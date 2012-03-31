@@ -1,0 +1,41 @@
+K 25
+svn:wc:ra_dav:version-url
+V 53
+/!svn/ver/806/branches/experimental/sql/evemu-updates
+END
+r517-conquerableStations.sql
+K 25
+svn:wc:ra_dav:version-url
+V 82
+/!svn/ver/806/branches/experimental/sql/evemu-updates/r517-conquerableStations.sql
+END
+r520-character.sql
+K 25
+svn:wc:ra_dav:version-url
+V 72
+/!svn/ver/806/branches/experimental/sql/evemu-updates/r520-character.sql
+END
+r577-chrCorporationRoles.sql
+K 25
+svn:wc:ra_dav:version-url
+V 82
+/!svn/ver/806/branches/experimental/sql/evemu-updates/r577-chrCorporationRoles.sql
+END
+r578-chrSkillQueue.sql
+K 25
+svn:wc:ra_dav:version-url
+V 76
+/!svn/ver/806/branches/experimental/sql/evemu-updates/r578-chrSkillQueue.sql
+END
+r495-entityStatic.sql
+K 25
+svn:wc:ra_dav:version-url
+V 75
+/!svn/ver/806/branches/experimental/sql/evemu-updates/r495-entityStatic.sql
+END
+r589-chrSkillQueue.sql
+K 25
+svn:wc:ra_dav:version-url
+V 76
+/!svn/ver/806/branches/experimental/sql/evemu-updates/r589-chrSkillQueue.sql
+END

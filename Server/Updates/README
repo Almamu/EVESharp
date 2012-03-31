@@ -1,0 +1,42 @@
+- Almamu: I want to thank to EVEmu Development Team for those valuable SQL files that will aid in the development of EVESharp.
+
+ORIGINAL FILE WITH SOME MODIFICATIONS:
+------------------------------------------------------------------------------------------------------------------------------
+DATABASE INSTALLATION GUIDE:
+=============================
+ 1. Download official EVE database dump:
+     http://eve.no-ip.de/apo15/apo15-mysql5-v1.sql.bz2
+    Unpack it - you should get file with ".sql" extension.
+
+ 2. Go to subdirectory utils and:
+    a) If you are on Windows:
+        Execute Merge-Server.bat and Merge-Oficial.bat.
+    b) If you are on Linux:
+        Execute Merge-Server.sh and Merge-Oficial.sh.
+
+    After that browse back to parent directory sql. Note the 2 new files
+    called Oficial.sql and Server.sql.
+
+ 3. Create database into which you want to stick all the EVESharp DB stuff.
+
+ 4. Import the .sql files in following order:
+    a) apo15-mysql5-v1.sql (official dump; the one you downloaded and unpacked)
+    b) Oficial.sql
+    c) Static.sql
+    d) Dynamic.sql
+    e) Server.sql
+    f) Prime.sql
+
+FILE DESCRIPTION:
+===================
+Static.sql
+**********************
+This file contains static data required by EVESharp.
+
+Dynamic.sql
+***********************
+This file contains dynamic database schema required by EVESharp.
+
+Prime.sql
+*************
+This is special SQL batch, which is intended to reset all the dynamic stuff into default state.
