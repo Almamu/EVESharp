@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<units>
+	<unit id="1" name="Length" display_name="m">
+		<description>
+			Meter
+		</description>
+	</unit>
+	<unit id="2" name="Mass" display_name="kg">
+		<description>
+			Kilogram
+		</description>
+	</unit>
+	<unit id="3" name="Time" display_name="sec">
+		<description>
+			Second
+		</description>
+	</unit>
+	<unit id="4" name="Electric Current" display_name="A">
+		<description>
+			Ampere
+		</description>
+	</unit>
+	<unit id="5" name="Temperature" display_name="K">
+		<description>
+			Kelvin
+		</description>
+	</unit>
+	<unit id="6" name="Amount Of Substance" display_name="mol">
+		<description>
+			Mole
+		</description>
+	</unit>
+	<unit id="7" name="Luminous Intensity" display_name="cd">
+		<description>
+			Candela
+		</description>
+	</unit>
+	<unit id="8" name="Area" display_name="m2">
+		<description>
+			Square meter
+		</description>
+	</unit>
+	<unit id="9" name="Volume" display_name="m3">
+		<description>
+			Cubic meter
+		</description>
+	</unit>
+	<unit id="10" name="Speed" display_name="m/sec">
+		<description>
+			Meter per second
+		</description>
+	</unit>
+	<unit id="11" name="Acceleration" display_name="m/sec">
+		<description>
+			Meter per second squared
+		</description>
+	</unit>
+	<unit id="12" name="Wave Number" display_name="m-1">
+		<description>
+			Reciprocal meter
+		</description>
+	</unit>
+	<unit id="12" name="Wave Number" display_name="m-1">
+		<description />
+	</unit>
+</units>

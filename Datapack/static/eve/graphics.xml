@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<graphics>
+	<graphic id="6" name="asdasdasd" obsolete="0" type="string" explosion_id="1231" directory_id="123123">
+		<file>res:/Scene/Askur/default.blue</file>
+		<description>SolarSystem</description>
+	</graphic>
+	<graphic id="6" name="asdasdasd" obsolete="0" type="string" explosion_id="1231" directory_id="123123">
+		<file>res:/Scene/Askur/default.blue</file>
+		<description>SolarSystem</description>
+	</graphic>
+</graphics>
