@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-16"?>
+<xsd:schema attributeFormDefault="unqualified" elementFormDefault="qualified" version="1.0" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <xsd:element name="agents">
+    <xsd:complexType>
+      <xsd:sequence>
+        <xsd:element maxOccurs="unbounded" name="agent">
+          <xsd:complexType>
+            <xsd:attribute name="id" type="xsd:int" />
+            <xsd:attribute name="division" type="xsd:int" />
+            <xsd:attribute name="corporation" type="xsd:int" />
+            <xsd:attribute name="level" type="xsd:int" />
+            <xsd:attribute name="quality" type="xsd:int" />
+            <xsd:attribute name="type" type="xsd:int" />
+            <xsd:attribute name="locator" type="xsd:boolean" />
+            <xsd:attribute name="research" type="xsd:boolean" />
+          </xsd:complexType>
+        </xsd:element>
+      </xsd:sequence>
+    </xsd:complexType>
+  </xsd:element>
+</xsd:schema>

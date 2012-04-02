@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<agents>
+	<agent id="123123" division="12312312" corporation="12312312" level="1" quality="20" type="2" locator="true" research="true" />
+	<agent id="123123" division="12312312" corporation="12312312" level="1" quality="20" type="2" locator="true" research="true" />
+	<agent id="123123" division="12312312" corporation="12312312" level="1" quality="20" type="2" locator="true" research="true" />
+</agents>
