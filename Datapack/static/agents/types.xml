@@ -1,5 +1,14 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <types>
 	<type id="1" name="NonAgent" />
-	<type id="1" name="NonAgent" />
+	<type id="2" name="BasicAgent" />
+	<type id="3" name="TutorialAgent" />
+	<type id="4" name="ResearchAgent" />
+	<type id="5" name="CONCORDAgent" />
+	<type id="6" name="GenericStorylineMissionAgent" />
+	<type id="7" name="StorylineMissionAgent" />
+	<type id="8" name="EventMissionAgent" />
+	<type id="9" name="FactionalWarfareAgent" />
+	<type id="10" name="EpicArcAgent" />
+	<type id="11" name="AuraAgent" />
 </types>
