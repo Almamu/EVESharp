@@ -8,11 +8,12 @@
             <xsd:attribute name="id" type="xsd:int" />
             <xsd:attribute name="division" type="xsd:int" />
             <xsd:attribute name="corporation" type="xsd:int" />
+            <xsd:attribute name="location" type="xsd:int" />
             <xsd:attribute name="level" type="xsd:int" />
             <xsd:attribute name="quality" type="xsd:int" />
             <xsd:attribute name="type" type="xsd:int" />
             <xsd:attribute name="locator" type="xsd:boolean" />
-            <xsd:attribute name="research" type="xsd:boolean" />
+            <xsd:attribute name="research_type" type="xsd:int" />
           </xsd:complexType>
         </xsd:element>
       </xsd:sequence>
