@@ -25,7 +25,7 @@ SET SQL_MODE="NO_AUTO_VALUE_ON_ZERO";
 -- Table structure for table `account`
 --
 
-DROP TABLE IF NOT EXISTS `account`;
+DROP TABLE IF EXISTS `account`;
 
 CREATE TABLE IF NOT EXISTS `account` (
   `accountID` int(10) unsigned NOT NULL AUTO_INCREMENT,
