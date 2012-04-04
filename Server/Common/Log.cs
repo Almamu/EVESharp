@@ -49,7 +49,7 @@ namespace Common
 
             Console.ForegroundColor = ConsoleColor.Gray;
 
-            string filelog = DateTime.Now.ToShortDateString() + DateTime.Now.ToShortTimeString();
+            string filelog = DateTime.Now.ToShortDateString() + " " + DateTime.Now.ToShortTimeString();
             filelog += " " + id + " " + svc + ": " + msg;
 
             FileLog(filelog);
