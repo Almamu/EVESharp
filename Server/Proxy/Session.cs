@@ -128,6 +128,12 @@ namespace Proxy
                     // We cant modify the session here, just store it on something temporal
                     tmp[s] = update;
                 }
+                else
+                {
+                    // We havent updated anything, but this would be later set as the session
+                    // This will prevent the loss of session data
+                    tmp[s] = value;
+                }
             }
 
             // Send back the session from temporal to the final storage
