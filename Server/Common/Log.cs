@@ -36,7 +36,7 @@ namespace Common
             while (logqueue > 1) ;
 
             Console.ForegroundColor = ConsoleColor.Gray;
-            Console.Write(DateTime.Now.ToShortDateString() + DateTime.Now.ToShortTimeString());
+            Console.Write(DateTime.Now.ToShortDateString() + " " + DateTime.Now.ToShortTimeString());
 
             Console.ForegroundColor = color;
             Console.Write(" " + id + " ");
