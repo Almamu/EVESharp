@@ -15,14 +15,25 @@ namespace Common.Packets
         public int build = 0;
         public string codename = "";
         public string region = "";
+        public string nodeIdentifier = "";
+        public bool isNode = false; // 0-> Client, 1-> Node
 
-        public PyTuple Encode()
+        public PyTuple Encode(bool node)
         {
             PyTuple res = new PyTuple();
 
             res.Items.Add(new PyInt(birthday));
             res.Items.Add(new PyInt(machoVersion));
-            res.Items.Add(new PyInt(usercount));
+
+            if (node)
+            {
+                res.Items.Add(new PyString("Node"));
+            }
+            else
+            {
+                res.Items.Add(new PyInt(usercount));
+            }
+
             res.Items.Add(new PyFloat(version));
             res.Items.Add(new PyInt(build));
             res.Items.Add(new PyString(codename + "@" + region));
@@ -32,6 +43,8 @@ namespace Common.Packets
 
         public bool Decode(PyObject data)
         {
+            isNode = false;
+
             if (data.Type != PyObjectType.Tuple)
             {
                 Log.Error("LowLevelVersionExchange", "Wrong type");
@@ -68,16 +81,24 @@ namespace Common.Packets
 
             PyObject users = tmp.Items[2];
 
-            if ( ( users.Type != PyObjectType.None ) && ( users.Type != PyObjectType.Long ))
+            if (users.Type == PyObjectType.None)
+            {
+                usercount = 0;   
+            }
+            else if(users.Type == PyObjectType.Long)
+            {
+                usercount = users.As<PyInt>().Value;
+            }
+            else if (users.Type != PyObjectType.String)
+            {
+                isNode = true;
+                nodeIdentifier = users.As<PyString>().Value;
+            }
+            else
             {
                 Log.Error("LowLevelVersionExchange", "Wrong type for usercount");
                 return false;
             }
-
-            if (users.Type == PyObjectType.None)
-                usercount = 0;
-            else
-                usercount = users.As<PyInt>().Value;
 
             PyObject ver = tmp.Items[3];
 

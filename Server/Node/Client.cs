@@ -317,7 +317,7 @@ namespace EVESharp
             data.version = Common.Constants.Game.version;
             data.usercount = Program.clients.Count;
             data.region = Common.Constants.Game.region;
-            Send(data.Encode());
+            Send(data.Encode(false));
         }
 
         private bool CheckLowLevelVersionExchange(PyTuple packet)

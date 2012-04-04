@@ -6,17 +6,30 @@ using Common;
 using Common.Network;
 using Marshal;
 using System.Threading;
+using Proxy.Database;
 
 namespace Proxy
 {
     class Program
     {
         static private TCPSocket listener = null;
-        static public int clients = 0;
+        static public List<Client> clients = null;
+        static public List<Connection> waiting = null;
 
         static void Main(string[] args)
         {
             Log.Init("proxy");
+
+            clients = new List<Client>();
+            waiting = new List<Connection>();
+
+            Log.Trace("Main", "Connecting to Database");
+            if (Database.Database.Init() == false)
+            {
+                while (true) Thread.Sleep(1);
+            }
+
+            Log.Debug("Main", "Connected to database sucesfull");
 
             Log.Trace("Main", "Starting listener on port 26000");
             listener = new TCPSocket(26000, false);
@@ -29,6 +42,8 @@ namespace Proxy
 
             Log.Debug("Main", "Listening on port 26000");
 
+            LoginQueue.Start();
+
             while (true)
             {
                 Thread.Sleep(1);
@@ -37,7 +52,8 @@ namespace Proxy
 
                 if (con != null)
                 {
-                    QueueProcessor.queue.Enqueue(con);
+                    Connection tmp = new Connection(con);
+                    waiting.Add(tmp);
                 }
             }
         }

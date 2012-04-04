@@ -31,6 +31,7 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="MySql.Data, Version=1.0.10.0, Culture=neutral, PublicKeyToken=c5687fc88969c44d" />
     <Reference Include="System" />
     <Reference Include="System.Core">
       <RequiredTargetFramework>3.5</RequiredTargetFramework>
@@ -45,9 +46,18 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Client.cs" />
+    <Compile Include="Database\AccountDB.cs" />
+    <Compile Include="Database\Database.cs" />
+    <Compile Include="Session.cs" />
+    <Compile Include="SessionData.cs" />
+    <Compile Include="Connection.cs" />
+    <Compile Include="LoginQueue.cs" />
+    <Compile Include="Node.cs" />
+    <Compile Include="NodeManager.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="QueueProcessor.cs" />
+    <Compile Include="ProxyClosingException.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Common\Common.csproj">
