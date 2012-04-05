@@ -23,7 +23,14 @@ namespace Proxy
 
         public static void AddNode(Node node)
         {
-            // The node has already been notified, just add it to the list
+            // Send a notification with the nodeInfo
+            NodeInfo info = new NodeInfo();
+
+            info.nodeID = nodes.Count;
+            info.solarSystems.Items.Add(new PyNone()); // This will let the node load the solarSystems it wants
+
+            node.Notify(info.Encode());
+
             nodes.Add(nodes.Count, node);
             nodeStatus.Add(nodes.Count, NodeStatus.NodeAlive);
         }
@@ -51,7 +58,7 @@ namespace Proxy
                 }
             }
 
-            return nodeID + 2; // Add two because the proxy is nodeID 1, the first node should be nodeID 2
+            return nodeID; // Add two because the proxy is nodeID 1, the first node should be nodeID 2
         }
 
         public static int GetNodeID(Node node)

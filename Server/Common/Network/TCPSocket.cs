@@ -46,19 +46,27 @@ namespace Common.Network
 
         public bool Connect(string address)
         {
-            bool res = true;
+            bool notHandled = true;
 
-            try
+            while (notHandled)
             {
-                ep = new IPEndPoint(Dns.GetHostEntry(address).AddressList[0], port);
-                sock.Connect(ep);
-            }
-            catch (Exception)
-            {
-                res = false;
+                try
+                {
+                    ep = new IPEndPoint(Dns.GetHostEntry(address).AddressList[0], port);
+                    sock.Connect(ep);
+                }
+                catch (SocketException e)
+                {
+                    if (e.ErrorCode == 10035)
+                    {
+                        break;
+                    }
+
+                    notHandled = false;
+                }
             }
 
-            return res;
+            return notHandled;
         }
 
         public bool Listen(int backlog)

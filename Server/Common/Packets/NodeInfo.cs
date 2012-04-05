@@ -33,7 +33,7 @@ namespace Common.Packets
 
             if (data.Name != "machoNet.nodeInfo")
             {
-                Log.Error("NodeInfo", "Wrong object name, expected machoNet.nodeInfo but got" + data.Name);
+                Log.Error("NodeInfo", "Wrong object name, expected machoNet.nodeInfo but got " + data.Name);
                 return false;
             }
 

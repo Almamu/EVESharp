@@ -141,5 +141,10 @@ namespace Proxy
 
             return res;
         }
+
+        public PyDict GetSession()
+        {
+            return session;
+        }
     }
 }

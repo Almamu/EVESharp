@@ -30,6 +30,7 @@ namespace Proxy
             }
 
             Log.Debug("Main", "Connected to database sucesfull");
+            Log.Trace("Main", "Reseting Solar Systems' status");
 
             Log.Trace("Main", "Starting listener on port 26000");
             listener = new TCPSocket(26000, false);

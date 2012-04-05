@@ -479,6 +479,9 @@ namespace EVESharp
                 Log.Error("Cache", "Cannot generate cache data for staticowners");
                 return false;
             }
+
+            SaveCacheFor(LoginCacheTable[16], DBUtils.DBResultToRowset(ref reader), DateTime.Now.ToFileTime());
+
             /*
 	        "config.StaticOwners",
 	        "config.Races",

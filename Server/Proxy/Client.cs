@@ -71,13 +71,80 @@ namespace Proxy
 
         private void Run()
         {
-            while (true)
+            try
             {
-                Thread.Sleep(1);
+                while (true)
+                {
+                    Thread.Sleep(1);
+
+                    byte[] data = new byte[socket.Available];
+                    int bytes = 0;
+
+                    try
+                    {
+                        bytes = socket.Recv(data);
+                    }
+                    catch (Exception)
+                    {
+                        throw new DisconnectException();
+                    }
+
+                    if (bytes == -1) // Client disconnected
+                    {
+                        throw new DisconnectException();
+                    }
+                    else if (bytes > 0)
+                    {
+                        int p = packetizer.QueuePackets(data);
+                        byte[] actual = null;
+
+                        for (int i = 0; i < p; i++)
+                        {
+                            actual = packetizer.PopItem();
+                            PyObject obj = Unmarshal.Process<PyObject>(actual);
+
+                            PyPacket packet = new PyPacket();
+                            if (packet.Decode(obj) == false)
+                            {
+                                Log.Error("Client", "Unknown packet");
+                            }
+                            else
+                            {
+                                // Get the node ID to send
+                                if (packet.dest.type == PyAddress.AddrType.Node)
+                                {
+                                    if (NodeManager.NotifyNode((int)packet.dest.typeID, obj) == false)
+                                    {
+                                        // We cant send the data to the node, what to do?
+                                        Log.Error("Client", "Trying to send a packet to a non-existing node");
+                                        throw new DisconnectException();
+                                    }
+                                }
+                            }
+
+                        }
+                    }
+                }
             }
+            catch (ThreadAbortException)
+            {
+
+            }
+            catch (DisconnectException)
+            {
+
+            }
+            catch (Exception ex)
+            {
+                Log.Error("Client", "Unhandled exception... " + ex.Message);
+                Log.Error("ExceptionHandler", "Stack trace: " + ex.StackTrace);
+            }
+
+            socket.Close();
+            Program.clients.Remove(this);
         }
 
-        private void Send(PyObject data)
+        public void Send(PyObject data)
         {
             Send(Marshal.Marshal.Process(data));
         }

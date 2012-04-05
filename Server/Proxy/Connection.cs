@@ -77,8 +77,7 @@ namespace Proxy
                         // Disconnected
                         throw new DisconnectException();
                     }
-
-                    if (bytes > 0)
+                    else if (bytes > 0)
                     {
                         int p = packetizer.QueuePackets(data);
                         byte[] packet = null;

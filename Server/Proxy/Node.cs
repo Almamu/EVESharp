@@ -63,6 +63,70 @@ namespace Proxy
             while (true)
             {
                 Thread.Sleep(1);
+
+                try
+                {
+                    byte[] data = new byte[socket.Available];
+                    int bytes = socket.Recv(data);
+
+                    if (bytes == -1)
+                    {
+                        throw new DisconnectException();
+                    }
+                    else if (bytes > 0)
+                    {
+                        int p = packetizer.QueuePackets(data);
+
+                        for (int i = 0; i < p; i++)
+                        {
+                            byte[] packet = packetizer.PopItem();
+                            PyObject obj = Unmarshal.Process<PyObject>(packet);
+
+                            if (obj.Type == PyObjectType.ObjectData)
+                            {
+                                PyObjectData item = obj as PyObjectData;
+
+                                if (item.Name == "macho.CallRsp")
+                                {
+                                    PyPacket final = new PyPacket();
+
+                                    if (final.Decode(item) == true)
+                                    {
+                                        if (final.dest.type == PyAddress.AddrType.Client)
+                                        {
+                                            Program.clients[(int)final.userID].Send(obj);
+                                        }
+                                        else if (final.dest.type == PyAddress.AddrType.Node)
+                                        {
+                                            NodeManager.NotifyNode((int)final.dest.typeID, obj);
+                                        }
+                                        else if (final.dest.type == PyAddress.AddrType.Broadcast)
+                                        {
+                                            // This should not be coded like this here, but will do the trick for now
+                                            foreach (Client client in Program.clients)
+                                            {
+                                                client.Send(obj);
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                Log.Error("Node", "Unknown type");
+                            }
+
+                        }
+                    }
+                }
+                catch (DisconnectException)
+                {
+                    Log.Error("Node", "Node " + NodeManager.GetNodeID(this) + " disconnected");
+                }
+                catch (Exception)
+                {
+
+                }
             }
         }
 
