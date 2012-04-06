@@ -52,13 +52,14 @@ namespace Common.Packets
                 return false;
             }
 
+            /* We cant check the vipKey, because the client sends different vipKeys, who know why ?
             PyString vipKey = tmp.Items[2].As<PyString>();
 
             if (vipKey.Value != vipkey)
             {
                 Log.Error("VipKeyCommand", "Wrong vipKey value, expected \"" + vipkey + "\" but got \"" + vipKey.Value + "\"");
                 return false;
-            }
+            }*/
 
             return true;
         }

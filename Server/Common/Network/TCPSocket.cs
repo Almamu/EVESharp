@@ -17,6 +17,12 @@ namespace Common.Network
             sock.Blocking = mode_blocking;
         }
 
+        public TCPSocket(TCPSocket from, bool socket_listening)
+        {
+            sock = from.Socket;
+            listening = socket_listening;
+        }
+
         public TCPSocket(Socket from, bool socket_listening)
         {
             sock = from;
@@ -46,19 +52,27 @@ namespace Common.Network
 
         public bool Connect(string address)
         {
-            bool res = true;
+            bool notHandled = true;
 
-            try
+            while (notHandled)
             {
-                ep = new IPEndPoint(Dns.GetHostEntry(address).AddressList[0], port);
-                sock.Connect(ep);
-            }
-            catch (Exception)
-            {
-                res = false;
+                try
+                {
+                    ep = new IPEndPoint(Dns.GetHostEntry(address).AddressList[0], port);
+                    sock.Connect(ep);
+                }
+                catch (SocketException e)
+                {
+                    if (e.ErrorCode == 10035)
+                    {
+                        break;
+                    }
+
+                    notHandled = false;
+                }
             }
 
-            return res;
+            return notHandled;
         }
 
         public bool Listen(int backlog)
@@ -176,6 +190,32 @@ namespace Common.Network
             get
             {
                 return sock.Available;
+            }
+        }
+
+        public bool Blocking
+        {
+            get
+            {
+                return sock.Blocking;
+            }
+
+            set
+            {
+                sock.Blocking = value;
+            }
+        }
+
+        public Socket Socket
+        {
+            get
+            {
+                return sock;
+            }
+
+            private set
+            {
+                sock = value;
             }
         }
     }

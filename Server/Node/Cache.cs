@@ -99,7 +99,140 @@ namespace EVESharp
         public static int CharacterAppearanceCacheTableSize = CharacterAppearanceCacheTable.Length;
 
         private static Dictionary<string, PyTuple> cacheData = new Dictionary<string, PyTuple>();
+        private static Dictionary<int, Dictionary<string, PyTuple>> userCacheData = new Dictionary<int, Dictionary<string, PyTuple>>();
 
+        /*
+         *  User cache 
+         */
+        public static bool LoadUserCacheFor(int user, string name)
+        {
+            return LoadUserCacheFor(user, name, false);
+        }
+
+        public static bool UpdateUserCache(int user, string name)
+        {
+            return LoadUserCacheFor(user, name, true);
+        }
+
+        public static bool LoadUserCacheFor(int user, string name, bool force)
+        {
+            Dictionary<string, PyTuple> old = null;
+
+            if (userCacheData.ContainsKey(user) == true)
+            {
+                if (userCacheData[user].ContainsKey(name) == true)
+                {
+                    if (force == false)
+                    {
+                        return true;
+                    }
+
+                    userCacheData[user].Remove(name);
+                }
+
+                if(force == false)
+                {
+                    return true;
+                }
+
+                // Store the actual cache data to reload only the required cacheName
+                old = userCacheData[user];
+                userCacheData.Remove(user);
+            }
+
+            // Get the cache data from the DB
+            PyTuple data = Database.CacheDB.GetUserCacheData(user, name);
+
+            if (data == null)
+            {
+                Log.Error("Cache", "Cannot load cache data for user " + user + " of type " + name);
+                return false;
+            }
+
+            // If the data wasnt loaded yet create an empty dictionary
+            if(old == null)
+            {
+                old = new Dictionary<string,PyTuple>();
+            }
+
+            // Add the cache loaded into the dictionary
+            old.Add(name, data);
+
+            // Load the dictionary with all the cache data into the userCacheData Dictionary
+            userCacheData.Add(user, old);
+
+            return true;
+        }
+
+        public static PyObject GetUserCache(int user, string name)
+        {
+            if (LoadUserCacheFor(user, name) == false)
+            {
+                return null;
+            }
+
+            // We can assume this will not throw any exception as we've just checked if it exists
+            PyTuple info = userCacheData[user][name];
+
+            PyCachedObject obj = new PyCachedObject();
+            obj.nodeID = info.Items[2].As<PyInt>().Value;
+            obj.objectID = new PyString(name);
+            obj.shared = 0;
+            obj.compressed = 0;
+            obj.cache = info.Items[0].As<PyBuffer>();
+            obj.timestamp = info.Items[1].As<PyLongLong>().Value;
+            obj.version = info.Items[3].As<PyInt>().Value;
+
+            return obj.Encode();
+        }
+
+        public static PyObject GetUserCacheData(int user, string name)
+        {
+            if (LoadUserCacheFor(user, name) == false)
+            {
+                return null;
+            }
+
+            PyTuple cache = userCacheData[user][name];
+
+            if (cache == null)
+            {
+                return null;
+            }
+
+            CacheInfo data = new CacheInfo();
+            data.objectID = new PyString(name);
+            data.cacheTime = cache.Items[1].As<PyLongLong>().Value;
+            data.nodeID = cache.Items[2].As<PyInt>().Value;
+            data.version = cache.Items[3].As<PyInt>().Value; // This is a CRC of the buffer
+
+            return data.Encode();
+        }
+
+        public static bool SaveUserCacheFor(int user, string name, PyObject data, long timestamp, int ownerType, string ownerName)
+        {
+            byte[] marshaled = Marshal.Marshal.Process(data);
+
+            if (Database.CacheDB.SaveUserCacheData(user, name, marshaled, timestamp, ownerName, ownerType) == false)
+            {
+                Log.Error("Cache", "Cannot save usercache data for " + name);
+                return false;
+            }
+
+            Log.Debug("Cache", "Saved usercache data for " + name);
+
+            if (UpdateUserCache(user, name) == false)
+            {
+                Log.Error("Cache", "Cannot update local usercache info");
+                return false;
+            }
+
+            return true;
+        }
+
+        /*
+         * General purpose server cache
+         */
         public static bool LoadCacheFor(string name)
         {
             return LoadCacheFor(name, false);
@@ -346,6 +479,9 @@ namespace EVESharp
                 Log.Error("Cache", "Cannot generate cache data for staticowners");
                 return false;
             }
+
+            SaveCacheFor(LoginCacheTable[16], DBUtils.DBResultToRowset(ref reader), DateTime.Now.ToFileTime());
+
             /*
 	        "config.StaticOwners",
 	        "config.Races",

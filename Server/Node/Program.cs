@@ -5,33 +5,28 @@ using System.Text;
 using Common;
 using Common.Network;
 using Common.Services;
+using Common.Packets;
 using System.Threading;
 using MySql.Data.MySqlClient;
 using EVESharp.Database;
 using System.Security.Cryptography;
+using Marshal;
 
 namespace EVESharp
 {
     class Program
     {
-        static private TCPSocket connection = null;
         static public List<Client> clients = null;
-        static private int nodeID = 0xFFAA;
+        static private int nodeID = 0xFFFF;
         static private TCPSocket proxyConnection = null;
+        static private StreamPacketizer packetizer = new StreamPacketizer();
         static public ServiceManager SvcMgr = new ServiceManager();
-
-        // Nodes list
-        static string[,] nodes = new string[,]
-        {
-            // IP         Port
-            {"127.0.0.1", "15000"}
-        };
 
         // Proxy info
         static string[,] proxy = new string[,]
         {
             // IP         Port
-            {"127.0.0.1", "26000"}
+            {"loopback", "26000"}
         };
 
         static public int GetNodeID()
@@ -39,16 +34,84 @@ namespace EVESharp
             return nodeID;
         }
 
+        static public void Send(byte[] data)
+        {
+            // The same error as in Proxy/Connection.cs -.-'
+            byte[] packet = new byte[data.Length + 4];
+
+            Array.Copy(data, 0, packet, 4, data.Length);
+            Array.Copy(BitConverter.GetBytes(data.Length), packet, 4);
+
+            proxyConnection.Send(packet);
+        }
+
+        static public void Send(PyObject data)
+        {
+            Send(Marshal.Marshal.Process(data));
+        }
+
+        static public void HandlePacket(PyPacket packet)
+        {
+            PyPacket res = new PyPacket();
+
+            if (packet.type == Macho.MachoNetMsg_Type.CALL_REQ)
+            {
+                PyTuple callInfo = packet.payload.As<PyTuple>().Items[0].As<PyTuple>();
+                callInfo = callInfo.Items[1].As<PyTuple>();
+
+                string call = callInfo.Items[1].As<PyString>().Value;
+                PyTuple args = callInfo.Items[2].As<PyTuple>();
+                PyDict sub = callInfo.Items[3].As<PyDict>();
+
+                if (Program.SvcMgr.FindService(packet.dest.service) == false)
+                {
+                    Log.Error("Client", "Cannot find service " + packet.dest.service + " to call " + call);
+                    return;
+                }
+
+                if (Program.SvcMgr.GetService(packet.dest.service).FindServiceCall(call) == false)
+                {
+                    Log.Error("Client", "Service " + packet.dest.service + " doesnt contains a call to " + call);
+                    return;
+                }
+
+                PyObject callRes = Program.SvcMgr.Call(packet.dest.service, call, args, null);
+
+                if (callRes == null)
+                {
+                    return;
+                }
+
+                if (callRes.Type == PyObjectType.Tuple)
+                {
+                    PyTuple payload = callRes.As<PyTuple>();
+
+                    res.type_string = "macho.CallRsp";
+                    res.type = Macho.MachoNetMsg_Type.CALL_RSP;
+
+                    res.source = packet.dest;
+                    res.dest = packet.source;
+                    /*
+                    res.dest.type = PyAddress.AddrType.Client;
+                    res.dest.typeID = packet.source.typeID;
+                    res.dest.callID = packet.source.callID;
+                    */
+                    res.userID = (uint)packet.userID;
+
+                    res.payload = new PyTuple();
+                    res.payload.Items.Add(new PySubStream(payload));
+
+                    Send(res.Encode());
+                }
+            }
+        }
+
         static void Main(string[] args)
         {
             clients = new List<Client>();
 
             Log.Init("evesharp");
-            Log.Info("Main", "Connecting to proxy...");
-            proxyConnection = new TCPSocket(ushort.Parse(proxy[0, 1]), false);
-            proxyConnection.Connect(proxy[0, 0]);
-
-            Log.Trace("Main", "Starting server...");
+            Log.Info("Main", "Starting node...");
             Log.Trace("Database", "Connecting to database...");
 
             if (Database.Database.Init() == false)
@@ -56,9 +119,7 @@ namespace EVESharp
                 while (true) ;
             }
 
-            Log.Trace("Main", "Adding an test account...");
-
-            /* Code to ADD an account:
+            /*
             SHA1 sha1 = SHA1.Create();
             byte[] hash = sha1.ComputeHash(Encoding.ASCII.GetBytes("password"));
             char[] strHash = new char[20];
@@ -75,6 +136,132 @@ namespace EVESharp
 
             Log.Info("Main", "Connection to the DB sucessfull");
 
+            Log.Trace("Main", "Registering services...");
+
+            SvcMgr.AddService(new Services.Network.machoNet());
+            SvcMgr.AddService(new Services.Network.alert());
+            SvcMgr.AddService(new Services.CacheSvc.objectCaching());
+
+            Log.Info("Main", "Done");
+            Log.Info("Main", "Connecting to proxy...");
+
+            proxyConnection = new TCPSocket(ushort.Parse(proxy[0, 1]), false);
+            if (proxyConnection.Connect(proxy[0, 0]) == false)
+            {
+                Log.Error("Main", "Cannot connect to proxy. Halting");
+                Database.Database.Stop();
+                while (true) ;
+            }
+
+            Log.Trace("Main", "Server started");
+
+            while (true)
+            {
+                Thread.Sleep(1);
+                try
+                {
+                    byte[] data = new byte[proxyConnection.Available];
+                    int bytes = proxyConnection.Recv(data);
+
+                    if (bytes == -1)
+                    {
+                        // Proxy is closing, shutdown the node
+                        break;
+                    }
+                    else if (bytes > 0)
+                    {
+                        int p = packetizer.QueuePackets(data);
+
+                        for (int i = 0; i < p; i++)
+                        {
+                            byte[] packet = packetizer.PopItem();
+                            PyObject obj = Unmarshal.Process<PyObject>(packet);
+
+                            if (obj is PyObjectData)
+                            {
+                                PyObjectData info = obj as PyObjectData;
+
+                                if (info.Name == "machoNet.nodeInfo")
+                                {
+                                    // Update our local info
+                                    NodeInfo nodeinfo = new NodeInfo();
+
+                                    if (nodeinfo.Decode(info) == true)
+                                    {
+                                        nodeID = nodeinfo.nodeID;
+
+                                        // The proxy should never tell us to load an specific solarSystem
+                                        // Just the other nodes
+                                        SystemManager.LoadSolarSystems(nodeinfo.solarSystems);
+                                    }
+                                }
+                                else
+                                {
+                                    // Client packet
+                                    PyPacket clientpacket = new PyPacket();
+                                    
+                                    if (clientpacket.Decode(info) == false)
+                                    {
+                                        Log.Error("Main", "Unknown packet");
+                                    }
+                                    else
+                                    {
+                                        // What about Async calls to handle more than one at once?
+                                        HandlePacket(clientpacket);
+                                    }
+                                }
+                            }
+                            else if (obj is PyTuple)
+                            {
+                                // The only tuple packet is the LowLevelVersionExchange
+                                LowLevelVersionExchange ex = new LowLevelVersionExchange();
+
+                                if (ex.Decode(obj) == false)
+                                {
+                                    Log.Error("Main", "LowLevelVersionExchange error");
+                                }
+
+                                // Reply with the node LowLevelVersionExchange
+                                LowLevelVersionExchange reply = new LowLevelVersionExchange();
+
+                                reply.codename = Common.Constants.Game.codename;
+                                reply.birthday = Common.Constants.Game.birthday;
+                                reply.build = Common.Constants.Game.build;
+                                reply.machoVersion = Common.Constants.Game.machoVersion;
+                                reply.version = Common.Constants.Game.version;
+                                reply.region = Common.Constants.Game.region;
+
+                                Send(reply.Encode(true));
+                            }
+                            else
+                            {
+                                Log.Error("Main", "Unhandled packet type");
+                            }
+                        }
+                    }
+
+                }
+                catch (Exception)
+                {
+
+                }
+            }
+
+            /* Code to ADD an account:
+            SHA1 sha1 = SHA1.Create();
+            byte[] hash = sha1.ComputeHash(Encoding.ASCII.GetBytes("password"));
+            char[] strHash = new char[20];
+
+            for (int i = 0; i < 20; i++)
+            {
+                strHash[i] = (char)hash[i];
+            }
+
+            string str = new string(strHash);
+
+            Database.Database.Query("INSERT INTO account(accountID, accountName, password, role, online, banned)VALUES(NULL, 'Username', '" + str + "', 2, 0, 0);");
+            */
+            /*
             connection = new TCPSocket(26000, false);
 
             if (connection.Listen(5) == false)
@@ -84,14 +271,6 @@ namespace EVESharp
             }
 
             Log.Trace("Main", "Listening on port 26000");
-            Log.Trace("Main", "Registering services...");
-
-            SvcMgr.AddService(new Services.Network.machoNet());
-            SvcMgr.AddService(new Services.Network.alert());
-            SvcMgr.AddService(new Services.CacheSvc.objectCaching());
-
-            Log.Info("Main", "Done");
-            Log.Info("Main", "Server started");
 
             while (true)
             {
@@ -106,7 +285,7 @@ namespace EVESharp
                     cli.Start();
                     clients.Add(cli);
                 }
-            }
+            }*/
         }
     }
 }
