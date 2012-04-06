@@ -30,6 +30,8 @@ namespace EVESharp.Database
                 result.Add(res.GetInt32(0));
             }
 
+            res.Close();
+
             return result;
         }
 

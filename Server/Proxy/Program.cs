@@ -54,6 +54,7 @@ namespace Proxy
                 if (con != null)
                 {
                     Connection tmp = new Connection(con);
+                    tmp.Start();
                     waiting.Add(tmp);
                 }
             }

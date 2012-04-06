@@ -56,7 +56,7 @@
     <Compile Include="Packets\AuthenticationRsp.cs" />
     <Compile Include="Packets\AuthenticationReq.cs" />
     <Compile Include="Packets\CacheInfo.cs" />
-    <Compile Include="Packets\GPSTransportClose.cs" />
+    <Compile Include="Packets\GPSTransportClosed.cs" />
     <Compile Include="Packets\HandshakeAck.cs" />
     <Compile Include="Packets\LowLevelVersionExchange.cs" />
     <Compile Include="Packets\NodeInfo.cs" />

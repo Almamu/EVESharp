@@ -17,6 +17,12 @@ namespace Common.Network
             sock.Blocking = mode_blocking;
         }
 
+        public TCPSocket(TCPSocket from, bool socket_listening)
+        {
+            sock = from.Socket;
+            listening = socket_listening;
+        }
+
         public TCPSocket(Socket from, bool socket_listening)
         {
             sock = from;
@@ -184,6 +190,32 @@ namespace Common.Network
             get
             {
                 return sock.Available;
+            }
+        }
+
+        public bool Blocking
+        {
+            get
+            {
+                return sock.Blocking;
+            }
+
+            set
+            {
+                sock.Blocking = value;
+            }
+        }
+
+        public Socket Socket
+        {
+            get
+            {
+                return sock;
+            }
+
+            private set
+            {
+                sock = value;
             }
         }
     }

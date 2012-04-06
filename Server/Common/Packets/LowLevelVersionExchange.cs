@@ -89,14 +89,14 @@ namespace Common.Packets
             {
                 usercount = users.As<PyInt>().Value;
             }
-            else if (users.Type != PyObjectType.String)
+            else if (users.Type == PyObjectType.String)
             {
                 isNode = true;
                 nodeIdentifier = users.As<PyString>().Value;
             }
             else
             {
-                Log.Error("LowLevelVersionExchange", "Wrong type for usercount");
+                Log.Error("LowLevelVersionExchange", "Wrong type for usercount/node identifier");
                 return false;
             }
 

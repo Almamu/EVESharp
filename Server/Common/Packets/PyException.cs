@@ -31,14 +31,14 @@ namespace Common.Packets
 
             args.Items.Add(new PyString(reason));
 
-            keywords.Set("reasonArgs", new PyDict());
-            keywords.Set("clock", new PyLongLong(DateTime.Now.ToFileTime()));
-            keywords.Set("region", new PyString(Constants.Game.region));
+            keywords.Set("reasonArgs", reasonArgs);
+            keywords.Set("clock", new PyLongLong(clock));
+            keywords.Set("region", new PyString(region));
             keywords.Set("reason", new PyString(reason));
-            keywords.Set("version", new PyFloat(Constants.Game.version));
-            keywords.Set("build", new PyInt(Constants.Game.build));
-            keywords.Set("codename", new PyString(Constants.Game.codename));
-            keywords.Set("machoVersion", new PyInt(Constants.Game.machoVersion));
+            keywords.Set("version", new PyFloat(version));
+            keywords.Set("build", new PyInt(build));
+            keywords.Set("codename", new PyString(codename));
+            keywords.Set("machoVersion", new PyInt(machoVersion));
 
             header.Items.Add(exception);
             header.Items.Add(args);

@@ -19,6 +19,7 @@ namespace Marshal
             IsType2 = isType2;
             Header = header;
             Dictionary = new Dictionary<PyObject, PyObject>();
+            List = new List<PyObject>();
         }
 
         public PyObjectEx()

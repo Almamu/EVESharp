@@ -33,15 +33,12 @@ namespace Proxy
             {
                 Log.Trace("Client", " Rejected by database");
 
-                GPSTransportClosed ex = new GPSTransportClosed("LoginAuthFailed");
-                from.Send(ex.Encode());
-
-                Program.waiting.Remove(from);
-
-                from.Close();
+                from.SetLoginStatus(Connection.LoginStatus.Failed);
             }
-
-            from.SetLoginStatus(Connection.LoginStatus.Sucess);
+            else
+            {
+                from.SetLoginStatus(Connection.LoginStatus.Sucess);
+            }
         }
 
         private static void Run()

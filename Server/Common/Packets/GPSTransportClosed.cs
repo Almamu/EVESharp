@@ -12,6 +12,13 @@ namespace Common.Packets
         {
             exception_type = "exceptions.GPSTransportClosed";
             reason = type;
+
+            region = Constants.Game.region;
+            codename = Constants.Game.codename;
+            machoVersion = Constants.Game.machoVersion;
+            version = Constants.Game.version;
+            build = Constants.Game.build;
+            clock = DateTime.Now.ToFileTime();
         }
     }
 }

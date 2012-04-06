@@ -151,7 +151,13 @@ namespace Proxy
 
         private void Send(byte[] data)
         {
-            socket.Send(data);
+            // The same error as in Proxy/Connection.cs -.-'
+            byte[] packet = new byte[data.Length + 4];
+
+            Array.Copy(data, 0, packet, 4, data.Length);
+            Array.Copy(BitConverter.GetBytes(data.Length), packet, 4);
+
+            socket.Send(packet);
         }
 
         public void ChangeToNode(int newNodeID)

@@ -36,12 +36,18 @@ namespace EVESharp
 
         static public void Send(byte[] data)
         {
-            proxyConnection.Send(data);
+            // The same error as in Proxy/Connection.cs -.-'
+            byte[] packet = new byte[data.Length + 4];
+
+            Array.Copy(data, 0, packet, 4, data.Length);
+            Array.Copy(BitConverter.GetBytes(data.Length), packet, 4);
+
+            proxyConnection.Send(packet);
         }
 
         static public void Send(PyObject data)
         {
-            proxyConnection.Send(Marshal.Marshal.Process(data));
+            Send(Marshal.Marshal.Process(data));
         }
 
         static public void HandlePacket(PyPacket packet)
@@ -112,6 +118,21 @@ namespace EVESharp
             {
                 while (true) ;
             }
+
+            /*
+            SHA1 sha1 = SHA1.Create();
+            byte[] hash = sha1.ComputeHash(Encoding.ASCII.GetBytes("password"));
+            char[] strHash = new char[20];
+
+            for (int i = 0; i < 20; i++)
+            {
+                strHash[i] = (char)hash[i];
+            }
+
+            string str = new string(strHash);
+
+            Database.Database.Query("INSERT INTO account(accountID, accountName, password, role, online, banned)VALUES(NULL, 'Username', '" + str + "', 2, 0, 0);");
+            */
 
             Log.Info("Main", "Connection to the DB sucessfull");
 

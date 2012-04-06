@@ -7,6 +7,8 @@ using Common.Network;
 using Common.Packets;
 using Marshal;
 using System.Threading;
+using System.Net;
+using System.Net.Sockets;
 
 namespace Proxy
 {
@@ -94,7 +96,14 @@ namespace Proxy
                                     {
                                         if (final.dest.type == PyAddress.AddrType.Client)
                                         {
-                                            Program.clients[(int)final.userID].Send(obj);
+                                            try
+                                            {
+                                                Program.clients[(int)final.userID].Send(obj);
+                                            }
+                                            catch (Exception)
+                                            {
+                                                Log.Error("Node", "Trying to send a packet to a non-existing client");
+                                            }
                                         }
                                         else if (final.dest.type == PyAddress.AddrType.Node)
                                         {
@@ -103,6 +112,7 @@ namespace Proxy
                                         else if (final.dest.type == PyAddress.AddrType.Broadcast)
                                         {
                                             // This should not be coded like this here, but will do the trick for now
+                                            // TODO: Add a ClientManager
                                             foreach (Client client in Program.clients)
                                             {
                                                 client.Send(obj);
@@ -119,9 +129,15 @@ namespace Proxy
                         }
                     }
                 }
+                catch (SocketException ex)
+                {
+                    if (ex.ErrorCode != 10035)
+                        break;
+                }
                 catch (DisconnectException)
                 {
                     Log.Error("Node", "Node " + NodeManager.GetNodeID(this) + " disconnected");
+                    break;
                 }
                 catch (Exception)
                 {

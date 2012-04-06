@@ -7,6 +7,8 @@ using Common;
 using Common.Packets;
 using Common.Network;
 using Marshal;
+using System.Net;
+using System.Net.Sockets;
 
 namespace Proxy
 {
@@ -37,6 +39,15 @@ namespace Proxy
             socket = sock;
             packetizer = new StreamPacketizer();
             thr = new Thread(Run);
+
+            if (sock.Blocking == true)
+            {
+                sock.Blocking = false;
+            }
+        }
+
+        public void Start()
+        {
             thr.Start();
         }
 
@@ -50,7 +61,7 @@ namespace Proxy
             loginStatus = status;
         }
 
-        private void Run()
+        public void Run()
         {
             try
             {
@@ -67,9 +78,10 @@ namespace Proxy
                         data = new byte[socket.Available];
                         bytes = socket.Recv(data);
                     }
-                    catch (Exception)
+                    catch (SocketException ex)
                     {
-                        throw new DisconnectException();
+                        if(ex.ErrorCode != 10035)
+                            throw new DisconnectException();
                     }
 
                     if (bytes == -1)
@@ -98,11 +110,11 @@ namespace Proxy
             }
             catch (DisconnectException)
             {
-                Log.Error("Connection", "Someone has disconnected");
+                Log.Error("Connection", "Connection closed");
             }
             catch (ThreadAbortException)
             {
-                Program.waiting.Remove(this);
+                
             }
             catch (Exception ex)
             {
@@ -110,6 +122,7 @@ namespace Proxy
                 Log.Error("ExceptionHandler", "Stack trace: " + ex.StackTrace);
             }
 
+            Program.waiting.Remove(this);
             if(forClose) socket.Close();
         }
 
@@ -196,6 +209,7 @@ namespace Proxy
                     // We have to send this just before the sessionchange
                     Send(ack.Encode());
 
+                    // Send session change
                     cli.SendSessionChange();
 
                     // Now we are completely in, add us to the list
@@ -258,6 +272,7 @@ namespace Proxy
                             return null;
                         }
 
+                        // The hash is in sha1, we should handle it later
                         if (req.user_password == null)
                         {
                             Log.Trace("Client", "Rejected by server; requesting plain password");
@@ -279,8 +294,19 @@ namespace Proxy
                         if (loginStatus == LoginStatus.Sucess)
                         {
                             // This should do the work left
-                            cli = new Client(new StreamPacketizer(), socket);
+                            cli = new Client(new StreamPacketizer(), new TCPSocket(socket, false));
                             cli.AuthCorrectInfo(accountid, role, request.user_languageid);
+                        }
+                        else if (loginStatus == LoginStatus.Failed)
+                        {
+                            GPSTransportClosed ex = new GPSTransportClosed("LoginAuthFailed");
+                            PyObject res = ex.Encode();
+                            Log.Warning("Connection", PrettyPrinter.Print(res));
+                            Send(res);
+
+                            Program.waiting.Remove(this);
+
+                            Close();
                         }
                         else
                         {
@@ -394,7 +420,15 @@ namespace Proxy
 
         private void Send(byte[] data)
         {
-            socket.Send(data);
+            // The biggest stupid error I've ever seen, I havent added the size indicator to the packet data
+            // This was causing the client to not answer...
+            // Fixed now
+            byte[] packet = new byte[data.Length + 4];
+
+            Array.Copy(data, 0, packet, 4, data.Length);
+            Array.Copy(BitConverter.GetBytes(data.Length), packet, 4);
+
+            socket.Send(packet);
         }
     }
 }
