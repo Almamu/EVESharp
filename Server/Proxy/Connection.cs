@@ -294,17 +294,13 @@ namespace Proxy
                         if (loginStatus == LoginStatus.Sucess)
                         {
                             // This should do the work left
-                            cli = new Client(new StreamPacketizer(), new TCPSocket(socket, false));
+                            cli = new Client(new StreamPacketizer(), socket);
                             cli.AuthCorrectInfo(accountid, role, request.user_languageid);
                         }
                         else if (loginStatus == LoginStatus.Failed)
                         {
                             GPSTransportClosed ex = new GPSTransportClosed("LoginAuthFailed");
-                            PyObject res = ex.Encode();
-                            Log.Warning("Connection", PrettyPrinter.Print(res));
-                            Send(res);
-
-                            Program.waiting.Remove(this);
+                            Send(ex.Encode());
 
                             Close();
                         }
