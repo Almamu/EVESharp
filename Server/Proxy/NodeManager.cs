@@ -9,6 +9,7 @@ using Marshal;
 
 namespace Proxy
 {
+    // Carefull, the proxy is the nodeID 1, so we should add/sub 2 to every nodeID
     public static class NodeManager
     {
         public enum NodeStatus
@@ -23,10 +24,12 @@ namespace Proxy
 
         public static void AddNode(Node node)
         {
+            Log.Debug("Node", "Node connected with id " + nodes.Count);
+
             // Send a notification with the nodeInfo
             NodeInfo info = new NodeInfo();
 
-            info.nodeID = nodes.Count;
+            info.nodeID = nodes.Count + 2;
             info.solarSystems.Items.Add(new PyNone()); // This will let the node load the solarSystems it wants
 
             node.Notify(info.Encode());
@@ -39,6 +42,11 @@ namespace Proxy
         {
             bool found = false;
             int nodeID = 0;
+
+            if (nodes.Count == 0)
+            {
+                return nodes.Count;
+            }
 
             while (found == false)
             {
@@ -58,7 +66,7 @@ namespace Proxy
                 }
             }
 
-            return nodeID; // Add two because the proxy is nodeID 1, the first node should be nodeID 2
+            return nodeID + 2; // Add two because the proxy is nodeID 1, the first node should be nodeID 2
         }
 
         public static int GetNodeID(Node node)
@@ -69,7 +77,7 @@ namespace Proxy
             {
                 if (itnode == node)
                 {
-                    return nodeID;
+                    return nodeID + 2;
                 }
 
                 nodeID++;
@@ -84,12 +92,12 @@ namespace Proxy
 
             nodes.Add(nodeID, node);
             
-            return nodeID;
+            return nodeID + 2;
         }
 
         public static bool IsNodeUnderHighLoad(int nodeID)
         {
-            return nodeStatus[nodeID] == NodeStatus.NodeUnderHighLoad;
+            return nodeStatus[nodeID - 2] == NodeStatus.NodeUnderHighLoad;
         }
 
         public static void HeartbeatNodes()
@@ -122,12 +130,13 @@ namespace Proxy
         {
             foreach (int nodeID in nodes.Keys)
             {
-                NotifyNode(nodeID, notify);
+                NotifyNode(nodeID + 2, notify);
             }
         }
 
         public static bool NotifyNode(int nodeID, PyObject data)
         {
+            nodeID = nodeID - 2;
             try
             {
                 nodes[nodeID].Notify(data);

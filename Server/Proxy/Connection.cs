@@ -215,6 +215,9 @@ namespace Proxy
                     // Now we are completely in, add us to the list
                     Program.clients.Add(cli);
 
+                    // Start the client packet reader thread
+                    cli.Start();
+
                     // Delete ourselves from the list
                     forClose = false;
                     thr.Abort();
@@ -295,7 +298,14 @@ namespace Proxy
                         {
                             // This should do the work left
                             cli = new Client(new StreamPacketizer(), socket);
-                            cli.AuthCorrectInfo(accountid, role, request.user_languageid);
+                            bool res = cli.AuthCorrectInfo(accountid, role, request.user_languageid);
+
+                            if (res == false)
+                            {
+                                forClose = true; // Just make sure its true
+                                Close();
+                                thr.Abort();
+                            }
                         }
                         else if (loginStatus == LoginStatus.Failed)
                         {

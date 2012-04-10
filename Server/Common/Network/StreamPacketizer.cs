@@ -16,22 +16,30 @@ namespace Common.Network
 
         public int QueuePackets(byte[] data)
         {
-            // Get the packet size:
-            int cur = 0;
-            int packets = 0;
-
-            for (; cur != data.Length; )
+            try
             {
-                int count = BitConverter.ToInt32(data, cur);
-                cur += 4;
-                byte[] packet = new byte[count];
-                Array.Copy(data, cur, packet, 0, count);
-                cur += count;
-                mOut.Enqueue(packet);
-                packets += 1;
-            }
+                // Get the packet size:
+                int cur = 0;
+                int packets = 0;
 
-            return packets;
+                for (; cur != data.Length; )
+                {
+                    int count = BitConverter.ToInt32(data, cur);
+                    cur += 4;
+                    byte[] packet = new byte[count];
+                    Array.Copy(data, cur, packet, 0, count);
+                    cur += count;
+                    mOut.Enqueue(packet);
+                    packets += 1;
+                }
+
+                return packets;
+            }
+            catch (Exception)
+            {
+                // The packets are malformed
+                return 0;
+            }
         }
 
         public byte[] PopItem()

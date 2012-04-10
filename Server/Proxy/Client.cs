@@ -22,11 +22,16 @@ namespace Proxy
         {
             socket = s;
             packetizer = p;
+            session = new Session();
             thr = new Thread(Run);
+        }
+
+        public void Start()
+        {
             thr.Start();
         }
 
-        public void AuthCorrectInfo(int accountid, int role, string languageid)
+        public bool AuthCorrectInfo(int accountid, int role, string languageid)
         {
             AuthenticationRsp rsp = new AuthenticationRsp();
 
@@ -60,13 +65,14 @@ namespace Proxy
             if (NodeManager.nodes.Count == 0)
             {
                 // Careful, no nodes found, close the connection
-                GPSTransportClosed ex = new GPSTransportClosed("NoNodeAvailable");
+                GPSTransportClosed ex = new GPSTransportClosed("ClusterStarting");
                 Send(ex.Encode());
-                thr.Abort();
-                Program.clients.Remove(this);
+                return false;
             }
 
             nodeID = NodeManager.GetRandomNode();
+
+            return true;
         }
 
         private void Run()
@@ -168,13 +174,27 @@ namespace Proxy
 
         public void SendSessionChange()
         {
+            PyObject sc = CreateSessionChange();
+
+            if (sc != null)
+            {
+                Send(sc);
+
+                // We should also notify our node
+                NodeManager.NotifyNode(nodeID, sc);
+            }
+        }
+
+        public PyPacket CreateEmptySessionChange()
+        {
+            // Fill all the packet data, except the dest/source
             SessionChangeNotification scn = new SessionChangeNotification();
             scn.changes = session.EncodeChanges();
 
             if (scn.changes.Dictionary.Count == 0)
             {
                 // Nothing to do
-                return;
+                return null;
             }
 
             // Add our current nodeID
@@ -186,7 +206,7 @@ namespace Proxy
             // Add all the nodeIDs
             foreach (int node in NodeManager.nodes.Keys)
             {
-                if(node != nodeID)
+                if (node != nodeID)
                     scn.nodesOfInterest.Items.Add(new PyInt(node));
             }
 
@@ -194,6 +214,25 @@ namespace Proxy
 
             p.type_string = "macho.SessionChangeNotification";
             p.type = Macho.MachoNetMsg_Type.SESSIONCHANGENOTIFICATION;
+
+            p.userID = (uint)GetAccountID();
+
+            p.payload = scn.Encode().As<PyTuple>();
+
+            p.named_payload = new PyDict();
+            p.named_payload.Set("channel", new PyString("sessionchange"));
+
+            return p;
+        }
+
+        public PyObject CreateSessionChange()
+        {
+            PyPacket p = CreateEmptySessionChange();
+
+            if (p == null)
+            {
+                return null;
+            }
 
             p.source.type = PyAddress.AddrType.Node;
             p.source.typeID = (ulong)nodeID;
@@ -203,12 +242,27 @@ namespace Proxy
             p.dest.typeID = (ulong)GetAccountID();
             p.dest.callID = 0;
 
-            p.userID = (uint)GetAccountID();
+            return p.Encode();
+        }
 
-            p.payload = scn.Encode().As<PyTuple>();
+        public PyObject CreateSessionChange(int nodeid)
+        {
+            PyPacket p = CreateEmptySessionChange();
 
-            p.named_payload = new PyDict();
-            p.named_payload.Set("channel", new PyString("sessionchange"));
+            if (p == null)
+            {
+                return null;
+            }
+
+            p.source.type = PyAddress.AddrType.Node;
+            p.source.typeID = (ulong)1;
+            p.source.callID = 0;
+
+            p.dest.type = PyAddress.AddrType.Node;
+            p.dest.typeID = (ulong)nodeid;
+            p.dest.callID = 0;
+
+            return p.Encode();
         }
 
         public string GetLanguageID()
