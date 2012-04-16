@@ -133,9 +133,9 @@ namespace Marshal
 
         private bool DecodeTypeID(PyObject data)
         {
-            if (( data.Type == PyObjectType.IntegerVar) || ( data.Type == PyObjectType.Long) )
+            if ((data.Type == PyObjectType.IntegerVar) || (data.Type == PyObjectType.Long) || (data.Type == PyObjectType.LongLong))
             {
-                typeID = (ulong)data.As<PyInt>().Value;
+                typeID = (ulong)data.IntValue;
             }
             else if (data.Type == PyObjectType.None)
             {
@@ -151,13 +151,9 @@ namespace Marshal
 
         private bool DecodeCallID(PyObject data)
         {
-            if ( (data.Type == PyObjectType.IntegerVar) || (data.Type == PyObjectType.Long ) )
+            if ((data.Type == PyObjectType.IntegerVar) || (data.Type == PyObjectType.Long) || (data.Type == PyObjectType.LongLong))
             {
                 callID = (ulong)data.IntValue;
-            }
-            else if (data.Type == PyObjectType.LongLong)
-            {
-                callID = (ulong)data.As<PyLongLong>().Value;
             }
             else if (data.Type == PyObjectType.None)
             {
@@ -192,31 +188,31 @@ namespace Marshal
         public enum AddrType
         {
             Any = 'A',
-                /*
-                 * [1] service
-                 * [2] callID
-                 */
+            /*
+             * [1] service
+             * [2] callID
+             */
             Node = 'N',
-                /* [1] nodeID
-                 * [2] service
-                 * [3] callID
-                 */
+            /* [1] nodeID
+             * [2] service
+             * [3] callID
+             */
             Client = 'C',
-                /*
-                 * [1] clientID
-                 * [2] callID
-                 * [3] service
-                 */
+            /*
+             * [1] clientID
+             * [2] callID
+             * [3] service
+             */
             Broadcast = 'B',
-                /*
-                 * [1] broadcastID
-                 * [2] narrowcast??
-                 * [3] idtype
-                 */
+            /*
+             * [1] broadcastID
+             * [2] narrowcast??
+             * [3] idtype
+             */
             Invalid = 'I' // Not real
         }
 
-        /*  From client/script/common/net/machonet.py line: 3864
+        /*  From client/script/common/net/machonet.py line: 3864(very old client source)
          *  Client = ('clientID', 'callID', 'service')
          *  Broadcast = ('broadcastID', 'narrowcast', 'idtype')
          *  Node = ('nodeID', 'service', 'callID')
@@ -230,64 +226,64 @@ namespace Marshal
             switch (type)
             {
                 case AddrType.Any:
-                    t.Items.Add( new PyString( "A" ));
+                    t.Items.Add(new PyString("A"));
 
-                    if( service == "" )
-                        t.Items.Add( new PyNone() );
-                    else
-                        t.Items.Add( new PyString( service ) );
-
-                    if( typeID == 0 )
+                    if (service == "")
                         t.Items.Add(new PyNone());
                     else
-                        t.Items.Add(new PyLongLong( (long)typeID ) );
+                        t.Items.Add(new PyString(service));
+
+                    if (typeID == 0)
+                        t.Items.Add(new PyNone());
+                    else
+                        t.Items.Add(new PyLongLong((long)typeID));
                     break;
 
                 case AddrType.Node:
-                    t.Items.Add( new PyString( "N" ) );
-                    t.Items.Add( new PyLongLong( (long)typeID ) );
+                    t.Items.Add(new PyString("N"));
+                    t.Items.Add(new PyLongLong((long)typeID));
 
-                    if( service == "" )
-                        t.Items.Add( new PyNone() );
+                    if (service == "")
+                        t.Items.Add(new PyNone());
                     else
-                        t.Items.Add( new PyString( service ) );
+                        t.Items.Add(new PyString(service));
 
-                    if( callID == 0 )
-                        t.Items.Add( new PyNone() );
+                    if (callID == 0)
+                        t.Items.Add(new PyNone());
                     else
-                        t.Items.Add( new PyLongLong( (long)callID ) );
+                        t.Items.Add(new PyLongLong((long)callID));
 
                     break;
 
                 case AddrType.Client:
-                    t.Items.Add( new PyString( "C" ) );
+                    t.Items.Add(new PyString("C"));
                     t.Items.Add(new PyLongLong((long)typeID));
                     t.Items.Add(new PyLongLong((long)callID));
 
-                    if( service == "" )
-                        t.Items.Add( new PyNone() );
+                    if (service == "")
+                        t.Items.Add(new PyNone());
                     else
-                        t.Items.Add( new PyString( service ) );
+                        t.Items.Add(new PyString(service));
 
                     break;
 
                 case AddrType.Broadcast:
-                    t.Items.Add( new PyString( "B" ) );
+                    t.Items.Add(new PyString("B"));
 
-                    if( service == "" )
-                        t.Items.Add( new PyNone() );
+                    if (service == "")
+                        t.Items.Add(new PyNone());
                     else
-                        t.Items.Add( new PyString( service ) );
+                        t.Items.Add(new PyString(service));
 
-                    t.Items.Add( new PyList() );
-                    t.Items.Add( new PyString( bcast_type ) );
+                    t.Items.Add(new PyList());
+                    t.Items.Add(new PyString(bcast_type));
                     break;
 
                 default:
                     break;
             }
 
-            return new PyObjectData( "macho.MachoAddress", t );
+            return new PyObjectData("macho.MachoAddress", t);
         }
 
 

@@ -63,6 +63,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Client.cs" />
+    <Compile Include="ClientManager.cs" />
     <Compile Include="Database\AccountDB.cs" />
     <Compile Include="Database\Database.cs" />
     <Compile Include="Database\GeneralDB.cs" />

@@ -40,13 +40,14 @@ namespace Marshal
         protected override void EncodeInternal(BinaryWriter output)
         {
             output.WriteOpcode(MarshalOpcode.SubStream);
-            var tempMs = new MemoryStream();
-            var temp = new BinaryWriter(tempMs);
-            temp.Write((byte)0x7E);
-            temp.Write((uint)0);
-            Data.Encode(temp);
-            output.WriteSizeEx((uint)tempMs.Length);
-            output.Write(tempMs.ToArray());
+
+            var memoryStream = new MemoryStream();
+            var binaryWriter = new BinaryWriter(memoryStream);
+
+            binaryWriter.Write(Marshal.Process(Data));
+            
+            output.WriteSizeEx((uint)memoryStream.Length);
+            output.Write(memoryStream.ToArray());
         }
 
         public override string ToString()

@@ -26,8 +26,7 @@ namespace EVESharp.Services.Network
 
             public override PyObject Run(PyTuple args, object client)
             {
-                Log.Debug("machoNet", "Called GetInitVals stub.");
-                PyString str = new PyString("machoNet.serviceInfo");
+                Log.Debug("machoNet", "Called GetInitVals stub");
 
                 if (Cache.LoadCacheFor("machoNet.serviceInfo") == false)
                 {

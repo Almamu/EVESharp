@@ -68,7 +68,9 @@ namespace Marshal
         public static void WriteSizeEx(this BinaryWriter writer, uint len)
         {
             if (len < 0xFF)
+            {
                 writer.Write((byte)len);
+            }
             else
             {
                 writer.Write((byte)0xFF);

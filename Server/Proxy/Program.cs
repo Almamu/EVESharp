@@ -45,6 +45,10 @@ namespace Proxy
 
             LoginQueue.Start();
 
+            // Add two nodes to the NodeManager
+            NodeManager.AddNode(null);
+            NodeManager.AddNode(null);
+
             while (true)
             {
                 Thread.Sleep(1);

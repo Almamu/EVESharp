@@ -61,6 +61,12 @@ namespace EVESharp
             return tmp.Items[1];
         }
 
+        public void Set(string name, PyObject value)
+        {
+            _Set(new PyString(name), value);
+        }
+
+
         public void SetString(string name, string value)
         {
             _Set(new PyString(name), new PyString(value));
@@ -69,6 +75,11 @@ namespace EVESharp
         public void SetInt(string name, int value)
         {
             _Set(new PyString(name), new PyInt(value));
+        }
+
+        public PyObject GetCurrent(string name)
+        {
+            return _Get(new PyString(name));
         }
 
         public string GetCurrentString(string name)

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using Common;
 using Common.Network;
 using Common.Packets;
@@ -22,20 +23,29 @@ namespace Proxy
         public static Dictionary<int, Node> nodes = new Dictionary<int, Node>();
         private static Dictionary<int, NodeStatus> nodeStatus = new Dictionary<int, NodeStatus>();
 
-        public static void AddNode(Node node)
+        public static int AddNode(Node node)
         {
+            // Add the nodes
+            nodeStatus.Add(nodes.Count, NodeStatus.NodeAlive);
+            nodes.Add(nodes.Count, node);
+
+            if (node == null)
+            {
+                Log.Debug("NodeManager", "Adding dummy nodes");
+                return 0; // Ignore it...
+            }
+
             Log.Debug("Node", "Node connected with id " + nodes.Count);
 
             // Send a notification with the nodeInfo
             NodeInfo info = new NodeInfo();
 
-            info.nodeID = nodes.Count + 2;
+            info.nodeID = nodes.Count;
             info.solarSystems.Items.Add(new PyNone()); // This will let the node load the solarSystems it wants
 
             node.Notify(info.Encode());
 
-            nodes.Add(nodes.Count, node);
-            nodeStatus.Add(nodes.Count, NodeStatus.NodeAlive);
+            return nodes.Count;
         }
 
         public static int GetRandomNode()
@@ -48,25 +58,33 @@ namespace Proxy
                 return nodes.Count;
             }
 
+            Random rnd = new Random();
+
             while (found == false)
             {
-                Random rnd = new Random();
+                Thread.Sleep(1);
+
                 nodeID = rnd.Next(nodes.Count);
 
                 try
                 {
+                    if (nodes[nodeID] == null)
+                    {
+                        continue;
+                    }
+
                     if (nodeStatus[nodeID] == NodeStatus.NodeAlive)
                     {
-                        found = true;
+                        return nodeID;
                     }
                 }
                 catch (Exception)
                 {
-
+                    Log.Error("NodeManager", "Node id " + nodeID + " doesnt has a status assigned to it...");
                 }
             }
 
-            return nodeID + 2; // Add two because the proxy is nodeID 1, the first node should be nodeID 2
+            return nodeID;
         }
 
         public static int GetNodeID(Node node)
@@ -77,7 +95,7 @@ namespace Proxy
             {
                 if (itnode == node)
                 {
-                    return nodeID + 2;
+                    return nodeID;
                 }
 
                 nodeID++;
@@ -86,18 +104,9 @@ namespace Proxy
             return -1;
         }
 
-        public static int RegisterNode(Node node)
-        {
-            int nodeID = nodes.Count;
-
-            nodes.Add(nodeID, node);
-            
-            return nodeID + 2;
-        }
-
         public static bool IsNodeUnderHighLoad(int nodeID)
         {
-            return nodeStatus[nodeID - 2] == NodeStatus.NodeUnderHighLoad;
+            return nodeStatus[nodeID] == NodeStatus.NodeUnderHighLoad;
         }
 
         public static void HeartbeatNodes()
@@ -105,6 +114,11 @@ namespace Proxy
             // Check if an older heartbeat left a node waiting
             foreach (int nodeID in nodeStatus.Keys)
             {
+                if (nodes[nodeID] == null)
+                {
+                    continue;
+                }
+
                 if (nodeStatus[nodeID] == NodeStatus.NodeWaitingHeartbeat)
                 {
                     // Node dead, load all the solarSystems into other node and transfer the clients
@@ -123,30 +137,46 @@ namespace Proxy
 
             data.Items.Add(new PyLongLong(DateTime.Now.ToFileTime()));
 
-            NotifyNodes(new PyObjectData("machoNet.PingReq", data));
+            NotifyNodes(new PyObjectData("macho.PingReq", data));
         }
 
         public static void NotifyNodes(PyObject notify)
         {
             foreach (int nodeID in nodes.Keys)
             {
-                NotifyNode(nodeID + 2, notify);
+                NotifyNode(nodeID, notify);
             }
         }
 
         public static bool NotifyNode(int nodeID, PyObject data)
         {
-            nodeID = nodeID - 2;
             try
             {
+                if (nodes[nodeID] == null)
+                {
+                    return false; // We receive a packet in a dummy node, return false
+                }
+
                 nodes[nodeID].Notify(data);
                 return true;
             }
             catch (Exception)
             {
                 Log.Error("NodeManager", "Trying to send data to a non-existing node");
+                Log.Warning("NodeManager", PrettyPrinter.Print(data));
                 return false;
             }
+        }
+
+        public static void RemoveNode(int nodeID)
+        {
+            nodes.Remove(nodeID);
+            nodeStatus.Remove(nodeID);
+        }
+
+        public static void RemoveNode(Node node)
+        {
+            RemoveNode(GetNodeID(node));
         }
     }
 }

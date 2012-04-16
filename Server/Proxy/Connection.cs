@@ -16,23 +16,22 @@ namespace Proxy
     {
         public enum LoginStatus
         {
-            NotStarted = 0,
-            Waiting = 1,
-            Sucess = 2,
-            Failed = 3,
+            Waiting = 0,
+            Sucess = 1,
+            Failed = 2,
         };
 
         private TCPSocket socket = null;
         private Thread thr = null;
         private StreamPacketizer packetizer = null;
         private bool isNode = false;
-        private LoginStatus loginStatus = LoginStatus.NotStarted;
         private AuthenticationReq request = null;
         public int accountid = 0;
         public int role = 0;
         public bool banned = false;
-        private Client cli = null;
+        public int nodeID = 0;
         private bool forClose = true;
+        private Session session = new Session();
 
         public Connection(TCPSocket sock)
         {
@@ -56,11 +55,6 @@ namespace Proxy
             return request;
         }
 
-        public void SetLoginStatus(LoginStatus status)
-        {
-            loginStatus = status;
-        }
-
         public void Run()
         {
             try
@@ -80,7 +74,7 @@ namespace Proxy
                     }
                     catch (SocketException ex)
                     {
-                        if(ex.ErrorCode != 10035)
+                        if (ex.ErrorCode != 10035)
                             throw new DisconnectException();
                     }
 
@@ -114,11 +108,10 @@ namespace Proxy
             }
             catch (ThreadAbortException)
             {
-                
             }
             catch (Exception ex)
             {
-                Log.Error("Client", "Unhandled exception... " + ex.Message);
+                Log.Error("Connection", "Unhandled exception... " + ex.Message);
                 Log.Error("ExceptionHandler", "Stack trace: " + ex.StackTrace);
             }
 
@@ -160,7 +153,7 @@ namespace Proxy
                 // Only LowLeverVersionExchange
                 if (CheckLowLevelVersionExchange(tup) == false)
                 {
-                    thr.Abort();
+                    Close();
                 }
 
                 if (isNode)
@@ -168,7 +161,9 @@ namespace Proxy
                     // We are a node, the next packets will be handled by the Node class
                     Node n = new Node(new StreamPacketizer(), socket);
                     NodeManager.AddNode(n);
-                    thr.Abort();
+
+                    forClose = false;
+                    Close();
                 }
 
                 return null;
@@ -183,7 +178,7 @@ namespace Proxy
                     if (vk.Decode(tup) == false)
                     {
                         Log.Error("Client", "Wrong vipKey command");
-                        thr.Abort();
+                        Close();
 
                         return null;
                     }
@@ -196,32 +191,40 @@ namespace Proxy
                     HandshakeAck ack = new HandshakeAck();
 
                     ack.live_updates = new PyList();
-                    ack.jit = cli.GetLanguageID();
-                    ack.userid = cli.GetAccountID();
+                    ack.jit = session.GetCurrentString("languageID");
+                    ack.userid = session.GetCurrentInt("userid");
                     ack.maxSessionTime = new PyNone();
                     ack.userType = Common.Constants.AccountType.User;
-                    ack.role = cli.GetAccountRole();
-                    ack.address = cli.GetAddress();
+                    ack.role = session.GetCurrentInt("role");
+                    ack.address = session.GetCurrentString("address");
                     ack.inDetention = new PyNone();
                     ack.client_hashes = new PyList();
-                    ack.user_clientid = cli.GetAccountID();
+                    ack.user_clientid = session.GetCurrentInt("userid") ;
 
                     // We have to send this just before the sessionchange
                     Send(ack.Encode());
 
+                    // Create the client instance
+                    Client cli = new Client(new StreamPacketizer(), socket);
+
+                    // Update the Client class session data
+                    cli.InitialSession(session);
+
+                    // Set the node id for the client
+                    cli.SetNodeID(nodeID);
+
                     // Send session change
                     cli.SendSessionChange();
-
-                    // Now we are completely in, add us to the list
-                    Program.clients.Add(cli);
 
                     // Start the client packet reader thread
                     cli.Start();
 
+                    // Now we are completely in, add us to the list
+                    Program.clients.Add(cli);
+
                     // Delete ourselves from the list
                     forClose = false;
-                    thr.Abort();
-                    return null;
+                    Close();
                 }
             }
             else if (items == 2) // PlaceboRequest, QueueCheck and Login packet
@@ -233,7 +236,7 @@ namespace Proxy
                     if (qc.Decode(tup) == false)
                     {
                         Log.Error("Client", "Wrong QueueCheck command");
-                        thr.Abort();
+                        Close();
 
                         return null;
                     }
@@ -254,7 +257,7 @@ namespace Proxy
                         if (req.Decode(tup) == false)
                         {
                             Log.Error("Client", "Wrong placebo request");
-                            thr.Abort();
+                            Close();
 
                             return null;
                         }
@@ -271,7 +274,7 @@ namespace Proxy
                             Log.Error("Client", "Wrong login packet");
                             GPSTransportClosed ex = new GPSTransportClosed("LoginAuthFailed");
                             Send(ex.Encode());
-                            thr.Abort();
+                            Close();
                             return null;
                         }
 
@@ -286,39 +289,9 @@ namespace Proxy
 
                         // Login request, add it to the queue and wait until we are accepted or rejected
                         LoginQueue.Enqueue(this);
-                        SetLoginStatus(LoginStatus.Waiting);
 
-                        // Wait until LoginQueue changes our state
-                        while (loginStatus == LoginStatus.Waiting)
-                        {
-                            Thread.Sleep(1);
-                        }
-
-                        if (loginStatus == LoginStatus.Sucess)
-                        {
-                            // This should do the work left
-                            cli = new Client(new StreamPacketizer(), socket);
-                            bool res = cli.AuthCorrectInfo(accountid, role, request.user_languageid);
-
-                            if (res == false)
-                            {
-                                forClose = true; // Just make sure its true
-                                Close();
-                                thr.Abort();
-                            }
-                        }
-                        else if (loginStatus == LoginStatus.Failed)
-                        {
-                            GPSTransportClosed ex = new GPSTransportClosed("LoginAuthFailed");
-                            Send(ex.Encode());
-
-                            Close();
-                        }
-                        else
-                        {
-                            Log.Error("Connection", "Wrong login status");
-                            thr.Abort();
-                        }
+                        // The login queue will call send the data to the client
+                        return null;
                     }
                 }
             }
@@ -435,6 +408,59 @@ namespace Proxy
             Array.Copy(BitConverter.GetBytes(data.Length), packet, 4);
 
             socket.Send(packet);
+        }
+
+        public void SendLoginNotification(LoginStatus loginStatus)
+        {
+            if (loginStatus == LoginStatus.Sucess)
+            {
+                AuthenticationRsp rsp = new AuthenticationRsp();
+
+                // String "None" marshaled
+                byte[] func_marshaled_code = new byte[] { 0x74, 0x04, 0x00, 0x00, 0x00, 0x4E, 0x6F, 0x6E, 0x65 };
+
+                rsp.serverChallenge = "";
+                rsp.func_marshaled_code = func_marshaled_code;
+                rsp.verification = false;
+                rsp.cluster_usercount = Program.clients.Count + 1; // We're not in the list yet
+                rsp.proxy_nodeid = 1;
+                rsp.user_logonqueueposition = 1;
+                rsp.challenge_responsehash = "55087";
+
+                rsp.macho_version = Common.Constants.Game.machoVersion;
+                rsp.boot_version = Common.Constants.Game.version;
+                rsp.boot_build = Common.Constants.Game.build;
+                rsp.boot_codename = Common.Constants.Game.codename;
+                rsp.boot_region = Common.Constants.Game.region;
+
+                // Setup session
+                session.SetString("address", socket.GetAddress());
+                session.SetString("languageID", request.user_languageid);
+                session.SetInt("userType", Common.Constants.AccountType.User);
+                session.SetInt("userid", accountid);
+                session.SetInt("role", role);
+
+                // We should check for a exact number of nodes here when we have the needed infraestructure
+                if (NodeManager.nodes.Count > 0)
+                {
+                    nodeID = NodeManager.GetRandomNode();
+                    Send(rsp.Encode());
+                }
+                else
+                {
+                    GPSTransportClosed ex = new GPSTransportClosed("AutClusterStarting");
+                    Send(ex.Encode());
+
+                    Close();
+                }
+            }
+            else if (loginStatus == LoginStatus.Failed)
+            {
+                GPSTransportClosed ex = new GPSTransportClosed("LoginAuthFailed");
+                Send(ex.Encode());
+
+                Close();
+            }
         }
     }
 }

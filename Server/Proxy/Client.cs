@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Net;
+using System.Net.Sockets;
 using Common;
 using Marshal;
 using Common.Network;
@@ -22,7 +24,6 @@ namespace Proxy
         {
             socket = s;
             packetizer = p;
-            session = new Session();
             thr = new Thread(Run);
         }
 
@@ -31,48 +32,9 @@ namespace Proxy
             thr.Start();
         }
 
-        public bool AuthCorrectInfo(int accountid, int role, string languageid)
+        public void InitialSession(Session from)
         {
-            AuthenticationRsp rsp = new AuthenticationRsp();
-
-            // String "None" marshaled
-            byte[] func_marshaled_code = new byte[] { 0x74, 0x04, 0x00, 0x00, 0x00, 0x4E, 0x6F, 0x6E, 0x65 };
-
-            rsp.serverChallenge = "";
-            rsp.func_marshaled_code = func_marshaled_code;
-            rsp.verification = false;
-            rsp.cluster_usercount = Program.clients.Count;
-            rsp.proxy_nodeid = 1; // This is the proxy ID, by the moment its the first node
-            rsp.user_logonqueueposition = 1;
-            rsp.challenge_responsehash = "55087";
-
-            rsp.macho_version = Common.Constants.Game.machoVersion;
-            rsp.boot_version = Common.Constants.Game.version;
-            rsp.boot_build = Common.Constants.Game.build;
-            rsp.boot_codename = Common.Constants.Game.codename;
-            rsp.boot_region = Common.Constants.Game.region;
-
-            // Setup session
-            session.SetString("address", socket.GetAddress());
-            session.SetString("languageID", languageid);
-            session.SetInt("userType", Common.Constants.AccountType.User);
-            session.SetInt("userid", accountid); 
-            session.SetInt("role", role);
-
-            Send(rsp.Encode());
-
-            // Find a node
-            if (NodeManager.nodes.Count == 0)
-            {
-                // Careful, no nodes found, close the connection
-                GPSTransportClosed ex = new GPSTransportClosed("ClusterStarting");
-                Send(ex.Encode());
-                return false;
-            }
-
-            nodeID = NodeManager.GetRandomNode();
-
-            return true;
+            session = from;
         }
 
         private void Run()
@@ -89,6 +51,11 @@ namespace Proxy
                     try
                     {
                         bytes = socket.Recv(data);
+                    }
+                    catch (SocketException ex)
+                    {
+                        if (ex.ErrorCode != 10035)
+                            throw new DisconnectException();
                     }
                     catch (Exception)
                     {
@@ -109,21 +76,37 @@ namespace Proxy
                             actual = packetizer.PopItem();
                             PyObject obj = Unmarshal.Process<PyObject>(actual);
 
-                            PyPacket packet = new PyPacket();
-                            if (packet.Decode(obj) == false)
+                            if (obj is PyObjectEx)
                             {
-                                Log.Error("Client", "Unknown packet");
+                                // PyException
+                                Log.Error("Client", "Got exception from client");
                             }
                             else
                             {
-                                // Get the node ID to send
-                                if (packet.dest.type == PyAddress.AddrType.Node)
+
+                                PyPacket packet = new PyPacket();
+                                if (packet.Decode(obj) == false)
                                 {
-                                    if (NodeManager.NotifyNode((int)packet.dest.typeID, obj) == false)
+                                    Log.Error("Client", "Error decoding PyPacket");
+                                }
+                                else
+                                {
+                                    // Get the node ID to send
+                                    if (packet.dest.type == PyAddress.AddrType.Node)
                                     {
-                                        // We cant send the data to the node, what to do?
-                                        Log.Error("Client", "Trying to send a packet to a non-existing node");
-                                        throw new DisconnectException();
+                                        if (packet.dest.typeID == 1)
+                                        {
+                                            packet.dest.typeID = (ulong)nodeID; // We dont want to receive packets in the proxy
+                                        }
+
+                                        Log.Warning("Client", PrettyPrinter.Print(packet.Encode()));
+
+                                        if (NodeManager.NotifyNode((int)packet.dest.typeID, obj) == false)
+                                        {
+                                            // We cant send the data to the node, what to do?
+                                            Log.Error("Client", "Trying to send a packet to a non-existing node");
+                                            throw new DisconnectException();
+                                        }
                                     }
                                 }
                             }
@@ -146,6 +129,8 @@ namespace Proxy
                 Log.Error("ExceptionHandler", "Stack trace: " + ex.StackTrace);
             }
 
+            // We should notify our node about this
+            Log.Error("Client", "Client disconnected");
             socket.Close();
             Program.clients.Remove(this);
         }
@@ -174,14 +159,16 @@ namespace Proxy
 
         public void SendSessionChange()
         {
-            PyObject sc = CreateSessionChange();
+            PyPacket sc = CreateEmptySessionChange();
+
+            PyObject client = SetSessionChangeDestination(sc);
+            PyObject node = SetSessionChangeDestination(sc, nodeID);
 
             if (sc != null)
             {
-                Send(sc);
+                Send(client);
 
-                // We should also notify our node
-                NodeManager.NotifyNode(nodeID, sc);
+                NodeManager.NotifyNode(nodeID, node);
             }
         }
 
@@ -197,17 +184,13 @@ namespace Proxy
                 return null;
             }
 
-            // Add our current nodeID
-            scn.nodesOfInterest.Items.Add(new PyInt(nodeID));
-
-            // Add the proxy ID
-            scn.nodesOfInterest.Items.Add(new PyInt(1));
-
             // Add all the nodeIDs
             foreach (int node in NodeManager.nodes.Keys)
             {
-                if (node != nodeID)
-                    scn.nodesOfInterest.Items.Add(new PyInt(node));
+                if (node == 0)
+                    continue;
+
+                scn.nodesOfInterest.Items.Add(new PyInt(node));
             }
 
             PyPacket p = new PyPacket();
@@ -215,7 +198,7 @@ namespace Proxy
             p.type_string = "macho.SessionChangeNotification";
             p.type = Macho.MachoNetMsg_Type.SESSIONCHANGENOTIFICATION;
 
-            p.userID = (uint)GetAccountID();
+            p.userID = (uint)ClientManager.GetClientID(this);
 
             p.payload = scn.Encode().As<PyTuple>();
 
@@ -223,6 +206,33 @@ namespace Proxy
             p.named_payload.Set("channel", new PyString("sessionchange"));
 
             return p;
+        }
+
+        public PyObject SetSessionChangeDestination(PyPacket p)
+        {
+            p.source.type = PyAddress.AddrType.Node;
+            p.source.typeID = (ulong)nodeID;
+            p.source.callID = 0;
+
+            p.dest.type = PyAddress.AddrType.Client;
+            p.dest.typeID = (ulong)ClientManager.GetClientID(this);
+            p.dest.callID = 0;
+
+            return p.Encode();
+        }
+
+        public PyObject SetSessionChangeDestination(PyPacket p, int node)
+        {
+            // The session change info should never come from the client
+            p.source.type = PyAddress.AddrType.Node;
+            p.source.typeID = (ulong)1;
+            p.source.callID = 0;
+
+            p.dest.type = PyAddress.AddrType.Node;
+            p.dest.typeID = (ulong)node;
+            p.dest.callID = 0;
+
+            return p.Encode();
         }
 
         public PyObject CreateSessionChange()
@@ -254,6 +264,7 @@ namespace Proxy
                 return null;
             }
 
+            // The session change info should never come from the client
             p.source.type = PyAddress.AddrType.Node;
             p.source.typeID = (ulong)1;
             p.source.callID = 0;
@@ -283,6 +294,11 @@ namespace Proxy
         public string GetAddress()
         {
             return session.GetCurrentString("address");
+        }
+
+        public void SetNodeID(int newNodeID)
+        {
+            nodeID = newNodeID;
         }
     }
 }

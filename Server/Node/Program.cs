@@ -16,7 +16,7 @@ namespace EVESharp
 {
     class Program
     {
-        static public List<Client> clients = null;
+        static public Dictionary<uint, Client> clients = new Dictionary<uint, Client>();
         static private int nodeID = 0xFFFF;
         static private TCPSocket proxyConnection = null;
         static private StreamPacketizer packetizer = new StreamPacketizer();
@@ -56,8 +56,7 @@ namespace EVESharp
 
             if (packet.type == Macho.MachoNetMsg_Type.CALL_REQ)
             {
-                PyTuple callInfo = packet.payload.As<PyTuple>().Items[0].As<PyTuple>();
-                callInfo = callInfo.Items[1].As<PyTuple>();
+                PyTuple callInfo = packet.payload.As<PyTuple>().Items[0].As<PyTuple>()[1].As<PySubStream>().Data.As<PyTuple>();
 
                 string call = callInfo.Items[1].As<PyString>().Value;
                 PyTuple args = callInfo.Items[2].As<PyTuple>();
@@ -84,32 +83,41 @@ namespace EVESharp
 
                 if (callRes.Type == PyObjectType.Tuple)
                 {
-                    PyTuple payload = callRes.As<PyTuple>();
-
                     res.type_string = "macho.CallRsp";
                     res.type = Macho.MachoNetMsg_Type.CALL_RSP;
 
                     res.source = packet.dest;
-                    res.dest = packet.source;
-                    /*
+
                     res.dest.type = PyAddress.AddrType.Client;
-                    res.dest.typeID = packet.source.typeID;
+                    res.dest.typeID = (ulong)clients[packet.userID].GetAccountID();
                     res.dest.callID = packet.source.callID;
-                    */
-                    res.userID = (uint)packet.userID;
+
+                    res.userID = (uint)clients[packet.userID].GetAccountID();
 
                     res.payload = new PyTuple();
-                    res.payload.Items.Add(new PySubStream(payload));
+                    res.payload.Items.Add(new PySubStream(callRes));
 
                     Send(res.Encode());
                 }
+            }
+            else if (packet.type == Macho.MachoNetMsg_Type.SESSIONCHANGENOTIFICATION)
+            {
+                Log.Debug("Main", "Updating session for client " + packet.userID);
+
+                // Check if the client isnt assigned to this node yet
+                if(clients.ContainsKey(packet.userID) == false)
+                {
+                    Client cli = new Client();
+                    clients.Add(packet.userID, cli);
+                }
+
+                // Update client session
+                clients[packet.userID].UpdateSession(packet);
             }
         }
 
         static void Main(string[] args)
         {
-            clients = new List<Client>();
-
             Log.Init("evesharp");
             Log.Info("Main", "Starting node...");
             Log.Trace("Database", "Connecting to database...");
@@ -190,7 +198,7 @@ namespace EVESharp
                                     {
                                         nodeID = nodeinfo.nodeID;
 
-                                        // The proxy should never tell us to load an specific solarSystem
+                                        // The proxy should never tell us to load a specific solarSystem
                                         // Just the other nodes
                                         SystemManager.LoadSolarSystems(nodeinfo.solarSystems);
                                     }
@@ -209,6 +217,19 @@ namespace EVESharp
                                         // What about Async calls to handle more than one at once?
                                         HandlePacket(clientpacket);
                                     }
+                                }
+                            }
+                            else if (obj is PyChecksumedStream) // Checksumed packets
+                            {
+                                PyPacket clientpacket = new PyPacket();
+
+                                if (clientpacket.Decode(obj) == false)
+                                {
+                                    Log.Error("Main", "Cannot decode packet");
+                                }
+                                else
+                                {
+                                    HandlePacket(clientpacket);
                                 }
                             }
                             else if (obj is PyTuple)
@@ -233,8 +254,13 @@ namespace EVESharp
 
                                 Send(reply.Encode(true));
                             }
+                            else if (obj is PyObjectEx)
+                            {
+                                Log.Error("PyObjectEx", PrettyPrinter.Print(obj));
+                            }
                             else
                             {
+                                Log.Error("Main", PrettyPrinter.Print(obj));
                                 Log.Error("Main", "Unhandled packet type");
                             }
                         }
@@ -261,31 +287,6 @@ namespace EVESharp
 
             Database.Database.Query("INSERT INTO account(accountID, accountName, password, role, online, banned)VALUES(NULL, 'Username', '" + str + "', 2, 0, 0);");
             */
-            /*
-            connection = new TCPSocket(26000, false);
-
-            if (connection.Listen(5) == false)
-            {
-                Log.Error("Main", "Can't start listening mode");
-                while (true) ;
-            }
-
-            Log.Trace("Main", "Listening on port 26000");
-
-            while (true)
-            {
-                Thread.Sleep(1);
-
-                TCPSocket client = connection.Accept();
-
-                if (client != null)
-                {
-                    Log.Trace("Main", "Client connected");
-                    Client cli = new Client(client);
-                    cli.Start();
-                    clients.Add(cli);
-                }
-            }*/
         }
     }
 }

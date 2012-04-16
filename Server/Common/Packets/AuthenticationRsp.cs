@@ -8,11 +8,10 @@ namespace Common.Packets
 {
     public class AuthenticationRsp
     {
-        // Thanks to EVEmu for this structure
         public string serverChallenge = "";
         public byte[] func_marshaled_code = null;
         public bool verification = false;
-        public Dictionary<string, PyObject> context = null;
+        public PyDict context = null;
         public string challenge_responsehash = "";
         public int macho_version = 0;
         public double boot_version = 0.0;
@@ -42,8 +41,7 @@ namespace Common.Packets
             }
             else
             {
-                // TODO: Convert context into a PyDict
-                res.Items.Add(new PyDict());
+                res.Items.Add(context);
             }
 
             PyDict info = new PyDict();

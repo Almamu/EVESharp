@@ -22,23 +22,34 @@ namespace Proxy
 
         public static void Enqueue(Connection con)
         {
-            queue.Enqueue(con);
+            // Just to be thread safe
+            lock (queue)
+            {
+                queue.Enqueue(con);
+            }
         }
+
 
         public static void HandleLogin(Connection from)
         {
-            Log.Debug("Client", "Login try " + from.GetAuthenticationReq().user_name);
+            // More thread-safe stuff
+            Log.Debug("LoginQueue", "Login try " + from.GetAuthenticationReq().user_name);
+            Connection.LoginStatus loginStatus = Connection.LoginStatus.Waiting;
 
             if ((Database.AccountDB.LoginPlayer(from.GetAuthenticationReq().user_name, from.GetAuthenticationReq().user_password, ref from.accountid, ref from.banned, ref from.role) == false) || (from.banned == true))
             {
-                Log.Trace("Client", " Rejected by database");
+                Log.Trace("LoginQueue", ": Rejected by database");
 
-                from.SetLoginStatus(Connection.LoginStatus.Failed);
+                loginStatus = Connection.LoginStatus.Failed;
             }
             else
             {
-                from.SetLoginStatus(Connection.LoginStatus.Sucess);
+                Log.Trace("LoginQueue", ": success");
+
+                loginStatus = Connection.LoginStatus.Sucess;
             }
+
+            from.SendLoginNotification(loginStatus);
         }
 
         private static void Run()
@@ -52,6 +63,7 @@ namespace Proxy
 
                     if (Environment.HasShutdownStarted)
                     {
+                        // This will shutdown all the nodes
                         throw new ProxyClosingException();
                     }
 
@@ -70,14 +82,21 @@ namespace Proxy
                     HandleLogin(now);
                 }
             }
-            catch (ProxyClosingException ex)
+            catch (ThreadAbortException)
             {
-                Log.Error("LoginQueue", ex.Message);
+                throw new ProxyClosingException();
             }
-            catch (Exception)
+            catch (ProxyClosingException)
             {
+                throw new ProxyClosingException();
+            }
+            catch (Exception ex)
+            {
+                Log.Error("LoginQueue", "Unhandled exception... " + ex.Message);
+                Log.Error("ExceptionHandler", "Stack trace: " + ex.StackTrace);
+            }
 
-            }
+            Log.Error("LoginQueue", "LoginQueue is closing... Bye Bye!");
         }
     }
 }

@@ -74,8 +74,8 @@ namespace Marshal
             }
 
             // lets just get rid of those here and now
-            if (ret is PySubStream)
-                return (ret as PySubStream).Data;
+            /*if (ret is PySubStream)
+                return (ret as PySubStream).Data;*/
 
             return ret;
         }
