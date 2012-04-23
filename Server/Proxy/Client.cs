@@ -99,6 +99,11 @@ namespace Proxy
                                             packet.dest.typeID = (ulong)nodeID; // We dont want to receive packets in the proxy
                                         }
 
+                                        if (packet.source.type != PyAddress.AddrType.Client)
+                                        {
+                                            Log.Error("Client", string.Format("Wrong source data, expected client but got {0}", packet.source.type));
+                                        }
+
                                         Log.Warning("Client", PrettyPrinter.Print(packet.Encode()));
 
                                         if (NodeManager.NotifyNode((int)packet.dest.typeID, obj) == false)
@@ -132,7 +137,7 @@ namespace Proxy
             // We should notify our node about this
             Log.Error("Client", "Client disconnected");
             socket.Close();
-            Program.clients.Remove(this);
+            ClientManager.RemoveClient(this);
         }
 
         public void Send(PyObject data)

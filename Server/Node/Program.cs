@@ -184,7 +184,7 @@ namespace EVESharp
                         {
                             byte[] packet = packetizer.PopItem();
                             PyObject obj = Unmarshal.Process<PyObject>(packet);
-
+                            
                             if (obj is PyObjectData)
                             {
                                 PyObjectData info = obj as PyObjectData;

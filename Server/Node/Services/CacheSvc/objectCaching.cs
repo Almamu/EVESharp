@@ -5,6 +5,7 @@ using System.Text;
 using Common;
 using Marshal;
 using Common.Services;
+using Common.Packets;
 
 namespace EVESharp.Services.CacheSvc
 {
@@ -26,14 +27,23 @@ namespace EVESharp.Services.CacheSvc
 
             public override PyObject Run(PyTuple args, object client)
             {
-                Log.Error("GetCachableObject", PrettyPrinter.Print(args));
+                Log.Debug("objectCaching", "Called GetCachableObject stub");
 
-                if (Cache.LoadCacheFor(args.Items[1].As<PyString>().Value) == false)
+                CacheInfo cache = new CacheInfo();
+
+                if (cache.Decode(args) == false)
                 {
                     return null;
                 }
 
-                return Cache.GetCache(args.Items[1].As<PyString>().Value);
+                Log.Debug("GetCachableObject", "Got cache request for cache " + cache.objectID.As<PyString>().Value);
+
+                if (Cache.LoadCacheFor(cache.objectID.As<PyString>().Value) == false)
+                {
+                    return null;
+                }
+
+                return Cache.GetCache(cache.objectID.As<PyString>().Value);
             }
         }
     }

@@ -175,13 +175,13 @@ namespace EVESharp
             PyTuple info = userCacheData[user][name];
 
             PyCachedObject obj = new PyCachedObject();
-            obj.nodeID = info.Items[2].As<PyInt>().Value;
+            obj.nodeID = info.Items[2].As<PyIntegerVar>().Value;
             obj.objectID = new PyString(name);
             obj.shared = 0;
             obj.compressed = 0;
             obj.cache = info.Items[0].As<PyBuffer>();
             obj.timestamp = info.Items[1].As<PyLongLong>().Value;
-            obj.version = info.Items[3].As<PyInt>().Value;
+            obj.version = info.Items[3].As<PyIntegerVar>().Value;
 
             return obj.Encode();
         }
@@ -203,8 +203,8 @@ namespace EVESharp
             CacheInfo data = new CacheInfo();
             data.objectID = new PyString(name);
             data.cacheTime = cache.Items[1].As<PyLongLong>().Value;
-            data.nodeID = cache.Items[2].As<PyInt>().Value;
-            data.version = cache.Items[3].As<PyInt>().Value; // This is a CRC of the buffer
+            data.nodeID = cache.Items[2].As<PyIntegerVar>().Value;
+            data.version = cache.Items[3].As<PyIntegerVar>().Value; // This is a CRC of the buffer
 
             return data.Encode();
         }
@@ -278,13 +278,13 @@ namespace EVESharp
             PyTuple info = cacheData[name];
 
             PyCachedObject obj = new PyCachedObject();
-            obj.nodeID = info.Items[2].As<PyInt>().Value;
+            obj.nodeID = info.Items[2].As<PyIntegerVar>().Value;
             obj.objectID = new PyString(name);
             obj.shared = 0;
             obj.compressed = 0;
             obj.cache = info.Items[0].As<PyBuffer>();
             obj.timestamp = info.Items[1].As<PyLongLong>().Value;
-            obj.version = info.Items[3].As<PyInt>().Value;
+            obj.version = info.Items[3].As<PyIntegerVar>().Value;
 
             return obj.Encode();
         }
@@ -307,8 +307,8 @@ namespace EVESharp
             CacheInfo data = new CacheInfo();
             data.objectID = new PyString(name);
             data.cacheTime = cache.Items[1].As<PyLongLong>().Value;
-            data.nodeID = cache.Items[2].As<PyInt>().Value;
-            data.version = cache.Items[3].As<PyInt>().Value; // This is a CRC of the buffer
+            data.nodeID = cache.Items[2].As<PyIntegerVar>().Value;
+            data.version = cache.Items[3].As<PyIntegerVar>().Value; // This is a CRC of the buffer
 
             return data.Encode();
         }
@@ -336,8 +336,8 @@ namespace EVESharp
 
         public static bool GenerateCache()
         {
-            // Here we will generate all the needed cache data
             MySqlDataReader reader = null;
+
             if (Database.Database.Query(ref reader, "SELECT activityID, activityName, iconNo, description, published FROM ramactivities") == false)
             {
                 Log.Error("Cache", "Cannot generate cache data for ramactivities");
@@ -370,7 +370,6 @@ namespace EVESharp
 
             SaveCacheFor(LoginCacheTable[3], DBUtils.DBResultToRowset(ref reader), DateTime.Now.ToFileTime());
 
-            // TODO: Change the table
             if (Database.Database.Query(ref reader, "SELECT corporationID, tickerName, shape1, shape2, shape3, color1, color2, color3 FROM corporation WHERE hasPlayerPersonnelManager = 0") == false)
             {
                 Log.Error("Cache", "Cannot generate cache data for tickernames");
@@ -393,7 +392,7 @@ namespace EVESharp
                 return false;
             }
 
-            SaveCacheFor(LoginCacheTable[6], DBUtils.DBResultToRowset(ref reader), DateTime.Now.ToFileTime());
+            SaveCacheFor(LoginCacheTable[6], DBUtils.DBResultToCRowset(ref reader), DateTime.Now.ToFileTime());
 
             if (Database.Database.Query(ref reader, "SELECT assemblyLineTypeID, assemblyLineTypeName, assemblyLineTypeName AS typeName, description, activityID, baseTimeMultiplier, baseMaterialMultiplier, volume FROM ramAssemblyLineTypes") == false)
             {
@@ -432,7 +431,7 @@ namespace EVESharp
                 Log.Error("Cache", "Cannot generate cache data for invTypeReactions");
                 return false;
             }
-            SaveCacheFor(LoginCacheTable[10], DBUtils.DBResultToRowset(ref reader), DateTime.Now.ToFileTime());
+            SaveCacheFor(LoginCacheTable[10], DBUtils.DBResultToCRowset(ref reader), DateTime.Now.ToFileTime());
 
             if (Database.Database.Query(ref reader, "SELECT typeID, effectID, isDefault FROM dgmTypeEffects") == false)
             {
@@ -464,7 +463,7 @@ namespace EVESharp
                 return false;
             }
 
-            SaveCacheFor(LoginCacheTable[14], DBUtils.DBResultToRowset(ref reader), DateTime.Now.ToFileTime());
+            SaveCacheFor(LoginCacheTable[14], DBUtils.DBResultToCRowset(ref reader), DateTime.Now.ToFileTime());
 
             if (Database.Database.Query(ref reader, "SELECT cacheOwner AS ownerID, cacheOwnerName AS ownerName, cacheOwnerType AS typeID FROM usercache") == false)
             {
@@ -482,16 +481,70 @@ namespace EVESharp
 
             SaveCacheFor(LoginCacheTable[16], DBUtils.DBResultToRowset(ref reader), DateTime.Now.ToFileTime());
 
+            if (Database.Database.Query(ref reader, "SELECT raceID, raceName, description, graphicID, shortDescription, 0 AS dataID FROM chrRaces") == false)
+            {
+                Log.Error("Cache", "Cannot generate cache data for races");
+                return false;
+            }
+
+            SaveCacheFor(LoginCacheTable[17], DBUtils.DBResultToRowset(ref reader), DateTime.Now.ToFileTime());
+
+            if (Database.Database.Query(ref reader, "SELECT attributeID, attributeName, description, graphicID FROM chrAttributes") == false)
+            {
+                Log.Error("Cache", "Cannot generate cache data for attributes");
+                return false;
+            }
+
+            SaveCacheFor(LoginCacheTable[18], DBUtils.DBResultToRowset(ref reader), DateTime.Now.ToFileTime());
+
+            if (Database.Database.Query(ref reader, "SELECT	dgmTypeAttributes.typeID,	dgmTypeAttributes.attributeID,	IF(valueInt IS NULL, valueFloat, valueInt) AS value FROM dgmTypeAttributes") == false)
+            {
+                Log.Error("Cache", "Cannot generate cache data for dgmtypeattribs");
+                return false;
+            }
+
+            SaveCacheFor(LoginCacheTable[19], DBUtils.DBResultToPackedRowList(ref reader), DateTime.Now.ToFileTime());
+
+            if (Database.Database.Query(ref reader, "SELECT locationID, locationName, x, y, z FROM cacheLocations") == false)
+            {
+                Log.Error("Cache", "Cannot generate cache data for locations");
+                return false;
+            }
+
+            SaveCacheFor(LoginCacheTable[20], DBUtils.DBResultToTupleSet(ref reader), DateTime.Now.ToFileTime());
+
+            if (Database.Database.Query(ref reader, "SELECT locationID, wormholeClassID FROM mapLocationWormholeClasses") == false)
+            {
+                Log.Error("Cache", "Cannot generate cache data for locationwormholeclasses");
+                return false;
+            }
+
+            SaveCacheFor(LoginCacheTable[21], DBUtils.DBResultToCRowset(ref reader), DateTime.Now.ToFileTime());
+
+            if (Database.Database.Query(ref reader, "SELECT groupID, categoryID, groupName, description, graphicID, useBasePrice, allowManufacture, allowRecycler, anchored, anchorable, fittableNonSingleton, 1 AS published, 0 AS dataID FROM invGroups") == false)
+            {
+                Log.Error("Cache", "Cannot generate cache data for groups");
+                return false;
+            }
+
+            SaveCacheFor(LoginCacheTable[22], DBUtils.DBResultToTupleSet(ref reader), DateTime.Now.ToFileTime());
+            
+            if(Database.Database.Query(ref reader, "SELECT shipTypeID,weaponTypeID,miningTypeID,skillTypeID FROM invShipTypes") == false)
+            {
+                Log.Error("Cache", "Cannot create cache data for shiptypes");
+                return false;
+            }
+
+            SaveCacheFor(LoginCacheTable[23], DBUtils.DBResultToCRowset(ref reader), DateTime.Now.ToFileTime());
+
+            if (Database.Database.Query(ref reader, "SELECT attributeID, attributeName, attributeCategory, description, maxAttributeID, attributeIdx, graphicID, chargeRechargeTimeID, defaultValue, published, displayName, unitID, stackable, highIsGood, categoryID, 0 AS dataID FROM dgmAttributeTypes") == false)
+            {
+                Log.Error("Cache", "Cannot generate cache data for dgmattribs");
+                return false;
+            }
+
+            SaveCacheFor(LoginCacheTable[24], DBUtils.DBResultToTupleSet(ref reader), DateTime.Now.ToFileTime());
             /*
-	        "config.StaticOwners",
-	        "config.Races",
-	        "config.Attributes",
-	        "config.BulkData.dgmtypeattribs",
-	        "config.BulkData.locations",
-	        "config.BulkData.locationwormholeclasses",
-	        "config.BulkData.groups",
-	        "config.BulkData.shiptypes",
-	        "config.BulkData.dgmattribs",
 	        "config.Flags",
 	        "config.BulkData.bptypes",
 	        "config.BulkData.graphics",

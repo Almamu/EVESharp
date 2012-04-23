@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Common;
+using Marshal;
 
 namespace Proxy
 {
@@ -21,6 +23,65 @@ namespace Proxy
             }
 
             return 0;
+        }
+
+        public static Client GetClient(int clientID)
+        {
+            try
+            {
+                return Program.clients[clientID];
+            }
+            catch (Exception)
+            {
+                return null;
+            }
+        }
+
+        public static int AddClient(Client client)
+        {
+            int clientID = Program.clients.Count;
+
+            Program.clients.Add(client);
+
+            return clientID;
+        }
+
+        public static bool RemoveClient(Client client)
+        {
+            if (client == null)
+            {
+                return false;
+            }
+
+            return Program.clients.Remove(client);
+        }
+
+        public static bool RemoveClient(int clientID)
+        {
+            if (clientID < 0)
+            {
+                Log.Debug("ClientManager", "Got invalid clientID in RemoveClient");
+                return false;
+            }
+
+            try
+            {
+                Program.clients.RemoveAt(clientID);
+            }
+            catch (ArgumentOutOfRangeException)
+            {
+                return false;
+            }
+
+            return true;
+        }
+
+        public static void NotifyClients(PyObject notify)
+        {
+            foreach (Client client in Program.clients)
+            {
+                client.Send(notify);
+            }
         }
     }
 }

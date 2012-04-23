@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using MySql.Data.MySqlClient;
 using MySql.Data.Types;
 using Common;
@@ -11,7 +12,7 @@ namespace EVESharp.Database
     public static class Database
     {
         private static MySqlConnection connection;
-
+        private static Queue<string> queryQueue = new Queue<string>();
         public static bool Init()
         {
             string connStr = String.Format("server={0};user id={1}; password={2}; database=eve-node; pooling=false",
@@ -90,6 +91,24 @@ namespace EVESharp.Database
             }
 
             return true;
+        }
+
+        public static void QueueQuery(string query)
+        {
+            queryQueue.Enqueue(query);
+        }
+
+        public static void Update()
+        {
+            Log.Debug("Database", "Saving information into the DB");
+
+            // Start the querys
+            string query = "";
+            while (queryQueue.Count > 0)
+            {
+                query = queryQueue.Dequeue();
+                Query(query);
+            }
         }
 
         public static void Stop()

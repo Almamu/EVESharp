@@ -26,7 +26,7 @@ namespace Proxy
             thr.Start();
         }
 
-        private void SendNodeInfo()
+        private void SendNodeChangeNotification()
         {
             NodeInfo nodeInfo = new NodeInfo();
 
@@ -59,9 +59,6 @@ namespace Proxy
 
         public void Run()
         {
-            // Send the node info
-            SendNodeInfo();
-
             while (true)
             {
                 Thread.Sleep(1);
@@ -86,6 +83,7 @@ namespace Proxy
 
                             if (obj.Type == PyObjectType.ObjectData)
                             {
+                                Log.Warning("Node", PrettyPrinter.Print(obj));
                                 PyObjectData item = obj as PyObjectData;
 
                                 if (item.Name == "macho.CallRsp")

@@ -8,7 +8,18 @@ namespace Common
 {
     public static class Log
     {
-        public static void Init( string base_filename )
+        public enum LogLevel
+        {
+            None = 0,
+            Debug = 1,
+            Error = 2,
+            Warning = 4,
+            Info = 8,
+            Trace = 16,
+            All = 31,
+        }
+
+        public static void Init(string base_filename, LogLevel level)
         {
             if (Directory.Exists("logs") == false)
             {
@@ -22,11 +33,24 @@ namespace Common
 
             fp = File.OpenWrite(file);
             enabled = true;
+
+            logLevel = level;
         }
 
-        public static void Send(ConsoleColor color, string id, string svc, string msg)
+        public static void Init(string base_filename)
+        {
+            Init(base_filename, LogLevel.All);
+        }
+
+        public static void Send(LogLevel level, ConsoleColor color, string id, string svc, string msg)
         {
             if (enabled == false)
+            {
+                return;
+            }
+
+            // Check for undesired message types
+            if ((level & logLevel) == 0)
             {
                 return;
             }
@@ -59,27 +83,27 @@ namespace Common
 
         public static void Debug(string svc, string msg)
         {
-            Send(ConsoleColor.Cyan, "D", svc, msg);
+            Send(LogLevel.Debug, ConsoleColor.Cyan, "D", svc, msg);
         }
 
         public static void Error(string svc, string msg)
         {
-            Send(ConsoleColor.Red, "E", svc, msg);
+            Send(LogLevel.Error, ConsoleColor.Red, "E", svc, msg);
         }
 
         public static void Warning(string svc, string msg)
         {
-            Send(ConsoleColor.Yellow, "W", svc, msg);
+            Send(LogLevel.Warning, ConsoleColor.Yellow, "W", svc, msg);
         }
 
         public static void Info(string svc, string msg)
         {
-            Send(ConsoleColor.Green, "I", svc, msg);
+            Send(LogLevel.Info, ConsoleColor.Green, "I", svc, msg);
         }
 
         public static void Trace(string svc, string msg)
         {
-            Send(ConsoleColor.Gray, "T", svc, msg);
+            Send(LogLevel.Trace, ConsoleColor.Gray, "T", svc, msg);
         }
 
         public static void Stop()
@@ -91,6 +115,8 @@ namespace Common
 
             fp.Close();
             fp = null;
+
+            logLevel = LogLevel.None;
         }
 
         public static void FileLog(string line)
@@ -109,5 +135,6 @@ namespace Common
         public static int logqueue = 0;
         public static string file = "";
         private static FileStream fp = null;
+        private static LogLevel logLevel = LogLevel.None;
     }
 }

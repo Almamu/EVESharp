@@ -49,8 +49,8 @@ namespace EVESharp.Database
             PyTuple tup = new PyTuple();
             tup.Items.Add(new PyBuffer(outb));
             tup.Items.Add(new PyLongLong(res.GetInt64(1)));
-            tup.Items.Add(new PyInt(res.GetInt32(2)));
-            tup.Items.Add(new PyInt((int)res.GetUInt32(3)));
+            tup.Items.Add(new PyIntegerVar(res.GetInt32(2)));
+            tup.Items.Add(new PyIntegerVar(res.GetUInt32(3)));
 
             res.Close();
 
@@ -147,8 +147,8 @@ namespace EVESharp.Database
             PyTuple tup = new PyTuple();
             tup.Items.Add(new PyBuffer(outb));
             tup.Items.Add(new PyLongLong(res.GetInt64(1)));
-            tup.Items.Add(new PyInt(res.GetInt32(2)));
-            tup.Items.Add(new PyInt((int)res.GetUInt32(3)));
+            tup.Items.Add(new PyIntegerVar(res.GetInt32(2)));
+            tup.Items.Add(new PyIntegerVar(res.GetUInt32(3)));
 
             res.Close();
 

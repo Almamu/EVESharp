@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Marshal;
+using Marshal.Database;
 using MySql.Data.Types;
 using MySql.Data.MySqlClient;
 
@@ -118,7 +119,38 @@ namespace Common.Utils
 
         public static PyObject DBResultToCRowset(ref MySqlDataReader result)
         {
-            return null;
+            DBRowDescriptor header = new DBRowDescriptor(ref result);
+            CRowset rowset = new CRowset(header);
+
+            while (result.Read())
+            {
+                rowset.Insert(CreatePackedRow(header, ref result));
+            }
+
+            return rowset.Encode();
+        }
+
+        public static PyPackedRow CreatePackedRow(DBRowDescriptor header, ref MySqlDataReader result)
+        {
+            PyPackedRow row = new PyPackedRow(header);
+            for (int i = 0; i < header.ColumnCount(); i++)
+            {
+                row.SetValue(header.GetColumnName(i).StringValue, DBColumnToPyObject(i, ref result));
+            }
+            return row;
+        }
+
+        public static PyObject DBResultToPackedRowList(ref MySqlDataReader result)
+        {
+            PyList res = new PyList();
+            DBRowDescriptor header = new DBRowDescriptor(ref result);
+
+            while (result.Read())
+            {
+                res.Items.Add(CreatePackedRow(header, ref result));
+            }
+
+            return res;
         }
     }
 }

@@ -25,27 +25,29 @@ namespace Proxy
 
         public static int AddNode(Node node)
         {
+            int nodeID = nodes.Count;
+
             // Add the nodes
-            nodeStatus.Add(nodes.Count, NodeStatus.NodeAlive);
-            nodes.Add(nodes.Count, node);
+            nodeStatus.Add(nodeID, NodeStatus.NodeAlive);
+            nodes.Add(nodeID, node);
 
             if (node == null)
             {
-                Log.Debug("NodeManager", "Adding dummy nodes");
+                Log.Debug("NodeManager", "Adding dummy node with id " + nodeID);
                 return 0; // Ignore it...
             }
 
-            Log.Debug("Node", "Node connected with id " + nodes.Count);
+            Log.Debug("Node", "Node connected with id " + nodeID);
 
             // Send a notification with the nodeInfo
             NodeInfo info = new NodeInfo();
 
-            info.nodeID = nodes.Count;
+            info.nodeID = nodeID;
             info.solarSystems.Items.Add(new PyNone()); // This will let the node load the solarSystems it wants
 
             node.Notify(info.Encode());
 
-            return nodes.Count;
+            return nodeID;
         }
 
         public static int GetRandomNode()

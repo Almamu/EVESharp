@@ -35,18 +35,26 @@ namespace Marshal
 
             // unknown
             if (userID == 0)
+            {
                 args.Items.Add(new PyNone());
+            }
             else
+            {
                 args.Items.Add(new PyInt((int)userID));
+            }
 
             // Add call args( payload )
             args.Items.Add(payload);
 
             // Named arguments
             if (named_payload == null)
+            {
                 args.Items.Add(new PyNone());
+            }
             else
+            {
                 args.Items.Add(named_payload);
+            }
 
             return new PyObjectData(type_string, args);
         }

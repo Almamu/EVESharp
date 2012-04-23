@@ -220,7 +220,7 @@ namespace Proxy
                     cli.Start();
 
                     // Now we are completely in, add us to the list
-                    Program.clients.Add(cli);
+                    ClientManager.AddClient(cli);
 
                     // Delete ourselves from the list
                     forClose = false;
