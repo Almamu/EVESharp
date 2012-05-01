@@ -50,6 +50,8 @@
             this.openFileDialog1 = new System.Windows.Forms.OpenFileDialog();
             this.button5 = new System.Windows.Forms.Button();
             this.saveFileDialog1 = new System.Windows.Forms.SaveFileDialog();
+            this.copiaDeSeguridadCompletaToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.folderBrowserDialog1 = new System.Windows.Forms.FolderBrowserDialog();
             this.toolStrip1.SuspendLayout();
             this.tabControl1.SuspendLayout();
             this.tabPage1.SuspendLayout();
@@ -88,7 +90,8 @@
             // 
             this.toolStripDropDownButton1.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
             this.toolStripDropDownButton1.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.salirToolStripMenuItem});
+            this.salirToolStripMenuItem,
+            this.copiaDeSeguridadCompletaToolStripMenuItem});
             this.toolStripDropDownButton1.Image = ((System.Drawing.Image)(resources.GetObject("toolStripDropDownButton1.Image")));
             this.toolStripDropDownButton1.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.toolStripDropDownButton1.Name = "toolStripDropDownButton1";
@@ -99,7 +102,7 @@
             // salirToolStripMenuItem
             // 
             this.salirToolStripMenuItem.Name = "salirToolStripMenuItem";
-            this.salirToolStripMenuItem.Size = new System.Drawing.Size(96, 22);
+            this.salirToolStripMenuItem.Size = new System.Drawing.Size(229, 22);
             this.salirToolStripMenuItem.Text = "Salir";
             this.salirToolStripMenuItem.Click += new System.EventHandler(this.salirToolStripMenuItem_Click);
             // 
@@ -266,6 +269,13 @@
             this.button5.UseVisualStyleBackColor = true;
             this.button5.Click += new System.EventHandler(this.button5_Click);
             // 
+            // copiaDeSeguridadCompletaToolStripMenuItem
+            // 
+            this.copiaDeSeguridadCompletaToolStripMenuItem.Name = "copiaDeSeguridadCompletaToolStripMenuItem";
+            this.copiaDeSeguridadCompletaToolStripMenuItem.Size = new System.Drawing.Size(229, 22);
+            this.copiaDeSeguridadCompletaToolStripMenuItem.Text = "Copia de seguridad completa";
+            this.copiaDeSeguridadCompletaToolStripMenuItem.Click += new System.EventHandler(this.copiaDeSeguridadCompletaToolStripMenuItem_Click);
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -312,6 +322,8 @@
         private System.Windows.Forms.OpenFileDialog openFileDialog1;
         private System.Windows.Forms.Button button5;
         private System.Windows.Forms.SaveFileDialog saveFileDialog1;
+        private System.Windows.Forms.ToolStripMenuItem copiaDeSeguridadCompletaToolStripMenuItem;
+        private System.Windows.Forms.FolderBrowserDialog folderBrowserDialog1;
     }
 }
 

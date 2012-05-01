@@ -18,6 +18,7 @@ namespace CacheTool
 
         private void button1_Click(object sender, EventArgs e)
         {
+            WindowLog.Info("Config::Save", "Saving new configuration");
             Program.ini.Write("Display", "CacheDataDisplayMode", comboBox1.Text);
             Program.cacheDataDisplayMode = comboBox1.Text;
             this.Close();

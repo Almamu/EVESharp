@@ -21,5 +21,12 @@ namespace CacheTool
 
             return MessageBox.Show(message, svc, MessageBoxButtons.YesNo, MessageBoxIcon.Question);
         }
+
+        public static void Info(string svc, string message)
+        {
+            WindowLog.Debug(svc, message);
+
+            MessageBox.Show(message, svc, MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
     }
 }

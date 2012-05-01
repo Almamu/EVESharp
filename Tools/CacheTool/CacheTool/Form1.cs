@@ -225,6 +225,8 @@ namespace CacheTool
                 byte[] data = fp.ReadAllBytes();
 
                 Cache.SaveCacheFor(listBox1.SelectedItem.ToString(), data, DateTime.Now.ToFileTime(), 0xFFAA);
+
+                listBox1_SelectedIndexChanged(sender, e); // Update the richTextBox
             }
         }
 
@@ -279,6 +281,71 @@ namespace CacheTool
             this.Enabled = false;
             frm.ShowDialog();
             this.Enabled = true;
+        }
+
+        private void copiaDeSeguridadCompletaToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            if (Message.Ask("Main::CompleteBackup", "¿Seguro que deseas hacer una copia de seguridad de toda la cache? Esto puede llevar varios minutos") == DialogResult.No)
+            {
+                return;
+            }
+
+            folderBrowserDialog1.Description = "Elije la carpeta de destino";
+            if (folderBrowserDialog1.ShowDialog() == DialogResult.Cancel)
+            {
+                return;
+            }
+
+            bool asked = false;
+
+            foreach (string name in cacheNames)
+            {
+                WindowLog.Debug("Main::CompleteBackup", "Saving cache " + name + " to file");
+
+                string filename = folderBrowserDialog1.SelectedPath + "/" + name + ".cache";
+                PyObject cache = Cache.GetCache(name);
+
+                PyCachedObject obj = new PyCachedObject();
+
+                if (obj.Decode(cache) == false)
+                {
+                    Message.Error("Main::CompleteBackup", "No se pudo obtener la información correctamente");
+                    return;
+                }
+
+                if (File.Exists(filename) == true)
+                {
+                    if (!asked)
+                    {
+                        if (Message.Ask("Main::CompleteBackup", "Uno o más archivos ya existen, ¿desea reemplazarlos?") == DialogResult.No)
+                        {
+                            WindowLog.Error("Main::CompleteBackup", "Cancelled by the user");
+                            return;
+                        }
+                    }
+
+                    asked = true;
+
+                    try
+                    {
+                        File.Delete(filename);
+                    }
+                    catch (Exception)
+                    {
+
+                    }
+                }
+
+                FileStream fp = File.OpenWrite(filename);
+
+                fp.Write(obj.cache.Data, 0, obj.cache.Data.Length);
+
+                fp.Close();
+
+                WindowLog.Debug("Main::CompleteBackup", "Cache " + name + " saved correctly");
+            }
+
+            Message.Info("Main::CompleteBackup", "Cache guardada en " + folderBrowserDialog1.SelectedPath + " con éxito");
         }
     }
 }
