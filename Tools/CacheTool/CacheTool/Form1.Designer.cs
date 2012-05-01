@@ -111,6 +111,7 @@
             this.toolStripDropDownButton2.Name = "toolStripDropDownButton2";
             this.toolStripDropDownButton2.Size = new System.Drawing.Size(96, 22);
             this.toolStripDropDownButton2.Text = "Configuración";
+            this.toolStripDropDownButton2.Click += new System.EventHandler(this.toolStripDropDownButton2_Click);
             // 
             // tabControl1
             // 
@@ -194,9 +195,9 @@
             this.label2.AutoSize = true;
             this.label2.Location = new System.Drawing.Point(271, 3);
             this.label2.Name = "label2";
-            this.label2.Size = new System.Drawing.Size(29, 13);
+            this.label2.Size = new System.Drawing.Size(86, 13);
             this.label2.TabIndex = 2;
-            this.label2.Text = "Raw";
+            this.label2.Text = "Datos de cache:";
             // 
             // listBox1
             // 

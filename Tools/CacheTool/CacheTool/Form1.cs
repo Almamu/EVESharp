@@ -31,7 +31,6 @@ namespace CacheTool
             Program.CreateIniFile();
 
             Program.cacheDataDisplayMode = Program.ini.Read("Display", "CacheDataDisplayMode");
-            label2.Text = Program.cacheDataDisplayMode + ":";
 
             if (Database.Database.Init() == false)
             {
@@ -272,6 +271,14 @@ namespace CacheTool
             fp.Close();
 
             WindowLog.Debug("Main::SaveFile", "Cache saved sucessful");
+        }
+
+        private void toolStripDropDownButton2_Click(object sender, EventArgs e)
+        {
+            Config frm = new Config();
+            this.Enabled = false;
+            frm.ShowDialog();
+            this.Enabled = true;
         }
     }
 }
