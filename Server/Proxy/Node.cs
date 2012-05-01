@@ -96,7 +96,7 @@ namespace Proxy
                                         {
                                             try
                                             {
-                                                Program.clients[(int)final.userID].Send(obj);
+                                                ClientManager.NotifyClient((int)final.userID, obj);
                                             }
                                             catch (Exception)
                                             {
@@ -111,10 +111,7 @@ namespace Proxy
                                         {
                                             // This should not be coded like this here, but will do the trick for now
                                             // TODO: Add a ClientManager
-                                            foreach (Client client in Program.clients)
-                                            {
-                                                client.Send(obj);
-                                            }
+                                            ClientManager.NotifyClients(obj);
                                         }
                                     }
                                 }

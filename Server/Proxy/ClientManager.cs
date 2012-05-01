@@ -9,10 +9,16 @@ namespace Proxy
 {
     public static class ClientManager
     {
+        private static List<Client> clients = new List<Client>();
+        public static int GetClientsCount()
+        {
+            return clients.Count;
+        }
+
         public static int GetClientID(Client cli)
         {
             int clientID = 0;
-            foreach (Client client in Program.clients)
+            foreach (Client client in clients)
             {
                 if (cli.GetAccountID() == client.GetAccountID())
                 {
@@ -29,7 +35,7 @@ namespace Proxy
         {
             try
             {
-                return Program.clients[clientID];
+                return clients[clientID];
             }
             catch (Exception)
             {
@@ -39,9 +45,9 @@ namespace Proxy
 
         public static int AddClient(Client client)
         {
-            int clientID = Program.clients.Count;
+            int clientID = clients.Count;
 
-            Program.clients.Add(client);
+            clients.Add(client);
 
             return clientID;
         }
@@ -53,7 +59,7 @@ namespace Proxy
                 return false;
             }
 
-            return Program.clients.Remove(client);
+            return clients.Remove(client);
         }
 
         public static bool RemoveClient(int clientID)
@@ -66,7 +72,7 @@ namespace Proxy
 
             try
             {
-                Program.clients.RemoveAt(clientID);
+                clients.RemoveAt(clientID);
             }
             catch (ArgumentOutOfRangeException)
             {
@@ -78,9 +84,21 @@ namespace Proxy
 
         public static void NotifyClients(PyObject notify)
         {
-            foreach (Client client in Program.clients)
+            foreach (Client client in clients)
             {
                 client.Send(notify);
+            }
+        }
+
+        public static void NotifyClient(int clientID, PyObject notify)
+        {
+            try
+            {
+                GetClient(clientID).Send(notify);
+            }
+            catch (Exception)
+            {
+
             }
         }
     }

@@ -46,5 +46,16 @@ namespace Common.Packets
 
             return new PyObjectData("objectCaching.CachedObject", args);
         }
+
+        /* This should never be used in the node, just the Cache Tool */
+        public bool Decode(PyObject from)
+        {
+            PyTuple data = (from as PyObjectData).Arguments as PyTuple;
+
+            // Just decode the cache info for now..
+            cache = data.Items[4] as PyBuffer;
+
+            return true;
+        }
     }
 }

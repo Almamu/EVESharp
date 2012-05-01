@@ -332,7 +332,7 @@ namespace Proxy
             data.build = Common.Constants.Game.build;
             data.machoVersion = Common.Constants.Game.machoVersion;
             data.version = Common.Constants.Game.version;
-            data.usercount = Program.clients.Count;
+            data.usercount = ClientManager.GetClientsCount();
             data.region = Common.Constants.Game.region;
 
             Send(data.Encode(false));
@@ -422,7 +422,7 @@ namespace Proxy
                 rsp.serverChallenge = "";
                 rsp.func_marshaled_code = func_marshaled_code;
                 rsp.verification = false;
-                rsp.cluster_usercount = Program.clients.Count + 1; // We're not in the list yet
+                rsp.cluster_usercount = ClientManager.GetClientsCount() + 1; // We're not in the list yet
                 rsp.proxy_nodeid = 1;
                 rsp.user_logonqueueposition = 1;
                 rsp.challenge_responsehash = "55087";

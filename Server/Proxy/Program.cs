@@ -13,14 +13,12 @@ namespace Proxy
     class Program
     {
         static private TCPSocket listener = null;
-        static public List<Client> clients = null;
         static public List<Connection> waiting = null;
 
         static void Main(string[] args)
         {
             Log.Init("proxy");
 
-            clients = new List<Client>();
             waiting = new List<Connection>();
 
             Log.Trace("Main", "Connecting to Database");
