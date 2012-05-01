@@ -34,9 +34,13 @@
             this.toolStrip1 = new System.Windows.Forms.ToolStrip();
             this.toolStripDropDownButton1 = new System.Windows.Forms.ToolStripDropDownButton();
             this.salirToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.copiaDeSeguridadCompletaToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripDropDownButton2 = new System.Windows.Forms.ToolStripDropDownButton();
             this.tabControl1 = new System.Windows.Forms.TabControl();
             this.tabPage1 = new System.Windows.Forms.TabPage();
+            this.button5 = new System.Windows.Forms.Button();
+            this.button4 = new System.Windows.Forms.Button();
+            this.button3 = new System.Windows.Forms.Button();
             this.textBox1 = new System.Windows.Forms.TextBox();
             this.button2 = new System.Windows.Forms.Button();
             this.button1 = new System.Windows.Forms.Button();
@@ -45,12 +49,8 @@
             this.listBox1 = new System.Windows.Forms.ListBox();
             this.label1 = new System.Windows.Forms.Label();
             this.tabPage2 = new System.Windows.Forms.TabPage();
-            this.button3 = new System.Windows.Forms.Button();
-            this.button4 = new System.Windows.Forms.Button();
             this.openFileDialog1 = new System.Windows.Forms.OpenFileDialog();
-            this.button5 = new System.Windows.Forms.Button();
             this.saveFileDialog1 = new System.Windows.Forms.SaveFileDialog();
-            this.copiaDeSeguridadCompletaToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.folderBrowserDialog1 = new System.Windows.Forms.FolderBrowserDialog();
             this.toolStrip1.SuspendLayout();
             this.tabControl1.SuspendLayout();
@@ -90,8 +90,8 @@
             // 
             this.toolStripDropDownButton1.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
             this.toolStripDropDownButton1.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.salirToolStripMenuItem,
-            this.copiaDeSeguridadCompletaToolStripMenuItem});
+            this.copiaDeSeguridadCompletaToolStripMenuItem,
+            this.salirToolStripMenuItem});
             this.toolStripDropDownButton1.Image = ((System.Drawing.Image)(resources.GetObject("toolStripDropDownButton1.Image")));
             this.toolStripDropDownButton1.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.toolStripDropDownButton1.Name = "toolStripDropDownButton1";
@@ -105,6 +105,13 @@
             this.salirToolStripMenuItem.Size = new System.Drawing.Size(229, 22);
             this.salirToolStripMenuItem.Text = "Salir";
             this.salirToolStripMenuItem.Click += new System.EventHandler(this.salirToolStripMenuItem_Click);
+            // 
+            // copiaDeSeguridadCompletaToolStripMenuItem
+            // 
+            this.copiaDeSeguridadCompletaToolStripMenuItem.Name = "copiaDeSeguridadCompletaToolStripMenuItem";
+            this.copiaDeSeguridadCompletaToolStripMenuItem.Size = new System.Drawing.Size(229, 22);
+            this.copiaDeSeguridadCompletaToolStripMenuItem.Text = "Copia de seguridad completa";
+            this.copiaDeSeguridadCompletaToolStripMenuItem.Click += new System.EventHandler(this.copiaDeSeguridadCompletaToolStripMenuItem_Click);
             // 
             // toolStripDropDownButton2
             // 
@@ -148,6 +155,39 @@
             this.tabPage1.TabIndex = 0;
             this.tabPage1.Text = "Cache general";
             this.tabPage1.UseVisualStyleBackColor = true;
+            // 
+            // button5
+            // 
+            this.button5.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+            this.button5.Location = new System.Drawing.Point(791, 403);
+            this.button5.Name = "button5";
+            this.button5.Size = new System.Drawing.Size(129, 23);
+            this.button5.TabIndex = 8;
+            this.button5.Text = "Guardar copia";
+            this.button5.UseVisualStyleBackColor = true;
+            this.button5.Click += new System.EventHandler(this.button5_Click);
+            // 
+            // button4
+            // 
+            this.button4.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+            this.button4.Location = new System.Drawing.Point(462, 403);
+            this.button4.Name = "button4";
+            this.button4.Size = new System.Drawing.Size(110, 23);
+            this.button4.TabIndex = 7;
+            this.button4.Text = "Añadir caché";
+            this.button4.UseVisualStyleBackColor = true;
+            this.button4.Click += new System.EventHandler(this.button4_Click);
+            // 
+            // button3
+            // 
+            this.button3.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+            this.button3.Location = new System.Drawing.Point(682, 403);
+            this.button3.Name = "button3";
+            this.button3.Size = new System.Drawing.Size(103, 23);
+            this.button3.TabIndex = 4;
+            this.button3.Text = "Subir cache";
+            this.button3.UseVisualStyleBackColor = true;
+            this.button3.Click += new System.EventHandler(this.button3_Click);
             // 
             // textBox1
             // 
@@ -232,49 +272,9 @@
             this.tabPage2.Text = "Cache de usuarios";
             this.tabPage2.UseVisualStyleBackColor = true;
             // 
-            // button3
-            // 
-            this.button3.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.button3.Location = new System.Drawing.Point(682, 403);
-            this.button3.Name = "button3";
-            this.button3.Size = new System.Drawing.Size(103, 23);
-            this.button3.TabIndex = 4;
-            this.button3.Text = "Subir cache";
-            this.button3.UseVisualStyleBackColor = true;
-            this.button3.Click += new System.EventHandler(this.button3_Click);
-            // 
-            // button4
-            // 
-            this.button4.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.button4.Location = new System.Drawing.Point(462, 403);
-            this.button4.Name = "button4";
-            this.button4.Size = new System.Drawing.Size(110, 23);
-            this.button4.TabIndex = 7;
-            this.button4.Text = "Añadir caché";
-            this.button4.UseVisualStyleBackColor = true;
-            this.button4.Click += new System.EventHandler(this.button4_Click);
-            // 
             // openFileDialog1
             // 
             this.openFileDialog1.FileName = "openFileDialog1";
-            // 
-            // button5
-            // 
-            this.button5.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.button5.Location = new System.Drawing.Point(791, 403);
-            this.button5.Name = "button5";
-            this.button5.Size = new System.Drawing.Size(129, 23);
-            this.button5.TabIndex = 8;
-            this.button5.Text = "Guardar copia";
-            this.button5.UseVisualStyleBackColor = true;
-            this.button5.Click += new System.EventHandler(this.button5_Click);
-            // 
-            // copiaDeSeguridadCompletaToolStripMenuItem
-            // 
-            this.copiaDeSeguridadCompletaToolStripMenuItem.Name = "copiaDeSeguridadCompletaToolStripMenuItem";
-            this.copiaDeSeguridadCompletaToolStripMenuItem.Size = new System.Drawing.Size(229, 22);
-            this.copiaDeSeguridadCompletaToolStripMenuItem.Text = "Copia de seguridad completa";
-            this.copiaDeSeguridadCompletaToolStripMenuItem.Click += new System.EventHandler(this.copiaDeSeguridadCompletaToolStripMenuItem_Click);
             // 
             // Form1
             // 
