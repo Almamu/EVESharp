@@ -32,7 +32,6 @@ namespace Proxy
 
         public static void HandleLogin(Connection from)
         {
-            // More thread-safe stuff
             Log.Debug("LoginQueue", "Login try " + from.GetAuthenticationReq().user_name);
             Connection.LoginStatus loginStatus = Connection.LoginStatus.Waiting;
 

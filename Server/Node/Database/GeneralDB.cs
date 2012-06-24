@@ -45,5 +45,10 @@ namespace EVESharp.Database
 
             return true;
         }
+
+        public static void UnloadSolarSystem(int solarSystemID)
+        {
+            Database.Query("UPDATE solarsystemsloaded SET nodeID=0 WHERE solarSystemID=" + solarSystemID);
+        }
     }
 }

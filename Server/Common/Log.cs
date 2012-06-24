@@ -109,9 +109,9 @@ namespace Common
         public static void Stop()
         {
             // Wait till all the logs complete
-            while (logqueue > 0) ;
-
             enabled = false;
+
+            while (logqueue > 0) ;
 
             fp.Close();
             fp = null;

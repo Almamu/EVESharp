@@ -17,5 +17,10 @@ namespace Proxy.Database
         {
             Database.Query("UPDATE solarsystemsloaded SET nodeID=0 WHERE solarSystemID=" + solarSystemID);
         }
+
+        public static void ResetItemsStatus()
+        {
+            Database.Query("UPDATE entity SET nodeID=0");
+        }
     }
 }

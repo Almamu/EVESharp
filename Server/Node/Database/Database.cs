@@ -15,7 +15,7 @@ namespace EVESharp.Database
         private static Queue<string> queryQueue = new Queue<string>();
         public static bool Init()
         {
-            string connStr = String.Format("server={0};user id={1}; password={2}; database=eve-node; pooling=false",
+            string connStr = String.Format("server={0};user id={1}; password={2}; database=evemu; pooling=false",
                 "localhost", "Almamu", "966772320");
 
             try
@@ -95,19 +95,24 @@ namespace EVESharp.Database
 
         public static void QueueQuery(string query)
         {
-            queryQueue.Enqueue(query);
+            lock (queryQueue)
+            {
+                queryQueue.Enqueue(query);
+            }
         }
 
         public static void Update()
         {
             Log.Debug("Database", "Saving information into the DB");
 
-            // Start the querys
-            string query = "";
-            while (queryQueue.Count > 0)
+            lock (queryQueue)
             {
-                query = queryQueue.Dequeue();
-                Query(query);
+                // Start the querys
+                while (queryQueue.Count > 0)
+                {
+                    string query = queryQueue.Dequeue();
+                    Query(query);
+                }
             }
         }
 

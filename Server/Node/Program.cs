@@ -9,6 +9,7 @@ using Common.Packets;
 using System.Threading;
 using MySql.Data.MySqlClient;
 using EVESharp.Database;
+using EVESharp.Inventory;
 using System.Security.Cryptography;
 using Marshal;
 
@@ -50,8 +51,9 @@ namespace EVESharp
             Send(Marshal.Marshal.Process(data));
         }
 
-        static public void HandlePacket(PyPacket packet)
+        static public void HandlePacket(object input)
         {
+            PyPacket packet = (PyPacket)input;
             PyPacket res = new PyPacket();
 
             if (packet.type == Macho.MachoNetMsg_Type.CALL_REQ)
@@ -124,6 +126,7 @@ namespace EVESharp
 
             if (Database.Database.Init() == false)
             {
+                Log.Error("Main", "Cannot connect to database");
                 while (true) ;
             }
 
@@ -198,8 +201,6 @@ namespace EVESharp
                                     {
                                         nodeID = nodeinfo.nodeID;
 
-                                        // The proxy should never tell us to load a specific solarSystem
-                                        // Just the other nodes
                                         SystemManager.LoadSolarSystems(nodeinfo.solarSystems);
                                     }
                                 }
@@ -214,8 +215,8 @@ namespace EVESharp
                                     }
                                     else
                                     {
-                                        // What about Async calls to handle more than one at once?
-                                        HandlePacket(clientpacket);
+                                        // Something similar to Async calls
+                                        new Thread(new ParameterizedThreadStart(HandlePacket)).Start(clientpacket);
                                     }
                                 }
                             }
@@ -229,7 +230,7 @@ namespace EVESharp
                                 }
                                 else
                                 {
-                                    HandlePacket(clientpacket);
+                                    new Thread(new ParameterizedThreadStart(HandlePacket)).Start(clientpacket);
                                 }
                             }
                             else if (obj is PyTuple)
