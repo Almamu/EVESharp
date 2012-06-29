@@ -18,7 +18,7 @@ namespace EVESharp
             // We should add a Decode method to SessionChangeNotification...
             PyTuple payload = from.payload;
 
-            PyDict changes = payload[0].As<PyTuple>()[1].As<PyTuple>()[0].As<PyDict>();
+            PyDict changes = payload[0].As<PyTuple>()[1].As<PyDict>();
 
             // Update our local session
             foreach(PyString key in changes.Dictionary.Keys)
@@ -27,24 +27,56 @@ namespace EVESharp
             }
         }
 
-        public string GetLanguageID()
+        public string LanguageID
         {
-            return session.GetCurrentString("languageID");
+            get
+            {
+                return session.GetCurrentString("languageID");
+            }
+
+            set
+            {
+                session.SetString("languageID", value);
+            }
         }
 
-        public int GetAccountID()
+        public int AccountID
         {
-            return session.GetCurrentInt("userid");
+            get
+            {
+                return session.GetCurrentInt("userid");
+            }
+
+            set
+            {
+
+            }
         }
 
-        public int GetAccountRole()
+        public int Role
         {
-            return session.GetCurrentInt("role");
+            get
+            {
+                return session.GetCurrentInt("role");
+            }
+
+            set
+            {
+
+            }
         }
 
-        public string GetAddress()
+        public string Address
         {
-            return session.GetCurrentString("address");
+            get
+            {
+                return session.GetCurrentString("address");
+            }
+
+            set
+            {
+
+            }
         }
     }
 }

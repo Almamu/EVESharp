@@ -15,7 +15,7 @@ namespace EVESharp.Database
         private static Queue<string> queryQueue = new Queue<string>();
         public static bool Init()
         {
-            string connStr = String.Format("server={0};user id={1}; password={2}; database=evemu; pooling=false",
+            string connStr = String.Format("server={0};user id={1}; password={2}; database=eve-node; pooling=false",
                 "localhost", "Almamu", "966772320");
 
             try

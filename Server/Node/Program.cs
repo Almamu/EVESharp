@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.IO;
 using Common;
 using Common.Network;
 using Common.Services;
@@ -12,6 +13,7 @@ using EVESharp.Database;
 using EVESharp.Inventory;
 using System.Security.Cryptography;
 using Marshal;
+using Marshal.Database;
 
 namespace EVESharp
 {
@@ -37,7 +39,6 @@ namespace EVESharp
 
         static public void Send(byte[] data)
         {
-            // The same error as in Proxy/Connection.cs -.-'
             byte[] packet = new byte[data.Length + 4];
 
             Array.Copy(data, 0, packet, 4, data.Length);
@@ -91,10 +92,10 @@ namespace EVESharp
                     res.source = packet.dest;
 
                     res.dest.type = PyAddress.AddrType.Client;
-                    res.dest.typeID = (ulong)clients[packet.userID].GetAccountID();
+                    res.dest.typeID = (ulong)clients[packet.userID].AccountID;
                     res.dest.callID = packet.source.callID;
 
-                    res.userID = (uint)clients[packet.userID].GetAccountID();
+                    res.userID = (uint)clients[packet.userID].AccountID;
 
                     res.payload = new PyTuple();
                     res.payload.Items.Add(new PySubStream(callRes));
@@ -130,6 +131,41 @@ namespace EVESharp
                 while (true) ;
             }
 
+            /*
+            DBRowDescriptor descriptor = new DBRowDescriptor();
+
+            descriptor.AddColumn("itemID", FieldType.I4);
+            descriptor.AddColumn("custominfo", FieldType.Str);
+            
+            PyPackedRow packed = new PyPackedRow(descriptor);
+
+            packed.SetValue("itemID", new PyInt(500));
+            packed.SetValue("custominfo", new PyString("hello world"));
+            
+            byte[] marshaled = Marshal.Marshal.Process(packed);
+
+            PyPackedRow unmarshaled = Unmarshal.Process<PyPackedRow>(marshaled);
+
+            Console.WriteLine(PrettyPrinter.Print(unmarshaled));
+            
+
+            byte[] raw = new byte[] { 1, 0, 55, 1, 22, 33, 0, 33, 25, 33, 14, 0, 0, 25, 45 };
+
+            MemoryStream output = new MemoryStream(raw);
+            BinaryReader reader = new BinaryReader(output);
+
+            MemoryStream stream = new MemoryStream();
+            BinaryWriter streamWriter = new BinaryWriter(stream);
+            BinaryReader streamReader = new BinaryReader(stream);
+
+            PyPackedRow.ZeroCompress(reader, output, streamWriter);
+
+            byte[] compressed = stream.ToArray();
+            stream.Seek(0, SeekOrigin.Begin);
+
+            byte[] uncompress = PyPackedRow.LoadZeroCompressed(streamReader);
+
+            while (true) Thread.Sleep(1);*/
             /*
             SHA1 sha1 = SHA1.Create();
             byte[] hash = sha1.ComputeHash(Encoding.ASCII.GetBytes("password"));
@@ -181,7 +217,9 @@ namespace EVESharp
                     }
                     else if (bytes > 0)
                     {
-                        int p = packetizer.QueuePackets(data);
+                        Log.Debug("Client", "Bytes: " + bytes);
+                        packetizer.QueuePackets(data, bytes);
+                        int p = packetizer.ProcessPackets();
 
                         for (int i = 0; i < p; i++)
                         {

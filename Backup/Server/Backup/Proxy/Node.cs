@@ -74,7 +74,8 @@ namespace Proxy
                     }
                     else if (bytes > 0)
                     {
-                        int p = packetizer.QueuePackets(data);
+                        packetizer.QueuePackets(data, bytes);
+                        int p = packetizer.ProcessPackets();
 
                         for (int i = 0; i < p; i++)
                         {
