@@ -16,76 +16,89 @@ namespace Common.Network
             input = new List<byte>();
         }
 
+        // Lots of thread safe code here to prevent data corruption
         public void QueuePackets(byte[] data, int bytes)
         {
-            byte[] tmp = new byte[bytes];
+            lock (input)
+            {
+                byte[] tmp = new byte[bytes];
 
-            Array.Copy(data, tmp, bytes);
+                Array.Copy(data, tmp, bytes);
 
-            input.AddRange(tmp);
+                input.AddRange(tmp);
+            }
         }
 
         public int ProcessPackets()
         {
-            try
+            lock (mOut)
             {
-                // Get the packet size:
-                int cur = 0;
-                int packets = 0;
-                byte[] tmp = input.ToArray();
-
-                while (cur != tmp.Length)
+                lock (input)
                 {
-                    int size = BitConverter.ToInt32(tmp, cur);
-
-                    cur += 4;
-
-                    if (size + cur > tmp.Length) // The packet is longer than we have here
+                    try
                     {
-                        // re-add the packets to the queue
-                        cur -= 4; // Go back to the size bytes
+                        // Get the packet size:
+                        int cur = 0;
+                        byte[] tmp = input.ToArray();
 
-                        // Get rid off the data before it
-                        input.RemoveRange(0, cur);
+                        while (cur != tmp.Length)
+                        {
+                            int size = BitConverter.ToInt32(tmp, cur);
 
-                        return packets + mOut.Count;
+                            if (size + cur > tmp.Length) // The packet is longer than we have here
+                            {
+                                // Get rid off the data before it
+                                input.RemoveRange(0, cur);
+
+                                return mOut.Count;
+                            }
+
+                            cur += 4;
+
+                            // Get the packet and add it to the queue
+                            byte[] packet = new byte[size];
+                            Array.Copy(tmp, cur, packet, 0, size);
+
+                            cur += size;
+
+                            mOut.Enqueue(packet);
+                        }
+
+                        // If we are here all the packets were parsed correctly
+                        input.RemoveRange(0, input.Count);
+
+                        return mOut.Count;
                     }
-
-                    // Get the packet and add it to the queue
-                    byte[] packet = new byte[size];
-                    Array.Copy(tmp, cur, packet, 0, size);
-
-                    cur += size;
-
-                    mOut.Enqueue(packet);
-
-                    packets++;
+                    catch (Exception)
+                    {
+                        // The packets are malformed
+                        return 0;
+                    }
                 }
-
-                // If we are here all the packets were parsed correctly
-                input.RemoveRange(0, input.Count);
-
-                return packets + mOut.Count; // We need to let the user know that there are packets in the queue too
-            }
-            catch (Exception)
-            {
-                // The packets are malformed
-                return 0;
             }
         }
 
         public byte[] PopItem()
         {
-            if (mOut.Count > 0)
-                return mOut.Dequeue();
+            lock (mOut)
+            {
+                if (mOut.Count > 0)
+                    return mOut.Dequeue();
 
-            return null;
+                return null;
+            }
         }
 
         public void ClearPackets()
         {
-            mOut = new Queue<byte[]>();
-            input = new List<byte>();
+            lock(mOut)
+            {
+                lock (input)
+                {
+                    mOut = new Queue<byte[]>();
+                    input = new List<byte>();
+                }
+            }
         }
     }
 }

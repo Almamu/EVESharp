@@ -19,15 +19,19 @@ namespace EVESharp.ClusterControler
             {
                 return HandleTuple(packet as PyTuple, connection);
             }
-            else if (packet is PyObjectData)
+            else if (packet is PyObjectEx)
             {
-                return HandleObject(packet as PyObjectData, connection);
+                return HandleObject(packet as PyObjectEx, connection);
             }
             else
             {
                 // Close the connection, we dont like them
+                Log.Error("Client", "Got unknown packet");
                 GPSTransportClosed ex = new GPSTransportClosed("None");
                 connection.Send(ex.Encode());
+                
+                connection.EndConnection();
+
                 return null;
             }
         }
@@ -36,36 +40,40 @@ namespace EVESharp.ClusterControler
         {
             if (loginStatus == LoginStatus.Sucess)
             {
-                AuthenticationRsp rsp = new AuthenticationRsp();
-
-                // String "None" marshaled
-                byte[] func_marshaled_code = new byte[] { 0x74, 0x04, 0x00, 0x00, 0x00, 0x4E, 0x6F, 0x6E, 0x65 };
-
-                rsp.serverChallenge = "";
-                rsp.func_marshaled_code = func_marshaled_code;
-                rsp.verification = false;
-                rsp.cluster_usercount = ConnectionManager.ClientsCount + 1; // We're not in the list yet
-                rsp.proxy_nodeid = 1;
-                rsp.user_logonqueueposition = 1;
-                rsp.challenge_responsehash = "55087";
-
-                rsp.macho_version = Common.Constants.Game.machoVersion;
-                rsp.boot_version = Common.Constants.Game.version;
-                rsp.boot_build = Common.Constants.Game.build;
-                rsp.boot_codename = Common.Constants.Game.codename;
-                rsp.boot_region = Common.Constants.Game.region;
-
-                // Setup session
-                connection.Session.SetString("address", connection.Address);
-                connection.Session.SetString("languageID", connection.LanguageID);
-                connection.Session.SetInt("userType", Common.Constants.AccountType.User);
-                connection.Session.SetInt("userid", connection.AccountID);
-                connection.Session.SetInt("role", connection.Role);
-
                 // We should check for a exact number of nodes here when we have the needed infraestructure
                 if (ConnectionManager.NodesCount > 0)
                 {
                     connection.NodeID = ConnectionManager.RandomNode;
+
+                    AuthenticationRsp rsp = new AuthenticationRsp();
+
+                    // String "None" marshaled
+                    byte[] func_marshaled_code = new byte[] { 0x74, 0x04, 0x00, 0x00, 0x00, 0x4E, 0x6F, 0x6E, 0x65 };
+
+                    rsp.serverChallenge = "";
+                    rsp.func_marshaled_code = func_marshaled_code;
+                    rsp.verification = false;
+                    rsp.cluster_usercount = ConnectionManager.ClientsCount + 1; // We're not in the list yet
+                    rsp.proxy_nodeid = connection.NodeID;
+                    rsp.user_logonqueueposition = 1;
+                    rsp.challenge_responsehash = "55087";
+
+                    rsp.macho_version = Common.Constants.Game.machoVersion;
+                    rsp.boot_version = Common.Constants.Game.version;
+                    rsp.boot_build = Common.Constants.Game.build;
+                    rsp.boot_codename = Common.Constants.Game.codename;
+                    rsp.boot_region = Common.Constants.Game.region;
+
+                    // Setup session
+                    connection.Session.SetString("address", connection.Address);
+                    connection.Session.SetString("languageID", connection.LanguageID);
+                    connection.Session.SetInt("userType", Common.Constants.AccountType.User);
+                    connection.Session.SetInt("userid", connection.AccountID);
+                    connection.Session.SetInt("role", connection.Role);
+
+                    // Update the connection, so it gets added to the clients correctly
+                    ConnectionManager.UpdateConnection(connection);
+
                     connection.Send(rsp.Encode());
                 }
                 else
@@ -111,8 +119,8 @@ namespace EVESharp.ClusterControler
                 }
                 else if (connection.Type == ConnectionType.Client)
                 {
-                    // Update the list in ConnectionManager
-                    ConnectionManager.UpdateConnection(connection);
+                    // Update the list in ConnectionManager(we should do this later)
+                    // ConnectionManager.UpdateConnection(connection);
                 }
 
                 return null;
@@ -140,15 +148,15 @@ namespace EVESharp.ClusterControler
                     HandshakeAck ack = new HandshakeAck();
 
                     ack.live_updates = new PyList();
-                    ack.jit = connection.Session.GetCurrentString("languageID");
-                    ack.userid = connection.Session.GetCurrentInt("userid");
+                    ack.jit = connection.LanguageID;
+                    ack.userid = connection.AccountID;
                     ack.maxSessionTime = new PyNone();
                     ack.userType = Common.Constants.AccountType.User;
-                    ack.role = connection.Session.GetCurrentInt("role");
-                    ack.address = connection.Session.GetCurrentString("address");
+                    ack.role = connection.Role;
+                    ack.address = connection.Address;
                     ack.inDetention = new PyNone();
                     ack.client_hashes = new PyList();
-                    ack.user_clientid = connection.Session.GetCurrentInt("userid");
+                    ack.user_clientid = connection.AccountID;
 
                     // We have to send this just before the sessionchange
                     connection.Send(ack.Encode());
@@ -242,14 +250,14 @@ namespace EVESharp.ClusterControler
             return null;
         }
 
-        private static PyObject HandleObject(PyObjectData dat, Connection connection)
+        private static PyObject HandleObject(PyObjectEx dat, Connection connection)
         {
             // Only exceptions should be this type
             PyException ex = new PyException();
 
             if (ex.Decode(dat) == false)
             {
-                Log.Error("Connection", "Unhandled PyObjectData packet");
+                Log.Error("Connection", "Unhandled PyObjectEx packet");
                 return null;
             }
 

@@ -37,7 +37,7 @@ namespace EVESharp.Database
 
         public static bool LoadSolarSystem(int solarSystemID)
         {
-            if (Database.Query("UPDATE solarsystemsloaded SET nodeID = " + Program.GetNodeID() + " WHERE solarSystemID = " + solarSystemID) == false)
+            if (Database.Query("UPDATE solarsystemsloaded SET nodeID = " + Program.NodeID + " WHERE solarSystemID = " + solarSystemID) == false)
             {
                 Log.Error("GeneralDB", "Cannot change solarSystem " + solarSystemID + " status to loaded");
                 return false;

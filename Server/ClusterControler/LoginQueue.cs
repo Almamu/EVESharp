@@ -88,14 +88,18 @@ namespace EVESharp.ClusterControler
                         continue;
                     }
 
-                    LoginQueueEntry now = queue.Dequeue();
-
-                    if (now == null)
+                    // Thread safe stuff
+                    lock (queue)
                     {
-                        continue;
-                    }
+                        LoginQueueEntry now = queue.Dequeue();
 
-                    HandleLogin(now);
+                        if (now == null)
+                        {
+                            continue;
+                        }
+
+                        HandleLogin(now);
+                    }
                 }
             }
             catch (ThreadAbortException)

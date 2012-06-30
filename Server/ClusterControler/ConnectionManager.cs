@@ -11,8 +11,8 @@ namespace EVESharp.ClusterControler
     class ConnectionManager
     {
         private static List<Connection> connections = new List<Connection>(); // This list contains ALL the connections, both nodes and clients
-        private static List<Connection> nodes = new List<Connection>(); // Contains the nodes list
-        private static List<Connection> clients = new List<Connection>(); // Contains the clients list
+        private static Dictionary<int, Connection> clients = new Dictionary<int, Connection>(); // Contains the nodes list
+        private static Dictionary<int, Connection> nodes = new Dictionary<int, Connection>(); // Contains the clients list
 
         public static int AddConnection(Socket sock)
         {
@@ -31,13 +31,27 @@ namespace EVESharp.ClusterControler
         {
             if (connection.Type == ConnectionType.Node)
             {
-                nodes.Add(connection);
-
                 connection.NodeID = connection.ClusterConnectionID;
+
+                if (nodes.ContainsKey(connection.NodeID))
+                {
+                    nodes[connection.NodeID] = connection;
+                }
+                else
+                {
+                    nodes.Add(connection.NodeID, connection);
+                }
             }
             else if (connection.Type == ConnectionType.Client)
             {
-                clients.Add(connection);
+                if (clients.ContainsKey(connection.AccountID))
+                {
+                    clients[connection.AccountID] = connection;
+                }
+                else
+                {
+                    clients.Add(connection.AccountID, connection);
+                }
             }
         }
 
@@ -67,12 +81,12 @@ namespace EVESharp.ClusterControler
             {
                 if (connection.Type == ConnectionType.Client)
                 {
-                    clients.Remove(connection);
+                    clients.Remove(connection.AccountID);
                     connections.Remove(connection);
                 }
                 else if (connection.Type == ConnectionType.Node)
                 {
-                    nodes.Remove(connection);
+                    nodes.Remove(connection.NodeID);
                     connections.Remove(connection);
                 }
                 else
@@ -86,14 +100,30 @@ namespace EVESharp.ClusterControler
             }
         }
 
-        public static List<Connection> GetNodeList()
+        public static Dictionary<int, Connection> Nodes
         {
-            return nodes;
+            get
+            {
+                return nodes;
+            }
+
+            set
+            {
+
+            }
         }
 
-        public static List<Connection> GetClientList()
+        public static Dictionary<int, Connection> Clients
         {
-            return clients;
+            get
+            {
+                return clients;
+            }
+
+            set
+            {
+
+            }
         }
 
         public static void NotifyConnection(int clusterConnectionID, PyObject packet)
@@ -108,13 +138,37 @@ namespace EVESharp.ClusterControler
             }
         }
 
+        public static void NotifyClient(int accountID, PyObject packet)
+        {
+            try
+            {
+                clients[accountID].Send(packet); // This will notify the client
+            }
+            catch
+            {
+
+            }
+        }
+
+        public static void NotifyNode(int nodeID, PyObject packet)
+        {
+            try
+            {
+                nodes[nodeID].Send(packet);
+            }
+            catch
+            {
+
+            }
+        }
+
         public static int RandomNode
         {
             get
             {
-                foreach (Connection node in nodes)
+                foreach (KeyValuePair<int, Connection> node in nodes)
                 {
-                    return node.NodeID;
+                    return node.Key;
                 }
 
                 return 1;

@@ -9,6 +9,8 @@ using System.Net;
 using Common;
 using Common.Network;
 
+using Marshal;
+
 namespace EVESharp.ClusterControler
 {
     class Program

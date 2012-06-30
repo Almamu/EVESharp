@@ -68,23 +68,26 @@ namespace EVESharp.ClusterControler
                             {
                                 Send(result);
                             }
+
+                            if (StageEnded == true)
+                            {
+                                if (Type == ConnectionType.Node)
+                                {
+                                    recvAsync = new AsyncCallback(ReceiveNodeAsync);
+                                }
+                                else if (Type == ConnectionType.Client)
+                                {
+                                    recvAsync = new AsyncCallback(ReceiveClientAsync);
+                                }
+
+                                // Exit from the loop to keep the packets in the list ;)
+                                break;
+                            }
                         }
                     }
-                    catch(Exception ex)
+                    catch (Exception ex)
                     {
                         Log.Error("Connection", ex.ToString());
-                    }
-                }
-
-                if (StageEnded == true)
-                {
-                    if (Type == ConnectionType.Node)
-                    {
-                        recvAsync = new AsyncCallback(ReceiveNodeAsync);
-                    }
-                    else if (Type == ConnectionType.Client)
-                    {
-                        recvAsync = new AsyncCallback(ReceiveClientAsync);
                     }
                 }
 
@@ -120,43 +123,51 @@ namespace EVESharp.ClusterControler
 
                 for (int i = 0; i < p; i++)
                 {
-                    try
+                    byte[] packet = packetizer.PopItem();
+
+                    PyObject obj = Unmarshal.Process<PyObject>(packet);
+
+                    if (obj == null)
                     {
-                        byte[] packet = packetizer.PopItem();
+                        Log.Debug("Node", "Null packet received");
+                        continue;
+                    }
 
-                        PyObject obj = Unmarshal.Process<PyObject>(packet);
+                    if ((obj is PyObjectData) == false)
+                    {
+                        Log.Debug("Node", "Non-valid node packet. Dropping");
+                        continue;
+                    }
 
-                        if ((obj is PyObjectData) == false)
+                    PyObjectData item = obj as PyObjectData;
+
+                    if (item.Name == "macho.CallRsp")
+                    {
+                        PyPacket final = new PyPacket();
+
+                        if (final.Decode(item) == false)
                         {
-                            Log.Debug("Node", "Non-valid node packet. Dropping");
+                            Log.Error("Node", "Cannot decode packet");
                             continue;
                         }
 
-                        PyObjectData item = obj as PyObjectData;
-
-                        if (item.Name == "macho.CallRsp")
+                        if (final.dest.type == PyAddress.AddrType.Client)
                         {
-                            PyPacket final = new PyPacket();
-
-                            if (final.Decode(item) == false)
-                            {
-                                Log.Error("Node", "Cannot decode packet");
-                                continue;
-                            }
-
-                            // We do not need to care about the destination
-                            ConnectionManager.NotifyConnection((int)(final.userID), obj);
-
-                            // TODO: Handle Broadcast packets
+                            ConnectionManager.NotifyClient((int)(final.userID), obj);
                         }
-                        else
+                        else if (final.dest.type == PyAddress.AddrType.Node)
                         {
-                            Log.Error("Node", string.Format("Wrong packet name: {0}", item.Name));
+                            ConnectionManager.NotifyNode((int)(final.dest.typeID), obj);
                         }
+                        else if (final.dest.type == PyAddress.AddrType.Broadcast)
+                        {
+                            Log.Error("Node", "Broadcast packets not supported yet");
+                        }
+                        // TODO: Handle Broadcast packets
                     }
-                    catch(Exception ex)
+                    else
                     {
-                        Log.Error("Node", ex.ToString());
+                        Log.Error("Node", string.Format("Wrong packet name: {0}", item.Name));
                     }
                 }
 
@@ -172,7 +183,7 @@ namespace EVESharp.ClusterControler
                 Log.Debug("Node", "Disconnected");
                 ConnectionManager.RemoveConnection(this);
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 Log.Error("Node", "Caught unhandled exception: " + ex.ToString());
             }
@@ -222,10 +233,17 @@ namespace EVESharp.ClusterControler
                                     Log.Error("Client", string.Format("Wrong source data, expected client but got {0}", packet.source.type));
                                 }
 
-                                Log.Warning("Client", PrettyPrinter.Print(packet.Encode()));
-
-                                // Notify the node, be careful here, the client will be able to sent packets to game clients
-                                ConnectionManager.NotifyConnection((int)(packet.dest.typeID), obj);
+                                // Notify the node, be careful here, the client will be able to send packets to game clients
+                                if (packet.dest.typeID == 0xFFAA)
+                                {
+                                    Log.Warning("Client", "Routing proxy packet to node " + NodeID);
+                                    ConnectionManager.NotifyNode(NodeID, obj);
+                                }
+                                else
+                                {
+                                    ConnectionManager.NotifyNode((int)(packet.dest.typeID), obj);
+                                }
+                                
                             }
                         }
                     }
@@ -395,12 +413,12 @@ namespace EVESharp.ClusterControler
                 return null;
             }
 
-            List<Connection> nodes = ConnectionManager.GetNodeList();
+            Dictionary<int, Connection> nodes = ConnectionManager.Nodes;
 
             // Add all the nodeIDs
-            foreach (Connection node in nodes)
+            foreach (KeyValuePair<int, Connection> node in nodes)
             {
-                scn.nodesOfInterest.Items.Add(new PyInt(node.NodeID));
+                scn.nodesOfInterest.Items.Add(new PyInt(node.Key));
             }
 
             PyPacket p = new PyPacket();
@@ -408,7 +426,7 @@ namespace EVESharp.ClusterControler
             p.type_string = "macho.SessionChangeNotification";
             p.type = Macho.MachoNetMsg_Type.SESSIONCHANGENOTIFICATION;
 
-            p.userID = (uint)ClusterConnectionID;
+            p.userID = (uint)AccountID;
 
             p.payload = scn.Encode().As<PyTuple>();
 
@@ -425,7 +443,7 @@ namespace EVESharp.ClusterControler
             p.source.callID = 0;
 
             p.dest.type = PyAddress.AddrType.Client;
-            p.dest.typeID = (ulong)ClusterConnectionID;
+            p.dest.typeID = (ulong)AccountID;
             p.dest.callID = 0;
 
             return p.Encode();
@@ -459,7 +477,7 @@ namespace EVESharp.ClusterControler
             p.source.callID = 0;
 
             p.dest.type = PyAddress.AddrType.Client;
-            p.dest.typeID = (ulong)ClusterConnectionID;
+            p.dest.typeID = (ulong)AccountID;
             p.dest.callID = 0;
 
             return p.Encode();

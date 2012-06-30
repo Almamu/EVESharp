@@ -32,9 +32,17 @@ namespace EVESharp
             {"loopback", "26000"}
         };
 
-        static public int GetNodeID()
+        static public int NodeID
         {
-            return nodeID;
+            get
+            {
+                return nodeID;
+            }
+
+            set
+            {
+                nodeID = value;
+            }
         }
 
         static public void Send(byte[] data)
@@ -91,11 +99,14 @@ namespace EVESharp
 
                     res.source = packet.dest;
 
+                    res.dest = packet.source;
+                    /*
                     res.dest.type = PyAddress.AddrType.Client;
                     res.dest.typeID = (ulong)clients[packet.userID].AccountID;
                     res.dest.callID = packet.source.callID;
+                    */
 
-                    res.userID = (uint)clients[packet.userID].AccountID;
+                    res.userID = packet.userID;
 
                     res.payload = new PyTuple();
                     res.payload.Items.Add(new PySubStream(callRes));

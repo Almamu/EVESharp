@@ -168,7 +168,7 @@ namespace EVESharp.Database
             reader.Close();
 
             // Update the database information
-            Database.Query("UPDATE entity SET nodeID=" + Program.GetNodeID() + " WHERE itemID=" + itemID);
+            Database.Query("UPDATE entity SET nodeID=" + Program.NodeID + " WHERE itemID=" + itemID);
 
             return newItem;
         }

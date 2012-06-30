@@ -71,7 +71,7 @@ namespace Common.Packets
                 return false;
             }
 
-            version = (timestamp[1] as PyInt).Value;
+            version = (int)(timestamp[1].IntValue);
 
             return true;
         }
