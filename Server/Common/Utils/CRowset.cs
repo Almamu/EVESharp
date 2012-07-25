@@ -36,7 +36,8 @@ namespace Common.Utils
 
             args.Items.Add(dict);
             res.List = items.Items;
-
+            res.Header = args;
+            
             return res;
         }
     }

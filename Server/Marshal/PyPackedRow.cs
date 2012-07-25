@@ -185,7 +185,9 @@ namespace Marshal
 
                 if (opcode.FirstIsZero)
                 {
-                    ret.Write(new byte[opcode.FirstLength + 1]); // Faster than whiles
+                    byte len = (byte)(opcode.FirstLength + 1);
+                    while (0 < len--)
+                        ret.Write((byte)(0x00));
                 }
                 else
                 {
@@ -196,7 +198,9 @@ namespace Marshal
 
                 if (opcode.SecondIsZero)
                 {
-                        ret.Write(new byte[opcode.SecondLength + 1]); // Faster than whiles
+                    byte len = (byte)(opcode.SecondLength + 1);
+                    while (0 < len--)
+                        ret.Write((byte)(0x00));
                 }
                 else
                 {
@@ -209,14 +213,14 @@ namespace Marshal
             return retStream.ToArray();
         }
 
-        public static void ZeroCompress(BinaryReader reader, MemoryStream stream, BinaryWriter output)
+        public static void SaveZeroCompressed(BinaryReader reader, BinaryWriter output)
         {
             MemoryStream newStream = new MemoryStream();
             BinaryWriter newWriter = new BinaryWriter(newStream);
 
             byte b = reader.ReadByte();
 
-            while(stream.Position < stream.Length)
+            while(reader.BaseStream.Position < reader.BaseStream.Length)
             {
                 ZeroCompressOpcode opcode = new ZeroCompressOpcode(0);
                 int opcodeStartShift = 1;
@@ -227,9 +231,9 @@ namespace Marshal
                 if (b == 0x00)
                 {
                     opcode.FirstIsZero = true;
-                    int firstLen = -1; 
+                    int firstLen = -1;
 
-                    while ((b == 0x00) && (firstLen < 7) && (stream.Position < stream.Length))
+                    while ((b == 0x00) && (firstLen < 7) && (reader.BaseStream.Position < reader.BaseStream.Length))
                     {
                         firstLen++;
                         b = reader.ReadByte();
@@ -242,13 +246,14 @@ namespace Marshal
                     opcode.FirstIsZero = false;
                     opcode.FirstLength = 8;
 
-                    while ((b != 0x00) && (opcode.FirstLength > 0))
+                    while ((b > 0x00) && (opcode.FirstLength > 0))
                     {
                         opcode.FirstLength--;
                         opcodeStartShift++;
 
                         newWriter.Write(b);
-                        if (stream.Position < stream.Length)
+
+                        if (reader.BaseStream.Position < reader.BaseStream.Length)
                         {
                             b = reader.ReadByte();
                         }
@@ -259,7 +264,7 @@ namespace Marshal
                     }
                 }
 
-                if (stream.Position == stream.Length)
+                if (reader.BaseStream.Position == reader.BaseStream.Length)
                 {
                     opcode.SecondIsZero = true;
                     opcode.SecondLength = 0;
@@ -269,7 +274,7 @@ namespace Marshal
                     opcode.SecondIsZero = true;
                     int secondLength = -1;
 
-                    while ((b == 0x00) && (opcode.SecondLength < 7) && (stream.Position < stream.Length))
+                    while ((b == 0x00) && (opcode.SecondLength < 7) && (reader.BaseStream.Position < reader.BaseStream.Length))
                     {
                         secondLength++;
                         b = reader.ReadByte();
@@ -288,7 +293,8 @@ namespace Marshal
                         opcodeStartShift++;
 
                         newWriter.Write(b);
-                        if (stream.Position < stream.Length)
+
+                        if (reader.BaseStream.Position < reader.BaseStream.Length)
                         {
                             b = reader.ReadByte();
                         }
@@ -358,14 +364,11 @@ namespace Marshal
                         writer.Write((float)(col.Value.FloatValue));
                         break;
 
-                    case FieldType.Bool:
-                        writer.Write((byte)(col.Value.IntValue));
+                    case FieldType.Bool: // These are always the last data added
+                        // writer.Write((byte)(col.Value.IntValue));
                         break;
 
                     case FieldType.Bytes:
-                        writer.Write((col.Value as PyBuffer).Data);
-                        break;
-
                     case FieldType.Str:
                     case FieldType.WStr:
                         col.Value.Encode(output);
@@ -405,7 +408,7 @@ namespace Marshal
             rawStream = new MemoryStream(unpacked);
             reader = new BinaryReader(rawStream);
 
-            ZeroCompress(reader, rawStream, output);
+            SaveZeroCompressed(reader, output);
 
             foreach (Column col in Columns)
             {
@@ -414,6 +417,5 @@ namespace Marshal
 
             reader.Close();
         }
-
     }
 }

@@ -14,76 +14,47 @@ namespace EVESharp.Services.Network
         public alert()
             : base("alert")
         {
-            AddServiceCall(new BeanCount());
-            AddServiceCall(new SendClientStackTraceAlert());
-            AddServiceCall(new BeanDelivery());
         }
 
-        public class BeanCount : ServiceCall
+        public PyObject BeanCount(PyTuple args, object client)
         {
-            public BeanCount() : base("BeanCount")
-            {
+            PyTuple res = new PyTuple();
 
-            }
+            res.Items.Add(new PyNone()); // Unique error ID, None for instant stack trace
+            res.Items.Add(new PyInt(0)); // logging mode, 0 = local
 
-            public override PyObject Run(PyTuple args, object client)
-            {
-                PyTuple res = new PyTuple();
-
-                res.Items.Add(new PyNone()); // Unique error ID, None for instant stack trace
-                res.Items.Add(new PyInt(0)); // logging mode, 0 = local
-
-                return res;
-            }
+            return res;
         }
 
-        public class SendClientStackTraceAlert : ServiceCall
+        public PyObject SendClientStackTraceAlert(PyTuple args, object client)
         {
-            public SendClientStackTraceAlert()
-                : base("SendClientStackTraceAlert")
+            Log.Trace("SendClientStackTraceAlert", "Received client stack trace. Saving to a file");
+
+            try
             {
-
-            }
-
-            public override PyObject Run(PyTuple args, object client)
-            {
-                Log.Trace("SendClientStackTraceAlert", "Received client stack trace. Saving to a file");
-
-                try
+                if (File.Exists("logs/stacktrace.txt") == false)
                 {
-                    if (File.Exists("logs/stacktrace.txt") == false)
-                    {
-                        File.Create("logs/stacktrace.txt");
-                    }
-
-                    File.AppendAllText("logs/stacktrace.txt", "------------------ " + args.Items[2].StringValue + " ------------------\n");
-                    File.AppendAllText("logs/stacktrace.txt", args.Items[0].As<PyTuple>().Items[1].StringValue);
-                    File.AppendAllText("logs/stacktrace.txt", args.Items[1].StringValue + "\n");
-                }
-                catch (Exception)
-                {
-
+                    File.Create("logs/stacktrace.txt");
                 }
 
-                // The client should receive anything to know that the stack trace arrived to the server
-                return new PyNone();
+                File.AppendAllText("logs/stacktrace.txt", "------------------ " + args.Items[2].StringValue + " ------------------\n");
+                File.AppendAllText("logs/stacktrace.txt", args.Items[0].As<PyTuple>().Items[1].StringValue);
+                File.AppendAllText("logs/stacktrace.txt", args.Items[1].StringValue + "\n");
             }
+            catch (Exception)
+            {
+
+            }
+
+            // The client should receive anything to know that the stack trace arrived to the server
+            return new PyNone();
         }
 
-        public class BeanDelivery : ServiceCall
+        public PyObject BeanDelivery(PyTuple args, object client)
         {
-            public BeanDelivery()
-                : base("BeanDelivery")
-            {
-
-            }
-
-            public override PyObject Run(PyTuple args, object client)
-            {
-                // I'm not joking, send me the stack trace NOW!!!
-                // :P
-                return new PyNone();
-            }
+            // I'm not joking, send me the stack trace NOW!!!
+            // :P
+            return new PyNone();
         }
     }
 }

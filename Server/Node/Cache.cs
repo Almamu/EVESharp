@@ -344,7 +344,7 @@ namespace EVESharp
                 return false;
             }
 
-            SaveCacheFor(LoginCacheTable[0], DBUtils.DBResultToTupleSet(ref reader), DateTime.Now.ToFileTime());
+            SaveCacheFor(LoginCacheTable[0], DBUtils.DBResultToTupleSet(ref reader), DateTime.Now.ToFileTimeUtc());
 
             if (Database.Database.Query(ref reader, "SELECT billTypeID, billTypeName, description FROM billtypes") == false)
             {
@@ -352,7 +352,7 @@ namespace EVESharp
                 return false;
             }
 
-            SaveCacheFor(LoginCacheTable[1], DBUtils.DBResultToTupleSet(ref reader), DateTime.Now.ToFileTime());
+            SaveCacheFor(LoginCacheTable[1], DBUtils.DBResultToTupleSet(ref reader), DateTime.Now.ToFileTimeUtc());
 
             if (Database.Database.Query(ref reader, "SELECT bloodlineID, bloodlineName, raceID, description, maleDescription, femaleDescription, shipTypeID, corporationID, perception, willpower, charisma, memory, intelligence, graphicID, shortDescription, shortMaleDescription, shortFemaleDescription, 0 AS dataID FROM chrBloodlines") == false)
             {
@@ -360,7 +360,7 @@ namespace EVESharp
                 return false;
             }
 
-            SaveCacheFor(LoginCacheTable[2], DBUtils.DBResultToRowset(ref reader), DateTime.Now.ToFileTime());
+            SaveCacheFor(LoginCacheTable[2], DBUtils.DBResultToRowset(ref reader), DateTime.Now.ToFileTimeUtc());
 
             if (Database.Database.Query(ref reader, "SELECT unitID, unitName, displayName FROM eveUnits") == false)
             {
@@ -368,7 +368,7 @@ namespace EVESharp
                 return false;
             }
 
-            SaveCacheFor(LoginCacheTable[3], DBUtils.DBResultToRowset(ref reader), DateTime.Now.ToFileTime());
+            SaveCacheFor(LoginCacheTable[3], DBUtils.DBResultToRowset(ref reader), DateTime.Now.ToFileTimeUtc());
 
             if (Database.Database.Query(ref reader, "SELECT corporationID, tickerName, shape1, shape2, shape3, color1, color2, color3 FROM corporation WHERE hasPlayerPersonnelManager = 0") == false)
             {
@@ -376,7 +376,7 @@ namespace EVESharp
                 return false;
             }
 
-            SaveCacheFor(LoginCacheTable[4], DBUtils.DBResultToTupleSet(ref reader), DateTime.Now.ToFileTime());
+            SaveCacheFor(LoginCacheTable[4], DBUtils.DBResultToTupleSet(ref reader), DateTime.Now.ToFileTimeUtc());
 
             if (Database.Database.Query(ref reader, "SELECT typeID, activityID, requiredTypeID, quantity, damagePerJob, recycle FROM typeActivityMaterials WHERE damagePerJob != 1.0 OR recycle = 1") == false)
             {
@@ -384,7 +384,7 @@ namespace EVESharp
                 return false;
             }
 
-            SaveCacheFor(LoginCacheTable[5], DBUtils.DBResultToRowset(ref reader), DateTime.Now.ToFileTime());
+            SaveCacheFor(LoginCacheTable[5], DBUtils.DBResultToRowset(ref reader), DateTime.Now.ToFileTimeUtc());
 
             if (Database.Database.Query(ref reader, "SELECT a.assemblyLineTypeID, b.activityID, a.groupID, a.timeMultiplier, a.materialMultiplier FROM ramAssemblyLineTypeDetailPerGroup AS a LEFT JOIN ramAssemblyLineTypes AS b ON a.assemblyLineTypeID = b.assemblyLineTypeID") == false)
             {
@@ -392,7 +392,7 @@ namespace EVESharp
                 return false;
             }
 
-            SaveCacheFor(LoginCacheTable[6], DBUtils.DBResultToCRowset(ref reader), DateTime.Now.ToFileTime());
+            SaveCacheFor(LoginCacheTable[6], DBUtils.DBResultToCRowset(ref reader), DateTime.Now.ToFileTimeUtc());
 
             if (Database.Database.Query(ref reader, "SELECT assemblyLineTypeID, assemblyLineTypeName, assemblyLineTypeName AS typeName, description, activityID, baseTimeMultiplier, baseMaterialMultiplier, volume FROM ramAssemblyLineTypes") == false)
             {
@@ -400,7 +400,7 @@ namespace EVESharp
                 return false;
             }
 
-            SaveCacheFor(LoginCacheTable[7], DBUtils.DBResultToRowset(ref reader), DateTime.Now.ToFileTime());
+            SaveCacheFor(LoginCacheTable[7], DBUtils.DBResultToRowset(ref reader), DateTime.Now.ToFileTimeUtc());
 
             if (Database.Database.Query(ref reader, "SELECT allianceID, shortName FROM allianceshortnames") == false)
             {
@@ -408,7 +408,7 @@ namespace EVESharp
                 return false;
             }
 
-            SaveCacheFor(LoginCacheTable[8], DBUtils.DBResultToRowset(ref reader), DateTime.Now.ToFileTime());
+            SaveCacheFor(LoginCacheTable[8], DBUtils.DBResultToRowset(ref reader), DateTime.Now.ToFileTimeUtc());
 
             if (Database.Database.Query(ref reader, "SELECT completedStatusID, completedStatusName, completedStatusText FROM ramCompletedStatuses") == false)
             {
@@ -416,7 +416,7 @@ namespace EVESharp
                 return false;
             }
 
-            SaveCacheFor(LoginCacheTable[8], DBUtils.DBResultToRowset(ref reader), DateTime.Now.ToFileTime());
+            SaveCacheFor(LoginCacheTable[8], DBUtils.DBResultToRowset(ref reader), DateTime.Now.ToFileTimeUtc());
 
             if (Database.Database.Query(ref reader, "SELECT categoryID, categoryName, description, graphicID, published, 0 AS dataID FROM invCategories") == false)
             {
@@ -424,14 +424,14 @@ namespace EVESharp
                 return false;
             }
 
-            SaveCacheFor(LoginCacheTable[9], DBUtils.DBResultToRowset(ref reader), DateTime.Now.ToFileTime());
+            SaveCacheFor(LoginCacheTable[9], DBUtils.DBResultToRowset(ref reader), DateTime.Now.ToFileTimeUtc());
 
             if (Database.Database.Query(ref reader, "SELECT reactionTypeID, input, typeID, quantity FROM invTypeReactions") == false)
             {
                 Log.Error("Cache", "Cannot generate cache data for invTypeReactions");
                 return false;
             }
-            SaveCacheFor(LoginCacheTable[10], DBUtils.DBResultToCRowset(ref reader), DateTime.Now.ToFileTime());
+            SaveCacheFor(LoginCacheTable[10], DBUtils.DBResultToCRowset(ref reader), DateTime.Now.ToFileTimeUtc());
 
             if (Database.Database.Query(ref reader, "SELECT typeID, effectID, isDefault FROM dgmTypeEffects") == false)
             {
@@ -439,7 +439,7 @@ namespace EVESharp
                 return false;
             }
 
-            SaveCacheFor(LoginCacheTable[11], DBUtils.DBResultToRowset(ref reader), DateTime.Now.ToFileTime());
+            SaveCacheFor(LoginCacheTable[11], DBUtils.DBResultToRowset(ref reader), DateTime.Now.ToFileTimeUtc());
 
             if (Database.Database.Query(ref reader, "SELECT metaGroupID, metaGroupName, description, graphicID, 0 AS dataID FROM invMetaGroups") == false)
             {
@@ -447,7 +447,7 @@ namespace EVESharp
                 return false;
             }
 
-            SaveCacheFor(LoginCacheTable[12], DBUtils.DBResultToRowset(ref reader), DateTime.Now.ToFileTime());
+            SaveCacheFor(LoginCacheTable[12], DBUtils.DBResultToRowset(ref reader), DateTime.Now.ToFileTimeUtc());
 
             if (Database.Database.Query(ref reader, "SELECT typeID, requiredTypeID AS materialTypeID, quantity FROM typeActivityMaterials WHERE activityID = 6 AND damagePerJob = 1.0 UNION SELECT productTypeID AS typeID, requiredTypeID AS materialTypeID, quantity FROM typeActivityMaterials JOIN invBlueprintTypes ON typeID = blueprintTypeID WHERE activityID = 1 AND damagePerJob = 1.0") == false)
             {
@@ -455,7 +455,7 @@ namespace EVESharp
                 return false;
             }
 
-            SaveCacheFor(LoginCacheTable[13], DBUtils.DBResultToRowset(ref reader), DateTime.Now.ToFileTime());
+            SaveCacheFor(LoginCacheTable[13], DBUtils.DBResultToRowset(ref reader), DateTime.Now.ToFileTimeUtc());
 
             if (Database.Database.Query(ref reader, "SELECT a.assemblyLineTypeID, b.activityID, a.categoryID, a.timeMultiplier, a.materialMultiplier FROM ramAssemblyLineTypeDetailPerCategory AS a LEFT JOIN ramAssemblyLineTypes AS b ON a.assemblyLineTypeID = b.assemblyLineTypeID") == false)
             {
@@ -463,7 +463,7 @@ namespace EVESharp
                 return false;
             }
 
-            SaveCacheFor(LoginCacheTable[14], DBUtils.DBResultToCRowset(ref reader), DateTime.Now.ToFileTime());
+            SaveCacheFor(LoginCacheTable[14], DBUtils.DBResultToCRowset(ref reader), DateTime.Now.ToFileTimeUtc());
 
             if (Database.Database.Query(ref reader, "SELECT cacheOwner AS ownerID, cacheOwnerName AS ownerName, cacheOwnerType AS typeID FROM usercache") == false)
             {
@@ -471,7 +471,7 @@ namespace EVESharp
                 return false;
             }
 
-            SaveCacheFor(LoginCacheTable[15], DBUtils.DBResultToRowset(ref reader), DateTime.Now.ToFileTime());
+            SaveCacheFor(LoginCacheTable[15], DBUtils.DBResultToRowset(ref reader), DateTime.Now.ToFileTimeUtc());
 
             if (Database.Database.Query(ref reader, "SELECT ownerID, ownerName, typeID FROM eveStaticOwners") == false)
             {
@@ -479,7 +479,7 @@ namespace EVESharp
                 return false;
             }
 
-            SaveCacheFor(LoginCacheTable[16], DBUtils.DBResultToRowset(ref reader), DateTime.Now.ToFileTime());
+            SaveCacheFor(LoginCacheTable[16], DBUtils.DBResultToRowset(ref reader), DateTime.Now.ToFileTimeUtc());
 
             if (Database.Database.Query(ref reader, "SELECT raceID, raceName, description, graphicID, shortDescription, 0 AS dataID FROM chrRaces") == false)
             {
@@ -487,7 +487,7 @@ namespace EVESharp
                 return false;
             }
 
-            SaveCacheFor(LoginCacheTable[17], DBUtils.DBResultToRowset(ref reader), DateTime.Now.ToFileTime());
+            SaveCacheFor(LoginCacheTable[17], DBUtils.DBResultToRowset(ref reader), DateTime.Now.ToFileTimeUtc());
 
             if (Database.Database.Query(ref reader, "SELECT attributeID, attributeName, description, graphicID FROM chrAttributes") == false)
             {
@@ -495,7 +495,7 @@ namespace EVESharp
                 return false;
             }
 
-            SaveCacheFor(LoginCacheTable[18], DBUtils.DBResultToRowset(ref reader), DateTime.Now.ToFileTime());
+            SaveCacheFor(LoginCacheTable[18], DBUtils.DBResultToRowset(ref reader), DateTime.Now.ToFileTimeUtc());
 
             if (Database.Database.Query(ref reader, "SELECT	dgmTypeAttributes.typeID,	dgmTypeAttributes.attributeID,	IF(valueInt IS NULL, valueFloat, valueInt) AS value FROM dgmTypeAttributes") == false)
             {
@@ -503,7 +503,7 @@ namespace EVESharp
                 return false;
             }
 
-            SaveCacheFor(LoginCacheTable[19], DBUtils.DBResultToPackedRowList(ref reader), DateTime.Now.ToFileTime());
+            SaveCacheFor(LoginCacheTable[19], DBUtils.DBResultToPackedRowList(ref reader), DateTime.Now.ToFileTimeUtc());
 
             if (Database.Database.Query(ref reader, "SELECT locationID, locationName, x, y, z FROM cacheLocations") == false)
             {
@@ -511,7 +511,7 @@ namespace EVESharp
                 return false;
             }
 
-            SaveCacheFor(LoginCacheTable[20], DBUtils.DBResultToTupleSet(ref reader), DateTime.Now.ToFileTime());
+            SaveCacheFor(LoginCacheTable[20], DBUtils.DBResultToTupleSet(ref reader), DateTime.Now.ToFileTimeUtc());
 
             if (Database.Database.Query(ref reader, "SELECT locationID, wormholeClassID FROM mapLocationWormholeClasses") == false)
             {
@@ -519,7 +519,7 @@ namespace EVESharp
                 return false;
             }
 
-            SaveCacheFor(LoginCacheTable[21], DBUtils.DBResultToCRowset(ref reader), DateTime.Now.ToFileTime());
+            SaveCacheFor(LoginCacheTable[21], DBUtils.DBResultToCRowset(ref reader), DateTime.Now.ToFileTimeUtc());
 
             if (Database.Database.Query(ref reader, "SELECT groupID, categoryID, groupName, description, graphicID, useBasePrice, allowManufacture, allowRecycler, anchored, anchorable, fittableNonSingleton, 1 AS published, 0 AS dataID FROM invGroups") == false)
             {
@@ -527,7 +527,7 @@ namespace EVESharp
                 return false;
             }
 
-            SaveCacheFor(LoginCacheTable[22], DBUtils.DBResultToTupleSet(ref reader), DateTime.Now.ToFileTime());
+            SaveCacheFor(LoginCacheTable[22], DBUtils.DBResultToTupleSet(ref reader), DateTime.Now.ToFileTimeUtc());
             
             if(Database.Database.Query(ref reader, "SELECT shipTypeID,weaponTypeID,miningTypeID,skillTypeID FROM invShipTypes") == false)
             {
@@ -535,7 +535,7 @@ namespace EVESharp
                 return false;
             }
 
-            SaveCacheFor(LoginCacheTable[23], DBUtils.DBResultToCRowset(ref reader), DateTime.Now.ToFileTime());
+            SaveCacheFor(LoginCacheTable[23], DBUtils.DBResultToCRowset(ref reader), DateTime.Now.ToFileTimeUtc());
 
             if (Database.Database.Query(ref reader, "SELECT attributeID, attributeName, attributeCategory, description, maxAttributeID, attributeIdx, graphicID, chargeRechargeTimeID, defaultValue, published, displayName, unitID, stackable, highIsGood, categoryID, 0 AS dataID FROM dgmAttributeTypes") == false)
             {
@@ -543,20 +543,106 @@ namespace EVESharp
                 return false;
             }
 
-            SaveCacheFor(LoginCacheTable[24], DBUtils.DBResultToTupleSet(ref reader), DateTime.Now.ToFileTime());
-            /*
-	        "config.Flags",
-	        "config.BulkData.bptypes",
-	        "config.BulkData.graphics",
-	        "config.BulkData.mapcelestialdescriptions",
-	        "config.BulkData.certificates",
-	        "config.StaticLocations",
-	        "config.InvContrabandTypes",
-	        "config.BulkData.certificaterelationships",
-	        "config.BulkData.units",
-	        "config.BulkData.dgmeffects",
-	        "config.BulkData.types",
-	        "config.BulkData.invmetatypes"*/
+            SaveCacheFor(LoginCacheTable[24], DBUtils.DBResultToTupleSet(ref reader), DateTime.Now.ToFileTimeUtc());
+
+            if (Database.Database.Query(ref reader, "SELECT flagID, flagName, flagText, flagType, orderID FROM invFlags") == false)
+            {
+                Log.Error("Cache", "Cannot generate cache data for flags");
+                return false;
+            }
+
+            SaveCacheFor(LoginCacheTable[25], DBUtils.DBResultToRowset(ref reader), DateTime.Now.ToFileTimeUtc());
+
+            if (Database.Database.Query(ref reader, "SELECT invTypes.typeName AS blueprintTypeName, invTypes.description, invTypes.graphicID, invTypes.basePrice, blueprintTypeID, parentBlueprintTypeID, productTypeID, productionTime, techLevel, researchProductivityTime, researchMaterialTime, researchCopyTime, researchTechTime, productivityModifier, materialModifier, wasteFactor, chanceOfReverseEngineering, maxProductionLimit FROM invBlueprintTypes, invTypes WHERE invBlueprintTypes.blueprintTypeID = invTypes.typeID") == false)
+            {
+                Log.Error("Cache", "Cannot generate cache data for bptypes");
+                return false;
+            }
+
+            SaveCacheFor(LoginCacheTable[26], DBUtils.DBResultToTupleSet(ref reader), DateTime.Now.ToFileTimeUtc());
+
+            if (Database.Database.Query(ref reader, "SELECT graphicID, url3D, urlWeb, icon, urlSound, explosionID FROM eveGraphics") == false)
+            {
+                Log.Error("Cache", "Cannot generate cache data for graphics");
+                return false;
+            }
+
+            SaveCacheFor(LoginCacheTable[27], DBUtils.DBResultToTupleSet(ref reader), DateTime.Now.ToFileTimeUtc());
+
+            if (Database.Database.Query(ref reader, "SELECT celestialID, description FROM mapCelestialDescriptions") == false)
+            {
+                Log.Error("Cache", "Cannot generate cache data for mapcelestialdescriptions");
+                return false;
+            }
+
+            SaveCacheFor(LoginCacheTable[28], DBUtils.DBResultToTupleSet(ref reader), DateTime.Now.ToFileTimeUtc());
+
+            if (Database.Database.Query(ref reader, "SELECT certificateID, categoryID, classID, grade, iconID, corpID, description, 0 AS dataID FROM crtCertificates") == false)
+            {
+                Log.Error("Cache", "Cannot generate cache data for certificates");
+                return false;
+            }
+
+            SaveCacheFor(LoginCacheTable[29], DBUtils.DBResultToCRowset(ref reader), DateTime.Now.ToFileTimeUtc());
+
+            if (Database.Database.Query(ref reader, "SELECT locationID, locationName, x, y, z FROM eveStaticLocations") == false)
+            {
+                Log.Error("Cache", "Cannot generate cache data for staticLocations");
+                return false;
+            }
+
+            SaveCacheFor(LoginCacheTable[30], DBUtils.DBResultToRowset(ref reader), DateTime.Now.ToFileTimeUtc());
+
+            if (Database.Database.Query(ref reader, "SELECT factionID, typeID, standingLoss, confiscateMinSec, fineByValue, attackMinSec FROM invContrabandTypes") == false)
+            {
+                Log.Error("Cache", "Cannot generate invContrabandTypes");
+                return false;
+            }
+
+            SaveCacheFor(LoginCacheTable[31], DBUtils.DBResultToRowset(ref reader), DateTime.Now.ToFileTimeUtc());
+
+            if (Database.Database.Query(ref reader, "SELECT relationshipID, parentID, parentTypeID, parentLevel, childID, childTypeID FROM crtRelationships") == false)
+            {
+                Log.Error("Cache", "Cannot generate certificateRelationships");
+                return false;
+            }
+
+            SaveCacheFor(LoginCacheTable[32], DBUtils.DBResultToCRowset(ref reader), DateTime.Now.ToFileTimeUtc());
+
+            if (Database.Database.Query(ref reader, "SELECT unitID,unitName,displayName FROM eveUnits") == false)
+            {
+                Log.Error("Cache", "Cannot generate units");
+                return false;
+            }
+
+            SaveCacheFor(LoginCacheTable[33], DBUtils.DBResultToTupleSet(ref reader), DateTime.Now.ToFileTimeUtc());
+
+            if (Database.Database.Query(ref reader, "SELECT effectID, effectName, effectCategory, preExpression, postExpression, description, guid, graphicID, isOffensive, isAssistance, durationAttributeID, trackingSpeedAttributeID, dischargeAttributeID, rangeAttributeID, falloffAttributeID, published, displayName, isWarpSafe, rangeChance, electronicChance, propulsionChance, distribution, sfxName, npcUsageChanceAttributeID, npcActivationChanceAttributeID, 0 AS fittingUsageChanceAttributeID, 0 AS dataID FROM dgmEffects") == false)
+            {
+                Log.Error("Cache", "Cannot generate dgmeffects");
+                return false;
+            }
+
+            SaveCacheFor(LoginCacheTable[34], DBUtils.DBResultToTupleSet(ref reader), DateTime.Now.ToFileTimeUtc());
+
+            if (Database.Database.Query(ref reader, "SELECT typeID, groupID, typeName, description, graphicID, radius, mass, volume, capacity, portionSize, raceID, basePrice, published, marketGroupID, chanceOfDuplicating, 0 AS dataID FROM invTypes") == false)
+            {
+                Log.Error("Cache", "Cannot generate types");
+                return false;
+            }
+
+            SaveCacheFor(LoginCacheTable[35], DBUtils.DBResultToTupleSet(ref reader), DateTime.Now.ToFileTimeUtc());
+
+            if (Database.Database.Query(ref reader, "SELECT typeID, parentTypeID, metaGroupID FROM invMetaTypes") == false)
+            {
+                Log.Error("Cache", "Cannot generate invMetaTypes");
+                return false;
+            }
+
+            SaveCacheFor(LoginCacheTable[36], DBUtils.DBResultToCRowset(ref reader), DateTime.Now.ToFileTimeUtc());
+
+            Log.Debug("Cache", "Basic cache generated correctly");
+
             return true;
         }
     }

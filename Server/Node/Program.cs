@@ -3,15 +3,19 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.IO;
+using System.Threading;
+using System.Security.Cryptography;
+
+using MySql.Data.MySqlClient;
+
 using Common;
 using Common.Network;
 using Common.Services;
 using Common.Packets;
-using System.Threading;
-using MySql.Data.MySqlClient;
+
 using EVESharp.Database;
 using EVESharp.Inventory;
-using System.Security.Cryptography;
+
 using Marshal;
 using Marshal.Database;
 
@@ -73,19 +77,25 @@ namespace EVESharp
                 PyTuple args = callInfo.Items[2].As<PyTuple>();
                 PyDict sub = callInfo.Items[3].As<PyDict>();
 
-                if (Program.SvcMgr.FindService(packet.dest.service) == false)
+                PyObject callRes = null;
+
+                try
                 {
-                    Log.Error("Client", "Cannot find service " + packet.dest.service + " to call " + call);
-                    return;
+                    callRes = Program.SvcMgr.ServiceCall(packet.dest.service, call, args, null);
+                }
+                catch (ServiceDoesNotContainCallException)
+                {
+                    Log.Error("HandlePacket", "The service does not contain a definition for " + call);
+                }
+                catch (ServiceDoesNotExistsException)
+                {
+                    Log.Error("HandlePacket", "The requested service(" + packet.dest.service + ")does not exists");
+                }
+                catch (Exception ex)
+                {
+                    Log.Error("HandlePacket", "Unhadled exception: " + ex.ToString());
                 }
 
-                if (Program.SvcMgr.GetService(packet.dest.service).FindServiceCall(call) == false)
-                {
-                    Log.Error("Client", "Service " + packet.dest.service + " doesnt contains a call to " + call);
-                    return;
-                }
-
-                PyObject callRes = Program.SvcMgr.Call(packet.dest.service, call, args, null);
 
                 if (callRes == null)
                 {
@@ -142,8 +152,8 @@ namespace EVESharp
                 while (true) ;
             }
 
-            /*
-            DBRowDescriptor descriptor = new DBRowDescriptor();
+            
+            /*DBRowDescriptor descriptor = new DBRowDescriptor();
 
             descriptor.AddColumn("itemID", FieldType.I4);
             descriptor.AddColumn("custominfo", FieldType.Str);
@@ -157,10 +167,10 @@ namespace EVESharp
 
             PyPackedRow unmarshaled = Unmarshal.Process<PyPackedRow>(marshaled);
 
-            Console.WriteLine(PrettyPrinter.Print(unmarshaled));
+            Console.WriteLine(PrettyPrinter.Print(unmarshaled));*/
             
 
-            byte[] raw = new byte[] { 1, 0, 55, 1, 22, 33, 0, 33, 25, 33, 14, 0, 0, 25, 45 };
+           /*byte[] raw = new byte[] { 1, 0, 55, 1, 22, 33, 0, 33, 25, 33, 14, 0, 0, 25, 45 };
 
             MemoryStream output = new MemoryStream(raw);
             BinaryReader reader = new BinaryReader(output);
@@ -169,12 +179,21 @@ namespace EVESharp
             BinaryWriter streamWriter = new BinaryWriter(stream);
             BinaryReader streamReader = new BinaryReader(stream);
 
-            PyPackedRow.ZeroCompress(reader, output, streamWriter);
+            PyPackedRow.SaveZeroCompressed(reader, streamWriter);
 
             byte[] compressed = stream.ToArray();
             stream.Seek(0, SeekOrigin.Begin);
 
             byte[] uncompress = PyPackedRow.LoadZeroCompressed(streamReader);
+
+
+            for (int i = 0; i < uncompress.Length; i++)
+            {
+                Console.Write(uncompress[i] + " ");
+            }
+
+            Console.WriteLine();
+            
 
             while (true) Thread.Sleep(1);*/
             /*
@@ -193,12 +212,6 @@ namespace EVESharp
             */
 
             Log.Info("Main", "Connection to the DB sucessfull");
-
-            Log.Trace("Main", "Registering services...");
-
-            SvcMgr.AddService(new Services.Network.machoNet());
-            SvcMgr.AddService(new Services.Network.alert());
-            SvcMgr.AddService(new Services.CacheSvc.objectCaching());
 
             Log.Info("Main", "Done");
             Log.Info("Main", "Connecting to proxy...");
@@ -228,7 +241,6 @@ namespace EVESharp
                     }
                     else if (bytes > 0)
                     {
-                        Log.Debug("Client", "Bytes: " + bytes);
                         packetizer.QueuePackets(data, bytes);
                         int p = packetizer.ProcessPackets();
 

@@ -90,6 +90,7 @@
     <Compile Include="Inventory\TypeManager.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="ServiceManager.cs" />
     <Compile Include="Services\CacheSvc\objectCaching.cs" />
     <Compile Include="Services\Network\alert.cs" />
     <Compile Include="Services\Network\machoNet.cs" />

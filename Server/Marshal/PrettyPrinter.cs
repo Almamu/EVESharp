@@ -78,10 +78,14 @@ namespace Marshal
                 Print(builder, indention + 1, objex.Header);
                 foreach (var item in objex.List)
                     Print(builder, indention + 1, item);
-                foreach (var kvp in objex.Dictionary)
+
+                if (objex.Dictionary != null)
                 {
-                    Print(builder, indention + 1, kvp.Key);
-                    Print(builder, indention + 1, kvp.Value);
+                    foreach (var kvp in objex.Dictionary)
+                    {
+                        Print(builder, indention + 1, kvp.Key);
+                        Print(builder, indention + 1, kvp.Value);
+                    }
                 }
             }
             else if (obj is PyToken)
@@ -91,7 +95,8 @@ namespace Marshal
             else if (obj is PyPackedRow)
             {
                 var packedRow = obj as PyPackedRow;
-                builder.AppendLine(indent + PrintPackedRow(packedRow));
+                // builder.AppendLine(indent + PrintPackedRow(packedRow));
+                builder.AppendLine("[PyPackedRow]");
                 if (packedRow.Columns != null)
                 {
                     foreach (var column in packedRow.Columns)

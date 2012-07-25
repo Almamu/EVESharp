@@ -2,55 +2,34 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Reflection;
+
 using Marshal;
 
 namespace Common.Services
 {
     public class ServiceManager
     {
-        private Dictionary<string, Service> services = null;
-
-        public ServiceManager()
+        // Who said me that this was painfull? :D Oh wait, I was myselft...
+        public PyObject ServiceCall(string service, string call, PyTuple data, object client)
         {
-            services = new Dictionary<string, Service>();
-        }
+            MethodInfo method = GetType().GetMethod(service);
 
-        public void AddService(Service service)
-        {
-            services.Add(service.GetServiceName(), service);
-        }
-
-        public bool FindService(string name)
-        {
-            return services.ContainsKey(name);
-        }
-
-        public void DelService(string name)
-        {
-            if (FindService(name) == true)
+            if (method == null)
             {
-                services.Remove(name);
-            }
-        }
-
-        public Service GetService(string name)
-        {
-            if (FindService(name) == true)
-            {
-                return services[name];
+                throw new ServiceDoesNotExistsException(service);
             }
 
-            return null;
-        }
+            Service svc = (Service)(method.Invoke(this, null));
 
-        public PyObject Call(string svc, string call, PyTuple args, object client)
-        {
-            Service service = GetService(svc);
+            method = svc.GetType().GetMethod(call);
 
-            if (service == null)
-                return null;
+            if (method == null)
+            {
+                throw new ServiceDoesNotContainCallException(service, call);
+            }
 
-            return service.Call(call, args, client);
+            return (PyObject)(method.Invoke(svc, new object[] { data, client }));
         }
     }
 }

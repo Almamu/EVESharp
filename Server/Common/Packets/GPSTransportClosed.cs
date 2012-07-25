@@ -18,7 +18,7 @@ namespace Common.Packets
             machoVersion = Constants.Game.machoVersion;
             version = Constants.Game.version;
             build = Constants.Game.build;
-            clock = DateTime.Now.ToFileTime();
+            clock = DateTime.Now.ToFileTimeUtc();
         }
     }
 }
