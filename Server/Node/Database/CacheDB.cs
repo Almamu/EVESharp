@@ -2,12 +2,15 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using Common;
+using System.Security.Cryptography;
+
 using Marshal;
+
 using MySql.Data.MySqlClient;
 using MySql.Data.Types;
-using System.Security.Cryptography;
+
 using Common.Utils;
+using Common;
 
 namespace EVESharp.Database
 {

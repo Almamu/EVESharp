@@ -6,6 +6,8 @@ using System.Net.Sockets;
 
 using Marshal;
 
+using Common;
+
 namespace EVESharp.ClusterControler
 {
     class ConnectionManager
@@ -31,7 +33,15 @@ namespace EVESharp.ClusterControler
         {
             if (connection.Type == ConnectionType.Node)
             {
-                connection.NodeID = connection.ClusterConnectionID;
+                // This will let us add a node as a proxy
+                if (nodes.Count == 0)
+                {
+                    connection.ClusterConnectionID = connection.NodeID = 0xFFAA;
+                }
+                else
+                {
+                    connection.NodeID = connection.ClusterConnectionID;
+                }
 
                 if (nodes.ContainsKey(connection.NodeID))
                 {
@@ -86,8 +96,41 @@ namespace EVESharp.ClusterControler
                 }
                 else if (connection.Type == ConnectionType.Node)
                 {
+                    Log.Warning("ConnectionManager", "Node " + connection.NodeID.ToString("X4") + " disconnected");
+
                     nodes.Remove(connection.NodeID);
                     connections.Remove(connection);
+
+                    if (connection.NodeID == 0xFFAA)
+                    {
+                        Log.Warning("ConnectionManager", "Proxy node has disconnected, searching for new nodes");
+
+                        if (nodes.Count == 0)
+                        {
+                            Log.Error("ConnectionManager", "No more nodes available, closing public cluster connections");
+
+                            foreach (KeyValuePair<int, Connection> client in clients)
+                            {
+                                // Close the client connection
+                                client.Value.EndConnection();
+                            }
+                        }
+                        else
+                        {
+                            Connection newProxyNode = nodes.First().Value;
+
+                            // Remove the node from nodes list to update it
+                            nodes.Remove(newProxyNode.NodeID);
+
+                            newProxyNode.ClusterConnectionID = newProxyNode.NodeID = 0xFFAA;
+
+                            // And add it back as the proxy node
+                            nodes.Add(newProxyNode.ClusterConnectionID, newProxyNode);
+
+                            // Send the node change notification
+                            newProxyNode.SendNodeChangeNotification();
+                        }
+                    }
                 }
                 else
                 {

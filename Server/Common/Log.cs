@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.IO;
+using System.Threading;
 
 namespace Common
 {
@@ -55,9 +56,9 @@ namespace Common
                 return;
             }
 
-            logqueue++;
+            while (logqueue > 0) Thread.Sleep(1);
 
-            while (logqueue > 1) ;
+            logqueue++;
 
             Console.ForegroundColor = ConsoleColor.Gray;
             Console.Write(DateTime.Now.ToShortDateString() + " " + DateTime.Now.ToShortTimeString());

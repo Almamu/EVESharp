@@ -85,7 +85,7 @@ namespace EVESharp
                 }
                 catch (ServiceDoesNotContainCallException)
                 {
-                    Log.Error("HandlePacket", "The service does not contain a definition for " + call);
+                    Log.Error("HandlePacket", "The service " + packet.dest.service + " does not contain a definition for " + call);
                 }
                 catch (ServiceDoesNotExistsException)
                 {
@@ -167,10 +167,10 @@ namespace EVESharp
 
             PyPackedRow unmarshaled = Unmarshal.Process<PyPackedRow>(marshaled);
 
-            Console.WriteLine(PrettyPrinter.Print(unmarshaled));*/
+            Console.WriteLine(PrettyPrinter.Print(unmarshaled));
             
 
-           /*byte[] raw = new byte[] { 1, 0, 55, 1, 22, 33, 0, 33, 25, 33, 14, 0, 0, 25, 45 };
+           byte[] raw = new byte[] { 1, 0, 55, 1, 22, 33, 0, 33, 25, 33, 14, 0, 0, 25, 45 };
 
             MemoryStream output = new MemoryStream(raw);
             BinaryReader reader = new BinaryReader(output);
@@ -195,7 +195,7 @@ namespace EVESharp
             Console.WriteLine();
             
 
-            while (true) Thread.Sleep(1);*/
+            while (true) Thread.Sleep(1);
             /*
             SHA1 sha1 = SHA1.Create();
             byte[] hash = sha1.ComputeHash(Encoding.ASCII.GetBytes("password"));
@@ -262,6 +262,7 @@ namespace EVESharp
                                     {
                                         nodeID = nodeinfo.nodeID;
 
+                                        Log.Debug("Main", "Found machoNet.nodeInfo, our new node id is " + nodeID.ToString("X4"));
                                         SystemManager.LoadSolarSystems(nodeinfo.solarSystems);
                                     }
                                 }

@@ -10,7 +10,9 @@ namespace Common.Services
 {
     public class ServiceManager
     {
-        // Who said me that this was painfull? :D Oh wait, I was myselft...
+        // Who said me that this was painfull? :D Oh wait, It was me...
+        // Nevermind, forget that, I found a way of do this using reflection
+        // So this will be faster and painless
         public PyObject ServiceCall(string service, string call, PyTuple data, object client)
         {
             MethodInfo method = GetType().GetMethod(service);

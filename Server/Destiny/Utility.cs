@@ -107,15 +107,21 @@ namespace Destiny
         public static uint ReadSizeEx(this BinaryReader reader)
         {
             var len = reader.ReadByte();
+            
             if (len == 0xFF)
+            {
                 return reader.ReadUInt32();
+            }
+
             return len;
         }
 
         public static void WriteSizeEx(this BinaryWriter writer, uint len)
         {
             if (len < 0xFF)
+            {
                 writer.Write((byte)len);
+            }
             else
             {
                 writer.Write((byte)0xFF);
@@ -239,6 +245,13 @@ namespace Destiny
             var sourceStream = new MemoryStream(input, 2, input.Length - 2);
             var stream = new DeflateStream(sourceStream, CompressionMode.Decompress);
             return stream.ReadAllBytes();
+        }
+
+        public static byte[] Compress(byte[] input)
+        {
+            MemoryStream stream = new MemoryStream(input);
+            DeflateStream compressStream = new DeflateStream(stream, CompressionMode.Compress);
+            return compressStream.ReadAllBytes();
         }
     }
 

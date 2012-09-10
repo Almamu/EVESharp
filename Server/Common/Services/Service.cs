@@ -14,6 +14,5 @@ namespace Common.Services
         {
             svc_name = name;
         }
-
     }
 }

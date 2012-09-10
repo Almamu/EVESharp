@@ -7,6 +7,7 @@ using System.Threading;
 using Common;
 using Common.Packets;
 using Common.Network;
+
 using Marshal;
 
 namespace EVESharp.ClusterControler

@@ -82,6 +82,7 @@ namespace EVESharp.ClusterControler
                     GPSTransportClosed ex = new GPSTransportClosed("AutClusterStarting");
                     connection.Send(ex.Encode());
 
+                    Log.Trace("Client", "Rejected by server; cluster is starting");
                     connection.EndConnection();
                 }
             }

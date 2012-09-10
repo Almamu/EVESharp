@@ -236,8 +236,8 @@ namespace EVESharp.ClusterControler
                                 // Notify the node, be careful here, the client will be able to send packets to game clients
                                 if (packet.dest.typeID == 0xFFAA)
                                 {
-                                    Log.Warning("Client", "Routing proxy packet to node " + NodeID);
-                                    ConnectionManager.NotifyNode(NodeID, obj);
+                                    Log.Warning("Client", "Sending packet to proxy");
+                                    ConnectionManager.NotifyNode((int)(packet.dest.typeID), obj);
                                 }
                                 else
                                 {
