@@ -39,8 +39,7 @@ namespace Marshal
 
             while (source.BaseStream.Position < source.BaseStream.Length)
             {
-                var b = source.ReadByte();
-                if (b == PackedTerminator)
+                if (source.ReadByte() == PackedTerminator)
                     break;
                 source.BaseStream.Seek(-1, SeekOrigin.Current);
                 List.Add(context.ReadObject(source));
@@ -48,12 +47,12 @@ namespace Marshal
 
             while (source.BaseStream.Position < source.BaseStream.Length)
             {
-                var b = source.ReadByte();
-                if (b == PackedTerminator)
+                if (source.ReadByte() == PackedTerminator)
                     break;
+
                 source.BaseStream.Seek(-1, SeekOrigin.Current);
-                var key = context.ReadObject(source);
-                var value = context.ReadObject(source);
+                PyObject key = context.ReadObject(source);
+                PyObject value = context.ReadObject(source);
                 Dictionary.Add(key, value);
             }
         }
@@ -62,26 +61,25 @@ namespace Marshal
         {
             output.WriteOpcode(IsType2 ? MarshalOpcode.ObjectEx2 : MarshalOpcode.ObjectEx1);
             Header.Encode(output);
+
             // list
             if (List.Count > 0)
             {
-                for (int i = 0; i < List.Count; i++)
+                foreach (PyObject item in List)
                 {
-                    List[i].Encode(output);
+                    item.Encode(output);
                 }
             }
 
             output.Write(PackedTerminator);
+
             // dict
             if (Dictionary.Count > 0)
             {
-                for (int i = 0; i < Dictionary.Count; i++)
+                foreach (var pair in Dictionary)
                 {
-                    foreach (var key in Dictionary.Keys)
-                    {
-                        key.Encode(output);
-                        Dictionary[key].Encode(output);
-                    }
+                    pair.Key.Encode(output);
+                    pair.Value.Encode(output);
                 }
             }
             output.Write(PackedTerminator);

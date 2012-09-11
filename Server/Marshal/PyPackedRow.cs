@@ -79,11 +79,11 @@ namespace Marshal
             if (columns == null)
                 return false;
 
-            /*
+            
             columns = columns.Items[0] as PyTuple;
             if (columns == null)
                 return false;
-            */
+            
             Columns = new List<Column>(columns.Items.Count);
 
             foreach (var obj in columns)
@@ -176,7 +176,41 @@ namespace Marshal
 
         public static byte[] LoadZeroCompressed(BinaryReader reader)
         {
-            MemoryStream retStream = new MemoryStream();
+            var ret = new List<byte>();
+            uint packedLen = reader.ReadSizeEx();
+            long max = reader.BaseStream.Position + packedLen;
+
+            while (reader.BaseStream.Position < max)
+            {
+                var opcode = new ZeroCompressOpcode(reader.ReadByte());
+
+                if (opcode.FirstIsZero)
+                {
+                    for (int n = 0; n < (opcode.FirstLength + 1); n++)
+                        ret.Add(0x00);
+                }
+                else
+                {
+                    int bytes = (int)(Math.Min(8 - opcode.FirstLength, max - reader.BaseStream.Position));
+                    for(int n = 0; n < bytes; n ++)
+                        ret.Add(reader.ReadByte());
+                }
+
+                if(opcode.SecondIsZero)
+                {
+                    for(int n = 0; n < (opcode.SecondLength + 1); n ++)
+                        ret.Add(0x00);
+                }
+                else
+                {
+                    int bytes = (int)(Math.Min(8 - opcode.SecondLength, max - reader.BaseStream.Position));
+                    for(int n = 0; n < bytes; n ++)
+                        ret.Add(reader.ReadByte());
+                }
+            }
+
+            return ret.ToArray();
+            /*MemoryStream retStream = new MemoryStream();
             BinaryWriter ret = new BinaryWriter(retStream);
 
             uint packedLen = reader.ReadSizeEx();
@@ -213,7 +247,7 @@ namespace Marshal
                 }
             }
 
-            return retStream.ToArray();
+            return retStream.ToArray();*/
         }
 
         public static void SaveZeroCompressed(BinaryReader reader, BinaryWriter output)
