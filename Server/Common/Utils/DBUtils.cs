@@ -133,7 +133,7 @@ namespace Common.Utils
         public static PyPackedRow CreatePackedRow(DBRowDescriptor header, ref MySqlDataReader result)
         {
             PyPackedRow row = new PyPackedRow(header);
-            for (int i = 0; i < header.ColumnCount(); i++)
+            for (int i = 0; i < header.ColumnCount; i++)
             {
                 row.SetValue(header.GetColumnName(i).StringValue, DBColumnToPyObject(i, ref result));
             }

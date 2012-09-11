@@ -69,6 +69,7 @@
     <Compile Include="PyObject.cs" />
     <Compile Include="PyObjectData.cs" />
     <Compile Include="PyObjectEx.cs" />
+    <Compile Include="PyObjectEx_Type1.cs" />
     <Compile Include="PyObjectType.cs" />
     <Compile Include="PyPackedRow.cs" />
     <Compile Include="PyPacket.cs" />

@@ -19,7 +19,7 @@ namespace Common.Utils
 
         public void Insert(PyPackedRow row)
         {
-            row.Header = descriptor.Encode();
+            row.Header = descriptor;
             items.Items.Add(row);
         }
 
@@ -29,7 +29,7 @@ namespace Common.Utils
             args.Items.Add(new PyToken("dbutil.CRowset"));
 
             PyDict dict = new PyDict();
-            dict.Set("header", descriptor.Encode());
+            dict.Set("header", descriptor);
 
             PyObjectEx res = new PyObjectEx();
             res.IsType2 = true;

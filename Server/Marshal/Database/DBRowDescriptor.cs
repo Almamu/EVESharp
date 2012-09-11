@@ -7,15 +7,31 @@ using MySql.Data.MySqlClient;
 
 namespace Marshal.Database
 {
-    public class DBRowDescriptor
+    public class DBRowDescriptor : PyObjectEx_Type1
     {
-        private PyTuple columnList = new PyTuple();
+        public PyTuple ColumnList
+        {
+            get
+            {
+                return Args[0] as PyTuple;
+            }
+        }
+
+        public int ColumnCount
+        {
+            get
+            {
+                return ColumnList.Items.Count;
+            }
+        }
 
         public DBRowDescriptor()
+            : base(new PyToken("blue.DBRowDescriptor"), CreateArgs())
         {
         }
 
         public DBRowDescriptor(ref MySqlDataReader res)
+            : base(new PyToken("blue.DBRowDescriptor"), CreateArgs())
         {
             int column = res.FieldCount;
 
@@ -32,32 +48,27 @@ namespace Marshal.Database
             column.Items.Add(new PyString(name));
             column.Items.Add(new PyInt((int)type));
 
-            columnList.Items.Add(column);
-        }
-
-        public int ColumnCount()
-        {
-            return columnList.Items.Count;
+            ColumnList.Items.Add(column);
         }
 
         public PyString GetColumnName(int index)
         {
-            return columnList.Items[index].As<PyTuple>().Items[0].As<PyString>();
+            return ColumnList[index].As<PyTuple>().Items[0].As<PyString>();
         }
 
         public FieldType GetColumnType(int index)
         {
-            return (FieldType)columnList.Items[index].As<PyTuple>().Items[1].As<PyInt>().Value;
+            return (FieldType)ColumnList[index].As<PyTuple>().Items[1].As<PyInt>().Value;
         }
 
         public int FindColumn(string name)
         {
-            int cc = ColumnCount();
+            int cc = ColumnCount;
             PyString stringName = new PyString(name);
 
             for (int i = 0; i < cc; i++)
             {
-                if (stringName == columnList.Items[i])
+                if (stringName == GetColumnName(i))
                 {
                     return i;
                 }
@@ -68,17 +79,7 @@ namespace Marshal.Database
 
         public PyTuple GetColumn(int index)
         {
-            return columnList.Items[index].As<PyTuple>();
-        }
-
-        public PyObject Encode()
-        {
-            PyTuple header = new PyTuple();
-
-            header.Items.Add(new PyToken("blue.DBRowDescriptor"));
-            header.Items.Add(columnList);
-
-            return new PyObjectEx(false, header);
+            return ColumnList[index] as PyTuple;
         }
 
         public FieldType GetType(int index, ref MySqlDataReader reader)
@@ -116,6 +117,15 @@ namespace Marshal.Database
                 default:
                     throw new Exception("Wrong FieldType");
             }
+        }
+
+        private static PyTuple CreateArgs()
+        {
+            PyTuple result = new PyTuple();
+
+            result.Items.Add(new PyTuple());
+
+            return result;
         }
     }
 }

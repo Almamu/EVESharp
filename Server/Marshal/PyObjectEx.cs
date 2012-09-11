@@ -3,7 +3,6 @@ using System.IO;
 
 namespace Marshal
 {
-
     public class PyObjectEx : PyObject
     {
         private const byte PackedTerminator = 0x2D;
@@ -85,5 +84,4 @@ namespace Marshal
             output.Write(PackedTerminator);
         }
     }
-
 }

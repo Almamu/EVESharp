@@ -24,11 +24,11 @@ namespace Marshal
         public PyPackedRow(DBRowDescriptor from)
             : base(PyObjectType.PackedRow)
         {
-            Header = from.Encode();
+            Header = from;
             
             Columns = new List<Column>();
 
-            for (int i = 0; i < from.ColumnCount(); i++)
+            for (int i = 0; i < from.ColumnCount; i++)
             {
                 Columns.Insert(i, new Column(from.GetColumnName(i).Value, from.GetColumnType(i)));
             }
