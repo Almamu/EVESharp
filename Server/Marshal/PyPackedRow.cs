@@ -61,11 +61,11 @@ namespace Marshal
             MemoryStream unpacked = new MemoryStream(RawData);
             BinaryReader unpackedReader = new BinaryReader(unpacked);
 
-            if (!ParseRowData(context, unpackedReader))
+            if (!ParseRowData(context, unpackedReader, source))
                  throw new InvalidDataException("Could not fully unpack PackedRow, stream integrity is broken");
         }
 
-        private bool ParseRowData(Unmarshal context, BinaryReader source)
+        private bool ParseRowData(Unmarshal context, BinaryReader source, BinaryReader extra)
         {
             var objex = Header as PyObjectEx;
             if (objex == null)
@@ -146,10 +146,11 @@ namespace Marshal
                         column.Value = new PyFloat(reader.ReadSingle());
                         break;
 
+                        // Those are at the end of the stream
                     case FieldType.Bytes:
                     case FieldType.Str:
                     case FieldType.WStr:
-                        column.Value = context.ReadObject(source);
+                        column.Value = context.ReadObject(extra);
                         break;
 
                     case FieldType.Bool:
@@ -269,14 +270,18 @@ namespace Marshal
                 {
                     opcode.FirstIsZero = true;
                     int firstLen = -1;
-
+                    
                     while ((b == 0x00) && (firstLen < 7) && (stream.Position < stream.Length))
                     {
                         firstLen++;
                         b = reader.ReadByte();
                     }
 
-                    opcode.FirstLength = (byte)(firstLen);
+                    // Very stupid, but fixes a big problem with them
+                    if (stream.Position == stream.Length)
+                        opcode.FirstLength = (byte)(firstLen + 1);
+                    else
+                        opcode.FirstLength = (byte)(firstLen);
                 }
                 else
                 {
