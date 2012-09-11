@@ -23,18 +23,17 @@
 
                 value |= (byte)(FirstLength & 0x07);
                 value |= (byte)((FirstIsZero == true) ? 0x08 : 0x00);
-                value |= (byte)((SecondLength << 4) & 0x70);
+                value |= (byte)((SecondLength & 0x07) << 4);
                 value |= (byte)((SecondIsZero == true) ? 0x80 : 0x00);
 
                 return value;
-
             }
 
             set
             {
                 FirstLength = (byte)(value & 0x07);
                 FirstIsZero = (value & 0x08) > 0;
-                SecondLength = (byte)((value & 0x70) >> 4);
+                SecondLength = (byte)((value >> 4) & 0x07);
                 SecondIsZero = (value & 0x80) > 0;
             }
         }

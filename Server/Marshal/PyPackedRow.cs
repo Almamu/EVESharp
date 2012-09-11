@@ -58,7 +58,10 @@ namespace Marshal
             context.NeedObjectEx = false;
             RawData = LoadZeroCompressed(source);
 
-            if (!ParseRowData(context, source))
+            MemoryStream unpacked = new MemoryStream(RawData);
+            BinaryReader unpackedReader = new BinaryReader(unpacked);
+
+            if (!ParseRowData(context, unpackedReader))
                  throw new InvalidDataException("Could not fully unpack PackedRow, stream integrity is broken");
         }
 
@@ -159,7 +162,7 @@ namespace Marshal
 
                             var b = reader.ReadByte();
                             reader.BaseStream.Seek(-1, SeekOrigin.Current);
-                            column.Value = new PyInt((b >> bitOffset++) & 0x01);
+                            column.Value = new PyBool(((b >> bitOffset++) & 0x01) == 0x01);
                             break;
                         }
 
@@ -231,37 +234,29 @@ namespace Marshal
                 if (b == 0x00)
                 {
                     opcode.FirstIsZero = true;
-                    int firstLen = -1;
 
-                    while ((b == 0x00) && (firstLen < 7) && (reader.BaseStream.Position < reader.BaseStream.Length))
+                    do
                     {
-                        firstLen++;
                         b = reader.ReadByte();
+                        ++opcode.FirstLength;
                     }
-
-                    opcode.FirstLength = (byte)(firstLen);
+                    while (7 > opcode.FirstLength && ((reader.BaseStream.Position < reader.BaseStream.Length) ? 0x00 == b : false));
                 }
                 else
                 {
                     opcode.FirstIsZero = false;
                     opcode.FirstLength = 8;
 
-                    while ((b > 0x00) && (opcode.FirstLength > 0))
+                    do
                     {
-                        opcode.FirstLength--;
                         opcodeStartShift++;
+                        --opcode.FirstLength;
 
                         newWriter.Write(b);
 
-                        if (reader.BaseStream.Position < reader.BaseStream.Length)
-                        {
-                            b = reader.ReadByte();
-                        }
-                        else
-                        {
-                            break;
-                        }
+                        b = reader.ReadByte();
                     }
+                    while (0 < opcode.FirstLength && ((reader.BaseStream.Position < reader.BaseStream.Length) ? 0x00 != b : false));
                 }
 
                 if (reader.BaseStream.Position == reader.BaseStream.Length)
@@ -272,37 +267,29 @@ namespace Marshal
                 else if (b == 0x00)
                 {
                     opcode.SecondIsZero = true;
-                    int secondLength = -1;
 
-                    while ((b == 0x00) && (opcode.SecondLength < 7) && (reader.BaseStream.Position < reader.BaseStream.Length))
+                    do
                     {
-                        secondLength++;
                         b = reader.ReadByte();
+                        ++opcode.SecondLength;
                     }
-
-                    opcode.SecondLength = (byte)(secondLength);
+                    while (7 > opcode.SecondLength && ((reader.BaseStream.Position < reader.BaseStream.Length) ? 0x00 == b : false));
                 }
                 else
                 {
                     opcode.SecondIsZero = false;
                     opcode.SecondLength = 8;
 
-                    while ((b != 0x00) && (opcode.SecondLength > 0))
+                    do
                     {
-                        opcode.SecondLength--;
                         opcodeStartShift++;
+                        --opcode.SecondLength;
 
                         newWriter.Write(b);
 
-                        if (reader.BaseStream.Position < reader.BaseStream.Length)
-                        {
-                            b = reader.ReadByte();
-                        }
-                        else
-                        {
-                            break;
-                        }
+                        b = reader.ReadByte();
                     }
+                    while (0 < opcode.SecondLength && ((reader.BaseStream.Position < reader.BaseStream.Length) ? 0x00 != b : false));
                 }
 
                 newWriter.Seek(-opcodeStartShift, SeekOrigin.Current);
@@ -310,11 +297,17 @@ namespace Marshal
                 newWriter.Seek(opcodeStartShift - 1, SeekOrigin.Current);
             }
 
-            output.WriteSizeEx((int)(newStream.Length));
+            // Create the final Packed data
+            output.WriteSizeEx((int)(newStream.Length)); // Write the packed data size
+
+            // Write the packed data(if neccessary)
             if(newStream.Length > 0)
             {
                 output.Write(newStream.ToArray());
             }
+
+            // Close the stream
+            newStream.Close();
         }
 
         protected override void EncodeInternal(BinaryWriter output)
@@ -329,6 +322,8 @@ namespace Marshal
             var reader = new BinaryReader(rawStream);
 
             var sizeList = Columns.OrderByDescending(c => FieldTypeHelper.GetTypeBits(c.Type));
+
+            byte bitOffset = 0;
 
             foreach (Column col in sizeList)
             {
@@ -364,9 +359,27 @@ namespace Marshal
                         writer.Write((float)(col.Value.FloatValue));
                         break;
 
-                    case FieldType.Bool: // These are always the last data added
-                        // writer.Write((byte)(col.Value.IntValue));
-                        break;
+                    case FieldType.Bool:
+                        {
+                            if (7 < bitOffset)
+                            {
+                                bitOffset = 0;
+                                writer.Write((byte)(col.Value.IntValue));
+                            }
+
+                            // Go back one byte
+                            rawStream.Seek(-1, SeekOrigin.Current);
+
+                            // Get the current byte
+                            byte b = reader.ReadByte();
+                            rawStream.Seek(-1, SeekOrigin.Current);
+                            
+                            // Write the result byte
+                            b |= (byte)(0x01 << bitOffset++);
+                            writer.Write(b);
+
+                            break;
+                        }
 
                     case FieldType.Bytes:
                     case FieldType.Str:
@@ -379,41 +392,9 @@ namespace Marshal
                 }
             }
 
-            long bitByte = 0;
-            byte bitOffset = 0;
-            byte[] unpacked = rawStream.ToArray();
-            rawStream.Close();
-
-            foreach (Column col in Columns)
-            {
-                if (FieldTypeHelper.GetTypeBits(col.Type) != 1)
-                {
-                    continue;
-                }
-
-                PyBool value = col.Value as PyBool;
-
-                if (bitOffset > 7)
-                    bitOffset = 0;
-
-                if (bitOffset == 0)
-                {
-                    bitByte = unpacked.Length + 1;
-                    Array.Resize<byte>(ref unpacked, (int)(bitByte));
-                }
-
-                unpacked[bitByte] |= (byte)(((value.Value == true) ? 1 : 0) << bitOffset++);
-            }
-
-            rawStream = new MemoryStream(unpacked);
-            reader = new BinaryReader(rawStream);
+            rawStream.Seek(0, SeekOrigin.Begin);
 
             SaveZeroCompressed(reader, output);
-
-            foreach (Column col in Columns)
-            {
-                col.Value.Encode(output);
-            }
 
             reader.Close();
         }
