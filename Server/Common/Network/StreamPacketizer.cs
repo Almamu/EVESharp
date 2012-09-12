@@ -31,50 +31,48 @@ namespace Common.Network
 
         public int ProcessPackets()
         {
-            lock (mOut)
+            try
             {
-                lock (input)
+                // Get the packet size:
+                int cur = 0;
+                int packets = 0;
+                byte[] tmp = input.ToArray();
+
+                while (cur != tmp.Length)
                 {
-                    try
+                    int size = BitConverter.ToInt32(tmp, cur);
+
+                    cur += 4;
+
+                    if (size + cur > tmp.Length) // The packet is longer than we have here
                     {
-                        // Get the packet size:
-                        int cur = 0;
-                        byte[] tmp = input.ToArray();
+                        cur -= 4; // Go back to the size bytes
 
-                        while (cur != tmp.Length)
-                        {
-                            int size = BitConverter.ToInt32(tmp, cur);
+                        // Get rid off the data before it
+                        input.RemoveRange(0, cur);
 
-                            if (size + cur > tmp.Length) // The packet is longer than we have here
-                            {
-                                // Get rid off the data before it
-                                input.RemoveRange(0, cur);
-
-                                return mOut.Count;
-                            }
-
-                            cur += 4;
-
-                            // Get the packet and add it to the queue
-                            byte[] packet = new byte[size];
-                            Array.Copy(tmp, cur, packet, 0, size);
-
-                            cur += size;
-
-                            mOut.Enqueue(packet);
-                        }
-
-                        // If we are here all the packets were parsed correctly
-                        input.RemoveRange(0, input.Count);
-
-                        return mOut.Count;
+                        return packets + mOut.Count;
                     }
-                    catch (Exception)
-                    {
-                        // The packets are malformed
-                        return 0;
-                    }
+
+                    byte[] packet = new byte[size];
+
+                    Array.Copy(tmp, cur, packet, 0, size);
+                    cur += size;
+
+                    mOut.Enqueue(packet);
+
+                    packets++;
                 }
+
+                // If we are here all the packets were parsed correctly
+                input.RemoveRange(0, input.Count);
+
+                return packets + mOut.Count; // We need to let the user know that there are packets in the queue too
+            }
+            catch (Exception)
+            {
+                // The packets are malformed
+                return 0;
             }
         }
 

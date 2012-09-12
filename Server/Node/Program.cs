@@ -152,50 +152,6 @@ namespace EVESharp
                 while (true) ;
             }
 
-            
-            /*DBRowDescriptor descriptor = new DBRowDescriptor();
-
-            descriptor.AddColumn("itemID", FieldType.I4);
-            descriptor.AddColumn("custominfo", FieldType.Str);
-            
-            PyPackedRow packed = new PyPackedRow(descriptor);
-
-            packed.SetValue("itemID", new PyInt(500));
-            packed.SetValue("custominfo", new PyString("hello world"));
-            
-            byte[] marshaled = Marshal.Marshal.Process(packed);
-
-            PyPackedRow unmarshaled = Unmarshal.Process<PyPackedRow>(marshaled);
-
-            Console.WriteLine(PrettyPrinter.Print(unmarshaled));
-            
-
-           byte[] raw = new byte[] { 1, 0, 55, 1, 22, 33, 0, 33, 25, 33, 14, 0, 0, 25, 45 };
-
-            MemoryStream output = new MemoryStream(raw);
-            BinaryReader reader = new BinaryReader(output);
-
-            MemoryStream stream = new MemoryStream();
-            BinaryWriter streamWriter = new BinaryWriter(stream);
-            BinaryReader streamReader = new BinaryReader(stream);
-
-            PyPackedRow.SaveZeroCompressed(reader, streamWriter);
-
-            byte[] compressed = stream.ToArray();
-            stream.Seek(0, SeekOrigin.Begin);
-
-            byte[] uncompress = PyPackedRow.LoadZeroCompressed(streamReader);
-
-
-            for (int i = 0; i < uncompress.Length; i++)
-            {
-                Console.Write(uncompress[i] + " ");
-            }
-
-            Console.WriteLine();
-            
-
-            while (true) Thread.Sleep(1);
             /*
             SHA1 sha1 = SHA1.Create();
             byte[] hash = sha1.ComputeHash(Encoding.ASCII.GetBytes("password"));
