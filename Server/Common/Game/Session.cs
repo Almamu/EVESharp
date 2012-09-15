@@ -71,6 +71,11 @@ namespace Common.Game
             _Set(new PyString(name), new PyInt(value));
         }
 
+        public void SetLong(string name, long value)
+        {
+            _Set(new PyString(name), new PyLongLong(value));
+        }
+
         public string GetCurrentString(string name)
         {
             PyObject res = _GetCurrent(new PyString(name));
@@ -93,6 +98,18 @@ namespace Common.Game
             }
 
             return res.As<PyInt>().Value;
+        }
+
+        public long GetCurrentLong(string name)
+        {
+            PyObject res = _GetCurrent(new PyString(name));
+
+            if (res.Type != PyObjectType.LongLong)
+            {
+                return 0;
+            }
+
+            return res.IntValue;
         }
 
         public PyDict EncodeChanges()

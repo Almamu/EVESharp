@@ -1,0 +1,70 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ordesignerObjectsDiagram dslVersion="1.0.0.0" absoluteBounds="0, 0, 11, 8.5" name="evesharp">
+  <DataContextMoniker Name="/evesharpDataContext" />
+  <nestedChildShapes>
+    <classShape Id="6014c611-26da-406e-b308-ec55b9aaeeec" isExpanded="false" absoluteBounds="3.625, 0.5, 2, 0.45">
+      <DataClassMoniker Name="/evesharpDataContext/character_" />
+      <nestedChildShapes>
+        <elementListCompartment Id="55f93d5c-c4ef-4db6-b097-9873852289be" absoluteBounds="3.6399999999999997, 0.96, 1.9700000000000002, 12.748982747395832" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
+      </nestedChildShapes>
+    </classShape>
+    <classShape Id="aaa70c62-62f6-43a1-b835-7c63196bed30" absoluteBounds="0.5, 2.625, 2, 1.7708968098958331">
+      <DataClassMoniker Name="/evesharpDataContext/cacheinfo" />
+      <nestedChildShapes>
+        <elementListCompartment Id="c2d5a81a-3e1f-49d1-8dd8-31d9ca1c3221" absoluteBounds="0.51499999999999968, 3.085, 1.9700000000000002, 1.2108968098958333" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
+      </nestedChildShapes>
+    </classShape>
+    <classShape Id="7b19f168-7e3f-4d15-906e-8ac1366e9b6c" absoluteBounds="3.625, 1, 2, 3.6939111328124996">
+      <DataClassMoniker Name="/evesharpDataContext/invtype" />
+      <nestedChildShapes>
+        <elementListCompartment Id="6196078b-a650-45e1-b2cc-e2c8c771a0b3" absoluteBounds="3.6400000000000006, 1.46, 1.9700000000000002, 3.1339111328125" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
+      </nestedChildShapes>
+    </classShape>
+    <classShape Id="09059c36-9ae2-4dd8-b708-b86daf875ec0" absoluteBounds="6.875, 0.5, 2, 3.5016097005208326">
+      <DataClassMoniker Name="/evesharpDataContext/entity" />
+      <nestedChildShapes>
+        <elementListCompartment Id="3911e2ac-5343-4530-8376-362d30e8bb9c" absoluteBounds="6.8900000000000006, 0.96, 1.9700000000000002, 2.941609700520833" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
+      </nestedChildShapes>
+    </classShape>
+    <associationConnector edgePoints="[(6.875 : 0.725); (5.625 : 0.725)]" fixedFrom="Algorithm" fixedTo="Algorithm">
+      <AssociationMoniker Name="/evesharpDataContext/entity/entity_character_" />
+      <nodes>
+        <classShapeMoniker Id="09059c36-9ae2-4dd8-b708-b86daf875ec0" />
+        <classShapeMoniker Id="6014c611-26da-406e-b308-ec55b9aaeeec" />
+      </nodes>
+    </associationConnector>
+    <associationConnector edgePoints="[(5.625 : 2.50080485026042); (6.875 : 2.50080485026042)]" fixedFrom="Algorithm" fixedTo="Algorithm">
+      <AssociationMoniker Name="/evesharpDataContext/invtype/invtype_entity" />
+      <nodes>
+        <classShapeMoniker Id="7b19f168-7e3f-4d15-906e-8ac1366e9b6c" />
+        <classShapeMoniker Id="09059c36-9ae2-4dd8-b708-b86daf875ec0" />
+      </nodes>
+    </associationConnector>
+    <classShape Id="f39b2dd3-9ce5-43cd-b161-9fe3ed7b6151" absoluteBounds="6.875, 4, 2, 1.1939925130208333">
+      <DataClassMoniker Name="/evesharpDataContext/solarsystemsloaded" />
+      <nestedChildShapes>
+        <elementListCompartment Id="21e3000f-24cc-4243-92b9-1829d303dfd1" absoluteBounds="6.8900000000000006, 4.46, 1.9700000000000002, 0.63399251302083326" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
+      </nestedChildShapes>
+    </classShape>
+    <associationConnector edgePoints="[(8.875 : 4.00007023898237); (9.25 : 4.37507023898237); (9.25 : 4.59699625651042); (8.875 : 4.59699625651042)]" fixedFrom="NotFixed" fixedTo="Algorithm">
+      <AssociationMoniker Name="/evesharpDataContext/entity/entity_solarsystemsloaded" />
+      <nodes>
+        <classShapeMoniker Id="09059c36-9ae2-4dd8-b708-b86daf875ec0" />
+        <classShapeMoniker Id="f39b2dd3-9ce5-43cd-b161-9fe3ed7b6151" />
+      </nodes>
+    </associationConnector>
+    <classShape Id="4122dfd8-797a-49b2-970b-c43497477e92" absoluteBounds="0.5, 0.5, 2, 1.9631982421875">
+      <DataClassMoniker Name="/evesharpDataContext/account" />
+      <nestedChildShapes>
+        <elementListCompartment Id="ba6b810a-649c-4436-8262-7722ad384243" absoluteBounds="0.51500000000000012, 0.96, 1.9700000000000002, 1.4031982421875" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
+      </nestedChildShapes>
+    </classShape>
+    <associationConnector edgePoints="[(2.5 : 0.725); (3.625 : 0.725)]" fixedFrom="Algorithm" fixedTo="Algorithm">
+      <AssociationMoniker Name="/evesharpDataContext/account/account_character_" />
+      <nodes>
+        <classShapeMoniker Id="4122dfd8-797a-49b2-970b-c43497477e92" />
+        <classShapeMoniker Id="6014c611-26da-406e-b308-ec55b9aaeeec" />
+      </nodes>
+    </associationConnector>
+  </nestedChildShapes>
+</ordesignerObjectsDiagram>

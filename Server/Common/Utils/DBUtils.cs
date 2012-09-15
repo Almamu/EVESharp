@@ -18,25 +18,25 @@ namespace Common.Utils
             switch (type.Name)
             {
                 case "String":
-                    return new PyString(reader.GetString(index));
+                    return new PyString(reader.IsDBNull(index) == true ? "" : reader.GetString(index));
                 case "UInt32":
                 case "Int32":
                 case "UInt16":
                 case "Int16":
                 case "SByte":
                 case "Byte":
-                    return new PyInt(reader.GetInt32(index));
+                    return new PyInt(reader.IsDBNull(index) == true ? 0 : reader.GetInt32(index));
                 case "UInt64":
                 case "Int64":
-                    return new PyLongLong(reader.GetInt64(index));
+                    return new PyLongLong(reader.IsDBNull(index) == true ? 0 : reader.GetInt64(index));
                 case "Byte[]":
-                    return new PyBuffer((byte[])reader.GetValue(index));
+                    return new PyBuffer(reader.IsDBNull(index) == true ? new byte[0] : (byte[])reader.GetValue(index));
                 case "Double":
-                    return new PyFloat(reader.GetDouble(index));
+                    return new PyFloat(reader.IsDBNull(index) == true ? 0.0 : reader.GetDouble(index));
                 case "Decimal":
-                    return new PyFloat((double)reader.GetDecimal(index));
+                    return new PyFloat(reader.IsDBNull(index) == true ? 0.0 : (double)reader.GetDecimal(index));
                 case "Boolean":
-                    return new PyBool(reader.GetBoolean(index));
+                    return new PyBool(reader.IsDBNull(index) == true ? false : reader.GetBoolean(index));
                 default:
                     Log.Error("Database", "Unhandled MySQL type " + type.Name);
                     break;
@@ -114,6 +114,8 @@ namespace Common.Utils
             res.Items.Add(cols);
             res.Items.Add(reslist);
 
+            result.Close();
+
             return res;
         }
 
@@ -126,6 +128,8 @@ namespace Common.Utils
             {
                 rowset.Insert(CreatePackedRow(header, ref result));
             }
+
+            result.Close();
 
             return rowset.Encode();
         }

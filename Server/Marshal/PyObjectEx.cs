@@ -62,25 +62,32 @@ namespace Marshal
             Header.Encode(output);
 
             // list
-            if (List.Count > 0)
+            if (List != null)
             {
-                foreach (PyObject item in List)
+                if (List.Count > 0)
                 {
-                    item.Encode(output);
+                    foreach (PyObject item in List)
+                    {
+                        item.Encode(output);
+                    }
                 }
             }
 
             output.Write(PackedTerminator);
 
             // dict
-            if (Dictionary.Count > 0)
+            if (Dictionary != null)
             {
-                foreach (var pair in Dictionary)
+                if (Dictionary.Count > 0)
                 {
-                    pair.Key.Encode(output);
-                    pair.Value.Encode(output);
+                    foreach (var pair in Dictionary)
+                    {
+                        pair.Key.Encode(output);
+                        pair.Value.Encode(output);
+                    }
                 }
             }
+
             output.Write(PackedTerminator);
         }
     }
