@@ -34,37 +34,38 @@ namespace EVESharp.Database
 {
     public static class AccountDB
     {
-        public static bool LoginPlayer(string username, string password, ref int accountid, ref bool banned, ref int role)
+        public static bool LoginPlayer(string username, string password, ref long accountid, ref bool banned, ref long role)
         {
-            MySqlDataReader res = null;
+            MySqlDataReader reader = null;
 
-            if (Database.Query(ref res, "SELECT password, accountID, banned, role FROM account WHERE accountName='" + username + "';") == false)
-            {
-                if (res != null) res.Close();
-                return false;
-            }
+            username = Database.DoEscapeString(username);
 
-            if (res == null)
+            if (Database.Query(ref reader, "SELECT accountID, password, banned, role FROM account WHERE accountName = '" + username + "'") == false)
             {
                 return false;
             }
 
-            if (res.Read() == false)
+            if (reader.FieldCount == 0)
             {
-                res.Close();
+                reader.Close();
                 return false;
             }
+
+            accountid = reader.GetInt64(0);
+            banned = reader.GetBoolean(2);
+            role = reader.GetInt64(3);
 
             SHA1 sha1 = SHA1.Create();
             sha1.Initialize();
             byte[] hash = sha1.ComputeHash(Encoding.ASCII.GetBytes(password));
-            byte[] outb = new byte[20];
+            byte[] outb = new byte[hash.Length];
 
-            res.GetBytes(0, 0, outb, 0, 20);
+            reader.GetBytes(1, 0, outb, 0, outb.Length);
+            reader.Close();
 
             bool equals = true;
 
-            for (int i = 0; i < 20; i++)
+            for (int i = 0; i < outb.Length; i++)
             {
                 if (outb[i] != hash[i])
                 {
@@ -73,16 +74,10 @@ namespace EVESharp.Database
                 }
             }
 
-            if (!equals)
+            if (equals == false)
             {
-                res.Close();
                 return false;
             }
-
-            accountid = res.GetInt32(1);
-            banned = res.GetBoolean(2);
-            role = res.GetInt32(3);
-            res.Close();
 
             return true;
         }

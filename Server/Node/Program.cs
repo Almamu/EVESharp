@@ -168,6 +168,16 @@ namespace EVESharp
         {
             Log.Init("evesharp");
             Log.Info("Main", "Starting node...");
+
+            Log.Info("Database", "Loading database.conf file");
+
+            string[] lines = File.ReadAllLines("database.conf");
+
+            Database.Database.Username = lines[0];
+            Database.Database.Password = lines[1];
+            Database.Database.Host = lines[2];
+            Database.Database.DB = lines[3];
+
             Log.Trace("Database", "Connecting to database...");
 
             if (Database.Database.Init() == false)

@@ -28,33 +28,33 @@ using System.Linq;
 using System.Text;
 using MySql.Data.MySqlClient;
 
+using Common;
+
 namespace EVESharp.ClusterControler.Database
 {
     public static class GeneralDB
     {
         public static void ResetSolarSystemStatus()
         {
-            foreach (var item in Database.context.solarsystemsloadeds)
+            if (Database.Query("UPDATE solarSystemsLoaded SET nodeID = 0") == false)
             {
-                item.nodeID = 0;
+                Log.Error("GeneralDB", "Cannot reset solar systems nodeID to 0");
             }
         }
 
         public static void ResetSolarSystemStatus(int solarSystemID)
         {
-            var systems = from h in Database.context.solarsystemsloadeds where h.solarSystemID == solarSystemID select h;
-
-            foreach (var system in systems)
+            if (Database.Query("UPDATE solarSystemsLoaded SET nodeID = 0 WHERE solarSystemID = " + solarSystemID.ToString()) == false)
             {
-                system.nodeID = solarSystemID;
+                Log.Error("GeneralDB", "Cannot reset solar system nodeID to 0 for solar system " + solarSystemID.ToString());
             }
         }
 
         public static void ResetItemsStatus()
         {
-            foreach (var item in Database.context.entities)
+            if (Database.Query("UPDATE entity SET nodeID = 0") == false)
             {
-                item.nodeID = 0;
+                Log.Error("GeneralDB", "Cannot reset nodeID for items");
             }
         }
     }

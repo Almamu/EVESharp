@@ -77,11 +77,6 @@
     <Compile Include="ConnectionType.cs" />
     <Compile Include="Database\AccountDB.cs" />
     <Compile Include="Database\Database.cs" />
-    <Compile Include="Database\evesharp.designer.cs">
-      <AutoGen>True</AutoGen>
-      <DesignTime>True</DesignTime>
-      <DependentUpon>evesharp.dbml</DependentUpon>
-    </Compile>
     <Compile Include="Database\GeneralDB.cs" />
     <Compile Include="LoginQueue.cs" />
     <Compile Include="LoginQueueEntry.cs" />
@@ -129,11 +124,6 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
-    <None Include="Database\evesharp.dbml">
-      <Generator>MSLinqToSQLGenerator</Generator>
-      <LastGenOutput>evesharp.designer.cs</LastGenOutput>
-      <SubType>Designer</SubType>
-    </None>
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
@@ -141,11 +131,6 @@
   </ItemGroup>
   <ItemGroup>
     <Service Include="{3259AA49-8AA1-44D3-9025-A0B520596A8C}" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Database\evesharp.dbml.layout">
-      <DependentUpon>evesharp.dbml</DependentUpon>
-    </None>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

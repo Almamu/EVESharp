@@ -29,6 +29,7 @@ using System.Text;
 using System.Threading;
 using System.Net.Sockets;
 using System.Net;
+using System.IO;
 
 using Common;
 using Common.Network;
@@ -62,6 +63,15 @@ namespace EVESharp.ClusterControler
             Log.Init("cluster", Log.LogLevel.All);
 
             Log.Info("Cluster", "Starting GameCluster");
+
+            Log.Info("Cluster", "Loading database.conf file");
+
+            string[] lines = File.ReadAllLines("database.conf");
+
+            Database.Database.Username = lines[0];
+            Database.Database.Password = lines[1];
+            Database.Database.Host = lines[2];
+            Database.Database.DB = lines[3];
 
             if (Database.Database.Init() == false)
             {

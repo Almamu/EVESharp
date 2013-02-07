@@ -37,10 +37,15 @@ namespace EVESharp.Database
     {
         private static MySqlConnection connection;
         private static Queue<string> queryQueue = new Queue<string>();
+        public static string Username = "root";
+        public static string Password = "root";
+        public static string Host = "localhost";
+        public static string DB = "eve";
+
         public static bool Init()
         {
-            string connStr = String.Format("server={0};user id={1}; password={2}; database=evemu; pooling=false",
-                "localhost", "Almamu", "966772320");
+            string connStr = String.Format("server={0};user id={1}; password={2}; database={3}; pooling=false",
+                Host, Username, Password, DB);
 
             try
             {
@@ -54,6 +59,11 @@ namespace EVESharp.Database
             }
 
             return true;
+        }
+
+        public static string DoEscapeString(string input)
+        {
+            return MySqlHelper.EscapeString(input);
         }
 
         public static bool QueryLID(ref ulong id, string query)

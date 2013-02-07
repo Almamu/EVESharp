@@ -28,6 +28,8 @@ using System.Linq;
 using System.Text;
 using System.Data.SqlTypes;
 using System.Security.Cryptography;
+using MySql.Data.MySqlClient;
+using MySql.Data.Types;
 
 namespace EVESharp.ClusterControler.Database
 {
@@ -35,33 +37,57 @@ namespace EVESharp.ClusterControler.Database
     {
         public static bool AccountExists(string username)
         {
-            var user = from h in Database.context.accounts where h.accountName.ToLower() == username.ToLower() select h;
+            MySqlDataReader reader = null;
 
-            if (user.Count() < 1)
+            username = Database.DoEscapeString(username);
+
+            if (Database.Query(ref reader, "SELECT COUNT(accountID) FROM account WHERE accountName = '" + username + "'") == false)
             {
                 return false;
             }
 
-            return true;
+            if (reader.FieldCount > 0)
+            {
+                reader.Close();
+                return true;
+            }
+
+            reader.Close();
+            return false;
         }
 
         public static bool LoginPlayer(string username, string password, ref long accountid, ref bool banned, ref long role)
         {
-            var user = from h in Database.context.accounts where h.accountName.ToLower() == username.ToLower() select h;
+            MySqlDataReader reader = null;
 
-            if (user.Count() < 1)
+            username = Database.DoEscapeString(username);
+
+            if (Database.Query(ref reader, "SELECT accountID, password, banned, role FROM account WHERE accountName = '" + username + "'") == false)
             {
                 return false;
             }
 
+            if (reader.FieldCount == 0)
+            {
+                reader.Close();
+                return false;
+            }
+
+            accountid = reader.GetInt64(0);
+            banned = reader.GetBoolean(2);
+            role = reader.GetInt64(3);
+
             SHA1 sha1 = SHA1.Create();
             sha1.Initialize();
             byte[] hash = sha1.ComputeHash(Encoding.ASCII.GetBytes(password));
-            byte[] outb = user.First().password.ToArray();
+            byte[] outb = new byte[hash.Length];
+
+            reader.GetBytes(1, 0, outb, 0, outb.Length);
+            reader.Close();
 
             bool equals = true;
 
-            for (int i = 0; i < user.First().password.Length; i++)
+            for (int i = 0; i < outb.Length; i++)
             {
                 if (outb[i] != hash[i])
                 {
@@ -75,10 +101,6 @@ namespace EVESharp.ClusterControler.Database
                 return false;
             }
 
-            accountid = user.First().accountID;
-            banned = user.First().banned;
-            role = user.First().role;
-
             return true;
         }
 
@@ -88,16 +110,11 @@ namespace EVESharp.ClusterControler.Database
             sha1.Initialize();
             byte[] hash = sha1.ComputeHash(Encoding.ASCII.GetBytes(accountPassword));
 
-            var user = new account();
+            accountName = Database.DoEscapeString(accountName);
 
-            user.accountID = Database.context.accounts.Count() + 1;
-            user.accountName = accountName;
-            user.banned = false;
-            user.online = 0;
-            user.password = hash;
-            user.role = (long)(Common.Constants.Roles.ROLE_PLAYER);
-
-            Database.context.accounts.InsertOnSubmit(user);
+            Database.Query("INSERT INTO account(accountID, accountName, password, role, online, banned)" +
+                "VALUES(NULL, '" + accountName + "', '" + Encoding.ASCII.GetString(hash) + "', " +
+                Common.Constants.Roles.ROLE_PLAYER + ", 0, 0)");
         }
     }
 }
