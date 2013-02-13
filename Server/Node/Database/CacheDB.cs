@@ -100,7 +100,7 @@ namespace EVESharp.Database
 
             string query = "DELETE FROM usercache WHERE cacheType='" + cacheName + "'";
             Database.Query(query);
-            query = "INSERT INTO usercache(cacheType, cacheOwner, cacheOwnerName, cacheOwnerType, cacheData, cacheTime, nodeID, version)VALUES('" + cacheName + "', " + user + ", '" + username + "', " + ownerType + ", '" + cacheData + "', " + cacheTime + ", " + Program.NodeID + ", " + version + ");";
+            query = "INSERT INTO usercache(cacheType, cacheOwner, cacheOwnerName, cacheOwnerType, cacheData, cacheTime, nodeID, version)VALUES('" + cacheName + "', " + user + ", '" + username + "', " + ownerType + ", '" + Database.DoEscapeString(cacheData) + "', " + cacheTime + ", " + Program.NodeID + ", " + version + ");";
 
             if (Database.Query(query) == false)
             {
@@ -122,7 +122,7 @@ namespace EVESharp.Database
 
             string query = "DELETE FROM cacheinfo WHERE cacheName='" + cacheName + "'";
             Database.Query(query);
-            query = "INSERT INTO cacheinfo(cacheName, cacheData, cacheTime, nodeID, version)VALUES('" + cacheName + "', '" + cacheData + "', " + cacheTime + ", " + Program.NodeID + ", " + version + ");";
+            query = "INSERT INTO cacheinfo(cacheName, cacheData, cacheTime, nodeID, version)VALUES('" + cacheName + "', '" + Database.DoEscapeString(cacheData) + "', " + cacheTime + ", " + Program.NodeID + ", " + version + ");";
             
             if (Database.Query(query) == false)
             {

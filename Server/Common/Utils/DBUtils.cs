@@ -50,6 +50,7 @@ namespace Common.Utils
             int column = dat.FieldCount;
             if (column == 0)
             {
+                dat.Close();
                 return new PyObjectData("util.Rowset", new PyDict());
             }
 
@@ -87,7 +88,10 @@ namespace Common.Utils
         {
             int column = result.FieldCount;
             if (column == 0)
+            {
+                result.Close();
                 return new PyTuple();
+            }
 
             int r = 0;
 
@@ -153,6 +157,8 @@ namespace Common.Utils
             {
                 res.Items.Add(CreatePackedRow(header, ref result));
             }
+
+            result.Close();
 
             return res;
         }

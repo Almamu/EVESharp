@@ -87,6 +87,9 @@ namespace EVESharp.ClusterControler
                 while (true) Thread.Sleep(1);
             }
 
+            // set max_allowed_packet value to 1GB
+            Database.Database.Query("SET global max_allowed_packet=1073741824");
+
             Log.Debug("Cluster", "Listening on port 26000");
 
             // Begin accept
