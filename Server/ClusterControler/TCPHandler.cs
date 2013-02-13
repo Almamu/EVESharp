@@ -235,6 +235,17 @@ namespace EVESharp.ClusterControler
                         // Check if the password is hashed or not and ask for plain password
                         AuthenticationReq req = new AuthenticationReq();
 
+                        // Send AutClusterStarting message if we do not have any node attached yet
+                        if (ConnectionManager.NodesCount <= 0)
+                        {
+                            GPSTransportClosed ex = new GPSTransportClosed("AutClusterStarting");
+
+                            connection.Send(ex.Encode());
+                            connection.EndConnection();
+
+                            return null;
+                        }
+
                         if (req.Decode(tup) == false)
                         {
                             Log.Error("Client", "Wrong login packet");

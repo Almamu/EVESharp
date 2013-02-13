@@ -58,7 +58,13 @@ namespace Common.Network
             {
                 try
                 {
-                    ep = new IPEndPoint(Dns.GetHostEntry(address).AddressList[0], port);
+                    IPAddress ip;
+                    if (IPAddress.TryParse(address, out ip) == false)
+                    {
+                        ip = Dns.GetHostEntry(address).AddressList[0];
+                    }
+
+                    ep = new IPEndPoint(ip, port);
                     sock.Connect(ep);
                 }
                 catch (SocketException e)

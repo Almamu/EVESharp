@@ -67,7 +67,7 @@ namespace EVESharp.ClusterControler.Database
                 return false;
             }
 
-            if (reader.FieldCount == 0)
+            if (reader.Read() == false)
             {
                 reader.Close();
                 return false;
