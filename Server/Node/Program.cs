@@ -201,6 +201,8 @@ namespace EVESharp
             Database.Database.Query("INSERT INTO account(accountID, accountName, password, role, online, banned)VALUES(NULL, 'Username', '" + str + "', 2, 0, 0);");
             */
 
+            Database.Database.Query("INSERT INTO account(accountID, accountName, password, role, online, banned)VALUES(NULL, 'Username', SHA1('password'), 2, 0, 0);");
+
             Log.Info("Main", "Connection to the DB sucessfull");
 
             Log.Info("Main", "Generating default cache data");

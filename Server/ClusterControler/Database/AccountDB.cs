@@ -60,9 +60,7 @@ namespace EVESharp.ClusterControler.Database
         {
             MySqlDataReader reader = null;
 
-            username = Database.DoEscapeString(username);
-
-            if (Database.Query(ref reader, "SELECT accountID, password, banned, role FROM account WHERE accountName = '" + username + "'") == false)
+            if (Database.Query(ref reader, "SELECT accountID, password, banned, role FROM account WHERE accountName = '" + Database.DoEscapeString(username) + "' AND password=SHA1('" + Database.DoEscapeString(password) + "')") == false)
             {
                 return false;
             }
@@ -84,22 +82,6 @@ namespace EVESharp.ClusterControler.Database
 
             reader.GetBytes(1, 0, outb, 0, outb.Length);
             reader.Close();
-
-            bool equals = true;
-
-            for (int i = 0; i < outb.Length; i++)
-            {
-                if (outb[i] != hash[i])
-                {
-                    equals = false;
-                    break;
-                }
-            }
-
-            if (equals == false)
-            {
-                return false;
-            }
 
             return true;
         }
