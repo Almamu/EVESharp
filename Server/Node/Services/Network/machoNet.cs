@@ -143,7 +143,7 @@ namespace EVESharp.Services.Network
 
             PyObject srvInfo = Cache.GetCacheData("machoNet.serviceInfo");
             PyTuple res = new PyTuple();
-            PyDict initvals = new PyDict();
+            PyDict initvals = Cache.GetCacheHints();
 
             res.Items.Add(srvInfo);
             res.Items.Add(initvals); // Rest of the cache data
