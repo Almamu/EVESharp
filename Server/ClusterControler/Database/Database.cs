@@ -70,63 +70,72 @@ namespace EVESharp.ClusterControler.Database
 
         public static bool QueryLID(ref ulong id, string query)
         {
-            MySqlCommand cmd = new MySqlCommand(query, connection);
-            MySqlDataReader reader = null;
+            lock (connection)
+            {
+                MySqlCommand cmd = new MySqlCommand(query, connection);
+                MySqlDataReader reader = null;
 
-            try
-            {
-                reader = cmd.ExecuteReader();
-                id = (ulong)reader.FieldCount; // Maybe not the best to use, but should do the trick
-            }
-            catch (MySqlException ex)
-            {
-                Log.Error("Database", "MySQL Error: " + ex.Message);
-                return false;
-            }
-            finally
-            {
-                if (reader != null) reader.Close();
-            }
+                try
+                {
+                    reader = cmd.ExecuteReader();
+                    id = (ulong)reader.FieldCount; // Maybe not the best to use, but should do the trick
+                }
+                catch (MySqlException ex)
+                {
+                    Log.Error("Database", "MySQL Error: " + ex.Message);
+                    return false;
+                }
+                finally
+                {
+                    if (reader != null) reader.Close();
+                }
 
-            return true;
+                return true;
+            }
         }
 
         public static bool Query(string query)
         {
-            MySqlCommand cmd = new MySqlCommand(query, connection);
-            MySqlDataReader reader = null;
-            try
+            lock (connection)
             {
-                reader = cmd.ExecuteReader();
-            }
-            catch (MySqlException ex)
-            {
-                Log.Error("Database", "MySQL Error: " + ex.Message);
-                return false;
-            }
-            finally
-            {
-                if (reader != null) reader.Close();
-            }
+                MySqlCommand cmd = new MySqlCommand(query, connection);
+                MySqlDataReader reader = null;
+                try
+                {
+                    reader = cmd.ExecuteReader();
+                }
+                catch (MySqlException ex)
+                {
+                    Log.Error("Database", "MySQL Error: " + ex.Message);
+                    return false;
+                }
+                finally
+                {
+                    if (reader != null) reader.Close();
+                }
 
-            return true;
+                return true;
+            }
         }
 
         public static bool Query(ref MySqlDataReader res, string query)
         {
-            MySqlCommand cmd = new MySqlCommand(query, connection);
-
-            try
+            lock (connection)
             {
-                res = cmd.ExecuteReader();
-            }
-            catch (MySqlException ex)
-            {
-                Log.Error("Database", "MySQL Error: " + ex.Message);
-                return false;
-            }
+                MySqlCommand cmd = new MySqlCommand(query, connection);
 
-            return true;
+                try
+                {
+                    res = cmd.ExecuteReader();
+                }
+                catch (MySqlException ex)
+                {
+                    Log.Error("Database", "MySQL Error: " + ex.Message);
+                    return false;
+                }
+
+                return true;
+            }
         }
 
         public static void QueueQuery(string query)
