@@ -42,8 +42,6 @@ namespace EVESharp.Services.CacheSvc
 
         public PyObject GetCachableObject(PyTuple args, object client)
         {
-            Log.Debug("objectCaching", "Called GetCachableObject stub");
-
             CacheInfo cache = new CacheInfo();
 
             if (cache.Decode(args) == false)
@@ -51,14 +49,24 @@ namespace EVESharp.Services.CacheSvc
                 return null;
             }
 
-            Log.Debug("GetCachableObject", "Got cache request for cache " + cache.objectID.As<PyString>().Value);
-
-            if (Cache.LoadCacheFor(cache.objectID.As<PyString>().Value) == false)
+            if (cache.objectID.Type != PyObjectType.String)
             {
+                Log.Error("GetCachableObject", String.Format("Unknown objectID on cache request"));
                 return null;
             }
 
-            return Cache.GetCache(cache.objectID.As<PyString>().Value);
+            string objectID = cache.objectID.As<PyString>().Value;
+
+            Log.Debug("GetCachableObject", String.Format("Received cache request for {0}", objectID));
+
+            try
+            {
+                return CacheStorage.Get(objectID);
+            }
+            catch (Exception e)
+            {
+                return null;
+            }
         }
     }
 }

@@ -36,7 +36,7 @@ using Common;
 using Common.Network;
 using Common.Services;
 using Common.Packets;
-
+using EVESharp.Configuration;
 using EVESharp.Database;
 using EVESharp.Inventory;
 
@@ -52,6 +52,7 @@ namespace EVESharp
         static private TCPSocket proxyConnection = null;
         static private StreamPacketizer packetizer = new StreamPacketizer();
         static public ServiceManager SvcMgr = new ServiceManager();
+        static public General Configuration;
 
         // Proxy info
         static string[,] proxy = new string[,]
@@ -166,184 +167,150 @@ namespace EVESharp
 
         static void Main(string[] args)
         {
-            Log.Init("evesharp");
-            Log.Info("Main", "Starting node...");
-
-            Log.Info("Database", "Loading database.conf file");
-
-            string[] lines = File.ReadAllLines("database.conf");
-
-            Database.Database.Username = lines[0];
-            Database.Database.Password = lines[1];
-            Database.Database.Host = lines[2];
-            Database.Database.DB = lines[3];
-
-            Log.Trace("Database", "Connecting to database...");
-
-            if (Database.Database.Init() == false)
+            try
             {
-                Log.Error("Main", "Cannot connect to database");
-                while (true) ;
-            }
+                Log.Init("evesharp");
+                Log.Info("Main", "Starting node...");
 
-            /*
-            SHA1 sha1 = SHA1.Create();
-            byte[] hash = sha1.ComputeHash(Encoding.ASCII.GetBytes("password"));
-            char[] strHash = new char[20];
+                Configuration = General.LoadFromFile("database.conf");
+                Database.Database.Configuration = Configuration.Database;
 
-            for (int i = 0; i < 20; i++)
-            {
-                strHash[i] = (char)hash[i];
-            }
+                Log.Trace("Database", "Connecting to database...");
 
-            string str = new string(strHash);
+                Database.Database.Init();
 
-            Database.Database.Query("INSERT INTO account(accountID, accountName, password, role, online, banned)VALUES(NULL, 'Username', '" + str + "', 2, 0, 0);");
+                Log.Info("Main", "Connection to the DB sucessfull");
 
-            Database.Database.Query("INSERT INTO account(accountID, accountName, password, role, online, banned)VALUES(NULL, 'Username', SHA1('password'), 2, 0, 0);");*/
+                Log.Info("Main", "Priming cache...");
+                CacheStorage.Load(CacheStorage.LoginCacheTable, CacheStorage.LoginCacheQueries);
+                Log.Debug("Main", "Done");
 
-            Log.Info("Main", "Connection to the DB sucessfull");
+                Log.Info("Main", "Connecting to proxy...");
 
-            Log.Info("Main", "Generating default cache data");
-            Cache.GenerateCache();
-            Log.Debug("Main", "Done");
-
-            Log.Info("Main", "Connecting to proxy...");
-
-            proxyConnection = new TCPSocket(ushort.Parse(proxy[0, 1]), false);
-            if (proxyConnection.Connect(proxy[0, 0]) == false)
-            {
-                Log.Error("Main", "Cannot connect to proxy. Halting");
-                Database.Database.Stop();
-                while (true) ;
-            }
-
-            Log.Trace("Main", "Server started");
-
-            while (true)
-            {
-                Thread.Sleep(1);
-                try
+                proxyConnection = new TCPSocket(ushort.Parse(proxy[0, 1]), false);
+                if (proxyConnection.Connect(proxy[0, 0]) == false)
                 {
-                    byte[] data = new byte[proxyConnection.Available];
-                    int bytes = proxyConnection.Recv(data);
+                    Log.Error("Main", "Cannot connect to proxy. Halting");
+                    Database.Database.Stop();
+                    while (true) Thread.Sleep (1);
+                }
 
-                    if (bytes == -1)
-                    {
-                        // Proxy is closing, shutdown the node
-                        break;
-                    }
-                    else if (bytes > 0)
-                    {
-                        packetizer.QueuePackets(data, bytes);
-                        int p = packetizer.ProcessPackets();
+                Log.Trace("Main", "Server started");
 
-                        for (int i = 0; i < p; i++)
+                while (true)
+                {
+                    Thread.Sleep(1);
+                    try
+                    {
+                        byte[] data = new byte[proxyConnection.Available];
+                        int bytes = proxyConnection.Recv(data);
+
+                        if (bytes == -1)
                         {
-                            byte[] packet = packetizer.PopItem();
-                            PyObject obj = Unmarshal.Process<PyObject>(packet);
-                            
-                            if (obj is PyObjectData)
+                            // Proxy is closing, shutdown the node
+                            break;
+                        }
+                        else if (bytes > 0)
+                        {
+                            packetizer.QueuePackets(data, bytes);
+                            int p = packetizer.ProcessPackets();
+
+                            for (int i = 0; i < p; i++)
                             {
-                                PyObjectData info = obj as PyObjectData;
-
-                                if (info.Name == "machoNet.nodeInfo")
+                                byte[] packet = packetizer.PopItem();
+                                PyObject obj = Unmarshal.Process<PyObject>(packet);
+                                
+                                if (obj is PyObjectData)
                                 {
-                                    // Update our local info
-                                    NodeInfo nodeinfo = new NodeInfo();
+                                    PyObjectData info = obj as PyObjectData;
 
-                                    if (nodeinfo.Decode(info) == true)
+                                    if (info.Name == "machoNet.nodeInfo")
                                     {
-                                        nodeID = nodeinfo.nodeID;
+                                        // Update our local info
+                                        NodeInfo nodeinfo = new NodeInfo();
 
-                                        Log.Debug("Main", "Found machoNet.nodeInfo, our new node id is " + nodeID.ToString("X4"));
-                                        SystemManager.LoadSolarSystems(nodeinfo.solarSystems);
-                                    }
-                                }
-                                else
-                                {
-                                    // Client packet
-                                    PyPacket clientpacket = new PyPacket();
-                                    
-                                    if (clientpacket.Decode(info) == false)
-                                    {
-                                        Log.Error("Main", "Unknown packet");
+                                        if (nodeinfo.Decode(info) == true)
+                                        {
+                                            nodeID = nodeinfo.nodeID;
+
+                                            Log.Debug("Main", "Found machoNet.nodeInfo, our new node id is " + nodeID.ToString("X4"));
+                                            SystemManager.LoadSolarSystems(nodeinfo.solarSystems);
+                                        }
                                     }
                                     else
                                     {
-                                        // Something similar to Async calls
+                                        // Client packet
+                                        PyPacket clientpacket = new PyPacket();
+                                        
+                                        if (clientpacket.Decode(info) == false)
+                                        {
+                                            Log.Error("Main", "Unknown packet");
+                                        }
+                                        else
+                                        {
+                                            // Something similar to Async calls
+                                            new Thread(new ParameterizedThreadStart(HandlePacket)).Start(clientpacket);
+                                        }
+                                    }
+                                }
+                                else if (obj is PyChecksumedStream) // Checksumed packets
+                                {
+                                    PyPacket clientpacket = new PyPacket();
+
+                                    if (clientpacket.Decode(obj) == false)
+                                    {
+                                        Log.Error("Main", "Cannot decode packet");
+                                    }
+                                    else
+                                    {
                                         new Thread(new ParameterizedThreadStart(HandlePacket)).Start(clientpacket);
                                     }
                                 }
-                            }
-                            else if (obj is PyChecksumedStream) // Checksumed packets
-                            {
-                                PyPacket clientpacket = new PyPacket();
-
-                                if (clientpacket.Decode(obj) == false)
+                                else if (obj is PyTuple)
                                 {
-                                    Log.Error("Main", "Cannot decode packet");
+                                    // The only tuple packet is the LowLevelVersionExchange
+                                    LowLevelVersionExchange ex = new LowLevelVersionExchange();
+
+                                    if (ex.Decode(obj) == false)
+                                    {
+                                        Log.Error("Main", "LowLevelVersionExchange error");
+                                    }
+
+                                    // Reply with the node LowLevelVersionExchange
+                                    LowLevelVersionExchange reply = new LowLevelVersionExchange();
+
+                                    reply.codename = Common.Constants.Game.codename;
+                                    reply.birthday = Common.Constants.Game.birthday;
+                                    reply.build = Common.Constants.Game.build;
+                                    reply.machoVersion = Common.Constants.Game.machoVersion;
+                                    reply.version = Common.Constants.Game.version;
+                                    reply.region = Common.Constants.Game.region;
+
+                                    Send(reply.Encode(true));
+                                }
+                                else if (obj is PyObjectEx)
+                                {
+                                    Log.Error("PyObjectEx", PrettyPrinter.Print(obj));
                                 }
                                 else
                                 {
-                                    new Thread(new ParameterizedThreadStart(HandlePacket)).Start(clientpacket);
+                                    Log.Error("Main", PrettyPrinter.Print(obj));
+                                    Log.Error("Main", "Unhandled packet type");
                                 }
-                            }
-                            else if (obj is PyTuple)
-                            {
-                                // The only tuple packet is the LowLevelVersionExchange
-                                LowLevelVersionExchange ex = new LowLevelVersionExchange();
-
-                                if (ex.Decode(obj) == false)
-                                {
-                                    Log.Error("Main", "LowLevelVersionExchange error");
-                                }
-
-                                // Reply with the node LowLevelVersionExchange
-                                LowLevelVersionExchange reply = new LowLevelVersionExchange();
-
-                                reply.codename = Common.Constants.Game.codename;
-                                reply.birthday = Common.Constants.Game.birthday;
-                                reply.build = Common.Constants.Game.build;
-                                reply.machoVersion = Common.Constants.Game.machoVersion;
-                                reply.version = Common.Constants.Game.version;
-                                reply.region = Common.Constants.Game.region;
-
-                                Send(reply.Encode(true));
-                            }
-                            else if (obj is PyObjectEx)
-                            {
-                                Log.Error("PyObjectEx", PrettyPrinter.Print(obj));
-                            }
-                            else
-                            {
-                                Log.Error("Main", PrettyPrinter.Print(obj));
-                                Log.Error("Main", "Unhandled packet type");
                             }
                         }
+
                     }
+                    catch (Exception)
+                    {
 
-                }
-                catch (Exception)
-                {
-
+                    }
                 }
             }
-
-            /* Code to ADD an account:
-            SHA1 sha1 = SHA1.Create();
-            byte[] hash = sha1.ComputeHash(Encoding.ASCII.GetBytes("password"));
-            char[] strHash = new char[20];
-
-            for (int i = 0; i < 20; i++)
+            catch (Exception e)
             {
-                strHash[i] = (char)hash[i];
+                Log.Error("Main", e.Message);
             }
-
-            string str = new string(strHash);
-
-            Database.Database.Query("INSERT INTO account(accountID, accountName, password, role, online, banned)VALUES(NULL, 'Username', '" + str + "', 2, 0, 0);");
-            */
         }
     }
 }

@@ -42,9 +42,8 @@ namespace EVESharp.Services.Network
 
         public PyObject GetInitVals(PyTuple args, object client)
         {
-            Log.Debug("machoNet", "Called GetInitVals stub");
-
-            if (Cache.LoadCacheFor("machoNet.serviceInfo") == false)
+            
+            if (CacheStorage.Exists("machoNet.serviceInfo") == false)
             {
                 // Cache does not exists, create it
                 PyDict dict = new PyDict();
@@ -138,12 +137,12 @@ namespace EVESharp.Services.Network
                 dict.Set("onlineStatus", new PyNone());
                 dict.Set("gangSvcObjectHandler", new PyNone());
 
-                Cache.SaveCacheFor("machoNet.serviceInfo", dict, DateTime.Now.ToFileTimeUtc());
+                CacheStorage.Store("machoNet.serviceInfo", dict, DateTime.Now.ToFileTimeUtc());
             }
 
-            PyObject srvInfo = Cache.GetCacheData("machoNet.serviceInfo");
+            PyObject srvInfo = CacheStorage.Get("machoNet.serviceInfo");
             PyTuple res = new PyTuple();
-            PyDict initvals = Cache.GetCacheHints();
+            PyDict initvals = CacheStorage.GetHints();
 
             res.Items.Add(srvInfo);
             res.Items.Add(initvals); // Rest of the cache data

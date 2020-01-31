@@ -75,5 +75,22 @@ namespace Common.Packets
 
             return true;
         }
+
+        public static CacheInfo FromBuffer(string name, byte[] data, long timestamp, int nodeID)
+        {
+            CacheInfo obj = new CacheInfo();
+
+            obj.version = (int) Crc32.Checksum(data);
+            obj.nodeID = nodeID;
+            obj.objectID = new PyString(name);
+            obj.cacheTime = timestamp;
+
+            return obj;
+        }
+
+        public static CacheInfo FromPyObject(string name, PyObject data, long timestamp, int nodeID)
+        {
+            return FromBuffer(name, Marshal.Marshal.Process(data), timestamp, nodeID);
+        }
     }
 }

@@ -57,5 +57,20 @@ namespace Common.Packets
 
             return true;
         }
+
+        public static PyCachedObject FromCacheInfo(CacheInfo cacheInfo, PyObject data)
+        {
+            PyCachedObject obj = new PyCachedObject();
+            
+            obj.nodeID = cacheInfo.nodeID;
+            obj.objectID = cacheInfo.objectID;
+            obj.shared = 0;
+            obj.compressed = 0;
+            obj.cache = new PyBuffer (Marshal.Marshal.Process(data));
+            obj.timestamp = cacheInfo.cacheTime;
+            obj.version = cacheInfo.version;
+
+            return obj;
+        }
     }
 }

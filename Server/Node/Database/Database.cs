@@ -37,28 +37,21 @@ namespace EVESharp.Database
     {
         private static MySqlConnection connection;
         private static Queue<string> queryQueue = new Queue<string>();
+        public static Configuration.Database Configuration;
         public static string Username = "root";
         public static string Password = "root";
         public static string Host = "localhost";
         public static string DB = "eve";
 
-        public static bool Init()
+        public static void Init()
         {
-            string connStr = String.Format("server={0};user id={1}; password={2}; database={3}; pooling=false",
-                Host, Username, Password, DB);
+            string connStr = String.Format(
+                "server={0};user id={1}; password={2}; database={3}; pooling=false",
+                Configuration.Hostname, Configuration.Username, Configuration.Password, Configuration.Name
+            );
 
-            try
-            {
-                connection = new MySqlConnection(connStr);
-                connection.Open();
-            }
-            catch (MySqlException)
-            {
-                Log.Error("Database", "Cannot connect to server database");
-                return false;
-            }
-
-            return true;
+            connection = new MySqlConnection(connStr);
+            connection.Open();
         }
 
         public static string DoEscapeString(string input)

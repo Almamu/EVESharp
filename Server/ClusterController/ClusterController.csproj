@@ -4,12 +4,8 @@
         <OutputType>Exe</OutputType>
         <TargetFramework>netcoreapp2.1</TargetFramework>
         <Company />
-        <Product>eveNode</Product>
+        <Product>eveClusterController</Product>
     </PropertyGroup>
-
-    <ItemGroup>
-      <PackageReference Include="MySql.Data" Version="8.0.19" />
-    </ItemGroup>
 
     <ItemGroup>
       <ProjectReference Include="..\Common\Common.csproj" />
