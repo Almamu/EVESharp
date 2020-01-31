@@ -6,5 +6,5 @@
 [Bb]in
 [Oo]bj
 *.user
-Server/Updates/Oficial.sql
-Server/Updates/Server.sql
+Database/Oficial.sql
+Database/Server.sql
