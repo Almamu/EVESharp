@@ -8,6 +8,7 @@
     </PropertyGroup>
 
     <ItemGroup>
+      <PackageReference Include="ini-parser-netstandard" Version="2.5.2" />
       <PackageReference Include="MySql.Data" Version="8.0.19" />
     </ItemGroup>
 

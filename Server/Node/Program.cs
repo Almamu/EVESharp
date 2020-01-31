@@ -172,7 +172,11 @@ namespace EVESharp
                 Log.Init("evesharp");
                 Log.Info("Main", "Starting node...");
 
-                Configuration = General.LoadFromFile("database.conf");
+                Configuration = General.LoadFromFile("configuration.conf");
+                
+                // update the loglevel with the new value
+                Log.SetLogLevel(Configuration.Logging.LogLevel);
+                // update the database class with the new configuration
                 Database.Database.Configuration = Configuration.Database;
 
                 Log.Trace("Database", "Connecting to database...");

@@ -33,6 +33,7 @@ using Common;
 
 namespace EVESharp.Database
 {
+    // TODO: CHANGE THIS TO NOT BE STATIC
     public static class Database
     {
         private static MySqlConnection connection;

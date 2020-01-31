@@ -20,7 +20,7 @@ namespace Common
             All = 31,
         }
 
-        public static void Init(string base_filename, LogLevel level)
+        public static void Init(string base_filename, int level)
         {
             if (Directory.Exists("logs") == false)
             {
@@ -35,12 +35,17 @@ namespace Common
             fp = File.OpenWrite(file);
             enabled = true;
 
+            SetLogLevel(level);
+        }
+
+        public static void SetLogLevel(int level)
+        {
             logLevel = level;
         }
 
         public static void Init(string base_filename)
         {
-            Init(base_filename, LogLevel.All);
+            Init(base_filename, (int) LogLevel.All);
         }
 
         public static void Send(LogLevel level, ConsoleColor color, string id, string svc, string msg)
@@ -51,7 +56,7 @@ namespace Common
             }
 
             // Check for undesired message types
-            if ((level & logLevel) == 0)
+            if ((((int) level) & logLevel) == 0)
             {
                 return;
             }
@@ -117,7 +122,7 @@ namespace Common
             fp.Close();
             fp = null;
 
-            logLevel = LogLevel.None;
+            logLevel = (int) LogLevel.None;
         }
 
         public static void FileLog(string line)
@@ -136,6 +141,6 @@ namespace Common
         public static int logqueue = 0;
         public static string file = "";
         private static FileStream fp = null;
-        private static LogLevel logLevel = LogLevel.None;
+        private static int logLevel = (int) LogLevel.None;
     }
 }
