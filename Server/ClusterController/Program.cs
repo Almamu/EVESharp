@@ -60,7 +60,7 @@ namespace EVESharp.ClusterControler
 
         static void Main(string[] args)
         {
-            Log.Init("cluster", Log.LogLevel.All);
+            Log.Init("cluster");
 
             Log.Info("Cluster", "Starting GameCluster");
 
