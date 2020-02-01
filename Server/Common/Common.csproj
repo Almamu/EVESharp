@@ -10,4 +10,8 @@
       <ProjectReference Include="..\Marshal\Marshal.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <PackageReference Include="ini-parser-netstandard" Version="2.5.2" />
+    </ItemGroup>
+
 </Project>

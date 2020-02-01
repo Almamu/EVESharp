@@ -26,13 +26,17 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using EVESharp.Database;
+using Common.Database;
+using Node.Database;
 
-namespace EVESharp.Inventory
+namespace Node.Inventory
 {
     public class Entity
     {
-        public Entity(string entityItemName, int entityItemID, int entityTypeID, int entityOwnerID, int entityLocationID, int entityFlag, bool entityContraband, bool entitySingleton, int entityQuantity, double entityX, double entityY, double entityZ, string entityCustomInfo)
+        public ItemDB mItemDB = null;
+        public ItemFactory mItemFactory = null;
+        
+        public Entity(string entityItemName, int entityItemID, int entityTypeID, int entityOwnerID, int entityLocationID, int entityFlag, bool entityContraband, bool entitySingleton, int entityQuantity, double entityX, double entityY, double entityZ, string entityCustomInfo, ItemDB itemDB, ItemFactory itemFactory)
         {
             itemName = entityItemName;
             itemID = entityItemID;
@@ -47,6 +51,9 @@ namespace EVESharp.Inventory
             y = entityY;
             Z = entityZ;
             customInfo = entityCustomInfo;
+            
+            this.mItemDB = itemDB;
+            this.mItemFactory = itemFactory;
         }
 
         public void SetSingleton(bool newSingleton, bool notify)
@@ -65,7 +72,7 @@ namespace EVESharp.Inventory
                 if (quantity > 1)
                 {
                     int newQuantity = quantity--;
-                    ItemFactory.GetItemManager().CreateItem(itemName, typeID, ownerID, locationID, flag, contraband, false, newQuantity, x, y, Z, customInfo);
+                    this.mItemFactory.ItemManager.CreateItem(itemName, typeID, ownerID, locationID, flag, contraband, false, newQuantity, x, y, Z, customInfo);
                 }
             }
 
@@ -80,7 +87,7 @@ namespace EVESharp.Inventory
             }
 
             itemName = newItemName;
-            ItemDB.SetItemName(itemID, itemName);
+            this.mItemDB.SetItemName(itemID, itemName);
         }
 
         public void MoveItem(int newLocationID, bool notify)
@@ -92,7 +99,7 @@ namespace EVESharp.Inventory
 
             locationID = newLocationID;
 
-            ItemDB.SetLocation(itemID, locationID);
+            this.mItemDB.SetLocation(itemID, locationID);
         }
 
         public void TransferOwnership(int newOwnerID, bool notify)
@@ -103,7 +110,7 @@ namespace EVESharp.Inventory
             }
 
             ownerID = newOwnerID;
-            ItemDB.SetOwner(itemID, ownerID);
+            this.mItemDB.SetOwner(itemID, ownerID);
         }
 
         public void SetFlag(int newFlag, bool notify)
@@ -114,13 +121,13 @@ namespace EVESharp.Inventory
             }
 
             flag = newFlag;
-            ItemDB.SetItemFlag(itemID, flag);
+            this.mItemDB.SetItemFlag(itemID, flag);
         }
 
         public void ChangeCustomInfo(string newCustomInfo)
         {
             customInfo = newCustomInfo;
-            ItemDB.SetCustomInfo(itemID, customInfo);
+            this.mItemDB.SetCustomInfo(itemID, customInfo);
         }
 
         public void SetQuantity(int newQuantity, bool notify)
@@ -131,13 +138,13 @@ namespace EVESharp.Inventory
             }
 
             quantity = newQuantity;
-            ItemDB.SetQuantity(itemID, quantity);
+            this.mItemDB.SetQuantity(itemID, quantity);
         }
 
         public void LoadAttributes()
         {
             // Load attributes
-            attributes = new Attributes();
+            attributes = new Attributes(this.mItemDB);
 
             attributes.LoadAttributes(itemID, typeID);
         }

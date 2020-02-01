@@ -24,6 +24,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using System.Text;
 using System.Net.Sockets;
@@ -35,16 +36,18 @@ using Common;
 
 using Marshal;
 
-namespace EVESharp.ClusterControler
+namespace ClusterControler
 {
     public class Connection
     {
         private AsyncCallback recvAsync;
         private AsyncCallback sendAsync;
         private StreamPacketizer packetizer = new StreamPacketizer();
+        public ConnectionManager ConnectionManager { get; private set; }
 
-        public Connection(Socket sock)
+        public Connection(Socket sock, ConnectionManager connectionManager)
         {
+            this.ConnectionManager = connectionManager;
             Socket = new TCPSocket(sock, false);
 
             // Declare handlers
@@ -121,12 +124,12 @@ namespace EVESharp.ClusterControler
             catch (ObjectDisposedException)
             {
                 Log.Debug("Connection", "Disconnected");
-                ConnectionManager.RemoveConnection(this);
+                this.ConnectionManager.RemoveConnection(this);
             }
             catch (SocketException)
             {
                 Log.Debug("Connection", "Disconnected");
-                ConnectionManager.RemoveConnection(this);
+                this.ConnectionManager.RemoveConnection(this);
             }
             catch (Exception ex)
             {
@@ -177,11 +180,11 @@ namespace EVESharp.ClusterControler
 
                         if (final.dest.type == PyAddress.AddrType.Client)
                         {
-                            ConnectionManager.NotifyClient((int)(final.userID), obj);
+                            this.ConnectionManager.NotifyClient((int)(final.userID), obj);
                         }
                         else if (final.dest.type == PyAddress.AddrType.Node)
                         {
-                            ConnectionManager.NotifyNode((int)(final.dest.typeID), obj);
+                            this.ConnectionManager.NotifyNode((int)(final.dest.typeID), obj);
                         }
                         else if (final.dest.type == PyAddress.AddrType.Broadcast)
                         {
@@ -200,12 +203,12 @@ namespace EVESharp.ClusterControler
             catch (ObjectDisposedException)
             {
                 Log.Debug("Node", "Disconnected");
-                ConnectionManager.RemoveConnection(this);
+                this.ConnectionManager.RemoveConnection(this);
             }
             catch (SocketException)
             {
                 Log.Debug("Node", "Disconnected");
-                ConnectionManager.RemoveConnection(this);
+                this.ConnectionManager.RemoveConnection(this);
             }
             catch (Exception ex)
             {
@@ -261,11 +264,11 @@ namespace EVESharp.ClusterControler
                                 if (packet.dest.typeID == 0xFFAA)
                                 {
                                     Log.Warning("Client", "Sending packet to proxy");
-                                    ConnectionManager.NotifyNode((int)(packet.dest.typeID), obj);
+                                    this.ConnectionManager.NotifyNode((int)(packet.dest.typeID), obj);
                                 }
                                 else
                                 {
-                                    ConnectionManager.NotifyNode((int)(packet.dest.typeID), obj);
+                                    this.ConnectionManager.NotifyNode((int)(packet.dest.typeID), obj);
                                 }
                                 
                             }
@@ -278,12 +281,12 @@ namespace EVESharp.ClusterControler
             catch (ObjectDisposedException)
             {
                 Log.Debug("Client", "Disconnected");
-                ConnectionManager.RemoveConnection(this);
+                this.ConnectionManager.RemoveConnection(this);
             }
             catch (SocketException)
             {
                 Log.Debug("Client", "Disconnected");
-                ConnectionManager.RemoveConnection(this);
+                this.ConnectionManager.RemoveConnection(this);
             }
             catch (Exception ex)
             {
@@ -324,7 +327,7 @@ namespace EVESharp.ClusterControler
             data.build = Common.Constants.Game.build;
             data.machoVersion = Common.Constants.Game.machoVersion;
             data.version = Common.Constants.Game.version;
-            data.usercount = ConnectionManager.ClientsCount;
+            data.usercount = this.ConnectionManager.ClientsCount;
             data.region = Common.Constants.Game.region;
 
             Send(data.Encode(false));
@@ -408,7 +411,7 @@ namespace EVESharp.ClusterControler
 
             }
 
-            ConnectionManager.RemoveConnection(ClusterConnectionID);
+            this.ConnectionManager.RemoveConnection(ClusterConnectionID);
         }
 
         public void SendSessionChange()
@@ -421,7 +424,7 @@ namespace EVESharp.ClusterControler
             if (sc != null)
             {
                 Send(client);
-                ConnectionManager.NotifyConnection(NodeID, node);
+                this.ConnectionManager.NotifyConnection(NodeID, node);
             }
         }
 
@@ -437,7 +440,7 @@ namespace EVESharp.ClusterControler
                 return null;
             }
 
-            Dictionary<int, Connection> nodes = ConnectionManager.Nodes;
+            Dictionary<int, Connection> nodes = this.ConnectionManager.Nodes;
 
             // Add all the nodeIDs
             foreach (KeyValuePair<int, Connection> node in nodes)
@@ -541,6 +544,11 @@ namespace EVESharp.ClusterControler
             nodeInfo.solarSystems.Items.Add(new PyNone()); // None = All solar systems
 
             Send(nodeInfo.Encode());
+        }
+
+        public void SendLoginNotification(LoginStatus loginStatus)
+        {
+            TCPHandler.SendLoginNotification(loginStatus, this, this.ConnectionManager);
         }
 
         public bool StageEnded

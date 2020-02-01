@@ -26,24 +26,25 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Node.Database;
 
-using EVESharp.Database;
-
-namespace EVESharp.Inventory
+namespace Node.Inventory
 {
     public class Attributes
     {
-        public Attributes()
+        private ItemDB mItemDB = null;
+        
+        public Attributes(ItemDB itemDB)
         {
-            
+            this.mItemDB = itemDB;
         }
 
         public void LoadAttributes(int itemID, int typeID)
         {
-            attributes = ItemDB.GetAttributesForItem(itemID);
+            attributes = this.mItemDB.GetAttributesForItem(itemID);
 
             // Add the default attributes
-            Dictionary<string, ItemAttribute> def = ItemDB.GetDefaultAttributesForType(typeID);
+            Dictionary<string, ItemAttribute> def = this.mItemDB.GetDefaultAttributesForType(typeID);
 
             foreach (KeyValuePair<string, ItemAttribute> pair in def)
             {
@@ -84,7 +85,7 @@ namespace EVESharp.Inventory
             {
                 ItemAttribute attrib = new ItemAttribute();
 
-                attrib.attributeID = ItemDB.GetAttributeIDForName(attribute);
+                attrib.attributeID = this.mItemDB.GetAttributeIDForName(attribute);
                 attrib.intValue = value;
 
                 attributes.Add(attribute, attrib);
@@ -101,7 +102,7 @@ namespace EVESharp.Inventory
             {
                 ItemAttribute attrib = new ItemAttribute();
 
-                attrib.attributeID = ItemDB.GetAttributeIDForName(attribute);
+                attrib.attributeID = this.mItemDB.GetAttributeIDForName(attribute);
                 attrib.floatValue = value;
 
                 attributes.Add(attribute, attrib);

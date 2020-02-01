@@ -29,7 +29,7 @@ using System.Text;
 using Marshal;
 using Common;
 
-namespace EVESharp
+namespace Node
 {
     class Client
     {

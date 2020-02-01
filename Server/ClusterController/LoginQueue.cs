@@ -31,37 +31,39 @@ using System.Threading;
 using Common;
 using Common.Packets;
 using Common.Network;
-
+using ClusterControler.Database;
 using Marshal;
 
-namespace EVESharp.ClusterControler
+namespace ClusterControler
 {
-    public static class LoginQueue
+    public class LoginQueue
     {
-        public static Queue<LoginQueueEntry> queue = new Queue<LoginQueueEntry>();
-        private static Thread thread = new Thread(Run);
+        public Queue<LoginQueueEntry> mQueue = new Queue<LoginQueueEntry>();
+        private Thread mThread = null;
+        private Common.Database.DatabaseConnection m_mDatabaseConnection = null;
+        private AccountDB mAccountDB = null;
 
-        public static void Start()
+        public void Start()
         {
-            thread.Start();
+            this.mThread.Start();
         }
 
-        public static void Enqueue(Connection con, AuthenticationReq packet)
+        public void Enqueue(Connection con, AuthenticationReq packet)
         {
             // Just to be thread safe
-            lock (queue)
+            lock (this.mQueue)
             {
                 LoginQueueEntry entry = new LoginQueueEntry();
 
                 entry.connection = con;
                 entry.request = packet;
 
-                queue.Enqueue(entry);
+                this.mQueue.Enqueue(entry);
             }
         }
 
 
-        public static void HandleLogin(LoginQueueEntry entry)
+        public void HandleLogin(LoginQueueEntry entry)
         {
             Log.Debug("LoginQueue", "Login try " + entry.request.user_name);
             LoginStatus status = LoginStatus.Waiting;
@@ -71,13 +73,13 @@ namespace EVESharp.ClusterControler
             long role = 0;
 
             // First check if the account exists
-            if (Database.AccountDB.AccountExists(entry.request.user_name) == false)
+            if (this.mAccountDB.AccountExists(entry.request.user_name) == false)
             {
                 // Create the account
-                Database.AccountDB.CreateAccount(entry.request.user_name, entry.request.user_password);
+                this.mAccountDB.CreateAccount(entry.request.user_name, entry.request.user_password);
             }
 
-            if ((Database.AccountDB.LoginPlayer(entry.request.user_name, entry.request.user_password, ref accountID, ref banned, ref role) == false) || (banned == true))
+            if ((this.mAccountDB.LoginPlayer(entry.request.user_name, entry.request.user_password, ref accountID, ref banned, ref role) == false) || (banned == true))
             {
                 Log.Trace("LoginQueue", ": Rejected by database");
 
@@ -95,11 +97,11 @@ namespace EVESharp.ClusterControler
 
                 status = LoginStatus.Sucess;
             }
-
-            TCPHandler.SendLoginNotification(status, entry.connection);
+            
+            entry.connection.SendLoginNotification(status);
         }
 
-        private static void Run()
+        private void Run()
         {
             // We should never exit from this loop
             try
@@ -115,15 +117,15 @@ namespace EVESharp.ClusterControler
                         return;
                     }
 
-                    if (queue.Count == 0)
+                    if (this.mQueue.Count == 0)
                     {
                         continue;
                     }
 
                     // Thread safe stuff
-                    lock (queue)
+                    lock (this.mQueue)
                     {
-                        LoginQueueEntry now = queue.Dequeue();
+                        LoginQueueEntry now = this.mQueue.Dequeue();
 
                         if (now == null)
                         {
@@ -150,6 +152,13 @@ namespace EVESharp.ClusterControler
             }
 
             Log.Error("LoginQueue", "LoginQueue is closing... Bye Bye!");
+        }
+
+        public LoginQueue(Common.Database.DatabaseConnection db)
+        {
+            this.m_mDatabaseConnection = db;
+            this.mAccountDB = new AccountDB(this.m_mDatabaseConnection);
+            this.mThread = new Thread(Run);
         }
     }
 }

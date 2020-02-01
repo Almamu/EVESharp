@@ -26,48 +26,25 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Common.Database;
 
-namespace EVESharp.Inventory
+namespace Node.Inventory
 {
-    public static class ItemFactory
+    public class ItemFactory : DatabaseAccessor
     {
-        private static ItemManager itemManager = new ItemManager();
-        private static CategoryManager categoryManager = new CategoryManager();
-        private static TypeManager typeManager = new TypeManager();
+        public ItemManager ItemManager { get; private set; }
+        public CategoryManager CategoryManager { get; private set; }
+        public TypeManager TypeManager { get; private set; }
 
-        public static bool LoadData()
+        public ItemFactory(DatabaseConnection db) : base(db)
         {
-            if (itemManager.Load() == false)
-            {
-                return false;
-            }
+            this.ItemManager = new ItemManager(db);
+            this.CategoryManager = new CategoryManager(db);
+            this.TypeManager = new TypeManager(db);
 
-            if (categoryManager.LoadCategories() == false)
-            {
-                return false;
-            }
-
-            if (typeManager.LoadTypes() == false)
-            {
-                return false;
-            }
-
-            return true;
-        }
-
-        public static ItemManager GetItemManager()
-        {
-            return itemManager;
-        }
-
-        public static ItemCategory GetCategory(int categoryID)
-        {
-            return categoryManager.GetCategory(categoryID);
-        }
-
-        public static ItemType GetType(int typeID)
-        {
-            return typeManager.GetType(typeID);
+            this.ItemManager.Load();
+            this.CategoryManager.Load();
+            this.TypeManager.Load();
         }
     }
 }

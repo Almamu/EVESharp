@@ -26,29 +26,31 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using EVESharp.Database;
 using Common;
+using Common.Database;
+using Node.Database;
 
-namespace EVESharp.Inventory
+namespace Node.Inventory
 {
-    public class CategoryManager
+    public class CategoryManager : DatabaseAccessor
     {
+        private ItemDB mItemDB = null;
         private Dictionary<int, ItemCategory> categoryesDict = new Dictionary<int, ItemCategory>();
 
-        public bool LoadCategories()
+        public bool Load()
         {
-            List<ItemCategory> categoryes = ItemDB.LoadItemCategories();
+            List<ItemCategory> categories = this.mItemDB.LoadItemCategories();
 
-            if (categoryes == null)
+            if (categories == null)
             {
                 return false;
             }
 
-            for (int i = 0; i < categoryes.Count; i++)
+            for (int i = 0; i < categories.Count; i++)
             {
                 try
                 {
-                    ItemCategory category = categoryes[i];
+                    ItemCategory category = categories[i];
                     categoryesDict.Add(category.categoryID, category);
                 }
                 catch (Exception)
@@ -70,6 +72,11 @@ namespace EVESharp.Inventory
             {
                 return null;
             }
+        }
+
+        public CategoryManager(DatabaseConnection db) : base(db)
+        {
+            this.mItemDB = new ItemDB(db);
         }
     }
 }

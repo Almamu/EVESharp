@@ -27,14 +27,14 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Security.Cryptography;
-
+using Common.Database;
 using MySql.Data.MySqlClient;
 
-namespace EVESharp.Database
+namespace Node.Database
 {
-    public static class AccountDB
+    public class AccountDB : DatabaseAccessor
     {
-        public static bool LoginPlayer(string username, string password, ref long accountid, ref bool banned, ref long role)
+        public bool LoginPlayer(string username, string password, ref long accountid, ref bool banned, ref long role)
         {
             MySqlDataReader reader = null;
 
@@ -80,6 +80,10 @@ namespace EVESharp.Database
             }
 
             return true;
+        }
+
+        public AccountDB(DatabaseConnection db) : base(db)
+        {
         }
     }
 }

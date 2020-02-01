@@ -28,7 +28,7 @@ using System.Linq;
 using System.Text;
 using Marshal;
 
-namespace EVESharp
+namespace Node
 {
     public class Session
     {

@@ -31,7 +31,7 @@ using Common;
 using Common.Services;
 using System.IO;
 
-namespace EVESharp.Services.Network
+namespace Node.Services.Network
 {
     public class alert : Service
     {

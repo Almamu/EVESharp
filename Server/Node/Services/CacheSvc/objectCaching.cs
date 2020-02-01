@@ -31,13 +31,16 @@ using Marshal;
 using Common.Services;
 using Common.Packets;
 
-namespace EVESharp.Services.CacheSvc
+namespace Node.Services.CacheSvc
 {
     public class objectCaching : Service
     {
-        public objectCaching()
+        private CacheStorage mCacheStorage = null;
+        
+        public objectCaching(CacheStorage cacheStorage)
             : base("objectCaching")
         {
+            this.mCacheStorage = cacheStorage;
         }
 
         public PyObject GetCachableObject(PyTuple args, object client)
@@ -51,17 +54,17 @@ namespace EVESharp.Services.CacheSvc
 
             if (cache.objectID.Type != PyObjectType.String)
             {
-                Log.Error("GetCachableObject", String.Format("Unknown objectID on cache request"));
+                Log.Error("GetCachableObject", "Unknown objectID on cache request");
                 return null;
             }
 
             string objectID = cache.objectID.As<PyString>().Value;
 
-            Log.Debug("GetCachableObject", String.Format("Received cache request for {0}", objectID));
+            Log.Debug("GetCachableObject", $"Received cache request for {objectID}");
 
             try
             {
-                return CacheStorage.Get(objectID);
+                return this.mCacheStorage.Get(objectID);
             }
             catch (Exception e)
             {

@@ -29,7 +29,7 @@ using System.Text;
 
 using Common.Packets;
 
-namespace EVESharp.ClusterControler
+namespace ClusterControler
 {
     public class LoginQueueEntry
     {

@@ -29,12 +29,13 @@ using System.Text;
 using MySql.Data.MySqlClient;
 
 using Common;
+using Common.Database;
 
-namespace EVESharp.ClusterControler.Database
+namespace ClusterControler.Database
 {
-    public static class GeneralDB
+    public class GeneralDB : DatabaseAccessor
     {
-        public static void ResetSolarSystemStatus()
+        public void ResetSolarSystemStatus()
         {
             if (Database.Query("UPDATE solarSystemsLoaded SET nodeID = 0") == false)
             {
@@ -42,7 +43,7 @@ namespace EVESharp.ClusterControler.Database
             }
         }
 
-        public static void ResetSolarSystemStatus(int solarSystemID)
+        public void ResetSolarSystemStatus(int solarSystemID)
         {
             if (Database.Query("UPDATE solarSystemsLoaded SET nodeID = 0 WHERE solarSystemID = " + solarSystemID.ToString()) == false)
             {
@@ -50,12 +51,16 @@ namespace EVESharp.ClusterControler.Database
             }
         }
 
-        public static void ResetItemsStatus()
+        public void ResetItemsStatus()
         {
             if (Database.Query("UPDATE entity SET nodeID = 0") == false)
             {
                 Log.Error("GeneralDB", "Cannot reset nodeID for items");
             }
+        }
+
+        public GeneralDB(Common.Database.DatabaseConnection db) : base(db)
+        {
         }
     }
 }

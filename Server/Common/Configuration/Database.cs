@@ -1,6 +1,6 @@
 using IniParser.Model;
 
-namespace EVESharp.Configuration
+namespace Common.Configuration
 {
     public class Database
     {

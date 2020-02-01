@@ -32,15 +32,22 @@ using System.Net;
 using System.IO;
 
 using Common;
+using Common.Database;
 using Common.Network;
-
+using Configuration;
 using Marshal;
 
-namespace EVESharp.ClusterControler
+namespace ClusterControler
 {
     class Program
     {
-        static TCPSocket socket = new TCPSocket(26000, false);
+        private static DatabaseConnection sDatabase = null;
+        private static General sConfiguration = null;
+        private static LoginQueue sLoginQueue = null;
+        private static ConnectionManager sConnectionManager = null;
+        
+        private static TCPSocket sListeningSocket = new TCPSocket(26000, false);
+        
         static AsyncCallback acceptAsync = new AsyncCallback(AcceptAsync);
 
         static void AcceptAsync(IAsyncResult ar)
@@ -55,7 +62,7 @@ namespace EVESharp.ClusterControler
 
             handler.Socket.BeginAccept(acceptAsync, handler);
 
-            ConnectionManager.AddConnection(sock);
+            sConnectionManager.AddConnection(sock);
         }
 
         static void Main(string[] args)
@@ -66,37 +73,40 @@ namespace EVESharp.ClusterControler
 
             Log.Info("Cluster", "Loading database.conf file");
 
-            string[] lines = File.ReadAllLines("database.conf");
+            sConfiguration = General.LoadFromFile("configuration.conf");
+                
+            // update the loglevel with the new value
+            Log.SetLogLevel(sConfiguration.Logging.LogLevel);
 
-            Database.Database.Username = lines[0];
-            Database.Database.Password = lines[1];
-            Database.Database.Host = lines[2];
-            Database.Database.DB = lines[3];
+            Log.Trace("Database", "Connecting to database...");
 
-            if (Database.Database.Init() == false)
-            {
-                Log.Error("Cluster", "Cannot connect to database");
-                while (true) Thread.Sleep(1);
-            }
+            sDatabase = DatabaseConnection.FromConfiguration(sConfiguration.Database);
 
+            Log.Info("Main", "Connection to the DB sucessfull");
             Log.Debug("Cluster", "Connected to database");
 
-            if (socket.Listen(1) == false)
+            Log.Trace("Main", "Initializing login queue...");
+            sLoginQueue = new LoginQueue(sDatabase);
+            sLoginQueue.Start();
+            Log.Info("Main", "Login queue initialized");
+            
+            Log.Trace("Main", "Initializing connection manager...");
+            sConnectionManager = new ConnectionManager(sLoginQueue);
+            Log.Info("Main", "Connection manager initialized");
+            
+            if (sListeningSocket.Listen(1) == false)
             {
                 Log.Error("Cluster", "Cannot listen on port 26000");
                 while (true) Thread.Sleep(1);
             }
 
             // set max_allowed_packet value to 1GB
-            Database.Database.Query("SET global max_allowed_packet=1073741824");
+            sDatabase.Query("SET global max_allowed_packet=1073741824");
 
             Log.Debug("Cluster", "Listening on port 26000");
 
             // Begin accept
-            socket.Socket.BeginAccept(acceptAsync, socket);
-
-            // Start the login queue
-            LoginQueue.Start();
+            sListeningSocket.Socket.BeginAccept(acceptAsync, sListeningSocket);
 
             while (true)
             {

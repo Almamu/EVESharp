@@ -27,39 +27,38 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.IO;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Security.Cryptography;
 
 using MySql.Data.MySqlClient;
 
 using Common;
+using Common.Database;
 using Common.Network;
 using Common.Services;
 using Common.Packets;
-using EVESharp.Configuration;
-using EVESharp.Database;
-using EVESharp.Inventory;
+using Node.Inventory;
 
 using Marshal;
 using Marshal.Database;
+using Node.Configuration;
 
-namespace EVESharp
+namespace Node
 {
     class Program
     {
+        private static CacheStorage sCacheStorage = null;
+        private static ServiceManager sServiceManager = null;
+        private static DatabaseConnection sDatabase = null;
+        private static SystemManager sSystemManager = null;
+        private static General sConfiguration = null;
+        private static ItemFactory sItemFactory = null;
+        
         static public Dictionary<uint, Client> clients = new Dictionary<uint, Client>();
         static private int nodeID = 0xFFFF;
         static private TCPSocket proxyConnection = null;
         static private StreamPacketizer packetizer = new StreamPacketizer();
-        static public ServiceManager SvcMgr = new ServiceManager();
-        static public General Configuration;
-
-        // Proxy info
-        static string[,] proxy = new string[,]
-        {
-            // IP         Port
-            {"127.0.0.1", "26000"}
-        };
 
         static public int NodeID
         {
@@ -89,7 +88,7 @@ namespace EVESharp
             Send(Marshal.Marshal.Process(data));
         }
 
-        static public void HandlePacket(object input)
+        public static void HandlePacket(object input)
         {
             PyPacket packet = (PyPacket)input;
             PyPacket res = new PyPacket();
@@ -106,19 +105,28 @@ namespace EVESharp
 
                 try
                 {
-                    callRes = Program.SvcMgr.ServiceCall(packet.dest.service, call, args, null);
+                    callRes = sServiceManager.ServiceCall(packet.dest.service, call, args, null);
                 }
                 catch (ServiceDoesNotContainCallException)
                 {
-                    Log.Error("HandlePacket", "The service " + packet.dest.service + " does not contain a definition for " + call);
+                    Log.Error(
+                        "HandlePacker",
+                        $"The service {packet.dest.service} does not contain a definition for {call}"
+                    );
                 }
                 catch (ServiceDoesNotExistsException)
                 {
-                    Log.Error("HandlePacket", "The requested service(" + packet.dest.service + ")does not exists");
+                    Log.Error(
+                        "HandlePacket",
+                        $"The requested service {packet.dest.service} doesn't exist"
+                    );
                 }
                 catch (Exception ex)
                 {
-                    Log.Error("HandlePacket", "Unhadled exception: " + ex.ToString());
+                    Log.Error(
+                        "HandlePacket",
+                        $"Unhandled exception: {ex.ToString()}"
+                    );
                 }
 
 
@@ -151,7 +159,7 @@ namespace EVESharp
             }
             else if (packet.type == Macho.MachoNetMsg_Type.SESSIONCHANGENOTIFICATION)
             {
-                Log.Debug("Main", "Updating session for client " + packet.userID);
+                Log.Debug("Main", $"Updating session for client {packet.userID}");
 
                 // Check if the client isnt assigned to this node yet
                 if(clients.ContainsKey(packet.userID) == false)
@@ -172,31 +180,41 @@ namespace EVESharp
                 Log.Init("evesharp");
                 Log.Info("Main", "Starting node...");
 
-                Configuration = General.LoadFromFile("configuration.conf");
+                sConfiguration = General.LoadFromFile("configuration.conf");
                 
                 // update the loglevel with the new value
-                Log.SetLogLevel(Configuration.Logging.LogLevel);
-                // update the database class with the new configuration
-                Database.Database.Configuration = Configuration.Database;
+                Log.SetLogLevel(sConfiguration.Logging.LogLevel);
 
                 Log.Trace("Database", "Connecting to database...");
 
-                Database.Database.Init();
+                sDatabase = DatabaseConnection.FromConfiguration(sConfiguration.Database);
 
                 Log.Info("Main", "Connection to the DB sucessfull");
 
                 Log.Info("Main", "Priming cache...");
-                CacheStorage.Load(CacheStorage.LoginCacheTable, CacheStorage.LoginCacheQueries);
+                sCacheStorage = new CacheStorage(sDatabase);
+                sCacheStorage.Load(CacheStorage.LoginCacheTable, CacheStorage.LoginCacheQueries);
+                Log.Debug("Main", "Done");
+                
+                Log.Info("Main", "Initializing item factory");
+                sItemFactory = new ItemFactory(sDatabase);
                 Log.Debug("Main", "Done");
 
+                Log.Info("Main", "Initializing solar system manager");
+                sSystemManager = new SystemManager(sDatabase, sItemFactory);
+                Log.Debug("Main", "Done");
+
+                Log.Info("Main", "Initializing service manager");
+                sServiceManager = new ServiceManager(sDatabase, sCacheStorage);
+                Log.Debug("Main", "Done");
+                
                 Log.Info("Main", "Connecting to proxy...");
 
-                proxyConnection = new TCPSocket(ushort.Parse(proxy[0, 1]), false);
-                if (proxyConnection.Connect(proxy[0, 0]) == false)
+                proxyConnection = new TCPSocket(sConfiguration.Proxy.Port, false);
+                
+                if (proxyConnection.Connect (sConfiguration.Proxy.Hostname) == false)
                 {
-                    Log.Error("Main", "Cannot connect to proxy. Halting");
-                    Database.Database.Stop();
-                    while (true) Thread.Sleep (1);
+                    throw new Exception("Cannot connect to proxy. Halting...");
                 }
 
                 Log.Trace("Main", "Server started");
@@ -238,7 +256,7 @@ namespace EVESharp
                                             nodeID = nodeinfo.nodeID;
 
                                             Log.Debug("Main", "Found machoNet.nodeInfo, our new node id is " + nodeID.ToString("X4"));
-                                            SystemManager.LoadSolarSystems(nodeinfo.solarSystems);
+                                            sSystemManager.LoadSolarSystems(nodeinfo.solarSystems);
                                         }
                                     }
                                     else
@@ -314,6 +332,8 @@ namespace EVESharp
             catch (Exception e)
             {
                 Log.Error("Main", e.Message);
+                Log.Trace("Main", e.StackTrace);
+                Log.Error("Main", "Stopped...");
             }
         }
     }

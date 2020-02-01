@@ -26,18 +26,20 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using EVESharp.Database;
 using Common;
+using Common.Database;
+using Node.Database;
 
-namespace EVESharp.Inventory
+namespace Node.Inventory
 {
-    public class TypeManager
+    public class TypeManager : DatabaseAccessor
     {
+        private ItemDB mItemDB = null;
         Dictionary<int, ItemType> itemTypes = new Dictionary<int, ItemType>();
 
-        public bool LoadTypes()
+        public bool Load()
         {
-            List<ItemType> types = ItemDB.LoadItemTypes();
+            List<ItemType> types = this.mItemDB.LoadItemTypes();
 
             if (types == null)
             {
@@ -69,6 +71,11 @@ namespace EVESharp.Inventory
             {
                 return null;
             }
+        }
+
+        public TypeManager(DatabaseConnection db) : base(db)
+        {
+            this.mItemDB = new ItemDB(db);
         }
     }
 }

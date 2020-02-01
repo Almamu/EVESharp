@@ -28,7 +28,7 @@ using System.Linq;
 using System.Text;
 using System.Net.Sockets;
 
-namespace EVESharp.ClusterControler
+namespace ClusterControler
 {
     class AsyncState
     {

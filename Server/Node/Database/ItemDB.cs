@@ -26,17 +26,17 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using EVESharp.Inventory;
+using Common.Database;
 using MySql.Data.MySqlClient;
+using Node.Inventory;
+using Node.Inventory.SystemEntities;
 
-using EVESharp.Inventory.SystemEntities;
-
-namespace EVESharp.Database
+namespace Node.Database
 {
-    public static class ItemDB
+    public class ItemDB : DatabaseAccessor
     {
         // General items database functions
-        public static List<Entity> LoadItems()
+        public List<Entity> LoadItems()
         {
             MySqlDataReader reader = null;
 
@@ -66,8 +66,10 @@ namespace EVESharp.Database
                     reader.GetDouble(9), // x
                     reader.GetDouble(10), // y
                     reader.GetDouble(11), // z
-                    reader.IsDBNull(12) ? "" : reader.GetString(12) // customInfo
-                    );
+                    reader.IsDBNull(12) ? "" : reader.GetString(12), // customInfo
+                    this,
+                    null
+                );
 
                 items.Add(newItem);
             }
@@ -77,7 +79,7 @@ namespace EVESharp.Database
             return items;
         }
 
-        public static List<ItemCategory> LoadItemCategories()
+        public List<ItemCategory> LoadItemCategories()
         {
             MySqlDataReader reader = null;
 
@@ -100,7 +102,7 @@ namespace EVESharp.Database
                     reader.GetString(2),
                     reader.IsDBNull(3) ? 0 : reader.GetInt32(3),
                     reader.GetBoolean(4)
-                    );
+                );
 
                 itemCategoryesList.Add(itemCategory);
             }
@@ -110,11 +112,11 @@ namespace EVESharp.Database
             return itemCategoryesList;
         }
 
-        public static List<ItemType> LoadItemTypes()
+        public List<ItemType> LoadItemTypes()
         {
             MySqlDataReader reader = null;
 
-            if (Database.Query(ref reader, "SELECT typeID, groupID, typeName, description, graphicID, radius, mass, volume, capacity, portionSize, raceID, basePrice, published, marketGroupID, chanceOfDuplicating FROM invtypes") == false)
+            if (Database.Query(ref reader, "SELECT typeID, groupID, typeName, description, graphicID, radius, mass, volume, capacity, portionSize, raceID, basePrice, published, marketGroupID, chanceOfDuplicating FROM invTypes") == false)
             {
                 return null;
             }
@@ -144,7 +146,7 @@ namespace EVESharp.Database
                     reader.GetBoolean(12),
                     reader.IsDBNull(13) ? 0 : reader.GetInt32(13),
                     reader.GetDouble(14)
-                    );
+                );
 
                 itemTypes.Add(type);
             }
@@ -154,7 +156,7 @@ namespace EVESharp.Database
             return itemTypes;
         }
 
-        public static Entity LoadItem(int itemID)
+        public Entity LoadItem(int itemID)
         {
             MySqlDataReader reader = null;
 
@@ -186,8 +188,10 @@ namespace EVESharp.Database
                 reader.GetDouble(9), // x
                 reader.GetDouble(10), // y
                 reader.GetDouble(11), // z
-                reader.GetString(12) // customInfo
-                );
+                reader.GetString(12), // customInfo
+                this,
+                null
+            );
 
             reader.Close();
 
@@ -197,7 +201,7 @@ namespace EVESharp.Database
             return newItem;
         }
 
-        public static List<int> GetInventoryItems(int inventoryID)
+        public List<int> GetInventoryItems(int inventoryID)
         {
             MySqlDataReader reader = null;
 
@@ -223,12 +227,12 @@ namespace EVESharp.Database
             return itemList;
         }
 
-        public static int GetCategoryID(Entity item)
+        public int GetCategoryID(Entity item)
         {
             return GetCategoryID(item.typeID);
         }
 
-        public static int GetCategoryID(int typeID)
+        public int GetCategoryID(int typeID)
         {
             MySqlDataReader reader = null;
 
@@ -254,12 +258,12 @@ namespace EVESharp.Database
             return categoryID;
         }
 
-        public static void SetBlueprintInfo(int itemID, bool copy, int materialLevel, int productivityLevel, int licensedProductionRunsRemaining)
+        public void SetBlueprintInfo(int itemID, bool copy, int materialLevel, int productivityLevel, int licensedProductionRunsRemaining)
         {
-            Database.Query("UPDATE invblueprints SET blueprintID=" + itemID + " copy=" + copy + " materialLevel=" + materialLevel + " licensedProductionRunsRemaining=" + licensedProductionRunsRemaining);
+            Database.Query("UPDATE invBlueprints SET blueprintID=" + itemID + " copy=" + copy + " materialLevel=" + materialLevel + " licensedProductionRunsRemaining=" + licensedProductionRunsRemaining);
         }
 
-        public static Blueprint LoadBlueprint(int itemID)
+        public Blueprint LoadBlueprint(int itemID)
         {
             Entity item = LoadItem(itemID);
 
@@ -294,54 +298,52 @@ namespace EVESharp.Database
             return bp;
         }
 
-        public static void SetCustomInfo(int itemID, string customInfo)
+        public void SetCustomInfo(int itemID, string customInfo)
         {
-            Database.Query("UPDATE invtypes SET customInfo='" + customInfo + "' WHERE itemID=" + itemID);
+            Database.Query("UPDATE entity SET customInfo='" + customInfo + "' WHERE itemID=" + itemID);
         }
 
-        public static void SetQuantity(int itemID, int quantity)
+        public void SetQuantity(int itemID, int quantity)
         {
-            Database.Query("UPDATE invtypes SET quantity=" + quantity + " WHERE itemID=" + itemID);
+            Database.Query("UPDATE entity SET quantity=" + quantity + " WHERE itemID=" + itemID);
         }
 
-        public static void SetSingleton(int itemID, bool singleton)
+        public void SetSingleton(int itemID, bool singleton)
         {
-            Database.Query("UPDATE invtypes SET singleton=" + singleton + " WHERE itemID=" + itemID);
+            Database.Query("UPDATE entity SET singleton=" + singleton + " WHERE itemID=" + itemID);
         }
 
-        public static void SetItemName(int itemID, string name)
+        public void SetItemName(int itemID, string name)
         {
-            Database.Query("UPDATE invtypes SET itemName='" + name + "' WHERE itemID=" + itemID);
+            Database.Query("UPDATE entity SET itemName='" + name + "' WHERE itemID=" + itemID);
         }
 
-        public static void SetItemFlag(int itemID, int flag)
+        public void SetItemFlag(int itemID, int flag)
         {
-            Database.Query("UPDATE invtypes SET flag=" + flag + " WHERE itemID=" + itemID);
+            Database.Query("UPDATE entity SET flag=" + flag + " WHERE itemID=" + itemID);
         }
 
-        public static void SetLocation(int itemID, int locationID)
+        public void SetLocation(int itemID, int locationID)
         {
-            Database.Query("UPDATE invtypes SET locationID=" + locationID + " WHERE itemID=" + itemID);
+            Database.Query("UPDATE entity SET locationID=" + locationID + " WHERE itemID=" + itemID);
         }
 
-        public static void SetOwner(int itemID, int ownerID)
+        public void SetOwner(int itemID, int ownerID)
         {
-            Database.Query("UPDATE invtypes SET ownerID=" + ownerID + " WHERE itemID=" + itemID);
+            Database.Query("UPDATE entity SET ownerID=" + ownerID + " WHERE itemID=" + itemID);
         }
 
-        public static ulong CreateItem(string itemName, int typeID, int ownerID, int locationID, int flag, bool contraband, bool singleton, int quantity, double x, double y, double z, string customInfo)
+        public ulong CreateItem(string itemName, int typeID, int ownerID, int locationID, int flag, bool contraband, bool singleton, int quantity, double x, double y, double z, string customInfo)
         {
-            ulong itemID = 0;
-
-            if (Database.QueryLID(ref itemID, "INSERT INTO entity(itemID, itemName, typeID, ownerID, locationID, flag, contraband, singleton, quantity, x, y, z, customInfo)VALUES(NULL, '" + itemName + "', " + typeID + ", " + ownerID + ", " + locationID + ", " + flag + ", " + contraband + ", " + singleton + ", " + quantity + ", " + x + ", " + y + ", " + z+ ", '" + customInfo + "')") == false)
-            {
-                return 0;
-            }
-
-            return itemID;
+            return Database.QueryLID(
+                String.Format(
+                    "INSERT INTO entity(itemID, itemName, typeID, ownerID, locationID, flag, contraband, singleton, quantity, x, y, z, customInfo)VALUES(NULL, '{0}', {1}, {2}, {3}, {4}, {5}, {6}, {7}, {8}, {9}, {10}, '{12}')",
+                    Database.DoEscapeString(itemName), typeID, ownerID, locationID, flag, contraband, singleton, quantity, x, y, z, customInfo
+                )
+            );
         }
 
-        public static List<Entity> GetItemsLocatedAt(int locationID)
+        public List<Entity> GetItemsLocatedAt(int locationID)
         {
             MySqlDataReader reader = null;
 
@@ -371,7 +373,9 @@ namespace EVESharp.Database
                     reader.GetDouble(9), // x
                     reader.GetDouble(10), // y
                     reader.GetDouble(11), // z
-                    reader.IsDBNull(12) ? "" : reader.GetString(12) // customInfo
+                    reader.IsDBNull(12) ? "" : reader.GetString(12), // customInfo
+                    this,
+                    null
                     );
 
                 items.Add(newItem);
@@ -382,11 +386,11 @@ namespace EVESharp.Database
             return items;
         }
 
-        public static SolarSystemInfo GetSolarSystemInfo(int solarSystemID)
+        public SolarSystemInfo GetSolarSystemInfo(int solarSystemID)
         {
             MySqlDataReader reader = null;
 
-            if (Database.Query(ref reader, "SELECT regionID, constellationID, x, y, z, xMin, yMin, zMin, xMax, yMax, zMax, luminosity, border, fringe, corridor, hub, international, regional, constellation, security, factionID, radius, sunTypeID, securityClass FROM mapsolarsystems WHERE solarSystemID=" + solarSystemID) == false)
+            if (Database.Query(ref reader, "SELECT regionID, constellationID, x, y, z, xMin, yMin, zMin, xMax, yMax, zMax, luminosity, border, fringe, corridor, hub, international, regional, constellation, security, factionID, radius, sunTypeID, securityClass FROM mapSolarSystems WHERE solarSystemID=" + solarSystemID) == false)
             {
                 throw new SolarSystemLoadException();
             }
@@ -432,16 +436,16 @@ namespace EVESharp.Database
             return info;
         }
 
-        public static void UnloadItem(ulong itemID)
+        public void UnloadItem(ulong itemID)
         {
             Database.Query("UPDATE entity SET nodeID=0 WHERE itemID=" + itemID);
         }
 
-        public static Dictionary<string, ItemAttribute> GetAttributesForItem(int itemID)
+        public Dictionary<string, ItemAttribute> GetAttributesForItem(int itemID)
         {
             MySqlDataReader reader = null;
 
-            if (Database.Query(ref reader, "SELECT dgmattributetypes.attributeName, entity_attributes.attributeID, valueInt, valueFloat FROM entity_attributes LEFT JOIN dgmattributetypes ON dgmattributetypes.attributeID=entity_attributes.attributeID WHERE itemID=" + itemID) == false)
+            if (Database.Query(ref reader, "SELECT dgmAttributeTypes.attributeName, entity_attributes.attributeID, valueInt, valueFloat FROM entity_attributes LEFT JOIN dgmAttributeTypes ON dgmAttributeTypes.attributeID=entity_attributes.attributeID WHERE itemID=" + itemID) == false)
             {
                 return null;
             }
@@ -469,11 +473,11 @@ namespace EVESharp.Database
             return result;
         }
 
-        public static int GetAttributeIDForName(string attributeName)
+        public int GetAttributeIDForName(string attributeName)
         {
             MySqlDataReader reader = null;
 
-            if (Database.Query(ref reader, "SELECT attributeID FROM dgmattributetypes WHERE attributeName='" + attributeName + "'") == false)
+            if (Database.Query(ref reader, "SELECT attributeID FROM dgmAttributeTypes WHERE attributeName='" + attributeName + "'") == false)
             {
                 return 0;
             }
@@ -497,11 +501,11 @@ namespace EVESharp.Database
             return attributeID;
         }
 
-        public static Dictionary<string, ItemAttribute> GetDefaultAttributesForType(int typeID)
+        public Dictionary<string, ItemAttribute> GetDefaultAttributesForType(int typeID)
         {
             MySqlDataReader reader = null;
 
-            if (Database.Query(ref reader, "SELECT dgmattributetypes.attributeName, dgmtypeattributes.attributeID, valueInt, valueFloat FROM dgmtypeattributes LEFT JOIN dgmattributetypes ON dgmattributetypes.attributeID = dgmtypeattributes.attributeID WHERE typeID=" + typeID) == false)
+            if (Database.Query(ref reader, "SELECT dgmAttributeTypes.attributeName, dgmTypeAttributes.attributeID, valueInt, valueFloat FROM dgmTypeAttributes LEFT JOIN dgmAttributeTypes ON dgmAttributeTypes.attributeID = dgmTypeAttributes.attributeID WHERE typeID=" + typeID) == false)
             {
                 return null;
             }
@@ -527,6 +531,10 @@ namespace EVESharp.Database
             reader.Close();
 
             return result;
+        }
+
+        public ItemDB(DatabaseConnection db) : base(db)
+        {
         }
     }
 }

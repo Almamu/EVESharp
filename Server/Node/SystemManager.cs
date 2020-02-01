@@ -25,21 +25,27 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using Common;
 using Marshal;
 using System.Threading;
+using Common.Database;
+using Node.Database;
+using Node.Inventory;
+using Node.Inventory.SystemEntities;
 
-using EVESharp.Database;
-using EVESharp.Inventory;
-using EVESharp.Inventory.SystemEntities;
-
-namespace EVESharp
+namespace Node
 {
-    public static class SystemManager
+    public class SystemManager
     {
-        static private List<SolarSystem> solarSystemsLoaded = new List<SolarSystem>(); // Should be changed to SolarSystem class when available
-        public static bool LoadSolarSystems(PyList solarSystems)
+        private DatabaseConnection mDatabase = null;
+        private GeneralDB mGeneralDB = null;
+        private ItemDB mItemDB = null;
+        private ItemFactory mItemFactory = null;
+        
+        private List<SolarSystem> solarSystemsLoaded = new List<SolarSystem>();
+        public bool LoadSolarSystems(PyList solarSystems)
         {
             // We should not load any solar system
             if (solarSystems.Items[0] is PyNone)
@@ -90,9 +96,9 @@ namespace EVESharp
             return true;
         }
 
-        private static bool BootupSolarSystem(int solarSystemID)
+        private bool BootupSolarSystem(int solarSystemID)
         {
-            List<Entity> items = ItemDB.GetItemsLocatedAt(solarSystemID);
+            List<Entity> items = this.mItemDB.GetItemsLocatedAt(solarSystemID);
 
             if (items == null)
             {
@@ -100,56 +106,64 @@ namespace EVESharp
             }
 
             // Add the items to the ItemFactory
-            ItemFactory.GetItemManager().LoadInventory(solarSystemID);
+            this.mItemFactory.ItemManager.LoadInventory(solarSystemID);
 
             return true;
         }
 
-        public static bool UnloadSolarSystem(int solarSystemID)
+        public bool UnloadSolarSystem(int solarSystemID)
         {
             // We should do the unload work here
             
             // Update the database
-            GeneralDB.UnloadSolarSystem(solarSystemID);
+            this.mGeneralDB.UnloadSolarSystem(solarSystemID);
 
             return true;
         }
 
-        public static bool LoadSolarSystem(SolarSystem solarSystem)
+        public bool LoadSolarSystem(SolarSystem solarSystem)
         {
             // We should do the load work here
             BootupSolarSystem(solarSystem.itemID);
 
             // Update the database
-            GeneralDB.LoadSolarSystem(solarSystem.itemID);
+            this.mGeneralDB.LoadSolarSystem(solarSystem.itemID);
 
             // Update the list
             solarSystemsLoaded.Add(solarSystem);
 
             // Update the ItemManager
-            ItemFactory.GetItemManager().LoadItem(solarSystem.itemID);
+            this.mItemFactory.ItemManager.LoadItem(solarSystem.itemID);
 
             return true;
         }
 
-        public static bool LoadUnloadedSolarSystems()
+        public bool LoadUnloadedSolarSystems()
         {
             // Get all the solarSystems not loaded and load them
-            List<int> solarSystems = GeneralDB.GetUnloadedSolarSystems();
+            List<int> solarSystems = this.mGeneralDB.GetUnloadedSolarSystems();
 
             // Load the not-loaded solar systems
             foreach (int solarSystemID in solarSystems)
             {
                 // We can assume we dont have it in the list, as we've queryed for the non-loaded solarSystems
-                SolarSystem solarSystem = new SolarSystem(ItemDB.LoadItem(solarSystemID), ItemDB.GetSolarSystemInfo(solarSystemID)); // Create the solarSystem class
+                SolarSystem solarSystem = new SolarSystem(this.mItemDB.LoadItem(solarSystemID), this.mItemDB.GetSolarSystemInfo(solarSystemID)); // Create the solarSystem class
                 
                 if (LoadSolarSystem(solarSystem) == false)
                 {
                     return false;
                 }
-
             }
+            
             return true;
+        }
+
+        public SystemManager(DatabaseConnection db, ItemFactory itemFactory)
+        {
+            this.mDatabase = db;
+            this.mGeneralDB = new GeneralDB(this.mDatabase);
+            this.mItemDB = new ItemDB(this.mDatabase);
+            this.mItemFactory = itemFactory;
         }
     }
 }

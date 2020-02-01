@@ -32,7 +32,7 @@ using Common;
 
 using Marshal;
 
-namespace EVESharp.ClusterControler
+namespace ClusterControler
 {
     public static class TCPHandler
     {
@@ -60,14 +60,14 @@ namespace EVESharp.ClusterControler
             }
         }
 
-        public static void SendLoginNotification(LoginStatus loginStatus, Connection connection)
+        public static void SendLoginNotification(LoginStatus loginStatus, Connection connection, ConnectionManager connectionManager)
         {
             if (loginStatus == LoginStatus.Sucess)
             {
                 // We should check for a exact number of nodes here when we have the needed infraestructure
-                if (ConnectionManager.NodesCount > 0)
+                if (connectionManager.NodesCount > 0)
                 {
-                    connection.NodeID = ConnectionManager.RandomNode;
+                    connection.NodeID = connectionManager.RandomNode;
 
                     AuthenticationRsp rsp = new AuthenticationRsp();
 
@@ -77,7 +77,7 @@ namespace EVESharp.ClusterControler
                     rsp.serverChallenge = "";
                     rsp.func_marshaled_code = func_marshaled_code;
                     rsp.verification = false;
-                    rsp.cluster_usercount = ConnectionManager.ClientsCount + 1; // We're not in the list yet
+                    rsp.cluster_usercount = connectionManager.ClientsCount + 1; // We're not in the list yet
                     rsp.proxy_nodeid = connection.NodeID;
                     rsp.user_logonqueueposition = 1;
                     rsp.challenge_responsehash = "55087";
@@ -96,7 +96,7 @@ namespace EVESharp.ClusterControler
                     connection.Session.SetLong("role", connection.Role);
 
                     // Update the connection, so it gets added to the clients correctly
-                    ConnectionManager.UpdateConnection(connection);
+                    connectionManager.UpdateConnection(connection);
 
                     connection.Send(rsp.Encode());
                 }
@@ -134,7 +134,7 @@ namespace EVESharp.ClusterControler
                 if (connection.Type == ConnectionType.Node)
                 {
                     // Update the list in ConnectionManager
-                    ConnectionManager.UpdateConnection(connection);
+                    connection.ConnectionManager.UpdateConnection(connection);
 
                     // Send the node info
                     connection.SendNodeChangeNotification();
@@ -208,7 +208,7 @@ namespace EVESharp.ClusterControler
                     }
 
                     // Queued logins
-                    connection.Send(new PyInt(LoginQueue.queue.Count + 1));
+                    connection.Send(new PyInt(connection.ConnectionManager.LoginQueue.mQueue.Count + 1));
                     connection.SendLowLevelVersionExchange();
 
                     return null;
@@ -236,7 +236,7 @@ namespace EVESharp.ClusterControler
                         AuthenticationReq req = new AuthenticationReq();
 
                         // Send AutClusterStarting message if we do not have any node attached yet
-                        if (ConnectionManager.NodesCount <= 0)
+                        if (connection.ConnectionManager.NodesCount <= 0)
                         {
                             GPSTransportClosed ex = new GPSTransportClosed("AutClusterStarting");
 
@@ -268,7 +268,7 @@ namespace EVESharp.ClusterControler
                         }
 
                         // Login request, add it to the queue and wait until we are accepted or rejected
-                        LoginQueue.Enqueue(connection, req);
+                        connection.ConnectionManager.LoginQueue.Enqueue(connection, req);
 
                         // The login queue will call send the data to the client
                         return null;

@@ -28,14 +28,15 @@ using System.Linq;
 using System.Text;
 using System.Data.SqlTypes;
 using System.Security.Cryptography;
+using Common.Database;
 using MySql.Data.MySqlClient;
 using MySql.Data.Types;
 
-namespace EVESharp.ClusterControler.Database
+namespace ClusterControler.Database
 {
-    public static class AccountDB
+    public class AccountDB : DatabaseAccessor
     {
-        public static bool AccountExists(string username)
+        public bool AccountExists(string username)
         {
             MySqlDataReader reader = null;
 
@@ -56,7 +57,7 @@ namespace EVESharp.ClusterControler.Database
             return false;
         }
 
-        public static bool LoginPlayer(string username, string password, ref long accountid, ref bool banned, ref long role)
+        public bool LoginPlayer(string username, string password, ref long accountid, ref bool banned, ref long role)
         {
             MySqlDataReader reader = null;
 
@@ -86,7 +87,7 @@ namespace EVESharp.ClusterControler.Database
             return true;
         }
 
-        public static void CreateAccount(string accountName, string accountPassword)
+        public void CreateAccount(string accountName, string accountPassword)
         {
             SHA1 sha1 = SHA1.Create();
             sha1.Initialize();
@@ -97,6 +98,10 @@ namespace EVESharp.ClusterControler.Database
             Database.Query("INSERT INTO account(accountID, accountName, password, role, online, banned)" +
                 "VALUES(NULL, '" + accountName + "', '" + Encoding.ASCII.GetString(hash) + "', " +
                 Common.Constants.Roles.ROLE_PLAYER + ", 0, 0)");
+        }
+
+        public AccountDB(Common.Database.DatabaseConnection db) : base(db)
+        {
         }
     }
 }

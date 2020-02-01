@@ -30,20 +30,22 @@ using Common.Services;
 using Marshal;
 using Common;
 
-namespace EVESharp.Services.Network
+namespace Node.Services.Network
 {
     public class machoNet : Service
     {
-        public machoNet()
+        private CacheStorage mCacheStorage = null;
+        
+        public machoNet(CacheStorage cacheStorage)
             : base("machoNet")
         {
-
+            this.mCacheStorage = cacheStorage;
         }
 
         public PyObject GetInitVals(PyTuple args, object client)
         {
             
-            if (CacheStorage.Exists("machoNet.serviceInfo") == false)
+            if (this.mCacheStorage.Exists("machoNet.serviceInfo") == false)
             {
                 // Cache does not exists, create it
                 PyDict dict = new PyDict();
@@ -137,12 +139,12 @@ namespace EVESharp.Services.Network
                 dict.Set("onlineStatus", new PyNone());
                 dict.Set("gangSvcObjectHandler", new PyNone());
 
-                CacheStorage.Store("machoNet.serviceInfo", dict, DateTime.Now.ToFileTimeUtc());
+                this.mCacheStorage.Store("machoNet.serviceInfo", dict, DateTime.Now.ToFileTimeUtc());
             }
 
-            PyObject srvInfo = CacheStorage.Get("machoNet.serviceInfo");
+            PyObject srvInfo = this.mCacheStorage.Get("machoNet.serviceInfo");
             PyTuple res = new PyTuple();
-            PyDict initvals = CacheStorage.GetHints();
+            PyDict initvals = this.mCacheStorage.GetHints();
 
             res.Items.Add(srvInfo);
             res.Items.Add(initvals); // Rest of the cache data

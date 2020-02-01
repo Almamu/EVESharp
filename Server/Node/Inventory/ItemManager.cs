@@ -26,18 +26,20 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using EVESharp.Database;
 using Common;
+using Common.Database;
+using Node.Database;
 
-namespace EVESharp.Inventory
+namespace Node.Inventory
 {
-    public class ItemManager
+    public class ItemManager : DatabaseAccessor
     {
+        private ItemDB mItemDB = null;
         private Dictionary<ulong, Entity> itemList = new Dictionary<ulong, Entity>();
 
         public bool Load()
         {
-            List<Entity> items = ItemDB.LoadItems();
+            List<Entity> items = this.mItemDB.LoadItems();
 
             if (items == null)
             {
@@ -68,7 +70,7 @@ namespace EVESharp.Inventory
         {
             if (IsItemLoaded(itemID) == false)
             {
-                Entity item = ItemDB.LoadItem(itemID);
+                Entity item = this.mItemDB.LoadItem(itemID);
 
                 if (item == null)
                 {
@@ -81,7 +83,7 @@ namespace EVESharp.Inventory
                     inv.UpdateItem(item);
                 }
 
-                switch ((ItemCategory)ItemDB.GetCategoryID(item.typeID))
+                switch ((ItemCategory) this.mItemDB.GetCategoryID(item.typeID))
                 {
                     case ItemCategory.None:
                         break;
@@ -137,7 +139,7 @@ namespace EVESharp.Inventory
 
         public List<Entity> LoadInventory(int inventoryID)
         {
-            List<int> items = ItemDB.GetInventoryItems(inventoryID);
+            List<int> items = this.mItemDB.GetInventoryItems(inventoryID);
             List<Entity> loaded = new List<Entity>();
 
             if (items == null)
@@ -165,7 +167,7 @@ namespace EVESharp.Inventory
 
         private bool LoadBlueprint(int itemID)
         {
-            Blueprint bp = ItemDB.LoadBlueprint(itemID);
+            Blueprint bp = this.mItemDB.LoadBlueprint(itemID);
             
             if (bp == null)
             {
@@ -179,7 +181,7 @@ namespace EVESharp.Inventory
 
         public Entity CreateItem(string itemName, int typeID, int ownerID, int locationID, int flag, bool contraband, bool singleton, int quantity, double x, double y, double z, string customInfo)
         {
-            ulong itemID = ItemDB.CreateItem(itemName, typeID, ownerID, locationID, flag, contraband, singleton, quantity, x, y, z, customInfo);
+            ulong itemID = this.mItemDB.CreateItem(itemName, typeID, ownerID, locationID, flag, contraband, singleton, quantity, x, y, z, customInfo);
 
             if (itemID == 0)
             {
@@ -201,12 +203,17 @@ namespace EVESharp.Inventory
                 itemList.Remove(itemID);
                 
                 // Update the database information
-                ItemDB.UnloadItem(itemID);
+                this.mItemDB.UnloadItem(itemID);
             }
             catch
             {
 
             }
+        }
+
+        public ItemManager(DatabaseConnection db) : base(db)
+        {
+            this.mItemDB = new ItemDB(db);
         }
     }
 }

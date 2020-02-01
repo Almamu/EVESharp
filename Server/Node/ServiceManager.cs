@@ -26,33 +26,45 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-
-using EVESharp.Services.CacheSvc;
-using EVESharp.Services.Network;
-
+using Common.Database;
 using Common.Services;
+using Node.Services.CacheSvc;
+using Node.Services.Network;
 
-namespace EVESharp
+namespace Node
 {
     public class ServiceManager : Common.Services.ServiceManager
     {
-        private objectCaching objectCachingSvc = new objectCaching();
-        private machoNet machoNetSvc = new machoNet();
-        private alert alertSvc = new alert();
+        private CacheStorage mCacheStorage = null;
+        private DatabaseConnection mDatabaseConnection = null;
+        private objectCaching mObjectCachingSvc = null;
+        private machoNet mMachoNetSvc = null;
+        private alert mAlertSvc = null;
 
         public Service objectCaching()
         {
-            return objectCachingSvc;
+            return this.mObjectCachingSvc;
         }
 
         public Service machoNet()
         {
-            return machoNetSvc;
+            return this.mMachoNetSvc;
         }
 
         public Service alert()
         {
-            return alertSvc;
+            return this.mAlertSvc;
+        }
+
+        public ServiceManager(DatabaseConnection db, CacheStorage storage)
+        {
+            this.mDatabaseConnection = db;
+            this.mCacheStorage = storage;
+            
+            // initialize services
+            this.mMachoNetSvc = new machoNet(this.mCacheStorage);
+            this.mAlertSvc = new alert();
+            this.mObjectCachingSvc = new objectCaching(this.mCacheStorage);
         }
     }
 }

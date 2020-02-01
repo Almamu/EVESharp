@@ -28,12 +28,13 @@ using System.Linq;
 using System.Text;
 using MySql.Data.MySqlClient;
 using Common;
+using Common.Database;
 
-namespace EVESharp.Database
+namespace Node.Database
 {
-    public static class GeneralDB
+    public class GeneralDB : DatabaseAccessor
     {
-        public static List<int> GetUnloadedSolarSystems()
+        public List<int> GetUnloadedSolarSystems()
         {
             MySqlDataReader res = null;
 
@@ -59,7 +60,7 @@ namespace EVESharp.Database
             return result;
         }
 
-        public static bool LoadSolarSystem(int solarSystemID)
+        public bool LoadSolarSystem(int solarSystemID)
         {
             if (Database.Query("UPDATE solarsystemsloaded SET nodeID = " + Program.NodeID + " WHERE solarSystemID = " + solarSystemID) == false)
             {
@@ -70,9 +71,13 @@ namespace EVESharp.Database
             return true;
         }
 
-        public static void UnloadSolarSystem(int solarSystemID)
+        public void UnloadSolarSystem(int solarSystemID)
         {
             Database.Query("UPDATE solarsystemsloaded SET nodeID=0 WHERE solarSystemID=" + solarSystemID);
+        }
+
+        public GeneralDB(DatabaseConnection db) : base(db)
+        {
         }
     }
 }

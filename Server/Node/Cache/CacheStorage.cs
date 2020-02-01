@@ -28,14 +28,16 @@ using System.Linq;
 using System.Text;
 using Marshal;
 using Common;
+using Common.Database;
 using MySql.Data.MySqlClient;
 using MySql.Data.Types;
 using Common.Packets;
 using Common.Utils;
+using Node.Database;
 
-namespace EVESharp
+namespace Node
 {
-    public static class CacheStorage
+    public class CacheStorage : DatabaseAccessor
     {
         public static string[] LoginCacheTable =
         {
@@ -162,52 +164,52 @@ namespace EVESharp
 
         public static int CharacterAppearanceCacheTableSize = CharacterAppearanceCacheTable.Length;
 */
-        private static Dictionary<string, PyObject> sCacheData = new Dictionary<string, PyObject>();
-        private static PyDict sCacheHints = new PyDict();
+        private Dictionary<string, PyObject> mCacheData = new Dictionary<string, PyObject>();
+        private PyDict mCacheHits = new PyDict();
 
-        public static bool Exists(string name)
+        public bool Exists(string name)
         {
-	        return sCacheData.ContainsKey(name);
+	        return this.mCacheData.ContainsKey(name);
         }
 
-        public static PyObject Get(string name)
+        public PyObject Get(string name)
         {
-            return sCacheData[name];
+            return this.mCacheData[name];
         }
 
-        public static void Store(string name, PyObject data, long timestamp)
+        public void Store(string name, PyObject data, long timestamp)
         {
             Log.Info("Cache", String.Format("Saving cache data for {0}", name));
             
             CacheInfo info = CacheInfo.FromPyObject(name, data, timestamp, Program.NodeID);
             
             // save cache hint
-            sCacheHints.Set(name, info.Encode ());
+            this.mCacheHits.Set(name, info.Encode ());
             // save cache object
-            sCacheData[name] = PyCachedObject.FromCacheInfo(info, data).Encode();
+            this.mCacheData[name] = PyCachedObject.FromCacheInfo(info, data).Encode();
         }
 
-        public static PyDict GetHints()
+        public PyDict GetHints()
         {
-	        return sCacheHints;
+	        return this.mCacheHits;
         }
 
-        private static void Load(string name, string query)
+        private void Load(string name, string query)
         {
-	        Log.Debug("Cache", String.Format("Loading cache data for {0}", name));
+	        Log.Debug("Cache", $"Loading cache data for {name}");
 	        
             MySqlDataReader reader = null;
 
-            if (Database.Database.Query(ref reader, query) == false)
+            if (Database.Query(ref reader, query) == false)
             {
                 // TODO: CREATE AN EXCEPTION FOR THIS
-                throw new Exception (String.Format("Cannot generate cache data for {0}", name));
+                throw new Exception ($"Cannot generate cache data for {name}");
             }
 
             Store(name, DBUtils.DBResultToCRowset(ref reader), DateTime.Now.ToFileTimeUtc());
         }
 
-        public static void Load(string[] names, string[] queries)
+        public void Load(string[] names, string[] queries)
         {
             if (names.Length != queries.Length)
                 throw new ArgumentOutOfRangeException("names", "names and queries do not match in size");
@@ -216,6 +218,10 @@ namespace EVESharp
             {
                 Load(names[i], queries[i]);
             }
+        }
+
+        public CacheStorage(DatabaseConnection db) : base(db)
+        {
         }
     }
 }

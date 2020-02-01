@@ -26,10 +26,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Node.Database;
 
-using EVESharp.Database;
-
-namespace EVESharp.Inventory.SystemEntities
+namespace Node.Inventory.SystemEntities
 {
     public struct SolarSystemInfo
     {
@@ -62,17 +61,6 @@ namespace EVESharp.Inventory.SystemEntities
     
     public class SolarSystem : Inventory
     {
-        public SolarSystem(Entity from)
-            : base(from)
-        {
-            if (typeID != 5) // SolarSystems typeID
-            {
-                throw new Exception("Trying to load a non-solar system item like one");
-            }
-
-            solarSystemInfo = ItemDB.GetSolarSystemInfo(itemID);
-        }
-
         public SolarSystem(Entity from, SolarSystemInfo info) : base(from)
         {
             if (typeID != 5)

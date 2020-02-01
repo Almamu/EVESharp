@@ -27,7 +27,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace EVESharp.Inventory
+namespace Node.Inventory
 {
     public class ItemType
     {

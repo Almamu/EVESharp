@@ -32,33 +32,39 @@ using Marshal;
 
 using Common;
 
-namespace EVESharp.ClusterControler
+namespace ClusterControler
 {
-    class ConnectionManager
+    public class ConnectionManager
     {
-        private static List<Connection> connections = new List<Connection>(); // This list contains ALL the connections, both nodes and clients
-        private static Dictionary<long, Connection> clients = new Dictionary<long, Connection>(); // Contains the nodes list
-        private static Dictionary<int, Connection> nodes = new Dictionary<int, Connection>(); // Contains the clients list
+        private List<Connection> mConnections = new List<Connection>(); // This list contains ALL the connections, both nodes and clients
+        private Dictionary<long, Connection> mClients = new Dictionary<long, Connection>(); // Contains the nodes list
+        private Dictionary<int, Connection> mNodes = new Dictionary<int, Connection>(); // Contains the clients list
+        public LoginQueue LoginQueue { get; set; }
 
-        public static int AddConnection(Socket sock)
+        public ConnectionManager(LoginQueue loginQueue)
         {
-            Connection connection = new Connection(sock);
+            this.LoginQueue = loginQueue;
+        }
+        
+        public int AddConnection(Socket sock)
+        {
+            Connection connection = new Connection(sock, this);
 
             // Priority
-            connection.ClusterConnectionID = connections.Count;
+            connection.ClusterConnectionID = mConnections.Count;
             connection.Type = ConnectionType.Undefined;
 
-            connections.Add(connection);
+            mConnections.Add(connection);
 
-            return connections.Count;
+            return mConnections.Count;
         }
 
-        public static void UpdateConnection(Connection connection)
+        public void UpdateConnection(Connection connection)
         {
             if (connection.Type == ConnectionType.Node)
             {
                 // This will let us add a node as a proxy
-                if (nodes.Count == 0)
+                if (mNodes.Count == 0)
                 {
                     connection.ClusterConnectionID = connection.NodeID = 0xFFAA;
                 }
@@ -67,37 +73,37 @@ namespace EVESharp.ClusterControler
                     connection.NodeID = connection.ClusterConnectionID;
                 }
 
-                if (nodes.ContainsKey(connection.NodeID))
+                if (mNodes.ContainsKey(connection.NodeID))
                 {
-                    nodes[connection.NodeID] = connection;
+                    mNodes[connection.NodeID] = connection;
                 }
                 else
                 {
-                    nodes.Add(connection.NodeID, connection);
+                    mNodes.Add(connection.NodeID, connection);
                 }
             }
             else if (connection.Type == ConnectionType.Client)
             {
-                if (clients.ContainsKey(connection.AccountID))
+                if (mClients.ContainsKey(connection.AccountID))
                 {
-                    clients[connection.AccountID] = connection;
+                    mClients[connection.AccountID] = connection;
                 }
                 else
                 {
-                    clients.Add(connection.AccountID, connection);
+                    mClients.Add(connection.AccountID, connection);
                 }
             }
         }
 
-        public static void RemoveConnection(int index)
+        public void RemoveConnection(int index)
         {
             try
             {
-                Connection connection = connections[index];
+                Connection connection = mConnections[index];
 
                 if (connection == null)
                 {
-                    connections.RemoveAt(index);
+                    mConnections.RemoveAt(index);
                     return;
                 }
 
@@ -109,31 +115,31 @@ namespace EVESharp.ClusterControler
             }
         }
 
-        public static void RemoveConnection(Connection connection)
+        public void RemoveConnection(Connection connection)
         {
             try
             {
                 if (connection.Type == ConnectionType.Client)
                 {
-                    clients.Remove(connection.AccountID);
-                    connections.Remove(connection);
+                    mClients.Remove(connection.AccountID);
+                    mConnections.Remove(connection);
                 }
                 else if (connection.Type == ConnectionType.Node)
                 {
                     Log.Warning("ConnectionManager", "Node " + connection.NodeID.ToString("X4") + " disconnected");
 
-                    nodes.Remove(connection.NodeID);
-                    connections.Remove(connection);
+                    mNodes.Remove(connection.NodeID);
+                    mConnections.Remove(connection);
 
                     if (connection.NodeID == 0xFFAA)
                     {
                         Log.Warning("ConnectionManager", "Proxy node has disconnected, searching for new nodes");
 
-                        if (nodes.Count == 0)
+                        if (mNodes.Count == 0)
                         {
                             Log.Error("ConnectionManager", "No more nodes available, closing public cluster connections");
 
-                            foreach (var client in clients)
+                            foreach (var client in mClients)
                             {
                                 // Close the client connection
                                 client.Value.EndConnection();
@@ -141,15 +147,15 @@ namespace EVESharp.ClusterControler
                         }
                         else
                         {
-                            Connection newProxyNode = nodes.First().Value;
+                            Connection newProxyNode = mNodes.First().Value;
 
                             // Remove the node from nodes list to update it
-                            nodes.Remove(newProxyNode.NodeID);
+                            mNodes.Remove(newProxyNode.NodeID);
 
                             newProxyNode.ClusterConnectionID = newProxyNode.NodeID = 0xFFAA;
 
                             // And add it back as the proxy node
-                            nodes.Add(newProxyNode.ClusterConnectionID, newProxyNode);
+                            mNodes.Add(newProxyNode.ClusterConnectionID, newProxyNode);
 
                             // Send the node change notification
                             newProxyNode.SendNodeChangeNotification();
@@ -158,7 +164,7 @@ namespace EVESharp.ClusterControler
                 }
                 else
                 {
-                    connections.Remove(connection);
+                    mConnections.Remove(connection);
                 }
             }
             catch
@@ -167,11 +173,11 @@ namespace EVESharp.ClusterControler
             }
         }
 
-        public static Dictionary<int, Connection> Nodes
+        public Dictionary<int, Connection> Nodes
         {
             get
             {
-                return nodes;
+                return mNodes;
             }
 
             set
@@ -180,11 +186,11 @@ namespace EVESharp.ClusterControler
             }
         }
 
-        public static Dictionary<long, Connection> Clients
+        public Dictionary<long, Connection> Clients
         {
             get
             {
-                return clients;
+                return mClients;
             }
 
             set
@@ -193,11 +199,11 @@ namespace EVESharp.ClusterControler
             }
         }
 
-        public static void NotifyConnection(int clusterConnectionID, PyObject packet)
+        public void NotifyConnection(int clusterConnectionID, PyObject packet)
         {
             try
             {
-                connections[clusterConnectionID].Send(packet); // This will notify the connection
+                mConnections[clusterConnectionID].Send(packet); // This will notify the connection
             }
             catch
             {
@@ -205,11 +211,11 @@ namespace EVESharp.ClusterControler
             }
         }
 
-        public static void NotifyClient(int accountID, PyObject packet)
+        public void NotifyClient(int accountID, PyObject packet)
         {
             try
             {
-                clients[accountID].Send(packet); // This will notify the client
+                mClients[accountID].Send(packet); // This will notify the client
             }
             catch
             {
@@ -217,11 +223,11 @@ namespace EVESharp.ClusterControler
             }
         }
 
-        public static void NotifyNode(int nodeID, PyObject packet)
+        public void NotifyNode(int nodeID, PyObject packet)
         {
             try
             {
-                nodes[nodeID].Send(packet);
+                mNodes[nodeID].Send(packet);
             }
             catch
             {
@@ -229,11 +235,11 @@ namespace EVESharp.ClusterControler
             }
         }
 
-        public static int RandomNode
+        public int RandomNode
         {
             get
             {
-                foreach (KeyValuePair<int, Connection> node in nodes)
+                foreach (KeyValuePair<int, Connection> node in mNodes)
                 {
                     return node.Key;
                 }
@@ -247,11 +253,11 @@ namespace EVESharp.ClusterControler
             }
         }
 
-        public static int ClientsCount
+        public int ClientsCount
         {
             get
             {
-                return clients.Count;
+                return mClients.Count;
             }
 
             private set
@@ -260,11 +266,11 @@ namespace EVESharp.ClusterControler
             }
         }
 
-        public static int NodesCount
+        public int NodesCount
         {
             get
             {
-                return nodes.Count;
+                return mNodes.Count;
             }
 
             private set
