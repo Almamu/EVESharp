@@ -77,9 +77,7 @@ namespace Common.Network
                 }
                 catch (SocketException e)
                 {
-                    Console.WriteLine(e.Message);
-                    
-                    if (e.ErrorCode == 10035)
+                    if (e.SocketErrorCode == SocketError.WouldBlock)
                     {
                         break;
                     }
