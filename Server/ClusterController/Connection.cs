@@ -243,10 +243,10 @@ namespace ClusterControler
                     {
                         // PyException
                         Log.Error("Client", "Got exception from client");
+                        Log.Info("Client", PrettyPrinter.Print(obj));
                     }
                     else
                     {
-
                         PyPacket packet = new PyPacket();
 
                         if (packet.Decode(obj) == false)
@@ -311,7 +311,27 @@ namespace ClusterControler
 
             // Send data
             // Socket.Socket.BeginSend(packet, 0, packet.Length, SocketFlags.None, sendAsync, null);
-            Socket.Send(packet); // Maybe no the best solution, but should be helpful
+            int sent = 0;
+
+            while (sent != packet.Length)
+            {
+                try
+                {
+                    sent += Socket.Socket.Send(packet, sent, packet.Length - sent, SocketFlags.None);
+                    // TEMPORAL SOLUTION UNTIL THE TCPSocket CLASS IS REWRITTEN
+                }
+                catch (SocketException ex)
+                {
+                    if (ex.SocketErrorCode == SocketError.WouldBlock)
+                        continue;
+                    throw;
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e);
+                    throw;
+                }
+            }
         }
 
         public void SendLowLevelVersionExchange()

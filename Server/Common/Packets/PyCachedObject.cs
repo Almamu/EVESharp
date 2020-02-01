@@ -64,9 +64,9 @@ namespace Common.Packets
             
             obj.nodeID = cacheInfo.nodeID;
             obj.objectID = cacheInfo.objectID;
-            obj.shared = 0;
-            obj.compressed = 0;
-            obj.cache = new PyBuffer (Marshal.Marshal.Process(data));
+            obj.shared = 1;
+            obj.compressed = 1;
+            obj.cache = new PyBuffer (Zlib.Compress(Marshal.Marshal.Process(data)));
             obj.timestamp = cacheInfo.cacheTime;
             obj.version = cacheInfo.version;
 

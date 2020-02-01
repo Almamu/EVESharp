@@ -27,6 +27,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.IO;
+using System.Net.Sockets;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Security.Cryptography;
@@ -77,10 +78,32 @@ namespace Node
         {
             byte[] packet = new byte[data.Length + 4];
 
+            Log.Trace("ProxyConnection", $"Sending {data.Length} bytes to the cluster controller");
+            
             Array.Copy(data, 0, packet, 4, data.Length);
             Array.Copy(BitConverter.GetBytes(data.Length), packet, 4);
 
-            proxyConnection.Send(packet);
+            int sent = 0;
+
+            while (sent != packet.Length)
+            {
+                try
+                {
+                    sent += proxyConnection.Socket.Send(packet, sent, packet.Length - sent, SocketFlags.None);
+                    // TEMPORAL SOLUTION UNTIL THE TCPSocket CLASS IS REWRITTEN
+                }
+                catch (SocketException ex)
+                {
+                    if (ex.SocketErrorCode == SocketError.WouldBlock)
+                        continue;
+                    throw;
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e);
+                    throw;
+                }
+            }
         }
 
         static public void Send(PyObject data)
@@ -129,13 +152,14 @@ namespace Node
                         $"Unhandled exception: {ex.ToString()}"
                     );
                 }
-
-
+                
                 if (callRes == null)
                 {
                     Log.Trace("HandlePacket", "No response received from the service");
                     return;
                 }
+                
+                Log.Trace("HandlePacket", PrettyPrinter.Print(callRes));
 
                 //if (callRes.Type == PyObjectType.Tuple)
                 {

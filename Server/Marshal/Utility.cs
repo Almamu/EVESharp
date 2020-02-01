@@ -3,6 +3,7 @@ using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Text;
+using Org.BouncyCastle.Utilities.Zlib;
 
 namespace Marshal
 {
@@ -190,10 +191,20 @@ namespace Marshal
     {
         public static byte[] Decompress(byte[] input)
         {
+            /*Use InflaterInputStream and DeflaterOutputStream classes. The classes Inflater and Deflater are not recommended as they are very low level */
             // two bytes shaved off (zlib header)
             var sourceStream = new MemoryStream(input, 2, input.Length - 2);
-            var stream = new DeflateStream(sourceStream, CompressionMode.Decompress);
+            var stream = new ZOutputStream(sourceStream);
             return stream.ReadAllBytes();
+        }
+
+        public static byte[] Compress(byte[] input)
+        {
+            var sourceStream = new MemoryStream();
+            var stream = new ZOutputStream(sourceStream, JZlib.Z_DEFAULT_COMPRESSION);
+            // write zlib header
+            stream.Write(input);
+            return sourceStream.GetBuffer();
         }
     }
 
