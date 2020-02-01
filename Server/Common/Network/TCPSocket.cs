@@ -7,6 +7,7 @@ using System.Net.Sockets;
 
 namespace Common.Network
 {
+    // TODO: REWRITE THIS MESS OF A CLASS
     public class TCPSocket
     {
         public TCPSocket(ushort socket_port, bool mode_blocking)
@@ -61,7 +62,14 @@ namespace Common.Network
                     IPAddress ip;
                     if (IPAddress.TryParse(address, out ip) == false)
                     {
-                        ip = Dns.GetHostEntry(address).AddressList[0];
+                        IPHostEntry entry = Dns.GetHostEntry(address);
+                        
+                        int i = 0;
+                        
+                        do
+                        {
+                            ip = entry.AddressList[i++];
+                        } while (ip.AddressFamily != AddressFamily.InterNetwork && i < entry.AddressList.Length);
                     }
 
                     ep = new IPEndPoint(ip, port);
@@ -69,6 +77,8 @@ namespace Common.Network
                 }
                 catch (SocketException e)
                 {
+                    Console.WriteLine(e.Message);
+                    
                     if (e.ErrorCode == 10035)
                     {
                         break;
