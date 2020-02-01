@@ -37,25 +37,42 @@ namespace ClusterControler.Database
     {
         public void ResetSolarSystemStatus()
         {
-            if (Database.Query("UPDATE solarSystemsLoaded SET nodeID = 0") == false)
+            try
+            {
+                Database.Query("UPDATE solarSystemsLoaded SET nodeID = 0");
+            }
+            catch (Exception e)
             {
                 Log.Error("GeneralDB", "Cannot reset solar systems nodeID to 0");
+                throw;
             }
         }
 
         public void ResetSolarSystemStatus(int solarSystemID)
         {
-            if (Database.Query("UPDATE solarSystemsLoaded SET nodeID = 0 WHERE solarSystemID = " + solarSystemID.ToString()) == false)
+            try
+            {
+                Database.Query(
+                    "UPDATE solarSystemsLoaded SET nodeID = 0 WHERE solarSystemID = " + solarSystemID.ToString()
+                );
+            }
+            catch (Exception e)
             {
                 Log.Error("GeneralDB", "Cannot reset solar system nodeID to 0 for solar system " + solarSystemID.ToString());
+                throw;
             }
         }
 
         public void ResetItemsStatus()
         {
-            if (Database.Query("UPDATE entity SET nodeID = 0") == false)
+            try
+            {
+                Database.Query("UPDATE entity SET nodeID = 0");
+            }
+            catch (Exception e)
             {
                 Log.Error("GeneralDB", "Cannot reset nodeID for items");
+                throw;
             }
         }
 

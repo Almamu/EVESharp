@@ -65,7 +65,7 @@ namespace ClusterControler
 
         public void HandleLogin(LoginQueueEntry entry)
         {
-            Log.Debug("LoginQueue", "Login try " + entry.request.user_name);
+            Log.Debug("LoginQueue", "Processing login for " + entry.request.user_name);
             LoginStatus status = LoginStatus.Waiting;
 
             long accountID = 0;

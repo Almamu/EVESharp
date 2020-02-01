@@ -1,102 +1,76 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 
 namespace Common.Network
 {
     public class StreamPacketizer
-    {
-        private Queue<byte[]> mOut;
-        private List<byte> input;
+    { 
+        private MemoryStream mInputStream = new MemoryStream();
+        private BinaryWriter mInputWriter = null;
+        private BinaryReader mInputReader = null;
+        private Queue<byte[]> mOutputQueue = new Queue<byte[]>();
 
         public StreamPacketizer()
         {
-            mOut = new Queue<byte[]>();
-            input = new List<byte>();
+            this.mInputReader = new BinaryReader(this.mInputStream);
+            this.mInputWriter = new BinaryWriter(this.mInputStream);
         }
 
         // Lots of thread safe code here to prevent data corruption
         public void QueuePackets(byte[] data, int bytes)
         {
-            lock (input)
+            lock (this.mInputStream)
             {
-                byte[] tmp = new byte[bytes];
-
-                Array.Copy(data, tmp, bytes);
-
-                input.AddRange(tmp);
+                // go to the end of the memory stream and write the data
+                this.mInputWriter.Seek(0, SeekOrigin.End);
+                this.mInputWriter.Write(data, 0, bytes);
+                // return to the beginning of the stream
+                this.mInputWriter.Seek(0, SeekOrigin.Begin);
             }
         }
 
         public int ProcessPackets()
         {
-            try
+            lock (this.mInputStream)
             {
-                // Get the packet size:
-                int cur = 0;
-                int packets = 0;
-                byte[] tmp = input.ToArray();
-
-                while (cur != tmp.Length)
+                while (this.mInputStream.Position != this.mInputStream.Length)
                 {
-                    int size = BitConverter.ToInt32(tmp, cur);
+                    // seek to the beginning of the stream
+                    this.mInputStream.Seek(0, SeekOrigin.Begin);
+                
+                    // get size flag
+                    int size = this.mInputReader.ReadInt32();
 
-                    cur += 4;
-
-                    if (size + cur > tmp.Length) // The packet is longer than we have here
-                    {
-                        cur -= 4; // Go back to the size bytes
-
-                        // Get rid off the data before it
-                        input.RemoveRange(0, cur);
-
-                        return packets + mOut.Count;
-                    }
-
-                    byte[] packet = new byte[size];
-
-                    Array.Copy(tmp, cur, packet, 0, size);
-                    cur += size;
-
-                    mOut.Enqueue(packet);
-
-                    packets++;
+                    // ensure this packet is completely received
+                    if ((size + this.mInputStream.Position) > this.mInputStream.Length)
+                        return this.mOutputQueue.Count;
+                    
+                    // read the packet's data and queue it on the packets queue
+                    this.mOutputQueue.Enqueue(this.mInputReader.ReadBytes(size));
+                    // remove the packet from the stream
+                    byte[] currentBuffer = this.mInputStream.GetBuffer();
+                    Buffer.BlockCopy(
+                        currentBuffer,
+                        (int) this.mInputStream.Position,
+                        currentBuffer,
+                        0,
+                        (int) (this.mInputStream.Length - this.mInputStream.Position)
+                    );
+                    this.mInputStream.SetLength(this.mInputStream.Length - this.mInputStream.Position);
                 }
 
-                // If we are here all the packets were parsed correctly
-                input.RemoveRange(0, input.Count);
-
-                return packets + mOut.Count; // We need to let the user know that there are packets in the queue too
-            }
-            catch (Exception)
-            {
-                // The packets are malformed
-                return 0;
+                return this.mOutputQueue.Count;   
             }
         }
 
         public byte[] PopItem()
         {
-            lock (mOut)
-            {
-                if (mOut.Count > 0)
-                    return mOut.Dequeue();
-
-                return null;
-            }
-        }
-
-        public void ClearPackets()
-        {
-            lock(mOut)
-            {
-                lock (input)
-                {
-                    mOut = new Queue<byte[]>();
-                    input = new List<byte>();
-                }
-            }
+            lock (this.mOutputQueue)
+                return this.mOutputQueue.Dequeue();
         }
     }
 }

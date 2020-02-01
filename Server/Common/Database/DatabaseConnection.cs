@@ -35,26 +35,30 @@ namespace Common.Database
 {
     public class DatabaseConnection
     {
-        private MySqlConnection mConnection = null;
+        private string mConnectionString = "";
         private Queue<string> mQueryQueue = new Queue<string>();
         
-        public DatabaseConnection(MySqlConnection mConnection)
+        public DatabaseConnection(string connectionString)
         {
-            this.mConnection = mConnection;
+            this.mConnectionString = connectionString;
         }
 
         ~DatabaseConnection()
         {
-            this.mConnection.Close();
+            
         }
 
         public ulong QueryLID(string query)
         {
             MySqlDataReader reader = null;
+            MySqlConnection connection = null;
 
             try
             {
-                MySqlCommand command = new MySqlCommand(query, this.mConnection);
+                connection = new MySqlConnection(this.mConnectionString);
+                connection.Open();
+                
+                MySqlCommand command = new MySqlCommand(query, connection);
 
                 reader = command.ExecuteReader();
                 return (ulong) reader.FieldCount;
@@ -63,47 +67,62 @@ namespace Common.Database
             {
                 if (reader != null)
                     reader.Close();
-                
+
                 Log.Error("Database", $"MySQL error: {e.Message}");
                 throw;
             }
+            finally
+            {
+                if(connection != null)
+                    connection.Close();
+            }
         }
 
-        public bool Query(string query)
+        public void Query(string query)
         {
             MySqlDataReader reader = null;
+            MySqlConnection connection = null;
 
             try
             {
-                MySqlCommand command = new MySqlCommand(query, this.mConnection);
+                connection = new MySqlConnection(this.mConnectionString);
+                connection.Open();
+                
+                MySqlCommand command = new MySqlCommand(query, connection);
 
                 reader = command.ExecuteReader();
-                return true;
             }
             catch (Exception e)
             {
                 if (reader != null)
                     reader.Close();
-                
+
                 Log.Error("Database", $"MySQL error: {e.Message}");
                 throw;
             }
+            finally
+            {
+                if (connection != null)
+                    connection.Close();
+            }
         }
 
-        public bool Query(ref MySqlDataReader reader, string query)
+        public void Query(ref MySqlDataReader reader, ref MySqlConnection connection, string query)
         {
             try
             {
-                MySqlCommand command = new MySqlCommand(query, this.mConnection);
+                connection = new MySqlConnection(this.mConnectionString);
+                connection.Open();
+                
+                MySqlCommand command = new MySqlCommand(query, connection);
 
                 reader = command.ExecuteReader();
-                return true;
             }
             catch (Exception e)
             {
                 if (reader != null)
                     reader.Close();
-                
+
                 Log.Error("Database", $"MySQL error: {e.Message}");
                 throw;
             }
@@ -118,13 +137,15 @@ namespace Common.Database
         
         public static DatabaseConnection FromConfiguration(Configuration.Database configuration)
         {
-            string connStr =
-                $"server={configuration.Hostname};user={configuration.Username}; password={configuration.Password}; database={configuration.Name}; pooling=false";
-            
-            MySqlConnection connection = new MySqlConnection(connStr);
-            connection.Open();
+            MySqlConnectionStringBuilder stringBuilder = new MySqlConnectionStringBuilder();
 
-            return new DatabaseConnection(connection);
+            stringBuilder.Server = configuration.Hostname;
+            stringBuilder.Database = configuration.Name;
+            stringBuilder.UserID = configuration.Username;
+            stringBuilder.Password = configuration.Password;
+            stringBuilder.MinimumPoolSize = 10;
+            
+            return new DatabaseConnection(stringBuilder.ToString ());
         }
 
         public string DoEscapeString(string input)

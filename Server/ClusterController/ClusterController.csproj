@@ -5,6 +5,7 @@
         <TargetFramework>netcoreapp2.1</TargetFramework>
         <Company />
         <Product>eveClusterController</Product>
+        <LangVersion>8</LangVersion>
     </PropertyGroup>
 
     <ItemGroup>

@@ -37,38 +37,38 @@ namespace Node.Database
         public List<int> GetUnloadedSolarSystems()
         {
             MySqlDataReader res = null;
+            MySqlConnection connection = null;
 
-            if (Database.Query(ref res, "SELECT solarSystemID FROM solarsystemsloaded WHERE nodeID=0") == false)
+            Database.Query(ref res, ref connection, "SELECT solarSystemID FROM solarsystemsloaded WHERE nodeID=0");
+            
+            using(connection)
+            using (res)
             {
-                return new List<int>();
+                List<int> result = new List<int>();
+
+                while (res.Read())
+                {
+                    result.Add(res.GetInt32(0));
+                }
+
+                return result;   
             }
-
-            if (res == null)
-            {
-                return new List<int>();
-            }
-
-            List<int> result = new List<int>();
-
-            while (res.Read())
-            {
-                result.Add(res.GetInt32(0));
-            }
-
-            res.Close();
-
-            return result;
         }
 
-        public bool LoadSolarSystem(int solarSystemID)
+        public void LoadSolarSystem(int solarSystemID)
         {
-            if (Database.Query("UPDATE solarsystemsloaded SET nodeID = " + Program.NodeID + " WHERE solarSystemID = " + solarSystemID) == false)
+            try
+            {
+                Database.Query(
+                    "UPDATE solarsystemsloaded SET nodeID = " + Program.NodeID + " WHERE solarSystemID = " +
+                    solarSystemID
+                );
+            }
+            catch (Exception e)
             {
                 Log.Error("GeneralDB", "Cannot change solarSystem " + solarSystemID + " status to loaded");
-                return false;
+                throw;
             }
-
-            return true;
         }
 
         public void UnloadSolarSystem(int solarSystemID)

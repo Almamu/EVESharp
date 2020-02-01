@@ -156,7 +156,7 @@ namespace ClusterControler
 
                     if (obj == null)
                     {
-                        Log.Debug("Node", "Null packet received");
+                        Log.Debug("Node", $"Null packet received ({packet.Length})");
                         continue;
                     }
 
@@ -180,10 +180,12 @@ namespace ClusterControler
 
                         if (final.dest.type == PyAddress.AddrType.Client)
                         {
+                            Log.Trace("Node", $"Sending packet to client {final.userID}");
                             this.ConnectionManager.NotifyClient((int)(final.userID), obj);
                         }
                         else if (final.dest.type == PyAddress.AddrType.Node)
                         {
+                            Log.Trace("Node", $"Sending packet to node {final.dest.typeID}");
                             this.ConnectionManager.NotifyNode((int)(final.dest.typeID), obj);
                         }
                         else if (final.dest.type == PyAddress.AddrType.Broadcast)
@@ -263,14 +265,10 @@ namespace ClusterControler
                                 // Notify the node, be careful here, the client will be able to send packets to game clients
                                 if (packet.dest.typeID == 0xFFAA)
                                 {
-                                    Log.Warning("Client", "Sending packet to proxy");
-                                    this.ConnectionManager.NotifyNode((int)(packet.dest.typeID), obj);
+                                    Log.Trace("Client", "Sending packet to proxy");
                                 }
-                                else
-                                {
-                                    this.ConnectionManager.NotifyNode((int)(packet.dest.typeID), obj);
-                                }
-                                
+
+                                this.ConnectionManager.NotifyNode((int)(packet.dest.typeID), obj);
                             }
                         }
                     }

@@ -28,6 +28,7 @@ using System.Linq;
 using System.Text;
 using System.Data.SqlTypes;
 using System.Security.Cryptography;
+using Common;
 using Common.Database;
 using MySql.Data.MySqlClient;
 using MySql.Data.Types;
@@ -39,52 +40,54 @@ namespace ClusterControler.Database
         public bool AccountExists(string username)
         {
             MySqlDataReader reader = null;
+            MySqlConnection connection = null;
 
             username = Database.DoEscapeString(username);
 
-            if (Database.Query(ref reader, "SELECT COUNT(accountID) FROM account WHERE accountName = '" + username + "'") == false)
-            {
-                return false;
-            }
+            Database.Query(
+                ref reader, ref connection,
+                "SELECT COUNT(accountID) FROM account WHERE accountName = '" + username + "'"
+            );
 
-            if (reader.FieldCount > 0)
+            using (connection)
             {
-                reader.Close();
-                return true;
-            }
+                using (reader)
+                {
+                    if (reader.FieldCount > 0)
+                        return true;
 
-            reader.Close();
-            return false;
+                    return false;
+                }
+            }
         }
 
         public bool LoginPlayer(string username, string password, ref long accountid, ref bool banned, ref long role)
         {
             MySqlDataReader reader = null;
+            MySqlConnection connection = null;
 
-            if (Database.Query(ref reader, "SELECT accountID, password, banned, role FROM account WHERE accountName = '" + Database.DoEscapeString(username) + "' AND password=SHA1('" + Database.DoEscapeString(password) + "')") == false)
+            Database.Query(ref reader, ref connection,
+                "SELECT accountID, password, banned, role FROM account WHERE accountName LIKE '" +
+                Database.DoEscapeString(username) + "' AND password LIKE SHA1('" + Database.DoEscapeString(password) + "')"
+            );
+
+            using (connection)
             {
-                return false;
+                using (reader)
+                {
+                    if (reader.FieldCount == 0)
+                        return false;
+
+                    if (reader.Read() == false)
+                        return false;
+                    
+                    accountid = reader.GetInt64(0);
+                    banned = reader.GetBoolean(2);
+                    role = reader.GetInt64(3);
+
+                    return true;
+                }
             }
-
-            if (reader.Read() == false)
-            {
-                reader.Close();
-                return false;
-            }
-
-            accountid = reader.GetInt64(0);
-            banned = reader.GetBoolean(2);
-            role = reader.GetInt64(3);
-
-            SHA1 sha1 = SHA1.Create();
-            sha1.Initialize();
-            byte[] hash = sha1.ComputeHash(Encoding.ASCII.GetBytes(password));
-            byte[] outb = new byte[hash.Length];
-
-            reader.GetBytes(1, 0, outb, 0, outb.Length);
-            reader.Close();
-
-            return true;
         }
 
         public void CreateAccount(string accountName, string accountPassword)

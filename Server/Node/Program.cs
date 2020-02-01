@@ -105,6 +105,7 @@ namespace Node
 
                 try
                 {
+                    Log.Trace("HandlePacket", $"Calling {packet.dest.service}::{call}");
                     callRes = sServiceManager.ServiceCall(packet.dest.service, call, args, null);
                 }
                 catch (ServiceDoesNotContainCallException)
@@ -132,10 +133,11 @@ namespace Node
 
                 if (callRes == null)
                 {
+                    Log.Trace("HandlePacket", "No response received from the service");
                     return;
                 }
 
-                if (callRes.Type == PyObjectType.Tuple)
+                //if (callRes.Type == PyObjectType.Tuple)
                 {
                     res.type_string = "macho.CallRsp";
                     res.type = Macho.MachoNetMsg_Type.CALL_RSP;
@@ -193,7 +195,7 @@ namespace Node
 
                 Log.Info("Main", "Priming cache...");
                 sCacheStorage = new CacheStorage(sDatabase);
-                sCacheStorage.Load(CacheStorage.LoginCacheTable, CacheStorage.LoginCacheQueries);
+                sCacheStorage.Load(CacheStorage.LoginCacheTable, CacheStorage.LoginCacheQueries, CacheStorage.LoginCacheTypes);
                 Log.Debug("Main", "Done");
                 
                 Log.Info("Main", "Initializing item factory");

@@ -37,49 +37,51 @@ namespace Node.Database
         public bool LoginPlayer(string username, string password, ref long accountid, ref bool banned, ref long role)
         {
             MySqlDataReader reader = null;
+            MySqlConnection connection = null;
 
             username = Database.DoEscapeString(username);
 
-            if (Database.Query(ref reader, "SELECT accountID, password, banned, role FROM account WHERE accountName = '" + username + "'") == false)
+            Database.Query(
+                ref reader, ref connection,
+                "SELECT accountID, password, banned, role FROM account WHERE accountName = '" + username + "'"
+            );
+
+            using (connection)
             {
-                return false;
-            }
-
-            if (reader.FieldCount == 0)
-            {
-                reader.Close();
-                return false;
-            }
-
-            accountid = reader.GetInt64(0);
-            banned = reader.GetBoolean(2);
-            role = reader.GetInt64(3);
-
-            SHA1 sha1 = SHA1.Create();
-            sha1.Initialize();
-            byte[] hash = sha1.ComputeHash(Encoding.ASCII.GetBytes(password));
-            byte[] outb = new byte[hash.Length];
-
-            reader.GetBytes(1, 0, outb, 0, outb.Length);
-            reader.Close();
-
-            bool equals = true;
-
-            for (int i = 0; i < outb.Length; i++)
-            {
-                if (outb[i] != hash[i])
+                using (reader)
                 {
-                    equals = false;
-                    break;
+                    if (reader.FieldCount == 0)
+                        return false;
+                    
+                    if (reader.Read() == false)
+                        return false;
+
+                    accountid = reader.GetInt64(0);
+                    banned = reader.GetBoolean(2);
+                    role = reader.GetInt64(3);
+
+                    SHA1 sha1 = SHA1.Create();
+                    sha1.Initialize();
+                    byte[] hash = sha1.ComputeHash(Encoding.ASCII.GetBytes(password));
+                    byte[] outb = new byte[hash.Length];
+
+                    reader.GetBytes(1, 0, outb, 0, outb.Length);
+                    reader.Close();
+
+                    bool equals = true;
+
+                    for (int i = 0; i < outb.Length; i++)
+                    {
+                        if (outb[i] != hash[i])
+                        {
+                            equals = false;
+                            break;
+                        }
+                    }
+
+                    return equals;
                 }
             }
-
-            if (equals == false)
-            {
-                return false;
-            }
-
-            return true;
         }
 
         public AccountDB(DatabaseConnection db) : base(db)

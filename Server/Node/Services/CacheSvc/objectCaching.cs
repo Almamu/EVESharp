@@ -61,15 +61,8 @@ namespace Node.Services.CacheSvc
             string objectID = cache.objectID.As<PyString>().Value;
 
             Log.Debug("GetCachableObject", $"Received cache request for {objectID}");
-
-            try
-            {
-                return this.mCacheStorage.Get(objectID);
-            }
-            catch (Exception e)
-            {
-                return null;
-            }
+            
+            return this.mCacheStorage.Get(objectID);
         }
     }
 }

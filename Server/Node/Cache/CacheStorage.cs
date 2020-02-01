@@ -39,6 +39,14 @@ namespace Node
 {
     public class CacheStorage : DatabaseAccessor
     {
+	    public enum CacheObjectType
+	    {
+		    TupleSet = 0,
+		    Rowset = 1,
+		    CRowset = 2,
+		    PackedRowList = 3
+	    };
+	    
         public static string[] LoginCacheTable =
         {
         	"config.BulkData.ramactivities",
@@ -122,6 +130,48 @@ namespace Node
             "SELECT typeID, groupID, typeName, description, graphicID, radius, mass, volume, capacity, portionSize, raceID, basePrice, published, marketGroupID, chanceOfDuplicating, 0 AS dataID FROM invTypes",
             "SELECT typeID, parentTypeID, metaGroupID FROM invMetaTypes"
         };
+
+        public static CacheObjectType[] LoginCacheTypes =
+        {
+	        CacheObjectType.TupleSet,
+	        CacheObjectType.TupleSet,
+	        CacheObjectType.Rowset,
+	        CacheObjectType.Rowset,
+	        CacheObjectType.TupleSet,
+	        CacheObjectType.Rowset,
+	        CacheObjectType.CRowset,
+	        CacheObjectType.CRowset,
+	        CacheObjectType.TupleSet,
+	        CacheObjectType.TupleSet,
+	        CacheObjectType.TupleSet,
+	        CacheObjectType.CRowset,
+	        CacheObjectType.Rowset,
+	        CacheObjectType.TupleSet,
+	        CacheObjectType.Rowset,
+	        CacheObjectType.CRowset,
+	        CacheObjectType.TupleSet,
+	        CacheObjectType.Rowset,
+	        CacheObjectType.Rowset,
+	        CacheObjectType.Rowset,
+	        CacheObjectType.PackedRowList,
+	        CacheObjectType.TupleSet,
+	        CacheObjectType.CRowset,
+	        CacheObjectType.TupleSet,
+	        CacheObjectType.CRowset,
+	        CacheObjectType.TupleSet,
+	        CacheObjectType.Rowset,
+	        CacheObjectType.TupleSet,
+	        CacheObjectType.TupleSet,
+	        CacheObjectType.TupleSet,
+	        CacheObjectType.CRowset,
+	        CacheObjectType.Rowset,
+	        CacheObjectType.Rowset,
+	        CacheObjectType.CRowset,
+	        CacheObjectType.TupleSet,
+	        CacheObjectType.TupleSet,
+	        CacheObjectType.TupleSet,
+	        CacheObjectType.CRowset
+        };
 /*
         public static string[] CreateCharacterCacheTable = new string[] 
         {
@@ -194,29 +244,51 @@ namespace Node
 	        return this.mCacheHits;
         }
 
-        private void Load(string name, string query)
+        private void Load(string name, string query, CacheObjectType type)
         {
-	        Log.Debug("Cache", $"Loading cache data for {name}");
+	        Log.Debug("Cache", $"Loading cache data for {name} of type {type}");
 	        
             MySqlDataReader reader = null;
+            MySqlConnection connection = null;
 
-            if (Database.Query(ref reader, query) == false)
+            try
             {
-                // TODO: CREATE AN EXCEPTION FOR THIS
-                throw new Exception ($"Cannot generate cache data for {name}");
-            }
+	            Database.Query(ref reader, ref connection, query);
+	            PyObject cacheObject = null;
 
-            Store(name, DBUtils.DBResultToCRowset(ref reader), DateTime.Now.ToFileTimeUtc());
+	            switch (type)
+	            {
+		            case CacheObjectType.Rowset:
+			            cacheObject = DBUtils.DBResultToRowset(ref reader);
+			            break;
+		            case CacheObjectType.CRowset:
+			            cacheObject = DBUtils.DBResultToCRowset(ref reader);
+			            break;
+		            case CacheObjectType.TupleSet:
+			            cacheObject = DBUtils.DBResultToTupleSet(ref reader);
+			            break;
+		            case CacheObjectType.PackedRowList:
+			            cacheObject = DBUtils.DBResultToPackedRowList(ref reader);
+			            break;
+	            }
+	            
+	            Store(name, cacheObject, DateTime.Now.ToFileTimeUtc());
+            }
+            catch (Exception e)
+            {
+	            Log.Error("Cache", $"Cannot generate cache data for {name}");
+	            throw;
+            }
         }
 
-        public void Load(string[] names, string[] queries)
+        public void Load(string[] names, string[] queries, CacheObjectType[] types)
         {
-            if (names.Length != queries.Length)
-                throw new ArgumentOutOfRangeException("names", "names and queries do not match in size");
+            if (names.Length != queries.Length || names.Length != types.Length)
+                throw new ArgumentOutOfRangeException("names", "names, queries and types do not match in size");
 
             for (int i = 0; i < names.Length; i++)
             {
-                Load(names[i], queries[i]);
+                Load(names[i], queries[i], types[i]);
             }
         }
 
