@@ -142,9 +142,9 @@ namespace Node.Services.Network
                 this.mCacheStorage.Store("machoNet.serviceInfo", dict, DateTime.Now.ToFileTimeUtc());
             }
 
-            PyObject srvInfo = this.mCacheStorage.Get("machoNet.serviceInfo");
+            PyObject srvInfo = this.mCacheStorage.GetHint("machoNet.serviceInfo");
             PyTuple res = new PyTuple();
-            PyDict initvals = this.mCacheStorage.GetHints();
+            PyDict initvals = this.mCacheStorage.GetHints(CacheStorage.LoginCacheTable);
 
             res.Items.Add(srvInfo);
             res.Items.Add(initvals); // Rest of the cache data

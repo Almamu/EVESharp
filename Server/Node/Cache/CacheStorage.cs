@@ -215,7 +215,7 @@ namespace Node
         public static int CharacterAppearanceCacheTableSize = CharacterAppearanceCacheTable.Length;
 */
         private Dictionary<string, PyObject> mCacheData = new Dictionary<string, PyObject>();
-        private PyDict mCacheHits = new PyDict();
+        private PyDict mCacheHints = new PyDict();
 
         public bool Exists(string name)
         {
@@ -229,19 +229,29 @@ namespace Node
 
         public void Store(string name, PyObject data, long timestamp)
         {
-            Log.Info("Cache", String.Format("Saving cache data for {0}", name));
+            Log.Info("Cache", $"Saving cache data for {name}");
             
             CacheInfo info = CacheInfo.FromPyObject(name, data, timestamp, Program.NodeID);
             
             // save cache hint
-            this.mCacheHits.Set(name, info.Encode ());
+            this.mCacheHints.Set(name, info.Encode ());
             // save cache object
             this.mCacheData[name] = PyCachedObject.FromCacheInfo(info, data).Encode();
         }
 
-        public PyDict GetHints()
+        public PyDict GetHints(string[] list)
         {
-	        return this.mCacheHits;
+	        PyDict hints = new PyDict();
+
+	        foreach(string name in list)
+				hints.Set(name, this.GetHint(name));
+	        
+	        return hints;
+        }
+
+        public PyObject GetHint(string name)
+        {
+	        return this.mCacheHints.Get(name);
         }
 
         private void Load(string name, string query, CacheObjectType type)

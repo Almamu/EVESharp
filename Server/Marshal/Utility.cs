@@ -193,7 +193,7 @@ namespace Marshal
         {
             /*Use InflaterInputStream and DeflaterOutputStream classes. The classes Inflater and Deflater are not recommended as they are very low level */
             // two bytes shaved off (zlib header)
-            var sourceStream = new MemoryStream(input, 2, input.Length - 2);
+            var sourceStream = new MemoryStream(input);
             var stream = new ZOutputStream(sourceStream);
             return stream.ReadAllBytes();
         }
@@ -201,9 +201,11 @@ namespace Marshal
         public static byte[] Compress(byte[] input)
         {
             var sourceStream = new MemoryStream();
-            var stream = new ZOutputStream(sourceStream, JZlib.Z_DEFAULT_COMPRESSION);
+            var stream = new ZOutputStream(sourceStream, -1);
             // write zlib header
             stream.Write(input);
+            stream.Finish();
+            
             return sourceStream.GetBuffer();
         }
     }

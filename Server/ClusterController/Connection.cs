@@ -270,6 +270,15 @@ namespace ClusterControler
 
                                 this.ConnectionManager.NotifyNode((int)(packet.dest.typeID), obj);
                             }
+                            else if (packet.dest.type == PyAddress.AddrType.Any)
+                            {
+                                Log.Trace("Client", "Sending service request with no node specifiedto proxy");
+
+                                packet.dest.type = PyAddress.AddrType.Node;
+                                packet.dest.typeID = 0xFFAA;
+                                
+                                this.ConnectionManager.NotifyNode((int)(packet.dest.typeID), packet.Encode());
+                            }
                         }
                     }
                 }

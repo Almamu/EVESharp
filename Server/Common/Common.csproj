@@ -12,7 +12,6 @@
 
     <ItemGroup>
       <PackageReference Include="ini-parser-netstandard" Version="2.5.2" />
-      <PackageReference Include="SharpZipLib" Version="1.2.0" />
     </ItemGroup>
 
 </Project>

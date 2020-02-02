@@ -31,12 +31,22 @@ namespace Common.Utils
             PyDict dict = new PyDict();
             dict.Set("header", descriptor);
 
+            PyList columns = new PyList();
+            
+            for(int i = 0; i < descriptor.ColumnCount; i ++)
+                columns.Items.Add(descriptor.GetColumnName(i));
+            
+            dict.Set("columns", columns);
+
             PyObjectEx res = new PyObjectEx();
             res.IsType2 = true;
 
-            args.Items.Add(dict);
+            PyTuple header = new PyTuple();
+            header.Items.Add(args);
+            header.Items.Add(dict);
+            
             res.List = items.Items;
-            res.Header = args;
+            res.Header = header;
             
             return res;
         }

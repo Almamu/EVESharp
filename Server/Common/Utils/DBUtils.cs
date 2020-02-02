@@ -79,6 +79,8 @@ namespace Common.Utils
                 rowlist.Items.Add(linedata);
             }
 
+            args.Set("lines", rowlist);
+            
             dat.Close();
 
             return new PyObjectData("util.Rowset", args);
