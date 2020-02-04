@@ -41,7 +41,7 @@ def process_func(code_q, result_q, store_path, lock):
                     if e.errno != errno.ENOENT:
                         raise
                 with open(filename, 'w') as out_file:
-                    uncompyle2.uncompyle('2.5', code, out_file)
+                    uncompyle2.uncompyle(2.5, code, out_file)
             except KeyboardInterrupt:
                 raise
             except:
@@ -212,8 +212,30 @@ if __name__ == '__main__':
         filelist = cPickle.loads(cPickle.loads(compiled_data)[1])['code']
 
         for code in filelist:
-            code_queue.put( (code[0].replace('../', '').replace('script:/', ''), UnjumbleString(code[1][0])) )
+            code_queue.put( ("compiled.code/" + code[0].replace('../', '').replace('script:/', ''), UnjumbleString(code[1][0])) )
 
+        # decompyle zip files too
+        with zipfile.ZipFile(os.path.join(eve_path, 'lib\evelib.ccp'), 'r') as zf:
+            for filename in zf.namelist():
+                if filename[-4:] == '.pyj':
+                    code_queue.put( ("evelib.ccp/" + filename[:-1], UnjumbleString(zf.read(filename))[8:]) )
+                elif filename[-4:] == '.pyc':
+                    code_queue.put( ("evelib.ccp/" + filename[:-1], zf.read(filename)[8:]) )
+                    
+        with zipfile.ZipFile(os.path.join(eve_path, 'lib\corestdlib.ccp'), 'r') as zf:
+            for filename in zf.namelist():
+                if filename[-4:] == '.pyj':
+                    code_queue.put( ("corestdlib.ccp/" + filename[:-1], UnjumbleString(zf.read(filename))[8:]) )
+                elif filename[-4:] == '.pyc':
+                    code_queue.put( ("corestdlib.ccp/" + filename[:-1], zf.read(filename)[8:]) )
+
+        with zipfile.ZipFile(os.path.join(eve_path, 'lib\corelib.ccp'), 'r') as zf:
+            for filename in zf.namelist():
+                if filename[-4:] == '.pyj':
+                    code_queue.put( ("corelib.ccp/" + filename[:-1], UnjumbleString(zf.read(filename))[8:]) )
+                elif filename[-4:] == '.pyc':
+                    code_queue.put( ("corelib.ccp/" + filename[:-1], zf.read(filename)[8:]) )
+                    
         #this process is done except for waiting, so add one more decompile process
         p = Process(target=process_func,
                     args=(code_queue, result_queue, store_path, print_lock))
