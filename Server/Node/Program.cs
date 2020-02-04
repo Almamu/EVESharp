@@ -55,8 +55,8 @@ namespace Node
         private static SystemManager sSystemManager = null;
         private static General sConfiguration = null;
         private static ItemFactory sItemFactory = null;
+        static public Dictionary<uint, Client> sClients = new Dictionary<uint, Client>();
         
-        static public Dictionary<uint, Client> clients = new Dictionary<uint, Client>();
         static private int nodeID = 0xFFFF;
         static private TCPSocket proxyConnection = null;
         static private StreamPacketizer packetizer = new StreamPacketizer();
@@ -116,6 +116,13 @@ namespace Node
             PyPacket packet = (PyPacket)input;
             PyPacket res = new PyPacket();
 
+            // Check if the client isnt assigned to this node yet
+            if(sClients.ContainsKey(packet.userID) == false)
+            {
+                Client cli = new Client();
+                sClients.Add(packet.userID, cli);
+            }
+            
             if (packet.type == Macho.MachoNetMsg_Type.CALL_REQ)
             {
                 PyTuple callInfo = packet.payload.As<PyTuple>().Items[0].As<PyTuple>()[1].As<PySubStream>().Data.As<PyTuple>();
@@ -128,8 +135,10 @@ namespace Node
 
                 try
                 {
+                    // TODO: SEPARATE HANDLING OF CLIENT AND NODE PACKETS TO PROPERLY DETECT USERID WITHOUT
+                    // TODO: RELYING ON THE PACKET
                     Log.Trace("HandlePacket", $"Calling {packet.dest.service}::{call}");
-                    callRes = sServiceManager.ServiceCall(packet.dest.service, call, args, null);
+                    callRes = sServiceManager.ServiceCall(packet.dest.service, call, args, sClients [packet.userID]);
                 }
                 catch (ServiceDoesNotContainCallException)
                 {
@@ -187,15 +196,8 @@ namespace Node
             {
                 Log.Debug("Main", $"Updating session for client {packet.userID}");
 
-                // Check if the client isnt assigned to this node yet
-                if(clients.ContainsKey(packet.userID) == false)
-                {
-                    Client cli = new Client();
-                    clients.Add(packet.userID, cli);
-                }
-
                 // Update client session
-                clients[packet.userID].UpdateSession(packet);
+                sClients[packet.userID].UpdateSession(packet);
             }
         }
 
@@ -231,7 +233,7 @@ namespace Node
                 Log.Debug("Main", "Done");
 
                 Log.Info("Main", "Initializing service manager");
-                sServiceManager = new ServiceManager(sDatabase, sCacheStorage);
+                sServiceManager = new ServiceManager(sDatabase, sCacheStorage, sConfiguration);
                 Log.Debug("Main", "Done");
                 
                 Log.Info("Main", "Connecting to proxy...");

@@ -14,6 +14,8 @@ namespace Node.Configuration
         private Logging m_Logging = new Logging ();
 
         private Proxy m_Proxy = new Proxy();
+        
+        private Authentication m_Authentication = new Authentication();
 
         public Common.Configuration.Database Database
         {
@@ -32,6 +34,12 @@ namespace Node.Configuration
             get { return this.m_Proxy; }
             set { this.m_Proxy = value; }
         }
+
+        public Authentication Authentication
+        {
+            get { return this.m_Authentication; }
+            set { this.m_Authentication = value; }
+        }
         
         public static General LoadFromFile(string filename)
         {
@@ -47,6 +55,9 @@ namespace Node.Configuration
             if (data.Sections.ContainsSection("logging") == true)
                 config.Logging.Load(data["logging"]);
 
+            if(data.Sections.ContainsSection("authentication") == true)
+                config.Authentication.Load(data["authentication"]);
+            
             return config;
         }
     }

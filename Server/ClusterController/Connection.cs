@@ -272,7 +272,7 @@ namespace ClusterControler
                             }
                             else if (packet.dest.type == PyAddress.AddrType.Any)
                             {
-                                Log.Trace("Client", "Sending service request with no node specifiedto proxy");
+                                Log.Trace("Client", "Sending service request with no node specified to proxy");
 
                                 packet.dest.type = PyAddress.AddrType.Node;
                                 packet.dest.typeID = 0xFFAA;

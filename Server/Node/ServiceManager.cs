@@ -29,6 +29,7 @@ using System.Text;
 using Common.Database;
 using Common.Services;
 using Node.Services.CacheSvc;
+using Node.Services.Characters;
 using Node.Services.Network;
 
 namespace Node
@@ -40,6 +41,8 @@ namespace Node
         private objectCaching mObjectCachingSvc = null;
         private machoNet mMachoNetSvc = null;
         private alert mAlertSvc = null;
+        private authentication mAuthenticationSvc = null;
+        private character mCharacterSvc = null;
 
         public Service objectCaching()
         {
@@ -56,7 +59,17 @@ namespace Node
             return this.mAlertSvc;
         }
 
-        public ServiceManager(DatabaseConnection db, CacheStorage storage)
+        public Service authentication()
+        {
+            return this.mAuthenticationSvc;
+        }
+
+        public Service character()
+        {
+            return this.mCharacterSvc;
+        }
+        
+        public ServiceManager(DatabaseConnection db, CacheStorage storage, Configuration.General configuration)
         {
             this.mDatabaseConnection = db;
             this.mCacheStorage = storage;
@@ -65,6 +78,8 @@ namespace Node
             this.mMachoNetSvc = new machoNet(this.mCacheStorage);
             this.mAlertSvc = new alert();
             this.mObjectCachingSvc = new objectCaching(this.mCacheStorage);
+            this.mAuthenticationSvc = new authentication(configuration.Authentication);
+            this.mCharacterSvc = new character(db);
         }
     }
 }

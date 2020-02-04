@@ -17,4 +17,8 @@
       <ProjectReference Include="..\Marshal\Marshal.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Folder Include="Services\Chat" />
+    </ItemGroup>
+
 </Project>

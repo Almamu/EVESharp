@@ -1,4 +1,4 @@
-﻿/*
+/*
     ------------------------------------------------------------------------------------
     LICENSE:
     ------------------------------------------------------------------------------------
@@ -28,79 +28,26 @@ using System.Linq;
 using System.Text;
 using Marshal;
 using Common;
+using Common.Services;
+using System.IO;
+using Common.Database;
+using Node.Database;
 
-namespace Node
+namespace Node.Services.Characters
 {
-    public class Client
+    public class character : Service
     {
-        private Session session = new Session();
-
-        public void UpdateSession(PyPacket from)
+        private CharacterDB mDB = null;
+        
+        public character(DatabaseConnection db)
+            : base("character")
         {
-            Log.Debug("Client", "Updating session for client");
-
-            // We should add a Decode method to SessionChangeNotification...
-            PyTuple payload = from.payload;
-
-            PyDict changes = payload[0].As<PyTuple>()[1].As<PyDict>();
-
-            // Update our local session
-            foreach(PyString key in changes.Dictionary.Keys)
-            {
-                session.Set(key.Value, changes[key.Value].As<PyTuple>()[1]);
-            }
+            this.mDB = new CharacterDB(db);
         }
 
-        public string LanguageID
+        public PyObject GetCharactersToSelect(PyTuple args, Client client)
         {
-            get
-            {
-                return session.GetCurrentString("languageID");
-            }
-
-            set
-            {
-                session.SetString("languageID", value);
-            }
-        }
-
-        public int AccountID
-        {
-            get
-            {
-                return session.GetCurrentInt("userid");
-            }
-
-            set
-            {
-
-            }
-        }
-
-        public int Role
-        {
-            get
-            {
-                return session.GetCurrentInt("role");
-            }
-
-            set
-            {
-
-            }
-        }
-
-        public string Address
-        {
-            get
-            {
-                return session.GetCurrentString("address");
-            }
-
-            set
-            {
-
-            }
+            return this.mDB.GetCharacterList(client.AccountID);
         }
     }
 }

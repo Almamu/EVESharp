@@ -28,79 +28,37 @@ using System.Linq;
 using System.Text;
 using Marshal;
 using Common;
+using Common.Services;
+using System.IO;
+using Node.Configuration;
 
-namespace Node
+namespace Node.Services.Network
 {
-    public class Client
+    public class authentication : Service
     {
-        private Session session = new Session();
-
-        public void UpdateSession(PyPacket from)
+        private Authentication mConfiguration = null;
+        
+        public authentication(Authentication configuration)
+            : base("authentication")
         {
-            Log.Debug("Client", "Updating session for client");
-
-            // We should add a Decode method to SessionChangeNotification...
-            PyTuple payload = from.payload;
-
-            PyDict changes = payload[0].As<PyTuple>()[1].As<PyDict>();
-
-            // Update our local session
-            foreach(PyString key in changes.Dictionary.Keys)
-            {
-                session.Set(key.Value, changes[key.Value].As<PyTuple>()[1]);
-            }
+            this.mConfiguration = configuration;
         }
 
-        public string LanguageID
+        public PyObject GetPostAuthenticationMessage(PyObject args, object client)
         {
-            get
+            if (this.mConfiguration.MessageType == AuthenticationMessageType.NoMessage)
+                return new PyNone();
+
+            if (this.mConfiguration.MessageType == AuthenticationMessageType.HTMLMessage)
             {
-                return session.GetCurrentString("languageID");
+                PyDict keyvalData = new PyDict();
+                
+                keyvalData.Set("message", new PyString(this.mConfiguration.Message));
+
+                return new PyObjectData("util.KeyVal", keyvalData);
             }
-
-            set
-            {
-                session.SetString("languageID", value);
-            }
-        }
-
-        public int AccountID
-        {
-            get
-            {
-                return session.GetCurrentInt("userid");
-            }
-
-            set
-            {
-
-            }
-        }
-
-        public int Role
-        {
-            get
-            {
-                return session.GetCurrentInt("role");
-            }
-
-            set
-            {
-
-            }
-        }
-
-        public string Address
-        {
-            get
-            {
-                return session.GetCurrentString("address");
-            }
-
-            set
-            {
-
-            }
+            
+            return new PyNone();
         }
     }
 }
