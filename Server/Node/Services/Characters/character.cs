@@ -49,5 +49,10 @@ namespace Node.Services.Characters
         {
             return this.mDB.GetCharacterList(client.AccountID);
         }
+
+        public PyObject LogStartOfCharacterCreation(PyTuple args, Client client)
+        {
+            return null;
+        }
     }
 }
