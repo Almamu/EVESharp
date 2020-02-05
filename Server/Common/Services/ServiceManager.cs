@@ -27,7 +27,7 @@ namespace Common.Services
             {
                 throw new ServiceDoesNotContainCallException(service, call);
             }
-
+            
             return (PyObject)(method.Invoke(svc, new object[] { data, client }));
         }
     }

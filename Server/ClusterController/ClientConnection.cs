@@ -14,10 +14,14 @@ namespace ClusterControler
         public int NodeID { get; private set; }
         
         public Session Session { get; private set; }
+
+        public long AccountID
+        {
+            get { return this.Session.GetCurrentLong("userid"); }
+            private set { }
+        }
         
-        public int ClientID { get; private set; }
-        
-        public ClientConnection(EVEClientSocket socket, ConnectionManager connectionManager, int clientID)
+        public ClientConnection(EVEClientSocket socket, ConnectionManager connectionManager)
             : base(socket, connectionManager)
         {
             // set the exception handler
@@ -30,13 +34,12 @@ namespace ClusterControler
             this.Session = new Session();
             // TODO: GET SOCKET ADDRESS
             this.Session.SetString("address", this.Socket.GetRemoteAddress());
-            this.ClientID = clientID;
         }
 
         protected override void OnConnectionLost()
         {
             // remove the client from the active list
-            this.ConnectionManager.RemoveClientConnection(this);
+            this.ConnectionManager.RemoveUnauthenticatedClientConnection(this);
             // and free the socket resources
             this.Socket.ForcefullyDisconnect();
         }
@@ -142,14 +145,14 @@ namespace ClusterControler
 
             ack.live_updates = new PyList();
             ack.jit = this.Session.GetCurrentString("languageid");
-            ack.userid = (int) this.Session.GetCurrentLong("userid");
+            ack.userid = this.Session.GetCurrentLong("userid");
             ack.maxSessionTime = new PyNone();
             ack.userType = Common.Constants.AccountType.User;
             ack.role = this.Session.GetCurrentInt("role");
             ack.address = this.Session.GetCurrentString("address");
             ack.inDetention = new PyNone();
             ack.client_hashes = new PyList();
-            ack.user_clientid = this.ClientID;
+            ack.user_clientid = this.Session.GetCurrentLong("userid");;
 
             // send the response first
             this.Socket.Send(ack);
@@ -167,6 +170,9 @@ namespace ClusterControler
             PyPacket pyPacket = new PyPacket();
 
             pyPacket.Decode(packet);
+            
+            if (pyPacket.userID != this.Session.GetCurrentLong("userid"))
+                throw new Exception("Received a packet coming from a client trying to spoof It's userID");
 
             if (pyPacket.dest.type == PyAddress.AddrType.Node)
             {
@@ -193,6 +199,7 @@ namespace ClusterControler
         protected void ExceptionHandler(Exception exception)
         {
             Log.Error("Client", exception.Message);
+            Log.Trace("Client", exception.StackTrace);
         }
         
         private void SendLowLevelVersionExchange()
@@ -212,7 +219,7 @@ namespace ClusterControler
             this.Socket.Send(data);
         }
         
-        public void SendLoginNotification(LoginStatus loginStatus)
+        public void SendLoginNotification(LoginStatus loginStatus, long accountID, long role)
         {
             if (loginStatus == LoginStatus.Sucess)
             {
@@ -240,12 +247,15 @@ namespace ClusterControler
                     rsp.boot_codename = Common.Constants.Game.codename;
                     rsp.boot_region = Common.Constants.Game.region;
 
-                    // Setup session
+                    // setup session
                     this.Session.SetInt("userType", Common.Constants.AccountType.User);
-
+                    this.Session.SetLong("userid", accountID);
+                    this.Session.SetLong("role", role);
+                    // move the connection to the authenticated user list
+                    this.ConnectionManager.RemoveUnauthenticatedClientConnection(this);
+                    this.ConnectionManager.AddAuthenticatedClientConnection(this);
                     // send the login response
                     this.Socket.Send(rsp);
-                    
                     // set second to last packet handler
                     this.Socket.SetReceiveCallback(ReceiveLoginResultResponse);
                 }
@@ -269,7 +279,12 @@ namespace ClusterControler
         private void AbortConnection()
         {
             this.Socket.GracefulDisconnect();
-            this.ConnectionManager.RemoveClientConnection(this);
+            
+            // remove the user from the correct lists
+            if(this.Session.KeyExists("userid") == false)
+                this.ConnectionManager.RemoveUnauthenticatedClientConnection(this);
+            else
+                this.ConnectionManager.RemoveAuthenticatedClientConnection(this);
         }
         
         // TODO: MOVE THIS CODE TO THE SESSION HANDLER INSTEAD
@@ -300,12 +315,12 @@ namespace ClusterControler
                 return null;
             }
 
-            Dictionary<int, NodeConnection> nodes = this.ConnectionManager.Nodes;
+            Dictionary<long, NodeConnection> nodes = this.ConnectionManager.Nodes;
 
             // Add all the nodeIDs
-            foreach (KeyValuePair<int, NodeConnection> node in nodes)
+            foreach (KeyValuePair<long, NodeConnection> node in nodes)
             {
-                scn.nodesOfInterest.Items.Add(new PyInt(node.Key));
+                scn.nodesOfInterest.Items.Add(new PyIntegerVar(node.Key));
             }
 
             PyPacket p = new PyPacket();
@@ -313,7 +328,7 @@ namespace ClusterControler
             p.type_string = "macho.SessionChangeNotification";
             p.type = Macho.MachoNetMsg_Type.SESSIONCHANGENOTIFICATION;
 
-            p.userID = (uint) this.ClientID;
+            p.userID = (uint) this.Session.GetCurrentLong("userid");
 
             p.payload = scn.Encode().As<PyTuple>();
 
@@ -326,11 +341,11 @@ namespace ClusterControler
         public PyObject SetSessionChangeDestination(PyPacket p)
         {
             p.source.type = PyAddress.AddrType.Node;
-            p.source.typeID = (ulong)NodeID;
+            p.source.typeID = NodeID;
             p.source.callID = 0;
 
             p.dest.type = PyAddress.AddrType.Client;
-            p.dest.typeID = (ulong)this.Session.GetCurrentLong("userid");
+            p.dest.typeID = this.Session.GetCurrentLong("userid");
             p.dest.callID = 0;
 
             return p.Encode();
@@ -340,11 +355,11 @@ namespace ClusterControler
         {
             // The session change info should never come from the client
             p.source.type = PyAddress.AddrType.Node;
-            p.source.typeID = (ulong)1;
+            p.source.typeID = 1;
             p.source.callID = 0;
 
             p.dest.type = PyAddress.AddrType.Node;
-            p.dest.typeID = (ulong)node;
+            p.dest.typeID = node;
             p.dest.callID = 0;
 
             return p.Encode();

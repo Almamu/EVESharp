@@ -10,7 +10,7 @@ namespace Common.Services
         public string Service = "";
 
         public ServiceDoesNotExistsException(string svc)
-            : base("The required service does not exists")
+            : base($"The requested service {svc} doesn't exist")
         {
             Service = svc;
         }

@@ -216,6 +216,7 @@ namespace Node
 */
         private Dictionary<string, PyObject> mCacheData = new Dictionary<string, PyObject>();
         private PyDict mCacheHints = new PyDict();
+        private NodeContainer mContainer = null;
 
         public bool Exists(string name)
         {
@@ -231,7 +232,7 @@ namespace Node
         {
             Log.Info("Cache", $"Saving cache data for {name}");
             
-            CacheInfo info = CacheInfo.FromPyObject(name, data, timestamp, Program.NodeID);
+            CacheInfo info = CacheInfo.FromPyObject(name, data, timestamp, this.mContainer.NodeID);
             
             // save cache hint
             this.mCacheHints.Set(name, info.Encode ());
@@ -302,8 +303,9 @@ namespace Node
             }
         }
 
-        public CacheStorage(DatabaseConnection db) : base(db)
+        public CacheStorage(NodeContainer container, DatabaseConnection db) : base(db)
         {
+	        this.mContainer = container;
         }
     }
 }

@@ -109,6 +109,11 @@ namespace Common.Game
             return res.IntValue;
         }
 
+        public bool KeyExists(string name)
+        {
+            return SessionData.ContainsKey(name);
+        }
+        
         public PyDict EncodeChanges()
         {
             PyDict result = new PyDict();

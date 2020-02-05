@@ -130,7 +130,7 @@ namespace Marshal
         {
             if ((data.Type == PyObjectType.IntegerVar) || (data.Type == PyObjectType.Long) || (data.Type == PyObjectType.LongLong))
             {
-                typeID = (ulong)data.IntValue;
+                typeID = data.IntValue;
             }
             else if (data.Type == PyObjectType.None)
             {
@@ -146,7 +146,7 @@ namespace Marshal
         {
             if ((data.Type == PyObjectType.IntegerVar) || (data.Type == PyObjectType.Long) || (data.Type == PyObjectType.LongLong))
             {
-                callID = (ulong)data.IntValue;
+                callID = data.IntValue;
             }
             else if (data.Type == PyObjectType.None)
             {
@@ -225,12 +225,12 @@ namespace Marshal
                     if (typeID == 0)
                         t.Items.Add(new PyNone());
                     else
-                        t.Items.Add(new PyLongLong((long)typeID));
+                        t.Items.Add(new PyLongLong(typeID));
                     break;
 
                 case AddrType.Node:
                     t.Items.Add(new PyString("N"));
-                    t.Items.Add(new PyLongLong((long)typeID));
+                    t.Items.Add(new PyLongLong(typeID));
 
                     if (service == "")
                         t.Items.Add(new PyNone());
@@ -240,14 +240,14 @@ namespace Marshal
                     if (callID == 0)
                         t.Items.Add(new PyNone());
                     else
-                        t.Items.Add(new PyLongLong((long)callID));
+                        t.Items.Add(new PyLongLong(callID));
 
                     break;
 
                 case AddrType.Client:
                     t.Items.Add(new PyString("C"));
-                    t.Items.Add(new PyLongLong((long)typeID));
-                    t.Items.Add(new PyLongLong((long)callID));
+                    t.Items.Add(new PyLongLong(typeID));
+                    t.Items.Add(new PyLongLong(callID));
 
                     if (service == "")
                         t.Items.Add(new PyNone());
@@ -277,8 +277,8 @@ namespace Marshal
 
 
         public AddrType type = AddrType.Invalid;
-        public ulong typeID = 0; // NodeID, ClientID, etc
-        public ulong callID = 0;
+        public long typeID = 0; // NodeID, ClientID, etc
+        public long callID = 0;
 
         public string service = ""; // broadcastID for a broadcast
         public string bcast_type = "";

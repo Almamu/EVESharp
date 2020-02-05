@@ -70,7 +70,7 @@ namespace ClusterControler
             // disable receive callback, this way the rest of the received data is pending to be processed
             this.Socket.SetReceiveCallback(null);
             this.ConnectionManager.RemoveUnauthenticatedConnection(this);
-            this.ConnectionManager.AddClientConnection(this.Socket);
+            this.ConnectionManager.AddUnauthenticatedClientConnection(this.Socket);
         }
 
         public void ConvertToNodeConnection()

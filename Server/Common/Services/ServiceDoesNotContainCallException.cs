@@ -11,11 +11,10 @@ namespace Common.Services
         public string Call = "";
 
         public ServiceDoesNotContainCallException(string svc, string call)
-            : base("The requested service does not contains the required call")
+            : base($"The service {svc} does not contain a definition for {call}")
         {
             Service = svc;
             Call = call;
-            
         }
     }
 }

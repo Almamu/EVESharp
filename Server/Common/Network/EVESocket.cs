@@ -51,10 +51,8 @@ namespace Common.Network
             // first call the custom exception handler
             this.mExceptionHandler.Invoke(ex);
             // check for specific disconnection scenarios
-            if (ex is SocketException)
+            if (ex is SocketException socketException)
             {
-                SocketException socketException = ex as SocketException;
-
                 switch (socketException.SocketErrorCode)
                 {
                     case SocketError.ConnectionAborted:

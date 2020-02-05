@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Net;
 using System.Net.Sockets;
 using System.Threading;
 using Common.Packets;
@@ -21,8 +22,42 @@ namespace Common.Network
         
         public EVEClientSocket(Socket socket) : base(socket)
         {
+            // setup async callback handlers
+            this.SetupCallbacks();
+            // start the receiving callbacks
+            this.BeginReceive(new byte[64 * 1024], this.mReceiveCallback);
+        }
+
+        public EVEClientSocket() : base(new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp))
+        {
+            this.SetupCallbacks();
+        }
+
+        private void SetupCallbacks()
+        {
+            // setup async callback handlers
             this.mSendCallback = new AsyncCallback(SendCallback);
             this.mReceiveCallback = new AsyncCallback(ReceiveCallback);
+        }
+
+        public void Connect(string address, int port)
+        {
+            IPAddress ip;
+
+            // check if the address is an IP, if not, query the DNS servers to resolve it
+            if (IPAddress.TryParse(address, out ip) == false)
+            {
+                IPHostEntry entry = Dns.GetHostEntry(address);
+                int i = 0;
+
+                do
+                {
+                    ip = entry.AddressList[i++];
+                } while (ip.AddressFamily != AddressFamily.InterNetwork && i < entry.AddressList.Length);
+            }
+
+            // connect to the server
+            this.Socket.Connect(new IPEndPoint(ip, port));
             // start the receiving callbacks
             this.BeginReceive(new byte[64 * 1024], this.mReceiveCallback);
         }
@@ -49,7 +84,7 @@ namespace Common.Network
                         // unmarshal the packet
                         PyObject packet = Unmarshal.Process<PyObject>(this.mPacketizer.PopItem());
                         // and invoke the callback for the packet handling if it is present
-                        mPacketReceiveCallback.Invoke(packet);
+                        this.mPacketReceiveCallback.Invoke(packet);
                     }
                     catch (Exception e)
                     {

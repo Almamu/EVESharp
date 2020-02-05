@@ -11,7 +11,7 @@ namespace Common.Packets
     {
         public long cacheTime = 0;
         public PyObject objectID = null;
-        public int nodeID = 0;
+        public long nodeID = 0;
         public int version = 0;
 
         public PyObject Encode()
@@ -19,7 +19,7 @@ namespace Common.Packets
             PyTuple info = new PyTuple();
 
             info.Items.Add(objectID);
-            info.Items.Add(new PyInt(nodeID));
+            info.Items.Add(new PyIntegerVar(nodeID));
 
             PyTuple timestamp = new PyTuple();
             timestamp.Items.Add(new PyIntegerVar(cacheTime));
@@ -41,12 +41,12 @@ namespace Common.Packets
 
             objectID = container[1];
 
-            if ((container[3].Type != PyObjectType.IntegerVar) && (container[3].Type != PyObjectType.Long))
+            if (container[3].Type != PyObjectType.IntegerVar)
             {
                 throw new Exception($"Expected nodeID of type Integer or Long, got {container[3].Type}");
             }
 
-            nodeID = (container[3] as PyInt).Value;
+            nodeID = (container[3] as PyIntegerVar).Value;
 
             if (container[2].Type != PyObjectType.Tuple)
             {
@@ -70,7 +70,7 @@ namespace Common.Packets
             version = (int)(timestamp[1].IntValue);
         }
 
-        public static CacheInfo FromBuffer(string name, byte[] data, long timestamp, int nodeID)
+        public static CacheInfo FromBuffer(string name, byte[] data, long timestamp, long nodeID)
         {
             CacheInfo obj = new CacheInfo();
 
@@ -82,7 +82,7 @@ namespace Common.Packets
             return obj;
         }
 
-        public static CacheInfo FromPyObject(string name, PyObject data, long timestamp, int nodeID)
+        public static CacheInfo FromPyObject(string name, PyObject data, long timestamp, long nodeID)
         {
             return FromBuffer(name, Marshal.Marshal.Process(data), timestamp, nodeID);
         }

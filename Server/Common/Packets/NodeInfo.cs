@@ -9,14 +9,14 @@ namespace Common.Packets
 {
     public class NodeInfo : Encodeable, Decodeable
     {
-        public int nodeID = 0;
+        public long nodeID = 0;
         public PyList solarSystems = new PyList();
 
         public PyObject Encode()
         {
             PyTuple packet = new PyTuple();
 
-            packet.Items.Add(new PyInt(nodeID));
+            packet.Items.Add(new PyIntegerVar(nodeID));
             packet.Items.Add(solarSystems);
 
             return new PyObjectData("machoNet.nodeInfo", packet);
@@ -43,12 +43,12 @@ namespace Common.Packets
 
             PyTuple args = data.Arguments.As<PyTuple>();
             
-            if (args.Items[0].Type != PyObjectType.Long)
+            if (args.Items[0].Type != PyObjectType.IntegerVar)
             {
                 throw new Exception($"Expected first argument of type Long but got {args.Items[0].Type}");
             }
 
-            nodeID = args.Items[0].As<PyInt>().Value;
+            nodeID = args.Items[0].As<PyIntegerVar>().Value;
 
             if (args.Items[1].Type != PyObjectType.List)
             {

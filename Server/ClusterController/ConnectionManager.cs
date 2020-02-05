@@ -51,23 +51,23 @@ namespace ClusterControler
             get { return Nodes.Count; }
             private set { }
         }
-        public Dictionary<int, NodeConnection> Nodes
+        public Dictionary<long, NodeConnection> Nodes
         {
             get { return this.mNodeConnections; }
             private set { }
         }
-        public Dictionary<int, ClientConnection> Clients
+        public Dictionary<long, ClientConnection> Clients
         {
             get { return this.mClientConnections; }
             private set { }
         }
 
-        private int mLastClientID = 0;
-        private int mLastNodeID = 0;
+        private long mLastNodeID = 0;
         
         private List<UnauthenticatedConnection> mUnauthenticatedConnections = new List<UnauthenticatedConnection>();
-        private Dictionary<int, ClientConnection> mClientConnections = new Dictionary<int, ClientConnection>();
-        private Dictionary<int, NodeConnection> mNodeConnections = new Dictionary<int, NodeConnection>();
+        private List<ClientConnection> mUnauthenticatedClientConnections = new List<ClientConnection>();
+        private Dictionary<long, ClientConnection> mClientConnections = new Dictionary<long, ClientConnection>();
+        private Dictionary<long, NodeConnection> mNodeConnections = new Dictionary<long, NodeConnection>();
         
         public ConnectionManager(LoginQueue loginQueue)
         {
@@ -86,14 +86,24 @@ namespace ClusterControler
             this.mUnauthenticatedConnections.Remove(connection);
         }
 
-        public void AddClientConnection(EVEClientSocket socket)
+        public void AddUnauthenticatedClientConnection(EVEClientSocket socket)
         {
-            this.mClientConnections.Add(++this.mLastClientID, new ClientConnection(socket, this, this.mLastClientID));
+            this.mUnauthenticatedClientConnections.Add(new ClientConnection(socket, this));
         }
 
-        public void RemoveClientConnection(ClientConnection connection)
+        public void RemoveUnauthenticatedClientConnection(ClientConnection connection)
         {
-            this.mClientConnections.Remove(connection.ClientID);
+            this.mUnauthenticatedClientConnections.Remove(connection);
+        }
+
+        public void AddAuthenticatedClientConnection(ClientConnection connection)
+        {
+            this.mClientConnections.Add(connection.AccountID, connection);
+        }
+
+        public void RemoveAuthenticatedClientConnection(ClientConnection connection)
+        {
+            this.mClientConnections.Remove(connection.AccountID);
         }
 
         public void AddNodeConnection(EVEClientSocket socket)

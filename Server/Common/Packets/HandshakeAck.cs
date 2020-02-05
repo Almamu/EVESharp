@@ -11,14 +11,14 @@ namespace Common.Packets
     {
         public PyList live_updates = new PyList();
         public string jit = "";
-        public int userid = 0;
+        public long userid = 0;
         public PyNone maxSessionTime = new PyNone();
         public int userType = 1;
         public int role = 0;
         public string address = "";
         public PyNone inDetention = new PyNone();
         public PyList client_hashes = new PyList();
-        public int user_clientid = 0;
+        public long user_clientid = 0;
 
         public PyObject Encode()
         {
@@ -29,7 +29,7 @@ namespace Common.Packets
             PyDict main = new PyDict();
 
             main.Set("jit", new PyString(jit));
-            main.Set("userid", new PyInt(userid));
+            main.Set("userid", new PyLongLong(userid));
             main.Set("maxSessionTime", maxSessionTime);
             main.Set("userType", new PyInt(userType));
             main.Set("role", new PyInt(role));
@@ -38,7 +38,7 @@ namespace Common.Packets
 
             res.Set("session_init", main);
             res.Set("client_hashes", client_hashes);
-            res.Set("user_clientid", new PyInt(user_clientid));
+            res.Set("user_clientid", new PyLongLong(user_clientid));
 
             return res.As<PyObject>();
         }

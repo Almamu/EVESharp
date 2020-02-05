@@ -11,7 +11,7 @@ namespace Common.Packets
     {
         public long timestamp = 0;
         public int version = 0;
-        public int nodeID = 0;
+        public long nodeID = 0;
         public int shared = 0;
         public PyBuffer cache = null;
         public int compressed = 0;
@@ -39,7 +39,7 @@ namespace Common.Packets
 
             args.Items.Add(versiont);
             args.Items.Add(new PyNone());
-            args.Items.Add(new PyInt(nodeID));
+            args.Items.Add(new PyIntegerVar(nodeID));
             args.Items.Add(new PyInt(shared));
             args.Items.Add(cache);
             args.Items.Add(new PyInt(compressed));

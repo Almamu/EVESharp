@@ -94,14 +94,10 @@ namespace ClusterControler
             {
                 Log.Trace("LoginQueue", ": success");
 
-                // TODO: Fill the class with the required data
-                entry.Connection.Session.SetLong("role", role);
-                entry.Connection.Session.SetLong("userid", accountID);
-
                 status = LoginStatus.Sucess;
             }
             
-            entry.Connection.SendLoginNotification(status);
+            entry.Connection.SendLoginNotification(status, accountID, role);
         }
 
         private void Run()

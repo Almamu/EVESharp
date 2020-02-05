@@ -107,9 +107,17 @@ namespace Marshal
             source.Decode(tuple.Items[1]);
             dest.Decode(tuple.Items[2]);
 
-            if ((tuple.Items[3].Type == PyObjectType.IntegerVar) || (tuple.Items[3].Type == PyObjectType.Long) )
+            if (tuple.Items[3].Type == PyObjectType.IntegerVar)
             {
-                userID = (uint)tuple.Items[3].As<PyInt>().Value;
+                userID = (tuple.Items[3] as PyIntegerVar).Value;
+            }
+            else if (tuple.Items[3].Type == PyObjectType.Long)
+            {
+                userID = tuple.Items[3].As<PyInt>().Value;
+            }
+            else if (tuple.Items[3].Type == PyObjectType.LongLong)
+            {
+                userID = (tuple.Items[3] as PyLongLong).Value;
             }
             else if (tuple.Items[3].Type == PyObjectType.None)
             {
@@ -145,7 +153,7 @@ namespace Marshal
         public Macho.MachoNetMsg_Type type;
         public PyAddress source;
         public PyAddress dest;
-        public uint userID;
+        public long userID;
         public PyTuple payload;
         public PyDict named_payload;
         public string type_string;

@@ -8,9 +8,9 @@ namespace ClusterControler
 {
     public class NodeConnection: Connection
     {
-        public int NodeID { get; private set; }
+        public long NodeID { get; private set; }
         
-        public NodeConnection(EVEClientSocket socket, ConnectionManager connectionManager, int nodeID)
+        public NodeConnection(EVEClientSocket socket, ConnectionManager connectionManager, long nodeID)
             : base(socket, connectionManager)
         {
             this.NodeID = nodeID;
