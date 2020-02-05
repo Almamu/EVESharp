@@ -27,7 +27,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading;
-
+using ClusterControler.Configuration;
 using Common;
 using Common.Packets;
 using Common.Network;
@@ -38,34 +38,34 @@ namespace ClusterControler
 {
     public class LoginQueue
     {
-        public Queue<LoginQueueEntry> mQueue = new Queue<LoginQueueEntry>();
+        private Queue<LoginQueueEntry> Queue = new Queue<LoginQueueEntry>();
         private Thread mThread = null;
         private Common.Database.DatabaseConnection m_mDatabaseConnection = null;
         private AccountDB mAccountDB = null;
+        private Authentication mConfiguration = null;
 
         public void Start()
         {
             this.mThread.Start();
         }
 
-        public void Enqueue(Connection con, AuthenticationReq packet)
+        public void Enqueue(ClientConnection connection, AuthenticationReq request)
         {
             // Just to be thread safe
-            lock (this.mQueue)
+            lock (this.Queue)
             {
                 LoginQueueEntry entry = new LoginQueueEntry();
 
-                entry.connection = con;
-                entry.request = packet;
+                entry.Connection = connection;
+                entry.Request = request;
 
-                this.mQueue.Enqueue(entry);
+                this.Queue.Enqueue(entry);
             }
         }
-
-
+        
         public void HandleLogin(LoginQueueEntry entry)
         {
-            Log.Debug("LoginQueue", "Processing login for " + entry.request.user_name);
+            Log.Debug("LoginQueue", "Processing login for " + entry.Request.user_name);
             LoginStatus status = LoginStatus.Waiting;
 
             long accountID = 0;
@@ -73,13 +73,18 @@ namespace ClusterControler
             long role = 0;
 
             // First check if the account exists
-            if (this.mAccountDB.AccountExists(entry.request.user_name) == false)
+            if (this.mAccountDB.AccountExists(entry.Request.user_name) == false)
             {
-                // Create the account
-                this.mAccountDB.CreateAccount(entry.request.user_name, entry.request.user_password);
+                if (this.mConfiguration.Autoaccount == true)
+                {
+                    Log.Info("LoginQueue", $"Auto account enabled, creating account for user {entry.Request.user_name}");
+                    
+                    // Create the account
+                    this.mAccountDB.CreateAccount(entry.Request.user_name, entry.Request.user_password, this.mConfiguration.Role);                    
+                }
             }
 
-            if ((this.mAccountDB.LoginPlayer(entry.request.user_name, entry.request.user_password, ref accountID, ref banned, ref role) == false) || (banned == true))
+            if ((this.mAccountDB.LoginPlayer(entry.Request.user_name, entry.Request.user_password, ref accountID, ref banned, ref role) == false) || (banned == true))
             {
                 Log.Trace("LoginQueue", ": Rejected by database");
 
@@ -89,16 +94,14 @@ namespace ClusterControler
             {
                 Log.Trace("LoginQueue", ": success");
 
-                // Fill the class with the required data
-                entry.connection.AccountID = accountID;
-                entry.connection.Banned = banned;
-                entry.connection.Role = role;
-                entry.connection.LanguageID = entry.request.user_languageid;
+                // TODO: Fill the class with the required data
+                entry.Connection.Session.SetLong("role", role);
+                entry.Connection.Session.SetLong("userid", accountID);
 
                 status = LoginStatus.Sucess;
             }
             
-            entry.connection.SendLoginNotification(status);
+            entry.Connection.SendLoginNotification(status);
         }
 
         private void Run()
@@ -117,15 +120,15 @@ namespace ClusterControler
                         return;
                     }
 
-                    if (this.mQueue.Count == 0)
+                    if (this.Queue.Count == 0)
                     {
                         continue;
                     }
 
                     // Thread safe stuff
-                    lock (this.mQueue)
+                    lock (this.Queue)
                     {
-                        LoginQueueEntry now = this.mQueue.Dequeue();
+                        LoginQueueEntry now = this.Queue.Dequeue();
 
                         if (now == null)
                         {
@@ -154,11 +157,17 @@ namespace ClusterControler
             Log.Error("LoginQueue", "LoginQueue is closing... Bye Bye!");
         }
 
-        public LoginQueue(Common.Database.DatabaseConnection db)
+        public LoginQueue(Authentication configuration, Common.Database.DatabaseConnection db)
         {
+            this.mConfiguration = configuration;
             this.m_mDatabaseConnection = db;
             this.mAccountDB = new AccountDB(this.m_mDatabaseConnection);
             this.mThread = new Thread(Run);
+        }
+
+        public int Count()
+        {
+            return this.Queue.Count;
         }
     }
 }

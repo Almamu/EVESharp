@@ -3,10 +3,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Marshal;
+using Marshal.Network;
 
 namespace Common.Packets
 {
-    public class AuthenticationReq
+    public class AuthenticationReq : Decodeable
     {
         public double boot_version = 0.0;
         public string boot_region = "";
@@ -19,56 +20,49 @@ namespace Common.Packets
         public string user_name = "";
         public string user_languageid = "";
 
-        public bool Decode(PyObject data)
+        public void Decode(PyObject data)
         {
             if (data.Type != PyObjectType.Tuple)
             {
-                Log.Error("AuthenticationReq", "Wrong type");
-                return false;
+                throw new Exception("Wrong type");
             }
 
             PyTuple tmp = data.As<PyTuple>();
 
             if (tmp.Items.Count != 2)
             {
-                Log.Error("AuthenticationReq", "Wrong size, expected 2 but got " + tmp.Items.Count);
-                return false;
+                throw new Exception($"Wrong size, expected 2 but got {tmp.Items.Count}");
             }
 
             if (tmp.Items[0].Type != PyObjectType.String)
             {
-                Log.Error("AuthenticationReq", "Wrong type for item 1");
-                return false;
+                throw new Exception($"Expected string for item 1 but got {tmp.Items[0].Type}");
             }
 
             if (tmp.Items[1].Type != PyObjectType.Dict)
             {
-                Log.Error("AuthenticationReq", "Wrong type for item 2");
-                return false;
+                throw new Exception($"Expected string for item 2 but got {tmp.Items[1].Type}");
             }
 
             PyDict info = tmp.Items[1].As<PyDict>();
 
             if (info.Contains("boot_version") == false)
             {
-                Log.Error("AuthenticationReq", "Dict item 1 doesnt has key boot_version");
-                return false;
+                throw new Exception("PyDict item 1 doesn't have the key 'boot_version'");
             }
 
             boot_version = info.Get("boot_version").As<PyFloat>().Value;
 
             if (info.Contains("boot_region") == false)
             {
-                Log.Error("AuthenticationReq", "Dict item 1 doesnt has key boot_region");
-                return false;
+                throw new Exception("PyDict item 1 doesn't have the key 'boot_region'");
             }
 
             boot_region = info.Get("boot_region").As<PyString>().Value;
 
             if (info.Contains("user_password") == false)
             {
-                Log.Error("AuthenticationReq", "Dict item 1 doesnt has key user_password");
-                return false;
+                throw new Exception("PyDict item 1 doesn't have the key 'user_password'");
             }
 
             if (info.Get("user_password").Type == PyObjectType.None)
@@ -84,16 +78,14 @@ namespace Common.Packets
 
             if (info.Contains("user_affiliateid") == false)
             {
-                Log.Error("AuthenticationReq", "Dict item 1 doesnt has key user_affiliateid");
-                return false;
+                throw new Exception("PyDict item 1 doesn't have the key 'user_affiliateid'");
             }
 
             user_affiliateid = info.Get("user_affiliateid").As<PyInt>().Value;
 
             if (info.Contains("user_password_hash") == false)
             {
-                Log.Error("AuthenticationReq", "Dict item 1 doesnt has key user_password_hash");
-                return false;
+                throw new Exception("PyDict item 1 doesn't have the key 'user_password_hash'");
             }
 
             if (info.Get("user_password_hash").Type == PyObjectType.None)
@@ -107,45 +99,38 @@ namespace Common.Packets
 
             if (info.Contains("macho_version") == false)
             {
-                Log.Error("AuthenticationReq", "Dict item 1 doesnt has key macho_version");
-                return false;
+                throw new Exception("PyDict item 1 doesn't have the key 'macho_version'");
             }
 
             macho_version = info.Get("macho_version").As<PyInt>().Value;
 
             if (info.Contains("boot_codename") == false)
             {
-                Log.Error("AuthenticationReq", "Dict item 1 doesnt has key boot_codename");
-                return false;
+                throw new Exception("PyDict item 1 doesn't have the key 'boot_codename'");
             }
 
             boot_codename = info.Get("boot_codename").As<PyString>().Value;
 
             if (info.Contains("boot_build") == false)
             {
-                Log.Error("AuthenticationReq", "Dict item 1 doesnt has key boot_build");
-                return false;
+                throw new Exception("PyDict item 1 doesn't have the key 'boot_build'");
             }
 
             boot_build = info.Get("boot_build").As<PyInt>().Value;
 
             if (info.Contains("user_name") == false)
             {
-                Log.Error("AuthenticationReq", "Dict item 1 doesnt has key user_name");
-                return false;
+                throw new Exception("PyDict item 1 doesn't have the key 'user_name'");
             }
 
             user_name = info.Get("user_name").As<PyString>().Value;
 
             if (info.Contains("user_languageid") == false)
             {
-                Log.Error("AuthenticationReq", "Dict item 1 doesnt has key user_languageid");
-                return false;
+                throw new Exception("PyDict item 1 doesn't have the key user_languageid'");
             }
 
             user_languageid = info.Get("user_languageid").As<PyString>().Value;
-
-            return true;
         }
     }
 }

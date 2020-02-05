@@ -47,10 +47,7 @@ namespace Node.Services.CacheSvc
         {
             CacheInfo cache = new CacheInfo();
 
-            if (cache.Decode(args) == false)
-            {
-                return null;
-            }
+            cache.Decode(args);
 
             if (cache.objectID.Type != PyObjectType.String)
             {

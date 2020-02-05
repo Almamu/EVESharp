@@ -33,6 +33,7 @@ using System.IO;
 
 using Common;
 using Common.Database;
+using Common.Game;
 using Common.Network;
 using Configuration;
 using Marshal;
@@ -45,24 +46,23 @@ namespace ClusterControler
         private static General sConfiguration = null;
         private static LoginQueue sLoginQueue = null;
         private static ConnectionManager sConnectionManager = null;
-        
-        private static TCPSocket sListeningSocket = new TCPSocket(26000, false);
+
+        private static EVEServerSocket sServerSocket = new EVEServerSocket(26000);
         
         static AsyncCallback acceptAsync = new AsyncCallback(AcceptAsync);
 
         static void AcceptAsync(IAsyncResult ar)
         {
-            TCPSocket handler = (TCPSocket)(ar.AsyncState);
-
-            Socket sock = handler.Socket.EndAccept(ar);
-
+            Log.Debug("Cluster", "Incoming connection...");
+            EVEServerSocket serverSocket = ar.AsyncState as EVEServerSocket;
+            EVEClientSocket clientSocket = serverSocket.EndAccept(ar);
+            
+            // put the server in accept state again
+            serverSocket.BeginAccept(acceptAsync);
+            
             Log.Debug("Cluster", "Incoming connection");
-
-            AsyncState state = new AsyncState();
-
-            handler.Socket.BeginAccept(acceptAsync, handler);
-
-            sConnectionManager.AddConnection(sock);
+            
+            sConnectionManager.AddUnauthenticatedConnection(clientSocket);
         }
 
         static void Main(string[] args)
@@ -81,32 +81,33 @@ namespace ClusterControler
             Log.Trace("Database", "Connecting to database...");
 
             sDatabase = DatabaseConnection.FromConfiguration(sConfiguration.Database);
+            // set max_allowed_packet value to 1GB
+            sDatabase.Query("SET global max_allowed_packet=1073741824");
 
             Log.Info("Main", "Connection to the DB sucessfull");
             Log.Debug("Cluster", "Connected to database");
 
             Log.Trace("Main", "Initializing login queue...");
-            sLoginQueue = new LoginQueue(sDatabase);
+            sLoginQueue = new LoginQueue(sConfiguration.Authentication, sDatabase);
             sLoginQueue.Start();
             Log.Info("Main", "Login queue initialized");
             
             Log.Trace("Main", "Initializing connection manager...");
             sConnectionManager = new ConnectionManager(sLoginQueue);
             Log.Info("Main", "Connection manager initialized");
-            
-            if (sListeningSocket.Listen(1) == false)
+
+            try
             {
-                Log.Error("Cluster", "Cannot listen on port 26000");
-                while (true) Thread.Sleep(1);
+                Log.Trace("Main", "Initializing server socket on port 26000...");
+                sServerSocket.Listen();
+                sServerSocket.BeginAccept(acceptAsync);
+                Log.Debug("Main", "Waiting for incoming connections on port 26000");
             }
-
-            // set max_allowed_packet value to 1GB
-            sDatabase.Query("SET global max_allowed_packet=1073741824");
-
-            Log.Debug("Cluster", "Listening on port 26000");
-
-            // Begin accept
-            sListeningSocket.Socket.BeginAccept(acceptAsync, sListeningSocket);
+            catch (Exception e)
+            {
+                Log.Error("Main", $"Error listening on port 26000: {e.Message}");
+                throw;
+            }
 
             while (true)
             {

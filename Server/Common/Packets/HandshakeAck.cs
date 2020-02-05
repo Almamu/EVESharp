@@ -3,10 +3,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Marshal;
+using Marshal.Network;
 
 namespace Common.Packets
 {
-    public class HandshakeAck
+    public class HandshakeAck : Encodeable
     {
         public PyList live_updates = new PyList();
         public string jit = "";

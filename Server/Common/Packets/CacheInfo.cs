@@ -3,10 +3,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Marshal;
+using Marshal.Network;
 
 namespace Common.Packets
 {
-    public class CacheInfo
+    public class CacheInfo : Decodeable, Encodeable
     {
         public long cacheTime = 0;
         public PyObject objectID = null;
@@ -29,12 +30,11 @@ namespace Common.Packets
             return new PyObjectData("util.CachedObject", info);
         }
 
-        public bool Decode(PyObject from)
+        public void Decode(PyObject from)
         {
             if (from.Type != PyObjectType.Tuple)
             {
-                Log.Error("CacheInfo", "Wrong type, expected Tuple");
-                return false;
+                throw new Exception($"Expected Tuple but got {@from.Type}");
             }
 
             PyTuple container = from as PyTuple;
@@ -43,37 +43,31 @@ namespace Common.Packets
 
             if ((container[3].Type != PyObjectType.IntegerVar) && (container[3].Type != PyObjectType.Long))
             {
-                Log.Error("CacheInfo", "Wrong node ID, got " + container[3].ToString() + " expected Int");
-                return false;
+                throw new Exception($"Expected nodeID of type Integer or Long, got {container[3].Type}");
             }
 
             nodeID = (container[3] as PyInt).Value;
 
             if (container[2].Type != PyObjectType.Tuple)
             {
-                Log.Error("CacheInfo", "Wrong identifier type, expected Tuple");
-                return false;
+                throw new Exception($"Expected identifier of type Tuple but got {container[2].Type}");
             }
 
             PyTuple timestamp = container[2] as PyTuple;
 
             if ((timestamp[0].Type != PyObjectType.LongLong) && (timestamp[0].Type != PyObjectType.IntegerVar))
             {
-                Log.Error("CacheInfo", "cacheTime is the wrong type, expected LongLong");
-                return false;
+                throw new Exception($"cacheTime is the wrong type, expected LongLong or Integer but got {timestamp[0].Type}");
             }
 
             cacheTime = timestamp[0].IntValue;
 
             if ((timestamp[1].Type != PyObjectType.Long) && (timestamp[1].Type != PyObjectType.IntegerVar))
             {
-                Log.Error("CacheInfo", "Checksum is the wrong type, expected Int");
-                return false;
+                throw new Exception($"Checksum is the wrong type, expected Long or integer but got {timestamp[1].Type}");
             }
 
             version = (int)(timestamp[1].IntValue);
-
-            return true;
         }
 
         public static CacheInfo FromBuffer(string name, byte[] data, long timestamp, int nodeID)

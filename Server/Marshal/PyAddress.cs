@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Marshal.Network;
 
 namespace Marshal
 {
@@ -9,7 +10,7 @@ namespace Marshal
     // This class eases the process of reading the macho.MachoAddress PyObjectData
     // To create a easy reply
 
-    public class PyAddress
+    public class PyAddress : Encodeable, Decodeable
     {
         public PyAddress()
         {
@@ -20,34 +21,34 @@ namespace Marshal
             bcast_type = "";
         }
 
-        public bool Decode(PyObject from)
+        public void Decode(PyObject from)
         {
             if (from.Type != PyObjectType.ObjectData)
             {
-                return false;
+                throw new Exception($"Expected container to be of type ObjectData but got {from.Type}");
             }
 
             PyObjectData obj = from.As<PyObjectData>();
 
             if (obj.Name != "macho.MachoAddress")
             {
-                return false;
+                throw new Exception($"Expected container to be of typeName 'macho.MachoAddress' but got {obj.Name}");
             }
 
             if (obj.Arguments.Type != PyObjectType.Tuple)
             {
-                return false;
+                throw new Exception($"Expected arguments to be of type Tuple but got {obj.Arguments.Type}");
             }
 
             PyTuple args = obj.Arguments.As<PyTuple>();
             if (args.Items.Count < 3)
             {
-                return false;
+                throw new Exception($"Expected arguments to have at least 3 items but got {args.Items.Count}");
             }
 
             if (args.Items[0].Type != PyObjectType.String)
             {
-                return false;
+                throw new Exception($"Expected first argument to be of type String but got {args.Items[0].Type}");
             }
 
             PyString typei = args.Items[0].As<PyString>();
@@ -57,13 +58,11 @@ namespace Marshal
                 case "A":
                     if (args.Items.Count != 3)
                     {
-                        return false;
+                        throw new Exception($"Expected arguments to have 3 items but got {args.Items.Count}");
                     }
 
-                    if (!DecodeService(args.Items[1]) || !DecodeCallID(args.Items[2]))
-                    {
-                        return false;
-                    }
+                    DecodeService(args.Items[1]);
+                    DecodeCallID(args.Items[2]);
 
                     type = AddrType.Any;
                     break;
@@ -71,13 +70,12 @@ namespace Marshal
                 case "N":
                     if (args.Items.Count != 4)
                     {
-                        return false;
+                        throw new Exception($"Expected arguments to have 4 items but got {args.Items.Count}");
                     }
-
-                    if (!DecodeTypeID(args.Items[1]) || !DecodeService(args.Items[2]) || !DecodeCallID(args.Items[3]))
-                    {
-                        return false;
-                    }
+                    
+                    DecodeTypeID(args.Items[1]);
+                    DecodeService(args.Items[2]);
+                    DecodeCallID(args.Items[3]);
 
                     type = AddrType.Node;
 
@@ -86,13 +84,12 @@ namespace Marshal
                 case "C":
                     if (args.Items.Count != 4)
                     {
-                        return false;
+                        throw new Exception($"Expected arguments to have 4 items but got {args.Items.Count}");
                     }
 
-                    if (!DecodeTypeID(args.Items[1]) || !DecodeCallID(args.Items[2]) || !DecodeService(args.Items[3]))
-                    {
-                        return false;
-                    }
+                    DecodeTypeID(args.Items[1]);
+                    DecodeCallID(args.Items[2]);
+                    DecodeService(args.Items[3]);
 
                     type = AddrType.Client;
 
@@ -101,19 +98,19 @@ namespace Marshal
                 case "B":
                     if (args.Items.Count != 4)
                     {
-                        return false;
+                        throw new Exception($"Expected arguments to have 4 items but got {args.Items.Count}");
                     }
 
                     type = AddrType.Broadcast;
 
                     if (args.Items[1].Type != PyObjectType.String)
                     {
-                        return false;
+                        throw new Exception($"Expected second argument to be of type String but got {args.Items[1].Type}");
                     }
 
                     if (args.Items[3].Type != PyObjectType.String)
                     {
-                        return false;
+                        throw new Exception($"Expected fourth argument to be of type String but got {args.Items[3].Type}");
                     }
 
                     PyString bid = args.Items[1].As<PyString>();
@@ -125,13 +122,11 @@ namespace Marshal
                     break;
 
                 default:
-                    return false;
+                    throw new Exception($"Unknown address type");
             }
-
-            return true;
         }
 
-        private bool DecodeTypeID(PyObject data)
+        private void DecodeTypeID(PyObject data)
         {
             if ((data.Type == PyObjectType.IntegerVar) || (data.Type == PyObjectType.Long) || (data.Type == PyObjectType.LongLong))
             {
@@ -143,13 +138,11 @@ namespace Marshal
             }
             else
             {
-                return false;
+                throw new Exception($"Expected typeID to be of type Integer, Long, LongLong or None but got {data.Type}");
             }
-
-            return true;
         }
 
-        private bool DecodeCallID(PyObject data)
+        private void DecodeCallID(PyObject data)
         {
             if ((data.Type == PyObjectType.IntegerVar) || (data.Type == PyObjectType.Long) || (data.Type == PyObjectType.LongLong))
             {
@@ -161,13 +154,11 @@ namespace Marshal
             }
             else
             {
-                return false;
+                throw new Exception($"Expected callID to be of type Integer, Long, LongLong or None but got {data.Type}");
             }
-
-            return true;
         }
 
-        private bool DecodeService(PyObject data)
+        private void DecodeService(PyObject data)
         {
             if (data.Type == PyObjectType.String)
             {
@@ -179,10 +170,8 @@ namespace Marshal
             }
             else
             {
-                return false;
+                throw new Exception($"Expected service to be of type String or None but got {data.Type}");
             }
-
-            return true;
         }
 
         public enum AddrType

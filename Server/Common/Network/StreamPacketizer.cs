@@ -14,6 +14,11 @@ namespace Common.Network
         private BinaryReader mInputReader = null;
         private Queue<byte[]> mOutputQueue = new Queue<byte[]>();
 
+        public int PacketCount
+        {
+            get { return this.mOutputQueue.Count; }
+            private set {}
+        }
         public StreamPacketizer()
         {
             this.mInputReader = new BinaryReader(this.mInputStream);
@@ -49,8 +54,10 @@ namespace Common.Network
                     if ((size + this.mInputStream.Position) > this.mInputStream.Length)
                         return this.mOutputQueue.Count;
                     
-                    // read the packet's data and queue it on the packets queue
-                    this.mOutputQueue.Enqueue(this.mInputReader.ReadBytes(size));
+                    lock(this.mOutputQueue)
+                        // read the packet's data and queue it on the packets queue
+                        this.mOutputQueue.Enqueue(this.mInputReader.ReadBytes(size));
+                    
                     // remove the packet from the stream
                     byte[] currentBuffer = this.mInputStream.GetBuffer();
                     Buffer.BlockCopy(

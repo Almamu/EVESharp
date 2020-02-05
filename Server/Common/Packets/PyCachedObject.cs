@@ -3,10 +3,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Marshal;
+using Marshal.Network;
 
 namespace Common.Packets
 {
-    public class PyCachedObject
+    public class PyCachedObject : Encodeable, Decodeable
     {
         public long timestamp = 0;
         public int version = 0;
@@ -48,14 +49,12 @@ namespace Common.Packets
         }
 
         /* This should never be used in the node, just the Cache Tool */
-        public bool Decode(PyObject from)
+        public void Decode(PyObject from)
         {
             PyTuple data = (from as PyObjectData).Arguments as PyTuple;
 
             // Just decode the cache info for now..
             cache = data.Items[4] as PyBuffer;
-
-            return true;
         }
 
         public static PyCachedObject FromCacheInfo(CacheInfo cacheInfo, PyObject data)

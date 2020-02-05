@@ -24,6 +24,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.Linq;
 using System.Text;
 using System.Net.Sockets;
@@ -31,252 +32,118 @@ using System.Net.Sockets;
 using Marshal;
 
 using Common;
+using Common.Constants;
+using Common.Network;
+using Marshal.Network;
 
 namespace ClusterControler
 {
     public class ConnectionManager
     {
-        private List<Connection> mConnections = new List<Connection>(); // This list contains ALL the connections, both nodes and clients
-        private Dictionary<long, Connection> mClients = new Dictionary<long, Connection>(); // Contains the nodes list
-        private Dictionary<int, Connection> mNodes = new Dictionary<int, Connection>(); // Contains the clients list
         public LoginQueue LoginQueue { get; set; }
+        public int ClientsCount
+        {
+            get { return Clients.Count; }
+            private set { }
+        }
+        public int NodesCount
+        {
+            get { return Nodes.Count; }
+            private set { }
+        }
+        public Dictionary<int, NodeConnection> Nodes
+        {
+            get { return this.mNodeConnections; }
+            private set { }
+        }
+        public Dictionary<int, ClientConnection> Clients
+        {
+            get { return this.mClientConnections; }
+            private set { }
+        }
 
+        private int mLastClientID = 0;
+        private int mLastNodeID = 0;
+        
+        private List<UnauthenticatedConnection> mUnauthenticatedConnections = new List<UnauthenticatedConnection>();
+        private Dictionary<int, ClientConnection> mClientConnections = new Dictionary<int, ClientConnection>();
+        private Dictionary<int, NodeConnection> mNodeConnections = new Dictionary<int, NodeConnection>();
+        
         public ConnectionManager(LoginQueue loginQueue)
         {
             this.LoginQueue = loginQueue;
         }
+
+        public void AddUnauthenticatedConnection(EVEClientSocket socket)
+        {
+            this.mUnauthenticatedConnections.Add (
+                new UnauthenticatedConnection(socket, this)
+            );
+        }
+
+        public void RemoveUnauthenticatedConnection(UnauthenticatedConnection connection)
+        {
+            this.mUnauthenticatedConnections.Remove(connection);
+        }
+
+        public void AddClientConnection(EVEClientSocket socket)
+        {
+            this.mClientConnections.Add(++this.mLastClientID, new ClientConnection(socket, this, this.mLastClientID));
+        }
+
+        public void RemoveClientConnection(ClientConnection connection)
+        {
+            this.mClientConnections.Remove(connection.ClientID);
+        }
+
+        public void AddNodeConnection(EVEClientSocket socket)
+        {
+            if(this.mNodeConnections.Count >= 0xFFFF)
+                throw new Exception("Cannot accept more nodes in the connection manager, reached maximum of 0xFFFF");
+            
+            if (this.mNodeConnections.ContainsKey(Network.PROXY_NODE_ID) == false)
+                this.mNodeConnections.Add(Network.PROXY_NODE_ID, new NodeConnection(socket, this, Network.PROXY_NODE_ID));
+            else
+            {
+                // find an unused nodeID
+                while (this.mNodeConnections.ContainsKey(this.mLastNodeID) == true)
+                {
+                    this.mLastNodeID++;
+                    // ensure that we do not exceed the limit
+                    if (this.mLastNodeID > 0xFFFF)
+                        this.mLastNodeID = 0;
+                }
+                
+                // finally assign it to the new node
+                this.mNodeConnections.Add(this.mLastNodeID, new NodeConnection(socket, this, this.mLastNodeID));
+            }
+        }
+
+        public void RemoveNodeConnection(NodeConnection connection)
+        {
+            // TODO: CHECK FOR PROXY NODE BEING DELETED AND TRY TO ASSIGN ANY OTHER
+            this.mNodeConnections.Remove(connection.NodeID);
+        }
         
-        public int AddConnection(Socket sock)
+        public void NotifyClient(int clientID, PyObject packet)
         {
-            Connection connection = new Connection(sock, this);
-
-            // Priority
-            connection.ClusterConnectionID = mConnections.Count;
-            connection.Type = ConnectionType.Undefined;
-
-            mConnections.Add(connection);
-
-            return mConnections.Count;
-        }
-
-        public void UpdateConnection(Connection connection)
-        {
-            if (connection.Type == ConnectionType.Node)
-            {
-                // This will let us add a node as a proxy
-                if (mNodes.Count == 0)
-                {
-                    connection.ClusterConnectionID = connection.NodeID = 0xFFAA;
-                }
-                else
-                {
-                    connection.NodeID = connection.ClusterConnectionID;
-                }
-
-                if (mNodes.ContainsKey(connection.NodeID))
-                {
-                    mNodes[connection.NodeID] = connection;
-                }
-                else
-                {
-                    mNodes.Add(connection.NodeID, connection);
-                }
-            }
-            else if (connection.Type == ConnectionType.Client)
-            {
-                if (mClients.ContainsKey(connection.AccountID))
-                {
-                    mClients[connection.AccountID] = connection;
-                }
-                else
-                {
-                    mClients.Add(connection.AccountID, connection);
-                }
-            }
-        }
-
-        public void RemoveConnection(int index)
-        {
-            try
-            {
-                Connection connection = mConnections[index];
-
-                if (connection == null)
-                {
-                    mConnections.RemoveAt(index);
-                    return;
-                }
-
-                RemoveConnection(connection);
-            }
-            catch
-            {
-
-            }
-        }
-
-        public void RemoveConnection(Connection connection)
-        {
-            try
-            {
-                if (connection.Type == ConnectionType.Client)
-                {
-                    mClients.Remove(connection.AccountID);
-                    mConnections.Remove(connection);
-                }
-                else if (connection.Type == ConnectionType.Node)
-                {
-                    Log.Warning("ConnectionManager", "Node " + connection.NodeID.ToString("X4") + " disconnected");
-
-                    mNodes.Remove(connection.NodeID);
-                    mConnections.Remove(connection);
-
-                    if (connection.NodeID == 0xFFAA)
-                    {
-                        Log.Warning("ConnectionManager", "Proxy node has disconnected, searching for new nodes");
-
-                        if (mNodes.Count == 0)
-                        {
-                            Log.Error("ConnectionManager", "No more nodes available, closing public cluster connections");
-
-                            foreach (var client in mClients)
-                            {
-                                // Close the client connection
-                                client.Value.EndConnection();
-                            }
-                        }
-                        else
-                        {
-                            Connection newProxyNode = mNodes.First().Value;
-
-                            // Remove the node from nodes list to update it
-                            mNodes.Remove(newProxyNode.NodeID);
-
-                            newProxyNode.ClusterConnectionID = newProxyNode.NodeID = 0xFFAA;
-
-                            // And add it back as the proxy node
-                            mNodes.Add(newProxyNode.ClusterConnectionID, newProxyNode);
-
-                            // Send the node change notification
-                            newProxyNode.SendNodeChangeNotification();
-                        }
-                    }
-                }
-                else
-                {
-                    mConnections.Remove(connection);
-                }
-            }
-            catch
-            {
-
-            }
-        }
-
-        public Dictionary<int, Connection> Nodes
-        {
-            get
-            {
-                return mNodes;
-            }
-
-            set
-            {
-
-            }
-        }
-
-        public Dictionary<long, Connection> Clients
-        {
-            get
-            {
-                return mClients;
-            }
-
-            set
-            {
-
-            }
-        }
-
-        public void NotifyConnection(int clusterConnectionID, PyObject packet)
-        {
-            try
-            {
-                mConnections[clusterConnectionID].Send(packet); // This will notify the connection
-            }
-            catch
-            {
-
-            }
-        }
-
-        public void NotifyClient(int accountID, PyObject packet)
-        {
-            try
-            {
-                mClients[accountID].Send(packet); // This will notify the client
-            }
-            catch
-            {
-
-            }
+            if (this.Clients.ContainsKey(clientID) == false)
+                throw new Exception($"Trying to notify a not connected client {clientID}");
+            
+            this.Clients[clientID].Socket.Send(packet);
         }
 
         public void NotifyNode(int nodeID, PyObject packet)
         {
-            try
-            {
-                mNodes[nodeID].Send(packet);
-            }
-            catch
-            {
-
-            }
+            if(this.Nodes.ContainsKey(nodeID) == false)
+                throw new Exception($"Trying to notify a non-existant node {nodeID}");
+            
+            this.Nodes[nodeID].Socket.Send(packet);
         }
 
-        public int RandomNode
+        public void NotifyNode(int nodeID, Encodeable packet)
         {
-            get
-            {
-                foreach (KeyValuePair<int, Connection> node in mNodes)
-                {
-                    return node.Key;
-                }
-
-                return 1;
-            }
-
-            private set
-            {
-
-            }
-        }
-
-        public int ClientsCount
-        {
-            get
-            {
-                return mClients.Count;
-            }
-
-            private set
-            {
-
-            }
-        }
-
-        public int NodesCount
-        {
-            get
-            {
-                return mNodes.Count;
-            }
-
-            private set
-            {
-
-            }
+            this.NotifyNode(nodeID, packet.Encode());
         }
     }
 }

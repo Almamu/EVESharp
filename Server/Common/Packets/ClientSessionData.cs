@@ -3,10 +3,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Marshal;
+using Marshal.Network;
 
 namespace Common.Packets
 {
-    class ClientSessionData
+    class ClientSessionData : Encodeable, Decodeable
     {
         public PyDict session = new PyDict();
         public int clientID = 0;
@@ -21,47 +22,45 @@ namespace Common.Packets
             return new PyObjectData("macho.sessionInitialState", args);
         }
 
-        public bool Decode(PyObject data)
+        public void Decode(PyObject data)
         {
             if (data.Type != PyObjectType.ObjectData)
             {
-                Log.Error("ClientSessionData", "Wrong container type");
-                return false;
+                throw new Exception($"Expected container of type ObjectData but got {data.Type}");
             }
 
             PyObjectData container = data as PyObjectData;
 
             if (container.Name != "macho.sessionInitialState")
             {
-                Log.Error("ClientSessionData", "Wrong container name/type");
-                return false;
+                throw new Exception($"Expected container with typeName 'macho.sessionInitialState' but got '{container.Name}'");
+            }
+
+            if (container.Arguments.Type != PyObjectType.Tuple)
+            {
+                throw new Exception($"Expected arguments of type Tuple but got {container.Arguments.Type}");
             }
 
             PyTuple args = container.Arguments as PyTuple;
 
             if (args.Items.Count != 2)
             {
-                Log.Error("ClientSessionData", "Wrong args count");
-                return false;
+                throw new Exception($"Expected arguments with 2 arguments but got {args.Items.Count}");
             }
 
             if (args.Items[0].Type != PyObjectType.Dict)
             {
-                Log.Error("ClientSessionData", "Arguments first element is not PyDict");
-                return false;
+                throw new Exception($"Expected PyDict as first argument but got {args.Items[0].Type}");
             }
 
             session = args.Items[0] as PyDict;
 
             if ((args.Items[1] is PyInt) == false)
             {
-                Log.Error("ClientSessionData", "Arguments second element is not PyInt");
-                return false;
+                throw new Exception($"Expected PyInt as second argument but got {args.Items[1].Type}");
             }
 
             clientID = (args.Items[1] as PyInt).Value;
-
-            return true;
         }
     }
 }

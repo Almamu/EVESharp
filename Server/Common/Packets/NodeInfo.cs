@@ -3,10 +3,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Marshal;
+using Marshal.Network;
 
 namespace Common.Packets
 {
-    public class NodeInfo
+    public class NodeInfo : Encodeable, Decodeable
     {
         public int nodeID = 0;
         public PyList solarSystems = new PyList();
@@ -21,47 +22,40 @@ namespace Common.Packets
             return new PyObjectData("machoNet.nodeInfo", packet);
         }
 
-        public bool Decode(PyObject info)
+        public void Decode(PyObject info)
         {
             if (info.Type != PyObjectType.ObjectData)
             {
-                Log.Error("NodeInfo", "Wrong type for ObjectData");
-                return false;
+                throw new Exception($"Expected container of type ObjectData but got {info.Type}");
             }
 
             PyObjectData data = info.As<PyObjectData>();
 
             if (data.Name != "machoNet.nodeInfo")
             {
-                Log.Error("NodeInfo", "Wrong object name, expected machoNet.nodeInfo but got " + data.Name);
-                return false;
+                throw new Exception($"Expected container with typeName 'machoNet.nodeInfo but got {data.Name}");
             }
 
             if (data.Arguments.Type != PyObjectType.Tuple)
             {
-                Log.Error("NodeInfo", "Wrong type for ObjectData arguments, expected Tuple");
-                return false;
+                throw new Exception($"Expected arguments of type Tuple but got {data.Arguments.Type}");
             }
 
             PyTuple args = data.Arguments.As<PyTuple>();
             
             if (args.Items[0].Type != PyObjectType.Long)
             {
-                Log.Error("NodeInfo", "Wrong type for tuple0 item0, expected int");
-                return false;
+                throw new Exception($"Expected first argument of type Long but got {args.Items[0].Type}");
             }
 
             nodeID = args.Items[0].As<PyInt>().Value;
 
             if (args.Items[1].Type != PyObjectType.List)
             {
-                Log.Error("NodeInfo", "Wrong type for tuple0 item1, expected list");
-                return false;
+                throw new Exception($"Expected second argument of type List but got {args.Items[1].Type}");
             }
 
             solarSystems = args.Items[1].As<PyList>();
-
-            return true;
         }
     }
 }

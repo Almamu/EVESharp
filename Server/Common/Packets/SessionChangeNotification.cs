@@ -3,10 +3,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Marshal;
+using Marshal.Network;
 
 namespace Common.Packets
 {
-    public class SessionChangeNotification
+    public class SessionChangeNotification : Encodeable
     {
         public int clueless = 0;
         public PyDict changes = new PyDict();

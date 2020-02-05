@@ -6,79 +6,76 @@ using Marshal;
 
 namespace Common.Game
 {
+    // TODO: ADD BETTER WAYS TO WORK WITH THE SESSION
     public class Session
     {
-        private PyDict session;
-
-        public Session()
+        private Dictionary<string, PyTuple> SessionData = new Dictionary<string, PyTuple>();
+        
+        private void Set(string key, PyObject newValue)
         {
-            session = new PyDict();
-        }
-
-        private void _Set(PyObject key, PyObject val)
-        {
-            if (session.Dictionary.ContainsKey(key) == false)
+            if (SessionData.ContainsKey(key) == false)
             {
                 PyTuple var = new PyTuple();
 
                 var.Items.Add(new PyNone());
-                var.Items.Add(val);
+                var.Items.Add(newValue);
 
-                session.Dictionary.Add(key, var);
+                SessionData.Add(key, var);
             }
             else
             {
-                PyTuple tmp = session.Dictionary[key].As<PyTuple>();
+                PyTuple tmp = SessionData[key] as PyTuple;
 
                 tmp.Items[0] = tmp.Items[1];
-                tmp.Items[1] = val;
+                tmp.Items[1] = newValue;
 
-                session.Dictionary[key] = tmp;
+                SessionData[key] = tmp;
             }
         }
 
-        private PyTuple _Get(PyObject key)
+        private PyTuple Get(string key)
         {
-            if (session.Dictionary.ContainsKey(key))
+            if (SessionData.ContainsKey(key) == false)
             {
-                return session[key].As<PyTuple>();
+                PyTuple tuple = new PyTuple();
+
+                // add two items to the list to simulate an actual tuple
+                tuple.Items.Add(new PyNone ());
+                tuple.Items.Add(new PyNone());
+                
+                return tuple;
             }
             else
             {
-                return new PyTuple();
+                return SessionData[key] as PyTuple;
             }
         }
 
-        private PyObject _GetCurrent(PyObject key)
+        private PyObject GetCurrent(string key)
         {
-            PyTuple tmp = _Get(key);
+            PyTuple values = this.Get(key);
 
-            if (tmp.Items.Count == 0)
-            {
-                return new PyNone();
-            }
-
-            return tmp.Items[1];
+            return values.Items[1];
         }
 
         public void SetString(string name, string value)
         {
-            _Set(new PyString(name), new PyString(value));
+            this.Set(name, new PyString(value));
         }
 
         public void SetInt(string name, int value)
         {
-            _Set(new PyString(name), new PyInt(value));
+            this.Set(name, new PyInt(value));
         }
 
         public void SetLong(string name, long value)
         {
-            _Set(new PyString(name), new PyLongLong(value));
+            this.Set(name, new PyLongLong(value));
         }
 
         public string GetCurrentString(string name)
         {
-            PyObject res = _GetCurrent(new PyString(name));
+            PyObject res = this.GetCurrent(name);
 
             if (res.Type != PyObjectType.String)
             {
@@ -90,7 +87,7 @@ namespace Common.Game
 
         public int GetCurrentInt(string name)
         {
-            PyObject res = _GetCurrent(new PyString(name));
+            PyObject res = this.GetCurrent(name);
 
             if((res.Type != PyObjectType.Long) || (res.Type != PyObjectType.IntegerVar))
             {
@@ -102,7 +99,7 @@ namespace Common.Game
 
         public long GetCurrentLong(string name)
         {
-            PyObject res = _GetCurrent(new PyString(name));
+            PyObject res = this.GetCurrent(name);
 
             if (res.Type != PyObjectType.LongLong)
             {
@@ -114,16 +111,14 @@ namespace Common.Game
 
         public PyDict EncodeChanges()
         {
-            PyDict res = new PyDict();
+            PyDict result = new PyDict();
             PyDict tmp = new PyDict();
 
             // Iterate through the session data
-            foreach (PyString s in session.Dictionary.Keys)
+            foreach (KeyValuePair<string, PyTuple> entry in SessionData)
             {
-                PyTuple value = session[s].As<PyTuple>();
-
-                PyObject last = value.Items[0];
-                PyObject current = value.Items[1];
+                PyObject last = entry.Value.Items[0];
+                PyObject current = entry.Value.Items[1];
 
                 // Check if they have the same type and value
                 if (last != current)
@@ -133,35 +128,14 @@ namespace Common.Game
 
                     change.Items.Add(last);
                     change.Items.Add(current);
-
-                    res.Set(s.Value, change);
-
-                    // Update the session with the new last value
-                    PyTuple update = new PyTuple();
-
-                    update.Items.Add(current);
-                    update.Items.Add(current);
-
-                    // We cant modify the session here, just store it on something temporal
-                    tmp[s] = update;
-                }
-                else
-                {
-                    // We havent updated anything, but this would be later set as the session
-                    // This will prevent the loss of session data
-                    tmp[s] = value;
+                    // build the change object
+                    result.Set(entry.Key, change);
+                    // update the old value with the one synced to the client
+                    entry.Value.Items[0] = entry.Value.Items[1];
                 }
             }
 
-            // Send back the session from temporal to the final storage
-            session = tmp;
-
-            return res;
-        }
-
-        public PyDict GetSession()
-        {
-            return session;
+            return result;
         }
     }
 }

@@ -2,12 +2,13 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Marshal.Network;
 
 namespace Marshal
 {
     // Ported from EVEmu: The EVE Online emulator
     // Just a helper class to help us reply to calls
-    public class PyPacket
+    public class PyPacket : Encodeable, Decodeable
     {
         public PyPacket()
         {
@@ -59,7 +60,7 @@ namespace Marshal
             return new PyObjectData(type_string, args);
         }
 
-        public bool Decode( PyObject data )
+        public void Decode( PyObject data )
         {
             PyObject packet = data;
 
@@ -75,7 +76,7 @@ namespace Marshal
 
             if (packet.Type != PyObjectType.ObjectData)
             {
-                return false;
+                throw new Exception($"Expected container to be of type ObjectData but got {packet.Type}");
             }
 
             PyObjectData packeto = packet.As<PyObjectData>();
@@ -84,34 +85,27 @@ namespace Marshal
 
             if (packeto.Arguments.Type != PyObjectType.Tuple)
             {
-                return false;
+                throw new Exception($"Expected arguments to be of type Tuple but got {packeto.Arguments.Type}");
             }
             
             PyTuple tuple = packeto.Arguments.As<PyTuple>();
 
             if (tuple.Items.Count != 6)
             {
-                return false;
+                throw new Exception($"Expected arguments to be of size 6 but got {tuple.Items.Count}");
             }
 
             if ((tuple.Items[0].Type != PyObjectType.IntegerVar) && ( tuple.Items[0].Type != PyObjectType.Long ) )
             {
-                return false;
+                throw new Exception($"Expected item 1 to be of type Long or Integer but got {tuple.Items[0].Type}");
             }
 
             PyInt typer = tuple.Items[0].As<PyInt>();
 
             type = (Macho.MachoNetMsg_Type)typer.Value;
 
-            if (!source.Decode(tuple.Items[1]))
-            {
-                return false;
-            }
-
-            if (!dest.Decode(tuple.Items[2]))
-            {
-                return false;
-            }
+            source.Decode(tuple.Items[1]);
+            dest.Decode(tuple.Items[2]);
 
             if ((tuple.Items[3].Type == PyObjectType.IntegerVar) || (tuple.Items[3].Type == PyObjectType.Long) )
             {
@@ -123,13 +117,13 @@ namespace Marshal
             }
             else
             {
-                return false;
+                throw new Exception($"Expected item 4 to be of type Integer, Long or None but got {tuple.Items[3].Type}");
             }
 
             // Payload( or call arguments )
             if ((tuple.Items[4].Type != PyObjectType.Buffer) && (tuple.Items[4].Type != PyObjectType.Tuple))
             {
-                return false;
+                throw new Exception($"Expected item 5 to be of type Buffer or Tuple but got {tuple.Items[4].Type}");
             }
 
             payload = tuple.Items[4].As<PyTuple>();
@@ -144,10 +138,8 @@ namespace Marshal
             }
             else
             {
-                return false;
+                throw new Exception($"Expected item 6 to be of type None or Dict but got {tuple.Items[5].Type}");
             }
-
-            return true;
         }
         
         public Macho.MachoNetMsg_Type type;

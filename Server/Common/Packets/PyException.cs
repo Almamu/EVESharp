@@ -3,10 +3,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Marshal;
+using Marshal.Network;
 
 namespace Common.Packets
 {
-    public class PyException
+    public class PyException : Decodeable, Encodeable
     {
         public string exception_type = "";
         public string message = "";
@@ -47,39 +48,35 @@ namespace Common.Packets
             return new PyObjectEx(false, header);
         }
 
-        public bool Decode(PyObject data)
+        public void Decode(PyObject data)
         {
             if (data.Type != PyObjectType.ObjectEx)
             {
-                Log.Error("PyException", "Wrong container type");
-                return false;
+                throw new Exception($"Expected container of type ObjectEx but got {data.Type}");
             }
 
             PyObjectEx p = data.As<PyObjectEx>();
 
             if (p.IsType2 == true)
             {
-                Log.Error("PyException", "Wrong PyObjectEx type, expected Normal, but got Type2");
-                return false;
+                throw new Exception($"Expected PyObjectEx to be of type 2 but got normal");
             }
 
             if (p.Header.Type != PyObjectType.Tuple)
             {
-                Log.Error("PyException", "Wrong item 1 type");
-                return false;
+                throw new Exception($"Expected header to be of type Tuple but got {p.Header.Type}");
             }
 
             PyTuple args = p.Header.As<PyTuple>();
+            
             if (args.Items.Count != 3)
             {
-                Log.Error("PyException", "Wrong tuple 1 item count, expected 3 but got " + args.Items.Count);
-                return false;
+                throw new Exception($"Expected header to have 3 items but got {args.Items.Count}");
             }
 
             if (args.Items[0].Type != PyObjectType.Token)
             {
-                Log.Error("PyException", "Wrong tuple item 1 type");
-                return false;
+                throw new Exception($"Expected first argument to be of type Token but got {args.Items[0].Type}");
             }
 
             PyToken type = args.Items[0].As<PyToken>();
@@ -87,28 +84,24 @@ namespace Common.Packets
 
             if (exception_type.StartsWith("exceptions.") == false)
             {
-                Log.Warning("PyException", "Trying to decode a non-exception packet: " + exception_type);
-                return false;
+                throw new Exception($"Trying to decode a non-exception packet: {exception_type}");
             }
 
             if (args.Items[1].Type != PyObjectType.Tuple)
             {
-                Log.Error("PyException", "Wrong tuple item 2 type");
-                return false;
+                throw new Exception($"Expected second argument to be of type Tuple but got {args.Items[1].Type}");
             }
 
             PyTuple msg = args.Items[1].As<PyTuple>();
 
             if (msg.Items.Count != 1)
             {
-                Log.Error("PyException", "Wrong item 2 tuple count, expected 1 but got " + msg.Items.Count);
-                return false;
+                throw new Exception($"Expected second argument Tuple to have 1 element but got {msg.Items.Count}");
             }
 
             if (msg.Items[0].Type != PyObjectType.String)
             {
-                Log.Error("PyException", "Wrong tuple 2 item 1 type");
-                return false;
+                throw new Exception($"Expected item 1 to be of type String but got {msg.Items[0].Type}");
             }
 
             PyString msg_data = msg.Items[0].As<PyString>();
@@ -117,101 +110,87 @@ namespace Common.Packets
 
             if (args.Items[2].Type != PyObjectType.Dict)
             {
-                Log.Error("PyException", "Wrong tuple 1 item 3 type");
-                return false;
+                throw new Exception($"Expected third argument to be of type PyDict but got {args.Items[2].Type}");
             }
 
             PyDict info = args.Items[2].As<PyDict>();
 
             if (info.Contains("origin") == false)
             {
-                Log.Error("PyException", "Dict item 1 doesnt has key origin");
-                return false;
+                throw new Exception("PyDict doesn't have the key 'origin'");
             }
 
             origin = info.Get("origin").As<PyString>().Value;
 
             if (info.Contains("reasonArgs") == false)
             {
-                Log.Error("PyException", "Dict item 1 doesn has key reasonArgs");
-                return false;
+                throw new Exception("PyDict doesn't have the key 'reasonArgs'");
             }
 
             reasonArgs = info.Get("reasonArgs").As<PyDict>();
 
             if (info.Contains("clock") == false)
             {
-                Log.Error("PyException", "Dict item 1 doesnt has key clock");
-                return false;
+                throw new Exception("PyDict doesn't have the key 'clock'");
             }
 
             clock = info.Get("clock").IntValue;
 
             if (info.Contains("loggedOnUserCount") == false)
             {
-                Log.Error("PyException", "Dict item 1 doesnt has key loggedOnUserCount");
-                return false;
+                throw new Exception("PyDict doesn't have the key 'loggedOnUserCount'");
             }
 
             loggedOnUserCount = info.Get("loggedOnUserCount");
 
             if (info.Contains("region") == false)
             {
-                Log.Error("PyException", "Dict item 1 doesnt has key region");
-                return false;
+                throw new Exception("PyDict doesn't have the key 'region'");
             }
 
             region = info.Get("region").As<PyString>().Value;
 
             if (info.Contains("reason") == false)
             {
-                Log.Error("PyException", "Dict item 1 doesnt has key reason");
-                return false;
+                throw new Exception("PyDict doesn't have the key 'reason'");
             }
 
             reason = info.Get("reason").As<PyString>().Value;
 
             if(info.Contains("version") == false)
             {
-                Log.Error("PyException", "Dict item 1 doesnt has key version");
-                return false;
+                throw new Exception("PyDict doesn't have the key 'version'");
             }
 
             version = info.Get("version").As<PyFloat>().Value;
 
             if (info.Contains("build") == false)
             {
-                Log.Error("PyException", "Dict item 1 doesnt has key build");
-                return false;
+                throw new Exception("PyDict doesn't have the key 'build'");
             }
 
             build = info.Get("build").As<PyInt>().Value;
 
             if (info.Contains("reasonCode") == false)
             {
-                Log.Error("PyException", "Dict item 1 doesnt has key reasonCode");
-                return false;
+                throw new Exception("PyDict doesn't have the key 'reasonCode'");
             }
 
             reasonCode = info.Get("reasonCode").StringValue;
 
             if (info.Contains("codename") == false)
             {
-                Log.Error("PyException", "Dict item 1 doesnt has key codename");
-                return false;
+                throw new Exception("PyDict doesn't have the key 'codename'");
             }
 
             codename = info.Get("codename").As<PyString>().Value;
 
             if (info.Contains("machoVersion") == false)
             {
-                Log.Error("PyException", "Dict item 1 doesnt has key machoVersion");
-                return false;
+                throw new Exception("PyDict doesn't have the key 'machoVersion'");
             }
 
             machoVersion = info.Get("machoVersion").As<PyInt>().Value;
-
-            return true;
         }
     }
 }

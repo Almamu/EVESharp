@@ -33,7 +33,7 @@ namespace ClusterControler
 {
     public class LoginQueueEntry
     {
-        public AuthenticationReq request;
-        public Connection connection;
+        public AuthenticationReq Request { get; set; }
+        public ClientConnection Connection { get; set; }
     }
 }

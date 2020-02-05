@@ -3,10 +3,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Marshal;
+using Marshal.Network;
 
 namespace Common.Packets
 {
-    public class AuthenticationRsp
+    public class AuthenticationRsp : Encodeable
     {
         public string serverChallenge = "";
         public byte[] func_marshaled_code = null;

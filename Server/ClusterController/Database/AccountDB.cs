@@ -90,17 +90,13 @@ namespace ClusterControler.Database
             }
         }
 
-        public void CreateAccount(string accountName, string accountPassword)
+        public void CreateAccount(string accountName, string accountPassword, int role)
         {
-            SHA1 sha1 = SHA1.Create();
-            sha1.Initialize();
-            byte[] hash = sha1.ComputeHash(Encoding.ASCII.GetBytes(accountPassword));
-
             accountName = Database.DoEscapeString(accountName);
 
             Database.Query("INSERT INTO account(accountID, accountName, password, role, online, banned)" +
-                "VALUES(NULL, '" + accountName + "', '" + Encoding.ASCII.GetString(hash) + "', " +
-                Common.Constants.Roles.ROLE_PLAYER + ", 0, 0)");
+                "VALUES(NULL, '" + accountName + "', SHA1('" + Database.DoEscapeString(accountPassword) + "'), " +
+                role + ", 0, 0)");
         }
 
         public AccountDB(Common.Database.DatabaseConnection db) : base(db)

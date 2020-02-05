@@ -279,53 +279,37 @@ namespace Node
                                         // Update our local info
                                         NodeInfo nodeinfo = new NodeInfo();
 
-                                        if (nodeinfo.Decode(info) == true)
-                                        {
-                                            nodeID = nodeinfo.nodeID;
+                                        nodeinfo.Decode(info);
+                                        nodeID = nodeinfo.nodeID;
 
-                                            Log.Debug("Main", "Found machoNet.nodeInfo, our new node id is " + nodeID.ToString("X4"));
-                                            sSystemManager.LoadSolarSystems(nodeinfo.solarSystems);
-                                        }
+                                        Log.Debug("Main", "Found machoNet.nodeInfo, our new node id is " + nodeID.ToString("X4"));
+                                        sSystemManager.LoadSolarSystems(nodeinfo.solarSystems);
                                     }
                                     else
                                     {
                                         // Client packet
                                         PyPacket clientpacket = new PyPacket();
-                                        
-                                        if (clientpacket.Decode(info) == false)
-                                        {
-                                            Log.Error("Main", "Unknown packet");
-                                        }
-                                        else
-                                        {
-                                            // Something similar to Async calls
-                                            new Thread(new ParameterizedThreadStart(HandlePacket)).Start(clientpacket);
-                                        }
+
+                                        clientpacket.Decode(info);
+                                        // Something similar to Async calls
+                                        new Thread(new ParameterizedThreadStart(HandlePacket)).Start(clientpacket);
                                     }
                                 }
                                 else if (obj is PyChecksumedStream) // Checksumed packets
                                 {
                                     PyPacket clientpacket = new PyPacket();
 
-                                    if (clientpacket.Decode(obj) == false)
-                                    {
-                                        Log.Error("Main", "Cannot decode packet");
-                                    }
-                                    else
-                                    {
-                                        new Thread(new ParameterizedThreadStart(HandlePacket)).Start(clientpacket);
-                                    }
+                                    clientpacket.Decode(obj);
+                                    
+                                    new Thread(new ParameterizedThreadStart(HandlePacket)).Start(clientpacket);
                                 }
                                 else if (obj is PyTuple)
                                 {
                                     // The only tuple packet is the LowLevelVersionExchange
                                     LowLevelVersionExchange ex = new LowLevelVersionExchange();
 
-                                    if (ex.Decode(obj) == false)
-                                    {
-                                        Log.Error("Main", "LowLevelVersionExchange error");
-                                    }
-
+                                    ex.Decode(obj);
+                                    
                                     // Reply with the node LowLevelVersionExchange
                                     LowLevelVersionExchange reply = new LowLevelVersionExchange();
 
@@ -335,8 +319,9 @@ namespace Node
                                     reply.machoVersion = Common.Constants.Game.machoVersion;
                                     reply.version = Common.Constants.Game.version;
                                     reply.region = Common.Constants.Game.region;
+                                    reply.isNode = true;
 
-                                    Send(reply.Encode(true));
+                                    Send(reply.Encode());
                                 }
                                 else if (obj is PyObjectEx)
                                 {
@@ -351,9 +336,8 @@ namespace Node
                         }
 
                     }
-                    catch (Exception)
+                    catch (Exception ex)
                     {
-
                     }
                 }
             }

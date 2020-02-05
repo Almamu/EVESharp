@@ -3,10 +3,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Marshal;
+using Marshal.Network;
 
 namespace Common.Packets
 {
-    public class LowLevelVersionExchange
+    public class LowLevelVersionExchange : Encodeable, Decodeable
     {
         public int birthday = 0;
         public int machoVersion = 0;
@@ -18,14 +19,14 @@ namespace Common.Packets
         public string nodeIdentifier = "";
         public bool isNode = false; // 0-> Client, 1-> Node
 
-        public PyTuple Encode(bool node)
+        public PyObject Encode()
         {
             PyTuple res = new PyTuple();
 
             res.Items.Add(new PyInt(birthday));
             res.Items.Add(new PyInt(machoVersion));
 
-            if (node)
+            if (this.isNode)
             {
                 res.Items.Add(new PyString("Node"));
             }
@@ -41,30 +42,27 @@ namespace Common.Packets
             return res;
         }
 
-        public bool Decode(PyObject data)
+        public void Decode(PyObject data)
         {
             isNode = false;
 
             if (data.Type != PyObjectType.Tuple)
             {
-                Log.Error("LowLevelVersionExchange", "Wrong type");
-                return false;
+                throw new Exception($"Expected container of type Tuple but got {data.Type}");
             }
 
             PyTuple tmp = data.As<PyTuple>();
 
             if (tmp.Items.Count != 6)
             {
-                Log.Error("LowLevelVersionExchange", "Wrong item count");
-                return false;
+                throw new Exception($"Expected container with 6 elements but got {tmp.Items.Count}");
             }
 
             PyObject birth = tmp.Items[0];
 
             if ( (birth.Type != PyObjectType.IntegerVar) && (birth.Type != PyObjectType.LongLong) && (birth.Type != PyObjectType.Long))
             {
-                Log.Error("LowLevelVersionExchange", "Wrong type for birthday. Type: " + (uint)birth.Type);
-                return false;
+                throw new Exception($"Expected a birthday of type Long, LongLong or Integer but got {birth.Type}");
             }
 
             birthday = birth.As<PyInt>().Value;
@@ -73,8 +71,7 @@ namespace Common.Packets
 
             if ((macho.Type != PyObjectType.IntegerVar) && (macho.Type != PyObjectType.LongLong) && (macho.Type != PyObjectType.Long))
             {
-                Log.Error("LowLevelVersionExchange", "Wrong type for machoVersion");
-                return false;
+                throw new Exception($"Expected a machoVersion of type Long, LongLong or Integer but got {macho.Type}");
             }
 
             machoVersion = macho.As<PyInt>().Value;
@@ -96,16 +93,14 @@ namespace Common.Packets
             }
             else
             {
-                Log.Error("LowLevelVersionExchange", "Wrong type for usercount/node identifier");
-                return false;
+                throw new Exception($"Wrong type for usercount/node identifier, got {users.Type}");
             }
 
             PyObject ver = tmp.Items[3];
 
             if (ver.Type != PyObjectType.Float)
             {
-                Log.Error("LowLevelVersionExchange", "Wrong type for version");
-                return false;
+                throw new Exception($"Expected a version of type Float but got {ver.Type}");
             }
 
             version = ver.As<PyFloat>().Value;
@@ -114,8 +109,7 @@ namespace Common.Packets
 
             if ((b.Type != PyObjectType.IntegerVar) && (b.Type != PyObjectType.LongLong) && (b.Type != PyObjectType.Long))
             {
-                Log.Error("LowLevelVersionExchange", "Wrong type for build");
-                return false;
+                throw new Exception($"Expected a build of type Long, LongLong or Integer but got {b.Type}");
             }
 
             build = b.As<PyInt>().Value;
@@ -124,13 +118,10 @@ namespace Common.Packets
 
             if (code.Type != PyObjectType.String)
             {
-                Log.Error("LowLevelVersionExchange", "Wrong type for codename");
-                return false;
+                throw new Exception($"Expected a codename of type String but got {code.Type}");
             }
 
             codename = code.As<PyString>().Value;
-
-            return true;
         }
     }
 }
