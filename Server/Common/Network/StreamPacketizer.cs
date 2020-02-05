@@ -44,9 +44,6 @@ namespace Common.Network
             {
                 while (this.mInputStream.Position != this.mInputStream.Length)
                 {
-                    // seek to the beginning of the stream
-                    this.mInputStream.Seek(0, SeekOrigin.Begin);
-                
                     // get size flag
                     int size = this.mInputReader.ReadInt32();
 
@@ -68,6 +65,8 @@ namespace Common.Network
                         (int) (this.mInputStream.Length - this.mInputStream.Position)
                     );
                     this.mInputStream.SetLength(this.mInputStream.Length - this.mInputStream.Position);
+                    // seek to the beginning of the stream so the next packet can be handled
+                    this.mInputStream.Seek(0, SeekOrigin.Begin);
                 }
 
                 return this.mOutputQueue.Count;   
