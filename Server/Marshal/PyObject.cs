@@ -6,11 +6,6 @@ namespace Marshal
     
     public abstract class PyObject
     {
-        /// <summary>
-        /// Enables recording RawSource and RawOffset data. More than doubles memory footprint of eveMarshal.
-        /// </summary>
-        public static bool EnableInspection;
-
         public byte[] RawSource { get; set; }
         public long RawOffset { get; set; }
 
@@ -31,14 +26,6 @@ namespace Marshal
             RawOffset = output.BaseStream.Position;
 
             EncodeInternal(output);
-
-            if (EnableInspection)
-            {
-                var postOffset = output.BaseStream.Position;
-                output.BaseStream.Seek(RawOffset, SeekOrigin.Begin);
-                RawSource = new byte[postOffset - RawOffset];
-                output.BaseStream.Read(RawSource, 0, (int)(postOffset - RawOffset));
-            }
         }
 
         protected abstract void EncodeInternal(BinaryWriter output);

@@ -38,8 +38,11 @@ namespace ClusterControler
 
         protected override void OnConnectionLost()
         {
-            // remove the client from the active list
-            this.ConnectionManager.RemoveUnauthenticatedClientConnection(this);
+            // remove the user from the correct lists
+            if(this.Session.KeyExists("userid") == false)
+                this.ConnectionManager.RemoveUnauthenticatedClientConnection(this);
+            else
+                this.ConnectionManager.RemoveAuthenticatedClientConnection(this);
             // and free the socket resources
             this.Socket.ForcefullyDisconnect();
         }
@@ -179,8 +182,6 @@ namespace ClusterControler
                 // search for the node in the list
                 if(pyPacket.source.type != PyAddress.AddrType.Client)
                     throw new Exception("Received a packet coming from a client trying to spoof the address");
-                if(pyPacket.dest.typeID == Network.PROXY_NODE_ID)
-                    Log.Warning("Client", "Sending packet to proxy");
                 
                 this.ConnectionManager.NotifyNode((int) pyPacket.dest.typeID, packet);
             }

@@ -30,16 +30,23 @@ namespace Marshal
         {
             if (data == null)
                 return null;
-            if (data[0] == ZlibMarker)
-                data = Zlib.Decompress(data);
-            return Process(new BinaryReader(new MemoryStream(data), Encoding.ASCII));
+
+            Stream stream = new MemoryStream(data);
+
+            int magic = stream.ReadByte();
+
+            stream.Seek(0, SeekOrigin.Begin);
+            
+            if (magic == ZlibMarker)
+                stream = Zlib.DecompressStream(stream);
+            if(stream.ReadByte() != HeaderByte)
+                throw new InvalidDataException($"Invalid magic, expected {HeaderByte}, read {magic}");
+            
+            return Process(new BinaryReader(stream, Encoding.ASCII));
         }
 
         private PyObject Process(BinaryReader reader)
         {
-            var magic = reader.ReadByte();
-            if (magic != HeaderByte)
-                throw new InvalidDataException("Invalid magic, expected: " + HeaderByte + " read: " + magic);
             var saveCount = reader.ReadUInt32();
 
             if (saveCount > 0)
@@ -64,14 +71,8 @@ namespace Marshal
         private PyObject CreateAndDecode<T>(BinaryReader reader, MarshalOpcode op) where T : PyObject, new()
         {
             // -1 for the opcode
-            var ret = new T {RawOffset = reader.BaseStream.Position - 1};
+            var ret = new T {};
             ret.Decode(this, op, reader);
-            if (PyObject.EnableInspection)
-            {
-                var postOffset = reader.BaseStream.Position;
-                reader.BaseStream.Seek(ret.RawOffset, SeekOrigin.Begin);
-                ret.RawSource = reader.ReadBytes((int)(postOffset - ret.RawOffset));
-            }
 
             return ret;
         }

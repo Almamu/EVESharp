@@ -105,10 +105,6 @@ namespace Node.Network
                     packet.dest.service, call, args, this.Container.ClientManager.Get(packet.userID)
                 );
 
-                // silently ignore the null results as these do not generate any kind of data back
-                if (callResult == null)
-                    return;
-
                 // convert the packet to a response so we don't have to allocate a whole new packet
                 res.type_string = "macho.CallRsp";
                 res.type = Macho.MachoNetMsg_Type.CALL_RSP;
@@ -116,12 +112,8 @@ namespace Node.Network
                 // switch source and dest
                 res.source = packet.dest;
                 res.dest = packet.source;
-                
-                /*
-                res.dest.type = PyAddress.AddrType.Client;
-                res.dest.typeID = (ulong)clients[packet.userID].AccountID;
-                res.dest.callID = packet.source.callID;
-                */
+                // ensure destination has clientID in it
+                res.dest.typeID = packet.userID;
 
                 res.userID = packet.userID;
 

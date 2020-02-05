@@ -37,7 +37,7 @@ namespace ClusterControler
             // solar systems to be loaded by the node
             nodeInfo.solarSystems.Items.Add(new PyNone());
 
-            Log.Debug("Node", $"Notifying node {nodeInfo.nodeID} of it's new ID");
+            Log.Debug("Node", $"Notifying node {nodeInfo.nodeID:X4} of it's new ID");
             
             this.Socket.Send(nodeInfo);
         }

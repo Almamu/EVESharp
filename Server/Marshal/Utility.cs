@@ -189,12 +189,15 @@ namespace Marshal
 
     public static class Zlib
     {
+        public static ZInputStream DecompressStream(Stream stream)
+        {
+            return new ZInputStream(stream);
+        }
+        
         public static byte[] Decompress(byte[] input)
         {
-            /*Use InflaterInputStream and DeflaterOutputStream classes. The classes Inflater and Deflater are not recommended as they are very low level */
-            // two bytes shaved off (zlib header)
             var sourceStream = new MemoryStream(input);
-            var stream = new ZOutputStream(sourceStream);
+            var stream = new ZInputStream(sourceStream, -1);
             return stream.ReadAllBytes();
         }
 

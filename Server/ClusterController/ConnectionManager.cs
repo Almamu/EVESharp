@@ -98,6 +98,14 @@ namespace ClusterControler
 
         public void AddAuthenticatedClientConnection(ClientConnection connection)
         {
+            // if there's already an user connected with this account inmediately log it off
+            if (this.mClientConnections.ContainsKey(connection.AccountID) == true)
+            {
+                ClientConnection con = this.mClientConnections[connection.AccountID];
+                
+                con.Socket.ForcefullyDisconnect();
+            }
+            
             this.mClientConnections.Add(connection.AccountID, connection);
         }
 
