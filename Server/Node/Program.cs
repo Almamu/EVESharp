@@ -61,7 +61,6 @@ namespace Node
         static public Dictionary<uint, Client> sClients = new Dictionary<uint, Client>();
         
         static private int nodeID = 0xFFFF;
-        static private TCPSocket proxyConnection = null;
 
         static public long NodeID
         {
@@ -93,7 +92,24 @@ namespace Node
 
                 Log.Info("Main", "Priming cache...");
                 sCacheStorage = new CacheStorage(sContainer, sDatabase);
-                sCacheStorage.Load(CacheStorage.LoginCacheTable, CacheStorage.LoginCacheQueries, CacheStorage.LoginCacheTypes);
+                // prime bulk data
+                sCacheStorage.Load(
+                    CacheStorage.LoginCacheTable,
+                    CacheStorage.LoginCacheQueries,
+                    CacheStorage.LoginCacheTypes
+                );
+                // prime character creation cache
+                sCacheStorage.Load(
+                    CacheStorage.CreateCharacterCacheTable,
+                    CacheStorage.CreateCharacterCacheQueries,
+                    CacheStorage.CreateCharacterCacheTypes
+                );
+                // prime character appearance cache
+                sCacheStorage.Load(
+                    CacheStorage.CharacterAppearanceCacheTable,
+                    CacheStorage.CharacterAppearanceCacheQueries,
+                    CacheStorage.CharacterAppearanceCacheTypes
+                );
                 Log.Debug("Main", "Done");
                 
                 Log.Info("Main", "Initializing item factory");

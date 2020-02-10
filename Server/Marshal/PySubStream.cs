@@ -7,20 +7,19 @@ namespace Marshal
     {
         public byte[] RawData { get; set; }
         public PyObject Data { get; set; }
-        public Unmarshal DataUnmarshal { get; set; }
-
+        
         public PySubStream()
             : base(PyObjectType.SubStream)
         {
-            
+            Data = null;
+            RawData = null;
         }
 
         public PySubStream(byte[] data)
              : base(PyObjectType.SubStream)
         {
             RawData = data;
-            DataUnmarshal = new Unmarshal();
-            Data = DataUnmarshal.Process(data);
+            Data = Unmarshal.Process<PyObject>(RawData);
         }
 
         public PySubStream(PyObject data)
@@ -32,22 +31,28 @@ namespace Marshal
         public override void Decode(Unmarshal context, MarshalOpcode op, BinaryReader source)
         {
             uint len = source.ReadSizeEx();
-            RawData = source.ReadBytes((int) len);
-            DataUnmarshal = new Unmarshal();
-            Data = DataUnmarshal.Process(RawData);
+
+            if (len > 0)
+            {
+                RawData = source.ReadBytes((int) len);
+                Data = Unmarshal.Process<PyObject>(RawData);
+            }
         }
 
         protected override void EncodeInternal(BinaryWriter output)
         {
             output.WriteOpcode(MarshalOpcode.SubStream);
 
-            var memoryStream = new MemoryStream();
-            var binaryWriter = new BinaryWriter(memoryStream);
+            // there can be substreams with no data
+            if (this.Data == null)
+            {
+                output.Write((byte) 0);
+                return;
+            }
 
-            binaryWriter.Write(Marshal.Process(Data));
-            
-            output.WriteSizeEx((uint)memoryStream.Length);
-            output.Write(memoryStream.ToArray());
+            byte[] data = Marshal.Process(Data);
+            output.WriteSizeEx((uint)data.Length);
+            output.Write(data);
         }
 
         public override string ToString()

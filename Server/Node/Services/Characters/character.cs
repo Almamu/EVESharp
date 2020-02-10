@@ -38,11 +38,13 @@ namespace Node.Services.Characters
     public class character : Service
     {
         private CharacterDB mDB = null;
+        private CacheStorage mCacheStorage = null;
         
-        public character(DatabaseConnection db)
+        public character(CacheStorage cacheStorage, DatabaseConnection db)
             : base("character")
         {
             this.mDB = new CharacterDB(db);
+            this.mCacheStorage = cacheStorage;
         }
 
         public PyObject GetCharactersToSelect(PyTuple args, Client client)
@@ -53,6 +55,21 @@ namespace Node.Services.Characters
         public PyObject LogStartOfCharacterCreation(PyTuple args, Client client)
         {
             return null;
+        }
+
+        public PyObject GetCharCreationInfo(PyTuple args, Client client)
+        {
+            return this.mCacheStorage.GetHints(CacheStorage.CreateCharacterCacheTable);
+        }
+
+        public PyObject GetAppearanceInfo(PyTuple args, Client client)
+        {
+            return this.mCacheStorage.GetHints(CacheStorage.CharacterAppearanceCacheTable);
+        }
+
+        public PyObject GetCharNewExtraCreationInfo(PyTuple args, Client client)
+        {
+            return new PyDict();
         }
     }
 }

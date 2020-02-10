@@ -79,7 +79,7 @@ namespace Node
             this.mAlertSvc = new alert();
             this.mObjectCachingSvc = new objectCaching(this.mCacheStorage);
             this.mAuthenticationSvc = new authentication(configuration.Authentication);
-            this.mCharacterSvc = new character(db);
+            this.mCharacterSvc = new character(storage, db);
         }
     }
 }

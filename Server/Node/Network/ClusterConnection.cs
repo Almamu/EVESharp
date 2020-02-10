@@ -105,6 +105,9 @@ namespace Node.Network
                     packet.dest.service, call, args, this.Container.ClientManager.Get(packet.userID)
                 );
 
+                if (callResult == null)
+                    callResult = new PyNone();
+
                 // convert the packet to a response so we don't have to allocate a whole new packet
                 res.type_string = "macho.CallRsp";
                 res.type = Macho.MachoNetMsg_Type.CALL_RSP;

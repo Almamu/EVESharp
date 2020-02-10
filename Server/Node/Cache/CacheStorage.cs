@@ -33,6 +33,7 @@ using MySql.Data.MySqlClient;
 using MySql.Data.Types;
 using Common.Packets;
 using Common.Utils;
+using MySqlX.XDevAPI.Relational;
 using Node.Database;
 
 namespace Node
@@ -172,7 +173,7 @@ namespace Node
 	        CacheObjectType.TupleSet,
 	        CacheObjectType.CRowset
         };
-/*
+
         public static string[] CreateCharacterCacheTable = new string[] 
         {
           	"charCreationInfo.bl_eyebrows",
@@ -194,8 +195,48 @@ namespace Node
 	        "charCreationInfo.bl_makeups"
         };
 
-        public static int CreateCharacterCacheTableSize = CreateCharacterCacheTable.Length;
+        public static string[] CreateCharacterCacheQueries = new string[]
+        {
+	        "SELECT bloodlineID, gender, eyebrowsID, npc FROM chrBLEyebrows",
+	        "SELECT bloodlineID, gender, eyesID, npc FROM chrBLEyes",
+	        "SELECT bloodlineID, gender, decoID, npc FROM chrBLDecos",
+	        "SELECT bloodlineID, bloodlineName, raceID, description, maleDescription, femaleDescription, shipTypeID, corporationID, perception, willpower, charisma, memory, intelligence, graphicID, shortDescription, shortMaleDescription, shortFemaleDescription, 0 AS dataID FROM chrBloodlines",
+	        "SELECT bloodlineID, gender, hairID, npc FROM chrBLHairs",
+	        "SELECT backgroundID, backgroundName FROM chrBLBackgrounds",
+	        "SELECT bloodlineID, gender, accessoryID, npc FROM chrBLAccessories",
+	        "SELECT bloodlineID, gender, costumeID, npc FROM chrBLCostumes",
+	        "SELECT lightID, lightName FROM chrBLLights",
+	        "SELECT raceID, raceName, description, graphicID, shortDescription, 0 AS dataID FROM chrRaces",
+	        "SELECT ancestryID, ancestryName, bloodlineID, description, perception, willpower, charisma, memory, intelligence, graphicID, shortDescription, 0 AS dataID FROM chrAncestries",
+	        "SELECT raceID, schoolID, schoolName, description, graphicID, corporationID, agentID, newAgentID FROM chrSchools LEFT JOIN agtAgents USING (corporationID) GROUP BY schoolID",
+	        "SELECT attributeID, attributeName, description, graphicID FROM chrAttributes",
+	        "SELECT bloodlineID, gender, beardID, npc FROM chrBLBeards",
+	        "SELECT bloodlineID, gender, skinID, npc FROM chrBLSkins",
+	        "SELECT bloodlineID, gender, lipstickID, npc FROM chrBLLipsticks",
+	        "SELECT bloodlineID, gender, makeupID, npc FROM chrBLMakeups"
+        };
 
+        public static CacheObjectType[] CreateCharacterCacheTypes = new CacheObjectType[]
+        {
+	        CacheObjectType.Rowset,
+	        CacheObjectType.Rowset,
+	        CacheObjectType.Rowset,
+	        CacheObjectType.CRowset,
+	        CacheObjectType.Rowset,
+	        CacheObjectType.Rowset,
+	        CacheObjectType.Rowset,
+	        CacheObjectType.Rowset,
+	        CacheObjectType.Rowset,
+	        CacheObjectType.CRowset,
+	        CacheObjectType.CRowset,
+	        CacheObjectType.CRowset,
+	        CacheObjectType.CRowset,
+	        CacheObjectType.Rowset,
+	        CacheObjectType.Rowset,
+	        CacheObjectType.Rowset,
+	        CacheObjectType.Rowset
+        };
+        
         public static string[] CharacterAppearanceCacheTable = new string[]
         {
            	"charCreationInfo.eyebrows",
@@ -212,8 +253,38 @@ namespace Node
 	        "charCreationInfo.lipsticks"
         };
 
-        public static int CharacterAppearanceCacheTableSize = CharacterAppearanceCacheTable.Length;
-*/
+        public static string[] CharacterAppearanceCacheQueries = new string[]
+        {
+	        "SELECT eyebrowsID, eyebrowsName FROM chrEyebrows",
+	        "SELECT eyesID, eyesName FROM chrEyes",
+	        "SELECT decoID, decoName FROM chrDecos",
+	        "SELECT hairID, hairName FROM chrHairs",
+	        "SELECT backgroundID, backgroundName FROM chrBackgrounds",
+	        "SELECT accessoryID, accessoryName FROM chrAccessories",
+	        "SELECT costumeID, costumeName FROM chrCostumes",
+	        "SELECT lightID, lightName FROM chrLights",
+	        "SELECT makeupID, makeupName FROM chrMakeups",
+	        "SELECT beardID, beardName FROM chrBeards",
+	        "SELECT skinID, skinName FROM chrSkins",
+	        "SELECT lipstickID, lipstickName FROM chrLipsticks"
+        };
+        
+        public static CacheObjectType[] CharacterAppearanceCacheTypes = new CacheObjectType[]
+        {
+	        CacheObjectType.Rowset,
+	        CacheObjectType.Rowset,
+	        CacheObjectType.Rowset,
+	        CacheObjectType.Rowset,
+	        CacheObjectType.Rowset,
+	        CacheObjectType.Rowset,
+	        CacheObjectType.Rowset,
+	        CacheObjectType.Rowset,
+	        CacheObjectType.Rowset,
+	        CacheObjectType.Rowset,
+	        CacheObjectType.Rowset,
+	        CacheObjectType.Rowset
+        };
+        
         private Dictionary<string, PyObject> mCacheData = new Dictionary<string, PyObject>();
         private PyDict mCacheHints = new PyDict();
         private NodeContainer mContainer = null;
