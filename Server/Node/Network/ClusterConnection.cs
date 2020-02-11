@@ -1,5 +1,6 @@
 using System;
 using Common;
+using Common.Logging;
 using Common.Network;
 using Common.Packets;
 using Common.Services;
@@ -9,25 +10,27 @@ namespace Node.Network
 {
     public class ClusterConnection
     {
+        private Channel Log { get; set; }
         public EVEClientSocket Socket { get; private set; }
         public NodeContainer Container { get; private set; }
         
         public ClusterConnection(NodeContainer container)
         {
+            this.Log = container.Logger.CreateLogChannel("ClusterConnection");
             this.Container = container;
-            this.Socket = new EVEClientSocket();
+            this.Socket = new EVEClientSocket(this.Log);
             this.Socket.SetReceiveCallback(ReceiveLowLevelVersionExchangeCallback);
             this.Socket.SetExceptionHandler(HandleException);
         }
 
         private void HandleException(Exception ex)
         {
-            Log.Error("ClusterConnection", "Exception detected: ");
+            Log.Error("Exception detected: ");
 
             do
             {
-                Log.Error("ClusterConnection", ex.Message);
-                Log.Trace("ClusterConnection", ex.StackTrace);
+                Log.Error(ex.Message);
+                Log.Trace(ex.StackTrace);
             } while ((ex = ex.InnerException) != null);
         }
         
@@ -55,7 +58,7 @@ namespace Node.Network
             }
             catch (Exception e)
             {
-                Log.Error("LowLevelVersionExchange", e.Message);
+                Log.Error($"Exception caught on LowLevelVersionExchange: {e.Message}");
                 throw;
             }
         }
@@ -76,7 +79,7 @@ namespace Node.Network
             nodeinfo.Decode(info);
             this.Container.NodeID = nodeinfo.nodeID;
 
-            Log.Debug("Main", "Found machoNet.nodeInfo, our new node id is " + nodeinfo.nodeID.ToString("X4"));
+            Log.Debug("Found machoNet.nodeInfo, our new node id is " + nodeinfo.nodeID.ToString("X4"));
             
             // load the specified solar systems
             this.Container.SystemManager.LoadSolarSystems(nodeinfo.solarSystems);
@@ -100,7 +103,7 @@ namespace Node.Network
                 PyTuple args = callInfo.Items[2].As<PyTuple>();
                 PyDict sub = callInfo.Items[3].As<PyDict>();
                 
-                Log.Trace("HandlePacket", $"Calling {packet.dest.service}::{call}");
+                Log.Trace($"Calling {packet.dest.service}::{call}");
                 PyObject callResult = this.Container.ServiceManager.ServiceCall(
                     packet.dest.service, call, args, this.Container.ClientManager.Get(packet.userID)
                 );
@@ -127,7 +130,7 @@ namespace Node.Network
             }
             else if (packet.type == Macho.MachoNetMsg_Type.SESSIONCHANGENOTIFICATION)
             {
-                Log.Debug("Main", $"Updating session for client {packet.userID}");
+                Log.Debug($"Updating session for client {packet.userID}");
 
                 // ensure the client is registered in the node and store his session
                 if(this.Container.ClientManager.Contains(packet.userID) == false)

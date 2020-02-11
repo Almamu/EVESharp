@@ -36,6 +36,8 @@ using MySql.Data.MySqlClient;
 
 using Common;
 using Common.Database;
+using Common.Logging;
+using Common.Logging.Streams;
 using Common.Network;
 using Common.Services;
 using Common.Packets;
@@ -53,15 +55,12 @@ namespace Node
         private static NodeContainer sContainer = null;
         private static ClusterConnection sConnection = null;
         private static CacheStorage sCacheStorage = null;
-        private static ServiceManager sServiceManager = null;
         private static DatabaseConnection sDatabase = null;
-        private static SystemManager sSystemManager = null;
         private static General sConfiguration = null;
         private static ItemFactory sItemFactory = null;
-        static public Dictionary<uint, Client> sClients = new Dictionary<uint, Client>();
+        private static Logger sLog = null;
+        private static Channel sChannel = null;
         
-        static private int nodeID = 0xFFFF;
-
         static public long NodeID
         {
             get { return sContainer.NodeID; }
@@ -72,26 +71,45 @@ namespace Node
         {
             try
             {
-                Log.Init("evesharp");
-                Log.Info("Main", "Starting node...");
-
                 sConfiguration = General.LoadFromFile("configuration.conf");
-                
-                // update the loglevel with the new value
-                Log.SetLogLevel(sConfiguration.Logging.LogLevel);
+                sLog = new Logger();
 
+                sChannel = sLog.CreateLogChannel("main");
+                // add log streams
+                sLog.AddLogStream(new ConsoleLogStream());
+                
+                if (sConfiguration.LogLite.Enabled == true)
+                    sLog.AddLogStream(new LogLiteStream("Node", sLog, sConfiguration.LogLite));
+                if (sConfiguration.FileLog.Enabled == true)
+                    sLog.AddLogStream(new FileLogStream(sConfiguration.FileLog));
+                
+                // run a thread for log flushing
+                new Thread(() => 
+                {
+                    while (true)
+                    {
+                        sLog.Flush();
+                        Thread.Sleep(1);
+                    }
+                }).Start();
+                
+                sChannel.Info("Initializing EVESharp Node");
+                sChannel.Fatal("Initializing EVESharp Node");
+                sChannel.Error("Initializing EVESharp Node");
+                sChannel.Warning("Initializing EVESharp Node");
+                sChannel.Debug("Initializing EVESharp Node");
+                sChannel.Trace("Initializing EVESharp Node");
+                
                 // create the node container
                 sContainer = new NodeContainer();
+                sContainer.Logger = sLog;
                 sContainer.ClientManager = new ClientManager();
                 
-                Log.Trace("Database", "Connecting to database...");
-
-                sDatabase = DatabaseConnection.FromConfiguration(sConfiguration.Database);
-
-                Log.Info("Main", "Connection to the DB sucessfull");
-
-                Log.Info("Main", "Priming cache...");
-                sCacheStorage = new CacheStorage(sContainer, sDatabase);
+                sDatabase = DatabaseConnection.FromConfiguration(sConfiguration.Database, sLog);
+                sDatabase.Query("SET global max_allowed_packet=1073741824");
+                
+                sChannel.Info("Priming cache...");
+                sCacheStorage = new CacheStorage(sContainer, sDatabase, sLog);
                 // prime bulk data
                 sCacheStorage.Load(
                     CacheStorage.LoginCacheTable,
@@ -110,29 +128,25 @@ namespace Node
                     CacheStorage.CharacterAppearanceCacheQueries,
                     CacheStorage.CharacterAppearanceCacheTypes
                 );
-                Log.Debug("Main", "Done");
-                
-                Log.Info("Main", "Initializing item factory");
+                sChannel.Debug("Done");
+                sChannel.Info("Initializing item factory");
                 sItemFactory = new ItemFactory(sDatabase);
-                Log.Debug("Main", "Done");
+                sChannel.Debug("Done");
 
-                Log.Info("Main", "Initializing solar system manager");
-                sSystemManager = new SystemManager(sDatabase, sItemFactory);
-                Log.Debug("Main", "Done");
+                sChannel.Info("Initializing solar system manager");
+                sContainer.SystemManager = new SystemManager(sDatabase, sItemFactory);
+                sChannel.Debug("Done");
 
-                Log.Info("Main", "Initializing service manager");
-                sServiceManager = new ServiceManager(sDatabase, sCacheStorage, sConfiguration);
-                Log.Debug("Main", "Done");
+                sChannel.Info("Initializing service manager");
+                sContainer.ServiceManager = new ServiceManager(sContainer, sDatabase, sCacheStorage, sConfiguration);
+                sChannel.Debug("Done");
                 
-                Log.Info("Main", "Connecting to proxy...");
+                sChannel.Info("Connecting to proxy...");
                 
-                sContainer.SystemManager = sSystemManager;
-                sContainer.ServiceManager = sServiceManager;
-
                 sConnection = new ClusterConnection(sContainer);
                 sConnection.Socket.Connect(sConfiguration.Proxy.Hostname, sConfiguration.Proxy.Port);
 
-                Log.Trace("Main", "Server started");
+                sChannel.Trace("Node startup done");
 
                 while (true)
                 {
@@ -141,9 +155,9 @@ namespace Node
             }
             catch (Exception e)
             {
-                Log.Error("Main", e.Message);
-                Log.Trace("Main", e.StackTrace);
-                Log.Error("Main", "Node stopped...");
+                sChannel?.Error(e.ToString());
+                sChannel?.Fatal("Node stopped...");
+                sLog?.Flush();
             }
         }
     }

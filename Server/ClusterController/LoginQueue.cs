@@ -32,6 +32,7 @@ using Common;
 using Common.Packets;
 using Common.Network;
 using ClusterControler.Database;
+using Common.Logging;
 using Marshal;
 
 namespace ClusterControler
@@ -43,6 +44,7 @@ namespace ClusterControler
         private Common.Database.DatabaseConnection m_mDatabaseConnection = null;
         private AccountDB mAccountDB = null;
         private Authentication mConfiguration = null;
+        private Channel Log { get; set; }
 
         public void Start()
         {
@@ -65,7 +67,7 @@ namespace ClusterControler
         
         public void HandleLogin(LoginQueueEntry entry)
         {
-            Log.Debug("LoginQueue", "Processing login for " + entry.Request.user_name);
+            Log.Debug("Processing login for " + entry.Request.user_name);
             LoginStatus status = LoginStatus.Waiting;
 
             long accountID = 0;
@@ -77,7 +79,7 @@ namespace ClusterControler
             {
                 if (this.mConfiguration.Autoaccount == true)
                 {
-                    Log.Info("LoginQueue", $"Auto account enabled, creating account for user {entry.Request.user_name}");
+                    Log.Info($"Auto account enabled, creating account for user {entry.Request.user_name}");
                     
                     // Create the account
                     this.mAccountDB.CreateAccount(entry.Request.user_name, entry.Request.user_password, this.mConfiguration.Role);                    
@@ -86,13 +88,13 @@ namespace ClusterControler
 
             if ((this.mAccountDB.LoginPlayer(entry.Request.user_name, entry.Request.user_password, ref accountID, ref banned, ref role) == false) || (banned == true))
             {
-                Log.Trace("LoginQueue", ": Rejected by database");
+                Log.Trace(": Rejected by database");
 
                 status = LoginStatus.Failed;
             }
             else
             {
-                Log.Trace("LoginQueue", ": success");
+                Log.Trace(": success");
 
                 status = LoginStatus.Sucess;
             }
@@ -146,15 +148,16 @@ namespace ClusterControler
             }*/
             catch (Exception ex)
             {
-                Log.Error("LoginQueue", "Unhandled exception... " + ex.Message);
-                Log.Error("ExceptionHandler", "Stack trace: " + ex.StackTrace);
+                Log.Error("Unhandled exception... " + ex.Message);
+                Log.Error("Stack trace: " + ex.StackTrace);
             }
 
-            Log.Error("LoginQueue", "LoginQueue is closing... Bye Bye!");
+            Log.Error("LoginQueue is closing... Bye Bye!");
         }
 
-        public LoginQueue(Authentication configuration, Common.Database.DatabaseConnection db)
+        public LoginQueue(Authentication configuration, Common.Database.DatabaseConnection db, Logger logger)
         {
+            this.Log = logger.CreateLogChannel("LoginQueue");
             this.mConfiguration = configuration;
             this.m_mDatabaseConnection = db;
             this.mAccountDB = new AccountDB(this.m_mDatabaseConnection);

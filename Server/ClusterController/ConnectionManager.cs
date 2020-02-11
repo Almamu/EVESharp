@@ -33,6 +33,7 @@ using Marshal;
 
 using Common;
 using Common.Constants;
+using Common.Logging;
 using Common.Network;
 using Marshal.Network;
 
@@ -61,6 +62,8 @@ namespace ClusterControler
             get { return this.mClientConnections; }
             private set { }
         }
+        
+        private Channel Log { get; set; }
 
         private long mLastNodeID = 0;
         
@@ -69,15 +72,16 @@ namespace ClusterControler
         private Dictionary<long, ClientConnection> mClientConnections = new Dictionary<long, ClientConnection>();
         private Dictionary<long, NodeConnection> mNodeConnections = new Dictionary<long, NodeConnection>();
         
-        public ConnectionManager(LoginQueue loginQueue)
+        public ConnectionManager(LoginQueue loginQueue, Logger logger)
         {
+            this.Log = logger.CreateLogChannel("ConnectionManager");
             this.LoginQueue = loginQueue;
         }
 
         public void AddUnauthenticatedConnection(EVEClientSocket socket)
         {
             this.mUnauthenticatedConnections.Add (
-                new UnauthenticatedConnection(socket, this)
+                new UnauthenticatedConnection(socket, this, Log.Logger)
             );
         }
 
@@ -88,7 +92,7 @@ namespace ClusterControler
 
         public void AddUnauthenticatedClientConnection(EVEClientSocket socket)
         {
-            this.mUnauthenticatedClientConnections.Add(new ClientConnection(socket, this));
+            this.mUnauthenticatedClientConnections.Add(new ClientConnection(socket, this, Log.Logger));
         }
 
         public void RemoveUnauthenticatedClientConnection(ClientConnection connection)
@@ -120,7 +124,7 @@ namespace ClusterControler
                 throw new Exception("Cannot accept more nodes in the connection manager, reached maximum of 0xFFFF");
             
             if (this.mNodeConnections.ContainsKey(Network.PROXY_NODE_ID) == false)
-                this.mNodeConnections.Add(Network.PROXY_NODE_ID, new NodeConnection(socket, this, Network.PROXY_NODE_ID));
+                this.mNodeConnections.Add(Network.PROXY_NODE_ID, new NodeConnection(socket, this, Log.Logger, Network.PROXY_NODE_ID));
             else
             {
                 // find an unused nodeID
@@ -133,7 +137,7 @@ namespace ClusterControler
                 }
                 
                 // finally assign it to the new node
-                this.mNodeConnections.Add(this.mLastNodeID, new NodeConnection(socket, this, this.mLastNodeID));
+                this.mNodeConnections.Add(this.mLastNodeID, new NodeConnection(socket, this, Log.Logger, this.mLastNodeID));
             }
         }
 

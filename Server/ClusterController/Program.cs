@@ -32,8 +32,11 @@ using System.Net;
 using System.IO;
 
 using Common;
+using Common.Configuration;
 using Common.Database;
 using Common.Game;
+using Common.Logging;
+using Common.Logging.Streams;
 using Common.Network;
 using Configuration;
 using Marshal;
@@ -46,73 +49,90 @@ namespace ClusterControler
         private static General sConfiguration = null;
         private static LoginQueue sLoginQueue = null;
         private static ConnectionManager sConnectionManager = null;
-
-        private static EVEServerSocket sServerSocket = new EVEServerSocket(26000);
+        private static Logger sLog = null;
+        private static Channel sChannel = null;
+        private static EVEServerSocket sServerSocket = null;
         
         static AsyncCallback acceptAsync = new AsyncCallback(AcceptAsync);
 
         static void AcceptAsync(IAsyncResult ar)
         {
-            Log.Debug("Cluster", "Incoming connection...");
+            sChannel.Trace("Incoming connection");
             EVEServerSocket serverSocket = ar.AsyncState as EVEServerSocket;
             EVEClientSocket clientSocket = serverSocket.EndAccept(ar);
             
             // put the server in accept state again
             serverSocket.BeginAccept(acceptAsync);
-            
-            Log.Debug("Cluster", "Incoming connection");
-            
+
             sConnectionManager.AddUnauthenticatedConnection(clientSocket);
         }
 
         static void Main(string[] args)
         {
-            Log.Init("cluster");
-
-            Log.Info("Cluster", "Starting GameCluster");
-
-            Log.Info("Cluster", "Loading database.conf file");
-
-            sConfiguration = General.LoadFromFile("configuration.conf");
-                
-            // update the loglevel with the new value
-            Log.SetLogLevel(sConfiguration.Logging.LogLevel);
-
-            Log.Trace("Database", "Connecting to database...");
-
-            sDatabase = DatabaseConnection.FromConfiguration(sConfiguration.Database);
-            // set max_allowed_packet value to 1GB
-            sDatabase.Query("SET global max_allowed_packet=1073741824");
-
-            Log.Info("Main", "Connection to the DB sucessfull");
-            Log.Debug("Cluster", "Connected to database");
-
-            Log.Trace("Main", "Initializing login queue...");
-            sLoginQueue = new LoginQueue(sConfiguration.Authentication, sDatabase);
-            sLoginQueue.Start();
-            Log.Info("Main", "Login queue initialized");
-            
-            Log.Trace("Main", "Initializing connection manager...");
-            sConnectionManager = new ConnectionManager(sLoginQueue);
-            Log.Info("Main", "Connection manager initialized");
-
             try
             {
-                Log.Trace("Main", "Initializing server socket on port 26000...");
-                sServerSocket.Listen();
-                sServerSocket.BeginAccept(acceptAsync);
-                Log.Debug("Main", "Waiting for incoming connections on port 26000");
+                // load server's configuration
+                sConfiguration = General.LoadFromFile("configuration.conf");
+                
+                // setup logging
+                sLog = new Logger();
+                // initialize main logging channel
+                sChannel = sLog.CreateLogChannel("main");
+                // add log streams
+                sLog.AddLogStream(new ConsoleLogStream());
+                
+                if (sConfiguration.LogLite.Enabled == true)
+                    sLog.AddLogStream(new LogLiteStream("ClusterController", sLog, sConfiguration.LogLite));
+                if (sConfiguration.FileLog.Enabled == true)
+                    sLog.AddLogStream(new FileLogStream(sConfiguration.FileLog));
+
+                // run a thread for log flushing
+                new Thread(() => 
+                {
+                    while (true)
+                    {
+                        sLog.Flush();
+                        Thread.Sleep(1);
+                    }
+                }).Start();
+                
+                sChannel.Info("Initializing EVESharp Cluster Controler and Proxy");
+                sChannel.Fatal("Initializing EVESharp Cluster Controler and Proxy");
+                sChannel.Error("Initializing EVESharp Cluster Controler and Proxy");
+                sChannel.Warning("Initializing EVESharp Cluster Controler and Proxy");
+                sChannel.Debug("Initializing EVESharp Cluster Controler and Proxy");
+                sChannel.Trace("Initializing EVESharp Cluster Controler and Proxy");
+                
+                sDatabase = DatabaseConnection.FromConfiguration(sConfiguration.Database, sLog);
+                sDatabase.Query("SET global max_allowed_packet=1073741824");
+                sLoginQueue = new LoginQueue(sConfiguration.Authentication, sDatabase, sLog);
+                sLoginQueue.Start();
+
+                sConnectionManager = new ConnectionManager(sLoginQueue, sLog);
+                
+                try
+                {
+                    sChannel.Trace("Initializing server socket on port 26000...");
+                    sServerSocket = new EVEServerSocket(26000, sLog.CreateLogChannel("ServerSocket"));
+                    sServerSocket.Listen();
+                    sServerSocket.BeginAccept(acceptAsync);
+                    sChannel.Debug("Waiting for incoming connections on port 26000");
+                }
+                catch (Exception e)
+                {
+                    sChannel.Error($"Error listening on port 26000: {e.Message}");
+                    throw;
+                }
+                
+                while (true)
+                {
+                    Thread.Sleep(1);
+                }
             }
             catch (Exception e)
             {
-                Log.Error("Main", $"Error listening on port 26000: {e.Message}");
-                throw;
-            }
-
-            while (true)
-            {
-                // Timers or whatever here? Or maybe async calls with timers? Pretty much that will help
-                Thread.Sleep(1);
+                sChannel?.Fatal(e.ToString());
+                sLog?.Flush();
             }
         }
     }

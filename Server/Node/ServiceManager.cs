@@ -69,15 +69,15 @@ namespace Node
             return this.mCharacterSvc;
         }
         
-        public ServiceManager(DatabaseConnection db, CacheStorage storage, Configuration.General configuration)
+        public ServiceManager(NodeContainer container, DatabaseConnection db, CacheStorage storage, Configuration.General configuration)
         {
             this.mDatabaseConnection = db;
             this.mCacheStorage = storage;
             
             // initialize services
             this.mMachoNetSvc = new machoNet(this.mCacheStorage);
-            this.mAlertSvc = new alert();
-            this.mObjectCachingSvc = new objectCaching(this.mCacheStorage);
+            this.mAlertSvc = new alert(container.Logger);
+            this.mObjectCachingSvc = new objectCaching(this.mCacheStorage, container.Logger);
             this.mAuthenticationSvc = new authentication(configuration.Authentication);
             this.mCharacterSvc = new character(storage, db);
         }

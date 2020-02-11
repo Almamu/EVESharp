@@ -46,18 +46,11 @@ namespace Node.Inventory
                 return false;
             }
 
-            for (int i = 0; i < types.Count; i++)
+            foreach (ItemType type in types)
             {
-                try
-                {
-                    itemTypes.Add(types[i].typeID, types[i]);
-                }
-                catch (Exception)
-                {
-                    Log.Error("TypeManager", "Cannot load item type " + i + " from the list");
-                }
+                itemTypes.Add(type.typeID, type);
             }
-
+            
             return true;
         }
 

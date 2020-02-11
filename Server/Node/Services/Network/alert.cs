@@ -30,14 +30,17 @@ using Marshal;
 using Common;
 using Common.Services;
 using System.IO;
+using Common.Logging;
 
 namespace Node.Services.Network
 {
     public class alert : Service
     {
-        public alert()
+        private Channel Log { get; set; }
+        public alert(Logger logger)
             : base("alert")
         {
+            this.Log = logger.CreateLogChannel("alert");
         }
 
         public PyObject BeanCount(PyTuple args, object client)
@@ -52,24 +55,13 @@ namespace Node.Services.Network
 
         public PyObject SendClientStackTraceAlert(PyTuple args, object client)
         {
-            Log.Trace("SendClientStackTraceAlert", "Received client stack trace. Saving to a file");
-
-            try
-            {
-                if (File.Exists("logs/stacktrace.txt") == false)
-                {
-                    File.Create("logs/stacktrace.txt");
-                }
-
-                File.AppendAllText("logs/stacktrace.txt", "------------------ " + args.Items[2].StringValue + " ------------------\n");
-                File.AppendAllText("logs/stacktrace.txt", args.Items[0].As<PyTuple>().Items[1].StringValue);
-                File.AppendAllText("logs/stacktrace.txt", args.Items[1].StringValue + "\n");
-            }
-            catch (Exception)
-            {
-
-            }
-
+            Log.Trace("Received the following client's stack trace");
+            Log.Fatal(
+                "Received a client stack trace:\n" + 
+                $"------------------ {args.Items[2].StringValue} ------------------\n" +
+                $"{args.Items[0].As<PyTuple>().Items[1].StringValue}\n" +
+                args.Items[1].StringValue
+            );
             // The client should receive anything to know that the stack trace arrived to the server
             return new PyNone();
         }

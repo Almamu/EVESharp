@@ -30,17 +30,20 @@ using System.Threading;
 using MySql.Data.MySqlClient;
 using MySql.Data.Types;
 using Common;
+using Common.Logging;
 
 namespace Common.Database
 {
     public class DatabaseConnection
     {
+        private Channel Log { get; set; }
         private string mConnectionString = "";
         private Queue<string> mQueryQueue = new Queue<string>();
         
-        public DatabaseConnection(string connectionString)
+        public DatabaseConnection(string connectionString, Logger logger)
         {
             this.mConnectionString = connectionString;
+            this.Log = logger.CreateLogChannel("Database");
         }
 
         ~DatabaseConnection()
@@ -68,7 +71,7 @@ namespace Common.Database
                 if (reader != null)
                     reader.Close();
 
-                Log.Error("Database", $"MySQL error: {e.Message}");
+                Log.Error($"MySQL error: {e.Message}");
                 throw;
             }
             finally
@@ -97,7 +100,7 @@ namespace Common.Database
                 if (reader != null)
                     reader.Close();
 
-                Log.Error("Database", $"MySQL error: {e.Message}");
+                Log.Error($"MySQL error: {e.Message}");
                 throw;
             }
             finally
@@ -123,7 +126,7 @@ namespace Common.Database
                 if (reader != null)
                     reader.Close();
 
-                Log.Error("Database", $"MySQL error: {e.Message}");
+                Log.Error($"MySQL error: {e.Message}");
                 throw;
             }
         }
@@ -135,7 +138,7 @@ namespace Common.Database
             }
         }
         
-        public static DatabaseConnection FromConfiguration(Configuration.Database configuration)
+        public static DatabaseConnection FromConfiguration(Configuration.Database configuration, Logger logger)
         {
             MySqlConnectionStringBuilder stringBuilder = new MySqlConnectionStringBuilder();
 
@@ -145,25 +148,12 @@ namespace Common.Database
             stringBuilder.Password = configuration.Password;
             stringBuilder.MinimumPoolSize = 10;
             
-            return new DatabaseConnection(stringBuilder.ToString ());
+            return new DatabaseConnection(stringBuilder.ToString (), logger);
         }
 
         public string DoEscapeString(string input)
         {
             return MySqlHelper.EscapeString(input);
-        }
-
-        public void Update()
-        {
-            Log.Debug("Database", "Saving information into the DB");
-
-            lock (this.mQueryQueue)
-            {
-                while (this.mQueryQueue.Count > 0)
-                {
-                    this.Query(this.mQueryQueue.Dequeue());
-                }
-            }
         }
     }
 }

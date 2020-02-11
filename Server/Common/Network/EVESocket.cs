@@ -1,24 +1,27 @@
 using System;
 using System.Net;
 using System.Net.Sockets;
+using Common.Logging;
 
 namespace Common.Network
 {
     public abstract class EVESocket
     {
+        public Channel Log { get; set; }
         protected Socket Socket { get; private set; }
         private Action<Exception> mExceptionHandler = null;
         private Action mOnConnectionLost = null;
 
-        public EVESocket()
+        public EVESocket(Channel logChannel)
         {
+            this.Log = logChannel;
             this.Socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
             this.SetTransferBuffers();
             // set a default exception handler
             this.SetExceptionHandler(DefaultExceptionHandler);
         }
 
-        protected EVESocket(Socket socket)
+        protected EVESocket(Socket socket, Channel logChannel)
         {
             this.Socket = socket;
             this.SetTransferBuffers();
@@ -75,8 +78,8 @@ namespace Common.Network
 
         private void DefaultExceptionHandler(Exception ex)
         {
-            Log.Error("EVESocket", "Unhandled exception");
-            Log.Error("EVESocket", ex.Message);
+            Log.Error("Unhandled exception on underlying socket:");
+            Log.Error(ex.Message);
         }
 
         /// <summary>

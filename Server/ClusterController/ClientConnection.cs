@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Common;
 using Common.Constants;
 using Common.Game;
+using Common.Logging;
 using Common.Network;
 using Common.Packets;
 using Marshal;
@@ -11,6 +12,7 @@ namespace ClusterControler
 {
     public class ClientConnection : Connection
     {
+        private Channel Log { get; set; }
         public int NodeID { get; private set; }
         
         public Session Session { get; private set; }
@@ -21,9 +23,12 @@ namespace ClusterControler
             private set { }
         }
         
-        public ClientConnection(EVEClientSocket socket, ConnectionManager connectionManager)
+        public ClientConnection(EVEClientSocket socket, ConnectionManager connectionManager, Logger logger)
             : base(socket, connectionManager)
         {
+            // to easily identify the clients use the address as channel
+            this.Log = logger.CreateLogChannel(this.Socket.GetRemoteAddress());
+            this.Socket.Log = this.Log;
             // set the exception handler
             this.Socket.SetExceptionHandler(ExceptionHandler);
             // send the lowlevelversion exchange
@@ -57,7 +62,7 @@ namespace ClusterControler
             }
             catch (Exception e)
             {
-                Log.Error("LowLevelVersionExchange", e.Message);
+                Log.Error($"Exception caught on LowLevelVersionExchange: {e.Message}");
                 throw;
             }
             // assign the new packet handler to wait for commands again
@@ -76,7 +81,7 @@ namespace ClusterControler
                 
                 command.Decode(packet);
                 
-                Log.Debug("Client", "Received QueueCheck command");
+                Log.Debug("Received QueueCheck command");
                 // send player position on the queue
                 this.Socket.Send(new PyInt(this.ConnectionManager.LoginQueue.Count()));
                 // send low level version exchange required
@@ -90,7 +95,7 @@ namespace ClusterControler
 
                 command.Decode(packet);
                 
-                Log.Debug("Client", "Received VipKey command");
+                Log.Debug("Received VipKey command");
                 // next is the placebo challenge
                 this.Socket.SetReceiveCallback(ReceiveCryptoRequestCallback);
             }
@@ -106,7 +111,7 @@ namespace ClusterControler
             
             request.Decode(packet);
             
-            Log.Debug("Client", "Received correct Crypto request");
+            Log.Debug("Received correct Crypto request");
             // answer the client with a correct crypto challenge
             this.Socket.Send(new PyString("OK CC"));
             // next is the first login attempt
@@ -121,7 +126,7 @@ namespace ClusterControler
 
             if (request.user_password == null)
             {
-                Log.Trace("Client", "Rejected by server; requesting plain password");
+                Log.Trace("Rejected by server; requesting plain password");
                 // request the user a plain password
                 this.Socket.Send(new PyInt(1)); // 1 => plain, 2 => hashed
                 return;
@@ -188,7 +193,7 @@ namespace ClusterControler
             else if (pyPacket.dest.type == PyAddress.AddrType.Any)
             {
                 // send packet to node proxy
-                Log.Trace("Client", "Sending service request from any to proxy node");
+                Log.Trace("Sending service request from any to proxy node");
 
                 pyPacket.dest.type = PyAddress.AddrType.Node;
                 pyPacket.dest.typeID = Network.PROXY_NODE_ID;
@@ -199,13 +204,13 @@ namespace ClusterControler
 
         protected void ExceptionHandler(Exception exception)
         {
-            Log.Error("Client", exception.Message);
-            Log.Trace("Client", exception.StackTrace);
+            Log.Error(exception.Message);
+            Log.Trace(exception.StackTrace);
         }
         
         private void SendLowLevelVersionExchange()
         {
-            Log.Debug("Client", "Sending LowLevelVersionExchange...");
+            Log.Debug("Sending LowLevelVersionExchange...");
 
             LowLevelVersionExchange data = new LowLevelVersionExchange();
 
@@ -265,7 +270,7 @@ namespace ClusterControler
                     // Pretty funny, "AutClusterStarting" maybe they mean "AuthClusterStarting"
                     this.Socket.Send(new GPSTransportClosed("AutClusterStarting"));
 
-                    Log.Trace("Client", "Rejected by server; cluster is starting");
+                    Log.Trace("Rejected by server; cluster is starting");
 
                     this.AbortConnection();
                 }

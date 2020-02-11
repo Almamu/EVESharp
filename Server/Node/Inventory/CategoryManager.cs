@@ -46,19 +46,11 @@ namespace Node.Inventory
                 return false;
             }
 
-            for (int i = 0; i < categories.Count; i++)
+            foreach (ItemCategory category in categories)
             {
-                try
-                {
-                    ItemCategory category = categories[i];
-                    categoryesDict.Add(category.categoryID, category);
-                }
-                catch (Exception)
-                {
-                    Log.Error("CategoryManager", "Cannot load item category " + i + " from the list");
-                }
+                categoryesDict.Add(category.categoryID, category);
             }
-
+            
             return true;
         }
 
