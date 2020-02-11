@@ -28,6 +28,7 @@ using System.Linq;
 using System.Text;
 using Marshal;
 using Common;
+using Common.Logging;
 
 namespace Node
 {
@@ -37,8 +38,6 @@ namespace Node
 
         public void UpdateSession(PyPacket from)
         {
-            Log.Debug("Client", "Updating session for client");
-
             // We should add a Decode method to SessionChangeNotification...
             PyTuple payload = from.payload;
 

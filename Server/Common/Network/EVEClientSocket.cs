@@ -4,6 +4,7 @@ using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
+using Common.Logging;
 using Common.Packets;
 using Marshal;
 using Marshal.Network;
@@ -20,7 +21,7 @@ namespace Common.Network
         private StreamPacketizer mPacketizer = new StreamPacketizer();
         private Action<PyObject> mPacketReceiveCallback = null;
         
-        public EVEClientSocket(Socket socket) : base(socket)
+        public EVEClientSocket(Socket socket, Channel logChannel) : base(socket, logChannel)
         {
             // setup async callback handlers
             this.SetupCallbacks();
@@ -28,7 +29,7 @@ namespace Common.Network
             this.BeginReceive(new byte[64 * 1024], this.mReceiveCallback);
         }
 
-        public EVEClientSocket() : base(new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp))
+        public EVEClientSocket(Channel logChannel) : base(new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp), logChannel)
         {
             this.SetupCallbacks();
         }
@@ -185,7 +186,7 @@ namespace Common.Network
         /// Sends raw bytes through this socket
         /// </summary>
         /// <param name="buffer">The bytes to send</param>
-        private void Send(byte[] buffer)
+        public void Send(byte[] buffer)
         {
             // add the buffer to the output queue when the queue is not in use
             lock(this.mOutputQueue)

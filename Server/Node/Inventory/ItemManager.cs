@@ -46,23 +46,12 @@ namespace Node.Inventory
                 return false;
             }
 
-            for (int i = 0; i < items.Count; i++)
+            foreach (Entity item in items)
             {
-                try
-                {
-                    itemList.Add((ulong)items[i].itemID, items[i]);
-                }
-                catch (Exception)
-                {
-                    Log.Error("ItemManager", "Cannot load item " + i + " from the list");
-                }
+                item.LoadAttributes();
+                itemList.Add((ulong) item.itemID, item);
             }
-
-            foreach (KeyValuePair<ulong, Entity> item in itemList)
-            {
-                item.Value.LoadAttributes();
-            }
-
+            
             return true;
         }
 

@@ -1,5 +1,6 @@
 using System;
 using Common;
+using Common.Logging;
 using Common.Network;
 using Common.Packets;
 using Marshal;
@@ -8,11 +9,13 @@ namespace ClusterControler
 {
     public class UnauthenticatedConnection : Connection
     {
+        private Channel Log { get; set; }
         private AsyncCallback mReceive = null;
 
-        public UnauthenticatedConnection(EVEClientSocket socket, ConnectionManager connectionManager)
+        public UnauthenticatedConnection(EVEClientSocket socket, ConnectionManager connectionManager, Logger logger)
             : base(socket, connectionManager)
         {
+            this.Log = logger.CreateLogChannel($"Unauthenticated-{this.Socket.GetRemoteAddress()}");
             // set the new exception handler
             this.Socket.SetExceptionHandler(ExceptionHandler);
             // send the low level version exchange
@@ -31,7 +34,7 @@ namespace ClusterControler
 
         private void SendLowLevelVersionExchange()
         {
-            Log.Debug("Client", "Sending LowLevelVersionExchange...");
+            Log.Debug("Sending LowLevelVersionExchange...");
 
             LowLevelVersionExchange data = new LowLevelVersionExchange();
 
@@ -60,7 +63,7 @@ namespace ClusterControler
             }
             catch (Exception e)
             {
-                Log.Error("LowLevelVersionExchange", e.Message);
+                Log.Error($"Exception caught on LowLevelVersionExchange {e.Message}");
                 throw;
             }
         }
@@ -83,7 +86,7 @@ namespace ClusterControler
 
         protected void ExceptionHandler(Exception exception)
         {
-            Log.Error("UnauthenticatedConnection", exception.Message);
+            Log.Error(exception.Message);
         }
     }
 }

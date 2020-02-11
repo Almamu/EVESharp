@@ -21,14 +21,12 @@ namespace Common.Packets
         {
             if (cache == null)
             {
-                Log.Error("PyCachedObject", "Cache data is null");
-                return null;
+                throw new Exception("Cache data is null");
             }
 
             if (objectID == null)
             {
-                Log.Error("PyCachedObject", "objectID is null");
-                return null;
+                throw new Exception("objectID is null");
             }
 
             PyTuple args = new PyTuple();

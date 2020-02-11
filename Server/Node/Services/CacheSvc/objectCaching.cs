@@ -27,6 +27,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Common;
+using Common.Logging;
 using Marshal;
 using Common.Services;
 using Common.Packets;
@@ -35,11 +36,13 @@ namespace Node.Services.CacheSvc
 {
     public class objectCaching : Service
     {
+        private Channel Log { get; set; }
         private CacheStorage mCacheStorage = null;
         
-        public objectCaching(CacheStorage cacheStorage)
+        public objectCaching(CacheStorage cacheStorage, Logger logger)
             : base("objectCaching")
         {
+            this.Log = logger.CreateLogChannel("objectCaching");
             this.mCacheStorage = cacheStorage;
         }
 
@@ -51,13 +54,13 @@ namespace Node.Services.CacheSvc
 
             if (cache.objectID.Type != PyObjectType.String)
             {
-                Log.Error("GetCachableObject", "Unknown objectID on cache request");
+                Log.Error("Unknown objectID on cache request");
                 return null;
             }
 
             string objectID = cache.objectID.As<PyString>().Value;
 
-            Log.Debug("GetCachableObject", $"Received cache request for {objectID}");
+            Log.Debug($"Received cache request for {objectID}");
             
             return this.mCacheStorage.Get(objectID);
         }

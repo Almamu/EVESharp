@@ -29,6 +29,7 @@ using System.Text;
 using Marshal;
 using Common;
 using Common.Database;
+using Common.Logging;
 using MySql.Data.MySqlClient;
 using MySql.Data.Types;
 using Common.Packets;
@@ -289,6 +290,7 @@ namespace Node
         private PyDict mCacheHints = new PyDict();
         private NodeContainer mContainer = null;
 
+        private Channel Log { get; set; }
         public bool Exists(string name)
         {
 	        return this.mCacheData.ContainsKey(name);
@@ -301,9 +303,7 @@ namespace Node
 
         public void Store(string name, PyObject data, long timestamp)
         {
-            Log.Info("Cache", $"Saving cache data for {name}");
-            
-            CacheInfo info = CacheInfo.FromPyObject(name, data, timestamp, this.mContainer.NodeID);
+	        CacheInfo info = CacheInfo.FromPyObject(name, data, timestamp, this.mContainer.NodeID);
             
             // save cache hint
             this.mCacheHints.Set(name, info.Encode ());
@@ -328,7 +328,7 @@ namespace Node
 
         private void Load(string name, string query, CacheObjectType type)
         {
-	        Log.Debug("Cache", $"Loading cache data for {name} of type {type}");
+	        Log.Debug($"Loading cache data for {name} of type {type}");
 	        
             MySqlDataReader reader = null;
             MySqlConnection connection = null;
@@ -358,7 +358,7 @@ namespace Node
             }
             catch (Exception e)
             {
-	            Log.Error("Cache", $"Cannot generate cache data for {name}");
+	            Log.Error($"Cannot generate cache data for {name}");
 	            throw;
             }
         }
@@ -374,8 +374,9 @@ namespace Node
             }
         }
 
-        public CacheStorage(NodeContainer container, DatabaseConnection db) : base(db)
+        public CacheStorage(NodeContainer container, DatabaseConnection db, Logger logger) : base(db)
         {
+	        this.Log = logger.CreateLogChannel("CacheStorage");
 	        this.mContainer = container;
         }
     }

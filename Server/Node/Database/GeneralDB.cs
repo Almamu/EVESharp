@@ -66,8 +66,7 @@ namespace Node.Database
             }
             catch (Exception e)
             {
-                Log.Error("GeneralDB", "Cannot change solarSystem " + solarSystemID + " status to loaded");
-                throw;
+                throw new Exception("Cannot change solarSystem {solarSystemID} status to loaded", e);
             }
         }
 

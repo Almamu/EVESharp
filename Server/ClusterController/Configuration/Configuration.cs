@@ -10,44 +10,25 @@ namespace Configuration
 {
     public class General
     {
-        private Database m_Database = new Database ();
-
-        private Logging m_Logging = new Logging ();
-        
-        private Authentication m_Authentication = new Authentication();
-        
-        public Database Database
-        {
-            get { return this.m_Database; }
-            private set { this.m_Database = value; }
-        }
-
-        public Logging Logging
-        {
-            get { return this.m_Logging; }
-            private set { this.m_Logging = value; }
-        }
-
-        public Authentication Authentication
-        {
-            get { return this.m_Authentication; }
-            private set { this.m_Authentication = value; }
-        }
+        public Database Database { get; private set; } = new Database();
+        public LogLite LogLite { get; private set; } = new LogLite();
+        public Authentication Authentication { get; private set; } = new Authentication();
+        public FileLog FileLog { get; private set; } = new FileLog();
 
         public static General LoadFromFile(string filename)
         {
-            Log.Debug("Configuration", $"Loading configuration file {filename}");
-            
             FileIniDataParser parser = new FileIniDataParser();
             IniData data = parser.ReadFile(filename);
             General config = new General();
 
             config.Database.Load(data["database"]);
             
-            if (data.Sections.ContainsSection("logging") == true)
-                config.Logging.Load(data["logging"]);
             if (data.Sections.ContainsSection("autoaccount") == true)
                 config.Authentication.Load(data["autoaccount"]);
+            if (data.Sections.ContainsSection("loglite") == true)
+                config.LogLite.Load(data["loglite"]);
+            if (data.Sections.ContainsSection("logfile") == true)
+                config.FileLog.Load(data["logfile"]);
 
             return config;
         }

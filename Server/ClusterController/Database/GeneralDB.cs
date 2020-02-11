@@ -30,11 +30,13 @@ using MySql.Data.MySqlClient;
 
 using Common;
 using Common.Database;
+using Common.Logging;
 
 namespace ClusterControler.Database
 {
     public class GeneralDB : DatabaseAccessor
     {
+        private Channel Log { get; set; }
         public void ResetSolarSystemStatus()
         {
             try
@@ -43,7 +45,7 @@ namespace ClusterControler.Database
             }
             catch (Exception e)
             {
-                Log.Error("GeneralDB", "Cannot reset solar systems nodeID to 0");
+                Log.Error("Cannot reset solar systems nodeID to 0");
                 throw;
             }
         }
@@ -58,7 +60,7 @@ namespace ClusterControler.Database
             }
             catch (Exception e)
             {
-                Log.Error("GeneralDB", "Cannot reset solar system nodeID to 0 for solar system " + solarSystemID.ToString());
+                Log.Error($"Cannot reset solar system nodeID to 0 for solar system {solarSystemID.ToString()}");
                 throw;
             }
         }
@@ -71,13 +73,14 @@ namespace ClusterControler.Database
             }
             catch (Exception e)
             {
-                Log.Error("GeneralDB", "Cannot reset nodeID for items");
+                Log.Error("Cannot reset nodeID for items");
                 throw;
             }
         }
 
-        public GeneralDB(Common.Database.DatabaseConnection db) : base(db)
+        public GeneralDB(Logger logger, DatabaseConnection db) : base(db)
         {
+            this.Log = logger.CreateLogChannel("GeneralDB");
         }
     }
 }

@@ -38,7 +38,7 @@ namespace Common.Utils
                 case "Boolean":
                     return new PyBool(reader.IsDBNull(index) == true ? false : reader.GetBoolean(index));
                 default:
-                    Log.Error("Database", "Unhandled MySQL type " + type.Name);
+                    throw new Exception($"Unhandled MySQL type {type.Name}");
                     break;
             }
 
