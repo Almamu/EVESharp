@@ -49,46 +49,46 @@ namespace Node
 		    PackedRowList = 3
 	    };
 	    
-        public static string[] LoginCacheTable =
+        public static Dictionary<string, string> LoginCacheTable = new Dictionary<string, string>()
         {
-        	"config.BulkData.ramactivities",
-	        "config.BulkData.billtypes",
-	        "config.Bloodlines",
-	        "config.Units",
-	        "config.BulkData.tickernames",
-	        "config.BulkData.ramtyperequirements",
-	        "config.BulkData.ramaltypesdetailpergroup",
-	        "config.BulkData.ramaltypes",
-	        "config.BulkData.allianceshortnames",
-	        "config.BulkData.ramcompletedstatuses",
-	        "config.BulkData.categories",
-	        "config.BulkData.invtypereactions",
-	        "config.BulkData.dgmtypeeffects",
-	        "config.BulkData.metagroups",
-	        "config.BulkData.ramtypematerials",
-	        "config.BulkData.ramaltypesdetailpercategory",
-	        "config.BulkData.owners",
-	        "config.StaticOwners",
-	        "config.Races",
-	        "config.Attributes",
-	        "config.BulkData.dgmtypeattribs",
-	        "config.BulkData.locations",
-	        "config.BulkData.locationwormholeclasses",
-	        "config.BulkData.groups",
-	        "config.BulkData.shiptypes",
-	        "config.BulkData.dgmattribs",
-	        "config.Flags",
-	        "config.BulkData.bptypes",
-	        "config.BulkData.graphics",
-	        "config.BulkData.mapcelestialdescriptions",
-	        "config.BulkData.certificates",
-	        "config.StaticLocations",
-	        "config.InvContrabandTypes",
-	        "config.BulkData.certificaterelationships",
-	        "config.BulkData.units",
-	        "config.BulkData.dgmeffects",
-	        "config.BulkData.types",
-	        "config.BulkData.invmetatypes"
+        	{"config.BulkData.ramactivities", "config.BulkData.ramactivities"},
+	        {"config.BulkData.billtypes", "config.BulkData.billtypes"},
+	        {"config.Bloodlines", "config.Bloodlines"},
+	        {"config.Units", "config.Units"},
+	        {"config.BulkData.tickernames", "config.BulkData.tickernames"},
+	        {"config.BulkData.ramtyperequirements", "config.BulkData.ramtyperequirements"},
+	        {"config.BulkData.ramaltypesdetailpergroup", "config.BulkData.ramaltypesdetailpergroup"},
+	        {"config.BulkData.ramaltypes", "config.BulkData.ramaltypes"},
+	        {"config.BulkData.allianceshortnames", "config.BulkData.allianceshortnames"},
+	        {"config.BulkData.ramcompletedstatuses", "config.BulkData.ramcompletedstatuses"},
+	        {"config.BulkData.categories", "config.BulkData.categories"},
+	        {"config.BulkData.invtypereactions", "config.BulkData.invtypereactions"},
+	        {"config.BulkData.dgmtypeeffects", "config.BulkData.dgmtypeeffects"},
+	        {"config.BulkData.metagroups", "config.BulkData.metagroups"},
+	        {"config.BulkData.ramtypematerials", "config.BulkData.ramtypematerials"},
+	        {"config.BulkData.ramaltypesdetailpercategory", "config.BulkData.ramaltypesdetailpercategory"},
+	        {"config.BulkData.owners", "config.BulkData.owners"},
+	        {"config.StaticOwners", "config.StaticOwners"},
+	        {"config.Races", "config.Races"},
+	        {"config.Attributes", "config.Attributes"},
+	        {"config.BulkData.dgmtypeattribs", "config.BulkData.dgmtypeattribs"},
+	        {"config.BulkData.locations", "config.BulkData.locations"},
+	        {"config.BulkData.locationwormholeclasses", "config.BulkData.locationwormholeclasses"},
+	        {"config.BulkData.groups", "config.BulkData.groups"},
+	        {"config.BulkData.shiptypes", "config.BulkData.shiptypes"},
+	        {"config.BulkData.dgmattribs", "config.BulkData.dgmattribs"},
+	        {"config.Flags", "config.Flags"},
+	        {"config.BulkData.bptypes", "config.BulkData.bptypes"},
+	        {"config.BulkData.graphics", "config.BulkData.graphics"},
+	        {"config.BulkData.mapcelestialdescriptions", "config.BulkData.mapcelestialdescriptions"},
+	        {"config.BulkData.certificates", "config.BulkData.certificates"},
+	        {"config.StaticLocations", "config.StaticLocations"},
+	        {"config.InvContrabandTypes", "config.InvContrabandTypes"},
+	        {"config.BulkData.certificaterelationships", "config.BulkData.certificaterelationships"},
+	        {"config.BulkData.units", "config.BulkData.units"},
+	        {"config.BulkData.dgmeffects", "config.BulkData.dgmeffects"},
+	        {"config.BulkData.types", "config.BulkData.types"},
+	        {"config.BulkData.invmetatypes", "config.BulkData.invmetatypes"},
         };
 
         public static string[] LoginCacheQueries =
@@ -175,25 +175,25 @@ namespace Node
 	        CacheObjectType.CRowset
         };
 
-        public static string[] CreateCharacterCacheTable = new string[] 
+        public static Dictionary<string, string> CreateCharacterCacheTable = new Dictionary<string, string>() 
         {
-          	"charCreationInfo.bl_eyebrows",
-	        "charCreationInfo.bl_eyes",
-	        "charCreationInfo.bl_decos",
-	        "charCreationInfo.bloodlines",
-	        "charCreationInfo.bl_hairs",
-	        "charCreationInfo.bl_backgrounds",
-	        "charCreationInfo.bl_accessories",
-	        "charCreationInfo.bl_costumes",
-	        "charCreationInfo.bl_lights",
-	        "charCreationInfo.races",
-	        "charCreationInfo.ancestries",
-	        "charCreationInfo.schools",
-	        "charCreationInfo.attributes",
-	        "charCreationInfo.bl_beards",
-	        "charCreationInfo.bl_skins",
-	        "charCreationInfo.bl_lipsticks",
-	        "charCreationInfo.bl_makeups"
+	        {"charCreationInfo.bl_eyebrows", "eyebrows"},
+	        {"charCreationInfo.bl_eyes", "eyes"},
+	        {"charCreationInfo.bl_decos", "decos"},
+	        {"charCreationInfo.bloodlines", "bloodlines"},
+	        {"charCreationInfo.bl_hairs", "hairs"},
+	        {"charCreationInfo.bl_backgrounds", "backgrounds"},
+	        {"charCreationInfo.bl_accessories", "accessories"},
+	        {"charCreationInfo.bl_costumes", "costumes"},
+	        {"charCreationInfo.bl_lights", "lights"},
+	        {"charCreationInfo.races", "races"},
+	        {"charCreationInfo.ancestries", "ancestries"},
+	        {"charCreationInfo.schools", "schools"},
+	        {"charCreationInfo.attributes", "attributes"},
+	        {"charCreationInfo.bl_beards", "beards"},
+	        {"charCreationInfo.bl_skins", "skins"},
+	        {"charCreationInfo.bl_lipsticks", "lipsticks"},
+	        {"charCreationInfo.bl_makeups", "makeups"}
         };
 
         public static string[] CreateCharacterCacheQueries = new string[]
@@ -238,20 +238,20 @@ namespace Node
 	        CacheObjectType.Rowset
         };
         
-        public static string[] CharacterAppearanceCacheTable = new string[]
+        public static Dictionary<string, string> CharacterAppearanceCacheTable = new Dictionary<string, string>()
         {
-           	"charCreationInfo.eyebrows",
-	        "charCreationInfo.eyes",
-	        "charCreationInfo.decos",
-	        "charCreationInfo.hairs",
-	        "charCreationInfo.backgrounds",
-	        "charCreationInfo.accessories",
-	        "charCreationInfo.costumes",
-	        "charCreationInfo.lights",
-	        "charCreationInfo.makeups",
-	        "charCreationInfo.beards",
-	        "charCreationInfo.skins",
-	        "charCreationInfo.lipsticks"
+	        {"charCreationInfo.eyebrows", "eyebrows"},
+	        {"charCreationInfo.eyes", "eyes"},
+	        {"charCreationInfo.decos", "decos"},
+	        {"charCreationInfo.hairs", "hairs"},
+	        {"charCreationInfo.backgrounds", "backgrounds"},
+	        {"charCreationInfo.accessories", "accessories"},
+	        {"charCreationInfo.costumes", "costumes"},
+	        {"charCreationInfo.lights", "lights"},
+	        {"charCreationInfo.makeups", "makeups"},
+	        {"charCreationInfo.beards", "beards"},
+	        {"charCreationInfo.skins", "skins"},
+	        {"charCreationInfo.lipsticks", "lipsticks"}
         };
 
         public static string[] CharacterAppearanceCacheQueries = new string[]
@@ -311,12 +311,12 @@ namespace Node
             this.mCacheData[name] = PyCachedObject.FromCacheInfo(info, data).Encode();
         }
 
-        public PyDict GetHints(string[] list)
+        public PyDict GetHints(Dictionary<string, string> list)
         {
 	        PyDict hints = new PyDict();
 
-	        foreach(string name in list)
-				hints.Set(name, this.GetHint(name));
+	        foreach(KeyValuePair<string, string> pair in list)
+				hints.Set(pair.Value, this.GetHint(pair.Key));
 	        
 	        return hints;
         }
@@ -363,14 +363,17 @@ namespace Node
             }
         }
 
-        public void Load(string[] names, string[] queries, CacheObjectType[] types)
+        public void Load(Dictionary<string, string> names, string[] queries, CacheObjectType[] types)
         {
-            if (names.Length != queries.Length || names.Length != types.Length)
+            if (names.Count != queries.Length || names.Count != types.Length)
                 throw new ArgumentOutOfRangeException("names", "names, queries and types do not match in size");
 
-            for (int i = 0; i < names.Length; i++)
+            int i = 0;
+
+            foreach (KeyValuePair<string, string> pair in names)
             {
-                Load(names[i], queries[i], types[i]);
+	            Load(pair.Key, queries[i], types[i]);
+	            i++;
             }
         }
 
