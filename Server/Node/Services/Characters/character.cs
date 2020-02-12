@@ -30,6 +30,7 @@ using Marshal;
 using Common;
 using Common.Services;
 using System.IO;
+using System.Text.RegularExpressions;
 using Common.Database;
 using Node.Database;
 
@@ -37,6 +38,17 @@ namespace Node.Services.Characters
 {
     public class character : Service
     {
+        enum NameValidationResults
+        {
+            Valid = 1,
+            TooShort = -1,
+            TooLong = -2,
+            IllegalCharacters = -5,
+            MoreThanOneSpace = -6,
+            Taken = -101,
+            Banned = -102
+        };
+        
         private CharacterDB mDB = null;
         private CacheStorage mCacheStorage = null;
         
@@ -70,6 +82,37 @@ namespace Node.Services.Characters
         public PyObject GetCharNewExtraCreationInfo(PyTuple args, Client client)
         {
             return new PyDict();
+        }
+
+        public PyObject ValidateNameEx(PyTuple args, Client client)
+        {
+            // TODO: IMPROVE PARSING OF PACKETS LIKE THIS
+            if(args.Items.Count != 1)
+                throw new Exception($"Expected tuple of size 1 but got {args.Items.Count}");
+            if(args.Items[0] is PyString == false)
+                throw new Exception($"Expected element 1 to be of type string but got {args.Items[0].Type}");
+
+            string characterName = args.Items[0].As<PyString>().Value;
+            
+            if (characterName.Length < 3)
+                return new PyInt((int) NameValidationResults.TooShort);
+            
+            // equivalent to the itemName column in the entity table
+            if(characterName.Length > 85)
+                return new PyInt((int) NameValidationResults.TooLong);
+            
+            // ensure only alphanumeric characters and/or spaces are used
+            if(Regex.IsMatch(characterName, "^[a-zA-Z0-9 ]*$") == false)
+                return new PyInt((int) NameValidationResults.IllegalCharacters);
+        
+            if(characterName.IndexOf(' ') != characterName.LastIndexOf(' '))
+                return new PyInt((int) NameValidationResults.MoreThanOneSpace);
+
+            if (this.mDB.IsCharacterNameTaken(characterName) == true)
+                return new PyInt((int) NameValidationResults.Taken);
+            
+            // TODO: IMPLEMENT BANLIST OF WORDS
+            return new PyInt((int) NameValidationResults.Valid);
         }
     }
 }

@@ -38,5 +38,24 @@ namespace Node.Database
                 return DBUtils.DBResultToRowset(ref reader);
             }
         }
+
+        public bool IsCharacterNameTaken(string characterName)
+        {
+            MySqlDataReader reader = null;
+            MySqlConnection connection = null;
+            
+            Database.Query(
+                ref reader, ref connection,
+                $"SELECT COUNT(*) FROM character_ LEFT JOIN entity ON characterID = itemID WHERE itemName LIKE '{Database.DoEscapeString(characterName)}'"
+            );
+            
+            using (connection)
+            using (reader)
+            {
+                reader.Read();
+                
+                return reader.GetInt32(0) > 0;
+            }
+        }
     }
 }
