@@ -55,9 +55,8 @@ namespace Node.Services.Network
 
         public PyObject SendClientStackTraceAlert(PyTuple args, object client)
         {
-            Log.Trace("Received the following client's stack trace");
             Log.Fatal(
-                "Received a client stack trace:\n" + 
+                "Received the following client's stack trace:\n" + 
                 $"------------------ {args.Items[2].StringValue} ------------------\n" +
                 $"{args.Items[0].As<PyTuple>().Items[1].StringValue}\n" +
                 args.Items[1].StringValue

@@ -200,6 +200,10 @@ namespace ClusterControler
                 
                 this.ConnectionManager.NotifyNode((int) pyPacket.dest.typeID, pyPacket);
             }
+            else
+            {
+                throw new Exception($"Unexpected destination tyoe {pyPacket.dest.type} for packet");
+            }
         }
 
         protected void ExceptionHandler(Exception exception)

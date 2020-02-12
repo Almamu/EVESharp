@@ -35,6 +35,7 @@ namespace Node.Configuration
                     this.MessageType = AuthenticationMessageType.HTMLMessage;
                     break;
                 case "NONE":
+                default:
                     this.MessageType = AuthenticationMessageType.NoMessage;
                     break;
             }

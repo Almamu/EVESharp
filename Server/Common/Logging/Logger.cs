@@ -32,7 +32,7 @@ namespace Common.Logging
         {
             if (this.mChannels.ContainsKey(name) == true)
             {
-                throw new Exception($"The log channel '{name}' already exists");
+                return this.mChannels[name];
             }
             
             Channel channel = new Channel(name, this);

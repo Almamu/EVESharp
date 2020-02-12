@@ -165,6 +165,11 @@ namespace Common.Network
             BinaryWriter writer = new BinaryWriter(stream);
             // marshal the packet first
             byte[] encodedPacket = Marshal.Marshal.Process(packet);
+            
+            // compress the packet if it exceeds the maximum size
+            if (encodedPacket.Length > Constants.Network.MAX_PACKET_SIZE)
+                encodedPacket = Zlib.Compress(encodedPacket);
+            
             // write the size to the stream
             writer.Write(encodedPacket.Length);
             // finally copy the packet buffer
