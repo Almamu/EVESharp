@@ -24,6 +24,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.IO;
@@ -43,10 +44,12 @@ using Common.Services;
 using Common.Packets;
 using Node.Inventory;
 
-using Marshal;
-using Marshal.Database;
+using PythonTypes;
+using PythonTypes.Types.Database;
 using Node.Configuration;
 using Node.Network;
+using PythonTypes.Compression;
+using PythonTypes.Types.Primitives;
 
 namespace Node
 {
@@ -67,16 +70,16 @@ namespace Node
             private set { }
         }
 
-        static void Main(string[] args)
+        static void Main(string[] argv)
         {
             try
             {
-                sConfiguration = General.LoadFromFile("configuration.conf");
                 sLog = new Logger();
 
                 sChannel = sLog.CreateLogChannel("main");
                 // add log streams
                 sLog.AddLogStream(new ConsoleLogStream());
+                sConfiguration = General.LoadFromFile("configuration.conf");
                 
                 if (sConfiguration.LogLite.Enabled == true)
                     sLog.AddLogStream(new LogLiteStream("Node", sLog, sConfiguration.LogLite));

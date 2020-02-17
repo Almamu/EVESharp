@@ -2,7 +2,8 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using Marshal;
+using PythonTypes;
+using PythonTypes.Types.Network;
 
 namespace Common.Packets
 {

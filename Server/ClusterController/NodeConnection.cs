@@ -3,7 +3,9 @@ using Common;
 using Common.Logging;
 using Common.Network;
 using Common.Packets;
-using Marshal;
+using PythonTypes;
+using PythonTypes.Types.Network;
+using PythonTypes.Types.Primitives;
 
 namespace ClusterControler
 {
@@ -39,39 +41,34 @@ namespace ClusterControler
 
             nodeInfo.nodeID = NodeID;
             // solar systems to be loaded by the node
-            nodeInfo.solarSystems.Items.Add(new PyNone());
+            nodeInfo.solarSystems.Add(new PyNone());
 
             Log.Debug($"Notifying node {nodeInfo.nodeID:X4} of it's new ID");
             
             this.Socket.Send(nodeInfo);
         }
 
-        private void ReceivePacketCallback(PyObject packet)
+        private void ReceivePacketCallback(PyDataType input)
         {
             Log.Debug("Processing packet from node");
+
+            PyPacket packet = input;
             
-            if (packet is PyObjectData == false)
-                throw new Exception("Non-valid node packet. Ignoring...");
-
-            PyObjectData item = packet as PyObjectData;
-
-            if (item.Name == "macho.CallRsp")
+            if(packet.Type == MachoMessageType.CALL_RSP)
             {
-                PyPacket final = new PyPacket();
-
-                final.Decode(item);
-
-                if (final.dest.type == PyAddress.AddrType.Client)
+                if (packet.Destination is PyAddressClient)
                 {
-                    Log.Trace($"Sending packet to client {final.userID}");
-                    this.ConnectionManager.NotifyClient((int)(final.userID), packet);
+                    Log.Trace($"Sending packet to client {packet.UserID}");
+                    this.ConnectionManager.NotifyClient((int)(packet.UserID), packet);
                 }
-                else if (final.dest.type == PyAddress.AddrType.Node)
+                else if (packet.Destination is PyAddressNode)
                 {
-                    Log.Trace($"Sending packet to node {final.dest.typeID}");
-                    this.ConnectionManager.NotifyNode((int)(final.dest.typeID), packet);
+                    PyAddressNode address = packet.Destination as PyAddressNode;
+                    
+                    Log.Trace($"Sending packet to node {address.NodeID}");
+                    this.ConnectionManager.NotifyNode((int)(address.NodeID), packet);
                 }
-                else if (final.dest.type == PyAddress.AddrType.Broadcast)
+                else if (packet.Destination is PyAddressBroadcast)
                 {
                     Log.Error("Broadcast packets not supported yet");
                 }
@@ -79,7 +76,7 @@ namespace ClusterControler
             }
             else
             {
-                Log.Error($"Wrong packet name: {item.Name}");
+                Log.Error($"Wrong packet name: {packet.type_string}");
             }
         }
     }

@@ -2,142 +2,51 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using Marshal;
+using PythonTypes;
+using PythonTypes.Types.Primitives;
 
 namespace Common.Game
 {
-    // TODO: ADD BETTER WAYS TO WORK WITH THE SESSION
-    public class Session
+    public class Session : PyDictionary
     {
-        private Dictionary<string, PyTuple> SessionData = new Dictionary<string, PyTuple>();
-        
-        private void Set(string key, PyObject newValue)
+        public new PyDataType this[string key]
         {
-            if (SessionData.ContainsKey(key) == false)
+            get
             {
-                PyTuple var = new PyTuple();
+                if (this.ContainsKey(key) == false)
+                    return new PyNone();
 
-                var.Items.Add(new PyNone());
-                var.Items.Add(newValue);
+                PyTuple data = base[key] as PyTuple;
 
-                SessionData.Add(key, var);
+                return data[1];
             }
-            else
+
+            set
             {
-                PyTuple tmp = SessionData[key] as PyTuple;
+                // ensure there is a key stored if the element is new
+                if(this.ContainsKey(key) == false)
+                    base[key] = new PyTuple(new PyDataType [] { new PyNone(), new PyNone() });
 
-                tmp.Items[0] = tmp.Items[1];
-                tmp.Items[1] = newValue;
+                PyTuple entry = base[key] as PyTuple;
 
-                SessionData[key] = tmp;
+                entry[0] = entry[1];
+                entry[1] = value;
+
+                base[key] = entry;
             }
         }
 
-        private PyTuple Get(string key)
+        public PyDictionary GenerateSessionChange()
         {
-            if (SessionData.ContainsKey(key) == false)
-            {
-                PyTuple tuple = new PyTuple();
+            PyDictionary result = new PyDictionary();
 
-                // add two items to the list to simulate an actual tuple
-                tuple.Items.Add(new PyNone ());
-                tuple.Items.Add(new PyNone());
+            foreach (KeyValuePair<string, PyDataType> pair in this)
+            {
+                PyTuple value = pair.Value as PyTuple;
                 
-                return tuple;
-            }
-            else
-            {
-                return SessionData[key] as PyTuple;
-            }
-        }
+                result[pair.Key] = new PyTuple(new []{ value[0], value[1] });
 
-        private PyObject GetCurrent(string key)
-        {
-            PyTuple values = this.Get(key);
-
-            return values.Items[1];
-        }
-
-        public void SetString(string name, string value)
-        {
-            this.Set(name, new PyString(value));
-        }
-
-        public void SetInt(string name, int value)
-        {
-            this.Set(name, new PyInt(value));
-        }
-
-        public void SetLong(string name, long value)
-        {
-            this.Set(name, new PyLongLong(value));
-        }
-
-        public string GetCurrentString(string name)
-        {
-            PyObject res = this.GetCurrent(name);
-
-            if (res.Type != PyObjectType.String)
-            {
-                return "";
-            }
-
-            return res.As<PyString>().Value;
-        }
-
-        public int GetCurrentInt(string name)
-        {
-            PyObject res = this.GetCurrent(name);
-
-            if((res.Type != PyObjectType.Long) || (res.Type != PyObjectType.IntegerVar))
-            {
-                return 0;
-            }
-
-            return res.As<PyInt>().Value;
-        }
-
-        public long GetCurrentLong(string name)
-        {
-            PyObject res = this.GetCurrent(name);
-
-            if (res.Type != PyObjectType.LongLong)
-            {
-                return 0;
-            }
-
-            return res.IntValue;
-        }
-
-        public bool KeyExists(string name)
-        {
-            return SessionData.ContainsKey(name);
-        }
-        
-        public PyDict EncodeChanges()
-        {
-            PyDict result = new PyDict();
-            PyDict tmp = new PyDict();
-
-            // Iterate through the session data
-            foreach (KeyValuePair<string, PyTuple> entry in SessionData)
-            {
-                PyObject last = entry.Value.Items[0];
-                PyObject current = entry.Value.Items[1];
-
-                // Check if they have the same type and value
-                if (last != current)
-                {
-                    // Add the change to the dict
-                    PyTuple change = new PyTuple();
-
-                    change.Items.Add(last);
-                    change.Items.Add(current);
-                    // build the change object
-                    result.Set(entry.Key, change);
-                    // update the old value with the one synced to the client
-                    entry.Value.Items[0] = entry.Value.Items[1];
-                }
+                value[0] = value[1];
             }
 
             return result;

@@ -4,13 +4,14 @@ using System.Linq;
 using System.Text;
 using System.Reflection;
 
-using Marshal;
+using PythonTypes;
+using PythonTypes.Types.Primitives;
 
 namespace Common.Services
 {
     public class ServiceManager
     {
-        public PyObject ServiceCall(string service, string call, PyTuple data, object client)
+        public PyDataType ServiceCall(string service, string call, PyTuple data, object client)
         {
             MethodInfo method = GetType().GetMethod(service);
 
@@ -28,7 +29,7 @@ namespace Common.Services
                 throw new ServiceDoesNotContainCallException(service, call);
             }
             
-            return (PyObject)(method.Invoke(svc, new object[] { data, client }));
+            return (PyDataType)(method.Invoke(svc, new object[] { data, client }));
         }
     }
 }

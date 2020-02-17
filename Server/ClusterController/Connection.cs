@@ -1,7 +1,8 @@
 using System;
 using Common.Network;
 using Common.Packets;
-using Marshal;
+using PythonTypes;
+using PythonTypes.Types.Primitives;
 
 namespace ClusterControler
 {
@@ -21,11 +22,9 @@ namespace ClusterControler
 
         protected abstract void OnConnectionLost();
         
-        protected LowLevelVersionExchange CheckLowLevelVersionExchange(PyObject exchange)
+        protected LowLevelVersionExchange CheckLowLevelVersionExchange(PyDataType exchange)
         {
-            LowLevelVersionExchange data = new LowLevelVersionExchange();
-
-            data.Decode(exchange);
+            LowLevelVersionExchange data = exchange;
 
             if (data.birthday != Common.Constants.Game.birthday)
             {

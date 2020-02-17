@@ -26,9 +26,11 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using Marshal;
+using PythonTypes;
 using Common;
 using Common.Logging;
+using PythonTypes.Types.Network;
+using PythonTypes.Types.Primitives;
 
 namespace Node
 {
@@ -39,14 +41,14 @@ namespace Node
         public void UpdateSession(PyPacket from)
         {
             // We should add a Decode method to SessionChangeNotification...
-            PyTuple payload = from.payload;
+            PyTuple payload = from.Payload;
 
-            PyDict changes = payload[0].As<PyTuple>()[1].As<PyDict>();
+            PyDictionary changes = (payload[0] as PyTuple) [1] as PyDictionary;
 
             // Update our local session
-            foreach(PyString key in changes.Dictionary.Keys)
+            foreach(KeyValuePair<string, PyDataType> pair in changes)
             {
-                session.Set(key.Value, changes[key.Value].As<PyTuple>()[1]);
+                session.Set(pair.Key, (pair.Value as PyTuple)[1]);
             }
         }
 
@@ -54,12 +56,12 @@ namespace Node
         {
             get
             {
-                return session.GetCurrentString("languageID");
+                return session.GetCurrent("languageID") as PyString;
             }
 
             set
             {
-                session.SetString("languageID", value);
+                session.Set("languageID", value);
             }
         }
 
@@ -67,7 +69,7 @@ namespace Node
         {
             get
             {
-                return session.GetCurrentInt("userid");
+                return session.GetCurrent("userid") as PyInteger;
             }
 
             set
@@ -80,7 +82,7 @@ namespace Node
         {
             get
             {
-                return session.GetCurrentInt("role");
+                return session.GetCurrent("role") as PyInteger;
             }
 
             set
@@ -93,7 +95,7 @@ namespace Node
         {
             get
             {
-                return session.GetCurrentString("address");
+                return session.GetCurrent("address") as PyString;
             }
 
             set

@@ -15,6 +15,7 @@
     <ItemGroup>
       <ProjectReference Include="..\Common\Common.csproj" />
       <ProjectReference Include="..\Marshal\Marshal.csproj" />
+      <ProjectReference Include="..\PythonTypes\PythonTypes.csproj" />
     </ItemGroup>
 
     <ItemGroup>

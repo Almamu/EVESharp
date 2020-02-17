@@ -3,14 +3,14 @@ using Common;
 using Common.Logging;
 using Common.Network;
 using Common.Packets;
-using Marshal;
+using PythonTypes;
+using PythonTypes.Types.Primitives;
 
 namespace ClusterControler
 {
     public class UnauthenticatedConnection : Connection
     {
         private Channel Log { get; set; }
-        private AsyncCallback mReceive = null;
 
         public UnauthenticatedConnection(EVEClientSocket socket, ConnectionManager connectionManager, Logger logger)
             : base(socket, connectionManager)
@@ -46,10 +46,10 @@ namespace ClusterControler
             data.usercount = this.ConnectionManager.ClientsCount;
             data.region = Common.Constants.Game.region;
 
-            this.Socket.Send(data.Encode());
+            this.Socket.Send(data);
         }
 
-        private void ReceiveLowLevelVersionExchangeCallback(PyObject ar)
+        private void ReceiveLowLevelVersionExchangeCallback(PyDataType ar)
         {
             try
             {
@@ -86,7 +86,13 @@ namespace ClusterControler
 
         protected void ExceptionHandler(Exception exception)
         {
-            Log.Error(exception.Message);
+            Log.Error("Exception detected: ");
+
+            do
+            {
+                Log.Error(exception.Message);
+                Log.Trace(exception.StackTrace);
+            } while ((exception = exception.InnerException) != null);
         }
     }
 }

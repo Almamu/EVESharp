@@ -5,6 +5,7 @@ using Common;
 using Common.Configuration;
 using IniParser;
 using IniParser.Model;
+using PythonTypes;
 
 namespace Configuration
 {
@@ -29,7 +30,7 @@ namespace Configuration
                 config.LogLite.Load(data["loglite"]);
             if (data.Sections.ContainsSection("logfile") == true)
                 config.FileLog.Load(data["logfile"]);
-
+            
             return config;
         }
     }

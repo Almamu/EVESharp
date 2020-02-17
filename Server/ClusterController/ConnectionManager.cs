@@ -29,13 +29,13 @@ using System.Linq;
 using System.Text;
 using System.Net.Sockets;
 
-using Marshal;
+using PythonTypes;
 
 using Common;
 using Common.Constants;
 using Common.Logging;
 using Common.Network;
-using Marshal.Network;
+using PythonTypes.Types.Primitives;
 
 namespace ClusterControler
 {
@@ -107,6 +107,8 @@ namespace ClusterControler
             {
                 ClientConnection con = this.mClientConnections[connection.AccountID];
                 
+                this.mClientConnections.Remove(connection.AccountID);
+                
                 con.Socket.ForcefullyDisconnect();
             }
             
@@ -147,7 +149,7 @@ namespace ClusterControler
             this.mNodeConnections.Remove(connection.NodeID);
         }
         
-        public void NotifyClient(int clientID, PyObject packet)
+        public void NotifyClient(int clientID, PyDataType packet)
         {
             if (this.Clients.ContainsKey(clientID) == false)
                 throw new Exception($"Trying to notify a not connected client {clientID}");
@@ -155,17 +157,12 @@ namespace ClusterControler
             this.Clients[clientID].Socket.Send(packet);
         }
 
-        public void NotifyNode(int nodeID, PyObject packet)
+        public void NotifyNode(int nodeID, PyDataType packet)
         {
             if(this.Nodes.ContainsKey(nodeID) == false)
                 throw new Exception($"Trying to notify a non-existant node {nodeID}");
             
             this.Nodes[nodeID].Socket.Send(packet);
-        }
-
-        public void NotifyNode(int nodeID, Encodeable packet)
-        {
-            this.NotifyNode(nodeID, packet.Encode());
         }
     }
 }

@@ -2,30 +2,25 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using Marshal;
-using Marshal.Network;
+using PythonTypes;
+using PythonTypes.Types.Primitives;
 
 namespace Common.Packets
 {
-    public class SessionChangeNotification : Encodeable
+    public class SessionChangeNotification
     {
         public int clueless = 0;
-        public PyDict changes = new PyDict();
+        public PyDictionary changes = new PyDictionary();
         public PyList nodesOfInterest = new PyList();
 
-        public PyObject Encode()
+        public static implicit operator PyTuple(SessionChangeNotification notification)
         {
-            PyTuple res = new PyTuple();
-
-            PyTuple main = new PyTuple();
-
-            main.Items.Add(new PyInt(clueless));
-            main.Items.Add(changes);
-
-            res.Items.Add(main);
-            res.Items.Add(nodesOfInterest);
-
-            return res.As<PyObject>();
+            return new PyTuple( new PyDataType[]
+                {
+                    new PyTuple(new PyDataType[] { notification.clueless, notification.changes }),
+                    notification.nodesOfInterest
+                }
+            );
         }
     }
 }

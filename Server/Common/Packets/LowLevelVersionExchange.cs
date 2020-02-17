@@ -1,13 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
+using System.IO;
 using System.Linq;
 using System.Text;
-using Marshal;
-using Marshal.Network;
+using PythonTypes;
+using PythonTypes.Types.Primitives;
 
 namespace Common.Packets
 {
-    public class LowLevelVersionExchange : Encodeable, Decodeable
+    public class LowLevelVersionExchange
     {
         public int birthday = 0;
         public int machoVersion = 0;
@@ -19,109 +21,44 @@ namespace Common.Packets
         public string nodeIdentifier = "";
         public bool isNode = false; // 0-> Client, 1-> Node
 
-        public PyObject Encode()
+        public static implicit operator LowLevelVersionExchange(PyDataType data)
         {
-            PyTuple res = new PyTuple();
+            PyTuple exchange = data as PyTuple;
+            
+            if(exchange.Count != 6)
+                throw new InvalidDataException("LowLevelVersionExchange must have 6 elements");
+            
+            LowLevelVersionExchange result = new LowLevelVersionExchange();
 
-            res.Items.Add(new PyInt(birthday));
-            res.Items.Add(new PyInt(machoVersion));
+            result.birthday = exchange[0] as PyInteger;
+            result.machoVersion = exchange[1] as PyInteger;
 
-            if (this.isNode)
+            if (exchange[2] is PyString)
             {
-                res.Items.Add(new PyString("Node"));
+                result.isNode = true;
+                result.nodeIdentifier = exchange[2] as PyString;
             }
             else
             {
-                res.Items.Add(new PyInt(usercount));
+                result.usercount = exchange[2] as PyInteger;
             }
 
-            res.Items.Add(new PyFloat(version));
-            res.Items.Add(new PyInt(build));
-            res.Items.Add(new PyString(codename + "@" + region));
+            result.version = exchange[3] as PyDecimal;
+            result.build = exchange[4] as PyInteger;
+            result.codename = exchange[5] as PyString;
 
-            return res;
+            return result;
         }
 
-        public void Decode(PyObject data)
+        public static implicit operator PyDataType(LowLevelVersionExchange exchange)
         {
-            isNode = false;
-
-            if (data.Type != PyObjectType.Tuple)
+            return new PyTuple(new PyDataType[]
             {
-                throw new Exception($"Expected container of type Tuple but got {data.Type}");
-            }
-
-            PyTuple tmp = data.As<PyTuple>();
-
-            if (tmp.Items.Count != 6)
-            {
-                throw new Exception($"Expected container with 6 elements but got {tmp.Items.Count}");
-            }
-
-            PyObject birth = tmp.Items[0];
-
-            if ( (birth.Type != PyObjectType.IntegerVar) && (birth.Type != PyObjectType.LongLong) && (birth.Type != PyObjectType.Long))
-            {
-                throw new Exception($"Expected a birthday of type Long, LongLong or Integer but got {birth.Type}");
-            }
-
-            birthday = birth.As<PyInt>().Value;
-
-            PyObject macho = tmp.Items[1];
-
-            if ((macho.Type != PyObjectType.IntegerVar) && (macho.Type != PyObjectType.LongLong) && (macho.Type != PyObjectType.Long))
-            {
-                throw new Exception($"Expected a machoVersion of type Long, LongLong or Integer but got {macho.Type}");
-            }
-
-            machoVersion = macho.As<PyInt>().Value;
-
-            PyObject users = tmp.Items[2];
-
-            if (users.Type == PyObjectType.None)
-            {
-                usercount = 0;   
-            }
-            else if(users.Type == PyObjectType.Long)
-            {
-                usercount = users.As<PyInt>().Value;
-            }
-            else if (users.Type == PyObjectType.String)
-            {
-                isNode = true;
-                nodeIdentifier = users.As<PyString>().Value;
-            }
-            else
-            {
-                throw new Exception($"Wrong type for usercount/node identifier, got {users.Type}");
-            }
-
-            PyObject ver = tmp.Items[3];
-
-            if (ver.Type != PyObjectType.Float)
-            {
-                throw new Exception($"Expected a version of type Float but got {ver.Type}");
-            }
-
-            version = ver.As<PyFloat>().Value;
-
-            PyObject b = tmp.Items[4];
-
-            if ((b.Type != PyObjectType.IntegerVar) && (b.Type != PyObjectType.LongLong) && (b.Type != PyObjectType.Long))
-            {
-                throw new Exception($"Expected a build of type Long, LongLong or Integer but got {b.Type}");
-            }
-
-            build = b.As<PyInt>().Value;
-
-            PyObject code = tmp.Items[5];
-
-            if (code.Type != PyObjectType.String)
-            {
-                throw new Exception($"Expected a codename of type String but got {code.Type}");
-            }
-
-            codename = code.As<PyString>().Value;
+                exchange.birthday, exchange.machoVersion,
+                (exchange.isNode == true) ? (PyDataType) exchange.nodeIdentifier : exchange.usercount, exchange.version,
+                exchange.build, exchange.codename + "@" + exchange.region
+            });
         }
+
     }
 }

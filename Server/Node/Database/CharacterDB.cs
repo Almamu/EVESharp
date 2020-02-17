@@ -1,7 +1,8 @@
 using Common.Database;
-using Common.Utils;
-using Marshal;
+using PythonTypes;
 using MySql.Data.MySqlClient;
+using PythonTypes.Types.Database;
+using PythonTypes.Types.Primitives;
 
 namespace Node.Database
 {
@@ -11,7 +12,7 @@ namespace Node.Database
         {
         }
 
-        public PyObject GetCharacterList(int accountID)
+        public PyDataType GetCharacterList(int accountID)
         {
             MySqlDataReader reader = null;
             MySqlConnection connection = null;
@@ -35,7 +36,7 @@ namespace Node.Database
             using (connection)
             using (reader)
             {
-                return DBUtils.DBResultToRowset(ref reader);
+                return Rowset.FromMySqlDataReader(reader);
             }
         }
 

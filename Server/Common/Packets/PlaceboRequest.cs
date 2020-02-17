@@ -1,51 +1,40 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
-using Marshal;
-using Marshal.Network;
+using PythonTypes;
+using PythonTypes.Types.Primitives;
 
 namespace Common.Packets
 {
-    public class PlaceboRequest : Decodeable
+    public class PlaceboRequest
     {
-        public void Decode(PyObject data)
+        public PyString Command { get; set; }
+        public PyDictionary Arguments { get; set; }
+
+        public PlaceboRequest()
         {
-            if (data.Type != PyObjectType.Tuple)
-            {
-                throw new Exception($"Expected container of type Tuple but got {data.Type}");
-            }
+            
+        }
 
-            PyTuple tmp = data.As<PyTuple>();
+        public PlaceboRequest(PyString command, PyDictionary arguments)
+        {
+            this.Command = command;
+            this.Arguments = arguments;
+        }
 
-            if (tmp.Items.Count != 2)
-            {
-                throw new Exception($"Expected container to have 2 items but got {tmp.Items.Count}");
-            }
+        public static implicit operator PlaceboRequest(PyDataType request)
+        {
+            PyTuple data = request as PyTuple;
+            
+            if(data.Count != 2)
+                throw new InvalidDataException($"Expected tuple of two items");
 
-            if (tmp.Items[0].Type != PyObjectType.String)
-            {
-                throw new Exception($"Expected item 1 to be of type string but got {tmp.Items[0].Type}");
-            }
-
-            if (tmp.Items[1].Type != PyObjectType.Dict)
-            {
-                throw new Exception($"Expected item 2 to be of type PyDict but got {tmp.Items[1].Type}");
-            }
-
-            PyString command = tmp.Items[0].As<PyString>();
-
-            if (command.Value != "placebo")
-            {
-                throw new Exception($"Expected command type of 'placebo' but got {command.Value}");
-            }
-
-            PyDict args = tmp.Items[1].As<PyDict>();
-
-            if (args.Dictionary.Count != 0)
-            {
-                throw new Exception("Arguments not supported yet");
-            }
+            return new PlaceboRequest(
+                data[0] as PyString,
+                data[1] as PyDictionary
+            );
         }
     }
 }

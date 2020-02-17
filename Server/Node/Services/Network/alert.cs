@@ -26,11 +26,12 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using Marshal;
+using PythonTypes;
 using Common;
 using Common.Services;
 using System.IO;
 using Common.Logging;
+using PythonTypes.Types.Primitives;
 
 namespace Node.Services.Network
 {
@@ -43,29 +44,29 @@ namespace Node.Services.Network
             this.Log = logger.CreateLogChannel("alert");
         }
 
-        public PyObject BeanCount(PyTuple args, object client)
+        public PyDataType BeanCount(PyTuple args, object client)
         {
-            PyTuple res = new PyTuple();
-
-            res.Items.Add(new PyNone()); // Unique error ID, None for instant stack trace
-            res.Items.Add(new PyInt(0)); // logging mode, 0 = local
-
+            PyTuple res = new PyTuple(2);
+            
+            res[0] = new PyNone();
+            res[1] = new PyInteger(0);
+            
             return res;
         }
 
-        public PyObject SendClientStackTraceAlert(PyTuple args, object client)
+        public PyDataType SendClientStackTraceAlert(PyTuple args, object client)
         {
             Log.Fatal(
                 "Received the following client's stack trace:\n" + 
-                $"------------------ {args.Items[2].StringValue} ------------------\n" +
-                $"{args.Items[0].As<PyTuple>().Items[1].StringValue}\n" +
-                args.Items[1].StringValue
+                $"------------------ {args[2] as PyString} ------------------\n" +
+                $"{(args[0] as PyTuple)[1] as PyString}\n" +
+                (args[1] as PyString)
             );
             // The client should receive anything to know that the stack trace arrived to the server
             return new PyNone();
         }
 
-        public PyObject BeanDelivery(PyTuple args, object client)
+        public PyDataType BeanDelivery(PyTuple args, object client)
         {
             // I'm not joking, send me the stack trace NOW!!!
             // :P

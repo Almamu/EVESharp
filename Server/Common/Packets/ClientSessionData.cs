@@ -1,66 +1,47 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
-using Marshal;
-using Marshal.Network;
+using System.Xml.XPath;
+using MySqlX.XDevAPI;
+using PythonTypes;
+using PythonTypes.Types.Primitives;
 
 namespace Common.Packets
 {
-    class ClientSessionData : Encodeable, Decodeable
+    class ClientSessionData
     {
-        public PyDict session = new PyDict();
+        private const string TYPE_NAME = "macho.sessionInitialState";
+        public PyDictionary session = new PyDictionary();
         public int clientID = 0;
 
-        public PyObject Encode()
+        public static implicit operator PyDataType(ClientSessionData sessionData)
         {
-            PyTuple args = new PyTuple();
-
-            args.Items.Add(session);
-            args.Items.Add(new PyInt(clientID));
-
-            return new PyObjectData("macho.sessionInitialState", args);
+            return new PyObjectData(TYPE_NAME, new PyTuple(new PyDataType[]
+            {
+                sessionData.session, sessionData.clientID
+            }));
         }
 
-        public void Decode(PyObject data)
+        public static implicit operator ClientSessionData(PyDataType sessionData)
         {
-            if (data.Type != PyObjectType.ObjectData)
-            {
-                throw new Exception($"Expected container of type ObjectData but got {data.Type}");
-            }
+            PyObjectData objectData = sessionData as PyObjectData;
+            
+            if(objectData.Name != TYPE_NAME)
+                throw new InvalidDataException($"Expected ObjectData of type {TYPE_NAME} but got {objectData.Name}");
 
-            PyObjectData container = data as PyObjectData;
+            PyTuple arguments = objectData.Arguments as PyTuple;
 
-            if (container.Name != "macho.sessionInitialState")
-            {
-                throw new Exception($"Expected container with typeName 'macho.sessionInitialState' but got '{container.Name}'");
-            }
+            if (arguments.Count != 2)
+                throw new InvalidDataException($"Expected tuple with two elements");
+            
+            ClientSessionData result = new ClientSessionData();
+            
+            result.session = arguments[0] as PyDictionary;
+            result.clientID = arguments[1] as PyInteger;
 
-            if (container.Arguments.Type != PyObjectType.Tuple)
-            {
-                throw new Exception($"Expected arguments of type Tuple but got {container.Arguments.Type}");
-            }
-
-            PyTuple args = container.Arguments as PyTuple;
-
-            if (args.Items.Count != 2)
-            {
-                throw new Exception($"Expected arguments with 2 arguments but got {args.Items.Count}");
-            }
-
-            if (args.Items[0].Type != PyObjectType.Dict)
-            {
-                throw new Exception($"Expected PyDict as first argument but got {args.Items[0].Type}");
-            }
-
-            session = args.Items[0] as PyDict;
-
-            if ((args.Items[1] is PyInt) == false)
-            {
-                throw new Exception($"Expected PyInt as second argument but got {args.Items[1].Type}");
-            }
-
-            clientID = (args.Items[1] as PyInt).Value;
+            return result;
         }
     }
 }

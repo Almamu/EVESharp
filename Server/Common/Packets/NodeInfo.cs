@@ -1,61 +1,46 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
-using Marshal;
-using Marshal.Network;
+using PythonTypes;
+using PythonTypes.Types.Primitives;
 
 namespace Common.Packets
 {
-    public class NodeInfo : Encodeable, Decodeable
+    public class NodeInfo
     {
+        private const string TYPE_NAME = "machoNet.nodeInfo";
+        
         public long nodeID = 0;
         public PyList solarSystems = new PyList();
 
-        public PyObject Encode()
+        public static implicit operator PyDataType(NodeInfo info)
         {
-            PyTuple packet = new PyTuple();
-
-            packet.Items.Add(new PyIntegerVar(nodeID));
-            packet.Items.Add(solarSystems);
-
-            return new PyObjectData("machoNet.nodeInfo", packet);
+            return new PyObjectData(TYPE_NAME, new PyTuple( new PyDataType[]
+            {
+                info.nodeID, info.solarSystems, 
+            }));
         }
 
-        public void Decode(PyObject info)
+        public static implicit operator NodeInfo(PyDataType info)
         {
-            if (info.Type != PyObjectType.ObjectData)
-            {
-                throw new Exception($"Expected container of type ObjectData but got {info.Type}");
-            }
-
-            PyObjectData data = info.As<PyObjectData>();
-
-            if (data.Name != "machoNet.nodeInfo")
-            {
-                throw new Exception($"Expected container with typeName 'machoNet.nodeInfo but got {data.Name}");
-            }
-
-            if (data.Arguments.Type != PyObjectType.Tuple)
-            {
-                throw new Exception($"Expected arguments of type Tuple but got {data.Arguments.Type}");
-            }
-
-            PyTuple args = data.Arguments.As<PyTuple>();
+            if (info is PyObjectData == false)
+                throw new InvalidDataException($"Expected container of type ObjectData");
             
-            if (args.Items[0].Type != PyObjectType.IntegerVar)
-            {
-                throw new Exception($"Expected first argument of type Long but got {args.Items[0].Type}");
-            }
+            PyObjectData data = info as PyObjectData;
+            
+            if(data.Name != TYPE_NAME)
+                throw new InvalidDataException($"Expected ObjectData of type {TYPE_NAME} but got {data.Name}");
 
-            nodeID = args.Items[0].As<PyIntegerVar>().Value;
+            PyTuple arguments = data.Arguments as PyTuple;
+            
+            NodeInfo result = new NodeInfo();
 
-            if (args.Items[1].Type != PyObjectType.List)
-            {
-                throw new Exception($"Expected second argument of type List but got {args.Items[1].Type}");
-            }
+            result.nodeID = arguments[0] as PyInteger;
+            result.solarSystems = arguments[1] as PyList;
 
-            solarSystems = args.Items[1].As<PyList>();
+            return result;
         }
     }
 }

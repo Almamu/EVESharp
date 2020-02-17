@@ -26,13 +26,14 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using Marshal;
+using PythonTypes;
 using Common;
 using Common.Services;
 using System.IO;
 using System.Text.RegularExpressions;
 using Common.Database;
 using Node.Database;
+using PythonTypes.Types.Primitives;
 
 namespace Node.Services.Characters
 {
@@ -59,60 +60,58 @@ namespace Node.Services.Characters
             this.mCacheStorage = cacheStorage;
         }
 
-        public PyObject GetCharactersToSelect(PyTuple args, Client client)
+        public PyDataType GetCharactersToSelect(PyTuple args, Client client)
         {
             return this.mDB.GetCharacterList(client.AccountID);
         }
 
-        public PyObject LogStartOfCharacterCreation(PyTuple args, Client client)
+        public PyDataType LogStartOfCharacterCreation(PyTuple args, Client client)
         {
             return null;
         }
 
-        public PyObject GetCharCreationInfo(PyTuple args, Client client)
+        public PyDataType GetCharCreationInfo(PyTuple args, Client client)
         {
             return this.mCacheStorage.GetHints(CacheStorage.CreateCharacterCacheTable);
         }
 
-        public PyObject GetAppearanceInfo(PyTuple args, Client client)
+        public PyDataType GetAppearanceInfo(PyTuple args, Client client)
         {
             return this.mCacheStorage.GetHints(CacheStorage.CharacterAppearanceCacheTable);
         }
 
-        public PyObject GetCharNewExtraCreationInfo(PyTuple args, Client client)
+        public PyDataType GetCharNewExtraCreationInfo(PyTuple args, Client client)
         {
-            return new PyDict();
+            return new PyDictionary();
         }
 
-        public PyObject ValidateNameEx(PyTuple args, Client client)
+        public PyDataType ValidateNameEx(PyTuple args, Client client)
         {
             // TODO: IMPROVE PARSING OF PACKETS LIKE THIS
-            if(args.Items.Count != 1)
-                throw new Exception($"Expected tuple of size 1 but got {args.Items.Count}");
-            if(args.Items[0] is PyString == false)
-                throw new Exception($"Expected element 1 to be of type string but got {args.Items[0].Type}");
+            if(args.Count != 1)
+                throw new Exception($"Expected tuple of size 1 but got {args.Count}");
 
-            string characterName = args.Items[0].As<PyString>().Value;
+            string characterName = args[0] as PyString;
             
             if (characterName.Length < 3)
-                return new PyInt((int) NameValidationResults.TooShort);
+                return new PyInteger((int) NameValidationResults.TooShort);
             
             // equivalent to the itemName column in the entity table
             if(characterName.Length > 85)
-                return new PyInt((int) NameValidationResults.TooLong);
+                return new PyInteger((int) NameValidationResults.TooLong);
             
             // ensure only alphanumeric characters and/or spaces are used
             if(Regex.IsMatch(characterName, "^[a-zA-Z0-9 ]*$") == false)
-                return new PyInt((int) NameValidationResults.IllegalCharacters);
+                return new PyInteger((int) NameValidationResults.IllegalCharacters);
         
             if(characterName.IndexOf(' ') != characterName.LastIndexOf(' '))
-                return new PyInt((int) NameValidationResults.MoreThanOneSpace);
+                return new PyInteger((int) NameValidationResults.MoreThanOneSpace);
 
             if (this.mDB.IsCharacterNameTaken(characterName) == true)
-                return new PyInt((int) NameValidationResults.Taken);
+                return new PyInteger((int) NameValidationResults.Taken);
             
             // TODO: IMPLEMENT BANLIST OF WORDS
-            return new PyInt((int) NameValidationResults.Valid);
+            return new PyInteger((int) NameValidationResults.Valid);
         }
     }
 }

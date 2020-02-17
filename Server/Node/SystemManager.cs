@@ -28,12 +28,13 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
 using Common;
-using Marshal;
+using PythonTypes;
 using System.Threading;
 using Common.Database;
 using Node.Database;
 using Node.Inventory;
 using Node.Inventory.SystemEntities;
+using PythonTypes.Types.Primitives;
 
 namespace Node
 {
@@ -48,7 +49,7 @@ namespace Node
         public bool LoadSolarSystems(PyList solarSystems)
         {
             // We should not load any solar system
-            if (solarSystems.Items[0] is PyNone)
+            if (solarSystems[0] is PyNone)
             {
                 return true;
             }
@@ -59,7 +60,7 @@ namespace Node
                 bool found = false;
 
                 // Loop the PyList to see if it should still be loaded
-                foreach (PyInt listID in solarSystems.Items)
+                foreach (PyInteger listID in solarSystems)
                 {
                     if (listID.Value == solarSystem.itemID)
                     {
@@ -79,7 +80,7 @@ namespace Node
             }
 
             // Now iterate the PyList and load the new solarSystems
-            foreach (PyInt listID in solarSystems.Items)
+            foreach (PyInteger listID in solarSystems)
             {
                 foreach (SolarSystem solarSystem in solarSystemsLoaded)
                 {

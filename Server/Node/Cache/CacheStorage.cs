@@ -24,18 +24,22 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Text;
-using Marshal;
+using PythonTypes;
 using Common;
 using Common.Database;
 using Common.Logging;
 using MySql.Data.MySqlClient;
 using MySql.Data.Types;
 using Common.Packets;
-using Common.Utils;
+using PythonTypes.Types.Database;
+using PythonTypes.Types.Primitives;
 using MySqlX.XDevAPI.Relational;
 using Node.Database;
+using PythonTypes.Types.Complex;
 
 namespace Node
 {
@@ -286,8 +290,8 @@ namespace Node
 	        CacheObjectType.Rowset
         };
         
-        private Dictionary<string, PyObject> mCacheData = new Dictionary<string, PyObject>();
-        private PyDict mCacheHints = new PyDict();
+        private Dictionary<string, PyDataType> mCacheData = new Dictionary<string, PyDataType>();
+        private PyDictionary mCacheHints = new PyDictionary();
         private NodeContainer mContainer = null;
 
         private Channel Log { get; set; }
@@ -296,34 +300,37 @@ namespace Node
 	        return this.mCacheData.ContainsKey(name);
         }
 
-        public PyObject Get(string name)
+        public PyDataType Get(string name)
         {
             return this.mCacheData[name];
         }
 
-        public void Store(string name, PyObject data, long timestamp)
+        public void Store(string name, PyDataType data, long timestamp)
         {
-	        CacheInfo info = CacheInfo.FromPyObject(name, data, timestamp, this.mContainer.NodeID);
+	        if(name == "charCreationInfo.races")
+		        Log.Debug(PrettyPrinter.Print(data));
+	        
+	        PyCacheHint hint = PyCacheHint.FromPyObject(name, data, timestamp, this.mContainer.NodeID);
             
             // save cache hint
-            this.mCacheHints.Set(name, info.Encode ());
+            this.mCacheHints[name] = hint;
             // save cache object
-            this.mCacheData[name] = PyCachedObject.FromCacheInfo(info, data).Encode();
+            this.mCacheData[name] = PyCachedObject.FromCacheHint(hint, data);
         }
 
-        public PyDict GetHints(Dictionary<string, string> list)
+        public PyDictionary GetHints(Dictionary<string, string> list)
         {
-	        PyDict hints = new PyDict();
+	        PyDictionary hints = new PyDictionary();
 
 	        foreach(KeyValuePair<string, string> pair in list)
-				hints.Set(pair.Value, this.GetHint(pair.Key));
+				hints[pair.Value] = this.GetHint(pair.Key);
 	        
 	        return hints;
         }
 
-        public PyObject GetHint(string name)
+        public PyDataType GetHint(string name)
         {
-	        return this.mCacheHints.Get(name);
+	        return this.mCacheHints[name];
         }
 
         private void Load(string name, string query, CacheObjectType type)
@@ -336,21 +343,21 @@ namespace Node
             try
             {
 	            Database.Query(ref reader, ref connection, query);
-	            PyObject cacheObject = null;
+	            PyDataType cacheObject = null;
 
 	            switch (type)
 	            {
 		            case CacheObjectType.Rowset:
-			            cacheObject = DBUtils.DBResultToRowset(ref reader);
+			            cacheObject = Rowset.FromMySqlDataReader(reader);
 			            break;
 		            case CacheObjectType.CRowset:
-			            cacheObject = DBUtils.DBResultToCRowset(ref reader);
+			            cacheObject = CRowset.FromMySqlDataReader(reader);
 			            break;
 		            case CacheObjectType.TupleSet:
-			            cacheObject = DBUtils.DBResultToTupleSet(ref reader);
+			            cacheObject = TupleSet.FromMySqlDataReader(reader);
 			            break;
 		            case CacheObjectType.PackedRowList:
-			            cacheObject = DBUtils.DBResultToPackedRowList(ref reader);
+			            cacheObject = PyPackedRowList.FromMySqlDataReader(reader);
 			            break;
 	            }
 	            

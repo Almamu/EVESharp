@@ -26,142 +26,107 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using Marshal;
+using PythonTypes;
+using PythonTypes.Types.Primitives;
 
 namespace Node
 {
     public class Session
     {
-        private PyDict session;
+        private PyDictionary session;
 
         public Session()
         {
-            session = new PyDict();
+            session = new PyDictionary();
         }
 
-        private void _Set(PyObject key, PyObject val)
+        private void _Set(string key, PyDataType val)
         {
-            if (session.Dictionary.ContainsKey(key) == false)
+            if (session.ContainsKey(key) == false)
             {
-                PyTuple var = new PyTuple();
+                PyTuple var = new PyTuple(2);
 
-                var.Items.Add(new PyNone());
-                var.Items.Add(val);
+                var[0] = new PyNone();
+                var[1] = val;
 
-                session.Dictionary.Add(key, var);
+                session[key] = var;
             }
             else
             {
-                PyTuple tmp = session.Dictionary[key].As<PyTuple>();
+                PyTuple tmp = session[key] as PyTuple;
 
-                tmp.Items[0] = tmp.Items[1];
-                tmp.Items[1] = val;
+                tmp[0] = tmp[1];
+                tmp[1] = val;
 
-                session.Dictionary[key] = tmp;
+                session[key] = tmp;
             }
         }
 
-        private PyTuple _Get(PyObject key)
+        private PyTuple _Get(string key)
         {
-            if (session.Dictionary.ContainsKey(key))
+            if (session.ContainsKey(key))
             {
-                return session[key].As<PyTuple>();
+                return session[key] as PyTuple;
             }
             else
             {
-                return new PyTuple();
+                return new PyTuple(0);
             }
         }
 
-        private PyObject _GetCurrent(PyObject key)
+        private PyDataType _GetCurrent(string key)
         {
             PyTuple tmp = _Get(key);
-
-            if (tmp.Items.Count == 0)
+            
+            if (tmp.Count == 0)
             {
                 return new PyNone();
             }
 
-            return tmp.Items[1];
+            return tmp[1];
         }
 
-        public void Set(string name, PyObject value)
+        public void Set(string name, PyDataType value)
         {
-            _Set(new PyString(name), value);
+            _Set(name, value);
+        }
+        
+        public PyDataType GetCurrent(string name)
+        {
+            return _GetCurrent(name);
         }
 
-
-        public void SetString(string name, string value)
+        public PyDictionary EncodeChanges()
         {
-            _Set(new PyString(name), new PyString(value));
-        }
-
-        public void SetInt(string name, int value)
-        {
-            _Set(new PyString(name), new PyInt(value));
-        }
-
-        public PyObject GetCurrent(string name)
-        {
-            return _Get(new PyString(name));
-        }
-
-        public string GetCurrentString(string name)
-        {
-            PyObject res = _GetCurrent(new PyString(name));
-
-            if (res.Type != PyObjectType.String)
-            {
-                return "";
-            }
-
-            return res.As<PyString>().Value;
-        }
-
-        public int GetCurrentInt(string name)
-        {
-            PyObject res = _GetCurrent(new PyString(name));
-
-            if((res.Type != PyObjectType.Long) || (res.Type != PyObjectType.IntegerVar))
-            {
-                return 0;
-            }
-
-            return res.As<PyInt>().Value;
-        }
-
-        public PyDict EncodeChanges()
-        {
-            PyDict res = new PyDict();
-            PyDict tmp = new PyDict();
+            PyDictionary res = new PyDictionary();
+            PyDictionary tmp = new PyDictionary();
 
             // Iterate through the session data
-            foreach (PyString s in session.Dictionary.Keys)
+            foreach (KeyValuePair<string, PyDataType> s in session)
             {
-                PyTuple value = session[s].As<PyTuple>();
+                PyTuple value = s.Value as PyTuple;
 
-                PyObject last = value.Items[0];
-                PyObject current = value.Items[1];
-
+                PyDataType last = value[0];
+                PyDataType current = value[1];
+                
                 // Check if they have the same type and value
                 if (last != current)
                 {
-                    // Add the change to the dict
-                    PyTuple change = new PyTuple();
+                    PyTuple change = new PyTuple(2);
 
-                    change.Items.Add(last);
-                    change.Items.Add(current);
+                    change[0] = last;
+                    change[1] = current;
 
-                    res.Set(s.Value, change);
-
+                    res[s.Key] = change;
+                    
                     // Update the session with the new last value
-                    PyTuple update = new PyTuple();
+                    PyTuple update = new PyTuple(2);
 
-                    update.Items.Add(current);
-                    update.Items.Add(current);
-
+                    update[0] = current;
+                    update[1] = current;
+                    
                     // We cant modify the session here, just store it on something temporal
-                    tmp[s] = update;
+                    tmp[s.Key] = update;
                 }
             }
 

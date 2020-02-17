@@ -1,12 +1,15 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using Common;
 using Common.Constants;
 using Common.Game;
 using Common.Logging;
 using Common.Network;
 using Common.Packets;
-using Marshal;
+using PythonTypes;
+using PythonTypes.Types.Network;
+using PythonTypes.Types.Primitives;
 
 namespace ClusterControler
 {
@@ -19,7 +22,7 @@ namespace ClusterControler
 
         public long AccountID
         {
-            get { return this.Session.GetCurrentLong("userid"); }
+            get { return this.Session["userid"] as PyInteger; }
             private set { }
         }
         
@@ -38,13 +41,13 @@ namespace ClusterControler
             // prepare the user's session
             this.Session = new Session();
             // TODO: GET SOCKET ADDRESS
-            this.Session.SetString("address", this.Socket.GetRemoteAddress());
+            this.Session["address"] = this.Socket.GetRemoteAddress();
         }
 
         protected override void OnConnectionLost()
         {
             // remove the user from the correct lists
-            if(this.Session.KeyExists("userid") == false)
+            if(this.Session.ContainsKey("userid") == false)
                 this.ConnectionManager.RemoveUnauthenticatedClientConnection(this);
             else
                 this.ConnectionManager.RemoveAuthenticatedClientConnection(this);
@@ -52,13 +55,11 @@ namespace ClusterControler
             this.Socket.ForcefullyDisconnect();
         }
 
-        private void ReceiveLowLevelVersionExchangeCallback(PyObject ar)
+        private void ReceiveLowLevelVersionExchangeCallback(PyDataType ar)
         {
             try
             {
-                LowLevelVersionExchange exchange = this.CheckLowLevelVersionExchange(ar);
-
-                exchange.Decode(ar);
+                LowLevelVersionExchange exchange = ar;
             }
             catch (Exception e)
             {
@@ -68,33 +69,22 @@ namespace ClusterControler
             // assign the new packet handler to wait for commands again
             this.Socket.SetReceiveCallback(ReceiveCommandCallback);
         }
-        private void ReceiveCommandCallback(PyObject packet)
+        private void ReceiveCommandCallback(PyDataType packet)
         {
-            if (packet.Type != PyObjectType.Tuple)
-                throw new Exception($"Expected command to be of type Tuple but got {packet.Type}");
-
-            PyTuple tuple = packet as PyTuple;
-
-            if (tuple.Items.Count == 2)
+            ClientCommand command = packet;
+            
+            if(command.Command == "QC")
             {
-                QueueCheckCommand command = new QueueCheckCommand();
-                
-                command.Decode(packet);
-                
                 Log.Debug("Received QueueCheck command");
                 // send player position on the queue
-                this.Socket.Send(new PyInt(this.ConnectionManager.LoginQueue.Count()));
+                this.Socket.Send(new PyInteger(this.ConnectionManager.LoginQueue.Count()));
                 // send low level version exchange required
                 this.SendLowLevelVersionExchange();
                 // wait for a new low level version exchange again
                 this.Socket.SetReceiveCallback(ReceiveLowLevelVersionExchangeCallback);
             }
-            else if (tuple.Items.Count == 3)
+            else if (command.Command == "VK")
             {
-                VipKeyCommand command = new VipKeyCommand();
-
-                command.Decode(packet);
-                
                 Log.Debug("Received VipKey command");
                 // next is the placebo challenge
                 this.Socket.SetReceiveCallback(ReceiveCryptoRequestCallback);
@@ -105,12 +95,16 @@ namespace ClusterControler
             }
         }
 
-        private void ReceiveCryptoRequestCallback(PyObject packet)
+        private void ReceiveCryptoRequestCallback(PyDataType packet)
         {
-            PlaceboRequest request = new PlaceboRequest();
+            PlaceboRequest request = packet;
             
-            request.Decode(packet);
+            if(request.Command != "placebo")
+                throw new InvalidDataException($"Unknown command {request.Command}, expected 'placebo'");
             
+            if(request.Arguments.Length > 0)
+                Log.Warning("Received PlaceboRequest with extra arguments, this is not supported");
+
             Log.Debug("Received correct Crypto request");
             // answer the client with a correct crypto challenge
             this.Socket.Send(new PyString("OK CC"));
@@ -118,49 +112,44 @@ namespace ClusterControler
             this.Socket.SetReceiveCallback(ReceiveAuthenticationRequestCallback);
         }
 
-        private void ReceiveAuthenticationRequestCallback(PyObject packet)
+        private void ReceiveAuthenticationRequestCallback(PyDataType packet)
         {
-            AuthenticationReq request = new AuthenticationReq();
-
-            request.Decode(packet);
-
+            AuthenticationReq request = packet;
+            
             if (request.user_password == null)
             {
                 Log.Trace("Rejected by server; requesting plain password");
                 // request the user a plain password
-                this.Socket.Send(new PyInt(1)); // 1 => plain, 2 => hashed
+                this.Socket.Send(new PyInteger(1)); // 1 => plain, 2 => hashed
                 return;
             }
             // set languageid in the session
-            this.Session.SetString("languageID", request.user_languageid);
+            this.Session["languageID"] = request.user_languageid;
             
             // add the user to the authentication queue
             this.ConnectionManager.LoginQueue.Enqueue(this, request);
         }
 
-        private void ReceiveLoginResultResponse(PyObject packet)
+        private void ReceiveLoginResultResponse(PyDataType packet)
         {
-            if (packet.Type != PyObjectType.Tuple)
-                throw new Exception($"Expected login response to be a tuple but got {packet.Type}");
-
-            PyTuple tuple = packet.As<PyTuple>();
+            PyTuple data = packet as PyTuple;
             
-            if (tuple.Items.Count != 3)
-                throw new Exception($"Expected tuple to have 3 items but got {tuple.Items.Count}");
+            if (data.Count != 3)
+                throw new Exception($"Expected tuple to have 3 items but got {data.Count}");
             
             // Handshake sent when we are mostly in
             HandshakeAck ack = new HandshakeAck();
 
             ack.live_updates = new PyList();
-            ack.jit = this.Session.GetCurrentString("languageid");
-            ack.userid = this.Session.GetCurrentLong("userid");
+            ack.jit = this.Session["languageID"] as PyString;
+            ack.userid = this.Session["userid"] as PyInteger;
             ack.maxSessionTime = new PyNone();
             ack.userType = Common.Constants.AccountType.User;
-            ack.role = this.Session.GetCurrentInt("role");
-            ack.address = this.Session.GetCurrentString("address");
+            ack.role = this.Session["role"] as PyInteger;
+            ack.address = this.Session["address"] as PyString;
             ack.inDetention = new PyNone();
             ack.client_hashes = new PyList();
-            ack.user_clientid = this.Session.GetCurrentLong("userid");;
+            ack.user_clientid = this.Session["userid"] as PyInteger;
 
             // send the response first
             this.Socket.Send(ack);
@@ -170,39 +159,36 @@ namespace ClusterControler
             this.Socket.SetReceiveCallback(ReceivePacketResponse);
         }
 
-        private void ReceivePacketResponse(PyObject packet)
+        private void ReceivePacketResponse(PyDataType packet)
         {
-            if(packet is PyObjectEx)
+            if(packet is PyObject)
                 throw new Exception("Got exception from client");
 
-            PyPacket pyPacket = new PyPacket();
-
-            pyPacket.Decode(packet);
+            PyPacket pyPacket = packet;
             
-            if (pyPacket.userID != this.Session.GetCurrentLong("userid"))
+            if (pyPacket.UserID != this.Session["userid"] as PyInteger)
                 throw new Exception("Received a packet coming from a client trying to spoof It's userID");
 
-            if (pyPacket.dest.type == PyAddress.AddrType.Node)
+            if(pyPacket.Destination is PyAddressNode)
             {
                 // search for the node in the list
-                if(pyPacket.source.type != PyAddress.AddrType.Client)
+                if(pyPacket.Source is PyAddressClient == false)
                     throw new Exception("Received a packet coming from a client trying to spoof the address");
+
+                PyAddressNode dest = pyPacket.Destination as PyAddressNode;
                 
-                this.ConnectionManager.NotifyNode((int) pyPacket.dest.typeID, packet);
+                this.ConnectionManager.NotifyNode((int) dest.NodeID, packet);
             }
-            else if (pyPacket.dest.type == PyAddress.AddrType.Any)
+            else if (pyPacket.Destination is PyAddressAny)
             {
                 // send packet to node proxy
                 Log.Trace("Sending service request from any to proxy node");
 
-                pyPacket.dest.type = PyAddress.AddrType.Node;
-                pyPacket.dest.typeID = Network.PROXY_NODE_ID;
-                
-                this.ConnectionManager.NotifyNode((int) pyPacket.dest.typeID, pyPacket);
+                this.ConnectionManager.NotifyNode((int) Network.PROXY_NODE_ID, pyPacket);
             }
             else
             {
-                throw new Exception($"Unexpected destination tyoe {pyPacket.dest.type} for packet");
+                throw new Exception($"Unexpected destination tyoe {pyPacket.Destination.GetType().Name} for packet");
             }
         }
 
@@ -258,9 +244,9 @@ namespace ClusterControler
                     rsp.boot_region = Common.Constants.Game.region;
 
                     // setup session
-                    this.Session.SetInt("userType", Common.Constants.AccountType.User);
-                    this.Session.SetLong("userid", accountID);
-                    this.Session.SetLong("role", role);
+                    this.Session["userType"] = Common.Constants.AccountType.User;
+                    this.Session["userid"] = accountID;
+                    this.Session["role"] = role;
                     // move the connection to the authenticated user list
                     this.ConnectionManager.RemoveUnauthenticatedClientConnection(this);
                     this.ConnectionManager.AddAuthenticatedClientConnection(this);
@@ -291,7 +277,7 @@ namespace ClusterControler
             this.Socket.GracefulDisconnect();
             
             // remove the user from the correct lists
-            if(this.Session.KeyExists("userid") == false)
+            if(this.Session.ContainsKey("userid") == false)
                 this.ConnectionManager.RemoveUnauthenticatedClientConnection(this);
             else
                 this.ConnectionManager.RemoveAuthenticatedClientConnection(this);
@@ -301,25 +287,25 @@ namespace ClusterControler
         
         public void SendSessionChange()
         {
-            PyPacket sc = CreateEmptySessionChange();
+            PyPacket packet = CreateEmptySessionChange();
 
-            PyObject client = SetSessionChangeDestination(sc);
-            PyObject node = SetSessionChangeDestination(sc, NodeID);
+            if (packet == null)
+                return;
 
-            if (sc != null)
-            {
-                this.Socket.Send(client);
-                this.ConnectionManager.NotifyNode(NodeID, node);
-            }
+            PyDataType client = SetSessionChangeDestination(packet);
+            PyDataType node = SetSessionChangeDestination(packet, NodeID);
+
+            this.Socket.Send(client);
+            this.ConnectionManager.NotifyNode(NodeID, node);
         }
 
         public PyPacket CreateEmptySessionChange()
         {
             // Fill all the packet data, except the dest/source
             SessionChangeNotification scn = new SessionChangeNotification();
-            scn.changes = Session.EncodeChanges();
+            scn.changes = Session.GenerateSessionChange();
 
-            if (scn.changes.Dictionary.Count == 0)
+            if (scn.changes.Length == 0)
             {
                 // Nothing to do
                 return null;
@@ -330,49 +316,38 @@ namespace ClusterControler
             // Add all the nodeIDs
             foreach (KeyValuePair<long, NodeConnection> node in nodes)
             {
-                scn.nodesOfInterest.Items.Add(new PyIntegerVar(node.Key));
+                scn.nodesOfInterest.Add(node.Key);
             }
 
             PyPacket p = new PyPacket();
 
             p.type_string = "macho.SessionChangeNotification";
-            p.type = Macho.MachoNetMsg_Type.SESSIONCHANGENOTIFICATION;
+            p.Type = MachoMessageType.SESSIONCHANGENOTIFICATION;
 
-            p.userID = (uint) this.Session.GetCurrentLong("userid");
+            p.UserID = this.Session["userid"] as PyInteger;
 
-            p.payload = scn.Encode().As<PyTuple>();
+            p.Payload = scn;
 
-            p.named_payload = new PyDict();
-            p.named_payload.Set("channel", new PyString("sessionchange"));
+            p.NamedPayload = new PyDictionary();
+            p.NamedPayload["channel"] = "sessionchange";
 
             return p;
         }
 
-        public PyObject SetSessionChangeDestination(PyPacket p)
+        public PyDataType SetSessionChangeDestination(PyPacket p)
         {
-            p.source.type = PyAddress.AddrType.Node;
-            p.source.typeID = NodeID;
-            p.source.callID = 0;
+            p.Source = new PyAddressNode(NodeID, 0);
+            p.Destination = new PyAddressClient(this.Session["userid"] as PyInteger, 0);
 
-            p.dest.type = PyAddress.AddrType.Client;
-            p.dest.typeID = this.Session.GetCurrentLong("userid");
-            p.dest.callID = 0;
-
-            return p.Encode();
+            return p;
         }
 
-        public PyObject SetSessionChangeDestination(PyPacket p, int node)
+        public PyDataType SetSessionChangeDestination(PyPacket p, int node)
         {
-            // The session change info should never come from the client
-            p.source.type = PyAddress.AddrType.Node;
-            p.source.typeID = 1;
-            p.source.callID = 0;
+            p.Source = new PyAddressNode(1, 0);
+            p.Destination = new PyAddressNode(node, 0);
 
-            p.dest.type = PyAddress.AddrType.Node;
-            p.dest.typeID = node;
-            p.dest.callID = 0;
-
-            return p.Encode();
+            return p;
         }
     }
 }

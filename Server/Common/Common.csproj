@@ -7,11 +7,11 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\Marshal\Marshal.csproj" />
+      <PackageReference Include="ini-parser-netstandard" Version="2.5.2" />
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="ini-parser-netstandard" Version="2.5.2" />
+      <ProjectReference Include="..\PythonTypes\PythonTypes.csproj" />
     </ItemGroup>
 
 </Project>

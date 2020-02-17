@@ -27,8 +27,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Common.Services;
-using Marshal;
+using PythonTypes;
 using Common;
+using PythonTypes.Types.Primitives;
 
 namespace Node.Services.Network
 {
@@ -42,119 +43,119 @@ namespace Node.Services.Network
             this.mCacheStorage = cacheStorage;
         }
 
-        public PyObject GetInitVals(PyTuple args, object client)
+        public PyDataType GetInitVals(PyTuple args, object client)
         {
             
             if (this.mCacheStorage.Exists("machoNet.serviceInfo") == false)
             {
                 // Cache does not exists, create it
-                PyDict dict = new PyDict();
+                PyDictionary dict = new PyDictionary();
+                
+                dict["trademgr"] = "station";
+                dict["tutorialSvc"] = "station";
+                dict["bookmark"] = "station";
+                dict["slash"] = "station";
+                dict["wormholeMgr"] = "station";
+                dict["account"] = "station";
+                dict["gangSvc"] = "station";
+                dict["contractMgr"] = "station";
 
-                dict.Set("trademgr", new PyString("station"));
-                dict.Set("tutorialSvc", new PyString("station"));
-                dict.Set("bookmark", new PyString("station"));
-                dict.Set("slash", new PyString("station"));
-                dict.Set("wormholeMgr", new PyString("station"));
-                dict.Set("account", new PyString("station"));
-                dict.Set("gangSvc", new PyString("station"));
-                dict.Set("contractMgr", new PyString("station"));
+                dict["LSC"] = "location";
+                dict["station"] = "location";
+                dict["config"] = "locationPreferred";
 
-                dict.Set("LSC", new PyString("location"));
-                dict.Set("station", new PyString("location"));
-                dict.Set("config", new PyString("locationPreferred"));
-
-                dict.Set("scanMgr", new PyString("solarsystem"));
-                dict.Set("keeper", new PyString("solarsystem"));
-
-                dict.Set("stationSvc", new PyNone());
-                dict.Set("zsystem", new PyNone());
-                dict.Set("invbroker", new PyNone());
-                dict.Set("droneMgr", new PyNone());
-                dict.Set("userSvc", new PyNone());
-                dict.Set("map", new PyNone());
-                dict.Set("beyonce", new PyNone());
-                dict.Set("standing2", new PyNone());
-                dict.Set("ram", new PyNone());
-                dict.Set("DB", new PyNone());
-                dict.Set("posMgr", new PyNone());
-                dict.Set("voucher", new PyNone());
-                dict.Set("entity", new PyNone());
-                dict.Set("damageTracker", new PyNone());
-                dict.Set("agentMgr", new PyNone());
-                dict.Set("dogmaIM", new PyNone());
-                dict.Set("machoNet", new PyNone());
-                dict.Set("dungeonExplorationMgr", new PyNone());
-                dict.Set("watchdog", new PyNone());
-                dict.Set("ship", new PyNone());
-                dict.Set("DB2", new PyNone());
-                dict.Set("market", new PyNone());
-                dict.Set("dungeon", new PyNone());
-                dict.Set("npcSvc", new PyNone());
-                dict.Set("sessionMgr", new PyNone());
-                dict.Set("allianceRegistry", new PyNone());
-                dict.Set("cache", new PyNone());
-                dict.Set("character", new PyNone());
-                dict.Set("factory", new PyNone());
-                dict.Set("facWarMgr", new PyNone());
-                dict.Set("corpStationMgr", new PyNone());
-                dict.Set("authentication", new PyNone());
-                dict.Set("effectCompiler", new PyNone());
-                dict.Set("charmgr", new PyNone());
-                dict.Set("BSD", new PyNone());
-                dict.Set("reprocessingSvc", new PyNone());
-                dict.Set("billingMgr", new PyNone());
-                dict.Set("billMgr", new PyNone());
-                dict.Set("lookupSvc", new PyNone());
-                dict.Set("emailreader", new PyNone());
-                dict.Set("lootSvc", new PyNone());
-                dict.Set("http", new PyNone());
-                dict.Set("repairSvc", new PyNone());
-                dict.Set("gagger", new PyNone());
-                dict.Set("dataconfig", new PyNone());
-                dict.Set("lien", new PyNone());
-                dict.Set("i2", new PyNone());
-                dict.Set("pathfinder", new PyNone());
-                dict.Set("alert", new PyNone());
-                dict.Set("director", new PyNone());
-                dict.Set("dogma", new PyNone());
-                dict.Set("aggressionMgr", new PyNone());
-                dict.Set("corporationSvc", new PyNone());
-                dict.Set("certificateMgr", new PyNone());
-                dict.Set("clones", new PyNone());
-                dict.Set("jumpCloneSvc", new PyNone());
-                dict.Set("insuranceSvc", new PyNone());
-                dict.Set("corpmgr", new PyNone());
-                dict.Set("warRegistry", new PyNone());
-                dict.Set("corpRegistry", new PyNone());
-                dict.Set("objectCaching", new PyNone());
-                dict.Set("counter", new PyNone());
-                dict.Set("petitioner", new PyNone());
-                dict.Set("LPSvc", new PyNone());
-                dict.Set("clientStatsMgr", new PyNone());
-                dict.Set("jumpbeaconsvc", new PyNone());
-                dict.Set("debug", new PyNone());
-                dict.Set("languageSvc", new PyNone());
-                dict.Set("skillMgr", new PyNone());
-                dict.Set("voiceMgr", new PyNone());
-                dict.Set("onlineStatus", new PyNone());
-                dict.Set("gangSvcObjectHandler", new PyNone());
+                dict["scanMgr"] = "solarsystem";
+                dict["keeper"] = "solarsystem";
+                
+                dict["stationSvc"] = new PyNone();
+                dict["zsystem"] = new PyNone();
+                dict["invbroker"] = new PyNone();
+                dict["droneMgr"] = new PyNone();
+                dict["userSvc"] = new PyNone();
+                dict["map"] = new PyNone();
+                dict["beyonce"] = new PyNone();
+                dict["standing2"] = new PyNone();
+                dict["ram"] = new PyNone();
+                dict["DB"] = new PyNone();
+                dict["posMgr"] = new PyNone();
+                dict["voucher"] = new PyNone();
+                dict["entity"] = new PyNone();
+                dict["damageTracker"] = new PyNone();
+                dict["agentMgr"] = new PyNone();
+                dict["dogmaIM"] = new PyNone();
+                dict["machoNet"] = new PyNone();
+                dict["dungeonExplorationMgr"] = new PyNone();
+                dict["watchdog"] = new PyNone();
+                dict["ship"] = new PyNone();
+                dict["DB2"] = new PyNone();
+                dict["market"] = new PyNone();
+                dict["dungeon"] = new PyNone();
+                dict["npcSvc"] = new PyNone();
+                dict["sessionMgr"] = new PyNone();
+                dict["allianceRegistry"] = new PyNone();
+                dict["cache"] = new PyNone();
+                dict["character"] = new PyNone();
+                dict["factory"] = new PyNone();
+                dict["facWarMgr"] = new PyNone();
+                dict["corpStationMgr"] = new PyNone();
+                dict["authentication"] = new PyNone();
+                dict["effectCompiler"] = new PyNone();
+                dict["charmgr"] = new PyNone();
+                dict["BSD"] = new PyNone();
+                dict["reprocessingSvc"] = new PyNone();
+                dict["billingMgr"] = new PyNone();
+                dict["billMgr"] = new PyNone();
+                dict["lookupSvc"] = new PyNone();
+                dict["emailreader"] = new PyNone();
+                dict["lootSvc"] = new PyNone();
+                dict["http"] = new PyNone();
+                dict["repairSvc"] = new PyNone();
+                dict["gagger"] = new PyNone();
+                dict["dataconfig"] = new PyNone();
+                dict["lien"] = new PyNone();
+                dict["i2"] = new PyNone();
+                dict["pathfinder"] = new PyNone();
+                dict["alert"] = new PyNone();
+                dict["director"] = new PyNone();
+                dict["dogma"] = new PyNone();
+                dict["aggressionMgr"] = new PyNone();
+                dict["corporationSvc"] = new PyNone();
+                dict["certificateMgr"] = new PyNone();
+                dict["clones"] = new PyNone();
+                dict["jumpCloneSvc"] = new PyNone();
+                dict["insuranceSvc"] = new PyNone();
+                dict["corpmgr"] = new PyNone();
+                dict["warRegistry"] = new PyNone();
+                dict["corpRegistry"] = new PyNone();
+                dict["objectCaching"] = new PyNone();
+                dict["counter"] = new PyNone();
+                dict["petitioner"] = new PyNone();
+                dict["LPSvc"] = new PyNone();
+                dict["clientStatsMgr"] = new PyNone();
+                dict["jumpbeaconsvc"] = new PyNone();
+                dict["debug"] = new PyNone();
+                dict["languageSvc"] = new PyNone();
+                dict["skillMgr"] = new PyNone();
+                dict["voiceMgr"] = new PyNone();
+                dict["onlineStatus"] = new PyNone();
+                dict["gangSvcObjectHandler"] = new PyNone();
 
                 this.mCacheStorage.Store("machoNet.serviceInfo", dict, DateTime.Now.ToFileTimeUtc());
             }
 
-            PyObject srvInfo = this.mCacheStorage.GetHint("machoNet.serviceInfo");
-            PyTuple res = new PyTuple();
-            PyDict initvals = this.mCacheStorage.GetHints(CacheStorage.LoginCacheTable);
+            PyDataType srvInfo = this.mCacheStorage.GetHint("machoNet.serviceInfo");
+            PyTuple res = new PyTuple(2);
+            PyDictionary initvals = this.mCacheStorage.GetHints(CacheStorage.LoginCacheTable);
 
-            res.Items.Add(srvInfo);
-            res.Items.Add(initvals); // Rest of the cache data
-
+            res[0] = srvInfo;
+            res[1] = initvals;
+            
             return res;
         }
 
-        public PyObject GetTime(PyTuple args, object client)
+        public PyDataType GetTime(PyTuple args, object client)
         {
-            return new PyLongLong(DateTime.Now.ToFileTimeUtc());
+            return new PyInteger(DateTime.Now.ToFileTimeUtc());
         }
     }
 }

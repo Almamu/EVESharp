@@ -6,8 +6,11 @@ using System.Net.Sockets;
 using System.Threading;
 using Common.Logging;
 using Common.Packets;
-using Marshal;
-using Marshal.Network;
+using PythonTypes;
+using PythonTypes.Compression;
+using PythonTypes.Marshal;
+using PythonTypes.Types.Network;
+using PythonTypes.Types.Primitives;
 
 namespace Common.Network
 {
@@ -19,7 +22,7 @@ namespace Common.Network
         private AsyncCallback mReceiveCallback = null;
         private Queue<byte[]> mOutputQueue = new Queue<byte[]>();
         private StreamPacketizer mPacketizer = new StreamPacketizer();
-        private Action<PyObject> mPacketReceiveCallback = null;
+        private Action<PyDataType> mPacketReceiveCallback = null;
         
         public EVEClientSocket(Socket socket, Channel logChannel) : base(socket, logChannel)
         {
@@ -63,7 +66,7 @@ namespace Common.Network
             this.BeginReceive(new byte[64 * 1024], this.mReceiveCallback);
         }
 
-        public void SetReceiveCallback(Action<PyObject> callback)
+        public void SetReceiveCallback(Action<PyDataType> callback)
         {
             bool shouldFlush = this.mPacketReceiveCallback == null;
             
@@ -83,7 +86,7 @@ namespace Common.Network
                     try
                     {
                         // unmarshal the packet
-                        PyObject packet = Unmarshal.Process<PyObject>(this.mPacketizer.PopItem());
+                        PyDataType packet = Unmarshal.ReadFromByteArray(this.mPacketizer.PopItem());
                         // and invoke the callback for the packet handling if it is present
                         this.mPacketReceiveCallback.Invoke(packet);
                     }
@@ -150,25 +153,20 @@ namespace Common.Network
             this.BeginReceive(state.Buffer, this.mReceiveCallback);
         }
 
-        public void Send(Encodeable packet)
-        {
-            this.Send(packet.Encode());
-        }
-
         /// <summary>
         /// Sends a PyObject through this socket
         /// </summary>
         /// <param name="packet">The packet data to send</param>
-        public void Send(PyObject packet)
+        public void Send(PyDataType packet)
         {
             MemoryStream stream = new MemoryStream();
             BinaryWriter writer = new BinaryWriter(stream);
             // marshal the packet first
-            byte[] encodedPacket = Marshal.Marshal.Process(packet);
+            byte[] encodedPacket = PythonTypes.Marshal.Marshal.ToByteArray(packet);
             
             // compress the packet if it exceeds the maximum size
             if (encodedPacket.Length > Constants.Network.MAX_PACKET_SIZE)
-                encodedPacket = Zlib.Compress(encodedPacket);
+                encodedPacket = ZlibHelper.Compress(encodedPacket);
             
             // write the size to the stream
             writer.Write(encodedPacket.Length);
@@ -176,15 +174,6 @@ namespace Common.Network
             writer.Write(encodedPacket);
             // after processing the whole packet queue the actual data
             this.Send(stream.ToArray());
-        }
-
-        /// <summary>
-        /// Sends a PyPacket through this socket
-        /// </summary>
-        /// <param name="packet">The packet data to send</param>
-        public void Send(PyPacket packet)
-        {
-            this.Send(packet.Encode());
         }
 
         /// <summary>

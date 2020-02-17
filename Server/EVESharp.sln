@@ -2,7 +2,7 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Common", "Common\Common.csproj", "{37CAB47C-2395-483B-9E21-947B152A1D19}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Marshal", "Marshal\Marshal.csproj", "{8E8A9A83-05F8-4744-A3CE-7AECBBAE6754}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PythonTypes", "PythonTypes\PythonTypes.csproj", "{8E8A9A83-05F8-4744-A3CE-7AECBBAE6754}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Destiny", "Destiny\Destiny.csproj", "{0CA562B7-141F-40DC-A408-B0BACE964169}"
 EndProject

@@ -26,11 +26,12 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using Marshal;
+using PythonTypes;
 using Common;
 using Common.Services;
 using System.IO;
 using Node.Configuration;
+using PythonTypes.Types.Primitives;
 
 namespace Node.Services.Network
 {
@@ -44,16 +45,16 @@ namespace Node.Services.Network
             this.mConfiguration = configuration;
         }
 
-        public PyObject GetPostAuthenticationMessage(PyObject args, object client)
+        public PyDataType GetPostAuthenticationMessage(PyTuple args, object client)
         {
             if (this.mConfiguration.MessageType == AuthenticationMessageType.NoMessage)
                 return new PyNone();
 
             if (this.mConfiguration.MessageType == AuthenticationMessageType.HTMLMessage)
             {
-                PyDict keyvalData = new PyDict();
-                
-                keyvalData.Set("message", new PyString(this.mConfiguration.Message));
+                PyDictionary keyvalData = new PyDictionary();
+
+                keyvalData["message"] = this.mConfiguration.Message;
 
                 return new PyObjectData("util.KeyVal", keyvalData);
             }

@@ -33,13 +33,18 @@ using System.IO;
 
 using Common;
 using Common.Configuration;
+using Common.Constants;
 using Common.Database;
 using Common.Game;
 using Common.Logging;
 using Common.Logging.Streams;
 using Common.Network;
+using Common.Packets;
 using Configuration;
-using Marshal;
+using PythonTypes;
+using PythonTypes.Marshal;
+using PythonTypes.Types.Network;
+using PythonTypes.Types.Primitives;
 
 namespace ClusterControler
 {
@@ -69,18 +74,30 @@ namespace ClusterControler
 
         static void Main(string[] args)
         {
+            PyPacket packet = new PyPacket();
+
+            packet.Destination = new PyAddressNode(500, 0);
+            packet.Source = new PyAddressClient(600, 1);
+            packet.Payload = new PyTuple(0);
+            packet.NamedPayload = new PyDictionary();
+            packet.Type = MachoMessageType.CALL_REQ;
+            packet.type_string = "macho.CallReq";
+            packet.UserID = 200;
+
+            byte[] data = Marshal.ToByteArray(packet);
+            
             try
             {
-                // load server's configuration
-                sConfiguration = General.LoadFromFile("configuration.conf");
-                
                 // setup logging
                 sLog = new Logger();
                 // initialize main logging channel
                 sChannel = sLog.CreateLogChannel("main");
-                // add log streams
+                // add console log streams
                 sLog.AddLogStream(new ConsoleLogStream());
                 
+                // load server's configuration
+                sConfiguration = General.LoadFromFile("configuration.conf");
+
                 if (sConfiguration.LogLite.Enabled == true)
                     sLog.AddLogStream(new LogLiteStream("ClusterController", sLog, sConfiguration.LogLite));
                 if (sConfiguration.FileLog.Enabled == true)

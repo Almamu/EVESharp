@@ -28,9 +28,11 @@ using System.Linq;
 using System.Text;
 using Common;
 using Common.Logging;
-using Marshal;
+using PythonTypes;
 using Common.Services;
 using Common.Packets;
+using PythonTypes.Types.Complex;
+using PythonTypes.Types.Primitives;
 
 namespace Node.Services.CacheSvc
 {
@@ -46,19 +48,17 @@ namespace Node.Services.CacheSvc
             this.mCacheStorage = cacheStorage;
         }
 
-        public PyObject GetCachableObject(PyTuple args, object client)
+        public PyDataType GetCachableObject(PyTuple args, object client)
         {
-            CacheInfo cache = new CacheInfo();
-
-            cache.Decode(args);
-
-            if (cache.objectID.Type != PyObjectType.String)
+            PyCacheHint cache = args;
+            
+            if(cache.objectID is PyString == false)
             {
                 Log.Error("Unknown objectID on cache request");
                 return null;
             }
 
-            string objectID = cache.objectID.As<PyString>().Value;
+            string objectID = cache.objectID as PyString;
 
             Log.Debug($"Received cache request for {objectID}");
             

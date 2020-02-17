@@ -1,0 +1,48 @@
+namespace PythonTypes.Marshal
+{
+    public enum Opcode
+    {
+        Error,
+        None,
+        Token,
+        IntegerLongLong,
+        IntegerLong,
+        IntegerSignedShort,
+        IntegerByte,
+        IntegerMinusOne,
+        IntegerZero,
+        IntegerOne,
+        Real,
+        RealZero,
+        Buffer = 13,
+        StringEmpty,
+        StringChar,
+        StringShort,
+        StringTable,
+        WStringUCS2,
+        StringLong,
+        Tuple,
+        List,
+        Dict,
+        ObjectData = 23,
+        SubStruct = 25,
+        SavedStreamElement = 27,
+        ChecksumedStream,
+        BoolTrue = 31,
+        BoolFalse,
+        ObjectType1 = 34,
+        ObjectType2,
+        TupleEmpty,
+        TupleOne,
+        ListEmpty,
+        ListOne,
+        WStringEmpty,
+        WStringUCS2Char,
+        PackedRow,
+        SubStream,
+        TupleTwo,
+        WStringUTF8 = 46,
+        IntegerVar
+    }
+
+}

@@ -156,9 +156,6 @@ namespace Node.Database
                 "SELECT itemID, itemName, typeID, ownerID, locationID, flag, contraband, singleton, quantity, x, y, z, custominfo FROM entity WHERE itemID=" +
                 itemID
             );
-            {
-                return null;
-            }
             
             using (connection)
             using (reader)

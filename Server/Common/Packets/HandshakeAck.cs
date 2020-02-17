@@ -2,12 +2,12 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using Marshal;
-using Marshal.Network;
+using PythonTypes;
+using PythonTypes.Types.Primitives;
 
 namespace Common.Packets
 {
-    public class HandshakeAck : Encodeable
+    public class HandshakeAck
     {
         public PyList live_updates = new PyList();
         public string jit = "";
@@ -20,27 +20,26 @@ namespace Common.Packets
         public PyList client_hashes = new PyList();
         public long user_clientid = 0;
 
-        public PyObject Encode()
+        public static implicit operator PyDataType(HandshakeAck ack)
         {
-            PyDict res = new PyDict();
+            PyDictionary main = new PyDictionary();
+            
+            main["jit"] = ack.jit;
+            main["userid"] = ack.userid;
+            main["maxSessionTime"] = ack.maxSessionTime;
+            main["userType"] = ack.userType;
+            main["role"] = ack.role;
+            main["address"] = ack.address;
+            main["inDetention"] = ack.inDetention;
+            
+            PyDictionary result = new PyDictionary();
 
-            res.Set("live_updated", live_updates);
+            result["live_updates"] = ack.live_updates;
+            result["session_init"] = main;
+            result["client_hashes"] = ack.client_hashes;
+            result["user_clientid"] = ack.user_clientid;
 
-            PyDict main = new PyDict();
-
-            main.Set("jit", new PyString(jit));
-            main.Set("userid", new PyLongLong(userid));
-            main.Set("maxSessionTime", maxSessionTime);
-            main.Set("userType", new PyInt(userType));
-            main.Set("role", new PyInt(role));
-            main.Set("address", new PyString(address));
-            main.Set("inDetention", inDetention);
-
-            res.Set("session_init", main);
-            res.Set("client_hashes", client_hashes);
-            res.Set("user_clientid", new PyLongLong(user_clientid));
-
-            return res.As<PyObject>();
+            return result;
         }
     }
 }

@@ -1,10 +1,13 @@
 using System;
+using System.Diagnostics;
 using Common;
 using Common.Logging;
 using Common.Network;
 using Common.Packets;
 using Common.Services;
-using Marshal;
+using PythonTypes;
+using PythonTypes.Types.Network;
+using PythonTypes.Types.Primitives;
 
 namespace Node.Network
 {
@@ -34,7 +37,7 @@ namespace Node.Network
             } while ((ex = ex.InnerException) != null);
         }
         
-        private void ReceiveLowLevelVersionExchangeCallback(PyObject ar)
+        private void ReceiveLowLevelVersionExchangeCallback(PyDataType ar)
         {
             try
             {
@@ -50,6 +53,7 @@ namespace Node.Network
                 reply.version = Common.Constants.Game.version;
                 reply.region = Common.Constants.Game.region;
                 reply.isNode = true;
+                reply.nodeIdentifier = "Node";
 
                 this.Socket.Send(reply);
                 
@@ -63,10 +67,10 @@ namespace Node.Network
             }
         }
 
-        private void ReceiveNodeInfoCallback(PyObject ar)
+        private void ReceiveNodeInfoCallback(PyDataType ar)
         {
             if (ar is PyObjectData == false)
-                throw new Exception($"Expected PyObjectData for machoNet.nodeInfo but got {ar.Type}");
+                throw new Exception($"Expected PyObjectData for machoNet.nodeInfo but got {ar.GetType()}");
         
             PyObjectData info = ar as PyObjectData;
 
@@ -74,9 +78,8 @@ namespace Node.Network
                 throw new Exception($"Expected PyObjectData of type machoNet.nodeInfo but got {info.Name}");
         
             // Update our local info
-            NodeInfo nodeinfo = new NodeInfo();
+            NodeInfo nodeinfo = info;
 
-            nodeinfo.Decode(info);
             this.Container.NodeID = nodeinfo.nodeID;
 
             Log.Debug("Found machoNet.nodeInfo, our new node id is " + nodeinfo.nodeID.ToString("X4"));
@@ -88,63 +91,79 @@ namespace Node.Network
             this.Socket.SetReceiveCallback(ReceiveNormalPacketCallback);
         }
 
-        private void ReceiveNormalPacketCallback(PyObject ar)
+        private void ReceiveNormalPacketCallback(PyDataType ar)
         {
-            PyPacket packet = new PyPacket();
+            PyPacket packet = ar;
             PyPacket res = new PyPacket();
             
-            packet.Decode(ar);
-
-            if (packet.type == Macho.MachoNetMsg_Type.CALL_REQ)
+            if (packet.Type == MachoMessageType.CALL_REQ)
             {
-                PyTuple callInfo = packet.payload.As<PyTuple>().Items[0].As<PyTuple>()[1].As<PySubStream>().Data.As<PyTuple>();
+                PyTuple callInfo = ((packet.Payload[0] as PyTuple)[1] as PySubStream).Stream as PyTuple;
 
-                string call = callInfo.Items[1].As<PyString>().Value;
-                PyTuple args = callInfo.Items[2].As<PyTuple>();
-                PyDict sub = callInfo.Items[3].As<PyDict>();
-                
-                Log.Trace($"Calling {packet.dest.service}::{call}");
-                PyObject callResult = this.Container.ServiceManager.ServiceCall(
-                    packet.dest.service, call, args, this.Container.ClientManager.Get(packet.userID)
-                );
+                string call = callInfo[1] as PyString;
+                PyTuple args = callInfo[2] as PyTuple;
+                PyDictionary sub = callInfo[3] as PyDictionary;
+                PyDataType callResult = null;
+                PyAddressClient source = packet.Source as PyAddressClient;
+
+                if (packet.Destination is PyAddressAny)
+                {
+                    PyAddressAny dest = packet.Destination as PyAddressAny;
+
+                    Log.Trace($"Calling {dest.Service.Value}::{call}");
+                    callResult = this.Container.ServiceManager.ServiceCall(
+                        dest.Service, call, args, this.Container.ClientManager.Get(packet.UserID)
+                    );
+                }
+                else if(packet.Destination is PyAddressNode)
+                {
+                    PyAddressNode dest = packet.Destination as PyAddressNode;
+
+                    Log.Trace($"Calling {dest.Service.Value}::{call}");
+                    callResult = this.Container.ServiceManager.ServiceCall(
+                        dest.Service, call, args, this.Container.ClientManager.Get(packet.UserID)
+                    );                    
+                }
+                else
+                {
+                    Log.Error($"Received packet that wasn't directed to us");
+                }
 
                 if (callResult == null)
                     callResult = new PyNone();
 
                 // convert the packet to a response so we don't have to allocate a whole new packet
                 res.type_string = "macho.CallRsp";
-                res.type = Macho.MachoNetMsg_Type.CALL_RSP;
-
-                // switch source and dest
-                res.source = packet.dest;
-                res.dest = packet.source;
+                res.Type = MachoMessageType.CALL_RSP;
+                
                 // ensure destination has clientID in it
-                res.dest.typeID = packet.userID;
+                source.ClientID = (int) packet.UserID;
+                // switch source and dest
+                res.Source = packet.Destination;
+                res.Destination = source;
 
-                res.userID = packet.userID;
+                res.UserID = packet.UserID;
 
-                res.payload = new PyTuple();
-                res.payload.Items.Add(new PySubStream(callResult));
+                res.Payload = new PyTuple(1);
+                res.Payload[0] = new PySubStream(callResult);
 
                 this.Socket.Send(res);
             }
-            else if (packet.type == Macho.MachoNetMsg_Type.SESSIONCHANGENOTIFICATION)
+            else if (packet.Type == MachoMessageType.SESSIONCHANGENOTIFICATION)
             {
-                Log.Debug($"Updating session for client {packet.userID}");
+                Log.Debug($"Updating session for client {packet.UserID}");
 
                 // ensure the client is registered in the node and store his session
-                if(this.Container.ClientManager.Contains(packet.userID) == false)
-                    this.Container.ClientManager.Add(packet.userID, new Client());
+                if(this.Container.ClientManager.Contains(packet.UserID) == false)
+                    this.Container.ClientManager.Add(packet.UserID, new Client());
 
-                this.Container.ClientManager.Get(packet.userID).UpdateSession(packet);
+                this.Container.ClientManager.Get(packet.UserID).UpdateSession(packet);
             }
         }
         
-        protected LowLevelVersionExchange CheckLowLevelVersionExchange(PyObject exchange)
+        protected LowLevelVersionExchange CheckLowLevelVersionExchange(PyDataType exchange)
         {
-            LowLevelVersionExchange data = new LowLevelVersionExchange();
-
-            data.Decode(exchange);
+            LowLevelVersionExchange data = exchange;
 
             if (data.birthday != Common.Constants.Game.birthday)
             {
