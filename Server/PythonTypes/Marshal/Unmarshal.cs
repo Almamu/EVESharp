@@ -73,6 +73,15 @@ namespace PythonTypes.Marshal
 
                 if (saveCount > 0)
                 {
+                    // compressed streams cannot be seek'd so ensure that the stream is decompressed first
+                    if (this.mStream is ZInputStream)
+                    {
+                        MemoryStream newStream = new MemoryStream();
+                        this.mStream.CopyTo(newStream);
+                        this.mStream = newStream;
+                        this.mReader = new BinaryReader(this.mStream);
+                    }
+                    
                     // reserve space for the savelist map and the actual elements in the save list
                     this.mSavedElementsMap = new int[saveCount];
                     this.mSavedList = new PyDataType[saveCount];
@@ -554,16 +563,31 @@ namespace PythonTypes.Marshal
                 throw new Exception($"Trying to parse a {opcode} as SubStream");
 
             uint length = this.mReader.ReadSizeEx();
-            long start = this.mStream.Position;
+            PyDataType result = null;
             
-            // this substream has it's own savelist etc, the best way is to create a new unmarshaler using the same
-            // stream so the data can be properly read without much issue
-            PyDataType data = ReadFromStream(this.mStream);
-            
-            if((start + length) != this.mStream.Position)
-                throw new Exception($"Read past the boundaries of the PySubStream");
+            // on compressed streams it's impossible to do boundary-checks, so ensure that is taken into account
+            if (this.mReader.BaseStream is ZInputStream)
+            {
+                byte[] buffer = new byte[length];
 
-            return new PySubStream(data);
+                this.mStream.Read(buffer, 0, buffer.Length);
+
+                result = ReadFromByteArray(buffer);
+            }
+            else
+            {
+                long start = this.mStream.Position;
+            
+                // this substream has it's own savelist etc, the best way is to create a new unmarshaler using the same
+                // stream so the data can be properly read without much issue
+                result = ReadFromStream(this.mStream);
+            
+                if((start + length) != this.mStream.Position)
+                    throw new Exception($"Read past the boundaries of the PySubStream");
+   
+            }
+            
+            return new PySubStream(result);
         }
 
         private PyDataType ProcessChecksumedStream(Opcode opcode)
