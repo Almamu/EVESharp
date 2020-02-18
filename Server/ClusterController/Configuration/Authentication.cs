@@ -1,4 +1,5 @@
 using System;
+using Common.Constants;
 using IniParser.Model;
 
 namespace ClusterControler.Configuration
@@ -6,7 +7,7 @@ namespace ClusterControler.Configuration
     public class Authentication
     {
         public bool Autoaccount { get; private set; }
-        public int Role { get; private set; }
+        public Roles Role { get; private set; }
 
         public Authentication()
         {
@@ -26,8 +27,12 @@ namespace ClusterControler.Configuration
                 throw new Exception("With autoaccount enabled you MUST specify a default role");
 
             string rolestring = section["role"];
+            Roles role;
 
-            this.Role = int.Parse(rolestring);
+            if(Roles.TryParse(rolestring, out role) == false)
+                throw new Exception($"Unknown role value {rolestring}");
+
+            this.Role = role;
         }
     }
 }

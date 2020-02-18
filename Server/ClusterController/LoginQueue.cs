@@ -82,7 +82,7 @@ namespace ClusterControler
                     Log.Info($"Auto account enabled, creating account for user {entry.Request.user_name}");
                     
                     // Create the account
-                    this.mAccountDB.CreateAccount(entry.Request.user_name, entry.Request.user_password, this.mConfiguration.Role);                    
+                    this.mAccountDB.CreateAccount(entry.Request.user_name, entry.Request.user_password, (ulong) this.mConfiguration.Role);                    
                 }
             }
 

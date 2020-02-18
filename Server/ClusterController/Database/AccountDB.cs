@@ -90,7 +90,7 @@ namespace ClusterControler.Database
             }
         }
 
-        public void CreateAccount(string accountName, string accountPassword, int role)
+        public void CreateAccount(string accountName, string accountPassword, ulong role)
         {
             accountName = Database.DoEscapeString(accountName);
 

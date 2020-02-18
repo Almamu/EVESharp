@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
@@ -60,7 +61,7 @@ namespace Common.Logging.Streams
                 
                 this.mWriter.Write(
                     $"{entry.Time.DateTime.ToShortDateString()} {entry.Time.DateTime.ToShortTimeString()} {entry.Type.ToString()[0]} " +
-                    $"{entry.Channel.Name}: {entry.Message}"
+                    $"{entry.Channel.Name}: {entry.Message}{Environment.NewLine}"
                 );
             }
 
