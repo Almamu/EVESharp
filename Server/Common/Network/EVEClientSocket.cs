@@ -33,9 +33,9 @@ namespace Common.Network
             this.Log = logChannel;
             
             // take into account network debugging for developers
-            #if DEBUG
+#if DEBUG
             this.mPacketLog = this.Log.Logger.CreateLogChannel("NetworkDebug");
-            #endif
+#endif
             
             // setup async callback handlers
             this.SetupCallbacks();
@@ -46,6 +46,12 @@ namespace Common.Network
         public EVEClientSocket(Channel logChannel) : base(new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp))
         {
             this.Log = logChannel;
+            
+            // take into account network debugging for developers
+#if DEBUG
+            this.mPacketLog = this.Log.Logger.CreateLogChannel("NetworkDebug");
+#endif
+            
             this.SetupCallbacks();
         }
 
@@ -99,9 +105,9 @@ namespace Common.Network
                     {
                         // unmarshal the packet
                         PyDataType packet = Unmarshal.ReadFromByteArray(this.mPacketizer.PopItem());
-                        #if DEBUG
+#if DEBUG
                         this.mPacketLog.Trace(PrettyPrinter.Print(packet));
-                        #endif
+#endif
                         // and invoke the callback for the packet handling if it is present
                         this.mPacketReceiveCallback.Invoke(packet);
                     }
@@ -174,9 +180,9 @@ namespace Common.Network
         /// <param name="packet">The packet data to send</param>
         public void Send(PyDataType packet)
         {
-            #if DEBUG
+#if DEBUG
             this.mPacketLog.Trace(PrettyPrinter.Print(packet));
-            #endif
+#endif
             
             MemoryStream stream = new MemoryStream();
             BinaryWriter writer = new BinaryWriter(stream);

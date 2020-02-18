@@ -7,8 +7,8 @@ namespace Common.Network
 {
     public class EVEServerSocket : EVESocket
     {
-        public Channel Log { get; set; }
-        public int Port { get; private set; }
+        public Channel Log { get; }
+        public int Port { get; }
         
         public EVEServerSocket(int port, Channel logChannel) : base()
         {
