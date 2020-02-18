@@ -75,18 +75,6 @@ namespace ClusterControler
 
         static void Main(string[] args)
         {
-            PyPacket packet = new PyPacket();
-
-            packet.Destination = new PyAddressNode(500, 0);
-            packet.Source = new PyAddressClient(600, 1);
-            packet.Payload = new PyTuple(0);
-            packet.NamedPayload = new PyDictionary();
-            packet.Type = MachoMessageType.CALL_REQ;
-            packet.type_string = "macho.CallReq";
-            packet.UserID = 200;
-
-            byte[] data = Marshal.ToByteArray(packet);
-            
             try
             {
                 // setup logging
@@ -98,6 +86,9 @@ namespace ClusterControler
                 
                 // load server's configuration
                 sConfiguration = General.LoadFromFile("configuration.conf");
+                
+                // update logger's configuration
+                sLog.SetConfiguration(sConfiguration.Logging);
 
                 if (sConfiguration.LogLite.Enabled == true)
                     sLog.AddLogStream(new LogLiteStream("ClusterController", sLog, sConfiguration.LogLite));

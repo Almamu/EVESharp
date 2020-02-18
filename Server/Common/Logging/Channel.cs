@@ -4,12 +4,15 @@ namespace Common.Logging
 {
     public class Channel
     {
-        public string Name { get; private set; }
-        public Logger Logger { get; private set; }
-        public Channel(string name, Logger parent)
+        public string Name { get; }
+        public Logger Logger { get; }
+        public bool Suppress { get; }
+        
+        public Channel(string name, Logger parent, bool suppress = false)
         {
             this.Name = name;
             this.Logger = parent;
+            this.Suppress = suppress;
         }
         
         public void Debug(string message)

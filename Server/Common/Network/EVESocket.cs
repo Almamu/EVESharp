@@ -7,21 +7,19 @@ namespace Common.Network
 {
     public abstract class EVESocket
     {
-        public Channel Log { get; set; }
         protected Socket Socket { get; private set; }
         private Action<Exception> mExceptionHandler = null;
         private Action mOnConnectionLost = null;
 
-        public EVESocket(Channel logChannel)
+        public EVESocket()
         {
-            this.Log = logChannel;
             this.Socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
             this.SetTransferBuffers();
             // set a default exception handler
             this.SetExceptionHandler(DefaultExceptionHandler);
         }
 
-        protected EVESocket(Socket socket, Channel logChannel)
+        protected EVESocket(Socket socket)
         {
             this.Socket = socket;
             this.SetTransferBuffers();
@@ -76,11 +74,7 @@ namespace Common.Network
             }
         }
 
-        private void DefaultExceptionHandler(Exception ex)
-        {
-            Log.Error("Unhandled exception on underlying socket:");
-            Log.Error(ex.Message);
-        }
+        protected abstract void DefaultExceptionHandler(Exception ex);
 
         /// <summary>
         /// Disconnects the socket flushing all the input/output buffers

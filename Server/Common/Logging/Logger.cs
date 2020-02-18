@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Common.Logging.Streams;
 
 namespace Common.Logging
@@ -18,9 +19,18 @@ namespace Common.Logging
     {
         private List<LogStream> mStreams = new List<LogStream>();
         private Dictionary<string, Channel> mChannels = new Dictionary<string, Channel>();
-
-        public Logger()
+        private Configuration.Logging mConfiguration = new Configuration.Logging();
+        
+        public Logger(Configuration.Logging configuration = null)
         {
+            if(configuration != null)
+                this.mConfiguration = configuration;
+        }
+
+        public void SetConfiguration(Configuration.Logging configuration)
+        {
+            if(configuration != null)
+                this.mConfiguration = configuration;
         }
         
         public void AddLogStream(LogStream newStream)
@@ -28,22 +38,26 @@ namespace Common.Logging
             this.mStreams.Add(newStream);
         }
 
-        public Channel CreateLogChannel(string name)
+        public Channel CreateLogChannel(string name, bool suppress = false)
         {
             if (this.mChannels.ContainsKey(name) == true)
             {
                 return this.mChannels[name];
             }
             
-            Channel channel = new Channel(name, this);
+            Channel channel = new Channel(name, this, suppress);
 
             this.mChannels.Add(name, channel);
             
             return channel;
         }
 
-        public void Write(MessageType messageType, string message, Channel channel = null)
+        public void Write(MessageType messageType, string message, Channel channel)
         {
+            // supress message if required
+            if (channel.Suppress == true && this.mConfiguration.EnableChannels.Contains(channel.Name) == false)
+                return;
+            
             // iterate all the log streams and queue the messages
             foreach(LogStream stream in this.mStreams)
             {

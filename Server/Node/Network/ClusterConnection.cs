@@ -13,9 +13,9 @@ namespace Node.Network
 {
     public class ClusterConnection
     {
-        private Channel Log { get; set; }
-        public EVEClientSocket Socket { get; private set; }
-        public NodeContainer Container { get; private set; }
+        private Channel Log { get; }
+        public EVEClientSocket Socket { get; }
+        public NodeContainer Container { get; }
         
         public ClusterConnection(NodeContainer container)
         {

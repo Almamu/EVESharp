@@ -11,10 +11,11 @@ namespace Configuration
 {
     public class General
     {
-        public Database Database { get; private set; } = new Database();
-        public LogLite LogLite { get; private set; } = new LogLite();
-        public Authentication Authentication { get; private set; } = new Authentication();
-        public FileLog FileLog { get; private set; } = new FileLog();
+        public Database Database { get; } = new Database();
+        public LogLite LogLite { get; } = new LogLite();
+        public Authentication Authentication { get; } = new Authentication();
+        public FileLog FileLog { get; } = new FileLog();
+        public Logging Logging { get; } = new Logging();
 
         public static General LoadFromFile(string filename)
         {
@@ -30,7 +31,9 @@ namespace Configuration
                 config.LogLite.Load(data["loglite"]);
             if (data.Sections.ContainsSection("logfile") == true)
                 config.FileLog.Load(data["logfile"]);
-            
+            if(data.Sections.ContainsSection("logging") == true)
+                config.Logging.Load(data["logging"]);
+
             return config;
         }
     }

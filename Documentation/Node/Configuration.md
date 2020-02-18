@@ -21,6 +21,16 @@ The name of the database to use for storing the data. This database has to be se
 ### hostname
 The server where the MySQL instance is running.
 
+## logging
+### force
+Indicates the log channels that should be enabled regardless of the supression state they are in (for example for debugging network packets). The list is separated by commas. This is intended for developers only. Example:
+```
+[logging]
+force=NetworkDebug,Client
+```
+
+Right now only NetworkDebug is suppressed by default, but more might come
+
 ## logfile
 Configuration for the file log output. If this section is not present there will be no log file created for the session.
 ### directory

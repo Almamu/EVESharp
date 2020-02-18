@@ -4,3 +4,4 @@
 # Table of contents
  1. [Pre-requierments](Pre-requirements.md)
  2. [Setup](Setup.md)
+ 3. [For developers](Developers.md)

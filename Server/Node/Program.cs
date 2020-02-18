@@ -79,7 +79,11 @@ namespace Node
                 sChannel = sLog.CreateLogChannel("main");
                 // add log streams
                 sLog.AddLogStream(new ConsoleLogStream());
+                // load the configuration
                 sConfiguration = General.LoadFromFile("configuration.conf");
+                
+                // update the logging configuration
+                sLog.SetConfiguration(sConfiguration.Logging);
                 
                 if (sConfiguration.LogLite.Enabled == true)
                     sLog.AddLogStream(new LogLiteStream("Node", sLog, sConfiguration.LogLite));

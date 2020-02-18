@@ -23,17 +23,29 @@ namespace Common.Network
         private Queue<byte[]> mOutputQueue = new Queue<byte[]>();
         private StreamPacketizer mPacketizer = new StreamPacketizer();
         private Action<PyDataType> mPacketReceiveCallback = null;
+        #if DEBUG
+        private Channel mPacketLog = null;
+        #endif
+        public Channel Log { get; set; }
         
-        public EVEClientSocket(Socket socket, Channel logChannel) : base(socket, logChannel)
+        public EVEClientSocket(Socket socket, Channel logChannel) : base(socket)
         {
+            this.Log = logChannel;
+            
+            // take into account network debugging for developers
+            #if DEBUG
+            this.mPacketLog = this.Log.Logger.CreateLogChannel("NetworkDebug");
+            #endif
+            
             // setup async callback handlers
             this.SetupCallbacks();
             // start the receiving callbacks
             this.BeginReceive(new byte[64 * 1024], this.mReceiveCallback);
         }
 
-        public EVEClientSocket(Channel logChannel) : base(new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp), logChannel)
+        public EVEClientSocket(Channel logChannel) : base(new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp))
         {
+            this.Log = logChannel;
             this.SetupCallbacks();
         }
 
@@ -87,6 +99,9 @@ namespace Common.Network
                     {
                         // unmarshal the packet
                         PyDataType packet = Unmarshal.ReadFromByteArray(this.mPacketizer.PopItem());
+                        #if DEBUG
+                        this.mPacketLog.Trace(PrettyPrinter.Print(packet));
+                        #endif
                         // and invoke the callback for the packet handling if it is present
                         this.mPacketReceiveCallback.Invoke(packet);
                     }
@@ -159,6 +174,10 @@ namespace Common.Network
         /// <param name="packet">The packet data to send</param>
         public void Send(PyDataType packet)
         {
+            #if DEBUG
+            this.mPacketLog.Trace(PrettyPrinter.Print(packet));
+            #endif
+            
             MemoryStream stream = new MemoryStream();
             BinaryWriter writer = new BinaryWriter(stream);
             // marshal the packet first
@@ -259,6 +278,12 @@ namespace Common.Network
             // keep the semaphore active so no one can send any more data
             // finally disconnect the socket
             this.ForcefullyDisconnect();
+        }
+
+        protected override void DefaultExceptionHandler(Exception ex)
+        {
+            Log.Error("Unhandled exception on underlying socket:");
+            Log.Error(ex.Message);
         }
     }
 }

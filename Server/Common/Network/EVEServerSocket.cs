@@ -7,10 +7,12 @@ namespace Common.Network
 {
     public class EVEServerSocket : EVESocket
     {
+        public Channel Log { get; set; }
         public int Port { get; private set; }
         
-        public EVEServerSocket(int port, Channel logChannel) : base(logChannel)
+        public EVEServerSocket(int port, Channel logChannel) : base()
         {
+            this.Log = logChannel;
             this.Port = port;
         }
 
@@ -35,6 +37,12 @@ namespace Common.Network
         {
             // graceful disconnect is the same as forcefully in a listening socket
             this.ForcefullyDisconnect();
+        }
+
+        protected override void DefaultExceptionHandler(Exception ex)
+        {
+            Log.Error("Unhandled exception on underlying socket:");
+            Log.Error(ex.Message);
         }
     }
 }
