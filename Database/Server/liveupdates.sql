@@ -44,7 +44,7 @@ CREATE TABLE `liveupdates` (
 
 LOCK TABLES `liveupdates` WRITE;
 /*!40000 ALTER TABLE `liveupdates` DISABLE KEYS */;
-INSERT INTO `liveupdates` VALUES (1,'tutorial','Disables tutorials whenever accessed, inspired from EVEmuDisableTutorial.py from Groove\'s evegen',219,219,101786,101786,'GetTutorials','svc.tutorial::TutorialSvc','globalClassMethod','c\0\0\0\0\0\0\0\0\0C\0\0\0sa\0\0\0d\0d\0\0k\0\0}\0t\0i\0d\0h\0\0d\0d\0<ƒ\0|\0i\0i\0d\0ƒ\0i\0d\0d\0d\0ƒ\0t\0i\0d\0h\0\0d	\0d\0<ƒ\0h\0\0S(\n\0\0\0Niÿÿÿÿt\0\0\0CustomNotifys\0\0\0Disabling tutorialst\0\0\0notifyt\0\0\0chart\0\0\0uit\r\0\0\0showTutorialsi\0\0\0\0s\0\0\0Tutorials disabled!(\0\0\0t\0\0\0__builtin__t\0\0\0evet\0\0\0Messaget\0\0\0settingst\0\0\0Gett\0\0\0Set(\0\0\0t\0\0\0selfR\0\0\0(\0\0\0\0(\0\0\0\0s:\0\0\0C:\\Program Files (x86)\\CCP\\EVE\\lib\\corelib.ccp\\autoexec.pyt\0\0\0GetTutorials\0\0\0s\n\0\0\0\0');
+INSERT INTO `liveupdates` VALUES (1,'tutorial','Disables tutorials whenever accessed, inspired from EVEmuDisableTutorial.py from Groove\'s evegen',219,219,101786,101786,'GetTutorials','svc.tutorial::TutorialSvc','globalClassMethod','c\0\0\0\0\0\0\0\0\0C\0\0\0s[\0\0\0d\0d\0\0k\0\0}\0t\0i\0d\0h\0\0d\0d\0<ƒ\0|\0i\0i\0i\0i\0d\0d\0ƒ\0t\0i\0d\0h\0\0d\0d\0<ƒ\0h\0\0S(\0\0\0Niÿÿÿÿt\0\0\0CustomNotifys\0\0\0Disabling tutorialst\0\0\0notifyt\r\0\0\0showTutorialsi\0\0\0\0s\0\0\0Tutorials disabled!(\0\0\0t\0\0\0__builtin__t\0\0\0evet\0\0\0Messaget\0\0\0settingst\0\0\0chart\0\0\0uit\0\0\0Set(\0\0\0t\0\0\0selfR\0\0\0(\0\0\0\0(\0\0\0\0s:\0\0\0C:\\Program Files (x86)\\CCP\\EVE\\lib\\corelib.ccp\\autoexec.pyt\0\0\0GetTutorials\0\0\0s\n\0\0\0\0');
 /*!40000 ALTER TABLE `liveupdates` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
@@ -57,4 +57,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2020-02-18 15:53:12
+-- Dump completed on 2020-02-18 16:24:32
