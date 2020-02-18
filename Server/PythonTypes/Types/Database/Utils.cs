@@ -14,9 +14,8 @@ namespace PythonTypes.Types.Database
             PyDataType data = null;
             bool isnull = reader.IsDBNull(index);
 
-            // TODO: PROPERLY HANDLE STRING DETECTION
             if(type == typeof(String))
-                data = (isnull) ? "" : reader.GetString(index);
+                data = new PyString((isnull) ? "" : reader.GetString(index), true);
             else if (type == typeof(UInt64))
                 data = (isnull) ? 0 : reader.GetUInt64(index);
             else if (type == typeof(Int64))

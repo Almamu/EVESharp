@@ -102,7 +102,7 @@ namespace PythonTypes.Types.Database
 
                 if (type == typeof(String))
                     // TODO: PROPERLY SPECIFY THE STRING TYPE
-                    fieldType = FieldType.Str;
+                    fieldType = FieldType.WStr;
                 else if (type == typeof(UInt64))
                     fieldType = FieldType.UI8;
                 else if (type == typeof(Int64))

@@ -259,6 +259,13 @@ namespace PythonTypes.Marshal
                 writer.WriteOpcode(Opcode.StringTable);
                 writer.Write(((byte) data.StringTableEntryIndex) + 1);
             }
+            else if (data.IsUTF8)
+            {
+                byte[] str = Encoding.UTF8.GetBytes (data.Value);
+                writer.WriteOpcode(Opcode.WStringUTF8);
+                writer.WriteSizeEx(str.Length);
+                writer.Write(str);
+            }
             else
             {
                 // TODO: ON SOME SITUATIONS A NORMAL STRING IS EXPECTED, PROVIDE A MECHANISM TO FORCE MARSHALING SUPPORT
