@@ -56,9 +56,6 @@ namespace PythonTypes.Types.Complex
             obj.cache = new PyBuffer (ZlibHelper.Compress(PythonTypes.Marshal.Marshal.ToByteArray(data)));
             obj.timestamp = cacheInfo.cacheTime;
             obj.version = cacheInfo.version;
-            
-            // write cache to file as a test
-            File.WriteAllBytes((obj.objectID as PyString).Value, PythonTypes.Marshal.Marshal.ToByteArray(data));
 
             return obj;
         }
