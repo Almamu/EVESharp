@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using ClusterControler.Database;
 using Common;
 using Common.Constants;
+using Common.Database;
 using Common.Game;
 using Common.Logging;
 using Common.Network;
@@ -20,15 +22,19 @@ namespace ClusterControler
         
         public Session Session { get; private set; }
 
+        private GeneralDB mGeneralDB = null;
+        
         public long AccountID
         {
             get { return this.Session["userid"] as PyInteger; }
             private set { }
         }
         
-        public ClientConnection(EVEClientSocket socket, ConnectionManager connectionManager, Logger logger)
+        public ClientConnection(EVEClientSocket socket, ConnectionManager connectionManager, DatabaseConnection connection, Logger logger)
             : base(socket, connectionManager)
         {
+            // access the GeneralDB
+            this.mGeneralDB = new GeneralDB(logger, connection);
             // to easily identify the clients use the address as channel
             this.Log = logger.CreateLogChannel(this.Socket.GetRemoteAddress());
             this.Socket.Log = this.Log;
@@ -40,7 +46,7 @@ namespace ClusterControler
             this.Socket.SetReceiveCallback(ReceiveCommandCallback);
             // prepare the user's session
             this.Session = new Session();
-            // TODO: GET SOCKET ADDRESS
+            // store address in session
             this.Session["address"] = this.Socket.GetRemoteAddress();
         }
 
@@ -140,7 +146,7 @@ namespace ClusterControler
             // Handshake sent when we are mostly in
             HandshakeAck ack = new HandshakeAck();
 
-            ack.live_updates = new PyList();
+            ack.live_updates = this.mGeneralDB.FetchLiveUpdates();
             ack.jit = this.Session["languageID"] as PyString;
             ack.userid = this.Session["userid"] as PyInteger;
             ack.maxSessionTime = new PyNone();

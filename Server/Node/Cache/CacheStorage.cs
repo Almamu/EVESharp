@@ -307,9 +307,6 @@ namespace Node
 
         public void Store(string name, PyDataType data, long timestamp)
         {
-	        if(name == "charCreationInfo.races")
-		        Log.Debug(PrettyPrinter.Print(data));
-	        
 	        PyCacheHint hint = PyCacheHint.FromPyObject(name, data, timestamp, this.mContainer.NodeID);
             
             // save cache hint

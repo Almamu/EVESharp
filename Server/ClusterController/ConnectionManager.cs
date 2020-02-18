@@ -33,6 +33,7 @@ using PythonTypes;
 
 using Common;
 using Common.Constants;
+using Common.Database;
 using Common.Logging;
 using Common.Network;
 using PythonTypes.Types.Primitives;
@@ -71,11 +72,13 @@ namespace ClusterControler
         private List<ClientConnection> mUnauthenticatedClientConnections = new List<ClientConnection>();
         private Dictionary<long, ClientConnection> mClientConnections = new Dictionary<long, ClientConnection>();
         private Dictionary<long, NodeConnection> mNodeConnections = new Dictionary<long, NodeConnection>();
+        private DatabaseConnection mDatabaseConnection = null;
         
-        public ConnectionManager(LoginQueue loginQueue, Logger logger)
+        public ConnectionManager(LoginQueue loginQueue, DatabaseConnection databaseConnection, Logger logger)
         {
             this.Log = logger.CreateLogChannel("ConnectionManager");
             this.LoginQueue = loginQueue;
+            this.mDatabaseConnection = databaseConnection;
         }
 
         public void AddUnauthenticatedConnection(EVEClientSocket socket)
@@ -92,7 +95,7 @@ namespace ClusterControler
 
         public void AddUnauthenticatedClientConnection(EVEClientSocket socket)
         {
-            this.mUnauthenticatedClientConnections.Add(new ClientConnection(socket, this, Log.Logger));
+            this.mUnauthenticatedClientConnections.Add(new ClientConnection(socket, this, this.mDatabaseConnection, Log.Logger));
         }
 
         public void RemoveUnauthenticatedClientConnection(ClientConnection connection)

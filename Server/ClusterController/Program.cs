@@ -41,6 +41,7 @@ using Common.Logging.Streams;
 using Common.Network;
 using Common.Packets;
 using Configuration;
+using MySql.Data.MySqlClient;
 using PythonTypes;
 using PythonTypes.Marshal;
 using PythonTypes.Types.Network;
@@ -124,8 +125,8 @@ namespace ClusterControler
                 sDatabase.Query("SET global max_allowed_packet=1073741824");
                 sLoginQueue = new LoginQueue(sConfiguration.Authentication, sDatabase, sLog);
                 sLoginQueue.Start();
-
-                sConnectionManager = new ConnectionManager(sLoginQueue, sLog);
+                
+                sConnectionManager = new ConnectionManager(sLoginQueue, sDatabase, sLog);
                 
                 try
                 {

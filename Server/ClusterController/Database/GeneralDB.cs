@@ -24,6 +24,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using MySql.Data.MySqlClient;
@@ -31,6 +32,7 @@ using MySql.Data.MySqlClient;
 using Common;
 using Common.Database;
 using Common.Logging;
+using PythonTypes.Types.Primitives;
 
 namespace ClusterControler.Database
 {
@@ -64,7 +66,7 @@ namespace ClusterControler.Database
                 throw;
             }
         }
-
+        
         public void ResetItemsStatus()
         {
             try
@@ -74,6 +76,55 @@ namespace ClusterControler.Database
             catch (Exception e)
             {
                 Log.Error("Cannot reset nodeID for items");
+                throw;
+            }
+        }
+
+        public PyList FetchLiveUpdates()
+        {
+            try
+            {
+                MySqlDataReader reader = null;
+                MySqlConnection connection = null;
+                
+                Database.Query(
+                    ref reader, ref connection,
+                    "SELECT updateID, updateName, description, machoVersionMin, machoVersionMax, buildNumberMin, buildNumberMax, methodName, objectID, codeType, code, OCTET_LENGTH(code) as codeLength FROM liveupdates"
+                );
+                
+                using(connection)
+                using (reader)
+                {
+                    
+                    PyList result = new PyList();
+
+                    while (reader.Read())
+                    {
+                        PyDictionary entry = new PyDictionary();
+                        PyDictionary code = new PyDictionary();
+
+                        // read the blob for the liveupdate
+                        byte[] buffer = new byte[reader.GetUInt32(11)];
+                        reader.GetBytes(10, 0, buffer, 0, buffer.Length);
+
+                        code["code"] = buffer;
+                        code["codeType"] = reader.GetString(9);
+                        code["methodName"] = reader.GetString(7);
+                        code["objectID"] = reader.GetString(8);
+                    
+                        entry["code"] = new PyObjectData("util.KeyVal", code);
+
+                        result.Add(
+                            new PyObjectData("util.KeyVal", entry)
+                        );
+                    }
+
+                    return result;
+                }
+            }
+            catch (Exception e)
+            {
+                Log.Error($"Cannot prepare live-updates information for client");
                 throw;
             }
         }
