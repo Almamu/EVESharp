@@ -1,5 +1,6 @@
 # Clone this repository
 Of course you'll need a local copy of the emulator's code to be able to run it. You can download the most up to date version [here](https://github.com/Almamu/EVESharp/archive/master.zip)
+
 Take in mind that this version might have regression bugs and other problems that "stable" releases do not have. Check the Releases and Tags section of the repository for more "stable" releases.
 
 # Static data dump database files

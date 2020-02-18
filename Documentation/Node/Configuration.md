@@ -1,5 +1,6 @@
 # Configuration options for Node
 The configuration file for Node has to be named "configuration.conf" and must always be stored in the same directory as the Node.
+
 This file follows the commonly-used ini format which separates the configuration in named sections and keys. [For more information on the .ini format click here](https://en.wikipedia.org/wiki/INI_file)
 
 ## proxy
