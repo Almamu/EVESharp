@@ -34,7 +34,7 @@ namespace Common.Network
             
             // take into account network debugging for developers
 #if DEBUG
-            this.mPacketLog = this.Log.Logger.CreateLogChannel("NetworkDebug");
+            this.mPacketLog = this.Log.Logger.CreateLogChannel("NetworkDebug", true);
 #endif
             
             // setup async callback handlers
@@ -49,7 +49,7 @@ namespace Common.Network
             
             // take into account network debugging for developers
 #if DEBUG
-            this.mPacketLog = this.Log.Logger.CreateLogChannel("NetworkDebug");
+            this.mPacketLog = this.Log.Logger.CreateLogChannel("NetworkDebug", true);
 #endif
             
             this.SetupCallbacks();
