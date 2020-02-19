@@ -22,15 +22,8 @@
     Creator: Almamu
 */
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using Common;
 using Common.Logging;
-using PythonTypes;
 using Common.Services;
-using Common.Packets;
 using PythonTypes.Types.Complex;
 using PythonTypes.Types.Primitives;
 
@@ -39,8 +32,8 @@ namespace Node.Services.CacheSvc
     public class objectCaching : Service
     {
         private Channel Log { get; set; }
-        private CacheStorage mCacheStorage = null;
-        
+        private readonly CacheStorage mCacheStorage = null;
+
         public objectCaching(CacheStorage cacheStorage, Logger logger)
             : base("objectCaching")
         {
@@ -51,8 +44,8 @@ namespace Node.Services.CacheSvc
         public PyDataType GetCachableObject(PyTuple args, object client)
         {
             PyCacheHint cache = args;
-            
-            if(cache.objectID is PyString == false)
+
+            if (cache.objectID is PyString == false)
             {
                 Log.Error("Unknown objectID on cache request");
                 return null;
@@ -61,7 +54,7 @@ namespace Node.Services.CacheSvc
             string objectID = cache.objectID as PyString;
 
             Log.Debug($"Received cache request for {objectID}");
-            
+
             return this.mCacheStorage.Get(objectID);
         }
     }

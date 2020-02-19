@@ -22,14 +22,7 @@
     Creator: Almamu
 */
 
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.CompilerServices;
-using System.Text;
-using Common;
-using PythonTypes;
-using System.Threading;
 using Common.Database;
 using Node.Database;
 using Node.Inventory;
@@ -40,19 +33,18 @@ namespace Node
 {
     public class SystemManager
     {
-        private DatabaseConnection mDatabase = null;
-        private GeneralDB mGeneralDB = null;
-        private ItemDB mItemDB = null;
-        private ItemFactory mItemFactory = null;
-        
-        private List<SolarSystem> solarSystemsLoaded = new List<SolarSystem>();
+        private readonly DatabaseConnection mDatabase = null;
+        private readonly GeneralDB mGeneralDB = null;
+        private readonly ItemDB mItemDB = null;
+        private readonly ItemFactory mItemFactory = null;
+
+        private readonly List<SolarSystem> solarSystemsLoaded = new List<SolarSystem>();
+
         public bool LoadSolarSystems(PyList solarSystems)
         {
             // We should not load any solar system
             if (solarSystems[0] is PyNone)
-            {
                 return true;
-            }
 
             // First of all check for loaded systems and unload the ones that are not needed
             foreach (SolarSystem solarSystem in solarSystemsLoaded)
@@ -73,9 +65,7 @@ namespace Node
                 {
                     // Unload the solar system
                     if (UnloadSolarSystem(solarSystem.itemID) == false)
-                    {
                         return false;
-                    }
                 }
             }
 
@@ -102,9 +92,7 @@ namespace Node
             List<Entity> items = this.mItemDB.GetItemsLocatedAt(solarSystemID);
 
             if (items == null)
-            {
                 return false;
-            }
 
             // Add the items to the ItemFactory
             this.mItemFactory.ItemManager.LoadInventory(solarSystemID);
@@ -115,7 +103,7 @@ namespace Node
         public bool UnloadSolarSystem(int solarSystemID)
         {
             // We should do the unload work here
-            
+
             // Update the database
             this.mGeneralDB.UnloadSolarSystem(solarSystemID);
 
@@ -147,15 +135,16 @@ namespace Node
             // Load the not-loaded solar systems
             foreach (int solarSystemID in solarSystems)
             {
-                // We can assume we dont have it in the list, as we've queryed for the non-loaded solarSystems
-                SolarSystem solarSystem = new SolarSystem(this.mItemDB.LoadItem(solarSystemID), this.mItemDB.GetSolarSystemInfo(solarSystemID)); // Create the solarSystem class
-                
+                // create the solar system object
+                SolarSystem solarSystem = new SolarSystem(
+                    this.mItemDB.LoadItem(solarSystemID),
+                    this.mItemDB.GetSolarSystemInfo(solarSystemID)
+                );
+
                 if (LoadSolarSystem(solarSystem) == false)
-                {
                     return false;
-                }
             }
-            
+
             return true;
         }
 

@@ -23,15 +23,9 @@
 */
 
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using PythonTypes;
-using Common;
-using Common.Services;
-using System.IO;
 using System.Text.RegularExpressions;
 using Common.Database;
+using Common.Services;
 using Node.Database;
 using PythonTypes.Types.Exceptions;
 using PythonTypes.Types.Primitives;
@@ -50,10 +44,10 @@ namespace Node.Services.Characters
             Taken = -101,
             Banned = -102
         };
-        
-        private CharacterDB mDB = null;
-        private CacheStorage mCacheStorage = null;
-        
+
+        private readonly CharacterDB mDB = null;
+        private readonly CacheStorage mCacheStorage = null;
+
         public character(CacheStorage cacheStorage, DatabaseConnection db)
             : base("character")
         {
@@ -89,28 +83,28 @@ namespace Node.Services.Characters
         public PyInteger ValidateNameEx(PyTuple args, Client client)
         {
             // TODO: IMPROVE PARSING OF PACKETS LIKE THIS
-            if(args.Count != 1)
+            if (args.Count != 1)
                 throw new Exception($"Expected tuple of size 1 but got {args.Count}");
 
             string characterName = args[0] as PyString;
-            
+
             if (characterName.Length < 3)
                 return new PyInteger((int) NameValidationResults.TooShort);
-            
+
             // equivalent to the itemName column in the entity table
-            if(characterName.Length > 85)
+            if (characterName.Length > 85)
                 return new PyInteger((int) NameValidationResults.TooLong);
-            
+
             // ensure only alphanumeric characters and/or spaces are used
-            if(Regex.IsMatch(characterName, "^[a-zA-Z0-9 ]*$") == false)
+            if (Regex.IsMatch(characterName, "^[a-zA-Z0-9 ]*$") == false)
                 return new PyInteger((int) NameValidationResults.IllegalCharacters);
-        
-            if(characterName.IndexOf(' ') != characterName.LastIndexOf(' '))
+
+            if (characterName.IndexOf(' ') != characterName.LastIndexOf(' '))
                 return new PyInteger((int) NameValidationResults.MoreThanOneSpace);
 
             if (this.mDB.IsCharacterNameTaken(characterName) == true)
                 return new PyInteger((int) NameValidationResults.Taken);
-            
+
             // TODO: IMPLEMENT BANLIST OF WORDS
             return new PyInteger((int) NameValidationResults.Valid);
         }

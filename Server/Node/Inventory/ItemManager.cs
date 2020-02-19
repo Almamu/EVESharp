@@ -24,9 +24,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using Common;
 using Common.Database;
 using Node.Database;
 
@@ -34,24 +31,22 @@ namespace Node.Inventory
 {
     public class ItemManager : DatabaseAccessor
     {
-        private ItemDB mItemDB = null;
-        private Dictionary<ulong, Entity> itemList = new Dictionary<ulong, Entity>();
+        private readonly ItemDB mItemDB = null;
+        private readonly Dictionary<ulong, Entity> itemList = new Dictionary<ulong, Entity>();
 
         public bool Load()
         {
             List<Entity> items = this.mItemDB.LoadItems();
 
             if (items == null)
-            {
                 return false;
-            }
 
             foreach (Entity item in items)
             {
                 item.LoadAttributes();
                 itemList.Add((ulong) item.itemID, item);
             }
-            
+
             return true;
         }
 
@@ -61,14 +56,11 @@ namespace Node.Inventory
             {
                 Entity item = this.mItemDB.LoadItem(itemID);
 
-                if (item == null)
-                {
-                    return false;
-                }
+                if (item == null) return false;
 
                 if (IsItemLoaded(item.locationID))
                 {
-                    Inventory inv = (Inventory)itemList[(ulong)item.locationID];
+                    Inventory inv = (Inventory) itemList[(ulong) item.locationID];
                     inv.UpdateItem(item);
                 }
 
@@ -82,7 +74,7 @@ namespace Node.Inventory
 
                     // Not handled
                     default:
-                        itemList.Add((ulong)item.itemID, item);
+                        itemList.Add((ulong) item.itemID, item);
                         break;
                 }
             }
@@ -92,7 +84,7 @@ namespace Node.Inventory
 
         public bool IsItemLoaded(int itemID)
         {
-            return itemList.ContainsKey((ulong)itemID);
+            return itemList.ContainsKey((ulong) itemID);
         }
 
         enum ItemCategory
@@ -132,9 +124,7 @@ namespace Node.Inventory
             List<Entity> loaded = new List<Entity>();
 
             if (items == null)
-            {
                 return null;
-            }
 
             foreach (int itemID in items)
             {
@@ -142,11 +132,10 @@ namespace Node.Inventory
                 {
                     try
                     {
-                        loaded.Add(itemList[(ulong)itemID]);
+                        loaded.Add(itemList[(ulong) itemID]);
                     }
                     catch (Exception)
                     {
-
                     }
                 }
             }
@@ -157,13 +146,11 @@ namespace Node.Inventory
         private bool LoadBlueprint(int itemID)
         {
             Blueprint bp = this.mItemDB.LoadBlueprint(itemID);
-            
-            if (bp == null)
-            {
-                return false;
-            }
 
-            itemList.Add((ulong)bp.itemID, bp);
+            if (bp == null)
+                return false;
+
+            itemList.Add((ulong) bp.itemID, bp);
 
             return true;
         }
@@ -173,14 +160,10 @@ namespace Node.Inventory
             ulong itemID = this.mItemDB.CreateItem(itemName, typeID, ownerID, locationID, flag, contraband, singleton, quantity, x, y, z, customInfo);
 
             if (itemID == 0)
-            {
                 return null;
-            }
 
-            if (LoadItem((int)itemID) == false)
-            {
+            if (LoadItem((int) itemID) == false)
                 return null;
-            }
 
             return itemList[itemID];
         }
@@ -190,13 +173,12 @@ namespace Node.Inventory
             try
             {
                 itemList.Remove(itemID);
-                
+
                 // Update the database information
                 this.mItemDB.UnloadItem(itemID);
             }
             catch
             {
-
             }
         }
 

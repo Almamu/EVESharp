@@ -22,18 +22,15 @@
     Creator: Almamu
 */
 
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using Node.Database;
 
 namespace Node.Inventory
 {
     public class Attributes
     {
-        private ItemDB mItemDB = null;
-        
+        private readonly ItemDB mItemDB = null;
+
         public Attributes(ItemDB itemDB)
         {
             this.mItemDB = itemDB;
@@ -49,18 +46,14 @@ namespace Node.Inventory
             foreach (KeyValuePair<string, ItemAttribute> pair in def)
             {
                 if (attributes.ContainsKey(pair.Key) == false)
-                {
                     attributes.Add(pair.Key, pair.Value);
-                }
             }
         }
 
         public int GetInt(string attribute)
         {
             if (attributes.ContainsKey(attribute) == true)
-            {
                 return attributes[attribute].intValue;
-            }
 
             return 0;
         }
@@ -68,9 +61,7 @@ namespace Node.Inventory
         public float GetFloat(string attribute)
         {
             if (attributes.ContainsKey(attribute) == true)
-            {
                 return attributes[attribute].floatValue;
-            }
 
             return 0.0f;
         }
@@ -78,9 +69,7 @@ namespace Node.Inventory
         public void Set(string attribute, int value)
         {
             if (attributes.ContainsKey(attribute) == true)
-            {
                 attributes[attribute].intValue = value;
-            }
             else
             {
                 ItemAttribute attrib = new ItemAttribute();
@@ -95,9 +84,7 @@ namespace Node.Inventory
         public void Set(string attribute, float value)
         {
             if (attributes.ContainsKey(attribute) == true)
-            {
                 attributes[attribute].floatValue = value;
-            }
             else
             {
                 ItemAttribute attrib = new ItemAttribute();

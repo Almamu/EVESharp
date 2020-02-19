@@ -22,10 +22,6 @@
     Creator: Almamu
 */
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using Common.Database;
 using Common.Services;
 using Node.Services.CacheSvc;
@@ -36,13 +32,13 @@ namespace Node
 {
     public class ServiceManager : Common.Services.ServiceManager
     {
-        private CacheStorage mCacheStorage = null;
+        private readonly CacheStorage mCacheStorage = null;
         private DatabaseConnection mDatabaseConnection = null;
-        private objectCaching mObjectCachingSvc = null;
-        private machoNet mMachoNetSvc = null;
-        private alert mAlertSvc = null;
-        private authentication mAuthenticationSvc = null;
-        private character mCharacterSvc = null;
+        private readonly objectCaching mObjectCachingSvc = null;
+        private readonly machoNet mMachoNetSvc = null;
+        private readonly alert mAlertSvc = null;
+        private readonly authentication mAuthenticationSvc = null;
+        private readonly character mCharacterSvc = null;
 
         public Service objectCaching()
         {
@@ -73,7 +69,7 @@ namespace Node
         {
             this.mDatabaseConnection = db;
             this.mCacheStorage = storage;
-            
+
             // initialize services
             this.mMachoNetSvc = new machoNet(this.mCacheStorage);
             this.mAlertSvc = new alert(container.Logger);

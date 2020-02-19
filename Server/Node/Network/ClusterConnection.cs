@@ -1,11 +1,7 @@
 using System;
-using System.Diagnostics;
-using Common;
 using Common.Logging;
 using Common.Network;
 using Common.Packets;
-using Common.Services;
-using PythonTypes;
 using PythonTypes.Types.Network;
 using PythonTypes.Types.Primitives;
 
@@ -20,11 +16,11 @@ namespace Node.Network
             UNMACHOCHANNEL = 1,
             WRAPPEDEXCEPTION = 2
         };
-        
+
         private Channel Log { get; }
         public EVEClientSocket Socket { get; }
         public NodeContainer Container { get; }
-        
+
         public ClusterConnection(NodeContainer container)
         {
             this.Log = container.Logger.CreateLogChannel("ClusterConnection");
@@ -44,7 +40,7 @@ namespace Node.Network
                 Log.Trace(ex.StackTrace);
             } while ((ex = ex.InnerException) != null);
         }
-        
+
         private void ReceiveLowLevelVersionExchangeCallback(PyDataType ar)
         {
             try
@@ -64,7 +60,7 @@ namespace Node.Network
                 reply.nodeIdentifier = "Node";
 
                 this.Socket.Send(reply);
-                
+
                 // set the new handler
                 this.Socket.SetReceiveCallback(ReceiveNodeInfoCallback);
             }
@@ -79,22 +75,22 @@ namespace Node.Network
         {
             if (ar is PyObjectData == false)
                 throw new Exception($"Expected PyObjectData for machoNet.nodeInfo but got {ar.GetType()}");
-        
+
             PyObjectData info = ar as PyObjectData;
 
-            if(info.Name != "machoNet.nodeInfo")
+            if (info.Name != "machoNet.nodeInfo")
                 throw new Exception($"Expected PyObjectData of type machoNet.nodeInfo but got {info.Name}");
-        
+
             // Update our local info
             NodeInfo nodeinfo = info;
 
             this.Container.NodeID = nodeinfo.nodeID;
 
             Log.Debug("Found machoNet.nodeInfo, our new node id is " + nodeinfo.nodeID.ToString("X4"));
-            
+
             // load the specified solar systems
             this.Container.SystemManager.LoadSolarSystems(nodeinfo.solarSystems);
-            
+
             // finally set the new packet handler
             this.Socket.SetReceiveCallback(ReceiveNormalPacketCallback);
         }
@@ -103,7 +99,7 @@ namespace Node.Network
         {
             PyPacket packet = ar;
             PyPacket res = new PyPacket();
-            
+
             if (packet.Type == MachoMessageType.CALL_REQ)
             {
                 PyTuple callInfo = ((packet.Payload[0] as PyTuple)[1] as PySubStream).Stream as PyTuple;
@@ -125,14 +121,14 @@ namespace Node.Network
                             dest.Service, call, args, this.Container.ClientManager.Get(packet.UserID)
                         );
                     }
-                    else if(packet.Destination is PyAddressNode)
+                    else if (packet.Destination is PyAddressNode)
                     {
                         PyAddressNode dest = packet.Destination as PyAddressNode;
 
                         Log.Trace($"Calling {dest.Service.Value}::{call}");
                         callResult = this.Container.ServiceManager.ServiceCall(
                             dest.Service, call, args, this.Container.ClientManager.Get(packet.UserID)
-                        );                    
+                        );
                     }
                     else
                     {
@@ -145,7 +141,7 @@ namespace Node.Network
                     // convert the packet to a response so we don't have to allocate a whole new packet
                     res.type_string = "macho.CallRsp";
                     res.Type = MachoMessageType.CALL_RSP;
-                
+
                     // ensure destination has clientID in it
                     source.ClientID = (int) packet.UserID;
                     // switch source and dest
@@ -154,7 +150,7 @@ namespace Node.Network
 
                     res.UserID = packet.UserID;
 
-                    res.Payload = new PyTuple(new PyDataType[] { new PySubStream (callResult) });
+                    res.Payload = new PyTuple(new PyDataType[] {new PySubStream(callResult)});
                 }
                 catch (PyException e)
                 {
@@ -173,7 +169,7 @@ namespace Node.Network
                         (int) packet.Type, (int) MACHONETERR_TYPE.WRAPPEDEXCEPTION, new PyTuple (new PyDataType[] { new PySubStream(e) }), 
                     });
                 }
-                
+
                 this.Socket.Send(res);
             }
             else if (packet.Type == MachoMessageType.SESSIONCHANGENOTIFICATION)
@@ -181,50 +177,39 @@ namespace Node.Network
                 Log.Debug($"Updating session for client {packet.UserID}");
 
                 // ensure the client is registered in the node and store his session
-                if(this.Container.ClientManager.Contains(packet.UserID) == false)
+                if (this.Container.ClientManager.Contains(packet.UserID) == false)
                     this.Container.ClientManager.Add(packet.UserID, new Client());
 
                 this.Container.ClientManager.Get(packet.UserID).UpdateSession(packet);
             }
         }
-        
+
         protected LowLevelVersionExchange CheckLowLevelVersionExchange(PyDataType exchange)
         {
             LowLevelVersionExchange data = exchange;
 
             if (data.birthday != Common.Constants.Game.birthday)
-            {
                 throw new Exception("Wrong birthday in LowLevelVersionExchange");
-            }
 
             if (data.build != Common.Constants.Game.build)
-            {
                 throw new Exception("Wrong build in LowLevelVersionExchange");
-            }
 
             if (data.codename != Common.Constants.Game.codename + "@" + Common.Constants.Game.region)
-            {
                 throw new Exception("Wrong codename in LowLevelVersionExchange");
-            }
 
             if (data.machoVersion != Common.Constants.Game.machoVersion)
-            {
                 throw new Exception("Wrong machoVersion in LowLevelVersionExchange");
-            }
 
             if (data.version != Common.Constants.Game.version)
-            {
                 throw new Exception("Wrong version in LowLevelVersionExchange");
-            }
 
             if (data.isNode == true)
             {
                 if (data.nodeIdentifier != "Node")
-                {
                     throw new Exception("Wrong node string in LowLevelVersionExchange");
-                }
             }
             
+
             return data;
         }
     }

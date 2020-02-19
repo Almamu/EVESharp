@@ -22,11 +22,6 @@
     Creator: Almamu
 */
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using Common.Database;
 using Node.Database;
 
 namespace Node.Inventory
@@ -51,7 +46,7 @@ namespace Node.Inventory
             y = entityY;
             Z = entityZ;
             customInfo = entityCustomInfo;
-            
+
             this.mItemDB = itemDB;
             this.mItemFactory = itemFactory;
         }
@@ -149,7 +144,7 @@ namespace Node.Inventory
             attributes.LoadAttributes(itemID, typeID);
         }
 
-        public string itemName {private set; get;}
+        public string itemName { private set; get; }
         public int itemID { private set; get; }
         public int typeID { private set; get; }
         public int ownerID { private set; get; }

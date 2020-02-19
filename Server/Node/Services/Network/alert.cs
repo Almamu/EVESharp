@@ -23,14 +23,8 @@
 */
 
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using PythonTypes;
-using Common;
-using Common.Services;
-using System.IO;
 using Common.Logging;
+using Common.Services;
 using PythonTypes.Types.Primitives;
 
 namespace Node.Services.Network
@@ -38,6 +32,7 @@ namespace Node.Services.Network
     public class alert : Service
     {
         private Channel Log { get; set; }
+
         public alert(Logger logger)
             : base("alert")
         {
@@ -47,19 +42,19 @@ namespace Node.Services.Network
         public PyDataType BeanCount(PyTuple args, object client)
         {
             PyTuple res = new PyTuple(2);
-            
+
             res[0] = new PyNone();
             res[1] = new PyInteger(0);
-            
+
             return res;
         }
 
         public PyDataType SendClientStackTraceAlert(PyTuple args, object client)
         {
             Log.Fatal(
-                "Received the following client's stack trace:\n" + 
-                $"------------------ {args[2] as PyString} ------------------\n" +
-                $"{(args[0] as PyTuple)[1] as PyString}\n" +
+                "Received the following client's stack trace:" + Environment.NewLine +
+                $"------------------ {args[2] as PyString} ------------------" + Environment.NewLine +
+                $"{(args[0] as PyTuple)[1] as PyString}" + Environment.NewLine +
                 (args[1] as PyString)
             );
             // The client should receive anything to know that the stack trace arrived to the server

@@ -24,9 +24,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using Common;
 using Common.Database;
 using Node.Database;
 
@@ -34,23 +31,19 @@ namespace Node.Inventory
 {
     public class CategoryManager : DatabaseAccessor
     {
-        private ItemDB mItemDB = null;
-        private Dictionary<int, ItemCategory> categoryesDict = new Dictionary<int, ItemCategory>();
+        private readonly ItemDB mItemDB = null;
+        private readonly Dictionary<int, ItemCategory> categoryesDict = new Dictionary<int, ItemCategory>();
 
         public bool Load()
         {
             List<ItemCategory> categories = this.mItemDB.LoadItemCategories();
 
             if (categories == null)
-            {
                 return false;
-            }
 
             foreach (ItemCategory category in categories)
-            {
                 categoryesDict.Add(category.categoryID, category);
-            }
-            
+
             return true;
         }
 

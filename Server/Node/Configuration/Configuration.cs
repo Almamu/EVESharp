@@ -1,6 +1,3 @@
-using System;
-using System.IO;
-using Common;
 using Common.Configuration;
 using IniParser;
 using IniParser.Model;
@@ -24,16 +21,16 @@ namespace Node.Configuration
 
             config.Database.Load(data["database"]);
             config.Proxy.Load(data["proxy"]);
-            
-            if(data.Sections.ContainsSection("authentication") == true)
+
+            if (data.Sections.ContainsSection("authentication") == true)
                 config.Authentication.Load(data["authentication"]);
             if (data.Sections.ContainsSection("loglite") == true)
                 config.LogLite.Load(data["loglite"]);
             if (data.Sections.ContainsSection("logfile") == true)
                 config.FileLog.Load(data["logfile"]);
-            if(data.Sections.ContainsSection("logging") == true)
+            if (data.Sections.ContainsSection("logging") == true)
                 config.Logging.Load(data["logging"]);
-            
+
             return config;
         }
     }

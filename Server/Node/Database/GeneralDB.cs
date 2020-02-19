@@ -24,11 +24,8 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using MySql.Data.MySqlClient;
-using Common;
 using Common.Database;
+using MySql.Data.MySqlClient;
 
 namespace Node.Database
 {
@@ -40,18 +37,16 @@ namespace Node.Database
             MySqlConnection connection = null;
 
             Database.Query(ref res, ref connection, "SELECT solarSystemID FROM solarsystemsloaded WHERE nodeID=0");
-            
-            using(connection)
+
+            using (connection)
             using (res)
             {
                 List<int> result = new List<int>();
 
-                while (res.Read())
-                {
+                while (res.Read() == true)
                     result.Add(res.GetInt32(0));
-                }
 
-                return result;   
+                return result;
             }
         }
 

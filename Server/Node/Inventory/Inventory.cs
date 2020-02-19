@@ -22,10 +22,7 @@
     Creator: Almamu
 */
 
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using Node.Database;
 
 namespace Node.Inventory
@@ -36,7 +33,6 @@ namespace Node.Inventory
             : base(entityItemName, entityItemID, entityTypeID, entityOwnerID, entityLocationID, entityFlag, entityContraband, entitySingleton, entityQuantity, entityX, entityY, entityZ, entityCustomInfo, itemDB, itemFactory)
         {
             loaded = LoadContents();
-            
         }
 
         public Inventory(Entity from) : base(from.itemName, from.itemID, from.typeID, from.ownerID, from.locationID, from.flag, from.contraband, from.singleton, from.quantity, from.x, from.y, from.Z, from.customInfo, from.mItemDB, from.mItemFactory)
@@ -49,9 +45,7 @@ namespace Node.Inventory
             items = this.mItemFactory.ItemManager.LoadInventory(itemID);
 
             if (items == null)
-            {
                 return false;
-            }
 
             return true;
         }

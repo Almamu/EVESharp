@@ -4,8 +4,8 @@ namespace Node
 {
     public class ClientManager
     {
-        private Dictionary<long, Client> mClients = new Dictionary<long,Client>();
-        
+        private readonly Dictionary<long, Client> mClients = new Dictionary<long, Client>();
+
         public void Add(long userID, Client client)
         {
             this.mClients.Add(userID, client);
@@ -20,7 +20,7 @@ namespace Node
         {
             return this.mClients.ContainsKey(userID);
         }
-        
+
         public void Remove(long userID)
         {
             this.mClients.Remove(userID);

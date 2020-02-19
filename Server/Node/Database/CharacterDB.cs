@@ -1,5 +1,4 @@
 using Common.Database;
-using PythonTypes;
 using MySql.Data.MySqlClient;
 using PythonTypes.Types.Database;
 using PythonTypes.Types.Primitives;
@@ -16,7 +15,7 @@ namespace Node.Database
         {
             MySqlDataReader reader = null;
             MySqlConnection connection = null;
-            
+
             Database.Query(
                 ref reader, ref connection,
                 "SELECT" +
@@ -32,7 +31,7 @@ namespace Node.Database
                 "	LEFT JOIN entity ON characterID = itemID" +
                 " WHERE accountID=" + accountID
             );
-            
+
             using (connection)
             using (reader)
             {
@@ -44,17 +43,17 @@ namespace Node.Database
         {
             MySqlDataReader reader = null;
             MySqlConnection connection = null;
-            
+
             Database.Query(
                 ref reader, ref connection,
                 $"SELECT COUNT(*) FROM character_ LEFT JOIN entity ON characterID = itemID WHERE itemName LIKE '{Database.DoEscapeString(characterName)}'"
             );
-            
+
             using (connection)
             using (reader)
             {
                 reader.Read();
-                
+
                 return reader.GetInt32(0) > 0;
             }
         }

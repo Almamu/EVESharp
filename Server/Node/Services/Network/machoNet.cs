@@ -23,20 +23,15 @@
 */
 
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using Common.Services;
-using PythonTypes;
-using Common;
 using PythonTypes.Types.Primitives;
 
 namespace Node.Services.Network
 {
     public class machoNet : Service
     {
-        private CacheStorage mCacheStorage = null;
-        
+        private readonly CacheStorage mCacheStorage = null;
+
         public machoNet(CacheStorage cacheStorage)
             : base("machoNet")
         {
@@ -45,12 +40,11 @@ namespace Node.Services.Network
 
         public PyDataType GetInitVals(PyTuple args, object client)
         {
-            
             if (this.mCacheStorage.Exists("machoNet.serviceInfo") == false)
             {
                 // Cache does not exists, create it
                 PyDictionary dict = new PyDictionary();
-                
+
                 dict["trademgr"] = "station";
                 dict["tutorialSvc"] = "station";
                 dict["bookmark"] = "station";
@@ -66,7 +60,7 @@ namespace Node.Services.Network
 
                 dict["scanMgr"] = "solarsystem";
                 dict["keeper"] = "solarsystem";
-                
+
                 dict["stationSvc"] = new PyNone();
                 dict["zsystem"] = new PyNone();
                 dict["invbroker"] = new PyNone();
@@ -149,7 +143,7 @@ namespace Node.Services.Network
 
             res[0] = srvInfo;
             res[1] = initvals;
-            
+
             return res;
         }
 

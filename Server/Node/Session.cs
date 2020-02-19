@@ -22,11 +22,7 @@
     Creator: Almamu
 */
 
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using PythonTypes;
 using PythonTypes.Types.Primitives;
 
 namespace Node
@@ -65,23 +61,17 @@ namespace Node
         private PyTuple _Get(string key)
         {
             if (session.ContainsKey(key))
-            {
                 return session[key] as PyTuple;
-            }
             else
-            {
                 return new PyTuple(0);
-            }
         }
 
         private PyDataType _GetCurrent(string key)
         {
             PyTuple tmp = _Get(key);
-            
+
             if (tmp.Count == 0)
-            {
                 return new PyNone();
-            }
 
             return tmp[1];
         }
@@ -90,7 +80,7 @@ namespace Node
         {
             _Set(name, value);
         }
-        
+
         public PyDataType GetCurrent(string name)
         {
             return _GetCurrent(name);
@@ -108,7 +98,7 @@ namespace Node
 
                 PyDataType last = value[0];
                 PyDataType current = value[1];
-                
+
                 // Check if they have the same type and value
                 if (last != current)
                 {
@@ -118,13 +108,13 @@ namespace Node
                     change[1] = current;
 
                     res[s.Key] = change;
-                    
+
                     // Update the session with the new last value
                     PyTuple update = new PyTuple(2);
 
                     update[0] = current;
                     update[1] = current;
-                    
+
                     // We cant modify the session here, just store it on something temporal
                     tmp[s.Key] = update;
                 }

@@ -24,8 +24,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using Common.Database;
 using MySql.Data.MySqlClient;
 using Node.Inventory;
@@ -44,8 +42,8 @@ namespace Node.Database
             Database.Query(ref reader, ref connection,
                 "SELECT itemID, itemName, typeID, ownerID, locationID, flag, contraband, singleton, quantity, x, y, z, customInfo FROM entity"
             );
-            
-            using(connection)
+
+            using (connection)
             using (reader)
             {
                 List<Entity> items = new List<Entity>();
@@ -72,7 +70,7 @@ namespace Node.Database
                     items.Add(newItem);
                 }
 
-                return items;   
+                return items;
             }
         }
 
@@ -84,8 +82,8 @@ namespace Node.Database
             Database.Query(ref reader, ref connection,
                 "SELECT categoryID, categoryName, description, graphicID, published FROM invCategories"
             );
-            
-            using(connection)
+
+            using (connection)
             using (reader)
             {
                 List<ItemCategory> itemCategoryesList = new List<ItemCategory>();
@@ -114,8 +112,8 @@ namespace Node.Database
             Database.Query(ref reader, ref connection,
                 "SELECT typeID, groupID, typeName, description, graphicID, radius, mass, volume, capacity, portionSize, raceID, basePrice, published, marketGroupID, chanceOfDuplicating FROM invTypes"
             );
-            
-            using(connection)
+
+            using (connection)
             using (reader)
             {
                 List<ItemType> itemTypes = new List<ItemType>();
@@ -143,7 +141,7 @@ namespace Node.Database
                     itemTypes.Add(type);
                 }
 
-                return itemTypes;    
+                return itemTypes;
             }
         }
 
@@ -156,7 +154,7 @@ namespace Node.Database
                 "SELECT itemID, itemName, typeID, ownerID, locationID, flag, contraband, singleton, quantity, x, y, z, custominfo FROM entity WHERE itemID=" +
                 itemID
             );
-            
+
             using (connection)
             using (reader)
             {
@@ -193,18 +191,15 @@ namespace Node.Database
             MySqlConnection connection = null;
 
             Database.Query(ref reader, ref connection, "SELECT itemID FROM entity WHERE locationID=" + inventoryID);
-            
+
             using (connection)
             using (reader)
             {
                 List<int> itemList = new List<int>();
 
-                while (reader.Read())
-                {
-                    itemList.Add(reader.GetInt32(0));
-                }
+                while (reader.Read()) itemList.Add(reader.GetInt32(0));
 
-                return itemList;   
+                return itemList;
             }
         }
 
@@ -222,15 +217,15 @@ namespace Node.Database
                 "SELECT invCategories.categoryID FROM invCategories LEFT JOIN invTypes ON invTypes.typeID=" + typeID +
                 " LEFT JOIN invGroups ON invGroups.groupID = invTypes.groupID WHERE invCategories.categoryID = invGroups.groupID"
             );
-            
-            using(connection)
+
+            using (connection)
             using (reader)
             {
                 if (reader.Read() == false)
                     return 0;
-                
+
                 int categoryID = reader.GetInt32(0);
-                
+
                 return categoryID;
             }
         }
@@ -246,7 +241,7 @@ namespace Node.Database
 
             if (item == null)
                 return null;
-            
+
             MySqlDataReader reader = null;
             MySqlConnection connection = null;
 
@@ -254,17 +249,17 @@ namespace Node.Database
                 "SELECT copy, materialLevel, productivityLevel, licensedProductionRunsRemaining FROM invBlueprints WHERE blueprintID=" +
                 itemID
             );
-            
-            using(connection)
+
+            using (connection)
             using (reader)
             {
                 if (reader.Read() == false)
                     return null;
-                
+
                 Blueprint bp = new Blueprint(item);
                 bp.SetBlueprintInfo(reader.GetBoolean(0), reader.GetInt32(1), reader.GetInt32(2), reader.GetInt32(3), false);
 
-                return bp;   
+                return bp;
             }
         }
 
@@ -322,8 +317,8 @@ namespace Node.Database
                 "SELECT itemID, itemName, typeID, ownerID, locationID, flag, contraband, singleton, quantity, x, y, z, customInfo FROM entity WHERE locationID=" +
                 locationID
             );
-            
-            using(connection)
+
+            using (connection)
             using (reader)
             {
                 List<Entity> items = new List<Entity>();
@@ -360,16 +355,16 @@ namespace Node.Database
             {
                 MySqlDataReader reader = null;
                 MySqlConnection connection = null;
-                
+
                 Database.Query(ref reader, ref connection,
                     "SELECT regionID, constellationID, x, y, z, xMin, yMin, zMin, xMax, yMax, zMax, luminosity, border, fringe, corridor, hub, international, regional, constellation, security, factionID, radius, sunTypeID, securityClass FROM mapSolarSystems WHERE solarSystemID=" +
                     solarSystemID
                 );
-                
-                using(connection)
+
+                using (connection)
                 using (reader)
                 {
-                    if(reader.Read() == false)
+                    if (reader.Read() == false)
                         throw new SolarSystemLoadException();
 
                     SolarSystemInfo info = new SolarSystemInfo();
@@ -422,11 +417,10 @@ namespace Node.Database
                 "SELECT dgmAttributeTypes.attributeName, entity_attributes.attributeID, valueInt, valueFloat FROM entity_attributes LEFT JOIN dgmAttributeTypes ON dgmAttributeTypes.attributeID=entity_attributes.attributeID WHERE itemID=" +
                 itemID
             );
-            
-            using(connection)
+
+            using (connection)
             using (reader)
             {
-
                 Dictionary<string, ItemAttribute> result = new Dictionary<string, ItemAttribute>();
 
                 while (reader.Read())
@@ -440,7 +434,7 @@ namespace Node.Database
                     result.Add(reader.GetString(0), attrib);
                 }
 
-                return result;                
+                return result;
             }
         }
 
@@ -452,8 +446,8 @@ namespace Node.Database
             Database.Query(ref reader, ref connection,
                 "SELECT attributeID FROM dgmAttributeTypes WHERE attributeName='" + attributeName + "'"
             );
-            
-            using(connection)
+
+            using (connection)
             using (reader)
             {
                 if (reader.Read() == false)
@@ -472,8 +466,8 @@ namespace Node.Database
                 "SELECT dgmAttributeTypes.attributeName, dgmTypeAttributes.attributeID, valueInt, valueFloat FROM dgmTypeAttributes LEFT JOIN dgmAttributeTypes ON dgmAttributeTypes.attributeID = dgmTypeAttributes.attributeID WHERE typeID=" +
                 typeID
             );
-            
-            using(connection)
+
+            using (connection)
             using (reader)
             {
                 Dictionary<string, ItemAttribute> result = new Dictionary<string, ItemAttribute>();
@@ -489,7 +483,7 @@ namespace Node.Database
                     result.Add(reader.GetString(0), attrib);
                 }
 
-                return result;   
+                return result;
             }
         }
 

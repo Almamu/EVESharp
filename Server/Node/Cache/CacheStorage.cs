@@ -24,75 +24,65 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
-using System.Linq;
-using System.Text;
-using PythonTypes;
-using Common;
 using Common.Database;
 using Common.Logging;
 using MySql.Data.MySqlClient;
-using MySql.Data.Types;
-using Common.Packets;
+using PythonTypes.Types.Complex;
 using PythonTypes.Types.Database;
 using PythonTypes.Types.Primitives;
-using MySqlX.XDevAPI.Relational;
-using Node.Database;
-using PythonTypes.Types.Complex;
 
 namespace Node
 {
     public class CacheStorage : DatabaseAccessor
     {
-	    public enum CacheObjectType
-	    {
-		    TupleSet = 0,
-		    Rowset = 1,
-		    CRowset = 2,
-		    PackedRowList = 3
-	    };
-	    
+        public enum CacheObjectType
+        {
+            TupleSet = 0,
+            Rowset = 1,
+            CRowset = 2,
+            PackedRowList = 3
+        };
+
         public static Dictionary<string, string> LoginCacheTable = new Dictionary<string, string>()
         {
-        	{"config.BulkData.ramactivities", "config.BulkData.ramactivities"},
-	        {"config.BulkData.billtypes", "config.BulkData.billtypes"},
-	        {"config.Bloodlines", "config.Bloodlines"},
-	        {"config.Units", "config.Units"},
-	        {"config.BulkData.tickernames", "config.BulkData.tickernames"},
-	        {"config.BulkData.ramtyperequirements", "config.BulkData.ramtyperequirements"},
-	        {"config.BulkData.ramaltypesdetailpergroup", "config.BulkData.ramaltypesdetailpergroup"},
-	        {"config.BulkData.ramaltypes", "config.BulkData.ramaltypes"},
-	        {"config.BulkData.allianceshortnames", "config.BulkData.allianceshortnames"},
-	        {"config.BulkData.ramcompletedstatuses", "config.BulkData.ramcompletedstatuses"},
-	        {"config.BulkData.categories", "config.BulkData.categories"},
-	        {"config.BulkData.invtypereactions", "config.BulkData.invtypereactions"},
-	        {"config.BulkData.dgmtypeeffects", "config.BulkData.dgmtypeeffects"},
-	        {"config.BulkData.metagroups", "config.BulkData.metagroups"},
-	        {"config.BulkData.ramtypematerials", "config.BulkData.ramtypematerials"},
-	        {"config.BulkData.ramaltypesdetailpercategory", "config.BulkData.ramaltypesdetailpercategory"},
-	        {"config.BulkData.owners", "config.BulkData.owners"},
-	        {"config.StaticOwners", "config.StaticOwners"},
-	        {"config.Races", "config.Races"},
-	        {"config.Attributes", "config.Attributes"},
-	        {"config.BulkData.dgmtypeattribs", "config.BulkData.dgmtypeattribs"},
-	        {"config.BulkData.locations", "config.BulkData.locations"},
-	        {"config.BulkData.locationwormholeclasses", "config.BulkData.locationwormholeclasses"},
-	        {"config.BulkData.groups", "config.BulkData.groups"},
-	        {"config.BulkData.shiptypes", "config.BulkData.shiptypes"},
-	        {"config.BulkData.dgmattribs", "config.BulkData.dgmattribs"},
-	        {"config.Flags", "config.Flags"},
-	        {"config.BulkData.bptypes", "config.BulkData.bptypes"},
-	        {"config.BulkData.graphics", "config.BulkData.graphics"},
-	        {"config.BulkData.mapcelestialdescriptions", "config.BulkData.mapcelestialdescriptions"},
-	        {"config.BulkData.certificates", "config.BulkData.certificates"},
-	        {"config.StaticLocations", "config.StaticLocations"},
-	        {"config.InvContrabandTypes", "config.InvContrabandTypes"},
-	        {"config.BulkData.certificaterelationships", "config.BulkData.certificaterelationships"},
-	        {"config.BulkData.units", "config.BulkData.units"},
-	        {"config.BulkData.dgmeffects", "config.BulkData.dgmeffects"},
-	        {"config.BulkData.types", "config.BulkData.types"},
-	        {"config.BulkData.invmetatypes", "config.BulkData.invmetatypes"},
+            {"config.BulkData.ramactivities", "config.BulkData.ramactivities"},
+            {"config.BulkData.billtypes", "config.BulkData.billtypes"},
+            {"config.Bloodlines", "config.Bloodlines"},
+            {"config.Units", "config.Units"},
+            {"config.BulkData.tickernames", "config.BulkData.tickernames"},
+            {"config.BulkData.ramtyperequirements", "config.BulkData.ramtyperequirements"},
+            {"config.BulkData.ramaltypesdetailpergroup", "config.BulkData.ramaltypesdetailpergroup"},
+            {"config.BulkData.ramaltypes", "config.BulkData.ramaltypes"},
+            {"config.BulkData.allianceshortnames", "config.BulkData.allianceshortnames"},
+            {"config.BulkData.ramcompletedstatuses", "config.BulkData.ramcompletedstatuses"},
+            {"config.BulkData.categories", "config.BulkData.categories"},
+            {"config.BulkData.invtypereactions", "config.BulkData.invtypereactions"},
+            {"config.BulkData.dgmtypeeffects", "config.BulkData.dgmtypeeffects"},
+            {"config.BulkData.metagroups", "config.BulkData.metagroups"},
+            {"config.BulkData.ramtypematerials", "config.BulkData.ramtypematerials"},
+            {"config.BulkData.ramaltypesdetailpercategory", "config.BulkData.ramaltypesdetailpercategory"},
+            {"config.BulkData.owners", "config.BulkData.owners"},
+            {"config.StaticOwners", "config.StaticOwners"},
+            {"config.Races", "config.Races"},
+            {"config.Attributes", "config.Attributes"},
+            {"config.BulkData.dgmtypeattribs", "config.BulkData.dgmtypeattribs"},
+            {"config.BulkData.locations", "config.BulkData.locations"},
+            {"config.BulkData.locationwormholeclasses", "config.BulkData.locationwormholeclasses"},
+            {"config.BulkData.groups", "config.BulkData.groups"},
+            {"config.BulkData.shiptypes", "config.BulkData.shiptypes"},
+            {"config.BulkData.dgmattribs", "config.BulkData.dgmattribs"},
+            {"config.Flags", "config.Flags"},
+            {"config.BulkData.bptypes", "config.BulkData.bptypes"},
+            {"config.BulkData.graphics", "config.BulkData.graphics"},
+            {"config.BulkData.mapcelestialdescriptions", "config.BulkData.mapcelestialdescriptions"},
+            {"config.BulkData.certificates", "config.BulkData.certificates"},
+            {"config.StaticLocations", "config.StaticLocations"},
+            {"config.InvContrabandTypes", "config.InvContrabandTypes"},
+            {"config.BulkData.certificaterelationships", "config.BulkData.certificaterelationships"},
+            {"config.BulkData.units", "config.BulkData.units"},
+            {"config.BulkData.dgmeffects", "config.BulkData.dgmeffects"},
+            {"config.BulkData.types", "config.BulkData.types"},
+            {"config.BulkData.invmetatypes", "config.BulkData.invmetatypes"},
         };
 
         public static string[] LoginCacheQueries =
@@ -139,165 +129,166 @@ namespace Node
 
         public static CacheObjectType[] LoginCacheTypes =
         {
-	        CacheObjectType.TupleSet,
-	        CacheObjectType.TupleSet,
-	        CacheObjectType.Rowset,
-	        CacheObjectType.Rowset,
-	        CacheObjectType.TupleSet,
-	        CacheObjectType.Rowset,
-	        CacheObjectType.CRowset,
-	        CacheObjectType.CRowset,
-	        CacheObjectType.TupleSet,
-	        CacheObjectType.TupleSet,
-	        CacheObjectType.TupleSet,
-	        CacheObjectType.CRowset,
-	        CacheObjectType.Rowset,
-	        CacheObjectType.TupleSet,
-	        CacheObjectType.Rowset,
-	        CacheObjectType.CRowset,
-	        CacheObjectType.TupleSet,
-	        CacheObjectType.Rowset,
-	        CacheObjectType.Rowset,
-	        CacheObjectType.Rowset,
-	        CacheObjectType.PackedRowList,
-	        CacheObjectType.TupleSet,
-	        CacheObjectType.CRowset,
-	        CacheObjectType.TupleSet,
-	        CacheObjectType.CRowset,
-	        CacheObjectType.TupleSet,
-	        CacheObjectType.Rowset,
-	        CacheObjectType.TupleSet,
-	        CacheObjectType.TupleSet,
-	        CacheObjectType.TupleSet,
-	        CacheObjectType.CRowset,
-	        CacheObjectType.Rowset,
-	        CacheObjectType.Rowset,
-	        CacheObjectType.CRowset,
-	        CacheObjectType.TupleSet,
-	        CacheObjectType.TupleSet,
-	        CacheObjectType.TupleSet,
-	        CacheObjectType.CRowset
+            CacheObjectType.TupleSet,
+            CacheObjectType.TupleSet,
+            CacheObjectType.Rowset,
+            CacheObjectType.Rowset,
+            CacheObjectType.TupleSet,
+            CacheObjectType.Rowset,
+            CacheObjectType.CRowset,
+            CacheObjectType.CRowset,
+            CacheObjectType.TupleSet,
+            CacheObjectType.TupleSet,
+            CacheObjectType.TupleSet,
+            CacheObjectType.CRowset,
+            CacheObjectType.Rowset,
+            CacheObjectType.TupleSet,
+            CacheObjectType.Rowset,
+            CacheObjectType.CRowset,
+            CacheObjectType.TupleSet,
+            CacheObjectType.Rowset,
+            CacheObjectType.Rowset,
+            CacheObjectType.Rowset,
+            CacheObjectType.PackedRowList,
+            CacheObjectType.TupleSet,
+            CacheObjectType.CRowset,
+            CacheObjectType.TupleSet,
+            CacheObjectType.CRowset,
+            CacheObjectType.TupleSet,
+            CacheObjectType.Rowset,
+            CacheObjectType.TupleSet,
+            CacheObjectType.TupleSet,
+            CacheObjectType.TupleSet,
+            CacheObjectType.CRowset,
+            CacheObjectType.Rowset,
+            CacheObjectType.Rowset,
+            CacheObjectType.CRowset,
+            CacheObjectType.TupleSet,
+            CacheObjectType.TupleSet,
+            CacheObjectType.TupleSet,
+            CacheObjectType.CRowset
         };
 
-        public static Dictionary<string, string> CreateCharacterCacheTable = new Dictionary<string, string>() 
+        public static Dictionary<string, string> CreateCharacterCacheTable = new Dictionary<string, string>()
         {
-	        {"charCreationInfo.bl_eyebrows", "eyebrows"},
-	        {"charCreationInfo.bl_eyes", "eyes"},
-	        {"charCreationInfo.bl_decos", "decos"},
-	        {"charCreationInfo.bloodlines", "bloodlines"},
-	        {"charCreationInfo.bl_hairs", "hairs"},
-	        {"charCreationInfo.bl_backgrounds", "backgrounds"},
-	        {"charCreationInfo.bl_accessories", "accessories"},
-	        {"charCreationInfo.bl_costumes", "costumes"},
-	        {"charCreationInfo.bl_lights", "lights"},
-	        {"charCreationInfo.races", "races"},
-	        {"charCreationInfo.ancestries", "ancestries"},
-	        {"charCreationInfo.schools", "schools"},
-	        {"charCreationInfo.attributes", "attributes"},
-	        {"charCreationInfo.bl_beards", "beards"},
-	        {"charCreationInfo.bl_skins", "skins"},
-	        {"charCreationInfo.bl_lipsticks", "lipsticks"},
-	        {"charCreationInfo.bl_makeups", "makeups"}
+            {"charCreationInfo.bl_eyebrows", "eyebrows"},
+            {"charCreationInfo.bl_eyes", "eyes"},
+            {"charCreationInfo.bl_decos", "decos"},
+            {"charCreationInfo.bloodlines", "bloodlines"},
+            {"charCreationInfo.bl_hairs", "hairs"},
+            {"charCreationInfo.bl_backgrounds", "backgrounds"},
+            {"charCreationInfo.bl_accessories", "accessories"},
+            {"charCreationInfo.bl_costumes", "costumes"},
+            {"charCreationInfo.bl_lights", "lights"},
+            {"charCreationInfo.races", "races"},
+            {"charCreationInfo.ancestries", "ancestries"},
+            {"charCreationInfo.schools", "schools"},
+            {"charCreationInfo.attributes", "attributes"},
+            {"charCreationInfo.bl_beards", "beards"},
+            {"charCreationInfo.bl_skins", "skins"},
+            {"charCreationInfo.bl_lipsticks", "lipsticks"},
+            {"charCreationInfo.bl_makeups", "makeups"}
         };
 
         public static string[] CreateCharacterCacheQueries = new string[]
         {
-	        "SELECT bloodlineID, gender, eyebrowsID, npc FROM chrBLEyebrows",
-	        "SELECT bloodlineID, gender, eyesID, npc FROM chrBLEyes",
-	        "SELECT bloodlineID, gender, decoID, npc FROM chrBLDecos",
-	        "SELECT bloodlineID, bloodlineName, raceID, description, maleDescription, femaleDescription, shipTypeID, corporationID, perception, willpower, charisma, memory, intelligence, graphicID, shortDescription, shortMaleDescription, shortFemaleDescription, 0 AS dataID FROM chrBloodlines",
-	        "SELECT bloodlineID, gender, hairID, npc FROM chrBLHairs",
-	        "SELECT backgroundID, backgroundName FROM chrBLBackgrounds",
-	        "SELECT bloodlineID, gender, accessoryID, npc FROM chrBLAccessories",
-	        "SELECT bloodlineID, gender, costumeID, npc FROM chrBLCostumes",
-	        "SELECT lightID, lightName FROM chrBLLights",
-	        "SELECT raceID, raceName, description, graphicID, shortDescription, 0 AS dataID FROM chrRaces",
-	        "SELECT ancestryID, ancestryName, bloodlineID, description, perception, willpower, charisma, memory, intelligence, graphicID, shortDescription, 0 AS dataID FROM chrAncestries",
-	        "SELECT raceID, schoolID, schoolName, description, graphicID, corporationID, agentID, newAgentID FROM chrSchools LEFT JOIN agtAgents USING (corporationID) GROUP BY schoolID",
-	        "SELECT attributeID, attributeName, description, graphicID FROM chrAttributes",
-	        "SELECT bloodlineID, gender, beardID, npc FROM chrBLBeards",
-	        "SELECT bloodlineID, gender, skinID, npc FROM chrBLSkins",
-	        "SELECT bloodlineID, gender, lipstickID, npc FROM chrBLLipsticks",
-	        "SELECT bloodlineID, gender, makeupID, npc FROM chrBLMakeups"
+            "SELECT bloodlineID, gender, eyebrowsID, npc FROM chrBLEyebrows",
+            "SELECT bloodlineID, gender, eyesID, npc FROM chrBLEyes",
+            "SELECT bloodlineID, gender, decoID, npc FROM chrBLDecos",
+            "SELECT bloodlineID, bloodlineName, raceID, description, maleDescription, femaleDescription, shipTypeID, corporationID, perception, willpower, charisma, memory, intelligence, graphicID, shortDescription, shortMaleDescription, shortFemaleDescription, 0 AS dataID FROM chrBloodlines",
+            "SELECT bloodlineID, gender, hairID, npc FROM chrBLHairs",
+            "SELECT backgroundID, backgroundName FROM chrBLBackgrounds",
+            "SELECT bloodlineID, gender, accessoryID, npc FROM chrBLAccessories",
+            "SELECT bloodlineID, gender, costumeID, npc FROM chrBLCostumes",
+            "SELECT lightID, lightName FROM chrBLLights",
+            "SELECT raceID, raceName, description, graphicID, shortDescription, 0 AS dataID FROM chrRaces",
+            "SELECT ancestryID, ancestryName, bloodlineID, description, perception, willpower, charisma, memory, intelligence, graphicID, shortDescription, 0 AS dataID FROM chrAncestries",
+            "SELECT raceID, schoolID, schoolName, description, graphicID, corporationID, agentID, newAgentID FROM chrSchools LEFT JOIN agtAgents USING (corporationID) GROUP BY schoolID",
+            "SELECT attributeID, attributeName, description, graphicID FROM chrAttributes",
+            "SELECT bloodlineID, gender, beardID, npc FROM chrBLBeards",
+            "SELECT bloodlineID, gender, skinID, npc FROM chrBLSkins",
+            "SELECT bloodlineID, gender, lipstickID, npc FROM chrBLLipsticks",
+            "SELECT bloodlineID, gender, makeupID, npc FROM chrBLMakeups"
         };
 
         public static CacheObjectType[] CreateCharacterCacheTypes = new CacheObjectType[]
         {
-	        CacheObjectType.Rowset,
-	        CacheObjectType.Rowset,
-	        CacheObjectType.Rowset,
-	        CacheObjectType.CRowset,
-	        CacheObjectType.Rowset,
-	        CacheObjectType.Rowset,
-	        CacheObjectType.Rowset,
-	        CacheObjectType.Rowset,
-	        CacheObjectType.Rowset,
-	        CacheObjectType.CRowset,
-	        CacheObjectType.CRowset,
-	        CacheObjectType.CRowset,
-	        CacheObjectType.CRowset,
-	        CacheObjectType.Rowset,
-	        CacheObjectType.Rowset,
-	        CacheObjectType.Rowset,
-	        CacheObjectType.Rowset
+            CacheObjectType.Rowset,
+            CacheObjectType.Rowset,
+            CacheObjectType.Rowset,
+            CacheObjectType.CRowset,
+            CacheObjectType.Rowset,
+            CacheObjectType.Rowset,
+            CacheObjectType.Rowset,
+            CacheObjectType.Rowset,
+            CacheObjectType.Rowset,
+            CacheObjectType.CRowset,
+            CacheObjectType.CRowset,
+            CacheObjectType.CRowset,
+            CacheObjectType.CRowset,
+            CacheObjectType.Rowset,
+            CacheObjectType.Rowset,
+            CacheObjectType.Rowset,
+            CacheObjectType.Rowset
         };
-        
+
         public static Dictionary<string, string> CharacterAppearanceCacheTable = new Dictionary<string, string>()
         {
-	        {"charCreationInfo.eyebrows", "eyebrows"},
-	        {"charCreationInfo.eyes", "eyes"},
-	        {"charCreationInfo.decos", "decos"},
-	        {"charCreationInfo.hairs", "hairs"},
-	        {"charCreationInfo.backgrounds", "backgrounds"},
-	        {"charCreationInfo.accessories", "accessories"},
-	        {"charCreationInfo.costumes", "costumes"},
-	        {"charCreationInfo.lights", "lights"},
-	        {"charCreationInfo.makeups", "makeups"},
-	        {"charCreationInfo.beards", "beards"},
-	        {"charCreationInfo.skins", "skins"},
-	        {"charCreationInfo.lipsticks", "lipsticks"}
+            {"charCreationInfo.eyebrows", "eyebrows"},
+            {"charCreationInfo.eyes", "eyes"},
+            {"charCreationInfo.decos", "decos"},
+            {"charCreationInfo.hairs", "hairs"},
+            {"charCreationInfo.backgrounds", "backgrounds"},
+            {"charCreationInfo.accessories", "accessories"},
+            {"charCreationInfo.costumes", "costumes"},
+            {"charCreationInfo.lights", "lights"},
+            {"charCreationInfo.makeups", "makeups"},
+            {"charCreationInfo.beards", "beards"},
+            {"charCreationInfo.skins", "skins"},
+            {"charCreationInfo.lipsticks", "lipsticks"}
         };
 
         public static string[] CharacterAppearanceCacheQueries = new string[]
         {
-	        "SELECT eyebrowsID, eyebrowsName FROM chrEyebrows",
-	        "SELECT eyesID, eyesName FROM chrEyes",
-	        "SELECT decoID, decoName FROM chrDecos",
-	        "SELECT hairID, hairName FROM chrHairs",
-	        "SELECT backgroundID, backgroundName FROM chrBackgrounds",
-	        "SELECT accessoryID, accessoryName FROM chrAccessories",
-	        "SELECT costumeID, costumeName FROM chrCostumes",
-	        "SELECT lightID, lightName FROM chrLights",
-	        "SELECT makeupID, makeupName FROM chrMakeups",
-	        "SELECT beardID, beardName FROM chrBeards",
-	        "SELECT skinID, skinName FROM chrSkins",
-	        "SELECT lipstickID, lipstickName FROM chrLipsticks"
+            "SELECT eyebrowsID, eyebrowsName FROM chrEyebrows",
+            "SELECT eyesID, eyesName FROM chrEyes",
+            "SELECT decoID, decoName FROM chrDecos",
+            "SELECT hairID, hairName FROM chrHairs",
+            "SELECT backgroundID, backgroundName FROM chrBackgrounds",
+            "SELECT accessoryID, accessoryName FROM chrAccessories",
+            "SELECT costumeID, costumeName FROM chrCostumes",
+            "SELECT lightID, lightName FROM chrLights",
+            "SELECT makeupID, makeupName FROM chrMakeups",
+            "SELECT beardID, beardName FROM chrBeards",
+            "SELECT skinID, skinName FROM chrSkins",
+            "SELECT lipstickID, lipstickName FROM chrLipsticks"
         };
-        
+
         public static CacheObjectType[] CharacterAppearanceCacheTypes = new CacheObjectType[]
         {
-	        CacheObjectType.Rowset,
-	        CacheObjectType.Rowset,
-	        CacheObjectType.Rowset,
-	        CacheObjectType.Rowset,
-	        CacheObjectType.Rowset,
-	        CacheObjectType.Rowset,
-	        CacheObjectType.Rowset,
-	        CacheObjectType.Rowset,
-	        CacheObjectType.Rowset,
-	        CacheObjectType.Rowset,
-	        CacheObjectType.Rowset,
-	        CacheObjectType.Rowset
+            CacheObjectType.Rowset,
+            CacheObjectType.Rowset,
+            CacheObjectType.Rowset,
+            CacheObjectType.Rowset,
+            CacheObjectType.Rowset,
+            CacheObjectType.Rowset,
+            CacheObjectType.Rowset,
+            CacheObjectType.Rowset,
+            CacheObjectType.Rowset,
+            CacheObjectType.Rowset,
+            CacheObjectType.Rowset,
+            CacheObjectType.Rowset
         };
-        
-        private Dictionary<string, PyDataType> mCacheData = new Dictionary<string, PyDataType>();
-        private PyDictionary mCacheHints = new PyDictionary();
-        private NodeContainer mContainer = null;
+
+        private readonly Dictionary<string, PyDataType> mCacheData = new Dictionary<string, PyDataType>();
+        private readonly PyDictionary mCacheHints = new PyDictionary();
+        private readonly NodeContainer mContainer = null;
 
         private Channel Log { get; set; }
+
         public bool Exists(string name)
         {
-	        return this.mCacheData.ContainsKey(name);
+            return this.mCacheData.ContainsKey(name);
         }
 
         public PyDataType Get(string name)
@@ -307,8 +298,8 @@ namespace Node
 
         public void Store(string name, PyDataType data, long timestamp)
         {
-	        PyCacheHint hint = PyCacheHint.FromPyObject(name, data, timestamp, this.mContainer.NodeID);
-            
+            PyCacheHint hint = PyCacheHint.FromPyObject(name, data, timestamp, this.mContainer.NodeID);
+
             // save cache hint
             this.mCacheHints[name] = hint;
             // save cache object
@@ -317,53 +308,53 @@ namespace Node
 
         public PyDictionary GetHints(Dictionary<string, string> list)
         {
-	        PyDictionary hints = new PyDictionary();
+            PyDictionary hints = new PyDictionary();
 
-	        foreach(KeyValuePair<string, string> pair in list)
-				hints[pair.Value] = this.GetHint(pair.Key);
-	        
-	        return hints;
+            foreach (KeyValuePair<string, string> pair in list)
+                hints[pair.Value] = this.GetHint(pair.Key);
+
+            return hints;
         }
 
         public PyDataType GetHint(string name)
         {
-	        return this.mCacheHints[name];
+            return this.mCacheHints[name];
         }
 
         private void Load(string name, string query, CacheObjectType type)
         {
-	        Log.Debug($"Loading cache data for {name} of type {type}");
-	        
+            Log.Debug($"Loading cache data for {name} of type {type}");
+
             MySqlDataReader reader = null;
             MySqlConnection connection = null;
 
             try
             {
-	            Database.Query(ref reader, ref connection, query);
-	            PyDataType cacheObject = null;
+                Database.Query(ref reader, ref connection, query);
+                PyDataType cacheObject = null;
 
-	            switch (type)
-	            {
-		            case CacheObjectType.Rowset:
-			            cacheObject = Rowset.FromMySqlDataReader(reader);
-			            break;
-		            case CacheObjectType.CRowset:
-			            cacheObject = CRowset.FromMySqlDataReader(reader);
-			            break;
-		            case CacheObjectType.TupleSet:
-			            cacheObject = TupleSet.FromMySqlDataReader(reader);
-			            break;
-		            case CacheObjectType.PackedRowList:
-			            cacheObject = PyPackedRowList.FromMySqlDataReader(reader);
-			            break;
-	            }
-	            
-	            Store(name, cacheObject, DateTime.Now.ToFileTimeUtc());
+                switch (type)
+                {
+                    case CacheObjectType.Rowset:
+                        cacheObject = Rowset.FromMySqlDataReader(reader);
+                        break;
+                    case CacheObjectType.CRowset:
+                        cacheObject = CRowset.FromMySqlDataReader(reader);
+                        break;
+                    case CacheObjectType.TupleSet:
+                        cacheObject = TupleSet.FromMySqlDataReader(reader);
+                        break;
+                    case CacheObjectType.PackedRowList:
+                        cacheObject = PyPackedRowList.FromMySqlDataReader(reader);
+                        break;
+                }
+
+                Store(name, cacheObject, DateTime.Now.ToFileTimeUtc());
             }
             catch (Exception e)
             {
-	            Log.Error($"Cannot generate cache data for {name}");
-	            throw;
+                Log.Error($"Cannot generate cache data for {name}");
+                throw;
             }
         }
 
@@ -376,15 +367,15 @@ namespace Node
 
             foreach (KeyValuePair<string, string> pair in names)
             {
-	            Load(pair.Key, queries[i], types[i]);
-	            i++;
+                Load(pair.Key, queries[i], types[i]);
+                i++;
             }
         }
 
         public CacheStorage(NodeContainer container, DatabaseConnection db, Logger logger) : base(db)
         {
-	        this.Log = logger.CreateLogChannel("CacheStorage");
-	        this.mContainer = container;
+            this.Log = logger.CreateLogChannel("CacheStorage");
+            this.mContainer = container;
         }
     }
 }

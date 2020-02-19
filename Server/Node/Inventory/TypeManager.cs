@@ -24,9 +24,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using Common;
 using Common.Database;
 using Node.Database;
 
@@ -34,23 +31,19 @@ namespace Node.Inventory
 {
     public class TypeManager : DatabaseAccessor
     {
-        private ItemDB mItemDB = null;
-        Dictionary<int, ItemType> itemTypes = new Dictionary<int, ItemType>();
+        private readonly ItemDB mItemDB = null;
+        readonly Dictionary<int, ItemType> itemTypes = new Dictionary<int, ItemType>();
 
         public bool Load()
         {
             List<ItemType> types = this.mItemDB.LoadItemTypes();
 
             if (types == null)
-            {
                 return false;
-            }
 
-            foreach (ItemType type in types)
-            {
+            foreach (ItemType type in types) 
                 itemTypes.Add(type.typeID, type);
-            }
-            
+
             return true;
         }
 

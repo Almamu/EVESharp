@@ -22,13 +22,7 @@
     Creator: Almamu
 */
 
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using PythonTypes;
-using Common;
-using Common.Logging;
 using PythonTypes.Types.Network;
 using PythonTypes.Types.Primitives;
 
@@ -36,72 +30,42 @@ namespace Node
 {
     public class Client
     {
-        private Session session = new Session();
+        private readonly Session session = new Session();
 
         public void UpdateSession(PyPacket from)
         {
             // We should add a Decode method to SessionChangeNotification...
             PyTuple payload = from.Payload;
 
-            PyDictionary changes = (payload[0] as PyTuple) [1] as PyDictionary;
+            PyDictionary changes = (payload[0] as PyTuple)[1] as PyDictionary;
 
             // Update our local session
-            foreach(KeyValuePair<string, PyDataType> pair in changes)
-            {
+            foreach (KeyValuePair<string, PyDataType> pair in changes)
                 session.Set(pair.Key, (pair.Value as PyTuple)[1]);
-            }
         }
 
         public string LanguageID
         {
-            get
-            {
-                return session.GetCurrent("languageID") as PyString;
-            }
-
-            set
-            {
-                session.Set("languageID", value);
-            }
+            get => session.GetCurrent("languageID") as PyString;
+            set => session.Set("languageID", value);
         }
 
         public int AccountID
         {
-            get
-            {
-                return session.GetCurrent("userid") as PyInteger;
-            }
-
-            set
-            {
-
-            }
+            get => session.GetCurrent("userid") as PyInteger;
+            set { }
         }
 
         public int Role
         {
-            get
-            {
-                return session.GetCurrent("role") as PyInteger;
-            }
-
-            set
-            {
-
-            }
+            get => session.GetCurrent("role") as PyInteger;
+            set { }
         }
 
         public string Address
         {
-            get
-            {
-                return session.GetCurrent("address") as PyString;
-            }
-
-            set
-            {
-
-            }
+            get => session.GetCurrent("address") as PyString;
+            set { }
         }
     }
 }

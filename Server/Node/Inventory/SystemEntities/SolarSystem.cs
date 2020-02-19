@@ -23,10 +23,6 @@
 */
 
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using Node.Database;
 
 namespace Node.Inventory.SystemEntities
 {
@@ -55,18 +51,15 @@ namespace Node.Inventory.SystemEntities
         public SolarSystemLoadException()
             : base("Cannot load solar system from database")
         {
-
         }
     }
-    
+
     public class SolarSystem : Inventory
     {
         public SolarSystem(Entity from, SolarSystemInfo info) : base(from)
         {
             if (typeID != 5)
-            {
                 throw new Exception("Trying to load a non-solar system item like one");
-            }
 
             solarSystemInfo = info;
         }

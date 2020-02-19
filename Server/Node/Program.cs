@@ -23,33 +23,13 @@
 */
 
 using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Text;
-using System.IO;
-using System.Net.Sockets;
-using System.Runtime.CompilerServices;
 using System.Threading;
-using System.Security.Cryptography;
-
-using MySql.Data.MySqlClient;
-
-using Common;
 using Common.Database;
 using Common.Logging;
 using Common.Logging.Streams;
-using Common.Network;
-using Common.Services;
-using Common.Packets;
-using Node.Inventory;
-
-using PythonTypes;
-using PythonTypes.Types.Database;
 using Node.Configuration;
+using Node.Inventory;
 using Node.Network;
-using PythonTypes.Compression;
-using PythonTypes.Types.Primitives;
 
 namespace Node
 {
@@ -63,10 +43,10 @@ namespace Node
         private static ItemFactory sItemFactory = null;
         private static Logger sLog = null;
         private static Channel sChannel = null;
-        
+
         static public long NodeID
         {
-            get { return sContainer.NodeID; }
+            get => sContainer.NodeID;
             private set { }
         }
 
@@ -81,17 +61,17 @@ namespace Node
                 sLog.AddLogStream(new ConsoleLogStream());
                 // load the configuration
                 sConfiguration = General.LoadFromFile("configuration.conf");
-                
+
                 // update the logging configuration
                 sLog.SetConfiguration(sConfiguration.Logging);
-                
+
                 if (sConfiguration.LogLite.Enabled == true)
                     sLog.AddLogStream(new LogLiteStream("Node", sLog, sConfiguration.LogLite));
                 if (sConfiguration.FileLog.Enabled == true)
                     sLog.AddLogStream(new FileLogStream(sConfiguration.FileLog));
-                
+
                 // run a thread for log flushing
-                new Thread(() => 
+                new Thread(() =>
                 {
                     while (true)
                     {
@@ -99,22 +79,22 @@ namespace Node
                         Thread.Sleep(1);
                     }
                 }).Start();
-                
+
                 sChannel.Info("Initializing EVESharp Node");
                 sChannel.Fatal("Initializing EVESharp Node");
                 sChannel.Error("Initializing EVESharp Node");
                 sChannel.Warning("Initializing EVESharp Node");
                 sChannel.Debug("Initializing EVESharp Node");
                 sChannel.Trace("Initializing EVESharp Node");
-                
+
                 // create the node container
                 sContainer = new NodeContainer();
                 sContainer.Logger = sLog;
                 sContainer.ClientManager = new ClientManager();
-                
+
                 sDatabase = DatabaseConnection.FromConfiguration(sConfiguration.Database, sLog);
                 sDatabase.Query("SET global max_allowed_packet=1073741824");
-                
+
                 sChannel.Info("Priming cache...");
                 sCacheStorage = new CacheStorage(sContainer, sDatabase, sLog);
                 // prime bulk data
@@ -147,18 +127,16 @@ namespace Node
                 sChannel.Info("Initializing service manager");
                 sContainer.ServiceManager = new ServiceManager(sContainer, sDatabase, sCacheStorage, sConfiguration);
                 sChannel.Debug("Done");
-                
+
                 sChannel.Info("Connecting to proxy...");
-                
+
                 sConnection = new ClusterConnection(sContainer);
                 sConnection.Socket.Connect(sConfiguration.Proxy.Hostname, sConfiguration.Proxy.Port);
 
                 sChannel.Trace("Node startup done");
 
                 while (true)
-                {
                     Thread.Sleep(1);
-                }
             }
             catch (Exception e)
             {

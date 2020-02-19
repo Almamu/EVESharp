@@ -22,14 +22,7 @@
     Creator: Almamu
 */
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using PythonTypes;
-using Common;
 using Common.Services;
-using System.IO;
 using Node.Configuration;
 using PythonTypes.Types.Primitives;
 
@@ -37,8 +30,8 @@ namespace Node.Services.Network
 {
     public class authentication : Service
     {
-        private Authentication mConfiguration = null;
-        
+        private readonly Authentication mConfiguration = null;
+
         public authentication(Authentication configuration)
             : base("authentication")
         {
@@ -58,7 +51,7 @@ namespace Node.Services.Network
 
                 return new PyObjectData("util.KeyVal", keyvalData);
             }
-            
+
             return new PyNone();
         }
     }

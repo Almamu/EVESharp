@@ -8,7 +8,7 @@ namespace Node.Configuration
         NoMessage = 0,
         HTMLMessage = 1
     }
-    
+
     public class Authentication
     {
         public AuthenticationMessageType MessageType { get; private set; }
