@@ -1,5 +1,9 @@
 namespace PythonTypes.Marshal
 {
+    /// <summary>
+    /// List of opcodes the marshal/unmarshal functions can use to read/write data to communicate
+    /// with/from python
+    /// </summary>
     public enum Opcode
     {
         Error,
@@ -23,7 +27,7 @@ namespace PythonTypes.Marshal
         StringLong,
         Tuple,
         List,
-        Dict,
+        Dictionary,
         ObjectData = 23,
         SubStruct = 25,
         SavedStreamElement = 27,

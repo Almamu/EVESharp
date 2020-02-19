@@ -2,7 +2,10 @@ using System.Collections.Generic;
 
 namespace PythonTypes.Marshal
 {
-    public class StringTable
+    /// <summary>
+    /// Utils for using strings on the StringTable
+    /// </summary>
+    public static class StringTableUtils
     {
         public enum EntryList
         {

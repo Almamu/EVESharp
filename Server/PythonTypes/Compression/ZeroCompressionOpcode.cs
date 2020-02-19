@@ -1,10 +1,26 @@
 namespace PythonTypes.Compression
 {
+    /// <summary>
+    /// Easier representation of the opcode for the zero compression which has information on the block
+    /// like how much zeros were compressed 
+    /// </summary>
     public struct ZeroCompressionOpcode
     {
+        /// <summary>
+        /// The length of the first part of the block
+        /// </summary>
         public byte FirstLength;
+        /// <summary>
+        /// Indicates if the first part of the block is zero
+        /// </summary>
         public bool FirstIsZero;
+        /// <summary>
+        /// The length of the second part of the block
+        /// </summary>
         public byte SecondLength;
+        /// <summary>
+        /// Indicates if the second part of the block is zero
+        /// </summary>
         public bool SecondIsZero;
 
         public ZeroCompressionOpcode(byte firstLength, bool firstIsZero, byte secondLength, bool secondIsZero)

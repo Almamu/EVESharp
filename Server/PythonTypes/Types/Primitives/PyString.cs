@@ -26,7 +26,7 @@ namespace PythonTypes.Types.Primitives
         public string Value { get; }
         public int Length { get { return this.Value.Length; } }
         public bool IsStringTableEntry { get; }
-        public StringTable.EntryList StringTableEntryIndex { get; }
+        public StringTableUtils.EntryList StringTableEntryIndex { get; }
         public bool IsUTF8 { get; }
         
 
@@ -37,9 +37,9 @@ namespace PythonTypes.Types.Primitives
             this.IsUTF8 = isUTF8;
         }
 
-        public PyString(StringTable.EntryList entry) : base(PyObjectType.String)
+        public PyString(StringTableUtils.EntryList entry) : base(PyObjectType.String)
         {
-            this.Value = StringTable.Entries[(int) entry];
+            this.Value = StringTableUtils.Entries[(int) entry];
             this.IsStringTableEntry = true;
             this.StringTableEntryIndex = entry;
         }
