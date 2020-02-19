@@ -106,7 +106,7 @@ namespace Common.Network
                         // unmarshal the packet
                         PyDataType packet = Unmarshal.ReadFromByteArray(this.mPacketizer.PopItem());
 #if DEBUG
-                        this.mPacketLog.Trace(PrettyPrinter.Print(packet));
+                        this.mPacketLog.Trace(PrettyPrinter.FromDataType(packet));
 #endif
                         // and invoke the callback for the packet handling if it is present
                         this.mPacketReceiveCallback.Invoke(packet);
@@ -181,7 +181,7 @@ namespace Common.Network
         public void Send(PyDataType packet)
         {
 #if DEBUG
-            this.mPacketLog.Trace(PrettyPrinter.Print(packet));
+            this.mPacketLog.Trace(PrettyPrinter.FromDataType(packet));
 #endif
             
             MemoryStream stream = new MemoryStream();

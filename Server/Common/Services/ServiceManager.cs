@@ -29,7 +29,20 @@ namespace Common.Services
                 throw new ServiceDoesNotContainCallException(service, call);
             }
             
-            return (PyDataType)(method.Invoke(svc, new object[] { data, client }));
+            // relay the exception throw by the call
+            try
+            {
+                return (PyDataType)(method.Invoke(svc, new object[] { data, client }));
+            }
+            catch (TargetInvocationException e)
+            {
+                // throw the InnerException if possible
+                if (e.InnerException == null)
+                    throw e;
+                
+                // throw the original exception
+                throw e.InnerException;
+            }
         }
     }
 }

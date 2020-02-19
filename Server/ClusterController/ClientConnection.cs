@@ -10,6 +10,7 @@ using Common.Logging;
 using Common.Network;
 using Common.Packets;
 using PythonTypes;
+using PythonTypes.Types.Exceptions;
 using PythonTypes.Types.Network;
 using PythonTypes.Types.Primitives;
 

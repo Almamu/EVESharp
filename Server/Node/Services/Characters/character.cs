@@ -33,6 +33,7 @@ using System.IO;
 using System.Text.RegularExpressions;
 using Common.Database;
 using Node.Database;
+using PythonTypes.Types.Exceptions;
 using PythonTypes.Types.Primitives;
 
 namespace Node.Services.Characters
@@ -85,7 +86,7 @@ namespace Node.Services.Characters
             return new PyDictionary();
         }
 
-        public PyDataType ValidateNameEx(PyTuple args, Client client)
+        public PyInteger ValidateNameEx(PyTuple args, Client client)
         {
             // TODO: IMPROVE PARSING OF PACKETS LIKE THIS
             if(args.Count != 1)
@@ -112,6 +113,14 @@ namespace Node.Services.Characters
             
             // TODO: IMPLEMENT BANLIST OF WORDS
             return new PyInteger((int) NameValidationResults.Valid);
+        }
+
+        public PyDataType CreateCharacter2(PyTuple arguments, Client client)
+        {
+            if(this.ValidateNameEx (new PyTuple(new PyDataType [] { arguments[0] }), client) != (int) NameValidationResults.Valid)
+                throw new UserError("CharNameInvalid");
+
+            throw new UserError("CharNameInvalid");
         }
     }
 }

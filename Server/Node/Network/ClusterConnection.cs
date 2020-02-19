@@ -13,6 +13,14 @@ namespace Node.Network
 {
     public class ClusterConnection
     {
+        // TODO: MOVE THIS TO THE CORRECT ZONE
+        enum MACHONETERR_TYPE
+        {
+            UNMACHODESTINATION = 0,
+            UNMACHOCHANNEL = 1,
+            WRAPPEDEXCEPTION = 2
+        };
+        
         private Channel Log { get; }
         public EVEClientSocket Socket { get; }
         public NodeContainer Container { get; }
@@ -106,47 +114,66 @@ namespace Node.Network
                 PyDataType callResult = null;
                 PyAddressClient source = packet.Source as PyAddressClient;
 
-                if (packet.Destination is PyAddressAny)
+                try
                 {
-                    PyAddressAny dest = packet.Destination as PyAddressAny;
+                    if (packet.Destination is PyAddressAny)
+                    {
+                        PyAddressAny dest = packet.Destination as PyAddressAny;
 
-                    Log.Trace($"Calling {dest.Service.Value}::{call}");
-                    callResult = this.Container.ServiceManager.ServiceCall(
-                        dest.Service, call, args, this.Container.ClientManager.Get(packet.UserID)
-                    );
-                }
-                else if(packet.Destination is PyAddressNode)
-                {
-                    PyAddressNode dest = packet.Destination as PyAddressNode;
+                        Log.Trace($"Calling {dest.Service.Value}::{call}");
+                        callResult = this.Container.ServiceManager.ServiceCall(
+                            dest.Service, call, args, this.Container.ClientManager.Get(packet.UserID)
+                        );
+                    }
+                    else if(packet.Destination is PyAddressNode)
+                    {
+                        PyAddressNode dest = packet.Destination as PyAddressNode;
 
-                    Log.Trace($"Calling {dest.Service.Value}::{call}");
-                    callResult = this.Container.ServiceManager.ServiceCall(
-                        dest.Service, call, args, this.Container.ClientManager.Get(packet.UserID)
-                    );                    
-                }
-                else
-                {
-                    Log.Error($"Received packet that wasn't directed to us");
-                }
+                        Log.Trace($"Calling {dest.Service.Value}::{call}");
+                        callResult = this.Container.ServiceManager.ServiceCall(
+                            dest.Service, call, args, this.Container.ClientManager.Get(packet.UserID)
+                        );                    
+                    }
+                    else
+                    {
+                        Log.Error($"Received packet that wasn't directed to us");
+                    }
 
-                if (callResult == null)
-                    callResult = new PyNone();
+                    if (callResult == null)
+                        callResult = new PyNone();
 
-                // convert the packet to a response so we don't have to allocate a whole new packet
-                res.type_string = "macho.CallRsp";
-                res.Type = MachoMessageType.CALL_RSP;
+                    // convert the packet to a response so we don't have to allocate a whole new packet
+                    res.type_string = "macho.CallRsp";
+                    res.Type = MachoMessageType.CALL_RSP;
                 
-                // ensure destination has clientID in it
-                source.ClientID = (int) packet.UserID;
-                // switch source and dest
-                res.Source = packet.Destination;
-                res.Destination = source;
+                    // ensure destination has clientID in it
+                    source.ClientID = (int) packet.UserID;
+                    // switch source and dest
+                    res.Source = packet.Destination;
+                    res.Destination = source;
 
-                res.UserID = packet.UserID;
+                    res.UserID = packet.UserID;
 
-                res.Payload = new PyTuple(1);
-                res.Payload[0] = new PySubStream(callResult);
+                    res.Payload = new PyTuple(new PyDataType[] { new PySubStream (callResult) });
+                }
+                catch (PyException e)
+                {
+                    // PyExceptions have to be relayed to the client
+                    // this way it's easy to notify the user without needing any special code
+                    res.type_string = "macho.ErrorResponse";
+                    res.Type = MachoMessageType.ERRORRESPONSE;
 
+                    source.ClientID = (int) packet.UserID;
+                    res.Source = packet.Destination;
+                    res.Destination = source;
+
+                    res.UserID = packet.UserID;
+                    res.Payload = new PyTuple(new PyDataType[]
+                    {
+                        (int) packet.Type, (int) MACHONETERR_TYPE.WRAPPEDEXCEPTION, new PyTuple (new PyDataType[] { new PySubStream(e) }), 
+                    });
+                }
+                
                 this.Socket.Send(res);
             }
             else if (packet.Type == MachoMessageType.SESSIONCHANGENOTIFICATION)

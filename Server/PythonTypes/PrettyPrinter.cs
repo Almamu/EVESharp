@@ -1,221 +1,229 @@
 using System;
+using System.Collections.Generic;
 using System.Text;
 using PythonTypes.Types.Database;
 using PythonTypes.Types.Primitives;
 
 namespace PythonTypes
 {
-    public static class PrettyPrinter
+    public class PrettyPrinter
     {
-        public const string Indention = "  ";
+        private const string Indention = "  ";
+        
+        private StringBuilder mStringBuilder = new StringBuilder();
+        private int mIndentation = 0;
 
-        public static string Print(PyDataType obj)
+        public static string FromDataType(PyDataType obj)
         {
-            var ret = new StringBuilder();
-            Print(ret, 0, obj);
-            return ret.ToString();
+            PrettyPrinter printer = new PrettyPrinter();
+
+            return printer.Process(obj);
         }
 
-        private static void Print(StringBuilder builder, int indention, PyDataType obj)
+        protected string Process(PyDataType obj)
         {
-            var indent = "";
-            for (int i = 0; i < indention; i++)
-                indent += Indention;
-
-            if (obj is PyString)
-                builder.AppendLine(PrintString(obj as PyString, indent));
-            else if (obj is PyNone)
-                builder.AppendLine(indent + PrintNone(obj as PyNone));
-            else if (obj is PyDecimal)
-                builder.AppendLine(indent + PrintFloat(obj as PyDecimal));
-            else if (obj is PyInteger)
-                builder.AppendLine(indent + PrintInt(obj as PyInteger));
-            else if (obj is PyTuple)
-            {
-                var tuple = obj as PyTuple;
-                builder.AppendLine(indent + PrintTuple(tuple));
-                foreach (var item in tuple)
-                    Print(builder, indention + 1, item);
-            }
-            else if (obj is PyList)
-            {
-                var list = obj as PyList;
-                builder.AppendLine(indent + PrintList(list));
-                foreach (var item in list)
-                    Print(builder, indention + 1, item);
-            }
-            else if (obj is PyBuffer)
-                builder.AppendLine(indent + PrintBuffer(obj as PyBuffer));
-            else if (obj is PyObjectData)
-            {
-                var objdata = obj as PyObjectData;
-                builder.AppendLine(indent + PrintObjectData(objdata));
-                Print(builder, indention + 1, objdata.Arguments);
-            }
-            else if (obj is PySubStream)
-            {
-                var sub = obj as PySubStream;
-                builder.AppendLine(indent + PrintSubStream(sub));
-                Print(builder, indention + 1, sub.Stream);
-            }
-            else if (obj is PyDictionary)
-            {
-                var dict = obj as PyDictionary;
-                builder.AppendLine(indent + PrintDict(dict));
-                foreach (var kvp in dict)
-                {
-                    Print(builder, indention + 1, kvp.Key);
-                    Print(builder, indention + 1, kvp.Value);
-                }
-            }
-            else if (obj is PyObject)
-            {
-                var objex = obj as PyObject;
-                builder.AppendLine(indent + PrintObjectEx(objex));
-                Print(builder, indention + 1, objex.Header);
-                foreach (var item in objex.List)
-                    Print(builder, indention + 1, item);
-
-                if (objex.Dictionary != null)
-                {
-                    foreach (var kvp in objex.Dictionary)
-                    {
-                        Print(builder, indention + 1, kvp.Key);
-                        Print(builder, indention + 1, kvp.Value);
-                    }
-                }
-            }
+            // add indentation to the string
+            for (int i = 0; i < this.mIndentation; i++)
+                this.mStringBuilder.Append(Indention);
+            
+            if (obj == null || obj is PyNone)
+                this.ProcessNone();
+            else if (obj is PyString)
+                this.ProcessString(obj as PyString);
             else if (obj is PyToken)
-            {
-                builder.AppendLine(indent + PrintToken(obj as PyToken));
-            }
-            else if (obj is PyPackedRow)
-            {
-                var packedRow = obj as PyPackedRow;
-                // builder.AppendLine(indent + PrintPackedRow(packedRow));
-                builder.AppendLine("[PyPackedRow]");
-                foreach (var column in packedRow.Header.Columns)
-                {
-                    builder.AppendLine(indent + Indention + "[\"" + column.Name + "\" => " + packedRow[column.Name] +
-                                       " [" + column.Type + "]]");
-                }
-            }
+                this.ProcessToken(obj as PyToken);
+            else if (obj is PyInteger)
+                this.ProcessInteger(obj as PyInteger);
+            else if (obj is PyDecimal)
+                this.ProcessDecimal(obj as PyDecimal);
+            else if (obj is PyBuffer)
+                this.ProcessBuffer(obj as PyBuffer);
             else if (obj is PyBool)
-            {
-                builder.AppendLine(indent + PrintBool(obj as PyBool));
-            }
-            else if (obj is PySubStruct)
-            {
-                var subs = obj as PySubStruct;
-                builder.AppendLine(indent + PrintSubStruct(subs));
-                Print(builder, indention + 1, subs.Definition);
-            }
+                this.ProcessBoolean(obj as PyBool);
+            else if (obj is PyTuple)
+                this.ProcessTuple(obj as PyTuple);
+            else if (obj is PyList)
+                this.ProcessList(obj as PyList);
+            else if (obj is PyDictionary)
+                this.ProcessDictionary(obj as PyDictionary);
             else if (obj is PyChecksumedStream)
-            {
-                var chk = obj as PyChecksumedStream;
-                builder.AppendLine(indent + PrintChecksumedStream(chk));
-                Print(builder, indention + 1, chk.Data);
-            }
+                this.ProcessChecksumedStream(obj as PyChecksumedStream);
+            else if (obj is PyObject)
+                this.ProcessObject(obj as PyObject);
+            else if (obj is PyObjectData)
+                this.ProcessObjectData(obj as PyObjectData);
+            else if (obj is PySubStream)
+                this.ProcessSubStream(obj as PySubStream);
+            else if (obj is PySubStruct)
+                this.ProcessSubStruct(obj as PySubStruct);
+            else if (obj is PyPackedRow)
+                this.ProcessPackedRow(obj as PyPackedRow);
             else
-                builder.AppendLine(indent + "[Warning: unable to print " + obj + "]");
+                this.mStringBuilder.AppendLine("[--PyUnknown--]");
+            
+            return this.mStringBuilder.ToString();
         }
 
-        private static string PrintChecksumedStream(PyChecksumedStream obj)
+        private void ProcessString(PyString str)
         {
-            return "[PyChecksumedStream]";
+            this.mStringBuilder.AppendFormat("[PyString {0} char(s): '{1}']", str.Length, str.Value);
+            this.mStringBuilder.AppendLine();
         }
 
-        private static string PrintSubStruct(PySubStruct substruct)
+        private void ProcessToken(PyToken token)
         {
-            return "[PySubStruct]";
+            this.mStringBuilder.AppendFormat("[PyToken {0} bytes: '{1}']", token.Token.Length, token.Token);
+            this.mStringBuilder.AppendLine();
         }
 
-        private static string PrintBool(PyBool boolean)
+        private void ProcessBoolean(PyBool boolean)
         {
-            return "[PyBool " + boolean.Value + "]";
-        }
-
-        private static string PrintPackedRow(PyPackedRow packedRow)
-        {
-            return "[PyPackedRow]";
-        }
-
-        private static string PrintToken(PyToken token)
-        {
-            return "[PyToken " + token.Token + "]";
-        }
-
-        private static string PrintObjectEx(PyObject obj)
-        {
-            return "[PyObjectEx " + (obj.Header.IsType2 ? "Type2" : "Normal") + "]";
-        }
-
-        private static string PrintDict(PyDictionary dict)
-        {
-            return "[PyDict " + dict.Length + " kvp]";
-        }
-
-        private static string PrintSubStream(PySubStream sub)
-        {
-            return "[PySubStream]";
-        }
-
-        private static string PrintList(PyList list)
-        {
-            return "[PyList " + list.Count + " items]";
-        }
-
-        private static string PrintObjectData(PyObjectData data)
-        {
-            return "[PyObjectData Name: " + data.Name + "]";
-        }
-
-        private static string PrintBuffer(PyBuffer buf)
-        {
-            return "[PyBuffer " + buf.Value.Length + " bytes]";
+            this.mStringBuilder.AppendFormat("[PyBool {0}]", (boolean) ? "true" : "false");
+            this.mStringBuilder.AppendLine();
         }
         
-        private static string PrintTuple(PyTuple tuple)
+        private void ProcessInteger(PyInteger integer)
         {
-            return "[PyTuple " + tuple.Count + " items]";
+            this.mStringBuilder.AppendFormat("[PyInteger {0}]", integer.Value);
+            this.mStringBuilder.AppendLine();
         }
 
-        private static string PrintInt(PyInteger integer)
+        private void ProcessDecimal(PyDecimal dec)
         {
-            return "[PyInt " + integer.Value + "]";
+            this.mStringBuilder.AppendFormat("[PyDecimal {0}]", dec.Value);
+            this.mStringBuilder.AppendLine();
         }
 
-        private static string PrintFloat(PyDecimal fl)
+        private void ProcessNone()
         {
-            return "[PyFloat " + fl.Value + "]";
+            this.mStringBuilder.Append("[PyNone]");
+            this.mStringBuilder.AppendLine();
         }
 
-        private static string PrintString(PyString str, string indention)
+        private void ProcessTuple(PyTuple tuple)
         {
-// aggressive destiny update pretty printing
-#if false
-            UpdateReader reader;
-            try
+            this.mStringBuilder.AppendFormat("[PyTuple {0} items]", tuple.Count); 
+            this.mStringBuilder.AppendLine();
+            this.mIndentation++;
+
+            // process all child elements
+            foreach (PyDataType data in tuple)
+                this.Process(data);
+
+            this.mIndentation--;
+        }
+
+        private void ProcessList(PyList list)
+        {
+            this.mStringBuilder.AppendFormat("[PyList {0} items]", list.Count);
+            this.mStringBuilder.AppendLine();
+            this.mIndentation++;
+            
+            // process all child elements
+            foreach (PyDataType data in list)
+                this.Process(data);
+
+            this.mIndentation--;
+        }
+
+        private void ProcessBuffer(PyBuffer buffer)
+        {
+            this.mStringBuilder.AppendFormat(
+                "[PyBuffer {0} bytes: {1}]", buffer.Length, HexDump.ByteArrayToHexViaLookup32(buffer.Value)
+            );
+            this.mStringBuilder.AppendLine();
+        }
+
+        private void ProcessDictionary(PyDictionary dictionary)
+        {
+            this.mStringBuilder.AppendFormat("[PyDictionary {0} entries]", dictionary.Length);
+            this.mStringBuilder.AppendLine();
+            this.mIndentation++;
+            
+            // process all the keys and values
+            foreach (KeyValuePair<string, PyDataType> pair in dictionary)
             {
-                reader = new UpdateReader();
-                reader.Read(new MemoryStream(str.Raw));
-            }
-            catch (Exception)
-            {
-                reader = null;
+                this.Process(pair.Key);
+                this.Process(pair.Value);
             }
 
-            if (reader == null)
-                return indention + "[PyString \"" + str.Value + "\"]";
-
-            return eveDestiny.PrettyPrinter.Print(reader, indention);
-#endif
-            return indention + "[PyString \"" + str.Value + "\"]";
+            this.mIndentation--;
         }
 
-        private static string PrintNone(PyNone none)
+        private void ProcessChecksumedStream(PyChecksumedStream stream)
         {
-            return "[PyNone]";
+            this.mStringBuilder.Append("[PyChecksumedStream]");
+            this.mStringBuilder.AppendLine();
+            this.mIndentation++;
+
+            this.Process(stream.Data);
+
+            this.mIndentation--;
         }
+
+        private void ProcessObject(PyObject obj)
+        {
+            this.mStringBuilder.AppendFormat("[PyObject {0}]", (obj.Header.IsType2) ? "Type2" : "Type1");
+            this.mStringBuilder.AppendLine();
+            this.mIndentation++;
+
+            // process all object's parts
+            this.Process(obj.Header);
+            this.Process(obj.List);
+            this.Process(obj.Dictionary);
+
+            this.mIndentation--;
+        }
+
+        private void ProcessObjectData(PyObjectData data)
+        {
+            this.mStringBuilder.AppendFormat("[PyObjectData {0}]", data.Name.Value);
+            this.mStringBuilder.AppendLine();
+            this.mIndentation++;
+
+            this.Process(data.Arguments);
+
+            this.mIndentation--;
+        }
+
+        private void ProcessSubStream(PySubStream stream)
+        {
+            this.mStringBuilder.AppendFormat("[PySubStream]");
+            this.mStringBuilder.AppendLine();
+            this.mIndentation++;
+
+            this.Process(stream.Stream);
+
+            this.mIndentation--;
+        }
+
+        private void ProcessSubStruct(PySubStruct subStruct)
+        {
+            this.mStringBuilder.AppendFormat("[PySubStruct]");
+            this.mStringBuilder.AppendLine();
+            this.mIndentation++;
+
+            this.Process(subStruct.Definition);
+
+            this.mIndentation--;
+        }
+
+        private void ProcessPackedRow(PyPackedRow packedRow)
+        {
+            this.mStringBuilder.AppendFormat("[PyPackedRow {0} columns]", packedRow.Header.Columns.Count);
+            if(packedRow.Header.Columns.Count > 0)
+                this.mStringBuilder.AppendLine();
+            this.mIndentation++;
+
+            foreach (DBRowDescriptor.Column column in packedRow.Header.Columns)
+            {
+                this.mStringBuilder.AppendFormat("[PyPackedRowColumn '{0}']", column.Name);
+                this.mStringBuilder.AppendLine();
+                this.Process(packedRow[column.Name]);
+            }
+
+            this.mIndentation--;
+        }
+        // TODO: MIGHT BE A GOOD IDEA TO IMPLEMENT A MARSHAL-STREAM DUMP TOO
     }
 }

@@ -7,63 +7,38 @@ using PythonTypes.Types.Primitives;
 
 namespace PythonTypes.Types.Network
 {
-    public class PyException
+    public class PyException : Exception
     {
-        public string exception_type = "";
-        public string message = "";
-        public string origin = "";
-        public PyDictionary reasonArgs = new PyDictionary();
-        public long clock = 0;
-        public PyDataType loggedOnUserCount = null;
-        public string region = "";
-        public string reason = "";
-        public double version = 0.0;
-        public int build = 0;
-        public string reasonCode = "";
-        public string codename = "";
-        public int machoVersion = 0;
+        public PyToken Type { get; }
+        public PyString Reason { get; protected set; }
+        public PyDictionary Keywords { get; protected set; }
 
-        public static implicit operator PyDataType(PyException exception)
+        public PyException(string type, string reason, PyDictionary keywords)
         {
-            PyDictionary keywords = new PyDictionary();
-
-            keywords["reasonArgs"] = exception.reasonArgs;
-            keywords["clock"] = exception.clock;
-            keywords["region"] = exception.region;
-            keywords["reason"] = exception.reason;
-            keywords["version"] = exception.version;
-            keywords["build"] = exception.build;
-            keywords["codename"] = exception.codename;
-            keywords["machoVersion"] = exception.machoVersion;
-
+            this.Type = type;
+            this.Reason = reason;
+            this.Keywords = keywords;
+        }
+        
+        public static implicit operator PyDataType(PyException ex)
+        {
             return new PyObject(
-                exception.exception_type,
-                new PyTuple (new PyDataType[]
-                { new PyTuple(new PyDataType[] { exception.reason }) }),
-                keywords
+                ex.Type,
+                new PyTuple (new PyDataType[] { new PyTuple ( new PyDataType[] { new PyTuple(new PyDataType[] { ex.Reason }) }) }),
+                ex.Keywords
             );
         }
 
         public static implicit operator PyException(PyDataType exception)
         {
-            PyException result = new PyException();
-            PyObject obj = exception as PyObject;
+            if(exception is PyObject == false)
+                throw new Exception("Expected object");
+            
+            PyObject ex = exception as PyObject;
 
-            result.exception_type = obj.Header.Type;
-            result.reason = obj.Header.Arguments[0] as PyString;
-
-            result.origin = obj.Header.Dictionary["origin"] as PyString;
-            result.reasonArgs = obj.Header.Dictionary["reasonArgs"] as PyDictionary;
-            result.clock = obj.Header.Dictionary["clock"] as PyInteger;
-            result.loggedOnUserCount = obj.Header.Dictionary["loggedOnUserCount"] as PyInteger;
-            result.region = obj.Header.Dictionary["region"] as PyString;
-            result.version = obj.Header.Dictionary["version"] as PyDecimal;
-            result.build = obj.Header.Dictionary["build"] as PyInteger;
-            result.reasonCode = obj.Header.Dictionary["reasonCode"] as PyString;
-            result.codename = obj.Header.Dictionary["codename"] as PyString;
-            result.machoVersion = obj.Header.Dictionary["machoVersion"] as PyInteger;
-
-            return result;
+            return new PyException(
+                ex.Header.Type, ex.Header.Arguments[0] as PyString, ex.Header.Dictionary
+            );
         }
     }
 }

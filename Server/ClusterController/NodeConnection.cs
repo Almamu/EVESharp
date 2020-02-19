@@ -54,7 +54,7 @@ namespace ClusterControler
 
             PyPacket packet = input;
             
-            if(packet.Type == MachoMessageType.CALL_RSP)
+            if(packet.Type == MachoMessageType.CALL_RSP || packet.Type == MachoMessageType.ERRORRESPONSE)
             {
                 if (packet.Destination is PyAddressClient)
                 {
