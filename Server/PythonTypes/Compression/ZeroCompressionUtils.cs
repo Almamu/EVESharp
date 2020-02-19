@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
 
 namespace PythonTypes.Compression
@@ -17,7 +16,7 @@ namespace PythonTypes.Compression
         {
             MemoryStream outputStream = new MemoryStream();
             BinaryWriter outputWriter = new BinaryWriter(outputStream);
-            
+
             uint packedLen = reader.ReadSizeEx();
             long max = reader.BaseStream.Position + packedLen;
 
@@ -32,20 +31,22 @@ namespace PythonTypes.Compression
                 }
                 else
                 {
-                    int bytes = (int)(Math.Min(8 - opcode.FirstLength, max - reader.BaseStream.Position));
-                    for(int n = 0; n < bytes; n ++)
+                    int bytes = (int) (Math.Min(8 - opcode.FirstLength, max - reader.BaseStream.Position));
+                    
+                    for (int n = 0; n < bytes; n++)
                         outputWriter.Write(reader.ReadByte());
                 }
 
-                if(opcode.SecondIsZero)
+                if (opcode.SecondIsZero)
                 {
-                    for(int n = 0; n < (opcode.SecondLength + 1); n ++)
+                    for (int n = 0; n < (opcode.SecondLength + 1); n++)
                         outputWriter.Write((byte) 0);
                 }
                 else
                 {
-                    int bytes = (int)(Math.Min(8 - opcode.SecondLength, max - reader.BaseStream.Position));
-                    for(int n = 0; n < bytes; n ++)
+                    int bytes = (int) (Math.Min(8 - opcode.SecondLength, max - reader.BaseStream.Position));
+                    
+                    for (int n = 0; n < bytes; n++)
                         outputWriter.Write(reader.ReadByte());
                 }
             }
@@ -65,9 +66,9 @@ namespace PythonTypes.Compression
             // seek capability and not all the streams have it
             MemoryStream newStream = new MemoryStream();
             BinaryWriter newWriter = new BinaryWriter(newStream);
-            
+
             byte b = reader.ReadByte();
-            
+
             while (reader.BaseStream.Position < reader.BaseStream.Length)
             {
                 ZeroCompressionOpcode opcode = (byte) 0;
@@ -82,7 +83,7 @@ namespace PythonTypes.Compression
                 {
                     opcode.FirstIsZero = true;
                     int firstLen = -1;
-                    
+
                     while ((b == 0x00) && (firstLen < 7) && (reader.BaseStream.Position < reader.BaseStream.Length))
                     {
                         firstLen++;
@@ -91,9 +92,9 @@ namespace PythonTypes.Compression
 
                     // Very stupid, but fixes a big problem with them
                     if (reader.BaseStream.Position == reader.BaseStream.Length)
-                        opcode.FirstLength = (byte)(firstLen + 1);
+                        opcode.FirstLength = (byte) (firstLen + 1);
                     else
-                        opcode.FirstLength = (byte)(firstLen);
+                        opcode.FirstLength = (byte) (firstLen);
                 }
                 // when the first byte read is not 0 the only option is to update the opcode and write
                 // to the stream the bytes that are not being compressed
@@ -109,13 +110,9 @@ namespace PythonTypes.Compression
 
                         newWriter.Write(b);
                         if (reader.BaseStream.Position < reader.BaseStream.Length)
-                        {
                             b = reader.ReadByte();
-                        }
                         else
-                        {
                             break;
-                        }
                     }
                 }
 
@@ -131,13 +128,14 @@ namespace PythonTypes.Compression
                     opcode.SecondIsZero = true;
                     int secondLength = -1;
 
-                    while ((b == 0x00) && (opcode.SecondLength < 7) && (reader.BaseStream.Position < reader.BaseStream.Length))
+                    while ((b == 0x00) && (opcode.SecondLength < 7) &&
+                           (reader.BaseStream.Position < reader.BaseStream.Length))
                     {
                         secondLength++;
                         b = reader.ReadByte();
                     }
 
-                    opcode.SecondLength = (byte)(secondLength);
+                    opcode.SecondLength = (byte) (secondLength);
                 }
                 else
                 {
@@ -151,13 +149,9 @@ namespace PythonTypes.Compression
 
                         newWriter.Write(b);
                         if (reader.BaseStream.Position < reader.BaseStream.Length)
-                        {
                             b = reader.ReadByte();
-                        }
                         else
-                        {
                             break;
-                        }
                     }
                 }
 
@@ -170,12 +164,10 @@ namespace PythonTypes.Compression
             }
 
             // once all the data is compressed write it to the actual output stream
-            output.WriteSizeEx((int)(newStream.Length));
-            
+            output.WriteSizeEx((int) (newStream.Length));
+
             if (newStream.Length > 0)
-            {
                 newStream.WriteTo(output.BaseStream);
-            }
         }
     }
 }

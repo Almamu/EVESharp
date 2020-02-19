@@ -1,7 +1,3 @@
-using System;
-using System.IO;
-using System.Runtime.CompilerServices;
-
 namespace PythonTypes.Types.Primitives
 {
     public class PyObject : PyDataType
@@ -10,10 +6,12 @@ namespace PythonTypes.Types.Primitives
         {
             public PyToken Type { get; }
             public PyTuple Arguments { get; }
+
             public PyDictionary Dictionary { get; }
+
             // TODO: GET RID OF THIS FLAG OR MAKE IT MORE COMPREHENSIBLE
-            public bool IsType2 { get;  }
-            
+            public bool IsType2 { get; }
+
             public ObjectHeader(PyToken type, PyTuple args, PyDictionary dictionary, bool isType2 = false)
             {
                 this.Type = type;
@@ -57,28 +55,28 @@ namespace PythonTypes.Types.Primitives
                         int length = header.Arguments.Count + 1;
                         if (header.Dictionary != null)
                             length++;
-                        
+
                         finalArguments = new PyTuple(length);
                         finalArguments[0] = header.Type;
 
                         // copy arguments over
                         header.Arguments.CopyTo(finalArguments, 0, 1);
                         // put dictionary in
-                        if(header.Dictionary != null)
+                        if (header.Dictionary != null)
                             finalArguments[finalArguments.Count - 1] = header.Dictionary;
                     }
                 }
 
                 return finalArguments;
             }
-            
+
             public static implicit operator ObjectHeader(PyTuple header)
             {
                 PyToken type = null;
                 PyTuple arguments = null;
                 PyDictionary dictionary = null;
                 bool isType2 = false;
-                
+
                 if (header[0] is PyToken)
                 {
                     type = header[0] as PyToken;
@@ -91,7 +89,7 @@ namespace PythonTypes.Types.Primitives
                 {
                     arguments = header[0] as PyTuple;
                     dictionary = header[1] as PyDictionary;
-                    
+
                     // take out the type token and build the correct arguments tuple
                     type = arguments[0] as PyToken;
 
@@ -108,11 +106,11 @@ namespace PythonTypes.Types.Primitives
 
                     isType2 = true;
                 }
-                
+
                 return new ObjectHeader(type, arguments, dictionary, isType2);
             }
         }
-        
+
         public ObjectHeader Header { get; }
         public PyList List { get; }
         public PyDictionary Dictionary { get; }

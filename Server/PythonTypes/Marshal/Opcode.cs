@@ -48,5 +48,4 @@ namespace PythonTypes.Marshal
         WStringUTF8 = 46,
         IntegerVar
     }
-
 }

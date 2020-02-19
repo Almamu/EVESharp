@@ -1,4 +1,3 @@
-using System;
 using MySql.Data.MySqlClient;
 using PythonTypes.Types.Primitives;
 
@@ -13,8 +12,8 @@ namespace PythonTypes.Types.Database
 
             PyList columns = new PyList(reader.FieldCount);
             PyList rows = new PyList();
-            
-            for(int i = 0; i < columns.Count; i ++)
+
+            for (int i = 0; i < columns.Count; i++)
                 columns[i] = new PyString(reader.GetName(i));
 
             while (reader.Read() == true)

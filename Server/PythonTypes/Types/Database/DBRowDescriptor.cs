@@ -1,10 +1,6 @@
 using System;
 using System.Collections.Generic;
-using System.Data.SqlTypes;
-using System.Runtime.CompilerServices;
 using MySql.Data.MySqlClient;
-using Org.BouncyCastle.Asn1.X509.Qualified;
-using PythonTypes.Types.Database;
 using PythonTypes.Types.Primitives;
 
 namespace PythonTypes.Types.Database
@@ -30,7 +26,7 @@ namespace PythonTypes.Types.Database
 
             public static implicit operator PyDataType(Column column)
             {
-                return new PyTuple(new PyDataType []
+                return new PyTuple(new PyDataType[]
                 {
                     column.Name,
                     (int) column.Type
@@ -40,20 +36,19 @@ namespace PythonTypes.Types.Database
             public static implicit operator Column(PyDataType column)
             {
                 PyTuple tuple = column as PyTuple;
-                
+
                 return new Column(
                     tuple[0] as PyString,
                     tuple[1] as PyInteger
                 );
             }
         };
-        
+
         private const string TYPE_NAME = "blue.DBRowDescriptor";
-        
+
         public List<Column> Columns { get; }
 
-        public 
-            DBRowDescriptor()
+        public DBRowDescriptor()
         {
             this.Columns = new List<Column>();
         }
@@ -64,24 +59,22 @@ namespace PythonTypes.Types.Database
             int index = 0;
 
             foreach (Column col in descriptor.Columns)
-                args[index ++] = col;
+                args[index++] = col;
 
-            args = new PyTuple(new PyDataType[] { args });
+            args = new PyTuple(new PyDataType[] {args});
             // build the args tuple
-            return new PyObject(TYPE_NAME, new PyTuple(new PyDataType[]{ args }));
+            return new PyObject(TYPE_NAME, new PyTuple(new PyDataType[] {args}));
         }
 
         public static implicit operator DBRowDescriptor(PyObject descriptor)
         {
-            if(descriptor.Header.Type != TYPE_NAME)
+            if (descriptor.Header.Type != TYPE_NAME)
                 throw new Exception($"Expected PyObject of type {TYPE_NAME}");
 
             DBRowDescriptor output = new DBRowDescriptor();
 
             foreach (PyTuple tuple in descriptor.Header.Arguments[0] as PyTuple)
-            {
                 output.Columns.Add(tuple);
-            }
 
             return output;
         }
@@ -129,7 +122,7 @@ namespace PythonTypes.Types.Database
                     fieldType = FieldType.Bool;
                 else
                     throw new Exception("Unknown field type");
-                
+
                 descriptor.Columns.Add(
                     new Column(reader.GetName(i), fieldType)
                 );

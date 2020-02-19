@@ -1,6 +1,5 @@
 ﻿namespace PythonTypes.Types.Primitives
 {
-
     public enum PyObjectType
     {
         Bool,
@@ -19,5 +18,4 @@
         PackedRow,
         ChecksumedStream
     }
-
 }

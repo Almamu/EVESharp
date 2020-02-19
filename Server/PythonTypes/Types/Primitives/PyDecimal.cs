@@ -4,9 +4,10 @@ namespace PythonTypes.Types.Primitives
     {
         public enum DecimalTypeEnum
         {
-            Double, Float
+            Double,
+            Float
         };
-        
+
         protected bool Equals(PyDecimal other)
         {
             return Value.Equals(other.Value);
@@ -51,11 +52,11 @@ namespace PythonTypes.Types.Primitives
         {
             return !(obj == value);
         }
-        
+
         public static bool operator ==(PyDecimal obj, float value)
         {
             if (ReferenceEquals(null, obj)) return false;
-            
+
             return obj.Value == value;
         }
 

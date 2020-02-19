@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.Text;
 using PythonTypes.Types.Database;
@@ -9,8 +8,8 @@ namespace PythonTypes
     public class PrettyPrinter
     {
         private const string Indention = "  ";
-        
-        private StringBuilder mStringBuilder = new StringBuilder();
+
+        private readonly StringBuilder mStringBuilder = new StringBuilder();
         private int mIndentation = 0;
 
         public static string FromDataType(PyDataType obj)
@@ -25,7 +24,7 @@ namespace PythonTypes
             // add indentation to the string
             for (int i = 0; i < this.mIndentation; i++)
                 this.mStringBuilder.Append(Indention);
-            
+
             if (obj == null || obj is PyNone)
                 this.ProcessNone();
             else if (obj is PyString)
@@ -60,7 +59,7 @@ namespace PythonTypes
                 this.ProcessPackedRow(obj as PyPackedRow);
             else
                 this.mStringBuilder.AppendLine("[--PyUnknown--]");
-            
+
             return this.mStringBuilder.ToString();
         }
 
@@ -81,7 +80,7 @@ namespace PythonTypes
             this.mStringBuilder.AppendFormat("[PyBool {0}]", (boolean) ? "true" : "false");
             this.mStringBuilder.AppendLine();
         }
-        
+
         private void ProcessInteger(PyInteger integer)
         {
             this.mStringBuilder.AppendFormat("[PyInteger {0}]", integer.Value);
@@ -102,7 +101,7 @@ namespace PythonTypes
 
         private void ProcessTuple(PyTuple tuple)
         {
-            this.mStringBuilder.AppendFormat("[PyTuple {0} items]", tuple.Count); 
+            this.mStringBuilder.AppendFormat("[PyTuple {0} items]", tuple.Count);
             this.mStringBuilder.AppendLine();
             this.mIndentation++;
 
@@ -118,7 +117,7 @@ namespace PythonTypes
             this.mStringBuilder.AppendFormat("[PyList {0} items]", list.Count);
             this.mStringBuilder.AppendLine();
             this.mIndentation++;
-            
+
             // process all child elements
             foreach (PyDataType data in list)
                 this.Process(data);
@@ -139,7 +138,7 @@ namespace PythonTypes
             this.mStringBuilder.AppendFormat("[PyDictionary {0} entries]", dictionary.Length);
             this.mStringBuilder.AppendLine();
             this.mIndentation++;
-            
+
             // process all the keys and values
             foreach (KeyValuePair<string, PyDataType> pair in dictionary)
             {
@@ -211,7 +210,7 @@ namespace PythonTypes
         private void ProcessPackedRow(PyPackedRow packedRow)
         {
             this.mStringBuilder.AppendFormat("[PyPackedRow {0} columns]", packedRow.Header.Columns.Count);
-            if(packedRow.Header.Columns.Count > 0)
+            if (packedRow.Header.Columns.Count > 0)
                 this.mStringBuilder.AppendLine();
             this.mIndentation++;
 
@@ -224,6 +223,7 @@ namespace PythonTypes
 
             this.mIndentation--;
         }
+
         // TODO: MIGHT BE A GOOD IDEA TO IMPLEMENT A MARSHAL-STREAM DUMP TOO
     }
 }

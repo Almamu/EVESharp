@@ -11,9 +11,10 @@ namespace PythonTypes
             var result = new uint[256];
             for (int i = 0; i < 256; i++)
             {
-                string s=i.ToString("X2");
-                result[i] = ((uint)s[0]) + ((uint)s[1] << 16);
+                string s = i.ToString("X2");
+                result[i] = ((uint) s[0]) + ((uint) s[1] << 16);
             }
+
             return result;
         }
 
@@ -24,9 +25,10 @@ namespace PythonTypes
             for (int i = 0; i < bytes.Length; i++)
             {
                 var val = lookup32[bytes[i]];
-                result[2*i] = (char)val;
-                result[2*i + 1] = (char) (val >> 16);
+                result[2 * i] = (char) val;
+                result[2 * i + 1] = (char) (val >> 16);
             }
+
             return new string(result);
         }
     }

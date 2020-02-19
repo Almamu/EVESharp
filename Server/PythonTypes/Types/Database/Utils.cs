@@ -1,6 +1,5 @@
 using System;
 using System.IO;
-using PythonTypes.Types.Database;
 using MySql.Data.MySqlClient;
 using PythonTypes.Types.Primitives;
 
@@ -14,7 +13,7 @@ namespace PythonTypes.Types.Database
             PyDataType data = null;
             bool isnull = reader.IsDBNull(index);
 
-            if(type == typeof(String))
+            if (type == typeof(String))
                 data = new PyString((isnull) ? "" : reader.GetString(index), true);
             else if (type == typeof(UInt64))
                 data = (isnull) ? 0 : reader.GetUInt64(index);
@@ -24,7 +23,7 @@ namespace PythonTypes.Types.Database
                 data = (isnull) ? 0 : reader.GetUInt32(index);
             else if (type == typeof(Int32))
                 data = (isnull) ? 0 : reader.GetInt32(index);
-            else if(type == typeof(UInt16))
+            else if (type == typeof(UInt16))
                 data = (isnull) ? 0 : reader.GetUInt16(index);
             else if (type == typeof(Int16))
                 data = (isnull) ? 0 : reader.GetInt16(index);
@@ -45,7 +44,7 @@ namespace PythonTypes.Types.Database
 
             return data;
         }
-        
+
         public static int GetTypeBits(FieldType type)
         {
             switch (type)

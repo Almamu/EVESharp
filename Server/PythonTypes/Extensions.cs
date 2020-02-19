@@ -13,7 +13,7 @@ namespace PythonTypes
         {
             w.Write((byte) op);
         }
-        
+
         /// <summary>
         /// Reads an extended size indicator from the stream. These indicators can be 1 or 5 bytes wide.
         /// If the first byte is 0xFF the next 4 bytes are read as those indicate the actual value
@@ -40,11 +40,11 @@ namespace PythonTypes
         {
             if (len < 0xFF)
             {
-                writer.Write((byte)len);
+                writer.Write((byte) len);
             }
             else
             {
-                writer.Write((byte)0xFF);
+                writer.Write((byte) 0xFF);
                 writer.Write(len);
             }
         }
@@ -56,7 +56,7 @@ namespace PythonTypes
         /// <param name="len"></param>
         public static void WriteSizeEx(this BinaryWriter writer, int len)
         {
-            WriteSizeEx(writer, (uint)len);
+            WriteSizeEx(writer, (uint) len);
         }
     }
 }

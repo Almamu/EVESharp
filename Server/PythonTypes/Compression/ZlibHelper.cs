@@ -17,7 +17,7 @@ namespace PythonTypes.Compression
         {
             return new ZInputStream(stream);
         }
-        
+
         /// <summary>
         /// Compresses the given <paramref name="input" />
         /// </summary>
@@ -30,7 +30,7 @@ namespace PythonTypes.Compression
             // write zlib header
             stream.Write(input);
             stream.Finish();
-            
+
             return sourceStream.GetBuffer();
         }
     }

@@ -2,15 +2,14 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
-using System.Text;
 using PythonTypes.Types.Database;
 
 namespace PythonTypes.Types.Primitives
 {
     public class PyTuple : PyDataType, IEnumerable<PyDataType>
     {
-        private PyDataType[] mList;
-        
+        private readonly PyDataType[] mList;
+
         public PyTuple(int size) : base(PyObjectType.Tuple)
         {
             this.mList = new PyDataType[size];
@@ -20,7 +19,7 @@ namespace PythonTypes.Types.Primitives
         {
             this.mList = data;
         }
-        
+
         // THESE CONSTRUCTORS ARE HERE TO PREVENT ERRORS WHEN USING THE TYPE-GUESSING STUFF IN C#
         // when you use new PyTuple (new [] { new PyNone(), new PyNone() }) C# creates a new array of PyNones
         // but as we're using the array directly in the PyTuple if we try to add something that's not a PyNone
@@ -44,8 +43,10 @@ namespace PythonTypes.Types.Primitives
         private static void ThrowInstantiationError()
         {
             throw new InvalidDataException(
-                "when you use new PyTuple (new [] { new PyNone(), new PyNone() }) C# creates a new array of PyNones" + Environment.NewLine + 
-                "but as the array is used directly in the PyTuple if we try to add something that's not a PyNone" + Environment.NewLine +
+                "when you use new PyTuple (new [] { new PyNone(), new PyNone() }) C# creates a new array of PyNones" +
+                Environment.NewLine +
+                "but as the array is used directly in the PyTuple if we try to add something that's not a PyNone" +
+                Environment.NewLine +
                 "an exception will be thrown" + Environment.NewLine +
                 "this exception is thrown to prevent and explain this situation" + Environment.NewLine +
                 "please use the new PyTypeData[] { new PyNone(), new PyNone() } form instead to get a proper array"
@@ -54,14 +55,15 @@ namespace PythonTypes.Types.Primitives
 
         public PyDataType this[int index]
         {
-            get { return this.mList[index]; }
-            set { this.mList[index] = value; }
+            get => this.mList[index];
+            set => this.mList[index] = value;
         }
-        
-        public int Count { get { return this.mList.Length; } }
+
+        public int Count => this.mList.Length;
+
         public IEnumerator<PyDataType> GetEnumerator()
         {
-            return ((IEnumerable<PyDataType>)this.mList).GetEnumerator();
+            return ((IEnumerable<PyDataType>) this.mList).GetEnumerator();
         }
 
         IEnumerator IEnumerable.GetEnumerator()
@@ -72,7 +74,7 @@ namespace PythonTypes.Types.Primitives
         public void CopyTo(PyTuple destination, int sourceIndex, int destinationIndex)
         {
             // perform some boundaries checks to ensure the data fits
-            if(
+            if (
                 (this.Count + destinationIndex - sourceIndex) > destination.Count ||
                 sourceIndex > this.Count ||
                 sourceIndex < 0 ||

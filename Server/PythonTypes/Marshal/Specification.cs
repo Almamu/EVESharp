@@ -6,7 +6,7 @@ namespace PythonTypes.Marshal
         /// Magic value used by the marshal package to identify valid marshal streams
         /// </summary>
         public const byte MarshalHeader = (byte) '~';
-        
+
         /// <summary>
         /// Not an actual header, but it's the compressed-value of the MarshalHeader
         /// and as it should be on the beginning of the marshal will always be the same

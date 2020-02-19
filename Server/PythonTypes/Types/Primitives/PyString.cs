@@ -1,5 +1,4 @@
 using PythonTypes.Marshal;
-using Renci.SshNet.Messages.Transport;
 
 namespace PythonTypes.Types.Primitives
 {
@@ -24,11 +23,11 @@ namespace PythonTypes.Types.Primitives
         }
 
         public string Value { get; }
-        public int Length { get { return this.Value.Length; } }
+        public int Length => this.Value.Length;
         public bool IsStringTableEntry { get; }
         public StringTableUtils.EntryList StringTableEntryIndex { get; }
         public bool IsUTF8 { get; }
-        
+
 
         public PyString(string value, bool isUTF8 = false) : base(PyObjectType.String)
         {
@@ -43,7 +42,7 @@ namespace PythonTypes.Types.Primitives
             this.IsStringTableEntry = true;
             this.StringTableEntryIndex = entry;
         }
-        
+
         public static bool operator ==(PyString obj, string value)
         {
             if (ReferenceEquals(null, obj) == true)
@@ -66,7 +65,7 @@ namespace PythonTypes.Types.Primitives
         {
             if (obj == null)
                 return null;
-            
+
             return obj.Value;
         }
 
@@ -77,7 +76,7 @@ namespace PythonTypes.Types.Primitives
 
         public static implicit operator PyString(char value)
         {
-            return new PyString(new string (new char [] { value }));
+            return new PyString(new string(new char[] {value}));
         }
     }
 }

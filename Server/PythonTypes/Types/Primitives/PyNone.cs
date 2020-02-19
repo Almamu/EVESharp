@@ -1,6 +1,3 @@
-using System.Configuration;
-using System.Diagnostics;
-
 namespace PythonTypes.Types.Primitives
 {
     public class PyNone : PyDataType

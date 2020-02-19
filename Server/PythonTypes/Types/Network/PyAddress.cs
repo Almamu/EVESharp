@@ -1,4 +1,3 @@
-﻿using System;
 using System.IO;
 using PythonTypes.Types.Primitives;
 
@@ -11,17 +10,17 @@ namespace PythonTypes.Types.Network
         protected const string TYPE_NODE = "N";
         protected const string TYPE_BROADCAST = "B";
         protected const string TYPE_CLIENT = "C";
-        
+
         protected PyString Type { get; }
 
         protected PyAddress(PyString type)
         {
             this.Type = type;
         }
-        
+
         public static implicit operator PyAddress(PyObjectData value)
         {
-            if(value.Name != OBJECT_TYPE)
+            if (value.Name != OBJECT_TYPE)
                 throw new InvalidDataException($"Expected {OBJECT_TYPE} for PyAddress object, got {value.Name}");
 
             PyTuple data = value.Arguments as PyTuple;
@@ -31,16 +30,16 @@ namespace PythonTypes.Types.Network
             {
                 case TYPE_ANY:
                     return (PyAddressAny) value;
-                
+
                 case TYPE_CLIENT:
                     return (PyAddressClient) value;
-                
+
                 case TYPE_NODE:
                     return (PyAddressNode) value;
-                
+
                 case TYPE_BROADCAST:
                     return (PyAddressBroadcast) value;
-                
+
                 default:
                     throw new InvalidDataException($"Unknown PyAddress type {type}");
             }

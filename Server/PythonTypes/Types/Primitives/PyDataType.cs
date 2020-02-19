@@ -13,7 +13,7 @@ namespace PythonTypes.Types.Primitives
         {
             if (str == null)
                 return new PyNone();
-            
+
             return new PyString(str);
         }
 
@@ -41,7 +41,7 @@ namespace PythonTypes.Types.Primitives
         {
             if (value == null)
                 return new PyNone();
-            
+
             return new PyBuffer(value);
         }
 

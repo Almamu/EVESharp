@@ -1,13 +1,11 @@
-using System.Configuration;
-
 namespace PythonTypes.Types.Primitives
 {
     public class PyBuffer : PyDataType
     {
         public byte[] Value { get; }
-        public int Length { get { return this.Value.Length; } }
+        public int Length => this.Value.Length;
 
-        public PyBuffer(byte [] value) : base(PyObjectType.Buffer)
+        public PyBuffer(byte[] value) : base(PyObjectType.Buffer)
         {
             this.Value = value;
         }

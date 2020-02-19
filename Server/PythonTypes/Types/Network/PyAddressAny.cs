@@ -18,7 +18,7 @@ namespace PythonTypes.Types.Network
         {
             return new PyObjectData(
                 OBJECT_TYPE,
-                new PyTuple (new PyDataType []
+                new PyTuple(new PyDataType[]
                 {
                     value.Type,
                     value.Service,
@@ -29,7 +29,7 @@ namespace PythonTypes.Types.Network
 
         public static implicit operator PyAddressAny(PyObjectData value)
         {
-            if(value.Name != OBJECT_TYPE)
+            if (value.Name != OBJECT_TYPE)
                 throw new InvalidDataException($"Expected {OBJECT_TYPE} for PyAddress object, got {value.Name}");
 
             PyTuple data = value.Arguments as PyTuple;
@@ -37,7 +37,7 @@ namespace PythonTypes.Types.Network
 
             if (type != TYPE_ANY)
                 throw new InvalidDataException($"Trying to cast unknown object to PyAddressAny");
-            
+
             return new PyAddressAny(
                 data[2] is PyNone ? null : data[2] as PyInteger,
                 data[1] as PyString

@@ -1,9 +1,3 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Text;
-using PythonTypes;
 using PythonTypes.Types.Primitives;
 
 namespace PythonTypes.Types.Complex
@@ -22,8 +16,8 @@ namespace PythonTypes.Types.Complex
                 cacheHint.cacheTime, cacheHint.version
             });
 
-            return new PyObjectData("util.CachedObject", 
-                new PyTuple(new []
+            return new PyObjectData("util.CachedObject",
+                new PyTuple(new[]
                 {
                     cacheHint.objectID,
                     cacheHint.nodeID,
@@ -31,7 +25,7 @@ namespace PythonTypes.Types.Complex
                 })
             );
         }
-        
+
         public static implicit operator PyCacheHint(PyDataType from)
         {
             PyCacheHint result = new PyCacheHint();

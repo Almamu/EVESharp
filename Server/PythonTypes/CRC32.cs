@@ -64,7 +64,7 @@ namespace PythonTypes
         {
             uint crc = data.Aggregate(0xFFFFFFFF,
                 (current, b) => (current >> 8) ^ _crc32Tab[b ^ (current & 0x000000FF)]);
-            
+
             return ~crc;
         }
     }

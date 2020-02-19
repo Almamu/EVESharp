@@ -1,5 +1,3 @@
-using System.Configuration;
-
 namespace PythonTypes.Types.Primitives
 {
     public class PyBool : PyDataType
@@ -14,7 +12,7 @@ namespace PythonTypes.Types.Primitives
             if (ReferenceEquals(null, obj)) return false;
             if (ReferenceEquals(this, obj)) return true;
             if (obj.GetType() != this.GetType()) return false;
-            
+
             return Equals((PyBool) obj);
         }
 

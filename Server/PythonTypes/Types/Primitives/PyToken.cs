@@ -1,5 +1,3 @@
-using System.Configuration;
-
 namespace PythonTypes.Types.Primitives
 {
     public class PyToken : PyDataType
@@ -28,7 +26,7 @@ namespace PythonTypes.Types.Primitives
         {
             this.Token = token;
         }
-        
+
         public static implicit operator PyToken(string value)
         {
             return new PyToken(value);

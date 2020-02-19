@@ -1,5 +1,3 @@
-using System.Collections.Generic;
-
 namespace PythonTypes.Marshal
 {
     /// <summary>
@@ -205,7 +203,7 @@ namespace PythonTypes.Marshal
             agent_ResearchMissionDetails,
             agent_StorylineMissionDetails,
         }
-        
+
         public static string[] Entries = new string[]
         {
             "*corpid",

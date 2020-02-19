@@ -1,5 +1,3 @@
-using System;
-
 namespace PythonTypes.Types.Primitives
 {
     public class PyObjectData : PyDataType

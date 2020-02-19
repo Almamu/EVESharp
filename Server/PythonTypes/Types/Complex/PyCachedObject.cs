@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
-using System.Linq;
-using System.Text;
-using PythonTypes;
+using System;
 using PythonTypes.Compression;
 using PythonTypes.Types.Primitives;
 
@@ -22,12 +16,12 @@ namespace PythonTypes.Types.Complex
 
         public static implicit operator PyDataType(PyCachedObject data)
         {
-            if(data.cache == null)
+            if (data.cache == null)
                 throw new Exception("Cache data is null");
 
-            if(data.objectID == null)
+            if (data.objectID == null)
                 throw new Exception("objectID is null");
-            
+
             PyTuple args = new PyTuple(7);
             PyTuple version = new PyTuple(2);
 
@@ -48,12 +42,12 @@ namespace PythonTypes.Types.Complex
         public static PyCachedObject FromCacheHint(PyCacheHint cacheInfo, PyDataType data)
         {
             PyCachedObject obj = new PyCachedObject();
-            
+
             obj.nodeID = cacheInfo.nodeID;
             obj.objectID = cacheInfo.objectID;
             obj.shared = 1;
             obj.compressed = 1;
-            obj.cache = new PyBuffer (ZlibHelper.Compress(PythonTypes.Marshal.Marshal.ToByteArray(data)));
+            obj.cache = new PyBuffer(ZlibHelper.Compress(PythonTypes.Marshal.Marshal.ToByteArray(data)));
             obj.timestamp = cacheInfo.cacheTime;
             obj.version = cacheInfo.version;
 

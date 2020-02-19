@@ -1,8 +1,5 @@
-﻿using System;
-
-namespace PythonTypes.Types.Database
+﻿namespace PythonTypes.Types.Database
 {
-
     public enum FieldType
     {
         Empty = 0x00,
@@ -35,5 +32,4 @@ namespace PythonTypes.Types.Database
         Str = 0x81,
         WStr = 0x82,
     }
-
 }

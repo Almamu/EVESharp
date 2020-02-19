@@ -11,10 +11,8 @@ namespace PythonTypes.Types.Database
             DBRowDescriptor descriptor = DBRowDescriptor.FromMySqlReader(reader);
 
             while (reader.Read() == true)
-            {
                 list.Add(PyPackedRow.FromMySqlDataReader(reader, descriptor));
-            }
-            
+
             return list;
         }
     }

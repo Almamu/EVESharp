@@ -1,5 +1,3 @@
-using Org.BouncyCastle.X509.Extension;
-
 namespace PythonTypes.Types.Primitives
 {
     public class PyChecksumedStream : PyDataType

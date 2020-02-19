@@ -20,9 +20,10 @@ namespace PythonTypes
                 len -= maxDefer;
                 while (--maxDefer >= 0)
                 {
-                    s1 = s1 + (uint)(data[i++] & 0xFF);
+                    s1 = s1 + (uint) (data[i++] & 0xFF);
                     s2 = s2 + s1;
                 }
+
                 s1 %= ModuloPrime;
                 s2 %= ModuloPrime;
             }

@@ -29,9 +29,9 @@ namespace PythonTypes.Types.Primitives
             Short,
             Byte
         };
-        
+
         public long Value { get; }
-        
+
         public IntegerTypeEnum IntegerType { get; }
 
         public PyInteger(long value) : base(PyObjectType.Integer)
@@ -57,11 +57,11 @@ namespace PythonTypes.Types.Primitives
             this.Value = value;
             this.IntegerType = IntegerTypeEnum.Byte;
         }
-        
+
         public static bool operator ==(PyInteger obj, long value)
         {
             if (ReferenceEquals(null, obj)) return false;
-            
+
             return obj.Value == value;
         }
 
@@ -69,11 +69,11 @@ namespace PythonTypes.Types.Primitives
         {
             return !(obj == value);
         }
-        
+
         public static bool operator ==(PyInteger obj, int value)
         {
             if (ReferenceEquals(null, obj)) return false;
-            
+
             return obj.Value == value;
         }
 
@@ -81,11 +81,11 @@ namespace PythonTypes.Types.Primitives
         {
             return !(obj == value);
         }
-        
+
         public static bool operator ==(PyInteger obj, short value)
         {
             if (ReferenceEquals(null, obj)) return false;
-            
+
             return obj.Value == value;
         }
 
@@ -93,11 +93,11 @@ namespace PythonTypes.Types.Primitives
         {
             return !(obj == value);
         }
-        
+
         public static bool operator ==(PyInteger obj, byte value)
         {
             if (ReferenceEquals(null, obj)) return false;
-            
+
             return obj.Value == value;
         }
 
@@ -125,7 +125,7 @@ namespace PythonTypes.Types.Primitives
         {
             return (byte) obj.Value;
         }
-        
+
         public static implicit operator PyInteger(long value)
         {
             return new PyInteger(value);

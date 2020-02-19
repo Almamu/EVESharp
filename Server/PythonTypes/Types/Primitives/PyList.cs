@@ -1,13 +1,16 @@
+#region
+
 using System.Collections;
 using System.Collections.Generic;
-using System.Configuration;
+
+#endregion
 
 namespace PythonTypes.Types.Primitives
 {
     public class PyList : PyDataType, IEnumerable<PyDataType>
     {
-        private List<PyDataType> mList;
-        
+        private readonly List<PyDataType> mList;
+
         public PyList() : base(PyObjectType.List)
         {
             this.mList = new List<PyDataType>();
@@ -17,6 +20,7 @@ namespace PythonTypes.Types.Primitives
         {
             this.mList = new List<PyDataType>(capacity);
         }
+
         public PyList(PyDataType[] data) : base(PyObjectType.List)
         {
             this.mList = new List<PyDataType>(data);
@@ -32,7 +36,7 @@ namespace PythonTypes.Types.Primitives
             this.mList.RemoveAt(index);
         }
 
-        public int Count { get { return this.mList.Count; } }
+        public int Count => this.mList.Count;
 
         public List<PyDataType>.Enumerator GetIterator()
         {
@@ -41,8 +45,8 @@ namespace PythonTypes.Types.Primitives
 
         public PyDataType this[int index]
         {
-            get { return this.mList[index]; }
-            set { this.mList[index] = value; }
+            get => this.mList[index];
+            set => this.mList[index] = value;
         }
 
         public IEnumerator<PyDataType> GetEnumerator()

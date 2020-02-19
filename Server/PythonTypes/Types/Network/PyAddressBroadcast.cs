@@ -18,7 +18,7 @@ namespace PythonTypes.Types.Network
 
         public static implicit operator PyAddressBroadcast(PyObjectData value)
         {
-            if(value.Name != OBJECT_TYPE)
+            if (value.Name != OBJECT_TYPE)
                 throw new InvalidDataException($"Expected {OBJECT_TYPE} for PyAddress object, got {value.Name}");
 
             PyTuple data = value.Arguments as PyTuple;
@@ -26,14 +26,14 @@ namespace PythonTypes.Types.Network
 
             if (type != TYPE_BROADCAST)
                 throw new InvalidDataException($"Trying to cast unknown object to PyAddressAny");
-            
+
             return new PyAddressBroadcast(
                 data[2] as PyList,
                 data[3] as PyString,
                 (data[1] is PyNone) ? null : data[1] as PyString
             );
         }
-        
+
         public static implicit operator PyDataType(PyAddressBroadcast value)
         {
             return new PyObjectData(

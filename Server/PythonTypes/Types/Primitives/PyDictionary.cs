@@ -1,13 +1,12 @@
 using System.Collections;
 using System.Collections.Generic;
-using System.Configuration;
 
 namespace PythonTypes.Types.Primitives
 {
     public class PyDictionary : PyDataType, IEnumerable<KeyValuePair<string, PyDataType>>
     {
-        private Dictionary<string, PyDataType> mDictionary = new Dictionary<string, PyDataType>();
-        
+        private readonly Dictionary<string, PyDataType> mDictionary = new Dictionary<string, PyDataType>();
+
         public PyDictionary() : base(PyObjectType.List)
         {
         }
@@ -21,18 +20,15 @@ namespace PythonTypes.Types.Primitives
         {
             return this.mDictionary.ContainsKey(key);
         }
-        
+
         public PyDataType this[string key]
         {
-            get { return this.mDictionary[key]; }
-            set { this.mDictionary[key] = value; }
+            get => this.mDictionary[key];
+            set => this.mDictionary[key] = value;
         }
 
-        public int Length
-        {
-            get { return this.mDictionary.Count; }
-        }
-        
+        public int Length => this.mDictionary.Count;
+
         public IEnumerator<KeyValuePair<string, PyDataType>> GetEnumerator()
         {
             return this.mDictionary.GetEnumerator();

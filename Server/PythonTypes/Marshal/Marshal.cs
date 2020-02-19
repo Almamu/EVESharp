@@ -1,14 +1,11 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Text;
 using PythonTypes.Compression;
 using PythonTypes.Types.Database;
 using PythonTypes.Types.Primitives;
-using Ubiety.Dns.Core;
 
 namespace PythonTypes.Marshal
 {
@@ -22,7 +19,7 @@ namespace PythonTypes.Marshal
         /// Separator for the PyObject's data
         /// </summary>
         public const byte PackedTerminator = 0x2D;
-        
+
         /// <summary>
         /// Converts the given <paramref name="data" /> python type into a byte stream
         /// </summary>
@@ -37,7 +34,7 @@ namespace PythonTypes.Marshal
 
             return stream.ToArray();
         }
-        
+
         /// <summary>
         /// Converts the given <paramref name="data" /> python type into a byte stream and writes it to <paramref name="stream" />
         /// </summary>
@@ -71,73 +68,39 @@ namespace PythonTypes.Marshal
         private static void Process(BinaryWriter writer, PyDataType data)
         {
             if (data == null || data is PyNone)
-            {
                 ProcessNone(writer);
-            }
             else if (data is PyInteger)
-            {
                 ProcessInteger(writer, data as PyInteger);
-            }
             else if (data is PyDecimal)
-            {
                 ProcessDecimal(writer, data as PyDecimal);
-            }
             else if (data is PyToken)
-            {
                 ProcessToken(writer, data as PyToken);
-            }
             else if (data is PyBool)
-            {
                 ProcessBool(writer, data as PyBool);
-            }
             else if (data is PyBuffer)
-            {
                 ProcessBuffer(writer, data as PyBuffer);
-            }
             else if (data is PyDictionary)
-            {
                 ProcessDictionary(writer, data as PyDictionary);
-            }
             else if (data is PyList)
-            {
                 ProcessList(writer, data as PyList);
-            }
             else if (data is PyObjectData)
-            {
                 ProcessObjectData(writer, data as PyObjectData);
-            }
             else if (data is PyObject)
-            {
                 ProcessObject(writer, data as PyObject);
-            }
             else if (data is PyString)
-            {
                 ProcessString(writer, data as PyString);
-            }
             else if (data is PySubStream)
-            {
                 ProcessSubStream(writer, data as PySubStream);
-            }
             else if (data is PyChecksumedStream)
-            {
                 ProcessChecksumedStream(writer, data as PyChecksumedStream);
-            }
             else if (data is PySubStruct)
-            {
                 ProcessSubStruct(writer, data as PySubStruct);
-            }
             else if (data is PyTuple)
-            {
                 ProcessTuple(writer, data as PyTuple);
-            }
             else if (data is PyPackedRow)
-            {
                 ProcessPackedRow(writer, data as PyPackedRow);
-            }
             else
-            {
                 throw new InvalidDataException($"Unexpected type {data.GetType()}");
-            }
         }
 
         /// <summary>
@@ -197,7 +160,7 @@ namespace PythonTypes.Marshal
         /// <param name="data">The value to write</param>
         private static void ProcessDecimal(BinaryWriter writer, PyDecimal data)
         {
-            if(data.Value == 0.0)
+            if (data.Value == 0.0)
                 writer.WriteOpcode(Opcode.RealZero);
             else
             {
@@ -293,7 +256,7 @@ namespace PythonTypes.Marshal
         /// <param name="list">The value to write</param>
         private static void ProcessList(BinaryWriter writer, PyList list)
         {
-            if(list.Count == 0)
+            if (list.Count == 0)
                 writer.WriteOpcode(Opcode.ListEmpty);
             else if (list.Count == 1)
             {
@@ -367,7 +330,7 @@ namespace PythonTypes.Marshal
                 writer.WriteOpcode(Opcode.ObjectType2);
             else
                 writer.WriteOpcode(Opcode.ObjectType1);
-            
+
             Process(writer, data.Header);
 
             if (data.List.Count > 0)
@@ -425,7 +388,7 @@ namespace PythonTypes.Marshal
             }
             else if (data.IsUTF8)
             {
-                byte[] str = Encoding.UTF8.GetBytes (data.Value);
+                byte[] str = Encoding.UTF8.GetBytes(data.Value);
                 writer.WriteOpcode(Opcode.WStringUTF8);
                 writer.WriteSizeEx(str.Length);
                 writer.Write(str);
@@ -458,7 +421,7 @@ namespace PythonTypes.Marshal
         private static void ProcessSubStream(BinaryWriter writer, PySubStream data)
         {
             byte[] buffer = ToByteArray(data.Stream);
-            
+
             writer.WriteOpcode(Opcode.SubStream);
             writer.WriteSizeEx(buffer.Length);
             writer.Write(buffer);
@@ -532,7 +495,7 @@ namespace PythonTypes.Marshal
             foreach (PyDataType entry in tuple)
                 Process(writer, entry);
         }
-        
+
         /// <summary>
         /// Converts the given <paramref name="data"/> to it's byte array representation.
         /// Packed rows are the big elephant in the room. These are a direct representation of a row in any of the tables
@@ -566,7 +529,7 @@ namespace PythonTypes.Marshal
         {
             writer.WriteOpcode(Opcode.PackedRow);
             Process(writer, packedRow.Header);
-            
+
             // prepare the zero-compression stream
             MemoryStream wholeByteStream = new MemoryStream();
             MemoryStream bitPacketStream = new MemoryStream();
@@ -575,7 +538,7 @@ namespace PythonTypes.Marshal
             BinaryWriter wholeByteWriter = new BinaryWriter(wholeByteStream);
             BinaryWriter bitPacketWriter = new BinaryWriter(bitPacketStream);
             BinaryWriter objectWriter = new BinaryWriter(objectStream);
-            
+
             // sort the columns by size
             IOrderedEnumerable<DBRowDescriptor.Column> enumerator = packedRow.Header.Columns.OrderByDescending(c => Utils.GetTypeBits(c.Type));
             byte bitOffset = 0;
@@ -591,26 +554,26 @@ namespace PythonTypes.Marshal
                     case FieldType.FileTime:
                         wholeByteWriter.Write((long) (packedRow[column.Name] as PyInteger));
                         break;
-                    
+
                     case FieldType.I4:
                     case FieldType.UI4:
                         wholeByteWriter.Write((int) (packedRow[column.Name] as PyInteger));
                         break;
-                    
+
                     case FieldType.I2:
                     case FieldType.UI2:
                         wholeByteWriter.Write((short) (packedRow[column.Name] as PyInteger));
                         break;
-                    
+
                     case FieldType.I1:
                     case FieldType.UI1:
                         wholeByteWriter.Write((byte) (packedRow[column.Name] as PyInteger));
                         break;
-                    
+
                     case FieldType.R8:
                         wholeByteWriter.Write((double) (packedRow[column.Name] as PyDecimal));
                         break;
-                    
+
                     case FieldType.R4:
                         wholeByteWriter.Write((float) (packedRow[column.Name] as PyDecimal));
                         break;
@@ -620,10 +583,8 @@ namespace PythonTypes.Marshal
                         PyBool value = packedRow[column.Name] as PyBool;
 
                         if (value)
-                        {
                             // bytes are written from right to left in the buffer
                             toWrite |= (byte) (1 << bitOffset);
-                        }
 
                         bitOffset++;
 
@@ -636,15 +597,16 @@ namespace PythonTypes.Marshal
                             // do the same for the next bit offset
                             bitOffset = 0;
                         }
+
                         break;
-                    
+
                     case FieldType.Bytes:
                     case FieldType.Str:
                     case FieldType.WStr:
                         // write the object to the proper memory stream
                         Process(objectWriter, packedRow[column.Name]);
                         break;
-                    
+
                     default:
                         throw new Exception($"Unknown field type {column.Type}");
                 }
@@ -654,7 +616,7 @@ namespace PythonTypes.Marshal
             // that have to be written to the bit stream too
             if (bitOffset > 0)
                 bitPacketWriter.Write(toWrite);
-            
+
             // append the bitStream to the to the wholeByteWriter
             bitPacketStream.WriteTo(wholeByteStream);
             // create a reader for the stream

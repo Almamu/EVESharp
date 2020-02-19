@@ -1,6 +1,4 @@
-using System;
 using System.IO;
-using Org.BouncyCastle.Crypto.Agreement.JPake;
 using PythonTypes.Types.Primitives;
 
 namespace PythonTypes.Types.Network
@@ -21,14 +19,14 @@ namespace PythonTypes.Types.Network
         public static implicit operator PyDataType(PyPacket packet)
         {
             PyTuple args = new PyTuple(6);
-            
+
             args[0] = (int) packet.Type;
             args[1] = packet.Source;
             args[2] = packet.Destination;
-            args[3] = (packet.UserID == 0) ? (PyDataType) new PyNone() : packet.UserID; 
+            args[3] = (packet.UserID == 0) ? (PyDataType) new PyNone() : packet.UserID;
             args[4] = packet.Payload;
             args[5] = packet.NamedPayload;
-            
+
             return new PyObjectData(packet.type_string, args);
         }
 
@@ -41,8 +39,8 @@ namespace PythonTypes.Types.Network
 
             if (data is PySubStream)
                 data = (data as PySubStream).Stream;
-            
-            if(data is PyObjectData == false)
+
+            if (data is PyObjectData == false)
                 throw new InvalidDataException();
 
             PyObjectData objectData = data as PyObjectData;
@@ -50,10 +48,10 @@ namespace PythonTypes.Types.Network
             result.type_string = objectData.Name;
 
             PyTuple packetData = objectData.Arguments as PyTuple;
-            
-            if(packetData.Count != 6)
+
+            if (packetData.Count != 6)
                 throw new InvalidDataException();
-            
+
             result.Type = (MachoMessageType) (int) (packetData[0] as PyInteger);
             result.Source = (PyAddress) packetData[1];
             result.Destination = (PyAddress) packetData[2];
@@ -63,7 +61,7 @@ namespace PythonTypes.Types.Network
 
             return result;
         }
-        
+
         public MachoMessageType Type;
         public PyAddress Source;
         public PyAddress Destination;

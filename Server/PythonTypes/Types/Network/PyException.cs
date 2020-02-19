@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using PythonTypes;
+using System;
 using PythonTypes.Types.Primitives;
 
 namespace PythonTypes.Types.Network
@@ -19,7 +15,7 @@ namespace PythonTypes.Types.Network
             this.Reason = reason;
             this.Keywords = keywords;
         }
-        
+
         public static implicit operator PyDataType(PyException ex)
         {
             return new PyObject(
@@ -31,9 +27,9 @@ namespace PythonTypes.Types.Network
 
         public static implicit operator PyException(PyDataType exception)
         {
-            if(exception is PyObject == false)
+            if (exception is PyObject == false)
                 throw new Exception("Expected object");
-            
+
             PyObject ex = exception as PyObject;
 
             return new PyException(
