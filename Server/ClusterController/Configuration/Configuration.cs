@@ -1,11 +1,7 @@
-using System;
-using System.IO;
 using ClusterControler.Configuration;
-using Common;
 using Common.Configuration;
 using IniParser;
 using IniParser.Model;
-using PythonTypes;
 
 namespace Configuration
 {
@@ -24,14 +20,14 @@ namespace Configuration
             General config = new General();
 
             config.Database.Load(data["database"]);
-            
+
             if (data.Sections.ContainsSection("autoaccount") == true)
                 config.Authentication.Load(data["autoaccount"]);
             if (data.Sections.ContainsSection("loglite") == true)
                 config.LogLite.Load(data["loglite"]);
             if (data.Sections.ContainsSection("logfile") == true)
                 config.FileLog.Load(data["logfile"]);
-            if(data.Sections.ContainsSection("logging") == true)
+            if (data.Sections.ContainsSection("logging") == true)
                 config.Logging.Load(data["logging"]);
 
             return config;

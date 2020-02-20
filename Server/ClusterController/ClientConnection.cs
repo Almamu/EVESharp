@@ -2,15 +2,12 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using ClusterControler.Database;
-using Common;
 using Common.Constants;
 using Common.Database;
 using Common.Game;
 using Common.Logging;
 using Common.Network;
 using Common.Packets;
-using PythonTypes;
-using PythonTypes.Types.Exceptions;
 using PythonTypes.Types.Network;
 using PythonTypes.Types.Primitives;
 
@@ -20,14 +17,14 @@ namespace ClusterControler
     {
         private Channel Log { get; set; }
         public int NodeID { get; private set; }
-        
+
         public Session Session { get; private set; }
 
-        private GeneralDB mGeneralDB = null;
-        
+        private readonly GeneralDB mGeneralDB = null;
+
         public long AccountID
         {
-            get { return this.Session["userid"] as PyInteger; }
+            get => this.Session["userid"] as PyInteger;
             private set { }
         }
         
@@ -54,7 +51,7 @@ namespace ClusterControler
         protected override void OnConnectionLost()
         {
             // remove the user from the correct lists
-            if(this.Session.ContainsKey("userid") == false)
+            if (this.Session.ContainsKey("userid") == false)
                 this.ConnectionManager.RemoveUnauthenticatedClientConnection(this);
             else
                 this.ConnectionManager.RemoveAuthenticatedClientConnection(this);
@@ -73,14 +70,16 @@ namespace ClusterControler
                 Log.Error($"Exception caught on LowLevelVersionExchange: {e.Message}");
                 throw;
             }
+
             // assign the new packet handler to wait for commands again
             this.Socket.SetReceiveCallback(ReceiveCommandCallback);
         }
+
         private void ReceiveCommandCallback(PyDataType packet)
         {
             ClientCommand command = packet;
-            
-            if(command.Command == "QC")
+
+            if (command.Command == "QC")
             {
                 Log.Debug("Received QueueCheck command");
                 // send player position on the queue
@@ -105,11 +104,11 @@ namespace ClusterControler
         private void ReceiveCryptoRequestCallback(PyDataType packet)
         {
             PlaceboRequest request = packet;
-            
-            if(request.Command != "placebo")
+
+            if (request.Command != "placebo")
                 throw new InvalidDataException($"Unknown command {request.Command}, expected 'placebo'");
-            
-            if(request.Arguments.Length > 0)
+
+            if (request.Arguments.Length > 0)
                 Log.Warning("Received PlaceboRequest with extra arguments, this is not supported");
 
             Log.Debug("Received correct Crypto request");
@@ -122,7 +121,7 @@ namespace ClusterControler
         private void ReceiveAuthenticationRequestCallback(PyDataType packet)
         {
             AuthenticationReq request = packet;
-            
+
             if (request.user_password == null)
             {
                 Log.Trace("Rejected by server; requesting plain password");
@@ -130,9 +129,10 @@ namespace ClusterControler
                 this.Socket.Send(new PyInteger(1)); // 1 => plain, 2 => hashed
                 return;
             }
+
             // set languageid in the session
             this.Session["languageID"] = request.user_languageid;
-            
+
             // add the user to the authentication queue
             this.ConnectionManager.LoginQueue.Enqueue(this, request);
         }
@@ -140,10 +140,10 @@ namespace ClusterControler
         private void ReceiveLoginResultResponse(PyDataType packet)
         {
             PyTuple data = packet as PyTuple;
-            
+
             if (data.Count != 3)
                 throw new Exception($"Expected tuple to have 3 items but got {data.Count}");
-            
+
             // Handshake sent when we are mostly in
             HandshakeAck ack = new HandshakeAck();
 
@@ -168,22 +168,22 @@ namespace ClusterControler
 
         private void ReceivePacketResponse(PyDataType packet)
         {
-            if(packet is PyObject)
+            if (packet is PyObject)
                 throw new Exception("Got exception from client");
 
             PyPacket pyPacket = packet;
-            
+
             if (pyPacket.UserID != this.Session["userid"] as PyInteger)
                 throw new Exception("Received a packet coming from a client trying to spoof It's userID");
 
-            if(pyPacket.Destination is PyAddressNode)
+            if (pyPacket.Destination is PyAddressNode)
             {
                 // search for the node in the list
-                if(pyPacket.Source is PyAddressClient == false)
+                if (pyPacket.Source is PyAddressClient == false)
                     throw new Exception("Received a packet coming from a client trying to spoof the address");
 
                 PyAddressNode dest = pyPacket.Destination as PyAddressNode;
-                
+
                 this.ConnectionManager.NotifyNode((int) dest.NodeID, packet);
             }
             else if (pyPacket.Destination is PyAddressAny)
@@ -204,7 +204,7 @@ namespace ClusterControler
             Log.Error(exception.Message);
             Log.Trace(exception.StackTrace);
         }
-        
+
         private void SendLowLevelVersionExchange()
         {
             Log.Debug("Sending LowLevelVersionExchange...");
@@ -221,7 +221,7 @@ namespace ClusterControler
 
             this.Socket.Send(data);
         }
-        
+
         public void SendLoginNotification(LoginStatus loginStatus, long accountID, long role)
         {
             if (loginStatus == LoginStatus.Sucess)
@@ -234,7 +234,7 @@ namespace ClusterControler
                     AuthenticationRsp rsp = new AuthenticationRsp();
 
                     // String "None" marshaled
-                    byte[] func_marshaled_code = new byte[] { 0x74, 0x04, 0x00, 0x00, 0x00, 0x4E, 0x6F, 0x6E, 0x65 };
+                    byte[] func_marshaled_code = new byte[] {0x74, 0x04, 0x00, 0x00, 0x00, 0x4E, 0x6F, 0x6E, 0x65};
 
                     rsp.serverChallenge = "";
                     rsp.func_marshaled_code = func_marshaled_code;
@@ -282,16 +282,16 @@ namespace ClusterControler
         private void AbortConnection()
         {
             this.Socket.GracefulDisconnect();
-            
+
             // remove the user from the correct lists
-            if(this.Session.ContainsKey("userid") == false)
+            if (this.Session.ContainsKey("userid") == false)
                 this.ConnectionManager.RemoveUnauthenticatedClientConnection(this);
             else
                 this.ConnectionManager.RemoveAuthenticatedClientConnection(this);
         }
-        
+
         // TODO: MOVE THIS CODE TO THE SESSION HANDLER INSTEAD
-        
+
         public void SendSessionChange()
         {
             PyPacket packet = CreateEmptySessionChange();
@@ -313,18 +313,14 @@ namespace ClusterControler
             scn.changes = Session.GenerateSessionChange();
 
             if (scn.changes.Length == 0)
-            {
                 // Nothing to do
                 return null;
-            }
 
             Dictionary<long, NodeConnection> nodes = this.ConnectionManager.Nodes;
 
             // Add all the nodeIDs
             foreach (KeyValuePair<long, NodeConnection> node in nodes)
-            {
                 scn.nodesOfInterest.Add(node.Key);
-            }
 
             PyPacket p = new PyPacket();
 

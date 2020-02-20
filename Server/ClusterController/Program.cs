@@ -23,29 +23,12 @@
 */
 
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading;
-using System.Net.Sockets;
-using System.Net;
-using System.IO;
-
-using Common;
-using Common.Configuration;
-using Common.Constants;
 using Common.Database;
-using Common.Game;
 using Common.Logging;
 using Common.Logging.Streams;
 using Common.Network;
-using Common.Packets;
 using Configuration;
-using MySql.Data.MySqlClient;
-using PythonTypes;
-using PythonTypes.Marshal;
-using PythonTypes.Types.Network;
-using PythonTypes.Types.Primitives;
 
 namespace ClusterControler
 {
@@ -58,15 +41,15 @@ namespace ClusterControler
         private static Logger sLog = null;
         private static Channel sChannel = null;
         private static EVEServerSocket sServerSocket = null;
-        
-        static AsyncCallback acceptAsync = new AsyncCallback(AcceptAsync);
+
+        static readonly AsyncCallback acceptAsync = new AsyncCallback(AcceptAsync);
 
         static void AcceptAsync(IAsyncResult ar)
         {
             sChannel.Trace("Incoming connection");
             EVEServerSocket serverSocket = ar.AsyncState as EVEServerSocket;
             EVEClientSocket clientSocket = serverSocket.EndAccept(ar);
-            
+
             // put the server in accept state again
             serverSocket.BeginAccept(acceptAsync);
 
@@ -83,10 +66,10 @@ namespace ClusterControler
                 sChannel = sLog.CreateLogChannel("main");
                 // add console log streams
                 sLog.AddLogStream(new ConsoleLogStream());
-                
+
                 // load server's configuration
                 sConfiguration = General.LoadFromFile("configuration.conf");
-                
+
                 // update logger's configuration
                 sLog.SetConfiguration(sConfiguration.Logging);
 
@@ -96,7 +79,7 @@ namespace ClusterControler
                     sLog.AddLogStream(new FileLogStream(sConfiguration.FileLog));
 
                 // run a thread for log flushing
-                new Thread(() => 
+                new Thread(() =>
                 {
                     while (true)
                     {
@@ -104,21 +87,21 @@ namespace ClusterControler
                         Thread.Sleep(1);
                     }
                 }).Start();
-                
+
                 sChannel.Info("Initializing EVESharp Cluster Controler and Proxy");
                 sChannel.Fatal("Initializing EVESharp Cluster Controler and Proxy");
                 sChannel.Error("Initializing EVESharp Cluster Controler and Proxy");
                 sChannel.Warning("Initializing EVESharp Cluster Controler and Proxy");
                 sChannel.Debug("Initializing EVESharp Cluster Controler and Proxy");
                 sChannel.Trace("Initializing EVESharp Cluster Controler and Proxy");
-                
+
                 sDatabase = DatabaseConnection.FromConfiguration(sConfiguration.Database, sLog);
                 sDatabase.Query("SET global max_allowed_packet=1073741824");
                 sLoginQueue = new LoginQueue(sConfiguration.Authentication, sDatabase, sLog);
                 sLoginQueue.Start();
-                
+
                 sConnectionManager = new ConnectionManager(sLoginQueue, sDatabase, sLog);
-                
+
                 try
                 {
                     sChannel.Trace("Initializing server socket on port 26000...");
@@ -132,11 +115,9 @@ namespace ClusterControler
                     sChannel.Error($"Error listening on port 26000: {e.Message}");
                     throw;
                 }
-                
+
                 while (true)
-                {
                     Thread.Sleep(1);
-                }
             }
             catch (Exception e)
             {

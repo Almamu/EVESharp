@@ -24,14 +24,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Collections.Specialized;
-using System.Linq;
-using System.Text;
-using System.Net.Sockets;
-
-using PythonTypes;
-
-using Common;
 using Common.Constants;
 using Common.Database;
 using Common.Logging;
@@ -43,37 +35,41 @@ namespace ClusterControler
     public class ConnectionManager
     {
         public LoginQueue LoginQueue { get; set; }
+
         public int ClientsCount
         {
-            get { return Clients.Count; }
+            get => Clients.Count;
             private set { }
         }
+
         public int NodesCount
         {
-            get { return Nodes.Count; }
+            get => Nodes.Count;
             private set { }
         }
+
         public Dictionary<long, NodeConnection> Nodes
         {
-            get { return this.mNodeConnections; }
+            get => this.mNodeConnections;
             private set { }
         }
+
         public Dictionary<long, ClientConnection> Clients
         {
-            get { return this.mClientConnections; }
+            get => this.mClientConnections;
             private set { }
         }
-        
+
         private Channel Log { get; set; }
 
         private long mLastNodeID = 0;
-        
-        private List<UnauthenticatedConnection> mUnauthenticatedConnections = new List<UnauthenticatedConnection>();
-        private List<ClientConnection> mUnauthenticatedClientConnections = new List<ClientConnection>();
-        private Dictionary<long, ClientConnection> mClientConnections = new Dictionary<long, ClientConnection>();
-        private Dictionary<long, NodeConnection> mNodeConnections = new Dictionary<long, NodeConnection>();
-        private DatabaseConnection mDatabaseConnection = null;
-        
+
+        private readonly List<UnauthenticatedConnection> mUnauthenticatedConnections = new List<UnauthenticatedConnection>();
+        private readonly List<ClientConnection> mUnauthenticatedClientConnections = new List<ClientConnection>();
+        private readonly Dictionary<long, ClientConnection> mClientConnections = new Dictionary<long, ClientConnection>();
+        private readonly Dictionary<long, NodeConnection> mNodeConnections = new Dictionary<long, NodeConnection>();
+        private readonly DatabaseConnection mDatabaseConnection = null;
+
         public ConnectionManager(LoginQueue loginQueue, DatabaseConnection databaseConnection, Logger logger)
         {
             this.Log = logger.CreateLogChannel("ConnectionManager");
@@ -83,7 +79,7 @@ namespace ClusterControler
 
         public void AddUnauthenticatedConnection(EVEClientSocket socket)
         {
-            this.mUnauthenticatedConnections.Add (
+            this.mUnauthenticatedConnections.Add(
                 new UnauthenticatedConnection(socket, this, Log.Logger)
             );
         }
@@ -109,12 +105,12 @@ namespace ClusterControler
             if (this.mClientConnections.ContainsKey(connection.AccountID) == true)
             {
                 ClientConnection con = this.mClientConnections[connection.AccountID];
-                
+
                 this.mClientConnections.Remove(connection.AccountID);
-                
+
                 con.Socket.ForcefullyDisconnect();
             }
-            
+
             this.mClientConnections.Add(connection.AccountID, connection);
         }
 
@@ -125,9 +121,9 @@ namespace ClusterControler
 
         public void AddNodeConnection(EVEClientSocket socket)
         {
-            if(this.mNodeConnections.Count >= 0xFFFF)
+            if (this.mNodeConnections.Count >= 0xFFFF)
                 throw new Exception("Cannot accept more nodes in the connection manager, reached maximum of 0xFFFF");
-            
+
             if (this.mNodeConnections.ContainsKey(Network.PROXY_NODE_ID) == false)
                 this.mNodeConnections.Add(Network.PROXY_NODE_ID, new NodeConnection(socket, this, Log.Logger, Network.PROXY_NODE_ID));
             else
@@ -140,7 +136,7 @@ namespace ClusterControler
                     if (this.mLastNodeID > 0xFFFF)
                         this.mLastNodeID = 0;
                 }
-                
+
                 // finally assign it to the new node
                 this.mNodeConnections.Add(this.mLastNodeID, new NodeConnection(socket, this, Log.Logger, this.mLastNodeID));
             }
@@ -151,20 +147,20 @@ namespace ClusterControler
             // TODO: CHECK FOR PROXY NODE BEING DELETED AND TRY TO ASSIGN ANY OTHER
             this.mNodeConnections.Remove(connection.NodeID);
         }
-        
+
         public void NotifyClient(int clientID, PyDataType packet)
         {
             if (this.Clients.ContainsKey(clientID) == false)
                 throw new Exception($"Trying to notify a not connected client {clientID}");
-            
+
             this.Clients[clientID].Socket.Send(packet);
         }
 
         public void NotifyNode(int nodeID, PyDataType packet)
         {
-            if(this.Nodes.ContainsKey(nodeID) == false)
+            if (this.Nodes.ContainsKey(nodeID) == false)
                 throw new Exception($"Trying to notify a non-existant node {nodeID}");
-            
+
             this.Nodes[nodeID].Socket.Send(packet);
         }
     }

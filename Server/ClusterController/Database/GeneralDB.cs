@@ -22,16 +22,11 @@
     Creator: Almamu
 */
 
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Text;
-using MySql.Data.MySqlClient;
 
-using Common;
+using System;
 using Common.Database;
 using Common.Logging;
+using MySql.Data.MySqlClient;
 using PythonTypes.Types.Primitives;
 
 namespace ClusterControler.Database
@@ -39,6 +34,7 @@ namespace ClusterControler.Database
     public class GeneralDB : DatabaseAccessor
     {
         private Channel Log { get; set; }
+
         public void ResetSolarSystemStatus()
         {
             try
@@ -66,7 +62,7 @@ namespace ClusterControler.Database
                 throw;
             }
         }
-        
+
         public void ResetItemsStatus()
         {
             try
@@ -86,16 +82,15 @@ namespace ClusterControler.Database
             {
                 MySqlDataReader reader = null;
                 MySqlConnection connection = null;
-                
+
                 Database.Query(
                     ref reader, ref connection,
                     "SELECT updateID, updateName, description, machoVersionMin, machoVersionMax, buildNumberMin, buildNumberMax, methodName, objectID, codeType, code, OCTET_LENGTH(code) as codeLength FROM liveupdates"
                 );
-                
-                using(connection)
+
+                using (connection)
                 using (reader)
                 {
-                    
                     PyList result = new PyList();
 
                     while (reader.Read())
@@ -111,7 +106,7 @@ namespace ClusterControler.Database
                         code["codeType"] = reader.GetString(9);
                         code["methodName"] = reader.GetString(7);
                         code["objectID"] = reader.GetString(8);
-                    
+
                         entry["code"] = new PyObjectData("util.KeyVal", code);
 
                         result.Add(

@@ -24,26 +24,21 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading;
 using ClusterControler.Configuration;
-using Common;
-using Common.Packets;
-using Common.Network;
 using ClusterControler.Database;
 using Common.Logging;
-using PythonTypes;
+using Common.Packets;
 
 namespace ClusterControler
 {
     public class LoginQueue
     {
-        private Queue<LoginQueueEntry> Queue = new Queue<LoginQueueEntry>();
-        private Thread mThread = null;
-        private Common.Database.DatabaseConnection m_mDatabaseConnection = null;
-        private AccountDB mAccountDB = null;
-        private Authentication mConfiguration = null;
+        private readonly Queue<LoginQueueEntry> Queue = new Queue<LoginQueueEntry>();
+        private readonly Thread mThread = null;
+        private readonly Common.Database.DatabaseConnection m_mDatabaseConnection = null;
+        private readonly AccountDB mAccountDB = null;
+        private readonly Authentication mConfiguration = null;
         private Channel Log { get; set; }
 
         public void Start()
@@ -64,7 +59,7 @@ namespace ClusterControler
                 this.Queue.Enqueue(entry);
             }
         }
-        
+
         public void HandleLogin(LoginQueueEntry entry)
         {
             Log.Debug("Processing login for " + entry.Request.user_name);
@@ -76,15 +71,13 @@ namespace ClusterControler
 
             // First check if the account exists
             if (this.mAccountDB.AccountExists(entry.Request.user_name) == false)
-            {
                 if (this.mConfiguration.Autoaccount == true)
                 {
                     Log.Info($"Auto account enabled, creating account for user {entry.Request.user_name}");
-                    
+
                     // Create the account
                     this.mAccountDB.CreateAccount(entry.Request.user_name, entry.Request.user_password, (ulong) this.mConfiguration.Role);                    
                 }
-            }
 
             if ((this.mAccountDB.LoginPlayer(entry.Request.user_name, entry.Request.user_password, ref accountID, ref banned, ref role) == false) || (banned == true))
             {
@@ -98,7 +91,7 @@ namespace ClusterControler
 
                 status = LoginStatus.Sucess;
             }
-            
+
             entry.Connection.SendLoginNotification(status, accountID, role);
         }
 
@@ -112,26 +105,20 @@ namespace ClusterControler
                     Thread.Sleep(1);
 
                     if (Environment.HasShutdownStarted)
-                    {
                         // This will shutdown all the nodes
                         // throw new ProxyClosingException();
                         return;
-                    }
 
                     if (this.Queue.Count == 0)
-                    {
                         continue;
-                    }
 
                     // Thread safe stuff
                     lock (this.Queue)
                     {
                         LoginQueueEntry now = this.Queue.Dequeue();
 
-                        if (now == null)
-                        {
+                        if (now == null) 
                             continue;
-                        }
 
                         HandleLogin(now);
                     }

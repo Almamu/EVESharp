@@ -22,16 +22,8 @@
     Creator: Almamu
 */
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Data.SqlTypes;
-using System.Security.Cryptography;
-using Common;
 using Common.Database;
 using MySql.Data.MySqlClient;
-using MySql.Data.Types;
 
 namespace ClusterControler.Database
 {
@@ -80,7 +72,7 @@ namespace ClusterControler.Database
 
                     if (reader.Read() == false)
                         return false;
-                    
+
                     accountid = reader.GetInt64(0);
                     banned = reader.GetBoolean(2);
                     role = reader.GetInt64(3);

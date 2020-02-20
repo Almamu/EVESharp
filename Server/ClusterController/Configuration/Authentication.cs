@@ -20,16 +20,16 @@ namespace ClusterControler.Configuration
                 return;
 
             string enablestring = section["enabled"].ToUpper();
-            
+
             this.Autoaccount = enablestring == "YES" || enablestring == "1" || enablestring == "TRUE";
-            
-            if(section.ContainsKey("role") == false)
+
+            if (section.ContainsKey("role") == false)
                 throw new Exception("With autoaccount enabled you MUST specify a default role");
 
             string rolestring = section["role"];
             Roles role;
 
-            if(Roles.TryParse(rolestring, out role) == false)
+            if (Roles.TryParse(rolestring, out role) == false)
                 throw new Exception($"Unknown role value {rolestring}");
 
             this.Role = role;

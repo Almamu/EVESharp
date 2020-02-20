@@ -1,9 +1,7 @@
 using System;
-using Common;
 using Common.Logging;
 using Common.Network;
 using Common.Packets;
-using PythonTypes;
 using PythonTypes.Types.Primitives;
 
 namespace ClusterControler
@@ -54,9 +52,9 @@ namespace ClusterControler
             try
             {
                 LowLevelVersionExchange exchange = this.CheckLowLevelVersionExchange(ar);
-                
+
                 // TODO: CHECK NETWORK OF THE NODE TO ENSURE UNAUTHORIZED CONNECTIONS DONT REACH A NODE STATE
-                if(exchange.isNode)
+                if (exchange.isNode)
                     this.ConvertToNodeConnection();
                 else
                     this.ConvertToClientConnection();
