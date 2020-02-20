@@ -1,6 +1,5 @@
 using System;
 using System.Net;
-using System.Net.Sockets;
 using Common.Logging;
 
 namespace Common.Network
@@ -9,7 +8,7 @@ namespace Common.Network
     {
         public Channel Log { get; }
         public int Port { get; }
-        
+
         public EVEServerSocket(int port, Channel logChannel) : base()
         {
             this.Log = logChannel;
@@ -30,7 +29,7 @@ namespace Common.Network
 
         public EVEClientSocket EndAccept(IAsyncResult asyncResult)
         {
-            return new EVEClientSocket (this.Socket.EndAccept(asyncResult), Log);
+            return new EVEClientSocket(this.Socket.EndAccept(asyncResult), Log);
         }
 
         public override void GracefulDisconnect()

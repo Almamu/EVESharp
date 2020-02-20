@@ -1,7 +1,6 @@
 using System;
 using System.Net;
 using System.Net.Sockets;
-using Common.Logging;
 
 namespace Common.Network
 {
@@ -36,9 +35,9 @@ namespace Common.Network
 
         public void SetExceptionHandler(Action<Exception> exceptionHandler)
         {
-            if(exceptionHandler == null)
+            if (exceptionHandler == null)
                 throw new ArgumentNullException(nameof(exceptionHandler));
-            
+
             this.mExceptionHandler = exceptionHandler;
         }
 
@@ -46,7 +45,7 @@ namespace Common.Network
         {
             this.mOnConnectionLost = onConnectionLostHandler;
         }
-        
+
         protected void HandleException(Exception ex)
         {
             // first call the custom exception handler

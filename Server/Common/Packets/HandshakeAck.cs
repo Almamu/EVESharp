@@ -1,8 +1,3 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using PythonTypes;
 using PythonTypes.Types.Primitives;
 
 namespace Common.Packets
@@ -23,7 +18,7 @@ namespace Common.Packets
         public static implicit operator PyDataType(HandshakeAck ack)
         {
             PyDictionary main = new PyDictionary();
-            
+
             main["jit"] = ack.jit;
             main["userid"] = ack.userid;
             main["maxSessionTime"] = ack.maxSessionTime;
@@ -31,7 +26,7 @@ namespace Common.Packets
             main["role"] = ack.role;
             main["address"] = ack.address;
             main["inDetention"] = ack.inDetention;
-            
+
             PyDictionary result = new PyDictionary();
 
             result["live_updates"] = ack.live_updates;

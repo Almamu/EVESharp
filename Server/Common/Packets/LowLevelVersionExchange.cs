@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
 using System.IO;
-using System.Linq;
-using System.Text;
-using PythonTypes;
 using PythonTypes.Types.Primitives;
 
 namespace Common.Packets
@@ -24,10 +18,10 @@ namespace Common.Packets
         public static implicit operator LowLevelVersionExchange(PyDataType data)
         {
             PyTuple exchange = data as PyTuple;
-            
-            if(exchange.Count != 6)
+
+            if (exchange.Count != 6)
                 throw new InvalidDataException("LowLevelVersionExchange must have 6 elements");
-            
+
             LowLevelVersionExchange result = new LowLevelVersionExchange();
 
             result.birthday = exchange[0] as PyInteger;
@@ -59,6 +53,5 @@ namespace Common.Packets
                 exchange.build, exchange.codename + "@" + exchange.region
             });
         }
-
     }
 }

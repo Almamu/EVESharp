@@ -24,22 +24,17 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading;
-using MySql.Data.MySqlClient;
-using MySql.Data.Types;
-using Common;
 using Common.Logging;
+using MySql.Data.MySqlClient;
 
 namespace Common.Database
 {
     public class DatabaseConnection
     {
         private Channel Log { get; set; }
-        private string mConnectionString = "";
-        private Queue<string> mQueryQueue = new Queue<string>();
-        
+        private readonly string mConnectionString = "";
+        private readonly Queue<string> mQueryQueue = new Queue<string>();
+
         public DatabaseConnection(string connectionString, Logger logger)
         {
             this.mConnectionString = connectionString;
@@ -48,7 +43,6 @@ namespace Common.Database
 
         ~DatabaseConnection()
         {
-            
         }
 
         public ulong QueryLID(string query)
@@ -60,7 +54,7 @@ namespace Common.Database
             {
                 connection = new MySqlConnection(this.mConnectionString);
                 connection.Open();
-                
+
                 MySqlCommand command = new MySqlCommand(query, connection);
 
                 reader = command.ExecuteReader();
@@ -76,7 +70,7 @@ namespace Common.Database
             }
             finally
             {
-                if(connection != null)
+                if (connection != null)
                     connection.Close();
             }
         }
@@ -90,7 +84,7 @@ namespace Common.Database
             {
                 connection = new MySqlConnection(this.mConnectionString);
                 connection.Open();
-                
+
                 MySqlCommand command = new MySqlCommand(query, connection);
 
                 reader = command.ExecuteReader();
@@ -116,7 +110,7 @@ namespace Common.Database
             {
                 connection = new MySqlConnection(this.mConnectionString);
                 connection.Open();
-                
+
                 MySqlCommand command = new MySqlCommand(query, connection);
 
                 reader = command.ExecuteReader();
@@ -130,6 +124,7 @@ namespace Common.Database
                 throw;
             }
         }
+
         public void QueueQuery(string query)
         {
             lock (this.mQueryQueue)
@@ -137,7 +132,7 @@ namespace Common.Database
                 this.mQueryQueue.Enqueue(query);
             }
         }
-        
+
         public static DatabaseConnection FromConfiguration(Configuration.Database configuration, Logger logger)
         {
             MySqlConnectionStringBuilder stringBuilder = new MySqlConnectionStringBuilder();
@@ -147,8 +142,8 @@ namespace Common.Database
             stringBuilder.UserID = configuration.Username;
             stringBuilder.Password = configuration.Password;
             stringBuilder.MinimumPoolSize = 10;
-            
-            return new DatabaseConnection(stringBuilder.ToString (), logger);
+
+            return new DatabaseConnection(stringBuilder.ToString(), logger);
         }
 
         public string DoEscapeString(string input)

@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Text;
-using PythonTypes;
 using PythonTypes.Types.Primitives;
 
 namespace Common.Packets
@@ -45,7 +40,7 @@ namespace Common.Packets
                 result.user_password_hash = null;
             else
                 result.user_password_hash = info["user_password_hash"] as PyString;
-            
+
             if (info["user_password"] is PyNone)
                 result.user_password = null;
             else if (info["user_password"] is PyObject)

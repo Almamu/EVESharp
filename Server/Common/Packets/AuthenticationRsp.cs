@@ -1,8 +1,3 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using PythonTypes;
 using PythonTypes.Types.Primitives;
 
 namespace Common.Packets
@@ -26,7 +21,7 @@ namespace Common.Packets
         public static implicit operator PyDataType(AuthenticationRsp rsp)
         {
             PyDictionary info = new PyDictionary();
-            
+
             info["macho_version"] = rsp.macho_version;
             info["boot_version"] = rsp.boot_version;
             info["boot_build"] = rsp.boot_build;

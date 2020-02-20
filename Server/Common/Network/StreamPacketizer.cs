@@ -1,24 +1,22 @@
-﻿using System;
-using System.Collections.Concurrent;
+using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Text;
 
 namespace Common.Network
 {
     public class StreamPacketizer
-    { 
-        private MemoryStream mInputStream = new MemoryStream();
-        private BinaryWriter mInputWriter = null;
-        private BinaryReader mInputReader = null;
-        private Queue<byte[]> mOutputQueue = new Queue<byte[]>();
+    {
+        private readonly MemoryStream mInputStream = new MemoryStream();
+        private readonly BinaryWriter mInputWriter = null;
+        private readonly BinaryReader mInputReader = null;
+        private readonly Queue<byte[]> mOutputQueue = new Queue<byte[]>();
 
         public int PacketCount
         {
-            get { return this.mOutputQueue.Count; }
-            private set {}
+            get => this.mOutputQueue.Count;
+            private set { }
         }
+
         public StreamPacketizer()
         {
             this.mInputReader = new BinaryReader(this.mInputStream);
@@ -50,11 +48,13 @@ namespace Common.Network
                     // ensure this packet is completely received
                     if ((size + this.mInputStream.Position) > this.mInputStream.Length)
                         return this.mOutputQueue.Count;
-                    
-                    lock(this.mOutputQueue)
+
+                    lock (this.mOutputQueue)
                         // read the packet's data and queue it on the packets queue
+                    {
                         this.mOutputQueue.Enqueue(this.mInputReader.ReadBytes(size));
-                    
+                    }
+
                     // remove the packet from the stream
                     byte[] currentBuffer = this.mInputStream.GetBuffer();
                     Buffer.BlockCopy(
@@ -69,14 +69,16 @@ namespace Common.Network
                     this.mInputStream.Seek(0, SeekOrigin.Begin);
                 }
 
-                return this.mOutputQueue.Count;   
+                return this.mOutputQueue.Count;
             }
         }
 
         public byte[] PopItem()
         {
             lock (this.mOutputQueue)
+            {
                 return this.mOutputQueue.Dequeue();
+            }
         }
     }
 }

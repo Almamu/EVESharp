@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Text;
-using PythonTypes;
 using PythonTypes.Types.Primitives;
 
 namespace Common.Packets
@@ -15,7 +10,6 @@ namespace Common.Packets
 
         public PlaceboRequest()
         {
-            
         }
 
         public PlaceboRequest(PyString command, PyDictionary arguments)
@@ -27,8 +21,8 @@ namespace Common.Packets
         public static implicit operator PlaceboRequest(PyDataType request)
         {
             PyTuple data = request as PyTuple;
-            
-            if(data.Count != 2)
+
+            if (data.Count != 2)
                 throw new InvalidDataException($"Expected tuple of two items");
 
             return new PlaceboRequest(

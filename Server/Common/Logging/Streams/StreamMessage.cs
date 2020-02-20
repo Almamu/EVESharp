@@ -4,12 +4,11 @@ namespace Common.Logging.Streams
 {
     public class StreamMessage
     {
-        
         public MessageType Type { get; }
         public string Message { get; }
         public Channel Channel { get; }
         public DateTimeOffset Time { get; private set; }
-            
+
         public StreamMessage(MessageType type, string message, Channel channel)
         {
             this.Type = type;

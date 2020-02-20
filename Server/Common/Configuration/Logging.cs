@@ -6,7 +6,7 @@ namespace Common.Configuration
     public class Logging
     {
         public List<string> EnableChannels = new List<string>();
-        
+
         public void Load(KeyDataCollection collection)
         {
             if (collection.ContainsKey("force") == false)

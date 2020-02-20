@@ -5,38 +5,36 @@ using System.Net;
 using System.Net.Sockets;
 using System.Threading;
 using Common.Logging;
-using Common.Packets;
 using PythonTypes;
 using PythonTypes.Compression;
 using PythonTypes.Marshal;
-using PythonTypes.Types.Network;
 using PythonTypes.Types.Primitives;
 
 namespace Common.Network
 {
     public class EVEClientSocket : EVESocket
     {
-        private Semaphore mSendingSemaphore = new Semaphore(1, 1);
-        private Semaphore mReceivingSemaphore = new Semaphore(1, 1);
+        private readonly Semaphore mSendingSemaphore = new Semaphore(1, 1);
+        private readonly Semaphore mReceivingSemaphore = new Semaphore(1, 1);
         private AsyncCallback mSendCallback = null;
         private AsyncCallback mReceiveCallback = null;
-        private Queue<byte[]> mOutputQueue = new Queue<byte[]>();
-        private StreamPacketizer mPacketizer = new StreamPacketizer();
+        private readonly Queue<byte[]> mOutputQueue = new Queue<byte[]>();
+        private readonly StreamPacketizer mPacketizer = new StreamPacketizer();
         private Action<PyDataType> mPacketReceiveCallback = null;
-        #if DEBUG
-        private Channel mPacketLog = null;
-        #endif
+#if DEBUG
+        private readonly Channel mPacketLog = null;
+#endif
         public Channel Log { get; set; }
-        
+
         public EVEClientSocket(Socket socket, Channel logChannel) : base(socket)
         {
             this.Log = logChannel;
-            
+
             // take into account network debugging for developers
 #if DEBUG
             this.mPacketLog = this.Log.Logger.CreateLogChannel("NetworkDebug", true);
 #endif
-            
+
             // setup async callback handlers
             this.SetupCallbacks();
             // start the receiving callbacks
@@ -46,12 +44,12 @@ namespace Common.Network
         public EVEClientSocket(Channel logChannel) : base(new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp))
         {
             this.Log = logChannel;
-            
+
             // take into account network debugging for developers
 #if DEBUG
             this.mPacketLog = this.Log.Logger.CreateLogChannel("NetworkDebug", true);
 #endif
-            
+
             this.SetupCallbacks();
         }
 
@@ -87,13 +85,13 @@ namespace Common.Network
         public void SetReceiveCallback(Action<PyDataType> callback)
         {
             bool shouldFlush = this.mPacketReceiveCallback == null;
-            
+
             this.mPacketReceiveCallback = callback;
             // check if there is any packet queued and not handled
-            if(shouldFlush)
+            if (shouldFlush)
                 this.FlushReceivingQueue();
         }
-        
+
         private void FlushReceivingQueue()
         {
             if (this.mReceivingSemaphore.WaitOne(0) == true)
@@ -116,11 +114,11 @@ namespace Common.Network
                         this.HandleException(e);
                     }
                 }
-                
+
                 // finally free the receiving semaphore
                 this.mReceivingSemaphore.Release();
             }
-            
+
             // semaphore not acquired, there's something already sending data, so we're sure the data will get there eventually
         }
 
@@ -162,14 +160,14 @@ namespace Common.Network
                 // an exception here means the connection closed
                 return;
             }
-            
+
             // queue the packets and process them
             this.mPacketizer.QueuePackets(state.Buffer, state.Received);
             this.mPacketizer.ProcessPackets();
-            
+
             // if there is any pending to be processed pop it and call the receive callback
             this.FlushReceivingQueue();
-            
+
             // begin receiving again
             this.BeginReceive(state.Buffer, this.mReceiveCallback);
         }
@@ -183,16 +181,16 @@ namespace Common.Network
 #if DEBUG
             this.mPacketLog.Trace(PrettyPrinter.FromDataType(packet));
 #endif
-            
+
             MemoryStream stream = new MemoryStream();
             BinaryWriter writer = new BinaryWriter(stream);
             // marshal the packet first
             byte[] encodedPacket = PythonTypes.Marshal.Marshal.ToByteArray(packet);
-            
+
             // compress the packet if it exceeds the maximum size
             if (encodedPacket.Length > Constants.Network.MAX_PACKET_SIZE)
                 encodedPacket = ZlibHelper.Compress(encodedPacket);
-            
+
             // write the size to the stream
             writer.Write(encodedPacket.Length);
             // finally copy the packet buffer
@@ -208,9 +206,11 @@ namespace Common.Network
         public void Send(byte[] buffer)
         {
             // add the buffer to the output queue when the queue is not in use
-            lock(this.mOutputQueue)
+            lock (this.mOutputQueue)
+            {
                 this.mOutputQueue.Enqueue(buffer);
-            
+            }
+
             this.FlushSendingQueue();
         }
 
@@ -219,7 +219,7 @@ namespace Common.Network
             if (shouldCheckForSemaphore == false || this.mSendingSemaphore.WaitOne(0) == true)
                 // semaphore acquired, start the send callback
                 this.BeginSend();
-            
+
             // semaphore not acquired, the send callbacks are already running
         }
 
@@ -236,8 +236,8 @@ namespace Common.Network
                     this.mSendingSemaphore.Release();
                     return;
                 }
-                
-                output = this.mOutputQueue.Dequeue();   
+
+                output = this.mOutputQueue.Dequeue();
             }
 
             try
@@ -256,7 +256,7 @@ namespace Common.Network
         {
             SendCallbackState state = ar.AsyncState as SendCallbackState;
             state.Sent += this.Socket.EndSend(ar);
-            
+
             // make sure the packet was sent completely
             if (state.Sent != state.Buffer.Length)
             {
@@ -269,9 +269,10 @@ namespace Common.Network
                 {
                     this.HandleException(e);
                 }
+
                 return;
             }
-            
+
             // packet was completely sent, free the semaphore and try to send the next packet (if any)
             this.FlushSendingQueue(false);
         }

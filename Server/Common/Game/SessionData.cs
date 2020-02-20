@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using PythonTypes;
-
-namespace Common.Game
+﻿namespace Common.Game
 {
     public class SessionData
     {

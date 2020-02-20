@@ -1,8 +1,3 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using PythonTypes;
 using PythonTypes.Types.Primitives;
 
 namespace Common.Packets
@@ -15,9 +10,9 @@ namespace Common.Packets
 
         public static implicit operator PyTuple(SessionChangeNotification notification)
         {
-            return new PyTuple( new PyDataType[]
+            return new PyTuple(new PyDataType[]
                 {
-                    new PyTuple(new PyDataType[] { notification.clueless, notification.changes }),
+                    new PyTuple(new PyDataType[] {notification.clueless, notification.changes}),
                     notification.nodesOfInterest
                 }
             );

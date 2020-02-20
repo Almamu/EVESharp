@@ -1,8 +1,4 @@
-﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using PythonTypes;
 using PythonTypes.Types.Primitives;
 
 namespace Common.Game
@@ -24,8 +20,8 @@ namespace Common.Game
             set
             {
                 // ensure there is a key stored if the element is new
-                if(this.ContainsKey(key) == false)
-                    base[key] = new PyTuple(new PyDataType [] { new PyNone(), new PyNone() });
+                if (this.ContainsKey(key) == false)
+                    base[key] = new PyTuple(new PyDataType[] {new PyNone(), new PyNone()});
 
                 PyTuple entry = base[key] as PyTuple;
 
@@ -43,8 +39,8 @@ namespace Common.Game
             foreach (KeyValuePair<string, PyDataType> pair in this)
             {
                 PyTuple value = pair.Value as PyTuple;
-                
-                result[pair.Key] = new PyTuple(new []{ value[0], value[1] });
+
+                result[pair.Key] = new PyTuple(new[] {value[0], value[1]});
 
                 value[0] = value[1];
             }

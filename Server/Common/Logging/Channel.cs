@@ -1,5 +1,3 @@
-using Renci.SshNet.Messages;
-
 namespace Common.Logging
 {
     public class Channel
@@ -7,14 +5,14 @@ namespace Common.Logging
         public string Name { get; }
         public Logger Logger { get; }
         public bool Suppress { get; }
-        
+
         public Channel(string name, Logger parent, bool suppress = false)
         {
             this.Name = name;
             this.Logger = parent;
             this.Suppress = suppress;
         }
-        
+
         public void Debug(string message)
         {
             this.Logger.Write(MessageType.Debug, message, this);

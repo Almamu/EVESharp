@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using PythonTypes;
+using System;
 using PythonTypes.Types.Network;
 using PythonTypes.Types.Primitives;
 
@@ -11,7 +7,7 @@ namespace Common.Packets
     public class GPSTransportClosed : PyException
     {
         private const string TYPE_NAME = "exceptions.GPSTransportClosed";
-        
+
         public GPSTransportClosed(string type) : base(TYPE_NAME, type, new PyDictionary())
         {
             this.reasonArgs = new PyDictionary();
@@ -41,14 +37,14 @@ namespace Common.Packets
         public static implicit operator GPSTransportClosed(PyDataType exception)
         {
             PyException ex = exception;
-            
-            if(ex.Type != TYPE_NAME)
+
+            if (ex.Type != TYPE_NAME)
                 throw new Exception($"Expected type {TYPE_NAME} but got {ex.Type}");
-            
+
             GPSTransportClosed result = new GPSTransportClosed(ex.Reason);
 
             result.Keywords = ex.Keywords;
-            
+
             result.reasonArgs = ex.Keywords["reasonArgs"] as PyDictionary;
             result.clock = ex.Keywords["clock"] as PyInteger;
             result.region = ex.Keywords["region"] as PyString;
@@ -57,10 +53,10 @@ namespace Common.Packets
             result.build = ex.Keywords["build"] as PyInteger;
             result.codename = ex.Keywords["codename"] as PyString;
             result.machoVersion = ex.Keywords["machoVersion"] as PyInteger;
-            
+
             return result;
         }
-        
+
         public string exception_type = "";
         public string message = "";
         public string origin = "";

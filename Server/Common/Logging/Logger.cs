@@ -1,6 +1,4 @@
-using System;
 using System.Collections.Generic;
-using System.Linq;
 using Common.Logging.Streams;
 
 namespace Common.Logging
@@ -14,25 +12,25 @@ namespace Common.Logging
         Fatal = 4,
         Warning = 5
     }
-    
+
     public class Logger
     {
-        private List<LogStream> mStreams = new List<LogStream>();
-        private Dictionary<string, Channel> mChannels = new Dictionary<string, Channel>();
+        private readonly List<LogStream> mStreams = new List<LogStream>();
+        private readonly Dictionary<string, Channel> mChannels = new Dictionary<string, Channel>();
         private Configuration.Logging mConfiguration = new Configuration.Logging();
-        
+
         public Logger(Configuration.Logging configuration = null)
         {
-            if(configuration != null)
+            if (configuration != null)
                 this.mConfiguration = configuration;
         }
 
         public void SetConfiguration(Configuration.Logging configuration)
         {
-            if(configuration != null)
+            if (configuration != null)
                 this.mConfiguration = configuration;
         }
-        
+
         public void AddLogStream(LogStream newStream)
         {
             this.mStreams.Add(newStream);
@@ -41,14 +39,12 @@ namespace Common.Logging
         public Channel CreateLogChannel(string name, bool suppress = false)
         {
             if (this.mChannels.ContainsKey(name) == true)
-            {
                 return this.mChannels[name];
-            }
-            
+
             Channel channel = new Channel(name, this, suppress);
 
             this.mChannels.Add(name, channel);
-            
+
             return channel;
         }
 
@@ -57,20 +53,16 @@ namespace Common.Logging
             // supress message if required
             if (channel.Suppress == true && this.mConfiguration.EnableChannels.Contains(channel.Name) == false)
                 return;
-            
+
             // iterate all the log streams and queue the messages
-            foreach(LogStream stream in this.mStreams)
-            {
+            foreach (LogStream stream in this.mStreams)
                 stream.Write(messageType, message, channel);
-            }
         }
 
         public void Flush()
         {
             foreach (LogStream stream in this.mStreams)
-            {
                 stream.Flush();
-            }
         }
     }
 }

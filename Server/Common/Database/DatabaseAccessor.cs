@@ -6,9 +6,10 @@ namespace Common.Database
 
         protected DatabaseConnection Database
         {
-            get { return this.mDatabase; }
-            private set { this.mDatabase = value; }
+            get => this.mDatabase;
+            private set => this.mDatabase = value;
         }
+
         public DatabaseAccessor(DatabaseConnection db)
         {
             this.Database = db;
