@@ -10,7 +10,7 @@ namespace Node.Network
     public class ClusterConnection
     {
         // TODO: MOVE THIS TO THE CORRECT ZONE
-        enum MACHONETERR_TYPE
+        public enum MACHONETERR_TYPE
         {
             UNMACHODESTINATION = 0,
             UNMACHOCHANNEL = 1,
@@ -134,9 +134,6 @@ namespace Node.Network
                     {
                         Log.Error($"Received packet that wasn't directed to us");
                     }
-
-                    if (callResult == null)
-                        callResult = new PyNone();
 
                     // convert the packet to a response so we don't have to allocate a whole new packet
                     res.type_string = "macho.CallRsp";

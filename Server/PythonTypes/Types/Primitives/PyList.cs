@@ -58,5 +58,10 @@ namespace PythonTypes.Types.Primitives
         {
             return GetEnumerator();
         }
+
+        public PyTuple ToTuple()
+        {
+            return new PyTuple(this.mList.ToArray());
+        }
     }
 }

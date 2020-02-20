@@ -38,7 +38,7 @@ namespace Node.Services.Network
             this.mConfiguration = configuration;
         }
 
-        public PyDataType GetPostAuthenticationMessage(PyTuple args, object client)
+        public PyDataType GetPostAuthenticationMessage(PyTuple args, Client client)
         {
             if (this.mConfiguration.MessageType == AuthenticationMessageType.NoMessage)
                 return new PyNone();

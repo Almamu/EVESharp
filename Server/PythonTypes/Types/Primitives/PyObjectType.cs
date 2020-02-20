@@ -7,6 +7,7 @@
         Decimal,
         None,
         List,
+        Dictionary,
         Tuple,
         Buffer,
         Object,

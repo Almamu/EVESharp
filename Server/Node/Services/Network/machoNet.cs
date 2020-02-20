@@ -38,13 +38,15 @@ namespace Node.Services.Network
             this.mCacheStorage = cacheStorage;
         }
 
-        public PyDataType GetInitVals(PyTuple args, object client)
+        public PyDataType GetInitVals(PyTuple args, Client client)
         {
             if (this.mCacheStorage.Exists("machoNet.serviceInfo") == false)
             {
                 // Cache does not exists, create it
                 PyDictionary dict = new PyDictionary();
 
+                // this cached object indicates where the packets should be directed to when the client
+                // wants to communicate with a service (as in PyAddress types or integers)
                 dict["trademgr"] = "station";
                 dict["tutorialSvc"] = "station";
                 dict["bookmark"] = "station";
@@ -60,7 +62,7 @@ namespace Node.Services.Network
 
                 dict["scanMgr"] = "solarsystem";
                 dict["keeper"] = "solarsystem";
-
+                
                 dict["stationSvc"] = new PyNone();
                 dict["zsystem"] = new PyNone();
                 dict["invbroker"] = new PyNone();

@@ -91,8 +91,9 @@ namespace Node.Services.Characters
             if (characterName.Length < 3)
                 return new PyInteger((int) NameValidationResults.TooShort);
 
-            // equivalent to the itemName column in the entity table
-            if (characterName.Length > 85)
+            // character name length is maximum 24 characters based on the error messages used for
+            // the user
+            if (characterName.Length > 24)
                 return new PyInteger((int) NameValidationResults.TooLong);
 
             // ensure only alphanumeric characters and/or spaces are used
@@ -111,10 +112,35 @@ namespace Node.Services.Characters
 
         public PyDataType CreateCharacter2(PyTuple arguments, Client client)
         {
-            if(this.ValidateNameEx (new PyTuple(new PyDataType [] { arguments[0] }), client) != (int) NameValidationResults.Valid)
-                throw new UserError("CharNameInvalid");
+            int validationError = this.ValidateNameEx (new PyTuple(new PyDataType [] { arguments[0] }), client);
 
-            throw new UserError("CharNameInvalid");
+            UserError ex = new UserError("CharNameInvalidMaxLength");
+
+            ex.Dictionary["notify"] = "Maximum length for a character name is 24 characters.";
+            
+            // ensure the name is valid
+            switch (validationError)
+            {
+                case (int) NameValidationResults.TooLong:
+                    throw new UserError("CharNameInvalidMaxLength");
+                case (int) NameValidationResults.Taken:
+                    throw new UserError("CharNameInvalidTaken");
+                case (int) NameValidationResults.IllegalCharacters:
+                    throw new UserError("CharNameInvalidSomeChar");
+                case (int) NameValidationResults.TooShort:
+                    throw new UserError("CharNameInvalidMinLength");
+                case (int) NameValidationResults.MoreThanOneSpace:
+                    throw new UserError("CharNameInvalidMaxSpaces");
+                case (int) NameValidationResults.Banned:
+                    throw new UserError("CharNameInvalidBannedWord");
+                case (int) NameValidationResults.Valid:
+                    break;
+                default:
+                    // unknown actual error, return generic error
+                    throw new UserError("CharNameInvalid");
+            }
+
+            throw ex;
         }
     }
 }

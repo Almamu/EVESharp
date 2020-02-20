@@ -8,7 +8,7 @@ namespace Common.Packets
     {
         private const string TYPE_NAME = "exceptions.GPSTransportClosed";
 
-        public GPSTransportClosed(string type) : base(TYPE_NAME, type, new PyDictionary())
+        public GPSTransportClosed(string type) : base(TYPE_NAME, type, null, new PyDictionary())
         {
             this.reasonArgs = new PyDictionary();
             this.clock = DateTime.Now.ToFileTimeUtc();

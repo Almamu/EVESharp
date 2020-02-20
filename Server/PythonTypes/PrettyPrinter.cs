@@ -162,7 +162,7 @@ namespace PythonTypes
 
         private void ProcessObject(PyObject obj)
         {
-            this.mStringBuilder.AppendFormat("[PyObject {0}]", (obj.Header.IsType2) ? "Type2" : "Type1");
+            this.mStringBuilder.AppendFormat("[PyObject {0}]", (obj.IsType2) ? "Type2" : "Type1");
             this.mStringBuilder.AppendLine();
             this.mIndentation++;
 

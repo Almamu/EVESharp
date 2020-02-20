@@ -6,6 +6,8 @@ namespace PythonTypes.Types.Complex
 {
     public class PyCachedObject
     {
+        private const string TYPE_NAME = "objectCaching.CachedObject";
+        
         public long timestamp = 0;
         public int version = 0;
         public long nodeID = 0;
@@ -36,7 +38,7 @@ namespace PythonTypes.Types.Complex
             args[5] = data.compressed;
             args[6] = data.objectID;
 
-            return new PyObjectData("objectCaching.CachedObject", args);
+            return new PyObjectData(TYPE_NAME, args);
         }
 
         public static PyCachedObject FromCacheHint(PyCacheHint cacheInfo, PyDataType data)

@@ -63,17 +63,20 @@ namespace PythonTypes.Types.Database
 
             args = new PyTuple(new PyDataType[] {args});
             // build the args tuple
-            return new PyObject(TYPE_NAME, new PyTuple(new PyDataType[] {args}));
+            return new PyObject(
+                false,
+                new PyTuple(new PyDataType[] { new PyToken(TYPE_NAME), args })
+            );
         }
 
         public static implicit operator DBRowDescriptor(PyObject descriptor)
         {
-            if (descriptor.Header.Type != TYPE_NAME)
+            if(descriptor.Header[0] is PyToken == false || descriptor.Header[0] as PyToken != TYPE_NAME)
                 throw new Exception($"Expected PyObject of type {TYPE_NAME}");
 
             DBRowDescriptor output = new DBRowDescriptor();
 
-            foreach (PyTuple tuple in descriptor.Header.Arguments[0] as PyTuple)
+            foreach(PyTuple tuple in descriptor.Header[1] as PyTuple)
                 output.Columns.Add(tuple);
 
             return output;

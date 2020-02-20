@@ -71,12 +71,13 @@ namespace PythonTypes.Types.Primitives
             return GetEnumerator();
         }
 
-        public void CopyTo(PyTuple destination, int sourceIndex, int destinationIndex)
+        public void CopyTo(PyTuple destination, int sourceIndex, int destinationIndex, int count)
         {
             // perform some boundaries checks to ensure the data fits
             if (
-                (this.Count + destinationIndex - sourceIndex) > destination.Count ||
+                (count + destinationIndex - sourceIndex) > destination.Count ||
                 sourceIndex > this.Count ||
+                sourceIndex + count > this.Count ||
                 sourceIndex < 0 ||
                 destinationIndex < 0)
                 throw new IndexOutOfRangeException("Trying to copy tuple items that would be out of range");
@@ -84,7 +85,7 @@ namespace PythonTypes.Types.Primitives
             // copy data over
             Array.Copy(
                 this.mList, sourceIndex,
-                destination.mList, destinationIndex, this.Count - sourceIndex
+                destination.mList, destinationIndex, count
             );
         }
     }

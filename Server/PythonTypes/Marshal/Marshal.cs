@@ -326,7 +326,7 @@ namespace PythonTypes.Marshal
         /// <param name="data">The value to write</param>
         private static void ProcessObject(BinaryWriter writer, PyObject data)
         {
-            if (data.Header.IsType2 == true)
+            if (data.IsType2 == true)
                 writer.WriteOpcode(Opcode.ObjectType2);
             else
                 writer.WriteOpcode(Opcode.ObjectType1);

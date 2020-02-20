@@ -44,7 +44,7 @@ namespace Common.Packets
             if (info["user_password"] is PyNone)
                 result.user_password = null;
             else if (info["user_password"] is PyObject)
-                result.user_password = (info["user_password"] as PyObject).Header.Arguments[0] as PyString;
+                result.user_password = ((info["user_password"] as PyObject).Header[0] as PyTuple)[1] as PyString;
 
             return result;
         }

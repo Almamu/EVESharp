@@ -54,17 +54,18 @@ namespace PythonTypes.Types.Database
             keywords["columns"] = rowset.Columns;
 
             return new PyObject(
-                new PyObject.ObjectHeader(TYPE_NAME, null, keywords, true),
+                true,
+                new PyTuple(new PyDataType[] { new PyTuple(new PyDataType[] { new PyToken(TYPE_NAME) }), keywords }),
                 rowset.Rows
             );
         }
 
         public static implicit operator CRowset(PyObject data)
         {
-            if (data.Header.Type != TYPE_NAME)
+            if(data.Header[0] is PyToken == false || data.Header[0] as PyToken != TYPE_NAME)
                 throw new InvalidDataException($"Expected PyObject of type {data}");
 
-            DBRowDescriptor descriptor = data.Header.Dictionary["header"];
+            DBRowDescriptor descriptor = (data.Header[1] as PyDictionary)["header"];
 
             return new CRowset(descriptor, data.List);
         }

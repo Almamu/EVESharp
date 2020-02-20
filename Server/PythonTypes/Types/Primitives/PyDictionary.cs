@@ -3,12 +3,18 @@ using System.Collections.Generic;
 
 namespace PythonTypes.Types.Primitives
 {
-    public class PyDictionary : PyDataType, IEnumerable<KeyValuePair<string, PyDataType>>
+    public class PyDictionary : PyDataType, IEnumerable
     {
-        private readonly Dictionary<string, PyDataType> mDictionary = new Dictionary<string, PyDataType>();
+        private readonly Dictionary<string, PyDataType> mDictionary;
 
-        public PyDictionary() : base(PyObjectType.List)
+        public PyDictionary() : base(PyObjectType.Dictionary)
         {
+            this.mDictionary = new Dictionary<string, PyDataType>();
+        }
+
+        public PyDictionary(Dictionary<string, PyDataType> seed) : base(PyObjectType.Dictionary)
+        {
+            this.mDictionary = seed;
         }
 
         public void Remove(string key)
@@ -29,14 +35,9 @@ namespace PythonTypes.Types.Primitives
 
         public int Length => this.mDictionary.Count;
 
-        public IEnumerator<KeyValuePair<string, PyDataType>> GetEnumerator()
+        public IEnumerator GetEnumerator()
         {
             return this.mDictionary.GetEnumerator();
-        }
-
-        IEnumerator IEnumerable.GetEnumerator()
-        {
-            return GetEnumerator();
         }
     }
 }

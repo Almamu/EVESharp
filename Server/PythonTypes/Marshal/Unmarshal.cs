@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -175,7 +176,7 @@ namespace PythonTypes.Marshal
 
                 case Opcode.ObjectType1:
                 case Opcode.ObjectType2:
-                    data = ProcessObjectEx(opcode);
+                    data = ProcessObject(opcode);
                     break;
 
                 case Opcode.SavedStreamElement:
@@ -640,7 +641,7 @@ namespace PythonTypes.Marshal
         }
 
         /// <summary>
-        /// <seealso cref="Marshal.ProcessObjectEx"/>
+        /// <seealso cref="Marshal.ProcessObject"/>
         /// 
         /// Opcodes supported:
         /// <seealso cref="Opcode.ObjectType1"/>
@@ -649,7 +650,7 @@ namespace PythonTypes.Marshal
         /// <param name="opcode">Type of object to parse</param>
         /// <returns>The decoded python type</returns>
         /// <exception cref="InvalidDataException">If any error was found in the data</exception>
-        private PyDataType ProcessObjectEx(Opcode opcode)
+        private PyDataType ProcessObject(Opcode opcode)
         {
             if (opcode != Opcode.ObjectType1 && opcode != Opcode.ObjectType2)
                 throw new InvalidDataException($"Trying to parse a {opcode} as ObjectEx");
@@ -658,7 +659,8 @@ namespace PythonTypes.Marshal
             PyList list = new PyList();
             PyDictionary dict = new PyDictionary();
 
-            while (this.mReader.PeekChar() != Marshal.PackedTerminator) list.Add(this.Process(false));
+            while (this.mReader.PeekChar() != Marshal.PackedTerminator)
+                list.Add(this.Process(false));
 
             // ignore packed terminator
             this.mReader.ReadByte();
@@ -674,7 +676,7 @@ namespace PythonTypes.Marshal
             // ignore packed terminator
             this.mReader.ReadByte();
 
-            return new PyObject(header, list, dict);
+            return new PyObject(opcode == Opcode.ObjectType2, header, list, dict);
         }
 
         /// <summary>

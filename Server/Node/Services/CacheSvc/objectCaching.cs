@@ -41,10 +41,11 @@ namespace Node.Services.CacheSvc
             this.mCacheStorage = cacheStorage;
         }
 
-        public PyDataType GetCachableObject(PyTuple args, object client)
+        public PyDataType GetCachableObject(PyTuple args, Client client)
         {
             PyCacheHint cache = args;
 
+            // TODO: CHECK CACHEOK EXCEPTION ON CLIENT
             if (cache.objectID is PyString == false)
             {
                 Log.Error("Unknown objectID on cache request");
