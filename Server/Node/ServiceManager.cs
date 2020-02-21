@@ -32,50 +32,27 @@ namespace Node
 {
     public class ServiceManager : Common.Services.ServiceManager
     {
-        private readonly CacheStorage mCacheStorage = null;
-        private DatabaseConnection mDatabaseConnection = null;
-        private readonly objectCaching mObjectCachingSvc = null;
-        private readonly machoNet mMachoNetSvc = null;
-        private readonly alert mAlertSvc = null;
-        private readonly authentication mAuthenticationSvc = null;
-        private readonly character mCharacterSvc = null;
+        public NodeContainer Container { get; }
+        public CacheStorage CacheStorage { get; }
+        public objectCaching objectCaching { get; }
+        public machoNet machoNet { get; }
+        public alert alert { get; }
+        public authentication authentication { get; }
+        public character character { get; }
+        private readonly DatabaseConnection mDatabaseConnection = null;
 
-        public Service objectCaching()
-        {
-            return this.mObjectCachingSvc;
-        }
-
-        public Service machoNet()
-        {
-            return this.mMachoNetSvc;
-        }
-
-        public Service alert()
-        {
-            return this.mAlertSvc;
-        }
-
-        public Service authentication()
-        {
-            return this.mAuthenticationSvc;
-        }
-
-        public Service character()
-        {
-            return this.mCharacterSvc;
-        }
-        
         public ServiceManager(NodeContainer container, DatabaseConnection db, CacheStorage storage, Configuration.General configuration)
         {
+            this.Container = container;
             this.mDatabaseConnection = db;
-            this.mCacheStorage = storage;
+            this.CacheStorage = storage;
 
             // initialize services
-            this.mMachoNetSvc = new machoNet(this.mCacheStorage);
-            this.mAlertSvc = new alert(container.Logger);
-            this.mObjectCachingSvc = new objectCaching(this.mCacheStorage, container.Logger);
-            this.mAuthenticationSvc = new authentication(configuration.Authentication);
-            this.mCharacterSvc = new character(storage, db);
+            this.machoNet = new machoNet(this);
+            this.objectCaching = new objectCaching(container.Logger, this);
+            this.alert = new alert(container.Logger, this);
+            this.authentication = new authentication(configuration.Authentication, this);
+            this.character = new character(storage, db, this);
         }
     }
 }

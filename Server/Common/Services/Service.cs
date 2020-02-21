@@ -1,12 +1,7 @@
 ﻿namespace Common.Services
 {
-    public class Service
+    public interface Service
     {
-        private string svc_name = "";
-
-        public Service(string name)
-        {
-            svc_name = name;
-        }
+        
     }
 }

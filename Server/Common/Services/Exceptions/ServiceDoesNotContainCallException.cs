@@ -1,6 +1,6 @@
 using System;
 
-namespace Common.Services
+namespace Common.Services.Exceptions
 {
     public class ServiceDoesNotContainCallException : Exception
     {

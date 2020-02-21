@@ -32,13 +32,13 @@ namespace Node.Services.Network
     {
         private readonly Authentication mConfiguration = null;
 
-        public authentication(Authentication configuration)
-            : base("authentication")
+        public authentication(Authentication configuration, ServiceManager manager)
+            : base(manager)
         {
             this.mConfiguration = configuration;
         }
 
-        public PyDataType GetPostAuthenticationMessage(PyTuple args, Client client)
+        public PyDataType GetPostAuthenticationMessage(PyDictionary namedPayload, Client client)
         {
             if (this.mConfiguration.MessageType == AuthenticationMessageType.NoMessage)
                 return new PyNone();

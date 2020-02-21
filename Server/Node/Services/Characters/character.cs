@@ -46,53 +46,45 @@ namespace Node.Services.Characters
         };
 
         private readonly CharacterDB mDB = null;
-        private readonly CacheStorage mCacheStorage = null;
 
-        public character(CacheStorage cacheStorage, DatabaseConnection db)
-            : base("character")
+        public character(CacheStorage cacheStorage, DatabaseConnection db, ServiceManager manager) : base(manager)
         {
             this.mDB = new CharacterDB(db);
-            this.mCacheStorage = cacheStorage;
         }
 
-        public PyDataType GetCharactersToSelect(PyTuple args, Client client)
+        public PyDataType GetCharactersToSelect(PyDictionary namedPayload, Client client)
         {
             return this.mDB.GetCharacterList(client.AccountID);
         }
 
-        public PyDataType LogStartOfCharacterCreation(PyTuple args, Client client)
+        public PyDataType LogStartOfCharacterCreation(PyDictionary namedPayload, Client client)
         {
             return null;
         }
 
-        public PyDataType GetCharCreationInfo(PyTuple args, Client client)
+        public PyDataType GetCharCreationInfo(PyDictionary namedPayload, Client client)
         {
-            return this.mCacheStorage.GetHints(CacheStorage.CreateCharacterCacheTable);
+            return this.ServiceManager.CacheStorage.GetHints(CacheStorage.CreateCharacterCacheTable);
         }
 
-        public PyDataType GetAppearanceInfo(PyTuple args, Client client)
+        public PyDataType GetAppearanceInfo(PyDictionary namedPayload, Client client)
         {
-            return this.mCacheStorage.GetHints(CacheStorage.CharacterAppearanceCacheTable);
+            return this.ServiceManager.CacheStorage.GetHints(CacheStorage.CharacterAppearanceCacheTable);
         }
 
-        public PyDataType GetCharNewExtraCreationInfo(PyTuple args, Client client)
+        public PyDataType GetCharNewExtraCreationInfo(PyDictionary namedPayload, Client client)
         {
             return new PyDictionary();
         }
 
-        public PyInteger ValidateNameEx(PyTuple args, Client client)
+        public PyInteger ValidateNameEx(PyString name, PyDictionary namedPayload, Client client)
         {
-            // TODO: IMPROVE PARSING OF PACKETS LIKE THIS
-            if (args.Count != 1)
-                throw new Exception($"Expected tuple of size 1 but got {args.Count}");
-
-            string characterName = args[0] as PyString;
-
+            string characterName = name;
+            
             if (characterName.Length < 3)
                 return new PyInteger((int) NameValidationResults.TooShort);
 
-            // character name length is maximum 24 characters based on the error messages used for
-            // the user
+            // character name length is maximum 24 characters based on the error messages used for the user
             if (characterName.Length > 24)
                 return new PyInteger((int) NameValidationResults.TooLong);
 
@@ -100,9 +92,11 @@ namespace Node.Services.Characters
             if (Regex.IsMatch(characterName, "^[a-zA-Z0-9 ]*$") == false)
                 return new PyInteger((int) NameValidationResults.IllegalCharacters);
 
+            // no more than one space allowed
             if (characterName.IndexOf(' ') != characterName.LastIndexOf(' '))
                 return new PyInteger((int) NameValidationResults.MoreThanOneSpace);
 
+            // ensure there is no character registered with this name already
             if (this.mDB.IsCharacterNameTaken(characterName) == true)
                 return new PyInteger((int) NameValidationResults.Taken);
 
@@ -110,9 +104,11 @@ namespace Node.Services.Characters
             return new PyInteger((int) NameValidationResults.Valid);
         }
 
-        public PyDataType CreateCharacter2(PyTuple arguments, Client client)
+        public PyDataType CreateCharacter2(
+            PyString characterName, PyInteger bloodlineID, PyInteger genderID, PyInteger ancestryID,
+            PyDictionary appearance, PyDictionary namedPayload, Client client)
         {
-            int validationError = this.ValidateNameEx (new PyTuple(new PyDataType [] { arguments[0] }), client);
+            int validationError = this.ValidateNameEx(characterName, null, client);
 
             // ensure the name is valid
             switch (validationError)

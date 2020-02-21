@@ -9,14 +9,6 @@ namespace Node.Network
 {
     public class ClusterConnection
     {
-        // TODO: MOVE THIS TO THE CORRECT ZONE
-        public enum MACHONETERR_TYPE
-        {
-            UNMACHODESTINATION = 0,
-            UNMACHOCHANNEL = 1,
-            WRAPPEDEXCEPTION = 2
-        };
-
         private Channel Log { get; }
         public EVEClientSocket Socket { get; }
         public NodeContainer Container { get; }
@@ -118,7 +110,7 @@ namespace Node.Network
 
                         Log.Trace($"Calling {dest.Service.Value}::{call}");
                         callResult = this.Container.ServiceManager.ServiceCall(
-                            dest.Service, call, args, this.Container.ClientManager.Get(packet.UserID)
+                            dest.Service, call, args, sub, this.Container.ClientManager.Get(packet.UserID)
                         );
                     }
                     else if (packet.Destination is PyAddressNode)
@@ -127,7 +119,7 @@ namespace Node.Network
 
                         Log.Trace($"Calling {dest.Service.Value}::{call}");
                         callResult = this.Container.ServiceManager.ServiceCall(
-                            dest.Service, call, args, this.Container.ClientManager.Get(packet.UserID)
+                            dest.Service, call, args, sub, this.Container.ClientManager.Get(packet.UserID)
                         );
                     }
                     else
@@ -163,7 +155,7 @@ namespace Node.Network
                     res.UserID = packet.UserID;
                     res.Payload = new PyTuple(new PyDataType[]
                     {
-                        (int) packet.Type, (int) MACHONETERR_TYPE.WRAPPEDEXCEPTION, new PyTuple (new PyDataType[] { new PySubStream(e) }), 
+                        (int) packet.Type, (int) MachoErrorType.WrappedException, new PyTuple (new PyDataType[] { new PySubStream(e) }), 
                     });
                 }
 

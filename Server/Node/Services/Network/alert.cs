@@ -31,15 +31,15 @@ namespace Node.Services.Network
 {
     public class alert : Service
     {
-        private Channel Log { get; set; }
+        private Channel Log { get; }
 
-        public alert(Logger logger)
-            : base("alert")
+        public alert(Logger logger, ServiceManager manager)
+            : base(manager)
         {
             this.Log = logger.CreateLogChannel("alert");
         }
 
-        public PyDataType BeanCount(PyTuple args, object client)
+        public PyDataType BeanCount(PyInteger stackID, PyDictionary namedPayload, object client)
         {
             PyTuple res = new PyTuple(2);
 
@@ -49,19 +49,20 @@ namespace Node.Services.Network
             return res;
         }
 
-        public PyDataType SendClientStackTraceAlert(PyTuple args, Client client)
+        public PyDataType SendClientStackTraceAlert(PyTuple stackInfo, PyString stackTrace, PyString type, PyDictionary namedPayload, Client client)
         {
             Log.Fatal(
                 "Received the following client's stack trace:" + Environment.NewLine +
-                $"------------------ {args[2] as PyString} ------------------" + Environment.NewLine +
-                $"{(args[0] as PyTuple)[1] as PyString}" + Environment.NewLine +
-                (args[1] as PyString)
+                $"------------------ {type.Value} ------------------" + Environment.NewLine +
+                $"{(stackInfo[1] as PyString).Value}" + Environment.NewLine +
+                stackTrace.Value
             );
+            
             // The client should receive anything to know that the stack trace arrived to the server
             return new PyNone();
         }
 
-        public PyDataType BeanDelivery(PyTuple args, object client)
+        public PyDataType BeanDelivery(PyDictionary beanCounts, PyDictionary namedPayload, object client)
         {
             // I'm not joking, send me the stack trace NOW!!!
             // :P

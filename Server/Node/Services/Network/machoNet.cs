@@ -30,17 +30,14 @@ namespace Node.Services.Network
 {
     public class machoNet : Service
     {
-        private readonly CacheStorage mCacheStorage = null;
-
-        public machoNet(CacheStorage cacheStorage)
-            : base("machoNet")
+        public machoNet(ServiceManager manager)
+            : base(manager)
         {
-            this.mCacheStorage = cacheStorage;
         }
 
-        public PyDataType GetInitVals(PyTuple args, Client client)
+        public PyDataType GetInitVals(PyDictionary namedPayload, Client client)
         {
-            if (this.mCacheStorage.Exists("machoNet.serviceInfo") == false)
+            if (this.ServiceManager.CacheStorage.Exists("machoNet.serviceInfo") == false)
             {
                 // Cache does not exists, create it
                 PyDictionary dict = new PyDictionary();
@@ -136,12 +133,12 @@ namespace Node.Services.Network
                 dict["onlineStatus"] = new PyNone();
                 dict["gangSvcObjectHandler"] = new PyNone();
 
-                this.mCacheStorage.Store("machoNet.serviceInfo", dict, DateTime.Now.ToFileTimeUtc());
+                this.ServiceManager.CacheStorage.Store("machoNet.serviceInfo", dict, DateTime.Now.ToFileTimeUtc());
             }
 
-            PyDataType srvInfo = this.mCacheStorage.GetHint("machoNet.serviceInfo");
+            PyDataType srvInfo = this.ServiceManager.CacheStorage.GetHint("machoNet.serviceInfo");
             PyTuple res = new PyTuple(2);
-            PyDictionary initvals = this.mCacheStorage.GetHints(CacheStorage.LoginCacheTable);
+            PyDictionary initvals = this.ServiceManager.CacheStorage.GetHints(CacheStorage.LoginCacheTable);
 
             res[0] = srvInfo;
             res[1] = initvals;
@@ -149,7 +146,7 @@ namespace Node.Services.Network
             return res;
         }
 
-        public PyDataType GetTime(PyTuple args, object client)
+        public PyDataType GetTime(PyDictionary namedPayload, Client client)
         {
             return new PyInteger(DateTime.Now.ToFileTimeUtc());
         }

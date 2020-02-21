@@ -31,32 +31,20 @@ namespace Node.Services.CacheSvc
 {
     public class objectCaching : Service
     {
-        private Channel Log { get; set; }
-        private readonly CacheStorage mCacheStorage = null;
+        private Channel Log { get; }
 
-        public objectCaching(CacheStorage cacheStorage, Logger logger)
-            : base("objectCaching")
+        public objectCaching(Logger logger, ServiceManager manager)
+            : base(manager)
         {
             this.Log = logger.CreateLogChannel("objectCaching");
-            this.mCacheStorage = cacheStorage;
         }
 
-        public PyDataType GetCachableObject(PyTuple args, Client client)
+        public PyDataType GetCachableObject(PyInteger shared, PyString objectID, PyTuple objectVersion, PyInteger nodeID, PyDictionary namedPayload, Client client)
         {
-            PyCacheHint cache = args;
-
             // TODO: CHECK CACHEOK EXCEPTION ON CLIENT
-            if (cache.objectID is PyString == false)
-            {
-                Log.Error("Unknown objectID on cache request");
-                return null;
-            }
-
-            string objectID = cache.objectID as PyString;
-
             Log.Debug($"Received cache request for {objectID}");
 
-            return this.mCacheStorage.Get(objectID);
+            return this.ServiceManager.CacheStorage.Get(objectID);
         }
     }
 }
