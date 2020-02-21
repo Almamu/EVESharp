@@ -73,7 +73,7 @@ namespace PythonTypes.Types.Network
                         ex.Header[0] as PyToken, extra[0] as PyString, extra[1], ex.Header[2] as PyDictionary
                     );
                 else
-                    throw new InvalidDataException("Unexpected amount of arguments for a PyException");   
+                    throw new InvalidDataException("Unexpected amount of arguments for a PyException");
             }
             else
             {

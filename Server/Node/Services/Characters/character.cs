@@ -114,10 +114,6 @@ namespace Node.Services.Characters
         {
             int validationError = this.ValidateNameEx (new PyTuple(new PyDataType [] { arguments[0] }), client);
 
-            UserError ex = new UserError("CharNameInvalidMaxLength");
-
-            ex.Dictionary["notify"] = "Maximum length for a character name is 24 characters.";
-            
             // ensure the name is valid
             switch (validationError)
             {
@@ -140,7 +136,7 @@ namespace Node.Services.Characters
                     throw new UserError("CharNameInvalid");
             }
 
-            throw ex;
+            return null;
         }
     }
 }
