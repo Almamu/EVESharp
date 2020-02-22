@@ -322,35 +322,32 @@ namespace ClusterControler
             foreach (KeyValuePair<long, NodeConnection> node in nodes)
                 scn.nodesOfInterest.Add(node.Key);
 
-            PyPacket p = new PyPacket();
+            PyPacket packet = new PyPacket(PyPacket.PacketType.SESSIONCHANGENOTIFICATION);
 
-            p.type_string = "macho.SessionChangeNotification";
-            p.Type = MachoMessageType.SESSIONCHANGENOTIFICATION;
+            packet.UserID = this.Session["userid"] as PyInteger;
 
-            p.UserID = this.Session["userid"] as PyInteger;
+            packet.Payload = scn;
 
-            p.Payload = scn;
+            packet.NamedPayload = new PyDictionary();
+            packet.NamedPayload["channel"] = "sessionchange";
 
-            p.NamedPayload = new PyDictionary();
-            p.NamedPayload["channel"] = "sessionchange";
-
-            return p;
+            return packet;
         }
 
-        public PyDataType SetSessionChangeDestination(PyPacket p)
+        public PyDataType SetSessionChangeDestination(PyPacket packet)
         {
-            p.Source = new PyAddressNode(NodeID, 0);
-            p.Destination = new PyAddressClient(this.Session["userid"] as PyInteger, 0);
+            packet.Source = new PyAddressNode(NodeID, 0);
+            packet.Destination = new PyAddressClient(this.Session["userid"] as PyInteger, 0);
 
-            return p;
+            return packet;
         }
 
-        public PyDataType SetSessionChangeDestination(PyPacket p, int node)
+        public PyDataType SetSessionChangeDestination(PyPacket packet, int node)
         {
-            p.Source = new PyAddressNode(1, 0);
-            p.Destination = new PyAddressNode(node, 0);
+            packet.Source = new PyAddressNode(1, 0);
+            packet.Destination = new PyAddressNode(node, 0);
 
-            return p;
+            return packet;
         }
     }
 }

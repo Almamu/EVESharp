@@ -4,6 +4,9 @@ using PythonTypes.Types.Primitives;
 
 namespace PythonTypes.Types.Database
 {
+    /// <summary>
+    /// Helper class to work with dbutil.CRowset types to be sent to the EVE Online client
+    /// </summary>
     public class CRowset
     {
         private const string TYPE_NAME = "dbutil.CRowset";
@@ -27,6 +30,9 @@ namespace PythonTypes.Types.Database
             this.PrepareColumnNames();
         }
 
+        /// <summary>
+        /// Creates the columns list based off the DBRowDescriptor of the header
+        /// </summary>
         private void PrepareColumnNames()
         {
             this.Columns = new PyList();
@@ -41,6 +47,10 @@ namespace PythonTypes.Types.Database
             set => this.Rows[index] = value;
         }
 
+        /// <summary>
+        /// Adds a new <seealso cref="PyPackedRow" /> to the result data of the CRowset
+        /// </summary>
+        /// <param name="row">The new row to add</param>
         public void Add(PyPackedRow row)
         {
             this.Rows.Add(row);
@@ -70,6 +80,12 @@ namespace PythonTypes.Types.Database
             return new CRowset(descriptor, data.List);
         }
 
+        /// <summary>
+        /// Helper method to instantiate a dbutil.CRowset type from a MySqlDataReader, this consumes the result
+        /// but does not close it, so calling code has to take care of this. Ideally, please use "using" statements
+        /// </summary>
+        /// <param name="reader">The reader to use as source of the information</param>
+        /// <returns>The CRowset object ready to be used</returns>
         public static CRowset FromMySqlDataReader(MySqlDataReader reader)
         {
             DBRowDescriptor descriptor = DBRowDescriptor.FromMySqlReader(reader);

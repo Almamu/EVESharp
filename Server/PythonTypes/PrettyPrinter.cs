@@ -5,21 +5,54 @@ using PythonTypes.Types.Primitives;
 
 namespace PythonTypes
 {
+    /// <summary>
+    /// A helper class to dump any Python type to file or console in a readable format for the user
+    /// </summary>
     public class PrettyPrinter
     {
+        /// <summary>
+        /// The character used for an indention level
+        /// </summary>
         private const string Indention = "  ";
 
+        /// <summary>
+        /// The output buffer used to write the values to
+        /// </summary>
         private readonly StringBuilder mStringBuilder = new StringBuilder();
+        /// <summary>
+        /// The current level of indention
+        /// </summary>
         private int mIndentation = 0;
 
+        /// <summary>
+        /// Utility method, creates a new pretty printer instance and dumps the given <paramref name="obj" />
+        /// </summary>
+        /// <param name="obj">The Python type to dump</param>
+        /// <returns></returns>
         public static string FromDataType(PyDataType obj)
         {
             PrettyPrinter printer = new PrettyPrinter();
 
-            return printer.Process(obj);
+            printer.Process(obj);
+
+            return printer.GetResult();
         }
 
-        protected string Process(PyDataType obj)
+        /// <summary>
+        /// Obtains the finalized dump
+        /// </summary>
+        /// <returns>The string representation of the dumped data with this PrettyPrinter's instance</returns>
+        public string GetResult()
+        {
+            return this.mStringBuilder.ToString();
+        }
+
+        /// <summary>
+        /// Main body of the pretty-printer class, takes care of type identification and passing it to the correct
+        /// formatter for proper dump
+        /// </summary>
+        /// <param name="obj">The python type to dump</param>
+        public void Process(PyDataType obj)
         {
             // add indentation to the string
             for (int i = 0; i < this.mIndentation; i++)
@@ -27,40 +60,38 @@ namespace PythonTypes
 
             if (obj == null || obj is PyNone)
                 this.ProcessNone();
-            else if (obj is PyString)
-                this.ProcessString(obj as PyString);
-            else if (obj is PyToken)
-                this.ProcessToken(obj as PyToken);
-            else if (obj is PyInteger)
-                this.ProcessInteger(obj as PyInteger);
-            else if (obj is PyDecimal)
-                this.ProcessDecimal(obj as PyDecimal);
-            else if (obj is PyBuffer)
-                this.ProcessBuffer(obj as PyBuffer);
-            else if (obj is PyBool)
-                this.ProcessBoolean(obj as PyBool);
-            else if (obj is PyTuple)
-                this.ProcessTuple(obj as PyTuple);
-            else if (obj is PyList)
-                this.ProcessList(obj as PyList);
-            else if (obj is PyDictionary)
-                this.ProcessDictionary(obj as PyDictionary);
-            else if (obj is PyChecksumedStream)
-                this.ProcessChecksumedStream(obj as PyChecksumedStream);
-            else if (obj is PyObject)
-                this.ProcessObject(obj as PyObject);
-            else if (obj is PyObjectData)
-                this.ProcessObjectData(obj as PyObjectData);
-            else if (obj is PySubStream)
-                this.ProcessSubStream(obj as PySubStream);
-            else if (obj is PySubStruct)
-                this.ProcessSubStruct(obj as PySubStruct);
-            else if (obj is PyPackedRow)
-                this.ProcessPackedRow(obj as PyPackedRow);
+            else if (obj is PyString pyString)
+                this.ProcessString(pyString);
+            else if (obj is PyToken pyToken)
+                this.ProcessToken(pyToken);
+            else if (obj is PyInteger pyInteger)
+                this.ProcessInteger(pyInteger);
+            else if (obj is PyDecimal pyDecimal)
+                this.ProcessDecimal(pyDecimal);
+            else if (obj is PyBuffer pyBuffer)
+                this.ProcessBuffer(pyBuffer);
+            else if (obj is PyBool pyBool)
+                this.ProcessBoolean(pyBool);
+            else if (obj is PyTuple pyTuple)
+                this.ProcessTuple(pyTuple);
+            else if (obj is PyList pyList)
+                this.ProcessList(pyList);
+            else if (obj is PyDictionary pyDictionary)
+                this.ProcessDictionary(pyDictionary);
+            else if (obj is PyChecksumedStream pyChecksumedStream)
+                this.ProcessChecksumedStream(pyChecksumedStream);
+            else if (obj is PyObject pyObject)
+                this.ProcessObject(pyObject);
+            else if (obj is PyObjectData pyObjectData)
+                this.ProcessObjectData(pyObjectData);
+            else if (obj is PySubStream pySubStream)
+                this.ProcessSubStream(pySubStream);
+            else if (obj is PySubStruct pySubStruct)
+                this.ProcessSubStruct(pySubStruct);
+            else if (obj is PyPackedRow pyPackedRow)
+                this.ProcessPackedRow(pyPackedRow);
             else
                 this.mStringBuilder.AppendLine("[--PyUnknown--]");
-
-            return this.mStringBuilder.ToString();
         }
 
         private void ProcessString(PyString str)

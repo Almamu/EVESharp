@@ -3,6 +3,9 @@ using PythonTypes.Types.Primitives;
 
 namespace PythonTypes.Types.Database
 {
+    /// <summary>
+    /// Helper class to work with PyPackedRow lists (which are just a PyList of PyPackedRows)
+    /// </summary>
     public class PyPackedRowList
     {
         public static PyList FromMySqlDataReader(MySqlDataReader reader)

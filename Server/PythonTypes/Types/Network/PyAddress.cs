@@ -3,6 +3,9 @@ using PythonTypes.Types.Primitives;
 
 namespace PythonTypes.Types.Network
 {
+    /// <summary>
+    /// Helper class to work with macho.MachoAddress objects in <seealso cref="PyPacket"/>
+    /// </summary>
     public abstract class PyAddress
     {
         protected const string OBJECT_TYPE = "macho.MachoAddress";

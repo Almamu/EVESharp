@@ -51,17 +51,15 @@ namespace ClusterControler
 
             PyPacket packet = input;
 
-            if (packet.Type == MachoMessageType.CALL_RSP || packet.Type == MachoMessageType.ERRORRESPONSE)
+            if (packet.Type == PyPacket.PacketType.CALL_RSP || packet.Type == PyPacket.PacketType.ERRORRESPONSE)
             {
                 if (packet.Destination is PyAddressClient)
                 {
                     Log.Trace($"Sending packet to client {packet.UserID}");
                     this.ConnectionManager.NotifyClient((int) (packet.UserID), packet);
                 }
-                else if (packet.Destination is PyAddressNode)
+                else if (packet.Destination is PyAddressNode address)
                 {
-                    PyAddressNode address = packet.Destination as PyAddressNode;
-
                     Log.Trace($"Sending packet to node {address.NodeID}");
                     this.ConnectionManager.NotifyNode((int) (address.NodeID), packet);
                 }
@@ -74,7 +72,7 @@ namespace ClusterControler
             }
             else
             {
-                Log.Error($"Wrong packet name: {packet.type_string}");
+                Log.Error($"Wrong packet name: {packet.TypeString}");
             }
         }
     }

@@ -90,10 +90,10 @@ namespace Node.Network
         private void ReceiveNormalPacketCallback(PyDataType ar)
         {
             PyPacket packet = ar;
-            PyPacket res = new PyPacket();
 
-            if (packet.Type == MachoMessageType.CALL_REQ)
+            if (packet.Type == PyPacket.PacketType.CALL_REQ)
             {
+                PyPacket result;
                 PyTuple callInfo = ((packet.Payload[0] as PyTuple)[1] as PySubStream).Stream as PyTuple;
 
                 string call = callInfo[1] as PyString;
@@ -126,42 +126,41 @@ namespace Node.Network
                     {
                         Log.Error($"Received packet that wasn't directed to us");
                     }
-
-                    // convert the packet to a response so we don't have to allocate a whole new packet
-                    res.type_string = "macho.CallRsp";
-                    res.Type = MachoMessageType.CALL_RSP;
+                    
+                    result = new PyPacket(PyPacket.PacketType.CALL_RSP);
 
                     // ensure destination has clientID in it
                     source.ClientID = (int) packet.UserID;
                     // switch source and dest
-                    res.Source = packet.Destination;
-                    res.Destination = source;
+                    result.Source = packet.Destination;
+                    result.Destination = source;
 
-                    res.UserID = packet.UserID;
+                    result.UserID = packet.UserID;
 
-                    res.Payload = new PyTuple(new PyDataType[] {new PySubStream(callResult)});
+                    result.Payload = new PyTuple(new PyDataType[] {new PySubStream(callResult)});
                 }
                 catch (PyException e)
                 {
                     // PyExceptions have to be relayed to the client
                     // this way it's easy to notify the user without needing any special code
-                    res.type_string = "macho.ErrorResponse";
-                    res.Type = MachoMessageType.ERRORRESPONSE;
+                    result = new PyPacket(PyPacket.PacketType.ERRORRESPONSE);
 
                     source.ClientID = (int) packet.UserID;
-                    res.Source = packet.Destination;
-                    res.Destination = source;
+                    result.Source = packet.Destination;
+                    result.Destination = source;
 
-                    res.UserID = packet.UserID;
-                    res.Payload = new PyTuple(new PyDataType[]
+                    result.UserID = packet.UserID;
+                    result.Payload = new PyTuple(new PyDataType[]
                     {
                         (int) packet.Type, (int) MachoErrorType.WrappedException, new PyTuple (new PyDataType[] { new PySubStream(e) }), 
                     });
                 }
 
-                this.Socket.Send(res);
+                // any of the paths that lead to the send here must have the PyPacket initialized
+                // so a null check is not needed
+                this.Socket.Send(result);
             }
-            else if (packet.Type == MachoMessageType.SESSIONCHANGENOTIFICATION)
+            else if (packet.Type == PyPacket.PacketType.SESSIONCHANGENOTIFICATION)
             {
                 Log.Debug($"Updating session for client {packet.UserID}");
 

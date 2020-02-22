@@ -18,9 +18,8 @@ namespace PythonTypes.Types.Network
             this.NodeID = nodeID;
         }
 
-        public PyAddressNode(PyInteger nodeID, PyInteger callID = null, PyString service = null) : base(TYPE_NODE)
+        public PyAddressNode(PyInteger nodeID, PyInteger callID = null, PyString service = null) : this(nodeID)
         {
-            this.NodeID = nodeID;
             this.CallID = callID;
             this.Service = service;
         }
@@ -48,7 +47,7 @@ namespace PythonTypes.Types.Network
             PyString type = data[0] as PyString;
 
             if (type != TYPE_NODE)
-                throw new InvalidDataException($"Trying to cast unknown object to PyAddressAny");
+                throw new InvalidDataException($"Trying to cast a different PyAddress ({type}) to PyAddressAny");
 
             return new PyAddressNode(
                 data[1] is PyNone ? null : data[1] as PyInteger,

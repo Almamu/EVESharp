@@ -69,36 +69,36 @@ namespace PythonTypes.Marshal
         {
             if (data == null || data is PyNone)
                 ProcessNone(writer);
-            else if (data is PyInteger)
-                ProcessInteger(writer, data as PyInteger);
-            else if (data is PyDecimal)
-                ProcessDecimal(writer, data as PyDecimal);
-            else if (data is PyToken)
-                ProcessToken(writer, data as PyToken);
-            else if (data is PyBool)
-                ProcessBool(writer, data as PyBool);
-            else if (data is PyBuffer)
-                ProcessBuffer(writer, data as PyBuffer);
-            else if (data is PyDictionary)
-                ProcessDictionary(writer, data as PyDictionary);
-            else if (data is PyList)
-                ProcessList(writer, data as PyList);
-            else if (data is PyObjectData)
-                ProcessObjectData(writer, data as PyObjectData);
-            else if (data is PyObject)
-                ProcessObject(writer, data as PyObject);
-            else if (data is PyString)
-                ProcessString(writer, data as PyString);
-            else if (data is PySubStream)
-                ProcessSubStream(writer, data as PySubStream);
-            else if (data is PyChecksumedStream)
-                ProcessChecksumedStream(writer, data as PyChecksumedStream);
-            else if (data is PySubStruct)
-                ProcessSubStruct(writer, data as PySubStruct);
-            else if (data is PyTuple)
-                ProcessTuple(writer, data as PyTuple);
-            else if (data is PyPackedRow)
-                ProcessPackedRow(writer, data as PyPackedRow);
+            else if (data is PyInteger pyInteger)
+                ProcessInteger(writer, pyInteger);
+            else if (data is PyDecimal pyDecimal)
+                ProcessDecimal(writer, pyDecimal);
+            else if (data is PyToken pyToken)
+                ProcessToken(writer, pyToken);
+            else if (data is PyBool pyBool)
+                ProcessBool(writer, pyBool);
+            else if (data is PyBuffer pyBuffer)
+                ProcessBuffer(writer, pyBuffer);
+            else if (data is PyDictionary pyDictionary)
+                ProcessDictionary(writer, pyDictionary);
+            else if (data is PyList pyList)
+                ProcessList(writer, pyList);
+            else if (data is PyObjectData pyObjectData)
+                ProcessObjectData(writer, pyObjectData);
+            else if (data is PyObject pyObject)
+                ProcessObject(writer, pyObject);
+            else if (data is PyString pyString)
+                ProcessString(writer, pyString);
+            else if (data is PySubStream pySubStream)
+                ProcessSubStream(writer, pySubStream);
+            else if (data is PyChecksumedStream pyChecksumedStream)
+                ProcessChecksumedStream(writer, pyChecksumedStream);
+            else if (data is PySubStruct pySubStruct)
+                ProcessSubStruct(writer, pySubStruct);
+            else if (data is PyTuple pyTuple)
+                ProcessTuple(writer, pyTuple);
+            else if (data is PyPackedRow pyPackedRow)
+                ProcessPackedRow(writer, pyPackedRow);
             else
                 throw new InvalidDataException($"Unexpected type {data.GetType()}");
         }

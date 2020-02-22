@@ -2,9 +2,12 @@ using System.Linq;
 
 namespace PythonTypes
 {
+    /// <summary>
+    /// Utility class to calculate CRC32 checksums of byte arrays
+    /// </summary>
     public static class CRC32
     {
-        private static readonly uint[] _crc32Tab = new uint[]
+        private static readonly uint[] _crc32Tab = 
         {
             0x00000000, 0x77073096, 0xee0e612c, 0x990951ba, 0x076dc419,
             0x706af48f, 0xe963a535, 0x9e6495a3, 0x0edb8832, 0x79dcb8a4,
@@ -62,8 +65,10 @@ namespace PythonTypes
 
         public static uint Checksum(byte[] data)
         {
-            uint crc = data.Aggregate(0xFFFFFFFF,
-                (current, b) => (current >> 8) ^ _crc32Tab[b ^ (current & 0x000000FF)]);
+            uint crc = data.Aggregate(
+                0xFFFFFFFF,
+                (current, b) => (current >> 8) ^ _crc32Tab[b ^ (current & 0x000000FF)]
+            );
 
             return ~crc;
         }

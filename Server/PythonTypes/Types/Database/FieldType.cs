@@ -1,5 +1,8 @@
 ﻿namespace PythonTypes.Types.Database
 {
+    /// <summary>
+    /// Integer representation of the different field types used by the Database results
+    /// </summary>
     public enum FieldType
     {
         Empty = 0x00,

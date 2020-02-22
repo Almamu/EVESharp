@@ -30,11 +30,11 @@ namespace Node.Inventory
     {
         public ItemFactory mItemFactory = null;
 
-        public int ID { set; get; }
+        public int ID { get; } // entity id cannot be changed
         public string Name { set; get; }
-        public ItemType Type { set; get; }
-        public int OwnerID { set; get; } // TODO: CONVERT THIS TO AN ENTITY
-        public int LocationID { set; get; } // TODO: CONVERT THIS TO AN ENTITY
+        public ItemType Type { get; } // entity type cannot be changed
+        public int OwnerID { set; get; } // TODO: CONVERT THIS TO AN ENTITY?
+        public int LocationID { set; get; } // TODO: CONVERT THIS TO AN ENTITY?
         public int Flag { set; get; }
         public bool Contraband { set; get; }
         public bool Singleton { set; get; }

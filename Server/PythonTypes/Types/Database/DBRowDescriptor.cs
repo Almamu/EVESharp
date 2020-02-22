@@ -1,12 +1,21 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using MySql.Data.MySqlClient;
 using PythonTypes.Types.Primitives;
 
 namespace PythonTypes.Types.Database
 {
+    /// <summary>
+    /// Helper class to work with DBRowDescriptors used by the EVE Online client.
+    ///
+    /// DBRowDescriptors are a Python representation of a table's header (column names and types)
+    /// </summary>
     public class DBRowDescriptor
     {
+        /// <summary>
+        /// Column representation for the DBRowDescriptors
+        /// </summary>
         public class Column
         {
             public string Name { get; }
@@ -44,6 +53,9 @@ namespace PythonTypes.Types.Database
             }
         };
 
+        /// <summary>
+        /// Name of the PyObjects that represent a DBRowDescriptor
+        /// </summary>
         private const string TYPE_NAME = "blue.DBRowDescriptor";
 
         public List<Column> Columns { get; }
@@ -87,6 +99,12 @@ namespace PythonTypes.Types.Database
             return descriptor as PyObject;
         }
 
+        /// <summary>
+        /// Creates a new DBRowDescriptor based off a specific result set from a MySqlDataReader
+        /// </summary>
+        /// <param name="reader">The MySqlDataReader to use when creating the DBRowDescriptor</param>
+        /// <returns>Instance of a new DBRowDescriptor</returns>
+        /// <exception cref="InvalidDataException">If any error was found on the creation</exception>
         public static DBRowDescriptor FromMySqlReader(MySqlDataReader reader)
         {
             DBRowDescriptor descriptor = new DBRowDescriptor();
@@ -96,35 +114,35 @@ namespace PythonTypes.Types.Database
                 Type type = reader.GetFieldType(i);
                 FieldType fieldType = FieldType.Error;
 
-                if (type == typeof(String))
+                if (type == typeof(string))
                     // TODO: PROPERLY SPECIFY THE STRING TYPE
                     fieldType = FieldType.WStr;
-                else if (type == typeof(UInt64))
+                else if (type == typeof(ulong))
                     fieldType = FieldType.UI8;
-                else if (type == typeof(Int64))
+                else if (type == typeof(long))
                     fieldType = FieldType.I8;
-                else if (type == typeof(UInt32))
+                else if (type == typeof(uint))
                     fieldType = FieldType.UI4;
-                else if (type == typeof(Int32))
+                else if (type == typeof(int))
                     fieldType = FieldType.I4;
-                else if (type == typeof(UInt16))
+                else if (type == typeof(ushort))
                     fieldType = FieldType.UI2;
-                else if (type == typeof(Int16))
+                else if (type == typeof(short))
                     fieldType = FieldType.I2;
-                else if (type == typeof(SByte))
+                else if (type == typeof(sbyte))
                     fieldType = FieldType.I1;
-                else if (type == typeof(Byte))
+                else if (type == typeof(byte))
                     fieldType = FieldType.UI1;
-                else if (type == typeof(Byte[]))
+                else if (type == typeof(byte[]))
                     fieldType = FieldType.Bytes;
-                else if (type == typeof(Double))
+                else if (type == typeof(double))
                     fieldType = FieldType.R8;
                 else if (type == typeof(float))
                     fieldType = FieldType.R4;
-                else if (type == typeof(Boolean))
+                else if (type == typeof(bool))
                     fieldType = FieldType.Bool;
                 else
-                    throw new Exception("Unknown field type");
+                    throw new InvalidDataException("Unknown field type");
 
                 descriptor.Columns.Add(
                     new Column(reader.GetName(i), fieldType)

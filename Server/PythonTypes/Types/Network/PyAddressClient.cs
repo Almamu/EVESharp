@@ -6,21 +6,20 @@ namespace PythonTypes.Types.Network
     public class PyAddressClient : PyAddress
     {
         public PyInteger ClientID { get; set; }
-        public PyInteger CallID { get; set; }
-        public PyString Service { get; set; }
+        public PyInteger CallID { get; }
+        public PyString Service { get; }
 
         public PyAddressClient() : base(TYPE_CLIENT)
         {
         }
 
-        public PyAddressClient(int clientID) : base(TYPE_CLIENT)
+        public PyAddressClient(PyInteger clientID) : base(TYPE_CLIENT)
         {
             this.ClientID = clientID;
         }
 
-        public PyAddressClient(PyInteger clientID, PyInteger callID = null, PyString service = null) : base(TYPE_CLIENT)
+        public PyAddressClient(PyInteger clientID, PyInteger callID = null, PyString service = null) : this(clientID)
         {
-            this.ClientID = clientID;
             this.CallID = callID;
             this.Service = service;
         }
@@ -48,7 +47,7 @@ namespace PythonTypes.Types.Network
             PyString type = data[0] as PyString;
 
             if (type != TYPE_CLIENT)
-                throw new InvalidDataException($"Trying to cast unknown object to PyAddressAny");
+                throw new InvalidDataException($"Trying to cast a different PyAddress ({type}) to PyAddressClient");
 
             return new PyAddressClient(
                 data[1] is PyNone ? null : data[1] as PyInteger,

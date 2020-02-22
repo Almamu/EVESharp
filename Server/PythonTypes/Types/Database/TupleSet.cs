@@ -3,8 +3,17 @@ using PythonTypes.Types.Primitives;
 
 namespace PythonTypes.Types.Database
 {
-    public class TupleSet
+    /// <summary>
+    /// Helper class to work with TupleSet types to be sent to the EVE Online client
+    /// </summary>
+    public static class TupleSet
     {
+        /// <summary>
+        /// Simple helper method that creates a correct tupleset and returns
+        /// it's PyDataType representation, ready to be sent to the EVE Online client
+        /// </summary>
+        /// <param name="reader">The MySqlDataReader to read the data from</param>
+        /// <returns></returns>
         public static PyDataType FromMySqlDataReader(MySqlDataReader reader)
         {
             if (reader.FieldCount == 0)

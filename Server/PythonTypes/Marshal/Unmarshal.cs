@@ -198,7 +198,7 @@ namespace PythonTypes.Marshal
                     break;
 
                 default:
-                    throw new InvalidDataException($"Unknown python type for opcode {opcode.ToString("X")}");
+                    throw new InvalidDataException($"Unknown python type for opcode {opcode:X}");
             }
 
             // check if the element has to be saved

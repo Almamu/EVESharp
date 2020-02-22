@@ -4,6 +4,11 @@ using PythonTypes.Types.Primitives;
 
 namespace PythonTypes.Types.Network
 {
+    /// <summary>
+    /// Helper class to work with EVE Online exceptions.
+    ///
+    /// Can be used in throw statements to ease the communication with the client of these exceptions
+    /// </summary>
     public class PyException : Exception
     {
         public PyToken Type { get; }
@@ -45,7 +50,7 @@ namespace PythonTypes.Types.Network
                 return new PyException(
                     ex.Header[0] as PyToken, "", null, null
                 );
-            else if (ex.Header.Count == 2 && ex.Header[1] is PyTuple)
+            if (ex.Header.Count == 2 && ex.Header[1] is PyTuple)
             {
                 PyTuple extra = ex.Header[1] as PyTuple;
                 
@@ -53,14 +58,14 @@ namespace PythonTypes.Types.Network
                     return new PyException(
                         ex.Header[0] as PyToken, ex.Header[1] as PyString, null, null
                     );
-                else if(extra.Count == 2)
+                if(extra.Count == 2)
                     return new PyException(
                         ex.Header[0] as PyToken, extra[0] as PyString, extra[1], null
                     );
-                else
-                    throw new InvalidDataException("Unexpected amount of arguments for a PyException");   
+                
+                throw new InvalidDataException("Unexpected amount of arguments for a PyException");   
             }
-            else if(ex.Header.Count == 3)
+            if(ex.Header.Count == 3)
             {
                 PyTuple extra = ex.Header[1] as PyTuple;
                 
@@ -68,17 +73,15 @@ namespace PythonTypes.Types.Network
                     return new PyException(
                         ex.Header[0] as PyToken, ex.Header[1] as PyString, null, ex.Header[2] as PyDictionary
                     );
-                else if(extra.Count == 2)
+                if(extra.Count == 2)
                     return new PyException(
                         ex.Header[0] as PyToken, extra[0] as PyString, extra[1], ex.Header[2] as PyDictionary
                     );
-                else
-                    throw new InvalidDataException("Unexpected amount of arguments for a PyException");
-            }
-            else
-            {
+                
                 throw new InvalidDataException("Unexpected amount of arguments for a PyException");
             }
+            
+            throw new InvalidDataException("Unexpected amount of arguments for a PyException");
         }
     }
 }

@@ -1,5 +1,8 @@
 namespace PythonTypes
 {
+    /// <summary>
+    /// Utility class to calculate Adler32 checksums of byte arrays
+    /// </summary>
     public static class Adler32
     {
         private const int ModuloPrime = 65521;

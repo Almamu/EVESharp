@@ -1,9 +1,13 @@
 namespace PythonTypes
 {
+    /// <summary>
+    /// Small utility class to create an hexadecimal dump of any kind of byte array
+    ///
+    /// Extracted from this stackoverflow post
+    /// https://stackoverflow.com/questions/311165/how-do-you-convert-a-byte-array-to-a-hexadecimal-string-and-vice-versa/24343727#24343727
+    /// </summary>
     public class HexDump
     {
-        // extracted from StackOverflow
-        // https://stackoverflow.com/questions/311165/how-do-you-convert-a-byte-array-to-a-hexadecimal-string-and-vice-versa/24343727#24343727
         private static readonly uint[] _lookup32 = CreateLookup32();
 
         private static uint[] CreateLookup32()

@@ -8,7 +8,7 @@ namespace PythonTypes.Types.Network
         public PyInteger ID { get; }
         public PyString Service { get; }
 
-        public PyAddressAny(PyInteger ID, PyString service = null) : base(TYPE_ANY)
+        public PyAddressAny(PyInteger id, PyString service = null) : base(TYPE_ANY)
         {
             this.Service = service;
             this.ID = ID;
