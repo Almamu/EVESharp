@@ -39,10 +39,9 @@ namespace Node.Database
         // General items database functions
         public Dictionary<int, Entity> LoadItems()
         {
-            MySqlDataReader reader = null;
             MySqlConnection connection = null;
 
-            Database.Query(ref reader, ref connection,
+            MySqlDataReader reader = Database.Query(ref connection,
                 "SELECT itemID, itemName, typeID, ownerID, locationID, flag, contraband, singleton, quantity, x, y, z, customInfo FROM entity"
             );
 
@@ -86,10 +85,9 @@ namespace Node.Database
 
         public Dictionary<int, ItemCategory> LoadItemCategories()
         {
-            MySqlDataReader reader = null;
             MySqlConnection connection = null;
 
-            Database.Query(ref reader, ref connection,
+            MySqlDataReader reader = Database.Query(ref connection,
                 "SELECT categoryID, categoryName, description, graphicID, published FROM invCategories"
             );
 
@@ -117,10 +115,9 @@ namespace Node.Database
 
         public Dictionary<int, ItemType> LoadItemTypes()
         {
-            MySqlDataReader reader = null;
             MySqlConnection connection = null;
 
-            Database.Query(ref reader, ref connection,
+            MySqlDataReader reader = Database.Query(ref connection,
                 "SELECT typeID, groupID, typeName, description, graphicID, radius, mass, volume, capacity, portionSize, raceID, basePrice, published, marketGroupID, chanceOfDuplicating FROM invTypes"
             );
 
@@ -168,10 +165,9 @@ namespace Node.Database
 
         public Dictionary<int, ItemGroup> LoadItemGroups()
         {
-            MySqlDataReader reader = null;
             MySqlConnection connection = null;
 
-            Database.Query(ref reader, ref connection,
+            MySqlDataReader reader = Database.Query(ref connection,
                 "SELECT groupID, categoryID, groupName, description, graphicID, useBasePrice, allowManufacture, allowRecycler, anchored, anchorable, fittableNonSingleton, published FROM invGroups"
             );
 
@@ -206,12 +202,11 @@ namespace Node.Database
 
         public Dictionary<int, AttributeInfo> LoadAttributesInformation()
         {
-            MySqlDataReader reader = null;
             MySqlConnection connection = null;
 
             // sort the attributes by maxAttributeID so the simple attributes are loaded first
             // and then the complex ones that are related to other attributes
-            Database.Query(ref reader, ref connection,
+            MySqlDataReader reader = Database.Query(ref connection,
                 "SELECT attributeID, attributeName, attributeCategory, description, maxAttributeID, attributeIdx, graphicID, chargeRechargeTimeID, defaultValue, published, displayName, unitID, stackable, highIsGood, categoryID FROM dgmAttributeTypes ORDER BY maxAttributeID ASC"
             );
 
@@ -249,10 +244,9 @@ namespace Node.Database
 
         public Dictionary<int, Dictionary<int, ItemAttribute>> LoadDefaultAttributes()
         {
-            MySqlDataReader reader = null;
             MySqlConnection connection = null;
             
-            Database.Query(ref reader, ref connection,
+            MySqlDataReader reader = Database.Query(ref connection, 
                 "SELECT typeID, attributeID, valueInt, valueFloat FROM dgmTypeAttributes"
             );
             
@@ -294,12 +288,13 @@ namespace Node.Database
 
         public Entity LoadItem(int itemID)
         {
-            MySqlDataReader reader = null;
             MySqlConnection connection = null;
-
-            Database.Query(ref reader, ref connection,
-                "SELECT itemID, itemName, typeID, ownerID, locationID, flag, contraband, singleton, quantity, x, y, z, custominfo FROM entity WHERE itemID=" +
-                itemID
+            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+                "SELECT itemID, itemName, typeID, ownerID, locationID, flag, contraband, singleton, quantity, x, y, z, custominfo FROM entity WHERE itemID = @itemID",
+                new Dictionary<string, object>()
+                {
+                    {"@itemID", itemID}
+                }
             );
 
             using (connection)
@@ -332,7 +327,14 @@ namespace Node.Database
                 );
 
                 // Update the database information
-                Database.Query("UPDATE entity SET nodeID=" + Program.NodeID + " WHERE itemID=" + itemID);
+                Database.PrepareQuery(
+                    "UPDATE entity SET nodeID = @nodeID WHERE itemID = @itemID",
+                    new Dictionary<string, object>()
+                    {
+                        {"@nodeID", Program.NodeID},
+                        {"@itemID", itemID}
+                    }
+                );
 
                 return newItem;
             }
@@ -340,10 +342,14 @@ namespace Node.Database
 
         public List<int> GetInventoryItems(int inventoryID)
         {
-            MySqlDataReader reader = null;
             MySqlConnection connection = null;
-
-            Database.Query(ref reader, ref connection, "SELECT itemID FROM entity WHERE locationID=" + inventoryID);
+            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+                "SELECT itemID FROM entity WHERE locationID = @inventoryID",
+                new Dictionary<string, object>()
+                {
+                    {"@inventoryID", inventoryID}
+                }
+            );
 
             using (connection)
             using (reader)
@@ -358,12 +364,13 @@ namespace Node.Database
         
         public int GetCategoryID(int typeID)
         {
-            MySqlDataReader reader = null;
             MySqlConnection connection = null;
-
-            Database.Query(ref reader, ref connection,
-                "SELECT invCategories.categoryID FROM invCategories LEFT JOIN invTypes ON invTypes.typeID=" + typeID +
-                " LEFT JOIN invGroups ON invGroups.groupID = invTypes.groupID WHERE invCategories.categoryID = invGroups.groupID"
+            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+                "SELECT invCategories.categoryID FROM invCategories LEFT JOIN invTypes ON invTypes.typeID = @typeID LEFT JOIN invGroups ON invGroups.groupID = invTypes.groupID WHERE invCategories.categoryID = invGroups.groupID",
+                new Dictionary<string, object>()
+                {
+                    {"@typeID",typeID}
+                }
             );
 
             using (connection)
@@ -380,7 +387,17 @@ namespace Node.Database
 
         public void SetBlueprintInfo(int itemID, bool copy, int materialLevel, int productivityLevel, int licensedProductionRunsRemaining)
         {
-            Database.Query("UPDATE invBlueprints SET blueprintID=" + itemID + " copy=" + copy + " materialLevel=" + materialLevel + " licensedProductionRunsRemaining=" + licensedProductionRunsRemaining);
+            Database.PrepareQuery(
+                "UPDATE invBlueprints SET copy = @copy, materialLevel = @materialLevel, productivityLevel = @productivityLevel, licensedProductionRunsRemaining = @licensedProductionRunsRemaining WHERE blueprintID = @itemID",
+                new Dictionary<string, object>()
+                {
+                    {"@itemID", itemID},
+                    {"@copy", copy},
+                    {"@materialLevel", materialLevel},
+                    {"@productivityLevel", productivityLevel},
+                    {"@licensedProductionRunsRemaining", licensedProductionRunsRemaining}
+                }
+            );
         }
 
         public Blueprint LoadBlueprint(int itemID)
@@ -390,12 +407,13 @@ namespace Node.Database
             if (item == null)
                 return null;
 
-            MySqlDataReader reader = null;
             MySqlConnection connection = null;
-
-            Database.Query(ref reader, ref connection,
-                "SELECT copy, materialLevel, productivityLevel, licensedProductionRunsRemaining FROM invBlueprints WHERE blueprintID=" +
-                itemID
+            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+                "SELECT copy, materialLevel, productivityLevel, licensedProductionRunsRemaining FROM invBlueprints WHERE blueprintID = @itemID",
+                new Dictionary<string, object>()
+                {
+                    {"@itemID", itemID}
+                }
             );
 
             using (connection)
@@ -413,57 +431,98 @@ namespace Node.Database
 
         public void SetCustomInfo(int itemID, string customInfo)
         {
-            Database.Query("UPDATE entity SET customInfo='" + customInfo + "' WHERE itemID=" + itemID);
+            Database.PrepareQuery("UPDATE entity SET customInfo = @customInfo WHERE itemID = @itemID", new Dictionary<string, object>()
+            {
+                {"@itemID", itemID},
+                {"@customInfo", customInfo}
+            });
         }
 
         public void SetQuantity(int itemID, int quantity)
         {
-            Database.Query("UPDATE entity SET quantity=" + quantity + " WHERE itemID=" + itemID);
+            Database.PrepareQuery("UPDATE entity SET quantity = @quantity WHERE itemID = @itemID", new Dictionary<string, object>()
+            {
+                {"@quantity", quantity},
+                {"@itemID", itemID}
+            });
         }
 
         public void SetSingleton(int itemID, bool singleton)
         {
-            Database.Query("UPDATE entity SET singleton=" + singleton + " WHERE itemID=" + itemID);
+            Database.PrepareQuery("UPDATE entity SET singleton = @singleton WHERE itemID = @itemID", new Dictionary<string, object>()
+            {
+                {"@singleton", singleton},
+                {"@itemID", itemID}
+            });
         }
 
         public void SetItemName(int itemID, string name)
         {
-            Database.Query("UPDATE entity SET itemName='" + name + "' WHERE itemID=" + itemID);
+            Database.PrepareQuery("UPDATE entity SET itemName = @itemName WHERE itemID = @itemID", new Dictionary<string, object>()
+            {
+                {"@itemName", name},
+                {"@itemID", itemID}
+            });
         }
 
         public void SetItemFlag(int itemID, int flag)
         {
-            Database.Query("UPDATE entity SET flag=" + flag + " WHERE itemID=" + itemID);
+            Database.PrepareQuery("UPDATE entity SET flag = @flag WHERE itemID = @itemID", new Dictionary<string, object>()
+            {
+                {"@flag", flag},
+                {"@itemID", itemID}
+            });
         }
 
         public void SetLocation(int itemID, int locationID)
         {
-            Database.Query("UPDATE entity SET locationID=" + locationID + " WHERE itemID=" + itemID);
+            Database.PrepareQuery("UPDATE entity SET locationID = @locationID WHERE itemID = @itemID", new Dictionary<string, object>()
+            {
+                {"@locationID", locationID},
+                {"@itemID", itemID}
+            });
         }
 
         public void SetOwner(int itemID, int ownerID)
         {
-            Database.Query("UPDATE entity SET ownerID=" + ownerID + " WHERE itemID=" + itemID);
+            Database.PrepareQuery("UPDATE entity SET ownerID = @ownerID WHERE itemID = @itemID", new Dictionary<string, object>()
+            {
+                {"@ownerID", ownerID},
+                {"@itemID", itemID}
+            });
         }
 
         public ulong CreateItem(string itemName, int typeID, int ownerID, int locationID, int flag, bool contraband, bool singleton, int quantity, double x, double y, double z, string customInfo)
         {
-            return Database.QueryLID(
-                String.Format(
-                    "INSERT INTO entity(itemID, itemName, typeID, ownerID, locationID, flag, contraband, singleton, quantity, x, y, z, customInfo)VALUES(NULL, '{0}', {1}, {2}, {3}, {4}, {5}, {6}, {7}, {8}, {9}, {10}, '{12}')",
-                    Database.DoEscapeString(itemName), typeID, ownerID, locationID, flag, contraband, singleton, quantity, x, y, z, customInfo
-                )
+            return Database.PrepareQueryLID(
+                "INSERT INTO entity(itemID, itemName, typeID, ownerID, locationID, flag, contraband, singleton, quantity, x, y, z, customInfo)VALUES(NULL, @itemName, @typeID, @ownerID, @locationID, @flag, @contraband, @singleton, @quantity, @x, @y, @z, @customInfo)",
+                new Dictionary<string, object>()
+                {
+                    {"@itemName", itemName},
+                    {"@typeID", typeID},
+                    {"@ownerID", ownerID},
+                    {"@locationID", locationID},
+                    {"@flag", flag},
+                    {"@contraband", contraband},
+                    {"@singleton", singleton},
+                    {"@quantity", quantity},
+                    {"@x", x},
+                    {"@y", y},
+                    {"@z", z},
+                    {"@customInfo", customInfo}
+                }
             );
         }
 
         public List<Entity> GetItemsLocatedAt(int locationID)
         {
-            MySqlDataReader reader = null;
             MySqlConnection connection = null;
-
-            Database.Query(ref reader, ref connection,
-                "SELECT itemID, itemName, typeID, ownerID, locationID, flag, contraband, singleton, quantity, x, y, z, customInfo FROM entity WHERE locationID=" +
-                locationID
+            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+                "SELECT itemID, itemName, typeID, ownerID, locationID, flag, contraband, singleton, quantity, x, y, z, customInfo FROM entity WHERE locationID = @locationID",
+                new Dictionary<string, object>()
+                {
+                    {"@locationID", locationID}
+                }
             );
 
             using (connection)
@@ -507,12 +566,13 @@ namespace Node.Database
         {
             try
             {
-                MySqlDataReader reader = null;
                 MySqlConnection connection = null;
-
-                Database.Query(ref reader, ref connection,
-                    "SELECT regionID, constellationID, x, y, z, xMin, yMin, zMin, xMax, yMax, zMax, luminosity, border, fringe, corridor, hub, international, regional, constellation, security, factionID, radius, sunTypeID, securityClass FROM mapSolarSystems WHERE solarSystemID=" +
-                    solarSystemID
+                MySqlDataReader reader = Database.PrepareQuery(ref connection,
+                    "SELECT regionID, constellationID, x, y, z, xMin, yMin, zMin, xMax, yMax, zMax, luminosity, border, fringe, corridor, hub, international, regional, constellation, security, factionID, radius, sunTypeID, securityClass FROM mapSolarSystems WHERE solarSystemID = @solarSystemID",
+                    new Dictionary<string, object>()
+                    {
+                        {"@solarSystemID", solarSystemID}
+                    }
                 );
 
                 using (connection)
@@ -559,17 +619,22 @@ namespace Node.Database
 
         public void UnloadItem(int itemID)
         {
-            Database.Query("UPDATE entity SET nodeID=0 WHERE itemID=" + itemID);
+            Database.PrepareQuery("UPDATE entity SET nodeID = 0 WHERE itemID = @itemID", new Dictionary<string, object>()
+                {
+                    {"@itemID", itemID}
+                }
+            );
         }
 
         public Dictionary<int, ItemAttribute> LoadAttributesForItem(int itemID)
         {
-            MySqlDataReader reader = null;
             MySqlConnection connection = null;
-
-            Database.Query(ref reader, ref connection,
-                "SELECT attributeID, valueInt, valueFloat FROM entity_attributes WHERE itemID = " +
-                itemID
+            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+                "SELECT attributeID, valueInt, valueFloat FROM entity_attributes WHERE itemID = @itemID",
+                new Dictionary<string, object>()
+                {
+                    {"@itemID", itemID}
+                }
             );
 
             using (connection)

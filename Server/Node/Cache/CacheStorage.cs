@@ -325,31 +325,33 @@ namespace Node
         {
             Log.Debug($"Loading cache data for {name} of type {type}");
 
-            MySqlDataReader reader = null;
-            MySqlConnection connection = null;
-
             try
             {
-                Database.Query(ref reader, ref connection, query);
+                MySqlConnection connection = null;
+                MySqlDataReader reader = Database.Query(ref connection, query);
                 PyDataType cacheObject = null;
 
-                switch (type)
+                using(connection)
+                using (reader)
                 {
-                    case CacheObjectType.Rowset:
-                        cacheObject = Rowset.FromMySqlDataReader(reader);
-                        break;
-                    case CacheObjectType.CRowset:
-                        cacheObject = CRowset.FromMySqlDataReader(reader);
-                        break;
-                    case CacheObjectType.TupleSet:
-                        cacheObject = TupleSet.FromMySqlDataReader(reader);
-                        break;
-                    case CacheObjectType.PackedRowList:
-                        cacheObject = PyPackedRowList.FromMySqlDataReader(reader);
-                        break;
-                }
+                    switch (type)
+                    {
+                        case CacheObjectType.Rowset:
+                            cacheObject = Rowset.FromMySqlDataReader(reader);
+                            break;
+                        case CacheObjectType.CRowset:
+                            cacheObject = CRowset.FromMySqlDataReader(reader);
+                            break;
+                        case CacheObjectType.TupleSet:
+                            cacheObject = TupleSet.FromMySqlDataReader(reader);
+                            break;
+                        case CacheObjectType.PackedRowList:
+                            cacheObject = PyPackedRowList.FromMySqlDataReader(reader);
+                            break;
+                    }
 
-                Store(name, cacheObject, DateTime.Now.ToFileTimeUtc());
+                    Store(name, cacheObject, DateTime.Now.ToFileTimeUtc());
+                }
             }
             catch (Exception e)
             {

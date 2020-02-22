@@ -33,18 +33,18 @@ namespace Node.Database
     {
         public List<int> GetUnloadedSolarSystems()
         {
-            MySqlDataReader res = null;
             MySqlConnection connection = null;
-
-            Database.Query(ref res, ref connection, "SELECT solarSystemID FROM solarsystemsloaded WHERE nodeID=0");
+            MySqlDataReader reader = Database.Query(
+                ref connection, "SELECT solarSystemID FROM solarsystemsloaded WHERE nodeID = 0"
+            );
 
             using (connection)
-            using (res)
+            using (reader)
             {
                 List<int> result = new List<int>();
 
-                while (res.Read() == true)
-                    result.Add(res.GetInt32(0));
+                while (reader.Read() == true)
+                    result.Add(reader.GetInt32(0));
 
                 return result;
             }
@@ -54,9 +54,12 @@ namespace Node.Database
         {
             try
             {
-                Database.Query(
-                    "UPDATE solarsystemsloaded SET nodeID = " + Program.NodeID + " WHERE solarSystemID = " +
-                    solarSystemID
+                Database.PrepareQuery(
+                    "UPDATE solarsystemsloaded SET nodeID = @nodeID WHERE solarSystemID = @solarSystemID", new Dictionary<string, object>()
+                    {
+                        {"@nodeID", Program.NodeID},
+                        {"@solarSystemID", solarSystemID}
+                    }
                 );
             }
             catch (Exception e)
@@ -67,7 +70,10 @@ namespace Node.Database
 
         public void UnloadSolarSystem(int solarSystemID)
         {
-            Database.Query("UPDATE solarsystemsloaded SET nodeID=0 WHERE solarSystemID=" + solarSystemID);
+            Database.PrepareQuery("UPDATE solarsystemsloaded SET nodeID = 0 WHERE solarSystemID = @solarSystemID", new Dictionary<string, object>()
+            {
+                {"@solarSystemID", solarSystemID}
+            });
         }
 
         public GeneralDB(DatabaseConnection db) : base(db)

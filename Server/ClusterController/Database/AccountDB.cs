@@ -22,6 +22,7 @@
     Creator: Almamu
 */
 
+using System.Collections.Generic;
 using Common.Database;
 using MySql.Data.MySqlClient;
 
@@ -31,36 +32,35 @@ namespace ClusterControler.Database
     {
         public bool AccountExists(string username)
         {
-            MySqlDataReader reader = null;
             MySqlConnection connection = null;
-
-            username = Database.DoEscapeString(username);
-
-            Database.Query(
-                ref reader, ref connection,
-                "SELECT COUNT(accountID) FROM account WHERE accountName = '" + username + "'"
+            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+                "SELECT COUNT(accountID) FROM account WHERE accountName = @username",
+                new Dictionary<string, object>()
+                {
+                    {"@username", username}
+                }
             );
 
             using (connection)
+            using (reader)
             {
-                using (reader)
-                {
-                    if (reader.FieldCount > 0)
-                        return true;
+                if (reader.FieldCount > 0)
+                    return true;
 
-                    return false;
-                }
+                return false;
             }
         }
 
         public bool LoginPlayer(string username, string password, ref long accountid, ref bool banned, ref long role)
         {
-            MySqlDataReader reader = null;
             MySqlConnection connection = null;
-
-            Database.Query(ref reader, ref connection,
-                "SELECT accountID, password, banned, role FROM account WHERE accountName LIKE '" +
-                Database.DoEscapeString(username) + "' AND password LIKE SHA1('" + Database.DoEscapeString(password) + "')"
+            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+                "SELECT accountID, password, banned, role FROM account WHERE accountName LIKE @username AND password LIKE SHA1(@password)",
+                new Dictionary<string, object>()
+                {
+                    {"@username", username},
+                    {"@password", password}
+                }
             );
 
             using (connection)
@@ -82,13 +82,17 @@ namespace ClusterControler.Database
             }
         }
 
-        public void CreateAccount(string accountName, string accountPassword, ulong role)
+        public void CreateAccount(string name, string password, ulong role)
         {
-            accountName = Database.DoEscapeString(accountName);
-
-            Database.Query("INSERT INTO account(accountID, accountName, password, role, online, banned)" +
-                "VALUES(NULL, '" + accountName + "', SHA1('" + Database.DoEscapeString(accountPassword) + "'), " +
-                role + ", 0, 0)");
+            Database.PrepareQuery(
+                "INSERT INTO account(accountID, accountName, password, role, online, banned)VALUES(NULL, @accountName, SHA1(@passsword), @role, 0, 0)",
+                new Dictionary<string, object>()
+                {
+                    {"@accountName", name},
+                    {"@password", password},
+                    {"@role", role}
+                }
+            );
         }
 
         public AccountDB(Common.Database.DatabaseConnection db) : base(db)

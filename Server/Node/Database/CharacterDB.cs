@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Common.Database;
 using MySql.Data.MySqlClient;
 using PythonTypes.Types.Database;
@@ -13,11 +14,8 @@ namespace Node.Database
 
         public PyDataType GetCharacterList(int accountID)
         {
-            MySqlDataReader reader = null;
             MySqlConnection connection = null;
-
-            Database.Query(
-                ref reader, ref connection,
+            MySqlDataReader reader = Database.PrepareQuery(ref connection,
                 "SELECT" +
                 " characterID, itemName AS characterName, 0 as deletePrepareDateTime," +
                 " gender, accessoryID, beardID, costumeID, decoID, eyebrowsID, eyesID, hairID," +
@@ -29,7 +27,11 @@ namespace Node.Database
                 " morph4e, morph4n, morph4s, morph4w" +
                 " FROM character_ " +
                 "	LEFT JOIN entity ON characterID = itemID" +
-                " WHERE accountID=" + accountID
+                " WHERE accountID = @accountID",
+                new Dictionary<string, object>()
+                {
+                    {"@accountID", accountID}
+                }
             );
 
             using (connection)
@@ -41,12 +43,14 @@ namespace Node.Database
 
         public bool IsCharacterNameTaken(string characterName)
         {
-            MySqlDataReader reader = null;
             MySqlConnection connection = null;
-
-            Database.Query(
-                ref reader, ref connection,
-                $"SELECT COUNT(*) FROM character_ LEFT JOIN entity ON characterID = itemID WHERE itemName LIKE '{Database.DoEscapeString(characterName)}'"
+            MySqlDataReader reader = Database.PrepareQuery(
+                ref connection,
+                $"SELECT COUNT(*) FROM character_ LEFT JOIN entity ON characterID = itemID WHERE itemName LIKE @characterName",
+                new Dictionary<string, object>()
+                {
+                    {"@characterName", characterName}
+                }
             );
 
             using (connection)

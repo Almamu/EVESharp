@@ -22,6 +22,7 @@
     Creator: Almamu
 */
 
+using System.Collections.Generic;
 using System.Security.Cryptography;
 using System.Text;
 using Common.Database;
@@ -33,51 +34,49 @@ namespace Node.Database
     {
         public bool LoginPlayer(string username, string password, ref long accountid, ref bool banned, ref long role)
         {
-            MySqlDataReader reader = null;
             MySqlConnection connection = null;
-
-            username = Database.DoEscapeString(username);
-
-            Database.Query(
-                ref reader, ref connection,
-                "SELECT accountID, password, banned, role FROM account WHERE accountName = '" + username + "'"
+            MySqlDataReader reader = Database.PrepareQuery(
+                ref connection,
+                "SELECT accountID, password, banned, role FROM account WHERE accountName = @username",
+                new Dictionary<string, object>()
+                {
+                    {"@username", username}
+                }
             );
 
             using (connection)
+            using (reader)
             {
-                using (reader)
+                if (reader.FieldCount == 0)
+                    return false;
+
+                if (reader.Read() == false)
+                    return false;
+
+                accountid = reader.GetInt64(0);
+                banned = reader.GetBoolean(2);
+                role = reader.GetInt64(3);
+
+                SHA1 sha1 = SHA1.Create();
+                sha1.Initialize();
+                byte[] hash = sha1.ComputeHash(Encoding.ASCII.GetBytes(password));
+                byte[] outb = new byte[hash.Length];
+
+                reader.GetBytes(1, 0, outb, 0, outb.Length);
+                reader.Close();
+
+                bool equals = true;
+
+                for (int i = 0; i < outb.Length; i++)
                 {
-                    if (reader.FieldCount == 0)
-                        return false;
-
-                    if (reader.Read() == false)
-                        return false;
-
-                    accountid = reader.GetInt64(0);
-                    banned = reader.GetBoolean(2);
-                    role = reader.GetInt64(3);
-
-                    SHA1 sha1 = SHA1.Create();
-                    sha1.Initialize();
-                    byte[] hash = sha1.ComputeHash(Encoding.ASCII.GetBytes(password));
-                    byte[] outb = new byte[hash.Length];
-
-                    reader.GetBytes(1, 0, outb, 0, outb.Length);
-                    reader.Close();
-
-                    bool equals = true;
-
-                    for (int i = 0; i < outb.Length; i++)
+                    if (outb[i] != hash[i])
                     {
-                        if (outb[i] != hash[i])
-                        {
-                            equals = false;
-                            break;
-                        }
+                        equals = false;
+                        break;
                     }
-
-                    return equals;
                 }
+
+                return equals;
             }
         }
 

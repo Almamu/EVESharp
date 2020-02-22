@@ -24,6 +24,7 @@
 
 
 using System;
+using System.Collections.Generic;
 using Common.Database;
 using Common.Logging;
 using MySql.Data.MySqlClient;
@@ -52,8 +53,12 @@ namespace ClusterControler.Database
         {
             try
             {
-                Database.Query(
-                    "UPDATE solarSystemsLoaded SET nodeID = 0 WHERE solarSystemID = " + solarSystemID.ToString()
+                Database.PrepareQuery(
+                    "UPDATE solarSystemsLoaded SET nodeID = 0 WHERE solarSystemID = @solarSystemID",
+                    new Dictionary<string, object>()
+                    {
+                        {"@solarSystemID", solarSystemID}
+                    }
                 );
             }
             catch (Exception e)
@@ -80,11 +85,8 @@ namespace ClusterControler.Database
         {
             try
             {
-                MySqlDataReader reader = null;
                 MySqlConnection connection = null;
-
-                Database.Query(
-                    ref reader, ref connection,
+                MySqlDataReader reader = Database.Query(ref connection,
                     "SELECT updateID, updateName, description, machoVersionMin, machoVersionMax, buildNumberMin, buildNumberMax, methodName, objectID, codeType, code, OCTET_LENGTH(code) as codeLength FROM liveupdates"
                 );
 

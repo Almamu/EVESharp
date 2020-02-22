@@ -45,33 +45,21 @@ namespace Common.Database
         {
         }
 
-        public ulong QueryLID(string query)
+        public ulong PrepareQueryLID(string query, Dictionary<string, object> values)
         {
-            MySqlDataReader reader = null;
-            MySqlConnection connection = null;
-
             try
             {
-                connection = new MySqlConnection(this.mConnectionString);
-                connection.Open();
+                MySqlConnection connection = null;
+                MySqlDataReader reader = this.PrepareQuery(ref connection, query, values);
 
-                MySqlCommand command = new MySqlCommand(query, connection);
-
-                reader = command.ExecuteReader();
-                return (ulong) reader.FieldCount;
+                using (connection)
+                using (reader)
+                    return (ulong) reader.FieldCount;
             }
             catch (Exception e)
             {
-                if (reader != null)
-                    reader.Close();
-
                 Log.Error($"MySQL error: {e.Message}");
                 throw;
-            }
-            finally
-            {
-                if (connection != null)
-                    connection.Close();
             }
         }
 
@@ -104,7 +92,91 @@ namespace Common.Database
             }
         }
 
-        public void Query(ref MySqlDataReader reader, ref MySqlConnection connection, string query)
+        /// <summary>
+        /// Creates a MySqlCommand with the given query to execute prepared queries
+        /// </summary>
+        /// <param name="connection">where to store the MySql connection (has to be closed manually)</param>
+        /// <param name="query">The prepared query</param>
+        /// <returns>The generated command to perform the queries agains the database</returns>
+        public MySqlCommand PrepareQuery(ref MySqlConnection connection, string query)
+        {
+            try
+            {
+                connection = new MySqlConnection(this.mConnectionString);
+                connection.Open();
+                
+                MySqlCommand command = new MySqlCommand(query, connection);
+                command.Prepare();
+
+                return command;
+            }
+            catch (Exception e)
+            {
+                Log.Error($"MySQL error: {e.Message}");
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Runs one prepared query with the given values as parameters
+        /// </summary>
+        /// <param name="connection">where to store the MySql connection (has to be closed manually)</param>
+        /// <param name="query">The prepared query</param>
+        /// <param name="values">The key-value pair of values to use when running the query</param>
+        /// <returns>The reader with the results of the query</returns>
+        public MySqlDataReader PrepareQuery(ref MySqlConnection connection, string query, Dictionary<string, object> values)
+        {
+            try
+            {
+                // create the correct command
+                MySqlCommand command = this.PrepareQuery(ref connection, query);
+                
+                // add values
+                foreach (KeyValuePair<string, object> pair in values)
+                    command.Parameters.AddWithValue(pair.Key, pair.Value);
+                
+                // run the prepared statement
+                return command.ExecuteReader();
+            }
+            catch (Exception e)
+            {
+                Log.Error($"MySQL error: {e.Message}");
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Runs one prepared query with the given value as parameters, ignoring the result data
+        /// </summary>
+        /// <param name="query">The prepared query</param>
+        /// <param name="values">The key-value pair of values to use when running the query</param>
+        /// <returns>The number of rows affected</returns>
+        public int PrepareQuery(string query, Dictionary<string, object> values)
+        {
+            try
+            {
+                MySqlConnection connection = null;
+                
+                // create the correct command
+                MySqlCommand command = this.PrepareQuery(ref connection, query);
+
+                using (connection)
+                {
+                    // add values
+                    foreach (KeyValuePair<string, object> pair in values)
+                        command.Parameters.AddWithValue(pair.Key, pair.Value);
+                    // run the command
+                    return command.ExecuteNonQuery();
+                }
+            }
+            catch (Exception e)
+            {
+                Log.Error($"MySQL error: {e.Message}");
+                throw;
+            }
+        }
+
+        public MySqlDataReader Query(ref MySqlConnection connection, string query)
         {
             try
             {
@@ -113,13 +185,10 @@ namespace Common.Database
 
                 MySqlCommand command = new MySqlCommand(query, connection);
 
-                reader = command.ExecuteReader();
+                return command.ExecuteReader();
             }
             catch (Exception e)
             {
-                if (reader != null)
-                    reader.Close();
-
                 Log.Error($"MySQL error: {e.Message}");
                 throw;
             }
@@ -144,11 +213,6 @@ namespace Common.Database
             stringBuilder.MinimumPoolSize = 10;
 
             return new DatabaseConnection(stringBuilder.ToString(), logger);
-        }
-
-        public string DoEscapeString(string input)
-        {
-            return MySqlHelper.EscapeString(input);
         }
     }
 }
