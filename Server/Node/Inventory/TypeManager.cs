@@ -24,44 +24,27 @@
 
 using System;
 using System.Collections.Generic;
+using System.Drawing;
 using Common.Database;
 using Node.Database;
 
 namespace Node.Inventory
 {
-    public class TypeManager : DatabaseAccessor
+    public class TypeManager
     {
-        private readonly ItemDB mItemDB = null;
-        readonly Dictionary<int, ItemType> itemTypes = new Dictionary<int, ItemType>();
+        public ItemFactory ItemFactory { get; }
+        private Dictionary<int, ItemType> mTypes = null;
 
-        public bool Load()
+        public void Load()
         {
-            List<ItemType> types = this.mItemDB.LoadItemTypes();
-
-            if (types == null)
-                return false;
-
-            foreach (ItemType type in types) 
-                itemTypes.Add(type.typeID, type);
-
-            return true;
+            this.mTypes = this.ItemFactory.ItemDB.LoadItemTypes();
         }
+        
+        public ItemType this[int id] { get => this.mTypes[id]; }
 
-        public ItemType GetType(int typeID)
+        public TypeManager(ItemFactory factory)
         {
-            try
-            {
-                return itemTypes[typeID];
-            }
-            catch (Exception)
-            {
-                return null;
-            }
-        }
-
-        public TypeManager(DatabaseConnection db) : base(db)
-        {
-            this.mItemDB = new ItemDB(db);
+            this.ItemFactory = factory;
         }
     }
 }

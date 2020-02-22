@@ -22,28 +22,23 @@
     Creator: Almamu
 */
 
-using System;
-using System.Collections.Generic;
-using Common.Database;
-using Node.Database;
-
 namespace Node.Inventory
 {
-    public class CategoryManager
+    public class ItemCategory
     {
-        public ItemFactory ItemFactory { get; }
-        private Dictionary<int, ItemCategory> mCategories = null;
+        public int ID { get; }
+        public string Name { get; }
+        public string Description { get; }
+        public int GraphicID { get; }
+        public bool Published { get; }
 
-        public void Load()
+        public ItemCategory(int id, string name, string description, int graphicID, bool published)
         {
-            this.mCategories = this.ItemFactory.ItemDB.LoadItemCategories();
-        }
-
-        public ItemCategory this[int id] { get => this.mCategories[id]; }
-
-        public CategoryManager(ItemFactory factory)
-        {
-            this.ItemFactory = factory;
+            this.ID = id;
+            this.Name = name;
+            this.Description = description;
+            this.GraphicID = graphicID;
+            this.Published = published;
         }
     }
 }

@@ -28,12 +28,12 @@ namespace Node.Inventory
 {
     public class Blueprint : Entity
     {
-        public Blueprint(string entityItemName, int entityItemID, int entityTypeID, int entityOwnerID, int entityLocationID, int entityFlag, bool entityContraband, bool entitySingleton, int entityQuantity, double entityX, double entityY, double entityZ, string entityCustomInfo, ItemDB itemDB, ItemFactory itemFactory)
-            : base(entityItemName, entityItemID, entityTypeID, entityOwnerID, entityLocationID, entityFlag, entityContraband, entitySingleton, entityQuantity, entityX, entityY, entityZ, entityCustomInfo, itemDB, itemFactory)
+        public Blueprint(string entityName, int entityId, ItemType entityType, int entityOwnerID, int entityLocationID, int entityFlag, bool entityContraband, bool entitySingleton, int entityQuantity, double entityX, double entityY, double entityZ, string entityCustomInfo, AttributeList attributes, ItemFactory itemFactory)
+            : base(entityName, entityId, entityType, entityOwnerID, entityLocationID, entityFlag, entityContraband, entitySingleton, entityQuantity, entityX, entityY, entityZ, entityCustomInfo, attributes, itemFactory)
         {
         }
 
-        public Blueprint(Entity from) : base(from.itemName, from.itemID, from.typeID, from.ownerID, from.locationID, from.flag, from.contraband, from.singleton, from.quantity, from.x, from.y, from.Z, from.customInfo, from.mItemDB, from.mItemFactory)
+        public Blueprint(Entity from) : base(from.Name, from.ID, from.Type, from.OwnerID, from.LocationID, from.Flag, from.Contraband, from.Singleton, from.Quantity, from.X, from.Y, from.Z, from.CustomInfo, from.Attributes, from.mItemFactory)
         {
         }
 
@@ -45,7 +45,7 @@ namespace Node.Inventory
             licensedProductionRunsRemaining = newLicensedProductionRunsRemainig;
 
             if (sqlUpdate)
-                this.mItemDB.SetBlueprintInfo(itemID, copy, materialLevel, productivityLevel, licensedProductionRunsRemaining);
+                this.mItemFactory.ItemDB.SetBlueprintInfo(ID, copy, materialLevel, productivityLevel, licensedProductionRunsRemaining);
         }
 
         public bool copy { private set; get; }

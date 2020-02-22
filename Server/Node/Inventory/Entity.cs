@@ -28,135 +28,41 @@ namespace Node.Inventory
 {
     public class Entity
     {
-        public ItemDB mItemDB = null;
         public ItemFactory mItemFactory = null;
-        
-        public Entity(string entityItemName, int entityItemID, int entityTypeID, int entityOwnerID, int entityLocationID, int entityFlag, bool entityContraband, bool entitySingleton, int entityQuantity, double entityX, double entityY, double entityZ, string entityCustomInfo, ItemDB itemDB, ItemFactory itemFactory)
-        {
-            itemName = entityItemName;
-            itemID = entityItemID;
-            typeID = entityTypeID;
-            ownerID = entityOwnerID;
-            locationID = entityLocationID;
-            flag = entityFlag;
-            contraband = entityContraband;
-            singleton = entitySingleton;
-            quantity = entityQuantity;
-            x = entityX;
-            y = entityY;
-            Z = entityZ;
-            customInfo = entityCustomInfo;
 
-            this.mItemDB = itemDB;
+        public int ID { set; get; }
+        public string Name { set; get; }
+        public ItemType Type { set; get; }
+        public int OwnerID { set; get; } // TODO: CONVERT THIS TO AN ENTITY
+        public int LocationID { set; get; } // TODO: CONVERT THIS TO AN ENTITY
+        public int Flag { set; get; }
+        public bool Contraband { set; get; }
+        public bool Singleton { set; get; }
+        public int Quantity { set; get; } // TODO: DEPRECATE THIS AND USE QUANTITY ATTRIBUTE
+        public double X { set; get; }
+        public double Y { set; get; }
+        public double Z { set; get; }
+        public string CustomInfo { set; get; }
+        public AttributeList Attributes { get; }
+        
+        public Entity(string entityName, int entityId, ItemType type, int entityOwnerID, int entityLocationID, int entityFlag, bool entityContraband, bool entitySingleton, int entityQuantity, double entityX, double entityY, double entityZ, string entityCustomInfo, AttributeList attributes, ItemFactory itemFactory)
+        {
+            this.Name = entityName;
+            this.ID = entityId;
+            this.Type = type;
+            this.OwnerID = entityOwnerID;
+            this.LocationID = entityLocationID;
+            this.Flag = entityFlag;
+            this.Contraband = entityContraband;
+            this.Singleton = entitySingleton;
+            this.Quantity = entityQuantity;
+            this.X = entityX;
+            this.Y = entityY;
+            this.Z = entityZ;
+            this.CustomInfo = entityCustomInfo;
+            this.Attributes = attributes;
+
             this.mItemFactory = itemFactory;
         }
-
-        public void SetSingleton(bool newSingleton, bool notify)
-        {
-            if (notify)
-            {
-                // Notify the client
-            }
-
-            if (newSingleton == true)
-            {
-                /*
-                 * We need to add a new item to the database cloning most of the info here
-                 * then add the new item to the local items list
-                 */
-                if (quantity > 1)
-                {
-                    int newQuantity = quantity--;
-                    this.mItemFactory.ItemManager.CreateItem(itemName, typeID, ownerID, locationID, flag, contraband, false, newQuantity, x, y, Z, customInfo);
-                }
-            }
-
-            singleton = newSingleton;
-        }
-
-        public void SetItemName(string newItemName, bool notify)
-        {
-            if (notify)
-            {
-                // Notify the ownerID
-            }
-
-            itemName = newItemName;
-            this.mItemDB.SetItemName(itemID, itemName);
-        }
-
-        public void MoveItem(int newLocationID, bool notify)
-        {
-            if (notify)
-            {
-                // Notify the ownerID
-            }
-
-            locationID = newLocationID;
-
-            this.mItemDB.SetLocation(itemID, locationID);
-        }
-
-        public void TransferOwnership(int newOwnerID, bool notify)
-        {
-            if (notify)
-            {
-                // Notify the old ownerID and the new ownerID
-            }
-
-            ownerID = newOwnerID;
-            this.mItemDB.SetOwner(itemID, ownerID);
-        }
-
-        public void SetFlag(int newFlag, bool notify)
-        {
-            if (notify)
-            {
-                // Notify the client
-            }
-
-            flag = newFlag;
-            this.mItemDB.SetItemFlag(itemID, flag);
-        }
-
-        public void ChangeCustomInfo(string newCustomInfo)
-        {
-            customInfo = newCustomInfo;
-            this.mItemDB.SetCustomInfo(itemID, customInfo);
-        }
-
-        public void SetQuantity(int newQuantity, bool notify)
-        {
-            if (notify)
-            {
-                // Notify the client
-            }
-
-            quantity = newQuantity;
-            this.mItemDB.SetQuantity(itemID, quantity);
-        }
-
-        public void LoadAttributes()
-        {
-            // Load attributes
-            attributes = new Attributes(this.mItemDB);
-
-            attributes.LoadAttributes(itemID, typeID);
-        }
-
-        public string itemName { private set; get; }
-        public int itemID { private set; get; }
-        public int typeID { private set; get; }
-        public int ownerID { private set; get; }
-        public int locationID { private set; get; }
-        public int flag { private set; get; }
-        public bool contraband { private set; get; }
-        public bool singleton { private set; get; }
-        public int quantity { private set; get; }
-        public double x { private set; get; }
-        public double y { private set; get; }
-        public double Z { private set; get; }
-        public string customInfo { private set; get; }
-        public Attributes attributes { private set; get; }
     }
 }

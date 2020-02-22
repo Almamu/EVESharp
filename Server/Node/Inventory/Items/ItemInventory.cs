@@ -27,22 +27,22 @@ using Node.Database;
 
 namespace Node.Inventory
 {
-    public class Inventory : Entity
+    public class ItemInventory : Entity
     {
-        public Inventory(string entityItemName, int entityItemID, int entityTypeID, int entityOwnerID, int entityLocationID, int entityFlag, bool entityContraband, bool entitySingleton, int entityQuantity, double entityX, double entityY, double entityZ, string entityCustomInfo, ItemDB itemDB, ItemFactory itemFactory)
-            : base(entityItemName, entityItemID, entityTypeID, entityOwnerID, entityLocationID, entityFlag, entityContraband, entitySingleton, entityQuantity, entityX, entityY, entityZ, entityCustomInfo, itemDB, itemFactory)
+        public ItemInventory(string entityName, int entityId, ItemType entityType, int entityOwnerID, int entityLocationID, int entityFlag, bool entityContraband, bool entitySingleton, int entityQuantity, double entityX, double entityY, double entityZ, string entityCustomInfo, AttributeList attributes, ItemFactory itemFactory)
+            : base(entityName, entityId, entityType, entityOwnerID, entityLocationID, entityFlag, entityContraband, entitySingleton, entityQuantity, entityX, entityY, entityZ, entityCustomInfo, attributes, itemFactory)
         {
             loaded = LoadContents();
         }
 
-        public Inventory(Entity from) : base(from.itemName, from.itemID, from.typeID, from.ownerID, from.locationID, from.flag, from.contraband, from.singleton, from.quantity, from.x, from.y, from.Z, from.customInfo, from.mItemDB, from.mItemFactory)
+        public ItemInventory(Entity from) : base(from.Name, from.ID, from.Type, from.OwnerID, from.LocationID, from.Flag, from.Contraband, from.Singleton, from.Quantity, from.X, from.Y, from.Z, from.CustomInfo, from.Attributes, from.mItemFactory)
         {
             loaded = LoadContents();
         }
 
         private bool LoadContents()
         {
-            items = this.mItemFactory.ItemManager.LoadInventory(itemID);
+            items = this.mItemFactory.ItemManager.LoadInventory(ID);
 
             if (items == null)
                 return false;
@@ -54,7 +54,7 @@ namespace Node.Inventory
         {
             foreach (Entity i in items)
             {
-                if (i.itemID == item.itemID)
+                if (i.ID == item.ID)
                 {
                     items[items.IndexOf(i)] = item;
                 }

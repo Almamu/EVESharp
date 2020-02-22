@@ -23,13 +23,21 @@
 */
 
 using System;
+using System.IO;
 using System.Threading;
 using Common.Database;
 using Common.Logging;
 using Common.Logging.Streams;
+using MySql.Data.MySqlClient;
 using Node.Configuration;
 using Node.Inventory;
 using Node.Network;
+using PythonTypes;
+using PythonTypes.Marshal;
+using PythonTypes.Types.Database;
+using PythonTypes.Types.Exceptions;
+using PythonTypes.Types.Network;
+using PythonTypes.Types.Primitives;
 
 namespace Node
 {
@@ -86,14 +94,15 @@ namespace Node
                 sChannel.Warning("Initializing EVESharp Node");
                 sChannel.Debug("Initializing EVESharp Node");
                 sChannel.Trace("Initializing EVESharp Node");
-
-                // create the node container
-                sContainer = new NodeContainer();
-                sContainer.Logger = sLog;
-                sContainer.ClientManager = new ClientManager();
-
+                
+                // connect to the database
                 sDatabase = DatabaseConnection.FromConfiguration(sConfiguration.Database, sLog);
                 sDatabase.Query("SET global max_allowed_packet=1073741824");
+                
+                // create the node container
+                sContainer = new NodeContainer(sDatabase);
+                sContainer.Logger = sLog;
+                sContainer.ClientManager = new ClientManager();
 
                 sChannel.Info("Priming cache...");
                 sCacheStorage = new CacheStorage(sContainer, sDatabase, sLog);
@@ -117,7 +126,8 @@ namespace Node
                 );
                 sChannel.Debug("Done");
                 sChannel.Info("Initializing item factory");
-                sItemFactory = new ItemFactory(sDatabase);
+                sContainer.ItemFactory = new ItemFactory(sContainer);
+                sContainer.ItemFactory.Init();
                 sChannel.Debug("Done");
 
                 sChannel.Info("Initializing solar system manager");

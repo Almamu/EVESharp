@@ -24,26 +24,32 @@
 
 using System;
 using System.Collections.Generic;
-using Common.Database;
 using Node.Database;
 
 namespace Node.Inventory
 {
-    public class CategoryManager
+    public class AttributeManager
     {
-        public ItemFactory ItemFactory { get; }
-        private Dictionary<int, ItemCategory> mCategories = null;
+        private ItemFactory ItemFactory { get; }
+        private Dictionary<int, AttributeInfo> mAttributes = null;
+        private Dictionary<int, Dictionary<int, ItemAttribute>> mDefaultAttributes = null;
+
+        public Dictionary<int, Dictionary<int, ItemAttribute>> DefaultAttributes
+        {
+            get => this.mDefaultAttributes;
+        }
+        
+        public AttributeManager(ItemFactory itemFactory)
+        {
+            this.ItemFactory = itemFactory;
+        }
+        
+        public AttributeInfo this[int id] { get => this.mAttributes[id]; }
 
         public void Load()
         {
-            this.mCategories = this.ItemFactory.ItemDB.LoadItemCategories();
-        }
-
-        public ItemCategory this[int id] { get => this.mCategories[id]; }
-
-        public CategoryManager(ItemFactory factory)
-        {
-            this.ItemFactory = factory;
+            this.mAttributes = this.ItemFactory.ItemDB.LoadAttributesInformation();
+            this.mDefaultAttributes = this.ItemFactory.ItemDB.LoadDefaultAttributes();
         }
     }
 }

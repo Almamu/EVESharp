@@ -24,10 +24,35 @@
 
 namespace Node.Inventory
 {
-    public class ItemAttribute
+    public class ItemGroup
     {
-        public int attributeID = 0;
-        public int intValue;
-        public float floatValue;
+        public int ID { get; }
+        public ItemCategory Category { get; }
+        public string Name { get; }
+        public string Description { get; }
+        public int GraphicID { get; }
+        public bool UseBasePrice { get; }
+        public bool AllowManufacture { get; }
+        public bool AllowRecycler { get; }
+        public bool Anchored { get; }
+        public bool Anchorable { get; }
+        public bool FittableNonSingleton { get; }
+        public bool Published { get; }
+
+        public ItemGroup(int id, ItemCategory category, string name, string description, int graphicId, bool useBasePrice, bool allowManufacture, bool allowRecycler, bool anchored, bool anchorable, bool fittableNonSingleton, bool published)
+        {
+            this.ID = id;
+            this.Category = category;
+            this.Name = name;
+            this.Description = description;
+            this.GraphicID = graphicId;
+            this.UseBasePrice = useBasePrice;
+            this.AllowManufacture = allowManufacture;
+            this.AllowRecycler = allowRecycler;
+            this.Anchored = anchored;
+            this.Anchorable = anchorable;
+            this.FittableNonSingleton = fittableNonSingleton;
+            this.Published = published;
+        }
     }
 }

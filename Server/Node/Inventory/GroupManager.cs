@@ -22,23 +22,28 @@
     Creator: Almamu
 */
 
+using System;
+using System.Collections.Generic;
+using Common.Database;
+using Node.Database;
+
 namespace Node.Inventory
 {
-    public class ItemCategory
+    public class GroupManager
     {
-        public int categoryID { private set; get; }
-        public string categoryName { private set; get; }
-        public string categoryDescription { private set; get; }
-        public int graphicID { private set; get; }
-        public bool published { private set; get; }
+        public ItemFactory ItemFactory { get; }
+        private Dictionary<int, ItemGroup> mGroups = null;
 
-        public ItemCategory(int invCategoryID, string invCategoryName, string invCategoryDescription, int invGraphicID, bool invPublished)
+        public void Load()
         {
-            categoryID = invCategoryID;
-            categoryName = invCategoryName;
-            categoryDescription = invCategoryDescription;
-            graphicID = invGraphicID;
-            published = invPublished;
+            this.mGroups = this.ItemFactory.ItemDB.LoadItemGroups();
+        }
+
+        public ItemGroup this[int id] { get => this.mGroups[id]; }
+
+        public GroupManager(ItemFactory factory)
+        {
+            this.ItemFactory = factory;
         }
     }
 }

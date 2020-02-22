@@ -54,11 +54,11 @@ namespace Node.Inventory.SystemEntities
         }
     }
 
-    public class SolarSystem : Inventory
+    public class SolarSystem : ItemInventory
     {
         public SolarSystem(Entity from, SolarSystemInfo info) : base(from)
         {
-            if (typeID != 5)
+            if (from.Type.ID != 5)
                 throw new Exception("Trying to load a non-solar system item like one");
 
             solarSystemInfo = info;

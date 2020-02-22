@@ -29,42 +29,31 @@ using Node.Database;
 
 namespace Node.Inventory
 {
-    public class ItemManager : DatabaseAccessor
+    public class ItemManager
     {
-        private readonly ItemDB mItemDB = null;
-        private readonly Dictionary<ulong, Entity> itemList = new Dictionary<ulong, Entity>();
+        private ItemFactory ItemFactory { get; }
+        private Dictionary<int, Entity> mItemList = new Dictionary<int, Entity>();
 
-        public bool Load()
+        public void Load()
         {
-            List<Entity> items = this.mItemDB.LoadItems();
-
-            if (items == null)
-                return false;
-
-            foreach (Entity item in items)
-            {
-                item.LoadAttributes();
-                itemList.Add((ulong) item.itemID, item);
-            }
-
-            return true;
+            // nothing is done on loading for now
         }
 
         public bool LoadItem(int itemID)
         {
             if (IsItemLoaded(itemID) == false)
             {
-                Entity item = this.mItemDB.LoadItem(itemID);
+                Entity item = this.ItemFactory.ItemDB.LoadItem(itemID);
 
                 if (item == null) return false;
 
-                if (IsItemLoaded(item.locationID))
+                if (IsItemLoaded(item.LocationID))
                 {
-                    Inventory inv = (Inventory) itemList[(ulong) item.locationID];
+                    ItemInventory inv = (ItemInventory) mItemList[item.LocationID];
                     inv.UpdateItem(item);
                 }
 
-                switch ((ItemCategory) this.mItemDB.GetCategoryID(item.typeID))
+                switch ((ItemCategory) item.Type.Group.Category.ID)
                 {
                     case ItemCategory.None:
                         break;
@@ -74,7 +63,7 @@ namespace Node.Inventory
 
                     // Not handled
                     default:
-                        itemList.Add((ulong) item.itemID, item);
+                        mItemList.Add(item.ID, item);
                         break;
                 }
             }
@@ -84,7 +73,7 @@ namespace Node.Inventory
 
         public bool IsItemLoaded(int itemID)
         {
-            return itemList.ContainsKey((ulong) itemID);
+            return mItemList.ContainsKey(itemID);
         }
 
         enum ItemCategory
@@ -120,7 +109,7 @@ namespace Node.Inventory
 
         public List<Entity> LoadInventory(int inventoryID)
         {
-            List<int> items = this.mItemDB.GetInventoryItems(inventoryID);
+            List<int> items = this.ItemFactory.ItemDB.GetInventoryItems(inventoryID);
             List<Entity> loaded = new List<Entity>();
 
             if (items == null)
@@ -132,7 +121,7 @@ namespace Node.Inventory
                 {
                     try
                     {
-                        loaded.Add(itemList[(ulong) itemID]);
+                        loaded.Add(mItemList[itemID]);
                     }
                     catch (Exception)
                     {
@@ -145,19 +134,19 @@ namespace Node.Inventory
 
         private bool LoadBlueprint(int itemID)
         {
-            Blueprint bp = this.mItemDB.LoadBlueprint(itemID);
+            Blueprint bp = this.ItemFactory.ItemDB.LoadBlueprint(itemID);
 
             if (bp == null)
                 return false;
 
-            itemList.Add((ulong) bp.itemID, bp);
+            mItemList.Add(bp.ID, bp);
 
             return true;
         }
 
         public Entity CreateItem(string itemName, int typeID, int ownerID, int locationID, int flag, bool contraband, bool singleton, int quantity, double x, double y, double z, string customInfo)
         {
-            ulong itemID = this.mItemDB.CreateItem(itemName, typeID, ownerID, locationID, flag, contraband, singleton, quantity, x, y, z, customInfo);
+            int itemID = (int) this.ItemFactory.ItemDB.CreateItem(itemName, typeID, ownerID, locationID, flag, contraband, singleton, quantity, x, y, z, customInfo);
 
             if (itemID == 0)
                 return null;
@@ -165,26 +154,26 @@ namespace Node.Inventory
             if (LoadItem((int) itemID) == false)
                 return null;
 
-            return itemList[itemID];
+            return mItemList[itemID];
         }
 
-        public void UnloadItem(ulong itemID)
+        public void UnloadItem(int itemID)
         {
             try
             {
-                itemList.Remove(itemID);
+                mItemList.Remove(itemID);
 
                 // Update the database information
-                this.mItemDB.UnloadItem(itemID);
+                this.ItemFactory.ItemDB.UnloadItem(itemID);
             }
             catch
             {
             }
         }
 
-        public ItemManager(DatabaseConnection db) : base(db)
+        public ItemManager(ItemFactory factory)
         {
-            this.mItemDB = new ItemDB(db);
+            this.ItemFactory = factory;
         }
     }
 }

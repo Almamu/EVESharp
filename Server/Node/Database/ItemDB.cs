@@ -28,13 +28,16 @@ using Common.Database;
 using MySql.Data.MySqlClient;
 using Node.Inventory;
 using Node.Inventory.SystemEntities;
+using Org.BouncyCastle.X509.Extension;
 
 namespace Node.Database
 {
     public class ItemDB : DatabaseAccessor
     {
+        private ItemFactory mItemFactory = null;
+        
         // General items database functions
-        public List<Entity> LoadItems()
+        public Dictionary<int, Entity> LoadItems()
         {
             MySqlDataReader reader = null;
             MySqlConnection connection = null;
@@ -46,13 +49,16 @@ namespace Node.Database
             using (connection)
             using (reader)
             {
-                List<Entity> items = new List<Entity>();
+                Dictionary<int, Entity> items = new Dictionary<int, Entity>();
 
                 while (reader.Read())
                 {
-                    Entity newItem = new Entity(reader.GetString(1), // itemName
+                    ItemType itemType = this.mItemFactory.TypeManager[reader.GetInt32(3)];
+                    
+                    Entity newItem = new Entity(
+                        reader.GetString(1), // itemName
                         reader.GetInt32(0), // itemID
-                        reader.GetInt32(2), // typeID
+                        itemType, // typeID
                         reader.GetInt32(3), // ownerID
                         reader.GetInt32(4), // locationID
                         reader.GetInt32(5), // flag
@@ -63,18 +69,22 @@ namespace Node.Database
                         reader.GetDouble(10), // y
                         reader.GetDouble(11), // z
                         reader.IsDBNull(12) ? "" : reader.GetString(12), // customInfo
-                        this,
-                        null
+                        new AttributeList(
+                            this.mItemFactory,
+                            itemType,
+                            this.LoadAttributesForItem(reader.GetInt32(0))
+                        ),
+                        this.mItemFactory
                     );
 
-                    items.Add(newItem);
+                    items[newItem.ID] = newItem;
                 }
 
                 return items;
             }
         }
 
-        public List<ItemCategory> LoadItemCategories()
+        public Dictionary<int, ItemCategory> LoadItemCategories()
         {
             MySqlDataReader reader = null;
             MySqlConnection connection = null;
@@ -86,25 +96,26 @@ namespace Node.Database
             using (connection)
             using (reader)
             {
-                List<ItemCategory> itemCategoryesList = new List<ItemCategory>();
+                Dictionary<int, ItemCategory> itemCategories = new Dictionary<int, ItemCategory>();
 
                 while (reader.Read())
                 {
-                    ItemCategory itemCategory = new ItemCategory(reader.GetInt32(0),
+                    ItemCategory itemCategory = new ItemCategory(
+                        reader.GetInt32(0),
                         reader.GetString(1),
                         reader.GetString(2),
                         reader.IsDBNull(3) ? 0 : reader.GetInt32(3),
                         reader.GetBoolean(4)
                     );
 
-                    itemCategoryesList.Add(itemCategory);
+                    itemCategories[itemCategory.ID] = itemCategory;
                 }
 
-                return itemCategoryesList;
+                return itemCategories;
             }
         }
 
-        public List<ItemType> LoadItemTypes()
+        public Dictionary<int, ItemType> LoadItemTypes()
         {
             MySqlDataReader reader = null;
             MySqlConnection connection = null;
@@ -116,13 +127,22 @@ namespace Node.Database
             using (connection)
             using (reader)
             {
-                List<ItemType> itemTypes = new List<ItemType>();
+                Dictionary<int, ItemType> itemTypes = new Dictionary<int, ItemType>();
 
                 while (reader.Read())
                 {
+                    int typeID = reader.GetInt32(0);
+                    
+                    Dictionary<int, ItemAttribute> defaultAttributes = null;
+
+                    if (this.mItemFactory.AttributeManager.DefaultAttributes.ContainsKey(typeID) == true)
+                        defaultAttributes = this.mItemFactory.AttributeManager.DefaultAttributes[typeID];
+                    else
+                        defaultAttributes = new Dictionary<int, ItemAttribute>();
+                    
                     ItemType type = new ItemType(
-                        reader.GetInt32(0),
-                        reader.GetInt32(1),
+                        typeID,
+                        this.mItemFactory.GroupManager[reader.GetInt32(1)],
                         reader.GetString(2),
                         reader.GetString(3),
                         reader.IsDBNull(4) ? 0 : reader.GetInt32(4),
@@ -135,13 +155,140 @@ namespace Node.Database
                         reader.GetDouble(11),
                         reader.GetBoolean(12),
                         reader.IsDBNull(13) ? 0 : reader.GetInt32(13),
-                        reader.GetDouble(14)
+                        reader.GetDouble(14),
+                        defaultAttributes
                     );
 
-                    itemTypes.Add(type);
+                    itemTypes[type.ID] = type;
                 }
 
                 return itemTypes;
+            }
+        }
+
+        public Dictionary<int, ItemGroup> LoadItemGroups()
+        {
+            MySqlDataReader reader = null;
+            MySqlConnection connection = null;
+
+            Database.Query(ref reader, ref connection,
+                "SELECT groupID, categoryID, groupName, description, graphicID, useBasePrice, allowManufacture, allowRecycler, anchored, anchorable, fittableNonSingleton, published FROM invGroups"
+            );
+
+            using (connection)
+            using (reader)
+            {
+                Dictionary<int, ItemGroup> itemGroups = new Dictionary<int, ItemGroup>();
+
+                while (reader.Read() == true)
+                {
+                    ItemGroup group = new ItemGroup(
+                        reader.GetInt32(0),
+                        this.mItemFactory.CategoryManager[reader.GetInt32(1)],
+                        reader.GetString(2),
+                        reader.GetString(3),
+                        reader.IsDBNull(4) ? 0 : reader.GetInt32(4),
+                        reader.GetBoolean(5),
+                        reader.GetBoolean(6),
+                        reader.GetBoolean(7),
+                        reader.GetBoolean(8),
+                        reader.GetBoolean(9),
+                        reader.GetBoolean(10),
+                        reader.GetBoolean(11)
+                    );
+
+                    itemGroups[group.ID] = group;
+                }
+
+                return itemGroups;
+            }
+        }
+
+        public Dictionary<int, AttributeInfo> LoadAttributesInformation()
+        {
+            MySqlDataReader reader = null;
+            MySqlConnection connection = null;
+
+            // sort the attributes by maxAttributeID so the simple attributes are loaded first
+            // and then the complex ones that are related to other attributes
+            Database.Query(ref reader, ref connection,
+                "SELECT attributeID, attributeName, attributeCategory, description, maxAttributeID, attributeIdx, graphicID, chargeRechargeTimeID, defaultValue, published, displayName, unitID, stackable, highIsGood, categoryID FROM dgmAttributeTypes ORDER BY maxAttributeID ASC"
+            );
+
+            using (connection)
+            using (reader)
+            {
+                Dictionary<int, AttributeInfo> attributes = new Dictionary<int, AttributeInfo>();
+
+                while (reader.Read())
+                {
+                    AttributeInfo info = new AttributeInfo(
+                        reader.GetInt32(0),
+                        reader.GetString(1),
+                        reader.GetInt32(2),
+                        reader.GetString(3),
+                        reader.IsDBNull(4) ? null : attributes[reader.GetInt32(4)],
+                        reader.IsDBNull(5) ? 0 : reader.GetInt32(5),
+                        reader.IsDBNull(6) ? 0 : reader.GetInt32(6),
+                        reader.IsDBNull(7) ? 0 : reader.GetInt32(7),
+                        reader.GetDouble(8),
+                        reader.GetInt32(9),
+                        reader.GetString(10),
+                        reader.IsDBNull(11) ? 0 : reader.GetInt32(11),
+                        reader.GetInt32(12),
+                        reader.GetInt32(13),
+                        reader.IsDBNull(14) ? 0 : reader.GetInt32(14)
+                    );
+
+                    attributes[info.ID] = info;
+                }
+
+                return attributes;
+            }
+        }
+
+        public Dictionary<int, Dictionary<int, ItemAttribute>> LoadDefaultAttributes()
+        {
+            MySqlDataReader reader = null;
+            MySqlConnection connection = null;
+            
+            Database.Query(ref reader, ref connection,
+                "SELECT typeID, attributeID, valueInt, valueFloat FROM dgmTypeAttributes"
+            );
+            
+            using(connection)
+            using (reader)
+            {
+                Dictionary<int, Dictionary<int, ItemAttribute>> attributes = new Dictionary<int, Dictionary<int, ItemAttribute>>();
+
+                while (reader.Read() == true)
+                {
+                    int typeID = reader.GetInt32(0);
+                    
+                    if(attributes.ContainsKey(typeID) == false)
+                        attributes[typeID] = new Dictionary<int, ItemAttribute>();
+                    
+                    ItemAttribute attribute = null;
+                    
+                    if (reader.IsDBNull(2) == false)
+                    {
+                        attribute = new ItemAttribute(
+                            this.mItemFactory.AttributeManager[reader.GetInt32(1)],
+                            reader.GetInt32(2)
+                        );
+                    }
+                    else
+                    {
+                        attribute = new ItemAttribute(
+                            this.mItemFactory.AttributeManager[reader.GetInt32(1)],
+                            reader.GetInt32(3)
+                        );
+                    }
+
+                    attributes[typeID][attribute.AttributeInfo.ID] = attribute;
+                }
+
+                return attributes;
             }
         }
 
@@ -161,9 +308,11 @@ namespace Node.Database
                 if (reader.Read() == false)
                     return null;
 
+                ItemType itemType = this.mItemFactory.TypeManager[reader.GetInt32(2)];
+                
                 Entity newItem = new Entity(reader.GetString(1), // itemName
                     reader.GetInt32(0), // itemID
-                    reader.GetInt32(2), // typeID
+                    itemType, // typeID
                     reader.GetInt32(3), // ownerID
                     reader.GetInt32(4), // locationID
                     reader.GetInt32(5), // flag
@@ -174,8 +323,12 @@ namespace Node.Database
                     reader.GetDouble(10), // y
                     reader.GetDouble(11), // z
                     reader.GetString(12), // customInfo
-                    this,
-                    null
+                    new AttributeList(
+                        this.mItemFactory,
+                        itemType,
+                        this.LoadAttributesForItem(reader.GetInt32(0))
+                    ), 
+                    this.mItemFactory
                 );
 
                 // Update the database information
@@ -202,12 +355,7 @@ namespace Node.Database
                 return itemList;
             }
         }
-
-        public int GetCategoryID(Entity item)
-        {
-            return GetCategoryID(item.typeID);
-        }
-
+        
         public int GetCategoryID(int typeID)
         {
             MySqlDataReader reader = null;
@@ -325,9 +473,11 @@ namespace Node.Database
 
                 while (reader.Read())
                 {
+                    ItemType itemType = this.mItemFactory.TypeManager[reader.GetInt32(1)];
+                    
                     Entity newItem = new Entity(reader.GetString(1), // itemName
                         reader.GetInt32(0), // itemID
-                        reader.GetInt32(2), // typeID
+                        itemType, // typeID
                         reader.GetInt32(3), // ownerID
                         reader.GetInt32(4), // locationID
                         reader.GetInt32(5), // flag
@@ -338,8 +488,12 @@ namespace Node.Database
                         reader.GetDouble(10), // y
                         reader.GetDouble(11), // z
                         reader.IsDBNull(12) ? "" : reader.GetString(12), // customInfo
-                        this,
-                        null
+                        new AttributeList(
+                            this.mItemFactory,
+                            itemType,
+                            this.LoadAttributesForItem(reader.GetInt32(0))
+                        ), 
+                        this.mItemFactory
                     );
 
                     items.Add(newItem);
@@ -403,92 +557,55 @@ namespace Node.Database
             }
         }
 
-        public void UnloadItem(ulong itemID)
+        public void UnloadItem(int itemID)
         {
             Database.Query("UPDATE entity SET nodeID=0 WHERE itemID=" + itemID);
         }
 
-        public Dictionary<string, ItemAttribute> GetAttributesForItem(int itemID)
+        public Dictionary<int, ItemAttribute> LoadAttributesForItem(int itemID)
         {
             MySqlDataReader reader = null;
             MySqlConnection connection = null;
 
             Database.Query(ref reader, ref connection,
-                "SELECT dgmAttributeTypes.attributeName, entity_attributes.attributeID, valueInt, valueFloat FROM entity_attributes LEFT JOIN dgmAttributeTypes ON dgmAttributeTypes.attributeID=entity_attributes.attributeID WHERE itemID=" +
+                "SELECT attributeID, valueInt, valueFloat FROM entity_attributes WHERE itemID = " +
                 itemID
             );
 
             using (connection)
             using (reader)
             {
-                Dictionary<string, ItemAttribute> result = new Dictionary<string, ItemAttribute>();
+                Dictionary<int, ItemAttribute> result = new Dictionary<int, ItemAttribute>();
 
                 while (reader.Read())
                 {
-                    ItemAttribute attrib = new ItemAttribute();
+                    ItemAttribute attribute = null;
 
-                    attrib.attributeID = reader.GetInt32(1);
-                    attrib.intValue = (reader.IsDBNull(2) == true) ? 0 : reader.GetInt32(2);
-                    attrib.floatValue = (reader.IsDBNull(3) == true) ? 0.0f : reader.GetFloat(3);
+                    if (reader.IsDBNull(1) == true)
+                    {
+                        attribute = new ItemAttribute(
+                            this.mItemFactory.AttributeManager[reader.GetInt32(0)],
+                            reader.GetDouble(2)
+                        );
+                    }
+                    else
+                    {
+                        attribute = new ItemAttribute(
+                            this.mItemFactory.AttributeManager[reader.GetInt32(0)],
+                            reader.GetInt32(2)
+                        );
+                    }
 
-                    result.Add(reader.GetString(0), attrib);
+                    result[attribute.AttributeInfo.ID] = attribute;
                 }
 
                 return result;
             }
         }
 
-        public int GetAttributeIDForName(string attributeName)
+        public ItemDB(DatabaseConnection db, ItemFactory factory) : base(db)
         {
-            MySqlDataReader reader = null;
-            MySqlConnection connection = null;
-
-            Database.Query(ref reader, ref connection,
-                "SELECT attributeID FROM dgmAttributeTypes WHERE attributeName='" + attributeName + "'"
-            );
-
-            using (connection)
-            using (reader)
-            {
-                if (reader.Read() == false)
-                    return 0;
-
-                return reader.GetInt32(0);
-            }
-        }
-
-        public Dictionary<string, ItemAttribute> GetDefaultAttributesForType(int typeID)
-        {
-            MySqlDataReader reader = null;
-            MySqlConnection connection = null;
-
-            Database.Query(ref reader, ref connection,
-                "SELECT dgmAttributeTypes.attributeName, dgmTypeAttributes.attributeID, valueInt, valueFloat FROM dgmTypeAttributes LEFT JOIN dgmAttributeTypes ON dgmAttributeTypes.attributeID = dgmTypeAttributes.attributeID WHERE typeID=" +
-                typeID
-            );
-
-            using (connection)
-            using (reader)
-            {
-                Dictionary<string, ItemAttribute> result = new Dictionary<string, ItemAttribute>();
-
-                while (reader.Read())
-                {
-                    ItemAttribute attrib = new ItemAttribute();
-
-                    attrib.attributeID = reader.GetInt32(1);
-                    attrib.intValue = (reader.IsDBNull(2) == true) ? 0 : reader.GetInt32(2);
-                    attrib.floatValue = (reader.IsDBNull(3) == true) ? 0.0f : reader.GetFloat(3);
-
-                    result.Add(reader.GetString(0), attrib);
-                }
-
-                return result;
-            }
-        }
-
-        public ItemDB(DatabaseConnection db) : base(db)
-        {
+            this.mItemFactory = factory;
         }
     }
 }

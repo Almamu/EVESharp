@@ -22,25 +22,44 @@
     Creator: Almamu
 */
 
-using Common.Database;
+using Node.Database;
 
 namespace Node.Inventory
 {
-    public class ItemFactory : DatabaseAccessor
+    public class ItemFactory
     {
-        public ItemManager ItemManager { get; private set; }
-        public CategoryManager CategoryManager { get; private set; }
-        public TypeManager TypeManager { get; private set; }
-
-        public ItemFactory(DatabaseConnection db) : base(db)
+        public NodeContainer Container { get; }
+        public AttributeManager AttributeManager { get; }
+        public ItemManager ItemManager { get; }
+        public CategoryManager CategoryManager { get; }
+        public GroupManager GroupManager { get; }
+        public TypeManager TypeManager { get; }
+        public ItemDB ItemDB { get; }
+        
+        public ItemFactory(NodeContainer container)
         {
-            this.ItemManager = new ItemManager(db);
-            this.CategoryManager = new CategoryManager(db);
-            this.TypeManager = new TypeManager(db);
+            this.Container = container;
+            this.ItemDB = new ItemDB(container.Database, this);
+            
+            // attribute manager goes first
+            this.AttributeManager = new AttributeManager(this);
+            // category manager goes first
+            this.CategoryManager = new CategoryManager(this);
+            // then groups
+            this.GroupManager = new GroupManager(this);
+            // then the type manager
+            this.TypeManager = new TypeManager(this);
+            // finally the item manager
+            this.ItemManager = new ItemManager(this);
+        }
 
-            this.ItemManager.Load();
+        public void Init()
+        {
+            this.AttributeManager.Load();
             this.CategoryManager.Load();
+            this.GroupManager.Load();
             this.TypeManager.Load();
+            this.ItemManager.Load();
         }
     }
 }
