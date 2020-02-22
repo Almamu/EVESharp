@@ -1,51 +1,91 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using PythonTypes.Types.Primitives;
 
 namespace Common.Game
 {
-    public class Session : PyDictionary
+    public class Session
     {
-        public new PyDataType this[string key]
+        private PyDictionary mSession;
+        
+        public PyDataType this[string key]
         {
-            get
+            get => this.GetCurrent(key);
+            set => this.SetCurrent(key, value);
+        }
+
+        public Session()
+        {
+            this.mSession = new PyDictionary();
+        }
+
+        public void SetCurrent(string key, PyDataType value)
+        {
+            if (this.mSession.ContainsKey(key) == false)
             {
-                if (this.ContainsKey(key) == false)
-                    return new PyNone();
+                PyTuple var = new PyTuple(2);
 
-                PyTuple data = base[key] as PyTuple;
+                var[0] = new PyNone();
+                var[1] = value;
 
-                return data[1];
+                this.mSession[key] = var;
             }
-
-            set
+            else
             {
-                // ensure there is a key stored if the element is new
-                if (this.ContainsKey(key) == false)
-                    base[key] = new PyTuple(new PyDataType[] {new PyNone(), new PyNone()});
+                PyTuple tmp = this.mSession[key] as PyTuple;
 
-                PyTuple entry = base[key] as PyTuple;
+                tmp[0] = tmp[1];
+                tmp[1] = value;
 
-                entry[0] = entry[1];
-                entry[1] = value;
-
-                base[key] = entry;
+                this.mSession[key] = tmp;
             }
+        }
+
+        public PyDataType GetCurrent(string key)
+        {
+            if (this.mSession.ContainsKey(key) == false)
+                this.mSession[key] = new PyTuple(new PyDataType[] { new PyNone(), new PyNone() });
+
+            PyTuple pair = this.mSession[key] as PyTuple;
+
+            return pair[1];
+        }
+
+        public bool ContainsKey(string key)
+        {
+            return this.mSession.ContainsKey(key);
         }
 
         public PyDictionary GenerateSessionChange()
         {
             PyDictionary result = new PyDictionary();
 
-            foreach (KeyValuePair<string, PyDataType> pair in this)
+            // iterate through the session data
+            foreach (KeyValuePair<string, PyDataType> pair in this.mSession)
             {
                 PyTuple value = pair.Value as PyTuple;
 
-                result[pair.Key] = new PyTuple(new[] {value[0], value[1]});
+                PyDataType last = value[0];
+                PyDataType current = value[1];
 
-                value[0] = value[1];
+                // encode only data that has changed
+                if (last != current)
+                {
+                    // create a new tuple to send as the session-change notification
+                    result[pair.Key] = new PyTuple(new PyDataType[] { last, current });
+
+                    // update the data in the session to reflect no change
+                    value[0] = value[1];
+                }
             }
-
+            
             return result;
+        }
+
+        public void LoadChanges(PyDictionary changes)
+        {
+            // parse the encoded changes and update the current values
+            foreach (KeyValuePair<string, PyDataType> pair in changes)
+                this[pair.Key] = (pair.Value as PyTuple)[1];
         }
     }
 }

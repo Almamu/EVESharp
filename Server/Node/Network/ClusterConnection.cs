@@ -104,22 +104,18 @@ namespace Node.Network
 
                 try
                 {
-                    if (packet.Destination is PyAddressAny)
+                    if (packet.Destination is PyAddressAny destAny)
                     {
-                        PyAddressAny dest = packet.Destination as PyAddressAny;
-
-                        Log.Trace($"Calling {dest.Service.Value}::{call}");
+                        Log.Trace($"Calling {destAny.Service.Value}::{call}");
                         callResult = this.Container.ServiceManager.ServiceCall(
-                            dest.Service, call, args, sub, this.Container.ClientManager.Get(packet.UserID)
+                            destAny.Service, call, args, sub, this.Container.ClientManager.Get(packet.UserID)
                         );
                     }
-                    else if (packet.Destination is PyAddressNode)
+                    else if (packet.Destination is PyAddressNode destNode)
                     {
-                        PyAddressNode dest = packet.Destination as PyAddressNode;
-
-                        Log.Trace($"Calling {dest.Service.Value}::{call}");
+                        Log.Trace($"Calling {destNode.Service.Value}::{call}");
                         callResult = this.Container.ServiceManager.ServiceCall(
-                            dest.Service, call, args, sub, this.Container.ClientManager.Get(packet.UserID)
+                            destNode.Service, call, args, sub, this.Container.ClientManager.Get(packet.UserID)
                         );
                     }
                     else

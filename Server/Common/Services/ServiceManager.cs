@@ -1,5 +1,6 @@
 
 using System.Reflection;
+using System.Runtime.ExceptionServices;
 using PythonTypes.Types.Primitives;
 using Common.Services.Exceptions;
 
@@ -47,11 +48,13 @@ namespace Common.Services
             catch (TargetInvocationException e)
             {
                 // throw the InnerException if possible
-                if (e.InnerException == null)
-                    throw e;
+                // ExceptionDispatchInfo is used to preserve the stacktrace of the inner exception
+                // getting rid of cryptic stack traces that do not really tell much about the error
+                if (e.InnerException != null)
+                    ExceptionDispatchInfo.Throw(e.InnerException);
 
-                // throw the original exception
-                throw e.InnerException;
+                // if no internal exception was found re-throw the original exception
+                throw;
             }
         }
     }

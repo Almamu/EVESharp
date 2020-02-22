@@ -23,6 +23,7 @@
 */
 
 using System.Collections.Generic;
+using Common.Game;
 using PythonTypes.Types.Network;
 using PythonTypes.Types.Primitives;
 
@@ -30,42 +31,32 @@ namespace Node
 {
     public class Client
     {
-        private readonly Session session = new Session();
+        private readonly Session mSession = new Session();
 
-        public void UpdateSession(PyPacket from)
+        public void UpdateSession(PyPacket packet)
         {
-            // We should add a Decode method to SessionChangeNotification...
-            PyTuple payload = from.Payload;
-
-            PyDictionary changes = (payload[0] as PyTuple)[1] as PyDictionary;
-
-            // Update our local session
-            foreach (KeyValuePair<string, PyDataType> pair in changes)
-                session.Set(pair.Key, (pair.Value as PyTuple)[1]);
+            this.mSession.LoadChanges((packet.Payload[0] as PyTuple)[1] as PyDictionary);
         }
 
         public string LanguageID
         {
-            get => session.GetCurrent("languageID") as PyString;
-            set => session.Set("languageID", value);
+            get => this.mSession["languageID"] as PyString;
+            set => this.mSession["languageID"] = value;
         }
 
         public int AccountID
         {
-            get => session.GetCurrent("userid") as PyInteger;
-            set { }
+            get => this.mSession["userid"] as PyInteger;
         }
 
         public int Role
         {
-            get => session.GetCurrent("role") as PyInteger;
-            set { }
+            get => this.mSession["role"] as PyInteger;
         }
 
         public string Address
         {
-            get => session.GetCurrent("address") as PyString;
-            set { }
+            get => this.mSession["address"] as PyString;
         }
     }
 }
