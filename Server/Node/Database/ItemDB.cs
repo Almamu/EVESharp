@@ -279,7 +279,7 @@ namespace Node.Database
                         );
                     }
 
-                    attributes[typeID][attribute.AttributeInfo.ID] = attribute;
+                    attributes[typeID][attribute.Info.ID] = attribute;
                 }
 
                 return attributes;
@@ -661,10 +661,97 @@ namespace Node.Database
                         );
                     }
 
-                    result[attribute.AttributeInfo.ID] = attribute;
+                    result[attribute.Info.ID] = attribute;
                 }
 
                 return result;
+            }
+        }
+
+        /// <summary>
+        /// Saves an entity to the database
+        /// </summary>
+        /// <param name="entity"></param>
+        public void PersistEntity(Entity entity)
+        {
+            Database.PrepareQuery(
+                "UPDATE entity SET itemName = @itemName, ownerID = @ownerID, locationID = @locationID, flag = @flag, contraband = @contraband, singleton = @singleton, quantity = @quantity, x = @x, y = @y, z = @z, customInfo = @customInfo WHERE itemID = @itemID",
+                new Dictionary<string, object>()
+                {
+                    {"@itemName", entity.Name},
+                    {"@ownerID", entity.OwnerID},
+                    {"@locationID", entity.LocationID},
+                    {"@flag", entity.Flag},
+                    {"@contraband", entity.Contraband},
+                    {"@singleton", entity.Singleton},
+                    {"@quantity", entity.Quantity},
+                    {"@x", entity.X},
+                    {"@y", entity.Y},
+                    {"@z", entity.Z},
+                    {"@customInfo", entity.CustomInfo},
+                    {"@itemID", entity.ID}
+                }
+            );
+        }
+
+        public void PersistAttributeList(Entity item, AttributeList list)
+        {
+            MySqlConnection connection = null;
+            MySqlCommand update = Database.PrepareQuery(
+                ref connection,
+                "UPDATE entity_attributes SET valueInt = @valueInt, valueFloat = @valueFloat WHERE itemID = @itemID AND attributeID = @attributeID"
+            );
+            MySqlCommand create = Database.PrepareQuery(
+                ref connection,
+                "INSERT INTO entity_attributes(itemID, attributeID, valueInt, valueFloat) VALUE (@itemID, @attributeID, @valueInt, @valueFloat)"
+            );
+
+            using (connection)
+            {
+                // set query parameters
+                update.Parameters.AddWithValue("@itemID", item.ID);
+                create.Parameters.AddWithValue("@itemID", item.ID);
+
+                foreach (KeyValuePair<int, ItemAttribute> pair in list)
+                {
+                    // only update dirty records
+                    if (pair.Value.Dirty == false)
+                        continue;
+
+                    // use the correct prepared statement based on whether the attribute is new or old
+                    if (pair.Value.New == true)
+                    {
+                        create.Parameters.AddWithValue("@attributeID", pair.Value.Info.ID);
+
+                        if (pair.Value.ValueType == ItemAttribute.ItemAttributeValueType.Integer)
+                            create.Parameters.AddWithValue("@valueInt", pair.Value.Integer);
+                        else
+                            create.Parameters.AddWithValue("@valueInt", null);
+
+                        if (pair.Value.ValueType == ItemAttribute.ItemAttributeValueType.Double)
+                            create.Parameters.AddWithValue("@valueFloat", pair.Value.Float);
+                        else
+                            create.Parameters.AddWithValue("@valueFloat", null);
+
+                        create.ExecuteNonQuery();
+                    }
+                    else
+                    {
+                        update.Parameters.AddWithValue("@attributeID", pair.Value.Info.ID);
+
+                        if (pair.Value.ValueType == ItemAttribute.ItemAttributeValueType.Integer)
+                            update.Parameters.AddWithValue("@valueInt", pair.Value.Integer);
+                        else
+                            update.Parameters.AddWithValue("@valueInt", null);
+
+                        if (pair.Value.ValueType == ItemAttribute.ItemAttributeValueType.Double)
+                            update.Parameters.AddWithValue("@valueFloat", pair.Value.Float);
+                        else
+                            update.Parameters.AddWithValue("@valueFloat", null);
+
+                        update.ExecuteNonQuery();
+                    }
+                }
             }
         }
 

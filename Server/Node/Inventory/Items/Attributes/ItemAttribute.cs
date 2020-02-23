@@ -24,10 +24,11 @@
 
 using System.IO;
 using System.Xml.Schema;
+using Common.Database;
 
 namespace Node.Inventory
 {
-    public class ItemAttribute
+    public class ItemAttribute : DatabaseEntity
     {
         // TODO: Create a PyNumber class to handle both integer and double values to easily access these and send them to the client?
         public enum ItemAttributeValueType
@@ -35,24 +36,47 @@ namespace Node.Inventory
             Integer = 0,
             Double = 1
         };
-        
-        public AttributeInfo AttributeInfo { get; }
-        public ItemAttributeValueType ValueType { get; }
-        public int Integer { get; set; }
-        public double Float { get; set; }
 
-        public ItemAttribute(AttributeInfo attribute, double value)
+        private int mInteger;
+        private double mFloat;
+        
+        public AttributeInfo Info { get; }
+        public ItemAttributeValueType ValueType { get; }
+
+        public int Integer
         {
-            this.AttributeInfo = attribute;
-            this.Float = value;
-            this.ValueType = ItemAttributeValueType.Double;
+            get => this.mInteger;
+            set
+            {
+                this.mInteger = value;
+                this.Dirty = true;
+            }
         }
 
-        public ItemAttribute(AttributeInfo attribute, int value)
+        public double Float
         {
-            this.AttributeInfo = attribute;
-            this.Integer = value;
+            get => this.mFloat;
+            set
+            {
+                this.mFloat = value;
+                this.Dirty = true;
+            }
+        }
+
+        public ItemAttribute(AttributeInfo attribute, double value, bool newEntity = false)
+        {
+            this.Info = attribute;
+            this.mFloat = value;
+            this.ValueType = ItemAttributeValueType.Double;
+            this.New = newEntity;
+        }
+
+        public ItemAttribute(AttributeInfo attribute, int value, bool newEntity = false)
+        {
+            this.Info = attribute;
+            this.mInteger = value;
             this.ValueType = ItemAttributeValueType.Integer;
+            this.New = newEntity;
         }
 
         /// <summary>
@@ -64,12 +88,20 @@ namespace Node.Inventory
             switch (this.ValueType)
             {
                 case ItemAttributeValueType.Double:
-                    return new ItemAttribute(this.AttributeInfo, this.Float);
+                    return new ItemAttribute(this.Info, this.Float, true);
                 case ItemAttributeValueType.Integer:
-                    return new ItemAttribute(this.AttributeInfo, this.Integer);
+                    return new ItemAttribute(this.Info, this.Integer, true);
                 default:
                     throw new InvalidDataException("");
             }
+        }
+
+        protected override void SaveToDB()
+        {
+            // item attributes cannot be saved by themselves
+            // only AttributeList have enough information to perform that save
+            // so use that class instead
+            throw new System.NotImplementedException();
         }
     }
 }

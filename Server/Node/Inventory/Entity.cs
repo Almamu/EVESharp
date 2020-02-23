@@ -22,47 +22,179 @@
     Creator: Almamu
 */
 
+using System.Diagnostics;
+using Common.Database;
 using Node.Database;
 
 namespace Node.Inventory
 {
-    public class Entity
+    public class Entity : DatabaseEntity
     {
         public ItemFactory mItemFactory = null;
 
-        public int ID { get; } // entity id cannot be changed
-        public string Name { set; get; }
-        public ItemType Type { get; } // entity type cannot be changed
-        public int OwnerID { set; get; } // TODO: CONVERT THIS TO AN ENTITY?
-        public int LocationID { set; get; } // TODO: CONVERT THIS TO AN ENTITY?
-        public int Flag { set; get; }
-        public bool Contraband { set; get; }
-        public bool Singleton { set; get; }
-        public int Quantity { set; get; } // TODO: DEPRECATE THIS AND USE QUANTITY ATTRIBUTE
-        public double X { set; get; }
-        public double Y { set; get; }
-        public double Z { set; get; }
-        public string CustomInfo { set; get; }
-        public AttributeList Attributes { get; }
-        
+        private int mID;
+        private string mName;
+        private ItemType mType;
+        private int mOwnerID;
+        private int mLocationID;
+        private int mFlag;
+        private bool mContraband;
+        private bool mSingleton;
+        private int mQuantity; // TODO: DEPRECATE THIS AND USE QUANTITY ATTRIBUTE
+        private double mX;
+        private double mY;
+        private double mZ;
+        private string mCustomInfo;
+        private AttributeList mAttributes;
+
+        public int ID => mID;
+        public ItemType Type => mType;
+        public AttributeList Attributes => mAttributes;
+
+        public string Name
+        {
+            get => mName;
+            set 
+            {
+                mName = value;
+                this.Dirty = true;
+            }
+        }
+
+        public int OwnerID
+        {
+            get => mOwnerID;
+            set
+            {
+                this.mOwnerID = value;
+                this.Dirty = true;
+            }
+        }
+
+        public int LocationID
+        {
+            get => mLocationID;
+            set
+            {
+                this.mLocationID = value;
+                this.Dirty = true;
+            }
+        }
+
+        public int Flag
+        {
+            get => mFlag;
+            set
+            {
+                this.mFlag = value;
+                this.Dirty = true;
+            }
+        }
+
+        public bool Contraband
+        {
+            get => mContraband;
+            set
+            {
+                this.mContraband = value;
+                this.Dirty = true;
+            }
+        }
+
+        public bool Singleton
+        {
+            get => mSingleton;
+            set
+            {
+                this.mSingleton = value;
+                this.Dirty = true;
+            }
+        }
+
+        public int Quantity
+        {
+            get => mQuantity;
+            set
+            {
+                this.mQuantity = value;
+                this.Dirty = true;
+            }
+        }
+
+        public double X
+        {
+            get => mX;
+            set
+            {
+                this.mX = value;
+                this.Dirty = true;
+            }
+        }
+
+        public double Y
+        {
+            get => mY;
+            set
+            {
+                this.mY = value;
+                this.Dirty = true;
+            }
+        }
+
+        public double Z
+        {
+            get => mZ;
+            set
+            {
+                this.mZ = value;
+                this.Dirty = true;
+            }
+        }
+
+        public string CustomInfo
+        {
+            get => mCustomInfo;
+            set
+            {
+                this.mCustomInfo = value;
+                this.Dirty = true;
+            }
+        }
+
         public Entity(string entityName, int entityId, ItemType type, int entityOwnerID, int entityLocationID, int entityFlag, bool entityContraband, bool entitySingleton, int entityQuantity, double entityX, double entityY, double entityZ, string entityCustomInfo, AttributeList attributes, ItemFactory itemFactory)
         {
-            this.Name = entityName;
-            this.ID = entityId;
-            this.Type = type;
-            this.OwnerID = entityOwnerID;
-            this.LocationID = entityLocationID;
-            this.Flag = entityFlag;
-            this.Contraband = entityContraband;
-            this.Singleton = entitySingleton;
-            this.Quantity = entityQuantity;
-            this.X = entityX;
-            this.Y = entityY;
-            this.Z = entityZ;
-            this.CustomInfo = entityCustomInfo;
-            this.Attributes = attributes;
+            this.mName = entityName;
+            this.mID = entityId;
+            this.mType = type;
+            this.mOwnerID = entityOwnerID;
+            this.mLocationID = entityLocationID;
+            this.mFlag = entityFlag;
+            this.mContraband = entityContraband;
+            this.mSingleton = entitySingleton;
+            this.mQuantity = entityQuantity;
+            this.mX = entityX;
+            this.mY = entityY;
+            this.mZ = entityZ;
+            this.mCustomInfo = entityCustomInfo;
+            this.mAttributes = attributes;
 
             this.mItemFactory = itemFactory;
+        }
+
+        protected override void SaveToDB()
+        {
+            // entities cannot be "new" as these have to be created in the database before instantiation
+            // of this class, so the "New" flag can be ignored
+            this.mItemFactory.ItemDB.PersistEntity(this);
+        }
+
+        public override void Persist()
+        {
+            // persist this object if needed
+            base.Persist();
+            
+            // persist the attribute list
+            this.Attributes.Persist(this);
         }
     }
 }

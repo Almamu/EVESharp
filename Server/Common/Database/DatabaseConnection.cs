@@ -65,30 +65,22 @@ namespace Common.Database
 
         public void Query(string query)
         {
-            MySqlDataReader reader = null;
-            MySqlConnection connection = null;
-
             try
             {
-                connection = new MySqlConnection(this.mConnectionString);
+                MySqlConnection connection = new MySqlConnection(this.mConnectionString);
                 connection.Open();
 
-                MySqlCommand command = new MySqlCommand(query, connection);
+                using (connection)
+                {
+                    MySqlCommand command = new MySqlCommand(query, connection);
 
-                reader = command.ExecuteReader();
+                    command.ExecuteNonQuery();
+                }
             }
             catch (Exception e)
             {
-                if (reader != null)
-                    reader.Close();
-
                 Log.Error($"MySQL error: {e.Message}");
                 throw;
-            }
-            finally
-            {
-                if (connection != null)
-                    connection.Close();
             }
         }
 
@@ -102,8 +94,12 @@ namespace Common.Database
         {
             try
             {
-                connection = new MySqlConnection(this.mConnectionString);
-                connection.Open();
+                // only open a connection if it's really needed
+                if (connection == null)
+                {
+                    connection = new MySqlConnection(this.mConnectionString);
+                    connection.Open();                    
+                }
                 
                 MySqlCommand command = new MySqlCommand(query, connection);
                 command.Prepare();
@@ -180,8 +176,12 @@ namespace Common.Database
         {
             try
             {
-                connection = new MySqlConnection(this.mConnectionString);
-                connection.Open();
+                // only open a connection if it's really needed
+                if (connection == null)
+                {
+                    connection = new MySqlConnection(this.mConnectionString);
+                    connection.Open();                    
+                }
 
                 MySqlCommand command = new MySqlCommand(query, connection);
 
