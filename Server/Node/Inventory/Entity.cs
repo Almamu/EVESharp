@@ -193,7 +193,7 @@ namespace Node.Inventory
             // persist this object if needed
             base.Persist();
             
-            // persist the attribute list
+            // persist the attribute list too
             this.Attributes.Persist(this);
         }
     }

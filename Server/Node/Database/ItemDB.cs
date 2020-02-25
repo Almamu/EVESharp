@@ -715,7 +715,7 @@ namespace Node.Database
                 foreach (KeyValuePair<int, ItemAttribute> pair in list)
                 {
                     // only update dirty records
-                    if (pair.Value.Dirty == false)
+                    if (pair.Value.Dirty == false && pair.Value.New == false)
                         continue;
 
                     // use the correct prepared statement based on whether the attribute is new or old
