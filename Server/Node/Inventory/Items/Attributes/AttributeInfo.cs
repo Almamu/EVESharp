@@ -1,4 +1,4 @@
-namespace Node.Inventory
+namespace Node.Inventory.Items.Attributes
 {
     public class AttributeInfo
     {

@@ -25,10 +25,11 @@
 using System.Diagnostics;
 using Common.Database;
 using Node.Database;
+using Node.Inventory.Items.Attributes;
 
-namespace Node.Inventory
+namespace Node.Inventory.Items
 {
-    public class Entity : DatabaseEntity
+    public abstract class ItemEntity : DatabaseEntity
     {
         public ItemFactory mItemFactory = null;
 
@@ -161,7 +162,7 @@ namespace Node.Inventory
             }
         }
 
-        public Entity(string entityName, int entityId, ItemType type, int entityOwnerID, int entityLocationID, int entityFlag, bool entityContraband, bool entitySingleton, int entityQuantity, double entityX, double entityY, double entityZ, string entityCustomInfo, AttributeList attributes, ItemFactory itemFactory)
+        public ItemEntity(string entityName, int entityId, ItemType type, int entityOwnerID, int entityLocationID, int entityFlag, bool entityContraband, bool entitySingleton, int entityQuantity, double entityX, double entityY, double entityZ, string entityCustomInfo, AttributeList attributes, ItemFactory itemFactory)
         {
             this.mName = entityName;
             this.mID = entityId;

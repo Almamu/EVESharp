@@ -26,6 +26,7 @@ using System.Collections.Generic;
 using Common.Database;
 using Node.Database;
 using Node.Inventory;
+using Node.Inventory.Items;
 using Node.Inventory.SystemEntities;
 using PythonTypes.Types.Primitives;
 
@@ -88,7 +89,7 @@ namespace Node
 
         private bool BootupSolarSystem(int solarSystemID)
         {
-            List<Entity> items = this.mItemFactory.ItemDB.GetItemsLocatedAt(solarSystemID);
+            List<ItemEntity> items = this.mItemFactory.ItemDB.GetItemsLocatedAt(solarSystemID);
 
             if (items == null)
                 return false;

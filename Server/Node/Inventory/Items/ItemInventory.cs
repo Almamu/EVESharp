@@ -24,10 +24,11 @@
 
 using System.Collections.Generic;
 using Node.Database;
+using Node.Inventory.Items.Attributes;
 
-namespace Node.Inventory
+namespace Node.Inventory.Items
 {
-    public class ItemInventory : Entity
+    public class ItemInventory : ItemEntity
     {
         public ItemInventory(string entityName, int entityId, ItemType entityType, int entityOwnerID, int entityLocationID, int entityFlag, bool entityContraband, bool entitySingleton, int entityQuantity, double entityX, double entityY, double entityZ, string entityCustomInfo, AttributeList attributes, ItemFactory itemFactory)
             : base(entityName, entityId, entityType, entityOwnerID, entityLocationID, entityFlag, entityContraband, entitySingleton, entityQuantity, entityX, entityY, entityZ, entityCustomInfo, attributes, itemFactory)
@@ -35,7 +36,7 @@ namespace Node.Inventory
             loaded = LoadContents();
         }
 
-        public ItemInventory(Entity from) : base(from.Name, from.ID, from.Type, from.OwnerID, from.LocationID, from.Flag, from.Contraband, from.Singleton, from.Quantity, from.X, from.Y, from.Z, from.CustomInfo, from.Attributes, from.mItemFactory)
+        public ItemInventory(ItemEntity from) : base(from.Name, from.ID, from.Type, from.OwnerID, from.LocationID, from.Flag, from.Contraband, from.Singleton, from.Quantity, from.X, from.Y, from.Z, from.CustomInfo, from.Attributes, from.mItemFactory)
         {
             loaded = LoadContents();
         }
@@ -50,9 +51,9 @@ namespace Node.Inventory
             return true;
         }
 
-        public void UpdateItem(Entity item)
+        public void UpdateItem(ItemEntity item)
         {
-            foreach (Entity i in items)
+            foreach (ItemEntity i in items)
             {
                 if (i.ID == item.ID)
                 {
@@ -61,7 +62,7 @@ namespace Node.Inventory
             }
         }
 
-        private List<Entity> items;
+        private List<ItemEntity> items;
         public bool loaded { private set; get; }
     }
 }

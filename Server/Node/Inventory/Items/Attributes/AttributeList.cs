@@ -1,7 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 
-namespace Node.Inventory
+namespace Node.Inventory.Items.Attributes
 {
     public class AttributeList : IEnumerable
     {
@@ -30,7 +30,7 @@ namespace Node.Inventory
             }
         }
 
-        public void Persist(Entity item)
+        public void Persist(ItemEntity item)
         {
             this.mItemFactory.ItemDB.PersistAttributeList(item, this);
         }

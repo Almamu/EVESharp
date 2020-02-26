@@ -61,5 +61,26 @@ namespace Node.Database
                 return reader.GetInt32(0) > 0;
             }
         }
+
+        public int GetCharacterTypeByBloodline(int bloodlineID)
+        {
+            MySqlConnection connection = null;
+            MySqlDataReader reader = Database.PrepareQuery(
+                ref connection,
+                "SELECT typeID FROM bloodlineTypes WHERE bloodlineID = @bloodlineID",
+                new Dictionary<string, object>()
+                {
+                    {"@bloodlineID", bloodlineID}
+                }
+            );
+            
+            using(connection)
+            using (reader)
+            {
+                reader.Read();
+
+                return reader.GetInt32(0);
+            }
+        }
     }
 }

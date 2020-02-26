@@ -26,13 +26,15 @@ using System;
 using System.Collections.Generic;
 using Common.Database;
 using Node.Database;
+using Node.Inventory.Items;
+using Node.Inventory.Items.Types;
 
 namespace Node.Inventory
 {
     public class ItemManager
     {
         private ItemFactory ItemFactory { get; }
-        private Dictionary<int, Entity> mItemList = new Dictionary<int, Entity>();
+        private Dictionary<int, ItemEntity> mItemList = new Dictionary<int, ItemEntity>();
 
         public void Load()
         {
@@ -43,7 +45,7 @@ namespace Node.Inventory
         {
             if (IsItemLoaded(itemID) == false)
             {
-                Entity item = this.ItemFactory.ItemDB.LoadItem(itemID);
+                ItemEntity item = this.ItemFactory.ItemDB.LoadItem(itemID);
 
                 if (item == null) return false;
 
@@ -107,10 +109,10 @@ namespace Node.Inventory
             Decryptors = 35,
         };
 
-        public List<Entity> LoadInventory(int inventoryID)
+        public List<ItemEntity> LoadInventory(int inventoryID)
         {
             List<int> items = this.ItemFactory.ItemDB.GetInventoryItems(inventoryID);
-            List<Entity> loaded = new List<Entity>();
+            List<ItemEntity> loaded = new List<ItemEntity>();
 
             if (items == null)
                 return null;
@@ -144,7 +146,7 @@ namespace Node.Inventory
             return true;
         }
 
-        public Entity CreateItem(string itemName, int typeID, int ownerID, int locationID, int flag, bool contraband, bool singleton, int quantity, double x, double y, double z, string customInfo)
+        public ItemEntity CreateItem(string itemName, int typeID, int ownerID, int locationID, int flag, bool contraband, bool singleton, int quantity, double x, double y, double z, string customInfo)
         {
             int itemID = (int) this.ItemFactory.ItemDB.CreateItem(itemName, typeID, ownerID, locationID, flag, contraband, singleton, quantity, x, y, z, customInfo);
 

@@ -23,17 +23,19 @@
 */
 
 using Node.Database;
+using Node.Inventory.Items;
+using Node.Inventory.Items.Attributes;
 
-namespace Node.Inventory
+namespace Node.Inventory.Items.Types
 {
-    public class Blueprint : Entity
+    public class Blueprint : ItemEntity
     {
         public Blueprint(string entityName, int entityId, ItemType entityType, int entityOwnerID, int entityLocationID, int entityFlag, bool entityContraband, bool entitySingleton, int entityQuantity, double entityX, double entityY, double entityZ, string entityCustomInfo, AttributeList attributes, ItemFactory itemFactory)
             : base(entityName, entityId, entityType, entityOwnerID, entityLocationID, entityFlag, entityContraband, entitySingleton, entityQuantity, entityX, entityY, entityZ, entityCustomInfo, attributes, itemFactory)
         {
         }
 
-        public Blueprint(Entity from) : base(from.Name, from.ID, from.Type, from.OwnerID, from.LocationID, from.Flag, from.Contraband, from.Singleton, from.Quantity, from.X, from.Y, from.Z, from.CustomInfo, from.Attributes, from.mItemFactory)
+        public Blueprint(ItemEntity from) : base(from.Name, from.ID, from.Type, from.OwnerID, from.LocationID, from.Flag, from.Contraband, from.Singleton, from.Quantity, from.X, from.Y, from.Z, from.CustomInfo, from.Attributes, from.mItemFactory)
         {
         }
 

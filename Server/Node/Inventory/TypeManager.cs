@@ -27,6 +27,7 @@ using System.Collections.Generic;
 using System.Drawing;
 using Common.Database;
 using Node.Database;
+using Node.Inventory.Items;
 
 namespace Node.Inventory
 {

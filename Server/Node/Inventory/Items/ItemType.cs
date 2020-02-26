@@ -23,8 +23,9 @@
 */
 
 using System.Collections.Generic;
+using Node.Inventory.Items.Attributes;
 
-namespace Node.Inventory
+namespace Node.Inventory.Items
 {
     public class ItemType
     {

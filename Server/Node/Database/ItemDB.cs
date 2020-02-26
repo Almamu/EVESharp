@@ -27,8 +27,10 @@ using System.Collections.Generic;
 using Common.Database;
 using MySql.Data.MySqlClient;
 using Node.Inventory;
+using Node.Inventory.Items;
+using Node.Inventory.Items.Attributes;
+using Node.Inventory.Items.Types;
 using Node.Inventory.SystemEntities;
-using Org.BouncyCastle.X509.Extension;
 
 namespace Node.Database
 {
@@ -37,7 +39,7 @@ namespace Node.Database
         private ItemFactory mItemFactory = null;
         
         // General items database functions
-        public Dictionary<int, Entity> LoadItems()
+        public Dictionary<int, Item> LoadItems()
         {
             MySqlConnection connection = null;
 
@@ -48,13 +50,13 @@ namespace Node.Database
             using (connection)
             using (reader)
             {
-                Dictionary<int, Entity> items = new Dictionary<int, Entity>();
+                Dictionary<int, Item> items = new Dictionary<int, Item>();
 
                 while (reader.Read())
                 {
                     ItemType itemType = this.mItemFactory.TypeManager[reader.GetInt32(3)];
                     
-                    Entity newItem = new Entity(
+                    Item newItem = new Item(
                         reader.GetString(1), // itemName
                         reader.GetInt32(0), // itemID
                         itemType, // typeID
@@ -286,7 +288,7 @@ namespace Node.Database
             }
         }
 
-        public Entity LoadItem(int itemID)
+        public Item LoadItem(int itemID)
         {
             MySqlConnection connection = null;
             MySqlDataReader reader = Database.PrepareQuery(ref connection,
@@ -305,7 +307,7 @@ namespace Node.Database
 
                 ItemType itemType = this.mItemFactory.TypeManager[reader.GetInt32(2)];
                 
-                Entity newItem = new Entity(reader.GetString(1), // itemName
+                Item newItem = new Item(reader.GetString(1), // itemName
                     reader.GetInt32(0), // itemID
                     itemType, // typeID
                     reader.GetInt32(3), // ownerID
@@ -402,7 +404,7 @@ namespace Node.Database
 
         public Blueprint LoadBlueprint(int itemID)
         {
-            Entity item = LoadItem(itemID);
+            Item item = LoadItem(itemID);
 
             if (item == null)
                 return null;
@@ -514,7 +516,7 @@ namespace Node.Database
             );
         }
 
-        public List<Entity> GetItemsLocatedAt(int locationID)
+        public List<ItemEntity> GetItemsLocatedAt(int locationID)
         {
             MySqlConnection connection = null;
             MySqlDataReader reader = Database.PrepareQuery(ref connection,
@@ -528,13 +530,13 @@ namespace Node.Database
             using (connection)
             using (reader)
             {
-                List<Entity> items = new List<Entity>();
+                List<ItemEntity> items = new List<ItemEntity>();
 
                 while (reader.Read())
                 {
                     ItemType itemType = this.mItemFactory.TypeManager[reader.GetInt32(1)];
                     
-                    Entity newItem = new Entity(reader.GetString(1), // itemName
+                    Item newItem = new Item(reader.GetString(1), // itemName
                         reader.GetInt32(0), // itemID
                         itemType, // typeID
                         reader.GetInt32(3), // ownerID
@@ -671,30 +673,30 @@ namespace Node.Database
         /// <summary>
         /// Saves an entity to the database
         /// </summary>
-        /// <param name="entity"></param>
-        public void PersistEntity(Entity entity)
+        /// <param name="Item"></param>
+        public void PersistEntity(ItemEntity Item)
         {
             Database.PrepareQuery(
                 "UPDATE entity SET itemName = @itemName, ownerID = @ownerID, locationID = @locationID, flag = @flag, contraband = @contraband, singleton = @singleton, quantity = @quantity, x = @x, y = @y, z = @z, customInfo = @customInfo WHERE itemID = @itemID",
                 new Dictionary<string, object>()
                 {
-                    {"@itemName", entity.Name},
-                    {"@ownerID", entity.OwnerID},
-                    {"@locationID", entity.LocationID},
-                    {"@flag", entity.Flag},
-                    {"@contraband", entity.Contraband},
-                    {"@singleton", entity.Singleton},
-                    {"@quantity", entity.Quantity},
-                    {"@x", entity.X},
-                    {"@y", entity.Y},
-                    {"@z", entity.Z},
-                    {"@customInfo", entity.CustomInfo},
-                    {"@itemID", entity.ID}
+                    {"@itemName", Item.Name},
+                    {"@ownerID", Item.OwnerID},
+                    {"@locationID", Item.LocationID},
+                    {"@flag", Item.Flag},
+                    {"@contraband", Item.Contraband},
+                    {"@singleton", Item.Singleton},
+                    {"@quantity", Item.Quantity},
+                    {"@x", Item.X},
+                    {"@y", Item.Y},
+                    {"@z", Item.Z},
+                    {"@customInfo", Item.CustomInfo},
+                    {"@itemID", Item.ID}
                 }
             );
         }
 
-        public void PersistAttributeList(Entity item, AttributeList list)
+        public void PersistAttributeList(ItemEntity item, AttributeList list)
         {
             MySqlConnection connection = null;
             MySqlCommand update = Database.PrepareQuery(

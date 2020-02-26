@@ -132,6 +132,9 @@ namespace Node.Services.Characters
                     throw new UserError("CharNameInvalid");
             }
 
+            int characterItemType = this.mDB.GetCharacterTypeByBloodline(bloodlineID);
+            
+            // TODO: FINISH THIS METHOD
             return null;
         }
     }

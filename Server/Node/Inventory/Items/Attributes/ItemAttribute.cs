@@ -26,7 +26,7 @@ using System.IO;
 using System.Xml.Schema;
 using Common.Database;
 
-namespace Node.Inventory
+namespace Node.Inventory.Items.Attributes
 {
     public class ItemAttribute : DatabaseEntity
     {

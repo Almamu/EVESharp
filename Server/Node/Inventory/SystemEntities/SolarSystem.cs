@@ -23,6 +23,7 @@
 */
 
 using System;
+using Node.Inventory.Items;
 
 namespace Node.Inventory.SystemEntities
 {
@@ -56,7 +57,7 @@ namespace Node.Inventory.SystemEntities
 
     public class SolarSystem : ItemInventory
     {
-        public SolarSystem(Entity from, SolarSystemInfo info) : base(from)
+        public SolarSystem(ItemEntity from, SolarSystemInfo info) : base(from)
         {
             if (from.Type.ID != 5)
                 throw new Exception("Trying to load a non-solar system item like one");
