@@ -44,10 +44,14 @@ namespace ClusterControler.Database
             using (connection)
             using (reader)
             {
-                if (reader.FieldCount > 0)
+                //If any errors getting account count from database return account exists.
+                if (reader.FieldCount != 1)
                     return true;
-
-                return false;
+                
+                if (reader.Read() == false)
+                    return true;
+                
+                return (reader.GetInt64(0) > 0);
             }
         }
 
@@ -85,7 +89,7 @@ namespace ClusterControler.Database
         public void CreateAccount(string name, string password, ulong role)
         {
             Database.PrepareQuery(
-                "INSERT INTO account(accountID, accountName, password, role, online, banned)VALUES(NULL, @accountName, SHA1(@passsword), @role, 0, 0)",
+                "INSERT INTO account(accountID, accountName, password, role, online, banned)VALUES(NULL, @accountName, SHA1(@password), @role, 0, 0)",
                 new Dictionary<string, object>()
                 {
                     {"@accountName", name},
