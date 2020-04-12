@@ -25,6 +25,7 @@
 using System;
 using System.Text.RegularExpressions;
 using Common.Database;
+using Common.Logging;
 using Common.Services;
 using Node.Database;
 using PythonTypes.Types.Exceptions;
@@ -34,6 +35,8 @@ namespace Node.Services.Characters
 {
     public class character : Service
     {
+        private Channel Log { get; }
+
         enum NameValidationResults
         {
             Valid = 1,
@@ -55,6 +58,19 @@ namespace Node.Services.Characters
         public PyDataType GetCharactersToSelect(PyDictionary namedPayload, Client client)
         {
             return this.mDB.GetCharacterList(client.AccountID);
+        }
+
+        public PyDataType GetCharacterToSelect(PyInteger characterID, PyDictionary namedPayload, Client client)
+        {
+            //Log.Debug($"Getting character {characterID}");
+            PyDataType result = mDB.GetCharSelectInfo(characterID);
+            if(result == null)
+            {
+                //Log.Error($"Failed to load character {characterID}");
+                return null;
+            }
+
+            return result;
         }
 
         public PyDataType LogStartOfCharacterCreation(PyDictionary namedPayload, Client client)

@@ -14,7 +14,7 @@ namespace Node.Services.UserSvc
 
         public PyList GetRedeemTokens(PyDictionary namedPayload, Client client)
         {
-            return null;
+            return new PyList();
         }
     }
 }
