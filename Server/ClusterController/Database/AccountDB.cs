@@ -59,7 +59,7 @@ namespace ClusterControler.Database
         {
             MySqlConnection connection = null;
             MySqlDataReader reader = Database.PrepareQuery(ref connection,
-                "SELECT accountID, password, banned, role FROM account WHERE accountName LIKE @username AND password LIKE SHA1(@password)",
+                "SELECT accountID, password, banned, role FROM account WHERE accountName LIKE @username AND password LIKE PASSWORD(@password)",
                 new Dictionary<string, object>()
                 {
                     {"@username", username},
@@ -89,7 +89,7 @@ namespace ClusterControler.Database
         public void CreateAccount(string name, string password, ulong role)
         {
             Database.PrepareQuery(
-                "INSERT INTO account(accountID, accountName, password, role, online, banned)VALUES(NULL, @accountName, SHA1(@password), @role, 0, 0)",
+                "INSERT INTO account(accountID, accountName, password, role, online, banned)VALUES(NULL, @accountName, PASSWORD(@password), @role, 0, 0)",
                 new Dictionary<string, object>()
                 {
                     {"@accountName", name},
