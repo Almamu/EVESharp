@@ -137,5 +137,10 @@ namespace Node.Services.Characters
             // TODO: FINISH THIS METHOD
             return null;
         }
+
+        public PyDataType Ping(PyDictionary namedPayload, Client client)
+        {
+            return client.AccountID;
+        }
     }
 }
