@@ -13,7 +13,7 @@ The EVESharp server is compatible with EVE Online Aprocrypha 6.14.101786 which c
 In order to be able to modify the game files to connect to any IP address the blue.dll file has to be patched to ignore the checksum checks done. There is an automatic patcher that automatically removes these checks. It can be downloaded from [here](https://files.evemu.dev/apoc/BlueAutoPatcher.exe)
 
 # Database server installation
-The server makes use of a MySQL database, this requires specific software to be installed. Depending on the OS you are goint to run the servers on there are different options.
+The server makes use of a MariaDB database, this requires specific software to be installed. Depending on the OS you are going to run the servers on there are different options. For more information and downloads go [here](https://downloads.mariadb.org/).
 
 It's important to have these files accessible as they will be required on the project's setup and configuration.
 

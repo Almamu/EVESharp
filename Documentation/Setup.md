@@ -2,13 +2,13 @@
 Before anything has to be done on the client-side of things the server must be setup, the following steps explain how to setup the database and the server binaries to accept incoming connections from clients.
 
 ## Database setup
-The first thing to do is setup the MySQL Database for the server. Assuming there is a MySQL server already installed, the first thing to do is create a database and a user for the emulator. Open a MySQL connection to the server and run the following queries:
+The first thing to do is setup the MariaDB Database for the server. Assuming there is a MariaDB server already installed, the first thing to do is create a database and a user for the emulator. Open a MariaDB connection to the server and run the following queries:
 ```
 CREATE DATABASE evedb;
 CREATE USER 'evesharp'@'localhost' IDENTIFIED BY 'passwordhere';
 GRANT ALL PRIVILEGES ON evedb.* TO 'evesharp'@'localhost';
 ```
-**IMPORTANT: Change the *passwordhere* to a proper password to ensure your database is secure. You might also need to change the 'localhost' to something different if your Cluster and Nodes do not run on the same machine as the MySQL server. Refer to the MySQL documentation to learn more**
+**IMPORTANT: Change the *passwordhere* to a proper password to ensure your database is secure. You might also need to change the 'localhost' to something different if your Cluster and Nodes do not run on the same machine as the MariaDB server. Refer to the MariaDB documentation to learn more**
 
 This will create the database "evedb" and the user "evesharp" for accessing the database with the given password.
 
