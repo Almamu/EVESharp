@@ -68,9 +68,9 @@ namespace Node.Database
             }
         }
 
-        public List<Bloodline> GetBloodlineInformation()
+        public Dictionary<int, Bloodline> GetBloodlineInformation()
         {
-            List<Bloodline> result = new List<Bloodline>();
+            Dictionary<int, Bloodline> result = new Dictionary<int, Bloodline>();
             MySqlConnection connection = null;
             MySqlDataReader reader = Database.Query(
                 ref connection,

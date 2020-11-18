@@ -49,7 +49,7 @@ namespace Node.Services.Characters
         };
 
         private readonly CharacterDB mDB = null;
-        private readonly List<Bloodline> mBloodlineCache = null;
+        private readonly Dictionary<int, Bloodline> mBloodlineCache = null;
 
         public character(DatabaseConnection db, ServiceManager manager) : base(manager)
         {
