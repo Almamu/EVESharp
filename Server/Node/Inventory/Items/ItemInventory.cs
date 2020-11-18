@@ -28,41 +28,29 @@ using Node.Inventory.Items.Attributes;
 
 namespace Node.Inventory.Items
 {
-    public class ItemInventory : ItemEntity
+    public abstract class ItemInventory : ItemEntity
     {
-        public ItemInventory(string entityName, int entityId, ItemType entityType, int entityOwnerID, int entityLocationID, int entityFlag, bool entityContraband, bool entitySingleton, int entityQuantity, double entityX, double entityY, double entityZ, string entityCustomInfo, AttributeList attributes, ItemFactory itemFactory)
-            : base(entityName, entityId, entityType, entityOwnerID, entityLocationID, entityFlag, entityContraband, entitySingleton, entityQuantity, entityX, entityY, entityZ, entityCustomInfo, attributes, itemFactory)
+        public ItemInventory(ItemEntity from) : base(from.Name, from.ID, from.Type, from.Owner, from.Location, from.Flag, from.Contraband, from.Singleton, from.Quantity, from.X, from.Y, from.Z, from.CustomInfo, from.Attributes, from.mItemFactory)
         {
-            loaded = LoadContents();
         }
 
-        public ItemInventory(ItemEntity from) : base(from.Name, from.ID, from.Type, from.OwnerID, from.LocationID, from.Flag, from.Contraband, from.Singleton, from.Quantity, from.X, from.Y, from.Z, from.CustomInfo, from.Attributes, from.mItemFactory)
+        protected virtual void LoadContents()
         {
-            loaded = LoadContents();
+            this.mContentsLoaded = true;
         }
 
-        private bool LoadContents()
+        public List<ItemEntity> Items
         {
-            items = this.mItemFactory.ItemManager.LoadInventory(ID);
-
-            if (items == null)
-                return false;
-
-            return true;
-        }
-
-        public void UpdateItem(ItemEntity item)
-        {
-            foreach (ItemEntity i in items)
+            get
             {
-                if (i.ID == item.ID)
-                {
-                    items[items.IndexOf(i)] = item;
-                }
+                if (this.mContentsLoaded == false)
+                    this.LoadContents();
+
+                return this.mItems;
             }
         }
-
-        private List<ItemEntity> items;
-        public bool loaded { private set; get; }
+        
+        private List<ItemEntity> mItems;
+        private bool mContentsLoaded = false;
     }
 }

@@ -27,44 +27,185 @@ using Node.Inventory.Items;
 
 namespace Node.Inventory.SystemEntities
 {
-    public struct SolarSystemInfo
-    {
-        public int regionID;
-        public int constellationID;
-        public double x, y, z, xMin, yMin, zMin, xMax, yMax, zMax;
-        public double luminosity;
-        public bool border;
-        public bool fringe;
-        public bool corridor;
-        public bool hub;
-        public bool international;
-        public bool regional;
-        public bool constellation;
-        public double security;
-        public int factionID;
-        public double radius;
-        public int sunTypeID;
-        public string securityClass;
-    }
-
-    public class SolarSystemLoadException : Exception
-    {
-        public SolarSystemLoadException()
-            : base("Cannot load solar system from database")
-        {
-        }
-    }
-
     public class SolarSystem : ItemInventory
     {
-        public SolarSystem(ItemEntity from, SolarSystemInfo info) : base(from)
+        public SolarSystem(ItemEntity from, int regionId, int constellationId, double mapX, double mapY, double mapZ,
+            double mapXMin, double mapYMin, double mapZMin, double mapXMax, double mapYMax, double mapZMax, double luminosity,
+            bool border, bool fringe, bool corridor, bool hub, bool international, bool regional, bool constellation,
+            double security, int factionId, double radius, int sunTypeId, string securityClass) : base(from)
         {
-            if (from.Type.ID != 5)
-                throw new Exception("Trying to load a non-solar system item like one");
-
-            solarSystemInfo = info;
+            this.mRegionId = regionId;
+            this.mConstellationId = constellationId;
+            this.mMapX = mapX;
+            this.mMapY = mapY;
+            this.mMapZ = mapZ;
+            this.mMapXMin = mapXMin;
+            this.mMapYMin = mapYMin;
+            this.mMapZMin = mapZMin;
+            this.mMapXMax = mapXMax;
+            this.mMapYMax = mapYMax;
+            this.mMapZMax = mapZMax;
+            this.mLuminosity = luminosity;
+            this.mBorder = border;
+            this.mFringe = fringe;
+            this.mCorridor = corridor;
+            this.mHub = hub;
+            this.mInternational = international;
+            this.mRegional = regional;
+            this.mConstellation = constellation;
+            this.mSecurity = security;
+            this.mFactionId = factionId;
+            this.mRadius = radius;
+            this.mSunTypeId = sunTypeId;
+            this.mSecurityClass = securityClass;
         }
 
-        public SolarSystemInfo solarSystemInfo { private set; get; }
+        private int mRegionId;
+        private int mConstellationId;
+        private double mMapX, mMapY, mMapZ, mMapXMin, mMapYMin, mMapZMin, mMapXMax, mMapYMax, mMapZMax;
+        private double mLuminosity;
+        private bool mBorder;
+        private bool mFringe;
+        private bool mCorridor;
+        private bool mHub;
+        private bool mInternational;
+        private bool mRegional;
+        private bool mConstellation;
+        private double mSecurity;
+        private int mFactionId;
+        private double mRadius;
+        private int mSunTypeId;
+        private string mSecurityClass;
+
+        public int RegionID
+        {
+            get => this.mRegionId;
+        }
+
+        public int ConstellationID
+        {
+            get => this.mConstellationId;
+        }
+
+        public double MapX
+        {
+            get => mMapX;
+        }
+
+        public double MapY
+        {
+            get => mMapY;
+        }
+
+        public double MapZ
+        {
+            get => mMapZ;
+        }
+
+        public double MapXMin
+        {
+            get => mMapXMin;
+        }
+
+        public double MapYMin
+        {
+            get => mMapYMin;
+        }
+
+        public double MapZMin
+        {
+            get => mMapZMin;
+        }
+
+        public double MapXMax
+        {
+            get => mMapXMax;
+        }
+
+        public double MapYMax
+        {
+            get => mMapYMax;
+        }
+
+        public double MapZMax
+        {
+            get => mMapZMax;
+        }
+
+        public double Luminosity
+        {
+            get => mLuminosity;
+        }
+
+        public bool Border
+        {
+            get => mBorder;
+        }
+
+        public bool Fringe
+        {
+            get => mFringe;
+        }
+
+        public bool Corridor
+        {
+            get => mCorridor;
+        }
+
+        public bool Hub
+        {
+            get => mHub;
+        }
+
+        public bool International
+        {
+            get => mInternational;
+        }
+
+        public bool Regional
+        {
+            get => mRegional;
+        }
+
+        public bool Constellation
+        {
+            get => mConstellation;
+        }
+
+        public double Security
+        {
+            get => mSecurity;
+        }
+
+        public int FactionID
+        {
+            get => mFactionId;
+        }
+
+        public double Radius
+        {
+            get => mRadius;
+        }
+
+        public int SunTypeID
+        {
+            get => mSunTypeId;
+        }
+
+        public string SecurityClass
+        {
+            get => mSecurityClass;
+        }
+
+        protected override void LoadContents()
+        {
+            throw new NotImplementedException();
+        }
+
+        protected override void SaveToDB()
+        {
+            // solar systems cannot be updated
+            throw new NotImplementedException();
+        }
     }
 }

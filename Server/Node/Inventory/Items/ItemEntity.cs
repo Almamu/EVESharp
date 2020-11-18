@@ -36,8 +36,8 @@ namespace Node.Inventory.Items
         private int mID;
         private string mName;
         private ItemType mType;
-        private int mOwnerID;
-        private int mLocationID;
+        private ItemEntity mOwner;
+        private ItemEntity mLocation;
         private int mFlag;
         private bool mContraband;
         private bool mSingleton;
@@ -62,22 +62,22 @@ namespace Node.Inventory.Items
             }
         }
 
-        public int OwnerID
+        public ItemEntity Owner
         {
-            get => mOwnerID;
+            get => mOwner;
             set
             {
-                this.mOwnerID = value;
+                this.mOwner = value;
                 this.Dirty = true;
             }
         }
 
-        public int LocationID
+        public ItemEntity Location
         {
-            get => mLocationID;
+            get => mLocation;
             set
             {
-                this.mLocationID = value;
+                this.mLocation = value;
                 this.Dirty = true;
             }
         }
@@ -162,13 +162,13 @@ namespace Node.Inventory.Items
             }
         }
 
-        public ItemEntity(string entityName, int entityId, ItemType type, int entityOwnerID, int entityLocationID, int entityFlag, bool entityContraband, bool entitySingleton, int entityQuantity, double entityX, double entityY, double entityZ, string entityCustomInfo, AttributeList attributes, ItemFactory itemFactory)
+        public ItemEntity(string entityName, int entityId, ItemType type, ItemEntity entityOwner, ItemEntity entityLocation, int entityFlag, bool entityContraband, bool entitySingleton, int entityQuantity, double entityX, double entityY, double entityZ, string entityCustomInfo, AttributeList attributes, ItemFactory itemFactory)
         {
             this.mName = entityName;
             this.mID = entityId;
             this.mType = type;
-            this.mOwnerID = entityOwnerID;
-            this.mLocationID = entityLocationID;
+            this.mOwner = entityOwner;
+            this.mLocation = entityLocation;
             this.mFlag = entityFlag;
             this.mContraband = entityContraband;
             this.mSingleton = entitySingleton;
@@ -182,16 +182,21 @@ namespace Node.Inventory.Items
             this.mItemFactory = itemFactory;
         }
 
+        public ItemEntity(ItemEntity from) : this(from.Name, from.ID, from.Type, from.Owner, from.Location, from.Flag,
+            from.Contraband, from.Singleton, from.Quantity, from.X, from.Y, from.Z, from.CustomInfo, from.Attributes,
+            from.mItemFactory)
+        {
+            
+        }
+
         protected override void SaveToDB()
         {
-            // entities cannot be "new" as these have to be created in the database before instantiation
-            // of this class, so the "New" flag can be ignored
             this.mItemFactory.ItemDB.PersistEntity(this);
         }
 
         public override void Persist()
         {
-            // persist this object if needed
+            // persist is overriden so the attributes are persisted regardless of the Dirty flag
             base.Persist();
             
             // persist the attribute list too

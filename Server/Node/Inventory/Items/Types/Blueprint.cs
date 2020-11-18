@@ -30,29 +30,62 @@ namespace Node.Inventory.Items.Types
 {
     public class Blueprint : ItemEntity
     {
-        public Blueprint(string entityName, int entityId, ItemType entityType, int entityOwnerID, int entityLocationID, int entityFlag, bool entityContraband, bool entitySingleton, int entityQuantity, double entityX, double entityY, double entityZ, string entityCustomInfo, AttributeList attributes, ItemFactory itemFactory)
-            : base(entityName, entityId, entityType, entityOwnerID, entityLocationID, entityFlag, entityContraband, entitySingleton, entityQuantity, entityX, entityY, entityZ, entityCustomInfo, attributes, itemFactory)
+        public Blueprint(ItemEntity @from, bool copy, int materialLevel, int productivityLevel, int licensedProductionRunsRemaining) : base(@from)
         {
+            this.mCopy = copy;
+            this.mMaterialLevel = materialLevel;
+            this.mProductivityLevel = productivityLevel;
+            this.mLicensedProductionRunsRemaining = licensedProductionRunsRemaining;
         }
 
-        public Blueprint(ItemEntity from) : base(from.Name, from.ID, from.Type, from.OwnerID, from.LocationID, from.Flag, from.Contraband, from.Singleton, from.Quantity, from.X, from.Y, from.Z, from.CustomInfo, from.Attributes, from.mItemFactory)
+        private bool mCopy;
+        private int mMaterialLevel;
+        private int mProductivityLevel;
+        private int mLicensedProductionRunsRemaining;
+
+        public bool Copy
         {
+            get => mCopy;
+            set
+            {
+                this.mCopy = value;
+                this.Dirty = true;
+            }
         }
 
-        public void SetBlueprintInfo(bool newCopy, int newMaterialLevel, int newProductivityLevel, int newLicensedProductionRunsRemainig, bool sqlUpdate)
+        public int MaterialLevel
         {
-            copy = newCopy;
-            materialLevel = newMaterialLevel;
-            productivityLevel = newProductivityLevel;
-            licensedProductionRunsRemaining = newLicensedProductionRunsRemainig;
-
-            if (sqlUpdate)
-                this.mItemFactory.ItemDB.SetBlueprintInfo(ID, copy, materialLevel, productivityLevel, licensedProductionRunsRemaining);
+            get => mMaterialLevel;
+            set
+            {
+                this.mMaterialLevel = value;
+                this.Dirty = true;
+            }
         }
 
-        public bool copy { private set; get; }
-        public int materialLevel { private set; get; }
-        public int productivityLevel { private set; get; }
-        public int licensedProductionRunsRemaining { private set; get; }
+        public int ProductivityLevel
+        {
+            get => mProductivityLevel;
+            set
+            {
+                this.mProductivityLevel = value;
+                this.Dirty = true;
+            }
+        }
+
+        public int LicensedProductionRunsRemaining
+        {
+            get => mLicensedProductionRunsRemaining;
+            set
+            {
+                this.mLicensedProductionRunsRemaining = value;
+                this.Dirty = true;
+            }
+        }
+
+        protected override void SaveToDB()
+        {
+            this.mItemFactory.ItemDB.PersistBlueprint(this.ID, this.Copy, this.MaterialLevel, this.ProductivityLevel, this.LicensedProductionRunsRemaining);
+        }
     }
 }

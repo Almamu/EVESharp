@@ -26,6 +26,7 @@ using System;
 using System.Collections.Generic;
 using Common.Database;
 using MySql.Data.MySqlClient;
+using Node.Inventory.SystemEntities;
 
 namespace Node.Database
 {
@@ -50,7 +51,7 @@ namespace Node.Database
             }
         }
 
-        public void LoadSolarSystem(int solarSystemID)
+        public void MarkSolarSystemAsLoaded(SolarSystem solarSystem)
         {
             try
             {
@@ -58,7 +59,7 @@ namespace Node.Database
                     "UPDATE solarsystemsloaded SET nodeID = @nodeID WHERE solarSystemID = @solarSystemID", new Dictionary<string, object>()
                     {
                         {"@nodeID", Program.NodeID},
-                        {"@solarSystemID", solarSystemID}
+                        {"@solarSystemID", solarSystem.ID}
                     }
                 );
             }
@@ -68,11 +69,11 @@ namespace Node.Database
             }
         }
 
-        public void UnloadSolarSystem(int solarSystemID)
+        public void MarkSolarSystemAsUnloaded(SolarSystem solarSystem)
         {
             Database.PrepareQuery("UPDATE solarsystemsloaded SET nodeID = 0 WHERE solarSystemID = @solarSystemID", new Dictionary<string, object>()
             {
-                {"@solarSystemID", solarSystemID}
+                {"@solarSystemID", solarSystem.ID}
             });
         }
 

@@ -38,7 +38,7 @@ namespace Node
         private readonly GeneralDB mGeneralDB = null;
         private readonly ItemFactory mItemFactory = null;
 
-        private readonly List<SolarSystem> solarSystemsLoaded = new List<SolarSystem>();
+        private readonly List<SolarSystem> mLoadedSolarSystems = new List<SolarSystem>();
 
         public bool LoadSolarSystems(PyList solarSystems)
         {
@@ -47,7 +47,7 @@ namespace Node
                 return true;
 
             // First of all check for loaded systems and unload the ones that are not needed
-            foreach (SolarSystem solarSystem in solarSystemsLoaded)
+            foreach (SolarSystem solarSystem in mLoadedSolarSystems)
             {
                 bool found = false;
 
@@ -64,7 +64,7 @@ namespace Node
                 if (found == false)
                 {
                     // Unload the solar system
-                    if (UnloadSolarSystem(solarSystem.ID) == false)
+                    if (UnloadSolarSystem(solarSystem) == false)
                         return false;
                 }
             }
@@ -72,57 +72,50 @@ namespace Node
             // Now iterate the PyList and load the new solarSystems
             foreach (PyInteger listID in solarSystems)
             {
-                foreach (SolarSystem solarSystem in solarSystemsLoaded)
+                bool found = false;
+                
+                foreach (SolarSystem solarSystem in mLoadedSolarSystems)
                 {
                     if (solarSystem.ID == listID.Value)
                     {
-                        if (LoadSolarSystem(solarSystem) == false)
-                        {
-                            return false;
-                        }
+                        found = true;
+                        break;
                     }
+                }
+
+                if (found == false)
+                {
+                    if (LoadSolarSystem(listID) == false)
+                        return false;
                 }
             }
 
             return true;
         }
 
-        private bool BootupSolarSystem(int solarSystemID)
+        public bool UnloadSolarSystem(SolarSystem solarSystem)
         {
-            List<ItemEntity> items = this.mItemFactory.ItemDB.GetItemsLocatedAt(solarSystemID);
-
-            if (items == null)
-                return false;
-
-            // Add the items to the ItemFactory
-            this.mItemFactory.ItemManager.LoadInventory(solarSystemID);
+            // remove references off the ItemFactory
+            this.mItemFactory.ItemManager.UnloadItem(solarSystem);
+            
+            // Update the database
+            this.mGeneralDB.MarkSolarSystemAsUnloaded(solarSystem);
 
             return true;
         }
 
-        public bool UnloadSolarSystem(int solarSystemID)
+        public bool LoadSolarSystem(int solarSystemID)
         {
-            // We should do the unload work here
+            // load the item into memory
+            SolarSystem solarSystem = this.mItemFactory.ItemManager.LoadItem(solarSystemID) as SolarSystem;
+            
+            // ensure the items in the solar system are loaded
 
             // Update the database
-            this.mGeneralDB.UnloadSolarSystem(solarSystemID);
-
-            return true;
-        }
-
-        public bool LoadSolarSystem(SolarSystem solarSystem)
-        {
-            // We should do the load work here
-            BootupSolarSystem(solarSystem.ID);
-
-            // Update the database
-            this.mGeneralDB.LoadSolarSystem(solarSystem.ID);
+            this.mGeneralDB.MarkSolarSystemAsLoaded(solarSystem);
 
             // Update the list
-            solarSystemsLoaded.Add(solarSystem);
-
-            // Update the ItemManager
-            this.mItemFactory.ItemManager.LoadItem(solarSystem.ID);
+            this.mLoadedSolarSystems.Add(solarSystem);
 
             return true;
         }
@@ -135,13 +128,7 @@ namespace Node
             // Load the not-loaded solar systems
             foreach (int solarSystemID in solarSystems)
             {
-                // create the solar system object
-                SolarSystem solarSystem = new SolarSystem(
-                    this.mItemFactory.ItemDB.LoadItem(solarSystemID),
-                    this.mItemFactory.ItemDB.GetSolarSystemInfo(solarSystemID)
-                );
-
-                if (LoadSolarSystem(solarSystem) == false)
+                if (LoadSolarSystem(solarSystemID) == false)
                     return false;
             }
 

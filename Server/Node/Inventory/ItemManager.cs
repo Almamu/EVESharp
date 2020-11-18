@@ -25,42 +25,46 @@
 using System;
 using System.Collections.Generic;
 using Common.Database;
+using Common.Logging;
 using Node.Database;
 using Node.Inventory.Items;
 using Node.Inventory.Items.Types;
+using Node.Inventory.SystemEntities;
 
 namespace Node.Inventory
 {
-    public class ItemManager
+    public partial class ItemManager
     {
         private ItemFactory ItemFactory { get; }
         private Dictionary<int, ItemEntity> mItemList = new Dictionary<int, ItemEntity>();
+        private Channel mChannel = null;
 
         public void Load()
         {
-            // nothing is done on loading for now
+            // create a log channel for the rare occurence of the ItemManager wanting to log something
+            this.mChannel = this.ItemFactory.Container.Logger.CreateLogChannel("ItemManager");
         }
 
-        public bool LoadItem(int itemID)
+        public ItemEntity LoadItem(int itemID)
         {
             if (IsItemLoaded(itemID) == false)
             {
                 ItemEntity item = this.ItemFactory.ItemDB.LoadItem(itemID);
 
-                if (item == null) return false;
+                if (item == null)
+                    return null;
 
-                if (IsItemLoaded(item.LocationID))
+                switch ((ItemCategories) item.Type.Group.Category.ID)
                 {
-                    ItemInventory inv = (ItemInventory) mItemList[item.LocationID];
-                    inv.UpdateItem(item);
-                }
-
-                switch ((ItemCategory) item.Type.Group.Category.ID)
-                {
-                    case ItemCategory.None:
+                    case ItemCategories.None:
                         break;
+                    
+                    // celestial items are a kind of subcategory
+                    // load them in specific ways based on the type of celestial item
+                    case ItemCategories.Celestial:
+                        return LoadCelestial(itemID, item.Type.Group.ID);
 
-                    case ItemCategory.Blueprint:
+                    case ItemCategories.Blueprint:
                         return LoadBlueprint(itemID);
 
                     // Not handled
@@ -68,9 +72,13 @@ namespace Node.Inventory
                         mItemList.Add(item.ID, item);
                         break;
                 }
-            }
 
-            return true;
+                return item;
+            }
+            else
+            {
+                return this.mItemList[itemID];
+            }
         }
 
         public bool IsItemLoaded(int itemID)
@@ -78,95 +86,46 @@ namespace Node.Inventory
             return mItemList.ContainsKey(itemID);
         }
 
-        enum ItemCategory
+        private ItemEntity LoadCelestial(int itemID, int itemGroup)
         {
-            None = 0,
-            Owner = 1,
-            Celestial = 2,
-            Station = 3,
-            Material = 4,
-            Accessories = 5,
-            Ship = 6,
-            Module = 7,
-            Charge = 8,
-            Blueprint = 9,
-            Trading = 10,
-            Entity = 11,
-            Bonus = 14,
-            Skill = 16,
-            Commodity = 17,
-            Drone = 18,
-            Implant = 20,
-            Deployable = 22,
-            Structure = 23,
-            Reaction = 24,
-            Asteroid = 25,
-            Interiors = 26,
-            Placeables = 27,
-            Abstract = 29,
-            Subsystem = 32,
-            AncientRelics = 34,
-            Decryptors = 35,
-        };
-
-        public List<ItemEntity> LoadInventory(int inventoryID)
-        {
-            List<int> items = this.ItemFactory.ItemDB.GetInventoryItems(inventoryID);
-            List<ItemEntity> loaded = new List<ItemEntity>();
-
-            if (items == null)
-                return null;
-
-            foreach (int itemID in items)
+            switch ((ItemGroups) itemGroup)
             {
-                if (LoadItem(itemID) == true)
-                {
-                    try
-                    {
-                        loaded.Add(mItemList[itemID]);
-                    }
-                    catch (Exception)
-                    {
-                    }
-                }
+                case ItemGroups.SolarSystem:
+                    return this.ItemFactory.ItemDB.LoadSolarSystem(itemID);
+                
+                default:
+                    this.mChannel.Warning($"Loading celestial {itemID} from item group {itemGroup} as normal item");
+                    return this.ItemFactory.ItemDB.LoadItem(itemID);
             }
-
-            return loaded;
         }
-
-        private bool LoadBlueprint(int itemID)
+        
+        private ItemEntity LoadBlueprint(int itemID)
         {
             Blueprint bp = this.ItemFactory.ItemDB.LoadBlueprint(itemID);
 
             if (bp == null)
-                return false;
+                return null;
 
             mItemList.Add(bp.ID, bp);
 
-            return true;
+            return bp;
         }
 
-        public ItemEntity CreateItem(string itemName, int typeID, int ownerID, int locationID, int flag, bool contraband, bool singleton, int quantity, double x, double y, double z, string customInfo)
+        public ItemEntity CreateItem(string itemName, int typeID, ItemEntity owner, ItemEntity location, int flag, bool contraband, bool singleton, int quantity, double x, double y, double z, string customInfo)
         {
-            int itemID = (int) this.ItemFactory.ItemDB.CreateItem(itemName, typeID, ownerID, locationID, flag, contraband, singleton, quantity, x, y, z, customInfo);
+            ItemEntity item = this.ItemFactory.ItemDB.CreateItem(itemName, typeID, owner, location, flag, contraband, singleton, quantity, x, y, z, customInfo);
 
-            if (itemID == 0)
-                return null;
-
-            if (LoadItem((int) itemID) == false)
-                return null;
-
-            return mItemList[itemID];
+            return this.mItemList[item.ID] = item;
         }
 
-        public void UnloadItem(int itemID)
+        public void UnloadItem(ItemEntity item)
         {
             try
             {
-                mItemList.Remove(itemID);
+                mItemList.Remove(item.ID);
 
                 // Update the database information
-                this.ItemFactory.ItemDB.UnloadItem(itemID);
+                this.ItemFactory.ItemDB.UnloadItem(item.ID);
             }
             catch
             {

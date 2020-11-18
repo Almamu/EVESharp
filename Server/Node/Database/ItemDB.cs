@@ -37,53 +37,6 @@ namespace Node.Database
     public class ItemDB : DatabaseAccessor
     {
         private ItemFactory mItemFactory = null;
-        
-        // General items database functions
-        public Dictionary<int, Item> LoadItems()
-        {
-            MySqlConnection connection = null;
-
-            MySqlDataReader reader = Database.Query(ref connection,
-                "SELECT itemID, itemName, typeID, ownerID, locationID, flag, contraband, singleton, quantity, x, y, z, customInfo FROM entity"
-            );
-
-            using (connection)
-            using (reader)
-            {
-                Dictionary<int, Item> items = new Dictionary<int, Item>();
-
-                while (reader.Read())
-                {
-                    ItemType itemType = this.mItemFactory.TypeManager[reader.GetInt32(3)];
-                    
-                    Item newItem = new Item(
-                        reader.GetString(1), // itemName
-                        reader.GetInt32(0), // itemID
-                        itemType, // typeID
-                        reader.GetInt32(3), // ownerID
-                        reader.GetInt32(4), // locationID
-                        reader.GetInt32(5), // flag
-                        reader.GetBoolean(6), // contraband
-                        reader.GetBoolean(7), // singleton
-                        reader.GetInt32(8), // quantity
-                        reader.GetDouble(9), // x
-                        reader.GetDouble(10), // y
-                        reader.GetDouble(11), // z
-                        reader.IsDBNull(12) ? "" : reader.GetString(12), // customInfo
-                        new AttributeList(
-                            this.mItemFactory,
-                            itemType,
-                            this.LoadAttributesForItem(reader.GetInt32(0))
-                        ),
-                        this.mItemFactory
-                    );
-
-                    items[newItem.ID] = newItem;
-                }
-
-                return items;
-            }
-        }
 
         public Dictionary<int, ItemCategory> LoadItemCategories()
         {
@@ -306,12 +259,20 @@ namespace Node.Database
                     return null;
 
                 ItemType itemType = this.mItemFactory.TypeManager[reader.GetInt32(2)];
+                ItemEntity owner = null, location = null;
                 
-                Item newItem = new Item(reader.GetString(1), // itemName
+                if (reader.IsDBNull(3) == false)
+                    owner = this.mItemFactory.ItemManager.LoadItem(reader.GetInt32(3));
+                
+                if (reader.IsDBNull(4) == false)
+                    location = this.mItemFactory.ItemManager.LoadItem(reader.GetInt32(4));
+                
+                Item newItem = new Item(
+                    reader.GetString(1), // itemName
                     reader.GetInt32(0), // itemID
                     itemType, // typeID
-                    reader.GetInt32(3), // ownerID
-                    reader.GetInt32(4), // locationID
+                    owner, // ownerID
+                    location, // locationID
                     reader.GetInt32(5), // flag
                     reader.GetBoolean(6), // contraband
                     reader.GetBoolean(7), // singleton
@@ -381,25 +342,8 @@ namespace Node.Database
                 if (reader.Read() == false)
                     return 0;
 
-                int categoryID = reader.GetInt32(0);
-
-                return categoryID;
+                return reader.GetInt32(0);
             }
-        }
-
-        public void SetBlueprintInfo(int itemID, bool copy, int materialLevel, int productivityLevel, int licensedProductionRunsRemaining)
-        {
-            Database.PrepareQuery(
-                "UPDATE invBlueprints SET copy = @copy, materialLevel = @materialLevel, productivityLevel = @productivityLevel, licensedProductionRunsRemaining = @licensedProductionRunsRemaining WHERE blueprintID = @itemID",
-                new Dictionary<string, object>()
-                {
-                    {"@itemID", itemID},
-                    {"@copy", copy},
-                    {"@materialLevel", materialLevel},
-                    {"@productivityLevel", productivityLevel},
-                    {"@licensedProductionRunsRemaining", licensedProductionRunsRemaining}
-                }
-            );
         }
 
         public Blueprint LoadBlueprint(int itemID)
@@ -424,86 +368,20 @@ namespace Node.Database
                 if (reader.Read() == false)
                     return null;
 
-                Blueprint bp = new Blueprint(item);
-                bp.SetBlueprintInfo(reader.GetBoolean(0), reader.GetInt32(1), reader.GetInt32(2), reader.GetInt32(3), false);
-
-                return bp;
+                return new Blueprint(item, reader.GetBoolean(0), reader.GetInt32(1), reader.GetInt32(2), reader.GetInt32(3));
             }
         }
 
-        public void SetCustomInfo(int itemID, string customInfo)
+        public ItemEntity CreateItem(string itemName, int typeID, ItemEntity owner, ItemEntity location, int flag, bool contraband, bool singleton, int quantity, double x, double y, double z, string customInfo)
         {
-            Database.PrepareQuery("UPDATE entity SET customInfo = @customInfo WHERE itemID = @itemID", new Dictionary<string, object>()
-            {
-                {"@itemID", itemID},
-                {"@customInfo", customInfo}
-            });
-        }
-
-        public void SetQuantity(int itemID, int quantity)
-        {
-            Database.PrepareQuery("UPDATE entity SET quantity = @quantity WHERE itemID = @itemID", new Dictionary<string, object>()
-            {
-                {"@quantity", quantity},
-                {"@itemID", itemID}
-            });
-        }
-
-        public void SetSingleton(int itemID, bool singleton)
-        {
-            Database.PrepareQuery("UPDATE entity SET singleton = @singleton WHERE itemID = @itemID", new Dictionary<string, object>()
-            {
-                {"@singleton", singleton},
-                {"@itemID", itemID}
-            });
-        }
-
-        public void SetItemName(int itemID, string name)
-        {
-            Database.PrepareQuery("UPDATE entity SET itemName = @itemName WHERE itemID = @itemID", new Dictionary<string, object>()
-            {
-                {"@itemName", name},
-                {"@itemID", itemID}
-            });
-        }
-
-        public void SetItemFlag(int itemID, int flag)
-        {
-            Database.PrepareQuery("UPDATE entity SET flag = @flag WHERE itemID = @itemID", new Dictionary<string, object>()
-            {
-                {"@flag", flag},
-                {"@itemID", itemID}
-            });
-        }
-
-        public void SetLocation(int itemID, int locationID)
-        {
-            Database.PrepareQuery("UPDATE entity SET locationID = @locationID WHERE itemID = @itemID", new Dictionary<string, object>()
-            {
-                {"@locationID", locationID},
-                {"@itemID", itemID}
-            });
-        }
-
-        public void SetOwner(int itemID, int ownerID)
-        {
-            Database.PrepareQuery("UPDATE entity SET ownerID = @ownerID WHERE itemID = @itemID", new Dictionary<string, object>()
-            {
-                {"@ownerID", ownerID},
-                {"@itemID", itemID}
-            });
-        }
-
-        public ulong CreateItem(string itemName, int typeID, int ownerID, int locationID, int flag, bool contraband, bool singleton, int quantity, double x, double y, double z, string customInfo)
-        {
-            return Database.PrepareQueryLID(
+            ulong itemID = Database.PrepareQueryLID(
                 "INSERT INTO entity(itemID, itemName, typeID, ownerID, locationID, flag, contraband, singleton, quantity, x, y, z, customInfo)VALUES(NULL, @itemName, @typeID, @ownerID, @locationID, @flag, @contraband, @singleton, @quantity, @x, @y, @z, @customInfo)",
                 new Dictionary<string, object>()
                 {
                     {"@itemName", itemName},
                     {"@typeID", typeID},
-                    {"@ownerID", ownerID},
-                    {"@locationID", locationID},
+                    {"@ownerID", owner?.ID},
+                    {"@locationID", location?.ID},
                     {"@flag", flag},
                     {"@contraband", contraband},
                     {"@singleton", singleton},
@@ -514,6 +392,8 @@ namespace Node.Database
                     {"@customInfo", customInfo}
                 }
             );
+
+            return this.mItemFactory.ItemManager.LoadItem((int) itemID);
         }
 
         public List<ItemEntity> GetItemsLocatedAt(int locationID)
@@ -535,12 +415,20 @@ namespace Node.Database
                 while (reader.Read())
                 {
                     ItemType itemType = this.mItemFactory.TypeManager[reader.GetInt32(1)];
+                    ItemEntity owner = null, location = null;
+                
+                    if (reader.IsDBNull(3) == false)
+                        owner = this.mItemFactory.ItemManager.LoadItem(reader.GetInt32(3));
+                
+                    if (reader.IsDBNull(4) == false)
+                        location = this.mItemFactory.ItemManager.LoadItem(reader.GetInt32(4));
                     
-                    Item newItem = new Item(reader.GetString(1), // itemName
+                    Item newItem = new Item(
+                        reader.GetString(1), // itemName
                         reader.GetInt32(0), // itemID
                         itemType, // typeID
-                        reader.GetInt32(3), // ownerID
-                        reader.GetInt32(4), // locationID
+                        owner, // ownerID
+                        location, // locationID
                         reader.GetInt32(5), // flag
                         reader.GetBoolean(6), // contraband
                         reader.GetBoolean(7), // singleton
@@ -564,58 +452,54 @@ namespace Node.Database
             }
         }
 
-        public SolarSystemInfo GetSolarSystemInfo(int solarSystemID)
+        public SolarSystem LoadSolarSystem(int solarSystemID)
         {
-            try
-            {
-                MySqlConnection connection = null;
-                MySqlDataReader reader = Database.PrepareQuery(ref connection,
-                    "SELECT regionID, constellationID, x, y, z, xMin, yMin, zMin, xMax, yMax, zMax, luminosity, border, fringe, corridor, hub, international, regional, constellation, security, factionID, radius, sunTypeID, securityClass FROM mapSolarSystems WHERE solarSystemID = @solarSystemID",
-                    new Dictionary<string, object>()
-                    {
-                        {"@solarSystemID", solarSystemID}
-                    }
-                );
+            Item item = LoadItem(solarSystemID);
 
-                using (connection)
-                using (reader)
+            if (item == null)
+                return null;
+            
+            MySqlConnection connection = null;
+            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+                "SELECT regionID, constellationID, x, y, z, xMin, yMin, zMin, xMax, yMax, zMax, luminosity, border, fringe, corridor, hub, international, regional, constellation, security, factionID, radius, sunTypeID, securityClass FROM mapSolarSystems WHERE solarSystemID = @solarSystemID",
+                new Dictionary<string, object>()
                 {
-                    if (reader.Read() == false)
-                        throw new SolarSystemLoadException();
-
-                    SolarSystemInfo info = new SolarSystemInfo();
-
-                    info.regionID = reader.GetInt32(0);
-                    info.constellationID = reader.GetInt32(1);
-                    info.x = reader.GetDouble(2);
-                    info.y = reader.GetDouble(3);
-                    info.z = reader.GetDouble(4);
-                    info.xMin = reader.GetDouble(5);
-                    info.yMin = reader.GetDouble(6);
-                    info.zMin = reader.GetDouble(7);
-                    info.xMax = reader.GetDouble(8);
-                    info.yMax = reader.GetDouble(9);
-                    info.zMax = reader.GetDouble(10);
-                    info.luminosity = reader.GetDouble(11);
-                    info.border = reader.GetBoolean(12);
-                    info.fringe = reader.GetBoolean(13);
-                    info.corridor = reader.GetBoolean(14);
-                    info.hub = reader.GetBoolean(15);
-                    info.international = reader.GetBoolean(16);
-                    info.regional = reader.GetBoolean(17);
-                    info.constellation = reader.GetBoolean(18);
-                    info.security = reader.GetDouble(19);
-                    info.factionID = reader.GetInt32(20);
-                    info.radius = reader.GetDouble(21);
-                    info.sunTypeID = reader.GetInt32(22);
-                    info.securityClass = reader.GetString(23);
-
-                    return info;
+                    {"@solarSystemID", solarSystemID}
                 }
-            }
-            catch (Exception e)
+            );
+
+            using (connection)
+            using (reader)
             {
-                throw new SolarSystemLoadException();
+                if (reader.Read() == false)
+                    return null;
+
+                return new SolarSystem(item,
+                    reader.GetInt32(0),
+                    reader.GetInt32(1),
+                    reader.GetDouble(2),
+                    reader.GetDouble(3),
+                    reader.GetDouble(4),
+                    reader.GetDouble(5),
+                    reader.GetDouble(6),
+                    reader.GetDouble(7),
+                    reader.GetDouble(8),
+                    reader.GetDouble(9),
+                    reader.GetDouble(10),
+                    reader.GetDouble(11),
+                    reader.GetBoolean(12),
+                    reader.GetBoolean(13),
+                    reader.GetBoolean(14),
+                    reader.GetBoolean(15),
+                    reader.GetBoolean(16),
+                    reader.GetBoolean(17),
+                    reader.GetBoolean(18),
+                    reader.GetDouble(19),
+                    reader.GetInt32(20),
+                    reader.GetDouble(21),
+                    reader.GetInt32(22),
+                    reader.GetString(23)
+                );
             }
         }
 
@@ -681,8 +565,8 @@ namespace Node.Database
                 new Dictionary<string, object>()
                 {
                     {"@itemName", Item.Name},
-                    {"@ownerID", Item.OwnerID},
-                    {"@locationID", Item.LocationID},
+                    {"@ownerID", Item.Owner?.ID},
+                    {"@locationID", Item.Location?.ID},
                     {"@flag", Item.Flag},
                     {"@contraband", Item.Contraband},
                     {"@singleton", Item.Singleton},
@@ -755,6 +639,21 @@ namespace Node.Database
                     }
                 }
             }
+        }
+
+        public void PersistBlueprint(int itemID, bool copy, int materialLevel, int productivityLevel, int licensedProductionRunsRemaining)
+        {
+            Database.PrepareQuery(
+                "UPDATE invBlueprints SET copy = @copy, materialLevel = @materialLevel, productivityLevel = @productivityLevel, licensedProductionRunsRemaining = @licensedProductionRunsRemaining WHERE blueprintID = @itemID",
+                new Dictionary<string, object>()
+                {
+                    {"@itemID", itemID},
+                    {"@copy", copy},
+                    {"@materialLevel", materialLevel},
+                    {"@productivityLevel", productivityLevel},
+                    {"@licensedProductionRunsRemaining", licensedProductionRunsRemaining}
+                }
+            );
         }
 
         public ItemDB(DatabaseConnection db, ItemFactory factory) : base(db)
