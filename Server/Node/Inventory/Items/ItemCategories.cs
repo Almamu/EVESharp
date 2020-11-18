@@ -2,7 +2,7 @@ namespace Node.Inventory.Items
 {
     public enum ItemCategories
     {
-        None = 0,
+        System = 0,
         Owner = 1,
         Celestial = 2,
         Station = 3,

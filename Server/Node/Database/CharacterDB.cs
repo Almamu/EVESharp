@@ -1,6 +1,9 @@
 using System.Collections.Generic;
+using System.Threading;
 using Common.Database;
 using MySql.Data.MySqlClient;
+using Node.Data;
+using Node.Inventory;
 using PythonTypes.Types.Database;
 using PythonTypes.Types.Primitives;
 
@@ -8,8 +11,11 @@ namespace Node.Database
 {
     public class CharacterDB : DatabaseAccessor
     {
-        public CharacterDB(DatabaseConnection db) : base(db)
+        private ItemFactory mItemFactory = null;
+        
+        public CharacterDB(DatabaseConnection db, ItemFactory factory) : base(db)
         {
+            this.mItemFactory = factory;
         }
 
         public PyDataType GetCharacterList(int accountID)
@@ -62,25 +68,51 @@ namespace Node.Database
             }
         }
 
-        public int GetCharacterTypeByBloodline(int bloodlineID)
+        public List<Bloodline> GetBloodlineInformation()
         {
+            List<Bloodline> result = new List<Bloodline>();
             MySqlConnection connection = null;
-            MySqlDataReader reader = Database.PrepareQuery(
+            MySqlDataReader reader = Database.Query(
                 ref connection,
-                "SELECT typeID FROM bloodlineTypes WHERE bloodlineID = @bloodlineID",
-                new Dictionary<string, object>()
-                {
-                    {"@bloodlineID", bloodlineID}
-                }
+                "SELECT " +
+                " bloodlineTypes.bloodlineID, typeID, bloodlineName, raceID, description, maleDescription, " +
+                " femaleDescription, shipTypeID, corporationID, perception, willpower, charisma, memory, " +
+                " intelligence, graphicID, shortDescription, shortMaleDescription, shortFemaleDescription " +
+                " FROM bloodlineTypes, chrBloodlines " + 
+                " WHERE chrBloodlines.bloodlineID = bloodlineTypes.bloodlineID"
             );
             
             using(connection)
             using (reader)
             {
-                reader.Read();
+                while (reader.Read() == true)
+                {
+                    Bloodline bloodline = new Bloodline(
+                        reader.GetInt32(0),
+                        this.mItemFactory.TypeManager[reader.GetInt32(1)],
+                        reader.GetString(2),
+                        reader.GetInt32(3),
+                        reader.GetString(4),
+                        reader.GetString(5),
+                        reader.GetString(6),
+                        this.mItemFactory.TypeManager[reader.GetInt32(7)],
+                        reader.GetInt32(8),
+                        reader.GetInt32(9),
+                        reader.GetInt32(10),
+                        reader.GetInt32(11),
+                        reader.GetInt32(12),
+                        reader.GetInt32(13),
+                        reader.IsDBNull(14) ? 0 : reader.GetInt32(14),
+                        reader.GetString(15),
+                        reader.GetString(16),
+                        reader.GetString(17)
+                    );
 
-                return reader.GetInt32(0);
+                    result[bloodline.ID] = bloodline;
+                }
             }
+
+            return result;
         }
     }
 }

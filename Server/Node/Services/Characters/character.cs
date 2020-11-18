@@ -23,10 +23,13 @@
 */
 
 using System;
+using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using Common.Database;
 using Common.Services;
+using Node.Data;
 using Node.Database;
+using Node.Inventory.Items;
 using PythonTypes.Types.Exceptions;
 using PythonTypes.Types.Primitives;
 
@@ -46,10 +49,12 @@ namespace Node.Services.Characters
         };
 
         private readonly CharacterDB mDB = null;
+        private readonly List<Bloodline> mBloodlineCache = null;
 
-        public character(CacheStorage cacheStorage, DatabaseConnection db, ServiceManager manager) : base(manager)
+        public character(DatabaseConnection db, ServiceManager manager) : base(manager)
         {
-            this.mDB = new CharacterDB(db);
+            this.mDB = new CharacterDB(db, manager.Container.ItemFactory);
+            this.mBloodlineCache = this.mDB.GetBloodlineInformation();
         }
 
         public PyDataType GetCharactersToSelect(PyDictionary namedPayload, Client client)
@@ -132,7 +137,8 @@ namespace Node.Services.Characters
                     throw new UserError("CharNameInvalid");
             }
 
-            int characterItemType = this.mDB.GetCharacterTypeByBloodline(bloodlineID);
+            ItemEntity owner = this.ServiceManager.Container.ItemFactory.ItemManager.LoadItem(1);
+            Bloodline bloodline = this.mBloodlineCache[bloodlineID];
             
             // TODO: FINISH THIS METHOD
             return null;

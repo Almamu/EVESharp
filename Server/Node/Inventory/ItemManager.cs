@@ -56,9 +56,6 @@ namespace Node.Inventory
 
                 switch ((ItemCategories) item.Type.Group.Category.ID)
                 {
-                    case ItemCategories.None:
-                        break;
-                    
                     // celestial items are a kind of subcategory
                     // load them in specific ways based on the type of celestial item
                     case ItemCategories.Celestial:
