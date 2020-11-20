@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Node.Inventory.Items;
 
 namespace Node.Data
@@ -6,7 +7,7 @@ namespace Node.Data
     {
         private int mBloodlineID;
         private ItemType mItemType;
-        private string mBloodlineName;
+        private string mName;
         private int mRaceID;
         private string mDescription;
         private string mMaleDescription;
@@ -23,14 +24,14 @@ namespace Node.Data
         private string mShortMaleDescription;
         private string mShortFemaleDescription;
         
-        public Bloodline(int bloodlineID, ItemType itemType, string bloodlineName, int raceID, string description,
+        public Bloodline(int bloodlineID, ItemType itemType, string name, int raceID, string description,
             string maleDescription, string femaleDescription, ItemType shipType, int corporationID, int perception,
             int willpower, int charisma, int memory, int intelligence, int graphicID, string shortDescription,
             string shortMaleDescription, string shortFemaleDescription)
         {
             this.mBloodlineID = bloodlineID;
             this.mItemType = itemType;
-            this.mBloodlineName = bloodlineName;
+            this.mName = name;
             this.mRaceID = raceID;
             this.mDescription = description;
             this.mMaleDescription = maleDescription;
@@ -50,7 +51,7 @@ namespace Node.Data
 
         public int ID => mBloodlineID;
         public ItemType ItemType => mItemType;
-        public string BloodlineName => mBloodlineName;
+        public string Name => mName;
         public int RaceID => mRaceID;
         public string Description => mDescription;
         public string MaleDescription => mMaleDescription;

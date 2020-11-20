@@ -12,6 +12,7 @@ namespace Node.Configuration
         public LogLite LogLite { get; private set; } = new LogLite();
         public FileLog FileLog { get; private set; } = new FileLog();
         public Logging Logging { get; } = new Logging();
+        public Character Character { get; } = new Character();
 
         public static General LoadFromFile(string filename)
         {
@@ -30,6 +31,8 @@ namespace Node.Configuration
                 config.FileLog.Load(data["logfile"]);
             if (data.Sections.ContainsSection("logging") == true)
                 config.Logging.Load(data["logging"]);
+            if (data.Sections.ContainsSection("character") == true)
+                config.Character.Load(data["character"]);
 
             return config;
         }

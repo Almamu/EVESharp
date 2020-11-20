@@ -280,7 +280,7 @@ namespace Node.Database
                     reader.GetDouble(9), // x
                     reader.GetDouble(10), // y
                     reader.GetDouble(11), // z
-                    reader.GetString(12), // customInfo
+                    reader.IsDBNull(12) ? null : reader.GetString(12), // customInfo
                     new AttributeList(
                         this.mItemFactory,
                         itemType,
@@ -372,9 +372,107 @@ namespace Node.Database
             }
         }
 
-        public ItemEntity CreateItem(string itemName, int typeID, ItemEntity owner, ItemEntity location, int flag, bool contraband, bool singleton, int quantity, double x, double y, double z, string customInfo)
+        public Character LoadCharacter(int itemID)
         {
-            ulong itemID = Database.PrepareQueryLID(
+            Item item = LoadItem(itemID);
+
+            if (item == null)
+                return null;
+
+            MySqlConnection connection = null;
+            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+                "SELECT characterID, accountID, title, description, bounty, balance, securityRating," +
+                " petitionMessage, logonMinutes, corporationID, corpRole, rolesAtAll, rolesAtBase, rolesAtHQ," +
+                " rolesAtOther, corporationDateTime, startDateTime, createDateTime, ancestryID, careerID, schoolID," +
+                " careerSpecialityID, gender, accessoryID, beardID, costumeID, decoID, eyebrowsID, eyesID, hairID," +
+                " lipstickID, makeupID, skinID, backgroundID, lightID, headRotation1, headRotation2, headRotation3," +
+                " eyeRotation1, eyeRotation2, eyeRotation3, camPos1, camPos2, camPos3, morph1e, morph1n, morph1s," +
+                " morph1w, morph2e, morph2n, morph2s, morph2w, morph3e, morph3n, morph3s, morph3w, morph4e, morph4n," +
+                " morph4s, morph4w, stationID, solarSystemID, constellationID, regionID, online" +
+                " FROM character_ WHERE characterID = @itemID",
+                new Dictionary<string, object>()
+                {
+                    {"@itemID", itemID}
+                }
+            );
+            
+            using (connection)
+            using (reader)
+            {
+                return new Character(
+                    item,
+                    reader.GetInt32(0),
+                    reader.GetInt32(1),
+                    reader.GetString(2),
+                    reader.GetString(3),
+                    reader.GetDouble(4),
+                    reader.GetDouble(5),
+                    reader.GetDouble(6),
+                    reader.GetString(7),
+                    reader.GetInt32(8),
+                    reader.GetInt32(9),
+                    reader.GetInt32(10),
+                    reader.GetInt32(11),
+                    reader.GetInt32(12),
+                    reader.GetInt32(13),
+                    reader.GetInt32(14),
+                    reader.GetInt64(15),
+                    reader.GetInt64(16),
+                    reader.GetInt64(17),
+                    reader.GetInt32(18),
+                    reader.GetInt32(19),
+                    reader.GetInt32(20),
+                    reader.GetInt32(21),
+                    reader.GetInt32(22),
+                    reader.GetInt32(23),
+                    reader.GetInt32(24),
+                    reader.GetInt32(25),
+                    reader.GetInt32(26),
+                    reader.GetInt32(27),
+                    reader.GetInt32(28),
+                    reader.GetInt32(29),
+                    reader.GetInt32(30),
+                    reader.GetInt32(31),
+                    reader.GetInt32(32),
+                    reader.GetInt32(33),
+                    reader.GetInt32(34),
+                    reader.GetDouble(35),
+                    reader.GetDouble(36),
+                    reader.GetDouble(37),
+                    reader.GetDouble(38),
+                    reader.GetDouble(39),
+                    reader.GetDouble(40),
+                    reader.GetDouble(41),
+                    reader.GetDouble(42),
+                    reader.GetDouble(43),
+                    reader.GetDouble(44),
+                    reader.GetDouble(45),
+                    reader.GetDouble(46),
+                    reader.GetDouble(47),
+                    reader.GetDouble(48),
+                    reader.GetDouble(49),
+                    reader.GetDouble(50),
+                    reader.GetDouble(51),
+                    reader.GetDouble(52),
+                    reader.GetDouble(53),
+                    reader.GetDouble(54),
+                    reader.GetDouble(55),
+                    reader.GetDouble(56),
+                    reader.GetDouble(57),
+                    reader.GetDouble(58),
+                    reader.GetDouble(59),
+                    reader.GetInt32(60),
+                    reader.GetInt32(61),
+                    reader.GetInt32(62),
+                    reader.GetInt32(63),
+                    reader.GetInt32(64)
+                );
+            }
+        }
+
+        public ulong CreateItem(string itemName, int typeID, ItemEntity owner, ItemEntity location, int flag, bool contraband, bool singleton, int quantity, double x, double y, double z, string customInfo)
+        {
+            return Database.PrepareQueryLID(
                 "INSERT INTO entity(itemID, itemName, typeID, ownerID, locationID, flag, contraband, singleton, quantity, x, y, z, customInfo)VALUES(NULL, @itemName, @typeID, @ownerID, @locationID, @flag, @contraband, @singleton, @quantity, @x, @y, @z, @customInfo)",
                 new Dictionary<string, object>()
                 {
@@ -392,8 +490,6 @@ namespace Node.Database
                     {"@customInfo", customInfo}
                 }
             );
-
-            return this.mItemFactory.ItemManager.LoadItem((int) itemID);
         }
 
         public List<ItemEntity> GetItemsLocatedAt(int locationID)

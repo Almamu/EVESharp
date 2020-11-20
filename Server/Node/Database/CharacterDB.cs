@@ -4,6 +4,8 @@ using Common.Database;
 using MySql.Data.MySqlClient;
 using Node.Data;
 using Node.Inventory;
+using Node.Inventory.Items;
+using Node.Inventory.Items.Types;
 using PythonTypes.Types.Database;
 using PythonTypes.Types.Primitives;
 
@@ -113,6 +115,57 @@ namespace Node.Database
             }
 
             return result;
+        }
+
+        public Dictionary<int, Ancestry> GetAncestryInformation(Dictionary<int, Bloodline> bloodlines)
+        {
+            Dictionary<int, Ancestry> result = new Dictionary<int, Ancestry>();
+            MySqlConnection connection = null;
+            MySqlDataReader reader = Database.Query(
+                ref connection,
+                "SELECT " +
+                " ancestryID, ancestryName, bloodlineID, description, perception, willpower, charisma," +
+                " memory, intelligence, graphicID, shortDescription " +
+                " FROM chrAncestries "
+            );
+            
+            using(connection)
+            using (reader)
+            {
+                while (reader.Read() == true)
+                {
+                    Ancestry ancestry = new Ancestry(
+                        reader.GetInt32(0),
+                        reader.GetString (1),
+                        bloodlines [reader.GetInt32(2)],
+                        reader.GetString(3),
+                        reader.GetInt32(4),
+                        reader.GetInt32(5),
+                        reader.GetInt32(6),
+                        reader.GetInt32(7),
+                        reader.GetInt32(8),
+                        reader.IsDBNull(9) ? 0 : reader.GetInt32(9),
+                        reader.GetString(10)
+                    );
+
+                    result[ancestry.ID] = ancestry;
+                }
+            }
+
+            return result;
+        }
+        public Character CreateCharacter(ItemType from, int accountId, double balance, double securityRating,
+            int corporationId, int corpRole, int rolesAtAll, int rolesAtBase, int rolesAtHq, int rolesAtOther,
+            long corporationDateTime, long startDateTime, long createDateTime, int ancestryId, int careerId, int schoolId,
+            int careerSpecialityId, int gender, int accessoryId, int beardId, int costumeId, int decoId, int eyebrowsId,
+            int eyesId, int hairId, int lipstickId, int makeupId, int skinId, int backgroundId, int lightId,
+            double headRotation1, double headRotation2, double headRotation3, double eyeRotation1, double eyeRotation2,
+            double eyeRotation3, double camPos1, double camPos2, double camPos3, double morph1E, double morph1N,
+            double morph1S, double morph1W, double morph2E, double morph2N, double morph2S, double morph2W,
+            double morph3E, double morph3N, double morph3S, double morph3W, double morph4E, double morph4N,
+            double morph4S, double morph4W, int stationId, int solarSystemId, int constellationId, int regionId)
+        {
+            return null;
         }
     }
 }

@@ -26,6 +26,7 @@ using System;
 using System.Collections.Generic;
 using Common.Database;
 using MySql.Data.MySqlClient;
+using Node.Data;
 using Node.Inventory.SystemEntities;
 
 namespace Node.Database
@@ -75,6 +76,25 @@ namespace Node.Database
             {
                 {"@solarSystemID", solarSystem.ID}
             });
+        }
+
+        public Dictionary<string, Constant> LoadConstants()
+        {
+            MySqlConnection connection = null;
+            MySqlDataReader reader = Database.Query(
+                ref connection, "SELECT constantName, constantValue FROM eveConstants"
+            );
+
+            using (connection)
+            using (reader)
+            {
+                Dictionary<string, Constant> result = new Dictionary<string, Constant>();
+
+                while (reader.Read() == true)
+                    result[reader.GetString(0)] = new Constant(reader.GetString(0), reader.GetInt32(1));
+
+                return result;
+            }
         }
 
         public GeneralDB(DatabaseConnection db) : base(db)

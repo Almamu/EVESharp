@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+
 namespace PythonTypes.Types.Primitives
 {
     public class PyDataType
@@ -58,6 +60,11 @@ namespace PythonTypes.Types.Primitives
         public static implicit operator PyDataType(bool value)
         {
             return new PyBool(value);
+        }
+
+        public static implicit operator PyDataType(Dictionary<string, PyDataType> value)
+        {
+            return new PyDictionary(value);
         }
     }
 }

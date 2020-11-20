@@ -37,12 +37,12 @@ namespace Node.Inventory
     {
         private ItemFactory ItemFactory { get; }
         private Dictionary<int, ItemEntity> mItemList = new Dictionary<int, ItemEntity>();
-        private Channel mChannel = null;
+        private Channel Log = null;
 
         public void Load()
         {
             // create a log channel for the rare occurence of the ItemManager wanting to log something
-            this.mChannel = this.ItemFactory.Container.Logger.CreateLogChannel("ItemManager");
+            this.Log = this.ItemFactory.Container.Logger.CreateLogChannel("ItemManager");
         }
 
         public ItemEntity LoadItem(int itemID)
@@ -64,6 +64,10 @@ namespace Node.Inventory
                     case ItemCategories.Blueprint:
                         return LoadBlueprint(itemID);
 
+                    // owner items are a kind of subcategory too
+                    case ItemCategories.Owner:
+                        return LoadOwner(itemID, item.Type.Group.ID);
+                    
                     // Not handled
                     default:
                         mItemList.Add(item.ID, item);
@@ -91,7 +95,7 @@ namespace Node.Inventory
                     return this.ItemFactory.ItemDB.LoadSolarSystem(itemID);
                 
                 default:
-                    this.mChannel.Warning($"Loading celestial {itemID} from item group {itemGroup} as normal item");
+                    Log.Warning($"Loading celestial {itemID} from item group {itemGroup} as normal item");
                     return this.ItemFactory.ItemDB.LoadItem(itemID);
             }
         }
@@ -108,11 +112,25 @@ namespace Node.Inventory
             return bp;
         }
 
-        public ItemEntity CreateItem(string itemName, int typeID, ItemEntity owner, ItemEntity location, int flag, bool contraband, bool singleton, int quantity, double x, double y, double z, string customInfo)
+        private ItemEntity LoadOwner(int itemID,  int itemGroup)
         {
-            ItemEntity item = this.ItemFactory.ItemDB.CreateItem(itemName, typeID, owner, location, flag, contraband, singleton, quantity, x, y, z, customInfo);
+            switch (itemGroup)
+            {
+                case (int) ItemGroups.Character:
+                    return this.ItemFactory.ItemDB.LoadCharacter(itemID);
+                
+                default:
+                    Log.Warning($"Loading owner {itemID} from item group {itemGroup} as normal item");
+                    return this.ItemFactory.ItemDB.LoadItem(itemID);
+            }
+        }
 
-            return this.mItemList[item.ID] = item;
+        public ItemEntity CreateSimpleItem(string itemName, int typeID, ItemEntity owner, ItemEntity location, int flag,
+            bool contraband, bool singleton, int quantity, double x, double y, double z, string customInfo)
+        {
+            int itemID = (int) this.ItemFactory.ItemDB.CreateItem(itemName, typeID, owner, location, flag, contraband, singleton, quantity, x, y, z, customInfo);
+
+            return this.LoadItem(itemID);
         }
 
         public void UnloadItem(ItemEntity item)

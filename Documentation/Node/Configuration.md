@@ -90,3 +90,14 @@ loginMessage=Welcome to EVESharp, the EVE Online server emulator written in C#
 Indicates whether the user will receive a message or not upon login. Possible values are: ```MESSAGE``` and ```NONE```
 ### loginMessage
 Indicates the message to be displayed to the user when logged in. The value can be any kind of HTML or plaintext text, but be wary, no new lines are supported
+
+## character
+This section controls various details of the character creation process.
+
+```
+[character]
+balance=50000
+```
+
+### balance
+The default balance a character will have when created. This only applies to new characters. If not specified the default value will be 50000

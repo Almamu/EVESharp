@@ -8,7 +8,7 @@ namespace PythonTypes.Types.Exceptions
     /// </summary>
     public class UserError : PyException
     {
-        public UserError(string type) : base("ccp_exceptions.UserError", type, null, new PyDictionary())
+        public UserError(string type, PyDictionary extra = null) : base("ccp_exceptions.UserError", type, extra, new PyDictionary())
         {
             this.Keywords["msg"] = this.Reason;
             this.Keywords["dict"] = this.Dictionary;

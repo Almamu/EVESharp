@@ -24,8 +24,10 @@
 
 using System;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using Common.Database;
+using Common.Logging;
 using Common.Services;
 using Node.Data;
 using Node.Database;
@@ -50,11 +52,17 @@ namespace Node.Services.Characters
 
         private readonly CharacterDB mDB = null;
         private readonly Dictionary<int, Bloodline> mBloodlineCache = null;
+        private readonly Dictionary<int, Ancestry> mAncestriesCache = null;
+        private readonly Configuration.Character mConfiguration = null;
+        private readonly Channel Log = null;
 
-        public character(DatabaseConnection db, ServiceManager manager) : base(manager)
+        public character(DatabaseConnection db, Configuration.Character configuration, ServiceManager manager) : base(manager)
         {
+            this.Log = manager.Container.Logger.CreateLogChannel("character");
+            this.mConfiguration = configuration;
             this.mDB = new CharacterDB(db, manager.Container.ItemFactory);
             this.mBloodlineCache = this.mDB.GetBloodlineInformation();
+            this.mAncestriesCache = this.mDB.GetAncestryInformation(this.mBloodlineCache);
         }
 
         public PyDataType GetCharactersToSelect(PyDictionary namedPayload, Client client)
@@ -136,9 +144,39 @@ namespace Node.Services.Characters
                     // unknown actual error, return generic error
                     throw new UserError("CharNameInvalid");
             }
+            
+            // get the System item's id
+            int systemItemID = this.ServiceManager.Container.Constants["locationSystem"];
 
-            ItemEntity owner = this.ServiceManager.Container.ItemFactory.ItemManager.LoadItem(1);
+            // load the item into memory
+            ItemEntity owner = this.ServiceManager.Container.ItemFactory.ItemManager.LoadItem(systemItemID);
+            
+            // load bloodline and ancestry info for the requested character
             Bloodline bloodline = this.mBloodlineCache[bloodlineID];
+            Ancestry ancestry = this.mAncestriesCache[ancestryID];
+            long currentTime = DateTime.UtcNow.ToFileTimeUtc();
+            
+            // TODO: DETERMINE SCHOOLID, CARREERID AND CAREERSPECIALITYID PROPERLY
+
+            if (ancestry.Bloodline != bloodline)
+            {
+                Log.Error($"The ancestry {ancestryID} doesn't belong to the given bloodline {bloodlineID}");
+                
+                throw new UserError("BannedBloodline", 
+                    new PyDictionary ()
+                    {
+                        {"name", ancestry.Name},
+                        {"bloodlineName", bloodline.Name}
+                    }
+                );
+            }
+
+            /*
+            this.mDB.CreateCharacter(
+                bloodline.ItemType, client.AccountID, this.mConfiguration.Balance, 0.0, bloodline.CorporationID,
+                0, 0, 0, 0, 0, currentTime, currentTime,
+                currentTime, ancestryID, 11, 0, 11, genderID,
+            */
             
             // TODO: FINISH THIS METHOD
             return null;

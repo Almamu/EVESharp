@@ -52,7 +52,7 @@ namespace Node
             this.objectCaching = new objectCaching(container.Logger, this);
             this.alert = new alert(container.Logger, this);
             this.authentication = new authentication(configuration.Authentication, this);
-            this.character = new character(db, this);
+            this.character = new character(db, configuration.Character, this);
         }
     }
 }
