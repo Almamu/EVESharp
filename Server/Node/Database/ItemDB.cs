@@ -492,6 +492,28 @@ namespace Node.Database
             );
         }
 
+        public ulong CreateItem(string itemName, int typeID, int owner, int location, int flag, bool contraband, bool singleton, int quantity, double x, double y, double z, string customInfo)
+        {
+            return Database.PrepareQueryLID(
+                "INSERT INTO entity(itemID, itemName, typeID, ownerID, locationID, flag, contraband, singleton, quantity, x, y, z, customInfo)VALUES(NULL, @itemName, @typeID, @ownerID, @locationID, @flag, @contraband, @singleton, @quantity, @x, @y, @z, @customInfo)",
+                new Dictionary<string, object>()
+                {
+                    {"@itemName", itemName},
+                    {"@typeID", typeID},
+                    {"@ownerID", owner},
+                    {"@locationID", location},
+                    {"@flag", flag},
+                    {"@contraband", contraband},
+                    {"@singleton", singleton},
+                    {"@quantity", quantity},
+                    {"@x", x},
+                    {"@y", y},
+                    {"@z", z},
+                    {"@customInfo", customInfo}
+                }
+            );
+        }
+
         public List<ItemEntity> GetItemsLocatedAt(int locationID)
         {
             MySqlConnection connection = null;

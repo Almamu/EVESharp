@@ -23,8 +23,10 @@
 */
 
 using System.IO;
+using System.Runtime.CompilerServices;
 using System.Xml.Schema;
 using Common.Database;
+using PythonTypes.Types.Primitives;
 
 namespace Node.Inventory.Items.Attributes
 {
@@ -41,13 +43,16 @@ namespace Node.Inventory.Items.Attributes
         private double mFloat;
         
         public AttributeInfo Info { get; }
-        public ItemAttributeValueType ValueType { get; }
+        public ItemAttributeValueType ValueType { get; protected set; }
 
         public int Integer
         {
             get => this.mInteger;
             set
             {
+                // ensure the type is updated to the correct one
+                this.ValueType = ItemAttributeValueType.Integer;
+                
                 this.mInteger = value;
                 this.Dirty = true;
             }
@@ -58,6 +63,9 @@ namespace Node.Inventory.Items.Attributes
             get => this.mFloat;
             set
             {
+                // ensure the type is updated to the correct one
+                this.ValueType = ItemAttributeValueType.Double;
+                
                 this.mFloat = value;
                 this.Dirty = true;
             }
@@ -92,7 +100,7 @@ namespace Node.Inventory.Items.Attributes
                 case ItemAttributeValueType.Integer:
                     return new ItemAttribute(this.Info, this.Integer, true);
                 default:
-                    throw new InvalidDataException("");
+                    throw new InvalidDataException();
             }
         }
 
@@ -102,6 +110,196 @@ namespace Node.Inventory.Items.Attributes
             // only AttributeList have enough information to perform that save
             // so use that class instead
             throw new System.NotImplementedException();
+        }
+        
+        public static implicit operator PyDataType(ItemAttribute attribute)
+        {
+            switch (attribute.ValueType)
+            {
+                case ItemAttributeValueType.Double:
+                    return new PyDecimal(attribute.Float);
+                case ItemAttributeValueType.Integer:
+                    return new PyInteger(attribute.Integer);
+                default:
+                    throw new InvalidDataException();
+            }
+        }
+
+        public static ItemAttribute operator *(ItemAttribute original, double value)
+        {
+            // clone the attribute but mark it as existant
+            ItemAttribute clone = original.Clone();
+            clone.New = false;
+            
+            // based on the types perform the appropiate operation
+            if (clone.ValueType == ItemAttributeValueType.Double)
+                clone.Float *= value;
+            else if (clone.ValueType == ItemAttributeValueType.Integer)
+                clone.Float = clone.Integer * value;
+
+            return clone;
+        }
+
+        public static ItemAttribute operator *(ItemAttribute original, int value)
+        {
+            // clone the attribute but mark it as existant
+            ItemAttribute clone = original.Clone();
+            clone.New = false;
+            
+            // based on the types perform the appropiate operation
+            if (clone.ValueType == ItemAttributeValueType.Integer)
+                clone.Integer *= value;
+            else if (clone.ValueType == ItemAttributeValueType.Double)
+                clone.Float *= value;
+
+            return clone;
+        }
+
+        public static ItemAttribute operator *(ItemAttribute original, ItemAttribute value)
+        {
+            // clone the attribute but mark it as existant
+            ItemAttribute clone = original.Clone();
+            clone.New = false;
+            
+            // based on the types perform the appropiate operation
+            if (value.ValueType == ItemAttributeValueType.Integer)
+                clone *= value.Integer;
+            else if (clone.ValueType == ItemAttributeValueType.Double)
+                clone *= value.Float;
+
+            return clone;
+        }
+        public static ItemAttribute operator /(ItemAttribute original, double value)
+        {
+            // clone the attribute but mark it as existant
+            ItemAttribute clone = original.Clone();
+            clone.New = false;
+            
+            // based on the types perform the appropiate operation
+            if (clone.ValueType == ItemAttributeValueType.Double)
+                clone.Float /= value;
+            else if (clone.ValueType == ItemAttributeValueType.Integer)
+                clone.Float = clone.Integer / value;
+
+            return clone;
+        }
+
+        public static ItemAttribute operator /(ItemAttribute original, int value)
+        {
+            // clone the attribute but mark it as existant
+            ItemAttribute clone = original.Clone();
+            clone.New = false;
+            
+            // based on the types perform the appropiate operation
+            if (clone.ValueType == ItemAttributeValueType.Integer)
+                clone.Integer /= value;
+            else if (clone.ValueType == ItemAttributeValueType.Double)
+                clone.Float /= value;
+
+            return clone;
+        }
+
+        public static ItemAttribute operator /(ItemAttribute original, ItemAttribute value)
+        {
+            // clone the attribute but mark it as existant
+            ItemAttribute clone = original.Clone();
+            clone.New = false;
+            
+            // based on the types perform the appropiate operation
+            if (value.ValueType == ItemAttributeValueType.Integer)
+                clone /= value.Integer;
+            else if (clone.ValueType == ItemAttributeValueType.Double)
+                clone /= value.Float;
+
+            return clone;
+        }
+        public static ItemAttribute operator +(ItemAttribute original, double value)
+        {
+            // clone the attribute but mark it as existant
+            ItemAttribute clone = original.Clone();
+            clone.New = false;
+            
+            // based on the types perform the appropiate operation
+            if (clone.ValueType == ItemAttributeValueType.Double)
+                clone.Float += value;
+            else if (clone.ValueType == ItemAttributeValueType.Integer)
+                clone.Float = clone.Integer + value;
+
+            return clone;
+        }
+
+        public static ItemAttribute operator +(ItemAttribute original, int value)
+        {
+            // clone the attribute but mark it as existant
+            ItemAttribute clone = original.Clone();
+            clone.New = false;
+            
+            // based on the types perform the appropiate operation
+            if (clone.ValueType == ItemAttributeValueType.Integer)
+                clone.Integer += value;
+            else if (clone.ValueType == ItemAttributeValueType.Double)
+                clone.Float += value;
+
+            return clone;
+        }
+
+        public static ItemAttribute operator +(ItemAttribute original, ItemAttribute value)
+        {
+            // clone the attribute but mark it as existant
+            ItemAttribute clone = original.Clone();
+            clone.New = false;
+            
+            // based on the types perform the appropiate operation
+            if (value.ValueType == ItemAttributeValueType.Integer)
+                clone += value.Integer;
+            else if (clone.ValueType == ItemAttributeValueType.Double)
+                clone += value.Float;
+
+            return clone;
+        }
+        public static ItemAttribute operator -(ItemAttribute original, double value)
+        {
+            // clone the attribute but mark it as existant
+            ItemAttribute clone = original.Clone();
+            clone.New = false;
+            
+            // based on the types perform the appropiate operation
+            if (clone.ValueType == ItemAttributeValueType.Double)
+                clone.Float -= value;
+            else if (clone.ValueType == ItemAttributeValueType.Integer)
+                clone.Float = clone.Integer - value;
+
+            return clone;
+        }
+
+        public static ItemAttribute operator -(ItemAttribute original, int value)
+        {
+            // clone the attribute but mark it as existant
+            ItemAttribute clone = original.Clone();
+            clone.New = false;
+            
+            // based on the types perform the appropiate operation
+            if (clone.ValueType == ItemAttributeValueType.Integer)
+                clone.Integer -= value;
+            else if (clone.ValueType == ItemAttributeValueType.Double)
+                clone.Float -= value;
+
+            return clone;
+        }
+
+        public static ItemAttribute operator -(ItemAttribute original, ItemAttribute value)
+        {
+            // clone the attribute but mark it as existant
+            ItemAttribute clone = original.Clone();
+            clone.New = false;
+            
+            // based on the types perform the appropiate operation
+            if (value.ValueType == ItemAttributeValueType.Integer)
+                clone -= value.Integer;
+            else if (clone.ValueType == ItemAttributeValueType.Double)
+                clone -= value.Float;
+
+            return clone;
         }
     }
 }

@@ -1,3 +1,5 @@
+using Node.Inventory.Items.Attributes;
+
 namespace Node.Inventory.Items.Types
 {
     public class Character : ItemInventory
@@ -213,5 +215,35 @@ namespace Node.Inventory.Items.Types
         private int mConstellationID;
         private int mRegionID;
         private int mOnline;
+
+        public ItemAttribute Charisma
+        {
+            get => this.Attributes[AttributeEnum.charisma];
+            set => this.Attributes[AttributeEnum.charisma] = value;
+        }
+
+        public ItemAttribute Willpower
+        {
+            get => this.Attributes[AttributeEnum.willpower];
+            set => this.Attributes[AttributeEnum.willpower] = value;
+        }
+
+        public ItemAttribute Intelligence
+        {
+            get => this.Attributes[AttributeEnum.intelligence];
+            set => this.Attributes[AttributeEnum.intelligence] = value;
+        }
+
+        public ItemAttribute Perception
+        {
+            get => this.Attributes[AttributeEnum.perception];
+            set => this.Attributes[AttributeEnum.perception] = value;
+        }
+
+        public ItemAttribute Memory
+        {
+            get => this.Attributes[AttributeEnum.memory];
+            set => this.Attributes[AttributeEnum.memory] = value;
+        }
     }
 }

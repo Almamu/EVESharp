@@ -82,7 +82,7 @@ namespace Node.Database
         {
             MySqlConnection connection = null;
             MySqlDataReader reader = Database.Query(
-                ref connection, "SELECT constantName, constantValue FROM eveConstants"
+                ref connection, "SELECT constantID, constantValue FROM eveConstants"
             );
 
             using (connection)
@@ -91,7 +91,7 @@ namespace Node.Database
                 Dictionary<string, Constant> result = new Dictionary<string, Constant>();
 
                 while (reader.Read() == true)
-                    result[reader.GetString(0)] = new Constant(reader.GetString(0), reader.GetInt32(1));
+                    result[reader.GetString(0)] = new Constant(reader.GetString(0), reader.GetInt64(1));
 
                 return result;
             }

@@ -32,6 +32,7 @@ using Common.Services;
 using Node.Data;
 using Node.Database;
 using Node.Inventory.Items;
+using Node.Inventory.Items.Types;
 using PythonTypes.Types.Exceptions;
 using PythonTypes.Types.Primitives;
 
@@ -171,13 +172,65 @@ namespace Node.Services.Characters
                 );
             }
 
-            /*
-            this.mDB.CreateCharacter(
-                bloodline.ItemType, client.AccountID, this.mConfiguration.Balance, 0.0, bloodline.CorporationID,
-                0, 0, 0, 0, 0, currentTime, currentTime,
-                currentTime, ancestryID, 11, 0, 11, genderID,
-            */
-            
+            int stationID, solarSystemID, constellationID, regionID;
+
+            // fetch information of starting location for the player
+            this.mDB.GetLocationForCorporation(bloodline.CorporationID, out stationID, out solarSystemID,
+                out constellationID, out regionID);
+
+            int itemID = this.mDB.CreateCharacter(
+                bloodline.ItemType, characterName, owner, client.AccountID, this.mConfiguration.Balance, 0.0,
+                bloodline.CorporationID, 0, 0, 0, 0, 0,
+                currentTime, currentTime, currentTime, ancestryID, 0, 0,
+                0, genderID,
+                appearance.ContainsKey("accessoryID") ? appearance["accessoryID"] as PyInteger : null,
+                appearance.ContainsKey("beardID") ? appearance["beardID"] as PyInteger : null,
+                appearance["costumeID"] as PyInteger,
+                appearance.ContainsKey("decoID") ? appearance["decoID"] as PyInteger : null,
+                appearance["eyebrowsID"] as PyInteger,
+                appearance["eyesID"] as PyInteger,
+                appearance["hairID"] as PyInteger,
+                appearance.ContainsKey("lipstickID") ? appearance["lipstickID"] as PyInteger : null,
+                appearance.ContainsKey("makeupID") ? appearance["makeupID"] as PyInteger : null,
+                appearance["skinID"] as PyInteger,
+                appearance["backgroundID"] as PyInteger,
+                appearance["lightID"] as PyInteger,
+                appearance["headRotation1"] as PyDecimal,
+                appearance["headRotation2"] as PyDecimal,
+                appearance["headRotation3"] as PyDecimal,
+                appearance["eyeRotation1"] as PyDecimal,
+                appearance["eyeRotation2"] as PyDecimal,
+                appearance["eyeRotation3"] as PyDecimal,
+                appearance["camPos1"] as PyDecimal,
+                appearance["camPos2"] as PyDecimal,
+                appearance["camPos3"] as PyDecimal,
+                appearance.ContainsKey("morph1e") ? appearance["morph1e"] as PyDecimal : null,
+                appearance.ContainsKey("morph1n") ? appearance["morph1n"] as PyDecimal : null,
+                appearance.ContainsKey("morph1s") ? appearance["morph1s"] as PyDecimal : null,
+                appearance.ContainsKey("morph1w") ? appearance["morph1w"] as PyDecimal : null,
+                appearance.ContainsKey("morph2e") ? appearance["morph2e"] as PyDecimal : null,
+                appearance.ContainsKey("morph2n") ? appearance["morph2n"] as PyDecimal : null,
+                appearance.ContainsKey("morph2s") ? appearance["morph2s"] as PyDecimal : null,
+                appearance.ContainsKey("morph2w") ? appearance["morph2w"] as PyDecimal : null,
+                appearance.ContainsKey("morph3e") ? appearance["morph3e"] as PyDecimal : null,
+                appearance.ContainsKey("morph3n") ? appearance["morph3n"] as PyDecimal : null,
+                appearance.ContainsKey("morph3s") ? appearance["morph3s"] as PyDecimal : null,
+                appearance.ContainsKey("morph3w") ? appearance["morph3w"] as PyDecimal : null,
+                appearance.ContainsKey("morph4e") ? appearance["morph4e"] as PyDecimal : null,
+                appearance.ContainsKey("morph4n") ? appearance["morph4n"] as PyDecimal : null,
+                appearance.ContainsKey("morph4s") ? appearance["morph4s"] as PyDecimal : null,
+                appearance.ContainsKey("morph4w") ? appearance["morph4w"] as PyDecimal : null,
+                stationID, solarSystemID, constellationID, regionID);
+
+            Character character = this.ServiceManager.Container.ItemFactory.ItemManager.LoadItem(itemID) as Character;
+
+            // change character attributes based on the picked ancestry
+            character.Charisma += ancestry.Charisma;
+            character.Intelligence += ancestry.Intelligence;
+            character.Memory += ancestry.Memory;
+            character.Willpower += ancestry.Willpower;
+            character.Perception += ancestry.Perception;
+
             // TODO: FINISH THIS METHOD
             return null;
         }

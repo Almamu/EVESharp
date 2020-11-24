@@ -3,20 +3,25 @@ namespace Node.Data
     public class Constant
     {
         private string mName;
-        private int mValue;
+        private long mValue;
 
-        public Constant(string name, int value)
+        public Constant(string name, long value)
         {
             this.mName = name;
             this.mValue = value;
         }
 
         public string Name => this.mName;
-        public int Value => this.mValue;
+        public long Value => this.mValue;
+
+        public static implicit operator long(Constant constant)
+        {
+            return constant.Value;
+        }
 
         public static implicit operator int(Constant constant)
         {
-            return constant.Value;
+            return (int) constant.Value;
         }
     }
 }
