@@ -125,7 +125,7 @@ namespace Node.Inventory
             }
         }
 
-        public ItemEntity CreateSimpleItem(string itemName, int typeID, ItemEntity owner, ItemEntity location, int flag,
+        public ItemEntity CreateSimpleItem(string itemName, int typeID, ItemEntity owner, ItemEntity location, ItemFlags flag,
             bool contraband, bool singleton, int quantity, double x, double y, double z, string customInfo)
         {
             int itemID = (int) this.ItemFactory.ItemDB.CreateItem(itemName, typeID, owner, location, flag, contraband, singleton, quantity, x, y, z, customInfo);

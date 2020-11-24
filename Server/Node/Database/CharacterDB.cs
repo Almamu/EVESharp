@@ -168,7 +168,8 @@ namespace Node.Database
             double morph4S, double morph4W, int stationID, int solarSystemID, int constellationID, int regionID)
         {
             // create the item first
-            int itemID = (int) this.mItemDB.CreateItem(name, from.ID, owner.ID, stationID, 4, false, true, 1, 0, 0, 0, "");
+            int itemID = (int) this.mItemDB.CreateItem(name, from.ID, owner.ID, stationID, ItemFlags.Connected, false,
+                true, 1, 0, 0, 0, "");
 
             // now create the character record in the database
             Database.PrepareQuery(

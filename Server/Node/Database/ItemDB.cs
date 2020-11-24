@@ -470,7 +470,8 @@ namespace Node.Database
             }
         }
 
-        public ulong CreateItem(string itemName, int typeID, ItemEntity owner, ItemEntity location, int flag, bool contraband, bool singleton, int quantity, double x, double y, double z, string customInfo)
+        public ulong CreateItem(string itemName, int typeID, ItemEntity owner, ItemEntity location, ItemFlags flag,
+            bool contraband, bool singleton, int quantity, double x, double y, double z, string customInfo)
         {
             return Database.PrepareQueryLID(
                 "INSERT INTO entity(itemID, itemName, typeID, ownerID, locationID, flag, contraband, singleton, quantity, x, y, z, customInfo)VALUES(NULL, @itemName, @typeID, @ownerID, @locationID, @flag, @contraband, @singleton, @quantity, @x, @y, @z, @customInfo)",
@@ -492,7 +493,8 @@ namespace Node.Database
             );
         }
 
-        public ulong CreateItem(string itemName, int typeID, int owner, int location, int flag, bool contraband, bool singleton, int quantity, double x, double y, double z, string customInfo)
+        public ulong CreateItem(string itemName, int typeID, int owner, int location, ItemFlags flag, bool contraband,
+            bool singleton, int quantity, double x, double y, double z, string customInfo)
         {
             return Database.PrepareQueryLID(
                 "INSERT INTO entity(itemID, itemName, typeID, ownerID, locationID, flag, contraband, singleton, quantity, x, y, z, customInfo)VALUES(NULL, @itemName, @typeID, @ownerID, @locationID, @flag, @contraband, @singleton, @quantity, @x, @y, @z, @customInfo)",
