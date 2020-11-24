@@ -1,6 +1,6 @@
 namespace Node.Inventory.Items
 {
-    public enum ItemFlags
+    public enum ItemFlags : int
     {
         None = 0,
         Wallet = 1,

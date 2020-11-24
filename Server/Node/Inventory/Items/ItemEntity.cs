@@ -38,7 +38,7 @@ namespace Node.Inventory.Items
         private ItemType mType;
         private ItemEntity mOwner;
         private ItemEntity mLocation;
-        private int mFlag;
+        private ItemFlags mFlag;
         private bool mContraband;
         private bool mSingleton;
         private int mQuantity; // TODO: DEPRECATE THIS AND USE QUANTITY ATTRIBUTE
@@ -82,7 +82,7 @@ namespace Node.Inventory.Items
             }
         }
 
-        public int Flag
+        public ItemFlags Flag
         {
             get => mFlag;
             set
@@ -162,7 +162,10 @@ namespace Node.Inventory.Items
             }
         }
 
-        public ItemEntity(string entityName, int entityId, ItemType type, ItemEntity entityOwner, ItemEntity entityLocation, int entityFlag, bool entityContraband, bool entitySingleton, int entityQuantity, double entityX, double entityY, double entityZ, string entityCustomInfo, AttributeList attributes, ItemFactory itemFactory)
+        public ItemEntity(string entityName, int entityId, ItemType type, ItemEntity entityOwner,
+            ItemEntity entityLocation, ItemFlags entityFlag, bool entityContraband, bool entitySingleton,
+            int entityQuantity, double entityX, double entityY, double entityZ, string entityCustomInfo,
+            AttributeList attributes, ItemFactory itemFactory)
         {
             this.mName = entityName;
             this.mID = entityId;

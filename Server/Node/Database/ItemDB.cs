@@ -273,7 +273,7 @@ namespace Node.Database
                     itemType, // typeID
                     owner, // ownerID
                     location, // locationID
-                    reader.GetInt32(5), // flag
+                    (ItemFlags) reader.GetInt32(5), // flag
                     reader.GetBoolean(6), // contraband
                     reader.GetBoolean(7), // singleton
                     reader.GetInt32(8), // quantity
@@ -549,7 +549,7 @@ namespace Node.Database
                         itemType, // typeID
                         owner, // ownerID
                         location, // locationID
-                        reader.GetInt32(5), // flag
+                        (ItemFlags) reader.GetInt32(5), // flag
                         reader.GetBoolean(6), // contraband
                         reader.GetBoolean(7), // singleton
                         reader.GetInt32(8), // quantity

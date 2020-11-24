@@ -6,7 +6,7 @@ namespace Node.Inventory.Items.Types
     {
         public Item(
             string entityName, int entityId, ItemType type, ItemEntity entityOwner, ItemEntity entityLocation,
-            int entityFlag, bool entityContraband, bool entitySingleton, int entityQuantity,
+            ItemFlags entityFlag, bool entityContraband, bool entitySingleton, int entityQuantity,
             double entityX, double entityY, double entityZ,
             string entityCustomInfo, AttributeList attributes, ItemFactory itemFactory
         ) : base(
