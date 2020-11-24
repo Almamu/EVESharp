@@ -42,6 +42,7 @@ namespace Node.Inventory
         }
         
         public ItemType this[int id] { get => this.mTypes[id]; }
+        public ItemType this[ItemTypes id] { get => this[(int) id]; }
 
         public TypeManager(ItemFactory factory)
         {

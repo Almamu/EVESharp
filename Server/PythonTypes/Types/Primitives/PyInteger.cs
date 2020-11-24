@@ -106,6 +106,26 @@ namespace PythonTypes.Types.Primitives
             return !(obj == value);
         }
 
+        public static implicit operator long?(PyInteger obj)
+        {
+            return obj?.Value;
+        }
+
+        public static implicit operator int?(PyInteger obj)
+        {
+            return (int?) obj?.Value;
+        }
+
+        public static implicit operator short?(PyInteger obj)
+        {
+            return (short?) obj?.Value;
+        }
+
+        public static implicit operator byte?(PyInteger obj)
+        {
+            return (byte?) obj?.Value;
+        }
+
         public static implicit operator long(PyInteger obj)
         {
             return obj.Value;

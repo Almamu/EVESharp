@@ -159,13 +159,13 @@ namespace Node.Database
         public int CreateCharacter(ItemType from, string name, ItemEntity owner, int accountID, double balance, double securityRating,
             int corporationID, int corpRole, int rolesAtAll, int rolesAtBase, int rolesAtHQ, int rolesAtOther,
             long corporationDateTime, long startDateTime, long createDateTime, int ancestryID, int careerID, int schoolID,
-            int careerSpecialityID, int gender, int accessoryID, int beardID, int costumeID, int decoID, int eyebrowsID,
-            int eyesID, int hairID, int lipstickID, int makeupID, int skinID, int backgroundID, int lightID,
+            int careerSpecialityID, int gender, int? accessoryID, int? beardID, int costumeID, int? decoID, int eyebrowsID,
+            int eyesID, int hairID, int? lipstickID, int? makeupID, int skinID, int backgroundID, int lightID,
             double headRotation1, double headRotation2, double headRotation3, double eyeRotation1, double eyeRotation2,
-            double eyeRotation3, double camPos1, double camPos2, double camPos3, double morph1E, double morph1N,
-            double morph1S, double morph1W, double morph2E, double morph2N, double morph2S, double morph2W,
-            double morph3E, double morph3N, double morph3S, double morph3W, double morph4E, double morph4N,
-            double morph4S, double morph4W, int stationID, int solarSystemID, int constellationID, int regionID)
+            double eyeRotation3, double camPos1, double camPos2, double camPos3, double? morph1E, double? morph1N,
+            double? morph1S, double? morph1W, double? morph2E, double? morph2N, double? morph2S, double? morph2W,
+            double? morph3E, double? morph3N, double? morph3S, double? morph3W, double? morph4E, double? morph4N,
+            double? morph4S, double? morph4W, int stationID, int solarSystemID, int constellationID, int regionID)
         {
             // create the item first
             int itemID = (int) this.mItemDB.CreateItem(name, from.ID, owner.ID, stationID, ItemFlags.Connected, false,
@@ -302,6 +302,30 @@ namespace Node.Database
 
                 return true;
             }
+        }
+
+        public Dictionary<int, int> GetBasicSkillsByRace(int raceID)
+        {
+            Dictionary<int, int> skills = new Dictionary<int, int>();
+            
+            MySqlConnection connection = null;
+            MySqlDataReader reader = Database.PrepareQuery(
+                ref connection,
+                "SELECT skillTypeID, levels FROM chrRaceSkills WHERE raceID = @raceID",
+                new Dictionary<string, object> ()
+                {
+                    {"@raceID", raceID}
+                }
+            );
+            
+            using(connection)
+            using (reader)
+            {
+                while (reader.Read() == true)
+                    skills[reader.GetInt32(0)] = reader.GetInt32(1);
+            }
+
+            return skills;
         }
     }
 }

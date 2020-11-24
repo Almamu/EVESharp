@@ -68,6 +68,15 @@ namespace Node.Inventory
                     case ItemCategories.Owner:
                         return LoadOwner(itemID, item.Type.Group.ID);
                     
+                    case ItemCategories.Skill:
+                        return LoadSkill(itemID);
+                    
+                    case ItemCategories.Ship:
+                        return LoadShip(itemID);
+                    
+                    case ItemCategories.Station:
+                        return LoadStation(itemID);
+                    
                     // Not handled
                     default:
                         mItemList.Add(item.ID, item);
@@ -82,6 +91,11 @@ namespace Node.Inventory
             }
         }
 
+        public Dictionary<int, ItemEntity> LoadItemsLocatedAt(ItemEntity location)
+        {
+            return this.ItemFactory.ItemDB.LoadItemsLocatedAt(location.ID);
+        }
+
         public bool IsItemLoaded(int itemID)
         {
             return mItemList.ContainsKey(itemID);
@@ -93,7 +107,8 @@ namespace Node.Inventory
             {
                 case ItemGroups.SolarSystem:
                     return this.ItemFactory.ItemDB.LoadSolarSystem(itemID);
-                
+                case ItemGroups.Station:
+                    return this.LoadStation(itemID);
                 default:
                     Log.Warning($"Loading celestial {itemID} from item group {itemGroup} as normal item");
                     return this.ItemFactory.ItemDB.LoadItem(itemID);
@@ -125,12 +140,70 @@ namespace Node.Inventory
             }
         }
 
-        public ItemEntity CreateSimpleItem(string itemName, int typeID, ItemEntity owner, ItemEntity location, ItemFlags flag,
+        private ItemEntity LoadSkill(int itemID)
+        {
+            return this.ItemFactory.ItemDB.LoadSkill(itemID);
+        }
+
+        private ItemEntity LoadShip(int itemID)
+        {
+            return this.ItemFactory.ItemDB.LoadShip(itemID);
+        }
+
+        private ItemEntity LoadStation(int itemID)
+        {
+            return this.ItemFactory.ItemDB.LoadStation(itemID);
+        }
+
+        public ItemEntity CreateSimpleItem(string itemName, ItemType type, ItemEntity owner, ItemEntity location, ItemFlags flag,
             bool contraband, bool singleton, int quantity, double x, double y, double z, string customInfo)
         {
-            int itemID = (int) this.ItemFactory.ItemDB.CreateItem(itemName, typeID, owner, location, flag, contraband, singleton, quantity, x, y, z, customInfo);
+            int itemID = (int) this.ItemFactory.ItemDB.CreateItem(itemName, type, owner, location, flag, contraband, singleton, quantity, x, y, z, customInfo);
 
             return this.LoadItem(itemID);
+        }
+
+        public ItemEntity CreateSimpleItem(ItemType type, ItemEntity owner, ItemEntity location, ItemFlags flags,
+            int quantity = 1, bool contraband = false, bool singleton = false)
+        {
+            return this.CreateSimpleItem(type.Name, type, owner, location, flags, contraband, singleton, quantity, 0, 0,
+                0, null);
+        }
+
+        public Skill CreateSkill(ItemType skillType, Character character, int level = 0)
+        {
+            int skillID = this.ItemFactory.SkillDB.CreateSkill(skillType, character);
+
+            Skill skill = this.LoadItem(skillID) as Skill;
+
+            // update skill level
+            skill.Level = level;
+            
+            // add skill to the character's inventory
+            character.AddItem(skill);
+
+            return skill;
+        }
+
+        public Ship CreateShip(ItemType shipType, ItemEntity location, Character owner)
+        {
+            int shipID = (int) this.ItemFactory.ItemDB.CreateShip(shipType, location, owner);
+
+            Ship ship = this.LoadItem(shipID) as Ship;
+
+            return ship;
+        }
+
+        public void MoveItem(ItemEntity item, ItemEntity newLocation)
+        {
+            // TODO: SEND NOTIFICATION OF ITEM CHANGE?
+            item.Location = newLocation;
+        }
+
+        public void ChangeOwnership(ItemEntity item, ItemEntity newOwner)
+        {
+            // TODO: SEND NOTIFICATION OF ITEM CHANGE?
+            item.Owner = newOwner;
         }
 
         public void UnloadItem(ItemEntity item)

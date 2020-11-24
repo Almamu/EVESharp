@@ -189,7 +189,6 @@ namespace Node.Inventory.Items
             from.Contraband, from.Singleton, from.Quantity, from.X, from.Y, from.Z, from.CustomInfo, from.Attributes,
             from.mItemFactory)
         {
-            
         }
 
         protected override void SaveToDB()

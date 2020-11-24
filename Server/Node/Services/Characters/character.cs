@@ -52,6 +52,7 @@ namespace Node.Services.Characters
         };
 
         private readonly CharacterDB mDB = null;
+        private readonly SkillDB mSkillDB = null;
         private readonly Dictionary<int, Bloodline> mBloodlineCache = null;
         private readonly Dictionary<int, Ancestry> mAncestriesCache = null;
         private readonly Configuration.Character mConfiguration = null;
@@ -62,6 +63,7 @@ namespace Node.Services.Characters
             this.Log = manager.Container.Logger.CreateLogChannel("character");
             this.mConfiguration = configuration;
             this.mDB = new CharacterDB(db, manager.Container.ItemFactory);
+            this.mSkillDB = new SkillDB(db, manager.Container.ItemFactory);
             this.mBloodlineCache = this.mDB.GetBloodlineInformation();
             this.mAncestriesCache = this.mDB.GetAncestryInformation(this.mBloodlineCache);
         }
@@ -178,6 +180,8 @@ namespace Node.Services.Characters
             this.mDB.GetLocationForCorporation(bloodline.CorporationID, out stationID, out solarSystemID,
                 out constellationID, out regionID);
 
+            Station station = this.ServiceManager.Container.ItemFactory.ItemManager.LoadItem(stationID) as Station;
+            
             int itemID = this.mDB.CreateCharacter(
                 bloodline.ItemType, characterName, owner, client.AccountID, this.mConfiguration.Balance, 0.0,
                 bloodline.CorporationID, 0, 0, 0, 0, 0,
@@ -230,9 +234,47 @@ namespace Node.Services.Characters
             character.Memory += ancestry.Memory;
             character.Willpower += ancestry.Willpower;
             character.Perception += ancestry.Perception;
+            
+            // get skills by race and create them
+            Dictionary<int, int> skills = this.mDB.GetBasicSkillsByRace(bloodline.RaceID);
 
-            // TODO: FINISH THIS METHOD
-            return null;
+            foreach (KeyValuePair<int, int> pair in skills)
+            {
+                ItemType skillType = this.ServiceManager.Container.ItemFactory.TypeManager[pair.Key];
+                    
+                // create the skill at the required level
+                this.ServiceManager.Container.ItemFactory.ItemManager.CreateSkill(skillType, character, pair.Value);
+            }
+            
+            // create the ship for the character
+            Ship ship = this.ServiceManager.Container.ItemFactory.ItemManager.CreateShip(bloodline.ShipType, station,
+                character);
+            
+            // add one unit of Tritanium to the station's hangar for the player
+            ItemType tritaniumType = this.ServiceManager.Container.ItemFactory.TypeManager[ItemTypes.Tritanium];
+
+            ItemEntity tritanium =
+                this.ServiceManager.Container.ItemFactory.ItemManager.CreateSimpleItem(tritaniumType, character,
+                    station, ItemFlags.Hangar);
+            
+            // add one unit of Damage Control I to the station's hangar for the player
+            ItemType damageControlType = this.ServiceManager.Container.ItemFactory.TypeManager[ItemTypes.DamageControlI];
+
+            ItemEntity damageControl =
+                this.ServiceManager.Container.ItemFactory.ItemManager.CreateSimpleItem(damageControlType, character,
+                    station, ItemFlags.Hangar);
+            
+            // create an alpha clone
+            ItemType cloneType = this.ServiceManager.Container.ItemFactory.TypeManager[ItemTypes.CloneGradeAlpha];
+            
+            ItemEntity clone =
+                this.ServiceManager.Container.ItemFactory.ItemManager.CreateSimpleItem(cloneType, character, station,
+                    ItemFlags.None);
+
+            // character is 100% created and the base items are too
+            // finally return the new character's ID and wait for the subsequent calls from the EVE client :)
+            
+            return character.ID;
         }
 
         public PyDataType Ping(PyDictionary namedPayload, Client client)

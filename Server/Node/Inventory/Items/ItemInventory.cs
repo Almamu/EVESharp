@@ -23,6 +23,7 @@
 */
 
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using Node.Database;
 using Node.Inventory.Items.Attributes;
 
@@ -39,7 +40,7 @@ namespace Node.Inventory.Items
             this.mContentsLoaded = true;
         }
 
-        public List<ItemEntity> Items
+        public Dictionary<int, ItemEntity> Items
         {
             get
             {
@@ -49,8 +50,23 @@ namespace Node.Inventory.Items
                 return this.mItems;
             }
         }
-        
-        private List<ItemEntity> mItems;
+
+        public void AddItem(ItemEntity item)
+        {
+            this.Items[item.ID] = item;
+        }
+
+        protected override void SaveToDB()
+        {
+            if (this.mContentsLoaded == true)
+            {
+                // persist all the items
+                foreach (KeyValuePair<int, ItemEntity> pair in this.mItems)
+                    pair.Value.Persist();
+            }
+        }
+
+        protected Dictionary<int, ItemEntity> mItems;
         private bool mContentsLoaded = false;
     }
 }

@@ -8,13 +8,13 @@ namespace Node.Inventory.Items.Types
             double bounty, double balance, double securityRating, string petitionMessage, int logonMinutes,
             int corporationId, int corpRole, int rolesAtAll, int rolesAtBase, int rolesAtHq, int rolesAtOther,
             long corporationDateTime, long startDateTime, long createDateTime, int ancestryId, int careerId, int schoolId,
-            int careerSpecialityId, int gender, int accessoryId, int beardId, int costumeId, int decoId, int eyebrowsId,
-            int eyesId, int hairId, int lipstickId, int makeupId, int skinId, int backgroundId, int lightId,
+            int careerSpecialityId, int gender, int? accessoryId, int beardId, int costumeId, int? decoId, int eyebrowsId,
+            int eyesId, int hairId, int? lipstickId, int? makeupId, int skinId, int backgroundId, int lightId,
             double headRotation1, double headRotation2, double headRotation3, double eyeRotation1, double eyeRotation2,
-            double eyeRotation3, double camPos1, double camPos2, double camPos3, double morph1E, double morph1N,
-            double morph1S, double morph1W, double morph2E, double morph2N, double morph2S, double morph2W,
-            double morph3E, double morph3N, double morph3S, double morph3W, double morph4E, double morph4N,
-            double morph4S, double morph4W, int stationId, int solarSystemId, int constellationId, int regionId,
+            double eyeRotation3, double camPos1, double camPos2, double camPos3, double? morph1E, double? morph1N,
+            double? morph1S, double? morph1W, double? morph2E, double? morph2N, double? morph2S, double? morph2W,
+            double? morph3E, double? morph3N, double? morph3S, double? morph3W, double? morph4E, double? morph4N,
+            double? morph4S, double? morph4W, int stationId, int solarSystemId, int constellationId, int regionId,
             int online) : base(from)
         {
             this.mCharacterID = characterId;
@@ -107,15 +107,15 @@ namespace Node.Inventory.Items.Types
         public int SchoolID => mSchoolID;
         public int CareerSpecialityID => mCareerSpecialityID;
         public int Gender => mGender;
-        public int AccessoryID => mAccessoryID;
-        public int BeardID => mBeardID;
+        public int? AccessoryID => mAccessoryID;
+        public int? BeardID => mBeardID;
         public int CostumeID => mCostumeID;
-        public int DecoID => mDecoID;
+        public int? DecoID => mDecoID;
         public int EyebrowsID => mEyebrowsID;
         public int EyesID => mEyesID;
         public int HairID => mHairID;
-        public int LipstickID => mLipstickID;
-        public int MakeupID => mMakeupID;
+        public int? LipstickID => mLipstickID;
+        public int? MakeupID => mMakeupID;
         public int SkinID => mSkinID;
         public int BackgroundID => mBackgroundID;
         public int LightID => mLightID;
@@ -128,22 +128,22 @@ namespace Node.Inventory.Items.Types
         public double CamPos1 => mCamPos1;
         public double CamPos2 => mCamPos2;
         public double CamPos3 => mCamPos3;
-        public double Morph1E => mMorph1E;
-        public double Morph1N => mMorph1N;
-        public double Morph1S => mMorph1S;
-        public double Morph1W => mMorph1W;
-        public double Morph2E => mMorph2E;
-        public double Morph2N => mMorph2N;
-        public double Morph2S => mMorph2S;
-        public double Morph2W => mMorph2W;
-        public double Morph3E => mMorph3E;
-        public double Morph3N => mMorph3N;
-        public double Morph3S => mMorph3S;
-        public double Morph3W => mMorph3W;
-        public double Morph4E => mMorph4E;
-        public double Morph4N => mMorph4N;
-        public double Morph4S => mMorph4S;
-        public double Morph4W => mMorph4W;
+        public double? Morph1E => mMorph1E;
+        public double? Morph1N => mMorph1N;
+        public double? Morph1S => mMorph1S;
+        public double? Morph1W => mMorph1W;
+        public double? Morph2E => mMorph2E;
+        public double? Morph2N => mMorph2N;
+        public double? Morph2S => mMorph2S;
+        public double? Morph2W => mMorph2W;
+        public double? Morph3E => mMorph3E;
+        public double? Morph3N => mMorph3N;
+        public double? Morph3S => mMorph3S;
+        public double? Morph3W => mMorph3W;
+        public double? Morph4E => mMorph4E;
+        public double? Morph4N => mMorph4N;
+        public double? Morph4S => mMorph4S;
+        public double? Morph4W => mMorph4W;
         public int StationID => mStationID;
         public int SolarSystemID => mSolarSystemID;
         public int ConstellationID => mConstellationID;
@@ -173,15 +173,15 @@ namespace Node.Inventory.Items.Types
         private int mSchoolID;
         private int mCareerSpecialityID;
         private int mGender;
-        private int mAccessoryID;
-        private int mBeardID;
+        private int? mAccessoryID;
+        private int? mBeardID;
         private int mCostumeID;
-        private int mDecoID;
+        private int? mDecoID;
         private int mEyebrowsID;
         private int mEyesID;
         private int mHairID;
-        private int mLipstickID;
-        private int mMakeupID;
+        private int? mLipstickID;
+        private int? mMakeupID;
         private int mSkinID;
         private int mBackgroundID;
         private int mLightID;
@@ -194,22 +194,22 @@ namespace Node.Inventory.Items.Types
         private double mCamPos1;
         private double mCamPos2;
         private double mCamPos3;
-        private double mMorph1E;
-        private double mMorph1N;
-        private double mMorph1S;
-        private double mMorph1W;
-        private double mMorph2E;
-        private double mMorph2N;
-        private double mMorph2S;
-        private double mMorph2W;
-        private double mMorph3E;
-        private double mMorph3N;
-        private double mMorph3S;
-        private double mMorph3W;
-        private double mMorph4E;
-        private double mMorph4N;
-        private double mMorph4S;
-        private double mMorph4W;
+        private double? mMorph1E;
+        private double? mMorph1N;
+        private double? mMorph1S;
+        private double? mMorph1W;
+        private double? mMorph2E;
+        private double? mMorph2N;
+        private double? mMorph2S;
+        private double? mMorph2W;
+        private double? mMorph3E;
+        private double? mMorph3N;
+        private double? mMorph3S;
+        private double? mMorph3W;
+        private double? mMorph4E;
+        private double? mMorph4N;
+        private double? mMorph4S;
+        private double? mMorph4W;
         private int mStationID;
         private int mSolarSystemID;
         private int mConstellationID;
@@ -244,6 +244,13 @@ namespace Node.Inventory.Items.Types
         {
             get => this.Attributes[AttributeEnum.memory];
             set => this.Attributes[AttributeEnum.memory] = value;
+        }
+
+        protected override void LoadContents()
+        {
+            this.mItems = this.mItemFactory.ItemManager.LoadItemsLocatedAt(this);
+            
+            base.LoadContents();
         }
     }
 }

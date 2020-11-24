@@ -50,11 +50,19 @@ namespace Common.Database
             try
             {
                 MySqlConnection connection = null;
-                MySqlDataReader reader = this.PrepareQuery(ref connection, query, values);
+                MySqlCommand command = this.PrepareQuery(ref connection, query);
+                
+                // add values
+                foreach (KeyValuePair<string, object> pair in values)
+                    command.Parameters.AddWithValue(pair.Key, pair.Value);
 
                 using (connection)
-                using (reader)
-                    return (ulong) reader.FieldCount;
+                using (command)
+                {
+                    command.ExecuteNonQuery();
+
+                    return (ulong) command.LastInsertedId;
+                }
             }
             catch (Exception e)
             {

@@ -70,6 +70,11 @@ namespace PythonTypes.Types.Primitives
             return obj.Value;
         }
 
+        public static implicit operator double?(PyDecimal obj)
+        {
+            return obj?.Value;
+        }
+
         public static explicit operator float(PyDecimal obj)
         {
             return (float) obj.Value;

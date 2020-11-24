@@ -35,11 +35,15 @@ namespace Node.Inventory
         public GroupManager GroupManager { get; }
         public TypeManager TypeManager { get; }
         public ItemDB ItemDB { get; }
+        public SkillDB SkillDB { get; }
+        public CharacterDB CharacterDB { get; }
         
         public ItemFactory(NodeContainer container)
         {
             this.Container = container;
             this.ItemDB = new ItemDB(container.Database, this);
+            this.SkillDB = new SkillDB(container.Database, this);
+            this.CharacterDB = new CharacterDB(container.Database, this);
             
             // attribute manager goes first
             this.AttributeManager = new AttributeManager(this);

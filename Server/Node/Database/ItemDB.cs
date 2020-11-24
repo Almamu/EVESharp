@@ -31,6 +31,7 @@ using Node.Inventory.Items;
 using Node.Inventory.Items.Attributes;
 using Node.Inventory.Items.Types;
 using Node.Inventory.SystemEntities;
+using Node.Services.Characters;
 
 namespace Node.Database
 {
@@ -399,6 +400,9 @@ namespace Node.Database
             using (connection)
             using (reader)
             {
+                if (reader.Read() == false)
+                    return null;
+                
                 return new Character(
                     item,
                     reader.GetInt32(0),
@@ -424,15 +428,15 @@ namespace Node.Database
                     reader.GetInt32(20),
                     reader.GetInt32(21),
                     reader.GetInt32(22),
-                    reader.GetInt32(23),
+                    reader.IsDBNull(23) ? default : reader.GetInt32(23),
                     reader.GetInt32(24),
                     reader.GetInt32(25),
-                    reader.GetInt32(26),
+                    reader.IsDBNull(26) ? default : reader.GetInt32(26),
                     reader.GetInt32(27),
                     reader.GetInt32(28),
                     reader.GetInt32(29),
-                    reader.GetInt32(30),
-                    reader.GetInt32(31),
+                    reader.IsDBNull(30) ? default : reader.GetInt32(30),
+                    reader.IsDBNull(31) ? default : reader.GetInt32(31),
                     reader.GetInt32(32),
                     reader.GetInt32(33),
                     reader.GetInt32(34),
@@ -445,22 +449,22 @@ namespace Node.Database
                     reader.GetDouble(41),
                     reader.GetDouble(42),
                     reader.GetDouble(43),
-                    reader.GetDouble(44),
-                    reader.GetDouble(45),
-                    reader.GetDouble(46),
-                    reader.GetDouble(47),
-                    reader.GetDouble(48),
-                    reader.GetDouble(49),
-                    reader.GetDouble(50),
-                    reader.GetDouble(51),
-                    reader.GetDouble(52),
-                    reader.GetDouble(53),
-                    reader.GetDouble(54),
-                    reader.GetDouble(55),
-                    reader.GetDouble(56),
-                    reader.GetDouble(57),
-                    reader.GetDouble(58),
-                    reader.GetDouble(59),
+                    reader.IsDBNull(44) ? default : reader.GetDouble(44),
+                    reader.IsDBNull(45) ? default : reader.GetDouble(45),
+                    reader.IsDBNull(46) ? default : reader.GetDouble(46),
+                    reader.IsDBNull(47) ? default : reader.GetDouble(47),
+                    reader.IsDBNull(48) ? default : reader.GetDouble(48),
+                    reader.IsDBNull(49) ? default : reader.GetDouble(49),
+                    reader.IsDBNull(50) ? default : reader.GetDouble(50),
+                    reader.IsDBNull(51) ? default : reader.GetDouble(51),
+                    reader.IsDBNull(52) ? default : reader.GetDouble(52),
+                    reader.IsDBNull(53) ? default : reader.GetDouble(53),
+                    reader.IsDBNull(54) ? default : reader.GetDouble(54),
+                    reader.IsDBNull(55) ? default : reader.GetDouble(55),
+                    reader.IsDBNull(56) ? default : reader.GetDouble(56),
+                    reader.IsDBNull(57) ? default : reader.GetDouble(57),
+                    reader.IsDBNull(58) ? default : reader.GetDouble(58),
+                    reader.IsDBNull(59) ? default : reader.GetDouble(59),
                     reader.GetInt32(60),
                     reader.GetInt32(61),
                     reader.GetInt32(62),
@@ -470,7 +474,37 @@ namespace Node.Database
             }
         }
 
-        public ulong CreateItem(string itemName, int typeID, ItemEntity owner, ItemEntity location, ItemFlags flag,
+        public Skill LoadSkill(int itemID)
+        {
+            Item item = LoadItem(itemID);
+
+            if (item == null)
+                return null;
+
+            return new Skill(item);
+        }
+
+        public Ship LoadShip(int itemID)
+        {
+            Item item = LoadItem(itemID);
+
+            if (item == null)
+                return null;
+
+            return new Ship(item);
+        }
+
+        public Station LoadStation(int itemID)
+        {
+            Item item = LoadItem(itemID);
+
+            if (item == null)
+                return null;
+
+            return new Station(item);
+        }
+
+        public ulong CreateItem(string itemName, ItemType type, ItemEntity owner, ItemEntity location, ItemFlags flag,
             bool contraband, bool singleton, int quantity, double x, double y, double z, string customInfo)
         {
             return Database.PrepareQueryLID(
@@ -478,7 +512,7 @@ namespace Node.Database
                 new Dictionary<string, object>()
                 {
                     {"@itemName", itemName},
-                    {"@typeID", typeID},
+                    {"@typeID", type.ID},
                     {"@ownerID", owner?.ID},
                     {"@locationID", location?.ID},
                     {"@flag", flag},
@@ -516,11 +550,19 @@ namespace Node.Database
             );
         }
 
-        public List<ItemEntity> GetItemsLocatedAt(int locationID)
+        public ulong CreateShip(ItemType shipType, ItemEntity location, Character owner)
+        {
+            return this.CreateItem(
+                $"{owner.Name}'s Ship", shipType, owner, location, ItemFlags.Hangar,
+                false, true, 1, 0, 0, 0, null
+            );
+        }
+
+        public Dictionary<int, ItemEntity> LoadItemsLocatedAt(int locationID)
         {
             MySqlConnection connection = null;
             MySqlDataReader reader = Database.PrepareQuery(ref connection,
-                "SELECT itemID, itemName, typeID, ownerID, locationID, flag, contraband, singleton, quantity, x, y, z, customInfo FROM entity WHERE locationID = @locationID",
+                "SELECT itemID FROM entity WHERE locationID = @locationID",
                 new Dictionary<string, object>()
                 {
                     {"@locationID", locationID}
@@ -530,42 +572,11 @@ namespace Node.Database
             using (connection)
             using (reader)
             {
-                List<ItemEntity> items = new List<ItemEntity>();
+                Dictionary<int, ItemEntity> items = new Dictionary<int, ItemEntity>();
 
                 while (reader.Read())
                 {
-                    ItemType itemType = this.mItemFactory.TypeManager[reader.GetInt32(1)];
-                    ItemEntity owner = null, location = null;
-                
-                    if (reader.IsDBNull(3) == false)
-                        owner = this.mItemFactory.ItemManager.LoadItem(reader.GetInt32(3));
-                
-                    if (reader.IsDBNull(4) == false)
-                        location = this.mItemFactory.ItemManager.LoadItem(reader.GetInt32(4));
-                    
-                    Item newItem = new Item(
-                        reader.GetString(1), // itemName
-                        reader.GetInt32(0), // itemID
-                        itemType, // typeID
-                        owner, // ownerID
-                        location, // locationID
-                        (ItemFlags) reader.GetInt32(5), // flag
-                        reader.GetBoolean(6), // contraband
-                        reader.GetBoolean(7), // singleton
-                        reader.GetInt32(8), // quantity
-                        reader.GetDouble(9), // x
-                        reader.GetDouble(10), // y
-                        reader.GetDouble(11), // z
-                        reader.IsDBNull(12) ? "" : reader.GetString(12), // customInfo
-                        new AttributeList(
-                            this.mItemFactory,
-                            itemType,
-                            this.LoadAttributesForItem(reader.GetInt32(0))
-                        ), 
-                        this.mItemFactory
-                    );
-
-                    items.Add(newItem);
+                    items[reader.GetInt32(0)] = this.mItemFactory.ItemManager.LoadItem(reader.GetInt32(0));
                 }
 
                 return items;
@@ -615,7 +626,7 @@ namespace Node.Database
                     reader.GetBoolean(17),
                     reader.GetBoolean(18),
                     reader.GetDouble(19),
-                    reader.GetInt32(20),
+                    reader.IsDBNull(20) ? 0 : reader.GetInt32(20),
                     reader.GetDouble(21),
                     reader.GetInt32(22),
                     reader.GetString(23)
