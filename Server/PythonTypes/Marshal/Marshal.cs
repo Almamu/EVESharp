@@ -546,6 +546,9 @@ namespace PythonTypes.Marshal
 
             foreach (DBRowDescriptor.Column column in enumerator)
             {
+                if (packedRow[column.Name] == null)
+                    continue;
+                
                 switch (column.Type)
                 {
                     case FieldType.I8:
@@ -605,6 +608,10 @@ namespace PythonTypes.Marshal
                     case FieldType.WStr:
                         // write the object to the proper memory stream
                         Process(objectWriter, packedRow[column.Name]);
+                        break;
+                    
+                    // nulls are not written
+                    case FieldType.Null:
                         break;
 
                     default:

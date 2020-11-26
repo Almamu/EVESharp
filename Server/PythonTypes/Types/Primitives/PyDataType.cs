@@ -39,6 +39,51 @@ namespace PythonTypes.Types.Primitives
             return new PyInteger(value);
         }
 
+        public static implicit operator PyDataType(sbyte value)
+        {
+            return new PyInteger(value);
+        }
+
+        public static implicit operator PyDataType(long? value)
+        {
+            if (value == null)
+                return new PyNone();
+
+            return new PyInteger((long) value);
+        }
+
+        public static implicit operator PyDataType(int? value)
+        {
+            if (value == null)
+                return new PyNone();
+
+            return new PyInteger((int) value);
+        }
+
+        public static implicit operator PyDataType(short? value)
+        {
+            if (value == null)
+                return new PyNone();
+
+            return new PyInteger((short) value);
+        }
+
+        public static implicit operator PyDataType(byte? value)
+        {
+            if (value == null)
+                return new PyNone();
+
+            return new PyInteger((byte) value);
+        }
+
+        public static implicit operator PyDataType(sbyte? value)
+        {
+            if (value == null)
+                return new PyNone();
+
+            return new PyInteger((sbyte) value);
+        }
+
         public static implicit operator PyDataType(byte[] value)
         {
             if (value == null)
@@ -60,6 +105,30 @@ namespace PythonTypes.Types.Primitives
         public static implicit operator PyDataType(bool value)
         {
             return new PyBool(value);
+        }
+
+        public static implicit operator PyDataType(float? value)
+        {
+            if (value == null)
+                return new PyNone();
+
+            return new PyDecimal((float) value);
+        }
+
+        public static implicit operator PyDataType(double? value)
+        {
+            if (value == null)
+                return new PyNone();
+
+            return new PyDecimal((double) value);
+        }
+
+        public static implicit operator PyDataType(bool? value)
+        {
+            if (value == null)
+                return new PyNone();
+
+            return new PyBool((bool) value);
         }
 
         public static implicit operator PyDataType(Dictionary<string, PyDataType> value)

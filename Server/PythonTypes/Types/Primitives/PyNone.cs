@@ -16,39 +16,43 @@ namespace PythonTypes.Types.Primitives
             return null;
         }
 
-        public static implicit operator double(PyNone ignored)
+        public static implicit operator double?(PyNone ignored)
         {
-            return 0.0;
+            return null;
         }
 
-        public static implicit operator float(PyNone ignored)
+        public static implicit operator float?(PyNone ignored)
         {
-            return 0;
+            return null;
         }
 
-        public static implicit operator long(PyNone ignored)
+        public static implicit operator long?(PyNone ignored)
         {
-            return 0;
+            return null;
         }
 
-        public static implicit operator int(PyNone ignored)
+        public static implicit operator int?(PyNone ignored)
         {
-            return 0;
+            return null;
         }
 
-        public static implicit operator short(PyNone ignored)
+        public static implicit operator short?(PyNone ignored)
         {
-            return 0;
+            return null;
         }
 
-        public static implicit operator byte(PyNone ignored)
+        public static implicit operator byte?(PyNone ignored)
         {
-            return 0;
+            return null;
         }
 
-        public static implicit operator bool(PyNone ignored)
+        public static implicit operator sbyte?(PyNone ignored)
         {
-            return false;
+            return null;
+        }
+        public static implicit operator bool?(PyNone ignored)
+        {
+            return null;
         }
     }
 }

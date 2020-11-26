@@ -105,7 +105,7 @@ namespace PythonTypes.Types.Database
         /// <param name="reader">The MySqlDataReader to use when creating the DBRowDescriptor</param>
         /// <returns>Instance of a new DBRowDescriptor</returns>
         /// <exception cref="InvalidDataException">If any error was found on the creation</exception>
-        public static DBRowDescriptor FromMySqlReader(MySqlDataReader reader)
+        public static DBRowDescriptor FromMySqlReader(MySqlDataReader reader, bool readStarted = false)
         {
             DBRowDescriptor descriptor = new DBRowDescriptor();
 
@@ -113,8 +113,11 @@ namespace PythonTypes.Types.Database
             {
                 Type type = reader.GetFieldType(i);
                 FieldType fieldType = FieldType.Error;
+                bool isnull = (readStarted) && reader.IsDBNull(i);
 
-                if (type == typeof(string))
+                if (isnull == true)
+                    fieldType = FieldType.Null;
+                else if (type == typeof(string))
                     // TODO: PROPERLY SPECIFY THE STRING TYPE
                     fieldType = FieldType.WStr;
                 else if (type == typeof(ulong))

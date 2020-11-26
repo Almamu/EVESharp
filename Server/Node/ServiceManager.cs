@@ -24,6 +24,7 @@
 
 using Common.Database;
 using Common.Services;
+using Node.Services.Account;
 using Node.Services.CacheSvc;
 using Node.Services.Characters;
 using Node.Services.Network;
@@ -39,6 +40,8 @@ namespace Node
         public alert alert { get; }
         public authentication authentication { get; }
         public character character { get; }
+        public userSvc userSvc { get; }
+        public charmgr charmgr { get; }
         private readonly DatabaseConnection mDatabaseConnection = null;
 
         public ServiceManager(NodeContainer container, DatabaseConnection db, CacheStorage storage, Configuration.General configuration)
@@ -53,6 +56,8 @@ namespace Node
             this.alert = new alert(container.Logger, this);
             this.authentication = new authentication(configuration.Authentication, this);
             this.character = new character(db, configuration.Character, this);
+            this.userSvc = new userSvc(this);
+            this.charmgr = new charmgr(db, this);
         }
     }
 }

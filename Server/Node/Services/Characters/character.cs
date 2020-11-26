@@ -177,9 +177,16 @@ namespace Node.Services.Characters
             int stationID, solarSystemID, constellationID, regionID;
 
             // fetch information of starting location for the player
-            this.mDB.GetLocationForCorporation(bloodline.CorporationID, out stationID, out solarSystemID,
+            bool found = this.mDB.GetLocationForCorporation(bloodline.CorporationID, out stationID, out solarSystemID,
                 out constellationID, out regionID);
 
+            if (found == false)
+            {
+                this.Log.Error($"Cannot find location for corporation {bloodline.CorporationID}");
+                
+                throw new CustomError($"Cannot find location for corporation {bloodline.CorporationID}");
+            }
+            
             Station station = this.ServiceManager.Container.ItemFactory.ItemManager.LoadItem(stationID) as Station;
             
             int itemID = this.mDB.CreateCharacter(
@@ -275,6 +282,11 @@ namespace Node.Services.Characters
             // finally return the new character's ID and wait for the subsequent calls from the EVE client :)
             
             return character.ID;
+        }
+
+        public PyDataType GetCharacterToSelect(PyInteger characterID, PyDictionary namedPayload, Client client)
+        {
+            return this.mDB.GetCharacterSelectionInfo(characterID, client.AccountID);
         }
 
         public PyDataType Ping(PyDictionary namedPayload, Client client)

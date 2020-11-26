@@ -92,7 +92,7 @@ namespace PythonTypes.Types.Database
             CRowset rowset = new CRowset(descriptor);
 
             while (reader.Read() == true)
-                rowset.Add(PyPackedRow.FromMySqlDataReader(reader, descriptor));
+                rowset.Add(PyPackedRow.FromMySqlDataReader(reader, DBRowDescriptor.FromMySqlReader(reader, true)));
 
             return rowset;
         }

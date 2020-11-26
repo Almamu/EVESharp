@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Threading;
 using Common.Database;
@@ -7,6 +8,7 @@ using Node.Inventory;
 using Node.Inventory.Items;
 using Node.Inventory.Items.Types;
 using PythonTypes.Types.Database;
+using PythonTypes.Types.Exceptions;
 using PythonTypes.Types.Primitives;
 
 namespace Node.Database
@@ -48,6 +50,59 @@ namespace Node.Database
             using (reader)
             {
                 return Rowset.FromMySqlDataReader(reader);
+            }
+        }
+
+        public PyDataType GetCharacterSelectionInfo(int characterID, int accountID)
+        {
+            MySqlConnection connection = null;
+            MySqlDataReader reader = Database.PrepareQuery(
+                ref connection,
+                "SELECT " +
+                    " itemName AS shortName,bloodlineID,gender,bounty,character_.corporationID,allianceID,title,startDateTime,createDateTime," +
+                    " securityRating,character_.balance,character_.stationID,solarSystemID,constellationID,regionID," +
+                    " petitionMessage,logonMinutes,tickerName" +
+                    " FROM character_ " +
+                    "	LEFT JOIN entity ON characterID = itemID" +
+                    "	LEFT JOIN corporation USING (corporationID)" +
+                    "	LEFT JOIN bloodlineTypes USING (typeID)" +
+                    " WHERE characterID=@characterID AND accountID = @accountID",
+                    new Dictionary<string, object>()
+                {
+                    {"@characterID", characterID},
+                    {"@accountID", accountID}
+                }
+            );
+                 
+            using(connection)
+            using (reader)
+            {
+                return Rowset.FromMySqlDataReader(reader);
+            }
+        }
+
+        public PyDataType GetPublicInfo(int characterID)
+        {
+            MySqlConnection connection = null;
+            MySqlDataReader reader = Database.PrepareQuery(
+                ref connection,
+                "SELECT gender, bloodlineID, corporationID " +
+                "FROM character_ " +
+                "LEFT JOIN chrAncestries USING (ancestryID) " +
+                "WHERE characterID = @characterID",
+                new Dictionary<string, object>()
+                {
+                    {"@characterID", characterID}
+                }
+            );
+            
+            using (connection)
+            using (reader)
+            {
+                if (reader.Read() == false)
+                    throw new CustomError("Cannot find the specified character");
+
+                return KeyVal.FromMySqlDataReader(reader);
             }
         }
 

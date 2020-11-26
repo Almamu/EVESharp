@@ -11,10 +11,11 @@ namespace PythonTypes.Types.Database
         public static PyList FromMySqlDataReader(MySqlDataReader reader)
         {
             PyList list = new PyList();
-            DBRowDescriptor descriptor = DBRowDescriptor.FromMySqlReader(reader);
 
             while (reader.Read() == true)
-                list.Add(PyPackedRow.FromMySqlDataReader(reader, descriptor));
+            {
+                list.Add(PyPackedRow.FromMySqlDataReader(reader, DBRowDescriptor.FromMySqlReader(reader, true)));
+            }
 
             return list;
         }

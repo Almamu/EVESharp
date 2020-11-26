@@ -24,32 +24,36 @@ namespace PythonTypes.Types.Database
             PyDataType data = null;
             bool isnull = reader.IsDBNull(index);
 
+            // null values should be null
+            if (isnull == true)
+                return null;
+            
             if (type == typeof(string))
-                data = new PyString((isnull) ? "" : reader.GetString(index), true);
+                data = new PyString(reader.GetString(index), true);
             else if (type == typeof(ulong))
-                data = (isnull) ? 0 : reader.GetUInt64(index);
+                data = reader.GetUInt64(index);
             else if (type == typeof(long))
-                data = (isnull) ? 0 : reader.GetInt64(index);
+                data = reader.GetInt64(index);
             else if (type == typeof(uint))
-                data = (isnull) ? 0 : reader.GetUInt32(index);
+                data = reader.GetUInt32(index);
             else if (type == typeof(int))
-                data = (isnull) ? 0 : reader.GetInt32(index);
+                data = reader.GetInt32(index);
             else if (type == typeof(ushort))
-                data = (isnull) ? 0 : reader.GetUInt16(index);
+                data = reader.GetUInt16(index);
             else if (type == typeof(short))
-                data = (isnull) ? 0 : reader.GetInt16(index);
+                data = reader.GetInt16(index);
             else if (type == typeof(byte))
-                data = (isnull) ? 0 : reader.GetByte(index);
+                data = reader.GetByte(index);
             else if (type == typeof(sbyte))
-                data = (isnull) ? 0 : reader.GetSByte(index);
+                data = reader.GetSByte(index);
             else if (type == typeof(byte[]))
-                data = (isnull) ? new byte[0] : (byte[]) reader.GetValue(index);
+                data = (byte[]) reader.GetValue(index);
             else if (type == typeof(float))
-                data = (isnull) ? 0 : reader.GetFloat(index);
+                data = reader.GetFloat(index);
             else if (type == typeof(double))
-                data = (isnull) ? 0 : reader.GetDouble(index);
+                data = reader.GetDouble(index);
             else if (type == typeof(bool))
-                data = (!isnull) && reader.GetBoolean(index);
+                data = reader.GetBoolean(index);
             else
                 throw new InvalidDataException($"Unknown data type {type}");
 
@@ -92,6 +96,7 @@ namespace PythonTypes.Types.Database
                 case FieldType.Bytes:
                 case FieldType.Str:
                 case FieldType.WStr:
+                case FieldType.Null:
                     // handled differently
                     return 0;
 
