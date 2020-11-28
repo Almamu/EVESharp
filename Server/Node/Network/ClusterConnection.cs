@@ -166,6 +166,38 @@ namespace Node.Network
 
                 this.Container.ClientManager.Get(packet.UserID).UpdateSession(packet);
             }
+            else if (packet.Type == PyPacket.PacketType.PING_REQ)
+            {
+                // alter package to include the times the data
+                PyTuple handleMessage = new PyTuple(3);
+                PyAddressClient source = packet.Source as PyAddressClient;
+
+                // this time should come from the stream packetizer or the socket itself
+                // but there's no way we're adding time tracking for all the goddamned packets
+                // so this should be sufficient
+                handleMessage[0] = DateTime.UtcNow.ToFileTime();
+                handleMessage[1] = DateTime.UtcNow.ToFileTime();
+                handleMessage[2] = "server::handle_message";
+            
+                PyTuple turnaround = new PyTuple(3);
+
+                turnaround[0] = DateTime.UtcNow.ToFileTime();
+                turnaround[1] = DateTime.UtcNow.ToFileTime();
+                turnaround[2] = "server::turnaround";
+                
+                (packet.Payload[0] as PyList)?.Add(handleMessage);
+                (packet.Payload[0] as PyList)?.Add(turnaround);
+
+                // change to a response
+                packet.Type = PyPacket.PacketType.PING_RSP;
+                
+                // switch source and destination
+                packet.Source = packet.Destination;
+                packet.Destination = source;
+                
+                // queue the packet back
+                this.Socket.Send(packet);
+            }
         }
 
         protected LowLevelVersionExchange CheckLowLevelVersionExchange(PyDataType exchange)

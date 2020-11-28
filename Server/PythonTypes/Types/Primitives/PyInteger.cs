@@ -58,6 +58,16 @@ namespace PythonTypes.Types.Primitives
             this.IntegerType = IntegerTypeEnum.Byte;
         }
 
+        public static bool operator >(PyInteger obj, long value)
+        {
+            return obj.Value > value;
+        }
+
+        public static bool operator <(PyInteger obj, long value)
+        {
+            return obj.Value < value;
+        }
+
         public static bool operator ==(PyInteger obj, long value)
         {
             if (ReferenceEquals(null, obj)) return false;
@@ -68,6 +78,16 @@ namespace PythonTypes.Types.Primitives
         public static bool operator !=(PyInteger obj, long value)
         {
             return !(obj == value);
+        }
+
+        public static bool operator >(PyInteger obj, int value)
+        {
+            return obj.Value > value;
+        }
+
+        public static bool operator <(PyInteger obj, int value)
+        {
+            return obj.Value < value;
         }
 
         public static bool operator ==(PyInteger obj, int value)
@@ -82,6 +102,16 @@ namespace PythonTypes.Types.Primitives
             return !(obj == value);
         }
 
+        public static bool operator >(PyInteger obj, short value)
+        {
+            return obj.Value > value;
+        }
+
+        public static bool operator <(PyInteger obj, short value)
+        {
+            return obj.Value < value;
+        }
+
         public static bool operator ==(PyInteger obj, short value)
         {
             if (ReferenceEquals(null, obj)) return false;
@@ -92,6 +122,16 @@ namespace PythonTypes.Types.Primitives
         public static bool operator !=(PyInteger obj, short value)
         {
             return !(obj == value);
+        }
+
+        public static bool operator >(PyInteger obj, byte value)
+        {
+            return obj.Value > value;
+        }
+
+        public static bool operator <(PyInteger obj, byte value)
+        {
+            return obj.Value < value;
         }
 
         public static bool operator ==(PyInteger obj, byte value)

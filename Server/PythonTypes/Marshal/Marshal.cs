@@ -611,7 +611,7 @@ namespace PythonTypes.Marshal
                         break;
                     
                     // nulls are not written
-                    case FieldType.Null:
+                    case FieldType.Empty:
                         break;
 
                     default:

@@ -116,7 +116,7 @@ namespace PythonTypes.Types.Database
                 bool isnull = (readStarted) && reader.IsDBNull(i);
 
                 if (isnull == true)
-                    fieldType = FieldType.Null;
+                    fieldType = FieldType.Empty;
                 else if (type == typeof(string))
                     // TODO: PROPERLY SPECIFY THE STRING TYPE
                     fieldType = FieldType.WStr;

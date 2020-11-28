@@ -54,7 +54,7 @@ namespace PythonTypes.Types.Database
                         this.mValues.Add(column.Name, values[index++] as PyString);
                         break;
 
-                    case FieldType.Null:
+                    case FieldType.Empty:
                         this.mValues.Add(column.Name, values[index++] as PyNone);
                         break;
 

@@ -1,3 +1,4 @@
+using System;
 using Common.Logging;
 using Common.Network;
 using Common.Packets;
@@ -50,8 +51,32 @@ namespace ClusterControler
             Log.Debug("Processing packet from node");
 
             PyPacket packet = input;
+            
+            // alter the ping responses from nodes to add the extra required information
+            if (packet.Type == PyPacket.PacketType.PING_RSP)
+            {
+                // alter package to include the times the data
+                PyTuple handleMessage = new PyTuple(3);
 
-            if (packet.Type == PyPacket.PacketType.CALL_RSP || packet.Type == PyPacket.PacketType.ERRORRESPONSE)
+                // this time should come from the stream packetizer or the socket itself
+                // but there's no way we're adding time tracking for all the goddamned packets
+                // so this should be sufficient
+                handleMessage[0] = DateTime.UtcNow.ToFileTime();
+                handleMessage[1] = DateTime.UtcNow.ToFileTime();
+                handleMessage[2] = "proxy::handle_message";
+                
+                PyTuple writing = new PyTuple(3);
+
+                writing[0] = DateTime.UtcNow.ToFileTime();
+                writing[1] = DateTime.UtcNow.ToFileTime();
+                writing[2] = "proxy::writing";
+                
+                (packet.Payload[0] as PyList)?.Add(handleMessage);
+                (packet.Payload[0] as PyList)?.Add(writing);
+            }
+
+            if (packet.Type == PyPacket.PacketType.CALL_RSP || packet.Type == PyPacket.PacketType.ERRORRESPONSE ||
+                packet.Type == PyPacket.PacketType.PING_RSP)
             {
                 if (packet.Destination is PyAddressClient)
                 {

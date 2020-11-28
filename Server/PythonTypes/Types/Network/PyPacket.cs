@@ -62,7 +62,7 @@ namespace PythonTypes.Types.Network
             "macho.PingRsp"
         };
         
-        public PacketType Type { get; private set; }
+        public PacketType Type { get; set; }
         public PyAddress Source { get; set; }
         public PyAddress Destination { get; set; }
         public long UserID { get; set; }
