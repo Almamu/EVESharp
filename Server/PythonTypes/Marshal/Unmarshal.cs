@@ -563,7 +563,7 @@ namespace PythonTypes.Marshal
                 throw new InvalidDataException($"Trying to parse a {opcode} as PackedRow");
 
             DBRowDescriptor descriptor = this.Process(false);
-            PyDataType[] data = new PyDataType[descriptor.Columns.Count];
+            Dictionary<string, PyDataType> data = new Dictionary<string, PyDataType> ();
 
             MemoryStream decompressedStream = ZeroCompressionUtils.LoadZeroCompressed(this.mReader);
             BinaryReader decompressedReader = new BinaryReader(decompressedStream);
@@ -574,7 +574,6 @@ namespace PythonTypes.Marshal
 
             int bitOffset = 8;
             byte buffer = 0;
-            int index = 0;
 
             foreach (DBRowDescriptor.Column column in enumerator)
                 switch (column.Type)
@@ -583,25 +582,25 @@ namespace PythonTypes.Marshal
                     case FieldType.UI8:
                     case FieldType.CY:
                     case FieldType.FileTime:
-                        data[index++] = new PyInteger(decompressedReader.ReadInt64());
+                        data[column.Name] = new PyInteger(decompressedReader.ReadInt64());
                         break;
                     case FieldType.I4:
                     case FieldType.UI4:
-                        data[index++] = new PyInteger(decompressedReader.ReadInt32());
+                        data[column.Name] = new PyInteger(decompressedReader.ReadInt32());
                         break;
                     case FieldType.I2:
                     case FieldType.UI2:
-                        data[index++] = new PyInteger(decompressedReader.ReadInt16());
+                        data[column.Name] = new PyInteger(decompressedReader.ReadInt16());
                         break;
                     case FieldType.I1:
                     case FieldType.UI1:
-                        data[index++] = new PyInteger(decompressedReader.ReadByte());
+                        data[column.Name] = new PyInteger(decompressedReader.ReadByte());
                         break;
                     case FieldType.R8:
-                        data[index++] = new PyDecimal(decompressedReader.ReadDouble());
+                        data[column.Name] = new PyDecimal(decompressedReader.ReadDouble());
                         break;
                     case FieldType.R4:
-                        data[index++] = new PyDecimal(decompressedReader.ReadSingle());
+                        data[column.Name] = new PyDecimal(decompressedReader.ReadSingle());
                         break;
                     case FieldType.Bool:
                         // read a byte from the buffer if needed
@@ -611,13 +610,19 @@ namespace PythonTypes.Marshal
                             bitOffset = 0;
                         }
 
-                        data[index++] = new PyBool(((buffer >> bitOffset++) & 0x01) == 0x01);
+                        data[column.Name] = new PyBool(((buffer >> bitOffset++) & 0x01) == 0x01);
                         break;
                     case FieldType.Bytes:
                     case FieldType.WStr:
                     case FieldType.Str:
-                        data[index++] = this.Process(false);
+                        data[column.Name] = this.Process(false);
                         break;
+                    
+                    case FieldType.Empty:
+                        break;
+                    
+                    default:
+                        throw new InvalidDataException($"Unknown column type {column.Type}");
                 }
 
             return new PyPackedRow(descriptor, data);

@@ -16,57 +16,14 @@ namespace PythonTypes.Types.Database
             this.Header = descriptor;
         }
 
-        public PyPackedRow(DBRowDescriptor descriptor, PyDataType[] values) : base(PyObjectType.PackedRow)
+        public PyPackedRow(DBRowDescriptor descriptor, Dictionary<string, PyDataType> values) : base(PyObjectType.PackedRow)
         {
             this.Header = descriptor;
 
-            if (values.Length != this.Header.Columns.Count)
+            if (values.Count != this.Header.Columns.Count)
                 throw new Exception("PackedRow must have the same value count as DBRowDescriptor");
 
-            int index = 0;
-
-            foreach (DBRowDescriptor.Column column in descriptor.Columns)
-                switch (column.Type)
-                {
-                    case FieldType.I1:
-                    case FieldType.I2:
-                    case FieldType.I4:
-                    case FieldType.I8:
-                    case FieldType.UI1:
-                    case FieldType.UI2:
-                    case FieldType.UI4:
-                    case FieldType.UI8:
-                    case FieldType.FileTime:
-                    case FieldType.CY:
-                        this.mValues.Add(column.Name, values[index++] as PyInteger);
-                        break;
-                    
-                    case FieldType.R8:
-                    case FieldType.R4:
-                        this.mValues.Add(column.Name, values[index++] as PyDecimal);
-                        break;
-                            
-
-                    case FieldType.Bool:
-                        this.mValues.Add(column.Name, values[index++] as PyBool);
-                        break;
-
-                    case FieldType.Bytes:
-                        this.mValues.Add(column.Name, values[index++] as PyBuffer);
-                        break;
-
-                    case FieldType.WStr:
-                    case FieldType.Str:
-                        this.mValues.Add(column.Name, values[index++] as PyString);
-                        break;
-
-                    case FieldType.Empty:
-                        this.mValues.Add(column.Name, values[index++] as PyNone);
-                        break;
-
-                    default:
-                        throw new Exception($"Unknown column type {column.Type}");
-                }
+            this.mValues = values;
         }
 
         public virtual PyDataType this[string key]
