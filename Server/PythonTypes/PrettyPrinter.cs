@@ -47,6 +47,13 @@ namespace PythonTypes
             return this.mStringBuilder.ToString();
         }
 
+        protected void AppendIndentation()
+        {
+            // add indentation to the string
+            for (int i = 0; i < this.mIndentation; i++)
+                this.mStringBuilder.Append(Indention);
+        }
+
         /// <summary>
         /// Main body of the pretty-printer class, takes care of type identification and passing it to the correct
         /// formatter for proper dump
@@ -54,9 +61,7 @@ namespace PythonTypes
         /// <param name="obj">The python type to dump</param>
         public void Process(PyDataType obj)
         {
-            // add indentation to the string
-            for (int i = 0; i < this.mIndentation; i++)
-                this.mStringBuilder.Append(Indention);
+            this.AppendIndentation();
 
             if (obj == null || obj is PyNone)
                 this.ProcessNone();
@@ -247,6 +252,7 @@ namespace PythonTypes
 
             foreach (DBRowDescriptor.Column column in packedRow.Header.Columns)
             {
+                this.AppendIndentation();
                 this.mStringBuilder.AppendFormat("[PyPackedRowColumn '{0}']", column.Name);
                 this.mStringBuilder.AppendLine();
                 this.Process(packedRow[column.Name]);

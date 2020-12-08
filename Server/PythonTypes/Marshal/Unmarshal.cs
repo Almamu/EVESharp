@@ -23,7 +23,7 @@ namespace PythonTypes.Marshal
         {
             Unmarshal processor = new Unmarshal(stream);
 
-            return processor.Process();
+            return processor.Process(expectHeader);
         }
 
         private Stream mStream;
@@ -35,6 +35,7 @@ namespace PythonTypes.Marshal
         public Unmarshal(Stream stream)
         {
             this.mStream = stream;
+            this.mReader = new BinaryReader(this.mStream);
         }
 
         /// <summary>
@@ -77,6 +78,7 @@ namespace PythonTypes.Marshal
                         this.mStream.CopyTo(newStream);
                         this.mStream = newStream;
                         this.mReader = new BinaryReader(this.mStream);
+                        this.mStream.Seek(0, SeekOrigin.Begin);
                     }
 
                     // reserve space for the savelist map and the actual elements in the save list
