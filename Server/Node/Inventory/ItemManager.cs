@@ -43,55 +43,67 @@ namespace Node.Inventory
         {
             // create a log channel for the rare occurence of the ItemManager wanting to log something
             this.Log = this.ItemFactory.Container.Logger.CreateLogChannel("ItemManager");
+            // load all the items in the database that do not belong to any user (so-called static items)
+            List<ItemEntity> items = this.ItemFactory.ItemDB.LoadStaticItems();
+
+            foreach (ItemEntity item in items)
+            {
+                this.PerformItemLoad(item);
+            }
+
+            Log.Info($"Preloaded {this.mItemList.Count} static items");
         }
 
         public ItemEntity LoadItem(int itemID)
         {
             if (IsItemLoaded(itemID) == false)
             {
-                ItemEntity item = this.ItemFactory.ItemDB.LoadItem(itemID);
-
-                if (item == null)
-                    return null;
-
-                switch (item.Type.Group.Category.ID)
-                {
-                    // celestial items are a kind of subcategory
-                    // load them in specific ways based on the type of celestial item
-                    case (int) ItemCategories.Celestial:
-                        item = LoadCelestial(item);
-                        break;
-
-                    case (int) ItemCategories.Blueprint:
-                        item = LoadBlueprint(item);
-                        break;
-
-                    // owner items are a kind of subcategory too
-                    case (int) ItemCategories.Owner:
-                        item = LoadOwner(item);
-                        break;
-                    
-                    case (int) ItemCategories.Skill:
-                        item = LoadSkill(item);
-                        break;
-                    
-                    case (int) ItemCategories.Ship:
-                        item = LoadShip(item);
-                        break;
-                    
-                    case (int) ItemCategories.Station:
-                        item = LoadStation(item);
-                        break;
-                }
-
-                this.mItemList.Add(item.ID, item);
-
-                return item;
+                return this.PerformItemLoad(this.ItemFactory.ItemDB.LoadItem(itemID));
             }
             else
             {
                 return this.mItemList[itemID];
             }
+        }
+
+        private ItemEntity PerformItemLoad(ItemEntity item)
+        {
+            if (item == null)
+                return null;
+
+            switch (item.Type.Group.Category.ID)
+            {
+                // celestial items are a kind of subcategory
+                // load them in specific ways based on the type of celestial item
+                case (int) ItemCategories.Celestial:
+                    item = LoadCelestial(item);
+                    break;
+
+                case (int) ItemCategories.Blueprint:
+                    item = LoadBlueprint(item);
+                    break;
+
+                // owner items are a kind of subcategory too
+                case (int) ItemCategories.Owner:
+                    item = LoadOwner(item);
+                    break;
+                    
+                case (int) ItemCategories.Skill:
+                    item = LoadSkill(item);
+                    break;
+                    
+                case (int) ItemCategories.Ship:
+                    item = LoadShip(item);
+                    break;
+                    
+                case (int) ItemCategories.Station:
+                    item = LoadStation(item);
+                    break;
+            }
+
+            this.mItemList.Add(item.ID, item);
+
+            return item;
         }
 
         public Dictionary<int, ItemEntity> LoadItemsLocatedAt(ItemEntity location)
@@ -112,6 +124,10 @@ namespace Node.Inventory
                     return this.ItemFactory.ItemDB.LoadSolarSystem(item);
                 case (int) ItemGroups.Station:
                     return this.LoadStation(item);
+                case (int) ItemGroups.Constellation:
+                    return this.LoadConstellation(item);
+                case (int) ItemGroups.Region:
+                    return this.LoadRegion(item);
                 default:
                     Log.Warning($"Loading celestial {item.ID} from item group {item.Type.Group.ID} as normal item");
                     return item;
@@ -129,7 +145,10 @@ namespace Node.Inventory
             {
                 case (int) ItemGroups.Character:
                     return this.ItemFactory.ItemDB.LoadCharacter(item);
-                
+                case (int) ItemGroups.Corporation:
+                    return this.ItemFactory.ItemDB.LoadCorporation(item);
+                case (int) ItemGroups.Faction:
+                    return this.ItemFactory.ItemDB.LoadFaction(item);
                 default:
                     Log.Warning($"Loading owner {item.ID} from item group {item.Type.Group.ID} as normal item");
                     return item;
@@ -151,6 +170,16 @@ namespace Node.Inventory
             return this.ItemFactory.ItemDB.LoadStation(item);
         }
 
+        private ItemEntity LoadConstellation(ItemEntity item)
+        {
+            return this.ItemFactory.ItemDB.LoadConstellation(item);
+        }
+
+        private ItemEntity LoadRegion(ItemEntity item)
+        {
+            return this.ItemFactory.ItemDB.LoadRegion(item);
+        }
+        
         public ItemEntity CreateSimpleItem(string itemName, ItemType type, ItemEntity owner, ItemEntity location, ItemFlags flag,
             bool contraband, bool singleton, int quantity, double x, double y, double z, string customInfo)
         {

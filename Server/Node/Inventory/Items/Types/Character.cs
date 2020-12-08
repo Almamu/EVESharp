@@ -8,7 +8,7 @@ namespace Node.Inventory.Items.Types
             double bounty, double balance, double securityRating, string petitionMessage, int logonMinutes,
             int corporationId, int corpRole, int rolesAtAll, int rolesAtBase, int rolesAtHq, int rolesAtOther,
             long corporationDateTime, long startDateTime, long createDateTime, int ancestryId, int careerId, int schoolId,
-            int careerSpecialityId, int gender, int? accessoryId, int beardId, int costumeId, int? decoId, int eyebrowsId,
+            int careerSpecialityId, int gender, int? accessoryId, int? beardId, int costumeId, int? decoId, int eyebrowsId,
             int eyesId, int hairId, int? lipstickId, int? makeupId, int skinId, int backgroundId, int lightId,
             double headRotation1, double headRotation2, double headRotation3, double eyeRotation1, double eyeRotation2,
             double eyeRotation3, double camPos1, double camPos2, double camPos3, double? morph1E, double? morph1N,

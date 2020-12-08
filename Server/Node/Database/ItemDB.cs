@@ -242,6 +242,57 @@ namespace Node.Database
             }
         }
 
+        public List<ItemEntity> LoadStaticItems()
+        {
+            MySqlConnection connection = null;
+            MySqlCommand command = Database.PrepareQuery(ref connection,
+                "SELECT itemID, itemName, typeID, ownerID, locationID, flag, contraband, singleton, quantity, x, y, z, custominfo FROM entity WHERE itemID < 90000000"
+            );
+            
+            using (connection)
+            using (command)
+            {
+                MySqlDataReader reader = command.ExecuteReader();
+                List<ItemEntity> itemList = new List<ItemEntity>();
+                
+                using (reader)
+                {
+                    while (reader.Read () == true)
+                        itemList.Add(this.BuildItemFromReader(reader));
+                }
+
+                return itemList;
+            }
+        }
+
+        private Item BuildItemFromReader(MySqlDataReader reader)
+        {
+            ItemType itemType = this.mItemFactory.TypeManager[reader.GetInt32(2)];
+            Item newItem = new Item(
+                reader.GetString(1), // itemName
+                reader.GetInt32(0), // itemID
+                itemType, // typeID
+                reader.GetInt32(3), // ownerID
+                reader.GetInt32(4), // locationID
+                (ItemFlags) reader.GetInt32(5), // flag
+                reader.GetBoolean(6), // contraband
+                reader.GetBoolean(7), // singleton
+                reader.GetInt32(8), // quantity
+                reader.GetDouble(9), // x
+                reader.GetDouble(10), // y
+                reader.GetDouble(11), // z
+                reader.IsDBNull(12) ? null : reader.GetString(12), // customInfo
+                new AttributeList(
+                    this.mItemFactory,
+                    itemType,
+                    this.LoadAttributesForItem(reader.GetInt32(0))
+                ), 
+                this.mItemFactory
+            );
+
+            return newItem;
+        }
+        
         public Item LoadItem(int itemID)
         {
             MySqlConnection connection = null;
@@ -259,29 +310,12 @@ namespace Node.Database
                 if (reader.Read() == false)
                     return null;
 
-                ItemType itemType = this.mItemFactory.TypeManager[reader.GetInt32(2)];
-                Item newItem = new Item(
-                    reader.GetString(1), // itemName
-                    reader.GetInt32(0), // itemID
-                    itemType, // typeID
-                    reader.GetInt32(3), // ownerID
-                    reader.GetInt32(4), // locationID
-                    (ItemFlags) reader.GetInt32(5), // flag
-                    reader.GetBoolean(6), // contraband
-                    reader.GetBoolean(7), // singleton
-                    reader.GetInt32(8), // quantity
-                    reader.GetDouble(9), // x
-                    reader.GetDouble(10), // y
-                    reader.GetDouble(11), // z
-                    reader.IsDBNull(12) ? null : reader.GetString(12), // customInfo
-                    new AttributeList(
-                        this.mItemFactory,
-                        itemType,
-                        this.LoadAttributesForItem(reader.GetInt32(0))
-                    ), 
-                    this.mItemFactory
-                );
-
+                Item newItem = this.BuildItemFromReader(reader);
+                
+                // the non-user generated items cannot be owned by any node
+                if (itemID < 90000000)
+                    return newItem;
+                
                 // Update the database information
                 Database.PrepareQuery(
                     "UPDATE entity SET nodeID = @nodeID WHERE itemID = @itemID",
@@ -360,6 +394,66 @@ namespace Node.Database
             }
         }
 
+        public Corporation LoadCorporation(ItemEntity item)
+        {
+            MySqlConnection connection = null;
+            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+                "SELECT description, tickerName, url, taxRate," +
+                " minimumJoinStanding, corporationType, hasPlayerPersonnelManager, sendCharTerminationMessage," +
+                " creatorID, stationID, raceID, allianceID, shares, memberCount, memberLimit," +
+                " allowedMemberRaceIDs, graphicID, shape1, shape2, shape3, color1, color2, color3, typeface," +
+                " division1, division2, division3, division4, division5, division6, division7, balance, deleted" +
+                " FROM corporation WHERE corporationID = @itemID",
+                new Dictionary<string, object>()
+                {
+                    {"@itemID", item.ID}
+                }
+            );
+            
+            using(connection)
+            using (reader)
+            {
+                if (reader.Read() == false)
+                    return null;
+
+                return new Corporation(item,
+                    reader.GetString(0),
+                    reader.GetString(1),
+                    reader.GetString(2),
+                    reader.GetDouble(3),
+                    reader.GetDouble(4),
+                    reader.GetInt32(5),
+                    reader.GetBoolean(6),
+                    reader.GetBoolean(7),
+                    reader.GetInt32(8),
+                    reader.GetInt32(9),
+                    reader.GetInt32(10),
+                    reader.GetInt32(11),
+                    reader.GetInt64(12),
+                    reader.GetInt32(13),
+                    reader.GetInt32(14),
+                    reader.GetInt32(15),
+                    reader.GetInt32(16),
+                    reader.IsDBNull(17) ? default : reader.GetInt32(17),
+                    reader.IsDBNull(18) ? default : reader.GetInt32(18),
+                    reader.IsDBNull(19) ? default : reader.GetInt32(19),
+                    reader.IsDBNull(20) ? default : reader.GetInt32(20),
+                    reader.IsDBNull(21) ? default : reader.GetInt32(21),
+                    reader.IsDBNull(22) ? default : reader.GetInt32(22),
+                    reader.IsDBNull(23) ? null : reader.GetString(23),
+                    reader.IsDBNull(24) ? null : reader.GetString(24),
+                    reader.IsDBNull(25) ? null : reader.GetString(25),
+                    reader.IsDBNull(26) ? null : reader.GetString(26),
+                    reader.IsDBNull(27) ? null : reader.GetString(27),
+                    reader.IsDBNull(28) ? null : reader.GetString(28),
+                    reader.IsDBNull(29) ? null : reader.GetString(29),
+                    reader.IsDBNull(30) ? null : reader.GetString(30),
+                    reader.GetDouble(31),
+                    reader.GetBoolean(32)
+                );
+            }
+        }
+        
         public Character LoadCharacter(ItemEntity item)
         {
             MySqlConnection connection = null;
@@ -388,7 +482,7 @@ namespace Node.Database
                 return new Character(
                     item,
                     reader.GetInt32(0),
-                    reader.GetInt32(1),
+                    reader.IsDBNull(1) ? 0 : reader.GetInt32(1),
                     reader.GetString(2),
                     reader.GetString(3),
                     reader.GetDouble(4),
@@ -411,7 +505,7 @@ namespace Node.Database
                     reader.GetInt32(21),
                     reader.GetInt32(22),
                     reader.IsDBNull(23) ? default : reader.GetInt32(23),
-                    reader.GetInt32(24),
+                    reader.IsDBNull(24) ? default : reader.GetInt32(24),
                     reader.GetInt32(25),
                     reader.IsDBNull(26) ? default : reader.GetInt32(26),
                     reader.GetInt32(27),
@@ -452,6 +546,38 @@ namespace Node.Database
                     reader.GetInt32(62),
                     reader.GetInt32(63),
                     reader.GetInt32(64)
+                );
+            }
+        }
+
+        public Faction LoadFaction(ItemEntity item)
+        {
+            MySqlConnection connection = null;
+            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+                "SELECT description, raceIDs, solarSystemID, corporationID, sizeFactor, stationCount," +
+                " stationSystemCount, militiaCorporationID" +
+                " FROM chrFactions",
+                new Dictionary<string, object>()
+                {
+                    {"@itemID", item.ID}
+                }
+            );
+            
+            using (connection)
+            using (reader)
+            {
+                if (reader.Read() == false)
+                    return null;
+                
+                return new Faction(item,
+                    reader.GetString(0),
+                    reader.GetInt32(1),
+                    reader.GetInt32(2),
+                    reader.GetInt32(3),
+                    reader.GetDouble(4),
+                    reader.GetInt32(5),
+                    reader.GetInt32(6),
+                    reader.GetInt32(7)
                 );
             }
         }
@@ -608,16 +734,87 @@ namespace Node.Database
                     reader.GetBoolean(17),
                     reader.GetBoolean(18),
                     reader.GetDouble(19),
-                    reader.IsDBNull(20) ? 0 : reader.GetInt32(20),
+                    reader.IsDBNull(20) ? default : reader.GetInt32(20),
                     reader.GetDouble(21),
                     reader.GetInt32(22),
-                    reader.GetString(23)
+                    reader.IsDBNull(23) ? null : reader.GetString(23)
+                );
+            }
+        }
+
+        public Constellation LoadConstellation(ItemEntity item)
+        {   
+            MySqlConnection connection = null;
+            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+                "SELECT regionID, x, y, z, xMin, yMin, zMin, xMax, yMax, zMax, factionID, radius FROM mapConstellations WHERE constellationID = @constellationID",
+                new Dictionary<string, object>()
+                {
+                    {"@constellationID", item.ID}
+                }
+            );
+
+            using (connection)
+            using (reader)
+            {
+                if (reader.Read() == false)
+                    return null;
+
+                return new Constellation(item,
+                    reader.GetInt32(0),
+                    reader.GetDouble(1),
+                    reader.GetDouble(2),
+                    reader.GetDouble(3),
+                    reader.GetDouble(4),
+                    reader.GetDouble(5),
+                    reader.GetDouble(6),
+                    reader.GetDouble(7),
+                    reader.GetDouble(8),
+                    reader.GetDouble(9),
+                    reader.IsDBNull(10) ? default : reader.GetInt32(10),
+                    reader.GetDouble(11)
+                );
+            }
+        }
+        
+        public Region LoadRegion(ItemEntity item)
+        {   
+            MySqlConnection connection = null;
+            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+                "SELECT x, y, z, xMin, yMin, zMin, xMax, yMax, zMax, factionID, radius FROM mapRegions WHERE regionID = @regionID",
+                new Dictionary<string, object>()
+                {
+                    {"@regionID", item.ID}
+                }
+            );
+
+            using (connection)
+            using (reader)
+            {
+                if (reader.Read() == false)
+                    return null;
+
+                return new Region(item,
+                    reader.GetDouble(0),
+                    reader.GetDouble(1),
+                    reader.GetDouble(2),
+                    reader.GetDouble(3),
+                    reader.GetDouble(4),
+                    reader.GetDouble(5),
+                    reader.GetDouble(6),
+                    reader.GetDouble(7),
+                    reader.GetDouble(8),
+                    reader.IsDBNull(9) ? default : reader.GetInt32(9),
+                    reader.GetDouble(10)
                 );
             }
         }
 
         public void UnloadItem(int itemID)
         {
+            // non-user generated items are not owned by anyone
+            if (itemID < 90000000)
+                return;
+            
             Database.PrepareQuery("UPDATE entity SET nodeID = 0 WHERE itemID = @itemID", new Dictionary<string, object>()
                 {
                     {"@itemID", itemID}

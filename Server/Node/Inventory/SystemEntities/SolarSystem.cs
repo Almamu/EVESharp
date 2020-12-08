@@ -32,7 +32,7 @@ namespace Node.Inventory.SystemEntities
         public SolarSystem(ItemEntity from, int regionId, int constellationId, double mapX, double mapY, double mapZ,
             double mapXMin, double mapYMin, double mapZMin, double mapXMax, double mapYMax, double mapZMax, double luminosity,
             bool border, bool fringe, bool corridor, bool hub, bool international, bool regional, bool constellation,
-            double security, int factionId, double radius, int sunTypeId, string securityClass) : base(from)
+            double security, int? factionId, double radius, int sunTypeId, string securityClass) : base(from)
         {
             this.mRegionId = regionId;
             this.mConstellationId = constellationId;
@@ -72,7 +72,7 @@ namespace Node.Inventory.SystemEntities
         private bool mRegional;
         private bool mConstellation;
         private double mSecurity;
-        private int mFactionId;
+        private int? mFactionId;
         private double mRadius;
         private int mSunTypeId;
         private string mSecurityClass;
@@ -177,7 +177,7 @@ namespace Node.Inventory.SystemEntities
             get => mSecurity;
         }
 
-        public int FactionID
+        public int? FactionID
         {
             get => mFactionId;
         }
