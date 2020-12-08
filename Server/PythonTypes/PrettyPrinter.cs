@@ -176,7 +176,7 @@ namespace PythonTypes
             this.mIndentation++;
 
             // process all the keys and values
-            foreach (KeyValuePair<string, PyDataType> pair in dictionary)
+            foreach (KeyValuePair<PyDataType, PyDataType> pair in dictionary)
             {
                 this.Process(pair.Key);
                 this.Process(pair.Value);

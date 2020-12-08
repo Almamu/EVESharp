@@ -60,7 +60,7 @@ namespace Common.Game
             PyDictionary result = new PyDictionary();
 
             // iterate through the session data
-            foreach (KeyValuePair<string, PyDataType> pair in this.mSession)
+            foreach (KeyValuePair<PyDataType, PyDataType> pair in this.mSession)
             {
                 PyTuple value = pair.Value as PyTuple;
 
@@ -84,8 +84,8 @@ namespace Common.Game
         public void LoadChanges(PyDictionary changes)
         {
             // parse the encoded changes and update the current values
-            foreach (KeyValuePair<string, PyDataType> pair in changes)
-                this[pair.Key] = (pair.Value as PyTuple)[1];
+            foreach (KeyValuePair<PyDataType, PyDataType> pair in changes)
+                this[pair.Key as PyString] = (pair.Value as PyTuple)[1];
         }
     }
 }

@@ -31,15 +31,15 @@ namespace PythonTypes.Types.Database
             if (type == typeof(string))
                 data = new PyString(reader.GetString(index), true);
             else if (type == typeof(ulong))
-                data = reader.GetUInt64(index);
+                data = (long) reader.GetUInt64(index);
             else if (type == typeof(long))
                 data = reader.GetInt64(index);
             else if (type == typeof(uint))
-                data = reader.GetUInt32(index);
+                data = (int) reader.GetUInt32(index);
             else if (type == typeof(int))
                 data = reader.GetInt32(index);
             else if (type == typeof(ushort))
-                data = reader.GetUInt16(index);
+                data = (short) reader.GetUInt16(index);
             else if (type == typeof(short))
                 data = reader.GetInt16(index);
             else if (type == typeof(byte))

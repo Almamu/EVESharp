@@ -11,22 +11,6 @@ MySQL - 5.0.67-community-nt : Database - eve_evemu_dynamic
 
 /*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
 
-/*Table structure for table `account` */
-
-DROP TABLE IF EXISTS `account`;
-
-CREATE TABLE `account` (
-  `accountID` int(10) unsigned NOT NULL auto_increment,
-  `accountName` varchar(43) NOT NULL default '',
-  `password` varchar(43) NOT NULL default '',
-  `role` int(10) unsigned NOT NULL default '0',
-  `online` tinyint(1) NOT NULL default '0',
-  `banned` tinyint(1) NOT NULL default '0',
-  PRIMARY KEY  (`accountID`),
-  UNIQUE KEY `accountName` (`accountName`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
-/*Data for the table `account` */
 
 /*Table structure for table `alliance_shortnames` */
 
@@ -167,99 +151,6 @@ CREATE TABLE `channelMods` (
 
 /*Data for the table `channelMods` */
 
-/*Table structure for table `character_` */
-
-DROP TABLE IF EXISTS `character_`;
-
-CREATE TABLE `character_` (
-  `characterID` int(10) unsigned NOT NULL default '0',
-  `characterName` varchar(43) NOT NULL default '',
-  `accountID` int(10) unsigned default NULL,
-  `title` varchar(85) NOT NULL default '',
-  `description` text NOT NULL,
-  `bounty` double NOT NULL default '0',
-  `balance` double NOT NULL default '0',
-  `securityRating` double NOT NULL default '0',
-  `petitionMessage` varchar(85) NOT NULL default '',
-  `logonMinutes` int(10) unsigned NOT NULL default '0',
-  `corporationID` int(10) unsigned NOT NULL default '0',
-  `corporationDateTime` bigint(20) unsigned NOT NULL default '0',
-  `startDateTime` bigint(20) unsigned NOT NULL default '0',
-  `createDateTime` bigint(20) unsigned NOT NULL default '0',
-  `typeID` int(10) unsigned NOT NULL default '0',
-  `raceID` int(10) unsigned NOT NULL default '0',
-  `bloodlineID` int(10) unsigned NOT NULL default '0',
-  `ancestryID` int(10) unsigned NOT NULL default '0',
-  `careerID` int(10) unsigned NOT NULL default '0',
-  `schoolID` int(10) unsigned NOT NULL default '0',
-  `careerSpecialityID` int(10) unsigned NOT NULL default '0',
-  `gender` tinyint(4) NOT NULL default '0',
-  `accessoryID` int(10) unsigned default NULL,
-  `beardID` int(10) unsigned default NULL,
-  `costumeID` int(10) unsigned NOT NULL default '0',
-  `decoID` int(10) unsigned default NULL,
-  `eyebrowsID` int(10) unsigned NOT NULL default '0',
-  `eyesID` int(10) unsigned NOT NULL default '0',
-  `hairID` int(10) unsigned NOT NULL default '0',
-  `lipstickID` int(10) unsigned default NULL,
-  `makeupID` int(10) unsigned default NULL,
-  `skinID` int(10) unsigned NOT NULL default '0',
-  `backgroundID` int(10) unsigned NOT NULL default '0',
-  `lightID` int(10) unsigned NOT NULL default '0',
-  `headRotation1` double NOT NULL default '0',
-  `headRotation2` double NOT NULL default '0',
-  `headRotation3` double NOT NULL default '0',
-  `eyeRotation1` double NOT NULL default '0',
-  `eyeRotation2` double NOT NULL default '0',
-  `eyeRotation3` double NOT NULL default '0',
-  `camPos1` double NOT NULL default '0',
-  `camPos2` double NOT NULL default '0',
-  `camPos3` double NOT NULL default '0',
-  `morph1e` double default NULL,
-  `morph1n` double default NULL,
-  `morph1s` double default NULL,
-  `morph1w` double default NULL,
-  `morph2e` double default NULL,
-  `morph2n` double default NULL,
-  `morph2s` double default NULL,
-  `morph2w` double default NULL,
-  `morph3e` double default NULL,
-  `morph3n` double default NULL,
-  `morph3s` double default NULL,
-  `morph3w` double default NULL,
-  `morph4e` double default NULL,
-  `morph4n` double default NULL,
-  `morph4s` double default NULL,
-  `morph4w` double default NULL,
-  `stationID` int(10) unsigned NOT NULL default '0',
-  `solarSystemID` int(10) unsigned NOT NULL default '0',
-  `constellationID` int(10) unsigned NOT NULL default '0',
-  `regionID` int(10) unsigned NOT NULL default '0',
-  `online` tinyint(1) NOT NULL default '0',
-  PRIMARY KEY  (`characterID`),
-  UNIQUE KEY `characterName` (`characterName`),
-  KEY `FK_CHARACTER__ACCOUNTS` (`accountID`),
-  KEY `FK_CHARACTER__INVTYPES` (`typeID`),
-  KEY `FK_CHARACTER__CHRACCESSORIES` (`accessoryID`),
-  KEY `FK_CHARACTER__CHRANCESTRIES` (`ancestryID`),
-  KEY `FK_CHARACTER__CHRBEARDS` (`beardID`),
-  KEY `FK_CHARACTER__CHRCAREERS` (`careerID`),
-  KEY `FK_CHARACTER__CHRCAREERSPECIALITIES` (`careerSpecialityID`),
-  KEY `FK_CHARACTER__CHRCOSTUMES` (`costumeID`),
-  KEY `FK_CHARACTER__CHRDECOS` (`decoID`),
-  KEY `FK_CHARACTER__CHREYEBROWS` (`eyebrowsID`),
-  KEY `FK_CHARACTER__CHREYES` (`eyesID`),
-  KEY `FK_CHARACTER__CHRHAIRS` (`hairID`),
-  KEY `FK_CHARACTER__CHRLIPSTICKS` (`lipstickID`),
-  KEY `FK_CHARACTER__CHRMAKEUPS` (`makeupID`),
-  KEY `FK_CHARACTER__CHRSCHOOLS` (`schoolID`),
-  KEY `FK_CHARACTER__CHRSKINS` (`skinID`),
-  KEY `FK_CHARACTER__CHRBACKGROUNDS` (`backgroundID`),
-  KEY `FK_CHARACTER__CHRLIGHTS` (`lightID`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
-/*Data for the table `character_` */
-
 /*Table structure for table `chrApplications` */
 
 DROP TABLE IF EXISTS `chrApplications`;
@@ -391,51 +282,6 @@ CREATE TABLE `chrStandings` (
 
 /*Data for the table `chrStandings` */
 
-/*Table structure for table `corporation` */
-
-DROP TABLE IF EXISTS `corporation`;
-
-CREATE TABLE `corporation` (
-  `corporationID` int(10) unsigned NOT NULL auto_increment,
-  `corporationName` varchar(100) NOT NULL default '',
-  `description` mediumtext NOT NULL,
-  `tickerName` varchar(8) NOT NULL default '',
-  `url` mediumtext NOT NULL,
-  `taxRate` double NOT NULL default '0',
-  `minimumJoinStanding` double NOT NULL default '0',
-  `corporationType` int(10) unsigned NOT NULL default '0',
-  `hasPlayerPersonnelManager` tinyint(3) unsigned NOT NULL default '0',
-  `sendCharTerminationMessage` tinyint(3) unsigned NOT NULL default '1',
-  `creatorID` int(10) unsigned NOT NULL default '0',
-  `ceoID` int(10) unsigned NOT NULL default '0',
-  `stationID` int(10) unsigned NOT NULL default '0',
-  `raceID` int(10) unsigned default NULL,
-  `allianceID` int(10) unsigned NOT NULL default '0',
-  `shares` bigint(20) unsigned NOT NULL default '1000',
-  `memberCount` int(10) unsigned NOT NULL default '0',
-  `memberLimit` int(10) unsigned NOT NULL default '10',
-  `allowedMemberRaceIDs` int(10) unsigned NOT NULL default '0',
-  `graphicID` int(10) unsigned NOT NULL default '0',
-  `shape1` int(10) unsigned default NULL,
-  `shape2` int(10) unsigned default NULL,
-  `shape3` int(10) unsigned default NULL,
-  `color1` int(10) unsigned default NULL,
-  `color2` int(10) unsigned default NULL,
-  `color3` int(10) unsigned default NULL,
-  `typeface` varchar(11) default NULL,
-  `division1` varchar(100) default '1st division',
-  `division2` varchar(100) default '2nd division',
-  `division3` varchar(100) default '3rd division',
-  `division4` varchar(100) default '4th division',
-  `division5` varchar(100) default '5th division',
-  `division6` varchar(100) default '6th division',
-  `division7` varchar(100) default '7th division',
-  `balance` double NOT NULL default '0',
-  `deleted` tinyint(3) unsigned NOT NULL default '0',
-  PRIMARY KEY  (`corporationID`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
-/*Data for the table `corporation` */
 
 /*Table structure for table `courierMissions` */
 
@@ -517,44 +363,6 @@ CREATE TABLE `droneState` (
 
 /*Data for the table `droneState` */
 
-/*Table structure for table `entity` */
-
-DROP TABLE IF EXISTS `entity`;
-
-CREATE TABLE `entity` (
-  `itemID` int(10) unsigned NOT NULL auto_increment,
-  `itemName` varchar(85) NOT NULL default '',
-  `typeID` int(10) unsigned NOT NULL default '0',
-  `ownerID` int(10) unsigned NOT NULL default '0',
-  `locationID` int(10) unsigned NOT NULL default '0',
-  `flag` int(10) unsigned NOT NULL default '0',
-  `contraband` int(10) unsigned NOT NULL default '0',
-  `singleton` int(10) unsigned NOT NULL default '0',
-  `quantity` int(10) unsigned NOT NULL default '0',
-  `x` double NOT NULL default '0',
-  `y` double NOT NULL default '0',
-  `z` double NOT NULL default '0',
-  `customInfo` text,
-  PRIMARY KEY  (`itemID`),
-  KEY `typeID` (`typeID`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
-/*Data for the table `entity` */
-
-/*Table structure for table `entity_attributes` */
-
-DROP TABLE IF EXISTS `entity_attributes`;
-
-CREATE TABLE `entity_attributes` (
-  `itemID` int(10) unsigned NOT NULL default '0',
-  `attributeID` int(10) unsigned NOT NULL default '0',
-  `valueInt` int(10) unsigned default NULL,
-  `valueFloat` double unsigned default NULL,
-  PRIMARY KEY  (`itemID`,`attributeID`),
-  KEY `attributeID` (`attributeID`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
-/*Data for the table `entity_attributes` */
 
 /*Table structure for table `eveMail` */
 
@@ -772,17 +580,5 @@ CREATE TABLE `rentalInfo` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 /*Data for the table `rentalInfo` */
-
-/*Table structure for table `srvStatus` */
-
-DROP TABLE IF EXISTS `srvStatus`;
-
-CREATE TABLE `srvStatus` (
-  `config_name` varchar(32) NOT NULL,
-  `config_value` varchar(64) NOT NULL,
-  UNIQUE KEY `config_name` (`config_name`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
-/*Data for the table `srvStatus` */
 
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;

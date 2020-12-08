@@ -34,6 +34,7 @@ using Node.Database;
 using Node.Inventory.Items;
 using Node.Inventory.Items.Types;
 using PythonTypes.Types.Exceptions;
+using PythonTypes.Types.Network;
 using PythonTypes.Types.Primitives;
 
 namespace Node.Services.Characters
@@ -287,6 +288,55 @@ namespace Node.Services.Characters
         public PyDataType GetCharacterToSelect(PyInteger characterID, PyDictionary namedPayload, Client client)
         {
             return this.mDB.GetCharacterSelectionInfo(characterID, client.AccountID);
+        }
+
+        // TODO: THIS PyNone SHOULD REALLY BE AN INTEGER, ALTHOUGH THIS FUNCTIONALITY IS NOT USED
+        // TODO: IT REVEALS AN IMPORTANT ISSUE, WE CAN'T HAVE A WILDCARD PARAMETER PyDataType
+        public PyDataType SelectCharacterID(PyInteger characterID, PyInteger loadDungeon, PyNone secondChoiceID,
+            PyDictionary namedPayload, Client client)
+        {
+            // ensure the character belongs to the current account
+            Character character =
+                this.ServiceManager.Container.ItemFactory.ItemManager.LoadItem(characterID) as Character;
+
+            if (character.AccountID != client.AccountID)
+                throw new CustomError("The selected character does not belong to this account, aborting...");
+            
+            // update the session data for this client
+            client.CharacterID = character.ID;
+            client.CorporationID = character.CorporationID;
+
+            if (character.StationID == 0)
+            {
+                client.SolarSystemID = character.SolarSystemID;
+            }
+            else
+            {
+                client.StationID = character.StationID;
+            }
+
+            client.SolarSystemID2 = character.SolarSystemID;
+            client.ConstellationID = character.ConstellationID;
+            client.RegionID = character.RegionID;
+            client.HQID = 0;
+            client.CorporationRole = character.CorpRole;
+            client.RolesAtAll = character.RolesAtAll;
+            client.RolesAtBase = character.RolesAtBase;
+            client.RolesAtHQ = character.RolesAtHq;
+            client.RolesAtOther = character.RolesAtOther;
+            client.ShipID = character.LocationID;
+            
+            // TODO: CHECK WHAT NODE HAS THE SOLAR SYSTEM LOADED AND PROPERLY LET THE CLIENT KNOW
+            
+            // build the session change
+            PyPacket sessionChangeNotification = client.CreateEmptySessionChange(this.ServiceManager.Container);
+            
+            // and finally send the client the required data
+            this.ServiceManager.Container.ClusterConnection.Socket.Send(sessionChangeNotification);
+            
+            // TODO: SEND SKILL QUEUE UPDATES FOR THE PLAYER
+            
+            return null;
         }
 
         public PyDataType Ping(PyDictionary namedPayload, Client client)

@@ -24,11 +24,15 @@
 
 using Common.Database;
 using Common.Services;
+using Node.Services;
 using Node.Services.Account;
 using Node.Services.CacheSvc;
 using Node.Services.Characters;
 using Node.Services.Config;
+using Node.Services.Dogma;
+using Node.Services.Inventory;
 using Node.Services.Network;
+using Node.Services.War;
 
 namespace Node
 {
@@ -44,6 +48,10 @@ namespace Node
         public userSvc userSvc { get; }
         public charmgr charmgr { get; }
         public config config { get; }
+        public dogmaIM dogmaIM { get; }
+        public invbroker invbroker { get; }
+        public warRegistry warRegistry { get; }
+        public station station { get; }
         private readonly DatabaseConnection mDatabaseConnection = null;
 
         public ServiceManager(NodeContainer container, DatabaseConnection db, CacheStorage storage, Configuration.General configuration)
@@ -61,6 +69,10 @@ namespace Node
             this.userSvc = new userSvc(this);
             this.charmgr = new charmgr(db, this);
             this.config = new config(db, this);
+            this.dogmaIM = new dogmaIM(this);
+            this.invbroker = new invbroker(this);
+            this.warRegistry = new warRegistry(this);
+            this.station = new station(this);
         }
     }
 }

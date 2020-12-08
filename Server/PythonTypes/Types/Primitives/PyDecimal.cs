@@ -32,13 +32,23 @@ namespace PythonTypes.Types.Primitives
         public PyDecimal(double value) : base(PyObjectType.Decimal)
         {
             this.Value = value;
-            this.DecimalType = DecimalTypeEnum.Float;
+            this.DecimalType = DecimalTypeEnum.Double;
         }
 
         public PyDecimal(float value) : base(PyObjectType.Decimal)
         {
             this.Value = value;
             this.DecimalType = DecimalTypeEnum.Float;
+        }
+
+        public static bool operator >(PyDecimal obj, double value)
+        {
+            return obj.Value > value;
+        }
+
+        public static bool operator <(PyDecimal obj, double value)
+        {
+            return obj.Value < value;
         }
 
         public static bool operator ==(PyDecimal obj, double value)
@@ -51,6 +61,16 @@ namespace PythonTypes.Types.Primitives
         public static bool operator !=(PyDecimal obj, double value)
         {
             return !(obj == value);
+        }
+
+        public static bool operator >(PyDecimal obj, float value)
+        {
+            return obj.Value > value;
+        }
+
+        public static bool operator <(PyDecimal obj, float value)
+        {
+            return obj.Value < value;
         }
 
         public static bool operator ==(PyDecimal obj, float value)

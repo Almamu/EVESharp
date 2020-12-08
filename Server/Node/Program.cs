@@ -136,6 +136,7 @@ namespace Node
 
                 sChannel.Info("Initializing service manager");
                 sContainer.ServiceManager = new ServiceManager(sContainer, sDatabase, sCacheStorage, sConfiguration);
+                sContainer.BoundServiceManager = new BoundServiceManager(sContainer);
                 sChannel.Debug("Done");
 
                 sChannel.Info("Connecting to proxy...");

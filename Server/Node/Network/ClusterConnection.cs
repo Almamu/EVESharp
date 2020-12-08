@@ -1,4 +1,5 @@
 using System;
+using System.Text.RegularExpressions;
 using Common.Logging;
 using Common.Network;
 using Common.Packets;
@@ -17,6 +18,7 @@ namespace Node.Network
         {
             this.Log = container.Logger.CreateLogChannel("ClusterConnection");
             this.Container = container;
+            this.Container.ClusterConnection = this;
             this.Socket = new EVEClientSocket(this.Log);
             this.Socket.SetReceiveCallback(ReceiveLowLevelVersionExchangeCallback);
             this.Socket.SetExceptionHandler(HandleException);
@@ -95,7 +97,7 @@ namespace Node.Network
             {
                 PyPacket result;
                 PyTuple callInfo = ((packet.Payload[0] as PyTuple)[1] as PySubStream).Stream as PyTuple;
-
+                
                 string call = callInfo[1] as PyString;
                 PyTuple args = callInfo[2] as PyTuple;
                 PyDictionary sub = callInfo[3] as PyDictionary;
@@ -106,17 +108,93 @@ namespace Node.Network
                 {
                     if (packet.Destination is PyAddressAny destAny)
                     {
-                        Log.Trace($"Calling {destAny.Service.Value}::{call}");
-                        callResult = this.Container.ServiceManager.ServiceCall(
-                            destAny.Service, call, args, sub, this.Container.ClientManager.Get(packet.UserID)
-                        );
+                        if (destAny.Service.Length == 0)
+                        {
+                            if (callInfo[0] is PyString == false)
+                            {
+                                Log.Fatal("Expected bound call with bound string, but got something different");
+                                return;
+                            }
+
+                            string boundString = callInfo[0] as PyString;
+                            
+                            // parse the bound string to get back proper node and bound ids
+                            Match regexMatch = Regex.Match(boundString, "N=([0-9]+):([0-9]+)");
+
+                            if (regexMatch.Captures.Count != 2)
+                            {
+                                Log.Fatal("Cannot find nodeID and boundID in the boundString");
+                                return;
+                            }
+
+                            int nodeID = int.Parse(regexMatch.Captures[0].Value);
+                            int boundID = int.Parse(regexMatch.Captures[1].Value);
+
+                            if (nodeID != this.Container.NodeID)
+                            {
+                                Log.Fatal("Got bound service call for a different node");
+                                // TODO: MIGHT BE A GOOD IDEA TO RELAY THIS CALL TO THE CORRECT NODE
+                                // TODO: INSIDE THE NETWORK, AT LEAST THAT'S WHAT CCP IS DOING BASED
+                                // TODO: ON THE CLIENT'S CODE... NEEDS MORE INVESTIGATION
+                                return;
+                            }
+
+                            callResult = this.Container.BoundServiceManager.ServiceCall(
+                                boundID, call, args, sub, this.Container.ClientManager.Get(packet.UserID)
+                            );
+                        }
+                        else
+                        {
+                            Log.Trace($"Calling {destAny.Service.Value}::{call}");
+                            callResult = this.Container.ServiceManager.ServiceCall(
+                                destAny.Service, call, args, sub, this.Container.ClientManager.Get(packet.UserID)
+                            );    
+                        }
                     }
                     else if (packet.Destination is PyAddressNode destNode)
                     {
-                        Log.Trace($"Calling {destNode.Service.Value}::{call}");
-                        callResult = this.Container.ServiceManager.ServiceCall(
-                            destNode.Service, call, args, sub, this.Container.ClientManager.Get(packet.UserID)
-                        );
+                        if (destNode.Service.Length == 0)
+                        {
+                            if (callInfo[0] is PyString == false)
+                            {
+                                Log.Fatal("Expected bound call with bound string, but got something different");
+                                return;
+                            }
+
+                            string boundString = callInfo[0] as PyString;
+                            
+                            // parse the bound string to get back proper node and bound ids
+                            Match regexMatch = Regex.Match(boundString, "N=([0-9]+):([0-9]+)");
+
+                            if (regexMatch.Captures.Count != 2)
+                            {
+                                Log.Fatal("Cannot find nodeID and boundID in the boundString");
+                                return;
+                            }
+
+                            int nodeID = int.Parse(regexMatch.Captures[0].Value);
+                            int boundID = int.Parse(regexMatch.Captures[1].Value);
+
+                            if (nodeID != this.Container.NodeID)
+                            {
+                                Log.Fatal("Got bound service call for a different node");
+                                // TODO: MIGHT BE A GOOD IDEA TO RELAY THIS CALL TO THE CORRECT NODE
+                                // TODO: INSIDE THE NETWORK, AT LEAST THAT'S WHAT CCP IS DOING BASED
+                                // TODO: ON THE CLIENT'S CODE... NEEDS MORE INVESTIGATION
+                                return;
+                            }
+
+                            callResult = this.Container.BoundServiceManager.ServiceCall(
+                                boundID, call, args, sub, this.Container.ClientManager.Get(packet.UserID)
+                            );
+                        }
+                        else
+                        {
+                            Log.Trace($"Calling {destNode.Service.Value}::{call}");
+                            callResult = this.Container.ServiceManager.ServiceCall(
+                                destNode.Service, call, args, sub, this.Container.ClientManager.Get(packet.UserID)
+                            );
+                        }
                     }
                     else
                     {

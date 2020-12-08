@@ -37,7 +37,7 @@ namespace Node.Database
                 " morph1e, morph1n, morph1s, morph1w, morph2e, morph2n," +
                 " morph2s, morph2w, morph3e, morph3n, morph3s, morph3w," +
                 " morph4e, morph4n, morph4s, morph4w" +
-                " FROM character_ " +
+                " FROM chrInformation " +
                 "	LEFT JOIN entity ON characterID = itemID" +
                 " WHERE accountID = @accountID",
                 new Dictionary<string, object>()
@@ -59,10 +59,10 @@ namespace Node.Database
             MySqlDataReader reader = Database.PrepareQuery(
                 ref connection,
                 "SELECT " +
-                    " itemName AS shortName,bloodlineID,gender,bounty,character_.corporationID,allianceID,title,startDateTime,createDateTime," +
-                    " securityRating,character_.balance,character_.stationID,solarSystemID,constellationID,regionID," +
+                    " itemName AS shortName,bloodlineID,gender,bounty,chrInformation.corporationID,allianceID,title,startDateTime,createDateTime," +
+                    " securityRating,chrInformation.balance,chrInformation.stationID,solarSystemID,constellationID,regionID," +
                     " petitionMessage,logonMinutes,tickerName" +
-                    " FROM character_ " +
+                    " FROM chrInformation " +
                     "	LEFT JOIN entity ON characterID = itemID" +
                     "	LEFT JOIN corporation USING (corporationID)" +
                     "	LEFT JOIN bloodlineTypes USING (typeID)" +
@@ -87,7 +87,7 @@ namespace Node.Database
             MySqlDataReader reader = Database.PrepareQuery(
                 ref connection,
                 "SELECT gender, bloodlineID, corporationID " +
-                "FROM character_ " +
+                "FROM chrInformation " +
                 "LEFT JOIN chrAncestries USING (ancestryID) " +
                 "WHERE characterID = @characterID",
                 new Dictionary<string, object>()
@@ -111,7 +111,7 @@ namespace Node.Database
             MySqlConnection connection = null;
             MySqlDataReader reader = Database.PrepareQuery(
                 ref connection,
-                $"SELECT COUNT(*) FROM character_ LEFT JOIN entity ON characterID = itemID WHERE itemName LIKE @characterName",
+                $"SELECT COUNT(*) FROM chrInformation LEFT JOIN entity ON characterID = itemID WHERE itemName LIKE @characterName",
                 new Dictionary<string, object>()
                 {
                     {"@characterName", characterName}
@@ -228,7 +228,7 @@ namespace Node.Database
 
             // now create the character record in the database
             Database.PrepareQuery(
-                "INSERT INTO character_(" + 
+                "INSERT INTO chrInformation(" + 
                     "characterID, accountID, title, description, bounty, balance, securityRating, petitionMessage, " +
                     "logonMinutes, corporationID, corpRole, rolesAtAll, rolesAtBase, rolesAtHQ, rolesAtOther, " +
                     "corporationDateTime, startDateTime, createDateTime, ancestryID, careerID, schoolID, careerSpecialityID, " +

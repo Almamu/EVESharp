@@ -131,7 +131,7 @@ namespace PythonTypes.Types.Primitives
             return new PyBool((bool) value);
         }
 
-        public static implicit operator PyDataType(Dictionary<string, PyDataType> value)
+        public static implicit operator PyDataType(Dictionary<PyDataType, PyDataType> value)
         {
             return new PyDictionary(value);
         }

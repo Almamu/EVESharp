@@ -160,7 +160,7 @@ namespace PythonTypes.Marshal
         /// <param name="data">The value to write</param>
         private static void ProcessDecimal(BinaryWriter writer, PyDecimal data)
         {
-            if (data.Value == 0.0)
+            if (data == 0.0)
                 writer.WriteOpcode(Opcode.RealZero);
             else
             {
@@ -235,7 +235,7 @@ namespace PythonTypes.Marshal
             writer.WriteOpcode(Opcode.Dictionary);
             writer.WriteSizeEx(dictionary.Length);
 
-            foreach (KeyValuePair<string, PyDataType> pair in dictionary)
+            foreach (KeyValuePair<PyDataType, PyDataType> pair in dictionary)
             {
                 Process(writer, pair.Value);
                 Process(writer, pair.Key);
@@ -343,7 +343,7 @@ namespace PythonTypes.Marshal
 
             if (data.Dictionary.Length > 0)
             {
-                foreach (KeyValuePair<string, PyDataType> entry in data.Dictionary)
+                foreach (KeyValuePair<PyDataType, PyDataType> entry in data.Dictionary)
                 {
                     Process(writer, entry.Key);
                     Process(writer, entry.Value);

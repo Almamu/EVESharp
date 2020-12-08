@@ -17,5 +17,10 @@ namespace Node.Services.Config
             // return item data from the entity table and call it a day
             return this.mDB.GetMultiOwnersEx(ids);
         }
+
+        public PyDataType GetMultiGraphicsEx(PyList ids, PyDictionary namedPayload, Client client)
+        {
+            return this.mDB.GetMultiGraphicsEx(ids);
+        }
     }
 }

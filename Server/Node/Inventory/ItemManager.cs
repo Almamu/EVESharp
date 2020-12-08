@@ -54,34 +54,37 @@ namespace Node.Inventory
                 if (item == null)
                     return null;
 
-                switch ((ItemCategories) item.Type.Group.Category.ID)
+                switch (item.Type.Group.Category.ID)
                 {
                     // celestial items are a kind of subcategory
                     // load them in specific ways based on the type of celestial item
-                    case ItemCategories.Celestial:
-                        return LoadCelestial(itemID, item.Type.Group.ID);
+                    case (int) ItemCategories.Celestial:
+                        item = LoadCelestial(item);
+                        break;
 
-                    case ItemCategories.Blueprint:
-                        return LoadBlueprint(itemID);
+                    case (int) ItemCategories.Blueprint:
+                        item = LoadBlueprint(item);
+                        break;
 
                     // owner items are a kind of subcategory too
-                    case ItemCategories.Owner:
-                        return LoadOwner(itemID, item.Type.Group.ID);
+                    case (int) ItemCategories.Owner:
+                        item = LoadOwner(item);
+                        break;
                     
-                    case ItemCategories.Skill:
-                        return LoadSkill(itemID);
+                    case (int) ItemCategories.Skill:
+                        item = LoadSkill(item);
+                        break;
                     
-                    case ItemCategories.Ship:
-                        return LoadShip(itemID);
+                    case (int) ItemCategories.Ship:
+                        item = LoadShip(item);
+                        break;
                     
-                    case ItemCategories.Station:
-                        return LoadStation(itemID);
-                    
-                    // Not handled
-                    default:
-                        mItemList.Add(item.ID, item);
+                    case (int) ItemCategories.Station:
+                        item = LoadStation(item);
                         break;
                 }
+
+                this.mItemList.Add(item.ID, item);
 
                 return item;
             }
@@ -101,58 +104,51 @@ namespace Node.Inventory
             return mItemList.ContainsKey(itemID);
         }
 
-        private ItemEntity LoadCelestial(int itemID, int itemGroup)
+        private ItemEntity LoadCelestial(ItemEntity item)
         {
-            switch ((ItemGroups) itemGroup)
+            switch (item.Type.Group.ID)
             {
-                case ItemGroups.SolarSystem:
-                    return this.ItemFactory.ItemDB.LoadSolarSystem(itemID);
-                case ItemGroups.Station:
-                    return this.LoadStation(itemID);
+                case (int) ItemGroups.SolarSystem:
+                    return this.ItemFactory.ItemDB.LoadSolarSystem(item);
+                case (int) ItemGroups.Station:
+                    return this.LoadStation(item);
                 default:
-                    Log.Warning($"Loading celestial {itemID} from item group {itemGroup} as normal item");
-                    return this.ItemFactory.ItemDB.LoadItem(itemID);
+                    Log.Warning($"Loading celestial {item.ID} from item group {item.Type.Group.ID} as normal item");
+                    return item;
             }
         }
         
-        private ItemEntity LoadBlueprint(int itemID)
+        private ItemEntity LoadBlueprint(ItemEntity item)
         {
-            Blueprint bp = this.ItemFactory.ItemDB.LoadBlueprint(itemID);
-
-            if (bp == null)
-                return null;
-
-            mItemList.Add(bp.ID, bp);
-
-            return bp;
+            return this.ItemFactory.ItemDB.LoadBlueprint(item);
         }
 
-        private ItemEntity LoadOwner(int itemID,  int itemGroup)
+        private ItemEntity LoadOwner(ItemEntity item)
         {
-            switch (itemGroup)
+            switch (item.Type.Group.ID)
             {
                 case (int) ItemGroups.Character:
-                    return this.ItemFactory.ItemDB.LoadCharacter(itemID);
+                    return this.ItemFactory.ItemDB.LoadCharacter(item);
                 
                 default:
-                    Log.Warning($"Loading owner {itemID} from item group {itemGroup} as normal item");
-                    return this.ItemFactory.ItemDB.LoadItem(itemID);
+                    Log.Warning($"Loading owner {item.ID} from item group {item.Type.Group.ID} as normal item");
+                    return item;
             }
         }
 
-        private ItemEntity LoadSkill(int itemID)
+        private ItemEntity LoadSkill(ItemEntity item)
         {
-            return this.ItemFactory.ItemDB.LoadSkill(itemID);
+            return this.ItemFactory.ItemDB.LoadSkill(item);
         }
 
-        private ItemEntity LoadShip(int itemID)
+        private ItemEntity LoadShip(ItemEntity item)
         {
-            return this.ItemFactory.ItemDB.LoadShip(itemID);
+            return this.ItemFactory.ItemDB.LoadShip(item);
         }
 
-        private ItemEntity LoadStation(int itemID)
+        private ItemEntity LoadStation(ItemEntity item)
         {
-            return this.ItemFactory.ItemDB.LoadStation(itemID);
+            return this.ItemFactory.ItemDB.LoadStation(item);
         }
 
         public ItemEntity CreateSimpleItem(string itemName, ItemType type, ItemEntity owner, ItemEntity location, ItemFlags flag,
@@ -197,13 +193,13 @@ namespace Node.Inventory
         public void MoveItem(ItemEntity item, ItemEntity newLocation)
         {
             // TODO: SEND NOTIFICATION OF ITEM CHANGE?
-            item.Location = newLocation;
+            item.LocationID = newLocation.ID;
         }
 
         public void ChangeOwnership(ItemEntity item, ItemEntity newOwner)
         {
             // TODO: SEND NOTIFICATION OF ITEM CHANGE?
-            item.Owner = newOwner;
+            item.OwnerID = newOwner.ID;
         }
 
         public void UnloadItem(ItemEntity item)

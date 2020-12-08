@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using PythonTypes.Types.Primitives;
 
 namespace Node.Inventory.Items.Attributes
 {
@@ -78,6 +79,21 @@ namespace Node.Inventory.Items.Attributes
         {
             foreach (ItemAttribute attrib in this)
                 list[attrib.Info.ID] = attrib.Clone();
+        }
+
+        public static implicit operator PyDataType(AttributeList list)
+        {
+            return (PyDictionary) list;
+        }
+
+        public static implicit operator PyDictionary(AttributeList list)
+        {
+            PyDictionary result = new PyDictionary();
+
+            foreach (KeyValuePair<int, ItemAttribute> attrib in list)
+                result[attrib.Key] = attrib.Value;
+
+            return result;
         }
     }
 }

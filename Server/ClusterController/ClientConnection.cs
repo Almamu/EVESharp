@@ -176,6 +176,30 @@ namespace ClusterControler
             if (pyPacket.UserID != this.Session["userid"] as PyInteger)
                 throw new Exception("Received a packet coming from a client trying to spoof It's userID");
 
+            if (pyPacket.Type == PyPacket.PacketType.PING_REQ)
+            {
+                // alter package to include the times the data
+                PyTuple handleMessage = new PyTuple(3);
+
+                // this time should come from the stream packetizer or the socket itself
+                // but there's no way we're adding time tracking for all the goddamned packets
+                // so this should be sufficient
+                handleMessage[0] = DateTime.UtcNow.ToFileTime();
+                handleMessage[1] = DateTime.UtcNow.ToFileTime();
+                handleMessage[2] = "proxy::handle_message";
+                
+                PyTuple writing = new PyTuple(3);
+
+                writing[0] = DateTime.UtcNow.ToFileTime();
+                writing[1] = DateTime.UtcNow.ToFileTime();
+                writing[2] = "proxy::writing";
+
+                Log.Debug("DateTimeNow: " + DateTime.UtcNow.ToFileTime());
+
+                (pyPacket.Payload[0] as PyList)?.Add(handleMessage);
+                (pyPacket.Payload[0] as PyList)?.Add(writing);
+            }
+
             if (pyPacket.Destination is PyAddressNode)
             {
                 // search for the node in the list
@@ -195,7 +219,7 @@ namespace ClusterControler
             }
             else
             {
-                throw new Exception($"Unexpected destination tyoe {pyPacket.Destination.GetType().Name} for packet");
+                throw new Exception($"Unexpected destination type {pyPacket.Destination.GetType().Name} for packet");
             }
         }
 

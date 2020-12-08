@@ -87,7 +87,7 @@ namespace ClusterControler.Database
             {
                 MySqlConnection connection = null;
                 MySqlDataReader reader = Database.Query(ref connection,
-                    "SELECT updateID, updateName, description, machoVersionMin, machoVersionMax, buildNumberMin, buildNumberMax, methodName, objectID, codeType, code, OCTET_LENGTH(code) as codeLength FROM liveupdates"
+                    "SELECT updateID, updateName, description, machoVersionMin, machoVersionMax, buildNumberMin, buildNumberMax, methodName, objectID, codeType, code, OCTET_LENGTH(code) as codeLength FROM eveLiveUpdates"
                 );
 
                 using (connection)

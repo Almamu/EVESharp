@@ -46,7 +46,7 @@ namespace PythonTypes.Types.Primitives
         public PyDataType this[int index]
         {
             get => this.mList[index];
-            set => this.mList[index] = value;
+            set => this.mList.Insert(index, value);
         }
 
         public IEnumerator<PyDataType> GetEnumerator()

@@ -34,9 +34,11 @@ namespace Node.Inventory
         public CategoryManager CategoryManager { get; }
         public GroupManager GroupManager { get; }
         public TypeManager TypeManager { get; }
+        public StationManager StationManager { get; }
         public ItemDB ItemDB { get; }
         public SkillDB SkillDB { get; }
         public CharacterDB CharacterDB { get; }
+        public StationDB StationDB { get; }
         
         public ItemFactory(NodeContainer container)
         {
@@ -44,7 +46,10 @@ namespace Node.Inventory
             this.ItemDB = new ItemDB(container.Database, this);
             this.SkillDB = new SkillDB(container.Database, this);
             this.CharacterDB = new CharacterDB(container.Database, this);
+            this.StationDB = new StationDB(container.Database);
             
+            // station manager goes first
+            this.StationManager = new StationManager(this);
             // attribute manager goes first
             this.AttributeManager = new AttributeManager(this);
             // category manager goes first

@@ -260,20 +260,12 @@ namespace Node.Database
                     return null;
 
                 ItemType itemType = this.mItemFactory.TypeManager[reader.GetInt32(2)];
-                ItemEntity owner = null, location = null;
-                
-                if (reader.IsDBNull(3) == false)
-                    owner = this.mItemFactory.ItemManager.LoadItem(reader.GetInt32(3));
-                
-                if (reader.IsDBNull(4) == false)
-                    location = this.mItemFactory.ItemManager.LoadItem(reader.GetInt32(4));
-                
                 Item newItem = new Item(
                     reader.GetString(1), // itemName
                     reader.GetInt32(0), // itemID
                     itemType, // typeID
-                    owner, // ownerID
-                    location, // locationID
+                    reader.GetInt32(3), // ownerID
+                    reader.GetInt32(4), // locationID
                     (ItemFlags) reader.GetInt32(5), // flag
                     reader.GetBoolean(6), // contraband
                     reader.GetBoolean(7), // singleton
@@ -347,19 +339,14 @@ namespace Node.Database
             }
         }
 
-        public Blueprint LoadBlueprint(int itemID)
+        public Blueprint LoadBlueprint(ItemEntity item)
         {
-            Item item = LoadItem(itemID);
-
-            if (item == null)
-                return null;
-
             MySqlConnection connection = null;
             MySqlDataReader reader = Database.PrepareQuery(ref connection,
                 "SELECT copy, materialLevel, productivityLevel, licensedProductionRunsRemaining FROM invBlueprints WHERE blueprintID = @itemID",
                 new Dictionary<string, object>()
                 {
-                    {"@itemID", itemID}
+                    {"@itemID", item.ID}
                 }
             );
 
@@ -373,13 +360,8 @@ namespace Node.Database
             }
         }
 
-        public Character LoadCharacter(int itemID)
+        public Character LoadCharacter(ItemEntity item)
         {
-            Item item = LoadItem(itemID);
-
-            if (item == null)
-                return null;
-
             MySqlConnection connection = null;
             MySqlDataReader reader = Database.PrepareQuery(ref connection,
                 "SELECT characterID, accountID, title, description, bounty, balance, securityRating," +
@@ -390,10 +372,10 @@ namespace Node.Database
                 " eyeRotation1, eyeRotation2, eyeRotation3, camPos1, camPos2, camPos3, morph1e, morph1n, morph1s," +
                 " morph1w, morph2e, morph2n, morph2s, morph2w, morph3e, morph3n, morph3s, morph3w, morph4e, morph4n," +
                 " morph4s, morph4w, stationID, solarSystemID, constellationID, regionID, online" +
-                " FROM character_ WHERE characterID = @itemID",
+                " FROM chrInformation WHERE characterID = @itemID",
                 new Dictionary<string, object>()
                 {
-                    {"@itemID", itemID}
+                    {"@itemID", item.ID}
                 }
             );
             
@@ -474,34 +456,39 @@ namespace Node.Database
             }
         }
 
-        public Skill LoadSkill(int itemID)
+        public Skill LoadSkill(ItemEntity item)
         {
-            Item item = LoadItem(itemID);
-
-            if (item == null)
-                return null;
-
             return new Skill(item);
         }
 
-        public Ship LoadShip(int itemID)
+        public Ship LoadShip(ItemEntity item)
         {
-            Item item = LoadItem(itemID);
-
-            if (item == null)
-                return null;
-
             return new Ship(item);
         }
 
-        public Station LoadStation(int itemID)
+        public Station LoadStation(ItemEntity item)
         {
-            Item item = LoadItem(itemID);
-
-            if (item == null)
-                return null;
-
-            return new Station(item);
+            MySqlConnection connection = null;
+            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+                "SELECT operationID FROM staStations WHERE stationID = @stationID",
+                new Dictionary<string, object>()
+                {
+                    {"@stationID", item.ID}
+                }
+            );
+            
+            using (connection)
+            using (reader)
+            {
+                if (reader.Read() == false)
+                    return null;
+                
+                return new Station(
+                    item,
+                    this.mItemFactory.StationManager.StationTypes[item.Type.ID],
+                    this.mItemFactory.StationManager.Operations[reader.GetInt32(0)]
+                );
+            }
         }
 
         public ulong CreateItem(string itemName, ItemType type, ItemEntity owner, ItemEntity location, ItemFlags flag,
@@ -583,19 +570,14 @@ namespace Node.Database
             }
         }
 
-        public SolarSystem LoadSolarSystem(int solarSystemID)
-        {
-            Item item = LoadItem(solarSystemID);
-
-            if (item == null)
-                return null;
-            
+        public SolarSystem LoadSolarSystem(ItemEntity item)
+        {   
             MySqlConnection connection = null;
             MySqlDataReader reader = Database.PrepareQuery(ref connection,
                 "SELECT regionID, constellationID, x, y, z, xMin, yMin, zMin, xMax, yMax, zMax, luminosity, border, fringe, corridor, hub, international, regional, constellation, security, factionID, radius, sunTypeID, securityClass FROM mapSolarSystems WHERE solarSystemID = @solarSystemID",
                 new Dictionary<string, object>()
                 {
-                    {"@solarSystemID", solarSystemID}
+                    {"@solarSystemID", item.ID}
                 }
             );
 
@@ -696,8 +678,8 @@ namespace Node.Database
                 new Dictionary<string, object>()
                 {
                     {"@itemName", Item.Name},
-                    {"@ownerID", Item.Owner?.ID},
-                    {"@locationID", Item.Location?.ID},
+                    {"@ownerID", Item.OwnerID},
+                    {"@locationID", Item.LocationID},
                     {"@flag", Item.Flag},
                     {"@contraband", Item.Contraband},
                     {"@singleton", Item.Singleton},

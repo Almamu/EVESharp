@@ -31,7 +31,9 @@ namespace Node.Inventory.Items
 {
     public abstract class ItemInventory : ItemEntity
     {
-        public ItemInventory(ItemEntity from) : base(from.Name, from.ID, from.Type, from.Owner, from.Location, from.Flag, from.Contraband, from.Singleton, from.Quantity, from.X, from.Y, from.Z, from.CustomInfo, from.Attributes, from.mItemFactory)
+        public ItemInventory(ItemEntity from) : base(from.Name, from.ID, from.Type, from.OwnerID, from.LocationID,
+            from.Flag, from.Contraband, from.Singleton, from.Quantity, from.X, from.Y, from.Z, from.CustomInfo,
+            from.Attributes, from.mItemFactory)
         {
         }
 

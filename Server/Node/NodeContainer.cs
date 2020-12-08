@@ -4,6 +4,7 @@ using Common.Logging;
 using Node.Data;
 using Node.Database;
 using Node.Inventory;
+using Node.Network;
 
 namespace Node
 {
@@ -11,12 +12,14 @@ namespace Node
     {
         public SystemManager SystemManager { get; set; }
         public ServiceManager ServiceManager { get; set; }
+        public BoundServiceManager BoundServiceManager { get; set; }
         public ClientManager ClientManager { get; set; }
         public ItemFactory ItemFactory { get; set; }
         public Logger Logger { get; set; }
         public long NodeID { get; set; }
         public DatabaseConnection Database { get; private set; }
         public Dictionary<string, Constant> Constants { get; private set; }
+        public ClusterConnection ClusterConnection { get; set; }
 
         private readonly GeneralDB mGeneralDB = null;
 

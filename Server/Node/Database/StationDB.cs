@@ -1,0 +1,95 @@
+using System.Collections.Generic;
+using Common.Database;
+using MySql.Data.MySqlClient;
+using Node.Data;
+using Node.Inventory;
+using Node.Inventory.Items;
+using Node.Inventory.Items.Types;
+
+namespace Node.Database
+{
+    public class StationDB : DatabaseAccessor
+    {
+        public StationDB(DatabaseConnection db) : base(db)
+        {
+        }
+
+        public Dictionary<int, StationOperations> LoadOperations()
+        {
+            MySqlConnection connection = null;
+            MySqlDataReader reader = Database.Query(ref connection, "SELECT operationID, operationName FROM staOperations");
+            
+            using (connection)
+            using (reader)
+            {
+                Dictionary<int, StationOperations> operations = new Dictionary<int, StationOperations>();
+                
+                while (reader.Read() == true)
+                {
+                    List<int> services = new List<int>();
+                    MySqlConnection connectionServices = null;
+                    MySqlDataReader readerServices = Database.PrepareQuery(ref connectionServices,
+                        "SELECT serviceID FROM staOperationServices WHERE operationID = @operationID",
+                        new Dictionary<string, object>()
+                        {
+                            {"@operationID", reader.GetUInt32(0)}
+                        }
+                    );
+                    
+                    using (connectionServices)
+                    using (readerServices)
+                    {
+                        while (readerServices.Read() == true)
+                            services.Add(readerServices.GetInt32(0));
+                    }
+                    
+                    StationOperations operation = new StationOperations(reader.GetInt32(0), services);
+
+                    operations[operation.OperationID] = operation;
+                }
+
+                return operations;
+            }
+        }
+
+        public Dictionary<int, StationType> LoadStationTypes()
+        {
+            MySqlConnection connection = null;
+            MySqlDataReader reader = Database.Query(
+                ref connection,
+                "SELECT stationTypeID, hangarGraphicID, dockEntryX," + 
+                " dockEntryY, dockEntryZ, dockOrientationX, dockOrientationY," +
+                " dockOrientationZ, operationID, officeSlots, reprocessingEfficiency, conquerable " +
+                "FROM staStationTypes"
+            );
+            
+            using (connection)
+            using (reader)
+            {
+                Dictionary<int, StationType> result = new Dictionary<int, StationType>();
+                
+                while (reader.Read() == true)
+                {
+                    StationType stationType = new StationType(
+                        reader.GetInt32(0),
+                        reader.IsDBNull(1) ? default : reader.GetInt32(1),
+                        reader.GetDouble(2),
+                        reader.GetDouble(3),
+                        reader.GetDouble(4),
+                        reader.GetDouble(5),
+                        reader.GetDouble(6),
+                        reader.GetDouble(7),
+                        reader.IsDBNull(8) ? default : reader.GetInt32(8),
+                        reader.IsDBNull(9) ? default : reader.GetInt32(9),
+                        reader.IsDBNull(10) ? default : reader.GetDouble(10),
+                        reader.GetBoolean(11)
+                    );
+
+                    result[stationType.ID] = stationType;
+                }
+
+                return result;
+            }
+        }
+    }
+}

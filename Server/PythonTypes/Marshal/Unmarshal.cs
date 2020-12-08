@@ -539,10 +539,7 @@ namespace PythonTypes.Marshal
                 PyDataType value = this.Process(false);
                 PyDataType key = this.Process(false);
 
-                if (key is PyString == false)
-                    throw new InvalidDataException($"Expected String as Dictionary key, but gor {key.GetType()}");
-
-                dictionary[key as PyString] = value;
+                dictionary[key] = value;
             }
 
             return dictionary;

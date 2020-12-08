@@ -22,10 +22,13 @@
     Creator: Almamu
 */
 
+using System.Collections.Generic;
 using System.Diagnostics;
 using Common.Database;
 using Node.Database;
 using Node.Inventory.Items.Attributes;
+using PythonTypes.Types.Database;
+using PythonTypes.Types.Primitives;
 
 namespace Node.Inventory.Items
 {
@@ -33,11 +36,29 @@ namespace Node.Inventory.Items
     {
         public ItemFactory mItemFactory = null;
 
+        private DBRowDescriptor sEntityItemDescriptor = new DBRowDescriptor()
+        {
+            Columns =
+            {
+                new DBRowDescriptor.Column("itemID", FieldType.I4),
+                new DBRowDescriptor.Column("typeID", FieldType.I2),
+                new DBRowDescriptor.Column("ownerID", FieldType.I4),
+                new DBRowDescriptor.Column("locationID", FieldType.I4),
+                new DBRowDescriptor.Column("flag", FieldType.UI1),
+                new DBRowDescriptor.Column("contraband", FieldType.Bool),
+                new DBRowDescriptor.Column("singleton", FieldType.Bool),
+                new DBRowDescriptor.Column("quantity", FieldType.I4),
+                new DBRowDescriptor.Column("groupID", FieldType.I2),
+                new DBRowDescriptor.Column("categoryID", FieldType.UI1),
+                new DBRowDescriptor.Column("customInfo", FieldType.Str)
+            }
+        };
+
         private int mID;
         private string mName;
         private ItemType mType;
-        private ItemEntity mOwner;
-        private ItemEntity mLocation;
+        private int? mOwnerID;
+        private int? mLocationID;
         private ItemFlags mFlag;
         private bool mContraband;
         private bool mSingleton;
@@ -62,22 +83,22 @@ namespace Node.Inventory.Items
             }
         }
 
-        public ItemEntity Owner
+        public int? OwnerID
         {
-            get => mOwner;
+            get => mOwnerID;
             set
             {
-                this.mOwner = value;
+                this.mOwnerID = value;
                 this.Dirty = true;
             }
         }
 
-        public ItemEntity Location
+        public int? LocationID
         {
-            get => mLocation;
+            get => mLocationID;
             set
             {
-                this.mLocation = value;
+                this.mLocationID = value;
                 this.Dirty = true;
             }
         }
@@ -161,17 +182,17 @@ namespace Node.Inventory.Items
                 this.Dirty = true;
             }
         }
-
-        public ItemEntity(string entityName, int entityId, ItemType type, ItemEntity entityOwner,
-            ItemEntity entityLocation, ItemFlags entityFlag, bool entityContraband, bool entitySingleton,
+        
+        public ItemEntity(string entityName, int entityId, ItemType type, int? ownerID,
+            int? locationID, ItemFlags entityFlag, bool entityContraband, bool entitySingleton,
             int entityQuantity, double entityX, double entityY, double entityZ, string entityCustomInfo,
             AttributeList attributes, ItemFactory itemFactory)
         {
             this.mName = entityName;
             this.mID = entityId;
             this.mType = type;
-            this.mOwner = entityOwner;
-            this.mLocation = entityLocation;
+            this.mOwnerID = ownerID;
+            this.mLocationID = locationID;
             this.mFlag = entityFlag;
             this.mContraband = entityContraband;
             this.mSingleton = entitySingleton;
@@ -185,7 +206,16 @@ namespace Node.Inventory.Items
             this.mItemFactory = itemFactory;
         }
 
-        public ItemEntity(ItemEntity from) : this(from.Name, from.ID, from.Type, from.Owner, from.Location, from.Flag,
+        public ItemEntity(string entityName, int entityId, ItemType type, ItemEntity entityOwner,
+            ItemEntity entityLocation, ItemFlags entityFlag, bool entityContraband, bool entitySingleton,
+            int entityQuantity, double entityX, double entityY, double entityZ, string entityCustomInfo,
+            AttributeList attributes, ItemFactory itemFactory) : this(
+            entityName, entityId, type, entityOwner.ID, entityLocation.ID, entityFlag, entityContraband,
+            entitySingleton, entityQuantity, entityX, entityY, entityZ, entityCustomInfo, attributes, itemFactory)
+        {
+        }
+
+        public ItemEntity(ItemEntity from) : this(from.Name, from.ID, from.Type, from.OwnerID, from.LocationID, from.Flag,
             from.Contraband, from.Singleton, from.Quantity, from.X, from.Y, from.Z, from.CustomInfo, from.Attributes,
             from.mItemFactory)
         {
@@ -203,6 +233,39 @@ namespace Node.Inventory.Items
             
             // persist the attribute list too
             this.Attributes.Persist(this);
+        }
+
+        public PyPackedRow GetEntityRow()
+        {
+            /*
+                new DBRowDescriptor.Column("itemID", FieldType.I4),
+                new DBRowDescriptor.Column("typeID", FieldType.I2),
+                new DBRowDescriptor.Column("ownerID", FieldType.I4),
+                new DBRowDescriptor.Column("locationID", FieldType.I4),
+                new DBRowDescriptor.Column("flag", FieldType.UI1),
+                new DBRowDescriptor.Column("contraband", FieldType.Bool),
+                new DBRowDescriptor.Column("singleton", FieldType.Bool),
+                new DBRowDescriptor.Column("quantity", FieldType.I4),
+                new DBRowDescriptor.Column("groupID", FieldType.I2),
+                new DBRowDescriptor.Column("categoryID", FieldType.UI1),
+                new DBRowDescriptor.Column("customInfo", FieldType.Str)*/
+            
+            Dictionary<string, PyDataType> values = new Dictionary<string, PyDataType> ()
+            {
+                {"itemID", this.ID},
+                {"typeID", this.Type.ID},
+                {"locationID", this.LocationID},
+                {"ownerID", this.OwnerID},
+                {"flag", (int) this.Flag},
+                {"contraband", this.Contraband},
+                {"singleton", this.Singleton},
+                {"quantity", this.Quantity},
+                {"groupID", this.Type.Group.ID},
+                {"categoryID", this.Type.Group.Category.ID},
+                {"customInfo", this.CustomInfo}
+            };
+            
+            return new PyPackedRow(sEntityItemDescriptor, values);
         }
     }
 }

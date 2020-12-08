@@ -76,7 +76,7 @@ namespace ClusterControler
             }
 
             if (packet.Type == PyPacket.PacketType.CALL_RSP || packet.Type == PyPacket.PacketType.ERRORRESPONSE ||
-                packet.Type == PyPacket.PacketType.PING_RSP)
+                packet.Type == PyPacket.PacketType.PING_RSP || packet.Type == PyPacket.PacketType.SESSIONCHANGENOTIFICATION)
             {
                 if (packet.Destination is PyAddressClient)
                 {
