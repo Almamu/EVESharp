@@ -52,6 +52,8 @@ namespace PythonTypes.Compression
             }
 
             // go to the beginning of the stream to properly parse the data
+            outputStream.Seek(0, SeekOrigin.Begin);
+            
             return outputStream;
         }
 

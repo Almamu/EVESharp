@@ -40,6 +40,12 @@ namespace PythonTypes.Types.Database
                     case FieldType.CY:
                         this.mValues.Add(column.Name, values[index++] as PyInteger);
                         break;
+                    
+                    case FieldType.R8:
+                    case FieldType.R4:
+                        this.mValues.Add(column.Name, values[index++] as PyDecimal);
+                        break;
+                            
 
                     case FieldType.Bool:
                         this.mValues.Add(column.Name, values[index++] as PyBool);
