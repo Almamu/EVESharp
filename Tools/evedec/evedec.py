@@ -29,6 +29,7 @@ def process_func(code_q, result_q, decompiled_store_path, compiled_store_path, l
     try:
         import sys, os, marshal, errno, Queue
         import uncompyle2
+        import uncompyle6
         while 1:
             filename, marshalled_code = code_q.get(True, 5)  # give up after 5 sec
             if filename == None:  # None is our end marker
@@ -61,16 +62,21 @@ def process_func(code_q, result_q, decompiled_store_path, compiled_store_path, l
                     if e.errno != errno.ENOENT:
                         raise
                 # create the pyc file
-                with open(compiled_filename, 'w') as out_file:
+                with open(compiled_filename, 'wb') as out_file:
                     out_file.write(marshalled_code)
                 # finally decompyle the file
-                with open(filename, 'w') as out_file:
-                    uncompyle2.uncompyle(2.5, code, out_file)
+                try:
+                    with open(filename, 'w') as out_file:
+                        uncompyle2.uncompyle(2.5, code, out_file)
+                except:
+                    with open(filename, 'w') as out_file:
+                        uncompyle6.main.decompile(2.5, code, out_file)
             except KeyboardInterrupt:
                 raise
-            except:
+            except Exception, e:
                 with lock:
                     print '### Can\'t decompile %s' % filename
+                    traceback.print_exc()
                     sys.stdout.flush()
                 os.rename(filename, filename+'_failed')
                 failed_files += 1
@@ -112,8 +118,6 @@ if __name__ == '__main__':
       'eve-%s.%s' % (eveconfig.get('main', 'version'), eveconfig.get('main', 'build')))
     compiled_store_path = os.path.abspath(compiled_store_path)
 
-    print compiled_store_path
-    print ''
     # search blue.dll for keyblob header
     # yeah, it's really that easy
 
