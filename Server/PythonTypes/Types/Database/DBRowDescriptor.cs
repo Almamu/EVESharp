@@ -83,12 +83,18 @@ namespace PythonTypes.Types.Database
 
         public static implicit operator DBRowDescriptor(PyObject descriptor)
         {
+            if (descriptor.Header.Count != 2)
+                throw new Exception($"{TYPE_NAME} does not contain 2 elements in the header");
             if(descriptor.Header[0] is PyToken == false || descriptor.Header[0] as PyToken != TYPE_NAME)
                 throw new Exception($"Expected PyObject of type {TYPE_NAME}");
+            if (descriptor.Header[1] is PyTuple == false)
+                throw new Exception($"{TYPE_NAME} does not contain an args tuple");
+
+            PyTuple args = descriptor.Header[1] as PyTuple;
 
             DBRowDescriptor output = new DBRowDescriptor();
 
-            foreach(PyTuple tuple in descriptor.Header[1] as PyTuple)
+            foreach(PyTuple tuple in args[0] as PyTuple)
                 output.Columns.Add(tuple);
 
             return output;

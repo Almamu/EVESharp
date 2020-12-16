@@ -1,3 +1,5 @@
+using Common.Database;
+using Node.Database;
 using Node.Inventory.Items.Types;
 using PythonTypes.Types.Primitives;
 
@@ -5,8 +7,10 @@ namespace Node.Services.Account
 {
     public class account : Service
     {
-        public account(ServiceManager manager) : base(manager)
+        private CharacterDB mDB;
+        public account(DatabaseConnection db, ServiceManager manager) : base(manager)
         {
+            this.mDB = new CharacterDB(db, manager.Container.ItemFactory);
         }
 
         private PyDataType GetCashBalance(Client client)
@@ -33,6 +37,11 @@ namespace Node.Services.Account
             
             // TODO: get key and search for the correct wallet
             return 0;
+        }
+
+        public PyDataType GetKeyMap(PyDictionary namedPayload, Client client)
+        {
+            return this.mDB.GetKeyMap();
         }
     }
 }

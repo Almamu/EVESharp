@@ -382,5 +382,19 @@ namespace Node.Database
 
             return skills;
         }
+
+        public PyDataType GetKeyMap()
+        {
+            MySqlConnection connection = null;
+            MySqlDataReader reader = Database.Query(ref connection,
+                "SELECT accountKey as keyID, accountType as keyType, accountName as keyName, description FROM market_keyMap"
+            );
+            
+            using (connection)
+            using (reader)
+            {
+                return Rowset.FromMySqlDataReader(reader);
+            }
+        }
     }
 }

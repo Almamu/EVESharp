@@ -136,5 +136,13 @@ namespace Node.Services.Dogma
 
             return itemInfo;
         }
+
+        public PyDataType GetWeaponBankInfoForShip(PyDictionary namedPayload, Client client)
+        {
+            // this function seems to indicate the client when modules are grouped
+            // so it can display them on the UI and I guess act on them too
+            // for now there's no support for this functionality, so it can be stubbed out
+            return new PyDictionary();
+        }
     }
 }

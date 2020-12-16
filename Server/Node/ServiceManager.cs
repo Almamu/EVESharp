@@ -77,7 +77,7 @@ namespace Node
             this.warRegistry = new warRegistry(this);
             this.station = new station(this);
             this.map = new map(this);
-            this.account = new account(this);
+            this.account = new account(db, this);
         }
     }
 }
