@@ -279,7 +279,22 @@ namespace Node.Services.Characters
                 this.ServiceManager.Container.ItemFactory.ItemManager.CreateSimpleItem(cloneType, character, station,
                     ItemFlags.None);
 
+            character.LocationID = ship.ID;
+            
             // character is 100% created and the base items are too
+            // persist objects to database and unload them as they do not really belong to us
+            clone.Persist();
+            damageControl.Persist();
+            tritanium.Persist();
+            ship.Persist();
+            character.Persist();
+            
+            // unload items from list
+            this.ServiceManager.Container.ItemFactory.ItemManager.UnloadItem(clone);
+            this.ServiceManager.Container.ItemFactory.ItemManager.UnloadItem(damageControl);
+            this.ServiceManager.Container.ItemFactory.ItemManager.UnloadItem(tritanium);
+            this.ServiceManager.Container.ItemFactory.ItemManager.UnloadItem(ship);
+            this.ServiceManager.Container.ItemFactory.ItemManager.UnloadItem(character);
             // finally return the new character's ID and wait for the subsequent calls from the EVE client :)
             
             return character.ID;

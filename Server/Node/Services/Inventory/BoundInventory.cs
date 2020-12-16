@@ -30,12 +30,7 @@ namespace Node.Services.Inventory
             });
 
             // after the service is bound the call can be run (if required)
-            PyTuple result = new PyTuple(2);
-
-            result[0] = new PySubStream(new PySubStruct(boundServiceInformation));
-            result[1] = null;
-
-            return result;
+            return new PySubStruct(new PySubStream(boundServiceInformation));
         }
     }
 }

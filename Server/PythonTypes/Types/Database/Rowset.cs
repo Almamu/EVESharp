@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using MySql.Data.MySqlClient;
 using PythonTypes.Types.Primitives;
 
@@ -16,26 +17,57 @@ namespace PythonTypes.Types.Database
         /// Type of every row
         /// </summary>
         private const string ROW_TYPE_NAME = "util.Row";
+        
+        /// <summary>
+        /// Headers of the rowset
+        /// </summary>
+        public string[] Header { get; set; }
+        public List<PyList> Rows { get; }
 
+        public Rowset(string[] headers)
+        {
+            this.Header = headers;
+            this.Rows = new List<PyList>();
+        }
+        
         /// <summary>
         /// Simple helper method that creates a correct util.Rowset ready to be sent
         /// to the EVE Online client based on the given MySqlDataReader
         /// </summary>
         /// <param name="reader"></param>
         /// <returns></returns>
-        public static PyDataType FromMySqlDataReader(MySqlDataReader reader)
+        public static Rowset FromMySqlDataReader(MySqlDataReader reader)
         {
-            // ensure the result is not empty
-            if (reader.FieldCount == 0)
-                return new PyObjectData(TYPE_NAME, new PyDictionary());
+            List<string> headers = new List<string>();
+            List<PyList> rows = new List<PyList>();
+            
+            for (int i = 0; i < reader.FieldCount; i++)
+                headers.Add(reader.GetName(i));
+            
+            Rowset result = new Rowset(headers.ToArray());
 
+            while (reader.Read() == true)
+            {
+                PyList row = new PyList();
+
+                for (int i = 0; i < reader.FieldCount; i++)
+                    row.Add(Utils.ObjectFromColumn(reader, i));
+                
+                result.Rows.Add(row);
+            }
+
+            return result;
+        }
+
+        public static implicit operator PyDataType(Rowset rowset)
+        {
             // create the main container for the util.Rowset
             PyDictionary arguments = new PyDictionary();
             // create the header for the rows
             PyList header = new PyList();
 
-            for (int i = 0; i < reader.FieldCount; i++)
-                header.Add(reader.GetName(i));
+            for (int i = 0; i < rowset.Header.Length; i++)
+                header.Add(rowset.Header[i]);
 
             // store the header and specify the type of rows the Rowset contains
             arguments["header"] = header;
@@ -45,12 +77,12 @@ namespace PythonTypes.Types.Database
             // based off the column's values
             PyList rowlist = new PyList();
 
-            while (reader.Read() == true)
+            for(int row = 0; row < rowset.Rows.Count; row ++)
             {
                 PyList linedata = new PyList();
 
-                for (int i = 0; i < reader.FieldCount; i++)
-                    linedata.Add(Utils.ObjectFromColumn(reader, i));
+                for (int i = 0; i < rowset.Rows[row].Count; i++)
+                    linedata.Add(rowset.Rows[row][i]);
 
                 rowlist.Add(linedata);
             }

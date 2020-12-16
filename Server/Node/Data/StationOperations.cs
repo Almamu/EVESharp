@@ -14,7 +14,7 @@ namespace Node.Data
         }
 
         public int OperationID => this.mOperationID;
-
+        public List<int> Services => this.mServices;
         public int ServiceMask
         {
             get

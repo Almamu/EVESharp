@@ -39,7 +39,12 @@ namespace Node.Inventory.Items
 
         protected virtual void LoadContents()
         {
-            this.mContentsLoaded = true;
+            lock (this)
+            {
+                this.mContentsLoaded = true;
+
+                this.mItems = this.mItemFactory.ItemManager.LoadItemsLocatedAt(this);
+            }
         }
 
         public Dictionary<int, ItemEntity> Items

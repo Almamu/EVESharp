@@ -91,5 +91,28 @@ namespace Node.Database
                 return result;
             }
         }
+
+        public Dictionary<int, string> LoadServices()
+        {
+            MySqlConnection connection = null;
+            MySqlCommand command =
+                Database.PrepareQuery(ref connection, "SELECT serviceID, serviceName FROM staServices");
+            
+            using (connection)
+            using (command)
+            {
+                MySqlDataReader reader = command.ExecuteReader();
+
+                using (reader)
+                {
+                    Dictionary<int, string> result = new Dictionary<int, string>();
+
+                    while (reader.Read() == true)
+                        result[reader.GetInt32(0)] = reader.GetString(1);
+
+                    return result;
+                }
+            }
+        }
     }
 }

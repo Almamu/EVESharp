@@ -255,8 +255,16 @@ namespace PythonTypes.Marshal
                         return new PyInteger(mReader.ReadByte());
                     if (length == 2)
                         return new PyInteger(mReader.ReadInt16());
+                    if (length == 3)
+                        return new PyInteger(mReader.ReadByte() | (mReader.ReadInt16() << 8));
                     if (length == 4)
                         return new PyInteger(mReader.ReadInt32());
+                    if (length == 5)
+                        return new PyInteger(mReader.ReadByte() | (mReader.ReadInt32() << 8));
+                    if (length == 6)
+                        return new PyInteger(mReader.ReadInt16() | (mReader.ReadInt32() << 16));
+                    if (length == 7)
+                        return new PyInteger(mReader.ReadInt16() | (mReader.ReadInt32() << 16) | ((long) mReader.ReadByte() << 32));
                     if (length == 8)
                         return new PyInteger(mReader.ReadInt64());
 

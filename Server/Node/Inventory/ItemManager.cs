@@ -33,11 +33,14 @@ using Node.Inventory.SystemEntities;
 
 namespace Node.Inventory
 {
-    public partial class ItemManager
+    public class ItemManager
     {
         private ItemFactory ItemFactory { get; }
         private Dictionary<int, ItemEntity> mItemList = new Dictionary<int, ItemEntity>();
         private Channel Log = null;
+        private Dictionary<int, Station> mStations = new Dictionary<int, Station>();
+
+        public Dictionary<int, Station> Stations => this.mStations;
 
         public void Load()
         {
@@ -167,7 +170,9 @@ namespace Node.Inventory
 
         private ItemEntity LoadStation(ItemEntity item)
         {
-            return this.ItemFactory.ItemDB.LoadStation(item);
+            Station station = this.ItemFactory.ItemDB.LoadStation(item);
+
+            return this.mStations[station.ID] = station;
         }
 
         private ItemEntity LoadConstellation(ItemEntity item)

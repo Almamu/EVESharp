@@ -237,19 +237,6 @@ namespace Node.Inventory.Items
 
         public PyPackedRow GetEntityRow()
         {
-            /*
-                new DBRowDescriptor.Column("itemID", FieldType.I4),
-                new DBRowDescriptor.Column("typeID", FieldType.I2),
-                new DBRowDescriptor.Column("ownerID", FieldType.I4),
-                new DBRowDescriptor.Column("locationID", FieldType.I4),
-                new DBRowDescriptor.Column("flag", FieldType.UI1),
-                new DBRowDescriptor.Column("contraband", FieldType.Bool),
-                new DBRowDescriptor.Column("singleton", FieldType.Bool),
-                new DBRowDescriptor.Column("quantity", FieldType.I4),
-                new DBRowDescriptor.Column("groupID", FieldType.I2),
-                new DBRowDescriptor.Column("categoryID", FieldType.UI1),
-                new DBRowDescriptor.Column("customInfo", FieldType.Str)*/
-            
             Dictionary<string, PyDataType> values = new Dictionary<string, PyDataType> ()
             {
                 {"itemID", this.ID},
@@ -266,6 +253,33 @@ namespace Node.Inventory.Items
             };
             
             return new PyPackedRow(sEntityItemDescriptor, values);
+        }
+        
+        public PyDictionary GetEffects()
+        {
+            // for now return no data
+            return new PyDictionary();
+            /*
+      <!-- Begin Environment -->
+      <int name="env_itemID" />
+      <int name="env_charID" />
+      <int name="env_shipID" />
+      <!-- optional -->
+      <int name="env_target" none_marker="0" default="0" />
+      <!-- can be complex -->
+      <raw name="env_other" />
+      <!-- not sure what data goes in here. -->
+      <list name="env_area"/>
+      <int name="env_effectID" />
+        <!-- End Environment -->
+
+        <long name="startTime" />
+        <!-- saw 0x7 placeholder -->
+        <int name="duration"/>
+        <!-- saw 0 -->
+        <int name="repeat"/>
+        <!-- randomSeed -->
+        <raw name="randomSeed" />*/
         }
     }
 }

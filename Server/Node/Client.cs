@@ -92,7 +92,7 @@ namespace Node
             get => this.mSession["address"] as PyString;
         }
 
-        public int CharacterID
+        public int? CharacterID
         {
             get => this.mSession["charid"] as PyInteger;
             set => this.mSession["charid"] = value;

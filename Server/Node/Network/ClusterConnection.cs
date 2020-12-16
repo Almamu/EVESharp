@@ -153,7 +153,7 @@ namespace Node.Network
                     }
                     else if (packet.Destination is PyAddressNode destNode)
                     {
-                        if (destNode.Service.Length == 0)
+                        if (destNode.Service == null)
                         {
                             if (callInfo[0] is PyString == false)
                             {
@@ -166,14 +166,14 @@ namespace Node.Network
                             // parse the bound string to get back proper node and bound ids
                             Match regexMatch = Regex.Match(boundString, "N=([0-9]+):([0-9]+)");
 
-                            if (regexMatch.Captures.Count != 2)
+                            if (regexMatch.Groups.Count != 3)
                             {
                                 Log.Fatal("Cannot find nodeID and boundID in the boundString");
                                 return;
                             }
 
-                            int nodeID = int.Parse(regexMatch.Captures[0].Value);
-                            int boundID = int.Parse(regexMatch.Captures[1].Value);
+                            int nodeID = int.Parse(regexMatch.Groups[1].Value);
+                            int boundID = int.Parse(regexMatch.Groups[2].Value);
 
                             if (nodeID != this.Container.NodeID)
                             {

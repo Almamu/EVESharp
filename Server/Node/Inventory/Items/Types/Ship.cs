@@ -7,11 +7,5 @@ namespace Node.Inventory.Items.Types
         public Ship(ItemEntity from) : base(from)
         {
         }
-
-        public PyDictionary GetEffects()
-        {
-	        // for now return no data
-	        return new PyDictionary();
-        }
     }
 }

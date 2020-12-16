@@ -58,7 +58,7 @@ namespace Node.Services
             // after the service is bound the call can be run (if required)
             PyTuple result = new PyTuple(2);
 
-            result[0] = new PySubStream(new PySubStruct(boundServiceInformation));
+            result[0] = new PySubStruct(new PySubStream(boundServiceInformation));
 
             if (callInfo is PyNone)
                 result[1] = null;

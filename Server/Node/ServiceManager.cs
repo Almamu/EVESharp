@@ -31,6 +31,7 @@ using Node.Services.Characters;
 using Node.Services.Config;
 using Node.Services.Dogma;
 using Node.Services.Inventory;
+using Node.Services.Navigation;
 using Node.Services.Network;
 using Node.Services.War;
 
@@ -52,6 +53,8 @@ namespace Node
         public invbroker invbroker { get; }
         public warRegistry warRegistry { get; }
         public station station { get; }
+        public map map { get; }
+        public account account { get; }
         private readonly DatabaseConnection mDatabaseConnection = null;
 
         public ServiceManager(NodeContainer container, DatabaseConnection db, CacheStorage storage, Configuration.General configuration)
@@ -73,6 +76,8 @@ namespace Node
             this.invbroker = new invbroker(this);
             this.warRegistry = new warRegistry(this);
             this.station = new station(this);
+            this.map = new map(this);
+            this.account = new account(this);
         }
     }
 }
