@@ -69,6 +69,11 @@ namespace Node.Inventory
             }
         }
 
+        public ItemEntity GetItem(int itemID)
+        {
+            return this.mItemList[itemID];
+        }
+
         private ItemEntity PerformItemLoad(ItemEntity item)
         {
             if (item == null)

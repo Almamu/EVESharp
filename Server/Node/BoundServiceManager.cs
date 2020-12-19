@@ -64,11 +64,15 @@ namespace Node
                     parameterList[parameterList.Length - 1] = client;
                     parameterList[parameterList.Length - 2] = namedPayload;
 
+                    bool match = true;
+                    
                     for (int i = 0; i < parameterList.Length - 2; i++)
                     {
-                        if ((i >= payload.Count || payload[i].GetType() != parameters[i].ParameterType) &&
-                            parameters[i].IsOptional == false)
-                            continue;
+                        if ((i >= payload.Count && parameters[i].IsOptional == false) || parameters[i].ParameterType != payload[i].GetType())
+                        {
+                            match = false;
+                            break;
+                        }
 
                         if (parameters[i].IsOptional == true && i >= payload.Count)
                             parameterList[i] = null;
@@ -76,8 +80,9 @@ namespace Node
                             parameterList[i] = payload[i];
                     }
                 
-                    // prepare the arguments for the function
-                    return (PyDataType) (method.Invoke(serviceInstance, parameterList));
+                    if (match)
+                        // prepare the arguments for the function
+                        return (PyDataType) (method.Invoke(serviceInstance, parameterList));
                 }
 
                 throw new ServiceDoesNotContainCallException($"(boundID {boundID}) {serviceInstance.GetType().Name}", call, payload);

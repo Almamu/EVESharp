@@ -240,7 +240,7 @@ namespace Node.Network
 
                 // ensure the client is registered in the node and store his session
                 if (this.Container.ClientManager.Contains(packet.UserID) == false)
-                    this.Container.ClientManager.Add(packet.UserID, new Client());
+                    this.Container.ClientManager.Add(packet.UserID, new Client(this.Container));
 
                 this.Container.ClientManager.Get(packet.UserID).UpdateSession(packet);
             }

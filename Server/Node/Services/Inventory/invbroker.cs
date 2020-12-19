@@ -17,13 +17,15 @@ namespace Node.Services.Inventory
             this.mObjectID = objectID;
         }
 
-        protected override Service CreateBoundInstance(PyTuple objectData)
+        protected override Service CreateBoundInstance(PyDataType objectData)
         {
             /*
              * objectData[0] => itemID (station/solarsystem)
              * objectData[1] => itemGroup
              */
-            return new invbroker(this.ServiceManager, objectData[0] as PyInteger);
+            PyTuple tupleData = objectData as PyTuple;
+            
+            return new invbroker(this.ServiceManager, tupleData[0] as PyInteger);
         }
 
         public PyDataType GetInventoryFromId(PyInteger itemID, PyInteger one, PyDictionary namedPayload, Client client)
@@ -45,7 +47,36 @@ namespace Node.Services.Inventory
                 });
             
             // create an instance of the inventory service and bind it to the item data
-            return BoundInventory.BindInventory(inventoryItem as ItemInventory, this.ServiceManager);
+            return BoundInventory.BindInventory(inventoryItem as ItemInventory, ItemFlags.None, this.ServiceManager);
+        }
+
+        public PyDataType GetInventory(PyInteger containerID, PyNone none, PyDictionary namedPayload, Client client)
+        {
+            ItemFlags flag = ItemFlags.None;
+            
+            switch ((int) containerID)
+            {
+                case (int) ItemContainer.Wallet:
+                    flag = ItemFlags.Wallet;
+                    break;
+                case (int) ItemContainer.Hangar:
+                    flag = ItemFlags.Hangar;
+                    break;
+                case (int) ItemContainer.Character:
+                    flag = ItemFlags.Skill;
+                    break;
+                case (int) ItemContainer.Global:
+                    flag = ItemFlags.None;
+                    break;
+                
+                default:
+                    throw new CustomError($"Trying to open container ID ({containerID.Value}) is not supported");
+            }
+            
+            ItemEntity inventoryItem = this.ServiceManager.Container.ItemFactory.ItemManager.LoadItem(this.mObjectID);
+            
+            // create an instance of the inventory service and bind it to the item data
+            return BoundInventory.BindInventory(inventoryItem as ItemInventory, flag, this.ServiceManager);
         }
     }
 }

@@ -76,7 +76,7 @@ namespace ClusterControler
             }
 
             if (packet.Type == PyPacket.PacketType.CALL_RSP || packet.Type == PyPacket.PacketType.ERRORRESPONSE ||
-                packet.Type == PyPacket.PacketType.PING_RSP || packet.Type == PyPacket.PacketType.SESSIONCHANGENOTIFICATION)
+                packet.Type == PyPacket.PacketType.PING_RSP)
             {
                 if (packet.Destination is PyAddressClient)
                 {
@@ -94,6 +94,31 @@ namespace ClusterControler
                 }
 
                 // TODO: Handle Broadcast packets
+            }
+            else if (packet.Type == PyPacket.PacketType.SESSIONCHANGENOTIFICATION)
+            {
+                // session change notifications are always sent to the client
+                // but interested nodes might want to hear about it too
+                // (for example to add the character to the station he is in)
+                // so this takes care of relaying the session change notification
+                // from the originating node to all the interested
+                if (packet.Destination is PyAddressClient == false)
+                {
+                    Log.Error("Received a SessionChangeNotification not aimed to a client");
+                    return;
+                }
+
+                Log.Trace("Sending SessionChangeNotification to client {packet.UserID}");
+
+                this.ConnectionManager.NotifyClient((int) packet.UserID, packet);
+                
+                // parse the notification, get the nodes of interest and tell them about this session change too
+                SessionChangeNotification scn = packet.Payload;
+
+                foreach (PyInteger nodeID in scn.nodesOfInterest)
+                {
+                    this.ConnectionManager.NotifyNode(nodeID, packet);
+                }
             }
             else
             {

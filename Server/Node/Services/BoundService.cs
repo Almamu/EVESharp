@@ -24,6 +24,14 @@ namespace Node.Services
             return this.ServiceManager.Container.NodeID;
         }
 
+        public PyDataType MachoResolveObject(PyInteger objectID, PyInteger zero, PyDictionary namedPayload,
+            Client client)
+        {
+            // TODO: PROPERLY SUPPORT THE ENTITY TABLE NODEID FIELD TO GET THIS INFORMATION PROPERLY
+            // TODO: FOR NOW JUST RETURN OUR ID AND BE HAPPY ABOUT IT
+            return this.ServiceManager.Container.NodeID;
+        }
+
         public PyDataType MachoBindObject(PyTuple objectData, PyTuple callInfo, PyDictionary namedPayload,
             Client client)
         {
@@ -35,8 +43,13 @@ namespace Node.Services
         {
             return this.MachoBindObject(objectData, callInfo as PyDataType, namedPayload, client);
         }
+
+        public PyDataType MachoBindObject(PyInteger objectID, PyNone callInfo, PyDictionary namedPayload, Client client)
+        {
+            return this.MachoBindObject(objectID, callInfo as PyDataType, namedPayload, client);
+        }
         
-        protected PyDataType MachoBindObject(PyTuple objectData, PyDataType callInfo, PyDictionary namedPayload,
+        protected PyDataType MachoBindObject(PyDataType objectData, PyDataType callInfo, PyDictionary namedPayload,
             Client client)
         {
             // create the bound instance and register it in the bound services
@@ -79,6 +92,6 @@ namespace Node.Services
             return result;
         }
 
-        protected abstract Service CreateBoundInstance(PyTuple objectData);
+        protected abstract Service CreateBoundInstance(PyDataType objectData);
     }
 }

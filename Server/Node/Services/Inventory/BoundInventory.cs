@@ -1,5 +1,9 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Runtime.CompilerServices;
 using Node.Inventory.Items;
+using PythonTypes.Types.Database;
 using PythonTypes.Types.Primitives;
 
 namespace Node.Services.Inventory
@@ -7,15 +11,42 @@ namespace Node.Services.Inventory
     public class BoundInventory : Service
     {
         private ItemInventory mInventory;
+        private ItemFlags mFlag;
         
         public BoundInventory(ItemInventory item, ServiceManager manager) : base(manager)
         {
             this.mInventory = item;
+            this.mFlag = ItemFlags.None;
         }
 
-        public static PyDataType BindInventory(ItemInventory item, ServiceManager manager)
+        public BoundInventory(ItemInventory item, ItemFlags flag, ServiceManager manager) : base(manager)
         {
-            Service instance = new BoundInventory(item, manager);
+            this.mInventory = item;
+            this.mFlag = flag;
+        }
+
+        public PyDataType List(PyDictionary namedPayload, Client client)
+        {
+            // get list of all the items with the given flag
+            IEnumerable<KeyValuePair<int, ItemEntity>> enumerable;
+
+            if (this.mFlag == ItemFlags.None)
+                enumerable = this.mInventory.Items;
+            else
+                enumerable = this.mInventory.Items
+                    .Where(x => x.Value.Flag == this.mFlag);
+            
+            CRowset result = new CRowset(ItemEntity.sEntityItemDescriptor);
+
+            foreach (KeyValuePair<int, ItemEntity> pair in enumerable)
+                result.Add(pair.Value.GetEntityRow());
+
+            return result;
+        }
+
+        public static PyDataType BindInventory(ItemInventory item, ItemFlags flag, ServiceManager manager)
+        {
+            Service instance = new BoundInventory(item, flag, manager);
             // bind the service
             int boundID = manager.Container.BoundServiceManager.BoundService(instance);
             // build the bound service string

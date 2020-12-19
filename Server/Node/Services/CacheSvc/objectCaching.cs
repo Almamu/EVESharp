@@ -25,6 +25,7 @@
 using Common.Logging;
 using Common.Services;
 using PythonTypes.Types.Complex;
+using PythonTypes.Types.Exceptions;
 using PythonTypes.Types.Primitives;
 
 namespace Node.Services.CacheSvc
@@ -37,6 +38,26 @@ namespace Node.Services.CacheSvc
             : base(manager)
         {
             this.Log = logger.CreateLogChannel("objectCaching");
+        }
+        
+        public PyDataType GetCachableObject(PyInteger shared, PyTuple objectID, PyTuple objectVersion, PyInteger nodeID, PyDictionary namedPayload, Client client)
+        {
+            // TODO: CHECK CACHEOK EXCEPTION ON CLIENT
+            Log.Debug($"Received cache request for a tuple objectID");
+            
+            if (objectID.Count != 3 || objectID [2] is PyTuple == false)
+                throw new CustomError("Requesting cache with an unknown objectID");
+
+            PyTuple callInformation = objectID[2] as PyTuple;
+
+            if (callInformation.Count != 2 || callInformation[0] is PyString == false ||
+                callInformation[1] is PyString == false)
+                throw new CustomError("Requesting cache with an unknown objectID");
+
+            string service = callInformation[0] as PyString;
+            string method = callInformation[1] as PyString;
+            
+            return this.ServiceManager.CacheStorage.Get(service, method);
         }
 
         public PyDataType GetCachableObject(PyInteger shared, PyString objectID, PyTuple objectVersion, PyInteger nodeID, PyDictionary namedPayload, Client client)

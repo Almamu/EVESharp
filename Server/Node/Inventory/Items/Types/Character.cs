@@ -1,9 +1,26 @@
+using System.Collections.Generic;
+using System.Linq;
 using Node.Inventory.Items.Attributes;
+using PythonTypes.Types.Primitives;
 
 namespace Node.Inventory.Items.Types
 {
     public class Character : ItemInventory
     {
+        public class SkillQueueEntry
+        {
+            public Skill Skill;
+            public int TargetLevel;
+            
+            public static implicit operator PyDataType(SkillQueueEntry from)
+            {
+                return new PyTuple(new PyDataType[]
+                {
+                    from.Skill.ID, from.TargetLevel
+                });
+            }
+        }
+        
         public Character(ItemEntity from, int characterId, int accountId, string title, string description,
             double bounty, double balance, double securityRating, string petitionMessage, int logonMinutes,
             int corporationId, int corpRole, int rolesAtAll, int rolesAtBase, int rolesAtHq, int rolesAtOther,
@@ -148,7 +165,16 @@ namespace Node.Inventory.Items.Types
         public int SolarSystemID => mSolarSystemID;
         public int ConstellationID => mConstellationID;
         public int RegionID => mRegionID;
-        public int Online => mOnline;
+
+        public int Online
+        {
+            get => this.mOnline;
+            set
+            {
+                this.mOnline = value;
+                this.Dirty = true;
+            }
+        }
         
         private int mCharacterID;
         private int mAccountID;
@@ -215,6 +241,8 @@ namespace Node.Inventory.Items.Types
         private int mConstellationID;
         private int mRegionID;
         private int mOnline;
+        private List<SkillQueueEntry> mSkillQueue;
+        private Corporation mCorporation = null;
 
         public ItemAttribute Charisma
         {
@@ -246,11 +274,48 @@ namespace Node.Inventory.Items.Types
             set => this.Attributes[AttributeEnum.memory] = value;
         }
 
+        public List<SkillQueueEntry> SkillQueue => this.mSkillQueue;
+
+        public Corporation Corporation
+        {
+            get
+            {
+                if (this.mCorporation != null)
+                    return this.mCorporation;
+
+                this.mCorporation = this.mItemFactory.ItemManager.LoadItem(this.CorporationID) as Corporation;
+
+                return this.mCorporation;
+            }
+        }
+        
+        public Dictionary<int, Skill> InjectedSkills =>
+            this.Items
+                .Where(x => (x.Value.Flag == ItemFlags.SkillInTraining || x.Value.Flag == ItemFlags.Skill) && x.Value is Skill)
+                .ToDictionary(dict => dict.Key, dict => dict.Value as Skill);
+
         protected override void LoadContents()
         {
-            this.mItems = this.mItemFactory.ItemManager.LoadItemsLocatedAt(this);
-            
             base.LoadContents();
+            
+            // put things where they belong
+            this.mSkillQueue = new List<SkillQueueEntry>();
+            Dictionary<int, Skill> skillQueue = this.Items
+                .Where(x => x.Value.Flag == ItemFlags.SkillInTraining && x.Value is Skill)
+                .ToDictionary(dict => dict.Key, dict => dict.Value as Skill);
+
+            foreach (KeyValuePair<int, Skill> pair in skillQueue)
+            {
+                this.mSkillQueue = base.mItemFactory.CharacterDB.LoadSkillQueue(this, skillQueue);
+            }
+        }
+        
+        protected override void SaveToDB()
+        {
+            base.SaveToDB();
+            
+            // ensure the online status is also persisted
+            this.mItemFactory.CharacterDB.UpdateOnlineStatus(this);
         }
     }
 }

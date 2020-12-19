@@ -23,9 +23,11 @@ namespace Node.Services.Dogma
             this.mObjectID = objectID;
         }
 
-        protected override Service CreateBoundInstance(PyTuple objectData)
+        protected override Service CreateBoundInstance(PyDataType objectData)
         {
-            return new dogmaIM(this.ServiceManager, objectData[0] as PyInteger);
+            PyTuple tupleData = objectData as PyTuple;
+            
+            return new dogmaIM(this.ServiceManager, tupleData[0] as PyInteger);
         }
 
         public PyDataType ShipGetInfo(PyDictionary namedPayload, Client client)

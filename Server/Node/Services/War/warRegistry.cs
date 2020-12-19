@@ -17,9 +17,11 @@ namespace Node.Services.War
             this.mObjectID = objectID;
         }
 
-        protected override Service CreateBoundInstance(PyTuple objectData)
+        protected override Service CreateBoundInstance(PyDataType objectData)
         {
-            return new warRegistry(this.ServiceManager, objectData[0] as PyInteger);
+            PyTuple tupleData = objectData as PyTuple;
+            
+            return new warRegistry(this.ServiceManager, tupleData[0] as PyInteger);
         }
 
         public PyDataType GetWars(PyInteger ownerID, PyDictionary namedPayload, Client client)

@@ -349,6 +349,14 @@ namespace Node.Services.Characters
             // and finally send the client the required data
             this.ServiceManager.Container.ClusterConnection.Socket.Send(sessionChangeNotification);
             
+            // update the character and set it's only flag to true
+            character.Online = 1;
+            // the online status must be persisted after update, so force the entity to be updated in the database
+            character.Persist();
+            
+            // TODO: SEND CHARACTER CONNECTION NOTIFICATION
+            // TODO: send "OnContactLoggedOn" to all the friends in the list as long as they're online
+            
             // TODO: SEND SKILL QUEUE UPDATES FOR THE PLAYER
             
             return null;
@@ -357,6 +365,14 @@ namespace Node.Services.Characters
         public PyDataType Ping(PyDictionary namedPayload, Client client)
         {
             return client.AccountID;
+        }
+
+        public PyDataType GetOwnerNoteLabels(PyDictionary namedPayload, Client client)
+        {
+            Character character =
+                this.ServiceManager.Container.ItemFactory.ItemManager.LoadItem((int) client.CharacterID) as Character;
+
+            return this.mDB.GetOwnerNoteLabels(character);
         }
     }
 }

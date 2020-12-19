@@ -40,7 +40,8 @@ namespace Node
             TupleSet = 0,
             Rowset = 1,
             CRowset = 2,
-            PackedRowList = 3
+            PackedRowList = 3,
+            IntIntDict = 4
         };
 
         public static Dictionary<string, string> LoginCacheTable = new Dictionary<string, string>()
@@ -291,9 +292,25 @@ namespace Node
             return this.mCacheData.ContainsKey(name);
         }
 
+        public PyDataType GenerateObjectIDForCall(string service, string method)
+        {
+            return new PyTuple(new PyDataType []
+            {
+                "Method Call", "server", new PyTuple (new PyDataType []
+                {
+                    service, method
+                })
+            });
+        }
+
         public PyDataType Get(string name)
         {
             return this.mCacheData[name];
+        }
+
+        public PyDataType Get(string service, string method)
+        {
+            return this.mCacheData[$"{service}::{method}"];
         }
 
         public void Store(string name, PyDataType data, long timestamp)
@@ -304,6 +321,18 @@ namespace Node
             this.mCacheHints[name] = hint;
             // save cache object
             this.mCacheData[name] = PyCachedObject.FromCacheHint(hint, data);
+        }
+
+        public void StoreCall(string service, string method, PyDataType data, long timestamp)
+        {
+            string index = $"{service}::{method}";
+            PyDataType objectID = this.GenerateObjectIDForCall(service, method);
+            PyCacheHint hint = PyCacheHint.FromPyObject(objectID, data, timestamp, this.mContainer.NodeID);
+            
+            // save cache hint
+            this.mCacheHints[index] = hint;
+            // save cache object
+            this.mCacheData[index] = PyCachedObject.FromCacheHint(hint, data);
         }
 
         public PyDictionary GetHints(Dictionary<string, string> list)
@@ -319,6 +348,11 @@ namespace Node
         public PyDataType GetHint(string name)
         {
             return this.mCacheHints[name];
+        }
+
+        public PyDataType GetHint(string service, string method)
+        {
+            return this.mCacheHints[$"{service}::{method}"];
         }
 
         private void Load(string name, string query, CacheObjectType type)
@@ -348,6 +382,9 @@ namespace Node
                         case CacheObjectType.PackedRowList:
                             cacheObject = PyPackedRowList.FromMySqlDataReader(reader);
                             break;
+                        case CacheObjectType.IntIntDict:
+                            cacheObject = IntIntDictionary.FromMySqlDataReader(reader);
+                            break;
                     }
 
                     Store(name, cacheObject, DateTime.Now.ToFileTimeUtc());
@@ -356,6 +393,48 @@ namespace Node
             catch (Exception e)
             {
                 Log.Error($"Cannot generate cache data for {name}");
+                throw;
+            }
+        }
+        
+        public void Load(string service, string method, string query, CacheObjectType type)
+        {
+            Log.Debug($"Loading cache data for {service}::{method} of type {type}");
+
+            try
+            {
+                MySqlConnection connection = null;
+                MySqlDataReader reader = Database.Query(ref connection, query);
+                PyDataType cacheObject = null;
+
+                using(connection)
+                using (reader)
+                {
+                    switch (type)
+                    {
+                        case CacheObjectType.Rowset:
+                            cacheObject = Rowset.FromMySqlDataReader(reader);
+                            break;
+                        case CacheObjectType.CRowset:
+                            cacheObject = CRowset.FromMySqlDataReader(reader);
+                            break;
+                        case CacheObjectType.TupleSet:
+                            cacheObject = TupleSet.FromMySqlDataReader(reader);
+                            break;
+                        case CacheObjectType.PackedRowList:
+                            cacheObject = PyPackedRowList.FromMySqlDataReader(reader);
+                            break;
+                        case CacheObjectType.IntIntDict:
+                            cacheObject = IntIntDictionary.FromMySqlDataReader(reader);
+                            break;
+                    }
+
+                    StoreCall(service, method, cacheObject, DateTime.Now.ToFileTimeUtc());
+                }
+            }
+            catch (Exception e)
+            {
+                Log.Error($"Cannot generate cache data for {service}::{method}");
                 throw;
             }
         }

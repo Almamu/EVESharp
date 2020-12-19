@@ -1,6 +1,7 @@
 using Common.Database;
 using Node.Database;
 using Node.Inventory.Items.Types;
+using PythonTypes.Types.Exceptions;
 using PythonTypes.Types.Primitives;
 
 namespace Node.Services.Account
@@ -35,8 +36,7 @@ namespace Node.Services.Account
             if (isCorpWallet == 0)
                 return this.GetCashBalance(client);
             
-            // TODO: get key and search for the correct wallet
-            return 0;
+            throw new CustomError("This function is not supported yet");
         }
 
         public PyDataType GetKeyMap(PyDictionary namedPayload, Client client)

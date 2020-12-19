@@ -90,7 +90,7 @@ namespace Node.Inventory.Items.Types
         public int CreatorId => mCreatorID;
         public int StationId => mStationID;
         public int RaceId => mRaceID;
-        public int AllianceId => mAllianceID;
+        public int AllianceID => mAllianceID;
         public long Shares => mShares;
         public int MemberCount => mMemberCount;
         public int MemberLimit => mMemberLimit;

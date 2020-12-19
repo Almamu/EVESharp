@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Threading;
 using Common.Database;
 using MySql.Data.MySqlClient;
@@ -395,6 +396,69 @@ namespace Node.Database
             {
                 return Rowset.FromMySqlDataReader(reader);
             }
+        }
+
+        public List<Character.SkillQueueEntry> LoadSkillQueue(Character character, Dictionary<int, Skill> skillsInTraining)
+        {
+            MySqlConnection connection = null;
+            MySqlDataReader reader = Database.PrepareQuery(
+                ref connection,
+                "SELECT skillItemID, level FROM chrSkillQueue WHERE characterID = @characterID ORDER BY orderIndex",
+                new Dictionary<string, object>()
+                {
+                    {"@characterID", character.ID}
+                }
+            );
+            
+            using (connection)
+            using (reader)
+            {
+                List<Character.SkillQueueEntry> result = new List<Character.SkillQueueEntry>();
+
+                while (reader.Read() == true)
+                {
+                    result.Add(
+                        new Character.SkillQueueEntry() { Skill = skillsInTraining [reader.GetInt32(0)], TargetLevel = reader.GetInt32(1)}
+                    );
+                }
+
+                return result;
+            }
+        }
+
+        public PyDataType GetOwnerNoteLabels(Character character)
+        {
+            return Database.PrepareRowsetQuery(
+                "SELECT noteID, label FROM chrOwnerNote WHERE ownerID = @ownerID",
+                new Dictionary<string, object>()
+                {
+                    {"@ownerID", character.ID}
+                }
+            );
+        }
+
+        public PyDataType GetFriendsList(Character character)
+        {
+            return Database.PrepareRowsetQuery(
+                "SELECT friendID AS characterID, online" + 
+                " FROM chrFriends, chrInformation" +
+                " WHERE chrFriends.characterID = @characterID AND chrInformation.characterID = chrFriends.friendID",
+                new Dictionary<string, object>()
+                {
+                    {"@characterID", character.ID}
+                }
+            );
+        }
+
+        public void UpdateOnlineStatus(Character character)
+        {
+            Database.PrepareQuery("UPDATE chrInformation SET online = @online WHERE characterID = @characterID",
+                new Dictionary<string, object>()
+                {
+                    {"@characterID", character.ID},
+                    {"@online", character.Online}
+                }
+            );
         }
     }
 }

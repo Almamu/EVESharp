@@ -26,6 +26,7 @@ using System;
 using System.Collections.Generic;
 using Common.Game;
 using Common.Packets;
+using Node.Inventory.Items.Types;
 using PythonTypes.Types.Network;
 using PythonTypes.Types.Primitives;
 
@@ -34,10 +35,56 @@ namespace Node
     public class Client
     {
         private readonly Session mSession = new Session();
+        private readonly NodeContainer mContainer = null;
+
+        public Client(NodeContainer container)
+        {
+            this.mContainer = container;
+        }
 
         public void UpdateSession(PyPacket packet)
         {
             this.mSession.LoadChanges((packet.Payload[0] as PyTuple)[1] as PyDictionary);
+            
+            // check for specific situations
+            if (this.mSession.ContainsKey("charid") == false)
+                return;
+
+            if (this.mSession["charid"] is PyInteger == false)
+                return;
+
+            int characterID = this.mSession["charid"] as PyInteger;
+            
+            // has the player got into a station?
+            if (this.mSession.ContainsKey("stationid") == true)
+            {
+                PyDataType newStationID = this.mSession["stationid"];
+                PyDataType oldStationID = this.mSession.GetPrevious("stationid");
+                int intNewStationID = 0;
+                int intOldStationID = 0;
+
+                if (oldStationID is PyInteger oldID)
+                    intOldStationID = oldID;
+                if (newStationID is PyInteger newID)
+                    intNewStationID = newID;
+
+                if (intNewStationID != intOldStationID)
+                {
+                    if (intNewStationID != 0)
+                    {
+                        Station station = this.mContainer.ItemFactory.ItemManager.GetItem(intNewStationID) as Station;
+
+                        station.Guests[characterID] = this.mContainer.ItemFactory.ItemManager.LoadItem(characterID) as Character;
+                    }
+
+                    if (intOldStationID != 0)
+                    {
+                        Station station = this.mContainer.ItemFactory.ItemManager.GetItem(intOldStationID) as Station;
+
+                        station.Guests.Remove(characterID);
+                    }
+                }
+            }
         }
 
         public PyPacket CreateEmptySessionChange(NodeContainer container)
@@ -51,6 +98,7 @@ namespace Node
                 return null;
             
             // add ourselves as nodes of interest
+            // TODO: DETECT NODE OF INTEREST BASED ON THE SERVER THAT HAS THE SOLAR SYSTEM LOADED IN
             scn.nodesOfInterest.Add(container.NodeID);
 
             PyPacket packet = new PyPacket(PyPacket.PacketType.SESSIONCHANGENOTIFICATION);

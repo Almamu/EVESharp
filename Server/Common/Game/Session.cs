@@ -43,11 +43,21 @@ namespace Common.Game
         public PyDataType GetCurrent(string key)
         {
             if (this.mSession.ContainsKey(key) == false)
-                this.mSession[key] = new PyTuple(new PyDataType[] { new PyNone(), new PyNone() });
+                return new PyNone();
 
             PyTuple pair = this.mSession[key] as PyTuple;
 
             return pair[1];
+        }
+
+        public PyDataType GetPrevious(string key)
+        {
+            if (this.mSession.ContainsKey(key) == false)
+                return new PyNone();
+
+            PyTuple pair = this.mSession[key] as PyTuple;
+
+            return pair[0];
         }
 
         public bool ContainsKey(string key)

@@ -28,11 +28,15 @@ using Node.Services;
 using Node.Services.Account;
 using Node.Services.CacheSvc;
 using Node.Services.Characters;
+using Node.Services.Chat;
 using Node.Services.Config;
+using Node.Services.Contracts;
+using Node.Services.Corporations;
 using Node.Services.Dogma;
 using Node.Services.Inventory;
 using Node.Services.Navigation;
 using Node.Services.Network;
+using Node.Services.Stations;
 using Node.Services.War;
 
 namespace Node
@@ -55,6 +59,15 @@ namespace Node
         public station station { get; }
         public map map { get; }
         public account account { get; }
+        public skillMgr skillMgr { get; }
+        public contractMgr contractMgr { get; }
+        public corpStationMgr corpStationMgr { get; }
+        public bookmark bookmark { get; }
+        public LSC LSC { get; }
+        public onlineStatus onlineStatus { get; }
+        public billMgr billMgr { get; }
+        public facWarMgr facWarMgr { get; }
+        public corporationSvc corporationSvc { get; }
         private readonly DatabaseConnection mDatabaseConnection = null;
 
         public ServiceManager(NodeContainer container, DatabaseConnection db, CacheStorage storage, Configuration.General configuration)
@@ -78,6 +91,15 @@ namespace Node
             this.station = new station(this);
             this.map = new map(this);
             this.account = new account(db, this);
+            this.skillMgr = new skillMgr(this);
+            this.contractMgr = new contractMgr(db, this);
+            this.corpStationMgr = new corpStationMgr(this);
+            this.bookmark = new bookmark(db, this);
+            this.LSC = new LSC(this);
+            this.onlineStatus = new onlineStatus(this);
+            this.billMgr = new billMgr(this);
+            this.facWarMgr = new facWarMgr(this);
+            this.corporationSvc = new corporationSvc(db, this);
         }
     }
 }

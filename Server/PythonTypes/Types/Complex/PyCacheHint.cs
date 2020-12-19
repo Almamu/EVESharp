@@ -65,7 +65,27 @@ namespace PythonTypes.Types.Complex
 
             return cacheHint;
         }
+        
+        /// <summary>
+        /// Creates a new PyCacheHint based on the given data
+        /// </summary>
+        /// <param name="objectID">The objectID for this cache hint</param>
+        /// <param name="data">The data for the cache hint</param>
+        /// <param name="timestamp">The timestamp of the creation of the cache hint</param>
+        /// <param name="nodeID">The node that created the cache</param>
+        /// <returns></returns>
+        public static PyCacheHint FromBuffer(PyDataType objectID, byte[] data, long timestamp, long nodeID)
+        {
+            PyCacheHint cacheHint = new PyCacheHint();
 
+            cacheHint.Version = (int) CRC32.Checksum(data);
+            cacheHint.NodeID = nodeID;
+            cacheHint.ObjectID = objectID;
+            cacheHint.CacheTime = timestamp;
+
+            return cacheHint;
+        }
+        
         /// <summary>
         /// Creates a new PyCacheHint based on the given data
         /// </summary>
@@ -77,6 +97,19 @@ namespace PythonTypes.Types.Complex
         public static PyCacheHint FromPyObject(string name, PyDataType data, long timestamp, long nodeID)
         {
             return FromBuffer(name, PythonTypes.Marshal.Marshal.ToByteArray(data), timestamp, nodeID);
+        }
+        
+        /// <summary>
+        /// Creates a new PyCacheHint based on the given data
+        /// </summary>
+        /// <param name="name">The name of the cache hint</param>
+        /// <param name="data">The data for the cache hint</param>
+        /// <param name="timestamp">The timestamp of the creation of the cache hint</param>
+        /// <param name="nodeID">The node that created the cache hint</param>
+        /// <returns></returns>
+        public static PyCacheHint FromPyObject(PyDataType objectID, PyDataType data, long timestamp, long nodeID)
+        {
+            return FromBuffer(objectID, PythonTypes.Marshal.Marshal.ToByteArray(data), timestamp, nodeID);
         }
     }
 }

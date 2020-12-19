@@ -36,7 +36,7 @@ namespace Node.Inventory.Items
     {
         public ItemFactory mItemFactory = null;
 
-        private static DBRowDescriptor sEntityItemDescriptor = new DBRowDescriptor()
+        public static DBRowDescriptor sEntityItemDescriptor = new DBRowDescriptor()
         {
             Columns =
             {

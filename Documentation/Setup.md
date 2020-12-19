@@ -149,3 +149,7 @@ useScriptIndexFiles=1
 Save the file. Now the client is completely setup and you should be able to connect to it properly.
 
 ![Apocrypha Login](Images/evescreen.png)
+
+If you have the [auto account option](ClusterController/Configuration.md) enabled in your ClusterController, you now will be able to create an account with a simple login try on the client.
+
+From here on the game should progress as normal as long as the features you're using are supported. As It stands right now, only the station view works.
