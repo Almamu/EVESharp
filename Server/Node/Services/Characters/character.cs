@@ -296,7 +296,9 @@ namespace Node.Services.Characters
             // and subscribe the character to some channels
             this.mChatDB.JoinChannel(ChatDB.CHANNEL_ROOKIECHANNELID, character.ID, ChatDB.CHATROLE_CONVERSATIONALIST);
             this.mChatDB.JoinChannel(channelID, character.ID, ChatDB.CHATROLE_CREATOR);
-            this.mChatDB.JoinChannel((int) station.LocationID, character.ID, ChatDB.CHATROLE_CONVERSATIONALIST);
+            this.mChatDB.JoinChannel(solarSystemID, character.ID, ChatDB.CHATROLE_CONVERSATIONALIST);
+            this.mChatDB.JoinChannel(constellationID, character.ID, ChatDB.CHATROLE_CONVERSATIONALIST);
+            this.mChatDB.JoinChannel(regionID, character.ID, ChatDB.CHATROLE_CONVERSATIONALIST);
             
             // unload items from list
             this.ServiceManager.Container.ItemFactory.ItemManager.UnloadItem(clone);

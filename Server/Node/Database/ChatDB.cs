@@ -52,10 +52,10 @@ namespace Node.Database
             return Database.PrepareRowsetQuery(
                 "SELECT" + 
                 " channelID, ownerID, displayName, motd, comparisonKey, memberless, !ISNULL(password) AS password," + 
-                " mailingList, cspa, temporary, role AS mode, !ISNULL(channelChars.charID), estimatedMemberCount " +
+                " mailingList, cspa, temporary, role AS mode, !ISNULL(channelChars.charID) AS subscribed, estimatedMemberCount " +
                 " FROM channels" +
                 " LEFT JOIN channelChars USING (channelID)" +
-                " WHERE channelChars.characterID = @characterID",
+                " WHERE channelChars.charID = @characterID",
                 new Dictionary<string, object>()
                 {
                     {"@characterID", characterID}
