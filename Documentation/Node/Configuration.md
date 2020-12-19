@@ -46,7 +46,13 @@ Indicates the log channels that should be enabled regardless of the supression s
 force=NetworkDebug,Client
 ```
 
-Right now only NetworkDebug is suppressed by default, but more might come
+#### Suppressed by default
+##### NetworkDebug
+Prints the full package data input/output on the node.
+##### CallDebug
+Prints the payloads to any of the method calls
+##### ResultDebug
+Prints the answers to any of the method calls
 
 ## logfile
 Configuration for the file log output. If this section is not present there will be no log file created for the session.

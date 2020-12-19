@@ -41,8 +41,9 @@ namespace Node.Inventory.Items.Attributes
 
         private int mInteger;
         private double mFloat;
-        
-        public AttributeInfo Info { get; }
+        private AttributeInfo mInfo;
+
+        public AttributeInfo Info => this.mInfo;
         public ItemAttributeValueType ValueType { get; protected set; }
 
         public int Integer
@@ -73,7 +74,7 @@ namespace Node.Inventory.Items.Attributes
 
         public ItemAttribute(AttributeInfo attribute, double value, bool newEntity = false)
         {
-            this.Info = attribute;
+            this.mInfo = attribute;
             this.mFloat = value;
             this.ValueType = ItemAttributeValueType.Double;
             this.New = newEntity;
@@ -81,7 +82,7 @@ namespace Node.Inventory.Items.Attributes
 
         public ItemAttribute(AttributeInfo attribute, int value, bool newEntity = false)
         {
-            this.Info = attribute;
+            this.mInfo = attribute;
             this.mInteger = value;
             this.ValueType = ItemAttributeValueType.Integer;
             this.New = newEntity;

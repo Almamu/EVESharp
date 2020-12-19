@@ -68,6 +68,7 @@ namespace Node
         public billMgr billMgr { get; }
         public facWarMgr facWarMgr { get; }
         public corporationSvc corporationSvc { get; }
+        public clientStatsMgr clientStatsMgr { get; }
         private readonly DatabaseConnection mDatabaseConnection = null;
 
         public ServiceManager(NodeContainer container, DatabaseConnection db, CacheStorage storage, Configuration.General configuration)
@@ -95,11 +96,12 @@ namespace Node
             this.contractMgr = new contractMgr(db, this);
             this.corpStationMgr = new corpStationMgr(this);
             this.bookmark = new bookmark(db, this);
-            this.LSC = new LSC(this);
+            this.LSC = new LSC(db, this);
             this.onlineStatus = new onlineStatus(this);
             this.billMgr = new billMgr(this);
             this.facWarMgr = new facWarMgr(this);
             this.corporationSvc = new corporationSvc(db, this);
+            this.clientStatsMgr = new clientStatsMgr(this);
         }
     }
 }

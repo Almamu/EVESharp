@@ -259,27 +259,6 @@ namespace Node.Inventory.Items
         {
             // for now return no data
             return new PyDictionary();
-            /*
-      <!-- Begin Environment -->
-      <int name="env_itemID" />
-      <int name="env_charID" />
-      <int name="env_shipID" />
-      <!-- optional -->
-      <int name="env_target" none_marker="0" default="0" />
-      <!-- can be complex -->
-      <raw name="env_other" />
-      <!-- not sure what data goes in here. -->
-      <list name="env_area"/>
-      <int name="env_effectID" />
-        <!-- End Environment -->
-
-        <long name="startTime" />
-        <!-- saw 0x7 placeholder -->
-        <int name="duration"/>
-        <!-- saw 0 -->
-        <int name="repeat"/>
-        <!-- randomSeed -->
-        <raw name="randomSeed" />*/
         }
     }
 }

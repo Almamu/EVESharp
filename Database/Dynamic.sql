@@ -113,44 +113,6 @@ CREATE TABLE `cacheOwners` (
 
 /*Data for the table `cacheOwners` */
 
-/*Table structure for table `channelChars` */
-
-DROP TABLE IF EXISTS `channelChars`;
-
-CREATE TABLE `channelChars` (
-  `channelID` int(10) unsigned NOT NULL default '0',
-  `corpID` int(10) unsigned NOT NULL default '0',
-  `charID` int(10) unsigned NOT NULL default '0',
-  `allianceID` int(10) unsigned NOT NULL default '0',
-  `role` int(10) unsigned NOT NULL default '0',
-  `extra` int(10) unsigned NOT NULL default '0',
-  PRIMARY KEY  (`channelID`,`charID`),
-  KEY `FK_CHANNELCHARS_CHARACTER` (`charID`),
-  KEY `FK_CHANNELCHARS_CORPORATIONS` (`corpID`),
-  KEY `FK_CHANNELCHARS_ALLIANCES` (`allianceID`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
-/*Data for the table `channelChars` */
-
-/*Table structure for table `channelMods` */
-
-DROP TABLE IF EXISTS `channelMods`;
-
-CREATE TABLE `channelMods` (
-  `id` int(10) unsigned NOT NULL auto_increment,
-  `channelID` int(10) unsigned NOT NULL default '0',
-  `accessor` int(10) unsigned default NULL,
-  `mode` int(10) unsigned NOT NULL default '0',
-  `untilWhen` bigint(20) unsigned default NULL,
-  `originalMode` int(10) unsigned default NULL,
-  `admin` varchar(85) default NULL,
-  `reason` text,
-  PRIMARY KEY  (`id`),
-  KEY `FK_CHANNELMODS_CHANNELS` (`channelID`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
-/*Data for the table `channelMods` */
-
 /*Table structure for table `chrApplications` */
 
 DROP TABLE IF EXISTS `chrApplications`;

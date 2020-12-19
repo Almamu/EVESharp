@@ -3,6 +3,7 @@ using System.Text.RegularExpressions;
 using Common.Logging;
 using Common.Network;
 using Common.Packets;
+using PythonTypes;
 using PythonTypes.Types.Network;
 using PythonTypes.Types.Primitives;
 
@@ -11,12 +12,20 @@ namespace Node.Network
     public class ClusterConnection
     {
         private Channel Log { get; }
+#if DEBUG
+        private Channel CallLog { get; }
+        private Channel ResultLog { get; }
+#endif
         public EVEClientSocket Socket { get; }
         public NodeContainer Container { get; }
 
         public ClusterConnection(NodeContainer container)
         {
             this.Log = container.Logger.CreateLogChannel("ClusterConnection");
+#if DEBUG
+            this.CallLog = container.Logger.CreateLogChannel("CallDebug", true);
+            this.ResultLog = container.Logger.CreateLogChannel("ResultDebug", true);
+#endif
             this.Container = container;
             this.Container.ClusterConnection = this;
             this.Socket = new EVEClientSocket(this.Log);
@@ -138,17 +147,42 @@ namespace Node.Network
                                 // TODO: ON THE CLIENT'S CODE... NEEDS MORE INVESTIGATION
                                 return;
                             }
+                            
+#if DEBUG
+                            CallLog.Trace("Payload");
+                            CallLog.Trace(PrettyPrinter.FromDataType(args));
+                            CallLog.Trace("Named payload");
+                            CallLog.Trace(PrettyPrinter.FromDataType(sub));
+#endif
 
                             callResult = this.Container.BoundServiceManager.ServiceCall(
                                 boundID, call, args, sub, this.Container.ClientManager.Get(packet.UserID)
                             );
+
+#if DEBUG
+                            ResultLog.Trace("Result");
+                            ResultLog.Trace(PrettyPrinter.FromDataType(callResult));
+#endif
                         }
                         else
                         {
                             Log.Trace($"Calling {destAny.Service.Value}::{call}");
+                            
+#if DEBUG
+                            CallLog.Trace("Payload");
+                            CallLog.Trace(PrettyPrinter.FromDataType(args));
+                            CallLog.Trace("Named payload");
+                            CallLog.Trace(PrettyPrinter.FromDataType(sub));
+#endif
+                            
                             callResult = this.Container.ServiceManager.ServiceCall(
                                 destAny.Service, call, args, sub, this.Container.ClientManager.Get(packet.UserID)
                             );    
+
+#if DEBUG
+                            ResultLog.Trace("Result");
+                            ResultLog.Trace(PrettyPrinter.FromDataType(callResult));
+#endif
                         }
                     }
                     else if (packet.Destination is PyAddressNode destNode)
@@ -184,16 +218,41 @@ namespace Node.Network
                                 return;
                             }
 
+#if DEBUG
+                            CallLog.Trace("Payload");
+                            CallLog.Trace(PrettyPrinter.FromDataType(args));
+                            CallLog.Trace("Named payload");
+                            CallLog.Trace(PrettyPrinter.FromDataType(sub));
+#endif
+
                             callResult = this.Container.BoundServiceManager.ServiceCall(
                                 boundID, call, args, sub, this.Container.ClientManager.Get(packet.UserID)
                             );
+
+#if DEBUG
+                            ResultLog.Trace("Result");
+                            ResultLog.Trace(PrettyPrinter.FromDataType(callResult));
+#endif
                         }
                         else
                         {
                             Log.Trace($"Calling {destNode.Service.Value}::{call}");
+                            
+#if DEBUG
+                            CallLog.Trace("Payload");
+                            CallLog.Trace(PrettyPrinter.FromDataType(args));
+                            CallLog.Trace("Named payload");
+                            CallLog.Trace(PrettyPrinter.FromDataType(sub));
+#endif
+
                             callResult = this.Container.ServiceManager.ServiceCall(
                                 destNode.Service, call, args, sub, this.Container.ClientManager.Get(packet.UserID)
                             );
+
+#if DEBUG
+                            ResultLog.Trace("Result");
+                            ResultLog.Trace(PrettyPrinter.FromDataType(callResult));
+#endif
                         }
                     }
                     else

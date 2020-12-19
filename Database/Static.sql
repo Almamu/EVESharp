@@ -149,44 +149,6 @@ CREATE TABLE `bloodlineTypes` (
 
 insert  into `bloodlineTypes`(`bloodlineID`,`typeID`) values (5,1373),(6,1374),(2,1375),(1,1376),(7,1377),(8,1378),(3,1379),(4,1380),(9,1381),(10,1382),(11,1383),(12,1384),(13,1385),(14,1386);
 
-/*Table structure for table `channels` */
-
-DROP TABLE IF EXISTS `channels`;
-
-CREATE TABLE `channels` (
-  `channelID` int(10) unsigned NOT NULL auto_increment,
-  `ownerID` int(10) unsigned NOT NULL default '0',
-  `displayName` varchar(85) default NULL,
-  `motd` text,
-  `comparisonKey` varchar(11) default NULL,
-  `memberless` tinyint(4) NOT NULL default '0',
-  `password` varchar(100) default NULL,
-  `mailingList` tinyint(4) NOT NULL default '0',
-  `cspa` tinyint(4) NOT NULL default '0',
-  `temporary` tinyint(4) NOT NULL default '0',
-  `mode` tinyint(4) NOT NULL default '0',
-  `subscribed` tinyint(4) NOT NULL default '0',
-  `estimatedMemberCount` int(10) unsigned NOT NULL default '0',
-  PRIMARY KEY  (`channelID`)
-) ENGINE=InnoDB AUTO_INCREMENT=30001408 DEFAULT CHARSET=utf8;
-
-/*Data for the table `channels` */
-
-insert  into `channels`(`channelID`,`ownerID`,`displayName`,`motd`,`comparisonKey`,`memberless`,`password`,`mailingList`,`cspa`,`temporary`,`mode`,`subscribed`,`estimatedMemberCount`) values (1,1,'Help\\Rookie Help','rookie MOTD','rookiehelp',1,NULL,0,100,0,3,0,7777),(2,1,'Help\\Help','help MOTD','help',1,NULL,0,100,0,3,0,6666),(1000044,1000044,NULL,NULL,NULL,1,NULL,1,127,0,1,1,1252),(1000115,1000115,NULL,NULL,NULL,1,NULL,1,127,0,1,1,1252),(30001407,30001407,NULL,NULL,NULL,1,NULL,1,127,0,1,1,1252);
-
-/*Table structure for table `channelTypes` */
-
-DROP TABLE IF EXISTS `channelTypes`;
-
-CREATE TABLE `channelTypes` (
-  `channelTypeID` int(10) unsigned NOT NULL default '0',
-  `channelTypeName` varchar(100) NOT NULL default '',
-  `defaultName` varchar(100) NOT NULL default '',
-  PRIMARY KEY  (`channelTypeID`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
-/*Data for the table `channelTypes` */
-
 /*Table structure for table `chrAccessories` */
 
 DROP TABLE IF EXISTS `chrAccessories`;

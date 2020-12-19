@@ -1,31 +1,38 @@
 using System.Xml.XPath;
+using Common.Database;
+using Node.Database;
 using PythonTypes.Types.Database;
+using PythonTypes.Types.Exceptions;
 using PythonTypes.Types.Primitives;
 
 namespace Node.Services.Chat
 {
     public class LSC : Service
     {
-        public LSC(ServiceManager manager) : base(manager)
+        
+        private ChatDB mDB = null;
+        
+        public LSC(DatabaseConnection db, ServiceManager manager) : base(manager)
         {
+            this.mDB = new ChatDB(db);
         }
 
         public PyDataType GetChannels(PyDictionary namedPayload, Client client)
         {
-            // TODO: SUPPORT CHAT SYSTEM
-            // build an empty channel list FOR NOW
-            Rowset result = new Rowset(new string []
-            {
-                "channelID", "ownerID", "displayName", "motd", "comparisonKey", "memberless", "password",
-                "mailingList", "cspa", "temporary", "mode", "subscribed", "estimatedMemberCount"
-            });
+            if (client.CharacterID == null)
+                throw new UserError("NoCharacterSelected");
 
-            return result;
+            return this.mDB.GetChannelsForCharacter((int) client.CharacterID);
         }
 
         public PyDataType GetChannels(PyInteger reload, PyDictionary namedPayload, Client client)
         {
             return this.GetChannels(namedPayload, client);
+        }
+
+        public PyDataType GetRookieHelpChannel(PyDictionary namedPayload, Client client)
+        {
+            return 1;
         }
     }
 }

@@ -27,7 +27,7 @@ namespace Node.Inventory.Items.Attributes
             {
                 // ensure the attribute we're looking for exists
                 if (this.mItemAttributes.ContainsKey(index) == false && this.mDefaultAttributes.ContainsKey(index) == false)
-                    this.mItemAttributes[index] = new ItemAttribute(null, 0, true);
+                    this.mItemAttributes[index] = new ItemAttribute(this.mItemFactory.AttributeManager[index], 0, true);
                 else if (this.mItemAttributes.ContainsKey(index) == false && this.mDefaultAttributes.ContainsKey(index) == true)
                     this.mItemAttributes[index] = this.mDefaultAttributes[index].Clone();
                 

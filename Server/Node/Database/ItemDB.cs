@@ -853,7 +853,7 @@ namespace Node.Database
                     {
                         attribute = new ItemAttribute(
                             this.mItemFactory.AttributeManager[reader.GetInt32(0)],
-                            reader.GetInt32(2)
+                            reader.GetInt32(1)
                         );
                     }
 
@@ -904,10 +904,6 @@ namespace Node.Database
 
             using (connection)
             {
-                // set query parameters
-                update.Parameters.AddWithValue("@itemID", item.ID);
-                create.Parameters.AddWithValue("@itemID", item.ID);
-
                 foreach (KeyValuePair<int, ItemAttribute> pair in list)
                 {
                     // only update dirty records
@@ -917,6 +913,9 @@ namespace Node.Database
                     // use the correct prepared statement based on whether the attribute is new or old
                     if (pair.Value.New == true)
                     {
+                        create.Parameters.Clear();
+                        
+                        create.Parameters.AddWithValue("@itemID", item.ID);
                         create.Parameters.AddWithValue("@attributeID", pair.Value.Info.ID);
 
                         if (pair.Value.ValueType == ItemAttribute.ItemAttributeValueType.Integer)
@@ -933,6 +932,9 @@ namespace Node.Database
                     }
                     else
                     {
+                        update.Parameters.Clear();
+                        
+                        update.Parameters.AddWithValue("@itemID", item.ID);
                         update.Parameters.AddWithValue("@attributeID", pair.Value.Info.ID);
 
                         if (pair.Value.ValueType == ItemAttribute.ItemAttributeValueType.Integer)

@@ -53,6 +53,7 @@ namespace Node.Services.Characters
         };
 
         private readonly CharacterDB mDB = null;
+        private readonly ChatDB mChatDB = null;
         private readonly SkillDB mSkillDB = null;
         private readonly Dictionary<int, Bloodline> mBloodlineCache = null;
         private readonly Dictionary<int, Ancestry> mAncestriesCache = null;
@@ -64,6 +65,7 @@ namespace Node.Services.Characters
             this.Log = manager.Container.Logger.CreateLogChannel("character");
             this.mConfiguration = configuration;
             this.mDB = new CharacterDB(db, manager.Container.ItemFactory);
+            this.mChatDB = new ChatDB(db);
             this.mSkillDB = new SkillDB(db, manager.Container.ItemFactory);
             this.mBloodlineCache = this.mDB.GetBloodlineInformation();
             this.mAncestriesCache = this.mDB.GetAncestryInformation(this.mBloodlineCache);
@@ -289,12 +291,20 @@ namespace Node.Services.Characters
             ship.Persist();
             character.Persist();
             
+            // create required mailing list channel
+            int channelID = (int) this.mChatDB.CreateChannel(character, character, characterName, true);
+            // and subscribe the character to some channels
+            this.mChatDB.JoinChannel(ChatDB.CHANNEL_ROOKIECHANNELID, character.ID, ChatDB.CHATROLE_CONVERSATIONALIST);
+            this.mChatDB.JoinChannel(channelID, character.ID, ChatDB.CHATROLE_CREATOR);
+            this.mChatDB.JoinChannel((int) station.LocationID, character.ID, ChatDB.CHATROLE_CONVERSATIONALIST);
+            
             // unload items from list
             this.ServiceManager.Container.ItemFactory.ItemManager.UnloadItem(clone);
             this.ServiceManager.Container.ItemFactory.ItemManager.UnloadItem(damageControl);
             this.ServiceManager.Container.ItemFactory.ItemManager.UnloadItem(tritanium);
             this.ServiceManager.Container.ItemFactory.ItemManager.UnloadItem(ship);
             this.ServiceManager.Container.ItemFactory.ItemManager.UnloadItem(character);
+            
             // finally return the new character's ID and wait for the subsequent calls from the EVE client :)
             
             return character.ID;
@@ -305,6 +315,11 @@ namespace Node.Services.Characters
             return this.mDB.GetCharacterSelectionInfo(characterID, client.AccountID);
         }
 
+        public PyDataType SelectCharacterID(PyInteger characterID, PyBool loadDungeon, PyNone secondChoiceID,
+            PyDictionary namedPayload, Client client)
+        {
+            return this.SelectCharacterID(characterID, loadDungeon == true ? 1 : 0, secondChoiceID, namedPayload, client);
+        }
         // TODO: THIS PyNone SHOULD REALLY BE AN INTEGER, ALTHOUGH THIS FUNCTIONALITY IS NOT USED
         // TODO: IT REVEALS AN IMPORTANT ISSUE, WE CAN'T HAVE A WILDCARD PARAMETER PyDataType
         public PyDataType SelectCharacterID(PyInteger characterID, PyInteger loadDungeon, PyNone secondChoiceID,

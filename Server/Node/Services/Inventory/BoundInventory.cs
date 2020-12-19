@@ -44,6 +44,11 @@ namespace Node.Services.Inventory
             return result;
         }
 
+        public PyDataType GetItem(PyDictionary namedPayload, Client client)
+        {
+            return this.mInventory.GetEntityRow();
+        }
+
         public static PyDataType BindInventory(ItemInventory item, ItemFlags flag, ServiceManager manager)
         {
             Service instance = new BoundInventory(item, flag, manager);

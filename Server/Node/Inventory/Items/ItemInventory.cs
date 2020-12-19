@@ -22,6 +22,7 @@
     Creator: Almamu
 */
 
+using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using Node.Database;
@@ -65,6 +66,8 @@ namespace Node.Inventory.Items
 
         protected override void SaveToDB()
         {
+            base.SaveToDB();
+            
             if (this.mContentsLoaded == true)
             {
                 // persist all the items
