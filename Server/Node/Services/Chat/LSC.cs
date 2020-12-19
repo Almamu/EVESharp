@@ -32,7 +32,7 @@ namespace Node.Services.Chat
 
         public PyDataType GetRookieHelpChannel(PyDictionary namedPayload, Client client)
         {
-            return 1;
+            return ChatDB.CHANNEL_ROOKIECHANNELID;
         }
     }
 }
