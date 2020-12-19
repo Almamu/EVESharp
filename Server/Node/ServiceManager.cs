@@ -37,6 +37,7 @@ using Node.Services.Inventory;
 using Node.Services.Navigation;
 using Node.Services.Network;
 using Node.Services.Stations;
+using Node.Services.Tutorial;
 using Node.Services.War;
 
 namespace Node
@@ -69,6 +70,9 @@ namespace Node
         public facWarMgr facWarMgr { get; }
         public corporationSvc corporationSvc { get; }
         public clientStatsMgr clientStatsMgr { get; }
+        public voiceMgr voiceMgr { get; }
+        public standing2 standing2 { get; }
+        public tutorialSvc tutorialSvc { get; }
         private readonly DatabaseConnection mDatabaseConnection = null;
 
         public ServiceManager(NodeContainer container, DatabaseConnection db, CacheStorage storage, Configuration.General configuration)
@@ -102,6 +106,9 @@ namespace Node
             this.facWarMgr = new facWarMgr(this);
             this.corporationSvc = new corporationSvc(db, this);
             this.clientStatsMgr = new clientStatsMgr(this);
+            this.voiceMgr = new voiceMgr(this);
+            this.standing2 = new standing2(this);
+            this.tutorialSvc = new tutorialSvc(this);
         }
     }
 }
