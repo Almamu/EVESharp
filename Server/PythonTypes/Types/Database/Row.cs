@@ -24,5 +24,24 @@ namespace PythonTypes.Types.Database
 
             return new PyObjectData(ROW_TYPE_NAME, data);
         }
+        
+        public static PyDataType FromMySqlDataReader(MySqlDataReader reader)
+        {
+            PyDictionary data = new PyDictionary();
+            
+            PyList header = new PyList();
+            PyList row = new PyList();
+
+            for (int i = 0; i < reader.FieldCount; i++)
+            {
+                header.Add(reader.GetName(i));
+                row.Add(Utils.ObjectFromColumn(reader, i));
+            }
+
+            data["header"] = header;
+            data["line"] = row;
+
+            return new PyObjectData(ROW_TYPE_NAME, data);
+        }
     }
 }
