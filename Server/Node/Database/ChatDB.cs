@@ -23,7 +23,7 @@ namespace Node.Database
         public ulong CreateChannel(ItemEntity owner, ItemEntity relatedEntity, string name, bool maillist)
         {
             return Database.PrepareQueryLID(
-                "INSERT INTO channels(channelID, ownerID, displayName, motd, comparisonKey, memberless, password, mailingList, cspa, temporary, estimatedMemberCount)VALUES(@ownerID, @relatedEntityID, @displayName, '', NULL, 0, NULL, @maillist, 100, 0, 1)",
+                "INSERT INTO channels(channelID, ownerID, relatedEntityID, displayName, motd, comparisonKey, memberless, password, mailingList, cspa, temporary, estimatedMemberCount)VALUES(@relatedEntityID, @ownerID, @relatedEntityID, @displayName, '', NULL, 0, NULL, @maillist, 100, 0, 1)",
                 new Dictionary<string, object>()
                 {
                     {"@ownerID", owner.ID},

@@ -26,20 +26,20 @@ CREATE TABLE `channels` (
 INSERT INTO `channels`(`channelID`,`ownerID`,`displayName`,`motd`,`comparisonKey`,`memberless`,`password`,`mailingList`,`cspa`,`temporary`,`estimatedMemberCount`) VALUES (1,1,'Help\\Rookie Help','rookie MOTD','rookiehelp',1,NULL,0,100,0,0),(2,1,'Help\\Help','help MOTD','help',1,NULL,0,100,0,0);
 
 /* Insert solar systems into the channels table */
-INSERT INTO `channels`(`ownerID`,`relatedEntityID`,`displayName`,`motd`,`comparisonKey`,`memberless`,`password`,`mailingList`,`cspa`,`temporary`,`estimatedMemberCount`)
-  SELECT 1 AS ownerID, solarSystemID as relatedEntityID, "System Channels\\Local" AS displayName, solarSystemName AS motd, NULL AS comparisonKey, 0 AS memberless, NULL AS password, 0 AS mailingList, 100 AS cspa, 0 AS temporary, 0 AS estimatedMemberCount FROM mapSolarSystems;
+INSERT INTO `channels`(`channelID`,`ownerID`,`relatedEntityID`,`displayName`,`motd`,`comparisonKey`,`memberless`,`password`,`mailingList`,`cspa`,`temporary`,`estimatedMemberCount`)
+  SELECT solarSystemID AS channelID, 1 AS ownerID, solarSystemID as relatedEntityID, "System Channels\\Local" AS displayName, solarSystemName AS motd, NULL AS comparisonKey, 0 AS memberless, NULL AS password, 0 AS mailingList, 100 AS cspa, 0 AS temporary, 0 AS estimatedMemberCount FROM mapSolarSystems;
 
 /* Insert constellations into the channels table */
-INSERT INTO `channels`(`ownerID`,`relatedEntityID`,`displayName`,`motd`,`comparisonKey`,`memberless`,`password`,`mailingList`,`cspa`,`temporary`,`estimatedMemberCount`)
-  SELECT 1 AS ownerID, constellationID as relatedEntityID, "System Channels\\Constellation" AS displayName, constellationName AS motd, NULL AS comparisonKey, 0 AS memberless, NULL AS password, 0 AS mailingList, 100 AS cspa, 0 AS temporary, 0 AS estimatedMemberCount FROM mapConstellations;
+INSERT INTO `channels`(`channelID`,`ownerID`,`relatedEntityID`,`displayName`,`motd`,`comparisonKey`,`memberless`,`password`,`mailingList`,`cspa`,`temporary`,`estimatedMemberCount`)
+  SELECT constellationID AS channelID, 1 AS ownerID, constellationID as relatedEntityID, "System Channels\\Constellation" AS displayName, constellationName AS motd, NULL AS comparisonKey, 0 AS memberless, NULL AS password, 0 AS mailingList, 100 AS cspa, 0 AS temporary, 0 AS estimatedMemberCount FROM mapConstellations;
 
 /* Insert regions into the channels table */
-INSERT INTO `channels`(`ownerID`,`relatedEntityID`,`displayName`,`motd`,`comparisonKey`,`memberless`,`password`,`mailingList`,`cspa`,`temporary`,`estimatedMemberCount`)
-  SELECT 1 AS ownerID, regionID as relatedEntityID, "System Channels\\Region" AS displayName, regionName AS motd, NULL AS comparisonKey, 0 AS memberless, NULL AS password, 0 AS mailingList, 100 AS cspa, 0 AS temporary, 0 AS estimatedMemberCount FROM mapRegions;
+INSERT INTO `channels`(`channelID`,`ownerID`,`relatedEntityID`,`displayName`,`motd`,`comparisonKey`,`memberless`,`password`,`mailingList`,`cspa`,`temporary`,`estimatedMemberCount`)
+  SELECT regionID AS channelID, 1 AS ownerID, regionID as relatedEntityID, "System Channels\\Region" AS displayName, regionName AS motd, NULL AS comparisonKey, 0 AS memberless, NULL AS password, 0 AS mailingList, 100 AS cspa, 0 AS temporary, 0 AS estimatedMemberCount FROM mapRegions;
 
 /* Insert NPC corporations into the channels table */
-INSERT INTO `channels`(`ownerID`,`relatedEntityID`,`displayName`,`motd`,`comparisonKey`,`memberless`,`password`,`mailingList`,`cspa`,`temporary`,`estimatedMemberCount`)
-  SELECT corporationID AS ownerID, corporationID as relatedEntityID, "System Channels\\Corp" AS displayName, corporationName AS motd, NULL AS comparisonKey, 0 AS memberless, NULL AS password, 0 AS mailingList, 100 AS cspa, 0 AS temporary, 0 AS estimatedMemberCount FROM corporation;
+INSERT INTO `channels`(`channelID`,`ownerID`,`relatedEntityID`,`displayName`,`motd`,`comparisonKey`,`memberless`,`password`,`mailingList`,`cspa`,`temporary`,`estimatedMemberCount`)
+  SELECT corporationID AS channelID, corporationID AS ownerID, corporationID as relatedEntityID, "System Channels\\Corp" AS displayName, corporationName AS motd, NULL AS comparisonKey, 0 AS memberless, NULL AS password, 0 AS mailingList, 100 AS cspa, 0 AS temporary, 0 AS estimatedMemberCount FROM corporation;
 
 /*Table structure for table `channelChars` */
 
