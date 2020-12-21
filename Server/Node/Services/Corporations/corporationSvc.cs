@@ -22,5 +22,10 @@ namespace Node.Services.Corporations
                 this.mDB.ListAllFactionSolarSystemCount(), this.mDB.ListAllNPCCorporationInfo()
             });
         }
+
+        public PyDataType GetNPCDivisions(PyDictionary namedPayload, Client client)
+        {
+            return this.mDB.GetNPCDivisions();
+        }
     }
 }

@@ -30,11 +30,13 @@ namespace Node.Services.Characters
             Character character =
                 this.ServiceManager.Container.ItemFactory.ItemManager.LoadItem((int) client.CharacterID) as Character;
 
-            PyList skillQueueList = new PyList();
+            PyList skillQueueList = new PyList(character.SkillQueue.Count);
+
+            int index = 0;
             
             foreach (Character.SkillQueueEntry entry in character.SkillQueue)
             {
-                skillQueueList.Add(entry);
+                skillQueueList[index++] = entry;
             }
 
             return skillQueueList;

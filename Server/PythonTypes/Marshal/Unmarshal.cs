@@ -516,7 +516,7 @@ namespace PythonTypes.Marshal
                     PyList list = new PyList((int) count);
 
                     for (int i = 0; i < count; i++)
-                        list.Add(this.Process(false));
+                        list[i] = this.Process(false);
 
                     return list;
                 }
@@ -621,9 +621,6 @@ namespace PythonTypes.Marshal
                     case FieldType.WStr:
                     case FieldType.Str:
                         data[column.Name] = this.Process(false);
-                        break;
-                    
-                    case FieldType.Empty:
                         break;
                     
                     default:

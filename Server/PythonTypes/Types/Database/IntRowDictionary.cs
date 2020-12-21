@@ -19,14 +19,14 @@ namespace PythonTypes.Types.Database
         public static PyDataType FromMySqlDataReader(MySqlDataReader reader, int keyColumnIndex)
         {
             PyDictionary result = new PyDictionary();
-            PyList header = new PyList();
+            PyList header = new PyList(reader.FieldCount);
 
             for (int i = 0; i < reader.FieldCount; i++)
-                header.Add(reader.GetName(i));
+                header [i] = reader.GetName(i);
 
             while (reader.Read() == true)
             {
-                result[reader.GetInt32(keyColumnIndex)] = Row.FromMySqlDataReader(reader, header);
+                result [reader.GetInt32(keyColumnIndex)] = Row.FromMySqlDataReader(reader, header);
             }
             
             return result;

@@ -25,14 +25,11 @@ namespace PythonTypes.Types.Database
         protected PyDictionary Lines { get; }
         public string IDName { get; set; }
 
-        public IndexRowset(string idName, string[] headers)
+        public IndexRowset(string idName, PyList headers)
         {
-            this.Headers = new PyList();
+            this.Headers = headers;
             this.Lines = new PyDictionary();
             this.IDName = idName;
-
-            foreach (string header in headers)
-                this.AddHeader(header);
         }
 
         public static implicit operator PyDataType(IndexRowset rowset)
@@ -56,9 +53,28 @@ namespace PythonTypes.Types.Database
             this.Lines[index] = data;
         }
 
-        protected void AddHeader(string header)
+        public static IndexRowset FromMySqlDataReader(MySqlDataReader reader, int indexField)
         {
-            this.Headers.Add(header);
+            string indexFieldName = reader.GetName(indexField);
+            
+            PyList headers = new PyList(reader.FieldCount);
+
+            for (int i = 0; i < reader.FieldCount; i++)
+                headers[i] = reader.GetName(i);
+            
+            IndexRowset rowset = new IndexRowset(indexFieldName, headers);
+
+            while (reader.Read() == true)
+            {
+                PyList row = new PyList(reader.FieldCount);
+
+                for (int i = 0; i < row.Count; i++)
+                    row[i] = Utils.ObjectFromColumn(reader, i);
+
+                rowset.AddRow(reader.GetInt32(indexField), row);
+            }
+
+            return rowset;
         }
     }
 }

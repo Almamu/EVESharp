@@ -43,10 +43,6 @@ namespace Common.Database
             this.Log = logger.CreateLogChannel("Database");
         }
 
-        ~DatabaseConnection()
-        {
-        }
-
         public ulong PrepareQueryLID(string query, Dictionary<string, object> values)
         {
             try
@@ -205,6 +201,71 @@ namespace Common.Database
                 {
                     // run the prepared statement
                     return CRowset.FromMySqlDataReader(reader);
+                }
+            }
+            catch (Exception e)
+            {
+                Log.Error($"MySQL error: {e.Message}");
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Runs one prepared query with the given values as parameters and returns an IndexRowset representing the result
+        /// </summary>
+        /// <param name="indexField">The position of the index field in the result</param>
+        /// <param name="query">The prepared query</param>
+        /// <param name="values">The key-value pair of values to use when running the query</param>
+        /// <returns>The Rowset object representing the result</returns>
+        public IndexRowset PrepareIndexRowsetQuery(int indexField, string query, Dictionary<string, object> values)
+        {
+            try
+            {
+                MySqlConnection connection = null;
+                // create the correct command
+                MySqlCommand command = this.PrepareQuery(ref connection, query);
+                
+                // add values
+                foreach (KeyValuePair<string, object> pair in values)
+                    command.Parameters.AddWithValue(pair.Key, pair.Value);
+
+                MySqlDataReader reader = command.ExecuteReader();
+                
+                using (connection)
+                using (reader)
+                {
+                    // run the prepared statement
+                    return IndexRowset.FromMySqlDataReader (reader, indexField);
+                }
+            }
+            catch (Exception e)
+            {
+                Log.Error($"MySQL error: {e.Message}");
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Runs one prepared query with the given values as parameters and returns an IndexRowset representing the result
+        /// </summary>
+        /// <param name="indexField">The position of the index field in the result</param>
+        /// <param name="query">The prepared query</param>
+        /// <returns>The Rowset object representing the result</returns>
+        public IndexRowset PrepareIndexRowsetQuery(int indexField, string query)
+        {
+            try
+            {
+                MySqlConnection connection = null;
+                // create the correct command
+                MySqlCommand command = this.PrepareQuery(ref connection, query);
+
+                MySqlDataReader reader = command.ExecuteReader();
+                
+                using (connection)
+                using (reader)
+                {
+                    // run the prepared statement
+                    return IndexRowset.FromMySqlDataReader (reader, indexField);
                 }
             }
             catch (Exception e)

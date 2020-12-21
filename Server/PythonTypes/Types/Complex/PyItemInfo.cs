@@ -5,7 +5,7 @@ namespace PythonTypes.Types.Complex
 {
     public class PyItemInfo : IndexRowset
     {
-        public PyItemInfo() : base("itemID", new string[]
+        public PyItemInfo() : base("itemID", new PyDataType[]
         {
             "itemID", "invItem", "activeEffects", "attributes", "time"
         })
@@ -14,10 +14,10 @@ namespace PythonTypes.Types.Complex
 
         public void AddRow(int itemID, PyPackedRow entityRow, PyDictionary effects, PyDictionary attributes, long time)
         {
-            this.AddRow(itemID, new PyList(new PyDataType[]
+            this.AddRow(itemID, (PyList) new PyDataType[]
             {
                 itemID, entityRow, effects, attributes, time
-            }));
+            });
         }
     }
 }

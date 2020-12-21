@@ -73,6 +73,8 @@ namespace Node
         public voiceMgr voiceMgr { get; }
         public standing2 standing2 { get; }
         public tutorialSvc tutorialSvc { get; }
+        public agentMgr agentMgr { get; }
+        public corpRegistry corpRegistry { get; }
         private readonly DatabaseConnection mDatabaseConnection = null;
 
         public ServiceManager(NodeContainer container, DatabaseConnection db, CacheStorage storage, Configuration.General configuration)
@@ -107,8 +109,10 @@ namespace Node
             this.corporationSvc = new corporationSvc(db, this);
             this.clientStatsMgr = new clientStatsMgr(this);
             this.voiceMgr = new voiceMgr(this);
-            this.standing2 = new standing2(this);
+            this.standing2 = new standing2(db, this);
             this.tutorialSvc = new tutorialSvc(this);
+            this.agentMgr = new agentMgr(db, this);
+            this.corpRegistry = new corpRegistry(db, this);
         }
     }
 }

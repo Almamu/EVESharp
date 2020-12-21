@@ -96,7 +96,6 @@ namespace PythonTypes.Types.Database
                 case FieldType.Bytes:
                 case FieldType.Str:
                 case FieldType.WStr:
-                case FieldType.Empty:
                     // handled differently
                     return 0;
 

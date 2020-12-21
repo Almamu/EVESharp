@@ -16,9 +16,6 @@ namespace PythonTypes.Types.Database
         /// <returns></returns>
         public static PyDataType FromMySqlDataReader(MySqlDataReader reader)
         {
-            if (reader.FieldCount == 0)
-                return new PyTuple(0);
-
             PyList columns = new PyList(reader.FieldCount);
             PyList rows = new PyList();
 

@@ -18,7 +18,7 @@ namespace Node.Database
 
         public PyDataType GetMultiOwnersEx(PyList ids)
         {
-            string query = "SELECT itemName as ownerName, itemID as ownerID, typeID FROM entity WHERE itemID IN (";
+            string query = "SELECT itemID as ownerID, itemName as ownerName, typeID FROM entity WHERE itemID IN (";
             Dictionary<string, object> parameters = new Dictionary<string,object>();
 
             foreach (PyDataType id in ids)

@@ -299,6 +299,7 @@ namespace Node.Services.Characters
             this.mChatDB.JoinChannel(solarSystemID, character.ID, ChatDB.CHATROLE_CONVERSATIONALIST);
             this.mChatDB.JoinChannel(constellationID, character.ID, ChatDB.CHATROLE_CONVERSATIONALIST);
             this.mChatDB.JoinChannel(regionID, character.ID, ChatDB.CHATROLE_CONVERSATIONALIST);
+            this.mChatDB.JoinChannel(character.CorporationID, character.ID, ChatDB.CHATROLE_CONVERSATIONALIST);
             
             // unload items from list
             this.ServiceManager.Container.ItemFactory.ItemManager.UnloadItem(clone);

@@ -18,7 +18,7 @@ namespace PythonTypes.Types.Primitives
 
         public PyList(int capacity) : base(PyObjectType.List)
         {
-            this.mList = new List<PyDataType>(capacity);
+            this.mList = new List<PyDataType>(new PyDataType[capacity]);
         }
 
         public PyList(PyDataType[] data) : base(PyObjectType.List)
@@ -46,7 +46,7 @@ namespace PythonTypes.Types.Primitives
         public PyDataType this[int index]
         {
             get => this.mList[index];
-            set => this.mList.Insert(index, value);
+            set => this.mList[index] = value;
         }
 
         public IEnumerator<PyDataType> GetEnumerator()
@@ -59,7 +59,12 @@ namespace PythonTypes.Types.Primitives
             return GetEnumerator();
         }
 
-        public PyTuple ToTuple()
+        public static implicit operator PyList(PyDataType[] array)
+        {
+            return new PyList(array);
+        }
+
+        public PyTuple AsTuple()
         {
             return new PyTuple(this.mList.ToArray());
         }

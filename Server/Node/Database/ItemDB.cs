@@ -400,7 +400,7 @@ namespace Node.Database
             MySqlDataReader reader = Database.PrepareQuery(ref connection,
                 "SELECT description, tickerName, url, taxRate," +
                 " minimumJoinStanding, corporationType, hasPlayerPersonnelManager, sendCharTerminationMessage," +
-                " creatorID, stationID, raceID, allianceID, shares, memberCount, memberLimit," +
+                " creatorID, ceoID, stationID, raceID, allianceID, shares, memberCount, memberLimit," +
                 " allowedMemberRaceIDs, graphicID, shape1, shape2, shape3, color1, color2, color3, typeface," +
                 " division1, division2, division3, division4, division5, division6, division7, balance, deleted" +
                 " FROM corporation WHERE corporationID = @itemID",
@@ -429,18 +429,18 @@ namespace Node.Database
                     reader.GetInt32(9),
                     reader.GetInt32(10),
                     reader.GetInt32(11),
-                    reader.GetInt64(12),
-                    reader.GetInt32(13),
+                    reader.GetInt32(12),
+                    reader.GetInt64(13),
                     reader.GetInt32(14),
                     reader.GetInt32(15),
                     reader.GetInt32(16),
-                    reader.IsDBNull(17) ? default : reader.GetInt32(17),
+                    reader.GetInt32(17),
                     reader.IsDBNull(18) ? default : reader.GetInt32(18),
                     reader.IsDBNull(19) ? default : reader.GetInt32(19),
                     reader.IsDBNull(20) ? default : reader.GetInt32(20),
                     reader.IsDBNull(21) ? default : reader.GetInt32(21),
                     reader.IsDBNull(22) ? default : reader.GetInt32(22),
-                    reader.IsDBNull(23) ? null : reader.GetString(23),
+                    reader.IsDBNull(23) ? default : reader.GetInt32(23),
                     reader.IsDBNull(24) ? null : reader.GetString(24),
                     reader.IsDBNull(25) ? null : reader.GetString(25),
                     reader.IsDBNull(26) ? null : reader.GetString(26),
@@ -448,8 +448,9 @@ namespace Node.Database
                     reader.IsDBNull(28) ? null : reader.GetString(28),
                     reader.IsDBNull(29) ? null : reader.GetString(29),
                     reader.IsDBNull(30) ? null : reader.GetString(30),
-                    reader.GetDouble(31),
-                    reader.GetBoolean(32)
+                    reader.IsDBNull(31) ? null : reader.GetString(31),
+                    reader.GetDouble(32),
+                    reader.GetBoolean(33)
                 );
             }
         }

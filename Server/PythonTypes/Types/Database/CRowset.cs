@@ -35,10 +35,12 @@ namespace PythonTypes.Types.Database
         /// </summary>
         private void PrepareColumnNames()
         {
-            this.Columns = new PyList();
+            this.Columns = new PyList(this.Header.Columns.Count);
 
+            int index = 0;
+            
             foreach (DBRowDescriptor.Column column in this.Header.Columns)
-                this.Columns.Add(column.Name);
+                this.Columns[index++] = column.Name;
         }
 
         public virtual PyPackedRow this[int index]
@@ -92,7 +94,7 @@ namespace PythonTypes.Types.Database
             CRowset rowset = new CRowset(descriptor);
 
             while (reader.Read() == true)
-                rowset.Add(PyPackedRow.FromMySqlDataReader(reader, DBRowDescriptor.FromMySqlReader(reader, true)));
+                rowset.Add(PyPackedRow.FromMySqlDataReader(reader, descriptor));
 
             return rowset;
         }

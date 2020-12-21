@@ -1,10 +1,13 @@
+using PythonTypes.Types.Database;
+using PythonTypes.Types.Primitives;
+
 namespace Node.Inventory.Items.Types
 {
     public class Corporation : ItemInventory
     {
         public Corporation(ItemEntity @from, string description, string tickerName, string url, double taxRate,
             double minimumJoinStanding, int corporationType, bool hasPlayerPersonnelManager,
-            bool sendCharTerminationMessage, int creatorId, int stationId, int raceId, int allianceId, long shares,
+            bool sendCharTerminationMessage, int creatorID, int ceoID, int stationID, int raceID, int allianceId, long shares,
             int memberCount, int memberLimit, int allowedMemberRaceIDs, int graphicId, int? shape1, int? shape2,
             int? shape3, int? color1, int? color2, int? color3, string typeface, string division1, string division2,
             string division3, string division4, string division5, string division6, string division7, double balance,
@@ -18,9 +21,10 @@ namespace Node.Inventory.Items.Types
             this.mCorporationType = corporationType;
             this.mHasPlayerPersonnelManager = hasPlayerPersonnelManager;
             this.mSendCharTerminationMessage = sendCharTerminationMessage;
-            this.mCreatorID = creatorId;
-            this.mStationID = stationId;
-            this.mRaceID = raceId;
+            this.mCreatorID = creatorID;
+            this.mCeoID = ceoID;
+            this.mStationID = stationID;
+            this.mRaceID = raceID;
             this.mAllianceID = allianceId;
             this.mShares = shares;
             this.mMemberCount = memberCount;
@@ -54,6 +58,7 @@ namespace Node.Inventory.Items.Types
         bool mHasPlayerPersonnelManager;
         bool mSendCharTerminationMessage;
         int mCreatorID;
+        int mCeoID;
         int mStationID;
         int mRaceID;
         int mAllianceID;
@@ -87,9 +92,10 @@ namespace Node.Inventory.Items.Types
         public int CorporationType => mCorporationType;
         public bool HasPlayerPersonnelManager => mHasPlayerPersonnelManager;
         public bool SendCharTerminationMessage => mSendCharTerminationMessage;
-        public int CreatorId => mCreatorID;
-        public int StationId => mStationID;
-        public int RaceId => mRaceID;
+        public int CreatorID => mCreatorID;
+        public int CeoID => this.mCeoID;
+        public int StationID => mStationID;
+        public int RaceID => mRaceID;
         public int AllianceID => mAllianceID;
         public long Shares => mShares;
         public int MemberCount => mMemberCount;
@@ -112,5 +118,30 @@ namespace Node.Inventory.Items.Types
         public string Division7 => mDivision7;
         public double Balance => mBalance;
         public bool Deleted => mDeleted;
+
+        public Row GetCorporationInfoRow()
+        {
+            return new Row(
+                (PyList) new PyDataType[]
+                {
+                    "corporationID", "corporationName", "description", "tickerName", "url", "taxRate",
+                    "minimumJoinStanding", "corporationType", "hasPlayerPersonnelManager", "sendCharTerminationMessage",
+                    "creatorID", "ceoID", "stationID", "raceID", "allianceID", "shares", "memberCount", "memberLimit",
+                    "allowedMemberRaceIDs", "graphicID", "shape1", "shape2", "shape3", "color1", "color2", "color3",
+                    "typeface", "division1", "division2", "division3", "division4", "division5", "division6",
+                    "division7", "deleted"
+                },
+                (PyList) new PyDataType []
+                {
+                    this.ID, this.Name, this.Description, this.TickerName, this.Url, this.TaxRate,
+                    this.MinimumJoinStanding, this.CorporationType, this.HasPlayerPersonnelManager,
+                    this.SendCharTerminationMessage, this.CreatorID, this.CeoID, this.StationID, this.RaceID,
+                    this.AllianceID, this.Shares, this.MemberCount, this.MemberLimit, this.AllowedMemberRaceIDs,
+                    this.GraphicId, this.Shape1, this.Shape2, this.Shape3, this.Color1, this.Color2, this.Color3,
+                    this.Typeface, this.Division1, this.Division2, this.Division3, this.Division4, this.Division5,
+                    this.Division6, this.Division7, this.Deleted
+                }
+            );
+        }
     }
 }

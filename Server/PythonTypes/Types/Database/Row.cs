@@ -10,38 +10,47 @@ namespace PythonTypes.Types.Database
         /// </summary>
         private const string ROW_TYPE_NAME = "util.Row";
         
-        public static PyDataType FromMySqlDataReader(MySqlDataReader reader, PyList header)
+        public PyList Header { get; }
+        public PyList Line { get; }
+
+        public Row(PyList header, PyList line)
+        {
+            this.Header = header;
+            this.Line = line;
+        }
+        
+        public static implicit operator PyDataType(Row row)
         {
             PyDictionary data = new PyDictionary();
-            
-            PyList row = new PyList();
 
-            for (int i = 0; i < reader.FieldCount; i++)
-                row.Add(Utils.ObjectFromColumn(reader, i));
-            
-            data["header"] = header;
-            data["line"] = row;
+            data["header"] = row.Header;
+            data["line"] = row.Line;
 
             return new PyObjectData(ROW_TYPE_NAME, data);
         }
         
-        public static PyDataType FromMySqlDataReader(MySqlDataReader reader)
+        public static Row FromMySqlDataReader(MySqlDataReader reader, PyList header)
         {
-            PyDictionary data = new PyDictionary();
-            
-            PyList header = new PyList();
-            PyList row = new PyList();
+            PyList row = new PyList(reader.FieldCount);
+
+            for (int i = 0; i < reader.FieldCount; i++)
+                row[i] = Utils.ObjectFromColumn(reader, i);
+
+            return new Row(header, row);
+        }
+        
+        public static Row FromMySqlDataReader(MySqlDataReader reader)
+        {
+            PyList header = new PyList(reader.FieldCount);
+            PyList row = new PyList(reader.FieldCount);
 
             for (int i = 0; i < reader.FieldCount; i++)
             {
-                header.Add(reader.GetName(i));
-                row.Add(Utils.ObjectFromColumn(reader, i));
+                header[i] = reader.GetName(i);
+                row[i] = Utils.ObjectFromColumn(reader, i);
             }
-
-            data["header"] = header;
-            data["line"] = row;
-
-            return new PyObjectData(ROW_TYPE_NAME, data);
+            
+            return new Row(header, row);
         }
     }
 }

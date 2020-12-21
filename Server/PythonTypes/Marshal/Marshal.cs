@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using MySqlX.XDevAPI.Relational;
 using PythonTypes.Compression;
 using PythonTypes.Types.Database;
 using PythonTypes.Types.Primitives;
@@ -546,8 +547,7 @@ namespace PythonTypes.Marshal
 
             foreach (DBRowDescriptor.Column column in enumerator)
             {
-                if (packedRow[column.Name] == null)
-                    continue;
+                PyDataType value = packedRow[column.Name];
                 
                 switch (column.Type)
                 {
@@ -555,37 +555,35 @@ namespace PythonTypes.Marshal
                     case FieldType.UI8:
                     case FieldType.CY:
                     case FieldType.FileTime:
-                        wholeByteWriter.Write((long) (packedRow[column.Name] as PyInteger));
+                        wholeByteWriter.Write((long) (value as PyInteger ?? 0));
                         break;
 
                     case FieldType.I4:
                     case FieldType.UI4:
-                        wholeByteWriter.Write((int) (packedRow[column.Name] as PyInteger));
+                        wholeByteWriter.Write((int) (value as PyInteger ?? 0));
                         break;
 
                     case FieldType.I2:
                     case FieldType.UI2:
-                        wholeByteWriter.Write((short) (packedRow[column.Name] as PyInteger));
+                        wholeByteWriter.Write((short) (value as PyInteger ?? 0));
                         break;
 
                     case FieldType.I1:
                     case FieldType.UI1:
-                        wholeByteWriter.Write((byte) (packedRow[column.Name] as PyInteger));
+                        wholeByteWriter.Write((byte) (value as PyInteger ?? 0));
                         break;
 
                     case FieldType.R8:
-                        wholeByteWriter.Write((double) (packedRow[column.Name] as PyDecimal));
+                        wholeByteWriter.Write((double) (value as PyDecimal ?? 0));
                         break;
 
                     case FieldType.R4:
-                        wholeByteWriter.Write((float) (packedRow[column.Name] as PyDecimal));
+                        wholeByteWriter.Write((float) (value as PyDecimal ?? 0));
                         break;
 
                     // bools, bytes and str are handled differently
                     case FieldType.Bool:
-                        PyBool value = packedRow[column.Name] as PyBool;
-
-                        if (value)
+                        if (value as PyBool)
                             // bytes are written from right to left in the buffer
                             toWrite |= (byte) (1 << bitOffset);
 
@@ -608,10 +606,6 @@ namespace PythonTypes.Marshal
                     case FieldType.WStr:
                         // write the object to the proper memory stream
                         Process(objectWriter, packedRow[column.Name]);
-                        break;
-                    
-                    // nulls are not written
-                    case FieldType.Empty:
                         break;
 
                     default:

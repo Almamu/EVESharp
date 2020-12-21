@@ -11,7 +11,7 @@ namespace Node.Services.Tutorial
 
         public PyDataType GetCharacterTutorialState(PyDictionary namedPayload, Client client)
         {
-            return new Rowset(new string []
+            return new Rowset(new PyDataType []
             {
                 "characterID", "tutorialID", "pageID", "eventTypeID"
             });

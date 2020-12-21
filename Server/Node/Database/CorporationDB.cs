@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Common.Database;
 using PythonTypes.Types.Primitives;
 
@@ -60,6 +61,24 @@ namespace Node.Database
                 " FROM crpNPCCorporations" +
                 " JOIN corporation USING (corporationID)" +
                 "   LEFT JOIN entity ON ceoID=entity.itemID", 0
+            );
+        }
+
+        public PyDataType GetEveOwners(int corporationID)
+        {
+            return Database.PrepareRowsetQuery(
+                "SELECT characterID as ownerID, itemName AS ownerName, typeID FROM chrInformation, entity WHERE entity.itemID = chrInformation.characterID AND corporationID = @corporationID",
+                new Dictionary<string, object>()
+                {
+                    {"@corporationID", corporationID}
+                }
+            );
+        }
+
+        public PyDataType GetNPCDivisions()
+        {
+            return Database.PrepareRowsetQuery(
+                "SELECT divisionID, divisionName, description, leaderType from crpNPCDivisions"
             );
         }
     }
