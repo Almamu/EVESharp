@@ -1,9 +1,10 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>netcoreapp2.1</TargetFramework>
+        <TargetFramework>netcoreapp3.1</TargetFramework>
         <Company />
         <Product>eveCommon</Product>
+        <LangVersion>8</LangVersion>
     </PropertyGroup>
 
     <ItemGroup>

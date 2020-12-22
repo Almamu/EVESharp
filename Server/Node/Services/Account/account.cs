@@ -25,6 +25,11 @@ namespace Node.Services.Account
             return character.Balance;
         }
 
+        public PyDataType GetCashBalance(PyBool isCorpWallet, PyDictionary namedPayload, Client client)
+        {
+            return this.GetCashBalance(isCorpWallet ? 1 : 0, 1000, namedPayload, client);
+        }
+        
         public PyDataType GetCashBalance(PyInteger isCorpWallet, PyDictionary namedPayload, Client client)
         {
             return this.GetCashBalance(isCorpWallet, 1000, namedPayload, client);
