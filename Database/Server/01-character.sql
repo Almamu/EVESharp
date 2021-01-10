@@ -1,3 +1,5 @@
+DROP TABLE IF EXISTS `chrInformation`;
+
 /**
  * Character information
  */
@@ -107,6 +109,8 @@ INSERT INTO chrInformation
   stationID,solarSystemID,constellationID,regionID,
   0 AS online
  FROM chrStatic;
+
+DROP TABLE IF EXISTS `chrSkillQueue`;
 
 /**
  * Create table for skill queue

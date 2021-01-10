@@ -23,7 +23,7 @@ CREATE TABLE `entity` (
   `y` double NOT NULL default '0',
   `z` double NOT NULL default '0',
   `customInfo` text,
-  `nodeID` int(10) unsigned DEFAULT NULL
+  `nodeID` int(10) unsigned DEFAULT NULL,
   PRIMARY KEY  (`itemID`),
   KEY `typeID` (`typeID`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;

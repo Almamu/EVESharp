@@ -61,8 +61,8 @@ namespace Node
                     object[] parameterList = new object[parameters.Length];
 
                     // set last parameters as these are the only ones that do not change
-                    parameterList[parameterList.Length - 1] = client;
-                    parameterList[parameterList.Length - 2] = namedPayload;
+                    parameterList[^1] = client;
+                    parameterList[^2] = namedPayload;
 
                     bool match = true;
                     
