@@ -387,7 +387,7 @@ namespace Node
                             break;
                     }
 
-                    Store(name, cacheObject, DateTime.Now.ToFileTimeUtc());
+                    Store(name, cacheObject, DateTime.UtcNow.ToFileTimeUtc());
                 }
             }
             catch (Exception)
@@ -429,7 +429,7 @@ namespace Node
                             break;
                     }
 
-                    StoreCall(service, method, cacheObject, DateTime.Now.ToFileTimeUtc());
+                    StoreCall(service, method, cacheObject, DateTime.UtcNow.ToFileTimeUtc());
                 }
             }
             catch (Exception)

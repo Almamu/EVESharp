@@ -134,6 +134,10 @@ namespace Node
                     CacheStorage.CharacterAppearanceCacheTypes
                 );
                 sChannel.Debug("Done");
+                sChannel.Info("Initializing timer manager");
+                sContainer.TimerManager = new TimerManager(sLog);
+                sContainer.TimerManager.Start();
+                sChannel.Debug("Done");
                 sChannel.Info("Initializing item factory");
                 sContainer.ItemFactory = new ItemFactory(sContainer);
                 sContainer.ItemFactory.Init();

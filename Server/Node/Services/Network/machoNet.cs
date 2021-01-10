@@ -133,7 +133,7 @@ namespace Node.Services.Network
                 dict["onlineStatus"] = new PyNone();
                 dict["gangSvcObjectHandler"] = new PyNone();
 
-                this.ServiceManager.CacheStorage.Store("machoNet.serviceInfo", dict, DateTime.Now.ToFileTimeUtc());
+                this.ServiceManager.CacheStorage.Store("machoNet.serviceInfo", dict, DateTime.UtcNow.ToFileTimeUtc());
             }
 
             PyDataType srvInfo = this.ServiceManager.CacheStorage.GetHint("machoNet.serviceInfo");
@@ -148,7 +148,7 @@ namespace Node.Services.Network
 
         public PyDataType GetTime(PyDictionary namedPayload, Client client)
         {
-            return new PyInteger(DateTime.Now.ToFileTimeUtc());
+            return new PyInteger(DateTime.UtcNow.ToFileTimeUtc());
         }
     }
 }

@@ -43,6 +43,12 @@ namespace Node.Inventory.Items.Attributes
             }
         }
 
+        public ItemAttribute this[long index]
+        {
+            get => this[(int) index];
+            set => this[(int) index] = value;
+        }
+
         public ItemAttribute this[AttributeEnum index]
         {
             get => this[(int) index];

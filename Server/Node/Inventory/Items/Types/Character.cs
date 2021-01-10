@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using Node.Database;
 using Node.Inventory.Items.Attributes;
 using PythonTypes.Types.Primitives;
 
@@ -16,7 +17,7 @@ namespace Node.Inventory.Items.Types
             {
                 return new PyTuple(new PyDataType[]
                 {
-                    from.Skill.ID, from.TargetLevel
+                    from.Skill.Type.ID, from.TargetLevel
                 });
             }
         }
@@ -252,37 +253,46 @@ namespace Node.Inventory.Items.Types
         private List<SkillQueueEntry> mSkillQueue;
         private Corporation mCorporation = null;
 
-        public int Charisma
+        public long Charisma
         {
             get => this.Attributes[AttributeEnum.charisma].Integer;
             set => this.Attributes[AttributeEnum.charisma].Integer = value;
         }
 
-        public int Willpower
+        public long Willpower
         {
             get => this.Attributes[AttributeEnum.willpower].Integer;
             set => this.Attributes[AttributeEnum.willpower].Integer = value;
         }
 
-        public int Intelligence
+        public long Intelligence
         {
             get => this.Attributes[AttributeEnum.intelligence].Integer;
             set => this.Attributes[AttributeEnum.intelligence].Integer = value;
         }
 
-        public int Perception
+        public long Perception
         {
             get => this.Attributes[AttributeEnum.perception].Integer;
             set => this.Attributes[AttributeEnum.perception].Integer = value;
         }
 
-        public int Memory
+        public long Memory
         {
             get => this.Attributes[AttributeEnum.memory].Integer;
             set => this.Attributes[AttributeEnum.memory].Integer = value;
         }
 
-        public List<SkillQueueEntry> SkillQueue => this.mSkillQueue;
+        public List<SkillQueueEntry> SkillQueue
+        {
+            get
+            {
+                // accessing the skillQueue might be a modification attempt
+                // so the character must be marked as dirty
+                this.Dirty = true;
+                return this.mSkillQueue;
+            }
+        }
 
         public Corporation Corporation
         {
@@ -307,15 +317,83 @@ namespace Node.Inventory.Items.Types
             base.LoadContents();
             
             // put things where they belong
-            this.mSkillQueue = new List<SkillQueueEntry>();
             Dictionary<int, Skill> skillQueue = this.Items
                 .Where(x => x.Value.Flag == ItemFlags.SkillInTraining && x.Value is Skill)
                 .ToDictionary(dict => dict.Key, dict => dict.Value as Skill);
 
-            foreach (KeyValuePair<int, Skill> pair in skillQueue)
+            this.mSkillQueue = base.mItemFactory.CharacterDB.LoadSkillQueue(this, skillQueue);
+            
+            // iterate the skill queue and generate timers for the skills
+            foreach (SkillQueueEntry entry in this.mSkillQueue)
+                if (entry.Skill.ExpiryTime != 0)
+                    this.mItemFactory.Container.TimerManager.EnqueueTimer(entry.Skill.ExpiryTime, SkillTrainingCompleted, entry.Skill.ID);
+        }
+
+        public void SkillTrainingCompleted(int itemID)
+        {
+            Skill skill = this.Items[itemID] as Skill;
+            
+            // set the skill to the proper flag and set the correct attributes
+            skill.Flag = ItemFlags.Skill;
+            skill.Level = skill.Level + 1;
+            
+            // notify the client of a change in the item's flag
+            if (this.mItemFactory.Container.ClientManager.Contains(this.AccountID) == true)
             {
-                this.mSkillQueue = base.mItemFactory.CharacterDB.LoadSkillQueue(this, skillQueue);
+                this.mItemFactory.Container.ClientManager.Get(this.AccountID).NotifyItemChange(skill, ItemFlags.SkillInTraining, this.ID);
+            
+                // skill was trained, send the success message
+                this.mItemFactory.Container.ClientManager.Get(this.AccountID).NotifySkillTrained(skill);                
             }
+
+            skill.Persist();
+            
+            // create history entry
+            this.mItemFactory.SkillDB.CreateSkillHistoryRecord(skill.Type, this, SkillHistoryReason.SkillTrainingComplete,
+                skill.Points);
+
+            // finally remove it off the skill queue
+            this.SkillQueue.RemoveAll(x => x.Skill.ID == skill.ID);
+            
+            // get the next skill from the queue (if any) and send the client proper notifications
+            if (this.SkillQueue.Count == 0)
+                return;
+
+            skill = this.SkillQueue[0].Skill;
+            
+            skill.Flag = ItemFlags.SkillInTraining;
+            
+            if (this.mItemFactory.Container.ClientManager.Contains(this.AccountID) == true)
+            {
+                this.mItemFactory.Container.ClientManager.Get(this.AccountID).NotifyItemChange(skill, ItemFlags.Skill, this.ID);
+            
+                // skill was trained, send the success message
+                this.mItemFactory.Container.ClientManager.Get(this.AccountID).NotifySkillStartTraining(skill);                
+            }
+
+            // create history entry
+            this.mItemFactory.SkillDB.CreateSkillHistoryRecord(skill.Type, this, SkillHistoryReason.SkillTrainingStarted,
+                skill.Points);
+            
+            // persists the skill queue
+            this.Dirty = true;
+            this.Persist();
+        }
+
+        public double GetSkillPointsPerMinute(Skill skill)
+        {
+            // TODO: TAKE INTO ACCOUNT THE SKILL LEARNING LEVEL (3374)
+            ItemAttribute primarySpPerMin = this.Attributes[skill.PrimaryAttribute.Integer];
+            ItemAttribute secondarySpPerMin = this.Attributes[skill.SecondaryAttribute.Integer];
+            int skillLearningLevel = 0;
+
+            double spPerMin = primarySpPerMin + secondarySpPerMin / 2.0f;
+            spPerMin = spPerMin * (1.0f + 0.02f * skillLearningLevel);
+            
+            // TODO: CHECK FOR 100% TRAINING BONUS
+            spPerMin = spPerMin * 2.0f;
+
+            return spPerMin;
         }
         
         protected override void SaveToDB()
@@ -324,6 +402,18 @@ namespace Node.Inventory.Items.Types
 
             // update the relevant character information
             this.mItemFactory.CharacterDB.UpdateCharacterInformation(this);
+        }
+
+        public override void Dispose()
+        {
+            base.Dispose();
+            
+            // remove timers if loaded
+            if (this.ContentsLoaded)
+            {
+                foreach (SkillQueueEntry entry in this.mSkillQueue)
+                    this.mItemFactory.Container.TimerManager.DequeueTimer(entry.Skill.ID, entry.Skill.ExpiryTime);
+            }
         }
     }
 }

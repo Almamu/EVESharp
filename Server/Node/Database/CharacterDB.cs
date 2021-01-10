@@ -455,7 +455,11 @@ namespace Node.Database
                 while (reader.Read() == true)
                 {
                     result.Add(
-                        new Character.SkillQueueEntry() { Skill = skillsInTraining [reader.GetInt32(0)], TargetLevel = reader.GetInt32(1)}
+                        new Character.SkillQueueEntry()
+                        {
+                            Skill = skillsInTraining [reader.GetInt32(0)],
+                            TargetLevel = reader.GetInt32(1),
+                        }
                     );
                 }
 
@@ -497,6 +501,40 @@ namespace Node.Database
                     {"@activeCloneID", character.ActiveCloneID}
                 }
             );
+
+            if (character.ContentsLoaded == true)
+            {
+                // ensure the skill queue is saved too
+                Database.PrepareQuery("DELETE FROM chrSkillQueue WHERE characterID = @characterID",
+                    new Dictionary<string, object>()
+                    {
+                        {"@characterID", character.ID}
+                    }
+                );
+            
+                // re-create the whole skill queue
+                MySqlConnection connection = null;
+            
+                MySqlCommand create = Database.PrepareQuery(
+                    ref connection,
+                    "INSERT INTO chrSkillQueue(orderIndex, characterID, skillItemID, level) VALUE (@orderIndex, @characterID, @skillItemID, @level)"
+                );
+
+                using (connection)
+                {
+                    int index = 0;
+                
+                    foreach (Character.SkillQueueEntry entry in character.SkillQueue)
+                    {
+                        create.Parameters.Clear();
+                        create.Parameters.AddWithValue("@orderIndex", index++);
+                        create.Parameters.AddWithValue("@characterID", character.ID);
+                        create.Parameters.AddWithValue("@skillItemID", entry.Skill.ID);
+                        create.Parameters.AddWithValue("@level", entry.TargetLevel);
+                        create.ExecuteNonQuery();
+                    }
+                }
+            }
         }
 
         public PyDataType GetJournal(int characterID, int? refTypeID, int accountKey, long minDate)

@@ -26,6 +26,7 @@ using System;
 using System.Collections.Generic;
 using Common.Game;
 using Common.Packets;
+using Node.Inventory.Items;
 using Node.Inventory.Items.Types;
 using PythonTypes.Types.Network;
 using PythonTypes.Types.Primitives;
@@ -238,6 +239,121 @@ namespace Node
         {
             get => this.mSession["locationid"] as PyInteger;
             set => this.mSession["locationid"] = value;
+        }
+
+        public void NotifyItemChange(ItemEntity item, ItemFlags oldFlag, int oldLocation)
+        {
+            PyDictionary changes = new PyDictionary();
+            
+            if (oldFlag != item.Flag)
+                changes[(int) ItemChange.Flag] = (int) oldFlag;
+            if (oldLocation != item.LocationID)
+                changes[(int) ItemChange.LocationID] = oldLocation;
+
+            PyTuple notification = new PyTuple(new PyDataType[]
+            {
+                item.GetEntityRow(), changes
+            });
+
+            this.SendNotification("OnItemChange", "charid", notification);
+        }
+
+        protected void SendNotification(string notificationType, string idType, PyDataType data)
+        {
+            PyTuple dataContainer = new PyTuple(new PyDataType []
+                {
+                    1, data
+                }
+            );
+
+            dataContainer = new PyTuple(new PyDataType[]
+                {
+                    0, dataContainer
+                }
+            );
+
+            dataContainer = new PyTuple(new PyDataType[]
+                {
+                    0, new PySubStream(dataContainer)
+                }
+            );
+
+            dataContainer = new PyTuple(new PyDataType[]
+                {
+                    dataContainer, null
+                }
+            );
+            
+            PyPacket packet = new PyPacket(PyPacket.PacketType.NOTIFICATION);
+
+            packet.Destination = new PyAddressBroadcast(new PyList(), idType, notificationType);
+            packet.Source = new PyAddressNode(this.mContainer.NodeID);
+
+            packet.UserID = this.AccountID;
+            packet.Payload = dataContainer;
+
+            this.mContainer.ClusterConnection.Socket.Send(packet);
+        }
+
+        public void NotifySkillTrained(Skill skill)
+        {
+            PyTuple onSkillTrained = new PyTuple(new PyDataType[]
+                {
+                    "OnSkillTrained", skill.ID
+                }
+            );
+            
+            // TODO: THESE SEEM TO BE TIED TO DESTINY FOR ONE REASON OR ANOTHER
+            PyTuple eventTuple = new PyTuple(new PyDataType[]
+                {
+                    (PyList) new PyDataType[]
+                    {
+                        onSkillTrained
+                    }
+                }
+            );
+            
+            this.SendNotification("OnMultiEvent", "charid", eventTuple);
+        }
+
+        public void NotifySkillTrainingStopped(Skill skill)
+        {
+            PyTuple onSkillTrainingStopped = new PyTuple(new PyDataType[]
+                {
+                    "OnSkillTrainingStopped", skill.ID, 0
+                }
+            );
+
+            PyTuple eventTuple = new PyTuple(new PyDataType[]
+                {
+                    (PyList) new PyDataType[]
+                    {
+                        onSkillTrainingStopped
+                    }
+                }
+            );
+
+            this.SendNotification("OnMultiEvent", "charid", eventTuple);
+        }
+
+        public void NotifySkillStartTraining(Skill skill)
+        {
+            PyTuple onSkillStartTraining = new PyTuple(new PyDataType[]
+                {
+                    "OnSkillStartTraining", skill.ID, skill.ExpiryTime
+                }
+            );
+
+            PyTuple eventTuple = new PyTuple(new PyDataType[]
+                {
+                    (PyList) new PyDataType[]
+                    {
+                        onSkillStartTraining
+                    }
+                }
+            );
+
+            this.SendNotification("OnMultiEvent", "charid", eventTuple);
         }
     }
 }

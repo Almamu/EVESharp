@@ -108,7 +108,7 @@ namespace ClusterControler
                     return;
                 }
 
-                Log.Trace("Sending SessionChangeNotification to client {packet.UserID}");
+                Log.Trace($"Sending SessionChangeNotification to client {packet.UserID}");
 
                 this.ConnectionManager.NotifyClient((int) packet.UserID, packet);
                 
@@ -119,6 +119,18 @@ namespace ClusterControler
                 {
                     this.ConnectionManager.NotifyNode(nodeID, packet);
                 }
+            }
+            else if (packet.Type == PyPacket.PacketType.NOTIFICATION)
+            {
+                if (packet.Destination is PyAddressBroadcast == false)
+                {
+                    Log.Error("Received a notification that is not a broadcast...");
+                    return;
+                }
+
+                Log.Trace($"Relying notification to client {packet.UserID}");
+
+                this.ConnectionManager.NotifyClient((int) packet.UserID, packet);
             }
             else
             {

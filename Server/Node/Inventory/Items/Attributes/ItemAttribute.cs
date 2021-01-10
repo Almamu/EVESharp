@@ -39,14 +39,14 @@ namespace Node.Inventory.Items.Attributes
             Double = 1
         };
 
-        private int mInteger;
+        private long mInteger;
         private double mFloat;
         private AttributeInfo mInfo;
 
         public AttributeInfo Info => this.mInfo;
         public ItemAttributeValueType ValueType { get; protected set; }
 
-        public int Integer
+        public long Integer
         {
             get => this.mInteger;
             set
@@ -80,7 +80,7 @@ namespace Node.Inventory.Items.Attributes
             this.New = newEntity;
         }
 
-        public ItemAttribute(AttributeInfo attribute, int value, bool newEntity = false)
+        public ItemAttribute(AttributeInfo attribute, long value, bool newEntity = false)
         {
             this.mInfo = attribute;
             this.mInteger = value;
@@ -146,7 +146,7 @@ namespace Node.Inventory.Items.Attributes
             return original * value;
         }
 
-        public static ItemAttribute operator *(ItemAttribute original, int value)
+        public static ItemAttribute operator *(ItemAttribute original, long value)
         {
             // clone the attribute but mark it as existant
             ItemAttribute clone = original.Clone();
@@ -175,7 +175,7 @@ namespace Node.Inventory.Items.Attributes
             // based on the types perform the appropiate operation
             if (value.ValueType == ItemAttributeValueType.Integer)
                 clone *= value.Integer;
-            else if (clone.ValueType == ItemAttributeValueType.Double)
+            else if (value.ValueType == ItemAttributeValueType.Double)
                 clone *= value.Float;
 
             return clone;
@@ -196,7 +196,7 @@ namespace Node.Inventory.Items.Attributes
             return clone;
         }
 
-        public static ItemAttribute operator /(ItemAttribute original, int value)
+        public static ItemAttribute operator /(ItemAttribute original, long value)
         {
             // clone the attribute but mark it as existant
             ItemAttribute clone = original.Clone();
@@ -220,7 +220,7 @@ namespace Node.Inventory.Items.Attributes
             // based on the types perform the appropiate operation
             if (value.ValueType == ItemAttributeValueType.Integer)
                 clone /= value.Integer;
-            else if (clone.ValueType == ItemAttributeValueType.Double)
+            else if (value.ValueType == ItemAttributeValueType.Double)
                 clone /= value.Float;
 
             return clone;
@@ -240,7 +240,7 @@ namespace Node.Inventory.Items.Attributes
             return clone;
         }
 
-        public static ItemAttribute operator +(ItemAttribute original, int value)
+        public static ItemAttribute operator +(ItemAttribute original, long value)
         {
             // clone the attribute but mark it as existant
             ItemAttribute clone = original.Clone();
@@ -264,7 +264,7 @@ namespace Node.Inventory.Items.Attributes
             // based on the types perform the appropiate operation
             if (value.ValueType == ItemAttributeValueType.Integer)
                 clone += value.Integer;
-            else if (clone.ValueType == ItemAttributeValueType.Double)
+            else if (value.ValueType == ItemAttributeValueType.Double)
                 clone += value.Float;
 
             return clone;
@@ -284,7 +284,7 @@ namespace Node.Inventory.Items.Attributes
             return clone;
         }
 
-        public static ItemAttribute operator -(ItemAttribute original, int value)
+        public static ItemAttribute operator -(ItemAttribute original, long value)
         {
             // clone the attribute but mark it as existant
             ItemAttribute clone = original.Clone();
@@ -308,7 +308,7 @@ namespace Node.Inventory.Items.Attributes
             // based on the types perform the appropiate operation
             if (value.ValueType == ItemAttributeValueType.Integer)
                 clone -= value.Integer;
-            else if (clone.ValueType == ItemAttributeValueType.Double)
+            else if (value.ValueType == ItemAttributeValueType.Double)
                 clone -= value.Float;
 
             return clone;

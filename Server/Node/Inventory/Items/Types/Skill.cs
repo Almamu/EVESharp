@@ -17,7 +17,7 @@ namespace Node.Inventory.Items.Types
         {
         }
 
-        public int Level
+        public long Level
         {
             get => this.Attributes[AttributeEnum.skillLevel].Integer;
             set
@@ -38,7 +38,23 @@ namespace Node.Inventory.Items.Types
             get => this.Attributes[AttributeEnum.skillTimeConstant];
         }
 
-        public double GetSkillPointsForLevel(int level)
+        public ItemAttribute PrimaryAttribute
+        {
+            get => this.Attributes[AttributeEnum.primaryAttribute];
+        }
+
+        public ItemAttribute SecondaryAttribute
+        {
+            get => this.Attributes[AttributeEnum.secondaryAttribute];
+        }
+
+        public long ExpiryTime
+        {
+            get => this.Attributes[AttributeEnum.expiryTime].Integer;
+            set => this.Attributes[AttributeEnum.expiryTime].Integer = value;
+        }
+
+        public double GetSkillPointsForLevel(long level)
         {
             if (level >= 5)
                 return 0;
@@ -46,6 +62,6 @@ namespace Node.Inventory.Items.Types
                 return TimeConstant * 250;
 
             return Math.Ceiling (TimeConstant * 250 * Math.Pow(2, 2.5 * (level - 1)));
-        } 
+        }
     }
 }

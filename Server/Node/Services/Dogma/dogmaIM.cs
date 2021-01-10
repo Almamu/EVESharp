@@ -5,6 +5,7 @@ using Node.Inventory.Items.Types;
 using Org.BouncyCastle.Crypto.Macs;
 using Org.BouncyCastle.Crypto.Tls;
 using PythonTypes.Types.Complex;
+using PythonTypes.Types.Database;
 using PythonTypes.Types.Exceptions;
 using PythonTypes.Types.Primitives;
 
@@ -137,6 +138,25 @@ namespace Node.Services.Dogma
             }
 
             return itemInfo;
+        }
+
+        public PyDataType ItemGetInfo(PyInteger itemID, PyDictionary namedPayload, Client client)
+        {
+            if (client.CharacterID == null)
+                throw new CustomError("This client has not selected a character yet");
+
+            ItemEntity item = this.ServiceManager.Container.ItemFactory.ItemManager.LoadItem(itemID);
+            
+            return new Row(
+                (PyList) new PyDataType[]
+                {
+                    "itemID", "invItem", "activeEffects", "attributes", "time"
+                },
+                (PyList) new PyDataType[]
+                {
+                    item.ID, item.GetEntityRow(), item.GetEffects(), item.Attributes, DateTime.UtcNow.ToFileTimeUtc()
+                }
+            );
         }
 
         public PyDataType GetWeaponBankInfoForShip(PyDictionary namedPayload, Client client)

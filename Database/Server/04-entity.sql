@@ -33,7 +33,7 @@ DROP TABLE IF EXISTS `entity_attributes`;
 CREATE TABLE `entity_attributes` (
   `itemID` int(10) unsigned NOT NULL default '0',
   `attributeID` int(10) unsigned NOT NULL default '0',
-  `valueInt` int(10) unsigned default NULL,
+  `valueInt` bigint unsigned default NULL,
   `valueFloat` double unsigned default NULL,
   PRIMARY KEY  (`itemID`,`attributeID`),
   KEY `attributeID` (`attributeID`)

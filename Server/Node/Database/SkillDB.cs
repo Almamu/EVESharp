@@ -45,7 +45,7 @@ namespace Node.Database
                     {"@characterID", character.ID},
                     {"@skillTypeID", skill.ID},
                     {"@eventID", (int) reason},
-                    {"@logDateTime", DateTime.Now.ToFileTimeUtc()},
+                    {"@logDateTime", DateTime.UtcNow.ToFileTimeUtc()},
                     {"@skillPoints", skillPoints}
                 }
             );

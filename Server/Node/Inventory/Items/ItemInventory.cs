@@ -48,6 +48,8 @@ namespace Node.Inventory.Items
             }
         }
 
+        public bool ContentsLoaded => this.mContentsLoaded;
+
         public Dictionary<int, ItemEntity> Items
         {
             get

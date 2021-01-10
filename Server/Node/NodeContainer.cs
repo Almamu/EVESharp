@@ -20,6 +20,7 @@ namespace Node
         public DatabaseConnection Database { get; private set; }
         public Dictionary<string, Constant> Constants { get; private set; }
         public ClusterConnection ClusterConnection { get; set; }
+        public TimerManager TimerManager { get; set; }
 
         private readonly GeneralDB mGeneralDB = null;
 

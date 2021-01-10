@@ -5,7 +5,7 @@ namespace Common.Database
         /// <summary>
         /// Indicates if the object was modified or not since the last read/write from the database
         /// </summary>
-        public bool Dirty { get; protected set; }
+        public bool Dirty { get; set; }
         
         /// <summary>
         /// Indicates if the object is new in the database or not
@@ -27,6 +27,11 @@ namespace Common.Database
 
             this.Dirty = false;
             this.New = false;
+        }
+
+        public virtual void Dispose()
+        {
+            
         }
     }
 }

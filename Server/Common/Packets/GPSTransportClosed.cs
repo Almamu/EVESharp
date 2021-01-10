@@ -11,7 +11,7 @@ namespace Common.Packets
         public GPSTransportClosed(string type) : base(TYPE_NAME, type, null, new PyDictionary())
         {
             this.reasonArgs = new PyDictionary();
-            this.clock = DateTime.Now.ToFileTimeUtc();
+            this.clock = DateTime.UtcNow.ToFileTimeUtc();
             this.region = Common.Constants.Game.region;
             this.Reason = type;
             this.version = Common.Constants.Game.version;

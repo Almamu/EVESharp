@@ -14,7 +14,7 @@ namespace Common.Logging.Streams
             this.Type = type;
             this.Message = message;
             this.Channel = channel;
-            this.Time = DateTime.Now;
+            this.Time = DateTime.UtcNow;
         }
     }
 }

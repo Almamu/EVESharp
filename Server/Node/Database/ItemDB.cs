@@ -232,7 +232,7 @@ namespace Node.Database
                     {
                         attribute = new ItemAttribute(
                             this.mItemFactory.AttributeManager[reader.GetInt32(1)],
-                            reader.GetInt32(3)
+                            reader.GetDouble(3)
                         );
                     }
 
@@ -890,7 +890,7 @@ namespace Node.Database
                     {
                         attribute = new ItemAttribute(
                             this.mItemFactory.AttributeManager[reader.GetInt32(0)],
-                            reader.GetInt32(1)
+                            reader.GetInt64(1)
                         );
                     }
 
@@ -966,6 +966,8 @@ namespace Node.Database
                             create.Parameters.AddWithValue("@valueFloat", null);
 
                         create.ExecuteNonQuery();
+
+                        pair.Value.New = false;
                     }
                     else
                     {
@@ -985,6 +987,8 @@ namespace Node.Database
                             update.Parameters.AddWithValue("@valueFloat", null);
 
                         update.ExecuteNonQuery();
+
+                        pair.Value.Dirty = false;
                     }
                 }
             }
