@@ -78,6 +78,7 @@ namespace Node
         public corpRegistry corpRegistry { get; }
         public marketProxy marketProxy { get; }
         public stationSvc stationSvc { get; }
+        public certificateMgr certificateMgr { get; }
         private readonly DatabaseConnection mDatabaseConnection = null;
 
         public ServiceManager(NodeContainer container, DatabaseConnection db, CacheStorage storage, Configuration.General configuration)
@@ -118,6 +119,7 @@ namespace Node
             this.corpRegistry = new corpRegistry(db, this);
             this.marketProxy = new marketProxy(db, this);
             this.stationSvc = new stationSvc(db, this);
+            this.certificateMgr = new certificateMgr(this);
         }
     }
 }

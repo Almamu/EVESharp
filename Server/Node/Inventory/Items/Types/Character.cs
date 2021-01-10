@@ -354,10 +354,15 @@ namespace Node.Inventory.Items.Types
 
             // finally remove it off the skill queue
             this.SkillQueue.RemoveAll(x => x.Skill.ID == skill.ID);
-            
+
             // get the next skill from the queue (if any) and send the client proper notifications
             if (this.SkillQueue.Count == 0)
+            {
+                // persists the skill queue
+                this.Dirty = true;
+                this.Persist();
                 return;
+            }
 
             skill = this.SkillQueue[0].Skill;
             
