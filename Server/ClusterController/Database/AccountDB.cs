@@ -79,7 +79,7 @@ namespace ClusterControler.Database
 
                     accountid = reader.GetInt64(0);
                     banned = reader.GetBoolean(2);
-                    role = reader.GetInt64(3);
+                    role = (long) reader.GetUInt64(3);
 
                     return true;
                 }

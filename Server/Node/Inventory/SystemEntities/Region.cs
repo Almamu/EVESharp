@@ -50,17 +50,17 @@ namespace Node.Inventory.SystemEntities
         private int? mFactionId;
         private double mRadius;
         
-        public double X
+        public new double X
         {
             get => mX;
         }
 
-        public double Y
+        public new double Y
         {
             get => mY;
         }
 
-        public double Z
+        public new double Z
         {
             get => mZ;
         }

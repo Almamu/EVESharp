@@ -390,7 +390,7 @@ namespace Node
                     Store(name, cacheObject, DateTime.Now.ToFileTimeUtc());
                 }
             }
-            catch (Exception e)
+            catch (Exception)
             {
                 Log.Error($"Cannot generate cache data for {name}");
                 throw;
@@ -432,7 +432,7 @@ namespace Node
                     StoreCall(service, method, cacheObject, DateTime.Now.ToFileTimeUtc());
                 }
             }
-            catch (Exception e)
+            catch (Exception)
             {
                 Log.Error($"Cannot generate cache data for {service}::{method}");
                 throw;

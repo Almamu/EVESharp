@@ -96,7 +96,7 @@ namespace ClusterControler
                 sChannel.Trace("Initializing EVESharp Cluster Controler and Proxy");
 
                 sDatabase = DatabaseConnection.FromConfiguration(sConfiguration.Database, sLog);
-                sDatabase.Query("SET global max_allowed_packet=1073741824");
+                // sDatabase.Query("SET global max_allowed_packet=1073741824");
                 sLoginQueue = new LoginQueue(sConfiguration.Authentication, sDatabase, sLog);
                 sLoginQueue.Start();
 

@@ -34,6 +34,7 @@ using Node.Services.Contracts;
 using Node.Services.Corporations;
 using Node.Services.Dogma;
 using Node.Services.Inventory;
+using Node.Services.Market;
 using Node.Services.Navigation;
 using Node.Services.Network;
 using Node.Services.Stations;
@@ -75,6 +76,7 @@ namespace Node
         public tutorialSvc tutorialSvc { get; }
         public agentMgr agentMgr { get; }
         public corpRegistry corpRegistry { get; }
+        public marketProxy marketProxy { get; }
         private readonly DatabaseConnection mDatabaseConnection = null;
 
         public ServiceManager(NodeContainer container, DatabaseConnection db, CacheStorage storage, Configuration.General configuration)
@@ -113,6 +115,7 @@ namespace Node
             this.tutorialSvc = new tutorialSvc(this);
             this.agentMgr = new agentMgr(db, this);
             this.corpRegistry = new corpRegistry(db, this);
+            this.marketProxy = new marketProxy(db, this);
         }
     }
 }

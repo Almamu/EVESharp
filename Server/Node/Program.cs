@@ -106,7 +106,7 @@ namespace Node
                 
                 // connect to the database
                 sDatabase = DatabaseConnection.FromConfiguration(sConfiguration.Database, sLog);
-                sDatabase.Query("SET global max_allowed_packet=1073741824");
+                // sDatabase.Query("SET global max_allowed_packet=1073741824");
                 
                 // create the node container
                 sContainer = new NodeContainer(sDatabase);

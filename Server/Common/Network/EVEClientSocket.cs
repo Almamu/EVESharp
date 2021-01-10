@@ -155,7 +155,7 @@ namespace Common.Network
             {
                 state.Received = this.EndReceive(asyncResult);
             }
-            catch (Exception e)
+            catch (Exception)
             {
                 // an exception here means the connection closed
                 return;

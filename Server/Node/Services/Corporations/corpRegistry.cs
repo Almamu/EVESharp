@@ -1,6 +1,7 @@
 using Common.Database;
 using Node.Database;
 using Node.Inventory.Items.Types;
+using PythonTypes.Types.Exceptions;
 using PythonTypes.Types.Primitives;
 
 namespace Node.Services.Corporations
@@ -49,6 +50,14 @@ namespace Node.Services.Corporations
         public PyDataType GetCorporation(PyDictionary namedPayload, Client client)
         {
             return this.Corporation.GetCorporationInfoRow();
+        }
+
+        public PyDataType GetSharesByShareholder(PyBool corpShares, PyDictionary namedPayload, Client client)
+        {
+            if (client.CharacterID == null)
+                throw new UserError("NoCharacterSelected");
+            
+            return this.mDB.GetSharesByShareholder((int) client.CharacterID);
         }
     }
 }

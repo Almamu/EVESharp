@@ -81,5 +81,16 @@ namespace Node.Database
                 "SELECT divisionID, divisionName, description, leaderType from crpNPCDivisions"
             );
         }
+
+        public PyDataType GetSharesByShareholder(int characterID)
+        {
+            return Database.PrepareRowsetQuery(
+                "SELECT corporationID, shares FROM crpCharShares WHERE characterID=@characterID",
+                new Dictionary<string, object>()
+                {
+                    {"@characterID", characterID}
+                }
+            );
+        }
     }
 }

@@ -42,7 +42,7 @@ namespace ClusterControler.Database
             {
                 Database.Query("UPDATE solarSystemsLoaded SET nodeID = 0");
             }
-            catch (Exception e)
+            catch (Exception)
             {
                 Log.Error("Cannot reset solar systems nodeID to 0");
                 throw;
@@ -61,7 +61,7 @@ namespace ClusterControler.Database
                     }
                 );
             }
-            catch (Exception e)
+            catch (Exception)
             {
                 Log.Error($"Cannot reset solar system nodeID to 0 for solar system {solarSystemID.ToString()}");
                 throw;
@@ -74,7 +74,7 @@ namespace ClusterControler.Database
             {
                 Database.Query("UPDATE entity SET nodeID = 0");
             }
-            catch (Exception e)
+            catch (Exception)
             {
                 Log.Error("Cannot reset nodeID for items");
                 throw;
@@ -119,7 +119,7 @@ namespace ClusterControler.Database
                     return result;
                 }
             }
-            catch (Exception e)
+            catch (Exception)
             {
                 Log.Error($"Cannot prepare live-updates information for client");
                 throw;

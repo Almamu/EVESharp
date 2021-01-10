@@ -460,5 +460,33 @@ namespace Node.Database
                 }
             );
         }
+
+        public PyDataType GetJournal(int characterID, int? refTypeID, int accountKey, long minDate)
+        {
+            // add one day to the minimum date to get the maximum date
+            long maxDate = DateTime.FromFileTimeUtc(minDate).AddDays(-1).ToFileTimeUtc();
+            
+            Dictionary<string, object> parameters = new Dictionary<string, object>()
+            {
+                {"@characterID", characterID},
+                {"@accountKey", accountKey},
+                {"@maxDate", maxDate},
+                {"@minDate", minDate}
+            };
+            
+            string query =
+                "SELECT refID as transactionID, transDate as transactionDate, 0 AS referenceID, refTypeID as entryTypeID," +
+                "ownerID1, ownerID2, argID1, accountKey, amount, balance, reason AS description " +
+                "FROM market_journal " +
+                "WHERE characterID=@characterID AND accountKey=@accountKey AND transDate <= @maxDate AND transDate >= @minDate";
+
+            if (refTypeID != null)
+            {
+                query += " AND refTypeID=@refTypeID";
+                parameters["@refTypeID"] = (int) refTypeID;
+            }
+
+            return Database.PrepareRowsetQuery(query, parameters);
+        }
     }
 }

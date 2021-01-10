@@ -68,16 +68,31 @@ namespace Node
                     
                     for (int i = 0; i < parameterList.Length - 2; i++)
                     {
-                        if ((i >= payload.Count && parameters[i].IsOptional == false) || parameters[i].ParameterType != payload[i].GetType())
+                        if (i >= payload.Count)
                         {
-                            match = false;
-                            break;
-                        }
+                            if (parameters[i].IsOptional == false)
+                            {
+                                match = false;
+                                break;                                
+                            }
 
-                        if (parameters[i].IsOptional == true && i >= payload.Count)
                             parameterList[i] = null;
+                        }
                         else
-                            parameterList[i] = payload[i];
+                        {
+                            PyDataType element = payload[i];
+                        
+                            // check parameter types
+                            if (parameters[i].ParameterType == element.GetType())
+                                parameterList[i] = element;
+                            else if (parameters[i].IsOptional == true || element is PyNone)
+                                parameterList[i] = null;
+                            else
+                            {
+                                match = false;
+                                break;
+                            }
+                        }
                     }
                 
                     if (match)
