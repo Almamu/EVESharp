@@ -21,7 +21,7 @@ namespace Node.Inventory.Items.Types
             }
         }
         
-        public Character(ItemEntity from, int characterId, int accountId, string title, string description,
+        public Character(ItemEntity from, int characterId, int accountId, int? activeCloneID, string title, string description,
             double bounty, double balance, double securityRating, string petitionMessage, int logonMinutes,
             int corporationId, int corpRole, int rolesAtAll, int rolesAtBase, int rolesAtHq, int rolesAtOther,
             long corporationDateTime, long startDateTime, long createDateTime, int ancestryId, int careerId, int schoolId,
@@ -36,6 +36,7 @@ namespace Node.Inventory.Items.Types
         {
             this.mCharacterID = characterId;
             this.mAccountID = accountId;
+            this.mActiveCloneID = activeCloneID;
             this.mTitle = title;
             this.mDescription = description;
             this.mBounty = bounty;
@@ -103,6 +104,12 @@ namespace Node.Inventory.Items.Types
 
         public int CharacterID => mCharacterID;
         public int AccountID => mAccountID;
+
+        public int? ActiveCloneID
+        {
+            get => this.mActiveCloneID;
+            set => this.mActiveCloneID = value;
+        }
         public string Title => mTitle;
         public string Description => mDescription;
         public double Bounty => mBounty;
@@ -178,6 +185,7 @@ namespace Node.Inventory.Items.Types
         
         private int mCharacterID;
         private int mAccountID;
+        private int? mActiveCloneID;
         private string mTitle;
         private string mDescription;
         private double mBounty;
@@ -313,9 +321,9 @@ namespace Node.Inventory.Items.Types
         protected override void SaveToDB()
         {
             base.SaveToDB();
-            
-            // ensure the online status is also persisted
-            this.mItemFactory.CharacterDB.UpdateOnlineStatus(this);
+
+            // update the relevant character information
+            this.mItemFactory.CharacterDB.UpdateCharacterInformation(this);
         }
     }
 }

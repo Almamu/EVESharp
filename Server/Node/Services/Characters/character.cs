@@ -177,10 +177,20 @@ namespace Node.Services.Characters
                 );
             }
 
-            int stationID, solarSystemID, constellationID, regionID;
+            int stationID, solarSystemID, constellationID, regionID, corporationID, careerID, schoolID, careerSpecialityID;
+
+            bool found = this.mDB.GetRandomCareerForRace(bloodline.RaceID, out careerID, out schoolID,
+                out careerSpecialityID, out corporationID);
+
+            if (found == false)
+            {
+                this.Log.Error($"Cannot find random career for race {bloodline.RaceID}");
+                
+                throw new CustomError($"Cannot find random career for race {bloodline.RaceID}");
+            }
 
             // fetch information of starting location for the player
-            bool found = this.mDB.GetLocationForCorporation(bloodline.CorporationID, out stationID, out solarSystemID,
+            found = this.mDB.GetLocationForCorporation(corporationID, out stationID, out solarSystemID,
                 out constellationID, out regionID);
 
             if (found == false)
@@ -189,14 +199,14 @@ namespace Node.Services.Characters
                 
                 throw new CustomError($"Cannot find location for corporation {bloodline.CorporationID}");
             }
-            
+
             Station station = this.ServiceManager.Container.ItemFactory.ItemManager.LoadItem(stationID) as Station;
             
             int itemID = this.mDB.CreateCharacter(
                 bloodline.ItemType, characterName, owner, client.AccountID, this.mConfiguration.Balance, 0.0,
-                bloodline.CorporationID, 0, 0, 0, 0, 0,
-                currentTime, currentTime, currentTime, ancestryID, 0, 0,
-                0, genderID,
+                corporationID, 0, 0, 0, 0, 0,
+                currentTime, currentTime, currentTime, ancestryID,
+                careerID, schoolID, careerSpecialityID, genderID,
                 appearance.ContainsKey("accessoryID") ? appearance["accessoryID"] as PyInteger : null,
                 appearance.ContainsKey("beardID") ? appearance["beardID"] as PyInteger : null,
                 appearance["costumeID"] as PyInteger,
@@ -282,6 +292,7 @@ namespace Node.Services.Characters
                     ItemFlags.None);
 
             character.LocationID = ship.ID;
+            character.ActiveCloneID = clone.ID;
             
             // character is 100% created and the base items are too
             // persist objects to database and unload them as they do not really belong to us
@@ -391,6 +402,32 @@ namespace Node.Services.Characters
                 this.ServiceManager.Container.ItemFactory.ItemManager.LoadItem((int) client.CharacterID) as Character;
 
             return this.mDB.GetOwnerNoteLabels(character);
+        }
+
+        public PyDataType GetCloneTypeID(PyDictionary namedPayload, Client client)
+        {
+            if (client.CharacterID == null)
+                throw new UserError("NoCharacterSelected");
+
+            Character character =
+                this.ServiceManager.Container.ItemFactory.ItemManager.LoadItem((int) client.CharacterID) as Character;
+
+            if (character.ActiveCloneID == null)
+                throw new UserError("NoCharacterSelected");
+
+            // check if the clone is loaded in our item list and get the data off there
+            if (this.ServiceManager.Container.ItemFactory.ItemManager.IsItemLoaded((int) character.ActiveCloneID) == true)
+            {
+                ItemEntity clone =
+                    this.ServiceManager.Container.ItemFactory.ItemManager.GetItem((int) character.ActiveCloneID);
+
+                return clone.Type.ID;
+            }
+            else
+            {
+                // get the information we want off the database as this item doesn't belong to us
+                return this.ServiceManager.Container.ItemFactory.ItemDB.GetItemTypeID((int) character.ActiveCloneID);
+            }
         }
     }
 }

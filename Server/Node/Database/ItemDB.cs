@@ -352,6 +352,31 @@ namespace Node.Database
                 return itemList;
             }
         }
+
+        /// <summary>
+        /// WARNING: ONLY USE WHEN THE ITEM IS NOT STATIC DATA AND DOES NOT BELONG TO OUR NODE!
+        /// </summary>
+        /// <param name="itemID"></param>
+        /// <returns></returns>
+        public int GetItemTypeID(int itemID)
+        {
+            MySqlConnection connection = null;
+            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+                "SELECT typeID FROM entity WHERE itemID = @itemID", new Dictionary<string, object>()
+                {
+                    {"@itemID", itemID}
+                }
+            );
+            
+            using(connection)
+            using (reader)
+            {
+                if (reader.Read() == false)
+                    return 0;
+
+                return reader.GetInt32(0);
+            }
+        }
         
         public int GetCategoryID(int typeID)
         {
@@ -460,7 +485,7 @@ namespace Node.Database
         {
             MySqlConnection connection = null;
             MySqlDataReader reader = Database.PrepareQuery(ref connection,
-                "SELECT characterID, accountID, title, description, bounty, balance, securityRating," +
+                "SELECT characterID, accountID, activeCloneID, title, description, bounty, balance, securityRating," +
                 " petitionMessage, logonMinutes, corporationID, corpRole, rolesAtAll, rolesAtBase, rolesAtHQ," +
                 " rolesAtOther, corporationDateTime, startDateTime, createDateTime, ancestryID, careerID, schoolID," +
                 " careerSpecialityID, gender, accessoryID, beardID, costumeID, decoID, eyebrowsID, eyesID, hairID," +
@@ -485,40 +510,40 @@ namespace Node.Database
                     item,
                     reader.GetInt32(0),
                     reader.IsDBNull(1) ? 0 : reader.GetInt32(1),
-                    reader.GetString(2),
+                    reader.IsDBNull(2) ? default : reader.GetInt32(2),
                     reader.GetString(3),
-                    reader.GetDouble(4),
+                    reader.GetString(4),
                     reader.GetDouble(5),
                     reader.GetDouble(6),
-                    reader.GetString(7),
-                    reader.GetInt32(8),
+                    reader.GetDouble(7),
+                    reader.GetString(8),
                     reader.GetInt32(9),
                     reader.GetInt32(10),
                     reader.GetInt32(11),
                     reader.GetInt32(12),
                     reader.GetInt32(13),
                     reader.GetInt32(14),
-                    reader.GetInt64(15),
+                    reader.GetInt32(15),
                     reader.GetInt64(16),
                     reader.GetInt64(17),
-                    reader.GetInt32(18),
+                    reader.GetInt64(18),
                     reader.GetInt32(19),
                     reader.GetInt32(20),
                     reader.GetInt32(21),
                     reader.GetInt32(22),
-                    reader.IsDBNull(23) ? default : reader.GetInt32(23),
+                    reader.GetInt32(23),
                     reader.IsDBNull(24) ? default : reader.GetInt32(24),
-                    reader.GetInt32(25),
-                    reader.IsDBNull(26) ? default : reader.GetInt32(26),
-                    reader.GetInt32(27),
+                    reader.IsDBNull(25) ? default : reader.GetInt32(25),
+                    reader.GetInt32(26),
+                    reader.IsDBNull(27) ? default : reader.GetInt32(27),
                     reader.GetInt32(28),
                     reader.GetInt32(29),
-                    reader.IsDBNull(30) ? default : reader.GetInt32(30),
+                    reader.GetInt32(30),
                     reader.IsDBNull(31) ? default : reader.GetInt32(31),
-                    reader.GetInt32(32),
+                    reader.IsDBNull(32) ? default : reader.GetInt32(32),
                     reader.GetInt32(33),
                     reader.GetInt32(34),
-                    reader.GetDouble(35),
+                    reader.GetInt32(35),
                     reader.GetDouble(36),
                     reader.GetDouble(37),
                     reader.GetDouble(38),
@@ -527,7 +552,7 @@ namespace Node.Database
                     reader.GetDouble(41),
                     reader.GetDouble(42),
                     reader.GetDouble(43),
-                    reader.IsDBNull(44) ? default : reader.GetDouble(44),
+                    reader.GetDouble(44),
                     reader.IsDBNull(45) ? default : reader.GetDouble(45),
                     reader.IsDBNull(46) ? default : reader.GetDouble(46),
                     reader.IsDBNull(47) ? default : reader.GetDouble(47),
@@ -543,11 +568,12 @@ namespace Node.Database
                     reader.IsDBNull(57) ? default : reader.GetDouble(57),
                     reader.IsDBNull(58) ? default : reader.GetDouble(58),
                     reader.IsDBNull(59) ? default : reader.GetDouble(59),
-                    reader.GetInt32(60),
+                    reader.IsDBNull(60) ? default : reader.GetDouble(60),
                     reader.GetInt32(61),
                     reader.GetInt32(62),
                     reader.GetInt32(63),
-                    reader.GetInt32(64)
+                    reader.GetInt32(64),
+                    reader.GetInt32(65)
                 );
             }
         }

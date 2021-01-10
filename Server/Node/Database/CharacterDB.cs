@@ -84,27 +84,18 @@ namespace Node.Database
 
         public PyDataType GetPublicInfo(int characterID)
         {
-            MySqlConnection connection = null;
-            MySqlDataReader reader = Database.PrepareQuery(
-                ref connection,
-                "SELECT gender, bloodlineID, corporationID " +
+            return Database.PrepareKeyValQuery(
+                "SELECT chrInformation.corporationID, raceID, bloodlineID, ancestryID, careerID," +
+                " schoolID, careerSpecialityID, createDateTime, gender " +
                 "FROM chrInformation " +
                 "LEFT JOIN chrAncestries USING (ancestryID) " +
-                "WHERE characterID = @characterID",
+                "LEFT JOIN chrBloodlines USING (bloodlineID) " +
+                "WHERE characterID=@characterID",
                 new Dictionary<string, object>()
                 {
                     {"@characterID", characterID}
                 }
             );
-            
-            using (connection)
-            using (reader)
-            {
-                if (reader.Read() == false)
-                    throw new CustomError("Cannot find the specified character");
-
-                return KeyVal.FromMySqlDataReader(reader);
-            }
         }
 
         public bool IsCharacterNameTaken(string characterName)
@@ -319,8 +310,54 @@ namespace Node.Database
                 }
             );
             
+            // create employment record
+            Database.PrepareQuery(
+                "INSERT INTO chrEmployment(characterID, corporationID, startDate)VALUES(@characterID, @corporationID, @startDate)",
+                new Dictionary<string, object>()
+                {
+                    {"@characterID", itemID},
+                    {"@corporationID", corporationID},
+                    {"@startDate", createDateTime}
+                }
+            );
+            
             // return the character's item id
             return itemID;
+        }
+
+        public bool GetRandomCareerForRace(int raceID, out int careerID, out int schoolID, out int careerSpecialityID, out int corporationID)
+        {
+            MySqlConnection connection = null;
+            MySqlDataReader reader = Database.PrepareQuery(
+                ref connection,
+                "SELECT careerID, corporationID, schoolID FROM chrSchools WHERE raceID = @raceID ORDER BY RAND();",
+                new Dictionary<string, object>()
+                {
+                    {"@raceID", raceID}
+                }
+            );
+            
+            using (connection)
+            using (reader)
+            {
+                if (reader.Read() == false)
+                {
+                    // set some defaults just in case
+                    careerID = 11;
+                    schoolID = 17;
+                    careerSpecialityID = 11;
+                    corporationID = 1000167;
+                    
+                    return false;
+                }
+
+                careerID = reader.GetInt32(0);
+                corporationID = reader.GetInt32(1);
+                schoolID = reader.GetInt32(2);
+                careerSpecialityID = careerID;
+
+                return true;
+            }
         }
 
         public bool GetLocationForCorporation(int corporationID, out int stationID, out int solarSystemID,
@@ -450,13 +487,14 @@ namespace Node.Database
             );
         }
 
-        public void UpdateOnlineStatus(Character character)
+        public void UpdateCharacterInformation(Character character)
         {
-            Database.PrepareQuery("UPDATE chrInformation SET online = @online WHERE characterID = @characterID",
+            Database.PrepareQuery("UPDATE chrInformation SET online = @online, activeCloneID = @activeCloneID WHERE characterID = @characterID",
                 new Dictionary<string, object>()
                 {
                     {"@characterID", character.ID},
-                    {"@online", character.Online}
+                    {"@online", character.Online},
+                    {"@activeCloneID", character.ActiveCloneID}
                 }
             );
         }

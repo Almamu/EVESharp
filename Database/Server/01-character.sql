@@ -6,6 +6,7 @@ DROP TABLE IF EXISTS `chrInformation`;
 CREATE TABLE `chrInformation` (
   `characterID` int(10) unsigned NOT NULL default '0',
   `accountID` int(10) unsigned default NULL,
+  `activeCloneID` int(10) unsigned default NULL,
   `title` varchar(85) NOT NULL default '',
   `description` text NOT NULL,
   `bounty` double NOT NULL default '0',

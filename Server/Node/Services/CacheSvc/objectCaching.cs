@@ -63,7 +63,7 @@ namespace Node.Services.CacheSvc
         public PyDataType GetCachableObject(PyInteger shared, PyString objectID, PyTuple objectVersion, PyInteger nodeID, PyDictionary namedPayload, Client client)
         {
             // TODO: CHECK CACHEOK EXCEPTION ON CLIENT
-            Log.Debug($"Received cache request for {objectID}");
+            Log.Debug($"Received cache request for {objectID.Value}");
 
             return this.ServiceManager.CacheStorage.Get(objectID);
         }

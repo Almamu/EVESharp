@@ -3,6 +3,7 @@ namespace Node.Inventory.Items
     public enum ItemFlags : int
     {
         None = 0,
+        AutoFit = 0,
         Wallet = 1,
         Factory = 2,
         Hangar = 4,
@@ -121,5 +122,6 @@ namespace Node.Inventory.Items
         SpecializedLargeShipHold = 141,
         SpecializedIndustrialShipHold = 142,
         SpecializedAmmoHold = 143,
+        HangarAll = 1000
     }
 }
