@@ -217,6 +217,9 @@ namespace Node.Inventory
             // add skill to the character's inventory
             character.AddItem(skill);
 
+            this.ItemFactory.SkillDB.CreateSkillHistoryRecord(skillType, character,
+                SkillHistoryReason.SkillTrainingComplete, skill.GetSkillPointsForLevel(level));
+
             return skill;
         }
 

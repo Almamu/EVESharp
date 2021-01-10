@@ -33,10 +33,9 @@ namespace Node.Inventory.Items.Types
             set => this.Attributes[AttributeEnum.skillPoints].Float = value;
         }
 
-        public int TimeConstant
+        public ItemAttribute TimeConstant
         {
-            get => this.Attributes[AttributeEnum.skillTimeConstant].Integer;
-            set => this.Attributes[AttributeEnum.skillTimeConstant].Integer = value;
+            get => this.Attributes[AttributeEnum.skillTimeConstant];
         }
 
         public double GetSkillPointsForLevel(int level)
@@ -46,7 +45,7 @@ namespace Node.Inventory.Items.Types
             if (level == 0)
                 return TimeConstant * 250;
 
-            return (int) ((TimeConstant * 250) * Math.Pow(2, 2.5 * level));
+            return Math.Ceiling (TimeConstant * 250 * Math.Pow(2, 2.5 * (level - 1)));
         } 
     }
 }

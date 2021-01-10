@@ -141,6 +141,11 @@ namespace Node.Inventory.Items.Attributes
             return clone;
         }
 
+        public static ItemAttribute operator *(double value, ItemAttribute original)
+        {
+            return original * value;
+        }
+
         public static ItemAttribute operator *(ItemAttribute original, int value)
         {
             // clone the attribute but mark it as existant
@@ -154,6 +159,11 @@ namespace Node.Inventory.Items.Attributes
                 clone.Float *= value;
 
             return clone;
+        }
+
+        public static ItemAttribute operator *(int value, ItemAttribute original)
+        {
+            return original * value;
         }
 
         public static ItemAttribute operator *(ItemAttribute original, ItemAttribute value)
@@ -170,6 +180,7 @@ namespace Node.Inventory.Items.Attributes
 
             return clone;
         }
+        
         public static ItemAttribute operator /(ItemAttribute original, double value)
         {
             // clone the attribute but mark it as existant
@@ -301,6 +312,17 @@ namespace Node.Inventory.Items.Attributes
                 clone -= value.Float;
 
             return clone;
+        }
+
+        public static implicit operator double(ItemAttribute attrib)
+        {
+            switch (attrib.ValueType)
+            {
+                case ItemAttributeValueType.Double:
+                    return attrib.Float;
+                default:
+                    return attrib.Integer;
+            }
         }
     }
 }

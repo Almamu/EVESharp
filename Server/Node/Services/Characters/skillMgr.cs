@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Node.Database;
 using Node.Inventory.Items.Types;
 using PythonTypes.Types.Exceptions;
 using PythonTypes.Types.Primitives;
@@ -7,8 +8,11 @@ namespace Node.Services.Characters
 {
     public class skillMgr : BoundService
     {
+        private SkillDB mDB = null;
+        
         public skillMgr(ServiceManager manager) : base(manager)
         {
+            this.mDB = new SkillDB(manager.Container.Database, manager.Container.ItemFactory);
         }
 
         protected override Service CreateBoundInstance(PyDataType objectData)
@@ -40,6 +44,19 @@ namespace Node.Services.Characters
             }
 
             return skillQueueList;
+        }
+
+        public PyDataType GetSkillHistory(PyDictionary namedPayload, Client client)
+        {
+            if (client.CharacterID == null)
+                throw new UserError("NoCharacterSelected");
+
+            return this.mDB.GetSkillHistory((int) client.CharacterID);
+        }
+
+        public PyDataType SaveSkillQueue(PyList queue, PyDictionary namedPayload, Client client)
+        {
+            return null;
         }
     }
 }

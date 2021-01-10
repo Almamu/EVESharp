@@ -252,34 +252,34 @@ namespace Node.Inventory.Items.Types
         private List<SkillQueueEntry> mSkillQueue;
         private Corporation mCorporation = null;
 
-        public ItemAttribute Charisma
+        public int Charisma
         {
-            get => this.Attributes[AttributeEnum.charisma];
-            set => this.Attributes[AttributeEnum.charisma] = value;
+            get => this.Attributes[AttributeEnum.charisma].Integer;
+            set => this.Attributes[AttributeEnum.charisma].Integer = value;
         }
 
-        public ItemAttribute Willpower
+        public int Willpower
         {
-            get => this.Attributes[AttributeEnum.willpower];
-            set => this.Attributes[AttributeEnum.willpower] = value;
+            get => this.Attributes[AttributeEnum.willpower].Integer;
+            set => this.Attributes[AttributeEnum.willpower].Integer = value;
         }
 
-        public ItemAttribute Intelligence
+        public int Intelligence
         {
-            get => this.Attributes[AttributeEnum.intelligence];
-            set => this.Attributes[AttributeEnum.intelligence] = value;
+            get => this.Attributes[AttributeEnum.intelligence].Integer;
+            set => this.Attributes[AttributeEnum.intelligence].Integer = value;
         }
 
-        public ItemAttribute Perception
+        public int Perception
         {
-            get => this.Attributes[AttributeEnum.perception];
-            set => this.Attributes[AttributeEnum.perception] = value;
+            get => this.Attributes[AttributeEnum.perception].Integer;
+            set => this.Attributes[AttributeEnum.perception].Integer = value;
         }
 
-        public ItemAttribute Memory
+        public int Memory
         {
-            get => this.Attributes[AttributeEnum.memory];
-            set => this.Attributes[AttributeEnum.memory] = value;
+            get => this.Attributes[AttributeEnum.memory].Integer;
+            set => this.Attributes[AttributeEnum.memory].Integer = value;
         }
 
         public List<SkillQueueEntry> SkillQueue => this.mSkillQueue;

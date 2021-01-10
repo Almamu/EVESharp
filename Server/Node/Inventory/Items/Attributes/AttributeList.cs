@@ -81,16 +81,14 @@ namespace Node.Inventory.Items.Attributes
                 list[attrib.Info.ID] = attrib.Clone();
         }
 
-        public static implicit operator PyDataType(AttributeList list)
-        {
-            return (PyDictionary) list;
-        }
-
         public static implicit operator PyDictionary(AttributeList list)
         {
             PyDictionary result = new PyDictionary();
 
-            foreach (KeyValuePair<int, ItemAttribute> attrib in list)
+            foreach (KeyValuePair<int, ItemAttribute> attrib in list.mDefaultAttributes)
+                result[attrib.Key] = attrib.Value;
+            
+            foreach (KeyValuePair<int, ItemAttribute> attrib in list.mItemAttributes)
                 result[attrib.Key] = attrib.Value;
 
             return result;
