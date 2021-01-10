@@ -249,11 +249,11 @@ namespace Node.Services.Characters
             Character character = this.ServiceManager.Container.ItemFactory.ItemManager.LoadItem(itemID) as Character;
 
             // change character attributes based on the picked ancestry
-            character.Charisma += ancestry.Charisma;
-            character.Intelligence += ancestry.Intelligence;
-            character.Memory += ancestry.Memory;
-            character.Willpower += ancestry.Willpower;
-            character.Perception += ancestry.Perception;
+            character.Charisma = bloodline.Charisma + ancestry.Charisma;
+            character.Intelligence = bloodline.Intelligence + ancestry.Intelligence;
+            character.Memory = bloodline.Memory + ancestry.Memory;
+            character.Willpower = bloodline.Willpower + ancestry.Willpower;
+            character.Perception = bloodline.Perception + ancestry.Perception;
             
             // get skills by race and create them
             Dictionary<int, int> skills = this.mDB.GetBasicSkillsByRace(bloodline.RaceID);
