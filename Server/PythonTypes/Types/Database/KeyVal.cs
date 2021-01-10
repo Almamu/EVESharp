@@ -5,6 +5,7 @@ namespace PythonTypes.Types.Database
 {
     public class KeyVal
     {
+        private const string OBJECT_NAME = "util.KeyVal";
         /// <summary>
         /// Simple helper method that creates the correct KeyVal data off a result row and
         /// returns it's PyDataType representation, ready to be sent to the EVE Online client
@@ -18,7 +19,12 @@ namespace PythonTypes.Types.Database
             for (int i = 0; i < reader.FieldCount; i++)
                 data[reader.GetName(i)] = Utils.ObjectFromColumn(reader, i);
             
-            return new PyObjectData("util.KeyVal", data);
+            return new PyObjectData(OBJECT_NAME, data);
+        }
+
+        public static PyDataType FromDictionary(PyDictionary columns)
+        {
+            return new PyObjectData(OBJECT_NAME, columns);
         }
     }
 }

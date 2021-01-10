@@ -22,5 +22,10 @@ namespace Node.Services.Config
         {
             return this.mDB.GetMultiGraphicsEx(ids);
         }
+
+        public PyDataType GetMultiLocationsEx(PyList ids, PyDictionary namedPayload, Client client)
+        {
+            return this.mDB.GetMultiLocationsEx(ids);
+        }
     }
 }

@@ -17,7 +17,7 @@ namespace Node.Database
         public Dictionary<int, StationOperations> LoadOperations()
         {
             MySqlConnection connection = null;
-            MySqlDataReader reader = Database.Query(ref connection, "SELECT operationID, operationName FROM staOperations");
+            MySqlDataReader reader = Database.Query(ref connection, "SELECT operationID, operationName, description FROM staOperations");
             
             using (connection)
             using (reader)
@@ -43,7 +43,12 @@ namespace Node.Database
                             services.Add(readerServices.GetInt32(0));
                     }
                     
-                    StationOperations operation = new StationOperations(reader.GetInt32(0), services);
+                    StationOperations operation = new StationOperations(
+                        reader.GetInt32(0),
+                        reader.GetString(1),
+                        reader.GetString(2),
+                        services
+                    );
 
                     operations[operation.OperationID] = operation;
                 }

@@ -134,7 +134,7 @@ namespace PythonTypes.Compression
                     opcode.SecondIsZero = true;
                     int secondLength = -1;
 
-                    while ((b == 0x00) && (opcode.SecondLength < 7) &&
+                    while ((b == 0x00) && (secondLength < 7) &&
                            (reader.BaseStream.Position < reader.BaseStream.Length))
                     {
                         secondLength++;

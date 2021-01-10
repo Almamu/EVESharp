@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using Node.Data;
 using Node.Inventory.Items.Types;
+using PythonTypes.Types.Complex;
 using PythonTypes.Types.Database;
 using PythonTypes.Types.Exceptions;
 using PythonTypes.Types.Primitives;
@@ -52,6 +53,20 @@ namespace Node.Services.Navigation
             {
                 stations, operationServices, services
             });
+        }
+
+        public PyDataType GetSolarSystemPseudoSecurities(PyDictionary namedPayload, Client client)
+        {
+            this.ServiceManager.CacheStorage.Load(
+                "map",
+                "GetSolarSystemPseudoSecurities",
+                "SELECT solarSystemID, security FROM mapSolarSystems",
+                CacheStorage.CacheObjectType.Rowset
+            );
+
+            PyDataType cacheHint = this.ServiceManager.CacheStorage.GetHint("map", "GetSolarSystemPseudoSecurities");
+
+            return PyCacheMethodCallResult.FromCacheHint(cacheHint);
         }
     }
 }

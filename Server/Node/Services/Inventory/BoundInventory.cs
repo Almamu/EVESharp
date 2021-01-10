@@ -4,6 +4,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using Node.Inventory.Items;
 using PythonTypes.Types.Database;
+using PythonTypes.Types.Exceptions;
 using PythonTypes.Types.Primitives;
 
 namespace Node.Services.Inventory
@@ -44,6 +45,27 @@ namespace Node.Services.Inventory
             return result;
         }
 
+        public PyDataType ListStations(PyInteger blueprintsOnly, PyInteger forCorp, PyDictionary namedPayload,
+            Client client)
+        {
+            if (client.CharacterID == null)
+                throw new UserError("NoCharacterSelected");
+            
+            // TODO: take into account blueprintsOnly
+            if (forCorp == 1)
+                return this.mInventory.mItemFactory.ItemDB.ListStations(client.CorporationID);
+            else
+                return this.mInventory.mItemFactory.ItemDB.ListStations((int) client.CharacterID);
+        }
+
+        public PyDataType ListStationItems(PyInteger stationID, PyDictionary namedPayload, Client client)
+        {
+            if (client.CharacterID == null)
+                throw new UserError("NoCharacterSelected");
+            
+            return this.mInventory.mItemFactory.ItemDB.ListStationItems(stationID, (int) client.CharacterID);
+        }
+        
         public PyDataType GetItem(PyDictionary namedPayload, Client client)
         {
             return this.mInventory.GetEntityRow();

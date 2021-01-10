@@ -77,6 +77,7 @@ namespace Node
         public agentMgr agentMgr { get; }
         public corpRegistry corpRegistry { get; }
         public marketProxy marketProxy { get; }
+        public stationSvc stationSvc { get; }
         private readonly DatabaseConnection mDatabaseConnection = null;
 
         public ServiceManager(NodeContainer container, DatabaseConnection db, CacheStorage storage, Configuration.General configuration)
@@ -116,6 +117,7 @@ namespace Node
             this.agentMgr = new agentMgr(db, this);
             this.corpRegistry = new corpRegistry(db, this);
             this.marketProxy = new marketProxy(db, this);
+            this.stationSvc = new stationSvc(db, this);
         }
     }
 }

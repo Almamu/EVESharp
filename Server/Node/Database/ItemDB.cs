@@ -32,6 +32,7 @@ using Node.Inventory.Items.Attributes;
 using Node.Inventory.Items.Types;
 using Node.Inventory.SystemEntities;
 using Node.Services.Characters;
+using PythonTypes.Types.Primitives;
 
 namespace Node.Database
 {
@@ -597,8 +598,8 @@ namespace Node.Database
         {
             MySqlConnection connection = null;
             MySqlDataReader reader = Database.PrepareQuery(ref connection,
-                "SELECT operationID FROM staStations WHERE stationID = @stationID",
-                new Dictionary<string, object>()
+                "SELECT operationID, security, dockingCostPerVolume, maxShipVolumeDockable, officeRentalCost, constellationID, regionID, reprocessingEfficiency, reprocessingStationsTake, reprocessingHangarFlag FROM staStations WHERE stationID = @stationID",
+                new Dictionary<string, object>
                 {
                     {"@stationID", item.ID}
                 }
@@ -609,11 +610,20 @@ namespace Node.Database
             {
                 if (reader.Read() == false)
                     return null;
-                
+
                 return new Station(
-                    item,
                     this.mItemFactory.StationManager.StationTypes[item.Type.ID],
-                    this.mItemFactory.StationManager.Operations[reader.GetInt32(0)]
+                    this.mItemFactory.StationManager.Operations[reader.GetInt32(0)],
+                    reader.GetInt32(1),
+                    reader.GetDouble(2),
+                    reader.GetDouble(3),
+                    reader.GetInt32(4),
+                    reader.GetInt32(5),
+                    reader.GetInt32(6),
+                    reader.GetDouble(7),
+                    reader.GetDouble(8),
+                    reader.GetInt32(9),
+                    item
                 );
             }
         }
@@ -965,6 +975,41 @@ namespace Node.Database
                     {"@materialLevel", materialLevel},
                     {"@productivityLevel", productivityLevel},
                     {"@licensedProductionRunsRemaining", licensedProductionRunsRemaining}
+                }
+            );
+        }
+
+        public PyDataType ListStations(int ownerID)
+        {
+            return Database.PrepareCRowsetQuery(
+                "SELECT stationID, COUNT(itemID) AS itemCount, COUNT(invBlueprints.blueprintID) AS blueprintCount " +
+                "FROM staStations " +
+                "LEFT JOIN entity ON locationID = stationID " +
+                "LEFT JOIN invBlueprints ON invBlueprints.blueprintID = itemID " +
+                "WHERE ownerID=@characterID AND flag=@hangarFlag " +
+                "GROUP BY stationID",
+                new Dictionary<string, object>()
+                {
+                    {"@characterID", ownerID},
+                    {"@hangarFlag", ItemFlags.Hangar}
+                }
+            );
+        }
+
+        public PyDataType ListStationItems(int stationID, int ownerID)
+        {
+            return Database.PrepareCRowsetQuery(
+                "SELECT itemID, entity.typeID, locationID, ownerID, flag, contraband, singleton, quantity,"+
+                " invTypes.groupID, invGroups.categoryID " +
+                "FROM entity " +
+                "LEFT JOIN invTypes ON entity.typeID = invTypes.typeID " +
+                "LEFT JOIN invGroups ON invTypes.groupID = invGroups.groupID " +
+                "WHERE ownerID=@ownerID AND locationID=@stationID AND flag=@hangarFlag",
+                new Dictionary<string, object>()
+                {
+                    {"@ownerID", ownerID},
+                    {"@stationID", stationID},
+                    {"@hangarFlag", ItemFlags.Hangar}
                 }
             );
         }
