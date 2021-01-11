@@ -79,6 +79,7 @@ namespace Node
         public marketProxy marketProxy { get; }
         public stationSvc stationSvc { get; }
         public certificateMgr certificateMgr { get; }
+        public jumpCloneSvc jumpCloneSvc { get; }
         private readonly DatabaseConnection mDatabaseConnection = null;
 
         public ServiceManager(NodeContainer container, DatabaseConnection db, CacheStorage storage, Configuration.General configuration)
@@ -120,6 +121,7 @@ namespace Node
             this.marketProxy = new marketProxy(db, this);
             this.stationSvc = new stationSvc(db, this);
             this.certificateMgr = new certificateMgr(db, this);
+            this.jumpCloneSvc = new jumpCloneSvc(this);
         }
     }
 }

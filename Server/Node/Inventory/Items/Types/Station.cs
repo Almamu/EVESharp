@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using Node.Data;
@@ -84,6 +85,11 @@ namespace Node.Inventory.Items.Types
             // TODO: CREATE OBJECTS FOR CONSTELLATION AND REGION ID SO THESE CAN BE FETCHED FROM MEMORY INSTEAD OF DATABASE
 
             return KeyVal.FromDictionary(data);
+        }
+
+        public override void Destroy()
+        {
+            throw new NotImplementedException("Stations cannot be destroyed as they're regarded as static data!");
         }
     }
 }

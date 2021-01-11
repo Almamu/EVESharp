@@ -235,6 +235,13 @@ namespace Node.Inventory.Items
             this.Attributes.Persist(this);
         }
 
+        public override void Destroy()
+        {
+            base.Destroy();
+
+            this.mItemFactory.ItemDB.DestroyItem(this);
+        }
+
         public PyPackedRow GetEntityRow()
         {
             Dictionary<string, PyDataType> values = new Dictionary<string, PyDataType> ()

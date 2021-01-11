@@ -157,6 +157,8 @@ namespace Node.Inventory
                     return this.ItemFactory.ItemDB.LoadCorporation(item);
                 case (int) ItemGroups.Faction:
                     return this.ItemFactory.ItemDB.LoadFaction(item);
+                case (int) ItemGroups.Clone:
+                    return this.ItemFactory.ItemDB.LoadClone(item);
                 default:
                     Log.Warning($"Loading owner {item.ID} from item group {item.Type.Group.ID} as normal item");
                     return item;
@@ -258,6 +260,30 @@ namespace Node.Inventory
             }
         }
 
+        public void DestroyItem(ItemEntity item)
+        {
+            if (this.IsItemLoaded(item.ID) == false)
+                throw new ArgumentException("Cannot destroy an item that was not loaded by this item manager");
+
+            // remove the item from the list
+            this.mItemList.Remove(item.ID);
+
+            // finally remove the item off the database
+            item.Destroy();
+        }
+
+        public void DestroyItems(Dictionary<int, ItemEntity> items)
+        {
+            foreach (KeyValuePair<int, ItemEntity> pair in items)
+                this.DestroyItem(pair.Value);
+        }
+
+        public void DestroyItems(List<ItemEntity> items)
+        {
+            foreach (ItemEntity item in items)
+                this.DestroyItem(item);
+        }
+        
         public ItemManager(ItemFactory factory)
         {
             this.ItemFactory = factory;

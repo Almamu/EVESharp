@@ -492,7 +492,8 @@ namespace Node.Database
                 " lipstickID, makeupID, skinID, backgroundID, lightID, headRotation1, headRotation2, headRotation3," +
                 " eyeRotation1, eyeRotation2, eyeRotation3, camPos1, camPos2, camPos3, morph1e, morph1n, morph1s," +
                 " morph1w, morph2e, morph2n, morph2s, morph2w, morph3e, morph3n, morph3s, morph3w, morph4e, morph4n," +
-                " morph4s, morph4w, stationID, solarSystemID, constellationID, regionID, online, freeRespecs, nextRespecTime" +
+                " morph4s, morph4w, stationID, solarSystemID, constellationID, regionID, online, freeRespecs, nextRespecTime," +
+                " timeLastJump" +
                 " FROM chrInformation WHERE characterID = @itemID",
                 new Dictionary<string, object>()
                 {
@@ -575,7 +576,8 @@ namespace Node.Database
                     reader.GetInt32(64),
                     reader.GetInt32(65),
                     reader.GetInt32(66),
-                    reader.GetInt64(67)
+                    reader.GetInt64(67),
+                    reader.GetInt64(68)
                 );
             }
         }
@@ -654,6 +656,11 @@ namespace Node.Database
                     item
                 );
             }
+        }
+
+        public Clone LoadClone(ItemEntity item)
+        {
+            return new Clone(item);
         }
 
         public ulong CreateItem(string itemName, ItemType type, ItemEntity owner, ItemEntity location, ItemFlags flag,
@@ -1042,6 +1049,61 @@ namespace Node.Database
                     {"@ownerID", ownerID},
                     {"@stationID", stationID},
                     {"@hangarFlag", ItemFlags.Hangar}
+                }
+            );
+        }
+
+        public PyDataType GetClonesForCharacter(int characterID)
+        {
+            // TODO: CACHE THIS IN A INTERMEDIATE TABLE TO MAKE THINGS EASIER TO QUERY
+            return Database.PrepareRowsetQuery(
+                "SELECT itemID AS jumpCloneID, typeID, locationID FROM entity WHERE flag = @cloneFlag AND ownerID = @characterID AND locationID IN(SELECT stationID FROM staStations)",
+                new Dictionary<string, object>()
+                {
+                    {"@cloneFlag", ItemFlags.Clone},
+                    {"@characterID", characterID}
+                }
+            );
+        }
+
+        public PyDataType GetClonesInShipForCharacter(int characterID)
+        {
+            return Database.PrepareRowsetQuery(
+                "SELECT itemID AS jumpCloneID, typeID, locationID FROM entity WHERE flag = @cloneFlag AND ownerID = @characterID AND locationID NOT IN(SELECT stationID FROM staStations)",
+                new Dictionary<string, object>()
+                {
+                    {"@cloneFlag", ItemFlags.Clone},
+                    {"@characterID", characterID}
+                }
+            );
+        }
+        
+        public PyDataType GetImplantsForCharacterClones(int characterID)
+        {
+            return Database.PrepareRowsetQuery(
+                "SELECT entity.itemID, entity.typeID, entity.locationID as jumpCloneID FROM entity LEFT JOIN entity second ON entity.locationID = second.itemID  WHERE entity.flag = @implantFlag AND second.flag = @cloneFlag AND second.ownerID = @characterID",
+                new Dictionary<string, object>()
+                {
+                    {"@characterID", characterID},
+                    {"@implantFlag", ItemFlags.Implant},
+                    {"@cloneFlag", ItemFlags.Clone}
+                }
+            );
+        }
+
+        public void DestroyItem(ItemEntity item)
+        {
+            Database.PrepareQuery(
+                "DELETE FROM entity WHERE itemID = @itemID",
+                new Dictionary<string, object>()
+                {
+                    {"@itemID", item.ID}
+                }
+            );
+            Database.PrepareQuery("DELETE FROM entity_attributes WHERE itemID = @itemID",
+                new Dictionary<string, object>()
+                {
+                    {"@itemID", item.ID}
                 }
             );
         }

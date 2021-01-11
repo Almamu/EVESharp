@@ -11,7 +11,7 @@ namespace Common.Database
         /// Indicates if the object is new in the database or not
         /// </summary>
         public bool New { get; set; }
-
+        
         /// <summary>
         /// Writes the object changes to the database
         /// </summary>
@@ -27,6 +27,14 @@ namespace Common.Database
 
             this.Dirty = false;
             this.New = false;
+        }
+
+        /// <summary>
+        /// Destroys the current object from memory and the database
+        /// </summary>
+        public virtual void Destroy()
+        {
+            
         }
 
         public virtual void Dispose()

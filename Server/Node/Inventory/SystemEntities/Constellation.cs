@@ -122,5 +122,10 @@ namespace Node.Inventory.SystemEntities
             // constellations cannot be updated
             throw new NotImplementedException();
         }
+
+        public override void Destroy()
+        {
+            throw new NotImplementedException("Stations cannot be destroyed as they're regarded as static data!");
+        }
     }
 }

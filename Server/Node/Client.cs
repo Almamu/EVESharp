@@ -242,6 +242,11 @@ namespace Node
             set => this.mSession["locationid"] = value;
         }
 
+        public void NotifyCloneUpdate()
+        {
+            this.SendNotification("OnJumpCloneCacheInvalidated", "charid", new PyTuple(0));
+        }
+
         public void NotifyAttributeChange(ItemAttribute attribute, ItemEntity item)
         {
             PyTuple notification = new PyTuple(new PyDataType[]

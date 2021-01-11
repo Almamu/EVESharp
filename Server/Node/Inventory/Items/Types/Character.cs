@@ -33,7 +33,7 @@ namespace Node.Inventory.Items.Types
             double? morph1S, double? morph1W, double? morph2E, double? morph2N, double? morph2S, double? morph2W,
             double? morph3E, double? morph3N, double? morph3S, double? morph3W, double? morph4E, double? morph4N,
             double? morph4S, double? morph4W, int stationId, int solarSystemId, int constellationId, int regionId,
-            int online, int freeReSpecs, long nextReSpecTime) : base(from)
+            int online, int freeReSpecs, long nextReSpecTime, long timeLastJump) : base(from)
         {
             this.mCharacterID = characterId;
             this.mAccountID = accountId;
@@ -103,6 +103,7 @@ namespace Node.Inventory.Items.Types
             this.mOnline = online;
             this.mFreeReSpecs = freeReSpecs;
             this.mNextReSpecTime = nextReSpecTime;
+            this.mTimeLastJump = timeLastJump;
         }
 
         public int CharacterID => mCharacterID;
@@ -196,6 +197,16 @@ namespace Node.Inventory.Items.Types
             }
         }
 
+        public long TimeLastJump
+        {
+            get => this.mTimeLastJump;
+            set
+            {
+                this.Dirty = true;
+                this.mTimeLastJump = value;
+            }
+        }
+
         public int Online
         {
             get => this.mOnline;
@@ -274,6 +285,7 @@ namespace Node.Inventory.Items.Types
         private int mOnline;
         private int mFreeReSpecs;
         private long mNextReSpecTime;
+        private long mTimeLastJump;
         
         private List<SkillQueueEntry> mSkillQueue;
         private Corporation mCorporation = null;

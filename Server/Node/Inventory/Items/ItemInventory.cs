@@ -78,6 +78,18 @@ namespace Node.Inventory.Items
             }
         }
 
+        public override void Destroy()
+        {
+            // first destroy all the items inside this inventory
+            // this might trigger the item loading mechanism but it's needed to ensure
+            // that all the childs are removed off the database too
+            this.mItemFactory.ItemManager.DestroyItems(this.Items);
+
+            // finally call our base destroy method as this will get rid of the item from the database
+            // for good
+            base.Destroy();
+        }
+
         protected Dictionary<int, ItemEntity> mItems;
         private bool mContentsLoaded = false;
     }

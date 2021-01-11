@@ -289,7 +289,7 @@ namespace Node.Services.Characters
             
             ItemEntity clone =
                 this.ServiceManager.Container.ItemFactory.ItemManager.CreateSimpleItem(cloneType, character, station,
-                    ItemFlags.None);
+                    ItemFlags.Clone);
 
             character.LocationID = ship.ID;
             character.ActiveCloneID = clone.ID;
@@ -385,9 +385,7 @@ namespace Node.Services.Characters
             
             // TODO: SEND CHARACTER CONNECTION NOTIFICATION
             // TODO: send "OnContactLoggedOn" to all the friends in the list as long as they're online
-            
-            // TODO: SEND SKILL QUEUE UPDATES FOR THE PLAYER
-            
+
             return null;
         }
 

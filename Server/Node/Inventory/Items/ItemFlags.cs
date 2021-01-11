@@ -122,6 +122,7 @@ namespace Node.Inventory.Items
         SpecializedLargeShipHold = 141,
         SpecializedIndustrialShipHold = 142,
         SpecializedAmmoHold = 143,
+        Clone = 1337,
         HangarAll = 1000
     }
 }
