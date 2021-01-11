@@ -7,6 +7,7 @@ using MySql.Data.MySqlClient;
 using Node.Data;
 using Node.Inventory;
 using Node.Inventory.Items;
+using Node.Inventory.Items.Attributes;
 using Node.Inventory.Items.Types;
 using PythonTypes.Types.Database;
 using PythonTypes.Types.Exceptions;
@@ -493,12 +494,15 @@ namespace Node.Database
 
         public void UpdateCharacterInformation(Character character)
         {
-            Database.PrepareQuery("UPDATE chrInformation SET online = @online, activeCloneID = @activeCloneID WHERE characterID = @characterID",
+            Database.PrepareQuery(
+                "UPDATE chrInformation SET online = @online, activeCloneID = @activeCloneID, freeRespecs = @freeRespecs, nextRespecTime = @nextRespecTime WHERE characterID = @characterID",
                 new Dictionary<string, object>()
                 {
                     {"@characterID", character.ID},
                     {"@online", character.Online},
-                    {"@activeCloneID", character.ActiveCloneID}
+                    {"@activeCloneID", character.ActiveCloneID},
+                    {"@freeRespecs", character.FreeReSpecs},
+                    {"@nextRespecTime", character.NextReSpecTime}
                 }
             );
 

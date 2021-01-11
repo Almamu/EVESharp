@@ -1,3 +1,4 @@
+using PythonTypes.Types.Database;
 using PythonTypes.Types.Primitives;
 
 namespace Node.Services.War
@@ -28,6 +29,15 @@ namespace Node.Services.War
             args[2] = new PyNone();
 
             return new PyObjectData("objectCaching.CachedMethodCallResult", args);
+        }
+
+        public PyDataType GetCharacterRankOverview(PyInteger characterID, PyDictionary namedPayload, Client client)
+        {
+            return new Rowset((PyList) new PyDataType[]
+                {
+                    "currentRank", "highestRank", "factionID", "lastModified"
+                }
+            );
         }
     }
 }

@@ -33,7 +33,7 @@ namespace Node.Inventory.Items.Types
             double? morph1S, double? morph1W, double? morph2E, double? morph2N, double? morph2S, double? morph2W,
             double? morph3E, double? morph3N, double? morph3S, double? morph3W, double? morph4E, double? morph4N,
             double? morph4S, double? morph4W, int stationId, int solarSystemId, int constellationId, int regionId,
-            int online) : base(from)
+            int online, int freeReSpecs, long nextReSpecTime) : base(from)
         {
             this.mCharacterID = characterId;
             this.mAccountID = accountId;
@@ -101,6 +101,8 @@ namespace Node.Inventory.Items.Types
             this.mConstellationID = constellationId;
             this.mRegionID = regionId;
             this.mOnline = online;
+            this.mFreeReSpecs = freeReSpecs;
+            this.mNextReSpecTime = nextReSpecTime;
         }
 
         public int CharacterID => mCharacterID;
@@ -173,6 +175,26 @@ namespace Node.Inventory.Items.Types
         public int SolarSystemID => mSolarSystemID;
         public int ConstellationID => mConstellationID;
         public int RegionID => mRegionID;
+
+        public int FreeReSpecs
+        {
+            get => mFreeReSpecs;
+            set
+            {
+                this.Dirty = true;
+                this.mFreeReSpecs = value;
+            }
+        }
+
+        public long NextReSpecTime
+        {
+            get => mNextReSpecTime;
+            set
+            {
+                this.Dirty = true;
+                this.mNextReSpecTime = value;
+            }
+        }
 
         public int Online
         {
@@ -250,6 +272,9 @@ namespace Node.Inventory.Items.Types
         private int mConstellationID;
         private int mRegionID;
         private int mOnline;
+        private int mFreeReSpecs;
+        private long mNextReSpecTime;
+        
         private List<SkillQueueEntry> mSkillQueue;
         private Corporation mCorporation = null;
         private double mSkillPoints = 0.0f;
@@ -313,6 +338,11 @@ namespace Node.Inventory.Items.Types
                 .Where(x => (x.Value.Flag == ItemFlags.SkillInTraining || x.Value.Flag == ItemFlags.Skill) && x.Value is Skill)
                 .ToDictionary(dict => dict.Key, dict => dict.Value as Skill);
 
+        public Dictionary<int, ItemEntity> Modifiers => 
+            this.Items
+                .Where(x => (x.Value.Flag == ItemFlags.SkillInTraining || x.Value.Flag == ItemFlags.Skill || x.Value.Flag == ItemFlags.Implant))
+                .ToDictionary(dict => dict.Key, dict => dict.Value);
+        
         public Dictionary<int, Skill> InjectedSkillsByTypeID =>
             this.Items
                 .Where(x => (x.Value.Flag == ItemFlags.Skill || x.Value.Flag == ItemFlags.SkillInTraining) && x.Value is Skill)

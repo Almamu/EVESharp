@@ -1,5 +1,6 @@
 using Common.Database;
 using Node.Database;
+using PythonTypes.Types.Exceptions;
 using PythonTypes.Types.Primitives;
 
 namespace Node.Services.Corporations
@@ -26,6 +27,16 @@ namespace Node.Services.Corporations
         public PyDataType GetNPCDivisions(PyDictionary namedPayload, Client client)
         {
             return this.mDB.GetNPCDivisions();
+        }
+
+        public PyDataType GetMedalsReceived(PyInteger characterID, PyDictionary namedPayload, Client client)
+        {
+            return new PyTuple(new PyDataType[]
+                {
+                    this.mDB.GetMedalsReceived(characterID),
+                    new PyList() // medal data, rowset medalID, part, layer, graphic, color
+                }
+            );
         }
     }
 }

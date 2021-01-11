@@ -492,7 +492,7 @@ namespace Node.Database
                 " lipstickID, makeupID, skinID, backgroundID, lightID, headRotation1, headRotation2, headRotation3," +
                 " eyeRotation1, eyeRotation2, eyeRotation3, camPos1, camPos2, camPos3, morph1e, morph1n, morph1s," +
                 " morph1w, morph2e, morph2n, morph2s, morph2w, morph3e, morph3n, morph3s, morph3w, morph4e, morph4n," +
-                " morph4s, morph4w, stationID, solarSystemID, constellationID, regionID, online" +
+                " morph4s, morph4w, stationID, solarSystemID, constellationID, regionID, online, freeRespecs, nextRespecTime" +
                 " FROM chrInformation WHERE characterID = @itemID",
                 new Dictionary<string, object>()
                 {
@@ -573,7 +573,9 @@ namespace Node.Database
                     reader.GetInt32(62),
                     reader.GetInt32(63),
                     reader.GetInt32(64),
-                    reader.GetInt32(65)
+                    reader.GetInt32(65),
+                    reader.GetInt32(66),
+                    reader.GetInt64(67)
                 );
             }
         }

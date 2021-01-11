@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Node.Inventory.Items;
+using Node.Inventory.Items.Attributes;
 using Node.Inventory.Items.Types;
 using Org.BouncyCastle.Crypto.Macs;
 using Org.BouncyCastle.Crypto.Tls;
@@ -165,6 +166,27 @@ namespace Node.Services.Dogma
             // so it can display them on the UI and I guess act on them too
             // for now there's no support for this functionality, so it can be stubbed out
             return new PyDictionary();
+        }
+
+        public PyDataType GetCharacterBaseAttributes(PyDictionary namedPayload, Client client)
+        {
+            if (client.CharacterID == null)
+                throw new CustomError("This client has not selected a character yet");
+            
+            Character character =
+                this.ServiceManager.Container.ItemFactory.ItemManager.LoadItem((int) client.CharacterID) as Character;
+
+            if (character == null)
+                throw new CustomError($"Cannot get information for character {client.CharacterID}");
+
+            return new PyDictionary
+            {
+                [(int) AttributeEnum.willpower] = character.Willpower,
+                [(int) AttributeEnum.charisma] = character.Charisma,
+                [(int) AttributeEnum.intelligence] = character.Intelligence,
+                [(int) AttributeEnum.perception] = character.Perception,
+                [(int) AttributeEnum.memory] = character.Memory
+            };
         }
     }
 }

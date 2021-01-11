@@ -27,6 +27,7 @@ using System.Collections.Generic;
 using Common.Game;
 using Common.Packets;
 using Node.Inventory.Items;
+using Node.Inventory.Items.Attributes;
 using Node.Inventory.Items.Types;
 using PythonTypes.Types.Network;
 using PythonTypes.Types.Primitives;
@@ -239,6 +240,38 @@ namespace Node
         {
             get => this.mSession["locationid"] as PyInteger;
             set => this.mSession["locationid"] = value;
+        }
+
+        public void NotifyAttributeChange(ItemAttribute attribute, ItemEntity item)
+        {
+            PyTuple notification = new PyTuple(new PyDataType[]
+                {
+                    attribute.Info.Name, item.GetEntityRow(), attribute
+                }
+            );
+
+            this.SendNotification("OnAttribute", "charid", notification);
+        }
+
+        public void NotifyMultipleAttributeChange(ItemAttribute[] attributes, ItemEntity[] items)
+        {
+            if (attributes.Length != items.Length)
+                throw new ArgumentOutOfRangeException(
+                    "attributes list and items list must have the same amount of elements");
+
+            PyList notification = new PyList();
+
+            for (int i = 0; i < attributes.Length; i++)
+            {
+                notification.Add(new PyTuple(new PyDataType[]
+                        {
+                            attributes[i].Info.Name, items[i].GetEntityRow(), attributes[i]
+                        }
+                    )
+                );
+            }
+
+            this.SendNotification("OnAttributes", "charid", new PyTuple (new PyDataType [] { notification }));
         }
 
         public void NotifyItemChange(ItemEntity item, ItemFlags oldFlag, int oldLocation)

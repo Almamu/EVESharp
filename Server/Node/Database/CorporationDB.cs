@@ -92,5 +92,16 @@ namespace Node.Database
                 }
             );
         }
+
+        public PyDataType GetMedalsReceived(int characterID)
+        {
+            return Database.PrepareRowsetQuery(
+                "SELECT medalID, title, description, ownerID, issuerID, date, reason, status FROM chrMedals WHERE characterID=@characterID",
+                new Dictionary<string, object>()
+                {
+                    {"@characterID", characterID}
+                }
+            );
+        }
     }
 }

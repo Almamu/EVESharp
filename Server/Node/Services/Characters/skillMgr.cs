@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Node.Database;
 using Node.Inventory.Items;
+using Node.Inventory.Items.Attributes;
 using Node.Inventory.Items.Types;
 using PythonTypes.Marshal;
 using PythonTypes.Types.Exceptions;
@@ -12,6 +13,9 @@ namespace Node.Services.Characters
 {
     public class skillMgr : BoundService
     {
+        private const int MAXIMUM_ATTRIBUTE_POINTS = 15;
+        private const int MINIMUM_ATTRIBUTE_POINTS = 5;
+        private const int MAXIMUM_TOTAL_ATTRIBUTE_POINTS = 39;
         private SkillDB mDB = null;
         
         public skillMgr(ServiceManager manager) : base(manager)
@@ -276,6 +280,138 @@ namespace Node.Services.Characters
                 this.mDB.CreateSkillHistoryRecord(entry.Skill.Type, character, SkillHistoryReason.SkillTrainingCancelled,
                     entry.Skill.Points);
             }
+
+            return null;
+        }
+
+        public PyDataType GetRespecInfo(PyDictionary namedPayload, Client client)
+        {
+            if (client.CharacterID == null)
+                throw new UserError("NoCharacterSelected");
+            
+            Character character =
+                this.ServiceManager.Container.ItemFactory.ItemManager.LoadItem((int) client.CharacterID) as Character;
+
+            return new PyDictionary
+            {
+                ["nextRespecTime"] = character.NextReSpecTime,
+                ["freeRespecs"] = character.FreeReSpecs
+            };
+        }
+
+        public PyDataType GetCharacterAttributeModifiers(PyInteger attributeID, PyDictionary namedPayload, Client client)
+        {
+            if (client.CharacterID == null)
+                throw new UserError("NoCharacterSelected");
+            
+            Character character =
+                this.ServiceManager.Container.ItemFactory.ItemManager.LoadItem((int) client.CharacterID) as Character;
+
+            AttributeEnum attribute;
+
+            switch ((int) attributeID)
+            {
+                case (int) AttributeEnum.willpower:
+                    attribute = AttributeEnum.willpowerBonus;
+                    break;
+                case (int) AttributeEnum.charisma:
+                    attribute = AttributeEnum.charismaBonus;
+                    break;
+                case (int) AttributeEnum.memory:
+                    attribute = AttributeEnum.memoryBonus;
+                    break;
+                case (int) AttributeEnum.intelligence:
+                    attribute = AttributeEnum.intelligenceBonus;
+                    break;
+                case (int) AttributeEnum.perception:
+                    attribute = AttributeEnum.perceptionBonus;
+                    break;
+                default:
+                    return new PyList();
+            }
+            
+            PyList modifiers = new PyList();
+            
+            foreach (KeyValuePair<int, ItemEntity> modifier in character.Modifiers)
+            {
+                if (modifier.Value.Attributes.AttributeExists(attribute) == true)
+                {
+                    // for now add all the elements as dgmAssModAdd
+                    // check ApplyModifiers on attributes.py
+                    // TODO: THE THIRD PARAMETER HERE WAS DECIDED RANDOMLY BASED ON THE CODE ITSELF
+                    // TODO: BUT THAT DOESN'T MEAN THAT IT'S ENTIRELY CORRECT
+                    // TODO: SO MAYBE CHECK IF THIS IS CORRECT SOMETIME AFTER
+                    modifiers.Add(new PyTuple(new PyDataType []
+                        {
+                            modifier.Value.ID, modifier.Value.Type.ID, 2,
+                            modifier.Value.Attributes[attribute]                            
+                        }
+                    ));
+                }
+            }
+            
+            // search for skills that modify this attribute
+            return modifiers;
+        }
+
+        public PyDataType RespecCharacter(PyInteger charisma, PyInteger intelligence, PyInteger memory,
+            PyInteger perception, PyInteger willpower, PyDictionary namedPayload, Client client)
+        {
+            if (client.CharacterID == null)
+                throw new UserError("NoCharacterSelected");
+            if (charisma < MINIMUM_ATTRIBUTE_POINTS || intelligence < MINIMUM_ATTRIBUTE_POINTS ||
+                memory < MINIMUM_ATTRIBUTE_POINTS || perception < MINIMUM_ATTRIBUTE_POINTS ||
+                willpower < MINIMUM_ATTRIBUTE_POINTS)
+                throw new UserError("RespecAttributesTooLow");
+            if (charisma >= MAXIMUM_ATTRIBUTE_POINTS || intelligence >= MAXIMUM_ATTRIBUTE_POINTS ||
+                memory >= MAXIMUM_ATTRIBUTE_POINTS || perception >= MAXIMUM_ATTRIBUTE_POINTS ||
+                willpower >= MAXIMUM_ATTRIBUTE_POINTS)
+                throw new UserError("RespecAttributesTooHigh");
+            if (charisma + intelligence + memory + perception + willpower != MAXIMUM_TOTAL_ATTRIBUTE_POINTS)
+                throw new UserError("RespecAttributesMisallocated");
+            
+            Character character =
+                this.ServiceManager.Container.ItemFactory.ItemManager.LoadItem((int) client.CharacterID) as Character;
+
+            if (character.FreeReSpecs == 0)
+                throw new CustomError("You've already remapped your character too much times at once, wait some time");
+            
+            // check if the respec is the same as it was already
+            if (charisma == character.Charisma && intelligence == character.Intelligence &&
+                memory == character.Memory && perception == character.Perception && willpower == character.Willpower)
+                throw new CustomError("No changes detected on the neural map");
+            
+            // take one respec out
+            character.FreeReSpecs--;
+            
+            // if respec is zero now means we don't have any free respecs until a year later
+            character.NextReSpecTime = DateTime.UtcNow.AddYears(1).ToFileTimeUtc();
+            
+            // finally set our attributes to the correct values
+            character.Charisma = charisma;
+            character.Intelligence = intelligence;
+            character.Memory = memory;
+            character.Perception = perception;
+            character.Willpower = willpower;
+
+            // save the character
+            character.Persist();
+            
+            // notify the game of the change on the character
+            client.NotifyMultipleAttributeChange(
+                new ItemAttribute[]
+                {
+                    character.Attributes[AttributeEnum.charisma],
+                    character.Attributes[AttributeEnum.perception],
+                    character.Attributes[AttributeEnum.intelligence],
+                    character.Attributes[AttributeEnum.memory],
+                    character.Attributes[AttributeEnum.willpower]
+                },
+                new ItemEntity[]
+                {
+                    character, character, character, character, character
+                }
+            );
 
             return null;
         }

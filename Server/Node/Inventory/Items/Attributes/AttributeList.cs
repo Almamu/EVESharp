@@ -60,11 +60,16 @@ namespace Node.Inventory.Items.Attributes
             return this.AttributeExists(attribute.Info.ID);
         }
 
-        protected bool AttributeExists(int attributeID)
+        public bool AttributeExists(int attributeID)
         {
             return this.mItemAttributes.ContainsKey(attributeID) || this.mDefaultAttributes.ContainsKey(attributeID);
         }
 
+        public bool AttributeExists(AttributeEnum attributeID)
+        {
+            return this.AttributeExists((int) attributeID);
+        }
+        
         public void Persist(ItemEntity item)
         {
             this.mItemFactory.ItemDB.PersistAttributeList(item, this);

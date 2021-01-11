@@ -70,6 +70,8 @@ CREATE TABLE `chrInformation` (
   `constellationID` int(10) unsigned NOT NULL default '0',
   `regionID` int(10) unsigned NOT NULL default '0',
   `online` tinyint(1) NOT NULL default '0',
+  `nextRespecTime` BIGINT(20) NOT NULL DEFAULT '0',
+  `freeRespecs` INT(11) NOT NULL DEFAULT '2',
   PRIMARY KEY  (`characterID`),
   KEY `FK_CHARACTER__ACCOUNTS` (`accountID`),
   KEY `FK_CHARACTER__CHRACCESSORIES` (`accessoryID`),
