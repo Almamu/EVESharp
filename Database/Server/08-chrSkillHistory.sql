@@ -1,4 +1,5 @@
-DROP TABLE IF EXISTS `chrSkillHistory
+DROP TABLE IF EXISTS `chrSkillHistory`;
+
 CREATE TABLE `chrSkillhistory` (
 	`characterID` INT(10) UNSIGNED NOT NULL,
 	`skillTypeID` INT(10) UNSIGNED NOT NULL,
