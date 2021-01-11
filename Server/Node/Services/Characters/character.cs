@@ -427,5 +427,29 @@ namespace Node.Services.Characters
                 return this.ServiceManager.Container.ItemFactory.ItemDB.GetItemTypeID((int) character.ActiveCloneID);
             }
         }
+
+        public PyDataType GetCharacterDescription(PyInteger characterID, PyDictionary namedPayload, Client client)
+        {
+            if (client.CharacterID == null)
+                throw new UserError("NoCharacterSelected");
+
+            Character character =
+                this.ServiceManager.Container.ItemFactory.ItemManager.LoadItem((int) client.CharacterID) as Character;
+            
+            return character.Description;
+        }
+
+        public PyDataType SetCharacterDescription(PyString newBio, PyDictionary namedPayload, Client client)
+        {
+            if (client.CharacterID == null)
+                throw new UserError("NoCharacterSelected");
+
+            Character character =
+                this.ServiceManager.Container.ItemFactory.ItemManager.LoadItem((int) client.CharacterID) as Character;
+
+            character.Description = newBio;
+            
+            return null;
+        }
     }
 }

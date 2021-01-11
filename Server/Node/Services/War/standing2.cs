@@ -52,5 +52,11 @@ namespace Node.Services.War
                 this.mDB.GetCharNPCStandings((int) client.CharacterID)
             });
         }
+
+        public PyDataType GetStandingTransactions(PyInteger from, PyInteger to, PyInteger direction, PyInteger eventID,
+            PyInteger eventTypeID, PyInteger eventDateTime, PyDictionary namedPayload, Client client)
+        {
+            return this.mDB.GetStandingTransactions(from, to, direction, eventID, eventTypeID, eventDateTime);
+        }
     }
 }

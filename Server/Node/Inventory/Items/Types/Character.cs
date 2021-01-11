@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using Node.Database;
 using Node.Inventory.Items.Attributes;
 using PythonTypes.Types.Primitives;
@@ -112,10 +113,24 @@ namespace Node.Inventory.Items.Types
         public int? ActiveCloneID
         {
             get => this.mActiveCloneID;
-            set => this.mActiveCloneID = value;
+            set
+            {
+                this.Dirty = true;
+                this.mActiveCloneID = value;
+            }
         }
+
         public string Title => mTitle;
-        public string Description => mDescription;
+
+        public string Description
+        {
+            get => this.mDescription;
+            set
+            {
+                this.Dirty = true;
+                this.mDescription = value;
+            }
+        }
         public double Bounty => mBounty;
         public double Balance => mBalance;
         public double SecurityRating => mSecurityRating;
@@ -481,6 +496,15 @@ namespace Node.Inventory.Items.Types
 
             // update the relevant character information
             this.mItemFactory.CharacterDB.UpdateCharacterInformation(this);
+        }
+
+        public override void Destroy()
+        {
+            // remove all timers this user might have
+            foreach (SkillQueueEntry entry in this.mSkillQueue)
+                this.mItemFactory.Container.TimerManager.DequeueTimer(entry.Skill.ID, entry.Skill.ExpiryTime);
+
+            base.Destroy();
         }
 
         public override void Dispose()

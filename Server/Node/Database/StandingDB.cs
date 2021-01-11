@@ -42,5 +42,55 @@ namespace Node.Database
                 }
             );
         }
+
+        public PyDataType GetStandingTransactions(int? fromID, int? toID, int? direction, int? eventID, int? eventTypeID,
+            long? eventDateTime)
+        {
+            // to understand what int_1, int_2 and int_3 mean check FmtStandingTransaction on eveFormat.py
+            // to see how they're used
+            
+            // use the old 1=1 trick to make it easier to append things
+            Dictionary<string, object> parameters = new Dictionary<string, object>();
+            string query =
+                "SELECT eventID, fromID, toID, direction, eventTypeID, msg, modification, int_1, int_2, int_3 FROM chrStandingTransactions WHERE 1=1";
+
+            if (fromID != null)
+            {
+                query += " AND fromID=@fromID";
+                parameters["@fromID"] = (int) fromID;
+            }
+
+            if (toID != null)
+            {
+                query += " AND toID=@toID";
+                parameters["@toID"] = (int) toID;
+            }
+
+            if (direction != null)
+            {
+                query += " AND direction=@direction";
+                parameters["@direction"] = (int) direction;
+            }
+
+            if (eventID != null)
+            {
+                query += " AND eventID=@eventID";
+                parameters["@eventID"] = (int) eventID;
+            }
+
+            if (eventTypeID != null)
+            {
+                query += " AND eventTypeID=@eventTypeID";
+                parameters["@eventTypeID"] = (int) eventTypeID;
+            }
+
+            if (eventDateTime != null)
+            {
+                query += " AND eventDateTime=@eventDateTime";
+                parameters["@eventDateTime"] = (long) eventDateTime;
+            }
+
+            return Database.PrepareRowsetQuery(query, parameters);
+        }
     }
 }

@@ -103,5 +103,16 @@ namespace Node.Database
                 }
             );
         }
+
+        public PyDataType GetEmploymentRecord(int characterID)
+        {
+            return Database.PrepareRowsetQuery(
+                "SELECT corporationID, startDate, deleted FROM chrEmployment WHERE characterID=@characterID",
+                new Dictionary<string, object>()
+                {
+                    {"@characterID", characterID}
+                }
+            );
+        }
     }
 }

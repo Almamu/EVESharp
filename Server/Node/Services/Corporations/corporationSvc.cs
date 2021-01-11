@@ -38,5 +38,10 @@ namespace Node.Services.Corporations
                 }
             );
         }
+
+        public PyDataType GetEmploymentRecord(PyInteger characterID, PyDictionary namedPayload, Client client)
+        {
+            return this.mDB.GetEmploymentRecord(characterID);
+        }
     }
 }

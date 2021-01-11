@@ -495,7 +495,7 @@ namespace Node.Database
         public void UpdateCharacterInformation(Character character)
         {
             Database.PrepareQuery(
-                "UPDATE chrInformation SET online = @online, activeCloneID = @activeCloneID, freeRespecs = @freeRespecs, nextRespecTime = @nextRespecTime, timeLastJump = @timeLastJump WHERE characterID = @characterID",
+                "UPDATE chrInformation SET online = @online, activeCloneID = @activeCloneID, freeRespecs = @freeRespecs, nextRespecTime = @nextRespecTime, timeLastJump = @timeLastJump, description = @description WHERE characterID = @characterID",
                 new Dictionary<string, object>()
                 {
                     {"@characterID", character.ID},
@@ -503,7 +503,8 @@ namespace Node.Database
                     {"@activeCloneID", character.ActiveCloneID},
                     {"@freeRespecs", character.FreeReSpecs},
                     {"@nextRespecTime", character.NextReSpecTime},
-                    {"@timeLastJump", character.TimeLastJump}
+                    {"@timeLastJump", character.TimeLastJump},
+                    {"@description", character.Description}
                 }
             );
 
