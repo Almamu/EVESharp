@@ -41,7 +41,8 @@ namespace Node
             Rowset = 1,
             CRowset = 2,
             PackedRowList = 3,
-            IntIntDict = 4
+            IntIntDict = 4,
+            IndexRowset = 5
         };
 
         public static Dictionary<string, string> LoginCacheTable = new Dictionary<string, string>()
@@ -385,6 +386,9 @@ namespace Node
                         case CacheObjectType.IntIntDict:
                             cacheObject = IntIntDictionary.FromMySqlDataReader(reader);
                             break;
+                        case CacheObjectType.IndexRowset:
+                            cacheObject = IndexRowset.FromMySqlDataReader(reader, 0);
+                            break;
                     }
 
                     Store(name, cacheObject, DateTime.UtcNow.ToFileTimeUtc());
@@ -426,6 +430,9 @@ namespace Node
                             break;
                         case CacheObjectType.IntIntDict:
                             cacheObject = IntIntDictionary.FromMySqlDataReader(reader);
+                            break;
+                        case CacheObjectType.IndexRowset:
+                            cacheObject = IndexRowset.FromMySqlDataReader(reader, 0);
                             break;
                     }
 

@@ -55,7 +55,7 @@ namespace PythonTypes.Types.Primitives
             return obj.Value;
         }
 
-        public static explicit operator PyBool(bool value)
+        public static implicit operator PyBool(bool value)
         {
             return new PyBool(value);
         }

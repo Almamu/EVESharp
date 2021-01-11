@@ -252,6 +252,7 @@ namespace Node.Inventory.Items.Types
         private int mOnline;
         private List<SkillQueueEntry> mSkillQueue;
         private Corporation mCorporation = null;
+        private double mSkillPoints = 0.0f;
 
         public long Charisma
         {
@@ -312,10 +313,17 @@ namespace Node.Inventory.Items.Types
                 .Where(x => (x.Value.Flag == ItemFlags.SkillInTraining || x.Value.Flag == ItemFlags.Skill) && x.Value is Skill)
                 .ToDictionary(dict => dict.Key, dict => dict.Value as Skill);
 
+        public Dictionary<int, Skill> InjectedSkillsByTypeID =>
+            this.Items
+                .Where(x => (x.Value.Flag == ItemFlags.Skill || x.Value.Flag == ItemFlags.SkillInTraining) && x.Value is Skill)
+                .ToDictionary(dict => dict.Value.Type.ID, dict => dict.Value as Skill);
+        
         protected override void LoadContents()
         {
             base.LoadContents();
             
+            this.CalculateSkillPoints();
+
             // put things where they belong
             Dictionary<int, Skill> skillQueue = this.Items
                 .Where(x => x.Value.Flag == ItemFlags.SkillInTraining && x.Value is Skill)
@@ -327,8 +335,25 @@ namespace Node.Inventory.Items.Types
             foreach (SkillQueueEntry entry in this.mSkillQueue)
                 if (entry.Skill.ExpiryTime != 0)
                     this.mItemFactory.Container.TimerManager.EnqueueTimer(entry.Skill.ExpiryTime, SkillTrainingCompleted, entry.Skill.ID);
+            
+            // send notification of the first skill being in the queue
+            if (this.mSkillQueue.Count > 0)
+            {
+                if (this.mItemFactory.Container.ClientManager.Contains(this.AccountID) == true)
+                {
+                    // skill was trained, send the success message
+                    this.mItemFactory.Container.ClientManager.Get(this.AccountID).NotifySkillStartTraining(this.mSkillQueue[0].Skill);                
+                }
+            }
         }
 
+        private void CalculateSkillPoints()
+        {
+            foreach (KeyValuePair<int, Skill> skills in this.InjectedSkills)
+                // increase our skillpoints count with all the trained skills
+                this.mSkillPoints += skills.Value.Points;
+        }
+        
         public void SkillTrainingCompleted(int itemID)
         {
             Skill skill = this.Items[itemID] as Skill;
@@ -355,6 +380,8 @@ namespace Node.Inventory.Items.Types
             // finally remove it off the skill queue
             this.SkillQueue.RemoveAll(x => x.Skill.ID == skill.ID);
 
+            this.CalculateSkillPoints();
+            
             // get the next skill from the queue (if any) and send the client proper notifications
             if (this.SkillQueue.Count == 0)
             {
@@ -387,16 +414,21 @@ namespace Node.Inventory.Items.Types
 
         public double GetSkillPointsPerMinute(Skill skill)
         {
-            // TODO: TAKE INTO ACCOUNT THE SKILL LEARNING LEVEL (3374)
             ItemAttribute primarySpPerMin = this.Attributes[skill.PrimaryAttribute.Integer];
             ItemAttribute secondarySpPerMin = this.Attributes[skill.SecondaryAttribute.Integer];
-            int skillLearningLevel = 0;
+            
+            long skillLearningLevel = 0;
+
+            Dictionary<int,Skill> injectedSkillsByTypeID = this.InjectedSkillsByTypeID;
+
+            if (injectedSkillsByTypeID.ContainsKey((int) ItemTypes.Learning) == true)
+                skillLearningLevel = injectedSkillsByTypeID[(int) ItemTypes.Learning].Level;
 
             double spPerMin = primarySpPerMin + secondarySpPerMin / 2.0f;
             spPerMin = spPerMin * (1.0f + 0.02f * skillLearningLevel);
             
-            // TODO: CHECK FOR 100% TRAINING BONUS
-            spPerMin = spPerMin * 2.0f;
+            if (this.mSkillPoints < 1600000.0f)
+                spPerMin = spPerMin * 2.0f;
 
             return spPerMin;
         }

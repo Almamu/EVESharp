@@ -10,6 +10,7 @@ namespace Node.Inventory.Items
 	    System = 0,
         Tritanium = 34,
         CloneGradeAlpha = 164,
-        DamageControlI = 2046
+        DamageControlI = 2046,
+        Learning = 3374
     }
 }

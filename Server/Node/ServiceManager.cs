@@ -119,7 +119,7 @@ namespace Node
             this.corpRegistry = new corpRegistry(db, this);
             this.marketProxy = new marketProxy(db, this);
             this.stationSvc = new stationSvc(db, this);
-            this.certificateMgr = new certificateMgr(this);
+            this.certificateMgr = new certificateMgr(db, this);
         }
     }
 }
