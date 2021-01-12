@@ -27,5 +27,10 @@ namespace Node.Services.Config
         {
             return this.mDB.GetMultiLocationsEx(ids);
         }
+
+        public PyDataType GetMultiAllianceShortNamesEx(PyList ids, PyDictionary namedPayload, Client client)
+        {
+            return this.mDB.GetMultiAllianceShortNamesEx(ids);
+        }
     }
 }

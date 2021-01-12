@@ -81,6 +81,7 @@ namespace Node.Services.Characters
 
         public PyDataType CloneJump(PyInteger locationID, PyBool unknown, PyDictionary namedPayload, Client client)
         {
+            // TODO: IMPLEMENT THIS CALL PROPERLY, INVOLVES SESSION CHANGES
             return null;
         }
     }

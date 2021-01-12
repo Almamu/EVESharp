@@ -451,5 +451,18 @@ namespace Node.Services.Characters
             
             return null;
         }
+
+        public PyDataType GetRecentShipKillsAndLosses(PyInteger count, PyInteger startIndex, PyDictionary namedPayload,
+            Client client)
+        {
+            if (client.CharacterID == null)
+                throw new UserError("NoCharacterSelected");
+
+            // limit number of records to 100 at maximum
+            if (count > 100)
+                count = 100;
+            
+            return this.mDB.GetRecentShipKillsAndLosses((int) client.CharacterID, count, startIndex);
+        }
     }
 }

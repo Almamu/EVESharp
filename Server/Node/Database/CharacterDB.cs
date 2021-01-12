@@ -570,5 +570,20 @@ namespace Node.Database
 
             return Database.PrepareRowsetQuery(query, parameters);
         }
+
+        public PyDataType GetRecentShipKillsAndLosses(int characterID, int count, int? startIndex)
+        {
+            // TODO: WRITE A GENERATOR FOR THE KILL LOGS, THESE SEEM TO BE KIND OF AN XML FILE WITH ALL THE INFORMATION
+            // TODO: FOR MORE INFORMATION CHECK CombatLog_CopyText ON eveCommonUtils.py
+            return Database.PrepareRowsetQuery(
+                "SELECT killID, solarSystemID, moonID, victimCharacterID, victimCorporationID, victimAllianceID, victimFactionID, victimShipTypeID, victimDamageTaken, finalCharacterID, finalCorporationID, finalAllianceID, finalFactionID, finalDamageDone, finalSecurityStatus, finalShipTypeID, finalWeaponTypeID, killTime, killBlob FROM chrCombatLogs WHERE victimCharacterID = @characterID OR finalCharacterID = @characterID LIMIT @startIndex, @limit",
+                new Dictionary<string, object>()
+                {
+                    {"@characterID", characterID},
+                    {"@startIndex", startIndex ?? 0},
+                    {"@limit", count}
+                }
+            );
+        }
     }
 }

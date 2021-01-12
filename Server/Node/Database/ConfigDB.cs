@@ -78,5 +78,26 @@ namespace Node.Database
                 return TupleSet.FromMySqlDataReader(reader);
             }
         }
+        
+        public PyDataType GetMultiAllianceShortNamesEx(PyList ids)
+        {
+            string query = "SELECT allianceID, shortName FROM alliance_shortnames WHERE allianceID IN (";
+            Dictionary<string, object> parameters = new Dictionary<string,object>();
+
+            foreach (PyDataType id in ids)
+                parameters["@itemID" + parameters.Count.ToString("X")] = (int) (id as PyInteger);
+
+            // prepare the correct list of arguments
+            query += String.Join(',', parameters.Keys) + ")";
+            
+            MySqlConnection connection = null;
+            MySqlDataReader reader = Database.PrepareQuery(ref connection, query, parameters);
+            
+            using (connection)
+            using (reader)
+            {
+                return TupleSet.FromMySqlDataReader(reader);
+            }
+        }
     }
 }
