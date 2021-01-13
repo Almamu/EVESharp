@@ -6,6 +6,7 @@ using Common.Packets;
 using PythonTypes;
 using PythonTypes.Types.Network;
 using PythonTypes.Types.Primitives;
+using SimpleInjector;
 
 namespace Node.Network
 {
@@ -17,17 +18,27 @@ namespace Node.Network
         private Channel ResultLog { get; }
 #endif
         public EVEClientSocket Socket { get; }
-        public NodeContainer Container { get; }
+        private NodeContainer Container { get; }
+        private SystemManager SystemManager { get; set; }
+        private ServiceManager ServiceManager { get; set; }
+        private ClientManager ClientManager { get; set; }
+        private BoundServiceManager BoundServiceManager { get; set; }
+        private Container DependencyInjector { get; set; }
 
-        public ClusterConnection(NodeContainer container)
+        public ClusterConnection(NodeContainer container, SystemManager systemManager, ServiceManager serviceManager,
+            ClientManager clientManager, BoundServiceManager boundServiceManager, Logger logger, Container dependencyInjector)
         {
-            this.Log = container.Logger.CreateLogChannel("ClusterConnection");
+            this.Log = logger.CreateLogChannel("ClusterConnection");
 #if DEBUG
-            this.CallLog = container.Logger.CreateLogChannel("CallDebug", true);
-            this.ResultLog = container.Logger.CreateLogChannel("ResultDebug", true);
+            this.CallLog = logger.CreateLogChannel("CallDebug", true);
+            this.ResultLog = logger.CreateLogChannel("ResultDebug", true);
 #endif
+            this.SystemManager = systemManager;
+            this.ServiceManager = serviceManager;
+            this.ClientManager = clientManager;
+            this.BoundServiceManager = boundServiceManager;
+            this.DependencyInjector = dependencyInjector;
             this.Container = container;
-            this.Container.ClusterConnection = this;
             this.Socket = new EVEClientSocket(this.Log);
             this.Socket.SetReceiveCallback(ReceiveLowLevelVersionExchangeCallback);
             this.Socket.SetExceptionHandler(HandleException);
@@ -92,7 +103,7 @@ namespace Node.Network
             Log.Debug("Found machoNet.nodeInfo, our new node id is " + nodeinfo.nodeID.ToString("X4"));
 
             // load the specified solar systems
-            this.Container.SystemManager.LoadSolarSystems(nodeinfo.solarSystems);
+            this.SystemManager.LoadSolarSystems(nodeinfo.solarSystems);
 
             // finally set the new packet handler
             this.Socket.SetReceiveCallback(ReceiveNormalPacketCallback);
@@ -155,8 +166,8 @@ namespace Node.Network
                             CallLog.Trace(PrettyPrinter.FromDataType(sub));
 #endif
 
-                            callResult = this.Container.BoundServiceManager.ServiceCall(
-                                boundID, call, args, sub, this.Container.ClientManager.Get(packet.UserID)
+                            callResult = this.BoundServiceManager.ServiceCall(
+                                boundID, call, args, sub, this.ClientManager.Get(packet.UserID)
                             );
 
 #if DEBUG
@@ -175,8 +186,8 @@ namespace Node.Network
                             CallLog.Trace(PrettyPrinter.FromDataType(sub));
 #endif
                             
-                            callResult = this.Container.ServiceManager.ServiceCall(
-                                destAny.Service, call, args, sub, this.Container.ClientManager.Get(packet.UserID)
+                            callResult = this.ServiceManager.ServiceCall(
+                                destAny.Service, call, args, sub, this.ClientManager.Get(packet.UserID)
                             );    
 
 #if DEBUG
@@ -225,8 +236,8 @@ namespace Node.Network
                             CallLog.Trace(PrettyPrinter.FromDataType(sub));
 #endif
 
-                            callResult = this.Container.BoundServiceManager.ServiceCall(
-                                boundID, call, args, sub, this.Container.ClientManager.Get(packet.UserID)
+                            callResult = this.BoundServiceManager.ServiceCall(
+                                boundID, call, args, sub, this.ClientManager.Get(packet.UserID)
                             );
 
 #if DEBUG
@@ -245,8 +256,8 @@ namespace Node.Network
                             CallLog.Trace(PrettyPrinter.FromDataType(sub));
 #endif
 
-                            callResult = this.Container.ServiceManager.ServiceCall(
-                                destNode.Service, call, args, sub, this.Container.ClientManager.Get(packet.UserID)
+                            callResult = this.ServiceManager.ServiceCall(
+                                destNode.Service, call, args, sub, this.ClientManager.Get(packet.UserID)
                             );
 
 #if DEBUG
@@ -298,10 +309,10 @@ namespace Node.Network
                 Log.Debug($"Updating session for client {packet.UserID}");
 
                 // ensure the client is registered in the node and store his session
-                if (this.Container.ClientManager.Contains(packet.UserID) == false)
-                    this.Container.ClientManager.Add(packet.UserID, new Client(this.Container));
+                if (this.ClientManager.Contains(packet.UserID) == false)
+                    this.ClientManager.Add(packet.UserID, this.DependencyInjector.GetInstance<Client>());
 
-                this.Container.ClientManager.Get(packet.UserID).UpdateSession(packet);
+                this.ClientManager.Get(packet.UserID).UpdateSession(packet);
             }
             else if (packet.Type == PyPacket.PacketType.PING_REQ)
             {

@@ -23,7 +23,9 @@
 */
 
 using Common.Database;
+using Common.Logging;
 using Common.Services;
+using Node.Configuration;
 using Node.Services;
 using Node.Services.Account;
 using Node.Services.CacheSvc;
@@ -40,6 +42,7 @@ using Node.Services.Network;
 using Node.Services.Stations;
 using Node.Services.Tutorial;
 using Node.Services.War;
+using SimpleInjector;
 
 namespace Node
 {
@@ -47,81 +50,117 @@ namespace Node
     {
         public NodeContainer Container { get; }
         public CacheStorage CacheStorage { get; }
-        public objectCaching objectCaching { get; }
-        public machoNet machoNet { get; }
-        public alert alert { get; }
-        public authentication authentication { get; }
-        public character character { get; }
-        public userSvc userSvc { get; }
-        public charmgr charmgr { get; }
-        public config config { get; }
-        public dogmaIM dogmaIM { get; }
-        public invbroker invbroker { get; }
-        public warRegistry warRegistry { get; }
-        public station station { get; }
-        public map map { get; }
-        public account account { get; }
-        public skillMgr skillMgr { get; }
-        public contractMgr contractMgr { get; }
-        public corpStationMgr corpStationMgr { get; }
-        public bookmark bookmark { get; }
-        public LSC LSC { get; }
-        public onlineStatus onlineStatus { get; }
-        public billMgr billMgr { get; }
-        public facWarMgr facWarMgr { get; }
-        public corporationSvc corporationSvc { get; }
-        public clientStatsMgr clientStatsMgr { get; }
-        public voiceMgr voiceMgr { get; }
-        public standing2 standing2 { get; }
-        public tutorialSvc tutorialSvc { get; }
-        public agentMgr agentMgr { get; }
-        public corpRegistry corpRegistry { get; }
-        public marketProxy marketProxy { get; }
-        public stationSvc stationSvc { get; }
-        public certificateMgr certificateMgr { get; }
-        public jumpCloneSvc jumpCloneSvc { get; }
-        private readonly DatabaseConnection mDatabaseConnection = null;
-
-        public ServiceManager(NodeContainer container, DatabaseConnection db, CacheStorage storage, Configuration.General configuration)
+        public BoundServiceManager BoundServiceManager { get; }
+        public Logger Logger { get; }
+        public objectCaching objectCaching { get; private set; }
+        public machoNet machoNet { get; private set; }
+        public alert alert { get; private set; }
+        public authentication authentication { get; private set; }
+        public character character { get; private set; }
+        public userSvc userSvc { get; private set; }
+        public charmgr charmgr { get; private set; }
+        public config config { get; private set; }
+        public dogmaIM dogmaIM { get; private set; }
+        public invbroker invbroker { get; private set; }
+        public warRegistry warRegistry { get; private set; }
+        public station station { get; private set; }
+        public map map { get; private set; }
+        public account account { get; private set; }
+        public skillMgr skillMgr { get; private set; }
+        public contractMgr contractMgr { get; private set; }
+        public corpStationMgr corpStationMgr { get; private set; }
+        public bookmark bookmark { get; private set; }
+        public LSC LSC { get; private set; }
+        public onlineStatus onlineStatus { get; private set; }
+        public billMgr billMgr { get; private set; }
+        public facWarMgr facWarMgr { get; private set; }
+        public corporationSvc corporationSvc { get; private set; }
+        public clientStatsMgr clientStatsMgr { get; private set; }
+        public voiceMgr voiceMgr { get; private set; }
+        public standing2 standing2 { get; private set; }
+        public tutorialSvc tutorialSvc { get; private set; }
+        public agentMgr agentMgr { get; private set; }
+        public corpRegistry corpRegistry { get; private set; }
+        public marketProxy marketProxy { get; private set; }
+        public stationSvc stationSvc { get; private set; }
+        public certificateMgr certificateMgr { get; private set; }
+        public jumpCloneSvc jumpCloneSvc { get; private set; }
+        
+        public ServiceManager(
+            NodeContainer container, CacheStorage storage, Logger logger, BoundServiceManager boundServiceManager,
+            machoNet machoNet,
+            objectCaching objectCaching,
+            alert alert,
+            authentication authentication,
+            character character,
+            userSvc userSvc,
+            charmgr charmgr,
+            config config,
+            dogmaIM dogmaIM,
+            invbroker invbroker,
+            warRegistry warRegistry,
+            station station,
+            map map,
+            account account,
+            skillMgr skillMgr,
+            contractMgr contractMgr,
+            corpStationMgr corpStationMgr,
+            bookmark bookmark,
+            LSC LSC,
+            onlineStatus onlineStatus,
+            billMgr billMgr,
+            facWarMgr facWarMgr,
+            corporationSvc corporationSvc,
+            clientStatsMgr clientStatsMgr,
+            voiceMgr voiceMgr,
+            standing2 standing2,
+            tutorialSvc tutorialSvc,
+            agentMgr agentMgr,
+            corpRegistry corpRegistry,
+            marketProxy marketProxy,
+            stationSvc stationSvc,
+            certificateMgr certificateMgr,
+            jumpCloneSvc jumpCloneSvc)
         {
             this.Container = container;
-            this.mDatabaseConnection = db;
             this.CacheStorage = storage;
-
-            // initialize services
-            this.machoNet = new machoNet(this);
-            this.objectCaching = new objectCaching(container.Logger, this);
-            this.alert = new alert(container.Logger, this);
-            this.authentication = new authentication(configuration.Authentication, this);
-            this.character = new character(db, configuration.Character, this);
-            this.userSvc = new userSvc(this);
-            this.charmgr = new charmgr(db, this);
-            this.config = new config(db, this);
-            this.dogmaIM = new dogmaIM(this);
-            this.invbroker = new invbroker(this);
-            this.warRegistry = new warRegistry(this);
-            this.station = new station(this);
-            this.map = new map(this);
-            this.account = new account(db, this);
-            this.skillMgr = new skillMgr(this);
-            this.contractMgr = new contractMgr(db, this);
-            this.corpStationMgr = new corpStationMgr(this);
-            this.bookmark = new bookmark(db, this);
-            this.LSC = new LSC(db, this);
-            this.onlineStatus = new onlineStatus(this);
-            this.billMgr = new billMgr(this);
-            this.facWarMgr = new facWarMgr(this);
-            this.corporationSvc = new corporationSvc(db, this);
-            this.clientStatsMgr = new clientStatsMgr(this);
-            this.voiceMgr = new voiceMgr(this);
-            this.standing2 = new standing2(db, this);
-            this.tutorialSvc = new tutorialSvc(this);
-            this.agentMgr = new agentMgr(db, this);
-            this.corpRegistry = new corpRegistry(db, this);
-            this.marketProxy = new marketProxy(db, this);
-            this.stationSvc = new stationSvc(db, this);
-            this.certificateMgr = new certificateMgr(db, this);
-            this.jumpCloneSvc = new jumpCloneSvc(this);
+            this.BoundServiceManager = boundServiceManager;
+            this.Logger = logger;
+            
+            // store all the services
+            this.machoNet = machoNet;
+            this.objectCaching = objectCaching;
+            this.alert = alert;
+            this.authentication = authentication;
+            this.character = character;
+            this.userSvc = userSvc;
+            this.charmgr = charmgr;
+            this.config = config;
+            this.dogmaIM = dogmaIM;
+            this.invbroker = invbroker;
+            this.warRegistry = warRegistry;
+            this.station = station;
+            this.map = map;
+            this.account = account;
+            this.skillMgr = skillMgr;
+            this.contractMgr = contractMgr;
+            this.corpStationMgr = corpStationMgr;
+            this.bookmark = bookmark;
+            this.LSC = LSC;
+            this.onlineStatus = onlineStatus;
+            this.billMgr = billMgr;
+            this.facWarMgr = facWarMgr;
+            this.corporationSvc = corporationSvc;
+            this.clientStatsMgr = clientStatsMgr;
+            this.voiceMgr = voiceMgr;
+            this.standing2 = standing2;
+            this.tutorialSvc = tutorialSvc;
+            this.agentMgr = agentMgr;
+            this.corpRegistry = corpRegistry;
+            this.marketProxy = marketProxy;
+            this.stationSvc = stationSvc;
+            this.certificateMgr = certificateMgr;
+            this.jumpCloneSvc = jumpCloneSvc;
         }
     }
 }

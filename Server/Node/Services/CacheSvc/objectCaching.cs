@@ -27,17 +27,19 @@ using Common.Services;
 using PythonTypes.Types.Complex;
 using PythonTypes.Types.Exceptions;
 using PythonTypes.Types.Primitives;
+using SimpleInjector;
 
 namespace Node.Services.CacheSvc
 {
     public class objectCaching : Service
     {
         private Channel Log { get; }
+        private CacheStorage CacheStorage { get; }
 
-        public objectCaching(Logger logger, ServiceManager manager)
-            : base(manager)
+        public objectCaching(CacheStorage cacheStorage, Logger logger)
         {
             this.Log = logger.CreateLogChannel("objectCaching");
+            this.CacheStorage = cacheStorage;
         }
         
         public PyDataType GetCachableObject(PyInteger shared, PyTuple objectID, PyTuple objectVersion, PyInteger nodeID, PyDictionary namedPayload, Client client)
@@ -57,7 +59,7 @@ namespace Node.Services.CacheSvc
             string service = callInformation[0] as PyString;
             string method = callInformation[1] as PyString;
             
-            return this.ServiceManager.CacheStorage.Get(service, method);
+            return this.CacheStorage.Get(service, method);
         }
 
         public PyDataType GetCachableObject(PyInteger shared, PyString objectID, PyTuple objectVersion, PyInteger nodeID, PyDictionary namedPayload, Client client)
@@ -65,7 +67,7 @@ namespace Node.Services.CacheSvc
             // TODO: CHECK CACHEOK EXCEPTION ON CLIENT
             Log.Debug($"Received cache request for {objectID.Value}");
 
-            return this.ServiceManager.CacheStorage.Get(objectID);
+            return this.CacheStorage.Get(objectID);
         }
     }
 }

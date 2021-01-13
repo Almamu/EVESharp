@@ -1,10 +1,12 @@
+using Common.Services;
 using PythonTypes.Types.Primitives;
+using SimpleInjector;
 
 namespace Node.Services.Network
 {
     public class clientStatsMgr : Service
     {
-        public clientStatsMgr(ServiceManager manager) : base(manager)
+        public clientStatsMgr()
         {
         }
 

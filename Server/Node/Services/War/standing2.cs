@@ -1,18 +1,22 @@
 using Common.Database;
+using Common.Services;
 using Node.Database;
 using PythonTypes.Types.Complex;
 using PythonTypes.Types.Exceptions;
 using PythonTypes.Types.Primitives;
+using SimpleInjector;
 
 namespace Node.Services.War
 {
     public class standing2 : Service
     {
-        private StandingDB mDB = null;
+        private StandingDB DB { get; }
+        private CacheStorage CacheStorage { get; }
         
-        public standing2(DatabaseConnection db, ServiceManager manager) : base(manager)
+        public standing2(CacheStorage cacheStorage, StandingDB db)
         {
-            this.mDB = new StandingDB(db);
+            this.CacheStorage = cacheStorage;
+            this.DB = db;
         }
 
         public PyDataType GetMyKillRights(PyDictionary namedPayload, Client client)
@@ -28,14 +32,14 @@ namespace Node.Services.War
 
         public PyDataType GetNPCNPCStandings(PyDictionary namedPayload, Client client)
         {
-            this.ServiceManager.CacheStorage.Load(
+            this.CacheStorage.Load(
                 "standing2",
                 "GetNPCNPCStandings",
                 "SELECT fromID, toID, standing FROM npcStandings",
                 CacheStorage.CacheObjectType.Rowset
             );
 
-            PyDataType cacheHint = this.ServiceManager.CacheStorage.GetHint("standing2", "GetNPCNPCStandings");
+            PyDataType cacheHint = this.CacheStorage.GetHint("standing2", "GetNPCNPCStandings");
 
             return PyCacheMethodCallResult.FromCacheHint(cacheHint);
         }
@@ -47,16 +51,16 @@ namespace Node.Services.War
 
             return new PyTuple(new PyDataType[]
             {
-                this.mDB.GetCharStandings((int) client.CharacterID),
-                this.mDB.GetCharPrime((int) client.CharacterID),
-                this.mDB.GetCharNPCStandings((int) client.CharacterID)
+                this.DB.GetCharStandings((int) client.CharacterID),
+                this.DB.GetCharPrime((int) client.CharacterID),
+                this.DB.GetCharNPCStandings((int) client.CharacterID)
             });
         }
 
         public PyDataType GetStandingTransactions(PyInteger from, PyInteger to, PyInteger direction, PyInteger eventID,
             PyInteger eventTypeID, PyInteger eventDateTime, PyDictionary namedPayload, Client client)
         {
-            return this.mDB.GetStandingTransactions(from, to, direction, eventID, eventTypeID, eventDateTime);
+            return this.DB.GetStandingTransactions(from, to, direction, eventID, eventTypeID, eventDateTime);
         }
     }
 }

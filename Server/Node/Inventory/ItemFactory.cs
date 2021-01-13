@@ -23,53 +23,59 @@
 */
 
 using Node.Database;
+using SimpleInjector;
 
 namespace Node.Inventory
 {
     public class ItemFactory
     {
         public NodeContainer Container { get; }
-        public AttributeManager AttributeManager { get; }
-        public ItemManager ItemManager { get; }
-        public CategoryManager CategoryManager { get; }
-        public GroupManager GroupManager { get; }
-        public TypeManager TypeManager { get; }
-        public StationManager StationManager { get; }
-        public ItemDB ItemDB { get; }
-        public SkillDB SkillDB { get; }
-        public CharacterDB CharacterDB { get; }
-        public StationDB StationDB { get; }
-        public MarketDB MarketDB { get; }
+        public AttributeManager AttributeManager { get; private set; }
+        public ItemManager ItemManager { get; private set; }
+        public CategoryManager CategoryManager { get; private set; }
+        public GroupManager GroupManager { get; private set; }
+        public TypeManager TypeManager { get; private set; }
+        public StationManager StationManager { get; private set; }
+        public ItemDB ItemDB { get; private set; }
+        public SkillDB SkillDB { get; private set; }
+        public CharacterDB CharacterDB { get; private set; }
+        public StationDB StationDB { get; private set; }
+        public MarketDB MarketDB { get; private set; }
         
-        public ItemFactory(NodeContainer container)
+        private Container DependencyInjection { get; }
+        
+        public ItemFactory(NodeContainer container, Container dependencyInjection)
         {
+            this.DependencyInjection = dependencyInjection;
             this.Container = container;
-            this.ItemDB = new ItemDB(container.Database, this);
-            this.SkillDB = new SkillDB(container.Database, this);
-            this.CharacterDB = new CharacterDB(container.Database, this);
-            this.StationDB = new StationDB(container.Database);
-            this.MarketDB = new MarketDB(container.Database);
-            
-            // station manager goes first
-            this.StationManager = new StationManager(this);
-            // attribute manager goes first
-            this.AttributeManager = new AttributeManager(this);
-            // category manager goes first
-            this.CategoryManager = new CategoryManager(this);
-            // then groups
-            this.GroupManager = new GroupManager(this);
-            // then the type manager
-            this.TypeManager = new TypeManager(this);
-            // finally the item manager
-            this.ItemManager = new ItemManager(this);
         }
 
         public void Init()
         {
+            this.ItemDB = this.DependencyInjection.GetInstance<ItemDB>();
+            this.SkillDB = this.DependencyInjection.GetInstance<SkillDB>();
+            this.CharacterDB = this.DependencyInjection.GetInstance<CharacterDB>();
+            this.StationDB = this.DependencyInjection.GetInstance<StationDB>();
+            this.MarketDB = this.DependencyInjection.GetInstance<MarketDB>();
+            
+            // station manager goes first
+            this.StationManager = this.DependencyInjection.GetInstance<StationManager>();
+            // attribute manager goes first
+            this.AttributeManager = this.DependencyInjection.GetInstance<AttributeManager>();
+            // category manager goes first
+            this.CategoryManager = this.DependencyInjection.GetInstance<CategoryManager>();
+            // then groups
+            this.GroupManager = this.DependencyInjection.GetInstance<GroupManager>();
+            // then the type manager
+            this.TypeManager = this.DependencyInjection.GetInstance<TypeManager>();
+            // finally the item manager
+            this.ItemManager = this.DependencyInjection.GetInstance<ItemManager>();
+
             this.AttributeManager.Load();
             this.CategoryManager.Load();
             this.GroupManager.Load();
             this.TypeManager.Load();
+            this.StationManager.Load();
             this.ItemManager.Load();
         }
     }

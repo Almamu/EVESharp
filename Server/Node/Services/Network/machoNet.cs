@@ -25,19 +25,21 @@
 using System;
 using Common.Services;
 using PythonTypes.Types.Primitives;
+using SimpleInjector;
 
 namespace Node.Services.Network
 {
     public class machoNet : Service
     {
-        public machoNet(ServiceManager manager)
-            : base(manager)
+        private CacheStorage CacheStorage { get; }
+        public machoNet(CacheStorage cacheStorage)
         {
+            this.CacheStorage = cacheStorage;
         }
 
         public PyDataType GetInitVals(PyDictionary namedPayload, Client client)
         {
-            if (this.ServiceManager.CacheStorage.Exists("machoNet.serviceInfo") == false)
+            if (this.CacheStorage.Exists("machoNet.serviceInfo") == false)
             {
                 // Cache does not exists, create it
                 PyDictionary dict = new PyDictionary();
@@ -133,12 +135,12 @@ namespace Node.Services.Network
                 dict["onlineStatus"] = new PyNone();
                 dict["gangSvcObjectHandler"] = new PyNone();
 
-                this.ServiceManager.CacheStorage.Store("machoNet.serviceInfo", dict, DateTime.UtcNow.ToFileTimeUtc());
+                this.CacheStorage.Store("machoNet.serviceInfo", dict, DateTime.UtcNow.ToFileTimeUtc());
             }
 
-            PyDataType srvInfo = this.ServiceManager.CacheStorage.GetHint("machoNet.serviceInfo");
+            PyDataType srvInfo = this.CacheStorage.GetHint("machoNet.serviceInfo");
             PyTuple res = new PyTuple(2);
-            PyDictionary initvals = this.ServiceManager.CacheStorage.GetHints(CacheStorage.LoginCacheTable);
+            PyDictionary initvals = this.CacheStorage.GetHints(CacheStorage.LoginCacheTable);
 
             res[0] = srvInfo;
             res[1] = initvals;

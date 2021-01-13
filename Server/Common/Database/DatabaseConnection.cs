@@ -37,9 +37,18 @@ namespace Common.Database
         private readonly string mConnectionString = "";
         private readonly Queue<string> mQueryQueue = new Queue<string>();
 
-        public DatabaseConnection(string connectionString, Logger logger)
+        public DatabaseConnection(Configuration.Database configuration, Logger logger)
         {
-            this.mConnectionString = connectionString;
+            
+            MySqlConnectionStringBuilder stringBuilder = new MySqlConnectionStringBuilder();
+
+            stringBuilder.Server = configuration.Hostname;
+            stringBuilder.Database = configuration.Name;
+            stringBuilder.UserID = configuration.Username;
+            stringBuilder.Password = configuration.Password;
+            stringBuilder.MinimumPoolSize = 10;
+
+            this.mConnectionString = stringBuilder.ToString();
             this.Log = logger.CreateLogChannel("Database");
         }
 
@@ -526,19 +535,6 @@ namespace Common.Database
             {
                 this.mQueryQueue.Enqueue(query);
             }
-        }
-
-        public static DatabaseConnection FromConfiguration(Configuration.Database configuration, Logger logger)
-        {
-            MySqlConnectionStringBuilder stringBuilder = new MySqlConnectionStringBuilder();
-
-            stringBuilder.Server = configuration.Hostname;
-            stringBuilder.Database = configuration.Name;
-            stringBuilder.UserID = configuration.Username;
-            stringBuilder.Password = configuration.Password;
-            stringBuilder.MinimumPoolSize = 10;
-
-            return new DatabaseConnection(stringBuilder.ToString(), logger);
         }
     }
 }

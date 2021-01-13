@@ -31,19 +31,19 @@ namespace Node.Inventory
 {
     public class GroupManager
     {
-        public ItemFactory ItemFactory { get; }
+        private ItemDB ItemDB { get; }
         private Dictionary<int, ItemGroup> mGroups = null;
 
         public void Load()
         {
-            this.mGroups = this.ItemFactory.ItemDB.LoadItemGroups();
+            this.mGroups = this.ItemDB.LoadItemGroups();
         }
 
         public ItemGroup this[int id] { get => this.mGroups[id]; }
 
-        public GroupManager(ItemFactory factory)
+        public GroupManager(ItemDB itemDB)
         {
-            this.ItemFactory = factory;
+            this.ItemDB = itemDB;
         }
     }
 }

@@ -1,8 +1,11 @@
 using Common.Database;
+using Common.Logging;
 using Node.Database;
+using Node.Inventory;
 using Node.Inventory.Items.Types;
 using PythonTypes.Types.Exceptions;
 using PythonTypes.Types.Primitives;
+using SimpleInjector;
 
 namespace Node.Services.Corporations
 {
@@ -14,20 +17,23 @@ namespace Node.Services.Corporations
         public Corporation Corporation => this.mCorporation;
         public int IsMaster => this.mIsMaster;
 
-        private CorporationDB mDB = null;
-        public corpRegistry(DatabaseConnection db, ServiceManager manager) : base(manager)
+        private CorporationDB DB { get; }
+        private ItemManager ItemManager { get; }
+        public corpRegistry(CorporationDB db, ItemManager itemManager, BoundServiceManager manager, Logger logger) : base(manager, logger)
         {
-            this.mDB = new CorporationDB(db);
+            this.DB = db;
+            this.ItemManager = itemManager;
         }
 
-        public corpRegistry(CorporationDB db, Corporation corp, int isMaster, ServiceManager manager) : base (manager)
+        protected corpRegistry(CorporationDB db, ItemManager itemManager, Corporation corp, int isMaster, BoundServiceManager manager, Logger logger) : base (manager, logger)
         {
-            this.mDB = db;
+            this.DB = db;
+            this.ItemManager = itemManager;
             this.mCorporation = corp;
             this.mIsMaster = isMaster;
         }
 
-        protected override Service CreateBoundInstance(PyDataType objectData)
+        protected override BoundService CreateBoundInstance(PyDataType objectData)
         {
             PyTuple data = objectData as PyTuple;
             
@@ -35,16 +41,15 @@ namespace Node.Services.Corporations
              * objectData[0] => corporationID
              * objectData[1] => isMaster
              */
-            Corporation corp =
-                this.ServiceManager.Container.ItemFactory.ItemManager.LoadItem(data[0] as PyInteger) as Corporation;
+            Corporation corp = this.ItemManager.LoadItem(data[0] as PyInteger) as Corporation;
             
-            return new corpRegistry(this.mDB, corp, data[1] as PyInteger, this.ServiceManager);
+            return new corpRegistry(this.DB, this.ItemManager, corp, data[1] as PyInteger, this.BoundServiceManager, this.Log.Logger);
         }
 
         public PyDataType GetEveOwners(PyDictionary namedPayload, Client client)
         {
             // this call seems to be getting all the members of the given corporationID
-            return this.mDB.GetEveOwners(this.Corporation.ID);
+            return this.DB.GetEveOwners(this.Corporation.ID);
         }
 
         public PyDataType GetCorporation(PyDictionary namedPayload, Client client)
@@ -57,7 +62,7 @@ namespace Node.Services.Corporations
             if (client.CharacterID == null)
                 throw new UserError("NoCharacterSelected");
             
-            return this.mDB.GetSharesByShareholder((int) client.CharacterID);
+            return this.DB.GetSharesByShareholder((int) client.CharacterID);
         }
     }
 }

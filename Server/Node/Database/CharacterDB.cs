@@ -17,13 +17,13 @@ namespace Node.Database
 {
     public class CharacterDB : DatabaseAccessor
     {
-        private readonly ItemFactory mItemFactory = null;
-        private readonly ItemDB mItemDB = null;
+        private ItemDB ItemDB { get; }
+        private TypeManager TypeManager { get; }
         
-        public CharacterDB(DatabaseConnection db, ItemFactory factory) : base(db)
+        public CharacterDB(DatabaseConnection db, ItemDB itemDB, TypeManager typeManager) : base(db)
         {
-            this.mItemFactory = factory;
-            this.mItemDB = new ItemDB(db, factory);
+            this.TypeManager = typeManager;
+            this.ItemDB = itemDB;
         }
 
         public PyDataType GetCharacterList(int accountID)
@@ -141,13 +141,13 @@ namespace Node.Database
                 {
                     Bloodline bloodline = new Bloodline(
                         reader.GetInt32(0),
-                        this.mItemFactory.TypeManager[reader.GetInt32(1)],
+                        this.TypeManager[reader.GetInt32(1)],
                         reader.GetString(2),
                         reader.GetInt32(3),
                         reader.GetString(4),
                         reader.GetString(5),
                         reader.GetString(6),
-                        this.mItemFactory.TypeManager[reader.GetInt32(7)],
+                        this.TypeManager[reader.GetInt32(7)],
                         reader.GetInt32(8),
                         reader.GetInt32(9),
                         reader.GetInt32(10),
@@ -216,7 +216,7 @@ namespace Node.Database
             double? morph4S, double? morph4W, int stationID, int solarSystemID, int constellationID, int regionID)
         {
             // create the item first
-            int itemID = (int) this.mItemDB.CreateItem(name, from.ID, owner.ID, stationID, ItemFlags.Connected, false,
+            int itemID = (int) this.ItemDB.CreateItem(name, from.ID, owner.ID, stationID, ItemFlags.Connected, false,
                 true, 1, 0, 0, 0, "");
 
             // now create the character record in the database

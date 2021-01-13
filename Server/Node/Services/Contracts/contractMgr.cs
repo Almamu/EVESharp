@@ -1,17 +1,19 @@
 using Common.Database;
+using Common.Services;
 using Node.Database;
 using PythonTypes.Types.Exceptions;
 using PythonTypes.Types.Primitives;
+using SimpleInjector;
 
 namespace Node.Services.Contracts
 {
     public class contractMgr : Service
     {
-        private ContractDB mDB = null;
+        private ContractDB DB { get; }
         
-        public contractMgr(DatabaseConnection db, ServiceManager manager) : base(manager)
+        public contractMgr(ContractDB db)
         {
-            this.mDB = new ContractDB(db);
+            this.DB = db;
         }
 
         public PyDataType NumRequiringAttention(PyDictionary namedPayload, Client client)

@@ -19,12 +19,13 @@ namespace Common.Logging
         private readonly Dictionary<string, Channel> mChannels = new Dictionary<string, Channel>();
         private Configuration.Logging mConfiguration = new Configuration.Logging();
 
-        public Logger(Configuration.Logging configuration = null)
+        public Logger(Configuration.Logging configuration)
         {
             if (configuration != null)
                 this.mConfiguration = configuration;
         }
 
+        // TODO: REMOVE THIS METHOD WHEN CLUSTER AND NODE USE DEPENDENCY INJECTION
         public void SetConfiguration(Configuration.Logging configuration)
         {
             if (configuration != null)

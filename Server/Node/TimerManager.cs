@@ -50,7 +50,7 @@ namespace Node
 
         private void Run()
         {
-            this.Log.Info("Timer thread started");
+            Log.Info("Timer thread started");
 
             try
             {

@@ -3,24 +3,26 @@ using System.Runtime.InteropServices;
 using System.Xml.XPath;
 using Common.Database;
 using Common.Logging;
+using Common.Services;
 using Node.Database;
 using PythonTypes.Types.Database;
 using PythonTypes.Types.Exceptions;
 using PythonTypes.Types.Primitives;
+using SimpleInjector;
 
 namespace Node.Services.Chat
 {
     public class LSC : Service
     {
-        private MessagesDB mMessagesDB = null;
-        private ChatDB mDB = null;
+        private MessagesDB MessagesDB { get; }
+        private ChatDB DB { get; }
         private Channel Log;
         
-        public LSC(DatabaseConnection db, ServiceManager manager) : base(manager)
+        public LSC(ChatDB db, MessagesDB messagesDB, Logger logger)
         {
-            this.mDB = new ChatDB(db);
-            this.mMessagesDB = new MessagesDB(db);
-            this.Log = this.ServiceManager.Container.Logger.CreateLogChannel("LSC");
+            this.DB = db;
+            this.MessagesDB = messagesDB;
+            this.Log = logger.CreateLogChannel("LSC");
         }
 
         public PyDataType GetChannels(PyDictionary namedPayload, Client client)
@@ -28,7 +30,7 @@ namespace Node.Services.Chat
             if (client.CharacterID == null)
                 throw new UserError("NoCharacterSelected");
 
-            return this.mDB.GetChannelsForCharacter((int) client.CharacterID);
+            return this.DB.GetChannelsForCharacter((int) client.CharacterID);
         }
 
         public PyDataType GetChannels(PyInteger reload, PyDictionary namedPayload, Client client)
@@ -82,9 +84,9 @@ namespace Node.Services.Chat
 
                 try
                 {
-                    Rowset mods = this.mDB.GetChannelMods(channelID);
-                    Rowset chars = this.mDB.GetChannelMembers(channelID);
-                    PyDataType info = this.mDB.GetChannelInfo(channelID, (int) client.CharacterID);
+                    Rowset mods = this.DB.GetChannelMods(channelID);
+                    Rowset chars = this.DB.GetChannelMembers(channelID);
+                    PyDataType info = this.DB.GetChannelInfo(channelID, (int) client.CharacterID);
                 
                     // the extra field is at the end
                     int extraIndex = chars.Header.Count - 1;
@@ -93,7 +95,7 @@ namespace Node.Services.Chat
                     foreach (PyList row in chars.Rows)
                     {
                         // fill it with information
-                        row[extraIndex] = this.mDB.GetExtraInfo(row[0] as PyInteger);
+                        row[extraIndex] = this.DB.GetExtraInfo(row[0] as PyInteger);
                     }
 
                     notifications.Add(new PyTuple(new PyDataType[]
@@ -117,7 +119,7 @@ namespace Node.Services.Chat
             if (client.CharacterID == null)
                 throw new UserError("NoCharacterSelected");
             
-            return this.mMessagesDB.GetMailHeaders((int) client.CharacterID);
+            return this.MessagesDB.GetMailHeaders((int) client.CharacterID);
         }
         
         public PyDataType GetRookieHelpChannel(PyDictionary namedPayload, Client client)

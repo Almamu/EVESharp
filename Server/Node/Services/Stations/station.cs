@@ -1,14 +1,19 @@
 using System.Collections.Generic;
+using Common.Services;
+using Node.Inventory;
 using Node.Inventory.Items.Types;
 using PythonTypes.Types.Exceptions;
 using PythonTypes.Types.Primitives;
+using SimpleInjector;
 
 namespace Node.Services.Stations
 {
     public class station : Service
     {
-        public station(ServiceManager manager) : base(manager)
+        private ItemManager ItemManager { get; }
+        public station(ItemManager itemManager) 
         {
+            this.ItemManager = itemManager;
         }
 
         public PyDataType GetStationItemBits(PyDictionary namedPayload, Client client)
@@ -16,8 +21,7 @@ namespace Node.Services.Stations
             if (client.StationID == null)
                 throw new UserError("CanOnlyDoInStations");
 
-            Station station =
-                this.ServiceManager.Container.ItemFactory.ItemManager.LoadItem((int) client.StationID) as Station;
+            Station station = this.ItemManager.LoadItem((int) client.StationID) as Station;
 
             PyTuple result = new PyTuple(5);
 
@@ -35,7 +39,7 @@ namespace Node.Services.Stations
             if (client.StationID == null)
                 throw new UserError("CanOnlyDoInStations");
 
-            Station station = this.ServiceManager.Container.ItemFactory.ItemManager.Stations[(int) client.StationID];
+            Station station = this.ItemManager.Stations[(int) client.StationID];
             PyList result = new PyList();
             
             foreach (KeyValuePair<int, Character> pair in station.Guests)

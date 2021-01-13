@@ -1,18 +1,20 @@
 ﻿using System.Threading;
 using Common.Database;
+using Common.Services;
 using Node.Database;
 using PythonTypes.Types.Exceptions;
 using PythonTypes.Types.Primitives;
+using SimpleInjector;
 
 namespace Node.Services.Market
 {
     public class marketProxy : Service
     {
-        private MarketDB mDB = null;
+        private MarketDB DB { get; }
         
-        public marketProxy(DatabaseConnection db, ServiceManager manager) : base(manager)
+        public marketProxy(MarketDB db)
         {
-            this.mDB = new MarketDB(db);
+            this.DB = db;
         }
 
         public PyDataType CharGetNewTransactions(PyInteger sellBuy, PyInteger typeID, PyNone clientID,
@@ -37,7 +39,7 @@ namespace Node.Services.Market
                 }
             }
             
-            return this.mDB.CharGetNewTransactions(
+            return this.DB.CharGetNewTransactions(
                 (int) client.CharacterID, clientID, transactionType, typeID as PyInteger, quantity, minPrice
             );
         }
@@ -47,7 +49,7 @@ namespace Node.Services.Market
             if (client.CharacterID == null)
                 throw new UserError("NoCharacterSelected");
 
-            return this.mDB.GetCharOrders((int) client.CharacterID);
+            return this.DB.GetCharOrders((int) client.CharacterID);
         }
     }
 }

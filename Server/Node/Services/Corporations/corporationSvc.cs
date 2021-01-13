@@ -1,39 +1,41 @@
 using Common.Database;
+using Common.Services;
 using Node.Database;
 using PythonTypes.Types.Exceptions;
 using PythonTypes.Types.Primitives;
+using SimpleInjector;
 
 namespace Node.Services.Corporations
 {
     public class corporationSvc : Service
     {
-        private CorporationDB mDB = null;
+        private CorporationDB DB { get; }
         
-        public corporationSvc(DatabaseConnection db, ServiceManager manager) : base(manager)
+        public corporationSvc(CorporationDB db)
         {
-            this.mDB = new CorporationDB(db);
+            this.DB = db;
         }
 
         public PyDataType GetFactionInfo(PyDictionary namedPayload, Client client)
         {
             return new PyTuple(new PyDataType[]
             {
-                this.mDB.ListAllCorpFactions(), this.mDB.ListAllFactionRegions(), this.mDB.ListAllFactionConstellations(),
-                this.mDB.ListAllFactionSolarSystems(), this.mDB.ListAllFactionRaces(), this.mDB.ListAllFactionStationCount(),
-                this.mDB.ListAllFactionSolarSystemCount(), this.mDB.ListAllNPCCorporationInfo()
+                this.DB.ListAllCorpFactions(), this.DB.ListAllFactionRegions(), this.DB.ListAllFactionConstellations(),
+                this.DB.ListAllFactionSolarSystems(), this.DB.ListAllFactionRaces(), this.DB.ListAllFactionStationCount(),
+                this.DB.ListAllFactionSolarSystemCount(), this.DB.ListAllNPCCorporationInfo()
             });
         }
 
         public PyDataType GetNPCDivisions(PyDictionary namedPayload, Client client)
         {
-            return this.mDB.GetNPCDivisions();
+            return this.DB.GetNPCDivisions();
         }
 
         public PyDataType GetMedalsReceived(PyInteger characterID, PyDictionary namedPayload, Client client)
         {
             return new PyTuple(new PyDataType[]
                 {
-                    this.mDB.GetMedalsReceived(characterID),
+                    this.DB.GetMedalsReceived(characterID),
                     new PyList() // medal data, rowset medalID, part, layer, graphic, color
                 }
             );
@@ -41,7 +43,7 @@ namespace Node.Services.Corporations
 
         public PyDataType GetEmploymentRecord(PyInteger characterID, PyDictionary namedPayload, Client client)
         {
-            return this.mDB.GetEmploymentRecord(characterID);
+            return this.DB.GetEmploymentRecord(characterID);
         }
     }
 }

@@ -24,6 +24,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using Common.Database;
 using MySql.Data.MySqlClient;
 using Node.Inventory;
@@ -39,7 +40,14 @@ namespace Node.Database
 {
     public class ItemDB : DatabaseAccessor
     {
-        private ItemFactory mItemFactory = null;
+        private ItemFactory ItemFactory { get; }
+        private ClientManager ClientManager { get; }
+        private TimerManager TimerManager { get; }
+        private AttributeManager AttributeManager => this.ItemFactory.AttributeManager;
+        private GroupManager GroupManager => this.ItemFactory.GroupManager;
+        private CategoryManager CategoryManager => this.ItemFactory.CategoryManager;
+        private TypeManager TypeManager => this.ItemFactory.TypeManager;
+        private StationManager StationManager => this.ItemFactory.StationManager;
 
         public Dictionary<int, ItemCategory> LoadItemCategories()
         {
@@ -90,14 +98,14 @@ namespace Node.Database
                     
                     Dictionary<int, ItemAttribute> defaultAttributes = null;
 
-                    if (this.mItemFactory.AttributeManager.DefaultAttributes.ContainsKey(typeID) == true)
-                        defaultAttributes = this.mItemFactory.AttributeManager.DefaultAttributes[typeID];
+                    if (this.AttributeManager.DefaultAttributes.ContainsKey(typeID) == true)
+                        defaultAttributes = this.AttributeManager.DefaultAttributes[typeID];
                     else
                         defaultAttributes = new Dictionary<int, ItemAttribute>();
                     
                     ItemType type = new ItemType(
                         typeID,
-                        this.mItemFactory.GroupManager[reader.GetInt32(1)],
+                        this.GroupManager[reader.GetInt32(1)],
                         reader.GetString(2),
                         reader.GetString(3),
                         reader.IsDBNull(4) ? 0 : reader.GetInt32(4),
@@ -138,7 +146,7 @@ namespace Node.Database
                 {
                     ItemGroup group = new ItemGroup(
                         reader.GetInt32(0),
-                        this.mItemFactory.CategoryManager[reader.GetInt32(1)],
+                        this.CategoryManager[reader.GetInt32(1)],
                         reader.GetString(2),
                         reader.GetString(3),
                         reader.IsDBNull(4) ? 0 : reader.GetInt32(4),
@@ -225,14 +233,14 @@ namespace Node.Database
                     if (reader.IsDBNull(2) == false)
                     {
                         attribute = new ItemAttribute(
-                            this.mItemFactory.AttributeManager[reader.GetInt32(1)],
+                            this.AttributeManager[reader.GetInt32(1)],
                             reader.GetInt32(2)
                         );
                     }
                     else
                     {
                         attribute = new ItemAttribute(
-                            this.mItemFactory.AttributeManager[reader.GetInt32(1)],
+                            this.AttributeManager[reader.GetInt32(1)],
                             reader.GetDouble(3)
                         );
                     }
@@ -269,7 +277,7 @@ namespace Node.Database
 
         private Item BuildItemFromReader(MySqlDataReader reader)
         {
-            ItemType itemType = this.mItemFactory.TypeManager[reader.GetInt32(2)];
+            ItemType itemType = this.TypeManager[reader.GetInt32(2)];
             Item newItem = new Item(
                 reader.GetString(1), // itemName
                 reader.GetInt32(0), // itemID
@@ -285,11 +293,11 @@ namespace Node.Database
                 reader.GetDouble(11), // z
                 reader.IsDBNull(12) ? null : reader.GetString(12), // customInfo
                 new AttributeList(
-                    this.mItemFactory,
+                    this.ItemFactory,
                     itemType,
                     this.LoadAttributesForItem(reader.GetInt32(0))
                 ), 
-                this.mItemFactory
+                this.ItemFactory
             );
 
             return newItem;
@@ -535,6 +543,8 @@ namespace Node.Database
                     return null;
                 
                 return new Character(
+                    this.ClientManager,
+                    this.TimerManager,
                     item,
                     reader.GetInt32(0),
                     reader.IsDBNull(1) ? 0 : reader.GetInt32(1),
@@ -669,8 +679,8 @@ namespace Node.Database
                     return null;
 
                 return new Station(
-                    this.mItemFactory.StationManager.StationTypes[item.Type.ID],
-                    this.mItemFactory.StationManager.Operations[reader.GetInt32(0)],
+                    this.StationManager.StationTypes[item.Type.ID],
+                    this.StationManager.Operations[reader.GetInt32(0)],
                     reader.GetInt32(1),
                     reader.GetDouble(2),
                     reader.GetDouble(3),
@@ -762,7 +772,7 @@ namespace Node.Database
 
                 while (reader.Read())
                 {
-                    items[reader.GetInt32(0)] = this.mItemFactory.ItemManager.LoadItem(reader.GetInt32(0));
+                    items[reader.GetInt32(0)] = this.ItemFactory.ItemManager.LoadItem(reader.GetInt32(0));
                 }
 
                 return items;
@@ -918,14 +928,14 @@ namespace Node.Database
                     if (reader.IsDBNull(1) == true)
                     {
                         attribute = new ItemAttribute(
-                            this.mItemFactory.AttributeManager[reader.GetInt32(0)],
+                            this.AttributeManager[reader.GetInt32(0)],
                             reader.GetDouble(2)
                         );
                     }
                     else
                     {
                         attribute = new ItemAttribute(
-                            this.mItemFactory.AttributeManager[reader.GetInt32(0)],
+                            this.AttributeManager[reader.GetInt32(0)],
                             reader.GetInt64(1)
                         );
                     }
@@ -1136,9 +1146,11 @@ namespace Node.Database
             );
         }
         
-        public ItemDB(DatabaseConnection db, ItemFactory factory) : base(db)
+        public ItemDB(DatabaseConnection db, ItemFactory factory, ClientManager clientManager, TimerManager timerManager) : base(db)
         {
-            this.mItemFactory = factory;
+            this.ItemFactory = factory;
+            this.ClientManager = clientManager;
+            this.TimerManager = timerManager;
         }
     }
 }

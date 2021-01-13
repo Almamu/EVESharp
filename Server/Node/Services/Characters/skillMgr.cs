@@ -1,13 +1,16 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Common.Logging;
 using Node.Database;
+using Node.Inventory;
 using Node.Inventory.Items;
 using Node.Inventory.Items.Attributes;
 using Node.Inventory.Items.Types;
 using PythonTypes.Marshal;
 using PythonTypes.Types.Exceptions;
 using PythonTypes.Types.Primitives;
+using SimpleInjector;
 
 namespace Node.Services.Characters
 {
@@ -16,14 +19,18 @@ namespace Node.Services.Characters
         private const int MAXIMUM_ATTRIBUTE_POINTS = 15;
         private const int MINIMUM_ATTRIBUTE_POINTS = 5;
         private const int MAXIMUM_TOTAL_ATTRIBUTE_POINTS = 39;
-        private SkillDB mDB = null;
+        private SkillDB DB { get; }
+        private ItemManager ItemManager { get; }
+        private TimerManager TimerManager { get; }
         
-        public skillMgr(ServiceManager manager) : base(manager)
+        public skillMgr(SkillDB db, ItemManager itemManager, TimerManager timerManager, BoundServiceManager manager, Logger logger) : base(manager, logger)
         {
-            this.mDB = new SkillDB(manager.Container.Database, manager.Container.ItemFactory);
+            this.DB = db;
+            this.ItemManager = itemManager;
+            this.TimerManager = timerManager;
         }
 
-        protected override Service CreateBoundInstance(PyDataType objectData)
+        protected override BoundService CreateBoundInstance(PyDataType objectData)
         {
             /*
              * objectData [0] => entityID (station or solar system)
@@ -31,7 +38,7 @@ namespace Node.Services.Characters
              */
             PyTuple tupleData = objectData as PyTuple;
             
-            return new skillMgr(this.ServiceManager);
+            return new skillMgr(this.DB, this.ItemManager, this.TimerManager, this.BoundServiceManager, this.Log.Logger);
         }
 
         public PyDataType GetSkillQueue(PyDictionary namedPayload, Client client)
@@ -39,8 +46,7 @@ namespace Node.Services.Characters
             if (client.CharacterID == null)
                 throw new UserError("NoCharacterSelected");
             
-            Character character =
-                this.ServiceManager.Container.ItemFactory.ItemManager.LoadItem((int) client.CharacterID) as Character;
+            Character character = this.ItemManager.LoadItem((int) client.CharacterID) as Character;
 
             PyList skillQueueList = new PyList(character.SkillQueue.Count);
 
@@ -57,7 +63,7 @@ namespace Node.Services.Characters
             if (client.CharacterID == null)
                 throw new UserError("NoCharacterSelected");
 
-            return this.mDB.GetSkillHistory((int) client.CharacterID);
+            return this.DB.GetSkillHistory((int) client.CharacterID);
         }
 
         public PyDataType SaveSkillQueue(PyList queue, PyDictionary namedPayload, Client client)
@@ -65,8 +71,7 @@ namespace Node.Services.Characters
             if (client.CharacterID == null)
                 throw new UserError("NoCharacterSelected");
 
-            Character character =
-                this.ServiceManager.Container.ItemFactory.ItemManager.LoadItem((int) client.CharacterID) as Character;
+            Character character = this.ItemManager.LoadItem((int) client.CharacterID) as Character;
 
             if (character.SkillQueue.Count > 0)
             {
@@ -93,7 +98,7 @@ namespace Node.Services.Characters
                 // remove all the timers associated with the current skillQueue and the expiry times
                 foreach (Character.SkillQueueEntry entry in character.SkillQueue)
                 {
-                    this.ServiceManager.Container.TimerManager.DequeueTimer(entry.Skill.ID, entry.Skill.ExpiryTime);
+                    this.TimerManager.DequeueTimer(entry.Skill.ID, entry.Skill.ExpiryTime);
                     entry.Skill.Flag = ItemFlags.Skill;
                     
                     client.NotifyItemChange(entry.Skill, ItemFlags.SkillInTraining, (int) entry.Skill.LocationID);
@@ -102,7 +107,7 @@ namespace Node.Services.Characters
                     client.NotifySkillTrainingStopped(entry.Skill);
 
                     // create history entry
-                    this.mDB.CreateSkillHistoryRecord(entry.Skill.Type, character, SkillHistoryReason.SkillTrainingCancelled,
+                    this.DB.CreateSkillHistoryRecord(entry.Skill.Type, character, SkillHistoryReason.SkillTrainingCancelled,
                         entry.Skill.Points);
                     
                     entry.Skill.ExpiryTime = 0;
@@ -147,7 +152,8 @@ namespace Node.Services.Characters
                 character.SkillQueue.Add(new Character.SkillQueueEntry() { Skill = skill, TargetLevel = level });
                 
                 // ensure the timer is present for this skill
-                this.ServiceManager.Container.TimerManager.EnqueueTimer(skill.ExpiryTime, character.SkillTrainingCompleted, skill.ID);
+                this.TimerManager.EnqueueTimer(skill.ExpiryTime, character.SkillTrainingCompleted, skill.ID);
+                
                 if (first == true)
                 {
                     skill.Flag = ItemFlags.SkillInTraining;
@@ -158,7 +164,7 @@ namespace Node.Services.Characters
                     client.NotifySkillStartTraining(skill);
                 
                     // create history entry
-                    this.mDB.CreateSkillHistoryRecord(skill.Type, character, SkillHistoryReason.SkillTrainingStarted,
+                    this.DB.CreateSkillHistoryRecord(skill.Type, character, SkillHistoryReason.SkillTrainingStarted,
                         skill.Points);
 
                     first = false;
@@ -178,8 +184,7 @@ namespace Node.Services.Characters
             if (client.CharacterID == null)
                 throw new UserError("NoCharacterSelected");
 
-            Character character =
-                this.ServiceManager.Container.ItemFactory.ItemManager.LoadItem((int) client.CharacterID) as Character;
+            Character character = this.ItemManager.LoadItem((int) client.CharacterID) as Character;
 
             // do not allow the user to do that if the skill queue is not empty
             if (character.SkillQueue.Count > 0)
@@ -204,11 +209,11 @@ namespace Node.Services.Characters
             client.NotifySkillStartTraining(skill);
             
             // create history entry
-            this.mDB.CreateSkillHistoryRecord(skill.Type, character, SkillHistoryReason.SkillTrainingStarted,
+            this.DB.CreateSkillHistoryRecord(skill.Type, character, SkillHistoryReason.SkillTrainingStarted,
                 skill.Points);
                 
             // ensure the timer is present for this skill
-            this.ServiceManager.Container.TimerManager.EnqueueTimer(skill.ExpiryTime, character.SkillTrainingCompleted, skill.ID);
+            this.TimerManager.EnqueueTimer(skill.ExpiryTime, character.SkillTrainingCompleted, skill.ID);
 
             skill.Persist();
             
@@ -221,7 +226,7 @@ namespace Node.Services.Characters
                 throw new UserError("NoCharacterSelected");
             
             Character character =
-                this.ServiceManager.Container.ItemFactory.ItemManager.LoadItem((int) client.CharacterID) as Character;
+                this.ItemManager.LoadItem((int) client.CharacterID) as Character;
 
             // do not allow the user to do that if the skill queue is not empty
             if (character.SkillQueue.Count > 0)
@@ -235,8 +240,7 @@ namespace Node.Services.Characters
             if (client.CharacterID == null)
                 throw new UserError("NoCharacterSelected");
             
-            Character character =
-                this.ServiceManager.Container.ItemFactory.ItemManager.LoadItem((int) client.CharacterID) as Character;
+            Character character = this.ItemManager.LoadItem((int) client.CharacterID) as Character;
             
             // iterate the whole skill queue, stop it and recalculate points for the skills
             if (character.SkillQueue.Count == 0)
@@ -264,7 +268,7 @@ namespace Node.Services.Characters
             foreach (Character.SkillQueueEntry entry in character.SkillQueue)
             {
                 // dequeue the timer first
-                this.ServiceManager.Container.TimerManager.DequeueTimer(entry.Skill.ID, entry.Skill.ExpiryTime);
+                this.TimerManager.DequeueTimer(entry.Skill.ID, entry.Skill.ExpiryTime);
 
                 // mark the skill as stopped and store it in the database
                 entry.Skill.ExpiryTime = 0;
@@ -277,7 +281,7 @@ namespace Node.Services.Characters
                 client.NotifySkillTrainingStopped(entry.Skill);
                 
                 // create history entry
-                this.mDB.CreateSkillHistoryRecord(entry.Skill.Type, character, SkillHistoryReason.SkillTrainingCancelled,
+                this.DB.CreateSkillHistoryRecord(entry.Skill.Type, character, SkillHistoryReason.SkillTrainingCancelled,
                     entry.Skill.Points);
             }
 
@@ -289,8 +293,7 @@ namespace Node.Services.Characters
             if (client.CharacterID == null)
                 throw new UserError("NoCharacterSelected");
             
-            Character character =
-                this.ServiceManager.Container.ItemFactory.ItemManager.LoadItem((int) client.CharacterID) as Character;
+            Character character = this.ItemManager.LoadItem((int) client.CharacterID) as Character;
 
             return new PyDictionary
             {
@@ -304,8 +307,7 @@ namespace Node.Services.Characters
             if (client.CharacterID == null)
                 throw new UserError("NoCharacterSelected");
             
-            Character character =
-                this.ServiceManager.Container.ItemFactory.ItemManager.LoadItem((int) client.CharacterID) as Character;
+            Character character = this.ItemManager.LoadItem((int) client.CharacterID) as Character;
 
             AttributeEnum attribute;
 
@@ -371,7 +373,7 @@ namespace Node.Services.Characters
                 throw new UserError("RespecAttributesMisallocated");
             
             Character character =
-                this.ServiceManager.Container.ItemFactory.ItemManager.LoadItem((int) client.CharacterID) as Character;
+                this.ItemManager.LoadItem((int) client.CharacterID) as Character;
 
             if (character.FreeReSpecs == 0)
                 throw new CustomError("You've already remapped your character too much times at once, wait some time");

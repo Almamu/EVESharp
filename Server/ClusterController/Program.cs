@@ -61,7 +61,7 @@ namespace ClusterControler
             try
             {
                 // setup logging
-                sLog = new Logger();
+                sLog = new Logger(null);
                 // initialize main logging channel
                 sChannel = sLog.CreateLogChannel("main");
                 // add console log streams
@@ -95,7 +95,7 @@ namespace ClusterControler
                 sChannel.Debug("Initializing EVESharp Cluster Controler and Proxy");
                 sChannel.Trace("Initializing EVESharp Cluster Controler and Proxy");
 
-                sDatabase = DatabaseConnection.FromConfiguration(sConfiguration.Database, sLog);
+                sDatabase = new DatabaseConnection(sConfiguration.Database, sLog);
                 // sDatabase.Query("SET global max_allowed_packet=1073741824");
                 sLoginQueue = new LoginQueue(sConfiguration.Authentication, sDatabase, sLog);
                 sLoginQueue.Start();

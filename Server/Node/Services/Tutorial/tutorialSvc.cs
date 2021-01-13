@@ -1,11 +1,13 @@
+using Common.Services;
 using PythonTypes.Types.Database;
 using PythonTypes.Types.Primitives;
+using SimpleInjector;
 
 namespace Node.Services.Tutorial
 {
     public class tutorialSvc : Service
     {
-        public tutorialSvc(ServiceManager manager) : base(manager)
+        public tutorialSvc()
         {
         }
 

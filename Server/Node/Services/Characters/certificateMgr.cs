@@ -1,62 +1,69 @@
 ﻿using System.Collections.Generic;
 using System.Reflection.Metadata.Ecma335;
 using Common.Database;
+using Common.Services;
 using Node.Data;
 using Node.Database;
+using Node.Inventory;
 using Node.Inventory.Items.Types;
 using PythonTypes.Types.Complex;
 using PythonTypes.Types.Exceptions;
 using PythonTypes.Types.Primitives;
+using SimpleInjector;
 
 namespace Node.Services.Characters
 {
     public class certificateMgr : Service
     {
-        private CertificatesDB mDB = null;
+        private CertificatesDB DB { get; }
+        private ItemManager ItemManager { get; }
+        private CacheStorage CacheStorage { get; }
         
-        public certificateMgr(DatabaseConnection db, ServiceManager manager) : base(manager)
+        public certificateMgr(CertificatesDB db, ItemManager itemManager, CacheStorage cacheStorage)
         {
-            this.mDB = new CertificatesDB(db);
+            this.DB = db;
+            this.ItemManager = itemManager;
+            this.CacheStorage = cacheStorage;
         }
 
         public PyDataType GetAllShipCertificateRecommendations(PyDictionary namedPayload, Client client)
         {
-            this.ServiceManager.CacheStorage.Load(
+            this.CacheStorage.Load(
                 "certificateMgr",
                 "GetAllShipCertificateRecommendations",
                 "SELECT shipTypeID, certificateID, recommendationLevel, recommendationID FROM crtRecommendations",
                 CacheStorage.CacheObjectType.Rowset
             );
 
-            PyDataType cacheHint = this.ServiceManager.CacheStorage.GetHint("certificateMgr", "GetAllShipCertificateRecommendations");
+            PyDataType cacheHint = this.CacheStorage.GetHint("certificateMgr", "GetAllShipCertificateRecommendations");
 
             return PyCacheMethodCallResult.FromCacheHint(cacheHint);
         }
 
         public PyDataType GetCertificateCategories(PyDictionary namedPayload, Client client)
         {
-            this.ServiceManager.CacheStorage.Load(
+            this.CacheStorage.Load(
                 "certificateMgr",
                 "GetCertificateCategories",
                 "SELECT categoryID, categoryName, description, 0 AS dataID FROM crtCategories",
                 CacheStorage.CacheObjectType.IndexRowset
             );
 
-            PyDataType cacheHint = this.ServiceManager.CacheStorage.GetHint("certificateMgr", "GetCertificateCategories");
+            PyDataType cacheHint = this.CacheStorage.GetHint("certificateMgr", "GetCertificateCategories");
 
             return PyCacheMethodCallResult.FromCacheHint(cacheHint);
         }
 
         public PyDataType GetCertificateClasses(PyDictionary namedPayload, Client client)
         {
-            this.ServiceManager.CacheStorage.Load(
+            this.CacheStorage.Load(
                 "certificateMgr",
                 "GetCertificateClasses",
                 "SELECT classID, className, description, 0 AS dataID FROM crtClasses",
                 CacheStorage.CacheObjectType.IndexRowset
             );
 
-            PyDataType cacheHint = this.ServiceManager.CacheStorage.GetHint("certificateMgr", "GetCertificateClasses");
+            PyDataType cacheHint = this.CacheStorage.GetHint("certificateMgr", "GetCertificateClasses");
 
             return PyCacheMethodCallResult.FromCacheHint(cacheHint);
         }
@@ -66,7 +73,7 @@ namespace Node.Services.Characters
             if (client.CharacterID == null)
                 throw new UserError("NoCharacterSelected");
 
-            return this.mDB.GetMyCertificates((int) client.CharacterID);
+            return this.DB.GetMyCertificates((int) client.CharacterID);
         }
 
         public PyBool GrantCertificate(PyInteger certificateID, PyDictionary namedPayload, Client client)
@@ -74,9 +81,8 @@ namespace Node.Services.Characters
             if (client.CharacterID == null)
                 throw new UserError("NoCharacterSelected");
 
-            List<CertificateRelationship> requirements = this.mDB.GetCertificateRequirements(certificateID);
-            Character character =
-                this.ServiceManager.Container.ItemFactory.ItemManager.LoadItem((int) client.CharacterID) as Character;
+            List<CertificateRelationship> requirements = this.DB.GetCertificateRequirements(certificateID);
+            Character character = this.ItemManager.LoadItem((int) client.CharacterID) as Character;
 
             Dictionary<int, Skill> skills = character.InjectedSkillsByTypeID;
 
@@ -87,7 +93,7 @@ namespace Node.Services.Characters
             }
             
             // if this line is reached, the character has all the requirements for this cert
-            this.mDB.GrantCertificate((int) client.CharacterID, certificateID);
+            this.DB.GrantCertificate((int) client.CharacterID, certificateID);
             
             return true;
         }
@@ -114,7 +120,7 @@ namespace Node.Services.Characters
             if (client.CharacterID == null)
                 throw new UserError("NoCharacterSelected");
 
-            this.mDB.UpdateVisibilityFlags(certificateID, (int) client.CharacterID, visibilityFlags);
+            this.DB.UpdateVisibilityFlags(certificateID, (int) client.CharacterID, visibilityFlags);
             
             return null;
         }

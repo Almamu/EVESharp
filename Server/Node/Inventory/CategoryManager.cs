@@ -31,19 +31,19 @@ namespace Node.Inventory
 {
     public class CategoryManager
     {
-        public ItemFactory ItemFactory { get; }
+        private ItemDB ItemDB { get; }
         private Dictionary<int, ItemCategory> mCategories = null;
 
         public void Load()
         {
-            this.mCategories = this.ItemFactory.ItemDB.LoadItemCategories();
+            this.mCategories = this.ItemDB.LoadItemCategories();
         }
 
         public ItemCategory this[int id] { get => this.mCategories[id]; }
 
-        public CategoryManager(ItemFactory factory)
+        public CategoryManager(ItemDB itemDB)
         {
-            this.ItemFactory = factory;
+            this.ItemDB = itemDB;
         }
     }
 }

@@ -1,18 +1,27 @@
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
+using Common.Services;
 using Node.Data;
+using Node.Inventory;
 using Node.Inventory.Items.Types;
 using PythonTypes.Types.Complex;
 using PythonTypes.Types.Database;
 using PythonTypes.Types.Exceptions;
 using PythonTypes.Types.Primitives;
+using SimpleInjector;
 
 namespace Node.Services.Navigation
 {
     public class map : Service
     {
-        public map(ServiceManager manager) : base(manager)
+        private ItemManager ItemManager { get; }
+        private StationManager StationManager { get; }
+        private CacheStorage CacheStorage { get; }
+        public map(ItemManager itemManager, StationManager stationManager, CacheStorage cacheStorage)
         {
+            this.ItemManager = itemManager;
+            this.StationManager = stationManager;
+            this.CacheStorage = cacheStorage;
         }
 
         public PyDataType GetStationExtraInfo(PyDictionary namedPayload, Client client)
@@ -30,20 +39,20 @@ namespace Node.Services.Navigation
                 "serviceID", "serviceName"
             });
             
-            foreach (KeyValuePair<int, Station> pair in this.ServiceManager.Container.ItemFactory.ItemManager.Stations)
+            foreach (KeyValuePair<int, Station> pair in this.ItemManager.Stations)
                 stations.Rows.Add((PyList) new PyDataType []
                 {
                     pair.Value.ID, pair.Value.LocationID, pair.Value.Operations.OperationID, pair.Value.StationType.ID, pair.Value.OwnerID
                 });
 
-            foreach (KeyValuePair<int, StationOperations> pair in this.ServiceManager.Container.ItemFactory.StationManager.Operations)
+            foreach (KeyValuePair<int, StationOperations> pair in this.StationManager.Operations)
                 foreach (int serviceID in pair.Value.Services)
                     operationServices.Rows.Add((PyList) new PyDataType[]
                     {
                         pair.Value.OperationID, serviceID
                     });
 
-            foreach (KeyValuePair<int, string> pair in this.ServiceManager.Container.ItemFactory.StationManager.Services)
+            foreach (KeyValuePair<int, string> pair in this.StationManager.Services)
                 services.Rows.Add((PyList) new PyDataType[]
                 {
                     pair.Key, pair.Value
@@ -57,14 +66,14 @@ namespace Node.Services.Navigation
 
         public PyDataType GetSolarSystemPseudoSecurities(PyDictionary namedPayload, Client client)
         {
-            this.ServiceManager.CacheStorage.Load(
+            this.CacheStorage.Load(
                 "map",
                 "GetSolarSystemPseudoSecurities",
                 "SELECT solarSystemID, security FROM mapSolarSystems",
                 CacheStorage.CacheObjectType.Rowset
             );
 
-            PyDataType cacheHint = this.ServiceManager.CacheStorage.GetHint("map", "GetSolarSystemPseudoSecurities");
+            PyDataType cacheHint = this.CacheStorage.GetHint("map", "GetSolarSystemPseudoSecurities");
 
             return PyCacheMethodCallResult.FromCacheHint(cacheHint);
         }

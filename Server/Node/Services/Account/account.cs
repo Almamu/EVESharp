@@ -1,18 +1,25 @@
 using Common.Database;
+using Common.Services;
 using Node.Database;
+using Node.Inventory;
 using Node.Inventory.Items.Types;
 using PythonTypes.Types.Complex;
 using PythonTypes.Types.Exceptions;
 using PythonTypes.Types.Primitives;
+using SimpleInjector;
 
 namespace Node.Services.Account
 {
     public class account : Service
     {
-        private CharacterDB mDB;
-        public account(DatabaseConnection db, ServiceManager manager) : base(manager)
+        private CharacterDB DB { get; }
+        private ItemManager ItemManager { get; }
+        private CacheStorage CacheStorage { get; }
+        public account(CharacterDB db, ItemManager itemManager, CacheStorage cacheStorage)
         {
-            this.mDB = new CharacterDB(db, manager.Container.ItemFactory);
+            this.DB = db;
+            this.ItemManager = itemManager;
+            this.CacheStorage = cacheStorage;
         }
 
         private PyDataType GetCashBalance(Client client)
@@ -21,7 +28,7 @@ namespace Node.Services.Account
                 return 0;
             
             Character character =
-                this.ServiceManager.Container.ItemFactory.ItemManager.LoadItem((int) client.CharacterID) as Character;
+                this.ItemManager.LoadItem((int) client.CharacterID) as Character;
 
             return character.Balance;
         }
@@ -47,19 +54,19 @@ namespace Node.Services.Account
 
         public PyDataType GetKeyMap(PyDictionary namedPayload, Client client)
         {
-            return this.mDB.GetKeyMap();
+            return this.DB.GetKeyMap();
         }
 
         public PyDataType GetEntryTypes(PyDictionary namedPayload, Client client)
         {
-            this.ServiceManager.CacheStorage.Load(
+            this.CacheStorage.Load(
                 "account",
                 "GetEntryTypes",
                 "SELECT refTypeID AS entryTypeID, refTypeText AS entryTypeName, description FROM market_refTypes",
                 CacheStorage.CacheObjectType.Rowset
             );
 
-            PyDataType cacheHint = this.ServiceManager.CacheStorage.GetHint("account", "GetEntryTypes");
+            PyDataType cacheHint = this.CacheStorage.GetHint("account", "GetEntryTypes");
 
             return PyCacheMethodCallResult.FromCacheHint(cacheHint);
         }
@@ -67,7 +74,7 @@ namespace Node.Services.Account
         public PyDataType GetJournal(PyInteger marketKey, PyInteger fromDate, PyInteger entryTypeID,
             PyBool isCorpWallet, PyInteger transactionID, PyInteger rev, PyDictionary namedPayload, Client client)
         {
-            return this.mDB.GetJournal((int) client.CharacterID, entryTypeID, marketKey, fromDate);
+            return this.DB.GetJournal((int) client.CharacterID, entryTypeID, marketKey, fromDate);
         }
     }
 }

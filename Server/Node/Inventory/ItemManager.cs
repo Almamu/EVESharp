@@ -35,19 +35,18 @@ namespace Node.Inventory
 {
     public class ItemManager
     {
-        private ItemFactory ItemFactory { get; }
+        private SkillDB SkillDB { get; }
+        private ItemDB ItemDB { get; }
+        private Channel Log { get; }
         private Dictionary<int, ItemEntity> mItemList = new Dictionary<int, ItemEntity>();
-        private Channel Log = null;
         private Dictionary<int, Station> mStations = new Dictionary<int, Station>();
 
         public Dictionary<int, Station> Stations => this.mStations;
 
         public void Load()
         {
-            // create a log channel for the rare occurence of the ItemManager wanting to log something
-            this.Log = this.ItemFactory.Container.Logger.CreateLogChannel("ItemManager");
             // load all the items in the database that do not belong to any user (so-called static items)
-            List<ItemEntity> items = this.ItemFactory.ItemDB.LoadStaticItems();
+            List<ItemEntity> items = this.ItemDB.LoadStaticItems();
 
             foreach (ItemEntity item in items)
             {
@@ -61,7 +60,7 @@ namespace Node.Inventory
         {
             if (IsItemLoaded(itemID) == false)
             {
-                return this.PerformItemLoad(this.ItemFactory.ItemDB.LoadItem(itemID));
+                return this.PerformItemLoad(this.ItemDB.LoadItem(itemID));
             }
             else
             {
@@ -120,7 +119,7 @@ namespace Node.Inventory
 
         public Dictionary<int, ItemEntity> LoadItemsLocatedAt(ItemEntity location)
         {
-            return this.ItemFactory.ItemDB.LoadItemsLocatedAt(location.ID);
+            return this.ItemDB.LoadItemsLocatedAt(location.ID);
         }
 
         public bool IsItemLoaded(int itemID)
@@ -133,7 +132,7 @@ namespace Node.Inventory
             switch (item.Type.Group.ID)
             {
                 case (int) ItemGroups.SolarSystem:
-                    return this.ItemFactory.ItemDB.LoadSolarSystem(item);
+                    return this.ItemDB.LoadSolarSystem(item);
                 case (int) ItemGroups.Station:
                     return this.LoadStation(item);
                 case (int) ItemGroups.Constellation:
@@ -148,7 +147,7 @@ namespace Node.Inventory
         
         private ItemEntity LoadBlueprint(ItemEntity item)
         {
-            return this.ItemFactory.ItemDB.LoadBlueprint(item);
+            return this.ItemDB.LoadBlueprint(item);
         }
 
         private ItemEntity LoadOwner(ItemEntity item)
@@ -156,11 +155,11 @@ namespace Node.Inventory
             switch (item.Type.Group.ID)
             {
                 case (int) ItemGroups.Character:
-                    return this.ItemFactory.ItemDB.LoadCharacter(item);
+                    return this.ItemDB.LoadCharacter(item);
                 case (int) ItemGroups.Corporation:
-                    return this.ItemFactory.ItemDB.LoadCorporation(item);
+                    return this.ItemDB.LoadCorporation(item);
                 case (int) ItemGroups.Faction:
-                    return this.ItemFactory.ItemDB.LoadFaction(item);
+                    return this.ItemDB.LoadFaction(item);
                 default:
                     Log.Warning($"Loading owner {item.ID} from item group {item.Type.Group.ID} as normal item");
                     return item;
@@ -172,7 +171,7 @@ namespace Node.Inventory
             switch (item.Type.Group.ID)
             {
                 case (int) ItemGroups.Clone:
-                    return this.ItemFactory.ItemDB.LoadClone(item);
+                    return this.ItemDB.LoadClone(item);
                 default:
                     Log.Warning($"Loading accessory {item.ID} from item group {item.Type.Group.ID} as normal item");
                     return item;
@@ -181,35 +180,35 @@ namespace Node.Inventory
 
         private ItemEntity LoadSkill(ItemEntity item)
         {
-            return this.ItemFactory.ItemDB.LoadSkill(item);
+            return this.ItemDB.LoadSkill(item);
         }
 
         private ItemEntity LoadShip(ItemEntity item)
         {
-            return this.ItemFactory.ItemDB.LoadShip(item);
+            return this.ItemDB.LoadShip(item);
         }
 
         private ItemEntity LoadStation(ItemEntity item)
         {
-            Station station = this.ItemFactory.ItemDB.LoadStation(item);
+            Station station = this.ItemDB.LoadStation(item);
 
             return this.mStations[station.ID] = station;
         }
 
         private ItemEntity LoadConstellation(ItemEntity item)
         {
-            return this.ItemFactory.ItemDB.LoadConstellation(item);
+            return this.ItemDB.LoadConstellation(item);
         }
 
         private ItemEntity LoadRegion(ItemEntity item)
         {
-            return this.ItemFactory.ItemDB.LoadRegion(item);
+            return this.ItemDB.LoadRegion(item);
         }
         
         public ItemEntity CreateSimpleItem(string itemName, ItemType type, ItemEntity owner, ItemEntity location, ItemFlags flag,
             bool contraband, bool singleton, int quantity, double x, double y, double z, string customInfo)
         {
-            int itemID = (int) this.ItemFactory.ItemDB.CreateItem(itemName, type, owner, location, flag, contraband, singleton, quantity, x, y, z, customInfo);
+            int itemID = (int) this.ItemDB.CreateItem(itemName, type, owner, location, flag, contraband, singleton, quantity, x, y, z, customInfo);
 
             return this.LoadItem(itemID);
         }
@@ -223,7 +222,7 @@ namespace Node.Inventory
 
         public Skill CreateSkill(ItemType skillType, Character character, int level = 0)
         {
-            int skillID = this.ItemFactory.SkillDB.CreateSkill(skillType, character);
+            int skillID = this.SkillDB.CreateSkill(skillType, character);
 
             Skill skill = this.LoadItem(skillID) as Skill;
 
@@ -233,7 +232,7 @@ namespace Node.Inventory
             // add skill to the character's inventory
             character.AddItem(skill);
 
-            this.ItemFactory.SkillDB.CreateSkillHistoryRecord(skillType, character,
+            this.SkillDB.CreateSkillHistoryRecord(skillType, character,
                 SkillHistoryReason.SkillTrainingComplete, skill.GetSkillPointsForLevel(level));
 
             return skill;
@@ -241,7 +240,7 @@ namespace Node.Inventory
 
         public Ship CreateShip(ItemType shipType, ItemEntity location, Character owner)
         {
-            int shipID = (int) this.ItemFactory.ItemDB.CreateShip(shipType, location, owner);
+            int shipID = (int) this.ItemDB.CreateShip(shipType, location, owner);
 
             Ship ship = this.LoadItem(shipID) as Ship;
 
@@ -272,7 +271,7 @@ namespace Node.Inventory
                 mItemList.Remove(item.ID);
 
                 // Update the database information
-                this.ItemFactory.ItemDB.UnloadItem(item.ID);
+                this.ItemDB.UnloadItem(item.ID);
             }
             catch
             {
@@ -303,9 +302,12 @@ namespace Node.Inventory
                 this.DestroyItem(item);
         }
         
-        public ItemManager(ItemFactory factory)
+        public ItemManager(Logger logger, ItemDB itemDB, SkillDB skillDB)
         {
-            this.ItemFactory = factory;
+            // create a log channel for the rare occurence of the ItemManager wanting to log something
+            this.Log = logger.CreateLogChannel("ItemManager");
+            this.ItemDB = itemDB;
+            this.SkillDB = skillDB;
         }
     }
 }

@@ -1,23 +1,25 @@
 ﻿using Common.Database;
+using Common.Services;
 using Node.Database;
+using Node.Inventory;
 using Node.Inventory.Items.Types;
 using PythonTypes.Types.Database;
 using PythonTypes.Types.Primitives;
+using SimpleInjector;
 
 namespace Node.Services.Stations
 {
     public class stationSvc : Service
     {
-        private StationDB mDB = null;
-        
-        public stationSvc(DatabaseConnection db, ServiceManager manager) : base(manager)
+        private ItemManager ItemManager { get; }
+        public stationSvc(ItemManager itemManager)
         {
-            this.mDB = new StationDB(db);
+            this.ItemManager = itemManager;
         }
 
         public PyDataType GetStation(PyInteger stationID, PyDictionary namedPayload, Client client)
         {
-            return this.ServiceManager.Container.ItemFactory.ItemManager.Stations[stationID].GetStationInfo();
+            return this.ItemManager.Stations[stationID].GetStationInfo();
         }
     }
 }

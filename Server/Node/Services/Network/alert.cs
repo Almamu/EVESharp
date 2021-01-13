@@ -26,6 +26,7 @@ using System;
 using Common.Logging;
 using Common.Services;
 using PythonTypes.Types.Primitives;
+using SimpleInjector;
 
 namespace Node.Services.Network
 {
@@ -33,8 +34,7 @@ namespace Node.Services.Network
     {
         private Channel Log { get; }
 
-        public alert(Logger logger, ServiceManager manager)
-            : base(manager)
+        public alert(Logger logger)
         {
             this.Log = logger.CreateLogChannel("alert");
         }

@@ -2,7 +2,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.ExceptionServices;
+using Common.Database;
+using Common.Logging;
 using Common.Services.Exceptions;
+using Node.Configuration;
 using PythonTypes.Types.Primitives;
 using Node.Services;
 using Service = Common.Services.Service;
@@ -11,17 +14,20 @@ namespace Node
 {
     public class BoundServiceManager
     {
-        private readonly NodeContainer mContainer;
-        private int mNextBoundID = 1;
-        private Dictionary<int, Service> mBoundServices;
-
-        public BoundServiceManager(NodeContainer container)
-        {
-            this.mContainer = container;
-            this.mBoundServices = new Dictionary<int, Service>();
-        }
+        public NodeContainer Container { get; }
+        public Logger Logger { get; }
         
-        public int BoundService(Service service)
+        private int mNextBoundID = 1;
+        private Dictionary<int, BoundService> mBoundServices;
+
+        public BoundServiceManager(NodeContainer container, Logger logger)
+        {
+            this.Logger = logger;
+            this.Container = container;
+            this.mBoundServices = new Dictionary<int, BoundService>();
+        }
+
+        public int BoundService(BoundService service)
         {
             int boundID = this.mNextBoundID++;
 
@@ -33,12 +39,12 @@ namespace Node
 
         public string BuildBoundServiceString(int boundID)
         {
-            return $"N={this.mContainer.NodeID}:{boundID}";
+            return $"N={this.Container.NodeID}:{boundID}";
         }
         
         public PyDataType ServiceCall(int boundID, string call, PyTuple payload, PyDictionary namedPayload, object client)
         {
-            Service serviceInstance = this.mBoundServices[boundID];
+            BoundService serviceInstance = this.mBoundServices[boundID];
             
             if(serviceInstance == null)
                 throw new ServiceDoesNotExistsException($"Bound Service {boundID}");

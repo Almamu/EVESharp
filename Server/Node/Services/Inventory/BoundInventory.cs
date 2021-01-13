@@ -2,28 +2,34 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using Common.Logging;
+using Node.Database;
 using Node.Inventory.Items;
 using PythonTypes.Types.Database;
 using PythonTypes.Types.Exceptions;
 using PythonTypes.Types.Primitives;
+using SimpleInjector;
 
 namespace Node.Services.Inventory
 {
-    public class BoundInventory : Service
+    public class BoundInventory : BoundService
     {
         private ItemInventory mInventory;
         private ItemFlags mFlag;
         
-        public BoundInventory(ItemInventory item, ServiceManager manager) : base(manager)
+        private ItemDB ItemDB { get; }
+        public BoundInventory(ItemDB itemDB, ItemInventory item, BoundServiceManager manager, Logger logger) : base(manager, logger)
         {
             this.mInventory = item;
             this.mFlag = ItemFlags.None;
+            this.ItemDB = itemDB;
         }
 
-        public BoundInventory(ItemInventory item, ItemFlags flag, ServiceManager manager) : base(manager)
+        public BoundInventory(ItemDB itemDB, ItemInventory item, ItemFlags flag, BoundServiceManager manager, Logger logger) : base(manager, logger)
         {
             this.mInventory = item;
             this.mFlag = flag;
+            this.ItemDB = itemDB;
         }
 
         public PyDataType List(PyDictionary namedPayload, Client client)
@@ -53,9 +59,9 @@ namespace Node.Services.Inventory
             
             // TODO: take into account blueprintsOnly
             if (forCorp == 1)
-                return this.mInventory.mItemFactory.ItemDB.ListStations(client.CorporationID);
+                return this.ItemDB.ListStations(client.CorporationID);
             else
-                return this.mInventory.mItemFactory.ItemDB.ListStations((int) client.CharacterID);
+                return this.ItemDB.ListStations((int) client.CharacterID);
         }
 
         public PyDataType ListStationItems(PyInteger stationID, PyDictionary namedPayload, Client client)
@@ -63,7 +69,7 @@ namespace Node.Services.Inventory
             if (client.CharacterID == null)
                 throw new UserError("NoCharacterSelected");
             
-            return this.mInventory.mItemFactory.ItemDB.ListStationItems(stationID, (int) client.CharacterID);
+            return this.ItemDB.ListStationItems(stationID, (int) client.CharacterID);
         }
         
         public PyDataType GetItem(PyDictionary namedPayload, Client client)
@@ -71,13 +77,13 @@ namespace Node.Services.Inventory
             return this.mInventory.GetEntityRow();
         }
 
-        public static PyDataType BindInventory(ItemInventory item, ItemFlags flag, ServiceManager manager)
+        public static PyDataType BindInventory(ItemDB itemDB, ItemInventory item, ItemFlags flag, BoundServiceManager boundServiceManager)
         {
-            Service instance = new BoundInventory(item, flag, manager);
+            BoundService instance = new BoundInventory(itemDB, item, flag, boundServiceManager, boundServiceManager.Logger);
             // bind the service
-            int boundID = manager.Container.BoundServiceManager.BoundService(instance);
+            int boundID = boundServiceManager.BoundService(instance);
             // build the bound service string
-            string boundServiceStr = manager.Container.BoundServiceManager.BuildBoundServiceString(boundID);
+            string boundServiceStr = boundServiceManager.BuildBoundServiceString(boundID);
 
             // TODO: the expiration time is 1 day, might be better to properly support this?
             // TODO: investigate these a bit more closely in the future

@@ -10,28 +10,17 @@ namespace Node
 {
     public class NodeContainer
     {
-        public SystemManager SystemManager { get; set; }
-        public ServiceManager ServiceManager { get; set; }
-        public BoundServiceManager BoundServiceManager { get; set; }
-        public ClientManager ClientManager { get; set; }
-        public ItemFactory ItemFactory { get; set; }
-        public Logger Logger { get; set; }
         public long NodeID { get; set; }
-        public DatabaseConnection Database { get; private set; }
-        public Dictionary<string, Constant> Constants { get; private set; }
-        public ClusterConnection ClusterConnection { get; set; }
-        public TimerManager TimerManager { get; set; }
+        public Dictionary<string, Constant> Constants { get; }
+        private GeneralDB GeneralDB { get; }
 
-        private readonly GeneralDB mGeneralDB = null;
-
-        public NodeContainer(DatabaseConnection db)
+        public NodeContainer(GeneralDB generalDB)
         {
             this.NodeID = 0;
-            this.Database = db;
-            this.mGeneralDB = new GeneralDB(db);
+            this.GeneralDB = generalDB;
 
             // load constants for the EVE System
-            this.Constants = this.mGeneralDB.LoadConstants();
+            this.Constants = this.GeneralDB.LoadConstants();
         }
     }
 }

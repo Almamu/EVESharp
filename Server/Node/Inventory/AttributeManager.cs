@@ -31,7 +31,7 @@ namespace Node.Inventory
 {
     public class AttributeManager
     {
-        private ItemFactory ItemFactory { get; }
+        private ItemDB ItemDB { get; }
         private Dictionary<int, AttributeInfo> mAttributes = null;
         private Dictionary<int, Dictionary<int, ItemAttribute>> mDefaultAttributes = null;
 
@@ -40,17 +40,17 @@ namespace Node.Inventory
             get => this.mDefaultAttributes;
         }
         
-        public AttributeManager(ItemFactory itemFactory)
+        public AttributeManager(ItemDB itemDB)
         {
-            this.ItemFactory = itemFactory;
+            this.ItemDB = itemDB;
         }
         
         public AttributeInfo this[int id] { get => this.mAttributes[id]; }
 
         public void Load()
         {
-            this.mAttributes = this.ItemFactory.ItemDB.LoadAttributesInformation();
-            this.mDefaultAttributes = this.ItemFactory.ItemDB.LoadDefaultAttributes();
+            this.mAttributes = this.ItemDB.LoadAttributesInformation();
+            this.mDefaultAttributes = this.ItemDB.LoadDefaultAttributes();
         }
     }
 }

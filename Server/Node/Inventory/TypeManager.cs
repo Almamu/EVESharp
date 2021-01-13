@@ -33,20 +33,20 @@ namespace Node.Inventory
 {
     public class TypeManager
     {
-        public ItemFactory ItemFactory { get; }
+        private ItemDB ItemDB { get; }
         private Dictionary<int, ItemType> mTypes = null;
 
         public void Load()
         {
-            this.mTypes = this.ItemFactory.ItemDB.LoadItemTypes();
+            this.mTypes = this.ItemDB.LoadItemTypes();
         }
         
         public ItemType this[int id] { get => this.mTypes[id]; }
         public ItemType this[ItemTypes id] { get => this[(int) id]; }
 
-        public TypeManager(ItemFactory factory)
+        public TypeManager(ItemDB itemDB)
         {
-            this.ItemFactory = factory;
+            this.ItemDB = itemDB;
         }
     }
 }

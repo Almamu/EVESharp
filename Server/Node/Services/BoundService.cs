@@ -1,16 +1,19 @@
 using System;
 using Common.Logging;
+using Common.Services;
 using PythonTypes.Types.Primitives;
+using SimpleInjector;
 
 namespace Node.Services
 {
     public abstract class BoundService : Service
     {
-        private readonly Channel Log;
-        
-        public BoundService(ServiceManager manager) : base(manager)
+        protected readonly Channel Log;
+        public BoundServiceManager BoundServiceManager { get; }
+        public BoundService(BoundServiceManager manager, Logger logger)
         {
-            this.Log = this.ServiceManager.Container.Logger.CreateLogChannel("BoundService");
+            this.Log = logger.CreateLogChannel("BoundService");
+            this.BoundServiceManager = manager;
         }
 
         public PyDataType MachoResolveObject(PyTuple objectData, PyInteger zero, PyDictionary namedPayload,
@@ -21,7 +24,7 @@ namespace Node.Services
             // TODO: PROPERLY SUPPORT THE ENTITY TABLE NODEID FIELD TO GET THIS INFORMATION PROPERLY
             // TODO: FOR NOW JUST RETURN OUR ID AND BE HAPPY ABOUT IT
             
-            return this.ServiceManager.Container.NodeID;
+            return this.BoundServiceManager.Container.NodeID;
         }
 
         public PyDataType MachoResolveObject(PyInteger objectID, PyInteger zero, PyDictionary namedPayload,
@@ -29,7 +32,7 @@ namespace Node.Services
         {
             // TODO: PROPERLY SUPPORT THE ENTITY TABLE NODEID FIELD TO GET THIS INFORMATION PROPERLY
             // TODO: FOR NOW JUST RETURN OUR ID AND BE HAPPY ABOUT IT
-            return this.ServiceManager.Container.NodeID;
+            return this.BoundServiceManager.Container.NodeID;
         }
 
         public PyDataType MachoBindObject(PyTuple objectData, PyTuple callInfo, PyDictionary namedPayload,
@@ -53,12 +56,12 @@ namespace Node.Services
             Client client)
         {
             // create the bound instance and register it in the bound services
-            Service instance = this.CreateBoundInstance(objectData);
+            BoundService instance = this.CreateBoundInstance(objectData);
 
             // bind the service
-            int boundID = this.ServiceManager.Container.BoundServiceManager.BoundService(instance);
+            int boundID = this.BoundServiceManager.BoundService(instance);
             // build the bound service string
-            string boundServiceStr = this.ServiceManager.Container.BoundServiceManager.BuildBoundServiceString(boundID);
+            string boundServiceStr = this.BoundServiceManager.BuildBoundServiceString(boundID);
 
             // TODO: the expiration time is 1 day, might be better to properly support this?
             // TODO: investigate these a bit more closely in the future
@@ -84,7 +87,7 @@ namespace Node.Services
                 
                 Log.Trace($"Calling {GetType().Name}::{call} on bound service {boundID}");
                 
-                result[1] = this.ServiceManager.Container.BoundServiceManager.ServiceCall(
+                result[1] = this.BoundServiceManager.ServiceCall(
                     boundID, call, arguments, namedArguments, client
                 );
             }
@@ -92,6 +95,9 @@ namespace Node.Services
             return result;
         }
 
-        protected abstract Service CreateBoundInstance(PyDataType objectData);
+        protected virtual BoundService CreateBoundInstance(PyDataType objectData)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

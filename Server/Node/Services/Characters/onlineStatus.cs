@@ -1,17 +1,22 @@
+using Common.Services;
 using Node.Database;
+using Node.Inventory;
 using Node.Inventory.Items.Types;
 using PythonTypes.Types.Exceptions;
 using PythonTypes.Types.Primitives;
+using SimpleInjector;
 
 namespace Node.Services.Characters
 {
     public class onlineStatus : Service
     {
-        private CharacterDB mDB = null;
+        private CharacterDB DB { get; }
+        private ItemManager ItemManager { get; }
         
-        public onlineStatus(ServiceManager manager) : base(manager)
+        public onlineStatus(CharacterDB db, ItemManager itemManager)
         {
-            this.mDB = manager.Container.ItemFactory.CharacterDB;
+            this.DB = db;
+            this.ItemManager = itemManager;
         }
 
         public PyDataType GetInitialState(PyDictionary namedPayload, Client client)
@@ -19,10 +24,9 @@ namespace Node.Services.Characters
             if (client.CharacterID == null)
                 throw new UserError("NoCharacterSelected");
 
-            Character character =
-                this.ServiceManager.Container.ItemFactory.ItemManager.LoadItem((int) client.CharacterID) as Character;
+            Character character = this.ItemManager.LoadItem((int) client.CharacterID) as Character;
             
-            return this.mDB.GetFriendsList(character);
+            return this.DB.GetFriendsList(character);
         }
 
         public PyDataType GetOnlineStatus(PyInteger characterID, PyDictionary namedPayload, Client client)

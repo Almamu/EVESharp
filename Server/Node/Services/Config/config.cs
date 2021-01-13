@@ -1,36 +1,39 @@
 using Common.Database;
+using Common.Services;
 using Node.Database;
 using PythonTypes.Types.Primitives;
+using SimpleInjector;
 
 namespace Node.Services.Config
 {
     public class config : Service
     {
-        private ConfigDB mDB = null;
-        public config(DatabaseConnection db, ServiceManager manager) : base(manager)
+        private ConfigDB DB { get; }
+        
+        public config(ConfigDB db)
         {
-            this.mDB = new ConfigDB(db);
+            this.DB = db;
         }
 
         public PyDataType GetMultiOwnersEx(PyList ids, PyDictionary namedPayload, Client client)
         {
             // return item data from the entity table and call it a day
-            return this.mDB.GetMultiOwnersEx(ids);
+            return this.DB.GetMultiOwnersEx(ids);
         }
 
         public PyDataType GetMultiGraphicsEx(PyList ids, PyDictionary namedPayload, Client client)
         {
-            return this.mDB.GetMultiGraphicsEx(ids);
+            return this.DB.GetMultiGraphicsEx(ids);
         }
 
         public PyDataType GetMultiLocationsEx(PyList ids, PyDictionary namedPayload, Client client)
         {
-            return this.mDB.GetMultiLocationsEx(ids);
+            return this.DB.GetMultiLocationsEx(ids);
         }
 
         public PyDataType GetMultiAllianceShortNamesEx(PyList ids, PyDictionary namedPayload, Client client)
         {
-            return this.mDB.GetMultiAllianceShortNamesEx(ids);
+            return this.DB.GetMultiAllianceShortNamesEx(ids);
         }
     }
 }

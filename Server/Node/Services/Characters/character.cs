@@ -31,11 +31,13 @@ using Common.Logging;
 using Common.Services;
 using Node.Data;
 using Node.Database;
+using Node.Inventory;
 using Node.Inventory.Items;
 using Node.Inventory.Items.Types;
 using PythonTypes.Types.Exceptions;
 using PythonTypes.Types.Network;
 using PythonTypes.Types.Primitives;
+using SimpleInjector;
 
 namespace Node.Services.Characters
 {
@@ -52,28 +54,34 @@ namespace Node.Services.Characters
             Banned = -102
         };
 
-        private readonly CharacterDB mDB = null;
-        private readonly ChatDB mChatDB = null;
-        private readonly SkillDB mSkillDB = null;
+        private CharacterDB DB { get; }
+        private ChatDB ChatDB { get; }
+        private ItemManager ItemManager { get; }
+        private TypeManager TypeManager { get; }
+        private CacheStorage CacheStorage { get; }
+        private NodeContainer Container { get; }
         private readonly Dictionary<int, Bloodline> mBloodlineCache = null;
         private readonly Dictionary<int, Ancestry> mAncestriesCache = null;
         private readonly Configuration.Character mConfiguration = null;
         private readonly Channel Log = null;
 
-        public character(DatabaseConnection db, Configuration.Character configuration, ServiceManager manager) : base(manager)
+        public character(CacheStorage cacheStorage, CharacterDB db, ChatDB chatDB, ItemManager itemManager, TypeManager typeManager, Logger logger, Configuration.Character configuration, NodeContainer container)
         {
-            this.Log = manager.Container.Logger.CreateLogChannel("character");
+            this.Log = logger.CreateLogChannel("character");
             this.mConfiguration = configuration;
-            this.mDB = new CharacterDB(db, manager.Container.ItemFactory);
-            this.mChatDB = new ChatDB(db);
-            this.mSkillDB = new SkillDB(db, manager.Container.ItemFactory);
-            this.mBloodlineCache = this.mDB.GetBloodlineInformation();
-            this.mAncestriesCache = this.mDB.GetAncestryInformation(this.mBloodlineCache);
+            this.DB = db;
+            this.ChatDB = chatDB;
+            this.ItemManager = itemManager;
+            this.TypeManager = typeManager;
+            this.CacheStorage = cacheStorage;
+            this.Container = container;
+            this.mBloodlineCache = this.DB.GetBloodlineInformation();
+            this.mAncestriesCache = this.DB.GetAncestryInformation(this.mBloodlineCache);
         }
 
         public PyDataType GetCharactersToSelect(PyDictionary namedPayload, Client client)
         {
-            return this.mDB.GetCharacterList(client.AccountID);
+            return this.DB.GetCharacterList(client.AccountID);
         }
 
         public PyDataType LogStartOfCharacterCreation(PyDictionary namedPayload, Client client)
@@ -83,12 +91,12 @@ namespace Node.Services.Characters
 
         public PyDataType GetCharCreationInfo(PyDictionary namedPayload, Client client)
         {
-            return this.ServiceManager.CacheStorage.GetHints(CacheStorage.CreateCharacterCacheTable);
+            return this.CacheStorage.GetHints(CacheStorage.CreateCharacterCacheTable);
         }
 
         public PyDataType GetAppearanceInfo(PyDictionary namedPayload, Client client)
         {
-            return this.ServiceManager.CacheStorage.GetHints(CacheStorage.CharacterAppearanceCacheTable);
+            return this.CacheStorage.GetHints(CacheStorage.CharacterAppearanceCacheTable);
         }
 
         public PyDataType GetCharNewExtraCreationInfo(PyDictionary namedPayload, Client client)
@@ -116,7 +124,7 @@ namespace Node.Services.Characters
                 return new PyInteger((int) NameValidationResults.MoreThanOneSpace);
 
             // ensure there is no character registered with this name already
-            if (this.mDB.IsCharacterNameTaken(characterName) == true)
+            if (this.DB.IsCharacterNameTaken(characterName) == true)
                 return new PyInteger((int) NameValidationResults.Taken);
 
             // TODO: IMPLEMENT BANLIST OF WORDS
@@ -152,10 +160,10 @@ namespace Node.Services.Characters
             }
             
             // get the System item's id
-            int systemItemID = this.ServiceManager.Container.Constants["locationSystem"];
+            int systemItemID = this.Container.Constants["locationSystem"];
 
             // load the item into memory
-            ItemEntity owner = this.ServiceManager.Container.ItemFactory.ItemManager.LoadItem(systemItemID);
+            ItemEntity owner = this.ItemManager.LoadItem(systemItemID);
             
             // load bloodline and ancestry info for the requested character
             Bloodline bloodline = this.mBloodlineCache[bloodlineID];
@@ -179,7 +187,7 @@ namespace Node.Services.Characters
 
             int stationID, solarSystemID, constellationID, regionID, corporationID, careerID, schoolID, careerSpecialityID;
 
-            bool found = this.mDB.GetRandomCareerForRace(bloodline.RaceID, out careerID, out schoolID,
+            bool found = this.DB.GetRandomCareerForRace(bloodline.RaceID, out careerID, out schoolID,
                 out careerSpecialityID, out corporationID);
 
             if (found == false)
@@ -190,7 +198,7 @@ namespace Node.Services.Characters
             }
 
             // fetch information of starting location for the player
-            found = this.mDB.GetLocationForCorporation(corporationID, out stationID, out solarSystemID,
+            found = this.DB.GetLocationForCorporation(corporationID, out stationID, out solarSystemID,
                 out constellationID, out regionID);
 
             if (found == false)
@@ -200,9 +208,9 @@ namespace Node.Services.Characters
                 throw new CustomError($"Cannot find location for corporation {bloodline.CorporationID}");
             }
 
-            Station station = this.ServiceManager.Container.ItemFactory.ItemManager.LoadItem(stationID) as Station;
+            Station station = this.ItemManager.LoadItem(stationID) as Station;
             
-            int itemID = this.mDB.CreateCharacter(
+            int itemID = this.DB.CreateCharacter(
                 bloodline.ItemType, characterName, owner, client.AccountID, this.mConfiguration.Balance, 0.0,
                 corporationID, 0, 0, 0, 0, 0,
                 currentTime, currentTime, currentTime, ancestryID,
@@ -246,7 +254,7 @@ namespace Node.Services.Characters
                 appearance.ContainsKey("morph4w") ? appearance["morph4w"] as PyDecimal : null,
                 stationID, solarSystemID, constellationID, regionID);
 
-            Character character = this.ServiceManager.Container.ItemFactory.ItemManager.LoadItem(itemID) as Character;
+            Character character = this.ItemManager.LoadItem(itemID) as Character;
 
             // change character attributes based on the picked ancestry
             character.Charisma = bloodline.Charisma + ancestry.Charisma;
@@ -256,39 +264,39 @@ namespace Node.Services.Characters
             character.Perception = bloodline.Perception + ancestry.Perception;
             
             // get skills by race and create them
-            Dictionary<int, int> skills = this.mDB.GetBasicSkillsByRace(bloodline.RaceID);
+            Dictionary<int, int> skills = this.DB.GetBasicSkillsByRace(bloodline.RaceID);
 
             foreach (KeyValuePair<int, int> pair in skills)
             {
-                ItemType skillType = this.ServiceManager.Container.ItemFactory.TypeManager[pair.Key];
+                ItemType skillType = this.TypeManager[pair.Key];
                     
                 // create the skill at the required level
-                this.ServiceManager.Container.ItemFactory.ItemManager.CreateSkill(skillType, character, pair.Value);
+                this.ItemManager.CreateSkill(skillType, character, pair.Value);
             }
             
             // create the ship for the character
-            Ship ship = this.ServiceManager.Container.ItemFactory.ItemManager.CreateShip(bloodline.ShipType, station,
+            Ship ship = this.ItemManager.CreateShip(bloodline.ShipType, station,
                 character);
             
             // add one unit of Tritanium to the station's hangar for the player
-            ItemType tritaniumType = this.ServiceManager.Container.ItemFactory.TypeManager[ItemTypes.Tritanium];
+            ItemType tritaniumType = this.TypeManager[ItemTypes.Tritanium];
 
             ItemEntity tritanium =
-                this.ServiceManager.Container.ItemFactory.ItemManager.CreateSimpleItem(tritaniumType, character,
+                this.ItemManager.CreateSimpleItem(tritaniumType, character,
                     station, ItemFlags.Hangar);
             
             // add one unit of Damage Control I to the station's hangar for the player
-            ItemType damageControlType = this.ServiceManager.Container.ItemFactory.TypeManager[ItemTypes.DamageControlI];
+            ItemType damageControlType = this.TypeManager[ItemTypes.DamageControlI];
 
             ItemEntity damageControl =
-                this.ServiceManager.Container.ItemFactory.ItemManager.CreateSimpleItem(damageControlType, character,
+                this.ItemManager.CreateSimpleItem(damageControlType, character,
                     station, ItemFlags.Hangar);
             
             // create an alpha clone
-            ItemType cloneType = this.ServiceManager.Container.ItemFactory.TypeManager[ItemTypes.CloneGradeAlpha];
+            ItemType cloneType = this.TypeManager[ItemTypes.CloneGradeAlpha];
             
             Clone clone =
-                this.ServiceManager.Container.ItemFactory.ItemManager.CreateClone(cloneType, station, character);
+                this.ItemManager.CreateClone(cloneType, station, character);
 
             character.LocationID = ship.ID;
             character.ActiveClone = clone;
@@ -302,21 +310,21 @@ namespace Node.Services.Characters
             character.Persist();
             
             // create required mailing list channel
-            int channelID = (int) this.mChatDB.CreateChannel(character, character, characterName, true);
+            int channelID = (int) this.ChatDB.CreateChannel(character, character, characterName, true);
             // and subscribe the character to some channels
-            this.mChatDB.JoinChannel(ChatDB.CHANNEL_ROOKIECHANNELID, character.ID, ChatDB.CHATROLE_CONVERSATIONALIST);
-            this.mChatDB.JoinChannel(channelID, character.ID, ChatDB.CHATROLE_CREATOR);
-            this.mChatDB.JoinChannel(solarSystemID, character.ID, ChatDB.CHATROLE_CONVERSATIONALIST);
-            this.mChatDB.JoinChannel(constellationID, character.ID, ChatDB.CHATROLE_CONVERSATIONALIST);
-            this.mChatDB.JoinChannel(regionID, character.ID, ChatDB.CHATROLE_CONVERSATIONALIST);
-            this.mChatDB.JoinChannel(character.CorporationID, character.ID, ChatDB.CHATROLE_CONVERSATIONALIST);
+            this.ChatDB.JoinChannel(ChatDB.CHANNEL_ROOKIECHANNELID, character.ID, ChatDB.CHATROLE_CONVERSATIONALIST);
+            this.ChatDB.JoinChannel(channelID, character.ID, ChatDB.CHATROLE_CREATOR);
+            this.ChatDB.JoinChannel(solarSystemID, character.ID, ChatDB.CHATROLE_CONVERSATIONALIST);
+            this.ChatDB.JoinChannel(constellationID, character.ID, ChatDB.CHATROLE_CONVERSATIONALIST);
+            this.ChatDB.JoinChannel(regionID, character.ID, ChatDB.CHATROLE_CONVERSATIONALIST);
+            this.ChatDB.JoinChannel(character.CorporationID, character.ID, ChatDB.CHATROLE_CONVERSATIONALIST);
             
             // unload items from list
-            this.ServiceManager.Container.ItemFactory.ItemManager.UnloadItem(clone);
-            this.ServiceManager.Container.ItemFactory.ItemManager.UnloadItem(damageControl);
-            this.ServiceManager.Container.ItemFactory.ItemManager.UnloadItem(tritanium);
-            this.ServiceManager.Container.ItemFactory.ItemManager.UnloadItem(ship);
-            this.ServiceManager.Container.ItemFactory.ItemManager.UnloadItem(character);
+            this.ItemManager.UnloadItem(clone);
+            this.ItemManager.UnloadItem(damageControl);
+            this.ItemManager.UnloadItem(tritanium);
+            this.ItemManager.UnloadItem(ship);
+            this.ItemManager.UnloadItem(character);
             
             // finally return the new character's ID and wait for the subsequent calls from the EVE client :)
             
@@ -325,7 +333,7 @@ namespace Node.Services.Characters
 
         public PyDataType GetCharacterToSelect(PyInteger characterID, PyDictionary namedPayload, Client client)
         {
-            return this.mDB.GetCharacterSelectionInfo(characterID, client.AccountID);
+            return this.DB.GetCharacterSelectionInfo(characterID, client.AccountID);
         }
 
         public PyDataType SelectCharacterID(PyInteger characterID, PyBool loadDungeon, PyNone secondChoiceID,
@@ -340,7 +348,7 @@ namespace Node.Services.Characters
         {
             // ensure the character belongs to the current account
             Character character =
-                this.ServiceManager.Container.ItemFactory.ItemManager.LoadItem(characterID) as Character;
+                this.ItemManager.LoadItem(characterID) as Character;
 
             if (character.AccountID != client.AccountID)
                 throw new CustomError("The selected character does not belong to this account, aborting...");
@@ -370,12 +378,7 @@ namespace Node.Services.Characters
             client.ShipID = character.LocationID;
             
             // TODO: CHECK WHAT NODE HAS THE SOLAR SYSTEM LOADED AND PROPERLY LET THE CLIENT KNOW
-            
-            // build the session change
-            PyPacket sessionChangeNotification = client.CreateEmptySessionChange(this.ServiceManager.Container);
-            
-            // and finally send the client the required data
-            this.ServiceManager.Container.ClusterConnection.Socket.Send(sessionChangeNotification);
+            client.SendSessionChange();
             
             // update the character and set it's only flag to true
             character.Online = 1;
@@ -396,9 +399,9 @@ namespace Node.Services.Characters
         public PyDataType GetOwnerNoteLabels(PyDictionary namedPayload, Client client)
         {
             Character character =
-                this.ServiceManager.Container.ItemFactory.ItemManager.LoadItem((int) client.CharacterID) as Character;
+                this.ItemManager.LoadItem((int) client.CharacterID) as Character;
 
-            return this.mDB.GetOwnerNoteLabels(character);
+            return this.DB.GetOwnerNoteLabels(character);
         }
 
         public PyDataType GetCloneTypeID(PyDictionary namedPayload, Client client)
@@ -407,7 +410,7 @@ namespace Node.Services.Characters
                 throw new UserError("NoCharacterSelected");
 
             Character character =
-                this.ServiceManager.Container.ItemFactory.ItemManager.LoadItem((int) client.CharacterID) as Character;
+                this.ItemManager.LoadItem((int) client.CharacterID) as Character;
 
             if (character.ActiveCloneID == null)
                 throw new CustomError("You do not have any medical clone...");
@@ -421,7 +424,7 @@ namespace Node.Services.Characters
                 throw new UserError("NoCharacterSelected");
 
             Character character =
-                this.ServiceManager.Container.ItemFactory.ItemManager.LoadItem((int) client.CharacterID) as Character;
+                this.ItemManager.LoadItem((int) client.CharacterID) as Character;
 
             if (character.ActiveCloneID == null)
                 throw new CustomError("You do not have any medical clone...");
@@ -435,7 +438,7 @@ namespace Node.Services.Characters
                 throw new UserError("NoCharacterSelected");
 
             Character character =
-                this.ServiceManager.Container.ItemFactory.ItemManager.LoadItem((int) client.CharacterID) as Character;
+                this.ItemManager.LoadItem((int) client.CharacterID) as Character;
             
             return character.Description;
         }
@@ -446,7 +449,7 @@ namespace Node.Services.Characters
                 throw new UserError("NoCharacterSelected");
 
             Character character =
-                this.ServiceManager.Container.ItemFactory.ItemManager.LoadItem((int) client.CharacterID) as Character;
+                this.ItemManager.LoadItem((int) client.CharacterID) as Character;
 
             character.Description = newBio;
             character.Persist();
@@ -464,7 +467,7 @@ namespace Node.Services.Characters
             if (count > 100)
                 count = 100;
             
-            return this.mDB.GetRecentShipKillsAndLosses((int) client.CharacterID, count, startIndex);
+            return this.DB.GetRecentShipKillsAndLosses((int) client.CharacterID, count, startIndex);
         }
     }
 }

@@ -1,21 +1,23 @@
 using Common.Database;
+using Common.Services;
 using Node.Database;
 using PythonTypes.Types.Primitives;
+using SimpleInjector;
 
 namespace Node.Services.Characters
 {
     public class charmgr : Service
     {
-        private readonly CharacterDB mDB = null;
+        private CharacterDB DB { get; }
         
         public PyDataType GetPublicInfo(PyInteger characterID, PyDictionary namedPayload, Client client)
         {
-            return this.mDB.GetPublicInfo(characterID);
+            return this.DB.GetPublicInfo(characterID);
         }
         
-        public charmgr(DatabaseConnection db, ServiceManager manager) : base(manager)
+        public charmgr(CharacterDB db)
         {
-            this.mDB = new CharacterDB(db, manager.Container.ItemFactory);
+            this.DB = db;
         }
     }
 }

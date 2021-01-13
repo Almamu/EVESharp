@@ -1,21 +1,33 @@
 ﻿using System.Collections.Generic;
+using Common.Logging;
 using Node.Database;
+using Node.Inventory;
 using Node.Inventory.Items;
 using Node.Inventory.Items.Types;
 using Node.Market;
 using PythonTypes.Types.Database;
 using PythonTypes.Types.Exceptions;
 using PythonTypes.Types.Primitives;
+using SimpleInjector;
 
 namespace Node.Services.Characters
 {
     public class jumpCloneSvc : BoundService
     {
-        public jumpCloneSvc(ServiceManager manager) : base(manager)
+        private ItemDB ItemDB { get; }
+        private MarketDB MarketDB { get; }
+        private ItemManager ItemManager { get; }
+        private TypeManager TypeManager { get; }
+        
+        public jumpCloneSvc(ItemDB itemDB, MarketDB marketDB, ItemManager itemManager, TypeManager typeManager, BoundServiceManager manager, Logger logger) : base(manager, logger)
         {
+            this.ItemDB = itemDB;
+            this.MarketDB = marketDB;
+            this.ItemManager = itemManager;
+            this.TypeManager = typeManager;
         }
         
-        protected override Service CreateBoundInstance(PyDataType objectData)
+        protected override BoundService CreateBoundInstance(PyDataType objectData)
         {
             PyTuple tupleData = objectData as PyTuple;
             
@@ -24,7 +36,7 @@ namespace Node.Services.Characters
              * objectData [1] => groupID (station or solar system)
              */
             
-            return new jumpCloneSvc(this.ServiceManager);
+            return new jumpCloneSvc(this.ItemDB, this.MarketDB, this.ItemManager, this.TypeManager, this.BoundServiceManager, this.Log.Logger);
         }
 
         public PyDataType GetCloneState(PyDictionary namedPayload, Client client)
@@ -32,17 +44,12 @@ namespace Node.Services.Characters
             if (client.CharacterID == null)
                 throw new UserError("NoCharacterSelected");
             
-            Character character =
-                this.ServiceManager.Container.ItemFactory.ItemManager.LoadItem((int) client.CharacterID) as Character;
+            Character character = this.ItemManager.LoadItem((int) client.CharacterID) as Character;
 
             return KeyVal.FromDictionary(new PyDictionary
                 {
-                    ["clones"] =
-                        this.ServiceManager.Container.ItemFactory.ItemDB
-                            .GetClonesForCharacter((int) client.CharacterID, (int) character.ActiveCloneID),
-                    ["implants"] =
-                        this.ServiceManager.Container.ItemFactory.ItemDB.GetImplantsForCharacterClones(
-                            (int) client.CharacterID),
+                    ["clones"] = this.ItemDB.GetClonesForCharacter((int) client.CharacterID, (int) character.ActiveCloneID),
+                    ["implants"] = this.ItemDB.GetImplantsForCharacterClones((int) client.CharacterID),
                     ["timeLastJump"] = character.TimeLastJump
                 }
             );
@@ -53,10 +60,10 @@ namespace Node.Services.Characters
             // if the clone is not loaded the clone cannot be removed, players can only remove clones from where they're at
             if (client.CharacterID == null)
                 throw new UserError("NoCharacterSelected");
-            if (this.ServiceManager.Container.ItemFactory.ItemManager.IsItemLoaded(jumpCloneID) == false)
+            if (this.ItemManager.IsItemLoaded(jumpCloneID) == false)
                 throw new CustomError("Cannot remotely destroy a clone");
 
-            ItemEntity clone = this.ServiceManager.Container.ItemFactory.ItemManager.LoadItem(jumpCloneID);
+            ItemEntity clone = this.ItemManager.LoadItem(jumpCloneID);
             
             if (clone.LocationID != client.LocationID)
                 throw new UserError("JumpCantDestroyNonLocalClone");
@@ -64,7 +71,7 @@ namespace Node.Services.Characters
                 throw new UserError("MktNotOwner");
 
             // finally destroy the clone, this also destroys all the implants in it
-            this.ServiceManager.Container.ItemFactory.ItemManager.DestroyItem(clone);
+            this.ItemManager.DestroyItem(clone);
             
             // let the client know that the clones were updated
             client.NotifyCloneUpdate();
@@ -77,8 +84,7 @@ namespace Node.Services.Characters
             if (client.CharacterID == null)
                 throw new UserError("NoCharacterSelected");
             
-            return this.ServiceManager.Container.ItemFactory.ItemDB.GetClonesInShipForCharacter(
-                (int) client.CharacterID);
+            return this.ItemDB.GetClonesInShipForCharacter((int) client.CharacterID);
         }
 
         public PyDataType CloneJump(PyInteger locationID, PyBool unknown, PyDictionary namedPayload, Client client)
@@ -103,8 +109,7 @@ namespace Node.Services.Characters
             if (client.StationID == null)
                 throw new UserError("CanOnlyDoInStations");
             
-            Character character =
-                this.ServiceManager.Container.ItemFactory.ItemManager.LoadItem((int) client.CharacterID) as Character;
+            Character character = this.ItemManager.LoadItem((int) client.CharacterID) as Character;
             
             // check the maximum number of clones the character has assigned
             Dictionary<int, Skill> injectedSkills = character.InjectedSkillsByTypeID;
@@ -119,8 +124,7 @@ namespace Node.Services.Characters
             maximumClonesAvailable = injectedSkills[(int) ItemTypes.InfomorphPsychology].Level;
 
             // get list of clones (excluding the medical clone)
-            Rowset clones = this.ServiceManager.Container.ItemFactory.ItemDB.GetClonesForCharacter(character.ID,
-                (int) character.ActiveCloneID);
+            Rowset clones = this.ItemDB.GetClonesForCharacter(character.ID, (int) character.ActiveCloneID);
 
             // ensure we don't have more than the allowed clones
             if (clones.Rows.Count >= maximumClonesAvailable)
@@ -143,20 +147,18 @@ namespace Node.Services.Characters
                 );
             
             // create an alpha clone
-            ItemType cloneType = this.ServiceManager.Container.ItemFactory.TypeManager[ItemTypes.CloneGradeAlpha];
+            ItemType cloneType = this.TypeManager[ItemTypes.CloneGradeAlpha];
             
             // get character's station
-            Station station =
-                this.ServiceManager.Container.ItemFactory.ItemManager.GetItem((int) client.StationID) as Station;
+            Station station = this.ItemManager.GetItem((int) client.StationID) as Station;
             
             // create a new clone on the itemDB
-            Clone clone =
-                this.ServiceManager.Container.ItemFactory.ItemManager.CreateClone(cloneType, station, character);
+            Clone clone = this.ItemManager.CreateClone(cloneType, station, character);
 
             // update the balance
             character.Balance -= cost;
             
-            this.ServiceManager.Container.ItemFactory.MarketDB.CreateJournalForCharacter(
+            this.MarketDB.CreateJournalForCharacter(
                 station.ID, MarketReference.JumpCloneInstallationFee, character.ID, null, station.ID,
                 -cost, character.Balance, $"Installed clone at {station.Name}", 1000
             );

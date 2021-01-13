@@ -1,10 +1,13 @@
 using System.Collections.Generic;
+using Common.Logging;
 using Node.Database;
+using Node.Inventory;
 using Node.Inventory.Items.Types;
 using Node.Market;
 using PythonTypes.Types.Database;
 using PythonTypes.Types.Exceptions;
 using PythonTypes.Types.Primitives;
+using SimpleInjector;
 
 namespace Node.Services.Stations
 {
@@ -12,13 +15,19 @@ namespace Node.Services.Stations
     {
         private const double CLONE_CONTRACT_COST = 5600.0;
         
-        public corpStationMgr(ServiceManager manager) : base(manager)
+        private ItemDB ItemDB { get; }
+        private MarketDB MarketDB { get; }
+        private ItemManager ItemManager { get; }
+        public corpStationMgr(ItemDB itemDB, MarketDB marketDB, ItemManager itemManager, BoundServiceManager manager, Logger logger) : base(manager, logger)
         {
+            this.ItemDB = itemDB;
+            this.MarketDB = marketDB;
+            this.ItemManager = itemManager;
         }
 
-        protected override Service CreateBoundInstance(PyDataType objectData)
+        protected override BoundService CreateBoundInstance(PyDataType objectData)
         {
-            return new corpStationMgr(this.ServiceManager);
+            return new corpStationMgr(this.ItemDB, this.MarketDB, this.ItemManager, this.BoundServiceManager, this.Log.Logger);
         }
 
         public PyDataType GetCorporateStationOffice(PyDictionary namedPayload, Client client)
@@ -50,12 +59,11 @@ namespace Node.Services.Stations
 
             List<Station> availableStations = new List<Station>();
             
-            Character character =
-                this.ServiceManager.Container.ItemFactory.ItemManager.LoadItem((int) client.CharacterID) as Character;
+            Character character = this.ItemManager.LoadItem((int) client.CharacterID) as Character;
 
             // TODO: CHECK STANDINGS TO ENSURE THIS STATION CAN BE USED
-            availableStations.Add(this.ServiceManager.Container.ItemFactory.ItemManager.Stations[(int) client.StationID]);
-            availableStations.Add(this.ServiceManager.Container.ItemFactory.ItemManager.Stations[character.Corporation.StationID]);
+            availableStations.Add(this.ItemManager.Stations[(int) client.StationID]);
+            availableStations.Add(this.ItemManager.Stations[character.Corporation.StationID]);
 
             return availableStations;
         }
@@ -89,8 +97,7 @@ namespace Node.Services.Stations
             if (client.StationID == null)
                 throw new UserError("CanOnlyDoInStations");
             
-            Character character =
-                this.ServiceManager.Container.ItemFactory.ItemManager.LoadItem((int) client.CharacterID) as Character;
+            Character character = this.ItemManager.LoadItem((int) client.CharacterID) as Character;
             
             // ensure the station selected is in the list of available stations for this character
             Station station = this.GetPotentialHomeStations(client).Find(x => x.ID == stationID);
@@ -104,9 +111,7 @@ namespace Node.Services.Stations
             // it also simplifies code that needs to communicate between nodes
             
             // what we need to do tho is ensure there's no other clone in here in the first place
-            Rowset clones =
-                this.ServiceManager.Container.ItemFactory.ItemDB.GetClonesForCharacter(character.ID,
-                    (int) character.ActiveCloneID);
+            Rowset clones = this.ItemDB.GetClonesForCharacter(character.ID, (int) character.ActiveCloneID);
 
             foreach (PyList entry in clones.Rows)
             {
@@ -129,7 +134,7 @@ namespace Node.Services.Stations
             // subtract the money off the character
             character.Balance -= CLONE_CONTRACT_COST;
 
-            this.ServiceManager.Container.ItemFactory.MarketDB.CreateJournalForCharacter(
+            this.MarketDB.CreateJournalForCharacter(
                 station.ID, MarketReference.CloneTransfer, character.ID, null, station.ID,
                 -CLONE_CONTRACT_COST, character.Balance, $"Moved clone to {station.Name}", 1000
             );

@@ -25,6 +25,7 @@
 using Common.Services;
 using Node.Configuration;
 using PythonTypes.Types.Primitives;
+using SimpleInjector;
 
 namespace Node.Services.Network
 {
@@ -32,8 +33,7 @@ namespace Node.Services.Network
     {
         private readonly Authentication mConfiguration = null;
 
-        public authentication(Authentication configuration, ServiceManager manager)
-            : base(manager)
+        public authentication(Authentication configuration)
         {
             this.mConfiguration = configuration;
         }

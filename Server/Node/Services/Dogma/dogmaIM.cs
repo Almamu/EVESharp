@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using Common.Logging;
+using Node.Inventory;
 using Node.Inventory.Items;
 using Node.Inventory.Items.Attributes;
 using Node.Inventory.Items.Types;
@@ -9,6 +11,7 @@ using PythonTypes.Types.Complex;
 using PythonTypes.Types.Database;
 using PythonTypes.Types.Exceptions;
 using PythonTypes.Types.Primitives;
+using SimpleInjector;
 
 namespace Node.Services.Dogma
 {
@@ -16,20 +19,23 @@ namespace Node.Services.Dogma
     {
         private int mObjectID;
         
-        public dogmaIM(ServiceManager manager) : base(manager)
+        private ItemManager ItemManager { get; }
+        public dogmaIM(ItemManager itemManager, BoundServiceManager manager, Logger logger) : base(manager, logger)
         {
+            this.ItemManager = itemManager;
         }
 
-        private dogmaIM(ServiceManager manager, int objectID) : base(manager)
+        private dogmaIM(ItemManager itemManager, BoundServiceManager manager, int objectID, Logger logger) : base(manager, logger)
         {
+            this.ItemManager = itemManager;
             this.mObjectID = objectID;
         }
 
-        protected override Service CreateBoundInstance(PyDataType objectData)
+        protected override BoundService CreateBoundInstance(PyDataType objectData)
         {
             PyTuple tupleData = objectData as PyTuple;
             
-            return new dogmaIM(this.ServiceManager, tupleData[0] as PyInteger);
+            return new dogmaIM(this.ItemManager, this.BoundServiceManager, tupleData[0] as PyInteger, this.Log.Logger);
         }
 
         public PyDataType ShipGetInfo(PyDictionary namedPayload, Client client)
@@ -37,7 +43,7 @@ namespace Node.Services.Dogma
             if (client.ShipID == null)
                 throw new CustomError($"The character is not aboard any ship");
             
-            Ship ship = this.ServiceManager.Container.ItemFactory.ItemManager.LoadItem((int) client.ShipID) as Ship;
+            Ship ship = this.ItemManager.LoadItem((int) client.ShipID) as Ship;
 
             if (ship == null)
                 throw new CustomError($"Cannot get information for ship {client.ShipID}");
@@ -107,8 +113,7 @@ namespace Node.Services.Dogma
             if (client.CharacterID == null)
                 throw new CustomError("This client has not selected a character yet");
 
-            Character character =
-                this.ServiceManager.Container.ItemFactory.ItemManager.LoadItem((int) client.CharacterID) as Character;
+            Character character = this.ItemManager.LoadItem((int) client.CharacterID) as Character;
 
             if (character == null)
                 throw new CustomError($"Cannot get information for character {client.CharacterID}");
@@ -146,7 +151,7 @@ namespace Node.Services.Dogma
             if (client.CharacterID == null)
                 throw new CustomError("This client has not selected a character yet");
 
-            ItemEntity item = this.ServiceManager.Container.ItemFactory.ItemManager.LoadItem(itemID);
+            ItemEntity item = this.ItemManager.LoadItem(itemID);
             
             return new Row(
                 (PyList) new PyDataType[]
@@ -173,8 +178,7 @@ namespace Node.Services.Dogma
             if (client.CharacterID == null)
                 throw new CustomError("This client has not selected a character yet");
             
-            Character character =
-                this.ServiceManager.Container.ItemFactory.ItemManager.LoadItem((int) client.CharacterID) as Character;
+            Character character = this.ItemManager.LoadItem((int) client.CharacterID) as Character;
 
             if (character == null)
                 throw new CustomError($"Cannot get information for character {client.CharacterID}");

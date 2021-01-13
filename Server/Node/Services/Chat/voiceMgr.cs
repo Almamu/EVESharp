@@ -1,10 +1,12 @@
+using Common.Services;
 using PythonTypes.Types.Primitives;
+using SimpleInjector;
 
 namespace Node.Services.Chat
 {
     public class voiceMgr : Service
     {
-        public voiceMgr(ServiceManager manager) : base(manager)
+        public voiceMgr()
         {
         }
 

@@ -1,24 +1,28 @@
+using Common.Services;
 using PythonTypes.Types.Database;
 using PythonTypes.Types.Primitives;
+using SimpleInjector;
 
 namespace Node.Services.War
 {
     public class facWarMgr : Service
     {
-        public facWarMgr(ServiceManager manager) : base(manager)
+        private CacheStorage CacheStorage { get; }
+        public facWarMgr(CacheStorage cacheStorage)
         {
+            this.CacheStorage = cacheStorage;
         }
 
         public PyDataType GetWarFactions(PyDictionary namedPayload, Client client)
         {
-            this.ServiceManager.CacheStorage.Load(
+            this.CacheStorage.Load(
                 "facWarMgr",
                 "GetWarFactions",
                 "SELECT factionID, militiaCorporationID FROM chrFactions WHERE militiaCorporationID IS NOT NULL",
                 CacheStorage.CacheObjectType.IntIntDict
             );
 
-            PyDataType cacheHint = this.ServiceManager.CacheStorage.GetHint("facWarMgr", "GetWarFactions");
+            PyDataType cacheHint = this.CacheStorage.GetHint("facWarMgr", "GetWarFactions");
 
             PyTuple args = new PyTuple(3);
             PyDictionary versionCheck = new PyDictionary();

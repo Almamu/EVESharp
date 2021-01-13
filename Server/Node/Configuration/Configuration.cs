@@ -1,6 +1,7 @@
 using Common.Configuration;
 using IniParser;
 using IniParser.Model;
+using SimpleInjector;
 
 namespace Node.Configuration
 {
@@ -14,7 +15,7 @@ namespace Node.Configuration
         public Logging Logging { get; } = new Logging();
         public Character Character { get; } = new Character();
 
-        public static General LoadFromFile(string filename)
+        public static General LoadFromFile(string filename, Container container)
         {
             FileIniDataParser parser = new FileIniDataParser();
             IniData data = parser.ReadFile(filename);
@@ -34,6 +35,15 @@ namespace Node.Configuration
             if (data.Sections.ContainsSection("character") == true)
                 config.Character.Load(data["character"]);
 
+            // register all the configuration options as dependencies available
+            container.RegisterInstance(config.Database);
+            container.RegisterInstance(config.Proxy);
+            container.RegisterInstance(config.Authentication);
+            container.RegisterInstance(config.LogLite);
+            container.RegisterInstance(config.FileLog);
+            container.RegisterInstance(config.Logging);
+            container.RegisterInstance(config.Character);
+            
             return config;
         }
     }

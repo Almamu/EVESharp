@@ -34,9 +34,8 @@ namespace Node
 {
     public class SystemManager
     {
-        private readonly DatabaseConnection mDatabase = null;
-        private readonly GeneralDB mGeneralDB = null;
-        private readonly ItemFactory mItemFactory = null;
+        private GeneralDB GeneralDB { get; }
+        private ItemFactory ItemFactory { get; }
 
         private readonly List<SolarSystem> mLoadedSolarSystems = new List<SolarSystem>();
 
@@ -96,10 +95,10 @@ namespace Node
         public bool UnloadSolarSystem(SolarSystem solarSystem)
         {
             // remove references off the ItemFactory
-            this.mItemFactory.ItemManager.UnloadItem(solarSystem);
+            this.ItemFactory.ItemManager.UnloadItem(solarSystem);
             
             // Update the database
-            this.mGeneralDB.MarkSolarSystemAsUnloaded(solarSystem);
+            this.GeneralDB.MarkSolarSystemAsUnloaded(solarSystem);
 
             return true;
         }
@@ -107,12 +106,12 @@ namespace Node
         public bool LoadSolarSystem(int solarSystemID)
         {
             // load the item into memory
-            SolarSystem solarSystem = this.mItemFactory.ItemManager.LoadItem(solarSystemID) as SolarSystem;
+            SolarSystem solarSystem = this.ItemFactory.ItemManager.LoadItem(solarSystemID) as SolarSystem;
             
             // ensure the items in the solar system are loaded
 
             // Update the database
-            this.mGeneralDB.MarkSolarSystemAsLoaded(solarSystem);
+            this.GeneralDB.MarkSolarSystemAsLoaded(solarSystem);
 
             // Update the list
             this.mLoadedSolarSystems.Add(solarSystem);
@@ -123,7 +122,7 @@ namespace Node
         public bool LoadUnloadedSolarSystems()
         {
             // Get all the solarSystems not loaded and load them
-            List<int> solarSystems = this.mGeneralDB.GetUnloadedSolarSystems();
+            List<int> solarSystems = this.GeneralDB.GetUnloadedSolarSystems();
 
             // Load the not-loaded solar systems
             foreach (int solarSystemID in solarSystems)
@@ -135,11 +134,10 @@ namespace Node
             return true;
         }
 
-        public SystemManager(DatabaseConnection db, ItemFactory itemFactory)
+        public SystemManager(GeneralDB generalDB, ItemFactory itemFactory)
         {
-            this.mDatabase = db;
-            this.mGeneralDB = new GeneralDB(this.mDatabase);
-            this.mItemFactory = itemFactory;
+            this.GeneralDB = generalDB;
+            this.ItemFactory = itemFactory;
         }
     }
 }

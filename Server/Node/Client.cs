@@ -23,12 +23,13 @@
 */
 
 using System;
-using System.Collections.Generic;
 using Common.Game;
 using Common.Packets;
+using Node.Inventory;
 using Node.Inventory.Items;
 using Node.Inventory.Items.Attributes;
 using Node.Inventory.Items.Types;
+using Node.Network;
 using PythonTypes.Types.Network;
 using PythonTypes.Types.Primitives;
 
@@ -37,11 +38,17 @@ namespace Node
     public class Client
     {
         private readonly Session mSession = new Session();
-        private readonly NodeContainer mContainer = null;
+        
+        private NodeContainer Container { get; }
 
-        public Client(NodeContainer container)
+        private ClusterConnection ClusterConnection { get; }
+        private ItemFactory ItemFactory { get; }
+        
+        public Client(NodeContainer container, ClusterConnection clusterConnection, ItemFactory itemFactory)
         {
-            this.mContainer = container;
+            this.Container = container;
+            this.ClusterConnection = clusterConnection;
+            this.ItemFactory = itemFactory;
         }
 
         public void UpdateSession(PyPacket packet)
@@ -74,14 +81,14 @@ namespace Node
                 {
                     if (intNewStationID != 0)
                     {
-                        Station station = this.mContainer.ItemFactory.ItemManager.GetItem(intNewStationID) as Station;
+                        Station station = this.ItemFactory.ItemManager.GetItem(intNewStationID) as Station;
 
-                        station.Guests[characterID] = this.mContainer.ItemFactory.ItemManager.LoadItem(characterID) as Character;
+                        station.Guests[characterID] = this.ItemFactory.ItemManager.LoadItem(characterID) as Character;
                     }
 
                     if (intOldStationID != 0)
                     {
-                        Station station = this.mContainer.ItemFactory.ItemManager.GetItem(intOldStationID) as Station;
+                        Station station = this.ItemFactory.ItemManager.GetItem(intOldStationID) as Station;
 
                         station.Guests.Remove(characterID);
                     }
@@ -117,6 +124,15 @@ namespace Node
             };
 
             return packet;
+        }
+
+        public void SendSessionChange()
+        {
+            // build the session change
+            PyPacket sessionChangeNotification = this.CreateEmptySessionChange(this.Container);
+            
+            // and finally send the client the required data
+            this.ClusterConnection.Socket.Send(sessionChangeNotification);
         }
 
         public Session Session => this.mSession;
@@ -335,12 +351,12 @@ namespace Node
             PyPacket packet = new PyPacket(PyPacket.PacketType.NOTIFICATION);
 
             packet.Destination = new PyAddressBroadcast(new PyList(), idType, notificationType);
-            packet.Source = new PyAddressNode(this.mContainer.NodeID);
+            packet.Source = new PyAddressNode(this.Container.NodeID);
 
             packet.UserID = this.AccountID;
             packet.Payload = dataContainer;
 
-            this.mContainer.ClusterConnection.Socket.Send(packet);
+            this.ClusterConnection.Socket.Send(packet);
         }
 
         public void NotifySkillTrained(Skill skill)
