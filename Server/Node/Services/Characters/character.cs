@@ -287,12 +287,11 @@ namespace Node.Services.Characters
             // create an alpha clone
             ItemType cloneType = this.ServiceManager.Container.ItemFactory.TypeManager[ItemTypes.CloneGradeAlpha];
             
-            ItemEntity clone =
-                this.ServiceManager.Container.ItemFactory.ItemManager.CreateSimpleItem(cloneType, character, station,
-                    ItemFlags.Clone);
+            Clone clone =
+                this.ServiceManager.Container.ItemFactory.ItemManager.CreateClone(cloneType, station, character);
 
             character.LocationID = ship.ID;
-            character.ActiveCloneID = clone.ID;
+            character.ActiveClone = clone;
             
             // character is 100% created and the base items are too
             // persist objects to database and unload them as they do not really belong to us
@@ -411,21 +410,23 @@ namespace Node.Services.Characters
                 this.ServiceManager.Container.ItemFactory.ItemManager.LoadItem((int) client.CharacterID) as Character;
 
             if (character.ActiveCloneID == null)
+                throw new CustomError("You do not have any medical clone...");
+
+            return character.ActiveClone.Type.ID;
+        }
+
+        public PyDataType GetHomeStation(PyDictionary namedPayload, Client client)
+        {
+            if (client.CharacterID == null)
                 throw new UserError("NoCharacterSelected");
 
-            // check if the clone is loaded in our item list and get the data off there
-            if (this.ServiceManager.Container.ItemFactory.ItemManager.IsItemLoaded((int) character.ActiveCloneID) == true)
-            {
-                ItemEntity clone =
-                    this.ServiceManager.Container.ItemFactory.ItemManager.GetItem((int) character.ActiveCloneID);
+            Character character =
+                this.ServiceManager.Container.ItemFactory.ItemManager.LoadItem((int) client.CharacterID) as Character;
 
-                return clone.Type.ID;
-            }
-            else
-            {
-                // get the information we want off the database as this item doesn't belong to us
-                return this.ServiceManager.Container.ItemFactory.ItemDB.GetItemTypeID((int) character.ActiveCloneID);
-            }
+            if (character.ActiveCloneID == null)
+                throw new CustomError("You do not have any medical clone...");
+
+            return character.ActiveClone.LocationID;
         }
 
         public PyDataType GetCharacterDescription(PyInteger characterID, PyDictionary namedPayload, Client client)
@@ -448,6 +449,7 @@ namespace Node.Services.Characters
                 this.ServiceManager.Container.ItemFactory.ItemManager.LoadItem((int) client.CharacterID) as Character;
 
             character.Description = newBio;
+            character.Persist();
             
             return null;
         }

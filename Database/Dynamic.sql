@@ -389,28 +389,6 @@ CREATE TABLE `market_history_old` (
 
 /*Data for the table `market_history_old` */
 
-/*Table structure for table `market_journal` */
-
-DROP TABLE IF EXISTS `market_journal`;
-
-CREATE TABLE `market_journal` (
-  `characterID` int(10) unsigned NOT NULL default '0',
-  `refID` int(10) unsigned NOT NULL auto_increment,
-  `transDate` bigint(20) default NULL,
-  `refTypeID` int(10) unsigned NOT NULL default '0',
-  `ownerID1` int(10) unsigned NOT NULL default '0',
-  `ownerID2` int(10) unsigned NOT NULL default '0',
-  `argID1` varchar(255) default NULL,
-  `accountID` int(10) unsigned NOT NULL default '0',
-  `amount` double NOT NULL default '0',
-  `balance` double NOT NULL default '0',
-  `reason` varchar(43) default NULL,
-  `accountKey` int(10) unsigned NOT NULL default '0',
-  PRIMARY KEY  (`refID`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
-/*Data for the table `market_journal` */
-
 /*Table structure for table `market_orders` */
 
 DROP TABLE IF EXISTS `market_orders`;

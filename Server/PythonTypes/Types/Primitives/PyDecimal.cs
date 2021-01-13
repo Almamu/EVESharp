@@ -41,6 +41,21 @@ namespace PythonTypes.Types.Primitives
             this.DecimalType = DecimalTypeEnum.Float;
         }
 
+        public static bool operator ==(PyDecimal obj1, PyDecimal obj2)
+        {
+            if (ReferenceEquals(obj1, obj2)) return true;
+            if (ReferenceEquals(null, obj1)) return false;
+            if (ReferenceEquals(null, obj2)) return false;
+
+            return obj1.Value == obj2.Value;
+        }
+
+        public static bool operator !=(PyDecimal obj1, PyDecimal obj2)
+        {
+            return !(obj1 == obj2);
+        }
+
+
         public static bool operator >(PyDecimal obj, double value)
         {
             return obj.Value > value;

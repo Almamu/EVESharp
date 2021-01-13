@@ -107,6 +107,10 @@ namespace Node.Inventory
                 case (int) ItemCategories.Station:
                     item = LoadStation(item);
                     break;
+                
+                case (int) ItemCategories.Accessories:
+                    item = LoadAccessories(item);
+                    break;
             }
 
             this.mItemList.Add(item.ID, item);
@@ -157,10 +161,20 @@ namespace Node.Inventory
                     return this.ItemFactory.ItemDB.LoadCorporation(item);
                 case (int) ItemGroups.Faction:
                     return this.ItemFactory.ItemDB.LoadFaction(item);
+                default:
+                    Log.Warning($"Loading owner {item.ID} from item group {item.Type.Group.ID} as normal item");
+                    return item;
+            }
+        }
+
+        private ItemEntity LoadAccessories(ItemEntity item)
+        {
+            switch (item.Type.Group.ID)
+            {
                 case (int) ItemGroups.Clone:
                     return this.ItemFactory.ItemDB.LoadClone(item);
                 default:
-                    Log.Warning($"Loading owner {item.ID} from item group {item.Type.Group.ID} as normal item");
+                    Log.Warning($"Loading accessory {item.ID} from item group {item.Type.Group.ID} as normal item");
                     return item;
             }
         }
@@ -232,6 +246,11 @@ namespace Node.Inventory
             Ship ship = this.LoadItem(shipID) as Ship;
 
             return ship;
+        }
+
+        public Clone CreateClone(ItemType cloneType, ItemEntity location, Character owner)
+        {
+            return this.CreateSimpleItem(cloneType, owner, location, ItemFlags.Clone, 1, false, true) as Clone;
         }
 
         public void MoveItem(ItemEntity item, ItemEntity newLocation)

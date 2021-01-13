@@ -557,15 +557,15 @@ namespace Node.Database
             };
             
             string query =
-                "SELECT refID as transactionID, transDate as transactionDate, 0 AS referenceID, refTypeID as entryTypeID," +
-                "ownerID1, ownerID2, argID1, accountKey, amount, balance, reason AS description " +
+                "SELECT transactionID, transactionDate, referenceID, entryTypeID," +
+                " ownerID1, ownerID2, accountKey, amount, balance, description " +
                 "FROM market_journal " +
-                "WHERE characterID=@characterID AND accountKey=@accountKey AND transDate <= @maxDate AND transDate >= @minDate";
+                "WHERE (ownerID1=@characterID OR ownerID2=@characterID) AND accountKey=@accountKey AND transactionDate <= @minDate AND transactionDate >= @maxDate";
 
             if (refTypeID != null)
             {
-                query += " AND refTypeID=@refTypeID";
-                parameters["@refTypeID"] = (int) refTypeID;
+                query += " AND entryTypeID=@entryTypeID";
+                parameters["@entryTypeID"] = (int) refTypeID;
             }
 
             return Database.PrepareRowsetQuery(query, parameters);

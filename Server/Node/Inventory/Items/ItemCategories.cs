@@ -1,6 +1,6 @@
 namespace Node.Inventory.Items
 {
-    public enum ItemCategories
+    public enum ItemCategories : int
     {
         System = 0,
         Owner = 1,

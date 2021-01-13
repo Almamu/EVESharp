@@ -132,7 +132,16 @@ namespace Node.Inventory.Items.Types
             }
         }
         public double Bounty => mBounty;
-        public double Balance => mBalance;
+
+        public double Balance
+        {
+            get => this.mBalance;
+            set
+            {
+                this.Dirty = true;
+                this.mBalance = value;
+            }
+        }
         public double SecurityRating => mSecurityRating;
         public string PetitionMessage => mPetitionMessage;
         public int LogonMinutes => mLogonMinutes;
@@ -231,6 +240,27 @@ namespace Node.Inventory.Items.Types
                 this.Dirty = true;
             }
         }
+
+        public Clone ActiveClone
+        {
+            get
+            {
+                if (this.mActiveClone == null)
+                    this.mActiveClone = this.mItemFactory.ItemManager.LoadItem((int) this.ActiveCloneID) as Clone;
+
+                return this.mActiveClone;
+            }
+
+            set
+            {
+                // free the current active clone (if loaded)
+                if (this.mActiveClone != null)
+                    this.mItemFactory.ItemManager.UnloadItem(this.mActiveClone);
+                
+                this.ActiveCloneID = value.ID;
+                this.mActiveClone = value;
+            }
+        }
         
         private int mCharacterID;
         private int mAccountID;
@@ -304,6 +334,7 @@ namespace Node.Inventory.Items.Types
         
         private List<SkillQueueEntry> mSkillQueue;
         private Corporation mCorporation = null;
+        private Clone mActiveClone = null;
         private double mSkillPoints = 0.0f;
 
         public long Charisma

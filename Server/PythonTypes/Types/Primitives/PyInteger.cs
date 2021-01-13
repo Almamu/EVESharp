@@ -6,7 +6,7 @@ namespace PythonTypes.Types.Primitives
     {
         protected bool Equals(PyInteger other)
         {
-            return Value == other.Value && IntegerType == other.IntegerType;
+            return Value.Equals(other.Value);
         }
 
         public override bool Equals(object obj)
@@ -58,6 +58,20 @@ namespace PythonTypes.Types.Primitives
             this.IntegerType = IntegerTypeEnum.Byte;
         }
 
+        public static bool operator ==(PyInteger obj1, PyInteger obj2)
+        {
+            if (ReferenceEquals(obj1, obj2)) return true;
+            if (ReferenceEquals(null, obj1)) return false;
+            if (ReferenceEquals(null, obj2)) return false;
+
+            return obj1.Value == obj2.Value;
+        }
+
+        public static bool operator !=(PyInteger obj1, PyInteger obj2)
+        {
+            return !(obj1 == obj2);
+        }
+        
         public static bool operator >(PyInteger obj, long value)
         {
             return obj.Value > value;

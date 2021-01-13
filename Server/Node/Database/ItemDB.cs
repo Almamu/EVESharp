@@ -32,6 +32,7 @@ using Node.Inventory.Items.Attributes;
 using Node.Inventory.Items.Types;
 using Node.Inventory.SystemEntities;
 using Node.Services.Characters;
+using PythonTypes.Types.Database;
 using PythonTypes.Types.Primitives;
 
 namespace Node.Database
@@ -358,7 +359,7 @@ namespace Node.Database
         /// </summary>
         /// <param name="itemID"></param>
         /// <returns></returns>
-        public int GetItemTypeID(int itemID)
+        public PyInteger GetItemTypeID(int itemID)
         {
             MySqlConnection connection = null;
             MySqlDataReader reader = Database.PrepareQuery(ref connection,
@@ -372,7 +373,33 @@ namespace Node.Database
             using (reader)
             {
                 if (reader.Read() == false)
-                    return 0;
+                    return null;
+
+                return reader.GetInt32(0);
+            }
+        }
+
+        /// <summary>
+        /// WARNING: ONLY USE WHEN THE ITEM IS NOT STATIC DATA AND DOES NOT BELONG TO OUR NODE!
+        /// </summary>
+        /// <param name="itemID"></param>
+        /// <returns></returns>
+        public PyInteger GetItemLocationID(int itemID)
+        {
+            MySqlConnection connection = null;
+            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+                "SELECT locationID FROM entity WHERE itemID = @itemID",
+                new Dictionary<string, object>()
+                {
+                    {"@itemID", itemID}
+                }
+            );
+            
+            using (connection)
+            using (reader)
+            {
+                if (reader.Read() == false)
+                    return null;
 
                 return reader.GetInt32(0);
             }
@@ -1053,14 +1080,15 @@ namespace Node.Database
             );
         }
 
-        public PyDataType GetClonesForCharacter(int characterID)
+        public Rowset GetClonesForCharacter(int characterID, int activeCloneID)
         {
             // TODO: CACHE THIS IN A INTERMEDIATE TABLE TO MAKE THINGS EASIER TO QUERY
             return Database.PrepareRowsetQuery(
-                "SELECT itemID AS jumpCloneID, typeID, locationID FROM entity WHERE flag = @cloneFlag AND ownerID = @characterID AND locationID IN(SELECT stationID FROM staStations)",
+                "SELECT itemID AS jumpCloneID, typeID, locationID FROM entity WHERE flag = @cloneFlag AND ownerID = @characterID AND itemID != @activeCloneID AND locationID IN(SELECT stationID FROM staStations)",
                 new Dictionary<string, object>()
                 {
                     {"@cloneFlag", ItemFlags.Clone},
+                    {"@activeCloneID", activeCloneID},
                     {"@characterID", characterID}
                 }
             );
@@ -1107,7 +1135,7 @@ namespace Node.Database
                 }
             );
         }
-
+        
         public ItemDB(DatabaseConnection db, ItemFactory factory) : base(db)
         {
             this.mItemFactory = factory;

@@ -1,5 +1,7 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using Common.Database;
+using Node.Market;
 using PythonTypes.Types.Primitives;
 
 namespace Node.Database
@@ -15,6 +17,50 @@ namespace Node.Database
     {
         public MarketDB(DatabaseConnection db) : base(db)
         {
+        }
+
+        public void CreateJournalForCharacter(int locationID, MarketReference reference, int ownerID1,
+            int? ownerID2, int? referenceID, double amount, double balance, string reason, int accountKey)
+        {
+            reason = reason.Substring(0, 43);
+            
+            Database.PrepareQuery(
+                "INSERT INTO market_journal(transactionDate, entryTypeID, ownerID1, ownerID2, referenceID, amount, balance, description, accountKey)VALUES(@transactionDate, @entryTypeID, @ownerID1, @ownerID2, @referenceID, @amount, @balance, @description, @accountKey)",
+                new Dictionary<string, object>()
+                {
+                    {"@transactionDate", DateTime.UtcNow.ToFileTimeUtc()},
+                    {"@entryTypeID", (int) reference},
+                    {"@locationID", locationID},
+                    {"@ownerID1", ownerID1},
+                    {"@ownerID2", ownerID2},
+                    {"@referenceID", referenceID},
+                    {"@amount", amount},
+                    {"@balance", balance},
+                    {"@description", reason},
+                    {"@accountKey", accountKey}
+                }
+            );
+        }
+
+        public void CreateTransactionForCharacter(int characterID, int? clientID, TransactionType sellBuy,
+            int typeID, int quantity, double price, int stationID, int regionID, bool corpTransaction = false)
+        {
+            Database.PrepareQuery(
+                "INSERT INTO market_transactions(transactionDateTime, typeID, quantity, price, transactionType, characterID, clientID, regionID, stationID, corpTransaction)VALUE(@transactionDateTime, @typeID, @quantity, @price, @transactionType, @characterID, @clientID, @regionID, @stationID, @corpTransaction)",
+                new Dictionary<string, object>()
+                {
+                    {"@transactionDateTime", DateTime.UtcNow.ToFileTimeUtc()},
+                    {"@typeID", typeID},
+                    {"@quantity", quantity},
+                    {"@price", price},
+                    {"@transactionType", (int) sellBuy},
+                    {"@characterID", characterID},
+                    {"@clientID", clientID},
+                    {"@regionID", regionID},
+                    {"@stationID", stationID},
+                    {"@corpTransaction", corpTransaction}
+                }
+            );
         }
 
         public PyDataType CharGetNewTransactions(int characterID, int? clientID, TransactionType sellBuy, int? typeID, int quantity, int minPrice)

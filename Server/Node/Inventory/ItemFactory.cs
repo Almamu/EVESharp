@@ -39,6 +39,7 @@ namespace Node.Inventory
         public SkillDB SkillDB { get; }
         public CharacterDB CharacterDB { get; }
         public StationDB StationDB { get; }
+        public MarketDB MarketDB { get; }
         
         public ItemFactory(NodeContainer container)
         {
@@ -47,6 +48,7 @@ namespace Node.Inventory
             this.SkillDB = new SkillDB(container.Database, this);
             this.CharacterDB = new CharacterDB(container.Database, this);
             this.StationDB = new StationDB(container.Database);
+            this.MarketDB = new MarketDB(container.Database);
             
             // station manager goes first
             this.StationManager = new StationManager(this);

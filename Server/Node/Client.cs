@@ -242,6 +242,16 @@ namespace Node
             set => this.mSession["locationid"] = value;
         }
 
+        public void NotifyBalanceUpdate(double balance)
+        {
+            PyTuple notification = new PyTuple(new PyDataType[]
+            {
+                "cash", this.CharacterID, balance
+            });
+            
+            this.SendNotification("OnAccountChange", "cash", notification);
+        }
+
         public void NotifyCloneUpdate()
         {
             this.SendNotification("OnJumpCloneCacheInvalidated", "charid", new PyTuple(0));
