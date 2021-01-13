@@ -17,19 +17,11 @@ namespace Common.Logging
     {
         private readonly List<LogStream> mStreams = new List<LogStream>();
         private readonly Dictionary<string, Channel> mChannels = new Dictionary<string, Channel>();
-        private Configuration.Logging mConfiguration = new Configuration.Logging();
+        private Configuration.Logging mConfiguration = null;
 
         public Logger(Configuration.Logging configuration)
         {
-            if (configuration != null)
-                this.mConfiguration = configuration;
-        }
-
-        // TODO: REMOVE THIS METHOD WHEN CLUSTER AND NODE USE DEPENDENCY INJECTION
-        public void SetConfiguration(Configuration.Logging configuration)
-        {
-            if (configuration != null)
-                this.mConfiguration = configuration;
+            this.mConfiguration = configuration;
         }
 
         public void AddLogStream(LogStream newStream)

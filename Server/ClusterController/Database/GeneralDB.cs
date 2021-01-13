@@ -34,52 +34,7 @@ namespace ClusterControler.Database
 {
     public class GeneralDB : DatabaseAccessor
     {
-        private Channel Log { get; set; }
-
-        public void ResetSolarSystemStatus()
-        {
-            try
-            {
-                Database.Query("UPDATE solarSystemsLoaded SET nodeID = 0");
-            }
-            catch (Exception)
-            {
-                Log.Error("Cannot reset solar systems nodeID to 0");
-                throw;
-            }
-        }
-
-        public void ResetSolarSystemStatus(int solarSystemID)
-        {
-            try
-            {
-                Database.PrepareQuery(
-                    "UPDATE solarSystemsLoaded SET nodeID = 0 WHERE solarSystemID = @solarSystemID",
-                    new Dictionary<string, object>()
-                    {
-                        {"@solarSystemID", solarSystemID}
-                    }
-                );
-            }
-            catch (Exception)
-            {
-                Log.Error($"Cannot reset solar system nodeID to 0 for solar system {solarSystemID.ToString()}");
-                throw;
-            }
-        }
-
-        public void ResetItemsStatus()
-        {
-            try
-            {
-                Database.Query("UPDATE entity SET nodeID = 0");
-            }
-            catch (Exception)
-            {
-                Log.Error("Cannot reset nodeID for items");
-                throw;
-            }
-        }
+        private Channel Log { get; }
 
         public PyList FetchLiveUpdates()
         {

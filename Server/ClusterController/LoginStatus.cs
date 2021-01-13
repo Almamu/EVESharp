@@ -27,7 +27,7 @@ namespace ClusterControler
     public enum LoginStatus
     {
         Waiting = 0,
-        Sucess = 1,
+        Success = 1,
         Failed = 2,
     };
 }

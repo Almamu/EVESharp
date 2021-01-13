@@ -24,41 +24,25 @@
 
 using System;
 using System.Collections.Generic;
+using System.Net.Sockets;
+using ClusterControler.Database;
 using Common.Constants;
 using Common.Database;
 using Common.Logging;
 using Common.Network;
+using MySqlX.XDevAPI;
 using PythonTypes.Types.Primitives;
 
 namespace ClusterControler
 {
     public class ConnectionManager
     {
-        public LoginQueue LoginQueue { get; set; }
-
-        public int ClientsCount
-        {
-            get => Clients.Count;
-            private set { }
-        }
-
-        public int NodesCount
-        {
-            get => Nodes.Count;
-            private set { }
-        }
-
-        public Dictionary<long, NodeConnection> Nodes
-        {
-            get => this.mNodeConnections;
-            private set { }
-        }
-
-        public Dictionary<long, ClientConnection> Clients
-        {
-            get => this.mClientConnections;
-            private set { }
-        }
+        public LoginQueue LoginQueue { get; }
+        private GeneralDB GeneralDB { get; }
+        public int ClientsCount => Clients.Count;
+        public int NodesCount => Nodes.Count;
+        public Dictionary<long, NodeConnection> Nodes => this.mNodeConnections;
+        public Dictionary<long, ClientConnection> Clients => this.mClientConnections;
 
         private Channel Log { get; set; }
 
@@ -68,13 +52,12 @@ namespace ClusterControler
         private readonly List<ClientConnection> mUnauthenticatedClientConnections = new List<ClientConnection>();
         private readonly Dictionary<long, ClientConnection> mClientConnections = new Dictionary<long, ClientConnection>();
         private readonly Dictionary<long, NodeConnection> mNodeConnections = new Dictionary<long, NodeConnection>();
-        private readonly DatabaseConnection mDatabaseConnection = null;
 
-        public ConnectionManager(LoginQueue loginQueue, DatabaseConnection databaseConnection, Logger logger)
+        public ConnectionManager(LoginQueue loginQueue, GeneralDB generalDB, Logger logger)
         {
             this.Log = logger.CreateLogChannel("ConnectionManager");
             this.LoginQueue = loginQueue;
-            this.mDatabaseConnection = databaseConnection;
+            this.GeneralDB = generalDB;
         }
 
         public void AddUnauthenticatedConnection(EVEClientSocket socket)
@@ -91,7 +74,7 @@ namespace ClusterControler
 
         public void AddUnauthenticatedClientConnection(EVEClientSocket socket)
         {
-            this.mUnauthenticatedClientConnections.Add(new ClientConnection(socket, this, this.mDatabaseConnection, Log.Logger));
+            this.mUnauthenticatedClientConnections.Add(new ClientConnection(socket, this, this.GeneralDB, Log.Logger));
         }
 
         public void RemoveUnauthenticatedClientConnection(ClientConnection connection)
@@ -108,7 +91,18 @@ namespace ClusterControler
 
                 this.mClientConnections.Remove(connection.AccountID);
 
-                con.Socket.ForcefullyDisconnect();
+                try
+                {
+                    // try to disconnect the user
+                    // there might be situations where the client is already disconnected
+                    // and the connection is just hung in there
+                    // so exceptions from this can be ignored
+                    con.Socket.ForcefullyDisconnect();
+                }
+                catch (Exception)
+                {
+                    // ignored
+                }
             }
 
             this.mClientConnections.Add(connection.AccountID, connection);
@@ -116,7 +110,9 @@ namespace ClusterControler
 
         public void RemoveAuthenticatedClientConnection(ClientConnection connection)
         {
-            this.mClientConnections.Remove(connection.AccountID);
+            // before removing it, ensure that the connection wasn't replaced by anyone already
+            if (this.mClientConnections[connection.AccountID] == connection)
+                this.mClientConnections.Remove(connection.AccountID);
         }
 
         public void AddNodeConnection(EVEClientSocket socket)

@@ -2,6 +2,7 @@ using ClusterControler.Configuration;
 using Common.Configuration;
 using IniParser;
 using IniParser.Model;
+using SimpleInjector;
 
 namespace Configuration
 {
@@ -13,7 +14,7 @@ namespace Configuration
         public FileLog FileLog { get; } = new FileLog();
         public Logging Logging { get; } = new Logging();
 
-        public static General LoadFromFile(string filename)
+        public static General LoadFromFile(string filename, Container container)
         {
             FileIniDataParser parser = new FileIniDataParser();
             IniData data = parser.ReadFile(filename);
@@ -30,6 +31,12 @@ namespace Configuration
             if (data.Sections.ContainsSection("logging") == true)
                 config.Logging.Load(data["logging"]);
 
+            container.RegisterInstance(config.Database);
+            container.RegisterInstance(config.Authentication);
+            container.RegisterInstance(config.LogLite);
+            container.RegisterInstance(config.FileLog);
+            container.RegisterInstance(config.Logging);
+            
             return config;
         }
     }

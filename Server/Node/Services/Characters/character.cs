@@ -192,7 +192,7 @@ namespace Node.Services.Characters
 
             if (found == false)
             {
-                this.Log.Error($"Cannot find random career for race {bloodline.RaceID}");
+                Log.Error($"Cannot find random career for race {bloodline.RaceID}");
                 
                 throw new CustomError($"Cannot find random career for race {bloodline.RaceID}");
             }
@@ -203,7 +203,7 @@ namespace Node.Services.Characters
 
             if (found == false)
             {
-                this.Log.Error($"Cannot find location for corporation {bloodline.CorporationID}");
+                Log.Error($"Cannot find location for corporation {bloodline.CorporationID}");
                 
                 throw new CustomError($"Cannot find location for corporation {bloodline.CorporationID}");
             }

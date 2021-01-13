@@ -24,23 +24,25 @@
 
 using System;
 using System.Threading;
+using ClusterControler.Database;
 using Common.Database;
 using Common.Logging;
 using Common.Logging.Streams;
 using Common.Network;
 using Configuration;
+using SimpleInjector;
 
 namespace ClusterControler
 {
     class Program
     {
-        private static DatabaseConnection sDatabase = null;
         private static General sConfiguration = null;
         private static LoginQueue sLoginQueue = null;
         private static ConnectionManager sConnectionManager = null;
         private static Logger sLog = null;
         private static Channel sChannel = null;
         private static EVEServerSocket sServerSocket = null;
+        private static Container sContainer = null;
 
         static readonly AsyncCallback acceptAsync = new AsyncCallback(AcceptAsync);
 
@@ -60,18 +62,28 @@ namespace ClusterControler
         {
             try
             {
+                sContainer = new Container();
+
+                sContainer.Register<Logger>(Lifestyle.Singleton);
+                sContainer.Register<DatabaseConnection>(Lifestyle.Singleton);
+                sContainer.Register<LoginQueue>(Lifestyle.Singleton);
+                sContainer.Register<ConnectionManager>(Lifestyle.Singleton);
+                sContainer.RegisterInstance(General.LoadFromFile("configuration.conf", sContainer));
+                
+                sContainer.Register<AccountDB>(Lifestyle.Singleton);
+                sContainer.Register<GeneralDB>(Lifestyle.Singleton);
+                // disable auto-verification on the container as it triggers creation of instances before they're needed
+                sContainer.Options.EnableAutoVerification = false;
+                
                 // setup logging
-                sLog = new Logger(null);
+                sLog = sContainer.GetInstance<Logger>();
                 // initialize main logging channel
                 sChannel = sLog.CreateLogChannel("main");
                 // add console log streams
                 sLog.AddLogStream(new ConsoleLogStream());
 
                 // load server's configuration
-                sConfiguration = General.LoadFromFile("configuration.conf");
-
-                // update logger's configuration
-                sLog.SetConfiguration(sConfiguration.Logging);
+                sConfiguration = sContainer.GetInstance<General>();
 
                 if (sConfiguration.LogLite.Enabled == true)
                     sLog.AddLogStream(new LogLiteStream("ClusterController", sLog, sConfiguration.LogLite));
@@ -95,12 +107,7 @@ namespace ClusterControler
                 sChannel.Debug("Initializing EVESharp Cluster Controler and Proxy");
                 sChannel.Trace("Initializing EVESharp Cluster Controler and Proxy");
 
-                sDatabase = new DatabaseConnection(sConfiguration.Database, sLog);
-                // sDatabase.Query("SET global max_allowed_packet=1073741824");
-                sLoginQueue = new LoginQueue(sConfiguration.Authentication, sDatabase, sLog);
-                sLoginQueue.Start();
-
-                sConnectionManager = new ConnectionManager(sLoginQueue, sDatabase, sLog);
+                sConnectionManager = sContainer.GetInstance<ConnectionManager>();
 
                 try
                 {
@@ -121,8 +128,15 @@ namespace ClusterControler
             }
             catch (Exception e)
             {
-                sChannel?.Fatal(e.ToString());
-                sLog?.Flush();
+                if (sLog == null || sChannel == null)
+                {
+                    Console.WriteLine(e.ToString());
+                }
+                else
+                {
+                    sChannel?.Fatal(e.ToString());
+                    sLog?.Flush();    
+                }
             }
         }
     }

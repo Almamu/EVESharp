@@ -99,7 +99,7 @@ namespace ClusterControler.Database
             );
         }
 
-        public AccountDB(Common.Database.DatabaseConnection db) : base(db)
+        public AccountDB(DatabaseConnection db) : base(db)
         {
         }
     }

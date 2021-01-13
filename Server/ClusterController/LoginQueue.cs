@@ -35,16 +35,9 @@ namespace ClusterControler
     public class LoginQueue
     {
         private readonly Queue<LoginQueueEntry> Queue = new Queue<LoginQueueEntry>();
-        private readonly Thread mThread = null;
-        private readonly Common.Database.DatabaseConnection m_mDatabaseConnection = null;
-        private readonly AccountDB mAccountDB = null;
-        private readonly Authentication mConfiguration = null;
+        private AccountDB AccountDB { get; }
+        private Authentication Configuration { get; }
         private Channel Log { get; set; }
-
-        public void Start()
-        {
-            this.mThread.Start();
-        }
 
         public void Enqueue(ClientConnection connection, AuthenticationReq request)
         {
@@ -70,16 +63,16 @@ namespace ClusterControler
             long role = 0;
 
             // First check if the account exists
-            if (this.mAccountDB.AccountExists(entry.Request.user_name) == false)
-                if (this.mConfiguration.Autoaccount == true)
+            if (this.AccountDB.AccountExists(entry.Request.user_name) == false)
+                if (this.Configuration.Autoaccount == true)
                 {
                     Log.Info($"Auto account enabled, creating account for user {entry.Request.user_name}");
 
                     // Create the account
-                    this.mAccountDB.CreateAccount(entry.Request.user_name, entry.Request.user_password, (ulong) this.mConfiguration.Role);                    
+                    this.AccountDB.CreateAccount(entry.Request.user_name, entry.Request.user_password, (ulong) this.Configuration.Role);                    
                 }
 
-            if ((this.mAccountDB.LoginPlayer(entry.Request.user_name, entry.Request.user_password, ref accountID, ref banned, ref role) == false) || (banned == true))
+            if ((this.AccountDB.LoginPlayer(entry.Request.user_name, entry.Request.user_password, ref accountID, ref banned, ref role) == false) || (banned == true))
             {
                 Log.Trace(": Rejected by database");
 
@@ -89,7 +82,7 @@ namespace ClusterControler
             {
                 Log.Trace(": success");
 
-                status = LoginStatus.Sucess;
+                status = LoginStatus.Success;
             }
 
             entry.Connection.SendLoginNotification(status, accountID, role);
@@ -142,13 +135,14 @@ namespace ClusterControler
             Log.Error("LoginQueue is closing... Bye Bye!");
         }
 
-        public LoginQueue(Authentication configuration, Common.Database.DatabaseConnection db, Logger logger)
+        public LoginQueue(Authentication configuration, AccountDB db, Logger logger)
         {
             this.Log = logger.CreateLogChannel("LoginQueue");
-            this.mConfiguration = configuration;
-            this.m_mDatabaseConnection = db;
-            this.mAccountDB = new AccountDB(this.m_mDatabaseConnection);
-            this.mThread = new Thread(Run);
+            this.Configuration = configuration;
+            this.AccountDB = db;
+            
+            // start the queue thread
+            new Thread(Run).Start();
         }
 
         public int Count()

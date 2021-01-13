@@ -15,24 +15,17 @@ namespace ClusterControler
 {
     public class ClientConnection : Connection
     {
-        private Channel Log { get; set; }
+        private Channel Log { get; }
         public int NodeID { get; private set; }
-
-        public Session Session { get; private set; }
-
-        private readonly GeneralDB mGeneralDB = null;
-
-        public long AccountID
-        {
-            get => this.Session["userid"] as PyInteger;
-            private set { }
-        }
+        public Session Session { get; }
+        private GeneralDB GeneralDB { get; }
+        public long AccountID => this.Session["userid"] as PyInteger;
         
-        public ClientConnection(EVEClientSocket socket, ConnectionManager connectionManager, DatabaseConnection connection, Logger logger)
+        public ClientConnection(EVEClientSocket socket, ConnectionManager connectionManager, GeneralDB generalDB, Logger logger)
             : base(socket, connectionManager)
         {
             // access the GeneralDB
-            this.mGeneralDB = new GeneralDB(logger, connection);
+            this.GeneralDB = generalDB;
             // to easily identify the clients use the address as channel
             this.Log = logger.CreateLogChannel(this.Socket.GetRemoteAddress());
             this.Socket.Log = this.Log;
@@ -147,7 +140,7 @@ namespace ClusterControler
             // Handshake sent when we are mostly in
             HandshakeAck ack = new HandshakeAck();
 
-            ack.live_updates = this.mGeneralDB.FetchLiveUpdates();
+            ack.live_updates = this.GeneralDB.FetchLiveUpdates();
             ack.jit = this.Session["languageID"] as PyString;
             ack.userid = this.Session["userid"] as PyInteger;
             ack.maxSessionTime = new PyNone();
@@ -248,7 +241,7 @@ namespace ClusterControler
 
         public void SendLoginNotification(LoginStatus loginStatus, long accountID, long role)
         {
-            if (loginStatus == LoginStatus.Sucess)
+            if (loginStatus == LoginStatus.Success)
             {
                 // We should check for a exact number of nodes here when we have the needed infraestructure
                 if (this.ConnectionManager.NodesCount > 0)

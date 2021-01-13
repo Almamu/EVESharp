@@ -7,8 +7,8 @@ namespace ClusterControler
 {
     public abstract class Connection
     {
-        public EVEClientSocket Socket { get; private set; }
-        public ConnectionManager ConnectionManager { get; private set; }
+        public EVEClientSocket Socket { get; }
+        protected ConnectionManager ConnectionManager { get; }
 
         public Connection(EVEClientSocket socket, ConnectionManager connectionManager)
         {
@@ -27,19 +27,14 @@ namespace ClusterControler
 
             if (data.birthday != Common.Constants.Game.birthday)
                 throw new Exception("Wrong birthday in LowLevelVersionExchange");
-
             if (data.build != Common.Constants.Game.build)
                 throw new Exception("Wrong build in LowLevelVersionExchange");
-
             if (data.codename != Common.Constants.Game.codename + "@" + Common.Constants.Game.region)
                 throw new Exception("Wrong codename in LowLevelVersionExchange");
-
             if (data.machoVersion != Common.Constants.Game.machoVersion)
                 throw new Exception("Wrong machoVersion in LowLevelVersionExchange");
-
             if (data.version != Common.Constants.Game.version)
                 throw new Exception("Wrong version in LowLevelVersionExchange");
-
             if (data.isNode == true)
                 if (data.nodeIdentifier != "Node")
                     throw new Exception("Wrong node string in LowLevelVersionExchange");
