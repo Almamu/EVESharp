@@ -110,6 +110,10 @@ DWORD WINAPI LogServer_MainThread (LPVOID lpParam)
                     break;
                 case 2:
                     // queue the mesage to loglite
+                    // TODO: DETECT MESSAGES LONGER THAN 254 CHARACTERS AND CONCATENATE THEM
+                    // TODO: THIS CAN BE EASILY DETECTED LOOKING AT THE LENGTH OF THE MESSAGE
+                    // TODO: AND LOOKING AT THE NEXT MESSAGE, IF IT STARTS WITH "- " THEN IT'S
+                    // TODO: CONTINUATION OF THE LAST MESSAGE
                     LogLite_EnqueueMessage(
                         msg->msg.pid, msg->timestamp, msg->msg.severity,
                         machineInformation.computerName, module->facilityName, module->facilityObject,
