@@ -185,6 +185,13 @@ namespace Common.Logging.Streams
             if (this.Enabled == false)
                 return;
 
+            // ensure that long messages are not sent as is, they could crash the LogLite
+            if (message.Length >= 6000)
+            {
+                // build a new message that only has parts of the original
+                message = message.Substring(0, 2048) + "\n[...]\n" + message.Substring(message.Length - 2048);
+            }
+            
             StreamMessage entry = new StreamMessage(messageType, message, channel);
 
             this.mSemaphore.WaitOne();

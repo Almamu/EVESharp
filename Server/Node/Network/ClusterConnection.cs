@@ -51,7 +51,7 @@ namespace Node.Network
             do
             {
                 Log.Error(ex.Message);
-                Log.Trace(ex.StackTrace);
+                Log.Error(ex.StackTrace);
             } while ((ex = ex.InnerException) != null);
         }
 

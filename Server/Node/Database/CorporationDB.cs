@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Common.Database;
+using MySql.Data.MySqlClient;
 using PythonTypes.Types.Primitives;
 
 namespace Node.Database
@@ -113,6 +114,31 @@ namespace Node.Database
                     {"@characterID", characterID}
                 }
             );
+        }
+
+        public PyDecimal GetLPForCharacterCorp(int corporationID, int characterID)
+        {
+            MySqlConnection connection = null;
+            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+                "SELECT balance FROM chrLPbalance WHERE characterID=@characterID AND corporationID=@corporationID",
+                new Dictionary<string, object>()
+                {
+                    {"@corporationID", corporationID},
+                    {"@characterID", characterID}
+                }
+            );
+            
+            using (connection)
+            using (reader)
+            {
+                // no records means the character doesn't have any LP with the corp yet
+                if (reader.Read() == false)
+                    return 0.0f;
+
+                return reader.GetDouble(0);
+            }
+            
+            return 0;
         }
     }
 }

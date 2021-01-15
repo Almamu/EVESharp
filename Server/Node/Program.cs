@@ -162,6 +162,7 @@ namespace Node
                 sContainer.Register<stationSvc>(Lifestyle.Singleton);
                 sContainer.Register<certificateMgr>(Lifestyle.Singleton);
                 sContainer.Register<jumpCloneSvc>(Lifestyle.Singleton);
+                sContainer.Register<LPSvc>(Lifestyle.Singleton);
                 
                 sContainer.RegisterInstance(General.LoadFromFile("configuration.conf", sContainer));
                 // disable auto-verification on the container as it triggers creation of instances before they're needed

@@ -52,39 +52,40 @@ namespace Node
         public CacheStorage CacheStorage { get; }
         public BoundServiceManager BoundServiceManager { get; }
         public Logger Logger { get; }
-        public objectCaching objectCaching { get; private set; }
-        public machoNet machoNet { get; private set; }
-        public alert alert { get; private set; }
-        public authentication authentication { get; private set; }
-        public character character { get; private set; }
-        public userSvc userSvc { get; private set; }
-        public charmgr charmgr { get; private set; }
-        public config config { get; private set; }
-        public dogmaIM dogmaIM { get; private set; }
-        public invbroker invbroker { get; private set; }
-        public warRegistry warRegistry { get; private set; }
-        public station station { get; private set; }
-        public map map { get; private set; }
-        public account account { get; private set; }
-        public skillMgr skillMgr { get; private set; }
-        public contractMgr contractMgr { get; private set; }
-        public corpStationMgr corpStationMgr { get; private set; }
-        public bookmark bookmark { get; private set; }
-        public LSC LSC { get; private set; }
-        public onlineStatus onlineStatus { get; private set; }
-        public billMgr billMgr { get; private set; }
-        public facWarMgr facWarMgr { get; private set; }
-        public corporationSvc corporationSvc { get; private set; }
-        public clientStatsMgr clientStatsMgr { get; private set; }
-        public voiceMgr voiceMgr { get; private set; }
-        public standing2 standing2 { get; private set; }
-        public tutorialSvc tutorialSvc { get; private set; }
-        public agentMgr agentMgr { get; private set; }
-        public corpRegistry corpRegistry { get; private set; }
-        public marketProxy marketProxy { get; private set; }
-        public stationSvc stationSvc { get; private set; }
-        public certificateMgr certificateMgr { get; private set; }
-        public jumpCloneSvc jumpCloneSvc { get; private set; }
+        public objectCaching objectCaching { get; }
+        public machoNet machoNet { get; }
+        public alert alert { get; }
+        public authentication authentication { get; }
+        public character character { get; }
+        public userSvc userSvc { get; }
+        public charmgr charmgr { get; }
+        public config config { get; }
+        public dogmaIM dogmaIM { get; }
+        public invbroker invbroker { get; }
+        public warRegistry warRegistry { get; }
+        public station station { get; }
+        public map map { get; }
+        public account account { get; }
+        public skillMgr skillMgr { get; }
+        public contractMgr contractMgr { get; }
+        public corpStationMgr corpStationMgr { get; }
+        public bookmark bookmark { get; }
+        public LSC LSC { get; }
+        public onlineStatus onlineStatus { get; }
+        public billMgr billMgr { get; }
+        public facWarMgr facWarMgr { get; }
+        public corporationSvc corporationSvc { get; }
+        public clientStatsMgr clientStatsMgr { get; }
+        public voiceMgr voiceMgr { get; }
+        public standing2 standing2 { get; }
+        public tutorialSvc tutorialSvc { get; }
+        public agentMgr agentMgr { get; }
+        public corpRegistry corpRegistry { get; }
+        public marketProxy marketProxy { get; }
+        public stationSvc stationSvc { get; }
+        public certificateMgr certificateMgr { get; }
+        public jumpCloneSvc jumpCloneSvc { get; }
+        public LPSvc LPSvc { get; }
         
         public ServiceManager(
             NodeContainer container, CacheStorage storage, Logger logger, BoundServiceManager boundServiceManager,
@@ -120,7 +121,8 @@ namespace Node
             marketProxy marketProxy,
             stationSvc stationSvc,
             certificateMgr certificateMgr,
-            jumpCloneSvc jumpCloneSvc)
+            jumpCloneSvc jumpCloneSvc,
+            LPSvc LPSvc)
         {
             this.Container = container;
             this.CacheStorage = storage;
@@ -161,6 +163,7 @@ namespace Node
             this.stationSvc = stationSvc;
             this.certificateMgr = certificateMgr;
             this.jumpCloneSvc = jumpCloneSvc;
+            this.LPSvc = LPSvc;
         }
     }
 }
