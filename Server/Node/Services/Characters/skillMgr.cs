@@ -23,7 +23,7 @@ namespace Node.Services.Characters
         private ItemManager ItemManager { get; }
         private TimerManager TimerManager { get; }
         
-        public skillMgr(SkillDB db, ItemManager itemManager, TimerManager timerManager, BoundServiceManager manager, Logger logger) : base(manager, logger)
+        public skillMgr(SkillDB db, ItemManager itemManager, TimerManager timerManager, BoundServiceManager manager) : base(manager)
         {
             this.DB = db;
             this.ItemManager = itemManager;
@@ -38,7 +38,7 @@ namespace Node.Services.Characters
              */
             PyTuple tupleData = objectData as PyTuple;
             
-            return new skillMgr(this.DB, this.ItemManager, this.TimerManager, this.BoundServiceManager, this.Log.Logger);
+            return new skillMgr(this.DB, this.ItemManager, this.TimerManager, this.BoundServiceManager);
         }
 
         public PyDataType GetSkillQueue(PyDictionary namedPayload, Client client)

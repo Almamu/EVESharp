@@ -19,7 +19,7 @@ namespace Node.Services.Characters
         private ItemManager ItemManager { get; }
         private TypeManager TypeManager { get; }
         
-        public jumpCloneSvc(ItemDB itemDB, MarketDB marketDB, ItemManager itemManager, TypeManager typeManager, BoundServiceManager manager, Logger logger) : base(manager, logger)
+        public jumpCloneSvc(ItemDB itemDB, MarketDB marketDB, ItemManager itemManager, TypeManager typeManager, BoundServiceManager manager) : base(manager)
         {
             this.ItemDB = itemDB;
             this.MarketDB = marketDB;
@@ -36,7 +36,7 @@ namespace Node.Services.Characters
              * objectData [1] => groupID (station or solar system)
              */
             
-            return new jumpCloneSvc(this.ItemDB, this.MarketDB, this.ItemManager, this.TypeManager, this.BoundServiceManager, this.Log.Logger);
+            return new jumpCloneSvc(this.ItemDB, this.MarketDB, this.ItemManager, this.TypeManager, this.BoundServiceManager);
         }
 
         public PyDataType GetCloneState(PyDictionary namedPayload, Client client)
@@ -150,7 +150,7 @@ namespace Node.Services.Characters
             ItemType cloneType = this.TypeManager[ItemTypes.CloneGradeAlpha];
             
             // get character's station
-            Station station = this.ItemManager.GetItem((int) client.StationID) as Station;
+            Station station = this.ItemManager.GetStation((int) client.StationID);
             
             // create a new clone on the itemDB
             Clone clone = this.ItemManager.CreateClone(cloneType, station, character);

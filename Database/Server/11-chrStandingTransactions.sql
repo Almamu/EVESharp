@@ -13,4 +13,4 @@ CREATE TABLE `chrStandingTransactions` (
 	`int_2` INT UNSIGNED NOT NULL,
 	`int_3` INT UNSIGNED NOT NULL,
 	PRIMARY KEY (`eventID`, `fromID`, `toID`)
-) ENGINE=InnoDB COLLATE=utf8;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;

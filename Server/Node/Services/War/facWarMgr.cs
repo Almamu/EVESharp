@@ -1,4 +1,6 @@
 using Common.Services;
+using Node.Inventory;
+using Node.Inventory.Items.Types;
 using PythonTypes.Types.Database;
 using PythonTypes.Types.Primitives;
 using SimpleInjector;
@@ -8,9 +10,11 @@ namespace Node.Services.War
     public class facWarMgr : Service
     {
         private CacheStorage CacheStorage { get; }
-        public facWarMgr(CacheStorage cacheStorage)
+        private ItemManager ItemManager { get; }
+        public facWarMgr(CacheStorage cacheStorage, ItemManager itemManager)
         {
             this.CacheStorage = cacheStorage;
+            this.ItemManager = itemManager;
         }
 
         public PyDataType GetWarFactions(PyDictionary namedPayload, Client client)
@@ -42,6 +46,11 @@ namespace Node.Services.War
                     "currentRank", "highestRank", "factionID", "lastModified"
                 }
             );
+        }
+
+        public PyDataType GetFactionMilitiaCorporation(PyInteger factionID, PyDictionary namedPayload, Client client)
+        {
+            return this.ItemManager.GetFaction(factionID).MilitiaCorporationId;
         }
     }
 }

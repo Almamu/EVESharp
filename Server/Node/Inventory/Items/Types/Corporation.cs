@@ -10,7 +10,9 @@ namespace Node.Inventory.Items.Types
             bool sendCharTerminationMessage, int creatorID, int ceoID, int stationID, int raceID, int allianceId, long shares,
             int memberCount, int memberLimit, int allowedMemberRaceIDs, int graphicId, int? shape1, int? shape2,
             int? shape3, int? color1, int? color2, int? color3, string typeface, string division1, string division2,
-            string division3, string division4, string division5, string division6, string division7, double balance,
+            string division3, string division4, string division5, string division6, string division7,
+            string walletDivision1, string walletDivision2, string walletDivision3, string walletDivision4,
+            string walletDivision5, string walletDivision6, string walletDivision7, double balance,
             bool deleted) : base(@from)
         {
             this.mDescription = description;
@@ -81,6 +83,13 @@ namespace Node.Inventory.Items.Types
         string mDivision5;
         string mDivision6;
         string mDivision7;
+        string mWalletDivision1;
+        string mWalletDivision2;
+        string mWalletDivision3;
+        string mWalletDivision4;
+        string mWalletDivision5;
+        string mWalletDivision6;
+        string mWalletDivision7;
         double mBalance;
         bool mDeleted;
 
@@ -116,6 +125,13 @@ namespace Node.Inventory.Items.Types
         public string Division5 => mDivision5;
         public string Division6 => mDivision6;
         public string Division7 => mDivision7;
+        public string WalletDivision1 => mWalletDivision1;
+        public string WalletDivision2 => mWalletDivision2;
+        public string WalletDivision3 => mWalletDivision3;
+        public string WalletDivision4 => mWalletDivision4;
+        public string WalletDivision5 => mWalletDivision5;
+        public string WalletDivision6 => mWalletDivision6;
+        public string WalletDivision7 => mWalletDivision7;
         public double Balance => mBalance;
         public bool Deleted => mDeleted;
 
@@ -129,7 +145,8 @@ namespace Node.Inventory.Items.Types
                     "creatorID", "ceoID", "stationID", "raceID", "allianceID", "shares", "memberCount", "memberLimit",
                     "allowedMemberRaceIDs", "graphicID", "shape1", "shape2", "shape3", "color1", "color2", "color3",
                     "typeface", "division1", "division2", "division3", "division4", "division5", "division6",
-                    "division7", "deleted"
+                    "division7", "walletDivision1", "walletDivision2", "walletDivision3", "walletDivision4",
+                    "walletDivision5", "walletDivision6", "walletDivision7", "deleted"
                 },
                 (PyList) new PyDataType []
                 {
@@ -139,7 +156,8 @@ namespace Node.Inventory.Items.Types
                     this.AllianceID, this.Shares, this.MemberCount, this.MemberLimit, this.AllowedMemberRaceIDs,
                     this.GraphicId, this.Shape1, this.Shape2, this.Shape3, this.Color1, this.Color2, this.Color3,
                     this.Typeface, this.Division1, this.Division2, this.Division3, this.Division4, this.Division5,
-                    this.Division6, this.Division7, this.Deleted
+                    this.Division6, this.Division7, this.WalletDivision1, this.WalletDivision2, this.WalletDivision3,
+                    this.WalletDivision4, this.WalletDivision5, this.WalletDivision6, this.WalletDivision7, this.Deleted
                 }
             );
         }

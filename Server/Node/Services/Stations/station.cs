@@ -21,7 +21,7 @@ namespace Node.Services.Stations
             if (client.StationID == null)
                 throw new UserError("CanOnlyDoInStations");
 
-            Station station = this.ItemManager.LoadItem((int) client.StationID) as Station;
+            Station station = this.ItemManager.GetStation((int) client.StationID);
 
             PyTuple result = new PyTuple(5);
 

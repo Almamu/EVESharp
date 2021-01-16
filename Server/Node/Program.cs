@@ -47,6 +47,7 @@ using Node.Services.Chat;
 using Node.Services.Config;
 using Node.Services.Contracts;
 using Node.Services.Corporations;
+using Node.Services.Data;
 using Node.Services.Dogma;
 using Node.Services.Inventory;
 using Node.Services.Market;
@@ -127,6 +128,7 @@ namespace Node
                 sContainer.Register<SkillDB>(Lifestyle.Singleton);
                 sContainer.Register<StandingDB>(Lifestyle.Singleton);
                 sContainer.Register<StationDB>(Lifestyle.Singleton);
+                sContainer.Register<LookupDB>(Lifestyle.Singleton);
                 
                 // register all the services
                 sContainer.Register<account>(Lifestyle.Singleton);
@@ -163,6 +165,7 @@ namespace Node
                 sContainer.Register<certificateMgr>(Lifestyle.Singleton);
                 sContainer.Register<jumpCloneSvc>(Lifestyle.Singleton);
                 sContainer.Register<LPSvc>(Lifestyle.Singleton);
+                sContainer.Register<lookupSvc>(Lifestyle.Singleton);
                 
                 sContainer.RegisterInstance(General.LoadFromFile("configuration.conf", sContainer));
                 // disable auto-verification on the container as it triggers creation of instances before they're needed

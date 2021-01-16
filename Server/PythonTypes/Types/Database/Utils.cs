@@ -27,7 +27,7 @@ namespace PythonTypes.Types.Database
             // null values should be null
             if (isnull == true)
                 return null;
-            
+
             if (type == typeof(string))
                 data = new PyString(reader.GetString(index), true);
             else if (type == typeof(ulong))
@@ -54,6 +54,8 @@ namespace PythonTypes.Types.Database
                 data = reader.GetDouble(index);
             else if (type == typeof(bool))
                 data = reader.GetBoolean(index);
+            else if (type == typeof(decimal))
+                data = (double) reader.GetDecimal(index);
             else
                 throw new InvalidDataException($"Unknown data type {type}");
 

@@ -1,6 +1,9 @@
+using System;
 using System.Collections.Generic;
+using System.Data;
 using Common.Database;
 using MySql.Data.MySqlClient;
+using PythonTypes.Types.Database;
 using PythonTypes.Types.Primitives;
 
 namespace Node.Database
@@ -139,6 +142,318 @@ namespace Node.Database
             }
             
             return 0;
+        }
+
+        public PyDataType GetMember(int characterID, int corporationID)
+        {
+            // TODO: GENERATE PROPER FIELDS FOR THE FOLLOWING FIELDS
+            // TODO: titleMask, grantableRoles, grantableRolesAtHQ, grantableRolesAtBase, grantableRolesAtOther
+            // TODO: divisionID, squadronID
+            // TODO: CHECK IF THIS startDateTime IS THE CORP'S MEMBERSHIP OR CHARACTER'S MEMBERSHIP
+            return Database.PrepareKeyValQuery(
+                "SELECT" +
+                " characterID, title, startDateTime, corpRole AS roles, rolesAtHQ, rolesAtBase, rolesAtOther," +
+                " 0 AS titleMask, 0 AS grantableRoles, 0 AS grantableRolesAtHQ, 0 AS grantableRolesAtBase," +
+                " 0 AS grantableRolesAtOther, 0 AS divisionID, 0 AS squadronID, locationID AS baseID, " +
+                " 0 AS blockRoles, gender " +
+                "FROM chrInformation " +
+                "LEFT JOIN entity ON entity.itemID = chrInformation.activeCloneID " +
+                "WHERE corporationID=@corporationID AND characterID=@characterID",
+                new Dictionary<string, object>()
+                {
+                    {"@characterID", characterID},
+                    {"@corporationID", corporationID}
+                }
+            );
+        }
+
+        public Dictionary<PyDataType, int> GetOffices(int corporationID)
+        {
+            MySqlConnection connection = null;
+            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+                "SELECT itemID FROM crpOffices WHERE corporationID = @corporationID",
+                new Dictionary<string, object>()
+                {
+                    {"@corporationID", corporationID}
+                }
+            );
+            
+            using (connection)
+            using (reader)
+            {
+                Dictionary<PyDataType, int> result = new Dictionary<PyDataType, int>();
+                int index = 0;
+                
+                while (reader.Read() == true)
+                {
+                    result[reader.GetInt32(0)] = index ++;
+                }
+
+                return result;
+            }
+        }
+
+        public PyDataType GetOffices(PyList itemIDs, int corporationID, SparseRowsetHeader header, Dictionary<PyDataType, int> rowsIndex)
+        {
+            Dictionary<string, object> parameters = new Dictionary<string, object>();
+            
+            string query = "SELECT" +
+                           " itemID, stationID, typeID, officeFolderID " +
+                           "FROM chrInformation " +
+                           "LEFT JOIN entity ON entity.itemID = chrInformation.activeCloneID " +
+                           "WHERE corporationID=@corporationID AND itemID IN (";
+
+            foreach (PyDataType id in itemIDs)
+                parameters["@itemID" + parameters.Count.ToString("X")] = (int) (id as PyInteger);
+
+            // prepare the correct list of arguments
+            query += String.Join(',', parameters.Keys) + ")";
+
+            parameters["@corporationID"] = corporationID;
+            
+            // TODO: GENERATE PROPER FIELDS FOR THE FOLLOWING FIELDS
+            // TODO: titleMask, grantableRoles, grantableRolesAtHQ, grantableRolesAtBase, grantableRolesAtOther
+            // TODO: divisionID, squadronID
+            // TODO: CHECK IF THIS startDateTime IS THE CORP'S MEMBERSHIP OR CHARACTER'S MEMBERSHIP
+            MySqlConnection connection = null;
+            MySqlDataReader reader = Database.PrepareQuery(ref connection, query, parameters);
+            
+            using (connection)
+            using (reader)
+            {
+                return header.DataFromMySqlReader(0, reader, rowsIndex);
+            }
+        }
+
+        public PyDataType GetOffices(int corporationID, int startPos, int limit, SparseRowsetHeader header, Dictionary<PyDataType, int> rowsIndex)
+        {
+            // TODO: GENERATE PROPER FIELDS FOR THE FOLLOWING FIELDS
+            // TODO: titleMask, grantableRoles, grantableRolesAtHQ, grantableRolesAtBase, grantableRolesAtOther
+            // TODO: divisionID, squadronID
+            // TODO: CHECK IF THIS startDateTime IS THE CORP'S MEMBERSHIP OR CHARACTER'S MEMBERSHIP
+            MySqlConnection connection = null;
+            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+                "SELECT" +
+                " itemID, stationID, typeID, officeFolderID " +
+                "FROM crpOffices " +
+                "WHERE corporationID=@corporationID " +
+                "LIMIT @startPos,@limit",
+                new Dictionary<string, object>()
+                {
+                    {"@corporationID", corporationID},
+                    {"@startPos", startPos},
+                    {"@limit", limit}
+                }
+            );
+            
+            using (connection)
+            using (reader)
+            {
+                return header.DataFromMySqlReader(0, reader, rowsIndex);
+            }
+        }
+        
+        public SparseRowsetHeader GetOfficesSparseRowset(int corporationID)
+        {
+            MySqlConnection connection = null;
+            MySqlDataReader reader =
+                Database.PrepareQuery(
+                    ref connection,
+                    "SELECT COUNT(*) AS recordCount FROM crpOffices WHERE corporationID=@corporationID",
+                    new Dictionary<string, object>()
+                    {
+                        {"@corporationID", corporationID}
+                    }
+                );
+            
+            using (connection)
+            using (reader)
+            {
+                if (reader.Read() == false)
+                    return new SparseRowsetHeader(0, (PyList) new PyDataType[]
+                    {
+                        "itemID", "stationID", "typeID", "officeFolderID"
+                    });
+                
+                
+                return new SparseRowsetHeader(reader.GetInt32(0), (PyList) new PyDataType[]
+                {
+                    "itemID", "stationID", "typeID", "officeFolderID"
+                });
+            }
+        }
+        
+        public Dictionary<PyDataType, int> GetMembers(int corporationID)
+        {
+            MySqlConnection connection = null;
+            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+                "SELECT characterID FROM chrInformation WHERE corporationID = @corporationID",
+                new Dictionary<string, object>()
+                {
+                    {"@corporationID", corporationID}
+                }
+            );
+            
+            using (connection)
+            using (reader)
+            {
+                Dictionary<PyDataType, int> result = new Dictionary<PyDataType, int>();
+                int index = 0;
+                
+                while (reader.Read() == true)
+                {
+                    result[reader.GetInt32(0)] = index ++;
+                }
+
+                return result;
+            }
+        }
+        
+        public PyDataType GetMembers(PyList characterIDs, int corporationID, SparseRowsetHeader header, Dictionary<PyDataType, int> rowsIndex)
+        {
+            Dictionary<string, object> parameters = new Dictionary<string, object>();
+            
+            string query = "SELECT" +
+                           " characterID, title, startDateTime, corpRole AS roles, rolesAtHQ, rolesAtBase, rolesAtOther," +
+                           " 0 AS titleMask, 0 AS grantableRoles, 0 AS grantableRolesAtHQ, 0 AS grantableRolesAtBase," +
+                           " 0 AS grantableRolesAtOther, 0 AS divisionID, 0 AS squadronID, 0 AS baseID, " +
+                           " 0 AS blockRoles, gender " +
+                           "FROM chrInformation " +
+                           "WHERE corporationID=@corporationID AND characterID IN (";
+
+            foreach (PyDataType id in characterIDs)
+                parameters["@characterID" + parameters.Count.ToString("X")] = (int) (id as PyInteger);
+
+            // prepare the correct list of arguments
+            query += String.Join(',', parameters.Keys) + ")";
+
+            parameters["@corporationID"] = corporationID;
+            
+            // TODO: GENERATE PROPER FIELDS FOR THE FOLLOWING FIELDS
+            // TODO: titleMask, grantableRoles, grantableRolesAtHQ, grantableRolesAtBase, grantableRolesAtOther
+            // TODO: divisionID, squadronID
+            // TODO: CHECK IF THIS startDateTime IS THE CORP'S MEMBERSHIP OR CHARACTER'S MEMBERSHIP
+            MySqlConnection connection = null;
+            MySqlDataReader reader = Database.PrepareQuery(ref connection, query, parameters);
+            
+            using (connection)
+            using (reader)
+            {
+                return header.DataFromMySqlReader(0, reader, rowsIndex);
+            }
+        }
+
+        public PyDataType GetMembers(int corporationID, int startPos, int limit, SparseRowsetHeader header, Dictionary<PyDataType, int> rowsIndex)
+        {
+            // TODO: GENERATE PROPER FIELDS FOR THE FOLLOWING FIELDS
+            // TODO: titleMask, grantableRoles, grantableRolesAtHQ, grantableRolesAtBase, grantableRolesAtOther
+            // TODO: divisionID, squadronID
+            // TODO: CHECK IF THIS startDateTime IS THE CORP'S MEMBERSHIP OR CHARACTER'S MEMBERSHIP
+            MySqlConnection connection = null;
+            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+                "SELECT" +
+                " characterID, title, startDateTime, corpRole AS roles, rolesAtHQ, rolesAtBase, rolesAtOther," +
+                " 0 AS titleMask, 0 AS grantableRoles, 0 AS grantableRolesAtHQ, 0 AS grantableRolesAtBase," + 
+                " 0 AS grantableRolesAtOther, 0 AS divisionID, 0 AS squadronID, 0 AS baseID, " + 
+                " 0 AS blockRoles, gender " +
+                "FROM chrInformation " +
+                "WHERE corporationID=@corporationID " +
+                "LIMIT @startPos,@limit",
+                new Dictionary<string, object>()
+                {
+                    {"@corporationID", corporationID},
+                    {"@startPos", startPos},
+                    {"@limit", limit}
+                }
+            );
+            
+            using (connection)
+            using (reader)
+            {
+                return header.DataFromMySqlReader(0, reader, rowsIndex);
+            }
+        }
+        
+        public SparseRowsetHeader GetMembersSparseRowset(int corporationID)
+        {
+            MySqlConnection connection = null;
+            MySqlDataReader reader =
+                Database.PrepareQuery(
+                    ref connection,
+                    "SELECT COUNT(*) AS recordCount FROM chrInformation WHERE corporationID=@corporationID",
+                    new Dictionary<string, object>()
+                    {
+                        {"@corporationID", corporationID}
+                    }
+                );
+            
+            using (connection)
+            using (reader)
+            {
+                if (reader.Read() == false)
+                    return new SparseRowsetHeader(0, (PyList) new PyDataType[]
+                    {
+                        "characterID", "title", "startDateTime", "roles", "rolesAtHQ", "rolesAtBase", "rolesAtOther",
+                        "titleMask", "grantableRoles", "grantableRolesAtHQ", "grantableRolesAtBase", "gender",
+                        "grantableRolesAtOther", "divisionID", "squadronID", "baseID", "blockRoles"
+                    });
+                
+                
+                return new SparseRowsetHeader(reader.GetInt32(0), (PyList) new PyDataType[]
+                {
+                    "characterID", "title", "startDateTime", "roles", "rolesAtHQ", "rolesAtBase", "rolesAtOther",
+                    "titleMask", "grantableRoles", "grantableRolesAtHQ", "grantableRolesAtBase", "gender",
+                    "grantableRolesAtOther", "divisionID", "squadronID", "baseID", "blockRoles"
+                });
+            }
+        }
+
+        public PyDataType GetRoleGroups()
+        {
+            return Database.PrepareRowsetQuery("SELECT roleGroupID, roleMask, roleGroupName, isDivisional, appliesTo, appliesToGrantable FROM crpRoleGroups");
+        }
+
+        public PyDataType GetRoles()
+        {
+            return Database.PrepareRowsetQuery("SELECT roleID, roleName, shortDescription, description FROM crpRoles");
+        }
+
+        public PyDataType GetDivisions()
+        {
+            // TODO: THESE MIGHT BE CUSTOMIZABLE (most likely)
+            // TODO: BUT FOR NOW THESE SHOULD BE ENOUGH
+            return Database.PrepareRowsetQuery("SELECT divisionID, divisionName, description, leaderType FROM crpNPCDivisions");
+        }
+
+        public PyDataType GetTitlesTemplate()
+        {
+            return Database.PrepareDictRowListQuery(
+                "SELECT titleID, titleName, roles, grantableRoles, rolesAtHQ, grantableRolesAtHQ, rolesAtBase, grantableRolesAtBase, rolesAtOther, grantableRolesAtOther FROM crpTitlesTemplate"
+            );
+        }
+
+        public PyDataType GetTitles(int corporationID)
+        {
+            return Database.PrepareDictRowListQuery(
+                "SELECT titleID, titleName, roles, grantableRoles, rolesAtHQ, grantableRolesAtHQ, rolesAtBase, grantableRolesAtBase, rolesAtOther, grantableRolesAtOther FROM crpTitles WHERE corporationID = @corporationID",
+                new Dictionary<string, object>()
+                {
+                    {"@corporationID", corporationID}
+                }
+            );
+        }
+
+        public PyDataType GetMemberTrackingInfoSimple(int corporationID)
+        {
+            return Database.PrepareRowsetQuery(
+                "SELECT characterID, IF(online = 1, -1, IF(lastOnline = 0, NULL, (@currentTicks - lastOnline) / @ticksPerHour)) AS lastOnline FROM chrInformation WHERE corporationID = @corporationID",
+                new Dictionary<string, object>()
+                {
+                    {"@corporationID", corporationID},
+                    {"@ticksPerHour", TimeSpan.TicksPerHour},
+                    {"@currentTicks", DateTime.UtcNow.ToFileTimeUtc ()}
+                }
+            );
         }
     }
 }

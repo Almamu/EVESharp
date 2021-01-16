@@ -13,4 +13,4 @@ CREATE TABLE `chrMedals` (
 	PRIMARY KEY (`characterID`, `medalID`),
 	INDEX `ownerID` (`ownerID`),
 	INDEX `issuerID` (`issuerID`)
-) ENGINE=InnoDB COLLATE=utf8;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;

@@ -26,4 +26,4 @@ CREATE TABLE `chrCombatLogs`(
 	INDEX `victimCorporationID` (`victimCorporationID`),
 	INDEX `finalCorporationID` (`finalCorporationID`),
 	INDEX `solarSystemID` (`solarSystemID`)
-) ENGINE=InnoDB COLLATE=utf8;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;

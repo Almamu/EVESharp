@@ -124,7 +124,16 @@ namespace Node.Inventory.Items.Types
                 this.mDescription = value;
             }
         }
-        public double Bounty => mBounty;
+
+        public double Bounty
+        {
+            get => this.mBounty;
+            set
+            {
+                this.Dirty = true;
+                this.mBounty = value;
+            }
+        }
 
         public double Balance
         {

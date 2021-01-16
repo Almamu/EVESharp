@@ -81,14 +81,14 @@ namespace Node
                 {
                     if (intNewStationID != 0)
                     {
-                        Station station = this.ItemFactory.ItemManager.GetItem(intNewStationID) as Station;
+                        Station station = this.ItemFactory.ItemManager.GetStation (intNewStationID);
 
                         station.Guests[characterID] = this.ItemFactory.ItemManager.LoadItem(characterID) as Character;
                     }
 
                     if (intOldStationID != 0)
                     {
-                        Station station = this.ItemFactory.ItemManager.GetItem(intOldStationID) as Station;
+                        Station station = this.ItemFactory.ItemManager.GetStation(intOldStationID);
 
                         station.Guests.Remove(characterID);
                     }

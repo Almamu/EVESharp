@@ -99,6 +99,17 @@ namespace Node.Database
             );
         }
 
+        public PyDataType GetPublicInfo3(int characterID)
+        {
+            return Database.PrepareRowsetQuery(
+                "SELECT bounty, title, startDateTime, description, corporationID FROM chrInformation WHERE characterID=@characterID",
+                new Dictionary<string, object>()
+                {
+                    {"@characterID", characterID}
+                }
+            );
+        }
+
         public bool IsCharacterNameTaken(string characterName)
         {
             MySqlConnection connection = null;
@@ -582,6 +593,58 @@ namespace Node.Database
                     {"@characterID", characterID},
                     {"@startIndex", startIndex ?? 0},
                     {"@limit", count}
+                }
+            );
+        }
+
+        public Rowset GetTopBounties()
+        {
+            // return the 100 topmost bounties
+            return Database.PrepareRowsetQuery(
+                "SELECT characterID, entity.itemName AS ownerName, bounty, 0 AS online " + 
+                "FROM chrBounties, entity " + 
+                "WHERE entity.itemID = chrBounties.ownerID " + 
+                "ORDER BY bounty DESC " + 
+                "LIMIT 100"
+            );
+        }
+
+        public void AddToBounty(int characterID, int ownerID, double bounty)
+        {
+            // create bounty record
+            Database.PrepareQuery(
+                "INSERT INTO chrBounties(characterID, ownerID, bounty)VALUES(@characterID, @ownerID, @bounty)",
+                new Dictionary<string, object>()
+                {
+                    {"@characterID", characterID},
+                    {"@ownerID", ownerID},
+                    {"@bounty", bounty}
+                }
+            );
+            
+            // add the bounty to the player
+            Database.PrepareQuery(
+                "UPDATE chrInformation SET bounty = bounty + @bounty",
+                new Dictionary<string, object>()
+                {
+                    {"@bounty", bounty}
+                }
+            );
+        }
+
+        public PyDataType GetPrivateInfo(int characterID)
+        {
+            return Database.PrepareKeyValQuery(
+                "SELECT gender, createDateTime, itemName AS charName, bloodlineName, raceName " +
+                "FROM chrInformation " + 
+                "LEFT JOIN entity ON entity.itemID = chrInformation.characterID " +
+                "LEFT JOIN chrAncestries USING (ancestryID) " +
+                "LEFT JOIN chrBloodlines USING (bloodlineID) " +
+                "LEFT JOIN chrRaces USING (raceID) " +
+                "WHERE characterID = @characterID",
+                new Dictionary<string, object>()
+                {
+                    {"@characterID", characterID}
                 }
             );
         }

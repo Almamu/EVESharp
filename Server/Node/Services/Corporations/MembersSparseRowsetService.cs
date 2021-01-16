@@ -1,0 +1,36 @@
+﻿using System;
+using System.Collections.Generic;
+using Common.Logging;
+using Node.Database;
+using Node.Inventory.Items.Types;
+using Node.Services.Database;
+using PythonTypes.Types.Database;
+using PythonTypes.Types.Primitives;
+
+namespace Node.Services.Corporations
+{
+    public class MembersSparseRowsetService : SparseRowsetDatabaseService
+    {
+        private Dictionary<PyDataType, int> RowsIndex = new Dictionary<PyDataType, int>();
+        private Corporation Corporation { get; }
+        private CorporationDB DB { get; }
+        public MembersSparseRowsetService(Corporation corporation, CorporationDB db, SparseRowsetHeader rowsetHeader, BoundServiceManager manager) : base(rowsetHeader, manager)
+        {
+            this.DB = db;
+            this.Corporation = corporation;
+            
+            // get all the indexes based on the key
+            this.RowsIndex = this.DB.GetMembers(corporation.ID);
+        }
+
+        public override PyDataType Fetch(PyInteger startPos, PyInteger fetchSize, PyDictionary namedPayload, Client client)
+        {
+            return this.DB.GetMembers(this.Corporation.ID, startPos, fetchSize, this.SparseRowset, this.RowsIndex);
+        }
+
+        public override PyDataType FetchByKey(PyList keyList, PyDictionary namedPayload, Client client)
+        {
+            return this.DB.GetMembers(keyList, this.Corporation.ID, this.SparseRowset, this.RowsIndex);
+        }
+    }
+}

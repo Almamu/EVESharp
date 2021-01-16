@@ -439,6 +439,71 @@ namespace Common.Database
         }
 
         /// <summary>
+        /// Runs one prepared query with the given values as parameters and returns a RowList representing
+        /// the result
+        /// </summary>
+        /// <param name="query">The prepared query</param>
+        /// <returns>The RowList object representing the result</returns>
+        public PyDataType PrepareDictRowListQuery(string query)
+        {
+            try
+            {
+                MySqlConnection connection = null;
+                // create the correct command
+                MySqlCommand command = this.PrepareQuery(ref connection, query);
+
+                MySqlDataReader reader = command.ExecuteReader();
+                
+                using (connection)
+                using (reader)
+                {
+                    // run the prepared statement
+                    return DictRowlist.FromMySqlDataReader(reader);
+                }
+            }
+            catch (Exception e)
+            {
+                Log.Error($"MySQL error: {e.Message}");
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Runs one prepared query with the given values as parameters and returns a RowList representing
+        /// the result
+        /// </summary>
+        /// <param name="query">The prepared query</param>
+        /// <param name="values">The key-value pair of values to use when running the query</param>
+        /// <returns>The RowList object representing the result</returns>
+        public PyDataType PrepareDictRowListQuery(string query, Dictionary<string, object> values)
+        {
+            try
+            {
+                MySqlConnection connection = null;
+                // create the correct command
+                MySqlCommand command = this.PrepareQuery(ref connection, query);
+                
+                // add values
+                foreach (KeyValuePair<string, object> pair in values)
+                    command.Parameters.AddWithValue(pair.Key, pair.Value);
+
+                MySqlDataReader reader = command.ExecuteReader();
+                
+                using (connection)
+                using (reader)
+                {
+                    // run the prepared statement
+                    return DictRowlist.FromMySqlDataReader(reader);
+                }
+            }
+            catch (Exception e)
+            {
+                Log.Error($"MySQL error: {e.Message}");
+                throw;
+            }
+        }
+
+        /// <summary>
         /// Runs one prepared query with the given values as parameters and returns a KeyVal representing the result.
         /// KeyVals only hold ONE row
         /// </summary>

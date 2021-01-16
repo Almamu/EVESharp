@@ -12,4 +12,4 @@ CREATE TABLE `market_journal` (
 	`description` VARCHAR(43) NULL DEFAULT NULL,
 	`accountKey` INT(10) UNSIGNED NOT NULL DEFAULT '0',
 	PRIMARY KEY (`transactionID`)
-) ENGINE=InnoDB CHARSET=utf8;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;

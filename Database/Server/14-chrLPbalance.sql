@@ -5,4 +5,4 @@ CREATE TABLE `chrLPbalance` (
 	`corporationID` INT UNSIGNED NOT NULL,
 	`balance` DOUBLE NOT NULL,
 	PRIMARY KEY (`characterID`, `corporationID`)
-) ENGINE=InnoDB CHARSET=utf8;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;

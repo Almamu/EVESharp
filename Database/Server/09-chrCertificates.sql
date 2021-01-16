@@ -6,4 +6,4 @@ CREATE TABLE `chrCertificates` (
 	`grantDate` BIGINT(20) NOT NULL,
 	`visibilityFlags` TINYINT(4) NOT NULL,
 	PRIMARY KEY (`characterID`, `certificateID`)
-) ENGINE=InnoDB COLLATE=utf8;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;

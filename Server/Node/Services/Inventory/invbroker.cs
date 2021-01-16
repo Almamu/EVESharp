@@ -17,13 +17,13 @@ namespace Node.Services.Inventory
         private ItemManager ItemManager { get; }
         private ItemDB ItemDB { get; }
         
-        public invbroker(ItemDB itemDB, ItemManager itemManager, BoundServiceManager manager, Logger logger) : base(manager, logger)
+        public invbroker(ItemDB itemDB, ItemManager itemManager, BoundServiceManager manager) : base(manager)
         {
             this.ItemManager = itemManager;
             this.ItemDB = itemDB;
         }
 
-        private invbroker(ItemDB itemDB, ItemManager itemManager, BoundServiceManager manager, int objectID, Logger logger) : base(manager, logger)
+        private invbroker(ItemDB itemDB, ItemManager itemManager, BoundServiceManager manager, int objectID) : base(manager)
         {
             this.ItemManager = itemManager;
             this.ItemDB = itemDB;
@@ -38,7 +38,7 @@ namespace Node.Services.Inventory
              */
             PyTuple tupleData = objectData as PyTuple;
             
-            return new invbroker(this.ItemDB, this.ItemManager, this.BoundServiceManager, tupleData[0] as PyInteger, this.Log.Logger);
+            return new invbroker(this.ItemDB, this.ItemManager, this.BoundServiceManager, tupleData[0] as PyInteger);
         }
 
         public PyDataType GetInventoryFromId(PyInteger itemID, PyInteger one, PyDictionary namedPayload, Client client)

@@ -165,7 +165,7 @@ namespace Node.Network
                             CallLog.Trace("Named payload");
                             CallLog.Trace(PrettyPrinter.FromDataType(sub));
 #endif
-
+                            
                             callResult = this.BoundServiceManager.ServiceCall(
                                 boundID, call, args, sub, this.ClientManager.Get(packet.UserID)
                             );

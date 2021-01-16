@@ -19,12 +19,14 @@ namespace Node
         
         private int mNextBoundID = 1;
         private Dictionary<int, BoundService> mBoundServices;
+        private Channel Log { get; }
 
         public BoundServiceManager(NodeContainer container, Logger logger)
         {
             this.Logger = logger;
             this.Container = container;
             this.mBoundServices = new Dictionary<int, BoundService>();
+            this.Log = this.Logger.CreateLogChannel("BoundService");
         }
 
         public int BoundService(BoundService service)
@@ -45,6 +47,8 @@ namespace Node
         public PyDataType ServiceCall(int boundID, string call, PyTuple payload, PyDictionary namedPayload, object client)
         {
             BoundService serviceInstance = this.mBoundServices[boundID];
+         
+            Log.Trace($"Calling {serviceInstance.GetType().Name}::{call} on bound service {boundID}");
             
             if(serviceInstance == null)
                 throw new ServiceDoesNotExistsException($"Bound Service {boundID}");

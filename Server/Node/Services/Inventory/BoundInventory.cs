@@ -18,14 +18,14 @@ namespace Node.Services.Inventory
         private ItemFlags mFlag;
         
         private ItemDB ItemDB { get; }
-        public BoundInventory(ItemDB itemDB, ItemInventory item, BoundServiceManager manager, Logger logger) : base(manager, logger)
+        public BoundInventory(ItemDB itemDB, ItemInventory item, BoundServiceManager manager) : base(manager)
         {
             this.mInventory = item;
             this.mFlag = ItemFlags.None;
             this.ItemDB = itemDB;
         }
 
-        public BoundInventory(ItemDB itemDB, ItemInventory item, ItemFlags flag, BoundServiceManager manager, Logger logger) : base(manager, logger)
+        public BoundInventory(ItemDB itemDB, ItemInventory item, ItemFlags flag, BoundServiceManager manager) : base(manager)
         {
             this.mInventory = item;
             this.mFlag = flag;
@@ -79,7 +79,7 @@ namespace Node.Services.Inventory
 
         public static PyDataType BindInventory(ItemDB itemDB, ItemInventory item, ItemFlags flag, BoundServiceManager boundServiceManager)
         {
-            BoundService instance = new BoundInventory(itemDB, item, flag, boundServiceManager, boundServiceManager.Logger);
+            BoundService instance = new BoundInventory(itemDB, item, flag, boundServiceManager);
             // bind the service
             int boundID = boundServiceManager.BoundService(instance);
             // build the bound service string

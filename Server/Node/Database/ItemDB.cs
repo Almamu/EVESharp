@@ -256,7 +256,7 @@ namespace Node.Database
         {
             MySqlConnection connection = null;
             MySqlCommand command = Database.PrepareQuery(ref connection,
-                "SELECT itemID, itemName, typeID, ownerID, locationID, flag, contraband, singleton, quantity, x, y, z, custominfo FROM entity WHERE itemID < 90000000"
+                $"SELECT itemID, itemName, typeID, ownerID, locationID, flag, contraband, singleton, quantity, x, y, z, custominfo FROM entity WHERE itemID < {ItemManager.USERGENERATED_ID_MIN}"
             );
             
             using (connection)
@@ -323,7 +323,7 @@ namespace Node.Database
                 Item newItem = this.BuildItemFromReader(reader);
                 
                 // the non-user generated items cannot be owned by any node
-                if (itemID < 90000000)
+                if (itemID < ItemManager.USERGENERATED_ID_MIN)
                     return newItem;
                 
                 // Update the database information
@@ -463,7 +463,9 @@ namespace Node.Database
                 " minimumJoinStanding, corporationType, hasPlayerPersonnelManager, sendCharTerminationMessage," +
                 " creatorID, ceoID, stationID, raceID, allianceID, shares, memberCount, memberLimit," +
                 " allowedMemberRaceIDs, graphicID, shape1, shape2, shape3, color1, color2, color3, typeface," +
-                " division1, division2, division3, division4, division5, division6, division7, balance, deleted" +
+                " division1, division2, division3, division4, division5, division6, division7, walletDivision1," +
+                " walletDivision2, walletDivision3, walletDivision4, walletDivision5, walletDivision6," + 
+                " walletDivision7, balance, deleted" +
                 " FROM corporation WHERE corporationID = @itemID",
                 new Dictionary<string, object>()
                 {
@@ -510,8 +512,15 @@ namespace Node.Database
                     reader.IsDBNull(29) ? null : reader.GetString(29),
                     reader.IsDBNull(30) ? null : reader.GetString(30),
                     reader.IsDBNull(31) ? null : reader.GetString(31),
-                    reader.GetDouble(32),
-                    reader.GetBoolean(33)
+                    reader.IsDBNull(32) ? null : reader.GetString(32),
+                    reader.IsDBNull(33) ? null : reader.GetString(33),
+                    reader.IsDBNull(34) ? null : reader.GetString(34),
+                    reader.IsDBNull(35) ? null : reader.GetString(35),
+                    reader.IsDBNull(36) ? null : reader.GetString(36),
+                    reader.IsDBNull(37) ? null : reader.GetString(37),
+                    reader.IsDBNull(38) ? null : reader.GetString(38),
+                    reader.GetDouble(39),
+                    reader.GetBoolean(40)
                 );
             }
         }
@@ -895,7 +904,7 @@ namespace Node.Database
         public void UnloadItem(int itemID)
         {
             // non-user generated items are not owned by anyone
-            if (itemID < 90000000)
+            if (itemID < ItemManager.USERGENERATED_ID_MIN)
                 return;
             
             Database.PrepareQuery("UPDATE entity SET nodeID = 0 WHERE itemID = @itemID", new Dictionary<string, object>()

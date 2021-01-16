@@ -1,50 +1,65 @@
+
 /**
  * Base tables for corporations
  */
 DROP TABLE IF EXISTS `corporation`;
 
 CREATE TABLE `corporation` (
-  `corporationID` int(10) unsigned NOT NULL,
-  `corporationName` varchar(100) NOT NULL default '',
-  `description` mediumtext NOT NULL,
-  `tickerName` varchar(8) NOT NULL default '',
-  `url` mediumtext NOT NULL,
-  `taxRate` double NOT NULL default '0',
-  `minimumJoinStanding` double NOT NULL default '0',
-  `corporationType` int(10) unsigned NOT NULL default '0',
-  `hasPlayerPersonnelManager` tinyint(3) unsigned NOT NULL default '0',
-  `sendCharTerminationMessage` tinyint(3) unsigned NOT NULL default '1',
-  `creatorID` int(10) unsigned NOT NULL default '0',
-  `ceoID` int(10) unsigned NOT NULL default '0',
-  `stationID` int(10) unsigned NOT NULL default '0',
-  `raceID` int(10) unsigned default NULL,
-  `allianceID` int(10) unsigned NOT NULL default '0',
-  `shares` bigint(20) unsigned NOT NULL default '1000',
-  `memberCount` int(10) unsigned NOT NULL default '0',
-  `memberLimit` int(10) unsigned NOT NULL default '10',
-  `allowedMemberRaceIDs` int(10) unsigned NOT NULL default '0',
-  `graphicID` int(10) unsigned NOT NULL default '0',
-  `shape1` int(10) unsigned default NULL,
-  `shape2` int(10) unsigned default NULL,
-  `shape3` int(10) unsigned default NULL,
-  `color1` int(10) unsigned default NULL,
-  `color2` int(10) unsigned default NULL,
-  `color3` int(10) unsigned default NULL,
-  `typeface` varchar(11) default NULL,
-  `division1` varchar(100) default '1st division',
-  `division2` varchar(100) default '2nd division',
-  `division3` varchar(100) default '3rd division',
-  `division4` varchar(100) default '4th division',
-  `division5` varchar(100) default '5th division',
-  `division6` varchar(100) default '6th division',
-  `division7` varchar(100) default '7th division',
-  `balance` double NOT NULL default '0',
-  `deleted` tinyint(3) unsigned NOT NULL default '0',
-  PRIMARY KEY  (`corporationID`)
+	`corporationID` INT(10) UNSIGNED NOT NULL,
+	`corporationName` VARCHAR(100) NOT NULL DEFAULT '',
+	`description` MEDIUMTEXT NOT NULL,
+	`tickerName` VARCHAR(8) NOT NULL DEFAULT '',
+	`url` MEDIUMTEXT NOT NULL,
+	`taxRate` DOUBLE NOT NULL DEFAULT '0',
+	`minimumJoinStanding` DOUBLE NOT NULL DEFAULT '0',
+	`corporationType` INT(10) UNSIGNED NOT NULL DEFAULT '0',
+	`hasPlayerPersonnelManager` TINYINT(3) UNSIGNED NOT NULL DEFAULT '0',
+	`sendCharTerminationMessage` TINYINT(3) UNSIGNED NOT NULL DEFAULT '1',
+	`creatorID` INT(10) UNSIGNED NOT NULL DEFAULT '0',
+	`ceoID` INT(10) UNSIGNED NOT NULL DEFAULT '0',
+	`stationID` INT(10) UNSIGNED NOT NULL DEFAULT '0',
+	`raceID` INT(10) UNSIGNED NULL DEFAULT NULL,
+	`allianceID` INT(10) UNSIGNED NOT NULL DEFAULT '0',
+	`shares` BIGINT(20) UNSIGNED NOT NULL DEFAULT '1000',
+	`memberCount` INT(10) UNSIGNED NOT NULL DEFAULT '0',
+	`memberLimit` INT(10) UNSIGNED NOT NULL DEFAULT '10',
+	`allowedMemberRaceIDs` INT(10) UNSIGNED NOT NULL DEFAULT '0',
+	`graphicID` INT(10) UNSIGNED NOT NULL DEFAULT '0',
+	`shape1` INT(10) UNSIGNED NULL DEFAULT NULL,
+	`shape2` INT(10) UNSIGNED NULL DEFAULT NULL,
+	`shape3` INT(10) UNSIGNED NULL DEFAULT NULL,
+	`color1` INT(10) UNSIGNED NULL DEFAULT NULL,
+	`color2` INT(10) UNSIGNED NULL DEFAULT NULL,
+	`color3` INT(10) UNSIGNED NULL DEFAULT NULL,
+	`typeface` VARCHAR(11) NULL DEFAULT NULL,
+	`division1` VARCHAR(100) NULL DEFAULT '1st Division',
+	`division2` VARCHAR(100) NULL DEFAULT '2nd Division',
+	`division3` VARCHAR(100) NULL DEFAULT '3rd Division',
+	`division4` VARCHAR(100) NULL DEFAULT '4th Division',
+	`division5` VARCHAR(100) NULL DEFAULT '5th Division',
+	`division6` VARCHAR(100) NULL DEFAULT '6th Division',
+	`division7` VARCHAR(100) NULL DEFAULT '7th Division',
+	`walletDivision1` VARCHAR(100) NULL DEFAULT 'Master wallet',
+	`walletDivision2` VARCHAR(100) NULL DEFAULT '2nd Wallet Division',
+	`walletDivision3` VARCHAR(100) NULL DEFAULT '3rd Wallet Division',
+	`walletDivision4` VARCHAR(100) NULL DEFAULT '4th Wallet Division',
+	`walletDivision5` VARCHAR(100) NULL DEFAULT '5th Wallet Division',
+	`walletDivision6` VARCHAR(100) NULL DEFAULT '6th Wallet Division',
+	`walletDivision7` VARCHAR(100) NULL DEFAULT '7th Wallet Division',
+	`balance` DOUBLE NOT NULL DEFAULT '0',
+	`deleted` TINYINT(3) UNSIGNED NOT NULL DEFAULT '0',
+	PRIMARY KEY (`corporationID`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 /*
  * Copy over the static corporation info
  */
 INSERT INTO corporation
- SELECT * FROM crpStatic;
+ SELECT
+  corporationID, corporationName, description, tickerName, url, taxRate, minimumJoinStanding, corporationType, hasPlayerPersonnelManager, 
+  sendCharTerminationMessage, creatorID, ceoID, stationID, raceID, allianceID, shares, memberCount, memberLimit, 
+  allowedMemberRaceIDs, graphicID, shape1, shape2, shape3, color1, color2, color3, typeface, division1, division2, division3, 
+  division4, division5, division6, division7, 'Master Wallet' AS walletDivision1, '2nd Wallet Division' AS walletDivision2, 
+  '3rd Wallet Division' AS walletDivision3, '4th Wallet Division' AS walletDivision4, '5th Wallet Division' AS walletDivision5, 
+  '6th Wallet Division' AS walletDivision6, '7th Wallet Division' AS walletDivision7, balance, deleted
+ FROM crpStatic;

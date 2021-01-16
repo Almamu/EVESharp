@@ -20,12 +20,12 @@ namespace Node.Services.Dogma
         private int mObjectID;
         
         private ItemManager ItemManager { get; }
-        public dogmaIM(ItemManager itemManager, BoundServiceManager manager, Logger logger) : base(manager, logger)
+        public dogmaIM(ItemManager itemManager, BoundServiceManager manager) : base(manager)
         {
             this.ItemManager = itemManager;
         }
 
-        private dogmaIM(ItemManager itemManager, BoundServiceManager manager, int objectID, Logger logger) : base(manager, logger)
+        private dogmaIM(ItemManager itemManager, BoundServiceManager manager, int objectID) : base(manager)
         {
             this.ItemManager = itemManager;
             this.mObjectID = objectID;
@@ -35,7 +35,7 @@ namespace Node.Services.Dogma
         {
             PyTuple tupleData = objectData as PyTuple;
             
-            return new dogmaIM(this.ItemManager, this.BoundServiceManager, tupleData[0] as PyInteger, this.Log.Logger);
+            return new dogmaIM(this.ItemManager, this.BoundServiceManager, tupleData[0] as PyInteger);
         }
 
         public PyDataType ShipGetInfo(PyDictionary namedPayload, Client client)

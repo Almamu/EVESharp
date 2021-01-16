@@ -3,6 +3,7 @@ using Common.Logging;
 using Node.Database;
 using Node.Inventory;
 using Node.Inventory.Items.Types;
+using PythonTypes.Types.Database;
 using PythonTypes.Types.Exceptions;
 using PythonTypes.Types.Primitives;
 using SimpleInjector;
@@ -19,13 +20,13 @@ namespace Node.Services.Corporations
 
         private CorporationDB DB { get; }
         private ItemManager ItemManager { get; }
-        public corpRegistry(CorporationDB db, ItemManager itemManager, BoundServiceManager manager, Logger logger) : base(manager, logger)
+        public corpRegistry(CorporationDB db, ItemManager itemManager, BoundServiceManager manager) : base(manager)
         {
             this.DB = db;
             this.ItemManager = itemManager;
         }
 
-        protected corpRegistry(CorporationDB db, ItemManager itemManager, Corporation corp, int isMaster, BoundServiceManager manager, Logger logger) : base (manager, logger)
+        protected corpRegistry(CorporationDB db, ItemManager itemManager, Corporation corp, int isMaster, BoundServiceManager manager) : base (manager)
         {
             this.DB = db;
             this.ItemManager = itemManager;
@@ -43,7 +44,7 @@ namespace Node.Services.Corporations
              */
             Corporation corp = this.ItemManager.LoadItem(data[0] as PyInteger) as Corporation;
             
-            return new corpRegistry(this.DB, this.ItemManager, corp, data[1] as PyInteger, this.BoundServiceManager, this.Log.Logger);
+            return new corpRegistry(this.DB, this.ItemManager, corp, data[1] as PyInteger, this.BoundServiceManager);
         }
 
         public PyDataType GetEveOwners(PyDictionary namedPayload, Client client)
@@ -63,6 +64,90 @@ namespace Node.Services.Corporations
                 throw new UserError("NoCharacterSelected");
             
             return this.DB.GetSharesByShareholder((int) client.CharacterID);
+        }
+
+        public PyDataType GetMember(PyInteger memberID, PyDictionary namedPayload, Client client)
+        {
+            return this.DB.GetMember(memberID, client.CorporationID);
+        }
+
+        public PyDataType GetMembers(PyDictionary namedPayload, Client client)
+        {
+            // generate the sparse rowset
+            SparseRowsetHeader rowsetHeader = this.DB.GetMembersSparseRowset(client.CorporationID);
+
+            PyDictionary dict = new PyDictionary
+            {
+                ["realRowCount"] = rowsetHeader.Count
+            };
+            
+            // create a service for handling it's calls
+            MembersSparseRowsetService svc =
+                new MembersSparseRowsetService(this.Corporation, this.DB, rowsetHeader, this.BoundServiceManager);
+
+            rowsetHeader.BoundObjectIdentifier = svc.MachoBindObject(dict, client);
+            
+            // finally return the data
+            return rowsetHeader;
+        }
+
+        public PyDataType GetOffices(PyDictionary namedPayload, Client client)
+        {
+            // generate the sparse rowset
+            SparseRowsetHeader rowsetHeader = this.DB.GetOfficesSparseRowset(client.CorporationID);
+
+            PyDictionary dict = new PyDictionary
+            {
+                ["realRowCount"] = rowsetHeader.Count
+            };
+            
+            // create a service for handling it's calls
+            OfficesSparseRowsetService svc =
+                new OfficesSparseRowsetService(this.Corporation, this.DB, rowsetHeader, this.BoundServiceManager);
+
+            rowsetHeader.BoundObjectIdentifier = svc.MachoBindObject(dict, client);
+            
+            // finally return the data
+            return rowsetHeader;
+        }
+
+        public PyDataType GetRoleGroups(PyDictionary namedPayload, Client client)
+        {
+            return this.DB.GetRoleGroups();
+        }
+
+        public PyDataType GetRoles(PyDictionary namedPayload, Client client)
+        {
+            return this.DB.GetRoles();
+        }
+
+        public PyDataType GetDivisions(PyDictionary namedPayload, Client client)
+        {
+            return this.DB.GetDivisions();
+        }
+
+        public PyDataType GetTitles(PyDictionary namedPayload, Client client)
+        {
+            // check if the corp is NPC and return placeholder data from the crpTitlesTemplate
+            if (ItemManager.IsNPCCorporationID(client.CorporationID) == true)
+            {
+                return this.DB.GetTitlesTemplate();
+            }
+            else
+            {
+                return this.DB.GetTitles(client.CorporationID);                
+            }
+        }
+
+        public PyDataType GetMemberTrackingInfo(PyInteger characterID, PyDictionary namedPayload, Client client)
+        {
+            // TODO: RETURN FULL TRACKING INFO, ONLY DIRECTORS ARE ALLOWED TO DO SO!
+            return null;
+        }
+
+        public PyDataType GetMemberTrackingInfoSimple(PyDictionary namedPayload, Client client)
+        {
+            return this.DB.GetMemberTrackingInfoSimple(client.CorporationID);
         }
     }
 }

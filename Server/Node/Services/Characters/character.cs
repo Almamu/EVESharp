@@ -208,7 +208,7 @@ namespace Node.Services.Characters
                 throw new CustomError($"Cannot find location for corporation {bloodline.CorporationID}");
             }
 
-            Station station = this.ItemManager.LoadItem(stationID) as Station;
+            Station station = this.ItemManager.GetStation(stationID);
             
             int itemID = this.DB.CreateCharacter(
                 bloodline.ItemType, characterName, owner, client.AccountID, this.mConfiguration.Balance, 0.0,

@@ -13,7 +13,7 @@ namespace PythonTypes.Types.Database
     public class IndexRowset
     {
         /// <summary>
-        /// Type of the rowser
+        /// Type of the rowset
         /// </summary>
         private const string TYPE_NAME = "util.IndexRowset";
         /// <summary>

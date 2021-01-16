@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Common.Database;
+using MySql.Data.MySqlClient;
 using PythonTypes.Types.Primitives;
 
 namespace Node.Database
@@ -91,6 +92,27 @@ namespace Node.Database
             }
 
             return Database.PrepareRowsetQuery(query, parameters);
+        }
+
+        public double? GetSecurityRating(int characterID)
+        {
+            MySqlConnection connection = null;
+            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+                "SELECT securityRating FROM chrInformation WHERE characterID = @characterID",
+                new Dictionary<string, object>()
+                {
+                    {"@characterID", characterID}
+                }
+            );
+            
+            using (connection)
+            using (reader)
+            {
+                if (reader.Read() == false)
+                    return null;
+
+                return reader.GetDouble(0);
+            }
         }
     }
 }

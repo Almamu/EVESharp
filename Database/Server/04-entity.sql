@@ -89,8 +89,9 @@ INSERT INTO entity (itemID, itemName, typeID, ownerID, locationID, singleton, qu
  * Insert corporations
  */
 INSERT INTO entity (itemID, itemName, typeID, ownerID, locationID, singleton, quantity)
-  SELECT corporationID, corporationName, 2, ceoID, stationID, 1, 1
-    FROM crpStatic;
+  SELECT crp.corporationID, crp.corporationName, 2, npc.factionID, crp.stationID, 1, 1
+    FROM crpStatic AS crp
+    LEFT JOIN crpNPCCorporations AS npc USING (corporationID);
 /*
  * Set the auto-increment lower bound
  */

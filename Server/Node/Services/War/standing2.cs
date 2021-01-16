@@ -1,6 +1,8 @@
 using Common.Database;
 using Common.Services;
 using Node.Database;
+using Node.Inventory;
+using Node.Inventory.Items.Types;
 using PythonTypes.Types.Complex;
 using PythonTypes.Types.Exceptions;
 using PythonTypes.Types.Primitives;
@@ -12,11 +14,13 @@ namespace Node.Services.War
     {
         private StandingDB DB { get; }
         private CacheStorage CacheStorage { get; }
+        private ItemManager ItemManager { get; }
         
-        public standing2(CacheStorage cacheStorage, StandingDB db)
+        public standing2(CacheStorage cacheStorage, StandingDB db, ItemManager itemManager)
         {
             this.CacheStorage = cacheStorage;
             this.DB = db;
+            this.ItemManager = itemManager;
         }
 
         public PyDataType GetMyKillRights(PyDictionary namedPayload, Client client)
@@ -61,6 +65,20 @@ namespace Node.Services.War
             PyInteger eventTypeID, PyInteger eventDateTime, PyDictionary namedPayload, Client client)
         {
             return this.DB.GetStandingTransactions(from, to, direction, eventID, eventTypeID, eventDateTime);
+        }
+
+        public PyDataType GetSecurityRating(PyInteger characterID, PyDictionary namedPayload, Client client)
+        {
+            if (this.ItemManager.IsItemLoaded(characterID) == true)
+            {
+                Character character = this.ItemManager.GetItem(characterID) as Character;
+
+                return character.SecurityRating;
+            }
+            else
+            {
+                return this.DB.GetSecurityRating(characterID);
+            }
         }
     }
 }

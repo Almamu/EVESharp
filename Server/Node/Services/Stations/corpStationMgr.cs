@@ -18,7 +18,7 @@ namespace Node.Services.Stations
         private ItemDB ItemDB { get; }
         private MarketDB MarketDB { get; }
         private ItemManager ItemManager { get; }
-        public corpStationMgr(ItemDB itemDB, MarketDB marketDB, ItemManager itemManager, BoundServiceManager manager, Logger logger) : base(manager, logger)
+        public corpStationMgr(ItemDB itemDB, MarketDB marketDB, ItemManager itemManager, BoundServiceManager manager) : base(manager)
         {
             this.ItemDB = itemDB;
             this.MarketDB = marketDB;
@@ -27,7 +27,7 @@ namespace Node.Services.Stations
 
         protected override BoundService CreateBoundInstance(PyDataType objectData)
         {
-            return new corpStationMgr(this.ItemDB, this.MarketDB, this.ItemManager, this.BoundServiceManager, this.Log.Logger);
+            return new corpStationMgr(this.ItemDB, this.MarketDB, this.ItemManager, this.BoundServiceManager);
         }
 
         public PyDataType GetCorporateStationOffice(PyDictionary namedPayload, Client client)

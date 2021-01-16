@@ -8,11 +8,9 @@ namespace Node.Services
 {
     public abstract class BoundService : Service
     {
-        protected readonly Channel Log;
         public BoundServiceManager BoundServiceManager { get; }
-        public BoundService(BoundServiceManager manager, Logger logger)
+        public BoundService(BoundServiceManager manager)
         {
-            this.Log = logger.CreateLogChannel("BoundService");
             this.BoundServiceManager = manager;
         }
 
@@ -84,8 +82,6 @@ namespace Node.Services
                 string call = data[0] as PyString;
                 PyTuple arguments = data[1] as PyTuple;
                 PyDictionary namedArguments = data[2] as PyDictionary;
-                
-                Log.Trace($"Calling {GetType().Name}::{call} on bound service {boundID}");
                 
                 result[1] = this.BoundServiceManager.ServiceCall(
                     boundID, call, arguments, namedArguments, client

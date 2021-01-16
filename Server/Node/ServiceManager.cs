@@ -34,6 +34,7 @@ using Node.Services.Chat;
 using Node.Services.Config;
 using Node.Services.Contracts;
 using Node.Services.Corporations;
+using Node.Services.Data;
 using Node.Services.Dogma;
 using Node.Services.Inventory;
 using Node.Services.Market;
@@ -86,6 +87,7 @@ namespace Node
         public certificateMgr certificateMgr { get; }
         public jumpCloneSvc jumpCloneSvc { get; }
         public LPSvc LPSvc { get; }
+        public lookupSvc lookupSvc { get; }
         
         public ServiceManager(
             NodeContainer container, CacheStorage storage, Logger logger, BoundServiceManager boundServiceManager,
@@ -122,7 +124,8 @@ namespace Node
             stationSvc stationSvc,
             certificateMgr certificateMgr,
             jumpCloneSvc jumpCloneSvc,
-            LPSvc LPSvc)
+            LPSvc LPSvc,
+            lookupSvc lookupSvc)
         {
             this.Container = container;
             this.CacheStorage = storage;
@@ -164,6 +167,7 @@ namespace Node
             this.certificateMgr = certificateMgr;
             this.jumpCloneSvc = jumpCloneSvc;
             this.LPSvc = LPSvc;
+            this.lookupSvc = lookupSvc;
         }
     }
 }

@@ -35,6 +35,14 @@ namespace Node.Inventory
 {
     public class ItemManager
     {
+        public const int FACTION_ID_MIN = 500000;
+        public const int FACTION_ID_MAX = 1000000;
+        public const int NPC_CORPORATION_ID_MIN = 1000000;
+        public const int NPC_CORPORATION_ID_MAX = 2000000;
+        public const int STATION_ID_MIN = 60000000;
+        public const int STATION_ID_MAX = 70000000;
+        public const int USERGENERATED_ID_MIN = 100000000;
+
         private SkillDB SkillDB { get; }
         private ItemDB ItemDB { get; }
         private Channel Log { get; }
@@ -71,6 +79,36 @@ namespace Node.Inventory
         public ItemEntity GetItem(int itemID)
         {
             return this.mItemList[itemID];
+        }
+
+        public static bool IsFactionID(int itemID)
+        {
+            return itemID >= FACTION_ID_MIN && itemID < FACTION_ID_MAX;
+        }
+
+        public static bool IsStationID(int itemID)
+        {
+            return itemID >= STATION_ID_MIN && itemID < STATION_ID_MAX;
+        }
+
+        public static bool IsNPCCorporationID(int itemID)
+        {
+            return itemID >= NPC_CORPORATION_ID_MIN && itemID < NPC_CORPORATION_ID_MAX;
+        }
+        public Faction GetFaction(int factionID)
+        {
+            if (ItemManager.IsFactionID(factionID) == false)
+                throw new ArgumentOutOfRangeException($"The id {factionID} does not belong to a faction");
+
+            return this.GetItem(factionID) as Faction;
+        }
+
+        public Station GetStation(int stationID)
+        {
+            if (ItemManager.IsStationID(stationID) == false)
+                throw new ArgumentOutOfRangeException($"The id {stationID}does not belong to a station");
+
+            return this.GetItem(stationID) as Station;
         }
 
         private ItemEntity PerformItemLoad(ItemEntity item)
