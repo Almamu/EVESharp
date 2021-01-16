@@ -94,4 +94,4 @@ INSERT INTO entity (itemID, itemName, typeID, ownerID, locationID, singleton, qu
 /*
  * Set the auto-increment lower bound
  */
-ALTER TABLE entity AUTO_INCREMENT = 90000000;
+ALTER TABLE entity AUTO_INCREMENT = 100000000;
