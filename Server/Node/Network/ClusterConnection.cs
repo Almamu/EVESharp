@@ -373,8 +373,159 @@ namespace Node.Network
                     throw new Exception("Wrong node string in LowLevelVersionExchange");
             }
             
-
             return data;
+        }
+
+        public void SendNotification(string notificationType, string idType, PyList idsOfInterest, Client client, PyDataType data)
+        {
+            PyTuple dataContainer = new PyTuple(new PyDataType []
+                {
+                    1, data
+                }
+            );
+
+            dataContainer = new PyTuple(new PyDataType[]
+                {
+                    0, dataContainer
+                }
+            );
+
+            dataContainer = new PyTuple(new PyDataType[]
+                {
+                    0, new PySubStream(dataContainer)
+                }
+            );
+
+            dataContainer = new PyTuple(new PyDataType[]
+                {
+                    dataContainer, null
+                }
+            );
+            
+            PyPacket packet = new PyPacket(PyPacket.PacketType.NOTIFICATION);
+
+            packet.Destination = new PyAddressBroadcast(idsOfInterest, idType, notificationType);
+            packet.Source = new PyAddressNode(this.Container.NodeID);
+
+            // set the userID to -1, this will indicate the cluster controller to fill it in
+            packet.UserID = client.AccountID;
+            packet.Payload = dataContainer;
+
+            this.Socket.Send(packet);
+        }
+
+        public void SendNotification(string notificationType, string idType, int id, Client client, PyDataType data)
+        {
+            PyTuple dataContainer = new PyTuple(new PyDataType []
+                {
+                    1, data
+                }
+            );
+
+            dataContainer = new PyTuple(new PyDataType[]
+                {
+                    0, dataContainer
+                }
+            );
+
+            dataContainer = new PyTuple(new PyDataType[]
+                {
+                    0, new PySubStream(dataContainer)
+                }
+            );
+
+            dataContainer = new PyTuple(new PyDataType[]
+                {
+                    dataContainer, null
+                }
+            );
+            
+            PyPacket packet = new PyPacket(PyPacket.PacketType.NOTIFICATION);
+
+            packet.Destination = new PyAddressBroadcast((PyList) new PyDataType[] { id }, idType, notificationType);
+            packet.Source = new PyAddressNode(this.Container.NodeID);
+
+            // set the userID to -1, this will indicate the cluster controller to fill it in
+            packet.UserID = client.AccountID;
+            packet.Payload = dataContainer;
+
+            this.Socket.Send(packet);
+        }
+
+        public void SendNotification(string notificationType, string idType, int id, PyDataType data)
+        {
+            PyTuple dataContainer = new PyTuple(new PyDataType []
+                {
+                    1, data
+                }
+            );
+
+            dataContainer = new PyTuple(new PyDataType[]
+                {
+                    0, dataContainer
+                }
+            );
+
+            dataContainer = new PyTuple(new PyDataType[]
+                {
+                    0, new PySubStream(dataContainer)
+                }
+            );
+
+            dataContainer = new PyTuple(new PyDataType[]
+                {
+                    dataContainer, null
+                }
+            );
+            
+            PyPacket packet = new PyPacket(PyPacket.PacketType.NOTIFICATION);
+
+            packet.Destination = new PyAddressBroadcast((PyList) new PyDataType[] { id }, idType, notificationType);
+            packet.Source = new PyAddressNode(this.Container.NodeID);
+
+            // set the userID to -1, this will indicate the cluster controller to fill it in
+            packet.UserID = -1;
+            packet.Payload = dataContainer;
+
+            this.Socket.Send(packet);
+        }
+        
+        public void SendNotification(string notificationType, string idType, PyList ids, PyDataType data)
+        {
+            PyTuple dataContainer = new PyTuple(new PyDataType []
+                {
+                    1, data
+                }
+            );
+
+            dataContainer = new PyTuple(new PyDataType[]
+                {
+                    0, dataContainer
+                }
+            );
+
+            dataContainer = new PyTuple(new PyDataType[]
+                {
+                    0, new PySubStream(dataContainer)
+                }
+            );
+
+            dataContainer = new PyTuple(new PyDataType[]
+                {
+                    dataContainer, null
+                }
+            );
+            
+            PyPacket packet = new PyPacket(PyPacket.PacketType.NOTIFICATION);
+
+            packet.Destination = new PyAddressBroadcast(ids, idType, notificationType);
+            packet.Source = new PyAddressNode(this.Container.NodeID);
+
+            // set the userID to -1, this will indicate the cluster controller to fill it in
+            packet.UserID = -1;
+            packet.Payload = dataContainer;
+
+            this.Socket.Send(packet);
         }
     }
 }

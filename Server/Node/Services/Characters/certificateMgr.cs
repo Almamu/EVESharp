@@ -80,6 +80,10 @@ namespace Node.Services.Characters
         {
             if (client.CharacterID == null)
                 throw new UserError("NoCharacterSelected");
+            
+            // TODO: WE MIGHT WANT TO CHECK AND ENSURE THAT THE CHARACTER BELONGS TO US BEFORE DOING ANYTHING ELSE HERE
+            if (this.ItemManager.IsItemLoaded((int) client.CharacterID) == false)
+                throw new CustomError("This request should arrive on the node that has this character loaded, not here");
 
             List<CertificateRelationship> requirements = this.DB.GetCertificateRequirements(certificateID);
             Character character = this.ItemManager.LoadItem((int) client.CharacterID) as Character;
@@ -131,11 +135,14 @@ namespace Node.Services.Characters
                 throw new UserError("NoCharacterSelected");
 
             foreach (KeyValuePair<PyDataType, PyDataType> update in updates)
-            {
                 this.UpdateCertificateFlags(update.Key as PyInteger, update.Value as PyInteger, namedPayload, client);
-            }
-            
+
             return null;
+        }
+
+        public PyDataType GetCertificatesByCharacter(PyInteger characterID, PyDictionary namedPayload, Client client)
+        {
+            return this.DB.GetCertificatesByCharacter(characterID);
         }
     }
 }

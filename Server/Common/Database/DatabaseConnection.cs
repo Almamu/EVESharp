@@ -34,12 +34,11 @@ namespace Common.Database
     public class DatabaseConnection
     {
         private Channel Log { get; set; }
-        private readonly string mConnectionString = "";
+        private readonly string mConnectionString;
         private readonly Queue<string> mQueryQueue = new Queue<string>();
 
         public DatabaseConnection(Configuration.Database configuration, Logger logger)
         {
-            
             MySqlConnectionStringBuilder stringBuilder = new MySqlConnectionStringBuilder();
 
             stringBuilder.Server = configuration.Hostname;

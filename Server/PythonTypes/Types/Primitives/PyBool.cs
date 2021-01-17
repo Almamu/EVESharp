@@ -59,5 +59,10 @@ namespace PythonTypes.Types.Primitives
         {
             return new PyBool(value);
         }
+
+        public static implicit operator PyInteger(PyBool obj)
+        {
+            return new PyInteger(obj.Value == true ? 1 : 0);
+        }
     }
 }

@@ -17,7 +17,7 @@ namespace Node.Database
         public Rowset GetMyCertificates(int characterID)
         {
             return Database.PrepareRowsetQuery(
-                "SELECT certificateID, grantDate, visibilityFlags FROM chrCertificates WHERE characterID=@characterID",
+                "SELECT certificateID, grantDate, visibilityFlags FROM chrCertificates WHERE characterID = @characterID",
                 new Dictionary<string, object>()
                 {
                     {"@characterID", characterID}
@@ -81,6 +81,17 @@ namespace Node.Database
                     {"@visibilityFlags", visibilityFlags},
                     {"@characterID", characterID},
                     {"@certificateID", certificateID}
+                }
+            );
+        }
+
+        public Rowset GetCertificatesByCharacter(int characterID)
+        {
+            return Database.PrepareRowsetQuery(
+                "SELECT certificateID, grantDate, visibilityFlags FROM chrCertificates WHERE characterID = @characterID AND visibilityFlags = 1",
+                new Dictionary<string, object>()
+                {
+                    {"@characterID", characterID}
                 }
             );
         }

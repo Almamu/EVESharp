@@ -23,7 +23,19 @@ namespace Node.Inventory.Items.Types
             }
         }
         
-        public Character(ClientManager clientManager, TimerManager timerManager, ItemEntity from, int characterId, int accountId, int? activeCloneID, string title, string description, double bounty, double balance, double securityRating, string petitionMessage, int logonMinutes, int corporationId, int corpRole, int rolesAtAll, int rolesAtBase, int rolesAtHq, int rolesAtOther, long corporationDateTime, long startDateTime, long createDateTime, int ancestryId, int careerId, int schoolId, int careerSpecialityId, int gender, int? accessoryId, int? beardId, int costumeId, int? decoId, int eyebrowsId, int eyesId, int hairId, int? lipstickId, int? makeupId, int skinId, int backgroundId, int lightId, double headRotation1, double headRotation2, double headRotation3, double eyeRotation1, double eyeRotation2, double eyeRotation3, double camPos1, double camPos2, double camPos3, double? morph1E, double? morph1N, double? morph1S, double? morph1W, double? morph2E, double? morph2N, double? morph2S, double? morph2W, double? morph3E, double? morph3N, double? morph3S, double? morph3W, double? morph4E, double? morph4N, double? morph4S, double? morph4W, int stationId, int solarSystemId, int constellationId, int regionId, int online, int freeReSpecs, long nextReSpecTime, long timeLastJump) : base(from)
+        public Character(ClientManager clientManager, TimerManager timerManager, ItemEntity from, int characterId,
+            int accountId, int? activeCloneID, string title, string description, double bounty, double balance,
+            double securityRating, string petitionMessage, int logonMinutes, int corporationId, int corpRole,
+            int rolesAtAll, int rolesAtBase, int rolesAtHq, int rolesAtOther, long corporationDateTime,
+            long startDateTime, long createDateTime, int ancestryId, int careerId, int schoolId, int careerSpecialityId,
+            int gender, int? accessoryId, int? beardId, int costumeId, int? decoId, int eyebrowsId, int eyesId,
+            int hairId, int? lipstickId, int? makeupId, int skinId, int backgroundId, int lightId, double headRotation1,
+            double headRotation2, double headRotation3, double eyeRotation1, double eyeRotation2, double eyeRotation3,
+            double camPos1, double camPos2, double camPos3, double? morph1E, double? morph1N, double? morph1S,
+            double? morph1W, double? morph2E, double? morph2N, double? morph2S, double? morph2W, double? morph3E,
+            double? morph3N, double? morph3S, double? morph3W, double? morph4E, double? morph4N, double? morph4S,
+            double? morph4W, int stationId, int solarSystemId, int constellationId, int regionId, int online,
+            int freeReSpecs, long nextReSpecTime, long timeLastJump, int titleMask) : base(from)
         {
             this.ClientManager = clientManager;
             this.TimerManager = timerManager;
@@ -96,6 +108,7 @@ namespace Node.Inventory.Items.Types
             this.mFreeReSpecs = freeReSpecs;
             this.mNextReSpecTime = nextReSpecTime;
             this.mTimeLastJump = timeLastJump;
+            this.mTitleMask = titleMask;
         }
 
         private ClientManager ClientManager { get; }
@@ -142,6 +155,16 @@ namespace Node.Inventory.Items.Types
             {
                 this.Dirty = true;
                 this.mBalance = value;
+            }
+        }
+
+        public int TitleMask
+        {
+            get => this.mTitleMask;
+            set
+            {
+                this.Dirty = true;
+                this.mTitleMask = value;
             }
         }
         public double SecurityRating => mSecurityRating;
@@ -333,6 +356,7 @@ namespace Node.Inventory.Items.Types
         private int mFreeReSpecs;
         private long mNextReSpecTime;
         private long mTimeLastJump;
+        private int mTitleMask;
         
         private List<SkillQueueEntry> mSkillQueue;
         private Corporation mCorporation = null;

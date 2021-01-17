@@ -26,5 +26,17 @@ namespace Node.Services.Data
         {
             return this.DB.LookupPlayerCharacters(criteria, exactMatch);
         }
+
+        public PyDataType LookupOwners(PyString criteria, PyDataType exactMatch, PyDictionary namedPayload, Client client)
+        {
+            bool exact = false;
+
+            if (exactMatch is PyBool exactBool)
+                exact = exactBool;
+            else if (exactMatch is PyInteger exactInteger)
+                exact = exactInteger != 0;
+            
+            return this.DB.LookupOwners(criteria, exact);
+        }
     }
 }

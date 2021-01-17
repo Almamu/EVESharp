@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Common.Logging;
 using Common.Network;
 using Common.Packets;
@@ -76,7 +77,7 @@ namespace ClusterControler
             }
 
             if (packet.Type == PyPacket.PacketType.CALL_RSP || packet.Type == PyPacket.PacketType.ERRORRESPONSE ||
-                packet.Type == PyPacket.PacketType.PING_RSP)
+                packet.Type == PyPacket.PacketType.PING_RSP || packet.Type == PyPacket.PacketType.CALL_REQ)
             {
                 if (packet.Destination is PyAddressClient)
                 {
@@ -92,8 +93,6 @@ namespace ClusterControler
                 {
                     Log.Error("Broadcast packets not supported yet");
                 }
-
-                // TODO: Handle Broadcast packets
             }
             else if (packet.Type == PyPacket.PacketType.SESSIONCHANGENOTIFICATION)
             {
@@ -110,8 +109,13 @@ namespace ClusterControler
 
                 Log.Trace($"Sending SessionChangeNotification to client {packet.UserID}");
 
-                this.ConnectionManager.NotifyClient((int) packet.UserID, packet);
-                
+                ClientConnection client = this.ConnectionManager.Clients[(int) packet.UserID];
+
+                // send the sessionchangenotification to the client
+                client.Socket.Send(packet);
+                // update the local copy of the session too
+                client.UpdateSession(packet);
+
                 // parse the notification, get the nodes of interest and tell them about this session change too
                 SessionChangeNotification scn = packet.Payload;
 
@@ -127,10 +131,128 @@ namespace ClusterControler
                     Log.Error("Received a notification that is not a broadcast...");
                     return;
                 }
+                
+                PyAddressBroadcast destination = packet.Destination as PyAddressBroadcast;
 
-                Log.Trace($"Relying notification to client {packet.UserID}");
+                if (packet.UserID == -1)
+                {
+                    // special situation, the ClusterController has to take care of fullfiling the proper information
+                    // in the packet, like UserID
+                    switch (destination.IDType)
+                    {
+                        case "solarsystemid2":
+                            foreach (PyDataType idData in destination.IDsOfInterest)
+                            {
+                                PyInteger id = idData as PyInteger;
+                                
+                                foreach (KeyValuePair<long, ClientConnection> entry in this.ConnectionManager.Clients)
+                                {
+                                    if (entry.Value.SolarSystemID2 == id)
+                                    {
+                                        // use the key instead of AccountID as this should be faster
+                                        packet.UserID = entry.Key;
+                                        // queue the packet for the user
+                                        entry.Value.Socket.Send(packet);
+                                    }
+                                }
+                            }
+                            break;
+                        
+                        case "constellationid":
+                            foreach (PyDataType idData in destination.IDsOfInterest)
+                            {
+                                PyInteger id = idData as PyInteger;
+                                
+                                foreach (KeyValuePair<long, ClientConnection> entry in this.ConnectionManager.Clients)
+                                {
+                                    if (entry.Value.ConstellationID == id)
+                                    {
+                                        // use the key instead of AccountID as this should be faster
+                                        packet.UserID = entry.Key;
+                                        // queue the packet for the user
+                                        entry.Value.Socket.Send(packet);
+                                    }
+                                }
+                            }
+                            break;
+                        
+                        case "corpid":
+                            foreach (PyDataType idData in destination.IDsOfInterest)
+                            {
+                                PyInteger id = idData as PyInteger;
+                                
+                                foreach (KeyValuePair<long, ClientConnection> entry in this.ConnectionManager.Clients)
+                                {
+                                    if (entry.Value.CorporationID == id)
+                                    {
+                                        // use the key instead of AccountID as this should be faster
+                                        packet.UserID = entry.Key;
+                                        // queue the packet for the user
+                                        entry.Value.Socket.Send(packet);
+                                    }
+                                }
+                            }
+                            break;
+                        
+                        case "regionid":
+                            foreach (PyDataType idData in destination.IDsOfInterest)
+                            {
+                                PyInteger id = idData as PyInteger;
+                                
+                                foreach (KeyValuePair<long, ClientConnection> entry in this.ConnectionManager.Clients)
+                                {
+                                    if (entry.Value.RegionID == id)
+                                    {
+                                        // use the key instead of AccountID as this should be faster
+                                        packet.UserID = entry.Key;
+                                        // queue the packet for the user
+                                        entry.Value.Socket.Send(packet);
+                                    }
+                                }
+                            }
+                            break;
+                        case "charid":
+                            PyList idlist = destination.IDsOfInterest;
 
-                this.ConnectionManager.NotifyClient((int) packet.UserID, packet);
+                            foreach (PyDataType idData in idlist)
+                            {
+                                PyInteger id = idData as PyInteger;
+                                
+                                foreach (KeyValuePair<long, ClientConnection> entry in this.ConnectionManager.Clients)
+                                {
+                                    if (entry.Value.CharacterID == id)
+                                    {
+                                        // use the key instead of AccountID as this should be faster
+                                        packet.UserID = entry.Key;
+                                        // change the ids of interest to hide the character's we've notified
+                                        destination.IDsOfInterest = (PyList) new PyDataType[] {id};
+                                        // queue the packet for the user
+                                        entry.Value.Socket.Send(packet);
+                                    }
+                                }
+                            }
+                            break;
+                        case "stationid":
+                            Log.Warning($"stationid based notifications not supported yet");
+                            break;
+                        case "allianceid":
+                            Log.Warning($"allianceid based notifications not supported yet");
+                            break;
+                        // TODO: IMPLEMENT stationid AND allianceid (there seems to be more, look at the client's code)
+                        case "nodeid":
+                            Log.Warning($"Inter-node notifications not implemented yet! Perhaps you're interested in implementing it?");
+                            break;
+                        default:
+                            Log.Error($"Unexpected broadcast with idtype {destination.IDType.Value} and negative userID (autofill by ClusterController)");
+                            break;
+                    }
+                }
+                else
+                {
+                    Log.Trace($"Relaying notification to client {packet.UserID}");
+
+                    this.ConnectionManager.NotifyClient((int) packet.UserID, packet);
+                }
             }
             else
             {

@@ -27,50 +27,35 @@ INSERT INTO `channels`(`channelID`,`ownerID`,`displayName`,`motd`,`comparisonKey
 
 /* Insert solar systems into the channels table */
 INSERT INTO `channels`(`channelID`,`ownerID`,`relatedEntityID`,`displayName`,`motd`,`comparisonKey`,`memberless`,`password`,`mailingList`,`cspa`,`temporary`,`estimatedMemberCount`)
-  SELECT solarSystemID AS channelID, 1 AS ownerID, solarSystemID as relatedEntityID, "System Channels\\Local" AS displayName, solarSystemName AS motd, NULL AS comparisonKey, 0 AS memberless, NULL AS password, 0 AS mailingList, 100 AS cspa, 0 AS temporary, 0 AS estimatedMemberCount FROM mapSolarSystems;
+  SELECT solarSystemID AS channelID, 1 AS ownerID, solarSystemID as relatedEntityID, "System Channels\\Local" AS displayName, solarSystemName AS motd, NULL AS comparisonKey, 0 AS memberless, NULL AS password, 0 AS mailingList, 1 AS cspa, 0 AS temporary, 0 AS estimatedMemberCount FROM mapSolarSystems;
 
 /* Insert constellations into the channels table */
 INSERT INTO `channels`(`channelID`,`ownerID`,`relatedEntityID`,`displayName`,`motd`,`comparisonKey`,`memberless`,`password`,`mailingList`,`cspa`,`temporary`,`estimatedMemberCount`)
-  SELECT constellationID AS channelID, 1 AS ownerID, constellationID as relatedEntityID, "System Channels\\Constellation" AS displayName, constellationName AS motd, NULL AS comparisonKey, 0 AS memberless, NULL AS password, 0 AS mailingList, 100 AS cspa, 0 AS temporary, 0 AS estimatedMemberCount FROM mapConstellations;
+  SELECT constellationID AS channelID, 1 AS ownerID, constellationID as relatedEntityID, "System Channels\\Constellation" AS displayName, constellationName AS motd, NULL AS comparisonKey, 0 AS memberless, NULL AS password, 0 AS mailingList, 1 AS cspa, 0 AS temporary, 0 AS estimatedMemberCount FROM mapConstellations;
 
 /* Insert regions into the channels table */
 INSERT INTO `channels`(`channelID`,`ownerID`,`relatedEntityID`,`displayName`,`motd`,`comparisonKey`,`memberless`,`password`,`mailingList`,`cspa`,`temporary`,`estimatedMemberCount`)
-  SELECT regionID AS channelID, 1 AS ownerID, regionID as relatedEntityID, "System Channels\\Region" AS displayName, regionName AS motd, NULL AS comparisonKey, 0 AS memberless, NULL AS password, 0 AS mailingList, 100 AS cspa, 0 AS temporary, 0 AS estimatedMemberCount FROM mapRegions;
+  SELECT regionID AS channelID, 1 AS ownerID, regionID as relatedEntityID, "System Channels\\Region" AS displayName, regionName AS motd, NULL AS comparisonKey, 0 AS memberless, NULL AS password, 0 AS mailingList, 1 AS cspa, 0 AS temporary, 0 AS estimatedMemberCount FROM mapRegions;
 
 /* Insert NPC corporations into the channels table */
 INSERT INTO `channels`(`channelID`,`ownerID`,`relatedEntityID`,`displayName`,`motd`,`comparisonKey`,`memberless`,`password`,`mailingList`,`cspa`,`temporary`,`estimatedMemberCount`)
-  SELECT corporationID AS channelID, corporationID AS ownerID, corporationID as relatedEntityID, "System Channels\\Corp" AS displayName, corporationName AS motd, NULL AS comparisonKey, 0 AS memberless, NULL AS password, 0 AS mailingList, 100 AS cspa, 0 AS temporary, 0 AS estimatedMemberCount FROM corporation;
-
-/*Table structure for table `channelChars` */
-
-DROP TABLE IF EXISTS `channelChars`;
-
-CREATE TABLE `channelChars` (
-  `channelID` int(10) unsigned NOT NULL default '0',
-  `charID` int(10) unsigned NOT NULL default '0',
-  `role` int(10) unsigned NOT NULL default '0',
-  `extra` int(10) unsigned NOT NULL default '0',
-  PRIMARY KEY  (`channelID`,`charID`),
-  KEY `FK_CHANNELCHARS_CHARACTER` (`charID`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
-/*Data for the table `channelChars` */
+  SELECT corporationID AS channelID, corporationID AS ownerID, corporationID as relatedEntityID, "System Channels\\Corp" AS displayName, corporationName AS motd, NULL AS comparisonKey, 0 AS memberless, NULL AS password, 0 AS mailingList, 1 AS cspa, 0 AS temporary, 0 AS estimatedMemberCount FROM corporation;
 
 /*Table structure for table `channelMods` */
 
 DROP TABLE IF EXISTS `channelMods`;
 
 CREATE TABLE `channelMods` (
-  `id` int(10) unsigned NOT NULL auto_increment,
-  `channelID` int(10) unsigned NOT NULL default '0',
-  `accessor` int(10) unsigned default NULL,
-  `mode` int(10) unsigned NOT NULL default '0',
-  `untilWhen` bigint(20) unsigned default NULL,
-  `originalMode` int(10) unsigned default NULL,
-  `admin` varchar(85) default NULL,
-  `reason` text,
-  PRIMARY KEY  (`id`),
+  `channelID` INT(10) UNSIGNED NOT NULL DEFAULT '0',
+  `accessor` INT(10) UNSIGNED NOT NULL,
+  `mode` INT(10) UNSIGNED NOT NULL DEFAULT '0',
+  `untilWhen` BIGINT(20) UNSIGNED NULL DEFAULT NULL,
+  `originalMode` INT(10) UNSIGNED NULL DEFAULT NULL,
+  `admin` VARCHAR(85) NULL DEFAULT NULL,
+  `reason` TEXT NULL DEFAULT NULL,
+  PRIMARY KEY (`channelID`, `accessor`),
   KEY `FK_CHANNELMODS_CHANNELS` (`channelID`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 /*Data for the table `channelMods` */
+                           

@@ -20,6 +20,11 @@ namespace ClusterControler
         public Session Session { get; }
         private GeneralDB GeneralDB { get; }
         public long AccountID => this.Session["userid"] as PyInteger;
+        public int SolarSystemID2 => this.Session["solarsystemid2"] as PyInteger;
+        public int ConstellationID => this.Session["constellationid"] as PyInteger;
+        public int CorporationID => this.Session["corpid"] as PyInteger;
+        public int RegionID => this.Session["regionid"] as PyInteger;
+        public int CharacterID => this.Session["charid"] as PyInteger;
         
         public ClientConnection(EVEClientSocket socket, ConnectionManager connectionManager, GeneralDB generalDB, Logger logger)
             : base(socket, connectionManager)
@@ -366,5 +371,12 @@ namespace ClusterControler
 
             return packet;
         }
+        
+        
+        public void UpdateSession(PyPacket packet)
+        {
+            this.Session.LoadChanges((packet.Payload[0] as PyTuple)[1] as PyDictionary);
+        }
+
     }
 }

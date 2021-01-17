@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Common.Database;
 using Common.Logging;
 using Node.Database;
@@ -148,6 +149,26 @@ namespace Node.Services.Corporations
         public PyDataType GetMemberTrackingInfoSimple(PyDictionary namedPayload, Client client)
         {
             return this.DB.GetMemberTrackingInfoSimple(client.CorporationID);
+        }
+
+        public PyDataType GetInfoWindowDataForChar(PyInteger characterID, PyDictionary namedPayload, Client client)
+        {
+            int titleMask = this.DB.GetTitleMaskForCharacter(characterID, client.CorporationID);
+            Dictionary<int, string> titles = this.DB.GetTitlesNames(client.CorporationID);
+            PyDictionary dictForKeyVal = new PyDictionary();
+
+            int number = 0;
+
+            foreach (KeyValuePair<int, string> title in titles)
+                dictForKeyVal["title" + (++number)] = title.Value;
+            
+            // we're supposed to be from the same corp, so add the extra information manually
+            // TODO: TEST WITH USERS FROM OTHER CORPS
+            dictForKeyVal["corpID"] = client.CorporationID;
+            dictForKeyVal["allianceID"] = client.AllianceID;
+            dictForKeyVal["title"] = "TITLE HERE";
+
+            return KeyVal.FromDictionary(dictForKeyVal);
         }
     }
 }

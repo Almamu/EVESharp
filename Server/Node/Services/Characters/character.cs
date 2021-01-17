@@ -34,6 +34,7 @@ using Node.Database;
 using Node.Inventory;
 using Node.Inventory.Items;
 using Node.Inventory.Items.Types;
+using PythonTypes.Types.Database;
 using PythonTypes.Types.Exceptions;
 using PythonTypes.Types.Network;
 using PythonTypes.Types.Primitives;
@@ -312,12 +313,12 @@ namespace Node.Services.Characters
             // create required mailing list channel
             int channelID = (int) this.ChatDB.CreateChannel(character, character, characterName, true);
             // and subscribe the character to some channels
-            this.ChatDB.JoinChannel(ChatDB.CHANNEL_ROOKIECHANNELID, character.ID, ChatDB.CHATROLE_CONVERSATIONALIST);
-            this.ChatDB.JoinChannel(channelID, character.ID, ChatDB.CHATROLE_CREATOR);
-            this.ChatDB.JoinChannel(solarSystemID, character.ID, ChatDB.CHATROLE_CONVERSATIONALIST);
-            this.ChatDB.JoinChannel(constellationID, character.ID, ChatDB.CHATROLE_CONVERSATIONALIST);
-            this.ChatDB.JoinChannel(regionID, character.ID, ChatDB.CHATROLE_CONVERSATIONALIST);
-            this.ChatDB.JoinChannel(character.CorporationID, character.ID, ChatDB.CHATROLE_CONVERSATIONALIST);
+            this.ChatDB.JoinChannel(ChatDB.CHANNEL_ROOKIECHANNELID, character.ID);
+            this.ChatDB.JoinEntityChannel(character.ID, character.ID);
+            this.ChatDB.JoinEntityChannel(solarSystemID, character.ID);
+            this.ChatDB.JoinEntityChannel(constellationID, character.ID);
+            this.ChatDB.JoinEntityChannel(regionID, character.ID);
+            this.ChatDB.JoinEntityChannel(character.CorporationID, character.ID);
             
             // unload items from list
             this.ItemManager.UnloadItem(clone);
@@ -468,6 +469,47 @@ namespace Node.Services.Characters
                 count = 100;
             
             return this.DB.GetRecentShipKillsAndLosses((int) client.CharacterID, count, startIndex);
+        }
+
+        public PyDataType GetCharacterAppearanceList(PyList ids, PyDictionary namedPayload, Client client)
+        {
+            PyList result = new PyList(ids.Count);
+
+            int index = 0;
+            
+            foreach (PyDataType id in ids)
+            {
+                // ignore non-integers
+                if (id is PyInteger == false)
+                    continue;
+
+                Rowset dbResult = this.DB.GetCharacterAppearanceInfo(id as PyInteger);
+
+                if (dbResult.Rows.Count != 0)
+                    result[index] = dbResult;
+
+                index++;
+            }
+
+            return result;
+        }
+
+        public PyDataType GetNote(PyInteger characterID, PyDictionary namedPayload, Client client)
+        {
+            if (client.CharacterID == null)
+                throw new UserError("NoCharacterSelected");
+            
+            return this.DB.GetNote(characterID, (int) client.CharacterID);
+        }
+
+        public PyDataType SetNote(PyInteger characterID, PyString note, PyDictionary namedPayload, Client client)
+        {
+            if (client.CharacterID == null)
+                throw new UserError("NoCharacterSelected");
+            
+            this.DB.SetNote(characterID, (int) client.CharacterID, note);
+
+            return null;
         }
     }
 }

@@ -648,5 +648,72 @@ namespace Node.Database
                 }
             );
         }
+
+        public Rowset GetCharacterAppearanceInfo(int characterID)
+        {
+            return Database.PrepareRowsetQuery(
+                "SELECT accessoryID, beardID, costumeID, decoID, eyebrowsID, eyesID, hairID," +
+                " lipstickID, makeupID, skinID, backgroundID, lightID," +
+                " headRotation1, headRotation2, headRotation3, eyeRotation1," +
+                " eyeRotation2, eyeRotation3, camPos1, camPos2, camPos3," +
+                " morph1e, morph1n, morph1s, morph1w, morph2e, morph2n," +
+                " morph2s, morph2w, morph3e, morph3n, morph3s, morph3w," +
+                " morph4e, morph4n, morph4s, morph4w " +
+                "FROM chrInformation WHERE characterID = @characterID",
+                new Dictionary<string, object>()
+                {
+                    {"@characterID", characterID}
+                }
+            );
+        }
+
+        public string GetNote(int itemID, int ownerID)
+        {
+            MySqlConnection connection = null;
+            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+                "SELECT note FROM chrNotes WHERE itemID = @itemID AND ownerID = @ownerID",
+                new Dictionary<string, object>()
+                {
+                    {"@itemID", itemID},
+                    {"@ownerID", ownerID}
+                }
+            );
+            
+            using (connection)
+            using (reader)
+            {
+                // if no record exists, return an empty string so the player can create it's own
+                if (reader.Read() == false)
+                    return "";
+
+                return reader.GetString(0);
+            }
+        }
+
+        public void SetNote(int itemID, int ownerID, string note)
+        {
+            // remove the note if no text is present
+            if (note.Length == 0)
+            {
+                Database.PrepareQuery("DELETE FROM chrNotes WHERE itemID = @itemID AND ownerID = @ownerID",
+                    new Dictionary<string, object>()
+                    {
+                        {"@itemID", itemID},
+                        {"@ownerID", ownerID}
+                    }
+                );
+            }
+            else
+            {
+                Database.PrepareQuery("REPLACE INTO chrNOtes (itemID, ownerID, note)VALUES(@itemID, @ownerID, @note)",
+                    new Dictionary<string, object>()
+                    {
+                        {"@itemID", itemID},
+                        {"@ownerID", ownerID},
+                        {"@note", note}
+                    }
+                );
+            }
+        }
     }
 }

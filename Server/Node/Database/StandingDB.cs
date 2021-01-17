@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using Common.Database;
 using MySql.Data.MySqlClient;
@@ -53,7 +54,7 @@ namespace Node.Database
             // use the old 1=1 trick to make it easier to append things
             Dictionary<string, object> parameters = new Dictionary<string, object>();
             string query =
-                "SELECT eventID, fromID, toID, direction, eventTypeID, msg, modification, int_1, int_2, int_3 FROM chrStandingTransactions WHERE 1=1";
+                "SELECT eventID, fromID, toID, direction, eventDateTime, eventTypeID, msg, modification, int_1, int_2, int_3 FROM chrStandingTransactions WHERE 1=1";
 
             if (fromID != null)
             {
@@ -113,6 +114,39 @@ namespace Node.Database
 
                 return reader.GetDouble(0);
             }
+        }
+
+        public void CreateStandingTransaction(int eventTypeID, int fromID, int toID, double value, string message, int int_1 = 0, int int_2 = 0, int int_3 = 0)
+        {
+            Database.PrepareQuery(
+                "INSERT INTO chrStandingTransactions (fromID, toID, modification, direction, msg, eventDateTime, eventTypeID, int_1, int_2, int_3)VALUES(@fromID, @toID, @modification, @direction, @msg, @eventDateTime, @eventTypeID, @int_1, @int_2, @int_3)",
+                new Dictionary<string, object>()
+                {
+                    {"@fromID", fromID},
+                    {"@toID", toID},
+                    {"@direction", 1}, // direction seems to not be used anymore
+                    {"@modification", value},
+                    {"@msg", message},
+                    {"@eventDateTime", DateTime.UtcNow.ToFileTimeUtc()},
+                    {"@eventTypeID", eventTypeID},
+                    {"@int_1", int_1},
+                    {"@int_2", int_2},
+                    {"@int_3", int_3}
+                }
+            );
+        }
+
+        public void SetPlayerStanding(int fromID, int toID, double value)
+        {
+            Database.PrepareQuery(
+                "REPLACE INTO chrStandings(characterID, toID, standing)VALUES(@fromID, @toID, @value)",
+                new Dictionary<string, object>()
+                {
+                    {"@fromID", fromID},
+                    {"@toID", toID},
+                    {"@value", value}
+                }
+            );
         }
     }
 }

@@ -1,3 +1,4 @@
+using System.Web;
 using Common.Database;
 using Common.Services;
 using Node.Database;
@@ -64,6 +65,10 @@ namespace Node.Services.War
         public PyDataType GetStandingTransactions(PyInteger from, PyInteger to, PyInteger direction, PyInteger eventID,
             PyInteger eventTypeID, PyInteger eventDateTime, PyDictionary namedPayload, Client client)
         {
+            if (from != client.CorporationID && from != client.CharacterID && to != client.CorporationID &&
+                to != client.CharacterID)
+                throw new CustomError("You can only view standings that concern you");
+            
             return this.DB.GetStandingTransactions(from, to, direction, eventID, eventTypeID, eventDateTime);
         }
 
@@ -79,6 +84,31 @@ namespace Node.Services.War
             {
                 return this.DB.GetSecurityRating(characterID);
             }
+        }
+
+        public PyDataType GetNPCStandingsTo(PyInteger characterID, PyDictionary namedPayload, Client client)
+        {
+            return this.DB.GetCharNPCStandings(characterID);
+        }
+
+        public PyDataType SetPlayerStanding(PyInteger characterID, PyDecimal standing, PyString reason, PyDictionary namedPayload, Client client)
+        {
+            this.DB.CreateStandingTransaction((int) StandingEventType.StandingPlayerSetStanding, (int) client.CharacterID, characterID, standing, reason);
+            this.DB.SetPlayerStanding((int) client.CharacterID, characterID, standing);
+            
+            // send standing change notification to the player
+            PyTuple notification = new PyTuple(3)
+            {
+                [0] = client.CharacterID,
+                [1] = characterID,
+                [2] = standing
+            };
+            
+            // send the same notification to both players
+            client.ClusterConnection.SendNotification("OnStandingSet", "charid", (int) client.CharacterID, client, notification);
+            client.ClusterConnection.SendNotification("OnStandingSet", "charid", characterID, notification);
+            
+            return null;
         }
     }
 }

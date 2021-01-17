@@ -153,7 +153,7 @@ namespace Node.Database
             return Database.PrepareKeyValQuery(
                 "SELECT" +
                 " characterID, title, startDateTime, corpRole AS roles, rolesAtHQ, rolesAtBase, rolesAtOther," +
-                " 0 AS titleMask, 0 AS grantableRoles, 0 AS grantableRolesAtHQ, 0 AS grantableRolesAtBase," +
+                " titleMask, 0 AS grantableRoles, 0 AS grantableRolesAtHQ, 0 AS grantableRolesAtBase," +
                 " 0 AS grantableRolesAtOther, 0 AS divisionID, 0 AS squadronID, locationID AS baseID, " +
                 " 0 AS blockRoles, gender " +
                 "FROM chrInformation " +
@@ -227,10 +227,6 @@ namespace Node.Database
 
         public PyDataType GetOffices(int corporationID, int startPos, int limit, SparseRowsetHeader header, Dictionary<PyDataType, int> rowsIndex)
         {
-            // TODO: GENERATE PROPER FIELDS FOR THE FOLLOWING FIELDS
-            // TODO: titleMask, grantableRoles, grantableRolesAtHQ, grantableRolesAtBase, grantableRolesAtOther
-            // TODO: divisionID, squadronID
-            // TODO: CHECK IF THIS startDateTime IS THE CORP'S MEMBERSHIP OR CHARACTER'S MEMBERSHIP
             MySqlConnection connection = null;
             MySqlDataReader reader = Database.PrepareQuery(ref connection,
                 "SELECT" +
@@ -311,11 +307,16 @@ namespace Node.Database
         
         public PyDataType GetMembers(PyList characterIDs, int corporationID, SparseRowsetHeader header, Dictionary<PyDataType, int> rowsIndex)
         {
+            // TODO: GENERATE PROPER FIELDS FOR THE FOLLOWING FIELDS
+            // TODO: titleMask, grantableRoles, grantableRolesAtHQ, grantableRolesAtBase, grantableRolesAtOther
+            // TODO: divisionID, squadronID
+            // TODO: CHECK IF THIS startDateTime IS THE CORP'S MEMBERSHIP OR CHARACTER'S MEMBERSHIP
+            
             Dictionary<string, object> parameters = new Dictionary<string, object>();
             
             string query = "SELECT" +
                            " characterID, title, startDateTime, corpRole AS roles, rolesAtHQ, rolesAtBase, rolesAtOther," +
-                           " 0 AS titleMask, 0 AS grantableRoles, 0 AS grantableRolesAtHQ, 0 AS grantableRolesAtBase," +
+                           " titleMask, 0 AS grantableRoles, 0 AS grantableRolesAtHQ, 0 AS grantableRolesAtBase," +
                            " 0 AS grantableRolesAtOther, 0 AS divisionID, 0 AS squadronID, 0 AS baseID, " +
                            " 0 AS blockRoles, gender " +
                            "FROM chrInformation " +
@@ -328,11 +329,6 @@ namespace Node.Database
             query += String.Join(',', parameters.Keys) + ")";
 
             parameters["@corporationID"] = corporationID;
-            
-            // TODO: GENERATE PROPER FIELDS FOR THE FOLLOWING FIELDS
-            // TODO: titleMask, grantableRoles, grantableRolesAtHQ, grantableRolesAtBase, grantableRolesAtOther
-            // TODO: divisionID, squadronID
-            // TODO: CHECK IF THIS startDateTime IS THE CORP'S MEMBERSHIP OR CHARACTER'S MEMBERSHIP
             MySqlConnection connection = null;
             MySqlDataReader reader = Database.PrepareQuery(ref connection, query, parameters);
             
@@ -353,7 +349,7 @@ namespace Node.Database
             MySqlDataReader reader = Database.PrepareQuery(ref connection,
                 "SELECT" +
                 " characterID, title, startDateTime, corpRole AS roles, rolesAtHQ, rolesAtBase, rolesAtOther," +
-                " 0 AS titleMask, 0 AS grantableRoles, 0 AS grantableRolesAtHQ, 0 AS grantableRolesAtBase," + 
+                " titleMask, 0 AS grantableRoles, 0 AS grantableRolesAtHQ, 0 AS grantableRolesAtBase," + 
                 " 0 AS grantableRolesAtOther, 0 AS divisionID, 0 AS squadronID, 0 AS baseID, " + 
                 " 0 AS blockRoles, gender " +
                 "FROM chrInformation " +
@@ -454,6 +450,51 @@ namespace Node.Database
                     {"@currentTicks", DateTime.UtcNow.ToFileTimeUtc ()}
                 }
             );
+        }
+
+        public int GetTitleMaskForCharacter(int characterID, int corporationID)
+        {
+            MySqlConnection connection = null;
+            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+                "SELECT titleMask FROM chrInformation WHERE characterID = @characterID AND corporationID = @corporationID",
+                new Dictionary<string, object>()
+                {
+                    {"@characterID", characterID},
+                    {"@corporationID", corporationID}
+                }
+            );
+            
+            using (connection)
+            using (reader)
+            {
+                if (reader.Read() == false)
+                    return 0;
+
+                return reader.GetInt32(0);
+            }
+        }
+
+        public Dictionary<int, string> GetTitlesNames(int corporationID)
+        {
+            MySqlConnection connection = null;
+            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+                "SELECT titleID, titleName FROM crpTitles WHERE corporationID = @corporationID",
+                new Dictionary<string, object>()
+                {
+                    {"@corporationID", corporationID}
+                }
+            );
+            
+            using (connection)
+            using (reader)
+            {
+                Dictionary<int, string> result = new Dictionary<int, string>();
+
+                while (reader.Read() == true)
+                    result[reader.GetInt32(0)] = reader.GetString(1);
+
+                return result;
+            }
         }
     }
 }

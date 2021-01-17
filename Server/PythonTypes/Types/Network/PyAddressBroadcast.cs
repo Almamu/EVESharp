@@ -5,9 +5,9 @@ namespace PythonTypes.Types.Network
 {
     public class PyAddressBroadcast : PyAddress
     {
-        public PyString Service { get; }
-        public PyList IDsOfInterest { get; }
-        public PyString IDType { get; }
+        public PyString Service { get; set; }
+        public PyList IDsOfInterest { get; set; }
+        public PyString IDType { get; set; }
 
         public PyAddressBroadcast(PyList idsOfInterest, PyString idType, PyString service = null) : base(TYPE_BROADCAST)
         {

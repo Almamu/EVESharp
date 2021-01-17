@@ -41,7 +41,7 @@ namespace Node
         
         private NodeContainer Container { get; }
 
-        private ClusterConnection ClusterConnection { get; }
+        public ClusterConnection ClusterConnection { get; }
         private ItemFactory ItemFactory { get; }
         
         public Client(NodeContainer container, ClusterConnection clusterConnection, ItemFactory itemFactory)
@@ -258,6 +258,17 @@ namespace Node
             set => this.mSession["locationid"] = value;
         }
 
+        public int? AllianceID
+        {
+            get => this.mSession["allianceid"] as PyInteger;
+            set => this.mSession["allianceid"] = value;
+        }
+
+        public int? WarFactionID
+        {
+            get => this.mSession["warfactionid"] as PyInteger;
+            set => this.mSession["warfactionid"] = value;
+        }
         public void NotifyBalanceUpdate(double balance)
         {
             PyTuple notification = new PyTuple(new PyDataType[]
@@ -265,12 +276,12 @@ namespace Node
                 "cash", this.CharacterID, balance
             });
             
-            this.SendNotification("OnAccountChange", "cash", notification);
+            this.ClusterConnection.SendNotification("OnAccountChange", "cash", (int) this.CharacterID, notification);
         }
 
         public void NotifyCloneUpdate()
         {
-            this.SendNotification("OnJumpCloneCacheInvalidated", "charid", new PyTuple(0));
+            this.ClusterConnection.SendNotification("OnJumpCloneCacheInvalidated", "charid", (int) this.CharacterID, new PyTuple(0));
         }
 
         public void NotifyAttributeChange(ItemAttribute attribute, ItemEntity item)
@@ -281,7 +292,7 @@ namespace Node
                 }
             );
 
-            this.SendNotification("OnAttribute", "charid", notification);
+            this.ClusterConnection.SendNotification("OnAttribute", "charid", (int) this.CharacterID, notification);
         }
 
         public void NotifyMultipleAttributeChange(ItemAttribute[] attributes, ItemEntity[] items)
@@ -302,7 +313,7 @@ namespace Node
                 );
             }
 
-            this.SendNotification("OnAttributes", "charid", new PyTuple (new PyDataType [] { notification }));
+            this.ClusterConnection.SendNotification("OnAttributes", "charid", (int) this.CharacterID, new PyTuple (new PyDataType [] { notification }));
         }
 
         public void NotifyItemChange(ItemEntity item, ItemFlags oldFlag, int oldLocation)
@@ -319,44 +330,7 @@ namespace Node
                 item.GetEntityRow(), changes
             });
 
-            this.SendNotification("OnItemChange", "charid", notification);
-        }
-
-        protected void SendNotification(string notificationType, string idType, PyDataType data)
-        {
-            PyTuple dataContainer = new PyTuple(new PyDataType []
-                {
-                    1, data
-                }
-            );
-
-            dataContainer = new PyTuple(new PyDataType[]
-                {
-                    0, dataContainer
-                }
-            );
-
-            dataContainer = new PyTuple(new PyDataType[]
-                {
-                    0, new PySubStream(dataContainer)
-                }
-            );
-
-            dataContainer = new PyTuple(new PyDataType[]
-                {
-                    dataContainer, null
-                }
-            );
-            
-            PyPacket packet = new PyPacket(PyPacket.PacketType.NOTIFICATION);
-
-            packet.Destination = new PyAddressBroadcast(new PyList(), idType, notificationType);
-            packet.Source = new PyAddressNode(this.Container.NodeID);
-
-            packet.UserID = this.AccountID;
-            packet.Payload = dataContainer;
-
-            this.ClusterConnection.Socket.Send(packet);
+            this.ClusterConnection.SendNotification("OnItemChange", "charid", (int) this.CharacterID, notification);
         }
 
         public void NotifySkillTrained(Skill skill)
@@ -377,7 +351,7 @@ namespace Node
                 }
             );
             
-            this.SendNotification("OnMultiEvent", "charid", eventTuple);
+            this.ClusterConnection.SendNotification("OnMultiEvent", "charid", (int) this.CharacterID, eventTuple);
         }
 
         public void NotifySkillTrainingStopped(Skill skill)
@@ -397,7 +371,7 @@ namespace Node
                 }
             );
 
-            this.SendNotification("OnMultiEvent", "charid", eventTuple);
+            this.ClusterConnection.SendNotification("OnMultiEvent", "charid", (int) this.CharacterID, eventTuple);
         }
 
         public void NotifySkillStartTraining(Skill skill)
@@ -417,7 +391,7 @@ namespace Node
                 }
             );
 
-            this.SendNotification("OnMultiEvent", "charid", eventTuple);
+            this.ClusterConnection.SendNotification("OnMultiEvent", "charid", (int) this.CharacterID, eventTuple);
         }
     }
 }

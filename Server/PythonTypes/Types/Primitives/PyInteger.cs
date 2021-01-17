@@ -180,6 +180,11 @@ namespace PythonTypes.Types.Primitives
             return (byte?) obj?.Value;
         }
 
+        public static implicit operator sbyte?(PyInteger obj)
+        {
+            return (sbyte?) obj?.Value;
+        }
+
         public static implicit operator long(PyInteger obj)
         {
             return obj.Value;
@@ -200,6 +205,12 @@ namespace PythonTypes.Types.Primitives
             return (byte) obj.Value;
         }
 
+        public static implicit operator sbyte(PyInteger obj)
+        {
+            return (sbyte) obj.Value;
+        }
+
+
         public static implicit operator PyInteger(long value)
         {
             return new PyInteger(value);
@@ -216,6 +227,11 @@ namespace PythonTypes.Types.Primitives
         }
 
         public static implicit operator PyInteger(byte value)
+        {
+            return new PyInteger(value);
+        }
+
+        public static implicit operator PyInteger(sbyte value)
         {
             return new PyInteger(value);
         }
