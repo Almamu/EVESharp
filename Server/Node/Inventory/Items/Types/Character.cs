@@ -479,7 +479,7 @@ namespace Node.Inventory.Items.Types
             // notify the client of a change in the item's flag
             if (this.ClientManager.Contains(this.AccountID) == true)
             {
-                this.ClientManager.Get(this.AccountID).NotifyItemChange(skill, ItemFlags.SkillInTraining, this.ID);
+                this.ClientManager.Get(this.AccountID).NotifyItemLocationChange(skill, ItemFlags.SkillInTraining, this.ID);
             
                 // skill was trained, send the success message
                 this.ClientManager.Get(this.AccountID).NotifySkillTrained(skill);                
@@ -511,7 +511,7 @@ namespace Node.Inventory.Items.Types
             
             if (this.ClientManager.Contains(this.AccountID) == true)
             {
-                this.ClientManager.Get(this.AccountID).NotifyItemChange(skill, ItemFlags.Skill, this.ID);
+                this.ClientManager.Get(this.AccountID).NotifyItemLocationChange(skill, ItemFlags.Skill, this.ID);
             
                 // skill was trained, send the success message
                 this.ClientManager.Get(this.AccountID).NotifySkillStartTraining(skill);                

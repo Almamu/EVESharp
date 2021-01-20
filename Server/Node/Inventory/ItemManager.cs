@@ -271,7 +271,7 @@ namespace Node.Inventory
                 0, null);
         }
 
-        public Skill CreateSkill(ItemType skillType, Character character, int level = 0)
+        public Skill CreateSkill(ItemType skillType, Character character, int level = 0, SkillHistoryReason reason = SkillHistoryReason.SkillTrainingComplete)
         {
             int skillID = this.SkillDB.CreateSkill(skillType, character);
 
@@ -283,8 +283,9 @@ namespace Node.Inventory
             // add skill to the character's inventory
             character.AddItem(skill);
 
-            this.SkillDB.CreateSkillHistoryRecord(skillType, character,
-                SkillHistoryReason.SkillTrainingComplete, skill.GetSkillPointsForLevel(level));
+            // create a history entry if needed
+            if (reason != SkillHistoryReason.None)
+                this.SkillDB.CreateSkillHistoryRecord(skillType, character, reason, skill.GetSkillPointsForLevel(level));
 
             return skill;
         }

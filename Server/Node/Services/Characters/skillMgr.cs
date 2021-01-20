@@ -23,12 +23,14 @@ namespace Node.Services.Characters
         private SkillDB DB { get; }
         private ItemManager ItemManager { get; }
         private TimerManager TimerManager { get; }
+        private Channel Log { get; }
         
-        public skillMgr(SkillDB db, ItemManager itemManager, TimerManager timerManager, BoundServiceManager manager) : base(manager)
+        public skillMgr(SkillDB db, ItemManager itemManager, TimerManager timerManager, BoundServiceManager manager, Logger logger) : base(manager)
         {
             this.DB = db;
             this.ItemManager = itemManager;
             this.TimerManager = timerManager;
+            this.Log = logger.CreateLogChannel("SkillManager");
         }
 
         protected override BoundService CreateBoundInstance(PyDataType objectData)
@@ -39,7 +41,7 @@ namespace Node.Services.Characters
              */
             PyTuple tupleData = objectData as PyTuple;
             
-            return new skillMgr(this.DB, this.ItemManager, this.TimerManager, this.BoundServiceManager);
+            return new skillMgr(this.DB, this.ItemManager, this.TimerManager, this.BoundServiceManager, this.BoundServiceManager.Logger);
         }
 
         public PyDataType GetSkillQueue(CallInformation call)
@@ -61,6 +63,77 @@ namespace Node.Services.Characters
             return this.DB.GetSkillHistory(call.Client.EnsureCharacterIsSelected());
         }
 
+        public PyDataType InjectSkillIntoBrain(PyList itemIDs, CallInformation call)
+        {
+            int callerCharacterID = call.Client.EnsureCharacterIsSelected();
+            Character character = this.ItemManager.GetItem(callerCharacterID) as Character;
+            
+            foreach (PyDataType item in itemIDs)
+            {
+                if (item is PyInteger == false)
+                    continue;
+
+                int itemID = item as PyInteger;
+                
+                // TODO: SUPPORT MULTIPLE NOTIFICATIONS IN ONE GO TO NOT SPAM THE CLIENT WITH NOTIFICATION PACKETS
+                try
+                {
+                    // get the item by it's ID and change the location of it
+                    Skill skill = this.ItemManager.GetItem(itemID) as Skill;
+                    
+                    // check if the character already has this skill injected
+                    if (character.InjectedSkillsByTypeID.ContainsKey(skill.Type.ID) == true)
+                    {
+                        throw new CustomError("Your character already knows this skill");
+                    }
+
+                    // is this a stack of skills?
+                    if (skill.Quantity > 1)
+                    {
+                        // add one of the skill into the character's brain
+                        Skill newStack =
+                            this.ItemManager.CreateSkill(skill.Type, character, 0, SkillHistoryReason.None);
+
+                        // subtract one from the quantity
+                        skill.Quantity -= 1;
+
+                        // save to database
+                        skill.Persist();
+                        
+                        // finally notify the client
+                        call.Client.NotifyItemQuantityChange(skill, skill.Quantity + 1);
+                        call.Client.NotifyNewItem(newStack);
+                    }
+                    else
+                    {
+                        // store old values for the notification
+                        int? oldLocationID = skill.LocationID;
+                        ItemFlags oldFlag = skill.Flag;
+
+                        // now set the new values
+                        skill.LocationID = callerCharacterID;
+                        skill.Flag = ItemFlags.Skill;
+
+                        // ensure the changes are saved
+                        skill.Persist();
+                    
+                        // notify the character of the change in the item
+                        call.Client.NotifyItemLocationChange(skill, oldFlag, oldLocationID);
+                    }
+                }
+                catch (Exception e)
+                {
+                    Log.Error($"Cannot inject itemID {itemID} into {callerCharacterID}'s brain...");
+                    throw;
+                }
+            }
+            
+            // send the skill injected notification to refresh windows if needed
+            call.Client.NotifySkillInjected();
+            
+            return null;
+        }
+        
         public PyDataType SaveSkillQueue(PyList queue, CallInformation call)
         {
             Character character = this.ItemManager.LoadItem(call.Client.EnsureCharacterIsSelected()) as Character;
@@ -93,7 +166,7 @@ namespace Node.Services.Characters
                     this.TimerManager.DequeueItemTimer(entry.Skill.ID, entry.Skill.ExpiryTime);
                     entry.Skill.Flag = ItemFlags.Skill;
                     
-                    call.Client.NotifyItemChange(entry.Skill, ItemFlags.SkillInTraining, (int) entry.Skill.LocationID);
+                    call.Client.NotifyItemLocationChange(entry.Skill, ItemFlags.SkillInTraining, (int) entry.Skill.LocationID);
             
                     // send notification of skill training stopped
                     call.Client.NotifySkillTrainingStopped(entry.Skill);
@@ -150,7 +223,7 @@ namespace Node.Services.Characters
                 {
                     skill.Flag = ItemFlags.SkillInTraining;
                     
-                    call.Client.NotifyItemChange(skill, ItemFlags.Skill, (int) skill.LocationID);
+                    call.Client.NotifyItemLocationChange(skill, ItemFlags.Skill, (int) skill.LocationID);
             
                     // skill was trained, send the success message
                     call.Client.NotifySkillStartTraining(skill);
@@ -192,7 +265,7 @@ namespace Node.Services.Characters
             skill.ExpiryTime = expiryTime.ToFileTimeUtc();
             skill.Flag = ItemFlags.SkillInTraining;
                     
-            call.Client.NotifyItemChange(skill, ItemFlags.Skill, (int) skill.LocationID);
+            call.Client.NotifyItemLocationChange(skill, ItemFlags.Skill, (int) skill.LocationID);
             
             // skill started training
             call.Client.NotifySkillStartTraining(skill);
@@ -257,7 +330,7 @@ namespace Node.Services.Characters
                 entry.Skill.Flag = ItemFlags.Skill;
                 entry.Skill.Persist();
                     
-                call.Client.NotifyItemChange(entry.Skill, ItemFlags.SkillInTraining, (int) entry.Skill.LocationID);
+                call.Client.NotifyItemLocationChange(entry.Skill, ItemFlags.SkillInTraining, (int) entry.Skill.LocationID);
                 
                 // notify the skill is not in training anymore
                 call.Client.NotifySkillTrainingStopped(entry.Skill);

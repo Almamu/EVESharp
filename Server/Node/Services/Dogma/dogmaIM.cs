@@ -154,7 +154,7 @@ namespace Node.Services.Dogma
 
             ItemEntity item = this.ItemManager.LoadItem(itemID);
 
-            if (item.OwnerID != callerCharacterID || item.OwnerID != call.Client.CorporationID)
+            if (item.OwnerID != callerCharacterID && item.OwnerID != call.Client.CorporationID)
                 throw new UserError("TheItemIsNotYoursToTake", new PyDictionary()
                 {
                     {"item", itemID}

@@ -318,7 +318,16 @@ namespace Node
             this.ClusterConnection.SendNotification("OnAttributes", "charid", (int) this.CharacterID, new PyTuple (new PyDataType [] { notification }));
         }
 
-        public void NotifyItemChange(ItemEntity item, ItemFlags oldFlag, int oldLocation)
+        public void NotifyItemQuantityChange(ItemEntity item, int oldQuantity)
+        {
+            PyDictionary changes = new PyDictionary
+            {
+                [(int) ItemChange.Quantity] = oldQuantity
+            };
+
+            this.NotifyItemChange(item, changes);
+        }
+        public void NotifyItemLocationChange(ItemEntity item, ItemFlags oldFlag, int? oldLocation)
         {
             PyDictionary changes = new PyDictionary();
             
@@ -327,12 +336,22 @@ namespace Node
             if (oldLocation != item.LocationID)
                 changes[(int) ItemChange.LocationID] = oldLocation;
 
+            this.NotifyItemChange(item, changes);
+        }
+
+        protected void NotifyItemChange(ItemEntity item, PyDictionary changes)
+        {
             PyTuple notification = new PyTuple(new PyDataType[]
             {
                 item.GetEntityRow(), changes
             });
 
             this.ClusterConnection.SendNotification("OnItemChange", "charid", (int) this.CharacterID, notification);
+        }
+
+        public void NotifyNewItem(ItemEntity item)
+        {
+            this.NotifyItemLocationChange(item, ItemFlags.None, null);
         }
 
         public void NotifySkillTrained(Skill skill)
@@ -394,6 +413,27 @@ namespace Node
             );
 
             this.ClusterConnection.SendNotification("OnMultiEvent", "charid", (int) this.CharacterID, eventTuple);
+        }
+
+        public void NotifySkillInjected()
+        {
+            PyTuple onSkillStartTraining = new PyTuple(new PyDataType[]
+                {
+                    "OnSkillInjected"
+                }
+            );
+
+            PyTuple eventTuple = new PyTuple(new PyDataType[]
+                {
+                    (PyList) new PyDataType[]
+                    {
+                        onSkillStartTraining
+                    }
+                }
+            );
+
+            this.ClusterConnection.SendNotification("OnMultiEvent", "charid", (int) this.CharacterID, eventTuple);
+
         }
 
         public void SendCallResponse(CallInformation answerTo, PyDataType result)

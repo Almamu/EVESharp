@@ -10,6 +10,7 @@ namespace Node.Database
 {
     public enum SkillHistoryReason
     {
+        None = 0,
         SkillClonePenalty = 34,
         SkillTrainingStarted = 36,
         SkillTrainingComplete = 37,

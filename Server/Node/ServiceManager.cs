@@ -99,6 +99,8 @@ namespace Node
         public jumpCloneSvc jumpCloneSvc { get; }
         public LPSvc LPSvc { get; }
         public lookupSvc lookupSvc { get; }
+        public insuranceSvc insuranceSvc { get; }
+        public slash slash { get; }
         
         public ServiceManager(
             NodeContainer container, CacheStorage storage, Logger logger, TimerManager timerManager,
@@ -137,7 +139,9 @@ namespace Node
             certificateMgr certificateMgr,
             jumpCloneSvc jumpCloneSvc,
             LPSvc LPSvc,
-            lookupSvc lookupSvc)
+            lookupSvc lookupSvc,
+            insuranceSvc insuranceSvc,
+            slash slash)
         {
             this.Container = container;
             this.CacheStorage = storage;
@@ -182,6 +186,8 @@ namespace Node
             this.jumpCloneSvc = jumpCloneSvc;
             this.LPSvc = LPSvc;
             this.lookupSvc = lookupSvc;
+            this.insuranceSvc = insuranceSvc;
+            this.slash = slash;
         }
 
         public void CallTimeoutExpired(int callID)

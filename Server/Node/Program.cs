@@ -129,7 +129,8 @@ namespace Node
                 sContainer.Register<StandingDB>(Lifestyle.Singleton);
                 sContainer.Register<StationDB>(Lifestyle.Singleton);
                 sContainer.Register<LookupDB>(Lifestyle.Singleton);
-                
+                sContainer.Register<InsuranceDB>(Lifestyle.Singleton);
+
                 // register all the services
                 sContainer.Register<account>(Lifestyle.Singleton);
                 sContainer.Register<machoNet>(Lifestyle.Singleton);
@@ -166,6 +167,8 @@ namespace Node
                 sContainer.Register<jumpCloneSvc>(Lifestyle.Singleton);
                 sContainer.Register<LPSvc>(Lifestyle.Singleton);
                 sContainer.Register<lookupSvc>(Lifestyle.Singleton);
+                sContainer.Register<insuranceSvc>(Lifestyle.Singleton);
+                sContainer.Register<slash>(Lifestyle.Singleton);
                 
                 sContainer.RegisterInstance(General.LoadFromFile("configuration.conf", sContainer));
                 // disable auto-verification on the container as it triggers creation of instances before they're needed

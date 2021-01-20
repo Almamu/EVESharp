@@ -46,6 +46,11 @@ namespace Node.Services
         {
             return this.MachoBindObject(objectID, callInfo as PyDataType, call);
         }
+
+        public PyDataType MachoBindObject(PyInteger objectID, PyTuple callInfo, CallInformation call)
+        {
+            return this.MachoBindObject(objectID, callInfo as PyDataType, call);
+        }
         
         protected PyDataType MachoBindObject(PyDataType objectData, PyDataType callInfo, CallInformation call)
         {

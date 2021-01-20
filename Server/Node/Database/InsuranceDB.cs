@@ -24,34 +24,42 @@
 
 using System;
 using System.Collections.Generic;
-using System.Drawing;
+using System.Security.Cryptography;
+using System.Text;
 using Common.Database;
-using Node.Database;
-using Node.Inventory.Items;
+using MySql.Data.MySqlClient;
+using PythonTypes.Types.Primitives;
 
-namespace Node.Inventory
+namespace Node.Database
 {
-    public class TypeManager
+    public class InsuranceDB : DatabaseAccessor
     {
-        private ItemDB ItemDB { get; }
-        private Dictionary<int, ItemType> mTypes = null;
-
-        public void Load()
+        public PyDataType GetContractsForShipsOnStation(int characterID, int stationID)
         {
-            this.mTypes = this.ItemDB.LoadItemTypes();
+            return Database.PreparePackedRowListQuery(
+                "SELECT chrShipInsurances.ownerID, shipID, fraction, startDate, endDate FROM chrShipInsurances LEFT JOIN entity ON entity.itemID = shipID WHERE chrShipInsurances.ownerID = @characterID AND entity.locationID = @stationID",
+                new Dictionary<string, object>()
+                {
+                    {"@characterID", characterID},
+                    {"@stationID", stationID}
+                }
+            );
         }
 
-        public bool Exists(int typeID)
+        public PyDataType GetContractForShip(int characterID, int shipID)
         {
-            return this.mTypes.ContainsKey(typeID);
+            return Database.PreparePackedRowListQuery(
+                "SELECT ownerID, shipID, fraction, startDate, endDate FROM chrShipInsurances WHERE ownerID = @characterID AND shipID = @shipID",
+                new Dictionary<string, object>()
+                {
+                    {"@characterID", characterID},
+                    {"@shipID", shipID}
+                }
+            );
         }
         
-        public ItemType this[int id] { get => this.mTypes[id]; }
-        public ItemType this[ItemTypes id] { get => this[(int) id]; }
-
-        public TypeManager(ItemDB itemDB)
+        public InsuranceDB(DatabaseConnection db) : base(db)
         {
-            this.ItemDB = itemDB;
         }
     }
 }
