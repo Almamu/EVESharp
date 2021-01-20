@@ -1,6 +1,7 @@
 using Common.Database;
 using Common.Services;
 using Node.Database;
+using Node.Network;
 using PythonTypes.Types.Exceptions;
 using PythonTypes.Types.Primitives;
 using SimpleInjector;
@@ -16,7 +17,7 @@ namespace Node.Services.Corporations
             this.DB = db;
         }
 
-        public PyDataType GetFactionInfo(PyDictionary namedPayload, Client client)
+        public PyDataType GetFactionInfo(CallInformation call)
         {
             return new PyTuple(new PyDataType[]
             {
@@ -26,12 +27,12 @@ namespace Node.Services.Corporations
             });
         }
 
-        public PyDataType GetNPCDivisions(PyDictionary namedPayload, Client client)
+        public PyDataType GetNPCDivisions(CallInformation call)
         {
             return this.DB.GetNPCDivisions();
         }
 
-        public PyDataType GetMedalsReceived(PyInteger characterID, PyDictionary namedPayload, Client client)
+        public PyDataType GetMedalsReceived(PyInteger characterID, CallInformation call)
         {
             return new PyTuple(new PyDataType[]
                 {
@@ -41,7 +42,7 @@ namespace Node.Services.Corporations
             );
         }
 
-        public PyDataType GetEmploymentRecord(PyInteger characterID, PyDictionary namedPayload, Client client)
+        public PyDataType GetEmploymentRecord(PyInteger characterID, CallInformation call)
         {
             return this.DB.GetEmploymentRecord(characterID);
         }

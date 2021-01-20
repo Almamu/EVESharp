@@ -241,11 +241,7 @@ namespace Node
                 sChannel.Info("Initializing solar system manager");
                 sContainer.GetInstance<SystemManager>();
                 sChannel.Debug("Done");
-
-                sChannel.Info("Initializing service manager");
-                sContainer.GetInstance<ServiceManager>();
-                sChannel.Debug("Done");
-
+                
                 sChannel.Info("Connecting to proxy...");
 
                 ClusterConnection clusterConnection = sContainer.GetInstance<ClusterConnection>();

@@ -4,6 +4,7 @@ using Common.Services;
 using Node.Database;
 using Node.Inventory;
 using Node.Inventory.Items.Types;
+using Node.Network;
 using PythonTypes.Types.Complex;
 using PythonTypes.Types.Exceptions;
 using PythonTypes.Types.Primitives;
@@ -24,7 +25,7 @@ namespace Node.Services.War
             this.ItemManager = itemManager;
         }
 
-        public PyDataType GetMyKillRights(PyDictionary namedPayload, Client client)
+        public PyDataType GetMyKillRights(CallInformation call)
         {
             PyDictionary killRights = new PyDictionary();
             PyDictionary killedRights = new PyDictionary();
@@ -35,7 +36,7 @@ namespace Node.Services.War
             });
         }
 
-        public PyDataType GetNPCNPCStandings(PyDictionary namedPayload, Client client)
+        public PyDataType GetNPCNPCStandings(CallInformation call)
         {
             this.CacheStorage.Load(
                 "standing2",
@@ -49,30 +50,30 @@ namespace Node.Services.War
             return PyCacheMethodCallResult.FromCacheHint(cacheHint);
         }
 
-        public PyDataType GetCharStandings(PyDictionary namedPayload, Client client)
+        public PyDataType GetCharStandings(CallInformation call)
         {
-            if (client.CharacterID == null)
+            if (call.Client.CharacterID == null)
                 throw new UserError("NoCharacterSelected");
 
             return new PyTuple(new PyDataType[]
             {
-                this.DB.GetCharStandings((int) client.CharacterID),
-                this.DB.GetCharPrime((int) client.CharacterID),
-                this.DB.GetCharNPCStandings((int) client.CharacterID)
+                this.DB.GetCharStandings((int) call.Client.CharacterID),
+                this.DB.GetCharPrime((int) call.Client.CharacterID),
+                this.DB.GetCharNPCStandings((int) call.Client.CharacterID)
             });
         }
 
         public PyDataType GetStandingTransactions(PyInteger from, PyInteger to, PyInteger direction, PyInteger eventID,
-            PyInteger eventTypeID, PyInteger eventDateTime, PyDictionary namedPayload, Client client)
+            PyInteger eventTypeID, PyInteger eventDateTime, CallInformation call)
         {
-            if (from != client.CorporationID && from != client.CharacterID && to != client.CorporationID &&
-                to != client.CharacterID)
+            if (from != call.Client.CorporationID && from != call.Client.CharacterID && to != call.Client.CorporationID &&
+                to != call.Client.CharacterID)
                 throw new CustomError("You can only view standings that concern you");
             
             return this.DB.GetStandingTransactions(from, to, direction, eventID, eventTypeID, eventDateTime);
         }
 
-        public PyDataType GetSecurityRating(PyInteger characterID, PyDictionary namedPayload, Client client)
+        public PyDataType GetSecurityRating(PyInteger characterID, CallInformation call)
         {
             if (this.ItemManager.IsItemLoaded(characterID) == true)
             {
@@ -86,27 +87,27 @@ namespace Node.Services.War
             }
         }
 
-        public PyDataType GetNPCStandingsTo(PyInteger characterID, PyDictionary namedPayload, Client client)
+        public PyDataType GetNPCStandingsTo(PyInteger characterID, CallInformation call)
         {
             return this.DB.GetCharNPCStandings(characterID);
         }
 
-        public PyDataType SetPlayerStanding(PyInteger characterID, PyDecimal standing, PyString reason, PyDictionary namedPayload, Client client)
+        public PyDataType SetPlayerStanding(PyInteger characterID, PyDecimal standing, PyString reason, CallInformation call)
         {
-            this.DB.CreateStandingTransaction((int) StandingEventType.StandingPlayerSetStanding, (int) client.CharacterID, characterID, standing, reason);
-            this.DB.SetPlayerStanding((int) client.CharacterID, characterID, standing);
+            this.DB.CreateStandingTransaction((int) StandingEventType.StandingPlayerSetStanding, (int) call.Client.CharacterID, characterID, standing, reason);
+            this.DB.SetPlayerStanding((int) call.Client.CharacterID, characterID, standing);
             
             // send standing change notification to the player
             PyTuple notification = new PyTuple(3)
             {
-                [0] = client.CharacterID,
+                [0] = call.Client.CharacterID,
                 [1] = characterID,
                 [2] = standing
             };
             
             // send the same notification to both players
-            client.ClusterConnection.SendNotification("OnStandingSet", "charid", (int) client.CharacterID, client, notification);
-            client.ClusterConnection.SendNotification("OnStandingSet", "charid", characterID, notification);
+            call.Client.ClusterConnection.SendNotification("OnStandingSet", "charid", (int) call.Client.CharacterID, call.Client, notification);
+            call.Client.ClusterConnection.SendNotification("OnStandingSet", "charid", characterID, notification);
             
             return null;
         }

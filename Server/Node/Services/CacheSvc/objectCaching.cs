@@ -24,6 +24,7 @@
 
 using Common.Logging;
 using Common.Services;
+using Node.Network;
 using PythonTypes.Types.Complex;
 using PythonTypes.Types.Exceptions;
 using PythonTypes.Types.Primitives;
@@ -42,7 +43,7 @@ namespace Node.Services.CacheSvc
             this.CacheStorage = cacheStorage;
         }
         
-        public PyDataType GetCachableObject(PyInteger shared, PyTuple objectID, PyTuple objectVersion, PyInteger nodeID, PyDictionary namedPayload, Client client)
+        public PyDataType GetCachableObject(PyInteger shared, PyTuple objectID, PyTuple objectVersion, PyInteger nodeID, CallInformation call)
         {
             // TODO: CHECK CACHEOK EXCEPTION ON CLIENT
             Log.Debug($"Received cache request for a tuple objectID");
@@ -62,7 +63,7 @@ namespace Node.Services.CacheSvc
             return this.CacheStorage.Get(service, method);
         }
 
-        public PyDataType GetCachableObject(PyInteger shared, PyString objectID, PyTuple objectVersion, PyInteger nodeID, PyDictionary namedPayload, Client client)
+        public PyDataType GetCachableObject(PyInteger shared, PyString objectID, PyTuple objectVersion, PyInteger nodeID, CallInformation call)
         {
             // TODO: CHECK CACHEOK EXCEPTION ON CLIENT
             Log.Debug($"Received cache request for {objectID.Value}");

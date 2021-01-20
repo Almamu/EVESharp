@@ -4,6 +4,7 @@ using Common.Logging;
 using Node.Database;
 using Node.Inventory;
 using Node.Inventory.Items.Types;
+using Node.Network;
 using PythonTypes.Types.Database;
 using PythonTypes.Types.Exceptions;
 using PythonTypes.Types.Primitives;
@@ -48,34 +49,34 @@ namespace Node.Services.Corporations
             return new corpRegistry(this.DB, this.ItemManager, corp, data[1] as PyInteger, this.BoundServiceManager);
         }
 
-        public PyDataType GetEveOwners(PyDictionary namedPayload, Client client)
+        public PyDataType GetEveOwners(CallInformation call)
         {
             // this call seems to be getting all the members of the given corporationID
             return this.DB.GetEveOwners(this.Corporation.ID);
         }
 
-        public PyDataType GetCorporation(PyDictionary namedPayload, Client client)
+        public PyDataType GetCorporation(CallInformation call)
         {
             return this.Corporation.GetCorporationInfoRow();
         }
 
-        public PyDataType GetSharesByShareholder(PyBool corpShares, PyDictionary namedPayload, Client client)
+        public PyDataType GetSharesByShareholder(PyBool corpShares, CallInformation call)
         {
-            if (client.CharacterID == null)
+            if (call.Client.CharacterID == null)
                 throw new UserError("NoCharacterSelected");
             
-            return this.DB.GetSharesByShareholder((int) client.CharacterID);
+            return this.DB.GetSharesByShareholder((int) call.Client.CharacterID);
         }
 
-        public PyDataType GetMember(PyInteger memberID, PyDictionary namedPayload, Client client)
+        public PyDataType GetMember(PyInteger memberID, CallInformation call)
         {
-            return this.DB.GetMember(memberID, client.CorporationID);
+            return this.DB.GetMember(memberID, call.Client.CorporationID);
         }
 
-        public PyDataType GetMembers(PyDictionary namedPayload, Client client)
+        public PyDataType GetMembers(CallInformation call)
         {
             // generate the sparse rowset
-            SparseRowsetHeader rowsetHeader = this.DB.GetMembersSparseRowset(client.CorporationID);
+            SparseRowsetHeader rowsetHeader = this.DB.GetMembersSparseRowset(call.Client.CorporationID);
 
             PyDictionary dict = new PyDictionary
             {
@@ -86,16 +87,16 @@ namespace Node.Services.Corporations
             MembersSparseRowsetService svc =
                 new MembersSparseRowsetService(this.Corporation, this.DB, rowsetHeader, this.BoundServiceManager);
 
-            rowsetHeader.BoundObjectIdentifier = svc.MachoBindObject(dict, client);
+            rowsetHeader.BoundObjectIdentifier = svc.MachoBindObject(dict, call.Client);
             
             // finally return the data
             return rowsetHeader;
         }
 
-        public PyDataType GetOffices(PyDictionary namedPayload, Client client)
+        public PyDataType GetOffices(CallInformation call)
         {
             // generate the sparse rowset
-            SparseRowsetHeader rowsetHeader = this.DB.GetOfficesSparseRowset(client.CorporationID);
+            SparseRowsetHeader rowsetHeader = this.DB.GetOfficesSparseRowset(call.Client.CorporationID);
 
             PyDictionary dict = new PyDictionary
             {
@@ -106,55 +107,55 @@ namespace Node.Services.Corporations
             OfficesSparseRowsetService svc =
                 new OfficesSparseRowsetService(this.Corporation, this.DB, rowsetHeader, this.BoundServiceManager);
 
-            rowsetHeader.BoundObjectIdentifier = svc.MachoBindObject(dict, client);
+            rowsetHeader.BoundObjectIdentifier = svc.MachoBindObject(dict, call.Client);
             
             // finally return the data
             return rowsetHeader;
         }
 
-        public PyDataType GetRoleGroups(PyDictionary namedPayload, Client client)
+        public PyDataType GetRoleGroups(CallInformation call)
         {
             return this.DB.GetRoleGroups();
         }
 
-        public PyDataType GetRoles(PyDictionary namedPayload, Client client)
+        public PyDataType GetRoles(CallInformation call)
         {
             return this.DB.GetRoles();
         }
 
-        public PyDataType GetDivisions(PyDictionary namedPayload, Client client)
+        public PyDataType GetDivisions(CallInformation call)
         {
             return this.DB.GetDivisions();
         }
 
-        public PyDataType GetTitles(PyDictionary namedPayload, Client client)
+        public PyDataType GetTitles(CallInformation call)
         {
             // check if the corp is NPC and return placeholder data from the crpTitlesTemplate
-            if (ItemManager.IsNPCCorporationID(client.CorporationID) == true)
+            if (ItemManager.IsNPCCorporationID(call.Client.CorporationID) == true)
             {
                 return this.DB.GetTitlesTemplate();
             }
             else
             {
-                return this.DB.GetTitles(client.CorporationID);                
+                return this.DB.GetTitles(call.Client.CorporationID);                
             }
         }
 
-        public PyDataType GetMemberTrackingInfo(PyInteger characterID, PyDictionary namedPayload, Client client)
+        public PyDataType GetMemberTrackingInfo(PyInteger characterID, CallInformation call)
         {
             // TODO: RETURN FULL TRACKING INFO, ONLY DIRECTORS ARE ALLOWED TO DO SO!
             return null;
         }
 
-        public PyDataType GetMemberTrackingInfoSimple(PyDictionary namedPayload, Client client)
+        public PyDataType GetMemberTrackingInfoSimple(CallInformation call)
         {
-            return this.DB.GetMemberTrackingInfoSimple(client.CorporationID);
+            return this.DB.GetMemberTrackingInfoSimple(call.Client.CorporationID);
         }
 
-        public PyDataType GetInfoWindowDataForChar(PyInteger characterID, PyDictionary namedPayload, Client client)
+        public PyDataType GetInfoWindowDataForChar(PyInteger characterID, CallInformation call)
         {
-            int titleMask = this.DB.GetTitleMaskForCharacter(characterID, client.CorporationID);
-            Dictionary<int, string> titles = this.DB.GetTitlesNames(client.CorporationID);
+            int titleMask = this.DB.GetTitleMaskForCharacter(characterID, call.Client.CorporationID);
+            Dictionary<int, string> titles = this.DB.GetTitlesNames(call.Client.CorporationID);
             PyDictionary dictForKeyVal = new PyDictionary();
 
             int number = 0;
@@ -164,8 +165,8 @@ namespace Node.Services.Corporations
             
             // we're supposed to be from the same corp, so add the extra information manually
             // TODO: TEST WITH USERS FROM OTHER CORPS
-            dictForKeyVal["corpID"] = client.CorporationID;
-            dictForKeyVal["allianceID"] = client.AllianceID;
+            dictForKeyVal["corpID"] = call.Client.CorporationID;
+            dictForKeyVal["allianceID"] = call.Client.AllianceID;
             dictForKeyVal["title"] = "TITLE HERE";
 
             return KeyVal.FromDictionary(dictForKeyVal);

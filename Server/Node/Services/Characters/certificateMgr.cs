@@ -6,6 +6,7 @@ using Node.Data;
 using Node.Database;
 using Node.Inventory;
 using Node.Inventory.Items.Types;
+using Node.Network;
 using PythonTypes.Types.Complex;
 using PythonTypes.Types.Exceptions;
 using PythonTypes.Types.Primitives;
@@ -26,7 +27,7 @@ namespace Node.Services.Characters
             this.CacheStorage = cacheStorage;
         }
 
-        public PyDataType GetAllShipCertificateRecommendations(PyDictionary namedPayload, Client client)
+        public PyDataType GetAllShipCertificateRecommendations(CallInformation call)
         {
             this.CacheStorage.Load(
                 "certificateMgr",
@@ -40,7 +41,7 @@ namespace Node.Services.Characters
             return PyCacheMethodCallResult.FromCacheHint(cacheHint);
         }
 
-        public PyDataType GetCertificateCategories(PyDictionary namedPayload, Client client)
+        public PyDataType GetCertificateCategories(CallInformation call)
         {
             this.CacheStorage.Load(
                 "certificateMgr",
@@ -54,7 +55,7 @@ namespace Node.Services.Characters
             return PyCacheMethodCallResult.FromCacheHint(cacheHint);
         }
 
-        public PyDataType GetCertificateClasses(PyDictionary namedPayload, Client client)
+        public PyDataType GetCertificateClasses(CallInformation call)
         {
             this.CacheStorage.Load(
                 "certificateMgr",
@@ -68,25 +69,25 @@ namespace Node.Services.Characters
             return PyCacheMethodCallResult.FromCacheHint(cacheHint);
         }
 
-        public PyDataType GetMyCertificates(PyDictionary namedPayload, Client client)
+        public PyDataType GetMyCertificates(CallInformation call)
         {
-            if (client.CharacterID == null)
+            if (call.Client.CharacterID == null)
                 throw new UserError("NoCharacterSelected");
 
-            return this.DB.GetMyCertificates((int) client.CharacterID);
+            return this.DB.GetMyCertificates((int) call.Client.CharacterID);
         }
 
-        public PyBool GrantCertificate(PyInteger certificateID, PyDictionary namedPayload, Client client)
+        public PyBool GrantCertificate(PyInteger certificateID, CallInformation call)
         {
-            if (client.CharacterID == null)
+            if (call.Client.CharacterID == null)
                 throw new UserError("NoCharacterSelected");
             
             // TODO: WE MIGHT WANT TO CHECK AND ENSURE THAT THE CHARACTER BELONGS TO US BEFORE DOING ANYTHING ELSE HERE
-            if (this.ItemManager.IsItemLoaded((int) client.CharacterID) == false)
+            if (this.ItemManager.IsItemLoaded((int) call.Client.CharacterID) == false)
                 throw new CustomError("This request should arrive on the node that has this character loaded, not here");
 
             List<CertificateRelationship> requirements = this.DB.GetCertificateRequirements(certificateID);
-            Character character = this.ItemManager.LoadItem((int) client.CharacterID) as Character;
+            Character character = this.ItemManager.LoadItem((int) call.Client.CharacterID) as Character;
 
             Dictionary<int, Skill> skills = character.InjectedSkillsByTypeID;
 
@@ -97,50 +98,49 @@ namespace Node.Services.Characters
             }
             
             // if this line is reached, the character has all the requirements for this cert
-            this.DB.GrantCertificate((int) client.CharacterID, certificateID);
+            this.DB.GrantCertificate((int) call.Client.CharacterID, certificateID);
             
             return true;
         }
 
-        public PyDataType BatchCertificateGrant(PyList certificateList, PyDictionary namedPayload, Client client)
+        public PyDataType BatchCertificateGrant(PyList certificateList, CallInformation call)
         {
-            if (client.CharacterID == null)
+            if (call.Client.CharacterID == null)
                 throw new UserError("NoCharacterSelected");
 
             PyList result = new PyList();
 
             foreach (PyInteger certificateID in certificateList)
             {
-                if (this.GrantCertificate(certificateID, namedPayload, client) == true)
+                if (this.GrantCertificate(certificateID, call) == true)
                     result.Add(certificateID);
             }
 
             return result;
         }
 
-        public PyDataType UpdateCertificateFlags(PyInteger certificateID, PyInteger visibilityFlags, PyDictionary namedPayload,
-            Client client)
+        public PyDataType UpdateCertificateFlags(PyInteger certificateID, PyInteger visibilityFlags, CallInformation call)
         {
-            if (client.CharacterID == null)
+            if (call.Client.CharacterID == null)
                 throw new UserError("NoCharacterSelected");
 
-            this.DB.UpdateVisibilityFlags(certificateID, (int) client.CharacterID, visibilityFlags);
+            this.DB.UpdateVisibilityFlags(certificateID, (int) call.Client.CharacterID, visibilityFlags);
             
             return null;
         }
 
-        public PyDataType BatchCertificateUpdate(PyDictionary updates, PyDictionary namedPayload, Client client)
+        public PyDataType BatchCertificateUpdate(PyDictionary updates, CallInformation call)
         {
-            if (client.CharacterID == null)
+            if (call.Client.CharacterID == null)
                 throw new UserError("NoCharacterSelected");
 
             foreach (KeyValuePair<PyDataType, PyDataType> update in updates)
-                this.UpdateCertificateFlags(update.Key as PyInteger, update.Value as PyInteger, namedPayload, client);
+                this.UpdateCertificateFlags(update.Key as PyInteger, update.Value as PyInteger, call);
 
             return null;
         }
 
-        public PyDataType GetCertificatesByCharacter(PyInteger characterID, PyDictionary namedPayload, Client client)
+        public PyDataType GetCertificatesByCharacter(PyInteger characterID, CallInformation call)
         {
             return this.DB.GetCertificatesByCharacter(characterID);
         }

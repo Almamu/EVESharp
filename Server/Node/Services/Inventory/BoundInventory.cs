@@ -5,6 +5,7 @@ using System.Runtime.CompilerServices;
 using Common.Logging;
 using Node.Database;
 using Node.Inventory.Items;
+using Node.Network;
 using PythonTypes.Types.Database;
 using PythonTypes.Types.Exceptions;
 using PythonTypes.Types.Primitives;
@@ -32,7 +33,7 @@ namespace Node.Services.Inventory
             this.ItemDB = itemDB;
         }
 
-        public PyDataType List(PyDictionary namedPayload, Client client)
+        public PyDataType List(CallInformation call)
         {
             // get list of all the items with the given flag
             IEnumerable<KeyValuePair<int, ItemEntity>> enumerable;
@@ -51,28 +52,27 @@ namespace Node.Services.Inventory
             return result;
         }
 
-        public PyDataType ListStations(PyInteger blueprintsOnly, PyInteger forCorp, PyDictionary namedPayload,
-            Client client)
+        public PyDataType ListStations(PyInteger blueprintsOnly, PyInteger forCorp, CallInformation call)
         {
-            if (client.CharacterID == null)
+            if (call.Client.CharacterID == null)
                 throw new UserError("NoCharacterSelected");
             
             // TODO: take into account blueprintsOnly
             if (forCorp == 1)
-                return this.ItemDB.ListStations(client.CorporationID);
+                return this.ItemDB.ListStations(call.Client.CorporationID);
             else
-                return this.ItemDB.ListStations((int) client.CharacterID);
+                return this.ItemDB.ListStations((int) call.Client.CharacterID);
         }
 
-        public PyDataType ListStationItems(PyInteger stationID, PyDictionary namedPayload, Client client)
+        public PyDataType ListStationItems(PyInteger stationID, CallInformation call)
         {
-            if (client.CharacterID == null)
+            if (call.Client.CharacterID == null)
                 throw new UserError("NoCharacterSelected");
             
-            return this.ItemDB.ListStationItems(stationID, (int) client.CharacterID);
+            return this.ItemDB.ListStationItems(stationID, (int) call.Client.CharacterID);
         }
         
-        public PyDataType GetItem(PyDictionary namedPayload, Client client)
+        public PyDataType GetItem(CallInformation call)
         {
             return this.mInventory.GetEntityRow();
         }

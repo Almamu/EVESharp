@@ -2,6 +2,7 @@
 using Common.Database;
 using Common.Services;
 using Node.Database;
+using Node.Network;
 using PythonTypes.Types.Exceptions;
 using PythonTypes.Types.Primitives;
 using SimpleInjector;
@@ -18,10 +19,9 @@ namespace Node.Services.Market
         }
 
         public PyDataType CharGetNewTransactions(PyInteger sellBuy, PyInteger typeID, PyNone clientID,
-            PyInteger quantity, PyNone fromDate, PyNone maxPrice, PyInteger minPrice, PyDictionary namedPayload,
-            Client client)
+            PyInteger quantity, PyNone fromDate, PyNone maxPrice, PyInteger minPrice, CallInformation call)
         {
-            if (client.CharacterID == null)
+            if (call.Client.CharacterID == null)
                 throw new UserError("NoCharacterSelected");
             
             TransactionType transactionType = TransactionType.Either;
@@ -40,16 +40,16 @@ namespace Node.Services.Market
             }
             
             return this.DB.CharGetNewTransactions(
-                (int) client.CharacterID, clientID, transactionType, typeID as PyInteger, quantity, minPrice
+                (int) call.Client.CharacterID, clientID, transactionType, typeID as PyInteger, quantity, minPrice
             );
         }
 
-        public PyDataType GetCharOrders(PyDictionary namedPayload, Client client)
+        public PyDataType GetCharOrders(CallInformation call)
         {
-            if (client.CharacterID == null)
+            if (call.Client.CharacterID == null)
                 throw new UserError("NoCharacterSelected");
 
-            return this.DB.GetCharOrders((int) client.CharacterID);
+            return this.DB.GetCharOrders((int) call.Client.CharacterID);
         }
     }
 }

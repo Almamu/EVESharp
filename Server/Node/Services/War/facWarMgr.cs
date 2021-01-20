@@ -1,6 +1,7 @@
 using Common.Services;
 using Node.Inventory;
 using Node.Inventory.Items.Types;
+using Node.Network;
 using PythonTypes.Types.Database;
 using PythonTypes.Types.Primitives;
 using SimpleInjector;
@@ -17,7 +18,7 @@ namespace Node.Services.War
             this.ItemManager = itemManager;
         }
 
-        public PyDataType GetWarFactions(PyDictionary namedPayload, Client client)
+        public PyDataType GetWarFactions(CallInformation call)
         {
             this.CacheStorage.Load(
                 "facWarMgr",
@@ -39,7 +40,7 @@ namespace Node.Services.War
             return new PyObjectData("objectCaching.CachedMethodCallResult", args);
         }
 
-        public PyDataType GetCharacterRankOverview(PyInteger characterID, PyDictionary namedPayload, Client client)
+        public PyDataType GetCharacterRankOverview(PyInteger characterID, CallInformation call)
         {
             return new Rowset((PyList) new PyDataType[]
                 {
@@ -48,7 +49,7 @@ namespace Node.Services.War
             );
         }
 
-        public PyDataType GetFactionMilitiaCorporation(PyInteger factionID, PyDictionary namedPayload, Client client)
+        public PyDataType GetFactionMilitiaCorporation(PyInteger factionID, CallInformation call)
         {
             return this.ItemManager.GetFaction(factionID).MilitiaCorporationId;
         }

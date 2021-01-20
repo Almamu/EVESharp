@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using Common.Services;
 using Node.Inventory;
 using Node.Inventory.Items.Types;
+using Node.Network;
 using PythonTypes.Types.Exceptions;
 using PythonTypes.Types.Primitives;
 using SimpleInjector;
@@ -16,12 +17,12 @@ namespace Node.Services.Stations
             this.ItemManager = itemManager;
         }
 
-        public PyDataType GetStationItemBits(PyDictionary namedPayload, Client client)
+        public PyDataType GetStationItemBits(CallInformation call)
         {
-            if (client.StationID == null)
+            if (call.Client.StationID == null)
                 throw new UserError("CanOnlyDoInStations");
 
-            Station station = this.ItemManager.GetStation((int) client.StationID);
+            Station station = this.ItemManager.GetStation((int) call.Client.StationID);
 
             PyTuple result = new PyTuple(5);
 
@@ -34,12 +35,12 @@ namespace Node.Services.Stations
             return result;
         }
 
-        public PyDataType GetGuests(PyDictionary namedPayload, Client client)
+        public PyDataType GetGuests(CallInformation call)
         {
-            if (client.StationID == null)
+            if (call.Client.StationID == null)
                 throw new UserError("CanOnlyDoInStations");
 
-            Station station = this.ItemManager.Stations[(int) client.StationID];
+            Station station = this.ItemManager.Stations[(int) call.Client.StationID];
             PyList result = new PyList();
             
             foreach (KeyValuePair<int, Character> pair in station.Guests)

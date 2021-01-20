@@ -1,4 +1,5 @@
 ﻿using Common.Services;
+using Node.Network;
 using PythonTypes.Types.Primitives;
 
 namespace Node.Services.Data
@@ -12,12 +13,12 @@ namespace Node.Services.Data
             this.DB = db;
         }
 
-        public PyDataType LookupPlayerCharacters(PyString criteria, PyInteger exactMatch, PyDictionary namedPayload, Client client)
+        public PyDataType LookupPlayerCharacters(PyString criteria, PyInteger exactMatch, CallInformation call)
         {
             return this.LookupPlayerCharacters(criteria, exactMatch == 1);
         }
 
-        public PyDataType LookupPlayerCharacters(PyString criteria, PyBool exactMatch, PyDictionary namedPayload, Client client)
+        public PyDataType LookupPlayerCharacters(PyString criteria, PyBool exactMatch, CallInformation call)
         {
             return this.LookupPlayerCharacters(criteria, exactMatch);
         }
@@ -27,7 +28,7 @@ namespace Node.Services.Data
             return this.DB.LookupPlayerCharacters(criteria, exactMatch);
         }
 
-        public PyDataType LookupOwners(PyString criteria, PyDataType exactMatch, PyDictionary namedPayload, Client client)
+        public PyDataType LookupOwners(PyString criteria, PyDataType exactMatch, CallInformation call)
         {
             bool exact = false;
 

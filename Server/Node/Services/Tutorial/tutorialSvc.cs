@@ -1,4 +1,5 @@
 using Common.Services;
+using Node.Network;
 using PythonTypes.Types.Database;
 using PythonTypes.Types.Primitives;
 using SimpleInjector;
@@ -11,7 +12,7 @@ namespace Node.Services.Tutorial
         {
         }
 
-        public PyDataType GetCharacterTutorialState(PyDictionary namedPayload, Client client)
+        public PyDataType GetCharacterTutorialState(CallInformation call)
         {
             return new Rowset(new PyDataType []
             {

@@ -24,6 +24,7 @@
 
 using Common.Services;
 using Node.Configuration;
+using Node.Network;
 using PythonTypes.Types.Primitives;
 using SimpleInjector;
 
@@ -38,7 +39,7 @@ namespace Node.Services.Network
             this.mConfiguration = configuration;
         }
 
-        public PyDataType GetPostAuthenticationMessage(PyDictionary namedPayload, Client client)
+        public PyDataType GetPostAuthenticationMessage(CallInformation call)
         {
             if (this.mConfiguration.MessageType == AuthenticationMessageType.NoMessage)
                 return new PyNone();

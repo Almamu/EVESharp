@@ -1,4 +1,5 @@
 using Common.Services;
+using Node.Network;
 using PythonTypes.Types.Primitives;
 using SimpleInjector;
 
@@ -10,7 +11,7 @@ namespace Node.Services.Chat
         {
         }
 
-        public PyDataType VoiceEnabled(PyDictionary namedPayload, Client client)
+        public PyDataType VoiceEnabled(CallInformation call)
         {
             return 0;
         }

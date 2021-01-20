@@ -315,6 +315,27 @@ namespace Node.Database
             }
         }
 
+        public string GetChannelName(int channelID)
+        {
+            MySqlConnection connection = null;
+            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+                "SELECT displayName FROM channels WHERE channelID = @channelID",
+                new Dictionary<string, object>()
+                {
+                    {"@channelID", channelID}
+                }
+            );
+            
+            using (connection)
+            using (reader)
+            {
+                if (reader.Read() == false)
+                    return "";
+
+                return reader.GetString(0);
+            }
+        }
+
         public string ChannelNameToChannelType(string channelName)
         {
             if (channelName == "System Channels\\Corp")
@@ -379,6 +400,28 @@ namespace Node.Database
                     return false;
 
                 return (reader.GetInt32(0) & CHATROLE_CREATOR) == CHATROLE_CREATOR;
+            }
+        }
+
+        public bool IsCharacterOperatorOrAdminOfChannel(int channelID, int characterID)
+        {
+            MySqlConnection connection = null;
+            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+                "SELECT `mode` FROM channelMods WHERE channelID = @channelID AND accessor = @characterID",
+                new Dictionary<string, object>()
+                {
+                    {"@channelID", channelID},
+                    {"@characterID", characterID}
+                }
+            );
+            
+            using (connection)
+            using (reader)
+            {
+                if (reader.Read() == false)
+                    return false;
+
+                return (reader.GetInt32(0) & (CHATROLE_CREATOR | CHATROLE_OPERATOR)) > 0;
             }
         }
 

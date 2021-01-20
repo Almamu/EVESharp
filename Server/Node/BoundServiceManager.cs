@@ -44,7 +44,7 @@ namespace Node
             return $"N={this.Container.NodeID}:{boundID}";
         }
         
-        public PyDataType ServiceCall(int boundID, string call, PyTuple payload, PyDictionary namedPayload, object client)
+        public PyDataType ServiceCall(int boundID, string call, PyTuple payload, object extraInformation)
         {
             BoundService serviceInstance = this.mBoundServices[boundID];
          
@@ -71,12 +71,11 @@ namespace Node
                     object[] parameterList = new object[parameters.Length];
 
                     // set last parameters as these are the only ones that do not change
-                    parameterList[^1] = client;
-                    parameterList[^2] = namedPayload;
+                    parameterList[^1] = extraInformation;
 
                     bool match = true;
                     
-                    for (int i = 0; i < parameterList.Length - 2; i++)
+                    for (int i = 0; i < parameterList.Length - 1; i++)
                     {
                         if (i >= payload.Count)
                         {

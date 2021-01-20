@@ -22,11 +22,11 @@
     Creator: Almamu
 */
 
-using Common.Database;
+using System;
+using System.Collections.Generic;
 using Common.Logging;
-using Common.Services;
-using Node.Configuration;
-using Node.Services;
+using Node.Database;
+using Node.Inventory.Items.Types;
 using Node.Services.Account;
 using Node.Services.CacheSvc;
 using Node.Services.Characters;
@@ -43,16 +43,27 @@ using Node.Services.Network;
 using Node.Services.Stations;
 using Node.Services.Tutorial;
 using Node.Services.War;
-using SimpleInjector;
+using PythonTypes.Types.Primitives;
 
 namespace Node
 {
+    public class RemoteCall
+    {
+        public object ExtraInfo { get; set; }
+        public Action<RemoteCall, PyDataType> Callback { get; set; } 
+        public Action<RemoteCall> TimeoutCallback { get; set; }
+    };
+    
     public class ServiceManager : Common.Services.ServiceManager
     {
+        private int mNextCallID = 0;
+        private Dictionary<int, RemoteCall> mCallCallbacks = new Dictionary<int, RemoteCall>();
         public NodeContainer Container { get; }
         public CacheStorage CacheStorage { get; }
         public BoundServiceManager BoundServiceManager { get; }
+        public TimerManager TimerManager { get; }
         public Logger Logger { get; }
+        private Channel Log { get; }
         public objectCaching objectCaching { get; }
         public machoNet machoNet { get; }
         public alert alert { get; }
@@ -90,7 +101,8 @@ namespace Node
         public lookupSvc lookupSvc { get; }
         
         public ServiceManager(
-            NodeContainer container, CacheStorage storage, Logger logger, BoundServiceManager boundServiceManager,
+            NodeContainer container, CacheStorage storage, Logger logger, TimerManager timerManager,
+            BoundServiceManager boundServiceManager,
             machoNet machoNet,
             objectCaching objectCaching,
             alert alert,
@@ -130,7 +142,9 @@ namespace Node
             this.Container = container;
             this.CacheStorage = storage;
             this.BoundServiceManager = boundServiceManager;
+            this.TimerManager = timerManager;
             this.Logger = logger;
+            this.Log = this.Logger.CreateLogChannel("ServiceManager");
             
             // store all the services
             this.machoNet = machoNet;
@@ -168,6 +182,69 @@ namespace Node
             this.jumpCloneSvc = jumpCloneSvc;
             this.LPSvc = LPSvc;
             this.lookupSvc = lookupSvc;
+        }
+
+        public void CallTimeoutExpired(int callID)
+        {
+            Log.Warning($"Timeout for call {callID} expired before getting an answer.");
+            
+            // get call id and call the timeout callback
+            RemoteCall call = this.mCallCallbacks[callID];
+
+            // call the callback if available
+            call.TimeoutCallback?.Invoke(call);
+
+            // finally remove from the list
+            this.mCallCallbacks.Remove(callID);
+        }
+
+        public void ReceivedRemoteCallAnswer(int callID, PyDataType result)
+        {
+            if (this.mCallCallbacks.ContainsKey(callID) == false)
+            {
+                Log.Warning($"Received an answer for call {callID} after the timeout expired, ignoring answer...");
+                return;
+            }
+            
+            // remove the timer from the list
+            this.TimerManager.DequeueCallTimer(callID);
+            
+            // get the callback information
+            RemoteCall call = this.mCallCallbacks[callID];
+            
+            // invoke the handler
+            call.Callback.Invoke(call, result);
+
+            // remove the call from the list
+            this.mCallCallbacks.Remove(callID);
+        }
+
+        public int ExpectRemoteServiceResult(Action<RemoteCall, PyDataType> callback, object extraInfo = null,
+            Action<RemoteCall> timeoutCallback = null, int timeoutSeconds = 0)
+        {
+            // generate the proper remote call object
+            RemoteCall entry = new RemoteCall
+            {
+                Callback = callback, ExtraInfo = extraInfo, TimeoutCallback = timeoutCallback
+            };
+            
+            // get the new callID
+            int callID = ++this.mNextCallID;
+
+            // add the callback to the list
+            this.mCallCallbacks[callID] = entry;
+            
+            // create the timer (if needed)
+            if (timeoutSeconds > 0)
+            {
+                this.TimerManager.EnqueueCallTimer(
+                    DateTime.UtcNow.AddSeconds(timeoutSeconds).ToFileTimeUtc(),
+                    CallTimeoutExpired,
+                    callID
+                );
+            }
+
+            return callID;
         }
     }
 }

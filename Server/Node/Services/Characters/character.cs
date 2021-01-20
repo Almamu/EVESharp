@@ -34,6 +34,7 @@ using Node.Database;
 using Node.Inventory;
 using Node.Inventory.Items;
 using Node.Inventory.Items.Types;
+using Node.Network;
 using PythonTypes.Types.Database;
 using PythonTypes.Types.Exceptions;
 using PythonTypes.Types.Network;
@@ -80,32 +81,32 @@ namespace Node.Services.Characters
             this.mAncestriesCache = this.DB.GetAncestryInformation(this.mBloodlineCache);
         }
 
-        public PyDataType GetCharactersToSelect(PyDictionary namedPayload, Client client)
+        public PyDataType GetCharactersToSelect(CallInformation call)
         {
-            return this.DB.GetCharacterList(client.AccountID);
+            return this.DB.GetCharacterList(call.Client.AccountID);
         }
 
-        public PyDataType LogStartOfCharacterCreation(PyDictionary namedPayload, Client client)
+        public PyDataType LogStartOfCharacterCreation(CallInformation call)
         {
             return null;
         }
 
-        public PyDataType GetCharCreationInfo(PyDictionary namedPayload, Client client)
+        public PyDataType GetCharCreationInfo(CallInformation call)
         {
             return this.CacheStorage.GetHints(CacheStorage.CreateCharacterCacheTable);
         }
 
-        public PyDataType GetAppearanceInfo(PyDictionary namedPayload, Client client)
+        public PyDataType GetAppearanceInfo(CallInformation call)
         {
             return this.CacheStorage.GetHints(CacheStorage.CharacterAppearanceCacheTable);
         }
 
-        public PyDataType GetCharNewExtraCreationInfo(PyDictionary namedPayload, Client client)
+        public PyDataType GetCharNewExtraCreationInfo(CallInformation call)
         {
             return new PyDictionary();
         }
 
-        public PyInteger ValidateNameEx(PyString name, PyDictionary namedPayload, Client client)
+        public PyInteger ValidateNameEx(PyString name, CallInformation call)
         {
             string characterName = name;
             
@@ -134,9 +135,9 @@ namespace Node.Services.Characters
 
         public PyDataType CreateCharacter2(
             PyString characterName, PyInteger bloodlineID, PyInteger genderID, PyInteger ancestryID,
-            PyDictionary appearance, PyDictionary namedPayload, Client client)
+            PyDictionary appearance, CallInformation call)
         {
-            int validationError = this.ValidateNameEx(characterName, null, client);
+            int validationError = this.ValidateNameEx(characterName, call);
 
             // ensure the name is valid
             switch (validationError)
@@ -212,8 +213,8 @@ namespace Node.Services.Characters
             Station station = this.ItemManager.GetStation(stationID);
             
             int itemID = this.DB.CreateCharacter(
-                bloodline.ItemType, characterName, owner, client.AccountID, this.mConfiguration.Balance, 0.0,
-                corporationID, 0, 0, 0, 0, 0,
+                bloodline.ItemType, characterName, owner, call.Client.AccountID, this.mConfiguration.Balance,
+                0.0, corporationID, 0, 0, 0, 0, 0,
                 currentTime, currentTime, currentTime, ancestryID,
                 careerID, schoolID, careerSpecialityID, genderID,
                 appearance.ContainsKey("accessoryID") ? appearance["accessoryID"] as PyInteger : null,
@@ -332,54 +333,54 @@ namespace Node.Services.Characters
             return character.ID;
         }
 
-        public PyDataType GetCharacterToSelect(PyInteger characterID, PyDictionary namedPayload, Client client)
+        public PyDataType GetCharacterToSelect(PyInteger characterID, CallInformation call)
         {
-            return this.DB.GetCharacterSelectionInfo(characterID, client.AccountID);
+            return this.DB.GetCharacterSelectionInfo(characterID, call.Client.AccountID);
         }
 
         public PyDataType SelectCharacterID(PyInteger characterID, PyBool loadDungeon, PyNone secondChoiceID,
-            PyDictionary namedPayload, Client client)
+            CallInformation call)
         {
-            return this.SelectCharacterID(characterID, loadDungeon == true ? 1 : 0, secondChoiceID, namedPayload, client);
+            return this.SelectCharacterID(characterID, loadDungeon == true ? 1 : 0, secondChoiceID, call);
         }
         // TODO: THIS PyNone SHOULD REALLY BE AN INTEGER, ALTHOUGH THIS FUNCTIONALITY IS NOT USED
         // TODO: IT REVEALS AN IMPORTANT ISSUE, WE CAN'T HAVE A WILDCARD PARAMETER PyDataType
         public PyDataType SelectCharacterID(PyInteger characterID, PyInteger loadDungeon, PyNone secondChoiceID,
-            PyDictionary namedPayload, Client client)
+            CallInformation call)
         {
             // ensure the character belongs to the current account
             Character character =
                 this.ItemManager.LoadItem(characterID) as Character;
 
-            if (character.AccountID != client.AccountID)
+            if (character.AccountID != call.Client.AccountID)
                 throw new CustomError("The selected character does not belong to this account, aborting...");
             
             // update the session data for this client
-            client.CharacterID = character.ID;
-            client.CorporationID = character.CorporationID;
+            call.Client.CharacterID = character.ID;
+            call.Client.CorporationID = character.CorporationID;
 
             if (character.StationID == 0)
             {
-                client.SolarSystemID = character.SolarSystemID;
+                call.Client.SolarSystemID = character.SolarSystemID;
             }
             else
             {
-                client.StationID = character.StationID;
+                call.Client.StationID = character.StationID;
             }
 
-            client.SolarSystemID2 = character.SolarSystemID;
-            client.ConstellationID = character.ConstellationID;
-            client.RegionID = character.RegionID;
-            client.HQID = 0;
-            client.CorporationRole = character.CorpRole;
-            client.RolesAtAll = character.RolesAtAll;
-            client.RolesAtBase = character.RolesAtBase;
-            client.RolesAtHQ = character.RolesAtHq;
-            client.RolesAtOther = character.RolesAtOther;
-            client.ShipID = character.LocationID;
+            call.Client.SolarSystemID2 = character.SolarSystemID;
+            call.Client.ConstellationID = character.ConstellationID;
+            call.Client.RegionID = character.RegionID;
+            call.Client.HQID = 0;
+            call.Client.CorporationRole = character.CorpRole;
+            call.Client.RolesAtAll = character.RolesAtAll;
+            call.Client.RolesAtBase = character.RolesAtBase;
+            call.Client.RolesAtHQ = character.RolesAtHq;
+            call.Client.RolesAtOther = character.RolesAtOther;
+            call.Client.ShipID = character.LocationID;
             
             // TODO: CHECK WHAT NODE HAS THE SOLAR SYSTEM LOADED AND PROPERLY LET THE CLIENT KNOW
-            client.SendSessionChange();
+            call.Client.SendSessionChange();
             
             // update the character and set it's only flag to true
             character.Online = 1;
@@ -388,30 +389,31 @@ namespace Node.Services.Characters
             
             // TODO: SEND CHARACTER CONNECTION NOTIFICATION
             // TODO: send "OnContactLoggedOn" to all the friends in the list as long as they're online
+            // TODO: send "OnCharNowInStation" to all the characters in this station
 
             return null;
         }
 
-        public PyDataType Ping(PyDictionary namedPayload, Client client)
+        public PyDataType Ping(CallInformation call)
         {
-            return client.AccountID;
+            return call.Client.AccountID;
         }
 
-        public PyDataType GetOwnerNoteLabels(PyDictionary namedPayload, Client client)
+        public PyDataType GetOwnerNoteLabels(CallInformation call)
         {
             Character character =
-                this.ItemManager.LoadItem((int) client.CharacterID) as Character;
+                this.ItemManager.LoadItem((int) call.Client.CharacterID) as Character;
 
             return this.DB.GetOwnerNoteLabels(character);
         }
 
-        public PyDataType GetCloneTypeID(PyDictionary namedPayload, Client client)
+        public PyDataType GetCloneTypeID(CallInformation call)
         {
-            if (client.CharacterID == null)
+            if (call.Client.CharacterID == null)
                 throw new UserError("NoCharacterSelected");
 
             Character character =
-                this.ItemManager.LoadItem((int) client.CharacterID) as Character;
+                this.ItemManager.LoadItem((int) call.Client.CharacterID) as Character;
 
             if (character.ActiveCloneID == null)
                 throw new CustomError("You do not have any medical clone...");
@@ -419,13 +421,13 @@ namespace Node.Services.Characters
             return character.ActiveClone.Type.ID;
         }
 
-        public PyDataType GetHomeStation(PyDictionary namedPayload, Client client)
+        public PyDataType GetHomeStation(CallInformation call)
         {
-            if (client.CharacterID == null)
+            if (call.Client.CharacterID == null)
                 throw new UserError("NoCharacterSelected");
 
             Character character =
-                this.ItemManager.LoadItem((int) client.CharacterID) as Character;
+                this.ItemManager.LoadItem((int) call.Client.CharacterID) as Character;
 
             if (character.ActiveCloneID == null)
                 throw new CustomError("You do not have any medical clone...");
@@ -433,24 +435,24 @@ namespace Node.Services.Characters
             return character.ActiveClone.LocationID;
         }
 
-        public PyDataType GetCharacterDescription(PyInteger characterID, PyDictionary namedPayload, Client client)
+        public PyDataType GetCharacterDescription(PyInteger characterID, CallInformation call)
         {
-            if (client.CharacterID == null)
+            if (call.Client.CharacterID == null)
                 throw new UserError("NoCharacterSelected");
 
             Character character =
-                this.ItemManager.LoadItem((int) client.CharacterID) as Character;
+                this.ItemManager.LoadItem((int) call.Client.CharacterID) as Character;
             
             return character.Description;
         }
 
-        public PyDataType SetCharacterDescription(PyString newBio, PyDictionary namedPayload, Client client)
+        public PyDataType SetCharacterDescription(PyString newBio, CallInformation call)
         {
-            if (client.CharacterID == null)
+            if (call.Client.CharacterID == null)
                 throw new UserError("NoCharacterSelected");
 
             Character character =
-                this.ItemManager.LoadItem((int) client.CharacterID) as Character;
+                this.ItemManager.LoadItem((int) call.Client.CharacterID) as Character;
 
             character.Description = newBio;
             character.Persist();
@@ -458,20 +460,19 @@ namespace Node.Services.Characters
             return null;
         }
 
-        public PyDataType GetRecentShipKillsAndLosses(PyInteger count, PyInteger startIndex, PyDictionary namedPayload,
-            Client client)
+        public PyDataType GetRecentShipKillsAndLosses(PyInteger count, PyInteger startIndex, CallInformation call)
         {
-            if (client.CharacterID == null)
+            if (call.Client.CharacterID == null)
                 throw new UserError("NoCharacterSelected");
 
             // limit number of records to 100 at maximum
             if (count > 100)
                 count = 100;
             
-            return this.DB.GetRecentShipKillsAndLosses((int) client.CharacterID, count, startIndex);
+            return this.DB.GetRecentShipKillsAndLosses((int) call.Client.CharacterID, count, startIndex);
         }
 
-        public PyDataType GetCharacterAppearanceList(PyList ids, PyDictionary namedPayload, Client client)
+        public PyDataType GetCharacterAppearanceList(PyList ids, CallInformation call)
         {
             PyList result = new PyList(ids.Count);
 
@@ -494,20 +495,20 @@ namespace Node.Services.Characters
             return result;
         }
 
-        public PyDataType GetNote(PyInteger characterID, PyDictionary namedPayload, Client client)
+        public PyDataType GetNote(PyInteger characterID, CallInformation call)
         {
-            if (client.CharacterID == null)
+            if (call.Client.CharacterID == null)
                 throw new UserError("NoCharacterSelected");
             
-            return this.DB.GetNote(characterID, (int) client.CharacterID);
+            return this.DB.GetNote(characterID, (int) call.Client.CharacterID);
         }
 
-        public PyDataType SetNote(PyInteger characterID, PyString note, PyDictionary namedPayload, Client client)
+        public PyDataType SetNote(PyInteger characterID, PyString note, CallInformation call)
         {
-            if (client.CharacterID == null)
+            if (call.Client.CharacterID == null)
                 throw new UserError("NoCharacterSelected");
             
-            this.DB.SetNote(characterID, (int) client.CharacterID, note);
+            this.DB.SetNote(characterID, (int) call.Client.CharacterID, note);
 
             return null;
         }

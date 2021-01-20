@@ -1,6 +1,7 @@
 using Common.Database;
 using Common.Services;
 using Node.Database;
+using Node.Network;
 using PythonTypes.Types.Exceptions;
 using PythonTypes.Types.Primitives;
 using SimpleInjector;
@@ -16,12 +17,12 @@ namespace Node.Services.Characters
             this.DB = db;
         }
 
-        public PyDataType GetBookmarks(PyDictionary namedPayload, Client client)
+        public PyDataType GetBookmarks(CallInformation call)
         {
-            if (client.CharacterID == null)
+            if (call.Client.CharacterID == null)
                 throw new UserError("NoCharacterSelected");
             
-            return this.DB.GetBookmarks((int) client.CharacterID);
+            return this.DB.GetBookmarks((int) call.Client.CharacterID);
         }
     }
 }

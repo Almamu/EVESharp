@@ -10,7 +10,7 @@ namespace Common.Services
 {
     public class ServiceManager
     {
-        public PyDataType ServiceCall(string service, string call, PyTuple payload, PyDictionary namedPayload, object client)
+        public PyDataType ServiceCall(string service, string call, PyTuple arguments, object extraInformation)
         {
             object serviceObject = GetType().GetProperty(service)?.GetValue(this);
             
@@ -25,7 +25,7 @@ namespace Common.Services
                 .ToList();
             
             if (methods.Any() == false)
-                throw new ServiceDoesNotContainCallException(service, call, payload);
+                throw new ServiceDoesNotContainCallException(service, call, arguments);
 
             // relay the exception throw by the call
             try
@@ -34,16 +34,15 @@ namespace Common.Services
                 {
                     ParameterInfo[] parameters = method.GetParameters();
                     object[] parameterList = new object[parameters.Length];
-
+                    
                     // set last parameters as these are the only ones that do not change
-                    parameterList[^1] = client;
-                    parameterList[^2] = namedPayload;
+                    parameterList[^1] = extraInformation;
 
                     bool match = true;
                     
-                    for (int i = 0; i < parameterList.Length - 2; i++)
+                    for (int i = 0; i < parameterList.Length - 1; i++)
                     {
-                        if (i >= payload.Count)
+                        if (i >= arguments.Count)
                         {
                             if (parameters[i].IsOptional == false)
                             {
@@ -55,7 +54,7 @@ namespace Common.Services
                         }
                         else
                         {
-                            PyDataType element = payload[i];
+                            PyDataType element = arguments[i];
                         
                             // check parameter types
                             if (parameters[i].ParameterType == element.GetType() ||
@@ -76,7 +75,7 @@ namespace Common.Services
                         return (PyDataType) (method.Invoke(serviceInstance, parameterList));
                 }
 
-                throw new ServiceDoesNotContainCallException(service, call, payload);
+                throw new ServiceDoesNotContainCallException(service, call, arguments);
             }
             catch (TargetInvocationException e)
             {

@@ -22,6 +22,7 @@
     Creator: Almamu
 */
 
+using System;
 using System.Collections.Generic;
 using System.Security.Cryptography;
 using System.Text;
@@ -77,6 +78,27 @@ namespace Node.Database
                 }
 
                 return equals;
+            }
+        }
+
+        public int GetAccountIDFromCharacterID(int characterID)
+        {
+            MySqlConnection connection = null;
+            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+                "SELECT accountID FROM chrInformation WHERE characterID = @characterID AND online = 1",
+                new Dictionary<string, object>()
+                {
+                    {"@characterID", characterID}
+                }
+            );
+            
+            using (connection)
+            using (reader)
+            {
+                if (reader.Read() == false)
+                    throw new ArgumentOutOfRangeException("Unknown characterID or characterID not online");
+
+                return reader.GetInt32(0);
             }
         }
 

@@ -1,4 +1,5 @@
 using Common.Services;
+using Node.Network;
 using PythonTypes.Types.Primitives;
 using SimpleInjector;
 
@@ -10,7 +11,7 @@ namespace Node.Services.Account
         {
         }
 
-        public PyList GetRedeemTokens(PyDictionary namedPayload, Client client)
+        public PyList GetRedeemTokens(CallInformation call)
         {
             // TODO: IMPLEMENT SUPPORT FOR USER REWARDS
             // tokens structure
@@ -25,7 +26,7 @@ namespace Node.Services.Account
             return new PyList();
         }
 
-        public PyNone ClaimRedeemTokens(PyList tokens, PyInteger characterID, PyDictionary namedPayload, Client client)
+        public PyNone ClaimRedeemTokens(PyList tokens, PyInteger characterID, CallInformation call)
         {
             // TODO: IMPLEMENT SUPPORT FOR USER REWARDS
             return new PyNone();

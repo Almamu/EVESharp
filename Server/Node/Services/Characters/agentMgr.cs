@@ -2,6 +2,7 @@ using System;
 using Common.Database;
 using Common.Services;
 using Node.Database;
+using Node.Network;
 using Org.BouncyCastle.X509.Extension;
 using PythonTypes.Types.Complex;
 using PythonTypes.Types.Database;
@@ -19,12 +20,12 @@ namespace Node.Services.Characters
             this.DB = db;
         }
 
-        public PyDataType GetAgents(PyDictionary namedPayload, Client client)
+        public PyDataType GetAgents(CallInformation call)
         {
             return this.DB.GetAgents();
         }
 
-        public PyDataType GetMyJournalDetails(PyDictionary namedPayload, Client client)
+        public PyDataType GetMyJournalDetails(CallInformation call)
         {
             return new PyTuple(new PyDataType[]
             {

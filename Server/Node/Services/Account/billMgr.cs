@@ -1,4 +1,5 @@
 using Common.Services;
+using Node.Network;
 using PythonTypes.Types.Complex;
 using PythonTypes.Types.Primitives;
 using SimpleInjector;
@@ -13,7 +14,7 @@ namespace Node.Services.Account
             this.CacheStorage = cacheStorage;
         }
 
-        public PyDataType GetBillTypes(PyDictionary namedPayload, Client client)
+        public PyDataType GetBillTypes(CallInformation call)
         {
             this.CacheStorage.Load(
                 "billMgr",

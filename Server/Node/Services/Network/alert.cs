@@ -25,6 +25,7 @@
 using System;
 using Common.Logging;
 using Common.Services;
+using Node.Network;
 using PythonTypes.Types.Primitives;
 using SimpleInjector;
 
@@ -39,7 +40,7 @@ namespace Node.Services.Network
             this.Log = logger.CreateLogChannel("alert");
         }
 
-        public PyDataType BeanCount(PyInteger stackID, PyDictionary namedPayload, object client)
+        public PyDataType BeanCount(PyInteger stackID, CallInformation call)
         {
             PyTuple res = new PyTuple(2);
 
@@ -49,7 +50,7 @@ namespace Node.Services.Network
             return res;
         }
 
-        public PyDataType SendClientStackTraceAlert(PyTuple stackInfo, PyString stackTrace, PyString type, PyDictionary namedPayload, Client client)
+        public PyDataType SendClientStackTraceAlert(PyTuple stackInfo, PyString stackTrace, PyString type, CallInformation call)
         {
             Log.Fatal(
                 "Received the following client's stack trace:" + Environment.NewLine +
@@ -62,7 +63,7 @@ namespace Node.Services.Network
             return new PyNone();
         }
 
-        public PyDataType BeanDelivery(PyDictionary beanCounts, PyDictionary namedPayload, object client)
+        public PyDataType BeanDelivery(PyDictionary beanCounts, CallInformation call)
         {
             // I'm not joking, send me the stack trace NOW!!!
             // :P

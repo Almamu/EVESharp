@@ -1,6 +1,7 @@
 using System;
 using Common.Logging;
 using Common.Services;
+using Node.Network;
 using PythonTypes.Types.Primitives;
 using SimpleInjector;
 
@@ -14,8 +15,7 @@ namespace Node.Services
             this.BoundServiceManager = manager;
         }
 
-        public PyDataType MachoResolveObject(PyTuple objectData, PyInteger zero, PyDictionary namedPayload,
-            Client client)
+        public PyDataType MachoResolveObject(PyTuple objectData, PyInteger zero, CallInformation call)
         {
             PyInteger objectID = objectData[0] as PyInteger;
             
@@ -25,33 +25,29 @@ namespace Node.Services
             return this.BoundServiceManager.Container.NodeID;
         }
 
-        public PyDataType MachoResolveObject(PyInteger objectID, PyInteger zero, PyDictionary namedPayload,
-            Client client)
+        public PyDataType MachoResolveObject(PyInteger objectID, PyInteger zero, CallInformation call)
         {
             // TODO: PROPERLY SUPPORT THE ENTITY TABLE NODEID FIELD TO GET THIS INFORMATION PROPERLY
             // TODO: FOR NOW JUST RETURN OUR ID AND BE HAPPY ABOUT IT
             return this.BoundServiceManager.Container.NodeID;
         }
 
-        public PyDataType MachoBindObject(PyTuple objectData, PyTuple callInfo, PyDictionary namedPayload,
-            Client client)
+        public PyDataType MachoBindObject(PyTuple objectData, PyTuple callInfo, CallInformation call)
         {
-            return this.MachoBindObject(objectData, callInfo as PyDataType, namedPayload, client);
+            return this.MachoBindObject(objectData, callInfo as PyDataType, call);
         }
 
-        public PyDataType MachoBindObject(PyTuple objectData, PyNone callInfo, PyDictionary namedPayload,
-            Client client)
+        public PyDataType MachoBindObject(PyTuple objectData, PyNone callInfo, CallInformation call)
         {
-            return this.MachoBindObject(objectData, callInfo as PyDataType, namedPayload, client);
+            return this.MachoBindObject(objectData, callInfo as PyDataType, call);
         }
 
-        public PyDataType MachoBindObject(PyInteger objectID, PyNone callInfo, PyDictionary namedPayload, Client client)
+        public PyDataType MachoBindObject(PyInteger objectID, PyNone callInfo, CallInformation call)
         {
-            return this.MachoBindObject(objectID, callInfo as PyDataType, namedPayload, client);
+            return this.MachoBindObject(objectID, callInfo as PyDataType, call);
         }
         
-        protected PyDataType MachoBindObject(PyDataType objectData, PyDataType callInfo, PyDictionary namedPayload,
-            Client client)
+        protected PyDataType MachoBindObject(PyDataType objectData, PyDataType callInfo, CallInformation call)
         {
             // create the bound instance and register it in the bound services
             BoundService instance = this.CreateBoundInstance(objectData);
@@ -79,13 +75,22 @@ namespace Node.Services
             else
             {
                 PyTuple data = callInfo as PyTuple;
-                string call = data[0] as PyString;
+                string func = data[0] as PyString;
                 PyTuple arguments = data[1] as PyTuple;
                 PyDictionary namedArguments = data[2] as PyDictionary;
+
+                CallInformation callInformation = new CallInformation
+                {
+                    Client = call.Client,
+                    NamedPayload = namedArguments,
+                    CallID = call.CallID,
+                    From = call.From,
+                    PacketType = call.PacketType,
+                    Service = null,
+                    To = call.To
+                };
                 
-                result[1] = this.BoundServiceManager.ServiceCall(
-                    boundID, call, arguments, namedArguments, client
-                );
+                result[1] = this.BoundServiceManager.ServiceCall(boundID, func, arguments, callInformation);
             }
 
             return result;

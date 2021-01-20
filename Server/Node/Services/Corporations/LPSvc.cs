@@ -1,5 +1,6 @@
 ﻿using Common.Services;
 using Node.Database;
+using Node.Network;
 using PythonTypes.Types.Exceptions;
 using PythonTypes.Types.Primitives;
 
@@ -14,12 +15,12 @@ namespace Node.Services.Corporations
             this.DB = db;
         }
         
-        public PyDecimal GetLPForCharacterCorp (PyInteger corporationID, PyDictionary namedPayload, Client client)
+        public PyDecimal GetLPForCharacterCorp (PyInteger corporationID, CallInformation call)
         {
-            if (client.CharacterID == null)
+            if (call.Client.CharacterID == null)
                 throw new UserError("NoCharacterSelected");
             
-            return this.DB.GetLPForCharacterCorp(corporationID, (int) client.CharacterID);
+            return this.DB.GetLPForCharacterCorp(corporationID, (int) call.Client.CharacterID);
         }
     }
 }

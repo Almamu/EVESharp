@@ -3,6 +3,7 @@ using Common.Services;
 using Node.Database;
 using Node.Inventory;
 using Node.Inventory.Items.Types;
+using Node.Network;
 using PythonTypes.Types.Complex;
 using PythonTypes.Types.Exceptions;
 using PythonTypes.Types.Primitives;
@@ -33,31 +34,30 @@ namespace Node.Services.Account
             return character.Balance;
         }
 
-        public PyDataType GetCashBalance(PyBool isCorpWallet, PyDictionary namedPayload, Client client)
+        public PyDataType GetCashBalance(PyBool isCorpWallet, CallInformation call)
         {
-            return this.GetCashBalance(isCorpWallet ? 1 : 0, 1000, namedPayload, client);
+            return this.GetCashBalance(isCorpWallet ? 1 : 0, 1000, call);
         }
         
-        public PyDataType GetCashBalance(PyInteger isCorpWallet, PyDictionary namedPayload, Client client)
+        public PyDataType GetCashBalance(PyInteger isCorpWallet, CallInformation call)
         {
-            return this.GetCashBalance(isCorpWallet, 1000, namedPayload, client);
+            return this.GetCashBalance(isCorpWallet, 1000, call);
         }
 
-        public PyDataType GetCashBalance(PyInteger isCorpWallet, PyInteger walletKey, PyDictionary namedPayload,
-            Client client)
+        public PyDataType GetCashBalance(PyInteger isCorpWallet, PyInteger walletKey, CallInformation call)
         {
             if (isCorpWallet == 0)
-                return this.GetCashBalance(client);
+                return this.GetCashBalance(call.Client);
             
             throw new CustomError("This function is not supported yet");
         }
 
-        public PyDataType GetKeyMap(PyDictionary namedPayload, Client client)
+        public PyDataType GetKeyMap(CallInformation call)
         {
             return this.DB.GetKeyMap();
         }
 
-        public PyDataType GetEntryTypes(PyDictionary namedPayload, Client client)
+        public PyDataType GetEntryTypes(CallInformation call)
         {
             this.CacheStorage.Load(
                 "account",
@@ -72,9 +72,9 @@ namespace Node.Services.Account
         }
 
         public PyDataType GetJournal(PyInteger marketKey, PyInteger fromDate, PyInteger entryTypeID,
-            PyBool isCorpWallet, PyInteger transactionID, PyInteger rev, PyDictionary namedPayload, Client client)
+            PyBool isCorpWallet, PyInteger transactionID, PyInteger rev, CallInformation call)
         {
-            return this.DB.GetJournal((int) client.CharacterID, entryTypeID, marketKey, fromDate);
+            return this.DB.GetJournal((int) call.Client.CharacterID, entryTypeID, marketKey, fromDate);
         }
     }
 }

@@ -5,6 +5,7 @@ using Node.Inventory;
 using Node.Inventory.Items;
 using Node.Inventory.Items.Attributes;
 using Node.Inventory.Items.Types;
+using Node.Network;
 using Org.BouncyCastle.Crypto.Macs;
 using Org.BouncyCastle.Crypto.Tls;
 using PythonTypes.Types.Complex;
@@ -38,16 +39,16 @@ namespace Node.Services.Dogma
             return new dogmaIM(this.ItemManager, this.BoundServiceManager, tupleData[0] as PyInteger);
         }
 
-        public PyDataType ShipGetInfo(PyDictionary namedPayload, Client client)
+        public PyDataType ShipGetInfo(CallInformation call)
         {
-            if (client.ShipID == null)
+            if (call.Client.ShipID == null)
                 throw new CustomError($"The character is not aboard any ship");
             
-            Ship ship = this.ItemManager.LoadItem((int) client.ShipID) as Ship;
+            Ship ship = this.ItemManager.LoadItem((int) call.Client.ShipID) as Ship;
 
             if (ship == null)
-                throw new CustomError($"Cannot get information for ship {client.ShipID}");
-            if (ship.OwnerID != client.CharacterID)
+                throw new CustomError($"Cannot get information for ship {call.Client.ShipID}");
+            if (ship.OwnerID != call.Client.CharacterID)
                 throw new CustomError("The ship you're trying to get info off does not belong to you");
             
             PyItemInfo itemInfo = new PyItemInfo();
@@ -108,15 +109,15 @@ namespace Node.Services.Dogma
             return itemInfo;
         }
 
-        public PyDataType CharGetInfo(PyDictionary namedPayload, Client client)
+        public PyDataType CharGetInfo(CallInformation call)
         {
-            if (client.CharacterID == null)
+            if (call.Client.CharacterID == null)
                 throw new CustomError("This client has not selected a character yet");
 
-            Character character = this.ItemManager.LoadItem((int) client.CharacterID) as Character;
+            Character character = this.ItemManager.LoadItem((int) call.Client.CharacterID) as Character;
 
             if (character == null)
-                throw new CustomError($"Cannot get information for character {client.CharacterID}");
+                throw new CustomError($"Cannot get information for character {call.Client.CharacterID}");
 
             PyItemInfo itemInfo = new PyItemInfo();
 
@@ -146,9 +147,9 @@ namespace Node.Services.Dogma
             return itemInfo;
         }
 
-        public PyDataType ItemGetInfo(PyInteger itemID, PyDictionary namedPayload, Client client)
+        public PyDataType ItemGetInfo(PyInteger itemID, CallInformation call)
         {
-            if (client.CharacterID == null)
+            if (call.Client.CharacterID == null)
                 throw new CustomError("This client has not selected a character yet");
 
             ItemEntity item = this.ItemManager.LoadItem(itemID);
@@ -165,7 +166,7 @@ namespace Node.Services.Dogma
             );
         }
 
-        public PyDataType GetWeaponBankInfoForShip(PyDictionary namedPayload, Client client)
+        public PyDataType GetWeaponBankInfoForShip(CallInformation call)
         {
             // this function seems to indicate the client when modules are grouped
             // so it can display them on the UI and I guess act on them too
@@ -173,15 +174,15 @@ namespace Node.Services.Dogma
             return new PyDictionary();
         }
 
-        public PyDataType GetCharacterBaseAttributes(PyDictionary namedPayload, Client client)
+        public PyDataType GetCharacterBaseAttributes(CallInformation call)
         {
-            if (client.CharacterID == null)
+            if (call.Client.CharacterID == null)
                 throw new CustomError("This client has not selected a character yet");
             
-            Character character = this.ItemManager.LoadItem((int) client.CharacterID) as Character;
+            Character character = this.ItemManager.LoadItem((int) call.Client.CharacterID) as Character;
 
             if (character == null)
-                throw new CustomError($"Cannot get information for character {client.CharacterID}");
+                throw new CustomError($"Cannot get information for character {call.Client.CharacterID}");
 
             return new PyDictionary
             {

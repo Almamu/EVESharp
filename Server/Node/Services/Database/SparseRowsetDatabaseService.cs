@@ -1,5 +1,6 @@
 ﻿using System;
 using Common.Logging;
+using Node.Network;
 using PythonTypes.Types.Database;
 using PythonTypes.Types.Primitives;
 
@@ -9,8 +10,8 @@ namespace Node.Services.Database
     {
         protected SparseRowsetHeader SparseRowset { get; }
         
-        public abstract PyDataType Fetch(PyInteger startPos, PyInteger fetchSize, PyDictionary namedPayload, Client client);
-        public abstract PyDataType FetchByKey(PyList keyList, PyDictionary namedPayload, Client client);
+        public abstract PyDataType Fetch(PyInteger startPos, PyInteger fetchSize, CallInformation call);
+        public abstract PyDataType FetchByKey(PyList keyList, CallInformation call);
 
         protected SparseRowsetDatabaseService(SparseRowsetHeader rowsetHeader, BoundServiceManager manager) : base(manager)
         {

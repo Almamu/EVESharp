@@ -1,6 +1,7 @@
 using Common.Database;
 using Common.Services;
 using Node.Database;
+using Node.Network;
 using PythonTypes.Types.Exceptions;
 using PythonTypes.Types.Primitives;
 using SimpleInjector;
@@ -16,9 +17,9 @@ namespace Node.Services.Contracts
             this.DB = db;
         }
 
-        public PyDataType NumRequiringAttention(PyDictionary namedPayload, Client client)
+        public PyDataType NumRequiringAttention(CallInformation call)
         {
-            if (client.CharacterID == null)
+            if (call.Client.CharacterID == null)
                 throw new UserError("NoCharacterSelected");
             
             // TODO: PROPERLY IMPLEMENT THIS

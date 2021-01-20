@@ -30,6 +30,7 @@ using Node.Inventory.Items;
 using Node.Inventory.Items.Attributes;
 using Node.Inventory.Items.Types;
 using Node.Network;
+using PythonTypes.Types.Exceptions;
 using PythonTypes.Types.Network;
 using PythonTypes.Types.Primitives;
 
@@ -40,14 +41,15 @@ namespace Node
         private readonly Session mSession = new Session();
         
         private NodeContainer Container { get; }
-
         public ClusterConnection ClusterConnection { get; }
+        public ServiceManager ServiceManager { get; }
         private ItemFactory ItemFactory { get; }
         
-        public Client(NodeContainer container, ClusterConnection clusterConnection, ItemFactory itemFactory)
+        public Client(NodeContainer container, ClusterConnection clusterConnection, ServiceManager serviceManager, ItemFactory itemFactory)
         {
             this.Container = container;
             this.ClusterConnection = clusterConnection;
+            this.ServiceManager = serviceManager;
             this.ItemFactory = itemFactory;
         }
 
@@ -392,6 +394,30 @@ namespace Node
             );
 
             this.ClusterConnection.SendNotification("OnMultiEvent", "charid", (int) this.CharacterID, eventTuple);
+        }
+
+        public void SendCallResponse(CallInformation answerTo, PyDataType result)
+        {
+            this.ClusterConnection.SendCallResult(answerTo, result);
+        }
+
+        public void SendException(CallInformation call, PyDataType content)
+        {
+            this.ClusterConnection.SendException(call, content);
+        }
+
+        /// <summary>
+        /// Checks session data to ensure a character is selected and returns it's characterID
+        /// </summary>
+        /// <returns>CharacterID for the client</returns>
+        public int EnsureCharacterIsSelected()
+        {
+            int? characterID = this.CharacterID;
+
+            if (characterID == null)
+                throw new UserError("NoCharacterSelected");
+
+            return (int) characterID;
         }
     }
 }

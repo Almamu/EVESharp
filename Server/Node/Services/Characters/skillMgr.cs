@@ -7,6 +7,7 @@ using Node.Inventory;
 using Node.Inventory.Items;
 using Node.Inventory.Items.Attributes;
 using Node.Inventory.Items.Types;
+using Node.Network;
 using PythonTypes.Marshal;
 using PythonTypes.Types.Exceptions;
 using PythonTypes.Types.Primitives;
@@ -41,12 +42,12 @@ namespace Node.Services.Characters
             return new skillMgr(this.DB, this.ItemManager, this.TimerManager, this.BoundServiceManager);
         }
 
-        public PyDataType GetSkillQueue(PyDictionary namedPayload, Client client)
+        public PyDataType GetSkillQueue(CallInformation call)
         {
-            if (client.CharacterID == null)
+            if (call.Client.CharacterID == null)
                 throw new UserError("NoCharacterSelected");
             
-            Character character = this.ItemManager.LoadItem((int) client.CharacterID) as Character;
+            Character character = this.ItemManager.LoadItem((int) call.Client.CharacterID) as Character;
 
             PyList skillQueueList = new PyList(character.SkillQueue.Count);
 
@@ -58,20 +59,20 @@ namespace Node.Services.Characters
             return skillQueueList;
         }
 
-        public PyDataType GetSkillHistory(PyDictionary namedPayload, Client client)
+        public PyDataType GetSkillHistory(CallInformation call)
         {
-            if (client.CharacterID == null)
+            if (call.Client.CharacterID == null)
                 throw new UserError("NoCharacterSelected");
 
-            return this.DB.GetSkillHistory((int) client.CharacterID);
+            return this.DB.GetSkillHistory((int) call.Client.CharacterID);
         }
 
-        public PyDataType SaveSkillQueue(PyList queue, PyDictionary namedPayload, Client client)
+        public PyDataType SaveSkillQueue(PyList queue, CallInformation call)
         {
-            if (client.CharacterID == null)
+            if (call.Client.CharacterID == null)
                 throw new UserError("NoCharacterSelected");
 
-            Character character = this.ItemManager.LoadItem((int) client.CharacterID) as Character;
+            Character character = this.ItemManager.LoadItem((int) call.Client.CharacterID) as Character;
 
             if (character.SkillQueue.Count > 0)
             {
@@ -98,13 +99,13 @@ namespace Node.Services.Characters
                 // remove all the timers associated with the current skillQueue and the expiry times
                 foreach (Character.SkillQueueEntry entry in character.SkillQueue)
                 {
-                    this.TimerManager.DequeueTimer(entry.Skill.ID, entry.Skill.ExpiryTime);
+                    this.TimerManager.DequeueItemTimer(entry.Skill.ID, entry.Skill.ExpiryTime);
                     entry.Skill.Flag = ItemFlags.Skill;
                     
-                    client.NotifyItemChange(entry.Skill, ItemFlags.SkillInTraining, (int) entry.Skill.LocationID);
+                    call.Client.NotifyItemChange(entry.Skill, ItemFlags.SkillInTraining, (int) entry.Skill.LocationID);
             
                     // send notification of skill training stopped
-                    client.NotifySkillTrainingStopped(entry.Skill);
+                    call.Client.NotifySkillTrainingStopped(entry.Skill);
 
                     // create history entry
                     this.DB.CreateSkillHistoryRecord(entry.Skill.Type, character, SkillHistoryReason.SkillTrainingCancelled,
@@ -152,16 +153,16 @@ namespace Node.Services.Characters
                 character.SkillQueue.Add(new Character.SkillQueueEntry() { Skill = skill, TargetLevel = level });
                 
                 // ensure the timer is present for this skill
-                this.TimerManager.EnqueueTimer(skill.ExpiryTime, character.SkillTrainingCompleted, skill.ID);
+                this.TimerManager.EnqueueItemTimer(skill.ExpiryTime, character.SkillTrainingCompleted, skill.ID);
                 
                 if (first == true)
                 {
                     skill.Flag = ItemFlags.SkillInTraining;
                     
-                    client.NotifyItemChange(skill, ItemFlags.Skill, (int) skill.LocationID);
+                    call.Client.NotifyItemChange(skill, ItemFlags.Skill, (int) skill.LocationID);
             
                     // skill was trained, send the success message
-                    client.NotifySkillStartTraining(skill);
+                    call.Client.NotifySkillStartTraining(skill);
                 
                     // create history entry
                     this.DB.CreateSkillHistoryRecord(skill.Type, character, SkillHistoryReason.SkillTrainingStarted,
@@ -179,12 +180,12 @@ namespace Node.Services.Characters
             return null;
         }
 
-        public PyDataType CharStartTrainingSkillByTypeID(PyInteger typeID, PyDictionary namedPayload, Client client)
+        public PyDataType CharStartTrainingSkillByTypeID(PyInteger typeID, CallInformation call)
         {
-            if (client.CharacterID == null)
+            if (call.Client.CharacterID == null)
                 throw new UserError("NoCharacterSelected");
 
-            Character character = this.ItemManager.LoadItem((int) client.CharacterID) as Character;
+            Character character = this.ItemManager.LoadItem((int) call.Client.CharacterID) as Character;
 
             // do not allow the user to do that if the skill queue is not empty
             if (character.SkillQueue.Count > 0)
@@ -203,30 +204,30 @@ namespace Node.Services.Characters
             skill.ExpiryTime = expiryTime.ToFileTimeUtc();
             skill.Flag = ItemFlags.SkillInTraining;
                     
-            client.NotifyItemChange(skill, ItemFlags.Skill, (int) skill.LocationID);
+            call.Client.NotifyItemChange(skill, ItemFlags.Skill, (int) skill.LocationID);
             
             // skill started training
-            client.NotifySkillStartTraining(skill);
+            call.Client.NotifySkillStartTraining(skill);
             
             // create history entry
             this.DB.CreateSkillHistoryRecord(skill.Type, character, SkillHistoryReason.SkillTrainingStarted,
                 skill.Points);
                 
             // ensure the timer is present for this skill
-            this.TimerManager.EnqueueTimer(skill.ExpiryTime, character.SkillTrainingCompleted, skill.ID);
+            this.TimerManager.EnqueueItemTimer(skill.ExpiryTime, character.SkillTrainingCompleted, skill.ID);
 
             skill.Persist();
             
             return null;
         }
 
-        public PyDataType GetEndOfTraining(PyDictionary namedPayload, Client client)
+        public PyDataType GetEndOfTraining(CallInformation call)
         {
-            if (client.CharacterID == null)
+            if (call.Client.CharacterID == null)
                 throw new UserError("NoCharacterSelected");
             
             Character character =
-                this.ItemManager.LoadItem((int) client.CharacterID) as Character;
+                this.ItemManager.LoadItem((int) call.Client.CharacterID) as Character;
 
             // do not allow the user to do that if the skill queue is not empty
             if (character.SkillQueue.Count > 0)
@@ -235,12 +236,12 @@ namespace Node.Services.Characters
             return character.SkillQueue[0].Skill.ExpiryTime;
         }
 
-        public PyDataType CharStopTrainingSkill(PyDictionary namedPayload, Client client)
+        public PyDataType CharStopTrainingSkill(CallInformation call)
         {
-            if (client.CharacterID == null)
+            if (call.Client.CharacterID == null)
                 throw new UserError("NoCharacterSelected");
             
-            Character character = this.ItemManager.LoadItem((int) client.CharacterID) as Character;
+            Character character = this.ItemManager.LoadItem((int) call.Client.CharacterID) as Character;
             
             // iterate the whole skill queue, stop it and recalculate points for the skills
             if (character.SkillQueue.Count == 0)
@@ -268,17 +269,17 @@ namespace Node.Services.Characters
             foreach (Character.SkillQueueEntry entry in character.SkillQueue)
             {
                 // dequeue the timer first
-                this.TimerManager.DequeueTimer(entry.Skill.ID, entry.Skill.ExpiryTime);
+                this.TimerManager.DequeueItemTimer(entry.Skill.ID, entry.Skill.ExpiryTime);
 
                 // mark the skill as stopped and store it in the database
                 entry.Skill.ExpiryTime = 0;
                 entry.Skill.Flag = ItemFlags.Skill;
                 entry.Skill.Persist();
                     
-                client.NotifyItemChange(entry.Skill, ItemFlags.SkillInTraining, (int) entry.Skill.LocationID);
+                call.Client.NotifyItemChange(entry.Skill, ItemFlags.SkillInTraining, (int) entry.Skill.LocationID);
                 
                 // notify the skill is not in training anymore
-                client.NotifySkillTrainingStopped(entry.Skill);
+                call.Client.NotifySkillTrainingStopped(entry.Skill);
                 
                 // create history entry
                 this.DB.CreateSkillHistoryRecord(entry.Skill.Type, character, SkillHistoryReason.SkillTrainingCancelled,
@@ -288,12 +289,12 @@ namespace Node.Services.Characters
             return null;
         }
 
-        public PyDataType GetRespecInfo(PyDictionary namedPayload, Client client)
+        public PyDataType GetRespecInfo(CallInformation call)
         {
-            if (client.CharacterID == null)
+            if (call.Client.CharacterID == null)
                 throw new UserError("NoCharacterSelected");
             
-            Character character = this.ItemManager.LoadItem((int) client.CharacterID) as Character;
+            Character character = this.ItemManager.LoadItem((int) call.Client.CharacterID) as Character;
 
             return new PyDictionary
             {
@@ -302,12 +303,12 @@ namespace Node.Services.Characters
             };
         }
 
-        public PyDataType GetCharacterAttributeModifiers(PyInteger attributeID, PyDictionary namedPayload, Client client)
+        public PyDataType GetCharacterAttributeModifiers(PyInteger attributeID, CallInformation call)
         {
-            if (client.CharacterID == null)
+            if (call.Client.CharacterID == null)
                 throw new UserError("NoCharacterSelected");
             
-            Character character = this.ItemManager.LoadItem((int) client.CharacterID) as Character;
+            Character character = this.ItemManager.LoadItem((int) call.Client.CharacterID) as Character;
 
             AttributeEnum attribute;
 
@@ -357,9 +358,9 @@ namespace Node.Services.Characters
         }
 
         public PyDataType RespecCharacter(PyInteger charisma, PyInteger intelligence, PyInteger memory,
-            PyInteger perception, PyInteger willpower, PyDictionary namedPayload, Client client)
+            PyInteger perception, PyInteger willpower, CallInformation call)
         {
-            if (client.CharacterID == null)
+            if (call.Client.CharacterID == null)
                 throw new UserError("NoCharacterSelected");
             if (charisma < MINIMUM_ATTRIBUTE_POINTS || intelligence < MINIMUM_ATTRIBUTE_POINTS ||
                 memory < MINIMUM_ATTRIBUTE_POINTS || perception < MINIMUM_ATTRIBUTE_POINTS ||
@@ -373,7 +374,7 @@ namespace Node.Services.Characters
                 throw new UserError("RespecAttributesMisallocated");
             
             Character character =
-                this.ItemManager.LoadItem((int) client.CharacterID) as Character;
+                this.ItemManager.LoadItem((int) call.Client.CharacterID) as Character;
 
             if (character.FreeReSpecs == 0)
                 throw new CustomError("You've already remapped your character too much times at once, wait some time");
@@ -400,7 +401,7 @@ namespace Node.Services.Characters
             character.Persist();
             
             // notify the game of the change on the character
-            client.NotifyMultipleAttributeChange(
+            call.Client.NotifyMultipleAttributeChange(
                 new ItemAttribute[]
                 {
                     character.Attributes[AttributeEnum.charisma],

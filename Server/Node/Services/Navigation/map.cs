@@ -4,6 +4,7 @@ using Common.Services;
 using Node.Data;
 using Node.Inventory;
 using Node.Inventory.Items.Types;
+using Node.Network;
 using PythonTypes.Types.Complex;
 using PythonTypes.Types.Database;
 using PythonTypes.Types.Exceptions;
@@ -24,7 +25,7 @@ namespace Node.Services.Navigation
             this.CacheStorage = cacheStorage;
         }
 
-        public PyDataType GetStationExtraInfo(PyDictionary namedPayload, Client client)
+        public PyDataType GetStationExtraInfo(CallInformation call)
         {
             Rowset stations = new Rowset(new PyDataType []
             {
@@ -64,7 +65,7 @@ namespace Node.Services.Navigation
             });
         }
 
-        public PyDataType GetSolarSystemPseudoSecurities(PyDictionary namedPayload, Client client)
+        public PyDataType GetSolarSystemPseudoSecurities(CallInformation call)
         {
             this.CacheStorage.Load(
                 "map",

@@ -7,6 +7,7 @@ using Common.Database;
 using Common.Logging;
 using Common.Services;
 using Node.Database;
+using Node.Exceptions;
 using Node.Inventory;
 using Node.Inventory.Items.Types;
 using Node.Network;
@@ -22,34 +23,35 @@ namespace Node.Services.Chat
     {
         private MessagesDB MessagesDB { get; }
         private ChatDB DB { get; }
+        private CharacterDB CharacterDB { get; }
         private Channel Log;
         private ItemManager ItemManager { get; }
         private NodeContainer NodeContainer { get; }
         
-        public LSC(ChatDB db, MessagesDB messagesDB, ItemManager itemManager, NodeContainer nodeContainer, Logger logger)
+        public LSC(ChatDB db, MessagesDB messagesDB, CharacterDB characterDB, ItemManager itemManager, NodeContainer nodeContainer, Logger logger)
         {
             this.DB = db;
             this.MessagesDB = messagesDB;
+            this.CharacterDB = characterDB;
             this.ItemManager = itemManager;
             this.NodeContainer = nodeContainer;
             this.Log = logger.CreateLogChannel("LSC");
         }
 
-        public PyDataType GetChannels(PyDictionary namedPayload, Client client)
+        public PyDataType GetChannels(CallInformation call)
         {
-            if (client.CharacterID == null)
-                throw new UserError("NoCharacterSelected");
-
-            return this.DB.GetChannelsForCharacter((int) client.CharacterID);
+            return this.DB.GetChannelsForCharacter(call.Client.EnsureCharacterIsSelected());
         }
 
-        public PyDataType GetChannels(PyInteger reload, PyDictionary namedPayload, Client client)
+        public PyDataType GetChannels(PyInteger reload, CallInformation call)
         {
-            return this.GetChannels(namedPayload, client);
+            return this.GetChannels(call);
         }
 
-        public PyDataType GetMembers(PyDataType channel, PyDictionary namedPayload, Client client)
+        public PyDataType GetMembers(PyDataType channel, CallInformation call)
         {
+            call.Client.EnsureCharacterIsSelected();
+
             int channelID = 0;
 
             if (channel is PyInteger integer)
@@ -88,7 +90,7 @@ namespace Node.Services.Chat
             return this.DB.GetChannelMembers(channelID);
         }
 
-        protected PyDataType GenerateLSCNotification(string type, PyDataType channel, PyTuple args, Client client)
+        private PyDataType GenerateLSCNotification(string type, PyDataType channel, PyTuple args, Client client)
         {
             PyTuple who = new PyTuple(6)
             {
@@ -111,14 +113,11 @@ namespace Node.Services.Chat
             };
         }
         
-        public PyDataType JoinChannels(PyList channels, PyInteger role, PyDictionary namedPayload, Client client)
+        public PyDataType JoinChannels(PyList channels, PyInteger role, CallInformation call)
         {
-            if (client.CharacterID == null)
-                throw new UserError("NoCharacterSelected");
-            
-            PyList result = new PyList();
+            int callerCharacterID = call.Client.EnsureCharacterIsSelected();
 
-            // TODO: SEND A NOTIFICATION TO ALL THE CHAT MEMBERS
+            PyList result = new PyList();
 
             foreach (PyDataType channel in channels)
             {
@@ -134,7 +133,7 @@ namespace Node.Services.Chat
                     typeString = "global";
                     channelIDExtended = channelID;
 
-                    if (channelID == client.CorporationID)
+                    if (channelID == call.Client.CorporationID)
                     {
                         Log.Warning(
                             "Ignoring normal channel ID for corporation as it might be trying to fetch the mailing list");
@@ -165,7 +164,7 @@ namespace Node.Services.Chat
                 }
                 else
                 {
-                    throw new CustomError("The channelID is not in the correct format");
+                    throw new LSCCannotJoin("The specified channel cannot be found");
                 }
                 
                 if (channelID == 0)
@@ -179,7 +178,7 @@ namespace Node.Services.Chat
                 if (typeString != "regionid" && typeString != "constellationid" && typeString != "solarsystemid2")
                 {
                     PyDataType notification =
-                        this.GenerateLSCNotification("JoinChannel", channelIDExtended, new PyTuple(0), client);
+                        this.GenerateLSCNotification("JoinChannel", channelIDExtended, new PyTuple(0), call.Client);
 
                     if (typeString == "global")
                     {
@@ -187,23 +186,23 @@ namespace Node.Services.Chat
                         PyList characters = this.DB.GetOnlineCharsOnChannel(channelID);
 
                         // notify them all
-                        client.ClusterConnection.SendNotification("OnLSC", "charid", characters, notification);  
+                        call.Client.ClusterConnection.SendNotification("OnLSC", "charid", characters, notification);  
                     }
                     else
                     {
                         // notify all players on the channel
-                        client.ClusterConnection.SendNotification("OnLSC", typeString, (PyList) new PyDataType [] { channelID }, notification);                            
-                    }                
+                        call.Client.ClusterConnection.SendNotification("OnLSC", typeString, (PyList) new PyDataType [] { channelID }, notification);                            
+                    }
                 }
 
                 try
                 {
                     Row info;
 
-                    if (typeString == "global" && channelID != (int) client.CharacterID && channelID != client.CorporationID)
-                        info = this.DB.GetChannelInfo(channelID, (int) client.CharacterID);
+                    if (typeString == "global" && channelID != callerCharacterID && channelID != call.Client.CorporationID)
+                        info = this.DB.GetChannelInfo(channelID, callerCharacterID);
                     else
-                        info = this.DB.GetChannelInfoByRelatedEntity(channelID, (int) client.CharacterID);
+                        info = this.DB.GetChannelInfoByRelatedEntity(channelID, callerCharacterID);
 
                     // check if the channel must include the list of members
                     PyInteger actualChannelID = info.Line[0] as PyInteger;
@@ -257,10 +256,10 @@ namespace Node.Services.Chat
                     {
                         // notify everyone in the channel only when it should
                         PyDataType notification =
-                            this.GenerateLSCNotification("DestroyChannel", channelID, new PyTuple(0), client);
+                            this.GenerateLSCNotification("DestroyChannel", channelID, new PyTuple(0), call.Client);
 
                         // notify all characters in the channel
-                        client.ClusterConnection.SendNotification("OnLSC", "charid", (int) client.CharacterID, client, notification);
+                        call.Client.ClusterConnection.SendNotification("OnLSC", "charid", callerCharacterID, call.Client, notification);
                     }
                     
                     Log.Error($"LSC could not get channel information. Error: {e.Message}");
@@ -270,44 +269,39 @@ namespace Node.Services.Chat
             return result;
         }
 
-        public PyDataType GetMyMessages(PyDictionary namedPayload, Client client)
+        public PyDataType GetMyMessages(CallInformation call)
         {
-            if (client.CharacterID == null)
-                throw new UserError("NoCharacterSelected");
-            
-            return this.MessagesDB.GetMailHeaders((int) client.CharacterID);
+            return this.MessagesDB.GetMailHeaders(call.Client.EnsureCharacterIsSelected());
         }
         
-        public PyDataType GetRookieHelpChannel(PyDictionary namedPayload, Client client)
+        public PyDataType GetRookieHelpChannel(CallInformation call)
         {
             return ChatDB.CHANNEL_ROOKIECHANNELID;
         }
 
-        public PyDataType SendMessage(PyInteger channelID, PyString message, PyDictionary namedPayload, Client client)
+        public PyDataType SendMessage(PyInteger channelID, PyString message, CallInformation call)
         {
-            if (client.CharacterID == null)
-                throw new UserError("NoCharacterSelected");
+            int callerCharacterID = call.Client.EnsureCharacterIsSelected();
 
             // ensure the player is allowed to chat here
-            if (this.DB.IsPlayerAllowedToChat(channelID, (int) client.CharacterID) == false)
-                return null;
+            if (this.DB.IsPlayerAllowedToChat(channelID, callerCharacterID) == false)
+                throw new LSCCannotSendMessage("Insufficient permissions");
 
             PyDataType notification =
-                this.GenerateLSCNotification("SendMessage", channelID, new PyTuple(1) { [0] = message }, client);
+                this.GenerateLSCNotification("SendMessage", channelID, new PyTuple(1) { [0] = message }, call.Client);
 
         
             // get users in the channel that are online now
             PyList characters = this.DB.GetOnlineCharsOnChannel(channelID);
 
-            client.ClusterConnection.SendNotification("OnLSC", "charid", characters, notification);
+            call.Client.ClusterConnection.SendNotification("OnLSC", "charid", characters, notification);
             
             return null;
         }
 
-        public PyDataType SendMessage(PyTuple tuple, PyString message, PyDictionary namedPayload, Client client)
+        public PyDataType SendMessage(PyTuple tuple, PyString message, CallInformation call)
         {
-            if (client.CharacterID == null)
-                throw new UserError("NoCharacterSelected");
+            int callerCharacterID = call.Client.EnsureCharacterIsSelected();
             
             if (tuple.Count != 1 || tuple[0] is PyTuple == false)
             {
@@ -328,18 +322,18 @@ namespace Node.Services.Chat
             PyString typeString = channelInfo[0] as PyString;
             PyInteger channelID = channelInfo[1] as PyInteger;
 
-            if (this.DB.IsPlayerAllowedToChatOnRelatedEntity(channelID, (int) client.CharacterID) == false)
-                return null;
+            if (this.DB.IsPlayerAllowedToChatOnRelatedEntity(channelID, callerCharacterID) == false)
+                throw new LSCCannotSendMessage("Insufficient permissions");
 
             PyDataType notification =
-                this.GenerateLSCNotification("SendMessage", tuple, new PyTuple(1) { [0] = message }, client);
+                this.GenerateLSCNotification("SendMessage", tuple, new PyTuple(1) { [0] = message }, call.Client);
 
-            client.ClusterConnection.SendNotification("OnLSC", typeString, (PyList) new PyDataType [] { channelID }, notification);
+            call.Client.ClusterConnection.SendNotification("OnLSC", typeString, (PyList) new PyDataType [] { channelID }, notification);
             
             return null;
         }
 
-        public PyDataType LeaveChannels(PyList channels, PyDataType boolUnsubscribe, PyInteger role, PyDictionary namedPayload, Client client)
+        public PyDataType LeaveChannels(PyList channels, PyDataType boolUnsubscribe, PyInteger role, CallInformation call)
         {
             foreach (PyDataType channelInfo in channels)
             {
@@ -361,14 +355,16 @@ namespace Node.Services.Chat
                 PyDataType channelID = tuple[0];
                 PyBool announce = tuple[1] as PyBool;
 
-                this.LeaveChannel(channelID, announce, namedPayload, client);
+                this.LeaveChannel(channelID, announce, call);
             }
             
             return null;
         }
         
-        public PyDataType LeaveChannel(PyDataType channel, PyInteger announce, PyDictionary namedPayload, Client client)
+        public PyDataType LeaveChannel(PyDataType channel, PyInteger announce, CallInformation call)
         {
+            int callerCharacterID = call.Client.EnsureCharacterIsSelected();
+
             int channelID = 0;
             PyString typeString;
             PyDataType channelIDExtended = null;
@@ -390,8 +386,7 @@ namespace Node.Services.Chat
 
                 PyTuple channelInfo = tuple[0] as PyTuple;
 
-                if (channelInfo.Count != 2 || channelInfo[0] is PyString == false ||
-                    channelInfo[1] is PyInteger == false)
+                if (channelInfo.Count != 2 || channelInfo[0] is PyString == false || channelInfo[1] is PyInteger == false)
                 {
                     Log.Error(
                         "LSC received a tuple for channel in JoinChannels that doesn't resemble anything we know");
@@ -417,58 +412,81 @@ namespace Node.Services.Chat
                 channelID = this.DB.GetChannelIDFromRelatedEntity(channelID);
 
             // make sure the character is actually in the channel
-            if (this.DB.IsCharacterMemberOfChannel(channelID, (int) client.CharacterID) == false)
+            if (this.DB.IsCharacterMemberOfChannel(channelID, callerCharacterID) == false)
                 return null;
             
             if (typeString != "corpid" && typeString != "solarsystemid2" && announce == 1)
             {
                 // notify everyone in the channel only when it should
                 PyDataType notification =
-                    this.GenerateLSCNotification("LeaveChannel", channel, new PyTuple(0), client);
+                    this.GenerateLSCNotification("LeaveChannel", channel, new PyTuple(0), call.Client);
                 
                 if (typeString != "global")
-                    client.ClusterConnection.SendNotification("OnLSC", typeString, (PyList) new PyDataType [] { channel }, notification);
+                    call.Client.ClusterConnection.SendNotification("OnLSC", typeString, (PyList) new PyDataType [] { channel }, notification);
                 else
                 {
                     // get users in the channel that are online now
                     PyList characters = this.DB.GetOnlineCharsOnChannel(channelID);
 
-                    client.ClusterConnection.SendNotification("OnLSC", "charid", characters, notification);
+                    call.Client.ClusterConnection.SendNotification("OnLSC", "charid", characters, notification);
                 }
             }
             
             // remove the player from the channel
-            // this.DB.LeaveChannel(channelID, (int) client.CharacterID);
+            // this.DB.LeaveChannel(channelID, callerCharacterID);
 
             return null;
         }
 
-        public PyDataType CreateChannel(PyString name, PyDictionary namedPayload, Client client)
+        public PyDataType CreateChannel(PyString name, CallInformation call)
         {
-            if (client.CharacterID == null)
-                throw new UserError("NoCharacterSelected");
-            if (client.CharacterID == null)
-                throw new UserError("NoCharacterSelected");
-            if (name.Length > 60)
-                throw new UserError("ChatCustomChannelNameTooLong", new PyDictionary() { ["max"] = 60 });
+            int callerCharacterID = call.Client.EnsureCharacterIsSelected();
 
+            if (name.Length > 60)
+                throw new ChatCustomChannelNameTooLong(60);
+
+            bool mailingList = false;
+
+            if (call.NamedPayload.ContainsKey("mailingList") == true)
+                mailingList = call.NamedPayload["mailingList"] as PyBool;
+            
             // create the channel in the database
-            int channelID = (int) this.DB.CreateChannel((int) client.CharacterID, null, "Private Channel\\" + name, namedPayload["mailingList"] as PyBool);
+            int channelID = (int) this.DB.CreateChannel(callerCharacterID, null, "Private Channel\\" + name, mailingList);
             
             // join the character to this channel
-            this.DB.JoinChannel(channelID, (int) client.CharacterID, ChatDB.CHATROLE_CREATOR);
+            this.DB.JoinChannel(channelID, callerCharacterID, ChatDB.CHATROLE_CREATOR);
             
-            return null;
+            Rowset mods = this.DB.GetChannelMods(channelID);
+            Rowset chars = this.DB.GetChannelMembers(channelID);
+                        
+            // the extra field is at the end
+            int extraIndex = chars.Header.Count - 1;
+                
+            // ensure they all have the owner information
+            foreach (PyList row in chars.Rows)
+            {
+                // fill it with information
+                row[extraIndex] = this.DB.GetExtraInfo(row[0] as PyInteger);
+            }
+            
+            // retrieve back the information about the characters as there is ONE character in here
+            // return the normal channel information
+            return new PyTuple(3)
+            {
+                [0] = this.DB.GetChannelInfo(channelID, callerCharacterID),
+                // build empty rowsets as there's no one in here yet
+                [1] = mods,
+                [2] = chars
+            };
         }
 
-        public PyDataType DestroyChannel(PyInteger channelID, PyDictionary namedPayload, Client client)
+        public PyDataType DestroyChannel(PyInteger channelID, CallInformation call)
         {
-            if (client.CharacterID == null)
-                throw new UserError("NoCharacterSelected");
+            int callerCharacterID = call.Client.EnsureCharacterIsSelected();
 
             // ensure the character has enough permissions
-            if (this.DB.IsCharacterAdminOfChannel(channelID, (int) client.CharacterID) == false)
-                throw new CustomError("Only the creator of the channel can remove it");
+            if (this.DB.IsCharacterAdminOfChannel(channelID, callerCharacterID) == false)
+                throw new LSCCannotDestroy("Insufficient permissions");
 
             // get users in the channel that are online now
             PyList characters = this.DB.GetOnlineCharsOnChannel(channelID);
@@ -478,21 +496,20 @@ namespace Node.Services.Chat
             
             // notify everyone in the channel only when it should
             PyDataType notification =
-                this.GenerateLSCNotification("DestroyChannel", channelID, new PyTuple(0), client);
+                this.GenerateLSCNotification("DestroyChannel", channelID, new PyTuple(0), call.Client);
 
             // notify all characters in the channel
-            client.ClusterConnection.SendNotification("OnLSC", "charid", characters, notification);
+            call.Client.ClusterConnection.SendNotification("OnLSC", "charid", characters, notification);
 
             return null;
         }
 
-        public PyDataType AccessControl(PyInteger channelID, PyInteger characterID, PyInteger accessLevel, PyDictionary namedPayload, Client client)
+        public PyDataType AccessControl(PyInteger channelID, PyInteger characterID, PyInteger accessLevel, CallInformation call)
         {
-            if (client.CharacterID == null)
-                throw new UserError("NoCharacterSelected");
+            int callerCharacterID = call.Client.EnsureCharacterIsSelected();
 
-            if (this.DB.IsCharacterAdminOfChannel(channelID, (int) client.CharacterID) == false)
-                return null;
+            if (this.DB.IsCharacterOperatorOrAdminOfChannel(channelID, callerCharacterID) == false)
+                throw new LSCCannotAccessControl("Insufficient permissions");
 
             this.DB.UpdatePermissionsForCharacterOnChannel(channelID, characterID, accessLevel);
 
@@ -506,72 +523,161 @@ namespace Node.Services.Chat
                 [5] = accessLevel == ChatDB.CHATROLE_CREATOR
             };
             
-            PyDataType notification = this.GenerateLSCNotification("AccessControl", channelID, args, client);
+            PyDataType notification = this.GenerateLSCNotification("AccessControl", channelID, args, call.Client);
             
             // get users in the channel that are online now
             PyList characters = this.DB.GetOnlineCharsOnChannel(channelID);
 
-            client.ClusterConnection.SendNotification("OnLSC", "charid", characters, notification);
+            call.Client.ClusterConnection.SendNotification("OnLSC", "charid", characters, notification);
             
             return null;
         }
 
-        public PyDataType ForgetChannel(PyInteger channelID, PyDictionary namedPayload, Client client)
+        public PyDataType ForgetChannel(PyInteger channelID, CallInformation call)
         {
-            if (client.CharacterID == null)
-                throw new UserError("NoCharacterSelected");
+            int callerCharacterID = call.Client.EnsureCharacterIsSelected();
 
             // announce leaving, important in private channels
             PyDataType notification =
-                this.GenerateLSCNotification("LeaveChannel", channelID, new PyTuple(0), client);
+                this.GenerateLSCNotification("LeaveChannel", channelID, new PyTuple(0), call.Client);
             
             // get users in the channel that are online now
             PyList characters = this.DB.GetOnlineCharsOnChannel(channelID);
 
-            client.ClusterConnection.SendNotification("OnLSC", "charid", characters, notification);
+            call.Client.ClusterConnection.SendNotification("OnLSC", "charid", characters, notification);
 
-            this.DB.LeaveChannel(channelID, (int) client.CharacterID);
+            this.DB.LeaveChannel(channelID, callerCharacterID);
             
             return null;
         }
 
-        public PyDataType Invite(PyInteger characterID, PyInteger channelID, PyString channelTitle, PyBool addAllowed, PyDictionary namedPayload, Client client)
+        public void InviteAnswerCallback(RemoteCall callInfo, PyDataType result)
         {
-            PyPacket packet = new PyPacket(PyPacket.PacketType.CALL_REQ);
+            InviteExtraInfo call = callInfo.ExtraInfo as InviteExtraInfo;
 
-            // try and send a service call, will this work?
-            packet.UserID = client.AccountID;
-            packet.Destination = new PyAddressClient(client.AccountID, null, "LSC");
-            packet.Source = new PyAddressNode(this.NodeContainer.NodeID, 1);
-            packet.NamedPayload = new PyDictionary();
-            packet.NamedPayload["role"] = (int) Roles.ROLE_SERVICE | (int) Roles.ROLE_REMOTESERVICE;
-            packet.Payload = new PyTuple(2)
+            if (result is PyString)
             {
-                [0] = new PyTuple (2)
-                {
-                    [0] = 0,
-                    [1] = new PySubStream(new PyTuple(4)
-                    {
-                        [0] = 1,
-                        [1] = "ChatInvite",
-                        [2] = new PyTuple(4)
+                PyString answer = result as PyString;
+
+                // this user's character might not be in the service
+                // so fetch the name from the database
+                call.OriginalCall.Client.SendException(
+                    call.OriginalCall,
+                    new UserError(
+                        answer,
+                        new PyDictionary
                         {
-                            [0] = client.CharacterID,
-                            [1] = "Almamu",
-                            [2] = 1,
-                            [3] = channelID
-                        },
-                        [3] = new PyDictionary()
-                    })
-                },
-                [1] = null
-            };
+                            ["channel"] = this.DB.GetChannelName(call.ChannelID),
+                            ["char"] = this.CharacterDB.GetCharacterName(call.ToCharacterID)
+                        }
+                    )
+                );
+            }
             
-            client.ClusterConnection.Socket.Send(packet);
+            // character has accepted, notify all users of the channel
+            PyString typeString = this.DB.GetChannelType(call.ChannelID);
             
-            // invitorID, invitorName, invitorGender, channelID
+            PyDataType notification =
+                this.GenerateLSCNotification("JoinChannel", call.ChannelID, new PyTuple(0), call.OriginalCall.Client);
+
+            // you should only be able to invite to global channels as of now
+            // TODO: CORP CHANNELS SHOULD BE SUPPORTED TOO
+            if (typeString == "global")
+            {
+                // get users in the channel that are online now
+                PyList characters = this.DB.GetOnlineCharsOnChannel(call.ChannelID);
+
+                // notify them all
+                call.OriginalCall.Client.ClusterConnection.SendNotification("OnLSC", "charid", characters, notification);  
+            } 
             
-            return null;
+            // return an empty response to the original calling client
+            call.OriginalCall.Client.SendCallResponse(call.OriginalCall, null);
+        }
+
+        public void InviteTimeoutCallback(RemoteCall callInfo)
+        {
+            // if the call timed out the character is not connected
+            InviteExtraInfo call = callInfo.ExtraInfo as InviteExtraInfo;
+
+            call.OriginalCall.Client.SendException(
+                call.OriginalCall,
+                new ChtCharNotReachable(this.CharacterDB.GetCharacterName(call.ToCharacterID))
+            );
+        }
+
+        public PyDataType Invite(PyInteger characterID, PyInteger channelID, PyString channelTitle, PyBool addAllowed, CallInformation call)
+        {
+            int callerCharacterID = call.Client.EnsureCharacterIsSelected();
+
+            try
+            {
+                if (characterID == callerCharacterID)
+                    throw new ChtCannotInviteSelf();
+                
+                if (ItemManager.IsNPC(characterID) == true)
+                {
+                    // NPCs should be loaded, so the character instance can be used willy-nilly
+                    Character npcChar = this.ItemManager.GetItem(characterID) as Character;
+
+                    throw new ChtNPC(npcChar.Name);
+                }
+                
+                // ensure our character has admin perms first
+                if (this.DB.IsCharacterOperatorOrAdminOfChannel(channelID, callerCharacterID) == false)
+                    throw new ChtWrongRole(this.DB.GetChannelName(channelID), "Operator");
+
+                // ensure the character is not there already
+                if (this.DB.IsCharacterMemberOfChannel(channelID, characterID) == true)
+                    throw new ChtAlreadyInChannel(this.CharacterDB.GetCharacterName(characterID));
+                
+                Character character = this.ItemManager.GetItem(callerCharacterID) as Character;
+
+                PyTuple args = new PyTuple(4)
+                {
+                    [0] = callerCharacterID,
+                    [1] = character.Name,
+                    [2] = character.Gender,
+                    [3] = channelID
+                };
+
+                InviteExtraInfo info = new InviteExtraInfo
+                {
+                    OriginalCall = call,
+                    Arguments = args,
+                    ChannelID = channelID,
+                    ToCharacterID = characterID,
+                    FromCharacterID = callerCharacterID
+                };
+                
+                // no timeout for this call
+                call.Client.ClusterConnection.SendServiceCall(
+                    characterID,
+                    "LSC", "ChatInvite", args, new PyDictionary(),
+                    InviteAnswerCallback, InviteTimeoutCallback,
+                    info, ProvisionalResponse.DEFAULT_TIMEOUT - 5
+                );
+                
+                // subscribe the user to the chat
+                this.DB.JoinChannel(channelID, characterID);
+            }
+            catch (ArgumentOutOfRangeException)
+            {
+                Log.Warning("Trying to invite a non-online character, aborting...");
+            }
+
+            // return SOMETHING to the client with the provisional data
+            // the real answer will come later on
+            throw new ProvisionalResponse(new PyString("OnDummy"), new PyTuple(0));
+        }
+
+        class InviteExtraInfo
+        {
+            public CallInformation OriginalCall { get; set; }
+            public int FromCharacterID { get; set; }
+            public int ToCharacterID { get; set; }
+            public int ChannelID { get; set; }
+            public PyTuple Arguments { get; set; }
         }
     }
 }

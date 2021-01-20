@@ -4,6 +4,7 @@ using Node.Database;
 using Node.Inventory;
 using Node.Inventory.Items.Types;
 using Node.Market;
+using Node.Network;
 using PythonTypes.Types.Database;
 using PythonTypes.Types.Exceptions;
 using PythonTypes.Types.Primitives;
@@ -30,18 +31,18 @@ namespace Node.Services.Stations
             return new corpStationMgr(this.ItemDB, this.MarketDB, this.ItemManager, this.BoundServiceManager);
         }
 
-        public PyDataType GetCorporateStationOffice(PyDictionary namedPayload, Client client)
+        public PyDataType GetCorporateStationOffice(CallInformation call)
         {
             // TODO: IMPLEMENT WHEN CORPORATION SUPPORT IS IN PLACE
             return new PyList();
         }
 
-        public PyDataType DoStandingCheckForStationService(PyInteger stationServiceID, PyDictionary namedPayload, Client client)
+        public PyDataType DoStandingCheckForStationService(PyInteger stationServiceID, CallInformation call)
         {
-            if (client.CharacterID == null)
+            if (call.Client.CharacterID == null)
                 throw new UserError("NoCharacterSelected");
 
-            if (client.StationID == null)
+            if (call.Client.StationID == null)
                 throw new UserError("CanOnlyDoInStations");
             
             // TODO: CHECK ACTUAL STANDING VALUE
@@ -68,9 +69,9 @@ namespace Node.Services.Stations
             return availableStations;
         }
         
-        public PyDataType GetPotentialHomeStations(PyDictionary namedPayload, Client client)
+        public PyDataType GetPotentialHomeStations(CallInformation call)
         {
-            List<Station> availableStations = this.GetPotentialHomeStations(client);
+            List<Station> availableStations = this.GetPotentialHomeStations(call.Client);
             Rowset result = new Rowset((PyList) new PyDataType[]
                 {
                     "stationID", "typeID", "serviceMask", 
@@ -90,17 +91,17 @@ namespace Node.Services.Stations
             return result;
         }
 
-        public PyDataType SetHomeStation(PyInteger stationID, PyDictionary namedPayload, Client client)
+        public PyDataType SetHomeStation(PyInteger stationID, CallInformation call)
         {
-            if (client.CharacterID == null)
+            if (call.Client.CharacterID == null)
                 throw new UserError("NoCharacterSelected");
-            if (client.StationID == null)
+            if (call.Client.StationID == null)
                 throw new UserError("CanOnlyDoInStations");
             
-            Character character = this.ItemManager.LoadItem((int) client.CharacterID) as Character;
+            Character character = this.ItemManager.LoadItem((int) call.Client.CharacterID) as Character;
             
             // ensure the station selected is in the list of available stations for this character
-            Station station = this.GetPotentialHomeStations(client).Find(x => x.ID == stationID);
+            Station station = this.GetPotentialHomeStations(call.Client).Find(x => x.ID == stationID);
 
             if (station == null)
                 throw new CustomError("The selected station is not in your allowed list...");
@@ -140,14 +141,14 @@ namespace Node.Services.Stations
             );
             
             // send the notification to the user
-            client.NotifyBalanceUpdate(character.Balance);
+            call.Client.NotifyBalanceUpdate(character.Balance);
             
             // set clone's station
             character.ActiveClone.LocationID = stationID;
             character.ActiveClone.Persist();
                 
             // invalidate client's cache
-            client.NotifyCloneUpdate();
+            call.Client.NotifyCloneUpdate();
             
             return null;
         }

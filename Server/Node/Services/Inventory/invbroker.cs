@@ -3,6 +3,7 @@ using Common.Logging;
 using Node.Database;
 using Node.Inventory;
 using Node.Inventory.Items;
+using Node.Network;
 using PythonTypes.Types.Exceptions;
 using PythonTypes.Types.Network;
 using PythonTypes.Types.Primitives;
@@ -41,12 +42,12 @@ namespace Node.Services.Inventory
             return new invbroker(this.ItemDB, this.ItemManager, this.BoundServiceManager, tupleData[0] as PyInteger);
         }
 
-        public PyDataType GetInventoryFromId(PyInteger itemID, PyInteger one, PyDictionary namedPayload, Client client)
+        public PyDataType GetInventoryFromId(PyInteger itemID, PyInteger one, CallInformation call)
         {
             ItemEntity inventoryItem = this.ItemManager.LoadItem(itemID);
 
             // ensure the itemID is owned by the client's character
-            if (inventoryItem.OwnerID != client.CharacterID && inventoryItem.ID != client.CharacterID)
+            if (inventoryItem.OwnerID != call.Client.CharacterID && inventoryItem.ID != call.Client.CharacterID)
                 throw new UserError("TheItemIsNotYoursToTake", new PyDictionary()
                 {
                     {"item", itemID}
@@ -63,7 +64,7 @@ namespace Node.Services.Inventory
             return BoundInventory.BindInventory(this.ItemDB, inventoryItem as ItemInventory, ItemFlags.None, this.BoundServiceManager);
         }
 
-        public PyDataType GetInventory(PyInteger containerID, PyNone none, PyDictionary namedPayload, Client client)
+        public PyDataType GetInventory(PyInteger containerID, PyNone none, CallInformation call)
         {
             ItemFlags flag = ItemFlags.None;
             
@@ -92,12 +93,12 @@ namespace Node.Services.Inventory
             return BoundInventory.BindInventory(this.ItemDB, inventoryItem as ItemInventory, flag, this.BoundServiceManager);
         }
 
-        public PyDataType SetLabel(PyInteger itemID, PyString newLabel, PyDictionary namedPayload, Client client)
+        public PyDataType SetLabel(PyInteger itemID, PyString newLabel, CallInformation call)
         {
             ItemEntity item = this.ItemManager.LoadItem(itemID);
 
             // ensure the itemID is owned by the client's character
-            if (item.OwnerID != client.CharacterID)
+            if (item.OwnerID != call.Client.CharacterID)
                 throw new UserError("TheItemIsNotYoursToTake", new PyDictionary()
                 {
                     {"item", itemID}
@@ -111,9 +112,9 @@ namespace Node.Services.Inventory
             // if the item is a ship, send a session change
             if (item.Type.Group.Category.ID == (int) ItemCategories.Ship)
             {
-                client.ShipID = client.ShipID;
+                call.Client.ShipID = call.Client.ShipID;
                 
-                client.SendSessionChange();
+                call.Client.SendSessionChange();
             }
 
             // TODO: CHECK IF ITEM BELONGS TO CORP AND NOTIFY CHARACTERS IN THIS NODE?

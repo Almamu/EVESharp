@@ -5,6 +5,7 @@ using Node.Inventory;
 using Node.Inventory.Items;
 using Node.Inventory.Items.Types;
 using Node.Market;
+using Node.Network;
 using PythonTypes.Types.Database;
 using PythonTypes.Types.Exceptions;
 using PythonTypes.Types.Primitives;
@@ -39,62 +40,62 @@ namespace Node.Services.Characters
             return new jumpCloneSvc(this.ItemDB, this.MarketDB, this.ItemManager, this.TypeManager, this.BoundServiceManager);
         }
 
-        public PyDataType GetCloneState(PyDictionary namedPayload, Client client)
+        public PyDataType GetCloneState(CallInformation call)
         {
-            if (client.CharacterID == null)
+            if (call.Client.CharacterID == null)
                 throw new UserError("NoCharacterSelected");
             
-            Character character = this.ItemManager.LoadItem((int) client.CharacterID) as Character;
+            Character character = this.ItemManager.LoadItem((int) call.Client.CharacterID) as Character;
 
             return KeyVal.FromDictionary(new PyDictionary
                 {
-                    ["clones"] = this.ItemDB.GetClonesForCharacter((int) client.CharacterID, (int) character.ActiveCloneID),
-                    ["implants"] = this.ItemDB.GetImplantsForCharacterClones((int) client.CharacterID),
+                    ["clones"] = this.ItemDB.GetClonesForCharacter((int) call.Client.CharacterID, (int) character.ActiveCloneID),
+                    ["implants"] = this.ItemDB.GetImplantsForCharacterClones((int) call.Client.CharacterID),
                     ["timeLastJump"] = character.TimeLastJump
                 }
             );
         }
 
-        public PyDataType DestroyInstalledClone(PyInteger jumpCloneID, PyDictionary namedPayload, Client client)
+        public PyDataType DestroyInstalledClone(PyInteger jumpCloneID, CallInformation call)
         {
             // if the clone is not loaded the clone cannot be removed, players can only remove clones from where they're at
-            if (client.CharacterID == null)
+            if (call.Client.CharacterID == null)
                 throw new UserError("NoCharacterSelected");
             if (this.ItemManager.IsItemLoaded(jumpCloneID) == false)
                 throw new CustomError("Cannot remotely destroy a clone");
 
             ItemEntity clone = this.ItemManager.LoadItem(jumpCloneID);
             
-            if (clone.LocationID != client.LocationID)
+            if (clone.LocationID != call.Client.LocationID)
                 throw new UserError("JumpCantDestroyNonLocalClone");
-            if (clone.OwnerID != (int) client.CharacterID)
+            if (clone.OwnerID != (int) call.Client.CharacterID)
                 throw new UserError("MktNotOwner");
 
             // finally destroy the clone, this also destroys all the implants in it
             this.ItemManager.DestroyItem(clone);
             
             // let the client know that the clones were updated
-            client.NotifyCloneUpdate();
+            call.Client.NotifyCloneUpdate();
             
             return null;
         }
 
-        public PyDataType GetShipCloneState(PyDictionary namedPayload, Client client)
+        public PyDataType GetShipCloneState(CallInformation call)
         {
-            if (client.CharacterID == null)
+            if (call.Client.CharacterID == null)
                 throw new UserError("NoCharacterSelected");
             
-            return this.ItemDB.GetClonesInShipForCharacter((int) client.CharacterID);
+            return this.ItemDB.GetClonesInShipForCharacter((int) call.Client.CharacterID);
         }
 
-        public PyDataType CloneJump(PyInteger locationID, PyBool unknown, PyDictionary namedPayload, Client client)
+        public PyDataType CloneJump(PyInteger locationID, PyBool unknown, CallInformation call)
         {
             // TODO: IMPLEMENT THIS CALL PROPERLY, INVOLVES SESSION CHANGES
             // TODO: AND SEND PROPER NOTIFICATION AFTER A JUMP CLONE OnJumpCloneTransitionCompleted
             return null;
         }
 
-        public PyInteger GetPriceForClone(PyDictionary namedPayload, Client client)
+        public PyInteger GetPriceForClone(CallInformation call)
         {
             // TODO: CALCULATE THIS ON POS, AS THIS VALUE IS STATIC OTHERWISE
             
@@ -102,14 +103,14 @@ namespace Node.Services.Characters
             return 100000;
         }
 
-        public PyDataType InstallCloneInStation(PyDictionary namedPayload, Client client)
+        public PyDataType InstallCloneInStation(CallInformation call)
         {
-            if (client.CharacterID == null)
+            if (call.Client.CharacterID == null)
                 throw new UserError("NoCharacterSelected");
-            if (client.StationID == null)
+            if (call.Client.StationID == null)
                 throw new UserError("CanOnlyDoInStations");
             
-            Character character = this.ItemManager.LoadItem((int) client.CharacterID) as Character;
+            Character character = this.ItemManager.LoadItem((int) call.Client.CharacterID) as Character;
             
             // check the maximum number of clones the character has assigned
             Dictionary<int, Skill> injectedSkills = character.InjectedSkillsByTypeID;
@@ -136,7 +137,7 @@ namespace Node.Services.Characters
                 );
             
             // ensure that the character has enough money
-            int cost = this.GetPriceForClone(namedPayload, client);
+            int cost = this.GetPriceForClone(call);
 
             if (character.Balance < cost)
                 throw new UserError("NotEnoughMoney", new PyDictionary
@@ -150,7 +151,7 @@ namespace Node.Services.Characters
             ItemType cloneType = this.TypeManager[ItemTypes.CloneGradeAlpha];
             
             // get character's station
-            Station station = this.ItemManager.GetStation((int) client.StationID);
+            Station station = this.ItemManager.GetStation((int) call.Client.StationID);
             
             // create a new clone on the itemDB
             Clone clone = this.ItemManager.CreateClone(cloneType, station, character);
@@ -164,10 +165,10 @@ namespace Node.Services.Characters
             );
 
             // notify the client about the balance change
-            client.NotifyBalanceUpdate(character.Balance);
+            call.Client.NotifyBalanceUpdate(character.Balance);
             
             // finally create the jump clone and invalidate caches
-            client.NotifyCloneUpdate();
+            call.Client.NotifyCloneUpdate();
             
             return null;
         }

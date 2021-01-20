@@ -1,5 +1,6 @@
 using System.Runtime.CompilerServices;
 using Common.Logging;
+using Node.Network;
 using PythonTypes.Types.Complex;
 using PythonTypes.Types.Primitives;
 using SimpleInjector;
@@ -26,7 +27,7 @@ namespace Node.Services.War
             return new warRegistry(this.BoundServiceManager, tupleData[0] as PyInteger);
         }
 
-        public PyDataType GetWars(PyInteger ownerID, PyDictionary namedPayload, Client client)
+        public PyDataType GetWars(PyInteger ownerID, CallInformation call)
         {
             return new PyWarInfo();
         }

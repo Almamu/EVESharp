@@ -3,6 +3,7 @@ using Common.Services;
 using Node.Database;
 using Node.Inventory;
 using Node.Inventory.Items.Types;
+using Node.Network;
 using PythonTypes.Types.Primitives;
 using SimpleInjector;
 
@@ -19,25 +20,25 @@ namespace Node.Services.Characters
             this.ItemManager = itemManager;
         }
         
-        public PyDataType GetPublicInfo(PyInteger characterID, PyDictionary namedPayload, Client client)
+        public PyDataType GetPublicInfo(PyInteger characterID, CallInformation call)
         {
             return this.DB.GetPublicInfo(characterID);
         }
 
-        public PyDataType GetPublicInfo3(PyInteger characterID, PyDictionary namedPayload, Client client)
+        public PyDataType GetPublicInfo3(PyInteger characterID, CallInformation call)
         {
             return this.DB.GetPublicInfo3(characterID);
         }
 
-        public PyDataType GetTopBounties(PyDictionary namedPayload, Client client)
+        public PyDataType GetTopBounties(CallInformation call)
         {
             return this.DB.GetTopBounties();
         }
 
-        public PyDataType AddToBounty(PyInteger characterID, PyInteger bounty, PyDictionary namedPayload, Client client)
+        public PyDataType AddToBounty(PyInteger characterID, PyInteger bounty, CallInformation call)
         {
             // create the bounty record and update the information in the database
-            this.DB.AddToBounty((int) client.CharacterID, characterID, bounty);
+            this.DB.AddToBounty((int) call.Client.CharacterID, characterID, bounty);
 
             // update our record if the player is loaded in memory
             if (this.ItemManager.IsItemLoaded(characterID) == true)
@@ -50,7 +51,7 @@ namespace Node.Services.Characters
             return null;
         }
 
-        public PyDataType GetPrivateInfo(PyInteger characterID, PyDictionary namedPayload, Client client)
+        public PyDataType GetPrivateInfo(PyInteger characterID, CallInformation call)
         {
             return this.DB.GetPrivateInfo(characterID);
         }

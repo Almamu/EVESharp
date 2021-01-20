@@ -715,5 +715,26 @@ namespace Node.Database
                 );
             }
         }
+
+        public string GetCharacterName(int characterID)
+        {
+            MySqlConnection connection = null;
+            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+                "SELECT itemName FROM entity WHERE itemID = @characterID",
+                new Dictionary<string, object>()
+                {
+                    {"@characterID", characterID}
+                }
+            );
+            
+            using (connection)
+            using (reader)
+            {
+                if (reader.Read() == false)
+                    return "";
+
+                return reader.GetString(0);
+            }
+        }
     }
 }

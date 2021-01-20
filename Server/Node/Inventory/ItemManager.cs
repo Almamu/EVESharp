@@ -41,6 +41,8 @@ namespace Node.Inventory
         public const int NPC_CORPORATION_ID_MAX = 2000000;
         public const int STATION_ID_MIN = 60000000;
         public const int STATION_ID_MAX = 70000000;
+        public const int NPC_CHARACTER_ID_MIN = 10000;
+        public const int NPC_CHARACTER_ID_MAX = 100000000;
         public const int USERGENERATED_ID_MIN = 100000000;
 
         private SkillDB SkillDB { get; }
@@ -95,6 +97,12 @@ namespace Node.Inventory
         {
             return itemID >= NPC_CORPORATION_ID_MIN && itemID < NPC_CORPORATION_ID_MAX;
         }
+
+        public static bool IsNPC(int itemID)
+        {
+            return itemID >= NPC_CHARACTER_ID_MIN && itemID < NPC_CHARACTER_ID_MAX;
+        }
+        
         public Faction GetFaction(int factionID)
         {
             if (ItemManager.IsFactionID(factionID) == false)

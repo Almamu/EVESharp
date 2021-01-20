@@ -448,7 +448,7 @@ namespace Node.Inventory.Items.Types
             // iterate the skill queue and generate timers for the skills
             foreach (SkillQueueEntry entry in this.mSkillQueue)
                 if (entry.Skill.ExpiryTime != 0)
-                    this.TimerManager.EnqueueTimer(entry.Skill.ExpiryTime, SkillTrainingCompleted, entry.Skill.ID);
+                    this.TimerManager.EnqueueItemTimer(entry.Skill.ExpiryTime, SkillTrainingCompleted, entry.Skill.ID);
             
             // send notification of the first skill being in the queue
             if (this.mSkillQueue.Count > 0)
@@ -559,7 +559,7 @@ namespace Node.Inventory.Items.Types
         {
             // remove all timers this user might have
             foreach (SkillQueueEntry entry in this.mSkillQueue)
-                this.TimerManager.DequeueTimer(entry.Skill.ID, entry.Skill.ExpiryTime);
+                this.TimerManager.DequeueItemTimer(entry.Skill.ID, entry.Skill.ExpiryTime);
 
             base.Destroy();
         }
@@ -572,7 +572,7 @@ namespace Node.Inventory.Items.Types
             if (this.ContentsLoaded)
             {
                 foreach (SkillQueueEntry entry in this.mSkillQueue)
-                    this.TimerManager.DequeueTimer(entry.Skill.ID, entry.Skill.ExpiryTime);
+                    this.TimerManager.DequeueItemTimer(entry.Skill.ID, entry.Skill.ExpiryTime);
             }
         }
     }

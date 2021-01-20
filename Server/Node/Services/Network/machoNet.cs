@@ -24,6 +24,7 @@
 
 using System;
 using Common.Services;
+using Node.Network;
 using PythonTypes.Types.Primitives;
 using SimpleInjector;
 
@@ -37,7 +38,7 @@ namespace Node.Services.Network
             this.CacheStorage = cacheStorage;
         }
 
-        public PyDataType GetInitVals(PyDictionary namedPayload, Client client)
+        public PyDataType GetInitVals(CallInformation call)
         {
             if (this.CacheStorage.Exists("machoNet.serviceInfo") == false)
             {
@@ -148,7 +149,7 @@ namespace Node.Services.Network
             return res;
         }
 
-        public PyDataType GetTime(PyDictionary namedPayload, Client client)
+        public PyDataType GetTime(CallInformation call)
         {
             return new PyInteger(DateTime.UtcNow.ToFileTimeUtc());
         }
