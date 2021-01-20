@@ -789,6 +789,32 @@ namespace Node.Database
             }
         }
 
+        public Dictionary<int, ItemEntity> LoadItemsLocatedAtByOwner(int locationID, int ownerID)
+        {
+            MySqlConnection connection = null;
+            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+                "SELECT itemID FROM entity WHERE locationID = @locationID AND ownerID = @ownerID",
+                new Dictionary<string, object>()
+                {
+                    {"@locationID", locationID},
+                    {"@ownerID", ownerID}
+                }
+            );
+
+            using (connection)
+            using (reader)
+            {
+                Dictionary<int, ItemEntity> items = new Dictionary<int, ItemEntity>();
+
+                while (reader.Read())
+                {
+                    items[reader.GetInt32(0)] = this.ItemFactory.ItemManager.LoadItem(reader.GetInt32(0));
+                }
+
+                return items;
+            }
+        }
+        
         public SolarSystem LoadSolarSystem(ItemEntity item)
         {   
             MySqlConnection connection = null;

@@ -168,6 +168,11 @@ namespace Node.Inventory
             return this.ItemDB.LoadItemsLocatedAt(location.ID);
         }
 
+        public Dictionary<int, ItemEntity> LoadItemsLocatedAtByOwner(ItemEntity location, int ownerID)
+        {
+            return this.ItemDB.LoadItemsLocatedAtByOwner(location.ID, ownerID);
+        }
+
         public bool IsItemLoaded(int itemID)
         {
             return mItemList.ContainsKey(itemID);

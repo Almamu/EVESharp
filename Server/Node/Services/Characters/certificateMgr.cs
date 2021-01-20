@@ -71,23 +71,19 @@ namespace Node.Services.Characters
 
         public PyDataType GetMyCertificates(CallInformation call)
         {
-            if (call.Client.CharacterID == null)
-                throw new UserError("NoCharacterSelected");
-
-            return this.DB.GetMyCertificates((int) call.Client.CharacterID);
+            return this.DB.GetMyCertificates(call.Client.EnsureCharacterIsSelected());
         }
 
         public PyBool GrantCertificate(PyInteger certificateID, CallInformation call)
         {
-            if (call.Client.CharacterID == null)
-                throw new UserError("NoCharacterSelected");
+            int callerCharacterID = call.Client.EnsureCharacterIsSelected();
             
             // TODO: WE MIGHT WANT TO CHECK AND ENSURE THAT THE CHARACTER BELONGS TO US BEFORE DOING ANYTHING ELSE HERE
-            if (this.ItemManager.IsItemLoaded((int) call.Client.CharacterID) == false)
+            if (this.ItemManager.IsItemLoaded(callerCharacterID) == false)
                 throw new CustomError("This request should arrive on the node that has this character loaded, not here");
 
             List<CertificateRelationship> requirements = this.DB.GetCertificateRequirements(certificateID);
-            Character character = this.ItemManager.LoadItem((int) call.Client.CharacterID) as Character;
+            Character character = this.ItemManager.LoadItem(callerCharacterID) as Character;
 
             Dictionary<int, Skill> skills = character.InjectedSkillsByTypeID;
 
@@ -98,15 +94,14 @@ namespace Node.Services.Characters
             }
             
             // if this line is reached, the character has all the requirements for this cert
-            this.DB.GrantCertificate((int) call.Client.CharacterID, certificateID);
+            this.DB.GrantCertificate(callerCharacterID, certificateID);
             
             return true;
         }
 
         public PyDataType BatchCertificateGrant(PyList certificateList, CallInformation call)
         {
-            if (call.Client.CharacterID == null)
-                throw new UserError("NoCharacterSelected");
+            call.Client.EnsureCharacterIsSelected();
 
             PyList result = new PyList();
 
@@ -121,19 +116,15 @@ namespace Node.Services.Characters
 
         public PyDataType UpdateCertificateFlags(PyInteger certificateID, PyInteger visibilityFlags, CallInformation call)
         {
-            if (call.Client.CharacterID == null)
-                throw new UserError("NoCharacterSelected");
-
-            this.DB.UpdateVisibilityFlags(certificateID, (int) call.Client.CharacterID, visibilityFlags);
+            this.DB.UpdateVisibilityFlags(certificateID, call.Client.EnsureCharacterIsSelected(), visibilityFlags);
             
             return null;
         }
 
         public PyDataType BatchCertificateUpdate(PyDictionary updates, CallInformation call)
         {
-            if (call.Client.CharacterID == null)
-                throw new UserError("NoCharacterSelected");
-
+            call.Client.EnsureCharacterIsSelected();
+            
             foreach (KeyValuePair<PyDataType, PyDataType> update in updates)
                 this.UpdateCertificateFlags(update.Key as PyInteger, update.Value as PyInteger, call);
 

@@ -41,6 +41,8 @@ namespace Node.Services.Dogma
 
         public PyDataType ShipGetInfo(CallInformation call)
         {
+            int callerCharacterID = call.Client.EnsureCharacterIsSelected();
+            
             if (call.Client.ShipID == null)
                 throw new CustomError($"The character is not aboard any ship");
             
@@ -48,7 +50,7 @@ namespace Node.Services.Dogma
 
             if (ship == null)
                 throw new CustomError($"Cannot get information for ship {call.Client.ShipID}");
-            if (ship.OwnerID != call.Client.CharacterID)
+            if (ship.OwnerID != callerCharacterID)
                 throw new CustomError("The ship you're trying to get info off does not belong to you");
             
             PyItemInfo itemInfo = new PyItemInfo();
@@ -111,13 +113,12 @@ namespace Node.Services.Dogma
 
         public PyDataType CharGetInfo(CallInformation call)
         {
-            if (call.Client.CharacterID == null)
-                throw new CustomError("This client has not selected a character yet");
+            int callerCharacterID = call.Client.EnsureCharacterIsSelected();
 
-            Character character = this.ItemManager.LoadItem((int) call.Client.CharacterID) as Character;
+            Character character = this.ItemManager.LoadItem(callerCharacterID) as Character;
 
             if (character == null)
-                throw new CustomError($"Cannot get information for character {call.Client.CharacterID}");
+                throw new CustomError($"Cannot get information for character {callerCharacterID}");
 
             PyItemInfo itemInfo = new PyItemInfo();
 
@@ -149,10 +150,15 @@ namespace Node.Services.Dogma
 
         public PyDataType ItemGetInfo(PyInteger itemID, CallInformation call)
         {
-            if (call.Client.CharacterID == null)
-                throw new CustomError("This client has not selected a character yet");
+            int callerCharacterID = call.Client.EnsureCharacterIsSelected();
 
             ItemEntity item = this.ItemManager.LoadItem(itemID);
+
+            if (item.OwnerID != callerCharacterID || item.OwnerID != call.Client.CorporationID)
+                throw new UserError("TheItemIsNotYoursToTake", new PyDictionary()
+                {
+                    {"item", itemID}
+                });
             
             return new Row(
                 (PyList) new PyDataType[]
@@ -176,13 +182,12 @@ namespace Node.Services.Dogma
 
         public PyDataType GetCharacterBaseAttributes(CallInformation call)
         {
-            if (call.Client.CharacterID == null)
-                throw new CustomError("This client has not selected a character yet");
+            int callerCharacterID = call.Client.EnsureCharacterIsSelected();
             
-            Character character = this.ItemManager.LoadItem((int) call.Client.CharacterID) as Character;
+            Character character = this.ItemManager.LoadItem(callerCharacterID) as Character;
 
             if (character == null)
-                throw new CustomError($"Cannot get information for character {call.Client.CharacterID}");
+                throw new CustomError($"Cannot get information for character {callerCharacterID}");
 
             return new PyDictionary
             {

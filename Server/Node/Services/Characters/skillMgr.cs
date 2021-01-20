@@ -44,10 +44,7 @@ namespace Node.Services.Characters
 
         public PyDataType GetSkillQueue(CallInformation call)
         {
-            if (call.Client.CharacterID == null)
-                throw new UserError("NoCharacterSelected");
-            
-            Character character = this.ItemManager.LoadItem((int) call.Client.CharacterID) as Character;
+            Character character = this.ItemManager.LoadItem(call.Client.EnsureCharacterIsSelected()) as Character;
 
             PyList skillQueueList = new PyList(character.SkillQueue.Count);
 
@@ -61,18 +58,12 @@ namespace Node.Services.Characters
 
         public PyDataType GetSkillHistory(CallInformation call)
         {
-            if (call.Client.CharacterID == null)
-                throw new UserError("NoCharacterSelected");
-
-            return this.DB.GetSkillHistory((int) call.Client.CharacterID);
+            return this.DB.GetSkillHistory(call.Client.EnsureCharacterIsSelected());
         }
 
         public PyDataType SaveSkillQueue(PyList queue, CallInformation call)
         {
-            if (call.Client.CharacterID == null)
-                throw new UserError("NoCharacterSelected");
-
-            Character character = this.ItemManager.LoadItem((int) call.Client.CharacterID) as Character;
+            Character character = this.ItemManager.LoadItem(call.Client.EnsureCharacterIsSelected()) as Character;
 
             if (character.SkillQueue.Count > 0)
             {
@@ -182,10 +173,7 @@ namespace Node.Services.Characters
 
         public PyDataType CharStartTrainingSkillByTypeID(PyInteger typeID, CallInformation call)
         {
-            if (call.Client.CharacterID == null)
-                throw new UserError("NoCharacterSelected");
-
-            Character character = this.ItemManager.LoadItem((int) call.Client.CharacterID) as Character;
+            Character character = this.ItemManager.LoadItem(call.Client.EnsureCharacterIsSelected()) as Character;
 
             // do not allow the user to do that if the skill queue is not empty
             if (character.SkillQueue.Count > 0)
@@ -223,11 +211,7 @@ namespace Node.Services.Characters
 
         public PyDataType GetEndOfTraining(CallInformation call)
         {
-            if (call.Client.CharacterID == null)
-                throw new UserError("NoCharacterSelected");
-            
-            Character character =
-                this.ItemManager.LoadItem((int) call.Client.CharacterID) as Character;
+            Character character = this.ItemManager.LoadItem(call.Client.EnsureCharacterIsSelected()) as Character;
 
             // do not allow the user to do that if the skill queue is not empty
             if (character.SkillQueue.Count > 0)
@@ -238,10 +222,7 @@ namespace Node.Services.Characters
 
         public PyDataType CharStopTrainingSkill(CallInformation call)
         {
-            if (call.Client.CharacterID == null)
-                throw new UserError("NoCharacterSelected");
-            
-            Character character = this.ItemManager.LoadItem((int) call.Client.CharacterID) as Character;
+            Character character = this.ItemManager.LoadItem(call.Client.EnsureCharacterIsSelected()) as Character;
             
             // iterate the whole skill queue, stop it and recalculate points for the skills
             if (character.SkillQueue.Count == 0)
@@ -291,10 +272,7 @@ namespace Node.Services.Characters
 
         public PyDataType GetRespecInfo(CallInformation call)
         {
-            if (call.Client.CharacterID == null)
-                throw new UserError("NoCharacterSelected");
-            
-            Character character = this.ItemManager.LoadItem((int) call.Client.CharacterID) as Character;
+            Character character = this.ItemManager.LoadItem(call.Client.EnsureCharacterIsSelected()) as Character;
 
             return new PyDictionary
             {
@@ -305,10 +283,7 @@ namespace Node.Services.Characters
 
         public PyDataType GetCharacterAttributeModifiers(PyInteger attributeID, CallInformation call)
         {
-            if (call.Client.CharacterID == null)
-                throw new UserError("NoCharacterSelected");
-            
-            Character character = this.ItemManager.LoadItem((int) call.Client.CharacterID) as Character;
+            Character character = this.ItemManager.LoadItem(call.Client.EnsureCharacterIsSelected()) as Character;
 
             AttributeEnum attribute;
 
@@ -360,8 +335,6 @@ namespace Node.Services.Characters
         public PyDataType RespecCharacter(PyInteger charisma, PyInteger intelligence, PyInteger memory,
             PyInteger perception, PyInteger willpower, CallInformation call)
         {
-            if (call.Client.CharacterID == null)
-                throw new UserError("NoCharacterSelected");
             if (charisma < MINIMUM_ATTRIBUTE_POINTS || intelligence < MINIMUM_ATTRIBUTE_POINTS ||
                 memory < MINIMUM_ATTRIBUTE_POINTS || perception < MINIMUM_ATTRIBUTE_POINTS ||
                 willpower < MINIMUM_ATTRIBUTE_POINTS)
@@ -372,9 +345,10 @@ namespace Node.Services.Characters
                 throw new UserError("RespecAttributesTooHigh");
             if (charisma + intelligence + memory + perception + willpower != MAXIMUM_TOTAL_ATTRIBUTE_POINTS)
                 throw new UserError("RespecAttributesMisallocated");
+            int callerCharacterID = call.Client.EnsureCharacterIsSelected();
             
             Character character =
-                this.ItemManager.LoadItem((int) call.Client.CharacterID) as Character;
+                this.ItemManager.LoadItem(callerCharacterID) as Character;
 
             if (character.FreeReSpecs == 0)
                 throw new CustomError("You've already remapped your character too much times at once, wait some time");

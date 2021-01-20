@@ -54,22 +54,18 @@ namespace Node.Services.Inventory
 
         public PyDataType ListStations(PyInteger blueprintsOnly, PyInteger forCorp, CallInformation call)
         {
-            if (call.Client.CharacterID == null)
-                throw new UserError("NoCharacterSelected");
+            int callerCharacterID = call.Client.EnsureCharacterIsSelected();
             
             // TODO: take into account blueprintsOnly
             if (forCorp == 1)
                 return this.ItemDB.ListStations(call.Client.CorporationID);
             else
-                return this.ItemDB.ListStations((int) call.Client.CharacterID);
+                return this.ItemDB.ListStations(callerCharacterID);
         }
 
         public PyDataType ListStationItems(PyInteger stationID, CallInformation call)
         {
-            if (call.Client.CharacterID == null)
-                throw new UserError("NoCharacterSelected");
-            
-            return this.ItemDB.ListStationItems(stationID, (int) call.Client.CharacterID);
+            return this.ItemDB.ListStationItems(stationID, call.Client.EnsureCharacterIsSelected());
         }
         
         public PyDataType GetItem(CallInformation call)

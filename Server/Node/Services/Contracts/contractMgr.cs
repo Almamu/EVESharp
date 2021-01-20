@@ -19,8 +19,7 @@ namespace Node.Services.Contracts
 
         public PyDataType NumRequiringAttention(CallInformation call)
         {
-            if (call.Client.CharacterID == null)
-                throw new UserError("NoCharacterSelected");
+            call.Client.EnsureCharacterIsSelected();
             
             // TODO: PROPERLY IMPLEMENT THIS
             PyDictionary requiringAttention = new PyDictionary();

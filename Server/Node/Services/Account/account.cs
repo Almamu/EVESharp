@@ -25,11 +25,7 @@ namespace Node.Services.Account
 
         private PyDataType GetCashBalance(Client client)
         {
-            if (client.CharacterID == null)
-                return 0;
-            
-            Character character =
-                this.ItemManager.LoadItem((int) client.CharacterID) as Character;
+            Character character = this.ItemManager.LoadItem(client.EnsureCharacterIsSelected()) as Character;
 
             return character.Balance;
         }
@@ -74,7 +70,7 @@ namespace Node.Services.Account
         public PyDataType GetJournal(PyInteger marketKey, PyInteger fromDate, PyInteger entryTypeID,
             PyBool isCorpWallet, PyInteger transactionID, PyInteger rev, CallInformation call)
         {
-            return this.DB.GetJournal((int) call.Client.CharacterID, entryTypeID, marketKey, fromDate);
+            return this.DB.GetJournal(call.Client.EnsureCharacterIsSelected(), entryTypeID, marketKey, fromDate);
         }
     }
 }

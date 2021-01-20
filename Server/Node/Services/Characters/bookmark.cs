@@ -19,10 +19,7 @@ namespace Node.Services.Characters
 
         public PyDataType GetBookmarks(CallInformation call)
         {
-            if (call.Client.CharacterID == null)
-                throw new UserError("NoCharacterSelected");
-            
-            return this.DB.GetBookmarks((int) call.Client.CharacterID);
+            return this.DB.GetBookmarks(call.Client.EnsureCharacterIsSelected());
         }
     }
 }

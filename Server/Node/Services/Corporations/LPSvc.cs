@@ -17,10 +17,7 @@ namespace Node.Services.Corporations
         
         public PyDecimal GetLPForCharacterCorp (PyInteger corporationID, CallInformation call)
         {
-            if (call.Client.CharacterID == null)
-                throw new UserError("NoCharacterSelected");
-            
-            return this.DB.GetLPForCharacterCorp(corporationID, (int) call.Client.CharacterID);
+            return this.DB.GetLPForCharacterCorp(corporationID, call.Client.EnsureCharacterIsSelected());
         }
     }
 }

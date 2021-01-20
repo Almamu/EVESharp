@@ -96,7 +96,7 @@ namespace Node.Services.Chat
             {
                 [0] = client.AllianceID,
                 [1] = client.CorporationID,
-                [2] = client.CharacterID,
+                [2] = client.EnsureCharacterIsSelected(),
                 [3] = client.Role,
                 [4] = client.CorporationRole,
                 [5] = client.WarFactionID

@@ -401,19 +401,14 @@ namespace Node.Services.Characters
 
         public PyDataType GetOwnerNoteLabels(CallInformation call)
         {
-            Character character =
-                this.ItemManager.LoadItem((int) call.Client.CharacterID) as Character;
+            Character character = this.ItemManager.LoadItem(call.Client.EnsureCharacterIsSelected()) as Character;
 
             return this.DB.GetOwnerNoteLabels(character);
         }
 
         public PyDataType GetCloneTypeID(CallInformation call)
         {
-            if (call.Client.CharacterID == null)
-                throw new UserError("NoCharacterSelected");
-
-            Character character =
-                this.ItemManager.LoadItem((int) call.Client.CharacterID) as Character;
+            Character character = this.ItemManager.LoadItem(call.Client.EnsureCharacterIsSelected()) as Character;
 
             if (character.ActiveCloneID == null)
                 throw new CustomError("You do not have any medical clone...");
@@ -423,11 +418,7 @@ namespace Node.Services.Characters
 
         public PyDataType GetHomeStation(CallInformation call)
         {
-            if (call.Client.CharacterID == null)
-                throw new UserError("NoCharacterSelected");
-
-            Character character =
-                this.ItemManager.LoadItem((int) call.Client.CharacterID) as Character;
+            Character character = this.ItemManager.LoadItem(call.Client.EnsureCharacterIsSelected()) as Character;
 
             if (character.ActiveCloneID == null)
                 throw new CustomError("You do not have any medical clone...");
@@ -437,22 +428,14 @@ namespace Node.Services.Characters
 
         public PyDataType GetCharacterDescription(PyInteger characterID, CallInformation call)
         {
-            if (call.Client.CharacterID == null)
-                throw new UserError("NoCharacterSelected");
-
-            Character character =
-                this.ItemManager.LoadItem((int) call.Client.CharacterID) as Character;
+            Character character = this.ItemManager.LoadItem(call.Client.EnsureCharacterIsSelected()) as Character;
             
             return character.Description;
         }
 
         public PyDataType SetCharacterDescription(PyString newBio, CallInformation call)
         {
-            if (call.Client.CharacterID == null)
-                throw new UserError("NoCharacterSelected");
-
-            Character character =
-                this.ItemManager.LoadItem((int) call.Client.CharacterID) as Character;
+            Character character = this.ItemManager.LoadItem(call.Client.EnsureCharacterIsSelected()) as Character;
 
             character.Description = newBio;
             character.Persist();
@@ -462,14 +445,11 @@ namespace Node.Services.Characters
 
         public PyDataType GetRecentShipKillsAndLosses(PyInteger count, PyInteger startIndex, CallInformation call)
         {
-            if (call.Client.CharacterID == null)
-                throw new UserError("NoCharacterSelected");
-
             // limit number of records to 100 at maximum
             if (count > 100)
                 count = 100;
             
-            return this.DB.GetRecentShipKillsAndLosses((int) call.Client.CharacterID, count, startIndex);
+            return this.DB.GetRecentShipKillsAndLosses(call.Client.EnsureCharacterIsSelected(), count, startIndex);
         }
 
         public PyDataType GetCharacterAppearanceList(PyList ids, CallInformation call)
@@ -497,18 +477,12 @@ namespace Node.Services.Characters
 
         public PyDataType GetNote(PyInteger characterID, CallInformation call)
         {
-            if (call.Client.CharacterID == null)
-                throw new UserError("NoCharacterSelected");
-            
-            return this.DB.GetNote(characterID, (int) call.Client.CharacterID);
+            return this.DB.GetNote(characterID, call.Client.EnsureCharacterIsSelected());
         }
 
         public PyDataType SetNote(PyInteger characterID, PyString note, CallInformation call)
         {
-            if (call.Client.CharacterID == null)
-                throw new UserError("NoCharacterSelected");
-            
-            this.DB.SetNote(characterID, (int) call.Client.CharacterID, note);
+            this.DB.SetNote(characterID, call.Client.EnsureCharacterIsSelected(), note);
 
             return null;
         }

@@ -42,15 +42,14 @@ namespace Node.Services.Characters
 
         public PyDataType GetCloneState(CallInformation call)
         {
-            if (call.Client.CharacterID == null)
-                throw new UserError("NoCharacterSelected");
+            int callerCharacterID = call.Client.EnsureCharacterIsSelected();
             
-            Character character = this.ItemManager.LoadItem((int) call.Client.CharacterID) as Character;
+            Character character = this.ItemManager.LoadItem(callerCharacterID) as Character;
 
             return KeyVal.FromDictionary(new PyDictionary
                 {
-                    ["clones"] = this.ItemDB.GetClonesForCharacter((int) call.Client.CharacterID, (int) character.ActiveCloneID),
-                    ["implants"] = this.ItemDB.GetImplantsForCharacterClones((int) call.Client.CharacterID),
+                    ["clones"] = this.ItemDB.GetClonesForCharacter(callerCharacterID, (int) character.ActiveCloneID),
+                    ["implants"] = this.ItemDB.GetImplantsForCharacterClones(callerCharacterID),
                     ["timeLastJump"] = character.TimeLastJump
                 }
             );
@@ -59,8 +58,8 @@ namespace Node.Services.Characters
         public PyDataType DestroyInstalledClone(PyInteger jumpCloneID, CallInformation call)
         {
             // if the clone is not loaded the clone cannot be removed, players can only remove clones from where they're at
-            if (call.Client.CharacterID == null)
-                throw new UserError("NoCharacterSelected");
+            int callerCharacterID = call.Client.EnsureCharacterIsSelected();
+            
             if (this.ItemManager.IsItemLoaded(jumpCloneID) == false)
                 throw new CustomError("Cannot remotely destroy a clone");
 
@@ -68,7 +67,7 @@ namespace Node.Services.Characters
             
             if (clone.LocationID != call.Client.LocationID)
                 throw new UserError("JumpCantDestroyNonLocalClone");
-            if (clone.OwnerID != (int) call.Client.CharacterID)
+            if (clone.OwnerID != callerCharacterID)
                 throw new UserError("MktNotOwner");
 
             // finally destroy the clone, this also destroys all the implants in it
@@ -82,10 +81,7 @@ namespace Node.Services.Characters
 
         public PyDataType GetShipCloneState(CallInformation call)
         {
-            if (call.Client.CharacterID == null)
-                throw new UserError("NoCharacterSelected");
-            
-            return this.ItemDB.GetClonesInShipForCharacter((int) call.Client.CharacterID);
+            return this.ItemDB.GetClonesInShipForCharacter(call.Client.EnsureCharacterIsSelected());
         }
 
         public PyDataType CloneJump(PyInteger locationID, PyBool unknown, CallInformation call)
@@ -105,12 +101,12 @@ namespace Node.Services.Characters
 
         public PyDataType InstallCloneInStation(CallInformation call)
         {
-            if (call.Client.CharacterID == null)
-                throw new UserError("NoCharacterSelected");
+            int callerCharacterID = call.Client.EnsureCharacterIsSelected();
+            
             if (call.Client.StationID == null)
                 throw new UserError("CanOnlyDoInStations");
             
-            Character character = this.ItemManager.LoadItem((int) call.Client.CharacterID) as Character;
+            Character character = this.ItemManager.LoadItem(callerCharacterID) as Character;
             
             // check the maximum number of clones the character has assigned
             Dictionary<int, Skill> injectedSkills = character.InjectedSkillsByTypeID;

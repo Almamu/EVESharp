@@ -21,8 +21,7 @@ namespace Node.Services.Market
         public PyDataType CharGetNewTransactions(PyInteger sellBuy, PyInteger typeID, PyNone clientID,
             PyInteger quantity, PyNone fromDate, PyNone maxPrice, PyInteger minPrice, CallInformation call)
         {
-            if (call.Client.CharacterID == null)
-                throw new UserError("NoCharacterSelected");
+            int callerCharacterID = call.Client.EnsureCharacterIsSelected();
             
             TransactionType transactionType = TransactionType.Either;
 
@@ -40,16 +39,13 @@ namespace Node.Services.Market
             }
             
             return this.DB.CharGetNewTransactions(
-                (int) call.Client.CharacterID, clientID, transactionType, typeID as PyInteger, quantity, minPrice
+                callerCharacterID, clientID, transactionType, typeID as PyInteger, quantity, minPrice
             );
         }
 
         public PyDataType GetCharOrders(CallInformation call)
         {
-            if (call.Client.CharacterID == null)
-                throw new UserError("NoCharacterSelected");
-
-            return this.DB.GetCharOrders((int) call.Client.CharacterID);
+            return this.DB.GetCharOrders(call.Client.EnsureCharacterIsSelected());
         }
     }
 }

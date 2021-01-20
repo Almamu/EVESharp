@@ -38,7 +38,7 @@ namespace Node.Services.Characters
         public PyDataType AddToBounty(PyInteger characterID, PyInteger bounty, CallInformation call)
         {
             // create the bounty record and update the information in the database
-            this.DB.AddToBounty((int) call.Client.CharacterID, characterID, bounty);
+            this.DB.AddToBounty(call.Client.EnsureCharacterIsSelected(), characterID, bounty);
 
             // update our record if the player is loaded in memory
             if (this.ItemManager.IsItemLoaded(characterID) == true)

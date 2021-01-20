@@ -62,10 +62,7 @@ namespace Node.Services.Corporations
 
         public PyDataType GetSharesByShareholder(PyBool corpShares, CallInformation call)
         {
-            if (call.Client.CharacterID == null)
-                throw new UserError("NoCharacterSelected");
-            
-            return this.DB.GetSharesByShareholder((int) call.Client.CharacterID);
+            return this.DB.GetSharesByShareholder(call.Client.EnsureCharacterIsSelected());
         }
 
         public PyDataType GetMember(PyInteger memberID, CallInformation call)

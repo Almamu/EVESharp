@@ -22,10 +22,7 @@ namespace Node.Services.Characters
 
         public PyDataType GetInitialState(CallInformation call)
         {
-            if (call.Client.CharacterID == null)
-                throw new UserError("NoCharacterSelected");
-
-            Character character = this.ItemManager.LoadItem((int) call.Client.CharacterID) as Character;
+            Character character = this.ItemManager.LoadItem(call.Client.EnsureCharacterIsSelected()) as Character;
             
             return this.DB.GetFriendsList(character);
         }

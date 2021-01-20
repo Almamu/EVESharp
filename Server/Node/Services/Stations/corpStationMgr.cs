@@ -39,8 +39,7 @@ namespace Node.Services.Stations
 
         public PyDataType DoStandingCheckForStationService(PyInteger stationServiceID, CallInformation call)
         {
-            if (call.Client.CharacterID == null)
-                throw new UserError("NoCharacterSelected");
+            call.Client.EnsureCharacterIsSelected();
 
             if (call.Client.StationID == null)
                 throw new UserError("CanOnlyDoInStations");
@@ -52,15 +51,12 @@ namespace Node.Services.Stations
 
         private List<Station> GetPotentialHomeStations(Client client)
         {
-            if (client.CharacterID == null)
-                throw new UserError("NoCharacterSelected");
-
             if (client.StationID == null)
                 throw new UserError("CanOnlyDoInStations");
 
             List<Station> availableStations = new List<Station>();
             
-            Character character = this.ItemManager.LoadItem((int) client.CharacterID) as Character;
+            Character character = this.ItemManager.LoadItem(client.EnsureCharacterIsSelected()) as Character;
 
             // TODO: CHECK STANDINGS TO ENSURE THIS STATION CAN BE USED
             availableStations.Add(this.ItemManager.Stations[(int) client.StationID]);
@@ -93,12 +89,11 @@ namespace Node.Services.Stations
 
         public PyDataType SetHomeStation(PyInteger stationID, CallInformation call)
         {
-            if (call.Client.CharacterID == null)
-                throw new UserError("NoCharacterSelected");
+            int callerCharacterID = call.Client.EnsureCharacterIsSelected();
             if (call.Client.StationID == null)
                 throw new UserError("CanOnlyDoInStations");
             
-            Character character = this.ItemManager.LoadItem((int) call.Client.CharacterID) as Character;
+            Character character = this.ItemManager.LoadItem(callerCharacterID) as Character;
             
             // ensure the station selected is in the list of available stations for this character
             Station station = this.GetPotentialHomeStations(call.Client).Find(x => x.ID == stationID);

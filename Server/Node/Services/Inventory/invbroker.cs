@@ -44,10 +44,11 @@ namespace Node.Services.Inventory
 
         public PyDataType GetInventoryFromId(PyInteger itemID, PyInteger one, CallInformation call)
         {
+            int callerCharacterID = call.Client.EnsureCharacterIsSelected();
             ItemEntity inventoryItem = this.ItemManager.LoadItem(itemID);
 
             // ensure the itemID is owned by the client's character
-            if (inventoryItem.OwnerID != call.Client.CharacterID && inventoryItem.ID != call.Client.CharacterID)
+            if (inventoryItem.OwnerID != callerCharacterID && inventoryItem.ID != callerCharacterID)
                 throw new UserError("TheItemIsNotYoursToTake", new PyDictionary()
                 {
                     {"item", itemID}
@@ -66,6 +67,8 @@ namespace Node.Services.Inventory
 
         public PyDataType GetInventory(PyInteger containerID, PyNone none, CallInformation call)
         {
+            int callerCharacterID = call.Client.EnsureCharacterIsSelected();
+            
             ItemFlags flag = ItemFlags.None;
             
             switch ((int) containerID)
@@ -87,10 +90,14 @@ namespace Node.Services.Inventory
                     throw new CustomError($"Trying to open container ID ({containerID.Value}) is not supported");
             }
             
+            // get the inventory item first
             ItemEntity inventoryItem = this.ItemManager.LoadItem(this.mObjectID);
             
+            // build the meta inventory item now
+            ItemInventoryByOwnerID inventoryByOwner = new ItemInventoryByOwnerID(callerCharacterID, inventoryItem);
+            
             // create an instance of the inventory service and bind it to the item data
-            return BoundInventory.BindInventory(this.ItemDB, inventoryItem as ItemInventory, flag, this.BoundServiceManager);
+            return BoundInventory.BindInventory(this.ItemDB, inventoryByOwner, flag, this.BoundServiceManager);
         }
 
         public PyDataType SetLabel(PyInteger itemID, PyString newLabel, CallInformation call)
@@ -98,7 +105,7 @@ namespace Node.Services.Inventory
             ItemEntity item = this.ItemManager.LoadItem(itemID);
 
             // ensure the itemID is owned by the client's character
-            if (item.OwnerID != call.Client.CharacterID)
+            if (item.OwnerID != call.Client.EnsureCharacterIsSelected())
                 throw new UserError("TheItemIsNotYoursToTake", new PyDictionary()
                 {
                     {"item", itemID}
