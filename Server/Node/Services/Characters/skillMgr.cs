@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Common.Logging;
 using Node.Database;
+using Node.Exceptions.skillMgr;
 using Node.Inventory;
 using Node.Inventory.Items;
 using Node.Inventory.Items.Attributes;
@@ -80,12 +81,10 @@ namespace Node.Services.Characters
                 {
                     // get the item by it's ID and change the location of it
                     Skill skill = this.ItemManager.GetItem(itemID) as Skill;
-                    
+
                     // check if the character already has this skill injected
                     if (character.InjectedSkillsByTypeID.ContainsKey(skill.Type.ID) == true)
-                    {
-                        throw new CustomError("Your character already knows this skill");
-                    }
+                        throw new CharacterAlreadyKnowsSkill(skill.Type);
 
                     // is this a stack of skills?
                     if (skill.Quantity > 1)
@@ -99,7 +98,8 @@ namespace Node.Services.Characters
 
                         // save to database
                         skill.Persist();
-                        
+                        newStack.Persist();
+
                         // finally notify the client
                         call.Client.NotifyItemQuantityChange(skill, skill.Quantity + 1);
                         call.Client.NotifyNewItem(newStack);
@@ -116,10 +116,14 @@ namespace Node.Services.Characters
 
                         // ensure the changes are saved
                         skill.Persist();
-                    
+
                         // notify the character of the change in the item
                         call.Client.NotifyItemLocationChange(skill, oldFlag, oldLocationID);
                     }
+                }
+                catch (CharacterAlreadyKnowsSkill)
+                {
+                    throw;
                 }
                 catch (Exception e)
                 {
