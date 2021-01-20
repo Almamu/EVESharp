@@ -168,5 +168,10 @@ namespace Node.Services.Corporations
 
             return KeyVal.FromDictionary(dictForKeyVal);
         }
+
+        public PyDataType GetMyApplications(CallInformation call)
+        {
+            return this.DB.GetCharacterApplications(call.Client.EnsureCharacterIsSelected());
+        }
     }
 }

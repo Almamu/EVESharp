@@ -63,3 +63,8 @@ INSERT INTO corporation
   '3rd Wallet Division' AS walletDivision3, '4th Wallet Division' AS walletDivision4, '5th Wallet Division' AS walletDivision5, 
   '6th Wallet Division' AS walletDivision6, '7th Wallet Division' AS walletDivision7, balance, deleted
  FROM crpStatic;
+
+/*
+ * Replace CEOs on the corporations to known characters, we don't know info about the CEOs
+ */
+UPDATE corporation SET ceoID = (SELECT characterID FROM chrInformation WHERE corporationID = corporationID LIMIT 1);

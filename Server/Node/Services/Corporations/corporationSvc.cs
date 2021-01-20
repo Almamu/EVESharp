@@ -2,6 +2,7 @@ using Common.Database;
 using Common.Services;
 using Node.Database;
 using Node.Network;
+using PythonTypes.Types.Database;
 using PythonTypes.Types.Exceptions;
 using PythonTypes.Types.Primitives;
 using SimpleInjector;
@@ -45,6 +46,26 @@ namespace Node.Services.Corporations
         public PyDataType GetEmploymentRecord(PyInteger characterID, CallInformation call)
         {
             return this.DB.GetEmploymentRecord(characterID);
+        }
+
+        public PyDataType GetRecruitmentAdTypes(CallInformation call)
+        {
+            return this.DB.GetRecruitmentAdTypes();
+        }
+
+        public PyDataType GetRecruitmentAdsByCriteria(PyInteger regionID, PyDecimal skillPoints, PyInteger typeMask,
+            PyInteger raceMask, PyInteger isInAlliance, PyInteger minMembers, PyInteger maxMembers, CallInformation call)
+        {
+            return this.DB.GetRecruitmentAds(regionID, skillPoints, typeMask, raceMask, isInAlliance, minMembers, maxMembers);
+        }
+
+        public PyDataType GetAllCorpMedals(PyInteger corporationID, CallInformation call)
+        {
+            return new PyTuple(2)
+            {
+                [0] = this.DB.GetMedalsList(corporationID),
+                [1] = this.DB.GetMedalsDetails(corporationID)
+            };
         }
     }
 }

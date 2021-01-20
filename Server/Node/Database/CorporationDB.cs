@@ -496,5 +496,98 @@ namespace Node.Database
                 return result;
             }
         }
+
+        public Rowset GetRecruitmentAdTypes()
+        {
+            return Database.PrepareRowsetQuery(
+                "SELECT typeMask, typeName, description, groupName, dataID, groupDataID FROM crpRecruitmentAdTypes"
+            );
+        }
+
+        public PyDataType GetRecruitmentAds(int? regionID, double? skillPoints, int? typeMask, int? raceMask,
+            int? isInAlliance, int? minMembers, int? maxMembers)
+        {
+            Dictionary<string, object> parameters = new Dictionary<string, object>();
+            string query =
+                "SELECT adID, crpRecruitmentAds.corporationID, typeMask, crpRecruitmentAds.description, crpRecruitmentAds.stationID, corporation.allowedMemberRaceIDs AS raceMask, corporation.allianceID FROM crpRecruitmentAds LEFT JOIN corporation ON corporation.corporationID = crpRecruitmentAds.corporationID WHERE 1=1";
+
+            if (regionID != null)
+            {
+                // query += " AND "
+            }
+
+            if (skillPoints != null)
+            {
+                query += " AND minimumSkillPoints >= @skillPoints";
+                parameters["@skillPoints"] = skillPoints;
+            }
+
+            if (typeMask != null)
+            {
+                query += " AND typeMask & @typeMask > 0";
+                parameters["@typeMask"] = typeMask;
+            }
+
+            if (raceMask != null)
+            {
+                query += " AND corporation.allowedMemberRaceIDs & @raceMask > 0";
+                parameters["@raceMask"] = raceMask;
+            }
+
+            if (isInAlliance != null)
+            {
+                if (isInAlliance == 0)
+                    query += " AND corporation.allianceID = 0";
+                else
+                    query += " AND corporation.allianceID > 0";
+            }
+
+            if (minMembers != null)
+            {
+                query += " AND corporation.memberCount > @minMembers";
+                parameters["@minMembers"] = minMembers;
+            }
+
+            if (maxMembers != null)
+            {
+                query += " AND corporation.memberCount < @maxMembers";
+                parameters["@maxMembers"] = maxMembers;
+            }
+
+            return Database.PrepareRowsetQuery(query, parameters);
+        }
+
+        public PyDataType GetMedalsList(int corporationID)
+        {
+            return Database.PrepareRowsetQuery(
+                "SELECT medalID, title, description, date, creatorID, noRecepients FROM crpMedals WHERE corporationID = @corporationID",
+                new Dictionary<string, object>()
+                {
+                    {"@corporationID", corporationID}
+                }
+            );
+        }
+
+        public PyDataType GetMedalsDetails(int corporationID)
+        {
+            return Database.PrepareRowsetQuery(
+                "SELECT crpMedals.medalID, part, graphic, color FROM crpMedalParts LEFT JOIN crpMedals ON crpMedals.medalID = crpMedalParts.medalID WHERE corporationID = @corporationID",
+                new Dictionary<string, object>()
+                {
+                    {"@corporationID", corporationID}
+                }
+            );
+        }
+
+        public Rowset GetCharacterApplications(int characterID)
+        {
+            return Database.PrepareRowsetQuery(
+                "SELECT corporationID, characterID, applicationText, roles, grantableRoles, status, applicationDateTime, deleted, lastCorpUpdaterID FROM chrApplications WHERE characterID = @characterID",
+                new Dictionary<string, object>()
+                {
+                    {"@characterID", characterID}
+                }
+            );
+        }
     }
 }
