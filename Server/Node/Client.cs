@@ -271,6 +271,7 @@ namespace Node
             get => this.mSession["warfactionid"] as PyInteger;
             set => this.mSession["warfactionid"] = value;
         }
+        
         public void NotifyBalanceUpdate(double balance)
         {
             PyTuple notification = new PyTuple(new PyDataType[]
@@ -278,7 +279,7 @@ namespace Node
                 "cash", this.CharacterID, balance
             });
             
-            this.ClusterConnection.SendNotification("OnAccountChange", "cash", (int) this.CharacterID, notification);
+            this.ClusterConnection.SendNotification("OnAccountChange", "charid", (int) this.CharacterID, notification);
         }
 
         public void NotifyCloneUpdate()
