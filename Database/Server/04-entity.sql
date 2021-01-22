@@ -101,3 +101,4 @@ ALTER TABLE entity AUTO_INCREMENT = 100000000;
  * Add default capacity attribute to all the items that have a capacity greater than 10
  */
 INSERT INTO dgmTypeAttributes(typeID, attributeID, valueInt, valueFloat) SELECT typeID, 38 AS attributeID, NULL AS valueInt, capacity AS valueFloat FROM invTypes WHERE capacity > 0;
+INSERT INTO dgmTypeAttributes(typeID, attributeID, valueInt, valueFloat) SELECT typeID, 161 AS attributeID, NULL AS valueInt, mass AS valueFloat FROM invTypes WHERE mass > 0;
