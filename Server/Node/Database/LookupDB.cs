@@ -3,7 +3,7 @@ using Common.Database;
 using Node.Inventory;
 using PythonTypes.Types.Database;
 
-namespace Node.Services.Data
+namespace Node.Database
 {
     public class LookupDB : DatabaseAccessor
     {

@@ -328,7 +328,7 @@ namespace Node
 
             this.NotifyItemChange(item, changes);
         }
-        public void NotifyItemLocationChange(ItemEntity item, ItemFlags oldFlag, int? oldLocation)
+        public void NotifyItemLocationChange(ItemEntity item, ItemFlags oldFlag, int oldLocation)
         {
             PyDictionary changes = new PyDictionary();
             
@@ -352,7 +352,7 @@ namespace Node
 
         public void NotifyNewItem(ItemEntity item)
         {
-            this.NotifyItemLocationChange(item, ItemFlags.None, null);
+            this.NotifyItemLocationChange(item, ItemFlags.None, 0);
         }
 
         public void NotifySkillTrained(Skill skill)

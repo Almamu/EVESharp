@@ -733,7 +733,7 @@ namespace Node.Database
             );
         }
 
-        public ulong CreateItem(string itemName, int typeID, int owner, int location, ItemFlags flag, bool contraband,
+        public ulong CreateItem(string itemName, int typeID, int owner, int? location, ItemFlags flag, bool contraband,
             bool singleton, int quantity, double x, double y, double z, string customInfo)
         {
             return Database.PrepareQueryLID(

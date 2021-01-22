@@ -1,6 +1,8 @@
 using System.Collections.Generic;
 using Common.Logging;
 using Node.Database;
+using Node.Exceptions;
+using Node.Exceptions.corpStationMgr;
 using Node.Inventory;
 using Node.Inventory.Items.Types;
 using Node.Market;
@@ -42,7 +44,7 @@ namespace Node.Services.Stations
             call.Client.EnsureCharacterIsSelected();
 
             if (call.Client.StationID == null)
-                throw new UserError("CanOnlyDoInStations");
+                throw new CanOnlyDoInStations();
             
             // TODO: CHECK ACTUAL STANDING VALUE
             
@@ -52,7 +54,7 @@ namespace Node.Services.Stations
         private List<Station> GetPotentialHomeStations(Client client)
         {
             if (client.StationID == null)
-                throw new UserError("CanOnlyDoInStations");
+                throw new CanOnlyDoInStations();
 
             List<Station> availableStations = new List<Station>();
             
@@ -91,7 +93,7 @@ namespace Node.Services.Stations
         {
             int callerCharacterID = call.Client.EnsureCharacterIsSelected();
             if (call.Client.StationID == null)
-                throw new UserError("CanOnlyDoInStations");
+                throw new CanOnlyDoInStations();
             
             Character character = this.ItemManager.LoadItem(callerCharacterID) as Character;
             
@@ -115,17 +117,12 @@ namespace Node.Services.Stations
 
                 // if a clone is already there, refuse to have the medical in there
                 if (locationID == stationID)
-                    throw new UserError("MedicalYouAlreadyHaveACloneContractAtThatStation");
+                    throw new MedicalYouAlreadyHaveACloneContractAtThatStation();
             }
             
             // check the user has enough money
             if (character.Balance < CLONE_CONTRACT_COST)
-                throw new UserError("NotEnoughMoney", new PyDictionary
-                    {
-                        ["balance"] = character.Balance,
-                        ["amount"] = CLONE_CONTRACT_COST
-                    }
-                );
+                throw new NotEnoughMoney(character.Balance, CLONE_CONTRACT_COST);
             
             // subtract the money off the character
             character.Balance -= CLONE_CONTRACT_COST;

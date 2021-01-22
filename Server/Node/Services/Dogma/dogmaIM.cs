@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Common.Logging;
+using Node.Exceptions;
 using Node.Inventory;
 using Node.Inventory.Items;
 using Node.Inventory.Items.Attributes;
@@ -155,10 +156,7 @@ namespace Node.Services.Dogma
             ItemEntity item = this.ItemManager.LoadItem(itemID);
 
             if (item.OwnerID != callerCharacterID && item.OwnerID != call.Client.CorporationID)
-                throw new UserError("TheItemIsNotYoursToTake", new PyDictionary()
-                {
-                    {"item", itemID}
-                });
+                throw new TheItemIsNotYoursToTake(itemID);
             
             return new Row(
                 (PyList) new PyDataType[]

@@ -42,6 +42,11 @@ namespace Node.Services.Inventory
             }
         }
 
+        public PyDataType GetContractForShip(PyInteger itemID, CallInformation call)
+        {
+            return this.DB.GetContractForShip(call.Client.EnsureCharacterIsSelected(), itemID);
+        }
+
         public PyDataType GetContracts(PyInteger includeCorp, CallInformation call)
         {
             // TODO: IMPLEMENT THIS VERSION OF GET CONTRACTS FOR THE INSURANCE SVC

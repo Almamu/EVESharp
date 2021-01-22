@@ -68,9 +68,7 @@ namespace Node.Services.Network
             Character character = this.ItemManager.GetItem(call.Client.EnsureCharacterIsSelected()) as Character;
             
             ItemType itemType = this.TypeManager[typeID];
-            ItemEntity item = this.ItemManager.CreateSimpleItem(
-                itemType, character, location, ItemFlags.Hangar
-            );
+            ItemEntity item = this.ItemManager.CreateSimpleItem(itemType, character, location, ItemFlags.Hangar);
 
             item.Persist();
             

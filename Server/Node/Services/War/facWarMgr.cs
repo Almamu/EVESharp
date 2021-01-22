@@ -2,6 +2,7 @@ using Common.Services;
 using Node.Inventory;
 using Node.Inventory.Items.Types;
 using Node.Network;
+using PythonTypes.Types.Complex;
 using PythonTypes.Types.Database;
 using PythonTypes.Types.Primitives;
 using SimpleInjector;
@@ -29,15 +30,7 @@ namespace Node.Services.War
 
             PyDataType cacheHint = this.CacheStorage.GetHint("facWarMgr", "GetWarFactions");
 
-            PyTuple args = new PyTuple(3);
-            PyDictionary versionCheck = new PyDictionary();
-            versionCheck["versionCheck"] = "run";
-
-            args[0] = versionCheck;
-            args[1] = cacheHint;
-            args[2] = new PyNone();
-
-            return new PyObjectData("objectCaching.CachedMethodCallResult", args);
+            return PyCacheMethodCallResult.FromCacheHint(cacheHint);
         }
 
         public PyDataType GetCharacterRankOverview(PyInteger characterID, CallInformation call)

@@ -173,5 +173,12 @@ namespace Node.Services.Corporations
         {
             return this.DB.GetCharacterApplications(call.Client.EnsureCharacterIsSelected());
         }
+
+        public PyDataType GetLockedItemLocations(CallInformation call)
+        {
+            // this just returns a list of itemIDs (locations) that are locked
+            // most likely used by the corp stuff for SOMETHING(tm)
+            return new PyList();
+        }
     }
 }

@@ -31,6 +31,7 @@ using Common.Logging;
 using Common.Services;
 using Node.Data;
 using Node.Database;
+using Node.Exceptions.character;
 using Node.Inventory;
 using Node.Inventory.Items;
 using Node.Inventory.Items.Types;
@@ -143,22 +144,22 @@ namespace Node.Services.Characters
             switch (validationError)
             {
                 case (int) NameValidationResults.TooLong:
-                    throw new UserError("CharNameInvalidMaxLength");
+                    throw new CharNameInvalidMaxLength ();
                 case (int) NameValidationResults.Taken:
-                    throw new UserError("CharNameInvalidTaken");
+                    throw new CharNameInvalidTaken ();
                 case (int) NameValidationResults.IllegalCharacters:
-                    throw new UserError("CharNameInvalidSomeChar");
+                    throw new CharNameInvalidSomeChar ();
                 case (int) NameValidationResults.TooShort:
-                    throw new UserError("CharNameInvalidMinLength");
+                    throw new CharNameInvalidMinLength ();
                 case (int) NameValidationResults.MoreThanOneSpace:
-                    throw new UserError("CharNameInvalidMaxSpaces");
+                    throw new CharNameInvalidMaxSpaces ();
                 case (int) NameValidationResults.Banned:
-                    throw new UserError("CharNameInvalidBannedWord");
+                    throw new CharNameInvalidBannedWord ();
                 case (int) NameValidationResults.Valid:
                     break;
                 default:
                     // unknown actual error, return generic error
-                    throw new UserError("CharNameInvalid");
+                    throw new CharNameInvalid();
             }
             
             // get the System item's id
@@ -177,14 +178,8 @@ namespace Node.Services.Characters
             if (ancestry.Bloodline != bloodline)
             {
                 Log.Error($"The ancestry {ancestryID} doesn't belong to the given bloodline {bloodlineID}");
-                
-                throw new UserError("BannedBloodline", 
-                    new PyDictionary ()
-                    {
-                        {"name", ancestry.Name},
-                        {"bloodlineName", bloodline.Name}
-                    }
-                );
+
+                throw new BannedBloodline(ancestry, bloodline);
             }
 
             int stationID, solarSystemID, constellationID, regionID, corporationID, careerID, schoolID, careerSpecialityID;
@@ -297,8 +292,7 @@ namespace Node.Services.Characters
             // create an alpha clone
             ItemType cloneType = this.TypeManager[ItemTypes.CloneGradeAlpha];
             
-            Clone clone =
-                this.ItemManager.CreateClone(cloneType, station, character);
+            Clone clone = this.ItemManager.CreateClone(cloneType, station, character);
 
             character.LocationID = ship.ID;
             character.ActiveClone = clone;
@@ -349,8 +343,7 @@ namespace Node.Services.Characters
             CallInformation call)
         {
             // ensure the character belongs to the current account
-            Character character =
-                this.ItemManager.LoadItem(characterID) as Character;
+            Character character = this.ItemManager.LoadItem(characterID) as Character;
 
             if (character.AccountID != call.Client.AccountID)
                 throw new CustomError("The selected character does not belong to this account, aborting...");
@@ -386,6 +379,8 @@ namespace Node.Services.Characters
             character.Online = 1;
             // the online status must be persisted after update, so force the entity to be updated in the database
             character.Persist();
+            
+            // TODO: CHECK IF THE PLAYER IS GOING TO SPAWN IN THIS NODE AND IF IT IS NOT, UNLOAD IT FROM THE ITEM MANAGER
             
             // TODO: SEND CHARACTER CONNECTION NOTIFICATION
             // TODO: send "OnContactLoggedOn" to all the friends in the list as long as they're online

@@ -255,6 +255,15 @@ namespace Node.Inventory
         {
             return this.ItemDB.LoadRegion(item);
         }
+
+        public ItemEntity CreateSimpleItem(ItemType type, int owner, int? location, ItemFlags flag, int quantity = 1,
+            bool contraband = false, bool singleton = false)
+        {
+            int itemID = (int) this.ItemDB.CreateItem(type.Name, type.ID, owner, location, flag, contraband, singleton,
+                quantity, 0, 0, 0, null);
+
+            return this.LoadItem(itemID);
+        }
         
         public ItemEntity CreateSimpleItem(string itemName, ItemType type, ItemEntity owner, ItemEntity location, ItemFlags flag,
             bool contraband, bool singleton, int quantity, double x, double y, double z, string customInfo)

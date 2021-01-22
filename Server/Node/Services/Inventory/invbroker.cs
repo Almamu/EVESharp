@@ -1,6 +1,7 @@
 using System.Runtime.CompilerServices;
 using Common.Logging;
 using Node.Database;
+using Node.Exceptions;
 using Node.Inventory;
 using Node.Inventory.Items;
 using Node.Network;
@@ -17,18 +18,21 @@ namespace Node.Services.Inventory
         
         private ItemManager ItemManager { get; }
         private ItemDB ItemDB { get; }
+        private NodeContainer NodeContainer { get; }
         
-        public invbroker(ItemDB itemDB, ItemManager itemManager, BoundServiceManager manager) : base(manager)
+        public invbroker(ItemDB itemDB, ItemManager itemManager, NodeContainer nodeContainer, BoundServiceManager manager) : base(manager)
         {
             this.ItemManager = itemManager;
             this.ItemDB = itemDB;
+            this.NodeContainer = nodeContainer;
         }
 
-        private invbroker(ItemDB itemDB, ItemManager itemManager, BoundServiceManager manager, int objectID) : base(manager)
+        private invbroker(ItemDB itemDB, ItemManager itemManager, NodeContainer nodeContainer, BoundServiceManager manager, int objectID) : base(manager)
         {
             this.ItemManager = itemManager;
             this.ItemDB = itemDB;
             this.mObjectID = objectID;
+            this.NodeContainer = nodeContainer;
         }
 
         protected override BoundService CreateBoundInstance(PyDataType objectData)
@@ -39,7 +43,7 @@ namespace Node.Services.Inventory
              */
             PyTuple tupleData = objectData as PyTuple;
             
-            return new invbroker(this.ItemDB, this.ItemManager, this.BoundServiceManager, tupleData[0] as PyInteger);
+            return new invbroker(this.ItemDB, this.ItemManager, this.NodeContainer, this.BoundServiceManager, tupleData[0] as PyInteger);
         }
 
         public PyDataType GetInventoryFromId(PyInteger itemID, PyInteger one, CallInformation call)
@@ -49,20 +53,14 @@ namespace Node.Services.Inventory
 
             // ensure the itemID is owned by the client's character
             if (inventoryItem.OwnerID != callerCharacterID && inventoryItem.ID != callerCharacterID)
-                throw new UserError("TheItemIsNotYoursToTake", new PyDictionary()
-                {
-                    {"item", itemID}
-                });
+                throw new TheItemIsNotYoursToTake(itemID);
 
             // also make sure it's a container
             if (inventoryItem is ItemInventory == false)
-                throw new UserError("ItemNotContainer", new PyDictionary()
-                {
-                    {"itemid", itemID}
-                });
+                throw new ItemNotContainer(itemID);
             
             // create an instance of the inventory service and bind it to the item data
-            return BoundInventory.BindInventory(this.ItemDB, inventoryItem as ItemInventory, ItemFlags.None, this.BoundServiceManager);
+            return BoundInventory.BindInventory(this.ItemDB, inventoryItem as ItemInventory, ItemFlags.None, this.ItemManager, this.NodeContainer, this.BoundServiceManager);
         }
 
         public PyDataType GetInventory(PyInteger containerID, PyNone none, CallInformation call)
@@ -97,7 +95,7 @@ namespace Node.Services.Inventory
             ItemInventoryByOwnerID inventoryByOwner = new ItemInventoryByOwnerID(callerCharacterID, inventoryItem);
             
             // create an instance of the inventory service and bind it to the item data
-            return BoundInventory.BindInventory(this.ItemDB, inventoryByOwner, flag, this.BoundServiceManager);
+            return BoundInventory.BindInventory(this.ItemDB, inventoryByOwner, flag, this.ItemManager, this.NodeContainer, this.BoundServiceManager);
         }
 
         public PyDataType SetLabel(PyInteger itemID, PyString newLabel, CallInformation call)
@@ -106,10 +104,7 @@ namespace Node.Services.Inventory
 
             // ensure the itemID is owned by the client's character
             if (item.OwnerID != call.Client.EnsureCharacterIsSelected())
-                throw new UserError("TheItemIsNotYoursToTake", new PyDictionary()
-                {
-                    {"item", itemID}
-                });
+                throw new TheItemIsNotYoursToTake(itemID);
 
             item.Name = newLabel;
             

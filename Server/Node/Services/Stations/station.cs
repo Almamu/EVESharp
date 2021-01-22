@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Common.Services;
+using Node.Exceptions;
 using Node.Inventory;
 using Node.Inventory.Items.Types;
 using Node.Network;
@@ -20,7 +21,7 @@ namespace Node.Services.Stations
         public PyDataType GetStationItemBits(CallInformation call)
         {
             if (call.Client.StationID == null)
-                throw new UserError("CanOnlyDoInStations");
+                throw new CanOnlyDoInStations();
 
             Station station = this.ItemManager.GetStation((int) call.Client.StationID);
 
@@ -38,7 +39,7 @@ namespace Node.Services.Stations
         public PyDataType GetGuests(CallInformation call)
         {
             if (call.Client.StationID == null)
-                throw new UserError("CanOnlyDoInStations");
+                throw new CanOnlyDoInStations();
 
             Station station = this.ItemManager.Stations[(int) call.Client.StationID];
             PyList result = new PyList();

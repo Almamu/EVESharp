@@ -107,7 +107,7 @@ namespace Node.Services.Characters
                     else
                     {
                         // store old values for the notification
-                        int? oldLocationID = skill.LocationID;
+                        int oldLocationID = skill.LocationID;
                         ItemFlags oldFlag = skill.Flag;
 
                         // now set the new values
@@ -415,13 +415,13 @@ namespace Node.Services.Characters
             if (charisma < MINIMUM_ATTRIBUTE_POINTS || intelligence < MINIMUM_ATTRIBUTE_POINTS ||
                 memory < MINIMUM_ATTRIBUTE_POINTS || perception < MINIMUM_ATTRIBUTE_POINTS ||
                 willpower < MINIMUM_ATTRIBUTE_POINTS)
-                throw new UserError("RespecAttributesTooLow");
+                throw new RespecAttributesTooLow();
             if (charisma >= MAXIMUM_ATTRIBUTE_POINTS || intelligence >= MAXIMUM_ATTRIBUTE_POINTS ||
                 memory >= MAXIMUM_ATTRIBUTE_POINTS || perception >= MAXIMUM_ATTRIBUTE_POINTS ||
                 willpower >= MAXIMUM_ATTRIBUTE_POINTS)
-                throw new UserError("RespecAttributesTooHigh");
+                throw new RespecAttributesTooHigh();
             if (charisma + intelligence + memory + perception + willpower != MAXIMUM_TOTAL_ATTRIBUTE_POINTS)
-                throw new UserError("RespecAttributesMisallocated");
+                throw new RespecAttributesMisallocated();
             int callerCharacterID = call.Client.EnsureCharacterIsSelected();
             
             Character character =

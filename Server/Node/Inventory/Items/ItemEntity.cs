@@ -57,8 +57,8 @@ namespace Node.Inventory.Items
         private int mID;
         private string mName;
         private ItemType mType;
-        private int? mOwnerID;
-        private int? mLocationID;
+        private int mOwnerID;
+        private int mLocationID;
         private ItemFlags mFlag;
         private bool mContraband;
         private bool mSingleton;
@@ -83,7 +83,7 @@ namespace Node.Inventory.Items
             }
         }
 
-        public int? OwnerID
+        public int OwnerID
         {
             get => mOwnerID;
             set
@@ -93,7 +93,7 @@ namespace Node.Inventory.Items
             }
         }
 
-        public int? LocationID
+        public int LocationID
         {
             get => mLocationID;
             set
@@ -183,8 +183,8 @@ namespace Node.Inventory.Items
             }
         }
         
-        public ItemEntity(string entityName, int entityId, ItemType type, int? ownerID,
-            int? locationID, ItemFlags entityFlag, bool entityContraband, bool entitySingleton,
+        public ItemEntity(string entityName, int entityId, ItemType type, int ownerID,
+            int locationID, ItemFlags entityFlag, bool entityContraband, bool entitySingleton,
             int entityQuantity, double entityX, double entityY, double entityZ, string entityCustomInfo,
             AttributeList attributes, ItemFactory itemFactory)
         {

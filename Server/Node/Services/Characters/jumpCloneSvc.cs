@@ -1,6 +1,8 @@
 ﻿using System.Collections.Generic;
 using Common.Logging;
 using Node.Database;
+using Node.Exceptions;
+using Node.Exceptions.jumpCloneSvc;
 using Node.Inventory;
 using Node.Inventory.Items;
 using Node.Inventory.Items.Types;
@@ -64,11 +66,11 @@ namespace Node.Services.Characters
                 throw new CustomError("Cannot remotely destroy a clone");
 
             ItemEntity clone = this.ItemManager.LoadItem(jumpCloneID);
-            
+
             if (clone.LocationID != call.Client.LocationID)
-                throw new UserError("JumpCantDestroyNonLocalClone");
+                throw new JumpCantDestroyNonLocalClone();
             if (clone.OwnerID != callerCharacterID)
-                throw new UserError("MktNotOwner");
+                throw new MktNotOwner();
 
             // finally destroy the clone, this also destroys all the implants in it
             this.ItemManager.DestroyItem(clone);
@@ -102,9 +104,9 @@ namespace Node.Services.Characters
         public PyDataType InstallCloneInStation(CallInformation call)
         {
             int callerCharacterID = call.Client.EnsureCharacterIsSelected();
-            
+
             if (call.Client.StationID == null)
-                throw new UserError("CanOnlyDoInStations");
+                throw new CanOnlyDoInStations();
             
             Character character = this.ItemManager.LoadItem(callerCharacterID) as Character;
             
@@ -113,7 +115,7 @@ namespace Node.Services.Characters
             
             // the skill is not trained
             if (injectedSkills.ContainsKey((int) ItemTypes.InfomorphPsychology) == false)
-                throw new UserError("JumpCharStoringMaxClonesNone");
+                throw new JumpCharStoringMaxClonesNone();
 
             long maximumClonesAvailable = 0;
             
@@ -125,23 +127,13 @@ namespace Node.Services.Characters
 
             // ensure we don't have more than the allowed clones
             if (clones.Rows.Count >= maximumClonesAvailable)
-                throw new UserError("JumpCharStoringMaxClones", new PyDictionary
-                    {
-                        ["have"] = clones.Rows.Count,
-                        ["max"] = maximumClonesAvailable
-                    }
-                );
+                throw new JumpCharStoringMaxClones(clones.Rows.Count, maximumClonesAvailable);
             
             // ensure that the character has enough money
             int cost = this.GetPriceForClone(call);
 
             if (character.Balance < cost)
-                throw new UserError("NotEnoughMoney", new PyDictionary
-                    {
-                        ["balance"] = character.Balance,
-                        ["amount"] = cost
-                    }
-                );
+                throw new NotEnoughMoney(character.Balance, cost);
             
             // create an alpha clone
             ItemType cloneType = this.TypeManager[ItemTypes.CloneGradeAlpha];
