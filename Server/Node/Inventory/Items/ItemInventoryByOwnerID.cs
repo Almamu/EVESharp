@@ -4,7 +4,7 @@
     {
         public int ItemOwnerID { get; }
         
-        public ItemInventoryByOwnerID(int ownerID, ItemEntity @from) : base(@from)
+        public ItemInventoryByOwnerID(int ownerID, ItemInventory @from) : base(@from)
         {
             this.ItemOwnerID = ownerID;
         }

@@ -51,16 +51,15 @@ namespace Node.Services.Inventory
             int callerCharacterID = call.Client.EnsureCharacterIsSelected();
             ItemEntity inventoryItem = this.ItemManager.LoadItem(itemID);
 
-            // ensure the itemID is owned by the client's character
-            if (inventoryItem.OwnerID != callerCharacterID && inventoryItem.ID != callerCharacterID)
-                throw new TheItemIsNotYoursToTake(itemID);
-
             // also make sure it's a container
             if (inventoryItem is ItemInventory == false)
                 throw new ItemNotContainer(itemID);
             
+            // build the meta inventory item now
+            ItemInventoryByOwnerID inventoryByOwner = new ItemInventoryByOwnerID(callerCharacterID, inventoryItem as ItemInventory);
+            
             // create an instance of the inventory service and bind it to the item data
-            return BoundInventory.BindInventory(this.ItemDB, inventoryItem as ItemInventory, ItemFlags.None, this.ItemManager, this.NodeContainer, this.BoundServiceManager);
+            return BoundInventory.BindInventory(this.ItemDB, inventoryByOwner, ItemFlags.None, this.ItemManager, this.NodeContainer, this.BoundServiceManager);
         }
 
         public PyDataType GetInventory(PyInteger containerID, PyNone none, CallInformation call)
@@ -90,9 +89,13 @@ namespace Node.Services.Inventory
             
             // get the inventory item first
             ItemEntity inventoryItem = this.ItemManager.LoadItem(this.mObjectID);
+
+            // also make sure it's a container
+            if (inventoryItem is ItemInventory == false)
+                throw new ItemNotContainer(inventoryItem.ID);
             
             // build the meta inventory item now
-            ItemInventoryByOwnerID inventoryByOwner = new ItemInventoryByOwnerID(callerCharacterID, inventoryItem);
+            ItemInventoryByOwnerID inventoryByOwner = new ItemInventoryByOwnerID(callerCharacterID, inventoryItem as ItemInventory);
             
             // create an instance of the inventory service and bind it to the item data
             return BoundInventory.BindInventory(this.ItemDB, inventoryByOwner, flag, this.ItemManager, this.NodeContainer, this.BoundServiceManager);
