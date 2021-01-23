@@ -41,7 +41,7 @@ namespace Node.Database
         public Rowset GetBookmarks(int ownerID)
         {
             return Database.PrepareRowsetQuery(
-	            "SELECT bookmarkID, ownerID, itemID, typeID, memo, comment, created, x, y, z, locationID FROM bookmarks WHERE ownerID = @ownerID",
+	            "SELECT bookmarkID, ownerID, itemID, typeID, memo, comment, created, x, y, z, locationID FROM chrBookmarks WHERE ownerID = @ownerID",
 	            new Dictionary<string, object>()
 	            {
 		            {"@ownerID", ownerID}
@@ -53,7 +53,7 @@ namespace Node.Database
             double z, int locationID)
         {
             return Database.PrepareQueryLID(
-                "INSERT INTO bookmarks(ownerID, itemID, typeID, memo, comment, created, x, y, z, locationID)VALUES(@characterID, @itemID, @typeID, @memo, @comment, @date, @x, @y, @z, @locationID)",
+                "INSERT INTO chrBookmarks(ownerID, itemID, typeID, memo, comment, created, x, y, z, locationID)VALUES(@characterID, @itemID, @typeID, @memo, @comment, @date, @x, @y, @z, @locationID)",
                 new Dictionary<string, object>()
                 {
                     {"@characterID", characterID},
