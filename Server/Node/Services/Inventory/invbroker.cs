@@ -54,10 +54,11 @@ namespace Node.Services.Inventory
             // also make sure it's a container
             if (inventoryItem is ItemInventory == false)
                 throw new ItemNotContainer(itemID);
-            
+
             // build the meta inventory item now
-            ItemInventoryByOwnerID inventoryByOwner = new ItemInventoryByOwnerID(callerCharacterID, inventoryItem as ItemInventory);
-            
+            ItemInventory inventoryByOwner = this.ItemManager.MetaInventoryManager.RegisterMetaInventoryForOwnerID(inventoryItem as ItemInventory,
+                callerCharacterID);
+
             // create an instance of the inventory service and bind it to the item data
             return BoundInventory.BindInventory(this.ItemDB, inventoryByOwner, ItemFlags.None, this.ItemManager, this.NodeContainer, this.BoundServiceManager);
         }
@@ -93,9 +94,10 @@ namespace Node.Services.Inventory
             // also make sure it's a container
             if (inventoryItem is ItemInventory == false)
                 throw new ItemNotContainer(inventoryItem.ID);
-            
+
             // build the meta inventory item now
-            ItemInventoryByOwnerID inventoryByOwner = new ItemInventoryByOwnerID(callerCharacterID, inventoryItem as ItemInventory);
+            ItemInventory inventoryByOwner = this.ItemManager.MetaInventoryManager.RegisterMetaInventoryForOwnerID(inventoryItem as ItemInventory,
+                callerCharacterID);
             
             // create an instance of the inventory service and bind it to the item data
             return BoundInventory.BindInventory(this.ItemDB, inventoryByOwner, flag, this.ItemManager, this.NodeContainer, this.BoundServiceManager);

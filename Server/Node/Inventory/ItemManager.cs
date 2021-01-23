@@ -48,6 +48,7 @@ namespace Node.Inventory
         private SkillDB SkillDB { get; }
         private ItemDB ItemDB { get; }
         private Channel Log { get; }
+        public MetaInventoryManager MetaInventoryManager { get; }
         private Dictionary<int, ItemEntity> mItemList = new Dictionary<int, ItemEntity>();
         private Dictionary<int, Station> mStations = new Dictionary<int, Station>();
 
@@ -261,21 +262,51 @@ namespace Node.Inventory
             return this.ItemDB.LoadRegion(item);
         }
 
-        public ItemEntity CreateSimpleItem(ItemType type, int owner, int? location, ItemFlags flag, int quantity = 1,
+        public ItemEntity CreateSimpleItem(ItemType type, int owner, int location, ItemFlags flag, int quantity = 1,
             bool contraband = false, bool singleton = false)
         {
-            int itemID = (int) this.ItemDB.CreateItem(type.Name, type.ID, owner, location, flag, contraband, singleton,
+            return this.CreateSimpleItem(type.Name, type.ID, owner, location, flag, quantity, contraband, singleton);
+        }
+
+        public ItemEntity CreateSimpleItem(string itemName, int typeID, int ownerID, int locationID, ItemFlags flag,
+            int quantity = 1, bool contraband = false, bool singleton = false, double x = 0.0, double y = 0.0, double z = 0.0,
+            string customInfo = null)
+        {
+            int itemID = (int) this.ItemDB.CreateItem(itemName, typeID, ownerID, locationID, flag, contraband, singleton,
                 quantity, 0, 0, 0, null);
 
-            return this.LoadItem(itemID);
+            ItemEntity entity = this.LoadItem(itemID);
+            
+            // check if the inventory that loads this item is loaded
+            // and ensure the item is added in there
+            if (this.IsItemLoaded(entity.LocationID) == true)
+            {
+                ItemInventory inventory = this.GetItem(entity.LocationID) as ItemInventory;
+
+                inventory.AddItem(entity);
+                
+                // look for any metainventories too
+                try
+                {
+                    ItemInventory metaInventory =
+                        this.MetaInventoryManager.GetOwnerInventoriesAtLocation(entity.LocationID, entity.OwnerID);
+
+                    metaInventory.AddItem(entity);
+                }
+                catch (ArgumentOutOfRangeException)
+                {
+                    // ignore the exception, this is expected when no meta inventories are registered
+                }
+            }
+
+            return entity;
         }
         
         public ItemEntity CreateSimpleItem(string itemName, ItemType type, ItemEntity owner, ItemEntity location, ItemFlags flag,
             bool contraband, bool singleton, int quantity, double x, double y, double z, string customInfo)
         {
-            int itemID = (int) this.ItemDB.CreateItem(itemName, type, owner, location, flag, contraband, singleton, quantity, x, y, z, customInfo);
-
-            return this.LoadItem(itemID);
+            return this.CreateSimpleItem(itemName, type.ID, owner.ID, location.ID, flag, quantity, contraband, singleton,
+                x, y, z, customInfo);
         }
 
         public ItemEntity CreateSimpleItem(ItemType type, ItemEntity owner, ItemEntity location, ItemFlags flags,
@@ -318,18 +349,6 @@ namespace Node.Inventory
             return this.CreateSimpleItem(cloneType, owner, location, ItemFlags.Clone, 1, false, true) as Clone;
         }
 
-        public void MoveItem(ItemEntity item, ItemEntity newLocation)
-        {
-            // TODO: SEND NOTIFICATION OF ITEM CHANGE?
-            item.LocationID = newLocation.ID;
-        }
-
-        public void ChangeOwnership(ItemEntity item, ItemEntity newOwner)
-        {
-            // TODO: SEND NOTIFICATION OF ITEM CHANGE?
-            item.OwnerID = newOwner.ID;
-        }
-
         public void UnloadItem(ItemEntity item)
         {
             try
@@ -368,12 +387,13 @@ namespace Node.Inventory
                 this.DestroyItem(item);
         }
         
-        public ItemManager(Logger logger, ItemDB itemDB, SkillDB skillDB)
+        public ItemManager(Logger logger, ItemDB itemDB, SkillDB skillDB, MetaInventoryManager metaInventoryManager)
         {
             // create a log channel for the rare occurence of the ItemManager wanting to log something
             this.Log = logger.CreateLogChannel("ItemManager");
             this.ItemDB = itemDB;
             this.SkillDB = skillDB;
+            this.MetaInventoryManager = metaInventoryManager;
         }
     }
 }

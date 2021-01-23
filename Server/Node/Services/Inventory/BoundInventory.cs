@@ -76,30 +76,99 @@ namespace Node.Services.Inventory
 
         public PyDataType Add(PyInteger itemID, PyInteger quantity, PyInteger flag, CallInformation call)
         {
-            // TODO: PROPERLY INVESTIGATE THE ADD FUNCTION
-            // TODO: DOES IT GET CALLED FOR ITEMS ON DIFFERENT INVENTORIES?
-            // TODO: OR WHAT DOES EXACTLY HAPPEN WITH THIS?
-            if (this.mInventory.Items.ContainsKey(itemID) == false)
-                return null;
-            
-            // for now treat the item as it comes from the same inventory and we're just splitting the quantities
-            ItemEntity item = this.mInventory.Items[itemID];
+            // TODO: ADD CONSTRAINTS CHECKS FOR THE FLAG
+            if (this.ItemManager.IsItemLoaded(itemID) == false)
+            {
+                // not loaded item, the steps are simpler as the server doesn't really know much about it
+                ItemEntity item = this.ItemManager.LoadItem(itemID);
 
-            // ensure there's enough quantity in the stack to split it
-            if (quantity >= item.Quantity)
-                return null;
+                if (quantity < item.Quantity)
+                {
+                    // subtract the quantities and create the new item
+                    item.Quantity -= quantity;
+                    item.Persist();
+                    
+                    // create a new item with the same specs as the original
+                    ItemEntity clone = this.ItemManager.CreateSimpleItem(item.Type, item.OwnerID, this.mInventory.ID, (ItemFlags) (int) flag, quantity,
+                        item.Contraband, item.Singleton);
+                    
+                    // persist it to the database
+                    clone.Persist();
+                    // notify the client of the new item
+                    call.Client.NotifyItemLocationChange(clone, ItemFlags.None, 0);
+                    // and notify the amount change
+                    call.Client.NotifyItemQuantityChange(item, item.Quantity + quantity);
+                }
+                else
+                {
+                    int oldLocation = item.LocationID;
+                    ItemFlags oldFlag = item.Flag;
+                    
+                    // simple, move the item
+                    item.LocationID = this.mInventory.ID;
+                    
+                    // is this really something we have to take into account? I'm not sure...
+                    item.Flag = (ItemFlags) (int) flag;
+                    
+                    item.Persist();
+                        
+                    // add it to the inventory
+                    this.mInventory.AddItem(item);
+                    
+                    // notify the client
+                    call.Client.NotifyItemLocationChange(item, oldFlag, oldLocation);
+                }
+            }
+            else
+            {
+                ItemEntity item = this.ItemManager.GetItem(itemID);
 
-            // create a new item with the same specs as the original
-            ItemEntity clone = this.ItemManager.CreateSimpleItem(item.Type, item.OwnerID, item.LocationID, item.Flag, quantity,
-                item.Contraband, item.Singleton);
+                // ensure there's enough quantity in the stack to split it
+                if (quantity > item.Quantity)
+                    return null;
+
+                if (quantity == item.Quantity)
+                {
+                    // the item is being moved completely, the easiest way is to remove from the old inventory
+                    // and put it in the new one
+                    
+                    // this means we require access to the original inventory to remove the item from there
+                    // and thus we have to be extra careful
+                    if (this.ItemManager.IsItemLoaded(item.LocationID) == true)
+                    {
+                        ItemInventory inventory = this.ItemManager.GetItem(item.LocationID) as ItemInventory;
+
+                        // remove the item from the inventory
+                        inventory.Items.Remove(item.ID);
+                    }
+
+                    int oldLocationID = item.LocationID;
+                    ItemFlags oldFlag = item.Flag;
+
+                    item.LocationID = this.mInventory.ID;
+                    item.Flag = (ItemFlags) (int) flag;
+
+                    item.Persist();
+                    this.mInventory.AddItem(item);
+                    // notify the client of the location change
+                    call.Client.NotifyItemLocationChange(item, oldFlag, oldLocationID);
+                }
+                else
+                {
+                    // create a new item with the same specs as the original
+                    ItemEntity clone = this.ItemManager.CreateSimpleItem(item.Type, item.OwnerID, this.mInventory.ID, (ItemFlags) (int) flag, quantity,
+                        item.Contraband, item.Singleton);
             
-            // subtract the quantity off the original item
-            item.Quantity -= quantity;
-            // notify the changes to the client
-            call.Client.NotifyItemQuantityChange(item, item.Quantity + quantity);
-            call.Client.NotifyItemLocationChange(clone, ItemFlags.None, 0);
-            // add the new item to the inventory
-            this.mInventory.AddItem(clone);
+                    // subtract the quantity off the original item
+                    item.Quantity -= quantity;
+                    // notify the changes to the client
+                    call.Client.NotifyItemQuantityChange(item, item.Quantity + quantity);
+                    call.Client.NotifyItemLocationChange(clone, ItemFlags.None, 0);
+                    // persist the item changes in the database
+                    clone.Persist();
+                    item.Persist();
+                }
+            }
             
             return null;
         }
@@ -121,11 +190,10 @@ namespace Node.Services.Inventory
                 PyInteger toItemID = tuple[1] as PyInteger;
                 PyInteger quantity = tuple[2] as PyInteger;
 
-                if (this.mInventory.Items.ContainsKey(fromItemID) == false ||
-                    this.mInventory.Items.ContainsKey(toItemID) == false)
+                if (this.mInventory.Items.ContainsKey(toItemID) == false)
                     continue;
 
-                ItemEntity fromItem = this.mInventory.Items[fromItemID];
+                ItemEntity fromItem = this.ItemManager.LoadItem(fromItemID);
                 ItemEntity toItem = this.mInventory.Items[toItemID];
 
                 // ignore singleton items
@@ -135,14 +203,25 @@ namespace Node.Services.Inventory
                 // if we're fully merging two stacks, just remove one item
                 if (quantity == fromItem.Quantity)
                 {
+                    int oldLocationID = fromItem.LocationID;
+                    
                     // remove the item
                     fromItem.Destroy();
-                    // update the item to something else so the item is take out of player's sight
+                    // remove the item from the inventory (if it belongs to us)
+                    if (fromItem.LocationID == this.mInventory.ID)
+                        this.mInventory.RemoveItem(fromItem);
+                    else if (this.ItemManager.IsItemLoaded(fromItem.LocationID) == true)
+                    {
+                        // check if the item belongs to a loaded container and be sure to remove it's reference from there
+                        ItemInventory inventory = this.ItemManager.GetItem(fromItem.LocationID) as ItemInventory;
+                        
+                        inventory.RemoveItem(fromItem);
+                    }
+                    
+                    // update the item to something else so the item is taken out of player's sight
                     fromItem.LocationID = this.NodeContainer.Constants["locationRecycler"];
                     // notify the client about the item too
-                    call.Client.NotifyItemLocationChange(fromItem, fromItem.Flag, toItem.LocationID);
-                    // remove the item from the inventory
-                    this.mInventory.Items.Remove(fromItemID);
+                    call.Client.NotifyItemLocationChange(fromItem, fromItem.Flag, oldLocationID);
                 }
                 else
                 {
@@ -150,10 +229,12 @@ namespace Node.Services.Inventory
                     fromItem.Quantity -= quantity;
                     // notify the client about the change
                     call.Client.NotifyItemQuantityChange(fromItem, fromItem.Quantity + quantity);
+                    fromItem.Persist();
                 }
 
                 toItem.Quantity += quantity;
                 call.Client.NotifyItemQuantityChange(toItem, toItem.Quantity - quantity);
+                toItem.Persist();
             }
             
             return null;
@@ -166,9 +247,50 @@ namespace Node.Services.Inventory
 
         public PyDataType StackAll(PyInteger locationFlag, CallInformation call)
         {
-            // figure out exactly what this does
-            // it could be used mostly on ship fittings
-            throw new NotImplementedException("Stacking by flag is not supported yet!");
+            // TODO: ADD CONSTRAINTS CHECKS FOR THE LOCATIONFLAG
+            foreach (int firstItemID in this.mInventory.Items.Keys)
+            {
+                ItemEntity firstItem = this.mInventory.Items[firstItemID];
+                
+                // singleton items are not even checked
+                if (firstItem.Singleton == true || firstItem.Flag != (ItemFlags) (int) locationFlag)
+                    continue;
+                
+                foreach (int secondItemID in this.mInventory.Items.Keys)
+                {
+                    // ignore the same itemID as they cannot really be merged
+                    if (firstItemID == secondItemID)
+                        continue;
+                    
+                    ItemEntity secondItem = this.mInventory.Items[secondItemID];
+                    
+                    // ignore the item if it's singleton
+                    if (secondItem.Singleton == true || secondItem.Flag != (ItemFlags) (int) locationFlag)
+                        continue;
+                    // ignore the item check if they're not the same type ID
+                    if (firstItem.Type.ID != secondItem.Type.ID)
+                        continue;
+                    int oldQuantity = secondItem.Quantity;
+                    // add the quantity of the first item to the second
+                    secondItem.Quantity += firstItem.Quantity;
+                    // also create the notification for the user
+                    call.Client.NotifyItemQuantityChange(secondItem, oldQuantity);
+                    // remove the item off the list
+                    this.mInventory.Items.Remove(firstItemID);
+                    // update the item to something else so the item is take out of player's sight
+                    firstItem.LocationID = this.NodeContainer.Constants["locationRecycler"];
+                    // notify the client about the item too
+                    call.Client.NotifyItemLocationChange(firstItem, firstItem.Flag, secondItem.LocationID);
+                    // delete the original item off the database
+                    firstItem.Destroy();
+                    // ensure the second item is saved to database too
+                    secondItem.Persist();
+                    // finally break this loop as the merge was already done
+                    break;
+                }
+            }
+
+            return null;
         }
         
         public PyDataType StackAll(CallInformation call)

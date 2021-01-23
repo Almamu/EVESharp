@@ -67,7 +67,21 @@ namespace Node.Inventory.Items
 
         public void AddItem(ItemEntity item)
         {
+            // do not add anything if the inventory is not loaded
+            // this prevents loading the full inventory for operations
+            // that don't really need it
+            if (this.mContentsLoaded == false)
+                return;
+            
             this.Items[item.ID] = item;
+        }
+
+        public void RemoveItem(ItemEntity item)
+        {
+            if (this.mContentsLoaded == false)
+                return;
+
+            this.Items.Remove(item.ID);
         }
 
         protected override void SaveToDB()

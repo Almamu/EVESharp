@@ -56,6 +56,10 @@ namespace Node.Services.Network
         private void SpawnCmd(string[] argv, CallInformation call)
         {
             int typeID = int.Parse(argv[1]);
+            int quantity = 1;
+            
+            if (argv.Length > 2)
+                quantity = int.Parse(argv[2]);
 
             if (call.Client.StationID == null)
                 throw new SlashError("Spawning items can only be done at station");
@@ -68,7 +72,7 @@ namespace Node.Services.Network
             Character character = this.ItemManager.GetItem(call.Client.EnsureCharacterIsSelected()) as Character;
             
             ItemType itemType = this.TypeManager[typeID];
-            ItemEntity item = this.ItemManager.CreateSimpleItem(itemType, character, location, ItemFlags.Hangar);
+            ItemEntity item = this.ItemManager.CreateSimpleItem(itemType, character, location, ItemFlags.Hangar, quantity);
 
             item.Persist();
             

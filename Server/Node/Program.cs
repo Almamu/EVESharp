@@ -98,6 +98,7 @@ namespace Node
                 sContainer.Register<NodeContainer>(Lifestyle.Singleton);
                 sContainer.Register<CacheStorage>(Lifestyle.Singleton);
                 sContainer.Register<ItemManager>(Lifestyle.Singleton);
+                sContainer.Register<MetaInventoryManager>(Lifestyle.Singleton);
                 sContainer.Register<AttributeManager>(Lifestyle.Singleton);
                 sContainer.Register<TypeManager>(Lifestyle.Singleton);
                 sContainer.Register<CategoryManager>(Lifestyle.Singleton);
