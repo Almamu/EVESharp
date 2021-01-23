@@ -144,5 +144,30 @@ namespace Node.Services.Stations
             
             return null;
         }
+
+        public PyDataType DoesPlayersCorpHaveJunkAtStation(CallInformation call)
+        {
+            if (ItemManager.IsNPCCorporationID(call.Client.CorporationID) == true)
+                return false;
+            
+            // TODO: PROPERLY IMPLEMENT THIS ONE
+            return false;
+        }
+
+        public PyDataType GetCorporateStationInfo(CallInformation call)
+        {
+            return new PyTuple(3)
+            {
+                [0] = new PyNone(), // eveowners list
+                [1] = new PyNone(), // corporations list
+                [2] = new PyNone()  // offices list
+            };
+        }
+
+        public PyDataType GetNumberOfUnrentedOffices(CallInformation call)
+        {
+            // TODO: PROPERLY IMPLEMENT THIS, NPC STATIONS HAVE A LIMIT OF 24 OFFICES
+            return 0;
+        }
     }
 }
