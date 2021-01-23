@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using Common.Database;
@@ -6,6 +7,7 @@ using Node.Database;
 using Node.Inventory;
 using Node.Inventory.Items;
 using Node.Network;
+using PythonTypes.Types.Database;
 using PythonTypes.Types.Exceptions;
 using PythonTypes.Types.Primitives;
 using SimpleInjector;
@@ -39,10 +41,25 @@ namespace Node.Services.Characters
 
             ulong bookmarkID = this.DB.CreateBookmark(call.Client.EnsureCharacterIsSelected(), item.ID, item.Type.ID,
                 name, comment, item.X, item.Y, item.Z, item.LocationID);
+
+            PyDataType bookmark = KeyVal.FromDictionary(new PyDictionary
+                {
+                    ["bookmarkID"] = bookmarkID,
+                    ["itemID"] = item.ID,
+                    ["typeID"] = item.Type.ID,
+                    ["memo"] = name,
+                    ["comment"] = comment,
+                    ["x"] = item.X,
+                    ["y"] = item.Y,
+                    ["z"] = item.Z,
+                    ["locationID"] = item.LocationID,
+                    ["created"] = DateTime.UtcNow.ToFileTimeUtc()
+                }
+            );
             
             // send a request to the client to update the bookmarks
-            call.Client.ClusterConnection.SendServiceCall(call.Client, "addressbook", "OnBookmarkAdded",
-                new PyTuple(0), new PyDictionary(), null, null, null, 0);
+            call.Client.ClusterConnection.SendServiceCall(call.Client, "addressbook", "OnBookmarkAdd",
+                new PyTuple(1) { [0] = bookmark }, new PyDictionary(), null, null, null, 0);
             
             return new PyTuple (7)
             {
