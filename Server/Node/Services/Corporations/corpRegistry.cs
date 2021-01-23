@@ -138,6 +138,11 @@ namespace Node.Services.Corporations
             }
         }
 
+        public PyDataType GetStations(CallInformation call)
+        {
+            return this.DB.GetStations(call.Client.CorporationID);
+        }
+
         public PyDataType GetMemberTrackingInfo(PyInteger characterID, CallInformation call)
         {
             // TODO: RETURN FULL TRACKING INFO, ONLY DIRECTORS ARE ALLOWED TO DO SO!

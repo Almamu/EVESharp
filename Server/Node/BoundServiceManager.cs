@@ -39,6 +39,12 @@ namespace Node
             return boundID;
         }
 
+        public void FreeBoundService(int boundID)
+        {
+            Log.Debug($"Freeing bound service {boundID}");
+            this.mBoundServices.Remove(boundID);
+        }
+        
         public string BuildBoundServiceString(int boundID)
         {
             return $"N={this.Container.NodeID}:{boundID}";

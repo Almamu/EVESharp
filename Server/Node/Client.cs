@@ -44,6 +44,7 @@ namespace Node
         public ClusterConnection ClusterConnection { get; }
         public ServiceManager ServiceManager { get; }
         private ItemFactory ItemFactory { get; }
+        private PyList PendingNotifications { get; set; }
         
         public Client(NodeContainer container, ClusterConnection clusterConnection, ServiceManager serviceManager, ItemFactory itemFactory)
         {
@@ -51,6 +52,7 @@ namespace Node
             this.ClusterConnection = clusterConnection;
             this.ServiceManager = serviceManager;
             this.ItemFactory = itemFactory;
+            this.PendingNotifications = new PyList();
         }
 
         public void UpdateSession(PyPacket packet)
@@ -362,18 +364,8 @@ namespace Node
                     "OnSkillTrained", skill.ID
                 }
             );
-            
-            // TODO: THESE SEEM TO BE TIED TO DESTINY FOR ONE REASON OR ANOTHER
-            PyTuple eventTuple = new PyTuple(new PyDataType[]
-                {
-                    (PyList) new PyDataType[]
-                    {
-                        onSkillTrained
-                    }
-                }
-            );
-            
-            this.ClusterConnection.SendNotification("OnMultiEvent", "charid", (int) this.CharacterID, eventTuple);
+
+            this.PendingNotifications.Add(onSkillTrained);
         }
 
         public void NotifySkillTrainingStopped(Skill skill)
@@ -383,17 +375,8 @@ namespace Node
                     "OnSkillTrainingStopped", skill.ID, 0
                 }
             );
-
-            PyTuple eventTuple = new PyTuple(new PyDataType[]
-                {
-                    (PyList) new PyDataType[]
-                    {
-                        onSkillTrainingStopped
-                    }
-                }
-            );
-
-            this.ClusterConnection.SendNotification("OnMultiEvent", "charid", (int) this.CharacterID, eventTuple);
+            
+            this.PendingNotifications.Add(onSkillTrainingStopped);
         }
 
         public void NotifySkillStartTraining(Skill skill)
@@ -404,16 +387,7 @@ namespace Node
                 }
             );
 
-            PyTuple eventTuple = new PyTuple(new PyDataType[]
-                {
-                    (PyList) new PyDataType[]
-                    {
-                        onSkillStartTraining
-                    }
-                }
-            );
-
-            this.ClusterConnection.SendNotification("OnMultiEvent", "charid", (int) this.CharacterID, eventTuple);
+            this.PendingNotifications.Add(onSkillStartTraining);
         }
 
         public void NotifySkillInjected()
@@ -424,17 +398,18 @@ namespace Node
                 }
             );
 
-            PyTuple eventTuple = new PyTuple(new PyDataType[]
-                {
-                    (PyList) new PyDataType[]
-                    {
-                        onSkillStartTraining
-                    }
-                }
-            );
+            this.PendingNotifications.Add(onSkillStartTraining);
+        }
 
-            this.ClusterConnection.SendNotification("OnMultiEvent", "charid", (int) this.CharacterID, eventTuple);
+        public void SendPendingNotifications()
+        {
+            if (this.PendingNotifications.Count > 0)
+            {
+                this.ClusterConnection.SendNotification("OnMultiEvent", "charid", (int) this.CharacterID,
+                    new PyTuple(1) {[0] = this.PendingNotifications});
 
+                this.PendingNotifications = new PyList();
+            }
         }
 
         public void SendCallResponse(CallInformation answerTo, PyDataType result)

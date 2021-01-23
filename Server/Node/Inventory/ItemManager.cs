@@ -102,6 +102,11 @@ namespace Node.Inventory
         {
             return itemID >= NPC_CHARACTER_ID_MIN && itemID < NPC_CHARACTER_ID_MAX;
         }
+
+        public static bool IsStaticData(int itemID)
+        {
+            return itemID < USERGENERATED_ID_MIN;
+        }
         
         public Faction GetFaction(int factionID)
         {

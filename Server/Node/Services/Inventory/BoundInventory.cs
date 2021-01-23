@@ -47,7 +47,7 @@ namespace Node.Services.Inventory
             CRowset result = new CRowset(ItemEntity.sEntityItemDescriptor);
 
             foreach (KeyValuePair<int, ItemEntity> pair in this.mInventory.Items)
-                if (pair.Value.Flag == this.mFlag)
+                if (this.mFlag == ItemFlags.None || pair.Value.Flag == this.mFlag)
                     result.Add(pair.Value.GetEntityRow());
 
             return result;
@@ -90,7 +90,7 @@ namespace Node.Services.Inventory
                 return null;
 
             // create a new item with the same specs as the original
-            ItemEntity clone = this.ItemManager.CreateSimpleItem(item.Type, item.OwnerID, item.LocationID, this.mFlag, quantity,
+            ItemEntity clone = this.ItemManager.CreateSimpleItem(item.Type, item.OwnerID, item.LocationID, item.Flag, quantity,
                 item.Contraband, item.Singleton);
             
             // subtract the quantity off the original item
@@ -141,6 +141,8 @@ namespace Node.Services.Inventory
                     fromItem.LocationID = this.NodeContainer.Constants["locationRecycler"];
                     // notify the client about the item too
                     call.Client.NotifyItemLocationChange(fromItem, fromItem.Flag, toItem.LocationID);
+                    // remove the item from the inventory
+                    this.mInventory.Items.Remove(fromItemID);
                 }
                 else
                 {

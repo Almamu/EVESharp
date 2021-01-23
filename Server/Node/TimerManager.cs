@@ -85,7 +85,7 @@ namespace Node
 
                             Log.Debug($"Firing callback for timer on itemID {timer.CallbackParameter}");
                             
-                            timer.Callback.Invoke(timer.CallbackParameter);
+                            timer.Callback?.Invoke(timer.CallbackParameter);
                         }
 
                         // remove timers that have already been fired
@@ -102,7 +102,7 @@ namespace Node
 
                             Log.Debug($"Firing callback for timer on callID {timer.CallbackParameter}");
 
-                            timer.Callback.Invoke(timer.CallbackParameter);
+                            timer.Callback?.Invoke(timer.CallbackParameter);
                         }
                         
                         // remove timers that have already been fired

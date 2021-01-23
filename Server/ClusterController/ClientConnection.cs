@@ -50,9 +50,15 @@ namespace ClusterControler
         {
             // remove the user from the correct lists
             if (this.Session.ContainsKey("userid") == false)
-                this.ConnectionManager.RemoveUnauthenticatedClientConnection(this);
+            {
+                this.ConnectionManager.RemoveUnauthenticatedClientConnection(this);                
+            }
             else
+            {
+                // authenticated users are somewhat special as they also have to be free'd from the nodes
                 this.ConnectionManager.RemoveAuthenticatedClientConnection(this);
+            }
+            
             // and free the socket resources
             this.Socket.ForcefullyDisconnect();
         }
@@ -171,6 +177,14 @@ namespace ClusterControler
 
             PyPacket pyPacket = packet;
 
+            // generate the proper PyAddressClient for the notification packets
+            // this prevents more special cases for the whole packet flow
+            if (pyPacket.Type == PyPacket.PacketType.NOTIFICATION)
+            {
+                pyPacket.UserID = this.Session["userid"] as PyInteger;
+                pyPacket.Source = new PyAddressClient(this.AccountID);
+            }
+            
             if (pyPacket.UserID != this.Session["userid"] as PyInteger)
                 throw new Exception("Received a packet coming from a client trying to spoof It's userID");
 
@@ -197,7 +211,7 @@ namespace ClusterControler
                 (pyPacket.Payload[0] as PyList)?.Add(handleMessage);
                 (pyPacket.Payload[0] as PyList)?.Add(writing);
             }
-
+            
             if (pyPacket.Destination is PyAddressNode)
             {
                 // search for the node in the list
@@ -206,7 +220,7 @@ namespace ClusterControler
 
                 PyAddressNode dest = pyPacket.Destination as PyAddressNode;
 
-                this.ConnectionManager.NotifyNode((int) dest.NodeID, packet);
+                this.ConnectionManager.NotifyNode((int) dest.NodeID, pyPacket);
             }
             else if (pyPacket.Destination is PyAddressAny)
             {

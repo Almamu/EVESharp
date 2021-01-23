@@ -120,6 +120,10 @@ namespace Node.Network
         private void ReceiveNormalPacketCallback(PyDataType ar)
         {
             PyPacket packet = ar;
+            Client client = null;
+            
+            if (this.ClientManager.Contains(packet.UserID))
+                client = this.ClientManager.Get(packet.UserID);
 
             if (packet.Type == PyPacket.PacketType.CALL_REQ)
             {
@@ -153,7 +157,7 @@ namespace Node.Network
                 
                 callInformation = new CallInformation
                 {
-                    Client = this.ClientManager.Get(packet.UserID),
+                    Client = client,
                     CallID = source.CallID,
                     NamedPayload = sub,
                     PacketType = packet.Type,
@@ -252,6 +256,7 @@ namespace Node.Network
                     this.ClientManager.Add(packet.UserID, this.DependencyInjector.GetInstance<Client>());
 
                 this.ClientManager.Get(packet.UserID).UpdateSession(packet);
+                return;
             }
             else if (packet.Type == PyPacket.PacketType.PING_REQ)
             {
@@ -321,6 +326,66 @@ namespace Node.Network
                 
                 this.ServiceManager.ReceivedRemoteCallAnswer(dest.CallID, subStream.Stream);
             }
+            else if (packet.Type == PyPacket.PacketType.NOTIFICATION)
+            {
+                PyTuple callInfo = ((packet.Payload[0] as PyTuple)[1] as PySubStream).Stream as PyTuple;
+
+                PyList objectIDs = callInfo[0] as PyList;
+                string call = callInfo[1] as PyString;
+
+                if (call != "ClientHasReleasedTheseObjects")
+                {
+                    Log.Error($"Received notification from client with unknown method {call}");
+                    return;
+                }
+                
+                // search for the given objects in the bound service
+                // and sure they're freed
+                foreach (PyDataType objectID in objectIDs)
+                {
+                    if (objectID is PyTuple == false)
+                    {
+                        Log.Fatal("Got a ClientHasReleasedTheseObjects for an unknown object id");
+                        continue;
+                    }
+                    
+                    PyTuple tuple = objectID as PyTuple;
+                    
+                    if (tuple[0] is PyString == false)
+                    {
+                        Log.Fatal("Expected bound call with bound string, but got something different");
+                        return;
+                    }
+
+                    string boundString = tuple[0] as PyString;
+
+                    // parse the bound string to get back proper node and bound ids
+                    Match regexMatch = Regex.Match(boundString, "N=([0-9]+):([0-9]+)");
+
+                    if (regexMatch.Groups.Count != 3)
+                    {
+                        Log.Fatal($"Cannot find nodeID and boundID in the boundString {boundString}");
+                        return;
+                    }
+
+                    int nodeID = int.Parse(regexMatch.Groups[1].Value);
+                    int boundID = int.Parse(regexMatch.Groups[2].Value);
+
+                    if (nodeID != this.Container.NodeID)
+                    {
+                        Log.Fatal("Got a ClientHasReleasedTheseObjects call for an object ID that doesn't belong to us");
+                        // TODO: MIGHT BE A GOOD IDEA TO RELAY THIS CALL TO THE CORRECT NODE
+                        // TODO: INSIDE THE NETWORK, AT LEAST THAT'S WHAT CCP IS DOING BASED
+                        // TODO: ON THE CLIENT'S CODE... NEEDS MORE INVESTIGATION
+                        return;
+                    }
+                    
+                    this.BoundServiceManager.FreeBoundService(boundID);
+                }
+            }
+            
+            // send any notification that might be pending
+            client?.SendPendingNotifications();
         }
 
         protected LowLevelVersionExchange CheckLowLevelVersionExchange(PyDataType exchange)

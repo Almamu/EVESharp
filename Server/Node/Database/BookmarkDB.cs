@@ -22,6 +22,7 @@
     Creator: Almamu
 */
 
+using System;
 using System.Collections.Generic;
 using System.Security.Cryptography;
 using System.Text;
@@ -40,12 +41,48 @@ namespace Node.Database
         public Rowset GetBookmarks(int ownerID)
         {
             return Database.PrepareRowsetQuery(
-	            "SELECT bookmarkID, ownerID, itemID, typeID, flag, memo, created, x, y, z, locationID FROM bookmarks WHERE ownerID = @ownerID",
+	            "SELECT bookmarkID, ownerID, itemID, typeID, memo, comment, created, x, y, z, locationID FROM bookmarks WHERE ownerID = @ownerID",
 	            new Dictionary<string, object>()
 	            {
 		            {"@ownerID", ownerID}
 	            }
 	        );
+        }
+
+        public ulong CreateBookmark(int characterID, int itemID, int typeID, string memo, string comment, double x, double y,
+            double z, int locationID)
+        {
+            return Database.PrepareQueryLID(
+                "INSERT INTO bookmarks(ownerID, itemID, typeID, memo, comment, created, x, y, z, locationID)VALUES(@characterID, @itemID, @typeID, @memo, @comment, @date, @x, @y, @z, @locationID)",
+                new Dictionary<string, object>()
+                {
+                    {"@characterID", characterID},
+                    {"@itemID", itemID},
+                    {"@typeID", typeID},
+                    {"@memo", memo},
+                    {"@comment", comment},
+                    {"@date", DateTime.UtcNow.ToFileTimeUtc ()},
+                    {"@x", x},
+                    {"@y", y},
+                    {"@z", z},
+                    {"@locationID", locationID}
+                }
+            );
+        }
+
+        public void DeleteBookmark(List<int> bookmarkIDs, int ownerID)
+        {
+            // do not remove anything if the count is not greater than 0
+            if (bookmarkIDs.Count == 0)
+                return;
+
+            Database.PrepareQuery(
+                "DELETE FROM bookmarks WHERE ownerID = @characterID AND bookmarkID IN(" + String.Join(',', bookmarkIDs) + ")",
+                new Dictionary<string, object>()
+                {
+                    {"@characterID", ownerID}
+                }
+            );
         }
     }
 }

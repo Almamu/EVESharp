@@ -64,27 +64,6 @@ CREATE TABLE `billsReceivable` (
 
 /*Data for the table `billsReceivable` */
 
-/*Table structure for table `bookmarks` */
-
-DROP TABLE IF EXISTS `bookmarks`;
-
-CREATE TABLE `bookmarks` (
-  `bookmarkID` int(10) unsigned NOT NULL default '0',
-  `ownerID` int(10) unsigned NOT NULL default '0',
-  `itemID` int(10) unsigned NOT NULL default '0',
-  `typeID` int(10) unsigned NOT NULL default '0',
-  `flag` int(10) unsigned NOT NULL default '0',
-  `memo` varchar(85) NOT NULL default '',
-  `created` bigint(20) unsigned NOT NULL default '0',
-  `x` double NOT NULL default '0',
-  `y` double NOT NULL default '0',
-  `z` double NOT NULL default '0',
-  `locationID` int(10) unsigned NOT NULL default '0',
-  PRIMARY KEY  (`bookmarkID`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
-/*Data for the table `bookmarks` */
-
 /*Table structure for table `cacheLocations` */
 
 DROP TABLE IF EXISTS `cacheLocations`;

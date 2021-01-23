@@ -219,7 +219,7 @@ namespace Node
             RemoteCall call = this.mCallCallbacks[callID];
             
             // invoke the handler
-            call.Callback.Invoke(call, result);
+            call.Callback?.Invoke(call, result);
 
             // remove the call from the list
             this.mCallCallbacks.Remove(callID);

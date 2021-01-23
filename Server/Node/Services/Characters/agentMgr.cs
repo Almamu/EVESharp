@@ -33,5 +33,10 @@ namespace Node.Services.Characters
                 new PyList() // research
             });
         }
+
+        public PyDataType GetMyEpicJournalDetails(CallInformation call)
+        {
+            return new PyList();
+        }
     }
 }

@@ -589,5 +589,16 @@ namespace Node.Database
                 }
             );
         }
+
+        public Rowset GetStations(int corporationID)
+        {
+            return Database.PrepareRowsetQuery(
+                "SELECT stationID, stationTypeID as typeID FROM staStations WHERE corporationID = @corporationID",
+                new Dictionary<string, object>()
+                {
+                    {"@corporationID", corporationID}
+                }
+            );
+        }
     }
 }
