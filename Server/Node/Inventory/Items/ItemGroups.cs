@@ -1,6 +1,6 @@
 namespace Node.Inventory.Items
 {
-    public enum ItemGroups
+    public enum ItemGroups : int
     {
         System = 0,
         Character = 1,

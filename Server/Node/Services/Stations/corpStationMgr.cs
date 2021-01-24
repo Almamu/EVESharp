@@ -4,6 +4,7 @@ using Node.Database;
 using Node.Exceptions;
 using Node.Exceptions.corpStationMgr;
 using Node.Inventory;
+using Node.Inventory.Items;
 using Node.Inventory.Items.Types;
 using Node.Market;
 using Node.Network;
@@ -21,16 +22,18 @@ namespace Node.Services.Stations
         private ItemDB ItemDB { get; }
         private MarketDB MarketDB { get; }
         private ItemManager ItemManager { get; }
-        public corpStationMgr(ItemDB itemDB, MarketDB marketDB, ItemManager itemManager, BoundServiceManager manager) : base(manager)
+        private TypeManager TypeManager { get; }
+        public corpStationMgr(ItemDB itemDB, MarketDB marketDB, ItemManager itemManager, TypeManager typeManager, BoundServiceManager manager) : base(manager)
         {
             this.ItemDB = itemDB;
             this.MarketDB = marketDB;
             this.ItemManager = itemManager;
+            this.TypeManager = typeManager;
         }
 
         protected override BoundService CreateBoundInstance(PyDataType objectData)
         {
-            return new corpStationMgr(this.ItemDB, this.MarketDB, this.ItemManager, this.BoundServiceManager);
+            return new corpStationMgr(this.ItemDB, this.MarketDB, this.ItemManager, this.TypeManager, this.BoundServiceManager);
         }
 
         public PyDataType GetCorporateStationOffice(CallInformation call)
@@ -121,8 +124,7 @@ namespace Node.Services.Stations
             }
             
             // check the user has enough money
-            if (character.Balance < CLONE_CONTRACT_COST)
-                throw new NotEnoughMoney(character.Balance, CLONE_CONTRACT_COST);
+            character.EnsureEnoughBalance(CLONE_CONTRACT_COST);
             
             // subtract the money off the character
             character.Balance -= CLONE_CONTRACT_COST;
@@ -138,6 +140,9 @@ namespace Node.Services.Stations
             // set clone's station
             character.ActiveClone.LocationID = stationID;
             character.ActiveClone.Persist();
+            
+            // persist character info
+            character.Persist();
                 
             // invalidate client's cache
             call.Client.NotifyCloneUpdate();
@@ -168,6 +173,42 @@ namespace Node.Services.Stations
         {
             // TODO: PROPERLY IMPLEMENT THIS, NPC STATIONS HAVE A LIMIT OF 24 OFFICES
             return 0;
+        }
+
+        public PyDataType SetCloneTypeID(PyInteger cloneTypeID, CallInformation call)
+        {
+            int callerCharacterID = call.Client.EnsureCharacterIsSelected();
+            
+            Character character = this.ItemManager.LoadItem(callerCharacterID) as Character;
+            ItemType newCloneType = this.TypeManager[cloneTypeID];
+
+            if (call.Client.StationID == null)
+                throw new CanOnlyDoInStations();
+            if (newCloneType.Group.ID != (int) ItemGroups.Clone)
+                throw new CustomError("Only clone types allowed!");
+            if (character.ActiveClone.Type.BasePrice > newCloneType.BasePrice)
+                throw new MedicalThisCloneIsWorse();
+
+            Station station = this.ItemManager.GetStation((int) call.Client.StationID);
+            
+            // ensure the character has enough money in the account for the upgrade
+            character.EnsureEnoughBalance(newCloneType.BasePrice);
+            character.Balance -= newCloneType.BasePrice;
+            // notify the client
+            call.Client.NotifyBalanceUpdate(character.Balance);
+            // create the wallet entry
+            this.MarketDB.CreateTransactionForCharacter(
+                callerCharacterID, 1, TransactionType.Buy, newCloneType.ID, 1, newCloneType.BasePrice,
+                station.ID, station.RegionID 
+            );
+
+            // update active clone's information
+            character.ActiveClone.Type = newCloneType;
+            character.ActiveClone.Name = newCloneType.Name;
+            character.ActiveClone.Persist();
+            character.Persist();
+            
+            return null;
         }
     }
 }

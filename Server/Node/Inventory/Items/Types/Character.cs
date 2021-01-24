@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using Node.Database;
+using Node.Exceptions;
 using Node.Inventory.Items.Attributes;
 using PythonTypes.Types.Primitives;
 
@@ -545,6 +546,12 @@ namespace Node.Inventory.Items.Types
                 spPerMin = spPerMin * 2.0f;
 
             return spPerMin;
+        }
+
+        public void EnsureEnoughBalance(double needed)
+        {
+            if (this.Balance < needed)
+                throw new NotEnoughMoney(this.Balance, needed);
         }
         
         protected override void SaveToDB()

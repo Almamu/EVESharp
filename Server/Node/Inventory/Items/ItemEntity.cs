@@ -70,8 +70,17 @@ namespace Node.Inventory.Items
         private AttributeList mAttributes;
 
         public int ID => mID;
-        public ItemType Type => mType;
         public AttributeList Attributes => mAttributes;
+
+        public ItemType Type
+        {
+            get => this.mType;
+            set
+            {
+                this.mType = value;
+                this.Dirty = true;
+            }
+        }
 
         public string Name
         {

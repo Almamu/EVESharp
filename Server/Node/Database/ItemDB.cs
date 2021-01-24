@@ -986,25 +986,26 @@ namespace Node.Database
         /// <summary>
         /// Saves an entity to the database
         /// </summary>
-        /// <param name="Item"></param>
-        public void PersistEntity(ItemEntity Item)
+        /// <param name="item"></param>
+        public void PersistEntity(ItemEntity item)
         {
             Database.PrepareQuery(
-                "UPDATE entity SET itemName = @itemName, ownerID = @ownerID, locationID = @locationID, flag = @flag, contraband = @contraband, singleton = @singleton, quantity = @quantity, x = @x, y = @y, z = @z, customInfo = @customInfo WHERE itemID = @itemID",
+                "UPDATE entity SET itemName = @itemName, typeID = @typeID, ownerID = @ownerID, locationID = @locationID, flag = @flag, contraband = @contraband, singleton = @singleton, quantity = @quantity, x = @x, y = @y, z = @z, customInfo = @customInfo WHERE itemID = @itemID",
                 new Dictionary<string, object>()
                 {
-                    {"@itemName", Item.Name},
-                    {"@ownerID", Item.OwnerID},
-                    {"@locationID", Item.LocationID},
-                    {"@flag", Item.Flag},
-                    {"@contraband", Item.Contraband},
-                    {"@singleton", Item.Singleton},
-                    {"@quantity", Item.Quantity},
-                    {"@x", Item.X},
-                    {"@y", Item.Y},
-                    {"@z", Item.Z},
-                    {"@customInfo", Item.CustomInfo},
-                    {"@itemID", Item.ID}
+                    {"@itemName", item.Name},
+                    {"@typeID", item.Type.ID},
+                    {"@ownerID", item.OwnerID},
+                    {"@locationID", item.LocationID},
+                    {"@flag", item.Flag},
+                    {"@contraband", item.Contraband},
+                    {"@singleton", item.Singleton},
+                    {"@quantity", item.Quantity},
+                    {"@x", item.X},
+                    {"@y", item.Y},
+                    {"@z", item.Z},
+                    {"@customInfo", item.CustomInfo},
+                    {"@itemID", item.ID}
                 }
             );
         }

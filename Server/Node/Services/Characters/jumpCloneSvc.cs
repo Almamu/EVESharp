@@ -132,8 +132,7 @@ namespace Node.Services.Characters
             // ensure that the character has enough money
             int cost = this.GetPriceForClone(call);
 
-            if (character.Balance < cost)
-                throw new NotEnoughMoney(character.Balance, cost);
+            character.EnsureEnoughBalance(cost);
             
             // create an alpha clone
             ItemType cloneType = this.TypeManager[ItemTypes.CloneGradeAlpha];
@@ -157,6 +156,9 @@ namespace Node.Services.Characters
             
             // finally create the jump clone and invalidate caches
             call.Client.NotifyCloneUpdate();
+            
+            // persist the character information
+            character.Persist();
             
             return null;
         }

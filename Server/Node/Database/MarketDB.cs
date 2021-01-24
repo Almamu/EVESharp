@@ -22,7 +22,7 @@ namespace Node.Database
         public void CreateJournalForCharacter(int locationID, MarketReference reference, int ownerID1,
             int? ownerID2, int? referenceID, double amount, double balance, string reason, int accountKey)
         {
-            reason = reason.Substring(0, 43);
+            reason = reason.Substring(0, Math.Min(reason.Length, 43));
             
             Database.PrepareQuery(
                 "INSERT INTO market_journal(transactionDate, entryTypeID, ownerID1, ownerID2, referenceID, amount, balance, description, accountKey)VALUES(@transactionDate, @entryTypeID, @ownerID1, @ownerID2, @referenceID, @amount, @balance, @description, @accountKey)",
