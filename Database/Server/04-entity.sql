@@ -107,7 +107,7 @@ INSERT INTO dgmTypeAttributes(typeID, attributeID, valueInt, valueFloat) SELECT 
 /*
  * Create the invTypes entry for the universe item type
  */
-INSERT INTO invTypes(typeID, groupID, typeName, description, radius, mass, volume, capacity, portionSize, basePrice, published)VALUES(1, 0, "Universe", "EVE Online Universe that contains everything in-game", (SELECT radius FROM mapUniverse LIMIT 1), 0, 0, 0, 0, 0, 0);
+INSERT INTO invTypes(typeID, groupID, typeName, description, radius, mass, volume, capacity, portionSize, basePrice, published, chanceOfDuplicating)VALUES(1, 0, "Universe", "EVE Online Universe that contains everything in-game", (SELECT radius FROM mapUniverse LIMIT 1), 0, 0, 0, 0, 0, 0, 0);
 /*
  * Copy over the universes in mapUniverse to entity
  */
