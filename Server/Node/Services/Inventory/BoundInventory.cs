@@ -206,20 +206,7 @@ namespace Node.Services.Inventory
                     int oldLocationID = fromItem.LocationID;
                     
                     // remove the item
-                    fromItem.Destroy();
-                    // remove the item from the inventory (if it belongs to us)
-                    if (fromItem.LocationID == this.mInventory.ID)
-                        this.mInventory.RemoveItem(fromItem);
-                    else if (this.ItemManager.IsItemLoaded(fromItem.LocationID) == true)
-                    {
-                        // check if the item belongs to a loaded container and be sure to remove it's reference from there
-                        ItemInventory inventory = this.ItemManager.GetItem(fromItem.LocationID) as ItemInventory;
-                        
-                        inventory.RemoveItem(fromItem);
-                    }
-                    
-                    // update the item to something else so the item is taken out of player's sight
-                    fromItem.LocationID = this.NodeContainer.Constants["locationRecycler"];
+                    this.ItemManager.DestroyItem(fromItem);
                     // notify the client about the item too
                     call.Client.NotifyItemLocationChange(fromItem, fromItem.Flag, oldLocationID);
                 }
@@ -275,14 +262,9 @@ namespace Node.Services.Inventory
                     secondItem.Quantity += firstItem.Quantity;
                     // also create the notification for the user
                     call.Client.NotifyItemQuantityChange(secondItem, oldQuantity);
-                    // remove the item off the list
-                    this.mInventory.Items.Remove(firstItemID);
-                    // update the item to something else so the item is take out of player's sight
-                    firstItem.LocationID = this.NodeContainer.Constants["locationRecycler"];
+                    this.ItemManager.DestroyItem(firstItem);
                     // notify the client about the item too
                     call.Client.NotifyItemLocationChange(firstItem, firstItem.Flag, secondItem.LocationID);
-                    // delete the original item off the database
-                    firstItem.Destroy();
                     // ensure the second item is saved to database too
                     secondItem.Persist();
                     // finally break this loop as the merge was already done
@@ -322,14 +304,9 @@ namespace Node.Services.Inventory
                     secondItem.Quantity += firstItem.Quantity;
                     // also create the notification for the user
                     call.Client.NotifyItemQuantityChange(secondItem, oldQuantity);
-                    // remove the item off the list
-                    this.mInventory.Items.Remove(firstItemID);
-                    // update the item to something else so the item is take out of player's sight
-                    firstItem.LocationID = this.NodeContainer.Constants["locationRecycler"];
+                    this.ItemManager.DestroyItem(firstItem);
                     // notify the client about the item too
                     call.Client.NotifyItemLocationChange(firstItem, firstItem.Flag, secondItem.LocationID);
-                    // delete the original item off the database
-                    firstItem.Destroy();
                     // ensure the second item is saved to database too
                     secondItem.Persist();
                     // finally break this loop as the merge was already done

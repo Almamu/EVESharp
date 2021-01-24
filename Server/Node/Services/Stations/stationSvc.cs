@@ -22,5 +22,10 @@ namespace Node.Services.Stations
         {
             return this.ItemManager.Stations[stationID].GetStationInfo();
         }
+
+        public PyDataType GetSolarSystem(PyInteger solarSystemID, CallInformation call)
+        {
+            return this.ItemManager.SolarSystems[solarSystemID].GetSolarSystemInfo();
+        }
     }
 }

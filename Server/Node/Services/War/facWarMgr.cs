@@ -1,3 +1,4 @@
+using System;
 using Common.Services;
 using Node.Inventory;
 using Node.Inventory.Items.Types;
@@ -31,6 +32,20 @@ namespace Node.Services.War
             PyDataType cacheHint = this.CacheStorage.GetHint("facWarMgr", "GetWarFactions");
 
             return PyCacheMethodCallResult.FromCacheHint(cacheHint);
+        }
+
+        public PyDataType GetFacWarSystems(CallInformation call)
+        {
+            /*
+             * The data is an integer dict (indicating solar system) with these as entries:
+             * ["occupierID"] = Faction ID - I guess faction ID that controls the system
+             * ["factionID"] = Faction ID - I guess original faction ID that controled the system?
+             */
+            this.CacheStorage.StoreCall("facWarMgr", "GetFacWarSystems", new PyDictionary (), DateTime.UtcNow.ToFileTimeUtc());
+
+            return PyCacheMethodCallResult.FromCacheHint(
+                this.CacheStorage.GetHint("facWarMgr", "GetFacWarSystems")
+            );
         }
 
         public PyDataType GetCharacterRankOverview(PyInteger characterID, CallInformation call)

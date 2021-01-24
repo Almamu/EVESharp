@@ -34,8 +34,8 @@ namespace Node.Services.Network
 
                 switch (parts[0])
                 {
-                    case "/spawn":
-                        this.SpawnCmd(parts, call);
+                    case "/create":
+                        this.CreateCmd(parts, call);
                         break;
                     default:
                         throw new SlashError("Unknown command: " + line.Value);
@@ -53,7 +53,7 @@ namespace Node.Services.Network
             return null;
         }
 
-        private void SpawnCmd(string[] argv, CallInformation call)
+        private void CreateCmd(string[] argv, CallInformation call)
         {
             int typeID = int.Parse(argv[1]);
             int quantity = 1;
@@ -62,7 +62,7 @@ namespace Node.Services.Network
                 quantity = int.Parse(argv[2]);
 
             if (call.Client.StationID == null)
-                throw new SlashError("Spawning items can only be done at station");
+                throw new SlashError("Creating items can only be done at station");
             // ensure the typeID exists
             if (this.TypeManager.Exists(typeID) == false)
                 throw new SlashError("The specified typeID doesn't exist");

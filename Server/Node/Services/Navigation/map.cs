@@ -78,5 +78,13 @@ namespace Node.Services.Navigation
 
             return PyCacheMethodCallResult.FromCacheHint(cacheHint);
         }
+
+        // TODO: PROPERLY IMPLEMENT THIS ONE
+        public PyDataType GetMyExtraMapInfoAgents(CallInformation call)
+        {
+            return new Rowset(
+                new PyDataType [] { "fromID", "rank" }
+            );
+        }
     }
 }

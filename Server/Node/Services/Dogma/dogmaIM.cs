@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Common.Constants;
 using Common.Logging;
 using Node.Exceptions;
 using Node.Inventory;
@@ -20,16 +21,18 @@ namespace Node.Services.Dogma
     public class dogmaIM : BoundService
     {
         private int mObjectID;
-        
         private ItemManager ItemManager { get; }
-        public dogmaIM(ItemManager itemManager, BoundServiceManager manager) : base(manager)
+        private AttributeManager AttributeManager { get; }
+        public dogmaIM(ItemManager itemManager, AttributeManager attributeManager, BoundServiceManager manager) : base(manager)
         {
             this.ItemManager = itemManager;
+            this.AttributeManager = attributeManager;
         }
 
-        private dogmaIM(ItemManager itemManager, BoundServiceManager manager, int objectID) : base(manager)
+        private dogmaIM(ItemManager itemManager, AttributeManager attributeManager, BoundServiceManager manager, int objectID) : base(manager)
         {
             this.ItemManager = itemManager;
+            this.AttributeManager = attributeManager;
             this.mObjectID = objectID;
         }
 
@@ -37,7 +40,7 @@ namespace Node.Services.Dogma
         {
             PyTuple tupleData = objectData as PyTuple;
             
-            return new dogmaIM(this.ItemManager, this.BoundServiceManager, tupleData[0] as PyInteger);
+            return new dogmaIM(this.ItemManager, this.AttributeManager, this.BoundServiceManager, tupleData[0] as PyInteger);
         }
 
         public PyDataType ShipGetInfo(CallInformation call)
@@ -194,6 +197,36 @@ namespace Node.Services.Dogma
                 [(int) AttributeEnum.intelligence] = character.Intelligence,
                 [(int) AttributeEnum.perception] = character.Perception,
                 [(int) AttributeEnum.memory] = character.Memory
+            };
+        }
+
+        public PyDataType LogAttribute(PyInteger itemID, PyInteger attributeID, CallInformation call)
+        {
+            return this.LogAttribute(itemID, attributeID, "", call);
+        }
+
+        public PyDataType LogAttribute(PyInteger itemID, PyInteger attributeID, PyString reason, CallInformation call)
+        {
+            int role = call.Client.Role;
+            int roleMask = (int) (Roles.ROLE_GDH | Roles.ROLE_QA | Roles.ROLE_PROGRAMMER | Roles.ROLE_GMH);
+
+            if ((role & roleMask) == 0)
+                throw new CustomError("Not allowed!");
+
+            ItemEntity item = this.ItemManager.GetItem(itemID);
+
+            if (item.Attributes.AttributeExists(attributeID) == false)
+                throw new CustomError("The given attribute doesn't exists in the item");
+            
+            // we don't know the actual values of the returned function
+            // but it should be enough to fill the required data by the client
+            return (PyList) new PyDataType[]
+            {
+                null,
+                null,
+                $"Server value: {item.Attributes[attributeID]}",
+                $"Base value: {AttributeManager.DefaultAttributes[item.Type.ID][attributeID]}",
+                $"Reason: {reason}"
             };
         }
     }

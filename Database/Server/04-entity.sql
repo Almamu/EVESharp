@@ -59,7 +59,7 @@ INSERT INTO entity (itemID, itemName, typeID, ownerID, locationID, singleton, qu
  * Insert regions
  */
 INSERT INTO entity (itemID, itemName, typeID, ownerID, locationID, x, y, z, singleton, quantity)
-  SELECT regionID, regionName, 3, 1, 1, x, y, z, 1, 1
+  SELECT regionID, regionName, 3, 1, 9, x, y, z, 1, 1
     FROM mapRegions;
 /*
  * Insert constellations
@@ -98,9 +98,18 @@ INSERT INTO entity (itemID, itemName, typeID, ownerID, locationID, singleton, qu
 ALTER TABLE entity AUTO_INCREMENT = 100000000;
 
 /*
- * Add default capacity attribute to all the items that have a capacity greater than 10
+ * Add default capacity attribute to all the items that have a capacity greater than 0
  */
 INSERT INTO dgmTypeAttributes(typeID, attributeID, valueInt, valueFloat) SELECT typeID, 38 AS attributeID, NULL AS valueInt, capacity AS valueFloat FROM invTypes WHERE capacity > 0;
 INSERT INTO dgmTypeAttributes(typeID, attributeID, valueInt, valueFloat) SELECT typeID, 4 AS attributeID, NULL AS valueInt, mass AS valueFloat FROM invTypes WHERE mass > 0;
 INSERT INTO dgmTypeAttributes(typeID, attributeID, valueInt, valueFloat) SELECT typeID, 161 AS attributeID, NULL AS valueInt, volume AS valueFloat FROM invTypes WHERE volume > 0;
 INSERT INTO dgmTypeAttributes(typeID, attributeID, valueInt, valueFloat) SELECT typeID, 162 AS attributeID, NULL AS valueInt, radius AS valueFloat FROM invTypes WHERE radius > 0;
+/*
+ * Create the invTypes entry for the universe item type
+ */
+INSERT INTO invTypes(typeID, groupID, typeName, description, radius, mass, volume, capacity, portionSize, basePrice, published)VALUES(1, 0, "Universe", "EVE Online Universe that contains everything in-game", (SELECT radius FROM mapUniverse LIMIT 1), 0, 0, 0, 0, 0, 0);
+/*
+ * Copy over the universes in mapUniverse to entity
+ */
+INSERT INTO entity (itemID, itemName, typeID, ownerID, locationID, singleton, quantity, x, y, z)
+  SELECT universeID, universeName, 1, 1, 1, 1, 1, x, y, z FROM mapUniverse;

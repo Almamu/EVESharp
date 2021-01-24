@@ -1012,16 +1012,13 @@ namespace Node.Database
         public void PersistAttributeList(ItemEntity item, AttributeList list)
         {
             MySqlConnection connection = null;
-            MySqlCommand update = Database.PrepareQuery(
+            MySqlCommand command = Database.PrepareQuery(
                 ref connection,
-                "UPDATE entity_attributes SET valueInt = @valueInt, valueFloat = @valueFloat WHERE itemID = @itemID AND attributeID = @attributeID"
-            );
-            MySqlCommand create = Database.PrepareQuery(
-                ref connection,
-                "INSERT INTO entity_attributes(itemID, attributeID, valueInt, valueFloat) VALUE (@itemID, @attributeID, @valueInt, @valueFloat)"
+                "REPLACE INTO entity_attributes(itemID, attributeID, valueInt, valueFloat) VALUE (@itemID, @attributeID, @valueInt, @valueFloat)"
             );
 
             using (connection)
+            using (command)
             {
                 foreach (KeyValuePair<int, ItemAttribute> pair in list)
                 {
@@ -1029,49 +1026,25 @@ namespace Node.Database
                     if (pair.Value.Dirty == false && pair.Value.New == false)
                         continue;
 
-                    // use the correct prepared statement based on whether the attribute is new or old
-                    if (pair.Value.New == true)
-                    {
-                        create.Parameters.Clear();
-                        
-                        create.Parameters.AddWithValue("@itemID", item.ID);
-                        create.Parameters.AddWithValue("@attributeID", pair.Value.Info.ID);
+                    command.Parameters.Clear();
+                    
+                    command.Parameters.AddWithValue("@itemID", item.ID);
+                    command.Parameters.AddWithValue("@attributeID", pair.Value.Info.ID);
 
-                        if (pair.Value.ValueType == ItemAttribute.ItemAttributeValueType.Integer)
-                            create.Parameters.AddWithValue("@valueInt", pair.Value.Integer);
-                        else
-                            create.Parameters.AddWithValue("@valueInt", null);
-
-                        if (pair.Value.ValueType == ItemAttribute.ItemAttributeValueType.Double)
-                            create.Parameters.AddWithValue("@valueFloat", pair.Value.Float);
-                        else
-                            create.Parameters.AddWithValue("@valueFloat", null);
-
-                        create.ExecuteNonQuery();
-
-                        pair.Value.New = false;
-                    }
+                    if (pair.Value.ValueType == ItemAttribute.ItemAttributeValueType.Integer)
+                        command.Parameters.AddWithValue("@valueInt", pair.Value.Integer);
                     else
-                    {
-                        update.Parameters.Clear();
-                        
-                        update.Parameters.AddWithValue("@itemID", item.ID);
-                        update.Parameters.AddWithValue("@attributeID", pair.Value.Info.ID);
+                        command.Parameters.AddWithValue("@valueInt", null);
 
-                        if (pair.Value.ValueType == ItemAttribute.ItemAttributeValueType.Integer)
-                            update.Parameters.AddWithValue("@valueInt", pair.Value.Integer);
-                        else
-                            update.Parameters.AddWithValue("@valueInt", null);
+                    if (pair.Value.ValueType == ItemAttribute.ItemAttributeValueType.Double)
+                        command.Parameters.AddWithValue("@valueFloat", pair.Value.Float);
+                    else
+                        command.Parameters.AddWithValue("@valueFloat", null);
 
-                        if (pair.Value.ValueType == ItemAttribute.ItemAttributeValueType.Double)
-                            update.Parameters.AddWithValue("@valueFloat", pair.Value.Float);
-                        else
-                            update.Parameters.AddWithValue("@valueFloat", null);
+                    command.ExecuteNonQuery();
 
-                        update.ExecuteNonQuery();
-
-                        pair.Value.Dirty = false;
-                    }
+                    pair.Value.New = false;
+                    pair.Value.Dirty = false;
                 }
             }
         }

@@ -24,6 +24,8 @@
 
 using System;
 using Node.Inventory.Items;
+using PythonTypes.Types.Database;
+using PythonTypes.Types.Primitives;
 
 namespace Node.Inventory.SystemEntities
 {
@@ -211,6 +213,24 @@ namespace Node.Inventory.SystemEntities
         public override void Destroy()
         {
             throw new NotImplementedException("Stations cannot be destroyed as they're regarded as static data!");
+        }
+
+        public PyDataType GetSolarSystemInfo()
+        {
+            // TODO: CHECK WHERE WE CAN FETCH allianceID, sovereigntyLevel and constellationSovereignty
+            // TODO: AS THESE SEEM TO BE DYNAMIC VALUES
+            return new Row(
+                new PyDataType[]
+                {
+                    "solarSystemID", "solarSystemName", "x", "y", "z", "radius", "security", "constellationID",
+                    "factionID", "sunTypeID", "regionID", "allianceID", "sovereigntyLevel", "constellationSovereignty"
+                },
+                new PyDataType[]
+                {
+                    this.ID, this.Name, this.X, this.Y, this.Z, this.Radius, this.Security, this.ConstellationID,
+                    this.FactionID, this.SunTypeID, this.RegionID, null, 0, 0
+                }
+            );
         }
     }
 }

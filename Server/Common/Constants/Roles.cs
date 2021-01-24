@@ -1,5 +1,8 @@
-﻿namespace Common.Constants
+﻿using System;
+
+namespace Common.Constants
 {
+    [Flags]
     public enum Roles : ulong
     {
         // Completely ported from Apocrypha game code

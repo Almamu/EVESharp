@@ -29,6 +29,12 @@ namespace PythonTypes.Types.Database
             this.Header = headers;
             this.Rows = new PyList();
         }
+
+        public Rowset(PyList headers, PyList rows)
+        {
+            this.Header = headers;
+            this.Rows = rows;
+        }
         
         /// <summary>
         /// Simple helper method that creates a correct util.Rowset ready to be sent

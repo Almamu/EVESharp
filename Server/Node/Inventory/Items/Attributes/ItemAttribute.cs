@@ -22,6 +22,7 @@
     Creator: Almamu
 */
 
+using System.Globalization;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Xml.Schema;
@@ -323,6 +324,17 @@ namespace Node.Inventory.Items.Attributes
                 default:
                     return attrib.Integer;
             }
+        }
+
+        public override string ToString()
+        {
+            if (this.ValueType == ItemAttributeValueType.Double)
+                return this.Float.ToString(CultureInfo.InvariantCulture);
+            if (this.ValueType == ItemAttributeValueType.Integer)
+                return this.Integer.ToString();
+
+            // this should never happen tho
+            return "Unknown";
         }
     }
 }

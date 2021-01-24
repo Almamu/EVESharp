@@ -39,6 +39,8 @@ namespace Node.Inventory
         public const int FACTION_ID_MAX = 1000000;
         public const int NPC_CORPORATION_ID_MIN = 1000000;
         public const int NPC_CORPORATION_ID_MAX = 2000000;
+        public const int CELESTIAL_ID_MIN = 40000000;
+        public const int CELESTIAL_ID_MAX = 50000000;
         public const int STATION_ID_MIN = 60000000;
         public const int STATION_ID_MAX = 70000000;
         public const int NPC_CHARACTER_ID_MIN = 10000;
@@ -48,11 +50,14 @@ namespace Node.Inventory
         private SkillDB SkillDB { get; }
         private ItemDB ItemDB { get; }
         private Channel Log { get; }
+        private NodeContainer NodeContainer { get; }
         public MetaInventoryManager MetaInventoryManager { get; }
         private Dictionary<int, ItemEntity> mItemList = new Dictionary<int, ItemEntity>();
         private Dictionary<int, Station> mStations = new Dictionary<int, Station>();
+        private Dictionary<int, SolarSystem> mSolarSystems = new Dictionary<int, SolarSystem>();
 
         public Dictionary<int, Station> Stations => this.mStations;
+        public Dictionary<int, SolarSystem> SolarSystems => this.mSolarSystems;
 
         public void Load()
         {
@@ -102,6 +107,11 @@ namespace Node.Inventory
         public static bool IsNPC(int itemID)
         {
             return itemID >= NPC_CHARACTER_ID_MIN && itemID < NPC_CHARACTER_ID_MAX;
+        }
+
+        public static bool IsCelestialID(int itemID)
+        {
+            return itemID >= CELESTIAL_ID_MIN && itemID < CELESTIAL_ID_MAX;
         }
 
         public static bool IsStaticData(int itemID)
@@ -189,7 +199,7 @@ namespace Node.Inventory
             switch (item.Type.Group.ID)
             {
                 case (int) ItemGroups.SolarSystem:
-                    return this.ItemDB.LoadSolarSystem(item);
+                    return this.LoadSolarSystem(item);
                 case (int) ItemGroups.Station:
                     return this.LoadStation(item);
                 case (int) ItemGroups.Constellation:
@@ -243,6 +253,13 @@ namespace Node.Inventory
         private ItemEntity LoadShip(ItemEntity item)
         {
             return this.ItemDB.LoadShip(item);
+        }
+
+        private ItemEntity LoadSolarSystem(ItemEntity item)
+        {
+            SolarSystem solarSystem = this.ItemDB.LoadSolarSystem(item);
+
+            return this.mSolarSystems[solarSystem.ID] = solarSystem;
         }
 
         private ItemEntity LoadStation(ItemEntity item)
@@ -355,7 +372,7 @@ namespace Node.Inventory
             {
                 mItemList.Remove(item.ID);
 
-                // Update the database information
+                // Update the database informationf
                 this.ItemDB.UnloadItem(item.ID);
             }
             catch
@@ -370,6 +387,30 @@ namespace Node.Inventory
 
             // remove the item from the list
             this.mItemList.Remove(item.ID);
+            
+            // check if there are inventories loaded for this item
+            if (this.IsItemLoaded(item.LocationID) == true)
+            {
+                ItemInventory inventory = this.GetItem(item.LocationID) as ItemInventory;
+                
+                // remove the item from the inventory
+                inventory.RemoveItem(item);
+                
+                // try to remove from meta inventories too
+                try
+                {
+                    ItemInventory metaInventory =
+                        this.MetaInventoryManager.GetOwnerInventoriesAtLocation(item.LocationID, item.OwnerID);
+
+                    metaInventory.RemoveItem(item);
+                }
+                catch (ArgumentOutOfRangeException)
+                {
+                }
+            }
+
+            // set the item to the recycler location
+            item.LocationID = this.NodeContainer.Constants["locationRecycler"];
 
             // finally remove the item off the database
             item.Destroy();
@@ -387,12 +428,13 @@ namespace Node.Inventory
                 this.DestroyItem(item);
         }
         
-        public ItemManager(Logger logger, ItemDB itemDB, SkillDB skillDB, MetaInventoryManager metaInventoryManager)
+        public ItemManager(Logger logger, ItemDB itemDB, SkillDB skillDB, NodeContainer nodeContainer, MetaInventoryManager metaInventoryManager)
         {
             // create a log channel for the rare occurence of the ItemManager wanting to log something
             this.Log = logger.CreateLogChannel("ItemManager");
             this.ItemDB = itemDB;
             this.SkillDB = skillDB;
+            this.NodeContainer = nodeContainer;
             this.MetaInventoryManager = metaInventoryManager;
         }
     }

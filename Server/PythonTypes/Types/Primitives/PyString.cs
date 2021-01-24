@@ -78,5 +78,10 @@ namespace PythonTypes.Types.Primitives
         {
             return new PyString(new string(new char[] {value}));
         }
+
+        public override string ToString()
+        {
+            return this.Value;
+        }
     }
 }

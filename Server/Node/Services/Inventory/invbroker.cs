@@ -1,3 +1,4 @@
+using System;
 using System.Runtime.CompilerServices;
 using Common.Logging;
 using Node.Database;
@@ -103,6 +104,26 @@ namespace Node.Services.Inventory
             return BoundInventory.BindInventory(this.ItemDB, inventoryByOwner, flag, this.ItemManager, this.NodeContainer, this.BoundServiceManager);
         }
 
+        public PyDataType TrashItems(PyList itemIDs, CallInformation call)
+        {
+            foreach (PyDataType itemID in itemIDs)
+            {
+                // ignore non integer values
+                if (itemID is PyInteger == false)
+                    continue;
+
+                ItemEntity item = this.ItemManager.GetItem(itemID as PyInteger);
+                // store it's location id
+                int oldLocationID = item.LocationID;
+                // remove the item off the ItemManager
+                this.ItemManager.DestroyItem(item);
+                // notify the client of the change
+                call.Client.NotifyItemLocationChange(item, item.Flag, oldLocationID);
+            }
+            
+            return null;
+        }
+        
         public PyDataType SetLabel(PyInteger itemID, PyString newLabel, CallInformation call)
         {
             ItemEntity item = this.ItemManager.LoadItem(itemID);
