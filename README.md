@@ -1,11 +1,11 @@
 <h3 align="center"><img src="assets/EVESharp.png" height="200px"></h3>
 
 <p align="center">
-	<img src="https://img.shields.io/github/license/Almamu/EVESharp" />
-	<img src="https://img.shields.io/tokei/lines/github/Almamu/EVESharp" />
-	<img src="https://img.shields.io/codefactor/grade/github/Almamu/EVESharp" />
-	<img src="https://img.shields.io/github/commit-activity/w/Almamu/EVESharp" />
-	<img src="https://img.shields.io/github/contributors/Almamu/EVESharp" />
+	<a href="https://github.com/Almamu/EVESharp/blob/master/LICENSE"><img src="https://img.shields.io/github/license/Almamu/EVESharp" /></a>
+	<a href="https://github.com/Almamu/EVESharp/pulse"><img src="https://img.shields.io/tokei/lines/github/Almamu/EVESharp" /></a>
+	<a href="https://www.codefactor.io/repository/github/almamu/evesharp"><img src="https://img.shields.io/codefactor/grade/github/Almamu/EVESharp" /></a>
+	<a href="https://github.com/Almamu/EVESharp/graphs/commit-activity"><img src="https://img.shields.io/github/commit-activity/w/Almamu/EVESharp" /></a>
+	<a href="https://github.com/Almamu/EVESharp/graphs/contributors"><img src="https://img.shields.io/github/contributors/Almamu/EVESharp" /></a>
 	<a href="https://discord.gg/4xYzq7tA3J"><img src="https://img.shields.io/discord/169172227386769418.svg" /></a>
 	<a href="https://github.com/Almamu/EVESharp/issues"><img src="https://img.shields.io/github/issues-raw/Almamu/EVESharp" /></a>
 	<a href="https://github.com/Almamu/EVESharp/issues?q=is%3Aissue+is%3Aopen+label%3A%22helpwanted%22"><img src="https://img.shields.io/github/issues/Almamu/EVESharp/helpwanted?color=green" alt="help wanted"></a>
