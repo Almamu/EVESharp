@@ -23,8 +23,7 @@ namespace PythonTypes.Types.Primitives
         {
             return new PyInteger((long) value);
         }
-
-
+        
         public static implicit operator PyDataType(long value)
         {
             return new PyInteger(value);

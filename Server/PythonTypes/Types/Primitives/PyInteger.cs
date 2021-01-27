@@ -28,7 +28,7 @@ namespace PythonTypes.Types.Primitives
             Int,
             Short,
             Byte
-        };
+        }
 
         public long Value { get; }
 
