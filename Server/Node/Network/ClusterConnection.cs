@@ -67,7 +67,7 @@ namespace Node.Network
         {
             try
             {
-                LowLevelVersionExchange exchange = this.CheckLowLevelVersionExchange(ar);
+                LowLevelVersionExchange exchange = CheckLowLevelVersionExchange(ar);
 
                 // reply with the node LowLevelVersionExchange
                 LowLevelVersionExchange reply = new LowLevelVersionExchange();
@@ -117,246 +117,57 @@ namespace Node.Network
             this.Socket.SetReceiveCallback(ReceiveNormalPacketCallback);
         }
 
-        private void ReceiveNormalPacketCallback(PyDataType ar)
+        private void HandleCallReq(PyPacket packet, Client client)
         {
-            PyPacket packet = ar;
-            Client client = null;
+            PyTuple callInfo = ((packet.Payload[0] as PyTuple)[1] as PySubStream).Stream as PyTuple;
             
-            if (this.ClientManager.Contains(packet.UserID))
-                client = this.ClientManager.Get(packet.UserID);
-
-            if (packet.Type == PyPacket.PacketType.CALL_REQ)
-            {
-                PyTuple callInfo = ((packet.Payload[0] as PyTuple)[1] as PySubStream).Stream as PyTuple;
-                
-                string call = callInfo[1] as PyString;
-                PyTuple args = callInfo[2] as PyTuple;
-                PyDictionary sub = callInfo[3] as PyDictionary;
-                PyDataType callResult = null;
-                PyAddressClient source = packet.Source as PyAddressClient;
-                string destinationService = null;
-                CallInformation callInformation;
-                
-                if (packet.Destination is PyAddressAny destAny)
-                {
-                    destinationService = destAny.Service;
-                }
-                else if (packet.Destination is PyAddressNode destNode)
-                {
-                    destinationService = destNode.Service;
-
-                    if (destNode.NodeID != Container.NodeID)
-                    {
-                        Log.Fatal(
-                            "Received a call request for a node that is not us, did the ClusterController get confused or something?!"
-                        );
-                        return;
-                    }
-                }
-                
-                callInformation = new CallInformation
-                {
-                    Client = client,
-                    CallID = source.CallID,
-                    NamedPayload = sub,
-                    PacketType = packet.Type,
-                    Service = destinationService,
-                    From = packet.Source,
-                    To = packet.Destination
-                };
-
-                try
-                {
-                    if (destinationService == null)
-                    {
-                        if (callInfo[0] is PyString == false)
-                        {
-                            Log.Fatal("Expected bound call with bound string, but got something different");
-                            return;
-                        }
-
-                        string boundString = callInfo[0] as PyString;
-
-                        // parse the bound string to get back proper node and bound ids
-                        Match regexMatch = Regex.Match(boundString, "N=([0-9]+):([0-9]+)");
-
-                        if (regexMatch.Groups.Count != 3)
-                        {
-                            Log.Fatal($"Cannot find nodeID and boundID in the boundString {boundString}");
-                            return;
-                        }
-
-                        int nodeID = int.Parse(regexMatch.Groups[1].Value);
-                        int boundID = int.Parse(regexMatch.Groups[2].Value);
-
-                        if (nodeID != this.Container.NodeID)
-                        {
-                            Log.Fatal("Got bound service call for a different node");
-                            // TODO: MIGHT BE A GOOD IDEA TO RELAY THIS CALL TO THE CORRECT NODE
-                            // TODO: INSIDE THE NETWORK, AT LEAST THAT'S WHAT CCP IS DOING BASED
-                            // TODO: ON THE CLIENT'S CODE... NEEDS MORE INVESTIGATION
-                            return;
-                        }
-
-#if DEBUG
-                        CallLog.Trace("Payload");
-                        CallLog.Trace(PrettyPrinter.FromDataType(args));
-                        CallLog.Trace("Named payload");
-                        CallLog.Trace(PrettyPrinter.FromDataType(sub));
-#endif
-
-                        callResult = this.BoundServiceManager.ServiceCall(
-                            boundID, call, args, callInformation
-                        );
-
-#if DEBUG
-                        ResultLog.Trace("Result");
-                        ResultLog.Trace(PrettyPrinter.FromDataType(callResult));
-#endif
-                    }
-                    else
-                    {
-                        Log.Trace($"Calling {destinationService}::{call}");
-
-#if DEBUG
-                        CallLog.Trace("Payload");
-                        CallLog.Trace(PrettyPrinter.FromDataType(args));
-                        CallLog.Trace("Named payload");
-                        CallLog.Trace(PrettyPrinter.FromDataType(sub));
-#endif
-
-                        callResult = this.ServiceManager.ServiceCall(
-                            destinationService, call, args, callInformation
-                        );
-
-#if DEBUG
-                        ResultLog.Trace("Result");
-                        ResultLog.Trace(PrettyPrinter.FromDataType(callResult));
-#endif
-                    }
-
-                    this.SendCallResult(callInformation, callResult);
-                }
-                catch (PyException e)
-                {
-                    this.SendException(callInformation, e);
-                }
-                catch (ProvisionalResponse provisional)
-                {
-                    this.SendProvisionalResponse(callInformation, provisional);
-                }
-            }
-            else if (packet.Type == PyPacket.PacketType.SESSIONCHANGENOTIFICATION)
-            {
-                Log.Debug($"Updating session for client {packet.UserID}");
-
-                // ensure the client is registered in the node and store his session
-                if (this.ClientManager.Contains(packet.UserID) == false)
-                    this.ClientManager.Add(packet.UserID, this.DependencyInjector.GetInstance<Client>());
-
-                this.ClientManager.Get(packet.UserID).UpdateSession(packet);
-                return;
-            }
-            else if (packet.Type == PyPacket.PacketType.PING_REQ)
-            {
-                // alter package to include the times the data
-                PyTuple handleMessage = new PyTuple(3);
-                PyAddressClient source = packet.Source as PyAddressClient;
-
-                // this time should come from the stream packetizer or the socket itself
-                // but there's no way we're adding time tracking for all the goddamned packets
-                // so this should be sufficient
-                handleMessage[0] = DateTime.UtcNow.ToFileTime();
-                handleMessage[1] = DateTime.UtcNow.ToFileTime();
-                handleMessage[2] = "server::handle_message";
+            string call = callInfo[1] as PyString;
+            PyTuple args = callInfo[2] as PyTuple;
+            PyDictionary sub = callInfo[3] as PyDictionary;
+            PyDataType callResult = null;
+            PyAddressClient source = packet.Source as PyAddressClient;
+            string destinationService = null;
+            CallInformation callInformation;
             
-                PyTuple turnaround = new PyTuple(3);
-
-                turnaround[0] = DateTime.UtcNow.ToFileTime();
-                turnaround[1] = DateTime.UtcNow.ToFileTime();
-                turnaround[2] = "server::turnaround";
-                
-                (packet.Payload[0] as PyList)?.Add(handleMessage);
-                (packet.Payload[0] as PyList)?.Add(turnaround);
-
-                // change to a response
-                packet.Type = PyPacket.PacketType.PING_RSP;
-                
-                // switch source and destination
-                packet.Source = packet.Destination;
-                packet.Destination = source;
-                
-                // queue the packet back
-                this.Socket.Send(packet);
-            }
-            else if (packet.Type == PyPacket.PacketType.CALL_RSP)
+            if (packet.Destination is PyAddressAny destAny)
             {
-                // ensure the response is directed to us
-                if (packet.Destination is PyAddressNode == false)
-                {
-                    Log.Error("Received a call response not directed to us");
-                    return;
-                }
-
-                PyAddressNode dest = packet.Destination as PyAddressNode;
-
-                if (dest.NodeID != Container.NodeID)
-                {
-                    Log.Error($"Received a call response for node {dest.NodeID} but we are {Container.NodeID}");
-                    return;
-                }
-                
-                // handle call response
-                if (packet.Payload.Count != 1)
-                {
-                    Log.Error("Received a call response without proper response data");
-                    return;
-                }
-
-                PyDataType first = packet.Payload[0];
-
-                if (first is PySubStream == false)
-                {
-                    Log.Error("Received a call response without proper response data");
-                    return;
-                }
-                
-                PySubStream subStream = packet.Payload[0] as PySubStream;
-                
-                this.ServiceManager.ReceivedRemoteCallAnswer(dest.CallID, subStream.Stream);
+                destinationService = destAny.Service;
             }
-            else if (packet.Type == PyPacket.PacketType.NOTIFICATION)
+            else if (packet.Destination is PyAddressNode destNode)
             {
-                PyTuple callInfo = ((packet.Payload[0] as PyTuple)[1] as PySubStream).Stream as PyTuple;
+                destinationService = destNode.Service;
 
-                PyList objectIDs = callInfo[0] as PyList;
-                string call = callInfo[1] as PyString;
-
-                if (call != "ClientHasReleasedTheseObjects")
+                if (destNode.NodeID != Container.NodeID)
                 {
-                    Log.Error($"Received notification from client with unknown method {call}");
+                    Log.Fatal(
+                        "Received a call request for a node that is not us, did the ClusterController get confused or something?!"
+                    );
                     return;
                 }
-                
-                // search for the given objects in the bound service
-                // and sure they're freed
-                foreach (PyDataType objectID in objectIDs)
+            }
+            
+            callInformation = new CallInformation
+            {
+                Client = client,
+                CallID = source.CallID,
+                NamedPayload = sub,
+                PacketType = packet.Type,
+                Service = destinationService,
+                From = packet.Source,
+                To = packet.Destination
+            };
+
+            try
+            {
+                if (destinationService == null)
                 {
-                    if (objectID is PyTuple == false)
-                    {
-                        Log.Fatal("Got a ClientHasReleasedTheseObjects for an unknown object id");
-                        continue;
-                    }
-                    
-                    PyTuple tuple = objectID as PyTuple;
-                    
-                    if (tuple[0] is PyString == false)
+                    if (callInfo[0] is PyString == false)
                     {
                         Log.Fatal("Expected bound call with bound string, but got something different");
                         return;
                     }
 
-                    string boundString = tuple[0] as PyString;
+                    string boundString = callInfo[0] as PyString;
 
                     // parse the bound string to get back proper node and bound ids
                     Match regexMatch = Regex.Match(boundString, "N=([0-9]+):([0-9]+)");
@@ -372,22 +183,233 @@ namespace Node.Network
 
                     if (nodeID != this.Container.NodeID)
                     {
-                        Log.Fatal("Got a ClientHasReleasedTheseObjects call for an object ID that doesn't belong to us");
+                        Log.Fatal("Got bound service call for a different node");
                         // TODO: MIGHT BE A GOOD IDEA TO RELAY THIS CALL TO THE CORRECT NODE
                         // TODO: INSIDE THE NETWORK, AT LEAST THAT'S WHAT CCP IS DOING BASED
                         // TODO: ON THE CLIENT'S CODE... NEEDS MORE INVESTIGATION
                         return;
                     }
-                    
-                    this.BoundServiceManager.FreeBoundService(boundID);
+
+#if DEBUG
+                    CallLog.Trace("Payload");
+                    CallLog.Trace(PrettyPrinter.FromDataType(args));
+                    CallLog.Trace("Named payload");
+                    CallLog.Trace(PrettyPrinter.FromDataType(sub));
+#endif
+
+                    callResult = this.BoundServiceManager.ServiceCall(
+                        boundID, call, args, callInformation
+                    );
+
+#if DEBUG
+                    ResultLog.Trace("Result");
+                    ResultLog.Trace(PrettyPrinter.FromDataType(callResult));
+#endif
                 }
+                else
+                {
+                    Log.Trace($"Calling {destinationService}::{call}");
+
+#if DEBUG
+                    CallLog.Trace("Payload");
+                    CallLog.Trace(PrettyPrinter.FromDataType(args));
+                    CallLog.Trace("Named payload");
+                    CallLog.Trace(PrettyPrinter.FromDataType(sub));
+#endif
+
+                    callResult = this.ServiceManager.ServiceCall(
+                        destinationService, call, args, callInformation
+                    );
+
+#if DEBUG
+                    ResultLog.Trace("Result");
+                    ResultLog.Trace(PrettyPrinter.FromDataType(callResult));
+#endif
+                }
+
+                this.SendCallResult(callInformation, callResult);
+            }
+            catch (PyException e)
+            {
+                this.SendException(callInformation, e);
+            }
+            catch (ProvisionalResponse provisional)
+            {
+                this.SendProvisionalResponse(callInformation, provisional);
+            }
+        }
+
+        private void HandleSessionChangeNotification(PyPacket packet, Client client)
+        {
+            Log.Debug($"Updating session for client {packet.UserID}");
+
+            // ensure the client is registered in the node and store his session
+            if (this.ClientManager.Contains(packet.UserID) == false)
+                this.ClientManager.Add(packet.UserID, this.DependencyInjector.GetInstance<Client>());
+
+            this.ClientManager.Get(packet.UserID).UpdateSession(packet);
+        }
+
+        private void HandlePingReq(PyPacket packet, Client client)
+        {
+            // alter package to include the times the data
+            PyTuple handleMessage = new PyTuple(3);
+            PyAddressClient source = packet.Source as PyAddressClient;
+
+            // this time should come from the stream packetizer or the socket itself
+            // but there's no way we're adding time tracking for all the goddamned packets
+            // so this should be sufficient
+            handleMessage[0] = DateTime.UtcNow.ToFileTime();
+            handleMessage[1] = DateTime.UtcNow.ToFileTime();
+            handleMessage[2] = "server::handle_message";
+            
+            PyTuple turnaround = new PyTuple(3);
+
+            turnaround[0] = DateTime.UtcNow.ToFileTime();
+            turnaround[1] = DateTime.UtcNow.ToFileTime();
+            turnaround[2] = "server::turnaround";
+                
+            (packet.Payload[0] as PyList)?.Add(handleMessage);
+            (packet.Payload[0] as PyList)?.Add(turnaround);
+
+            // change to a response
+            packet.Type = PyPacket.PacketType.PING_RSP;
+                
+            // switch source and destination
+            packet.Source = packet.Destination;
+            packet.Destination = source;
+                
+            // queue the packet back
+            this.Socket.Send(packet);
+        }
+
+        private void HandleCallRes(PyPacket packet, Client client)
+        {
+            // ensure the response is directed to us
+            if (packet.Destination is PyAddressNode == false)
+            {
+                Log.Error("Received a call response not directed to us");
+                return;
+            }
+
+            PyAddressNode dest = packet.Destination as PyAddressNode;
+
+            if (dest.NodeID != Container.NodeID)
+            {
+                Log.Error($"Received a call response for node {dest.NodeID} but we are {Container.NodeID}");
+                return;
+            }
+                
+            // handle call response
+            if (packet.Payload.Count != 1)
+            {
+                Log.Error("Received a call response without proper response data");
+                return;
+            }
+
+            PyDataType first = packet.Payload[0];
+
+            if (first is PySubStream == false)
+            {
+                Log.Error("Received a call response without proper response data");
+                return;
+            }
+                
+            PySubStream subStream = packet.Payload[0] as PySubStream;
+                
+            this.ServiceManager.ReceivedRemoteCallAnswer(dest.CallID, subStream.Stream);
+        }
+
+        private void HandleNotification(PyPacket packet, Client client)
+        {
+            PyTuple callInfo = ((packet.Payload[0] as PyTuple)[1] as PySubStream).Stream as PyTuple;
+
+            PyList objectIDs = callInfo[0] as PyList;
+            string call = callInfo[1] as PyString;
+
+            if (call != "ClientHasReleasedTheseObjects")
+            {
+                Log.Error($"Received notification from client with unknown method {call}");
+                return;
+            }
+            
+            // search for the given objects in the bound service
+            // and sure they're freed
+            foreach (PyDataType objectID in objectIDs)
+            {
+                if (objectID is PyTuple == false)
+                {
+                    Log.Fatal("Got a ClientHasReleasedTheseObjects for an unknown object id");
+                    continue;
+                }
+                
+                PyTuple tuple = objectID as PyTuple;
+                
+                if (tuple[0] is PyString == false)
+                {
+                    Log.Fatal("Expected bound call with bound string, but got something different");
+                    return;
+                }
+
+                string boundString = tuple[0] as PyString;
+
+                // parse the bound string to get back proper node and bound ids
+                Match regexMatch = Regex.Match(boundString, "N=([0-9]+):([0-9]+)");
+
+                if (regexMatch.Groups.Count != 3)
+                {
+                    Log.Fatal($"Cannot find nodeID and boundID in the boundString {boundString}");
+                    return;
+                }
+
+                int nodeID = int.Parse(regexMatch.Groups[1].Value);
+                int boundID = int.Parse(regexMatch.Groups[2].Value);
+
+                if (nodeID != this.Container.NodeID)
+                {
+                    Log.Fatal("Got a ClientHasReleasedTheseObjects call for an object ID that doesn't belong to us");
+                    // TODO: MIGHT BE A GOOD IDEA TO RELAY THIS CALL TO THE CORRECT NODE
+                    // TODO: INSIDE THE NETWORK, AT LEAST THAT'S WHAT CCP IS DOING BASED
+                    // TODO: ON THE CLIENT'S CODE... NEEDS MORE INVESTIGATION
+                    return;
+                }
+                
+                this.BoundServiceManager.FreeBoundService(boundID);
+            }
+        }
+
+        private void ReceiveNormalPacketCallback(PyDataType ar)
+        {
+            PyPacket packet = ar;
+            Client client = null;
+            
+            if (this.ClientManager.Contains(packet.UserID))
+                client = this.ClientManager.Get(packet.UserID);
+
+            switch (packet.Type)
+            {
+                case PyPacket.PacketType.CALL_REQ:
+                    this.HandleCallReq(packet, client);
+                    break;
+                case PyPacket.PacketType.SESSIONCHANGENOTIFICATION:
+                    this.HandleSessionChangeNotification(packet, client);
+                    break;
+                case PyPacket.PacketType.PING_REQ:
+                    this.HandlePingReq(packet, client);
+                    break;
+                case PyPacket.PacketType.CALL_RSP:
+                    this.HandleCallRes(packet, client);
+                    break;
+                case PyPacket.PacketType.NOTIFICATION:
+                    this.HandleNotification(packet, client);
+                    break;
             }
             
             // send any notification that might be pending
             client?.SendPendingNotifications();
         }
 
-        protected LowLevelVersionExchange CheckLowLevelVersionExchange(PyDataType exchange)
+        private static LowLevelVersionExchange CheckLowLevelVersionExchange(PyDataType exchange)
         {
             LowLevelVersionExchange data = exchange;
 
