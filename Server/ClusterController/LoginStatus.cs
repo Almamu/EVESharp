@@ -29,5 +29,5 @@ namespace ClusterControler
         Waiting = 0,
         Success = 1,
         Failed = 2,
-    };
+    }
 }

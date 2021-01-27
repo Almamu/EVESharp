@@ -29,5 +29,5 @@ namespace Node.Inventory.Items
         Subsystem = 32,
         AncientRelics = 34,
         Decryptors = 35,
-    };
+    }
 }

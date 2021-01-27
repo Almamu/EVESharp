@@ -17,7 +17,8 @@ namespace Node.Database
         SkillTrainingCancelled = 38,
         GMGiveSkill = 39,
         SkillTrainingComplete2 = 53
-    };
+    }
+    
     public class SkillDB : DatabaseAccessor
     {
         private ItemDB ItemDB { get; }

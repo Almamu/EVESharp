@@ -18,7 +18,7 @@ namespace Common.Logging.Streams
             LARGE_MESSAGE,
             CONTINUATION_MESSAGE,
             CONTINUATION_END_MESSAGE,
-        };
+        }
 
         enum Severity
         {
@@ -26,7 +26,7 @@ namespace Common.Logging.Streams
             SEVERITY_NOTICE,
             SEVERITY_WARN,
             SEVERITY_ERR,
-        };
+        }
 
         private static Dictionary<MessageType, Severity> MessageTypeToSeverity = new Dictionary<MessageType, Severity>()
         {
@@ -38,7 +38,6 @@ namespace Common.Logging.Streams
             {MessageType.Warning, Severity.SEVERITY_WARN}
         };
         
-
         private const int PROTOCOL_VERSION = 2;
 
         private Queue<StreamMessage> mQueue = new Queue<StreamMessage>();

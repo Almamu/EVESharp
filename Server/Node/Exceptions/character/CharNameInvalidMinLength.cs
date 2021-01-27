@@ -7,5 +7,5 @@ namespace Node.Exceptions.character
         public CharNameInvalidMinLength() : base("CharNameInvalidMinLength")
         {
         }
-    };
+    }
 }

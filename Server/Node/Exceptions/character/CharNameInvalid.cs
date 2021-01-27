@@ -7,5 +7,5 @@ namespace Node.Exceptions.character
         public CharNameInvalid() : base("CharNameInvalid")
         {
         }
-    };
+    }
 }

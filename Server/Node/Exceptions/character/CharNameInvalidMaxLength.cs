@@ -7,5 +7,5 @@ namespace Node.Exceptions.character
         public CharNameInvalidMaxLength() : base("CharNameInvalidMaxLength")
         {
         }
-    };
+    }
 }
