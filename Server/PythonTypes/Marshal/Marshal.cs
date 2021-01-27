@@ -68,40 +68,60 @@ namespace PythonTypes.Marshal
         /// <exception cref="InvalidDataException">If an unknow python data type is detected</exception>
         private static void Process(BinaryWriter writer, PyDataType data)
         {
-            if (data == null || data is PyNone)
-                ProcessNone(writer);
-            else if (data is PyInteger pyInteger)
-                ProcessInteger(writer, pyInteger);
-            else if (data is PyDecimal pyDecimal)
-                ProcessDecimal(writer, pyDecimal);
-            else if (data is PyToken pyToken)
-                ProcessToken(writer, pyToken);
-            else if (data is PyBool pyBool)
-                ProcessBool(writer, pyBool);
-            else if (data is PyBuffer pyBuffer)
-                ProcessBuffer(writer, pyBuffer);
-            else if (data is PyDictionary pyDictionary)
-                ProcessDictionary(writer, pyDictionary);
-            else if (data is PyList pyList)
-                ProcessList(writer, pyList);
-            else if (data is PyObjectData pyObjectData)
-                ProcessObjectData(writer, pyObjectData);
-            else if (data is PyObject pyObject)
-                ProcessObject(writer, pyObject);
-            else if (data is PyString pyString)
-                ProcessString(writer, pyString);
-            else if (data is PySubStream pySubStream)
-                ProcessSubStream(writer, pySubStream);
-            else if (data is PyChecksumedStream pyChecksumedStream)
-                ProcessChecksumedStream(writer, pyChecksumedStream);
-            else if (data is PySubStruct pySubStruct)
-                ProcessSubStruct(writer, pySubStruct);
-            else if (data is PyTuple pyTuple)
-                ProcessTuple(writer, pyTuple);
-            else if (data is PyPackedRow pyPackedRow)
-                ProcessPackedRow(writer, pyPackedRow);
-            else
-                throw new InvalidDataException($"Unexpected type {data.GetType()}");
+            switch (data)
+            {
+                case null:
+                case PyNone _:
+                    ProcessNone(writer);
+                    break;
+                case PyInteger pyInteger:
+                    ProcessInteger(writer, pyInteger);
+                    break;
+                case PyDecimal pyDecimal:
+                    ProcessDecimal(writer, pyDecimal);
+                    break;
+                case PyToken pyToken:
+                    ProcessToken(writer, pyToken);
+                    break;
+                case PyBool pyBool:
+                    ProcessBool(writer, pyBool);
+                    break;
+                case PyBuffer pyBuffer:
+                    ProcessBuffer(writer, pyBuffer);
+                    break;
+                case PyDictionary pyDictionary:
+                    ProcessDictionary(writer, pyDictionary);
+                    break;
+                case PyList pyList:
+                    ProcessList(writer, pyList);
+                    break;
+                case PyObjectData pyObjectData:
+                    ProcessObjectData(writer, pyObjectData);
+                    break;
+                case PyObject pyObject:
+                    ProcessObject(writer, pyObject);
+                    break;
+                case PyString pyString:
+                    ProcessString(writer, pyString);
+                    break;
+                case PySubStream pySubStream:
+                    ProcessSubStream(writer, pySubStream);
+                    break;
+                case PyChecksumedStream pyChecksumedStream:
+                    ProcessChecksumedStream(writer, pyChecksumedStream);
+                    break;
+                case PySubStruct pySubStruct:
+                    ProcessSubStruct(writer, pySubStruct);
+                    break;
+                case PyTuple pyTuple:
+                    ProcessTuple(writer, pyTuple);
+                    break;
+                case PyPackedRow pyPackedRow:
+                    ProcessPackedRow(writer, pyPackedRow);
+                    break;
+                default:
+                    throw new InvalidDataException($"Unexpected type {data.GetType()}");
+            }
         }
 
         /// <summary>
