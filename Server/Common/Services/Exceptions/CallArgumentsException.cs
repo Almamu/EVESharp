@@ -7,7 +7,6 @@ namespace Common.Services.Exceptions
         public CallArgumentsException(string parameter, Type type) : base(
             $"Expected parameter {parameter} of type {type}")
         {
-            
         }
     }
 }

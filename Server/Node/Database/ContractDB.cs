@@ -35,7 +35,5 @@ namespace Node.Database
         public ContractDB(DatabaseConnection db) : base(db)
         {
         }
-        
-        
     }
 }

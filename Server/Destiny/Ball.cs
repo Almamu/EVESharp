@@ -3,7 +3,7 @@
     public class Ball
     {
         public BallHeader Header { get; set; }
-        public ExtraBallHeader ExtraHeader { get; set;}
+        public ExtraBallHeader ExtraHeader { get; set; }
         public BallData Data { get; set; }
         public byte FormationId { get; set; }
         public string Name { get; set; }
@@ -34,6 +34,5 @@
         {
             return Header.ItemId.GetHashCode();
         }
-
     }
 }

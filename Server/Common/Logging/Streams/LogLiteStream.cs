@@ -143,8 +143,7 @@ namespace Common.Logging.Streams
                     {
                         byteMessage = new byte[256];
                         Encoding.ASCII.GetBytes(message.Message, offset, Math.Min(255, message.Message.Length - offset), byteMessage, 0);
-                    
-
+                        
                         if ((message.Message.Length - offset) > 255)
                             writer.Write((uint) ConnectionMessage.CONTINUATION_MESSAGE);
                         else

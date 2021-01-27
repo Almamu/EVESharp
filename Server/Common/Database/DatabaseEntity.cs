@@ -34,12 +34,10 @@ namespace Common.Database
         /// </summary>
         public virtual void Destroy()
         {
-            
         }
 
         public virtual void Dispose()
         {
-            
         }
     }
 }

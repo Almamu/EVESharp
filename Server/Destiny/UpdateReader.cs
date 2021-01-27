@@ -109,5 +109,4 @@ namespace Destiny
             return ret;
         }
     }
-
 }

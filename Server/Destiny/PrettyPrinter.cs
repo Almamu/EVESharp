@@ -2,7 +2,6 @@
 
 namespace Destiny
 {
-
     public static class PrettyPrinter
     {
         public const string Indention = "  ";
@@ -169,5 +168,4 @@ namespace Destiny
             sb.AppendLine(indention + Indention + "[Stamp: " + header.Stamp + "]");
         }
     }
-
 }

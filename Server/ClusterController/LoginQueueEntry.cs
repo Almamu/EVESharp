@@ -22,7 +22,6 @@
     Creator: Almamu
 */
 
-
 using Common.Packets;
 
 namespace ClusterControler
