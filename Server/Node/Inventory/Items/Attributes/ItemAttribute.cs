@@ -38,7 +38,7 @@ namespace Node.Inventory.Items.Attributes
         {
             Integer = 0,
             Double = 1
-        };
+        }
 
         private long mInteger;
         private double mFloat;

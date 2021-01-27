@@ -90,6 +90,75 @@ namespace PythonTypes.Marshal
                 this.mStream.Seek(currentPosition, SeekOrigin.Begin);
             }
         }
+
+        private PyDataType ProcessOpcode(Opcode opcode)
+        {
+            // perform decode
+            switch (opcode)
+            {
+                case Opcode.IntegerVar: return ProcessIntegerVar(opcode);
+                case Opcode.None: return ProcessNone(opcode);
+                case Opcode.Buffer: return ProcessBuffer(opcode);
+                case Opcode.Token: return ProcessToken(opcode);
+                case Opcode.SubStruct: return ProcessSubStruct(opcode);
+                case Opcode.SubStream: return ProcessSubStream(opcode);
+                case Opcode.ChecksumedStream: return ProcessChecksumedStream(opcode);
+                case Opcode.Dictionary: return ProcessDictionary(opcode);
+                case Opcode.PackedRow: return ProcessPackedRow(opcode);
+                case Opcode.ObjectData: return ProcessObjectData(opcode);
+                
+                case Opcode.IntegerLongLong:
+                case Opcode.IntegerSignedShort:
+                case Opcode.IntegerByte:
+                case Opcode.IntegerMinusOne:
+                case Opcode.IntegerOne:
+                case Opcode.IntegerZero:
+                case Opcode.IntegerLong:
+                    return ProcessInteger(opcode);
+                
+                case Opcode.BoolFalse:
+                case Opcode.BoolTrue:
+                    return ProcessBool(opcode);
+
+                case Opcode.Real:
+                case Opcode.RealZero:
+                    return ProcessDecimal(opcode);
+
+                case Opcode.StringEmpty:
+                case Opcode.StringChar:
+                case Opcode.StringShort:
+                case Opcode.StringTable:
+                case Opcode.StringLong:
+                case Opcode.WStringEmpty:
+                case Opcode.WStringUCS2:
+                case Opcode.WStringUCS2Char:
+                case Opcode.WStringUTF8:
+                    return ProcessString(opcode);
+                
+                case Opcode.Tuple:
+                case Opcode.TupleOne:
+                case Opcode.TupleTwo:
+                case Opcode.TupleEmpty:
+                    return ProcessTuple(opcode);
+
+                case Opcode.List:
+                case Opcode.ListOne:
+                case Opcode.ListEmpty:
+                    return ProcessList(opcode);
+
+                case Opcode.ObjectType1:
+                case Opcode.ObjectType2:
+                    return ProcessObject(opcode);
+
+                case Opcode.SavedStreamElement:
+                    return this.mSavedList[
+                        this.mSavedElementsMap[this.mReader.ReadSizeEx() - 1] - 1
+                    ];
+                
+                default:
+                    throw new InvalidDataException($"Unknown python type for opcode {opcode:X}");
+            }
+        }
         
         /// <summary>
         /// Processes a python type from the current position of mStream
@@ -107,110 +176,7 @@ namespace PythonTypes.Marshal
             Opcode opcode = (Opcode) (header & Specification.OpcodeMask);
             bool save = (header & Specification.SaveMask) == Specification.SaveMask;
 
-            PyDataType data;
-
-            // perform decode
-            switch (opcode)
-            {
-                case Opcode.IntegerLongLong:
-                case Opcode.IntegerSignedShort:
-                case Opcode.IntegerByte:
-                case Opcode.IntegerMinusOne:
-                case Opcode.IntegerOne:
-                case Opcode.IntegerZero:
-                case Opcode.IntegerLong:
-                    data = ProcessInteger(opcode);
-                    break;
-                
-                case Opcode.IntegerVar:
-                    data = ProcessIntegerVar(opcode);
-                    break;
-
-                case Opcode.None:
-                    data = ProcessNone(opcode);
-                    break;
-
-                case Opcode.Buffer:
-                    data = ProcessBuffer(opcode);
-                    break;
-
-                case Opcode.BoolFalse:
-                case Opcode.BoolTrue:
-                    data = ProcessBool(opcode);
-                    break;
-
-                case Opcode.Real:
-                case Opcode.RealZero:
-                    data = ProcessDecimal(opcode);
-                    break;
-
-                case Opcode.Token:
-                    data = ProcessToken(opcode);
-                    break;
-
-                case Opcode.StringEmpty:
-                case Opcode.StringChar:
-                case Opcode.StringShort:
-                case Opcode.StringTable:
-                case Opcode.StringLong:
-                case Opcode.WStringEmpty:
-                case Opcode.WStringUCS2:
-                case Opcode.WStringUCS2Char:
-                case Opcode.WStringUTF8:
-                    data = ProcessString(opcode);
-                    break;
-                
-                case Opcode.Tuple:
-                case Opcode.TupleOne:
-                case Opcode.TupleTwo:
-                case Opcode.TupleEmpty:
-                    data = ProcessTuple(opcode);
-                    break;
-
-                case Opcode.List:
-                case Opcode.ListOne:
-                case Opcode.ListEmpty:
-                    data = ProcessList(opcode);
-                    break;
-
-                case Opcode.Dictionary:
-                    data = ProcessDictionary(opcode);
-                    break;
-
-                case Opcode.PackedRow:
-                    data = ProcessPackedRow(opcode);
-                    break;
-
-                case Opcode.ObjectData:
-                    data = ProcessObjectData(opcode);
-                    break;
-
-                case Opcode.ObjectType1:
-                case Opcode.ObjectType2:
-                    data = ProcessObject(opcode);
-                    break;
-
-                case Opcode.SavedStreamElement:
-                    data = this.mSavedList[
-                        this.mSavedElementsMap[this.mReader.ReadSizeEx() - 1] - 1
-                    ];
-                    break;
-
-                case Opcode.SubStruct:
-                    data = ProcessSubStruct(opcode);
-                    break;
-
-                case Opcode.SubStream:
-                    data = ProcessSubStream(opcode);
-                    break;
-
-                case Opcode.ChecksumedStream:
-                    data = ProcessChecksumedStream(opcode);
-                    break;
-
-                default:
-                    throw new InvalidDataException($"Unknown python type for opcode {opcode:X}");
-            }
+            PyDataType data = this.ProcessOpcode(opcode);
 
             // check if the element has to be saved
             if (save == true)

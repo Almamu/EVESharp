@@ -42,12 +42,12 @@ namespace PythonTypes
         /// Obtains the finalized dump
         /// </summary>
         /// <returns>The string representation of the dumped data with this PrettyPrinter's instance</returns>
-        public string GetResult()
+        private string GetResult()
         {
             return this.mStringBuilder.ToString();
         }
 
-        protected void AppendIndentation()
+        private void AppendIndentation()
         {
             // add indentation to the string
             for (int i = 0; i < this.mIndentation; i++)
@@ -59,44 +59,65 @@ namespace PythonTypes
         /// formatter for proper dump
         /// </summary>
         /// <param name="obj">The python type to dump</param>
-        public void Process(PyDataType obj)
+        private void Process(PyDataType obj)
         {
             this.AppendIndentation();
 
-            if (obj == null || obj is PyNone)
-                this.ProcessNone();
-            else if (obj is PyString pyString)
-                this.ProcessString(pyString);
-            else if (obj is PyToken pyToken)
-                this.ProcessToken(pyToken);
-            else if (obj is PyInteger pyInteger)
-                this.ProcessInteger(pyInteger);
-            else if (obj is PyDecimal pyDecimal)
-                this.ProcessDecimal(pyDecimal);
-            else if (obj is PyBuffer pyBuffer)
-                this.ProcessBuffer(pyBuffer);
-            else if (obj is PyBool pyBool)
-                this.ProcessBoolean(pyBool);
-            else if (obj is PyTuple pyTuple)
-                this.ProcessTuple(pyTuple);
-            else if (obj is PyList pyList)
-                this.ProcessList(pyList);
-            else if (obj is PyDictionary pyDictionary)
-                this.ProcessDictionary(pyDictionary);
-            else if (obj is PyChecksumedStream pyChecksumedStream)
-                this.ProcessChecksumedStream(pyChecksumedStream);
-            else if (obj is PyObject pyObject)
-                this.ProcessObject(pyObject);
-            else if (obj is PyObjectData pyObjectData)
-                this.ProcessObjectData(pyObjectData);
-            else if (obj is PySubStream pySubStream)
-                this.ProcessSubStream(pySubStream);
-            else if (obj is PySubStruct pySubStruct)
-                this.ProcessSubStruct(pySubStruct);
-            else if (obj is PyPackedRow pyPackedRow)
-                this.ProcessPackedRow(pyPackedRow);
-            else
-                this.mStringBuilder.AppendLine("[--PyUnknown--]");
+            switch (obj)
+            {
+                case null:
+                case PyNone _:
+                    this.ProcessNone();
+                    break;
+                case PyString pyString:
+                    this.ProcessString(pyString);
+                    break;
+                case PyToken pyToken:
+                    this.ProcessToken(pyToken);
+                    break;
+                case PyInteger pyInteger:
+                    this.ProcessInteger(pyInteger);
+                    break;
+                case PyDecimal pyDecimal:
+                    this.ProcessDecimal(pyDecimal);
+                    break;
+                case PyBuffer pyBuffer:
+                    this.ProcessBuffer(pyBuffer);
+                    break;
+                case PyBool pyBool:
+                    this.ProcessBoolean(pyBool);
+                    break;
+                case PyTuple pyTuple:
+                    this.ProcessTuple(pyTuple);
+                    break;
+                case PyList pyList:
+                    this.ProcessList(pyList);
+                    break;
+                case PyDictionary pyDictionary:
+                    this.ProcessDictionary(pyDictionary);
+                    break;
+                case PyChecksumedStream pyChecksumedStream:
+                    this.ProcessChecksumedStream(pyChecksumedStream);
+                    break;
+                case PyObject pyObject:
+                    this.ProcessObject(pyObject);
+                    break;
+                case PyObjectData pyObjectData:
+                    this.ProcessObjectData(pyObjectData);
+                    break;
+                case PySubStream pySubStream:
+                    this.ProcessSubStream(pySubStream);
+                    break;
+                case PySubStruct pySubStruct:
+                    this.ProcessSubStruct(pySubStruct);
+                    break;
+                case PyPackedRow pyPackedRow:
+                    this.ProcessPackedRow(pyPackedRow);
+                    break;
+                default:
+                    this.mStringBuilder.AppendLine("[--PyUnknown--]");
+                    break;
+            }
         }
 
         private void ProcessString(PyString str)
@@ -259,6 +280,10 @@ namespace PythonTypes
             }
 
             this.mIndentation--;
+        }
+
+        private PrettyPrinter()
+        {
         }
 
         // TODO: MIGHT BE A GOOD IDEA TO IMPLEMENT A MARSHAL-STREAM DUMP TOO

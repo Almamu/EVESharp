@@ -269,7 +269,6 @@ namespace Node.Database
                         "itemID", "stationID", "typeID", "officeFolderID"
                     });
                 
-                
                 return new SparseRowsetHeader(reader.GetInt32(0), (PyList) new PyDataType[]
                 {
                     "itemID", "stationID", "typeID", "officeFolderID"
@@ -391,8 +390,7 @@ namespace Node.Database
                         "titleMask", "grantableRoles", "grantableRolesAtHQ", "grantableRolesAtBase", "gender",
                         "grantableRolesAtOther", "divisionID", "squadronID", "baseID", "blockRoles"
                     });
-                
-                
+
                 return new SparseRowsetHeader(reader.GetInt32(0), (PyList) new PyDataType[]
                 {
                     "characterID", "title", "startDateTime", "roles", "rolesAtHQ", "rolesAtBase", "rolesAtOther",
