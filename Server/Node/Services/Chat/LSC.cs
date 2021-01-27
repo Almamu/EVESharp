@@ -367,7 +367,6 @@ namespace Node.Services.Chat
 
             int channelID = 0;
             PyString typeString;
-            PyDataType channelIDExtended = null;
 
             if (channel is PyInteger integer)
             {

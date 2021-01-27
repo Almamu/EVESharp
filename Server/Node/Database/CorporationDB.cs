@@ -140,8 +140,6 @@ namespace Node.Database
 
                 return reader.GetDouble(0);
             }
-            
-            return 0;
         }
 
         public PyDataType GetMember(int characterID, int corporationID)

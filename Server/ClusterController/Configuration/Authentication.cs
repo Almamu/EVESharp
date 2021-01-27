@@ -7,7 +7,7 @@ namespace ClusterControler.Configuration
     public class Authentication
     {
         public bool Autoaccount { get; private set; }
-        public Roles Role { get; private set; }
+        public long Role { get; private set; }
 
         public Authentication()
         {
@@ -27,12 +27,17 @@ namespace ClusterControler.Configuration
                 throw new Exception("With autoaccount enabled you MUST specify a default role");
 
             string rolestring = section["role"];
-            Roles role;
+            string[] rolelist = rolestring.Split(",");
 
-            if (Roles.TryParse(rolestring, out role) == false)
-                throw new Exception($"Unknown role value {rolestring}");
+            foreach (string role in rolelist)
+            {
+                Roles roleValue;
 
-            this.Role = role;
+                if (Roles.TryParse(role.Trim(), out roleValue) == false)
+                    throw new Exception($"Unknown role value {role.Trim()}");
+
+                this.Role |= (long) roleValue;
+            }
         }
     }
 }

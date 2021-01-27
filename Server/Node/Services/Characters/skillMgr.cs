@@ -125,7 +125,7 @@ namespace Node.Services.Characters
                 {
                     throw;
                 }
-                catch (Exception e)
+                catch (Exception)
                 {
                     Log.Error($"Cannot inject itemID {itemID} into {callerCharacterID}'s brain...");
                     throw;

@@ -127,7 +127,6 @@ namespace Node.Network
 
             if (packet.Type == PyPacket.PacketType.CALL_REQ)
             {
-                PyPacket result;
                 PyTuple callInfo = ((packet.Payload[0] as PyTuple)[1] as PySubStream).Stream as PyTuple;
                 
                 string call = callInfo[1] as PyString;

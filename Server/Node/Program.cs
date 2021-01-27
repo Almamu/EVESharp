@@ -73,7 +73,6 @@ namespace Node
         private static CacheStorage sCacheStorage = null;
         private static DatabaseConnection sDatabase = null;
         private static General sConfiguration = null;
-        private static ItemFactory sItemFactory = null;
         private static Logger sLog = null;
         private static Channel sChannel = null;
 

@@ -47,6 +47,13 @@ namespace Node.Inventory.Items.Types
             this.mDivision5 = division5;
             this.mDivision6 = division6;
             this.mDivision7 = division7;
+            this.mWalletDivision1 = walletDivision1;
+            this.mWalletDivision2 = walletDivision2;
+            this.mWalletDivision3 = walletDivision3;
+            this.mWalletDivision4 = walletDivision4;
+            this.mWalletDivision5 = walletDivision5;
+            this.mWalletDivision6 = walletDivision6;
+            this.mWalletDivision7 = walletDivision7;
             this.mBalance = balance;
             this.mDeleted = deleted;
         }

@@ -69,7 +69,7 @@ Configuration for the autoaccount mechanism. If a non-existant user tries to log
 ```
 [autoaccount]
 enabled=true
-role=ROLE_PLAYER
+role=ROLE_PLAYER, ROLE_LOGIN, ROLE_ADMIN, ROLE_QA, ROLE_SPAWN, 
 ```
 ### enabled
 Indicates if the auto-account mechanism should be enabled or not. Possible values are: ```yes```, ```1```, ```true```.
@@ -124,3 +124,5 @@ ROLE_ANY
 ROLEMASK_ELEVATEDPLAYER
 ROLEMASK_VIEW
 ```
+
+Multiple roles can be specified separating them by commas.

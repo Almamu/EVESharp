@@ -11,6 +11,8 @@ namespace Node.Data
 
         public StationOperations(int operationID, string name, string description, List<int> services)
         {
+            this.mName = name;
+            this.mDescription = description;
             this.mOperationID = operationID;
             this.mServices = services;
         }

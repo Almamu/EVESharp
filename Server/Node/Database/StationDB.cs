@@ -77,16 +77,16 @@ namespace Node.Database
                 {
                     StationType stationType = new StationType(
                         reader.GetInt32(0),
-                        reader.IsDBNull(1) ? default : reader.GetInt32(1),
+                        reader.GetInt32OrNull(1),
                         reader.GetDouble(2),
                         reader.GetDouble(3),
                         reader.GetDouble(4),
                         reader.GetDouble(5),
                         reader.GetDouble(6),
                         reader.GetDouble(7),
-                        reader.IsDBNull(8) ? default : reader.GetInt32(8),
-                        reader.IsDBNull(9) ? default : reader.GetInt32(9),
-                        reader.IsDBNull(10) ? default : reader.GetDouble(10),
+                        reader.GetInt32OrNull(8),
+                        reader.GetInt32OrNull(9),
+                        reader.GetDoubleOrNull(10),
                         reader.GetBoolean(11)
                     );
 

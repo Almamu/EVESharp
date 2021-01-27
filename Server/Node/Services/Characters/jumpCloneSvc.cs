@@ -63,7 +63,7 @@ namespace Node.Services.Characters
             int callerCharacterID = call.Client.EnsureCharacterIsSelected();
             
             if (this.ItemManager.IsItemLoaded(jumpCloneID) == false)
-                throw new CustomError("Cannot remotely destroy a clone");
+                throw new JumpCantDestroyNonLocalClone();
 
             ItemEntity clone = this.ItemManager.LoadItem(jumpCloneID);
 

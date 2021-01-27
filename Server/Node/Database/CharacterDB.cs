@@ -165,7 +165,7 @@ namespace Node.Database
                         reader.GetInt32(11),
                         reader.GetInt32(12),
                         reader.GetInt32(13),
-                        reader.IsDBNull(14) ? 0 : reader.GetInt32(14),
+                        reader.GetInt32OrDefault(14),
                         reader.GetString(15),
                         reader.GetString(16),
                         reader.GetString(17)
@@ -205,7 +205,7 @@ namespace Node.Database
                         reader.GetInt32(6),
                         reader.GetInt32(7),
                         reader.GetInt32(8),
-                        reader.IsDBNull(9) ? 0 : reader.GetInt32(9),
+                        reader.GetInt32OrDefault(9),
                         reader.GetString(10)
                     );
 
