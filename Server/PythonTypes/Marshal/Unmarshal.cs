@@ -32,73 +32,78 @@ namespace PythonTypes.Marshal
         private int mCurrentSavedIndex;
         private int[] mSavedElementsMap;
 
-        public Unmarshal(Stream stream)
+        private Unmarshal(Stream stream)
         {
             this.mStream = stream;
             this.mReader = new BinaryReader(this.mStream);
         }
 
         /// <summary>
+        /// Processes the marshal buffer header and decompress the data if needed
+        /// </summary>
+        /// <exception cref="InvalidDataException">If the header is not a correct marshal header</exception>
+        private void ProcessPacketHeader()
+        {
+            // check the header and ensure we use the correct stream to read from it
+            byte header = (byte) this.mStream.ReadByte();
+
+            if (header == Specification.ZlibHeader)
+            {
+                this.mStream.Seek(-1, SeekOrigin.Current);
+                this.mStream = new ZInputStream(this.mStream);
+                header = (byte) this.mStream.ReadByte();
+            }
+
+            if (header != Specification.MarshalHeader)
+                throw new InvalidDataException($"Expected Marshal header, but got {header}");
+
+            // create the reader
+            this.mReader = new BinaryReader(this.mStream);
+            // read the save list information
+            int saveCount = this.mReader.ReadInt32();
+
+            // check if there are elements in the save list and parse the list-map first
+            if (saveCount > 0)
+            {
+                // compressed streams cannot be seek'd so ensure that the stream is decompressed first
+                if (this.mStream is ZInputStream)
+                {
+                    MemoryStream newStream = new MemoryStream();
+                    this.mStream.CopyTo(newStream);
+                    this.mStream = newStream;
+                    this.mReader = new BinaryReader(this.mStream);
+                    this.mStream.Seek(0, SeekOrigin.Begin);
+                }
+
+                // reserve space for the savelist map and the actual elements in the save list
+                this.mSavedElementsMap = new int[saveCount];
+                this.mSavedList = new PyDataType[saveCount];
+
+                long currentPosition = this.mStream.Position;
+                // read at the end of the stream to get the correct index to element mapping
+                this.mStream.Seek(-saveCount * 4, SeekOrigin.End);
+
+                for (int i = 0; i < saveCount; i++)
+                    this.mSavedElementsMap[i] = this.mReader.ReadInt32();
+
+                // go back to where the stream was after reading the amount of saved elements
+                this.mStream.Seek(currentPosition, SeekOrigin.Begin);
+            }
+        }
+        
+        /// <summary>
         /// Processes a python type from the current position of mStream
         /// </summary>
         /// <param name="expectHeader">Whether the unmarshaler should check for a Marshal header or not</param>
         /// <returns></returns>
         /// <exception cref="InvalidDataException">If any error was found during the unmarshal process</exception>
-        public PyDataType Process(bool expectHeader = true)
+        private PyDataType Process(bool expectHeader = true)
         {
-            byte header;
-
             if (expectHeader)
-            {
-                // check the header and ensure we use the correct stream to read from it
-                header = (byte) this.mStream.ReadByte();
-
-                if (header == Specification.ZlibHeader)
-                {
-                    this.mStream.Seek(-1, SeekOrigin.Current);
-                    this.mStream = new ZInputStream(this.mStream);
-                    header = (byte) this.mStream.ReadByte();
-                }
-
-                if (header != Specification.MarshalHeader)
-                    throw new InvalidDataException($"Expected Marshal header, but got {header}");
-
-                // create the reader
-                this.mReader = new BinaryReader(this.mStream);
-                // read the save list information
-                int saveCount = this.mReader.ReadInt32();
-
-                // check if there are elements in the save list and parse the list-map first
-                if (saveCount > 0)
-                {
-                    // compressed streams cannot be seek'd so ensure that the stream is decompressed first
-                    if (this.mStream is ZInputStream)
-                    {
-                        MemoryStream newStream = new MemoryStream();
-                        this.mStream.CopyTo(newStream);
-                        this.mStream = newStream;
-                        this.mReader = new BinaryReader(this.mStream);
-                        this.mStream.Seek(0, SeekOrigin.Begin);
-                    }
-
-                    // reserve space for the savelist map and the actual elements in the save list
-                    this.mSavedElementsMap = new int[saveCount];
-                    this.mSavedList = new PyDataType[saveCount];
-
-                    long currentPosition = this.mStream.Position;
-                    // read at the end of the stream to get the correct index to element mapping
-                    this.mStream.Seek(-saveCount * 4, SeekOrigin.End);
-
-                    for (int i = 0; i < saveCount; i++)
-                        this.mSavedElementsMap[i] = this.mReader.ReadInt32();
-
-                    // go back to where the stream was after reading the amount of saved elements
-                    this.mStream.Seek(currentPosition, SeekOrigin.Begin);
-                }
-            }
+                this.ProcessPacketHeader();
 
             // read the type's opcode from the stream
-            header = this.mReader.ReadByte();
+            byte header = this.mReader.ReadByte();
             Opcode opcode = (Opcode) (header & Specification.OpcodeMask);
             bool save = (header & Specification.SaveMask) == Specification.SaveMask;
 
@@ -251,24 +256,19 @@ namespace PythonTypes.Marshal
                     // emergency fallback, for longer integers read it as a PyBuffer
                     if (length > 8)
                         return new PyBuffer(mReader.ReadBytes((int) length));
-                    if (length == 1)
-                        return new PyInteger(mReader.ReadByte());
-                    if (length == 2)
-                        return new PyInteger(mReader.ReadInt16());
-                    if (length == 3)
-                        return new PyInteger(mReader.ReadByte() | (mReader.ReadInt16() << 8));
-                    if (length == 4)
-                        return new PyInteger(mReader.ReadInt32());
-                    if (length == 5)
-                        return new PyInteger(mReader.ReadByte() | (mReader.ReadInt32() << 8));
-                    if (length == 6)
-                        return new PyInteger(mReader.ReadInt16() | (mReader.ReadInt32() << 16));
-                    if (length == 7)
-                        return new PyInteger(mReader.ReadInt16() | (mReader.ReadInt32() << 16) | ((long) mReader.ReadByte() << 32));
-                    if (length == 8)
-                        return new PyInteger(mReader.ReadInt64());
-
-                    throw new InvalidDataException($"IntegerVar of odd size ({length})");
+                    
+                    switch (length)
+                    {
+                        case 1: return new PyInteger(mReader.ReadByte());
+                        case 2: return new PyInteger(mReader.ReadInt16());
+                        case 3: return new PyInteger(mReader.ReadByte() | (mReader.ReadInt16() << 8));
+                        case 4: return new PyInteger(mReader.ReadInt32());
+                        case 5: return new PyInteger(mReader.ReadByte() | (mReader.ReadInt32() << 8));
+                        case 6: return new PyInteger(mReader.ReadInt16() | (mReader.ReadInt32() << 16));
+                        case 7: return new PyInteger(mReader.ReadInt16() | (mReader.ReadInt32() << 16) | ((long) mReader.ReadByte() << 32));
+                        case 8: return new PyInteger(mReader.ReadInt64());
+                        default: throw new InvalidDataException($"IntegerVar of odd size ({length})");
+                    }
                 }
                 default:
                     throw new InvalidDataException($"Trying to parse a {opcode} as Integer");

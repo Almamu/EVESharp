@@ -345,8 +345,7 @@ namespace Common.Database
                 throw;
             }
         }
-
-
+        
         /// <summary>
         /// Runs one prepared query with the given values as parameters and returns a Rowset representing the result
         /// </summary>
