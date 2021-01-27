@@ -160,14 +160,34 @@ namespace PythonTypes.Types.Primitives
             return !(obj == value);
         }
 
+        public static implicit operator double?(PyInteger obj)
+        {
+            return obj?.Value;
+        }
+
+        public static implicit operator ulong?(PyInteger obj)
+        {
+            return (ulong?) obj?.Value;
+        }
+
         public static implicit operator long?(PyInteger obj)
         {
             return obj?.Value;
         }
 
+        public static implicit operator uint?(PyInteger obj)
+        {
+            return (uint?) obj?.Value;
+        }
+
         public static implicit operator int?(PyInteger obj)
         {
             return (int?) obj?.Value;
+        }
+
+        public static implicit operator ushort?(PyInteger obj)
+        {
+            return (ushort?) obj?.Value;
         }
 
         public static implicit operator short?(PyInteger obj)
@@ -185,14 +205,34 @@ namespace PythonTypes.Types.Primitives
             return (sbyte?) obj?.Value;
         }
 
+        public static implicit operator ulong(PyInteger obj)
+        {
+            return (ulong) obj.Value;
+        }
+
+        public static implicit operator double(PyInteger obj)
+        {
+            return obj.Value;
+        }
+
         public static implicit operator long(PyInteger obj)
         {
             return obj.Value;
         }
 
+        public static implicit operator uint(PyInteger obj)
+        {
+            return (uint) obj.Value;
+        }
+
         public static implicit operator int(PyInteger obj)
         {
             return (int) obj.Value;
+        }
+
+        public static implicit operator ushort(PyInteger obj)
+        {
+            return (ushort) obj.Value;
         }
 
         public static implicit operator short(PyInteger obj)
@@ -209,14 +249,28 @@ namespace PythonTypes.Types.Primitives
         {
             return (sbyte) obj.Value;
         }
-
-
+        
+        public static implicit operator PyInteger(ulong value)
+        {
+            return new PyInteger((long) value);
+        }
+        
         public static implicit operator PyInteger(long value)
         {
             return new PyInteger(value);
         }
 
+        public static implicit operator PyInteger(uint value)
+        {
+            return new PyInteger(value);
+        }
+
         public static implicit operator PyInteger(int value)
+        {
+            return new PyInteger(value);
+        }
+
+        public static implicit operator PyInteger(ushort value)
         {
             return new PyInteger(value);
         }

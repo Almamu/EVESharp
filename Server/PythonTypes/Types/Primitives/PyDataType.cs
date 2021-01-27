@@ -18,13 +18,29 @@ namespace PythonTypes.Types.Primitives
 
             return new PyString(str);
         }
+        
+        public static implicit operator PyDataType(ulong value)
+        {
+            return new PyInteger((long) value);
+        }
+
 
         public static implicit operator PyDataType(long value)
         {
             return new PyInteger(value);
         }
+        
+        public static implicit operator PyDataType(uint value)
+        {
+            return new PyInteger(value);
+        }
 
         public static implicit operator PyDataType(int value)
+        {
+            return new PyInteger(value);
+        }
+
+        public static implicit operator PyDataType(ushort value)
         {
             return new PyInteger(value);
         }

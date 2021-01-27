@@ -56,7 +56,7 @@ namespace Node.Services.Corporations
         public PyDataType GetRecruitmentAdsByCriteria(PyInteger regionID, PyInteger skillPoints, PyInteger typeMask,
             PyInteger raceMask, PyInteger isInAlliance, PyInteger minMembers, PyInteger maxMembers, CallInformation call)
         {
-            return this.GetRecruitmentAdsByCriteria(regionID, skillPoints * 1.0f, typeMask, raceMask, isInAlliance,
+            return this.GetRecruitmentAdsByCriteria(regionID, skillPoints * 1.0, typeMask, raceMask, isInAlliance,
                 minMembers, maxMembers, call);
         }
         public PyDataType GetRecruitmentAdsByCriteria(PyInteger regionID, PyDecimal skillPoints, PyInteger typeMask,

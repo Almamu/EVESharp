@@ -117,38 +117,7 @@ namespace PythonTypes.Types.Database
 
             for (int i = 0; i < reader.FieldCount; i++)
             {
-                Type type = reader.GetFieldType(i);
-                FieldType fieldType = FieldType.Error;
-
-                if (type == typeof(string))
-                    // TODO: PROPERLY SPECIFY THE STRING TYPE
-                    fieldType = FieldType.WStr;
-                else if (type == typeof(ulong))
-                    fieldType = FieldType.UI8;
-                else if (type == typeof(long))
-                    fieldType = FieldType.I8;
-                else if (type == typeof(uint))
-                    fieldType = FieldType.UI4;
-                else if (type == typeof(int))
-                    fieldType = FieldType.I4;
-                else if (type == typeof(ushort))
-                    fieldType = FieldType.UI2;
-                else if (type == typeof(short))
-                    fieldType = FieldType.I2;
-                else if (type == typeof(sbyte))
-                    fieldType = FieldType.I1;
-                else if (type == typeof(byte))
-                    fieldType = FieldType.UI1;
-                else if (type == typeof(byte[]))
-                    fieldType = FieldType.Bytes;
-                else if (type == typeof(double))
-                    fieldType = FieldType.R8;
-                else if (type == typeof(float))
-                    fieldType = FieldType.R4;
-                else if (type == typeof(bool))
-                    fieldType = FieldType.Bool;
-                else
-                    throw new InvalidDataException("Unknown field type");
+                FieldType fieldType = Utils.GetFieldType(reader, i);
 
                 descriptor.Columns.Add(
                     new Column(reader.GetName(i), fieldType)

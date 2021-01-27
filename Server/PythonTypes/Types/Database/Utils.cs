@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.IO;
 using MySql.Data.MySqlClient;
 using PythonTypes.Types.Primitives;
@@ -8,8 +9,36 @@ namespace PythonTypes.Types.Database
     /// <summary>
     /// Extra database utilities that are used in more than one place
     /// </summary>
-    public class Utils
+    public static class Utils
     {
+        /// <summary>
+        /// Obtains the current field type off a MySqlDataReader for the given column
+        /// </summary>
+        /// <param name="reader">The data reader to use</param>
+        /// <param name="index">The column to get the type from</param>
+        /// <returns></returns>
+        /// <exception cref="InvalidDataException">If the type is not supported</exception>
+        public static FieldType GetFieldType(MySqlDataReader reader, int index)
+        {
+            Type type = reader.GetFieldType(index);
+            
+            if (type == typeof(string)) return FieldType.WStr;
+            if (type == typeof(ulong)) return FieldType.UI8;
+            if (type == typeof(long)) return FieldType.I8;
+            if (type == typeof(uint)) return FieldType.UI4;
+            if (type == typeof(int)) return FieldType.I4;
+            if (type == typeof(ushort)) return FieldType.UI2;
+            if (type == typeof(short)) return FieldType.I2;
+            if (type == typeof(sbyte)) return FieldType.I1;
+            if (type == typeof(byte)) return FieldType.UI1;
+            if (type == typeof(byte[])) return FieldType.Bytes;
+            if (type == typeof(double)) return FieldType.R8;
+            if (type == typeof(float)) return FieldType.R4;
+            if (type == typeof(bool)) return FieldType.Bool;
+            
+            throw new InvalidDataException($"Unknown field type {type}");
+        }
+        
         /// <summary>
         /// Creates a PyDataType of the given column (specified by <paramref name="index"/>) based off the given
         /// MySqlDataReader
@@ -20,46 +49,33 @@ namespace PythonTypes.Types.Database
         /// <exception cref="InvalidDataException">If any error was found during the creation of the PyDataType</exception>
         public static PyDataType ObjectFromColumn(MySqlDataReader reader, int index)
         {
-            Type type = reader.GetFieldType(index);
-            PyDataType data = null;
-            bool isnull = reader.IsDBNull(index);
-
+            FieldType type = GetFieldType(reader, index);
+            
             // null values should be null
-            if (isnull == true)
+            if (reader.IsDBNull(index) == true)
                 return null;
 
-            if (type == typeof(string))
-                data = new PyString(reader.GetString(index), true);
-            else if (type == typeof(ulong))
-                data = (long) reader.GetUInt64(index);
-            else if (type == typeof(long))
-                data = reader.GetInt64(index);
-            else if (type == typeof(uint))
-                data = (int) reader.GetUInt32(index);
-            else if (type == typeof(int))
-                data = reader.GetInt32(index);
-            else if (type == typeof(ushort))
-                data = (short) reader.GetUInt16(index);
-            else if (type == typeof(short))
-                data = reader.GetInt16(index);
-            else if (type == typeof(byte))
-                data = reader.GetByte(index);
-            else if (type == typeof(sbyte))
-                data = reader.GetSByte(index);
-            else if (type == typeof(byte[]))
-                data = (byte[]) reader.GetValue(index);
-            else if (type == typeof(float))
-                data = reader.GetFloat(index);
-            else if (type == typeof(double))
-                data = reader.GetDouble(index);
-            else if (type == typeof(bool))
-                data = reader.GetBoolean(index);
-            else if (type == typeof(decimal))
-                data = (double) reader.GetDecimal(index);
-            else
-                throw new InvalidDataException($"Unknown data type {type}");
-
-            return data;
+            if (reader.GetName(index) == "startDateTime" || reader.GetName(index) == "corporationDateTime")
+                Debugger.Break();
+            
+            switch (type)
+            {
+                case FieldType.I2: return reader.GetInt16(index);
+                case FieldType.UI2: return reader.GetUInt16(index);
+                case FieldType.I4: return reader.GetInt32(index);
+                case FieldType.UI4: return reader.GetUInt32(index);
+                case FieldType.R4: return reader.GetFloat(index);
+                case FieldType.R8: return reader.GetDouble(index);
+                case FieldType.Bool: return reader.GetBoolean(index);
+                case FieldType.I1: return reader.GetSByte(index);
+                case FieldType.UI1: return reader.GetByte(index);
+                case FieldType.UI8: return reader.GetUInt64(index);
+                case FieldType.Bytes: return (byte[]) reader.GetValue(index);
+                case FieldType.I8: return reader.GetInt64(index);
+                case FieldType.WStr: return new PyString(reader.GetString(index), true);
+                default:
+                    throw new InvalidDataException($"Unknown data type {type}");
+            }
         }
 
         /// <summary>
