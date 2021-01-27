@@ -539,8 +539,8 @@ namespace Node.Inventory.Items.Types
             if (injectedSkillsByTypeID.ContainsKey((int) ItemTypes.Learning) == true)
                 skillLearningLevel = injectedSkillsByTypeID[(int) ItemTypes.Learning].Level;
 
-            double spPerMin = primarySpPerMin + secondarySpPerMin / 2.0f;
-            spPerMin = spPerMin * (1.0f + 0.02f * skillLearningLevel);
+            double spPerMin = primarySpPerMin + (secondarySpPerMin / 2.0f);
+            spPerMin = spPerMin * (1.0f + (0.02f * skillLearningLevel));
             
             if (this.mSkillPoints < 1600000.0f)
                 spPerMin = spPerMin * 2.0f;

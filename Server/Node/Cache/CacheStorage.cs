@@ -44,7 +44,7 @@ namespace Node
             PackedRowList = 3,
             IntIntDict = 4,
             IndexRowset = 5
-        };
+        }
 
         public static Dictionary<string, string> LoginCacheTable = new Dictionary<string, string>()
         {

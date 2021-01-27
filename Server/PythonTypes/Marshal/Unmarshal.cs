@@ -119,8 +119,11 @@ namespace PythonTypes.Marshal
                 case Opcode.IntegerOne:
                 case Opcode.IntegerZero:
                 case Opcode.IntegerLong:
-                case Opcode.IntegerVar:
                     data = ProcessInteger(opcode);
+                    break;
+                
+                case Opcode.IntegerVar:
+                    data = ProcessIntegerVar(opcode);
                     break;
 
                 case Opcode.None:
@@ -156,6 +159,7 @@ namespace PythonTypes.Marshal
                 case Opcode.WStringUTF8:
                     data = ProcessString(opcode);
                     break;
+                
                 case Opcode.Tuple:
                 case Opcode.TupleOne:
                 case Opcode.TupleTwo:
@@ -215,6 +219,31 @@ namespace PythonTypes.Marshal
             return data;
         }
 
+        private PyDataType ProcessIntegerVar(Opcode opcode)
+        {
+            if (opcode != Opcode.IntegerVar)
+                throw new InvalidDataException($"Trying to parse a {opcode} as integer var");
+            
+            // read the size
+            uint length = mReader.ReadSizeEx();
+            // emergency fallback, for longer integers read it as a PyBuffer
+            if (length > 8)
+                return new PyBuffer(mReader.ReadBytes((int) length));
+                    
+            switch (length)
+            {
+                case 1: return new PyInteger(mReader.ReadByte());
+                case 2: return new PyInteger(mReader.ReadInt16());
+                case 3: return new PyInteger(mReader.ReadByte() | (mReader.ReadInt16() << 8));
+                case 4: return new PyInteger(mReader.ReadInt32());
+                case 5: return new PyInteger(mReader.ReadByte() | (mReader.ReadInt32() << 8));
+                case 6: return new PyInteger(mReader.ReadInt16() | (mReader.ReadInt32() << 16));
+                case 7: return new PyInteger(mReader.ReadInt16() | (mReader.ReadInt32() << 16) | ((long) mReader.ReadByte() << 32));
+                case 8: return new PyInteger(mReader.ReadInt64());
+                default: throw new InvalidDataException($"IntegerVar of odd size ({length})");
+            }
+        }
+
         /// <summary>
         /// <seealso cref="Marshal.ProcessInteger"/>
         /// 
@@ -223,7 +252,6 @@ namespace PythonTypes.Marshal
         /// <seealso cref="Opcode.IntegerLong"/>
         /// <seealso cref="Opcode.IntegerSignedShort"/>
         /// <seealso cref="Opcode.IntegerByte"/>
-        /// <seealso cref="Opcode.IntegerVar"/>
         /// <seealso cref="Opcode.IntegerOne"/>
         /// <seealso cref="Opcode.IntegerZero"/>
         /// <seealso cref="Opcode.IntegerMinusOne"/>
@@ -249,27 +277,6 @@ namespace PythonTypes.Marshal
                     return new PyInteger(0);
                 case Opcode.IntegerMinusOne:
                     return new PyInteger(-1);
-                case Opcode.IntegerVar:
-                {
-                    // read the size
-                    uint length = mReader.ReadSizeEx();
-                    // emergency fallback, for longer integers read it as a PyBuffer
-                    if (length > 8)
-                        return new PyBuffer(mReader.ReadBytes((int) length));
-                    
-                    switch (length)
-                    {
-                        case 1: return new PyInteger(mReader.ReadByte());
-                        case 2: return new PyInteger(mReader.ReadInt16());
-                        case 3: return new PyInteger(mReader.ReadByte() | (mReader.ReadInt16() << 8));
-                        case 4: return new PyInteger(mReader.ReadInt32());
-                        case 5: return new PyInteger(mReader.ReadByte() | (mReader.ReadInt32() << 8));
-                        case 6: return new PyInteger(mReader.ReadInt16() | (mReader.ReadInt32() << 16));
-                        case 7: return new PyInteger(mReader.ReadInt16() | (mReader.ReadInt32() << 16) | ((long) mReader.ReadByte() << 32));
-                        case 8: return new PyInteger(mReader.ReadInt64());
-                        default: throw new InvalidDataException($"IntegerVar of odd size ({length})");
-                    }
-                }
                 default:
                     throw new InvalidDataException($"Trying to parse a {opcode} as Integer");
             }
