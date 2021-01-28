@@ -11,7 +11,6 @@ namespace PythonTypes.Types.Database
     /// </summary>
     public class SparseRowsetHeader
     {
-        
         /// <summary>
         /// Type of the rowset
         /// </summary>

@@ -15,43 +15,115 @@ namespace Node.Services
             this.BoundServiceManager = manager;
         }
 
+        /// <summary>
+        /// Called by the EVE Client to know which node is storing the objectID's information
+        /// TODO: PROPERLY SUPPORT THE ENTITY TABLE NODEID FIELD TO GET THIS INFORMATION PROPERLY
+        /// TODO: OR LET THE CHILD CLASS HANDLE THIS
+        ///
+        /// TODO: FOR NOW JUST RETURN OUR NODE ID AND BE HAPPY ABOUT IT
+        /// </summary>
+        /// <param name="objectData"></param>
+        /// <param name="zero"></param>
+        /// <param name="call"></param>
+        /// <returns>The node where this object is stored</returns>
         public PyDataType MachoResolveObject(PyTuple objectData, PyInteger zero, CallInformation call)
         {
             PyInteger objectID = objectData[0] as PyInteger;
             
-            // TODO: PROPERLY SUPPORT THE ENTITY TABLE NODEID FIELD TO GET THIS INFORMATION PROPERLY
-            // TODO: FOR NOW JUST RETURN OUR ID AND BE HAPPY ABOUT IT
-            
             return this.BoundServiceManager.Container.NodeID;
         }
 
+        /// <summary>
+        /// Called by the EVE Client to know which node is storing the objectID's information
+        /// TODO: PROPERLY SUPPORT THE ENTITY TABLE NODEID FIELD TO GET THIS INFORMATION PROPERLY
+        /// TODO: OR LET THE CHILD CLASS HANDLE THIS
+        ///
+        /// TODO: FOR NOW JUST RETURN OUR NODE ID AND BE HAPPY ABOUT IT
+        /// </summary>
+        /// <param name="objectID"></param>
+        /// <param name="zero"></param>
+        /// <param name="call"></param>
+        /// <returns>The node where this object is stored</returns>
         public PyDataType MachoResolveObject(PyInteger objectID, PyInteger zero, CallInformation call)
         {
-            // TODO: PROPERLY SUPPORT THE ENTITY TABLE NODEID FIELD TO GET THIS INFORMATION PROPERLY
-            // TODO: FOR NOW JUST RETURN OUR ID AND BE HAPPY ABOUT IT
             return this.BoundServiceManager.Container.NodeID;
         }
-
+        
+        /// <summary>
+        /// Binds a new object of this type with the given objectData to provide a stateful
+        /// interface to itself
+        ///
+        /// WARNING: Some MachoBindObject calls also include a call to a method inside the new stateful
+        /// service, this also handles that behaviour
+        /// </summary>
+        /// <param name="objectData">The information of the object to be stateful about</param>
+        /// <param name="callInfo">The information on the call</param>
+        /// <param name="call">The call object with extra information</param>
+        /// <returns></returns>
         public PyDataType MachoBindObject(PyTuple objectData, PyTuple callInfo, CallInformation call)
         {
             return this.MachoBindObject(objectData, callInfo as PyDataType, call);
         }
-
+        
+        /// <summary>
+        /// Binds a new object of this type with the given objectData to provide a stateful
+        /// interface to itself
+        ///
+        /// WARNING: Some MachoBindObject calls also include a call to a method inside the new stateful
+        /// service, this also handles that behaviour
+        /// </summary>
+        /// <param name="objectData">The information of the object to be stateful about</param>
+        /// <param name="callInfo">The information on the call</param>
+        /// <param name="call">The call object with extra information</param>
+        /// <returns></returns>
         public PyDataType MachoBindObject(PyTuple objectData, PyNone callInfo, CallInformation call)
         {
             return this.MachoBindObject(objectData, callInfo as PyDataType, call);
         }
-
+        
+        /// <summary>
+        /// Binds a new object of this type with the given objectData to provide a stateful
+        /// interface to itself
+        ///
+        /// WARNING: Some MachoBindObject calls also include a call to a method inside the new stateful
+        /// service, this also handles that behaviour
+        /// </summary>
+        /// <param name="objectID">The information of the object to be stateful about</param>
+        /// <param name="callInfo">The information on the call</param>
+        /// <param name="call">The call object with extra information</param>
+        /// <returns></returns>
         public PyDataType MachoBindObject(PyInteger objectID, PyNone callInfo, CallInformation call)
         {
             return this.MachoBindObject(objectID, callInfo as PyDataType, call);
         }
-
+        
+        /// <summary>
+        /// Binds a new object of this type with the given objectData to provide a stateful
+        /// interface to itself
+        ///
+        /// WARNING: Some MachoBindObject calls also include a call to a method inside the new stateful
+        /// service, this also handles that behaviour
+        /// </summary>
+        /// <param name="objectID">The information of the object to be stateful about</param>
+        /// <param name="callInfo">The information on the call</param>
+        /// <param name="call">The call object with extra information</param>
+        /// <returns></returns>
         public PyDataType MachoBindObject(PyInteger objectID, PyTuple callInfo, CallInformation call)
         {
             return this.MachoBindObject(objectID, callInfo as PyDataType, call);
         }
         
+        /// <summary>
+        /// Binds a new object of this type with the given objectData to provide a stateful
+        /// interface to itself
+        ///
+        /// WARNING: Some MachoBindObject calls also include a call to a method inside the new stateful
+        /// service, this also handles that behaviour
+        /// </summary>
+        /// <param name="objectData">The information of the object to be stateful about</param>
+        /// <param name="callInfo">The information on the call</param>
+        /// <param name="call">The call object with extra information</param>
+        /// <returns></returns>
         protected PyDataType MachoBindObject(PyDataType objectData, PyDataType callInfo, CallInformation call)
         {
             // create the bound instance and register it in the bound services
@@ -101,6 +173,12 @@ namespace Node.Services
             return result;
         }
 
+        /// <summary>
+        /// Method to be override by BoundServices to build their own stateful versions when requested
+        /// </summary>
+        /// <param name="objectData">The information required for the instantiation</param>
+        /// <returns>The new boudn service</returns>
+        /// <exception cref="NotImplementedException">If this has not been implemented by the class</exception>
         protected virtual BoundService CreateBoundInstance(PyDataType objectData)
         {
             throw new NotImplementedException();

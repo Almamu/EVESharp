@@ -186,6 +186,10 @@ namespace Node
             this.ship = ship;
         }
 
+        /// <summary>
+        /// Callback fired by the <seealso cref="TimerManager"/> when a call timeout has been reached
+        /// </summary>
+        /// <param name="callID">The callID that expired</param>
         public void CallTimeoutExpired(int callID)
         {
             Log.Warning($"Timeout for call {callID} expired before getting an answer.");
@@ -200,6 +204,12 @@ namespace Node
             this.mCallCallbacks.Remove(callID);
         }
 
+        /// <summary>
+        /// Tells the ServiceManager that a call was completed successfully and invokes the success callback
+        /// so the server can continue processing further
+        /// </summary>
+        /// <param name="callID">The callID that completed</param>
+        /// <param name="result">The result of the call</param>
         public void ReceivedRemoteCallAnswer(int callID, PyDataType result)
         {
             if (this.mCallCallbacks.ContainsKey(callID) == false)
@@ -221,11 +231,18 @@ namespace Node
             this.mCallCallbacks.Remove(callID);
         }
 
+        /// <summary>
+        /// Reserves a slot in the call list and prepares timeout timers in case the call wait time expires 
+        /// </summary>
+        /// <param name="callback">The function to call when the answer is received</param>
+        /// <param name="client">The client that is getting the call</param>
+        /// <param name="extraInfo">Any extra information to store for later usage</param>
+        /// <param name="timeoutCallback">The function to call if the call timeout expires</param>
+        /// <param name="timeoutSeconds">The amount of seconds to wait until timing out</param>
+        /// <returns>The callID to be notified to the client</returns>
         public int ExpectRemoteServiceResult(Action<RemoteCall, PyDataType> callback, Client client, object extraInfo = null,
             Action<RemoteCall> timeoutCallback = null, int timeoutSeconds = 0)
         {
-            // get the client the packet is directed towards
-            
             // generate the proper remote call object
             RemoteCall entry = new RemoteCall
             {

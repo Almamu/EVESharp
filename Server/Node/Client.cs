@@ -36,6 +36,9 @@ using PythonTypes.Types.Primitives;
 
 namespace Node
 {
+    /// <summary>
+    /// Class that represents a normal client transport
+    /// </summary>
     public class Client
     {
         private readonly Session mSession = new Session();
@@ -55,11 +58,18 @@ namespace Node
             this.PendingNotifications = new PyList();
         }
 
+        /// <summary>
+        /// Updates the current client's session based of a session change notification
+        /// (for example, coming from another node or from the cluster controller itself)
+        /// </summary>
+        /// <param name="packet">The packet that contains the session change notification</param>
         public void UpdateSession(PyPacket packet)
         {
+            // load the new session data
             this.mSession.LoadChanges((packet.Payload[0] as PyTuple)[1] as PyDictionary);
             
-            // check for specific situations
+            // now check for specific situations to properly increase/decrease counters
+            // on various areas
             if (this.mSession.ContainsKey("charid") == false)
                 return;
 
@@ -68,6 +78,7 @@ namespace Node
 
             int characterID = this.mSession["charid"] as PyInteger;
             
+            // TODO: CHECK IF THE OLD OR NEW STATION ARE REALLY MANAGED BY THIS NODE
             // has the player got into a station?
             if (this.mSession.ContainsKey("stationid") == true)
             {
@@ -100,6 +111,11 @@ namespace Node
             }
         }
 
+        /// <summary>
+        /// Creates a session change notification including only the last changes to the session
+        /// </summary>
+        /// <param name="container">Information about the current node the client is in</param>
+        /// <returns>The packet ready to be sent</returns>
         private PyPacket CreateEmptySessionChange(NodeContainer container)
         {
             // Fill all the packet data, except the dest/source
@@ -130,6 +146,9 @@ namespace Node
             return packet;
         }
 
+        /// <summary>
+        /// Prepares and sends a session change notification to this client
+        /// </summary>
         public void SendSessionChange()
         {
             // build the session change
@@ -274,6 +293,13 @@ namespace Node
             set => this.mSession["warfactionid"] = value;
         }
         
+        /// <summary>
+        /// Sends an OnAccountChange notification to the client to let it know that their ISK
+        /// balance has changed
+        ///
+        /// TODO: THIS SHOULD BE EXPANDED TO INCLUDE THE POSSIBILITY TO ALSO NOTIFY ABOUT CORP WALLET CHANGES
+        /// </summary>
+        /// <param name="balance">The new balance</param>
         public void NotifyBalanceUpdate(double balance)
         {
             PyTuple notification = new PyTuple(new PyDataType[]
@@ -284,11 +310,20 @@ namespace Node
             this.ClusterConnection.SendNotification("OnAccountChange", "charid", (int) this.CharacterID, notification);
         }
 
+        /// <summary>
+        /// Sends an OnJumpCloneCacheInvalidated notification to the client to force it to re-fresh
+        /// any clone information stored in cache
+        /// </summary>
         public void NotifyCloneUpdate()
         {
             this.ClusterConnection.SendNotification("OnJumpCloneCacheInvalidated", "charid", (int) this.CharacterID, new PyTuple(0));
         }
 
+        /// <summary>
+        /// Notifies the client of a single attribute change on a specific item
+        /// </summary>
+        /// <param name="attribute">The attribute to notify about</param>
+        /// <param name="item">The item to notify about</param>
         public void NotifyAttributeChange(ItemAttribute attribute, ItemEntity item)
         {
             PyTuple notification = new PyTuple(new PyDataType[]
@@ -300,6 +335,12 @@ namespace Node
             this.ClusterConnection.SendNotification("OnAttribute", "charid", (int) this.CharacterID, notification);
         }
 
+        /// <summary>
+        /// Notifies the client of a multiple attribute change on different items
+        /// </summary>
+        /// <param name="attributes">The list of attributes that have changed</param>
+        /// <param name="items">The list of items those attributes belong to</param>
+        /// <exception cref="ArgumentOutOfRangeException">If the list of attributes and items is not the same size</exception>
         public void NotifyMultipleAttributeChange(ItemAttribute[] attributes, ItemEntity[] items)
         {
             if (attributes.Length != items.Length)
@@ -321,6 +362,11 @@ namespace Node
             this.ClusterConnection.SendNotification("OnAttributes", "charid", (int) this.CharacterID, new PyTuple (new PyDataType [] { notification }));
         }
 
+        /// <summary>
+        /// Notifies the client of a change in the quantity on a specific item
+        /// </summary>
+        /// <param name="item">The item to notify about</param>
+        /// <param name="oldQuantity">The old quantity the item had</param>
         public void NotifyItemQuantityChange(ItemEntity item, int oldQuantity)
         {
             PyDictionary changes = new PyDictionary
@@ -330,6 +376,13 @@ namespace Node
 
             this.NotifyItemChange(item, changes);
         }
+        
+        /// <summary>
+        /// Notifies the client of a change in the location and/or flag on a specific item
+        /// </summary>
+        /// <param name="item">The item to notify about</param>
+        /// <param name="oldFlag">The old value of the flag</param>
+        /// <param name="oldLocation">The old location ID</param>
         public void NotifyItemLocationChange(ItemEntity item, ItemFlags oldFlag, int oldLocation)
         {
             PyDictionary changes = new PyDictionary();
@@ -342,6 +395,11 @@ namespace Node
             this.NotifyItemChange(item, changes);
         }
 
+        /// <summary>
+        /// Notifies the client of a change on the singleton flag on a specific item
+        /// </summary>
+        /// <param name="item">The item to notify about</param>
+        /// <param name="oldSingleton">The old value of the singleton flag</param>
         public void NotifySingletonChange(ItemEntity item, bool oldSingleton)
         {
             PyDictionary changes = new PyDictionary();
@@ -352,6 +410,11 @@ namespace Node
             this.NotifyItemChange(item, changes);
         }
 
+        /// <summary>
+        /// Notifies the client of a item change in one of their inventories
+        /// </summary>
+        /// <param name="item">The item to notify about</param>
+        /// <param name="changes">List of old data for the item that has changed</param>
         protected void NotifyItemChange(ItemEntity item, PyDictionary changes)
         {
             PyTuple notification = new PyTuple(new PyDataType[]
@@ -362,11 +425,19 @@ namespace Node
             this.ClusterConnection.SendNotification("OnItemChange", "charid", (int) this.CharacterID, notification);
         }
 
+        /// <summary>
+        /// Notifies this client of a new item in one of their inventories
+        /// </summary>
+        /// <param name="item">The item to notify about</param>
         public void NotifyNewItem(ItemEntity item)
         {
             this.NotifyItemLocationChange(item, ItemFlags.None, 0);
         }
 
+        /// <summary>
+        /// Queues a OnSkillTrained notification for this client
+        /// </summary>
+        /// <param name="skill"></param>
         public void NotifySkillTrained(Skill skill)
         {
             PyTuple onSkillTrained = new PyTuple(new PyDataType[]
@@ -378,6 +449,10 @@ namespace Node
             this.PendingNotifications.Add(onSkillTrained);
         }
 
+        /// <summary>
+        /// Queues a OnSkillTrainingStopped notification for this client
+        /// </summary>
+        /// <param name="skill"></param>
         public void NotifySkillTrainingStopped(Skill skill)
         {
             PyTuple onSkillTrainingStopped = new PyTuple(new PyDataType[]
@@ -389,6 +464,10 @@ namespace Node
             this.PendingNotifications.Add(onSkillTrainingStopped);
         }
 
+        /// <summary>
+        /// Queues a OnSkillStartTraining notification for this client
+        /// </summary>
+        /// <param name="skill"></param>
         public void NotifySkillStartTraining(Skill skill)
         {
             PyTuple onSkillStartTraining = new PyTuple(new PyDataType[]
@@ -400,6 +479,9 @@ namespace Node
             this.PendingNotifications.Add(onSkillStartTraining);
         }
 
+        /// <summary>
+        /// Queues a OnSkillInjected notification for this client
+        /// </summary>
         public void NotifySkillInjected()
         {
             PyTuple onSkillStartTraining = new PyTuple(new PyDataType[]
@@ -411,6 +493,11 @@ namespace Node
             this.PendingNotifications.Add(onSkillStartTraining);
         }
 
+        /// <summary>
+        /// Checks if there's any pending notifications and sends them to the client
+        ///
+        /// This includes sending session change notifications when there has been any changes to it
+        /// </summary>
         public void SendPendingNotifications()
         {
             if (this.PendingNotifications.Count > 0)
@@ -428,11 +515,21 @@ namespace Node
             }
         }
 
+        /// <summary>
+        /// Sends a response to a call performed by the client
+        /// </summary>
+        /// <param name="answerTo">The call to answer to</param>
+        /// <param name="result">The data to send as response</param>
         public void SendCallResponse(CallInformation answerTo, PyDataType result)
         {
             this.ClusterConnection.SendCallResult(answerTo, result);
         }
 
+        /// <summary>
+        /// Sends an exception to a call performed by the client
+        /// </summary>
+        /// <param name="call">The call to answer with the exception</param>
+        /// <param name="content">The contents of the exception</param>
         public void SendException(CallInformation call, PyDataType content)
         {
             this.ClusterConnection.SendException(call, content);
