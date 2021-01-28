@@ -433,9 +433,9 @@ namespace Node.Inventory.Items.Types
                 .Where(x => (x.Value.Flag == ItemFlags.Skill || x.Value.Flag == ItemFlags.SkillInTraining) && x.Value is Skill)
                 .ToDictionary(dict => dict.Value.Type.ID, dict => dict.Value as Skill);
         
-        protected override void LoadContents()
+        protected override void LoadContents(ItemFlags ignoreFlags = ItemFlags.None)
         {
-            base.LoadContents();
+            base.LoadContents(ignoreFlags);
             
             this.CalculateSkillPoints();
 

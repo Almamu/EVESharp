@@ -68,8 +68,9 @@ namespace Node.Services.Inventory
             // get the item type
             ItemType capsuleType = this.TypeManager[ItemTypes.Capsule];
             // create a pod for this character
-            ItemEntity capsule =
-                this.ItemManager.CreateSimpleItem(character.Name + "'s Capsule", capsuleType, character, this.Location, ItemFlags.Hangar, singleton: true);
+            ItemInventory capsule = this.ItemManager.CreateShip(capsuleType, this.Location, character);
+            // update capsule's name
+            capsule.Name = character.Name + "'s Capsule";
             // change character's location to the pod
             character.LocationID = capsule.ID;
             // notify the client about the item changes
@@ -82,7 +83,84 @@ namespace Node.Services.Inventory
             capsule.Persist();
             character.Persist();
             
+            // TODO: CHECKS FOR IN-SPACE LEAVING!
+
             return capsule.ID;
+        }
+
+        public PyDataType Board(PyInteger itemID, CallInformation call)
+        {
+            int callerCharacterID = call.Client.EnsureCharacterIsSelected();
+            
+            // ensure the item is loaded somewhere in this node
+            // this will usually be taken care by the EVE Client
+            if (this.ItemManager.IsItemLoaded(itemID) == false)
+                throw new CustomError("Ships not loaded for player and hangar!");
+
+            Ship newShip = this.ItemManager.GetItem(itemID) as Ship;
+            Character character = this.ItemManager.GetItem(callerCharacterID) as Character;
+            Ship currentShip = this.ItemManager.GetItem((int) call.Client.ShipID) as Ship;
+
+            if (newShip.Singleton == false)
+                throw new UserError("TooFewSubSystemsToUndock");
+
+            // TODO: CHECKS FOR IN-SPACE BOARDING!
+            
+            // check skills required to board the given ship
+            newShip.CheckShipPrerequisites(character);
+            
+            // move the character into this new ship
+            character.LocationID = newShip.ID;
+            // finally update the session
+            call.Client.ShipID = newShip.ID;
+            // notify the client about the change in location
+            call.Client.NotifyItemLocationChange(character, ItemFlags.Pilot, currentShip.ID);
+
+            character.Persist();
+
+            // ensure the character is not removed when the capsule is removed
+            currentShip.RemoveItem(character);
+
+            if (currentShip.Type.ID == (int) ItemTypes.Capsule)
+            {
+                // destroy the pod from the database
+                this.ItemManager.DestroyItem(currentShip);
+                // notify the player of the item change
+                call.Client.NotifyItemLocationChange(currentShip, currentShip.Flag, this.Location.ID);
+            }
+            
+            return null;
+        }
+
+        public PyDataType AssembleShip(PyInteger itemID, CallInformation call)
+        {
+            // ensure the item is loaded somewhere in this node
+            // this will usually be taken care by the EVE Client
+            if (this.ItemManager.IsItemLoaded(itemID) == false)
+                throw new CustomError("Ships not loaded for player and hangar!");
+
+            Ship ship = this.ItemManager.GetItem(itemID) as Ship;
+
+            if (ship.Singleton == false)
+                ship.Singleton = true;
+            
+            call.Client.NotifySingletonChange(ship, false);
+
+            return null;
+        }
+
+        public PyDataType AssembleShip(PyList itemIDs, CallInformation call)
+        {
+            foreach (PyDataType itemID in itemIDs)
+            {
+                // ignore item
+                if (itemID is PyInteger == false)
+                    continue;
+
+                this.AssembleShip(itemID as PyInteger, call);
+            }
+            
+            return null;
         }
     }
 }

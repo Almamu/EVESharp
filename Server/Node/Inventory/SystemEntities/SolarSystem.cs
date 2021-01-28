@@ -199,7 +199,7 @@ namespace Node.Inventory.SystemEntities
             get => mSecurityClass;
         }
 
-        protected override void LoadContents()
+        protected override void LoadContents(ItemFlags ignoreFlags = ItemFlags.None)
         {
             throw new NotImplementedException();
         }

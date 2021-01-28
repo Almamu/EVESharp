@@ -42,7 +42,7 @@ INSERT INTO `channels`(`channelID`,`ownerID`,`relatedEntityID`,`displayName`,`mo
 
 /* Insert mailing lists for NPC corporations into the channels table */
 INSERT INTO `channels`(`channelID`,`ownerID`,`relatedEntityID`,`displayName`,`motd`,`comparisonKey`,`memberless`,`password`,`mailingList`,`cspa`,`temporary`,`estimatedMemberCount`)
-  SELECT corporationID AS channelID, corporationID AS ownerID, corporationID as relatedEntityID, "System Channels\\Corp" AS displayName, corporationName AS motd, NULL AS comparisonKey, 0 AS memberless, NULL AS password, 1 AS mailingList, 1 AS cspa, 0 AS temporary, 0 AS estimatedMemberCount FROM corporation;
+  SELECT NULL AS channelID, corporationID AS ownerID, corporationID as relatedEntityID, "System Channels\\Corp" AS displayName, corporationName AS motd, NULL AS comparisonKey, 0 AS memberless, NULL AS password, 1 AS mailingList, 1 AS cspa, 0 AS temporary, 0 AS estimatedMemberCount FROM corporation;
 
 /*Table structure for table `channelMods` */
 

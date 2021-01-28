@@ -9,7 +9,7 @@
             this.ItemOwnerID = ownerID;
         }
 
-        protected override void LoadContents()
+        protected override void LoadContents(ItemFlags ignoreFlags = ItemFlags.None)
         {
             lock (this)
             {

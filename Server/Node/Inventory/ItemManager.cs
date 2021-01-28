@@ -185,9 +185,9 @@ namespace Node.Inventory
             return item;
         }
 
-        public Dictionary<int, ItemEntity> LoadItemsLocatedAt(ItemEntity location)
+        public Dictionary<int, ItemEntity> LoadItemsLocatedAt(ItemEntity location, ItemFlags ignoreFlag = ItemFlags.None)
         {
-            return this.ItemDB.LoadItemsLocatedAt(location.ID);
+            return this.ItemDB.LoadItemsLocatedAt(location.ID, ignoreFlag);
         }
 
         public Dictionary<int, ItemEntity> LoadItemsLocatedAtByOwner(ItemEntity location, int ownerID)

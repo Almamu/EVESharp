@@ -764,14 +764,15 @@ namespace Node.Database
             );
         }
 
-        public Dictionary<int, ItemEntity> LoadItemsLocatedAt(int locationID)
+        public Dictionary<int, ItemEntity> LoadItemsLocatedAt(int locationID, ItemFlags ignoreFlag)
         {
             MySqlConnection connection = null;
             MySqlDataReader reader = Database.PrepareQuery(ref connection,
-                "SELECT itemID FROM entity WHERE locationID = @locationID",
+                "SELECT itemID FROM entity WHERE locationID = @locationID AND flag != @flag",
                 new Dictionary<string, object>()
                 {
-                    {"@locationID", locationID}
+                    {"@locationID", locationID},
+                    {"@flag", ignoreFlag}
                 }
             );
 

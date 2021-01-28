@@ -342,6 +342,16 @@ namespace Node
             this.NotifyItemChange(item, changes);
         }
 
+        public void NotifySingletonChange(ItemEntity item, bool oldSingleton)
+        {
+            PyDictionary changes = new PyDictionary();
+
+            if (oldSingleton != item.Singleton)
+                changes[(int) ItemChange.Singleton] = oldSingleton;
+
+            this.NotifyItemChange(item, changes);
+        }
+
         protected void NotifyItemChange(ItemEntity item, PyDictionary changes)
         {
             PyTuple notification = new PyTuple(new PyDataType[]

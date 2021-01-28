@@ -38,13 +38,13 @@ namespace Node.Inventory.Items
         {
         }
 
-        protected virtual void LoadContents()
+        protected virtual void LoadContents(ItemFlags ignoreFlags = ItemFlags.None)
         {
             lock (this)
             {
                 this.mContentsLoaded = true;
 
-                this.mItems = this.mItemFactory.ItemManager.LoadItemsLocatedAt(this);
+                this.mItems = this.mItemFactory.ItemManager.LoadItemsLocatedAt(this, ignoreFlags);
             }
         }
 
