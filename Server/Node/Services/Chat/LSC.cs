@@ -142,6 +142,59 @@ namespace Node.Services.Chat
                 [4] = args
             };
         }
+
+        private PyTuple GetChannelInformation(string channelType, int channelID, int entityID, int callerCharacterID, PyDataType channelIDExtended, CallInformation call)
+        {
+            Row info;
+
+            if (channelType == CHANNEL_TYPE_GLOBAL && entityID != callerCharacterID && entityID != call.Client.CorporationID)
+                info = this.DB.GetChannelInfo(channelID, callerCharacterID);
+            else
+                info = this.DB.GetChannelInfoByRelatedEntity(channelID, callerCharacterID);
+
+            // check if the channel must include the list of members
+            PyInteger actualChannelID = info.Line[0] as PyInteger;
+            PyString displayName = info.Line[2] as PyString;
+            string typeValue = this.DB.ChannelNameToChannelType(displayName);
+            Rowset mods = null;
+            Rowset chars = null;
+            
+            if (typeValue != CHANNEL_TYPE_REGIONID && typeValue != CHANNEL_TYPE_CONSTELLATIONID && typeValue != CHANNEL_TYPE_SOLARSYSTEMID2)
+            {
+                mods = this.DB.GetChannelMods(actualChannelID);
+                chars = this.DB.GetChannelMembers(actualChannelID);
+                
+                // the extra field is at the end
+                int extraIndex = chars.Header.Count - 1;
+        
+                // ensure they all have the owner information
+                foreach (PyList row in chars.Rows)
+                {
+                    // fill it with information
+                    row[extraIndex] = this.DB.GetExtraInfo(row[0] as PyInteger);
+                }    
+            }
+            else
+            {
+                // build empty rowsets for channels that should not reveal anyone unless they talk
+                mods = new Rowset(new PyDataType[]
+                    {"accessor", "mode", "untilWhen", "originalMode", "admin", "reason"});
+                chars = new Rowset(new PyDataType[]
+                    {"charID", "corpID", "allianceID", "warFactionID", "role", "extra"});
+            }
+
+            return new PyTuple(3)
+            {
+                [0] = channelIDExtended,
+                [1] = 1,
+                [2] = new PyTuple(3)
+                {
+                    [0] = info,
+                    [1] = mods,
+                    [2] = chars
+                }
+            };
+        }
         
         public PyDataType JoinChannels(PyList channels, PyInteger role, CallInformation call)
         {
@@ -203,55 +256,12 @@ namespace Node.Services.Chat
 
                 try
                 {
-                    Row info;
 
-                    if (channelType == CHANNEL_TYPE_GLOBAL && entityID != callerCharacterID && entityID != call.Client.CorporationID)
-                        info = this.DB.GetChannelInfo(channelID, callerCharacterID);
-                    else
-                        info = this.DB.GetChannelInfoByRelatedEntity(channelID, callerCharacterID);
-
-                    // check if the channel must include the list of members
-                    PyInteger actualChannelID = info.Line[0] as PyInteger;
-                    PyString displayName = info.Line[2] as PyString;
-                    string typeValue = this.DB.ChannelNameToChannelType(displayName);
-                    Rowset mods = null;
-                    Rowset chars = null;
-                    
-                    if (typeValue != CHANNEL_TYPE_REGIONID && typeValue != CHANNEL_TYPE_CONSTELLATIONID && typeValue != CHANNEL_TYPE_SOLARSYSTEMID2)
-                    {
-                        mods = this.DB.GetChannelMods(actualChannelID);
-                        chars = this.DB.GetChannelMembers(actualChannelID);
-                        
-                        // the extra field is at the end
-                        int extraIndex = chars.Header.Count - 1;
-                
-                        // ensure they all have the owner information
-                        foreach (PyList row in chars.Rows)
-                        {
-                            // fill it with information
-                            row[extraIndex] = this.DB.GetExtraInfo(row[0] as PyInteger);
-                        }    
-                    }
-                    else
-                    {
-                        // build empty rowsets for channels that should not reveal anyone unless they talk
-                        mods = new Rowset(new PyDataType[]
-                            {"accessor", "mode", "untilWhen", "originalMode", "admin", "reason"});
-                        chars = new Rowset(new PyDataType[]
-                            {"charID", "corpID", "allianceID", "warFactionID", "role", "extra"});
-                    }
-
-                    result.Add(new PyTuple(3)
-                    {
-                        [0] = channelIDExtended,
-                        [1] = 1,
-                        [2] = new PyTuple(3)
-                        {
-                            [0] = info,
-                            [1] = mods,
-                            [2] = chars
-                        }
-                    });
+                    result.Add(
+                        this.GetChannelInformation(
+                            channelType, channelID, entityID, callerCharacterID, channelIDExtended, call
+                        )
+                    );
                 }
                 catch (Exception e)
                 {
