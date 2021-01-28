@@ -62,7 +62,11 @@ namespace PythonTypes
         private void Process(PyDataType obj)
         {
             this.AppendIndentation();
+            this.ProcessPythonType(obj);
+        }
 
+        private void ProcessPythonType(PyDataType obj)
+        {
             switch (obj)
             {
                 case null:

@@ -218,13 +218,15 @@ namespace Node
             this.mCallCallbacks.Remove(callID);
         }
 
-        public int ExpectRemoteServiceResult(Action<RemoteCall, PyDataType> callback, object extraInfo = null,
+        public int ExpectRemoteServiceResult(Action<RemoteCall, PyDataType> callback, Client client, object extraInfo = null,
             Action<RemoteCall> timeoutCallback = null, int timeoutSeconds = 0)
         {
+            // get the client the packet is directed towards
+            
             // generate the proper remote call object
             RemoteCall entry = new RemoteCall
             {
-                Callback = callback, ExtraInfo = extraInfo, TimeoutCallback = timeoutCallback
+                Callback = callback, ExtraInfo = extraInfo, TimeoutCallback = timeoutCallback, Client = client
             };
             
             // get the new callID

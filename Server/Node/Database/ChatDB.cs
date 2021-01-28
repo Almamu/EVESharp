@@ -210,7 +210,7 @@ namespace Node.Database
         {
             MySqlConnection connection = null;
             MySqlDataReader reader = Database.PrepareQuery(ref connection,
-                "SELECT accessor FROM channelMods LEFT JOIN chrInformation ON accessor = characterID WHERE channelID = @channelID AND online = 1 AND mode > 0",
+                "SELECT accessor FROM channelMods LEFT JOIN chrInformation ON accessor = characterID WHERE channelID = @channelID AND online = 1 AND `mode` > 0",
                 new Dictionary<string, object>()
                 {
                     {"@channelID", channelID}

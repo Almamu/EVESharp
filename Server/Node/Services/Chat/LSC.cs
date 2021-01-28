@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Runtime.InteropServices;
 using System.Xml.XPath;
 using Common.Constants;
@@ -21,6 +22,12 @@ namespace Node.Services.Chat
 {
     public class LSC : Service
     {
+        private const string CHANNEL_TYPE_GLOBAL = "global";
+        private const string CHANNEL_TYPE_SOLARSYSTEMID2 = "solarsystemid2";
+        private const string CHANNEL_TYPE_REGIONID = "regionid";
+        private const string CHANNEL_TYPE_CORPID = "corpid";
+        private const string CHANNEL_TYPE_CONSTELLATIONID = "constellationid";
+        
         private MessagesDB MessagesDB { get; }
         private ChatDB DB { get; }
         private CharacterDB CharacterDB { get; }
@@ -38,6 +45,51 @@ namespace Node.Services.Chat
             this.Log = logger.CreateLogChannel("LSC");
         }
 
+        private static void ParseTupleChannelIdentifier(PyTuple tuple, out int channelID, out string channelType, out int entityID)
+        {
+            if (tuple.Count != 1 || tuple[0] is PyTuple == false)
+                throw new InvalidDataException("LSC received a wrongly formatted channel identifier");
+
+            PyTuple channelInfo = tuple[0] as PyTuple;
+
+            if (channelInfo.Count != 2 || channelInfo[0] is PyString == false || channelInfo[1] is PyInteger == false)
+                throw new InvalidDataException("LSC received a wrongly formatted channel identifier");
+
+            channelType = channelInfo[0] as PyString;
+            channelID = channelInfo[1] as PyInteger;
+            entityID = channelID;
+        }
+        
+        private void ParseChannelIdentifier(PyDataType channel, out int channelID, out string channelType, out int entityID)
+        {
+            switch (channel)
+            {
+                case PyInteger integer:
+                    channelID = integer;
+                    entityID = 0;
+                    // get the full channel identifier
+                    channelType = CHANNEL_TYPE_GLOBAL;
+                    break;
+                case PyTuple tuple:
+                    ParseTupleChannelIdentifier(tuple, out channelID, out channelType, out entityID);
+                    break;
+                default:
+                    throw new InvalidDataException("LSC received a wrongly formatted channel identifier");
+            }
+            
+            // ensure the channelID is the correct one and not an entityID
+            if (channelType != CHANNEL_TYPE_GLOBAL)
+                channelID = this.DB.GetChannelIDFromRelatedEntity(channelID);
+                
+            if (channelID == 0)
+                throw new InvalidDataException("LSC could not determine chatID for the requested chats");
+        }
+
+        private void ParseChannelIdentifier(PyDataType channel, out int channelID, out string channelType)
+        {
+            this.ParseChannelIdentifier(channel, out channelID, out channelType, out _);
+        }
+
         public PyDataType GetChannels(CallInformation call)
         {
             return this.DB.GetChannelsForCharacter(call.Client.EnsureCharacterIsSelected());
@@ -52,45 +104,23 @@ namespace Node.Services.Chat
         {
             call.Client.EnsureCharacterIsSelected();
 
-            int channelID = 0;
+            int channelID;
+            string channelType;
 
-            if (channel is PyInteger integer)
-                channelID = integer;
-            else if (channel is PyTuple tuple)
+            try
             {
-                if (tuple.Count != 1 || tuple[0] is PyTuple == false)
-                {
-                    Log.Error("LSC received a tuple in GetMembers that doesn't resemble anything we know");
-                    return null;
-                }
-
-                PyTuple channelInfo = tuple[0] as PyTuple;
-
-                if (channelInfo.Count != 2 || channelInfo[0] is PyString == false ||
-                    channelInfo[1] is PyInteger == false)
-                {
-                    Log.Error("LSC received a tuple for channel in GetMembers that doesn't resemble anything we know");
-                    return null;
-                }
-
-                channelID = channelInfo[1] as PyInteger;
-                channelID = this.DB.GetChannelIDFromRelatedEntity(channelID);
+                this.ParseChannelIdentifier(channel, out channelID, out channelType);
             }
-            else
+            catch (InvalidDataException)
             {
-                throw new CustomError("The channelID is not in the correct format");
-            }
-                
-            if (channelID == 0)
-            {
-                Log.Error("LSC could not determine chatID for the requested chats");
+                Log.Error("Error parsing channel identifier for GetMembers");
                 return null;
             }
             
             return this.DB.GetChannelMembers(channelID);
         }
 
-        private PyDataType GenerateLSCNotification(string type, PyDataType channel, PyTuple args, Client client)
+        private static PyDataType GenerateLSCNotification(string type, PyDataType channel, PyTuple args, Client client)
         {
             PyTuple who = new PyTuple(6)
             {
@@ -121,66 +151,42 @@ namespace Node.Services.Chat
 
             foreach (PyDataType channel in channels)
             {
-                int channelID = 0;
-                PyString typeString;
+                int channelID;
+                string channelType;
+                int entityID;
                 PyDataType channelIDExtended = null;
 
-                if (channel is PyInteger integer)
+                try
                 {
-                    channelID = integer;
-                    
-                    // get the full channel identifier
-                    typeString = "global";
-                    channelIDExtended = channelID;
-
-                    if (channelID == call.Client.CorporationID)
-                    {
-                        Log.Warning(
-                            "Ignoring normal channel ID for corporation as it might be trying to fetch the mailing list");
-                        continue;
-                    }
+                    this.ParseChannelIdentifier(channel, out channelID, out channelType, out entityID);
                 }
-                else if (channel is PyTuple tuple)
-                {
-                    if (tuple.Count != 1 || tuple[0] is PyTuple == false)
-                    {
-                        Log.Error("LSC received a tuple in JoinChannels that doesn't resemble anything we know");
-                        continue;
-                    }
-
-                    PyTuple channelInfo = tuple[0] as PyTuple;
-
-                    if (channelInfo.Count != 2 || channelInfo[0] is PyString == false ||
-                        channelInfo[1] is PyInteger == false)
-                    {
-                        Log.Error(
-                            "LSC received a tuple for channel in JoinChannels that doesn't resemble anything we know");
-                        continue;
-                    }
-
-                    channelIDExtended = tuple;
-                    typeString = channelInfo[0] as PyString;
-                    channelID = channelInfo[1] as PyInteger;
-                }
-                else
+                catch (InvalidDataException)
                 {
                     throw new LSCCannotJoin("The specified channel cannot be found");
                 }
-                
-                if (channelID == 0)
-                {
-                    Log.Error("LSC could not determine chatID for the requested chats");
-                    continue;
-                }
 
+                if (channelType == CHANNEL_TYPE_GLOBAL)
+                    channelIDExtended = channelID;
+                else
+                {
+                    channelIDExtended = new PyTuple(1)
+                    {
+                        [0] = new PyTuple(2)
+                        {
+                            [0] = channelType,
+                            [1] = entityID
+                        }
+                    };
+                }
+                
                 // send notifications only on channels that should be receiving notifications
                 // we don't want people in local to know about players unless they talk there
-                if (typeString != "regionid" && typeString != "constellationid" && typeString != "solarsystemid2")
+                if (channelType != CHANNEL_TYPE_REGIONID && channelType != CHANNEL_TYPE_CONSTELLATIONID && channelType != CHANNEL_TYPE_SOLARSYSTEMID2)
                 {
                     PyDataType notification =
-                        this.GenerateLSCNotification("JoinChannel", channelIDExtended, new PyTuple(0), call.Client);
+                        GenerateLSCNotification("JoinChannel", channelIDExtended, new PyTuple(0), call.Client);
 
-                    if (typeString == "global")
+                    if (channelType == CHANNEL_TYPE_GLOBAL)
                     {
                         // get users in the channel that are online now
                         PyList characters = this.DB.GetOnlineCharsOnChannel(channelID);
@@ -191,7 +197,7 @@ namespace Node.Services.Chat
                     else
                     {
                         // notify all players on the channel
-                        call.Client.ClusterConnection.SendNotification("OnLSC", typeString, (PyList) new PyDataType [] { channelID }, notification);                            
+                        call.Client.ClusterConnection.SendNotification("OnLSC", channelType, (PyList) new PyDataType [] { entityID }, notification);                            
                     }
                 }
 
@@ -199,7 +205,7 @@ namespace Node.Services.Chat
                 {
                     Row info;
 
-                    if (typeString == "global" && channelID != callerCharacterID && channelID != call.Client.CorporationID)
+                    if (channelType == CHANNEL_TYPE_GLOBAL && entityID != callerCharacterID && entityID != call.Client.CorporationID)
                         info = this.DB.GetChannelInfo(channelID, callerCharacterID);
                     else
                         info = this.DB.GetChannelInfoByRelatedEntity(channelID, callerCharacterID);
@@ -211,7 +217,7 @@ namespace Node.Services.Chat
                     Rowset mods = null;
                     Rowset chars = null;
                     
-                    if (typeValue != "regionid" && typeValue != "constellationid" && typeValue != "solarsystemid2")
+                    if (typeValue != CHANNEL_TYPE_REGIONID && typeValue != CHANNEL_TYPE_CONSTELLATIONID && typeValue != CHANNEL_TYPE_SOLARSYSTEMID2)
                     {
                         mods = this.DB.GetChannelMods(actualChannelID);
                         chars = this.DB.GetChannelMembers(actualChannelID);
@@ -229,9 +235,9 @@ namespace Node.Services.Chat
                     else
                     {
                         // build empty rowsets for channels that should not reveal anyone unless they talk
-                        mods = new Rowset((PyList) new PyDataType[]
+                        mods = new Rowset(new PyDataType[]
                             {"accessor", "mode", "untilWhen", "originalMode", "admin", "reason"});
-                        chars = new Rowset((PyList) new PyDataType[]
+                        chars = new Rowset(new PyDataType[]
                             {"charID", "corpID", "allianceID", "warFactionID", "role", "extra"});
                     }
 
@@ -252,11 +258,11 @@ namespace Node.Services.Chat
                     // most of the time this indicates a destroyed channel
                     // so build a destroy notification and let the client know this channel
                     // can be removed from it's lists
-                    if (typeString == "global")
+                    if (channelType == CHANNEL_TYPE_GLOBAL)
                     {
                         // notify everyone in the channel only when it should
                         PyDataType notification =
-                            this.GenerateLSCNotification("DestroyChannel", channelID, new PyTuple(0), call.Client);
+                            GenerateLSCNotification("DestroyChannel", channelID, new PyTuple(0), call.Client);
 
                         // notify all characters in the channel
                         call.Client.ClusterConnection.SendNotification("OnLSC", "charid", callerCharacterID, call.Client, notification);
@@ -279,57 +285,66 @@ namespace Node.Services.Chat
             return ChatDB.CHANNEL_ROOKIECHANNELID;
         }
 
-        public PyDataType SendMessage(PyInteger channelID, PyString message, CallInformation call)
+        public PyDataType SendMessage(PyDataType channel, PyString message, CallInformation call)
         {
             int callerCharacterID = call.Client.EnsureCharacterIsSelected();
 
-            // ensure the player is allowed to chat here
-            if (this.DB.IsPlayerAllowedToChat(channelID, callerCharacterID) == false)
-                throw new LSCCannotSendMessage("Insufficient permissions");
+            int channelID;
+            int entityID;
+            string channelType;
 
-            PyDataType notification =
-                this.GenerateLSCNotification("SendMessage", channelID, new PyTuple(1) { [0] = message }, call.Client);
-
-        
-            // get users in the channel that are online now
-            PyList characters = this.DB.GetOnlineCharsOnChannel(channelID);
-
-            call.Client.ClusterConnection.SendNotification("OnLSC", "charid", characters, notification);
-            
-            return null;
-        }
-
-        public PyDataType SendMessage(PyTuple tuple, PyString message, CallInformation call)
-        {
-            int callerCharacterID = call.Client.EnsureCharacterIsSelected();
-            
-            if (tuple.Count != 1 || tuple[0] is PyTuple == false)
+            try
             {
-                Log.Error("LSC received a tuple in SendMessage that doesn't resemble anything we know");
-                return null;
+                this.ParseChannelIdentifier(channel, out channelID, out channelType, out entityID);
+            }
+            catch (InvalidDataException)
+            {
+                throw new LSCCannotSendMessage("Cannot get channel information");
             }
 
-            PyTuple channelInfo = tuple[0] as PyTuple;
-
-            if (channelInfo.Count != 2 || channelInfo[0] is PyString == false ||
-                channelInfo[1] is PyInteger == false)
-            {
-                Log.Error(
-                    "LSC received a tuple for channel in SendMessage that doesn't resemble anything we know");
-                return null;
-            }
-
-            PyString typeString = channelInfo[0] as PyString;
-            PyInteger channelID = channelInfo[1] as PyInteger;
-
-            if (this.DB.IsPlayerAllowedToChatOnRelatedEntity(channelID, callerCharacterID) == false)
+            // ensure the player is allowed to chat in there
+            if (channelType == CHANNEL_TYPE_GLOBAL && this.DB.IsPlayerAllowedToChat(channelID, callerCharacterID) == false)
+                throw new LSCCannotSendMessage("Insufficient permissions");
+            if (channelType != CHANNEL_TYPE_GLOBAL && this.DB.IsPlayerAllowedToChatOnRelatedEntity(entityID, callerCharacterID) == false)
                 throw new LSCCannotSendMessage("Insufficient permissions");
 
-            PyDataType notification =
-                this.GenerateLSCNotification("SendMessage", tuple, new PyTuple(1) { [0] = message }, call.Client);
-
-            call.Client.ClusterConnection.SendNotification("OnLSC", typeString, (PyList) new PyDataType [] { channelID }, notification);
+            PyTuple notificationBody = new PyTuple(1) {[0] = message};
             
+            if (channelType == CHANNEL_TYPE_GLOBAL)
+            {
+                PyDataType notification =
+                    GenerateLSCNotification("SendMessage", channelID, notificationBody, call.Client);
+
+                call.Client.ClusterConnection.SendNotification(
+                    "OnLSC",
+                    "charid",
+                    this.DB.GetOnlineCharsOnChannel(channelID),
+                    notification
+                );
+            }
+            else
+            {
+                PyTuple identifier = new PyTuple(1)
+                {
+                    [0] = new PyTuple(2)
+                    {
+                        [0] = channelType,
+                        [1] = entityID
+                    }
+                };
+                
+                PyDataType notification =
+                    GenerateLSCNotification("SendMessage", identifier, notificationBody, call.Client);
+
+                call.Client.ClusterConnection.SendNotification(
+                    "OnLSC",
+                    channelType,
+                    new PyDataType [] { entityID },
+                    notification
+                );
+
+            }
+
             return null;
         }
 
@@ -365,63 +380,31 @@ namespace Node.Services.Chat
         {
             int callerCharacterID = call.Client.EnsureCharacterIsSelected();
 
-            int channelID = 0;
-            PyString typeString;
+            int channelID;
+            string channelType;
 
-            if (channel is PyInteger integer)
+            try
             {
-                channelID = integer;
-                    
-                // get the full channel identifier
-                typeString = "global";
+                this.ParseChannelIdentifier(channel, out channelID, out channelType);
             }
-            else if (channel is PyTuple tuple)
+            catch (InvalidDataException ex)
             {
-                if (tuple.Count != 1 || tuple[0] is PyTuple == false)
-                {
-                    Log.Error("LSC received a tuple in JoinChannels that doesn't resemble anything we know");
-                    return null;
-                }
-
-                PyTuple channelInfo = tuple[0] as PyTuple;
-
-                if (channelInfo.Count != 2 || channelInfo[0] is PyString == false || channelInfo[1] is PyInteger == false)
-                {
-                    Log.Error(
-                        "LSC received a tuple for channel in JoinChannels that doesn't resemble anything we know");
-                    return null;
-                }
-
-                typeString = channelInfo[0] as PyString;
-                channelID = channelInfo[1] as PyInteger;
-            }
-            else
-            {
-                throw new CustomError("The channelID is not in the correct format");
-            }
-                
-            if (channelID == 0)
-            {
-                Log.Error("LSC could not determine chatID for the requested chats");
+                Log.Error("Error parsing channel identifier for LeaveChannel");
                 return null;
             }
-
-            // ensure we got the real channelID and not the entity ID
-            if (typeString != "global")
-                channelID = this.DB.GetChannelIDFromRelatedEntity(channelID);
 
             // make sure the character is actually in the channel
             if (this.DB.IsCharacterMemberOfChannel(channelID, callerCharacterID) == false)
                 return null;
             
-            if (typeString != "corpid" && typeString != "solarsystemid2" && announce == 1)
+            if (channelType != CHANNEL_TYPE_CORPID && channelType != CHANNEL_TYPE_SOLARSYSTEMID2 && announce == 1)
             {
                 // notify everyone in the channel only when it should
                 PyDataType notification =
-                    this.GenerateLSCNotification("LeaveChannel", channel, new PyTuple(0), call.Client);
+                    GenerateLSCNotification("LeaveChannel", channel, new PyTuple(0), call.Client);
                 
-                if (typeString != "global")
-                    call.Client.ClusterConnection.SendNotification("OnLSC", typeString, (PyList) new PyDataType [] { channel }, notification);
+                if (channelType != CHANNEL_TYPE_GLOBAL)
+                    call.Client.ClusterConnection.SendNotification("OnLSC", channelType, new PyDataType [] { channel }, notification);
                 else
                 {
                     // get users in the channel that are online now
@@ -430,9 +413,6 @@ namespace Node.Services.Chat
                     call.Client.ClusterConnection.SendNotification("OnLSC", "charid", characters, notification);
                 }
             }
-            
-            // remove the player from the channel
-            // this.DB.LeaveChannel(channelID, callerCharacterID);
 
             return null;
         }
@@ -473,7 +453,6 @@ namespace Node.Services.Chat
             return new PyTuple(3)
             {
                 [0] = this.DB.GetChannelInfo(channelID, callerCharacterID),
-                // build empty rowsets as there's no one in here yet
                 [1] = mods,
                 [2] = chars
             };
@@ -495,7 +474,7 @@ namespace Node.Services.Chat
             
             // notify everyone in the channel only when it should
             PyDataType notification =
-                this.GenerateLSCNotification("DestroyChannel", channelID, new PyTuple(0), call.Client);
+                GenerateLSCNotification("DestroyChannel", channelID, new PyTuple(0), call.Client);
 
             // notify all characters in the channel
             call.Client.ClusterConnection.SendNotification("OnLSC", "charid", characters, notification);
@@ -522,7 +501,7 @@ namespace Node.Services.Chat
                 [5] = accessLevel == ChatDB.CHATROLE_CREATOR
             };
             
-            PyDataType notification = this.GenerateLSCNotification("AccessControl", channelID, args, call.Client);
+            PyDataType notification = GenerateLSCNotification("AccessControl", channelID, args, call.Client);
             
             // get users in the channel that are online now
             PyList characters = this.DB.GetOnlineCharsOnChannel(channelID);
@@ -538,7 +517,7 @@ namespace Node.Services.Chat
 
             // announce leaving, important in private channels
             PyDataType notification =
-                this.GenerateLSCNotification("LeaveChannel", channelID, new PyTuple(0), call.Client);
+                GenerateLSCNotification("LeaveChannel", channelID, new PyTuple(0), call.Client);
             
             // get users in the channel that are online now
             PyList characters = this.DB.GetOnlineCharsOnChannel(channelID);
@@ -554,10 +533,8 @@ namespace Node.Services.Chat
         {
             InviteExtraInfo call = callInfo.ExtraInfo as InviteExtraInfo;
 
-            if (result is PyString)
+            if (result is PyString answer)
             {
-                PyString answer = result as PyString;
-
                 // this user's character might not be in the service
                 // so fetch the name from the database
                 call.OriginalCall.Client.SendException(
@@ -574,14 +551,14 @@ namespace Node.Services.Chat
             }
             
             // character has accepted, notify all users of the channel
-            PyString typeString = this.DB.GetChannelType(call.ChannelID);
+            string channelType = this.DB.GetChannelType(call.ChannelID);
             
             PyDataType notification =
-                this.GenerateLSCNotification("JoinChannel", call.ChannelID, new PyTuple(0), call.OriginalCall.Client);
+                GenerateLSCNotification("JoinChannel", call.ChannelID, new PyTuple(0), callInfo.Client);
 
             // you should only be able to invite to global channels as of now
             // TODO: CORP CHANNELS SHOULD BE SUPPORTED TOO
-            if (typeString == "global")
+            if (channelType == CHANNEL_TYPE_GLOBAL)
             {
                 // get users in the channel that are online now
                 PyList characters = this.DB.GetOnlineCharsOnChannel(call.ChannelID);

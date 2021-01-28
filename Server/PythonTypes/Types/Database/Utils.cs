@@ -54,9 +54,6 @@ namespace PythonTypes.Types.Database
             // null values should be null
             if (reader.IsDBNull(index) == true)
                 return null;
-
-            if (reader.GetName(index) == "startDateTime" || reader.GetName(index) == "corporationDateTime")
-                Debugger.Break();
             
             switch (type)
             {

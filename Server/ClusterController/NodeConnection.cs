@@ -246,11 +246,9 @@ namespace ClusterControler
             // update the local copy of the session too
             client.UpdateSession(packet);
 
-            // parse the notification, get the nodes of interest and tell them about this session change too
-            SessionChangeNotification scn = packet.Payload;
-
-            foreach (PyInteger nodeID in scn.nodesOfInterest)
-                this.ConnectionManager.NotifyNode(nodeID, packet);
+            // notify all the nodes in the cluster
+            foreach (KeyValuePair<long, NodeConnection> pair in this.ConnectionManager.Nodes)
+                pair.Value.Socket.Send(packet);
         }
 
         private void RelayPacket(PyPacket packet)

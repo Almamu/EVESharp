@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Text.RegularExpressions;
 using Common.Constants;
 using Common.Logging;
@@ -657,8 +658,13 @@ namespace Node.Network
         private void ClientSendServiceCall(int clientID, string service, string call, PyTuple args, PyDictionary namedPayload,
             Action<RemoteCall, PyDataType> callback, Action<RemoteCall> timeoutCallback, object extraInfo = null, int timeoutSeconds = 0)
         {
+            if (this.ClientManager.Contains(clientID) == false)
+                throw new InvalidDataException("Cannot send a service call to a userID that is not registered");
+
+            Client destination = this.ClientManager.Get(clientID);
+            
             // queue the call in the service manager and get the callID
-            int callID = this.ServiceManager.ExpectRemoteServiceResult(callback, extraInfo, timeoutCallback, timeoutSeconds);
+            int callID = this.ServiceManager.ExpectRemoteServiceResult(callback, destination, extraInfo, timeoutCallback, timeoutSeconds);
             
             // prepare the request packet
             PyPacket packet = new PyPacket(PyPacket.PacketType.CALL_REQ);
