@@ -3,6 +3,9 @@ using PythonTypes.Types.Primitives;
 
 namespace PythonTypes.Types.Complex
 {
+    /// <summary>
+    /// Simple base class to simplify working with Item information
+    /// </summary>
     public class PyWarInfo : IndexRowset
     {
         public PyWarInfo() : base("warID", new PyDataType[]

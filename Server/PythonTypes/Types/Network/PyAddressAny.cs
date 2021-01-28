@@ -6,6 +6,9 @@ namespace PythonTypes.Types.Network
     public class PyAddressAny : PyAddress
     {
         public PyInteger ID { get; }
+        /// <summary>
+        /// The related service
+        /// </summary>
         public PyString Service { get; }
 
         public PyAddressAny(PyInteger id, PyString service = null) : base(TYPE_ANY)

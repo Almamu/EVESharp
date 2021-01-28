@@ -23,6 +23,9 @@ namespace PythonTypes.Types.Database
         
         protected PyList Headers { get; }
         protected PyDictionary Lines { get; }
+        /// <summary>
+        /// The field used to index the Rowset
+        /// </summary>
         public string IDName { get; set; }
 
         public IndexRowset(string idName, PyList headers)
@@ -53,6 +56,13 @@ namespace PythonTypes.Types.Database
             this.Lines[index] = data;
         }
 
+        /// <summary>
+        /// Simple helper method that creates a correct IndexRowset and returns
+        /// it's PyDataType representation, ready to be sent to the EVE Online client
+        ///
+        /// </summary>
+        /// <param name="reader">The MySqlDataReader to read the data from</param>
+        /// <returns></returns>
         public static IndexRowset FromMySqlDataReader(MySqlDataReader reader, int indexField)
         {
             string indexFieldName = reader.GetName(indexField);

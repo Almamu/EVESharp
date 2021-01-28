@@ -8,7 +8,7 @@ namespace PythonTypes.Types.Database
     public static class IntIntListDictionary
     {
         /// <summary>
-        /// Simple helper method that creates a correct IntegerIntegerList dictionary and returns
+        /// Simple helper method that creates a correct IntegerIntegerListDictionary and returns
         /// it's PyDataType representation, ready to be sent to the EVE Online client
         ///
         /// IMPORTANT: The first field MUST be ordered (direction doesn't matter) for this method

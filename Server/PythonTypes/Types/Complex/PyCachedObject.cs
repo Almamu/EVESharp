@@ -12,12 +12,33 @@ namespace PythonTypes.Types.Complex
     {
         private const string TYPE_NAME = "objectCaching.CachedObject";
         
+        /// <summary>
+        /// The datetime this cached object was generated
+        /// </summary>
         public long Timestamp { get; private set; }
+        /// <summary>
+        /// The version (CRC32) of this cached object
+        /// </summary>
         public int Version { get; private set; }
+        /// <summary>
+        /// The node that generated this object
+        /// </summary>
         public long NodeID { get; private set; }
+        /// <summary>
+        /// Whether this cached object is shared between nodes or not
+        /// </summary>
         public int Shared { get; private set; }
+        /// <summary>
+        /// The cached contents
+        /// </summary>
         public PyBuffer Cache { get; private set; }
+        /// <summary>
+        /// The length in bytes of the cached object
+        /// </summary>
         public int Compressed { get; private set; }
+        /// <summary>
+        /// ObjectID representation of the cached object to identify it
+        /// </summary>
         public PyDataType ObjectID { get; private set; }
 
         public static implicit operator PyDataType(PyCachedObject cachedObject)

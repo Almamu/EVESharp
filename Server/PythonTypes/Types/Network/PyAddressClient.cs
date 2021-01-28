@@ -5,8 +5,17 @@ namespace PythonTypes.Types.Network
 {
     public class PyAddressClient : PyAddress
     {
+        /// <summary>
+        /// Related clientID
+        /// </summary>
         public PyInteger ClientID { get; set; }
+        /// <summary>
+        /// The callID for the request/response
+        /// </summary>
         public PyInteger CallID { get; }
+        /// <summary>
+        /// The related service
+        /// </summary>
         public PyString Service { get; }
 
         public PyAddressClient() : base(TYPE_CLIENT)

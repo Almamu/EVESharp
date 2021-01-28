@@ -62,11 +62,29 @@ namespace PythonTypes.Types.Network
             "macho.PingRsp"
         };
         
+        /// <summary>
+        /// The type of packet
+        /// </summary>
         public PacketType Type { get; set; }
+        /// <summary>
+        /// The address where the packet was originated
+        /// </summary>
         public PyAddress Source { get; set; }
+        /// <summary>
+        /// The address where the packet should arrive
+        /// </summary>
         public PyAddress Destination { get; set; }
+        /// <summary>
+        /// The related userID for the packet
+        /// </summary>
         public long UserID { get; set; }
+        /// <summary>
+        /// Tuple payload with the actual packet data
+        /// </summary>
         public PyTuple Payload { get; set; }
+        /// <summary>
+        /// Out of bounds data with extra information for machoNet or other services
+        /// </summary>
         public PyDictionary OutOfBounds { get; set; }
         public string TypeString { get => PacketTypeString[(int) this.Type]; }
         

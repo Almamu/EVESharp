@@ -5,8 +5,14 @@ using PythonTypes.Types.Primitives;
 
 namespace PythonTypes.Types.Database
 {
+    /// <summary>
+    /// Extended Python type that represents a normal row in the database that is compressed when marshaled
+    /// </summary>
     public class PyPackedRow : PyDataType
     {
+        /// <summary>
+        /// The header for this PyPackedRow
+        /// </summary>
         public DBRowDescriptor Header { get; private set; }
 
         private readonly Dictionary<string, PyDataType> mValues = new Dictionary<string, PyDataType>();
@@ -32,6 +38,13 @@ namespace PythonTypes.Types.Database
             set => this.mValues[key] = value;
         }
 
+        /// <summary>
+        /// Simple helper method that creates the correct PackedRow data off a result row and
+        /// returns it's PyDataType representation, ready to be sent to the EVE Online client
+        /// </summary>
+        /// <param name="reader"></param>
+        /// <param name="descriptor"></param>
+        /// <returns></returns>
         public static PyPackedRow FromMySqlDataReader(MySqlDataReader reader, DBRowDescriptor descriptor)
         {
             PyPackedRow row = new PyPackedRow(descriptor);

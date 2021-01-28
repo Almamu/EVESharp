@@ -12,6 +12,12 @@ namespace PythonTypes.Marshal
 {
     public class Unmarshal
     {
+        /// <summary>
+        /// Extracts the PyDataType off the given byte array
+        /// </summary>
+        /// <param name="data">Byte array to extract the PyDataType from</param>
+        /// <param name="expectHeader">Whether a marshal header is expected or not</param>
+        /// <returns>The unmarshaled PyDataType</returns>
         public static PyDataType ReadFromByteArray(byte[] data, bool expectHeader = true)
         {
             MemoryStream stream = new MemoryStream(data);
@@ -19,6 +25,12 @@ namespace PythonTypes.Marshal
             return ReadFromStream(stream, expectHeader);
         }
 
+        /// <summary>
+        /// Extracts the PyDataType off the given stream
+        /// </summary>
+        /// <param name="stream">Stream to extract the PyDataType from</param>
+        /// <param name="expectHeader">Whether a marshal header is expected or not</param>
+        /// <returns>The unmarshaled PyDataType</returns>
         public static PyDataType ReadFromStream(Stream stream, bool expectHeader = true)
         {
             Unmarshal processor = new Unmarshal(stream);

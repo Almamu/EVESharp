@@ -22,6 +22,12 @@ namespace PythonTypes.Types.Database
             return new PyObjectData(OBJECT_NAME, data);
         }
 
+        /// <summary>
+        /// Simple helper method that creates the correct KeyVal data off a dictionary and
+        /// returns it's PyDataType representation, ready to be sent to the EVE Online client
+        /// </summary>
+        /// <param name="columns"></param>
+        /// <returns></returns>
         public static PyDataType FromDictionary(PyDictionary columns)
         {
             return new PyObjectData(OBJECT_NAME, columns);

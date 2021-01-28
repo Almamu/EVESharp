@@ -8,7 +8,7 @@ namespace PythonTypes.Types.Database
     public static class IntIntDictionary
     {
         /// <summary>
-        /// Simple helper method that creates a correct IntegerInteger dictionary and returns
+        /// Simple helper method that creates a correct IntegerIntegerDictionary and returns
         /// it's PyDataType representation, ready to be sent to the EVE Online client
         /// </summary>
         /// <param name="reader">The MySqlDataReader to read the data from</param>

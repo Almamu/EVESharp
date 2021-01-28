@@ -8,7 +8,7 @@ namespace PythonTypes.Types.Database
     public class DictRowlist
     {
         /// <summary>
-        /// Simple helper method that creates a correct RowList and returns
+        /// Simple helper method that creates a correct DictRowList and returns
         /// it's PyDataType representation, ready to be sent to the EVE Online client
         ///
         /// </summary>

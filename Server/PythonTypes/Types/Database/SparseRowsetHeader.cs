@@ -6,6 +6,9 @@ using PythonTypes.Types.Primitives;
 
 namespace PythonTypes.Types.Database
 {
+    /// <summary>
+    /// Header for SparseRowset, which is a special object that acts as a bound service to return results 
+    /// </summary>
     public class SparseRowsetHeader
     {
         
@@ -14,8 +17,17 @@ namespace PythonTypes.Types.Database
         /// </summary>
         private const string TYPE_NAME = "util.SparseRowset";
         
+        /// <summary>
+        /// The number of records found
+        /// </summary>
         public int Count { get; private set; }
-        public PyList Headers { get; private set; } 
+        /// <summary>
+        /// The columns of the result
+        /// </summary>
+        public PyList Headers { get; private set; }
+        /// <summary>
+        /// The Bound ID for this SparseRowset
+        /// </summary>
         public PyDataType BoundObjectIdentifier { get; set; }
 
         public SparseRowsetHeader(int count, PyList headers)
@@ -34,7 +46,13 @@ namespace PythonTypes.Types.Database
 
             return new PyObjectData(TYPE_NAME, container);
         }
-
+        
+        /// <summary>
+        /// Simple helper method that creates rows to be returned from a SparseRowset-based bound service
+        /// </summary>
+        /// <param name="reader"></param>
+        /// <param name="header"></param>
+        /// <returns></returns>
         public PyDataType DataFromMySqlReader(int pkFieldIndex, MySqlDataReader reader, Dictionary<PyDataType, int> rowsIndex)
         {
             PyList result = new PyList();

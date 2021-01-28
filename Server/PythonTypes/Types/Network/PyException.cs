@@ -11,8 +11,17 @@ namespace PythonTypes.Types.Network
     /// </summary>
     public class PyException : Exception
     {
+        /// <summary>
+        /// The type of exception
+        /// </summary>
         public PyToken Type { get; }
+        /// <summary>
+        /// The reason for the exception, this gives the client extra information on what the exception is all about
+        /// </summary>
         public PyString Reason { get; protected set; }
+        /// <summary>
+        /// Extra information required for the exception
+        /// </summary>
         public PyDictionary Keywords { get; protected set; }
         public PyDataType Extra { get; }
 

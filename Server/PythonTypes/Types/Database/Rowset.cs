@@ -22,6 +22,9 @@ namespace PythonTypes.Types.Database
         /// Headers of the rowset
         /// </summary>
         public PyList Header { get; }
+        /// <summary>
+        /// All the rows of the Rowset
+        /// </summary>
         public PyList Rows { get; }
 
         public Rowset(PyList headers)
@@ -37,7 +40,7 @@ namespace PythonTypes.Types.Database
         }
         
         /// <summary>
-        /// Simple helper method that creates a correct util.Rowset ready to be sent
+        /// Simple helper method that creates a correct Rowset ready to be sent
         /// to the EVE Online client based on the given MySqlDataReader
         /// </summary>
         /// <param name="reader"></param>

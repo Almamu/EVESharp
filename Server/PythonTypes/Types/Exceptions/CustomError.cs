@@ -4,7 +4,7 @@ using PythonTypes.Types.Primitives;
 namespace PythonTypes.Types.Exceptions
 {
     /// <summary>
-    /// Helper class to work with ccp_exceptions.UserError exceptions
+    /// Helper class to represent simple error messages for the client
     /// </summary>
     public class CustomError : PyException
     {

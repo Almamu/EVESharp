@@ -9,10 +9,22 @@ namespace PythonTypes.Types.Complex
     public class PyCacheHint
     {
         private const string TYPE_NAME = "util.CachedObject";
-        
+
+        /// <summary>
+        /// The datetime this cached object was generated
+        /// </summary>
         public long CacheTime { get; private set; }
+        /// <summary>
+        /// ObjectID representation of the cached object to identify it
+        /// </summary>
         public PyDataType ObjectID { get; private set; }
+        /// <summary>
+        /// The node that generated this object
+        /// </summary>
         public long NodeID { get; private set; }
+        /// <summary>
+        /// The version (CRC32) of this cached object
+        /// </summary>
         public int Version { get; private set; }
 
         public static implicit operator PyDataType(PyCacheHint cacheHint)
