@@ -134,38 +134,46 @@ namespace Node.Services.Characters
             return new PyInteger((int) NameValidationResults.Valid);
         }
 
+        private void GetRandomCareerForRace(int raceID, out int careerID, out int schoolID, out int careerSpecialityID,
+            out int corporationID)
+        {
+            // TODO: DETERMINE SCHOOLID, CARREERID AND CAREERSPECIALITYID PROPERLY
+            
+            bool found = this.DB.GetRandomCareerForRace(raceID, out careerID, out schoolID,
+                out careerSpecialityID, out corporationID);
+
+            if (found == true)
+                return;
+            
+            Log.Error($"Cannot find random career for race {raceID}");
+                
+            throw new CustomError($"Cannot find random career for race {raceID}");
+        }
+
+        private void GetLocationForCorporation(int corporationID, out int stationID, out int solarSystemID,
+            out int constellationID, out int regionID)
+        {
+            // fetch information of starting location for the player
+            bool found = this.DB.GetLocationForCorporation(corporationID, out stationID, out solarSystemID,
+                out constellationID, out regionID);
+
+            if (found == true)
+                return;
+            
+            Log.Error($"Cannot find location for corporation {corporationID}");
+                
+            throw new CustomError($"Cannot find location for corporation {corporationID}");
+        }
+
         private Character CreateCharacter(string characterName, Ancestry ancestry, int genderID, PyDictionary appearance, long currentTime, CallInformation call)
         {
-            // get the System item's id
-            int systemItemID = this.Container.Constants["locationSystem"];
-
             // load the item into memory
-            ItemEntity owner = this.ItemManager.LoadItem(systemItemID);
+            ItemEntity owner = this.ItemManager.LocationSystem;
             
             int stationID, solarSystemID, constellationID, regionID, corporationID, careerID, schoolID, careerSpecialityID;
             
-            // TODO: DETERMINE SCHOOLID, CARREERID AND CAREERSPECIALITYID PROPERLY
-            
-            bool found = this.DB.GetRandomCareerForRace(ancestry.Bloodline.RaceID, out careerID, out schoolID,
-                out careerSpecialityID, out corporationID);
-
-            if (found == false)
-            {
-                Log.Error($"Cannot find random career for race {ancestry.Bloodline.RaceID}");
-                
-                throw new CustomError($"Cannot find random career for race {ancestry.Bloodline.RaceID}");
-            }
-
-            // fetch information of starting location for the player
-            found = this.DB.GetLocationForCorporation(corporationID, out stationID, out solarSystemID,
-                out constellationID, out regionID);
-
-            if (found == false)
-            {
-                Log.Error($"Cannot find location for corporation {ancestry.Bloodline.CorporationID}");
-                
-                throw new CustomError($"Cannot find location for corporation {ancestry.Bloodline.CorporationID}");
-            }
+            this.GetRandomCareerForRace(ancestry.Bloodline.RaceID, out careerID, out schoolID, out careerSpecialityID, out corporationID);
+            this.GetLocationForCorporation(corporationID, out stationID, out solarSystemID, out constellationID, out regionID);
             
             int itemID = this.DB.CreateCharacter(
                 ancestry.Bloodline.ItemType, characterName, owner, call.Client.AccountID, this.mConfiguration.Balance,
@@ -223,23 +231,15 @@ namespace Node.Services.Characters
             // ensure the name is valid
             switch (validationError)
             {
-                case (int) NameValidationResults.TooLong:
-                    throw new CharNameInvalidMaxLength ();
-                case (int) NameValidationResults.Taken:
-                    throw new CharNameInvalidTaken ();
-                case (int) NameValidationResults.IllegalCharacters:
-                    throw new CharNameInvalidSomeChar ();
-                case (int) NameValidationResults.TooShort:
-                    throw new CharNameInvalidMinLength ();
-                case (int) NameValidationResults.MoreThanOneSpace:
-                    throw new CharNameInvalidMaxSpaces ();
-                case (int) NameValidationResults.Banned:
-                    throw new CharNameInvalidBannedWord ();
-                case (int) NameValidationResults.Valid:
-                    break;
-                default:
-                    // unknown actual error, return generic error
-                    throw new CharNameInvalid();
+                case (int) NameValidationResults.TooLong: throw new CharNameInvalidMaxLength ();
+                case (int) NameValidationResults.Taken: throw new CharNameInvalidTaken ();
+                case (int) NameValidationResults.IllegalCharacters: throw new CharNameInvalidSomeChar ();
+                case (int) NameValidationResults.TooShort: throw new CharNameInvalidMinLength ();
+                case (int) NameValidationResults.MoreThanOneSpace: throw new CharNameInvalidMaxSpaces ();
+                case (int) NameValidationResults.Banned: throw new CharNameInvalidBannedWord ();
+                case (int) NameValidationResults.Valid: break;
+                // unknown actual error, return generic error
+                default: throw new CharNameInvalid();
             }
             
             // load bloodline and ancestry info for the requested character

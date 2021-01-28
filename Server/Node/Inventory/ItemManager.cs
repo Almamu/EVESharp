@@ -58,6 +58,8 @@ namespace Node.Inventory
 
         public Dictionary<int, Station> Stations => this.mStations;
         public Dictionary<int, SolarSystem> SolarSystems => this.mSolarSystems;
+        public ItemEntity LocationSystem { get; private set; }
+        public ItemEntity LocationRecycler { get; private set; }
 
         public void Load()
         {
@@ -70,6 +72,10 @@ namespace Node.Inventory
             }
 
             Log.Info($"Preloaded {this.mItemList.Count} static items");
+            
+            // store useful items like recycler and system
+            this.LocationRecycler = this.GetItem(this.NodeContainer.Constants["locationRecycler"]);
+            this.LocationSystem = this.GetItem(this.NodeContainer.Constants["locationSystem"]);
         }
 
         public ItemEntity LoadItem(int itemID)
@@ -410,7 +416,7 @@ namespace Node.Inventory
             }
 
             // set the item to the recycler location
-            item.LocationID = this.NodeContainer.Constants["locationRecycler"];
+            item.LocationID = this.LocationRecycler.ID;
 
             // finally remove the item off the database
             item.Destroy();
