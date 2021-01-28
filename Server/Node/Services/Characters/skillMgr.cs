@@ -422,10 +422,10 @@ namespace Node.Services.Characters
                 throw new RespecAttributesTooHigh();
             if (charisma + intelligence + memory + perception + willpower != MAXIMUM_TOTAL_ATTRIBUTE_POINTS)
                 throw new RespecAttributesMisallocated();
+            
             int callerCharacterID = call.Client.EnsureCharacterIsSelected();
             
-            Character character =
-                this.ItemManager.LoadItem(callerCharacterID) as Character;
+            Character character = this.ItemManager.GetItem(callerCharacterID) as Character;
 
             if (character.FreeReSpecs == 0)
                 throw new CustomError("You've already remapped your character too much times at once, wait some time");
