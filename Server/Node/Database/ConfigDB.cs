@@ -2,10 +2,6 @@ using System;
 using System.Collections.Generic;
 using Common.Database;
 using MySql.Data.MySqlClient;
-using MySqlX.XDevAPI.Common;
-using Node.Inventory;
-using Node.Inventory.Items;
-using Node.Inventory.Items.Types;
 using PythonTypes.Types.Database;
 using PythonTypes.Types.Primitives;
 

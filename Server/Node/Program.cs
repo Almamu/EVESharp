@@ -23,22 +23,13 @@
 */
 
 using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
-using System.Linq;
-using System.Reflection;
-using System.Text.RegularExpressions;
 using System.Threading;
 using Common.Database;
 using Common.Logging;
 using Common.Logging.Streams;
-using MySql.Data.MySqlClient;
 using Node.Configuration;
 using Node.Database;
 using Node.Inventory;
-using Node.Inventory.Items;
-using Node.Inventory.Items.Types;
 using Node.Network;
 using Node.Services.Account;
 using Node.Services.CacheSvc;
@@ -56,13 +47,6 @@ using Node.Services.Network;
 using Node.Services.Stations;
 using Node.Services.Tutorial;
 using Node.Services.War;
-using PythonTypes;
-using PythonTypes.Marshal;
-using PythonTypes.Types.Complex;
-using PythonTypes.Types.Database;
-using PythonTypes.Types.Exceptions;
-using PythonTypes.Types.Network;
-using PythonTypes.Types.Primitives;
 using SimpleInjector;
 
 namespace Node

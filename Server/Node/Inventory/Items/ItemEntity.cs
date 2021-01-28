@@ -23,9 +23,7 @@
 */
 
 using System.Collections.Generic;
-using System.Diagnostics;
 using Common.Database;
-using Node.Database;
 using Node.Inventory.Items.Attributes;
 using PythonTypes.Types.Database;
 using PythonTypes.Types.Primitives;

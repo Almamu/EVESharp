@@ -22,7 +22,6 @@
     Creator: Almamu
 */
 
-using System;
 using System.Collections.Generic;
 using Node.Database;
 using Node.Inventory.Items.Attributes;

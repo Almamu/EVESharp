@@ -1,10 +1,8 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using Node.Exceptions.Internal;
 using Node.Exceptions.ship;
 using Node.Inventory.Items.Attributes;
-using PythonTypes.Types.Primitives;
 
 namespace Node.Inventory.Items.Types
 {

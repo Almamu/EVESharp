@@ -1,16 +1,12 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.Threading;
 using Common.Database;
 using MySql.Data.MySqlClient;
 using Node.Data;
 using Node.Inventory;
 using Node.Inventory.Items;
-using Node.Inventory.Items.Attributes;
 using Node.Inventory.Items.Types;
 using PythonTypes.Types.Database;
-using PythonTypes.Types.Exceptions;
 using PythonTypes.Types.Primitives;
 
 namespace Node.Database

@@ -22,9 +22,7 @@
     Creator: Almamu
 */
 
-using System;
 using System.Collections.Generic;
-using System.Runtime.CompilerServices;
 using Common.Database;
 using MySql.Data.MySqlClient;
 using Node.Inventory;
@@ -32,7 +30,6 @@ using Node.Inventory.Items;
 using Node.Inventory.Items.Attributes;
 using Node.Inventory.Items.Types;
 using Node.Inventory.SystemEntities;
-using Node.Services.Characters;
 using PythonTypes.Types.Database;
 using PythonTypes.Types.Primitives;
 

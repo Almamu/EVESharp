@@ -1,4 +1,3 @@
-using System;
 using IniParser.Model;
 
 namespace Node.Configuration

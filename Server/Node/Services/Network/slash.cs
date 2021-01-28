@@ -3,14 +3,12 @@ using System.Collections.Generic;
 using System.Linq;
 using Common.Constants;
 using Common.Services;
-using Microsoft.VisualBasic.FileIO;
 using Node.Database;
 using Node.Exceptions.slash;
 using Node.Inventory;
 using Node.Inventory.Items;
 using Node.Inventory.Items.Types;
 using Node.Network;
-using PythonTypes.Types.Exceptions;
 using PythonTypes.Types.Primitives;
 
 namespace Node.Services.Network

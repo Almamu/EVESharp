@@ -1,5 +1,3 @@
-using Node.Inventory.Items;
-
 namespace Node.Data
 {
     public class StationType

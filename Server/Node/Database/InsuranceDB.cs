@@ -24,8 +24,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Security.Cryptography;
-using System.Text;
 using Common.Database;
 using MySql.Data.MySqlClient;
 using PythonTypes.Types.Primitives;

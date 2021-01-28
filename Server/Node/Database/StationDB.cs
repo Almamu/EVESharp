@@ -2,9 +2,6 @@ using System.Collections.Generic;
 using Common.Database;
 using MySql.Data.MySqlClient;
 using Node.Data;
-using Node.Inventory;
-using Node.Inventory.Items;
-using Node.Inventory.Items.Types;
 
 namespace Node.Database
 {

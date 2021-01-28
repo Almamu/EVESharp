@@ -22,10 +22,6 @@
     Creator: Almamu
 */
 
-using Node.Database;
-using Node.Inventory.Items;
-using Node.Inventory.Items.Attributes;
-
 namespace Node.Inventory.Items.Types
 {
     public class Blueprint : ItemEntity

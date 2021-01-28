@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using Common.Logging;
+﻿using System.Collections.Generic;
 using Node.Database;
 using Node.Inventory.Items.Types;
 using Node.Network;

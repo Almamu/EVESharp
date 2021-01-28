@@ -26,7 +26,6 @@ using Common.Services;
 using Node.Configuration;
 using Node.Network;
 using PythonTypes.Types.Primitives;
-using SimpleInjector;
 
 namespace Node.Services.Network
 {

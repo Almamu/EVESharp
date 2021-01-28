@@ -2,13 +2,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.ExceptionServices;
-using Common.Database;
 using Common.Logging;
 using Common.Services.Exceptions;
-using Node.Configuration;
-using PythonTypes.Types.Primitives;
 using Node.Services;
-using Service = Common.Services.Service;
+using PythonTypes.Types.Primitives;
 
 namespace Node
 {

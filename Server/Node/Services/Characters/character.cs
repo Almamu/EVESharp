@@ -24,9 +24,7 @@
 
 using System;
 using System.Collections.Generic;
-using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
-using Common.Database;
 using Common.Logging;
 using Common.Services;
 using Node.Data;
@@ -38,9 +36,7 @@ using Node.Inventory.Items.Types;
 using Node.Network;
 using PythonTypes.Types.Database;
 using PythonTypes.Types.Exceptions;
-using PythonTypes.Types.Network;
 using PythonTypes.Types.Primitives;
-using SimpleInjector;
 
 namespace Node.Services.Characters
 {

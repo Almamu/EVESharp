@@ -1,7 +1,6 @@
 ﻿using Common.Services;
 using Node.Database;
 using Node.Network;
-using PythonTypes.Types.Exceptions;
 using PythonTypes.Types.Primitives;
 
 namespace Node.Services.Corporations

@@ -1,7 +1,6 @@
 using Common.Services;
 using Node.Network;
 using PythonTypes.Types.Primitives;
-using SimpleInjector;
 
 namespace Node.Services.Account
 {

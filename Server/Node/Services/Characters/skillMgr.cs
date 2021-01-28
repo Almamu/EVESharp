@@ -9,10 +9,8 @@ using Node.Inventory.Items;
 using Node.Inventory.Items.Attributes;
 using Node.Inventory.Items.Types;
 using Node.Network;
-using PythonTypes.Marshal;
 using PythonTypes.Types.Exceptions;
 using PythonTypes.Types.Primitives;
-using SimpleInjector;
 
 namespace Node.Services.Characters
 {

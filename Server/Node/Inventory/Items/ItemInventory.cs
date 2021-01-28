@@ -22,11 +22,7 @@
     Creator: Almamu
 */
 
-using System;
 using System.Collections.Generic;
-using System.Runtime.CompilerServices;
-using Node.Database;
-using Node.Inventory.Items.Attributes;
 
 namespace Node.Inventory.Items
 {

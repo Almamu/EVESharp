@@ -1,20 +1,16 @@
 using System;
 using System.Collections.Generic;
 using Common.Constants;
-using Common.Logging;
 using Node.Exceptions;
 using Node.Inventory;
 using Node.Inventory.Items;
 using Node.Inventory.Items.Attributes;
 using Node.Inventory.Items.Types;
 using Node.Network;
-using Org.BouncyCastle.Crypto.Macs;
-using Org.BouncyCastle.Crypto.Tls;
 using PythonTypes.Types.Complex;
 using PythonTypes.Types.Database;
 using PythonTypes.Types.Exceptions;
 using PythonTypes.Types.Primitives;
-using SimpleInjector;
 
 namespace Node.Services.Dogma
 {

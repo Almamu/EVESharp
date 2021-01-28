@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using Common.Database;
-using Node.Inventory;
 using Node.Inventory.Items;
 using Node.Inventory.Items.Types;
 using PythonTypes.Types.Database;

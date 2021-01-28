@@ -25,8 +25,6 @@
 using System;
 using System.Collections.Generic;
 using Common.Logging;
-using Node.Database;
-using Node.Inventory.Items.Types;
 using Node.Services.Account;
 using Node.Services.CacheSvc;
 using Node.Services.Characters;

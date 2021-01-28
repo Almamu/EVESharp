@@ -1,18 +1,11 @@
 using System;
 using System.Collections.Generic;
-using System.Dynamic;
-using System.Linq;
-using System.Runtime.CompilerServices;
-using Common.Logging;
 using Node.Database;
 using Node.Inventory;
 using Node.Inventory.Items;
-using Node.Inventory.Items.Types;
 using Node.Network;
 using PythonTypes.Types.Database;
-using PythonTypes.Types.Exceptions;
 using PythonTypes.Types.Primitives;
-using SimpleInjector;
 
 namespace Node.Services.Inventory
 {

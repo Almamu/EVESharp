@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using Common.Logging;
 using Node.Database;
 using Node.Exceptions;
 using Node.Exceptions.jumpCloneSvc;
@@ -9,9 +8,7 @@ using Node.Inventory.Items.Types;
 using Node.Market;
 using Node.Network;
 using PythonTypes.Types.Database;
-using PythonTypes.Types.Exceptions;
 using PythonTypes.Types.Primitives;
-using SimpleInjector;
 
 namespace Node.Services.Characters
 {
