@@ -102,7 +102,7 @@ namespace Node.Database
                 " mailingList, cspa, temporary, 1 AS subscribed, estimatedMemberCount " +
                 " FROM channels" +
                 " LEFT JOIN channelMods USING (channelID)" +
-                " WHERE accessor = @characterID AND mode > 0",
+                " WHERE accessor = @characterID AND `mode` > 0",
                 new Dictionary<string, object>()
                 {
                     {"@characterID", characterID}

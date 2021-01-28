@@ -134,64 +134,26 @@ namespace Node.Services.Characters
             return new PyInteger((int) NameValidationResults.Valid);
         }
 
-        public PyDataType CreateCharacter2(
-            PyString characterName, PyInteger bloodlineID, PyInteger genderID, PyInteger ancestryID,
-            PyDictionary appearance, CallInformation call)
+        private Character CreateCharacter(string characterName, Ancestry ancestry, int genderID, PyDictionary appearance, long currentTime, CallInformation call)
         {
-            int validationError = this.ValidateNameEx(characterName, call);
-
-            // ensure the name is valid
-            switch (validationError)
-            {
-                case (int) NameValidationResults.TooLong:
-                    throw new CharNameInvalidMaxLength ();
-                case (int) NameValidationResults.Taken:
-                    throw new CharNameInvalidTaken ();
-                case (int) NameValidationResults.IllegalCharacters:
-                    throw new CharNameInvalidSomeChar ();
-                case (int) NameValidationResults.TooShort:
-                    throw new CharNameInvalidMinLength ();
-                case (int) NameValidationResults.MoreThanOneSpace:
-                    throw new CharNameInvalidMaxSpaces ();
-                case (int) NameValidationResults.Banned:
-                    throw new CharNameInvalidBannedWord ();
-                case (int) NameValidationResults.Valid:
-                    break;
-                default:
-                    // unknown actual error, return generic error
-                    throw new CharNameInvalid();
-            }
-            
             // get the System item's id
             int systemItemID = this.Container.Constants["locationSystem"];
 
             // load the item into memory
             ItemEntity owner = this.ItemManager.LoadItem(systemItemID);
             
-            // load bloodline and ancestry info for the requested character
-            Bloodline bloodline = this.mBloodlineCache[bloodlineID];
-            Ancestry ancestry = this.mAncestriesCache[ancestryID];
-            long currentTime = DateTime.UtcNow.ToFileTimeUtc();
+            int stationID, solarSystemID, constellationID, regionID, corporationID, careerID, schoolID, careerSpecialityID;
             
             // TODO: DETERMINE SCHOOLID, CARREERID AND CAREERSPECIALITYID PROPERLY
-
-            if (ancestry.Bloodline != bloodline)
-            {
-                Log.Error($"The ancestry {ancestryID} doesn't belong to the given bloodline {bloodlineID}");
-
-                throw new BannedBloodline(ancestry, bloodline);
-            }
-
-            int stationID, solarSystemID, constellationID, regionID, corporationID, careerID, schoolID, careerSpecialityID;
-
-            bool found = this.DB.GetRandomCareerForRace(bloodline.RaceID, out careerID, out schoolID,
+            
+            bool found = this.DB.GetRandomCareerForRace(ancestry.Bloodline.RaceID, out careerID, out schoolID,
                 out careerSpecialityID, out corporationID);
 
             if (found == false)
             {
-                Log.Error($"Cannot find random career for race {bloodline.RaceID}");
+                Log.Error($"Cannot find random career for race {ancestry.Bloodline.RaceID}");
                 
-                throw new CustomError($"Cannot find random career for race {bloodline.RaceID}");
+                throw new CustomError($"Cannot find random career for race {ancestry.Bloodline.RaceID}");
             }
 
             // fetch information of starting location for the player
@@ -200,17 +162,15 @@ namespace Node.Services.Characters
 
             if (found == false)
             {
-                Log.Error($"Cannot find location for corporation {bloodline.CorporationID}");
+                Log.Error($"Cannot find location for corporation {ancestry.Bloodline.CorporationID}");
                 
-                throw new CustomError($"Cannot find location for corporation {bloodline.CorporationID}");
+                throw new CustomError($"Cannot find location for corporation {ancestry.Bloodline.CorporationID}");
             }
-
-            Station station = this.ItemManager.GetStation(stationID);
             
             int itemID = this.DB.CreateCharacter(
-                bloodline.ItemType, characterName, owner, call.Client.AccountID, this.mConfiguration.Balance,
+                ancestry.Bloodline.ItemType, characterName, owner, call.Client.AccountID, this.mConfiguration.Balance,
                 0.0, corporationID, 0, 0, 0, 0, 0,
-                currentTime, currentTime, currentTime, ancestryID,
+                currentTime, currentTime, currentTime, ancestry.ID,
                 careerID, schoolID, careerSpecialityID, genderID,
                 appearance.ContainsKey("accessoryID") ? appearance["accessoryID"] as PyInteger : null,
                 appearance.ContainsKey("beardID") ? appearance["beardID"] as PyInteger : null,
@@ -251,7 +211,52 @@ namespace Node.Services.Characters
                 appearance.ContainsKey("morph4w") ? appearance["morph4w"] as PyDecimal : null,
                 stationID, solarSystemID, constellationID, regionID);
 
-            Character character = this.ItemManager.LoadItem(itemID) as Character;
+            return this.ItemManager.LoadItem(itemID) as Character;
+        }
+
+        public PyDataType CreateCharacter2(
+            PyString characterName, PyInteger bloodlineID, PyInteger genderID, PyInteger ancestryID,
+            PyDictionary appearance, CallInformation call)
+        {
+            int validationError = this.ValidateNameEx(characterName, call);
+
+            // ensure the name is valid
+            switch (validationError)
+            {
+                case (int) NameValidationResults.TooLong:
+                    throw new CharNameInvalidMaxLength ();
+                case (int) NameValidationResults.Taken:
+                    throw new CharNameInvalidTaken ();
+                case (int) NameValidationResults.IllegalCharacters:
+                    throw new CharNameInvalidSomeChar ();
+                case (int) NameValidationResults.TooShort:
+                    throw new CharNameInvalidMinLength ();
+                case (int) NameValidationResults.MoreThanOneSpace:
+                    throw new CharNameInvalidMaxSpaces ();
+                case (int) NameValidationResults.Banned:
+                    throw new CharNameInvalidBannedWord ();
+                case (int) NameValidationResults.Valid:
+                    break;
+                default:
+                    // unknown actual error, return generic error
+                    throw new CharNameInvalid();
+            }
+            
+            // load bloodline and ancestry info for the requested character
+            Bloodline bloodline = this.mBloodlineCache[bloodlineID];
+            Ancestry ancestry = this.mAncestriesCache[ancestryID];
+            long currentTime = DateTime.UtcNow.ToFileTimeUtc();
+
+            if (ancestry.Bloodline != bloodline)
+            {
+                Log.Error($"The ancestry {ancestryID} doesn't belong to the given bloodline {bloodlineID}");
+
+                throw new BannedBloodline(ancestry, bloodline);
+            }
+
+            Character character =
+                this.CreateCharacter(characterName, ancestry, genderID, appearance, currentTime, call);
+            Station station = this.ItemManager.GetStation(character.StationID);
 
             // change character attributes based on the picked ancestry
             character.Charisma = bloodline.Charisma + ancestry.Charisma;
@@ -306,13 +311,13 @@ namespace Node.Services.Characters
             character.Persist();
             
             // create required mailing list channel
-            int channelID = (int) this.ChatDB.CreateChannel(character, character, characterName, true);
+            this.ChatDB.CreateChannel(character, character, characterName, true);
             // and subscribe the character to some channels
             this.ChatDB.JoinChannel(ChatDB.CHANNEL_ROOKIECHANNELID, character.ID);
             this.ChatDB.JoinEntityChannel(character.ID, character.ID);
-            this.ChatDB.JoinEntityChannel(solarSystemID, character.ID);
-            this.ChatDB.JoinEntityChannel(constellationID, character.ID);
-            this.ChatDB.JoinEntityChannel(regionID, character.ID);
+            this.ChatDB.JoinEntityChannel(character.SolarSystemID, character.ID);
+            this.ChatDB.JoinEntityChannel(character.ConstellationID, character.ID);
+            this.ChatDB.JoinEntityChannel(character.RegionID, character.ID);
             this.ChatDB.JoinEntityChannel(character.CorporationID, character.ID);
             
             // unload items from list

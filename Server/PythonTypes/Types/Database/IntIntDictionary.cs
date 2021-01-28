@@ -5,7 +5,7 @@ using PythonTypes.Types.Primitives;
 
 namespace PythonTypes.Types.Database
 {
-    public class IntIntDictionary
+    public static class IntIntDictionary
     {
         /// <summary>
         /// Simple helper method that creates a correct IntegerInteger dictionary and returns
