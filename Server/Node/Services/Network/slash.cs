@@ -102,7 +102,6 @@ namespace Node.Services.Network
             
             if (skillType == "all")
             {
-                
                 // player wants all the skills!
                 IEnumerable<KeyValuePair<int, ItemType>> skillTypes =
                     this.TypeManager.Where(x => x.Value.Group.Category.ID == (int) ItemCategories.Skill);

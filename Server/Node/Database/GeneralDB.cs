@@ -3,7 +3,7 @@
     LICENSE:
     ------------------------------------------------------------------------------------
     This file is part of EVE#: The EVE Online Server Emulator
-    Copyright 2012 - Glint Development Group
+    Copyright 2021 - EVE# Team
     ------------------------------------------------------------------------------------
     This program is free software; you can redistribute it and/or modify it under
     the terms of the GNU Lesser General Public License as published by the Free Software
