@@ -19,7 +19,7 @@ namespace Node.Database
         {
         }
 
-        public void CreateJournalForCharacter(int locationID, MarketReference reference, int ownerID1,
+        public void CreateJournalForCharacter(MarketReference reference, int ownerID1,
             int? ownerID2, int? referenceID, double amount, double balance, string reason, int accountKey)
         {
             reason = reason.Substring(0, Math.Min(reason.Length, 43));
@@ -30,7 +30,6 @@ namespace Node.Database
                 {
                     {"@transactionDate", DateTime.UtcNow.ToFileTimeUtc()},
                     {"@entryTypeID", (int) reference},
-                    {"@locationID", locationID},
                     {"@ownerID1", ownerID1},
                     {"@ownerID2", ownerID2},
                     {"@referenceID", referenceID},

@@ -60,6 +60,7 @@ namespace Node.Inventory
         public Dictionary<int, SolarSystem> SolarSystems => this.mSolarSystems;
         public ItemEntity LocationSystem { get; private set; }
         public ItemEntity LocationRecycler { get; private set; }
+        public ItemEntity SecureCommerceCommision { get; private set; }
 
         public void Load()
         {
@@ -76,6 +77,7 @@ namespace Node.Inventory
             // store useful items like recycler and system
             this.LocationRecycler = this.GetItem(this.NodeContainer.Constants["locationRecycler"]);
             this.LocationSystem = this.GetItem(this.NodeContainer.Constants["locationSystem"]);
+            this.SecureCommerceCommision = this.GetItem(this.NodeContainer.Constants["ownerSecureCommerceCommission"]);
         }
 
         public ItemEntity LoadItem(int itemID)

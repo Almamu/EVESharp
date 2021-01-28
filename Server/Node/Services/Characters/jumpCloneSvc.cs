@@ -147,7 +147,7 @@ namespace Node.Services.Characters
             character.Balance -= cost;
             
             this.MarketDB.CreateJournalForCharacter(
-                station.ID, MarketReference.JumpCloneInstallationFee, character.ID, null, station.ID,
+                MarketReference.JumpCloneInstallationFee, character.ID, null, station.ID,
                 -cost, character.Balance, $"Installed clone at {station.Name}", 1000
             );
 

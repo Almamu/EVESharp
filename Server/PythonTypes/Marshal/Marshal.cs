@@ -147,17 +147,17 @@ namespace PythonTypes.Marshal
                 writer.WriteOpcode(Opcode.IntegerZero);
             else if (data == -1)
                 writer.WriteOpcode(Opcode.IntegerMinusOne);
-            else if (data < sbyte.MaxValue)
+            else if (data > sbyte.MinValue && data < sbyte.MaxValue)
             {
                 writer.WriteOpcode(Opcode.IntegerByte);
                 writer.Write((byte) data.Value);
             }
-            else if (data < short.MaxValue)
+            else if (data > short.MinValue && data < short.MaxValue)
             {
                 writer.WriteOpcode(Opcode.IntegerSignedShort);
                 writer.Write((short) data.Value);
             }
-            else if (data < int.MaxValue)
+            else if (data > int.MinValue && data < int.MaxValue)
             {
                 writer.WriteOpcode(Opcode.IntegerLong);
                 writer.Write((int) data.Value);

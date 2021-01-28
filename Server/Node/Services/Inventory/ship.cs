@@ -1,4 +1,6 @@
-﻿using Common.Services;
+﻿using System;
+using Common.Services;
+using Node.Exceptions.jumpCloneSvc;
 using Node.Inventory;
 using Node.Inventory.Items;
 using Node.Inventory.Items.Types;
@@ -104,6 +106,9 @@ namespace Node.Services.Inventory
             if (newShip.Singleton == false)
                 throw new UserError("TooFewSubSystemsToUndock");
 
+            if (newShip.OwnerID != callerCharacterID)
+                throw new MktNotOwner();
+
             // TODO: CHECKS FOR IN-SPACE BOARDING!
             
             // check skills required to board the given ship
@@ -134,17 +139,59 @@ namespace Node.Services.Inventory
 
         public PyDataType AssembleShip(PyInteger itemID, CallInformation call)
         {
+            int callerCharacterID = call.Client.EnsureCharacterIsSelected();
+            
             // ensure the item is loaded somewhere in this node
             // this will usually be taken care by the EVE Client
             if (this.ItemManager.IsItemLoaded(itemID) == false)
                 throw new CustomError("Ships not loaded for player and hangar!");
 
             Ship ship = this.ItemManager.GetItem(itemID) as Ship;
+            Character character = this.ItemManager.GetItem(callerCharacterID) as Character;
 
-            if (ship.Singleton == false)
+            if (ship.OwnerID != callerCharacterID)
+                throw new MktNotOwner();
+
+            // do not do anything if item is already assembled
+            if (ship.Singleton == true)
+                return null;
+
+            // first split the stack
+            if (ship.Quantity > 1)
+            {
+                // subtract one off the stack
+                ship.Quantity -= 1;
+                ship.Persist();
+                // notify the quantity change
+                call.Client.NotifyItemQuantityChange(ship, ship.Quantity + 1);
+  
+                // create the new item in the database
+                Station station = this.ItemManager.GetStation((int) call.Client.StationID);
+                ship = this.ItemManager.CreateShip(ship.Type, station, character);
+                // notify the new item
+                call.Client.NotifyNewItem(ship);
+                // ensure the item is in the meta inventory
+                try
+                {
+                    ItemInventory metaInventory =
+                        this.ItemManager.MetaInventoryManager.GetOwnerInventoriesAtLocation(ship.LocationID, character.ID);
+
+                    metaInventory.AddItem(ship);
+                }
+                catch (Exception)
+                {
+                    
+                }
+            }
+            else
+            {
+                // stack of one, simple as changing the singleton flag
                 ship.Singleton = true;
-            
-            call.Client.NotifySingletonChange(ship, false);
+                call.Client.NotifySingletonChange(ship, false);                
+            }
+
+            // save the ship
+            ship.Persist();
 
             return null;
         }

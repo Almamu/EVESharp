@@ -73,5 +73,13 @@ namespace Node.Inventory.Items.Types
             if (missingSkills.Count > 0)
                 throw new ShipHasSkillPrerequisites(this.Type.Name, String.Join(", ", missingSkills));
         }
+
+        public override void Destroy()
+        {
+            base.Destroy();
+            
+            // remove insurance off the database
+            this.mItemFactory.InsuranceDB.UnInsureShip(this.ID);
+        }
     }
 }

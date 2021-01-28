@@ -759,7 +759,7 @@ namespace Node.Database
         public ulong CreateShip(ItemType shipType, ItemEntity location, Character owner)
         {
             return this.CreateItem(
-                $"{owner.Name}'s Ship", shipType, owner, location, ItemFlags.Hangar,
+                $"{owner.Name}'s {shipType.Name}", shipType, owner, location, ItemFlags.Hangar,
                 false, true, 1, 0, 0, 0, null
             );
         }

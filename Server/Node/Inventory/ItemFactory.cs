@@ -41,6 +41,7 @@ namespace Node.Inventory
         public CharacterDB CharacterDB { get; private set; }
         public StationDB StationDB { get; private set; }
         public MarketDB MarketDB { get; private set; }
+        public InsuranceDB InsuranceDB { get; private set; }
         
         private Container DependencyInjection { get; }
         
@@ -57,6 +58,7 @@ namespace Node.Inventory
             this.CharacterDB = this.DependencyInjection.GetInstance<CharacterDB>();
             this.StationDB = this.DependencyInjection.GetInstance<StationDB>();
             this.MarketDB = this.DependencyInjection.GetInstance<MarketDB>();
+            this.InsuranceDB = this.DependencyInjection.GetInstance<InsuranceDB>();
             
             // station manager goes first
             this.StationManager = this.DependencyInjection.GetInstance<StationManager>();

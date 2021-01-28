@@ -45,6 +45,18 @@ namespace Node.Database
                 }
             );
         }
+        public PyDataType GetContractsForShipsOnStationIncludingCorp(int characterID, int corporationID, int stationID)
+        {
+            return Database.PreparePackedRowListQuery(
+                "SELECT chrShipInsurances.ownerID, shipID, fraction, startDate, endDate FROM chrShipInsurances LEFT JOIN entity ON entity.itemID = shipID WHERE (chrShipInsurances.ownerID = @characterID OR chrShipInsurances.ownerID = @corporationID) AND entity.locationID = @stationID",
+                new Dictionary<string, object>()
+                {
+                    {"@characterID", characterID},
+                    {"@corporationID", corporationID},
+                    {"@stationID", stationID}
+                }
+            );
+        }
 
         public PyDataType GetContractForShip(int characterID, int shipID)
         {
@@ -53,6 +65,60 @@ namespace Node.Database
                 new Dictionary<string, object>()
                 {
                     {"@characterID", characterID},
+                    {"@shipID", shipID}
+                }
+            );
+        }
+
+        public bool IsShipInsured(int shipID, out string ownerName)
+        {
+            ownerName = null;
+            
+            MySqlConnection connection = null;
+            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+                "SELECT itemName FROM chrShipInsurances LEFT JOIN entity ON itemID = chrShipInsurances.ownerID WHERE shipID = @shipID",
+                new Dictionary<string, object>()
+                {
+                    {"@shipID", shipID}
+                }
+            );
+            
+            using (connection)
+            using (reader)
+            {
+                if (reader.Read() == false)
+                    return false;
+
+                ownerName = reader.GetString(0);
+
+                return true;
+            }
+        }
+
+        public int InsureShip(int shipID, int characterID, double fraction)
+        {
+            // calculate the expiration date based on the game's UI, 12 weeks
+            long endDate = DateTime.UtcNow.AddDays(7 * 12).ToFileTimeUtc();
+            
+            return (int) Database.PrepareQueryLID(
+                "INSERT INTO chrShipInsurances(ownerID, shipID, fraction, startDate, endDate)VALUES(@characterID, @shipID, @fraction, @startDate, @endDate)",
+                new Dictionary<string, object>()
+                {
+                    {"@characterID", characterID},
+                    {"@shipID", shipID},
+                    {"@fraction", fraction},
+                    {"@startDate", DateTime.UtcNow.ToFileTimeUtc()},
+                    {"@endDate", endDate}
+                }
+            );
+        }
+
+        public void UnInsureShip(int shipID)
+        {
+            Database.PrepareQuery(
+                "DELETE FROM chrShipInsurances WHERE shipID = @shipID",
+                new Dictionary<string, object>()
+                {
                     {"@shipID", shipID}
                 }
             );

@@ -70,5 +70,10 @@ namespace Node.Services.Config
             // TODO: CHECK FOR STATIC DATA TO FETCH IT OFF MEMORY INSTEAD OF DATABASE?
             return this.DB.GetCelestialStatistic(celestialID);
         }
+
+        public PyDataType GetMultiInvTypesEx(PyList typeIDs, CallInformation call)
+        {
+            return this.DB.GetMultiInvTypesEx(typeIDs);
+        }
     }
 }
