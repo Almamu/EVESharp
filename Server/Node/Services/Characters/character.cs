@@ -314,11 +314,12 @@ namespace Node.Services.Characters
             this.ChatDB.CreateChannel(character, character, characterName, true);
             // and subscribe the character to some channels
             this.ChatDB.JoinChannel(ChatDB.CHANNEL_ROOKIECHANNELID, character.ID);
-            this.ChatDB.JoinEntityChannel(character.ID, character.ID);
+            this.ChatDB.JoinEntityMailingList(character.ID, character.ID);
             this.ChatDB.JoinEntityChannel(character.SolarSystemID, character.ID);
             this.ChatDB.JoinEntityChannel(character.ConstellationID, character.ID);
             this.ChatDB.JoinEntityChannel(character.RegionID, character.ID);
             this.ChatDB.JoinEntityChannel(character.CorporationID, character.ID);
+            this.ChatDB.JoinEntityMailingList(character.CorporationID, character.ID);
             
             // unload items from list
             this.ItemManager.UnloadItem(clone);

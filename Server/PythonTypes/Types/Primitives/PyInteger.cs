@@ -289,5 +289,10 @@ namespace PythonTypes.Types.Primitives
         {
             return new PyInteger(value);
         }
+
+        public override string ToString()
+        {
+            return this.Value.ToString();
+        }
     }
 }

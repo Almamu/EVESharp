@@ -50,6 +50,11 @@ INSERT INTO entity (itemID, itemName, singleton, quantity)
 INSERT INTO entity (itemID, itemName, singleton, quantity)
   VALUES (1, 'EVE System', 1, 1);
 /*
+ * Static record for Recycler
+ */
+INSERT INTO entity (itemID, itemName, singleton, quantity)
+  VALUES (6, 'Recycler', 1, 1);
+/*
  * Insert factions
  */
 INSERT INTO entity (itemID, itemName, typeID, ownerID, locationID, singleton, quantity)

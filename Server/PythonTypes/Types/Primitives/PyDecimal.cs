@@ -1,3 +1,5 @@
+using System.Globalization;
+
 namespace PythonTypes.Types.Primitives
 {
     public class PyDecimal : PyDataType
@@ -123,6 +125,11 @@ namespace PythonTypes.Types.Primitives
         public static explicit operator PyDecimal(float value)
         {
             return new PyDecimal(value);
+        }
+
+        public override string ToString()
+        {
+            return this.Value.ToString(CultureInfo.InvariantCulture);
         }
     }
 }

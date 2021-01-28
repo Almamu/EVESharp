@@ -47,7 +47,7 @@ namespace ClusterControler
             this.Socket.Send(nodeInfo);
         }
 
-        private void HandlePingRsp(PyPacket packet)
+        private static void HandlePingRsp(PyPacket packet)
         {
             // alter package to include the times the data
             PyTuple handleMessage = new PyTuple(3);
@@ -160,7 +160,7 @@ namespace ClusterControler
                         // use the key instead of AccountID as this should be faster
                         packet.UserID = entry.Key;
                         // change the ids of interest to hide the character's we've notified
-                        destination.IDsOfInterest = (PyList) new PyDataType[] {id};
+                        destination.IDsOfInterest = new PyDataType[] {id};
                         // queue the packet for the user
                         entry.Value.Socket.Send(packet);
                     }
@@ -255,9 +255,9 @@ namespace ClusterControler
         {
             switch (packet.Destination)
             {
-                case PyAddressClient client:
-                    Log.Trace($"Sending packet to client {client.ClientID}");
-                    this.ConnectionManager.NotifyClient((int) (client.ClientID), packet);
+                case PyAddressClient _:
+                    Log.Trace($"Sending packet to client {packet.UserID}");
+                    this.ConnectionManager.NotifyClient((int) (packet.UserID), packet);
                     break;
                 case PyAddressNode address:
                     Log.Trace($"Sending packet to node {address.NodeID}");
@@ -277,7 +277,7 @@ namespace ClusterControler
             
             // alter the ping responses from nodes to add the extra required information
             if (packet.Type == PyPacket.PacketType.PING_RSP)
-                this.HandlePingRsp(packet);
+                HandlePingRsp(packet);
 
             switch (packet.Type)
             {

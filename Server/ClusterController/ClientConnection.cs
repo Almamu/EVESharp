@@ -206,20 +206,16 @@ namespace ClusterControler
                 writing[1] = DateTime.UtcNow.ToFileTime();
                 writing[2] = "proxy::writing";
 
-                Log.Debug("DateTimeNow: " + DateTime.UtcNow.ToFileTime());
-
                 (pyPacket.Payload[0] as PyList)?.Add(handleMessage);
                 (pyPacket.Payload[0] as PyList)?.Add(writing);
             }
             
-            if (pyPacket.Destination is PyAddressNode)
+            if (pyPacket.Destination is PyAddressNode dest)
             {
                 // search for the node in the list
                 if (pyPacket.Source is PyAddressClient == false)
                     throw new Exception("Received a packet coming from a client trying to spoof the address");
-
-                PyAddressNode dest = pyPacket.Destination as PyAddressNode;
-
+                
                 this.ConnectionManager.NotifyNode((int) dest.NodeID, pyPacket);
             }
             else if (pyPacket.Destination is PyAddressAny)
@@ -364,8 +360,8 @@ namespace ClusterControler
 
             packet.Payload = scn;
 
-            packet.NamedPayload = new PyDictionary();
-            packet.NamedPayload["channel"] = "sessionchange";
+            packet.OutOfBounds = new PyDictionary();
+            packet.OutOfBounds["channel"] = "sessionchange";
 
             return packet;
         }

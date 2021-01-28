@@ -250,13 +250,12 @@ namespace Node.Services.Chat
                     else
                     {
                         // notify all players on the channel
-                        call.Client.ClusterConnection.SendNotification("OnLSC", channelType, (PyList) new PyDataType [] { entityID }, notification);                            
+                        call.Client.ClusterConnection.SendNotification("OnLSC", channelType, new PyDataType [] { entityID }, notification);                            
                     }
                 }
 
                 try
                 {
-
                     result.Add(
                         this.GetChannelInformation(
                             channelType, channelID, entityID, callerCharacterID, channelIDExtended, call

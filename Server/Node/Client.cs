@@ -122,7 +122,7 @@ namespace Node
 
             packet.Payload = scn;
 
-            packet.NamedPayload = new PyDictionary()
+            packet.OutOfBounds = new PyDictionary()
             {
                 {"channel", "sessionchange"}
             };

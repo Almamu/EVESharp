@@ -67,7 +67,7 @@ namespace PythonTypes.Types.Network
         public PyAddress Destination { get; set; }
         public long UserID { get; set; }
         public PyTuple Payload { get; set; }
-        public PyDictionary NamedPayload { get; set; }
+        public PyDictionary OutOfBounds { get; set; }
         public string TypeString { get => PacketTypeString[(int) this.Type]; }
         
         protected PyPacket()
@@ -75,7 +75,7 @@ namespace PythonTypes.Types.Network
             this.Type = PacketType.__Fake_Invalid_Type;
             this.UserID = 0;
             this.Payload = null;
-            this.NamedPayload = null;
+            this.OutOfBounds = null;
             this.Source = null;
             this.Destination = null;
         }
@@ -98,7 +98,7 @@ namespace PythonTypes.Types.Network
             args[2] = packet.Destination;
             args[3] = (packet.UserID == 0) ? (PyDataType) new PyNone() : packet.UserID;
             args[4] = packet.Payload;
-            args[5] = packet.NamedPayload;
+            args[5] = packet.OutOfBounds;
 
             return new PyObjectData(packet.TypeString, args);
         }
@@ -129,7 +129,7 @@ namespace PythonTypes.Types.Network
             result.Destination = (PyAddress) packetData[2];
             result.UserID = (packetData[3] is PyNone) ? 0 : (long) (packetData[3] as PyInteger);
             result.Payload = packetData[4] as PyTuple;
-            result.NamedPayload = packetData[5] as PyDictionary;
+            result.OutOfBounds = packetData[5] as PyDictionary;
 
             // ensure consistency between the integer type and the string type indicators
             if(result.TypeString != objectData.Name)

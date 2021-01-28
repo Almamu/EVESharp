@@ -42,6 +42,13 @@ namespace Node.Database
             );
         }
 
+        public void JoinEntityMailingList(int relatedEntityID, int characterID, int role = CHATROLE_CONVERSATIONALIST)
+        {
+            int channelID = this.GetChannelIDFromRelatedEntity(relatedEntityID, true);
+
+            this.JoinChannel(channelID, characterID, role);
+        }
+
         public void JoinEntityChannel(int relatedEntityID, int characterID, int role = CHATROLE_CONVERSATIONALIST)
         {
             int channelID = GetChannelIDFromRelatedEntity(relatedEntityID);
@@ -273,14 +280,15 @@ namespace Node.Database
             }
         }
 
-        public int GetChannelIDFromRelatedEntity(int relatedEntityID)
+        public int GetChannelIDFromRelatedEntity(int relatedEntityID, bool isMailingList = false)
         {
             MySqlConnection connection = null;
             MySqlDataReader reader = Database.PrepareQuery(ref connection,
-                "SELECT channelID FROM channels WHERE relatedEntityID = @itemID",
+                "SELECT channelID FROM channels WHERE relatedEntityID = @itemID AND mailingList = @mailingList",
                 new Dictionary<string, object>()
                 {
-                    {"@itemID", relatedEntityID}
+                    {"@itemID", relatedEntityID},
+                    {"@mailingList", isMailingList}
                 }
             );
             
