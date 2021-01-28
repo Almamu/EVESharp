@@ -6,13 +6,6 @@ using Common.Logging;
 
 namespace Node
 {
-    class Timer
-    {
-        public long DateTime;
-        public Action<int> Callback;
-        public int CallbackParameter;
-    };
-    
     /// <summary>
     /// Main timer manager used by the Node to do time-related stuff.
     ///
