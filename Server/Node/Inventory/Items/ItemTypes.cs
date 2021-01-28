@@ -10,6 +10,7 @@ namespace Node.Inventory.Items
 	    System = 0,
         Tritanium = 34,
         CloneGradeAlpha = 164,
+        Capsule = 670,
         DamageControlI = 2046,
         Learning = 3374,
         InfomorphPsychology = 24242

@@ -8,7 +8,7 @@ namespace PythonTypes.Types.Primitives
         {
             Double,
             Float
-        };
+        }
 
         protected bool Equals(PyDecimal other)
         {
@@ -56,8 +56,7 @@ namespace PythonTypes.Types.Primitives
         {
             return !(obj1 == obj2);
         }
-
-
+        
         public static bool operator >(PyDecimal obj, double value)
         {
             return obj.Value > value;

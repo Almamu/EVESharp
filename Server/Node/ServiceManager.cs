@@ -94,6 +94,7 @@ namespace Node
         public lookupSvc lookupSvc { get; }
         public insuranceSvc insuranceSvc { get; }
         public slash slash { get; }
+        public ship ship { get; }
         
         public ServiceManager(
             NodeContainer container, CacheStorage storage, Logger logger, TimerManager timerManager,
@@ -134,7 +135,8 @@ namespace Node
             LPSvc LPSvc,
             lookupSvc lookupSvc,
             insuranceSvc insuranceSvc,
-            slash slash)
+            slash slash,
+            ship ship)
         {
             this.Container = container;
             this.CacheStorage = storage;
@@ -181,6 +183,7 @@ namespace Node
             this.lookupSvc = lookupSvc;
             this.insuranceSvc = insuranceSvc;
             this.slash = slash;
+            this.ship = ship;
         }
 
         public void CallTimeoutExpired(int callID)

@@ -6,6 +6,7 @@ namespace Common.Game
     public class Session
     {
         private PyDictionary mSession;
+        public bool IsDirty { get; private set; }
         
         public PyDataType this[string key]
         {
@@ -16,10 +17,13 @@ namespace Common.Game
         public Session()
         {
             this.mSession = new PyDictionary();
+            this.IsDirty = false;
         }
 
         public void SetCurrent(string key, PyDataType value)
         {
+            this.IsDirty = true;
+            
             if (this.mSession.ContainsKey(key) == false)
             {
                 PyTuple var = new PyTuple(2);
@@ -87,6 +91,8 @@ namespace Common.Game
                     value[0] = value[1];
                 }
             }
+
+            this.IsDirty = false;
             
             return result;
         }
@@ -96,6 +102,9 @@ namespace Common.Game
             // parse the encoded changes and update the current values
             foreach (KeyValuePair<PyDataType, PyDataType> pair in changes)
                 this[pair.Key as PyString] = (pair.Value as PyTuple)[1];
+
+            // session is not dirty if we're updating from the changes of another node
+            this.IsDirty = false;
         }
     }
 }

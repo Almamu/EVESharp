@@ -100,7 +100,7 @@ namespace Node
             }
         }
 
-        public PyPacket CreateEmptySessionChange(NodeContainer container)
+        private PyPacket CreateEmptySessionChange(NodeContainer container)
         {
             // Fill all the packet data, except the dest/source
             SessionChangeNotification scn = new SessionChangeNotification();
@@ -409,6 +409,12 @@ namespace Node
                     new PyTuple(1) {[0] = this.PendingNotifications});
 
                 this.PendingNotifications = new PyList();
+            }
+
+            if (this.Session.IsDirty)
+            {
+                // send session change
+                this.SendSessionChange();
             }
         }
 

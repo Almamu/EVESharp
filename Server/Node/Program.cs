@@ -169,6 +169,7 @@ namespace Node
                 sContainer.Register<lookupSvc>(Lifestyle.Singleton);
                 sContainer.Register<insuranceSvc>(Lifestyle.Singleton);
                 sContainer.Register<slash>(Lifestyle.Singleton);
+                sContainer.Register<ship>(Lifestyle.Singleton);
                 
                 sContainer.RegisterInstance(General.LoadFromFile("configuration.conf", sContainer));
                 // disable auto-verification on the container as it triggers creation of instances before they're needed

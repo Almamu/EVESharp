@@ -326,7 +326,7 @@ namespace Node.Inventory
         }
         
         public ItemEntity CreateSimpleItem(string itemName, ItemType type, ItemEntity owner, ItemEntity location, ItemFlags flag,
-            bool contraband, bool singleton, int quantity, double x, double y, double z, string customInfo)
+            bool contraband = false, bool singleton = false, int quantity = 1, double x = 0.0, double y = 0.0, double z = 0.0, string customInfo = null)
         {
             return this.CreateSimpleItem(itemName, type.ID, owner.ID, location.ID, flag, quantity, contraband, singleton,
                 x, y, z, customInfo);
