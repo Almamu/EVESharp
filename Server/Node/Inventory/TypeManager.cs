@@ -23,15 +23,17 @@
 */
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Runtime.InteropServices;
 using Common.Database;
 using Node.Database;
 using Node.Inventory.Items;
 
 namespace Node.Inventory
 {
-    public class TypeManager
+    public class TypeManager : IReadOnlyDictionary<int, ItemType>
     {
         private ItemDB ItemDB { get; }
         private Dictionary<int, ItemType> mTypes = null;
@@ -41,17 +43,36 @@ namespace Node.Inventory
             this.mTypes = this.ItemDB.LoadItemTypes();
         }
 
-        public bool Exists(int typeID)
+        public bool ContainsKey(int typeID)
         {
             return this.mTypes.ContainsKey(typeID);
         }
-        
-        public ItemType this[int id] { get => this.mTypes[id]; }
-        public ItemType this[ItemTypes id] { get => this[(int) id]; }
+
+        public bool TryGetValue(int typeID, out ItemType value)
+        {
+            return this.mTypes.TryGetValue(typeID, out value);
+        }
+
+        public ItemType this[int id] => this.mTypes[id];
+        public ItemType this[ItemTypes id] => this[(int) id];
+        public IEnumerable<int> Keys  => this.mTypes.Keys;
+        public IEnumerable<ItemType> Values => this.mTypes.Values;
+        public int Count => this.mTypes.Count;
 
         public TypeManager(ItemDB itemDB)
         {
             this.ItemDB = itemDB;
         }
+
+        public IEnumerator<KeyValuePair<int, ItemType>> GetEnumerator()
+        {
+            return this.mTypes.GetEnumerator();
+        }
+
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return GetEnumerator();
+        }
+
     }
 }

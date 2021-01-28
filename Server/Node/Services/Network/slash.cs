@@ -1,7 +1,10 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using Common.Constants;
 using Common.Services;
 using Microsoft.VisualBasic.FileIO;
+using Node.Database;
 using Node.Exceptions.slash;
 using Node.Inventory;
 using Node.Inventory.Items;
@@ -37,6 +40,9 @@ namespace Node.Services.Network
                     case "/create":
                         this.CreateCmd(parts, call);
                         break;
+                    case "/giveskill":
+                        this.GiveSkillCmd(parts, call);
+                        break;
                     default:
                         throw new SlashError("Unknown command: " + line.Value);
                 }
@@ -47,7 +53,7 @@ namespace Node.Services.Network
             }
             catch (Exception e)
             {
-                throw new SlashError(e.Message);
+                throw new SlashError($"Runtime error: {e.Message}");
             }
             
             return null;
@@ -64,7 +70,7 @@ namespace Node.Services.Network
             if (call.Client.StationID == null)
                 throw new SlashError("Creating items can only be done at station");
             // ensure the typeID exists
-            if (this.TypeManager.Exists(typeID) == false)
+            if (this.TypeManager.ContainsKey(typeID) == false)
                 throw new SlashError("The specified typeID doesn't exist");
             
             // create a new item with the correct locationID
@@ -78,6 +84,80 @@ namespace Node.Services.Network
             
             // send client a notification so they can display the item in the hangar
             call.Client.NotifyNewItem(item);
+        }
+
+        private void GiveSkillCmd(string[] argv, CallInformation call)
+        {
+            if (argv.Length != 4)
+                throw new SlashError("GiveSkill must have 4 arguments");
+
+            string target = argv[1].Trim(new [] { '"', ' '});
+            string skillType = argv[2];
+            int level = int.Parse(argv[3]);
+
+            if (target != "me")
+                throw new SlashError("giveskill only supports me for now");
+
+            Character character = this.ItemManager.GetItem(call.Client.EnsureCharacterIsSelected()) as Character;
+            
+            if (skillType == "all")
+            {
+                
+                // player wants all the skills!
+                IEnumerable<KeyValuePair<int, ItemType>> skillTypes =
+                    this.TypeManager.Where(x => x.Value.Group.Category.ID == (int) ItemCategories.Skill);
+
+                Dictionary<int, Skill> injectedSkills = character.InjectedSkillsByTypeID;
+
+                foreach (KeyValuePair<int, ItemType> pair in skillTypes)
+                {
+                    // skill already injected, train it to the desired level
+                    if (injectedSkills.ContainsKey(pair.Key) == true)
+                    {
+                        Skill skill = injectedSkills[pair.Key];
+
+                        skill.Level = level;
+                        skill.Persist();
+                        call.Client.NotifyItemLocationChange(skill, skill.Flag, skill.LocationID);
+                        call.Client.NotifySkillTrained(skill);
+                    }
+                    else
+                    {
+                        // skill not injected, create it, inject and done
+                        Skill skill = this.ItemManager.CreateSkill(pair.Value, character, level,
+                            SkillHistoryReason.GMGiveSkill);
+                        
+                        call.Client.NotifyNewItem(skill);
+                        call.Client.NotifySkillInjected();
+                        skill.Persist();
+                    }
+                }
+            }
+            else
+            {
+                int skillTypeID = int.Parse(skillType);
+                Dictionary<int, Skill> injectedSkills = character.InjectedSkillsByTypeID;
+
+                if (injectedSkills.ContainsKey(skillTypeID) == true)
+                {
+                    Skill skill = injectedSkills[skillTypeID];
+
+                    skill.Level = level;
+                    skill.Persist();
+                    call.Client.NotifyItemLocationChange(skill, skill.Flag, skill.LocationID);
+                    call.Client.NotifySkillTrained(skill);
+                }
+                else
+                {
+                    // skill not injected, create it, inject and done
+                    Skill skill = this.ItemManager.CreateSkill(this.TypeManager[skillTypeID], character, level,
+                        SkillHistoryReason.GMGiveSkill);
+
+                    call.Client.NotifyNewItem(skill);
+                    call.Client.NotifySkillInjected();
+                    skill.Persist();
+                }
+            }
         }
     }
 }

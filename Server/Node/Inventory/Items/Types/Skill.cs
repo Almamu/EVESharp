@@ -56,7 +56,7 @@ namespace Node.Inventory.Items.Types
 
         public double GetSkillPointsForLevel(long level)
         {
-            if (level >= 5)
+            if (level > 5)
                 return 0;
             if (level == 0)
                 return TimeConstant * 250;
