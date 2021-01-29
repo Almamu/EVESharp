@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Node.Database;
+using Node.Exceptions;
 using Node.Inventory;
 using Node.Inventory.Items;
 using Node.Network;
@@ -67,8 +68,78 @@ namespace Node.Services.Inventory
             return this.mInventory.GetEntityRow();
         }
 
+        public PyDataType Add(PyInteger itemID, CallInformation call)
+        {
+            if (itemID == call.Client.ShipID)
+                throw new CantMoveActiveShip();
+            
+            // the item has to be moved to this inventory completely
+            if (this.ItemManager.IsItemLoaded(itemID) == false)
+            {
+                ItemEntity item = this.ItemManager.LoadItem(itemID);
+
+                // get old information
+                int oldLocationID = item.LocationID;
+                ItemFlags oldFlag = item.Flag;
+                
+                // set the new location for the item
+                item.LocationID = this.mInventory.ID;
+                item.Flag = this.mFlag;
+                
+                call.Client.NotifyItemLocationChange(item, oldFlag, oldLocationID);
+                
+                // finally add the item to this inventory
+                this.mInventory.AddItem(item);
+
+                item.Persist();
+            }
+            else
+            {
+                ItemEntity item = this.ItemManager.GetItem(itemID);
+                
+                // remove item off the old inventory
+                if (this.ItemManager.IsItemLoaded(item.LocationID) == true)
+                {
+                    ItemInventory inventory = this.ItemManager.GetItem(item.LocationID) as ItemInventory;
+
+                    inventory.RemoveItem(item);
+                }
+                
+                // remove item off the meta inventories
+                try
+                {
+                    this.ItemManager.MetaInventoryManager
+                        .GetOwnerInventoriesAtLocation(item.LocationID, item.OwnerID)
+                        .RemoveItem(item);
+                }
+                catch (ArgumentOutOfRangeException)
+                {
+                }
+                
+                // get old information
+                int oldLocationID = item.LocationID;
+                ItemFlags oldFlag = item.Flag;
+                
+                // set the new location for the item
+                item.LocationID = this.mInventory.ID;
+                item.Flag = this.mFlag;
+                
+                call.Client.NotifyItemLocationChange(item, oldFlag, oldLocationID);
+                
+                // finally add the item to this inventory
+                this.mInventory.AddItem(item);
+
+                item.Persist();
+            }
+
+            return null;
+        }
+
         public PyDataType Add(PyInteger itemID, PyInteger quantity, PyInteger flag, CallInformation call)
         {
+            if (itemID == call.Client.ShipID)
+                throw new CantMoveActiveShip();
+
             // TODO: ADD CONSTRAINTS CHECKS FOR THE FLAG
             if (this.ItemManager.IsItemLoaded(itemID) == false)
             {
@@ -88,7 +159,7 @@ namespace Node.Services.Inventory
                     // persist it to the database
                     clone.Persist();
                     // notify the client of the new item
-                    call.Client.NotifyItemLocationChange(clone, ItemFlags.None, 0);
+                    call.Client.NotifyNewItem(clone);
                     // and notify the amount change
                     call.Client.NotifyItemQuantityChange(item, item.Quantity + quantity);
                 }
@@ -156,7 +227,7 @@ namespace Node.Services.Inventory
                     item.Quantity -= quantity;
                     // notify the changes to the client
                     call.Client.NotifyItemQuantityChange(item, item.Quantity + quantity);
-                    call.Client.NotifyItemLocationChange(clone, ItemFlags.None, 0);
+                    call.Client.NotifyNewItem(clone);
                     // persist the item changes in the database
                     clone.Persist();
                     item.Persist();

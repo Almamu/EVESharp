@@ -7,7 +7,6 @@ using Common.Network;
 using Common.Packets;
 using Node.Database;
 using Node.Inventory.Items.Types;
-using Org.BouncyCastle.Bcpg;
 using PythonTypes;
 using PythonTypes.Types.Exceptions;
 using PythonTypes.Types.Network;

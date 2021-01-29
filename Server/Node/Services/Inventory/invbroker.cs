@@ -103,9 +103,14 @@ namespace Node.Services.Inventory
         {
             foreach (PyDataType itemID in itemIDs)
             {
-                // ignore non integer values
-                if (itemID is PyInteger == false)
+                // ignore non integer values and the current
+                if (itemID is PyInteger integer == false)
                     continue;
+                PyInteger value = itemID as PyInteger;
+
+                // do not trash the active ship
+                if (value == call.Client.ShipID)
+                    throw new CantMoveActiveShip();
 
                 ItemEntity item = this.ItemManager.GetItem(itemID as PyInteger);
                 // store it's location id
@@ -134,11 +139,7 @@ namespace Node.Services.Inventory
             
             // if the item is a ship, send a session change
             if (item.Type.Group.Category.ID == (int) ItemCategories.Ship)
-            {
                 call.Client.ShipID = call.Client.ShipID;
-                
-                call.Client.SendSessionChange();
-            }
 
             // TODO: CHECK IF ITEM BELONGS TO CORP AND NOTIFY CHARACTERS IN THIS NODE?
             return null;

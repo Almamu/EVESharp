@@ -1,5 +1,6 @@
 ﻿using System;
 using Node.Exceptions.jumpCloneSvc;
+using Node.Exceptions.ship;
 using Node.Inventory;
 using Node.Inventory.Items;
 using Node.Inventory.Items.Types;
@@ -148,11 +149,11 @@ namespace Node.Services.Inventory
             Character character = this.ItemManager.GetItem(callerCharacterID) as Character;
 
             if (ship.OwnerID != callerCharacterID)
-                throw new MktNotOwner();
+                throw new AssembleOwnShipsOnly();
 
             // do not do anything if item is already assembled
             if (ship.Singleton == true)
-                return null;
+                return new ShipAlreadyAssembled(ship.Type.Name);
 
             // first split the stack
             if (ship.Quantity > 1)
