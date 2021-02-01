@@ -7,6 +7,7 @@ using Node.Exceptions;
 using Node.Inventory;
 using Node.Inventory.Items.Types;
 using Node.Network;
+using PythonTypes;
 using PythonTypes.Types.Database;
 using PythonTypes.Types.Exceptions;
 using PythonTypes.Types.Primitives;
@@ -16,6 +17,7 @@ namespace Node.Services.Chat
     public class LSC : Service
     {
         private const string CHANNEL_TYPE_NORMAL = "normal";
+        private const string CHANNEL_TYPE_GLOBAL = "global";
         private const string CHANNEL_TYPE_SOLARSYSTEMID2 = "solarsystemid2";
         private const string CHANNEL_TYPE_REGIONID = "regionid";
         private const string CHANNEL_TYPE_CORPID = "corpid";
@@ -38,7 +40,7 @@ namespace Node.Services.Chat
             this.Log = logger.CreateLogChannel("LSC");
         }
 
-        private static void ParseTupleChannelIdentifier(PyTuple tuple, out int channelID, out string channelType, out int entityID)
+        private static void ParseTupleChannelIdentifier(PyTuple tuple, out int channelID, out string channelType, out int? entityID)
         {
             if (tuple.Count != 1 || tuple[0] is PyTuple == false)
                 throw new InvalidDataException("LSC received a wrongly formatted channel identifier");
@@ -47,19 +49,23 @@ namespace Node.Services.Chat
 
             if (channelInfo.Count != 2 || channelInfo[0] is PyString == false || channelInfo[1] is PyInteger == false)
                 throw new InvalidDataException("LSC received a wrongly formatted channel identifier");
-
+            
             channelType = channelInfo[0] as PyString;
             channelID = channelInfo[1] as PyInteger;
             entityID = channelID;
+
+            if (channelID < 0)
+                throw new InvalidDataException("LSC received a wrongly formatted channel identifier (negative entityID)");
         }
         
-        private void ParseChannelIdentifier(PyDataType channel, out int channelID, out string channelType, out int entityID)
+        private void ParseChannelIdentifier(PyDataType channel, out int channelID, out string channelType, out int? entityID)
         {
             switch (channel)
             {
                 case PyInteger integer:
                     channelID = integer;
-                    entityID = 0;
+                    // positive channel ids are entity ids, negatives are custom user channels
+                    entityID = null;
                     // get the full channel identifier
                     channelType = CHANNEL_TYPE_NORMAL;
                     break;
@@ -71,8 +77,8 @@ namespace Node.Services.Chat
             }
             
             // ensure the channelID is the correct one and not an entityID
-            if (channelType != CHANNEL_TYPE_NORMAL)
-                channelID = this.DB.GetChannelIDFromRelatedEntity(channelID);
+            if (channelID > 0 && entityID != null)
+                channelID = this.DB.GetChannelIDFromRelatedEntity((int) entityID);
                 
             if (channelID == 0)
                 throw new InvalidDataException("LSC could not determine chatID for the requested chats");
@@ -136,14 +142,14 @@ namespace Node.Services.Chat
             };
         }
 
-        private PyTuple GetChannelInformation(string channelType, int channelID, int entityID, int callerCharacterID, PyDataType channelIDExtended, CallInformation call)
+        private PyTuple GetChannelInformation(string channelType, int channelID, int? entityID, int callerCharacterID, PyDataType channelIDExtended, CallInformation call)
         {
             Row info;
 
-            if (channelType == CHANNEL_TYPE_NORMAL && channelID != callerCharacterID && entityID != call.Client.CorporationID)
+            if (channelID < 0 || entityID == null)
                 info = this.DB.GetChannelInfo(channelID, callerCharacterID);
             else
-                info = this.DB.GetChannelInfoByRelatedEntity(channelID, callerCharacterID);
+                info = this.DB.GetChannelInfoByRelatedEntity((int) entityID, callerCharacterID);
 
             // check if the channel must include the list of members
             PyInteger actualChannelID = info.Line[0] as PyInteger;
@@ -199,7 +205,7 @@ namespace Node.Services.Chat
             {
                 int channelID;
                 string channelType;
-                int entityID;
+                int? entityID;
                 PyDataType channelIDExtended = null;
 
                 try
@@ -208,7 +214,7 @@ namespace Node.Services.Chat
                 }
                 catch (InvalidDataException)
                 {
-                    throw new LSCCannotJoin("The specified channel cannot be found");
+                    throw new LSCCannotJoin("The specified channel cannot be found" + PrettyPrinter.FromDataType(channel));
                 }
 
                 if (channelType == CHANNEL_TYPE_NORMAL)
@@ -292,7 +298,7 @@ namespace Node.Services.Chat
             int callerCharacterID = call.Client.EnsureCharacterIsSelected();
 
             int channelID;
-            int entityID;
+            int? entityID;
             string channelType;
 
             try
@@ -307,7 +313,7 @@ namespace Node.Services.Chat
             // ensure the player is allowed to chat in there
             if (channelType == CHANNEL_TYPE_NORMAL && this.DB.IsPlayerAllowedToChat(channelID, callerCharacterID) == false)
                 throw new LSCCannotSendMessage("Insufficient permissions");
-            if (channelType != CHANNEL_TYPE_NORMAL && this.DB.IsPlayerAllowedToChatOnRelatedEntity(entityID, callerCharacterID) == false)
+            if (channelType != CHANNEL_TYPE_NORMAL && this.DB.IsPlayerAllowedToChatOnRelatedEntity((int) entityID, callerCharacterID) == false)
                 throw new LSCCannotSendMessage("Insufficient permissions");
 
             PyTuple notificationBody = new PyTuple(1) {[0] = message};

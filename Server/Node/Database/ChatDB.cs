@@ -23,23 +23,69 @@ namespace Node.Database
         {
         }
 
-        public ulong CreateChannel(ItemEntity owner, ItemEntity relatedEntity, string name, bool maillist)
+        public void GrantAccessToStandardChannels(int characterID)
+        {
+            Database.PrepareQuery(
+                "INSERT INTO lscChannelPermissions(channelID, accessor, mode) SELECT channelID, @characterID AS accessor, @mode AS `mode` FROM lscGeneralChannels WHERE channelID < 1000",
+                new Dictionary<string, object>()
+                {
+                    {"@characterID", characterID},
+                    {"@mode", CHATROLE_CONVERSATIONALIST}
+                }
+            );
+        }
+
+        public long CreateChannel(ItemEntity owner, ItemEntity relatedEntity, string name, bool maillist)
         {
             return this.CreateChannel(owner.ID, relatedEntity?.ID, name, maillist);
         }
 
-        public ulong CreateChannel(int owner, int? relatedEntity, string name, bool maillist)
+        public long CreateChannel(int owner, int? relatedEntity, string name, bool maillist)
         {
-            return Database.PrepareQueryLID(
-                "INSERT INTO channels(ownerID, relatedEntityID, displayName, motd, comparisonKey, memberless, password, mailingList, cspa, temporary, estimatedMemberCount)VALUES(@ownerID, @relatedEntityID, @displayName, '', NULL, 0, NULL, @maillist, 1, 0, 1)",
-                new Dictionary<string, object>()
+            if (relatedEntity == null)
+            {
+                return -(long) Database.PrepareQueryLID(
+                    "INSERT INTO lscPrivateChannels(channelID, ownerID, displayName, motd, comparisonKey, memberless, password, mailingList, cspa, temporary, estimatedMemberCount)VALUES(NULL, @ownerID, @displayName, '', NULL, 0, NULL, @mailinglist, 0, 0, 0)",
+                    new Dictionary<string, object>()
+                    {
+                        {"@ownerID", owner},
+                        {"@displayName", name},
+                        {"@mailinglist", maillist}
+                    }
+                );
+            }
+            else
+            {
+                // maillist 
+                if (maillist == true)
                 {
-                    {"@ownerID", owner},
-                    {"@relatedEntityID", relatedEntity},
-                    {"@displayName", name},
-                    {"@maillist", maillist}
+                    Database.PrepareQuery(
+                        "INSERT INTO lscGeneralChannels(channelID, ownerID, relatedEntityID, displayName, motd, comparisonKey, memberless, password, mailingList, cspa, temporary, estimatedMemberCount)VALUES(@channelID, @ownerID, @relatedEntityID, @displayName, '', NULL, 0, NULL, 1, 0, 0, 0)",
+                        new Dictionary<string, object>()
+                        {
+                            {"@channelID", relatedEntity},
+                            {"@ownerID", owner},
+                            {"@relatedEntityID", relatedEntity},
+                            {"@displayName", name}
+                        }
+                    );
+
+                    return (long) relatedEntity;
                 }
-            );
+                else
+                {
+                    return (long) Database.PrepareQueryLID(
+                        "INSERT INTO lscGeneralChannels(channelID, ownerID, relatedEntityID, displayName, motd, comparisonKey, memberless, password, mailingList, cspa, temporary, estimatedMemberCount)VALUES(NULL, @ownerID, @relatedEntityID, @displayName, '', NULL, 0, NULL, 0, 0, 0, 0)",
+                        new Dictionary<string, object>()
+                        {
+                            {"@channelID", relatedEntity},
+                            {"@ownerID", owner},
+                            {"@relatedEntityID", relatedEntity},
+                            {"@displayName", name}
+                        }
+                    );
+                }
+            }
         }
 
         public void JoinEntityMailingList(int relatedEntityID, int characterID, int role = CHATROLE_CONVERSATIONALIST)
@@ -59,7 +105,7 @@ namespace Node.Database
         public void JoinChannel(int channelID, int characterID, int role = CHATROLE_CONVERSATIONALIST)
         {
             Database.PrepareQuery(
-                "INSERT INTO channelMods(channelID, accessor, `mode`, untilWhen, originalMode, admin, reason)VALUES(@channelID, @characterID, @role, NULL, @role, @admin, '')",
+                "INSERT INTO lscChannelPermissions(channelID, accessor, `mode`, untilWhen, originalMode, admin, reason)VALUES(@channelID, @characterID, @role, NULL, @role, @admin, '')",
                 new Dictionary<string, object>()
                 {
                     {"@channelID", channelID},
@@ -72,15 +118,29 @@ namespace Node.Database
 
         public void DestroyChannel(int channelID)
         {
+            if (channelID < 0)
+            {
+                Database.PrepareQuery(
+                    "DELETE FROM lscPrivateChannels WHERE channelID = @channelID",
+                    new Dictionary<string, object>()
+                    {
+                        {"@channelID", -channelID}
+                    }
+                );
+            }
+            else
+            {
+                Database.PrepareQuery(
+                    "DELETE FROM lscGeneralChannels WHERE channelID = @channelID",
+                    new Dictionary<string, object>()
+                    {
+                        {"@channelID", channelID}
+                    }
+                );
+            }
+            
             Database.PrepareQuery(
-                "DELETE FROM channels WHERE channelID = @channelID",
-                new Dictionary<string, object>()
-                {
-                    {"@channelID", channelID}
-                }
-            );
-            Database.PrepareQuery(
-                "DELETE FROM channelMods WHERE channelID = @channelID",
+                "DELETE FROM lscChannelPermissions WHERE channelID = @channelID",
                 new Dictionary<string, object>()
                 {
                     {"@channelID", channelID}
@@ -91,7 +151,7 @@ namespace Node.Database
         public void LeaveChannel(int channelID, int characterID)
         {
             Database.PrepareQuery(
-                "DELETE FROM channelMods WHERE accessor = @characterID AND channelID = @channelID",
+                "DELETE FROM lscChannelPermissions WHERE accessor = @characterID AND channelID = @channelID",
                 new Dictionary<string, object>()
                 {
                     {"@characterID", characterID},
@@ -102,14 +162,13 @@ namespace Node.Database
 
         public Rowset GetChannelsForCharacter(int characterID)
         {
-            // TODO: IMPLEMENT THE OPTION TO HAVE GLOBAL CHANNELS SO ALL THE PLAYERS CAN SEE THEM
             return Database.PrepareRowsetQuery(
                 "SELECT" + 
-                " channelID, ownerID, displayName, motd, comparisonKey, memberless, !ISNULL(password) AS password," + 
+                " lscChannelPermissions.channelID, ownerID, displayName, motd, comparisonKey, memberless, !ISNULL(password) AS password," + 
                 " mailingList, cspa, temporary, 1 AS subscribed, estimatedMemberCount " +
-                " FROM channels" +
-                " LEFT JOIN channelMods USING (channelID)" +
-                " WHERE accessor = @characterID AND `mode` > 0",
+                " FROM lscPrivateChannels" +
+                " LEFT JOIN lscChannelPermissions ON lscPrivateChannels.channelID = -lscChannelPermissions.channelID" +
+                " WHERE accessor = @characterID AND `mode` > 0 AND lscChannelPermissions.channelID < 0",
                 new Dictionary<string, object>()
                 {
                     {"@characterID", characterID}
@@ -119,14 +178,31 @@ namespace Node.Database
 
         public Row GetChannelInfo(int channelID, int characterID)
         {
+            string query;
+
+            if (channelID < 0)
+            {
+                query = 
+                    "SELECT" +
+                    " lscChannelPermissions.channelID, ownerID, displayName, motd, comparisonKey, memberless, !ISNULL(password) AS password," +
+                    " mailingList, cspa, temporary, !ISNULL(lscChannelPermissions.accessor) AS subscribed, 0 AS languageRestriction " +
+                    " FROM lscPrivateChannels" +
+                    " LEFT JOIN lscChannelPermissions ON lscPrivateChannels.channelID = -lscChannelPermissions.channelID" +
+                    " WHERE lscChannelPermissions.accessor = @characterID AND lscChannelPermissions.channelID = @channelID";
+            }
+            else
+            {
+                query = 
+                    "SELECT" +
+                    " channelID, ownerID, displayName, motd, comparisonKey, memberless, !ISNULL(password) AS password," +
+                    " mailingList, cspa, temporary, !ISNULL(lscChannelPermissions.accessor) AS subscribed, 0 AS languageRestriction " +
+                    " FROM lscGeneralChannels" +
+                    " LEFT JOIN lscChannelPermissions USING (channelID)" +
+                    " WHERE lscChannelPermissions.accessor = @characterID AND channelID = @channelID";
+            }
+            
             MySqlConnection connection = null;
-            MySqlDataReader reader = Database.PrepareQuery(ref connection,
-                "SELECT" +
-                " channelID, ownerID, displayName, motd, comparisonKey, memberless, !ISNULL(password) AS password," +
-                " mailingList, cspa, temporary, !ISNULL(channelMods.accessor) AS subscribed, 0 AS languageRestriction " +
-                " FROM channels" +
-                " LEFT JOIN channelMods USING (channelID)" +
-                " WHERE channelMods.accessor = @characterID AND channelID = @channelID",
+            MySqlDataReader reader = Database.PrepareQuery(ref connection, query, 
                 new Dictionary<string, object>()
                 {
                     {"@characterID", characterID},
@@ -150,10 +226,10 @@ namespace Node.Database
             MySqlDataReader reader = Database.PrepareQuery(ref connection,
                 "SELECT" +
                 " channelID, ownerID, displayName, motd, comparisonKey, memberless, !ISNULL(password) AS password," +
-                " mailingList, cspa, temporary, !ISNULL(channelMods.accessor) AS subscribed, 0 AS languageRestriction " +
-                " FROM channels" +
-                " LEFT JOIN channelMods USING (channelID)" +
-                " WHERE channelMods.accessor = @characterID AND channels.relatedEntityID = @relatedEntityID",
+                " mailingList, cspa, temporary, !ISNULL(lscChannelPermissions.accessor) AS subscribed, 0 AS languageRestriction " +
+                " FROM lscGeneralChannels" +
+                " LEFT JOIN lscChannelPermissions USING (channelID)" +
+                " WHERE accessor = @characterID AND relatedEntityID = @relatedEntityID",
                 new Dictionary<string, object>()
                 {
                     {"@characterID", characterID},
@@ -174,7 +250,7 @@ namespace Node.Database
         public Rowset GetChannelMembers(int channelID)
         {
             return Database.PrepareRowsetQuery(
-                "SELECT accessor AS charID, corporationID AS corpID, allianceID, 0 AS warFactionID, account.role AS role, 0 AS extra FROM channelMods LEFT JOIN chrInformation ON accessor = characterID LEFT JOIN corporation USING(corporationID) LEFT JOIN account ON account.accountID = chrInformation.accountID WHERE channelID = @channelID AND account.online = 1",
+                "SELECT accessor AS charID, corporationID AS corpID, allianceID, 0 AS warFactionID, account.role AS role, 0 AS extra FROM lscChannelPermissions LEFT JOIN chrInformation ON accessor = characterID LEFT JOIN corporation USING(corporationID) LEFT JOIN account ON account.accountID = chrInformation.accountID WHERE channelID = @channelID AND account.online = 1",
                 new Dictionary<string, object>()
                 {
                     {"@channelID", channelID}
@@ -185,7 +261,7 @@ namespace Node.Database
         public Rowset GetChannelMods(int channelID)
         {
             return Database.PrepareRowsetQuery(
-                "SELECT accessor, `mode`, untilWhen, originalMode, admin, reason FROM channelMods WHERE channelID = @channelID",
+                "SELECT accessor, `mode`, untilWhen, originalMode, admin, reason FROM lscChannelPermissions WHERE channelID = @channelID",
                 new Dictionary<string, object>()
                 {
                     {"@channelID", channelID}
@@ -217,7 +293,7 @@ namespace Node.Database
         {
             MySqlConnection connection = null;
             MySqlDataReader reader = Database.PrepareQuery(ref connection,
-                "SELECT accessor FROM channelMods LEFT JOIN chrInformation ON accessor = characterID WHERE channelID = @channelID AND online = 1 AND `mode` > 0",
+                "SELECT accessor FROM lscChannelPermissions LEFT JOIN chrInformation ON accessor = characterID WHERE channelID = @channelID AND online = 1 AND `mode` > 0",
                 new Dictionary<string, object>()
                 {
                     {"@channelID", channelID}
@@ -240,7 +316,7 @@ namespace Node.Database
         {
             MySqlConnection connection = null;
             MySqlDataReader reader = Database.PrepareQuery(ref connection,
-                "SELECT `mode` FROM channelMods WHERE channelID = @channelID AND accessor = @characterID",
+                "SELECT `mode` FROM lscChannelPermissions WHERE channelID = @channelID AND accessor = @characterID",
                 new Dictionary<string, object>()
                 {
                     {"@channelID", channelID},
@@ -262,7 +338,7 @@ namespace Node.Database
         {
             MySqlConnection connection = null;
             MySqlDataReader reader = Database.PrepareQuery(ref connection,
-                "SELECT `mode` FROM channelMods, channels WHERE channels.channelID = channelMods.channelID AND channels.relatedEntityID = @relatedEntityID AND accessor = @characterID",
+                "SELECT `mode` FROM lscChannelPermissions, lscGeneralChannels WHERE lscGeneralChannels.channelID = lscChannelPermissions.channelID AND lscGeneralChannels.relatedEntityID = @relatedEntityID AND accessor = @characterID",
                 new Dictionary<string, object>()
                 {
                     {"@relatedEntityID", relatedEntityID},
@@ -284,7 +360,7 @@ namespace Node.Database
         {
             MySqlConnection connection = null;
             MySqlDataReader reader = Database.PrepareQuery(ref connection,
-                "SELECT channelID FROM channels WHERE relatedEntityID = @itemID AND mailingList = @mailingList",
+                "SELECT channelID FROM lscGeneralChannels WHERE relatedEntityID = @itemID AND mailingList = @mailingList",
                 new Dictionary<string, object>()
                 {
                     {"@itemID", relatedEntityID},
@@ -304,9 +380,12 @@ namespace Node.Database
 
         public string GetChannelType(int channelID)
         {
+            if (channelID < 0)
+                return "normal";
+            
             MySqlConnection connection = null;
             MySqlDataReader reader = Database.PrepareQuery(ref connection,
-                "SELECT displayName FROM channels WHERE channelID = @channelID",
+                "SELECT displayName FROM lscGeneralChannels WHERE channelID = @channelID",
                 new Dictionary<string, object>()
                 {
                     {"@channelID", channelID}
@@ -325,9 +404,19 @@ namespace Node.Database
 
         public string GetChannelName(int channelID)
         {
+            string query;
+
+            if (channelID < 0)
+            {
+                query = "SELECT displayName FROM lscPrivateChannels WHERE channelID = @channelID";
+            }
+            else
+            {
+                query = "SELECT displayName FROM lscGeneralChannels WHERE channelID = @channelID";
+            }
+            
             MySqlConnection connection = null;
-            MySqlDataReader reader = Database.PrepareQuery(ref connection,
-                "SELECT displayName FROM channels WHERE channelID = @channelID",
+            MySqlDataReader reader = Database.PrepareQuery(ref connection, query,
                 new Dictionary<string, object>()
                 {
                     {"@channelID", channelID}
@@ -374,7 +463,7 @@ namespace Node.Database
         {
             MySqlConnection connection = null;
             MySqlDataReader reader = Database.PrepareQuery(ref connection,
-                "SELECT 0 AS extra FROM channelMods WHERE channelID = @channelID AND accessor = @characterID",
+                "SELECT 0 AS extra FROM lscChannelPermissions WHERE channelID = @channelID AND accessor = @characterID",
                 new Dictionary<string, object>()
                 {
                     {"@channelID", channelID},
@@ -393,7 +482,7 @@ namespace Node.Database
         {
             MySqlConnection connection = null;
             MySqlDataReader reader = Database.PrepareQuery(ref connection,
-                "SELECT `mode` FROM channelMods WHERE channelID = @channelID AND accessor = @characterID",
+                "SELECT `mode` FROM lscChannelPermissions WHERE channelID = @channelID AND accessor = @characterID",
                 new Dictionary<string, object>()
                 {
                     {"@channelID", channelID},
@@ -415,7 +504,7 @@ namespace Node.Database
         {
             MySqlConnection connection = null;
             MySqlDataReader reader = Database.PrepareQuery(ref connection,
-                "SELECT `mode` FROM channelMods WHERE channelID = @channelID AND accessor = @characterID",
+                "SELECT `mode` FROM lscChannelPermissions WHERE channelID = @channelID AND accessor = @characterID",
                 new Dictionary<string, object>()
                 {
                     {"@channelID", channelID},
@@ -436,7 +525,7 @@ namespace Node.Database
         public void UpdatePermissionsForCharacterOnChannel(int channelID, int characterID, sbyte permissions)
         {
             Database.PrepareQuery(
-                "REPLACE INTO channelMods(channelID, accessor, mode, untilWhen, originalMode, admin, reason)VALUES(@channelID, @characterID, @mode, NULL, @mode, @admin, '')",
+                "REPLACE INTO lscChannelPermissions(channelID, accessor, mode, untilWhen, originalMode, admin, reason)VALUES(@channelID, @characterID, @mode, NULL, @mode, @admin, '')",
                 new Dictionary<string, object>()
                 {
                     {"@channelID", channelID},

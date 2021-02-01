@@ -306,10 +306,11 @@ namespace Node.Services.Characters
             ship.Persist();
             character.Persist();
             
+            // join the character to all the general channels
+            this.ChatDB.GrantAccessToStandardChannels(character.ID);
             // create required mailing list channel
             this.ChatDB.CreateChannel(character, character, characterName, true);
             // and subscribe the character to some channels
-            this.ChatDB.JoinChannel(ChatDB.CHANNEL_ROOKIECHANNELID, character.ID);
             this.ChatDB.JoinEntityMailingList(character.ID, character.ID);
             this.ChatDB.JoinEntityChannel(character.SolarSystemID, character.ID);
             this.ChatDB.JoinEntityChannel(character.ConstellationID, character.ID);
