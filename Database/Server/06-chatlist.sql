@@ -34,7 +34,6 @@ CREATE TABLE `lscPrivateChannels` (
   `temporary` tinyint(4) NOT NULL default '0',
   `estimatedMemberCount` int(10) unsigned NOT NULL default '0',
   PRIMARY KEY  (`channelID`),
-  KEY `FK_CHANNELS_RELEATEDENTITY` (`relatedEntityID`),
   KEY `FK_CHANNELS_OWNER` (`ownerID`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
 
