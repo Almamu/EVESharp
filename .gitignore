@@ -8,3 +8,4 @@
 *.user
 Database/Oficial.sql
 Database/Server.sql
+logs/

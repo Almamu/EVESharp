@@ -18,5 +18,10 @@ namespace Node.Services.Tutorial
                 "characterID", "tutorialID", "pageID", "eventTypeID"
             });
         }
+
+        public PyDataType GetContextHelp(CallInformation call)
+        {
+            return new PyList();
+        }
     }
 }
