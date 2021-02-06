@@ -25,6 +25,7 @@
 using System;
 using System.Threading;
 using ClusterControler.Database;
+using ClusterController.Configuration;
 using Common.Constants;
 using Common.Database;
 using Common.Logging;
@@ -109,18 +110,19 @@ namespace ClusterControler
                 sChannel.Trace("Initializing EVESharp Cluster Controler and Proxy");
 
                 sConnectionManager = sContainer.GetInstance<ConnectionManager>();
-
+                Listening listening = sContainer.GetInstance<Listening>();
+                
                 try
                 {
-                    sChannel.Trace("Initializing server socket on port 26000...");
-                    sServerSocket = new EVEServerSocket(26000, sLog.CreateLogChannel("ServerSocket"));
+                    sChannel.Trace($"Initializing server socket on port {listening.Port}...");
+                    sServerSocket = new EVEServerSocket(listening.Port, sLog.CreateLogChannel("ServerSocket"));
                     sServerSocket.Listen();
                     sServerSocket.BeginAccept(acceptAsync);
-                    sChannel.Debug("Waiting for incoming connections on port 26000");
+                    sChannel.Debug($"Waiting for incoming connections on port {listening.Port}");
                 }
                 catch (Exception e)
                 {
-                    sChannel.Error($"Error listening on port 26000: {e.Message}");
+                    sChannel.Error($"Error listening on port {listening.Port}: {e.Message}");
                     throw;
                 }
 

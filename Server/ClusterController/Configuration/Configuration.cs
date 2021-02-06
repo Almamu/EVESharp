@@ -1,4 +1,5 @@
 using ClusterControler.Configuration;
+using ClusterController.Configuration;
 using Common.Configuration;
 using IniParser;
 using IniParser.Model;
@@ -13,6 +14,7 @@ namespace Configuration
         public Authentication Authentication { get; } = new Authentication();
         public FileLog FileLog { get; } = new FileLog();
         public Logging Logging { get; } = new Logging();
+        public Listening Listening { get; } = new Listening();
 
         public static General LoadFromFile(string filename, Container container)
         {
@@ -30,12 +32,15 @@ namespace Configuration
                 config.FileLog.Load(data["logfile"]);
             if (data.Sections.ContainsSection("logging") == true)
                 config.Logging.Load(data["logging"]);
+            if (data.Sections.ContainsSection("listening") == true)
+                config.Listening.Load(data["listening"]);
 
             container.RegisterInstance(config.Database);
             container.RegisterInstance(config.Authentication);
             container.RegisterInstance(config.LogLite);
             container.RegisterInstance(config.FileLog);
             container.RegisterInstance(config.Logging);
+            container.RegisterInstance(config.Listening);
             
             return config;
         }

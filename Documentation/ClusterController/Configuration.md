@@ -126,3 +126,14 @@ ROLEMASK_VIEW
 ```
 
 Multiple roles can be specified separating them by commas.
+
+## listening
+Configuration for how the ClusterController listens for new node and/or client connections.
+
+### port
+Sets the port the ClusterController will listen on for new clients and nodes connections. By default this will be setup to port 26000 (the default port). This is specially useful for using [EVEmu Live Packet Editor](https://github.com/Almamu/EVEmu-live-packet-editor) to debug client <-> server communications.
+
+```
+[listening]
+port=26000
+```
