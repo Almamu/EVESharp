@@ -40,7 +40,7 @@ namespace Node.Services.Chat
             this.Log = logger.CreateLogChannel("LSC");
         }
 
-        private static void ParseTupleChannelIdentifier(PyTuple tuple, out int channelID, out string channelType, out int? entityID)
+        private void ParseTupleChannelIdentifier(PyTuple tuple, out int channelID, out string channelType, out int? entityID)
         {
             if (tuple.Count != 1 || tuple[0] is PyTuple == false)
                 throw new InvalidDataException("LSC received a wrongly formatted channel identifier");
@@ -51,9 +51,10 @@ namespace Node.Services.Chat
                 throw new InvalidDataException("LSC received a wrongly formatted channel identifier");
             
             channelType = channelInfo[0] as PyString;
-            channelID = channelInfo[1] as PyInteger;
-            entityID = channelID;
+            entityID = channelInfo[1] as PyInteger;
 
+            channelID = this.DB.GetChannelIDFromRelatedEntity((int) entityID, false);
+            
             if (channelID < 0)
                 throw new InvalidDataException("LSC received a wrongly formatted channel identifier (negative entityID)");
         }
@@ -66,19 +67,21 @@ namespace Node.Services.Chat
                     channelID = integer;
                     // positive channel ids are entity ids, negatives are custom user channels
                     entityID = null;
+                    if (channelID > ChatDB.MIN_CHANNEL_ENTITY_ID && channelID < ChatDB.MAX_CHANNEL_ENTITY_ID)
+                        entityID = channelID;
                     // get the full channel identifier
                     channelType = CHANNEL_TYPE_NORMAL;
                     break;
                 case PyTuple tuple:
-                    ParseTupleChannelIdentifier(tuple, out channelID, out channelType, out entityID);
+                    this.ParseTupleChannelIdentifier(tuple, out channelID, out channelType, out entityID);
                     break;
                 default:
                     throw new InvalidDataException("LSC received a wrongly formatted channel identifier");
             }
             
             // ensure the channelID is the correct one and not an entityID
-            if (channelID > 0 && entityID != null)
-                channelID = this.DB.GetChannelIDFromRelatedEntity((int) entityID);
+            if (entityID != null)
+                channelID = this.DB.GetChannelIDFromRelatedEntity((int) entityID, channelID == entityID);
                 
             if (channelID == 0)
                 throw new InvalidDataException("LSC could not determine chatID for the requested chats");
@@ -146,10 +149,10 @@ namespace Node.Services.Chat
         {
             Row info;
 
-            if (channelID < 0 || entityID == null)
+            if (channelID < ChatDB.MIN_CHANNEL_ENTITY_ID || entityID == null || channelID >= ChatDB.MAX_CHANNEL_ENTITY_ID)
                 info = this.DB.GetChannelInfo(channelID, callerCharacterID);
             else
-                info = this.DB.GetChannelInfoByRelatedEntity((int) entityID, callerCharacterID);
+                info = this.DB.GetChannelInfoByRelatedEntity((int) entityID, callerCharacterID, channelID == entityID);
 
             // check if the channel must include the list of members
             PyInteger actualChannelID = info.Line[0] as PyInteger;
@@ -214,7 +217,7 @@ namespace Node.Services.Chat
                 }
                 catch (InvalidDataException)
                 {
-                    throw new LSCCannotJoin("The specified channel cannot be found" + PrettyPrinter.FromDataType(channel));
+                    throw new LSCCannotJoin("The specified channel cannot be found: " + PrettyPrinter.FromDataType(channel));
                 }
 
                 if (channelType == CHANNEL_TYPE_NORMAL)
@@ -240,11 +243,14 @@ namespace Node.Services.Chat
 
                     if (channelType == CHANNEL_TYPE_NORMAL)
                     {
-                        // get users in the channel that are online now
-                        PyList characters = this.DB.GetOnlineCharsOnChannel(channelID);
+                        if (channelID < ChatDB.MIN_CHANNEL_ENTITY_ID)
+                        {
+                            // get users in the channel that are online now
+                            PyList characters = this.DB.GetOnlineCharsOnChannel(channelID);
 
-                        // notify them all
-                        call.Client.ClusterConnection.SendNotification("OnLSC", "charid", characters, notification);  
+                            // notify them all
+                            call.Client.ClusterConnection.SendNotification("OnLSC", "charid", characters, notification);  
+                        }
                     }
                     else
                     {
@@ -266,7 +272,7 @@ namespace Node.Services.Chat
                     // most of the time this indicates a destroyed channel
                     // so build a destroy notification and let the client know this channel
                     // can be removed from it's lists
-                    if (channelType == CHANNEL_TYPE_NORMAL)
+                    if (channelType == CHANNEL_TYPE_NORMAL && channelID != entityID)
                     {
                         // notify everyone in the channel only when it should
                         PyDataType notification =

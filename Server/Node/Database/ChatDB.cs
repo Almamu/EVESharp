@@ -10,6 +10,9 @@ namespace Node.Database
 {
     public class ChatDB : DatabaseAccessor
     {
+        public const int MIN_CHANNEL_ENTITY_ID = 1000;
+        public const int MAX_CHANNEL_ENTITY_ID = 2100000000;
+        
         public const int CHATROLE_CREATOR = 8 + 4 + 2 + 1;
         public const int CHATROLE_OPERATOR = 4 + CHATROLE_SPEAKER + CHATROLE_LISTENER;
         public const int CHATROLE_CONVERSATIONALIST = CHATROLE_SPEAKER + CHATROLE_LISTENER;
@@ -168,7 +171,14 @@ namespace Node.Database
                 " mailingList, cspa, temporary, 1 AS subscribed, estimatedMemberCount " +
                 " FROM lscPrivateChannels" +
                 " LEFT JOIN lscChannelPermissions ON lscPrivateChannels.channelID = -lscChannelPermissions.channelID" +
-                " WHERE accessor = @characterID AND `mode` > 0 AND lscChannelPermissions.channelID < 0",
+                " WHERE accessor = @characterID AND `mode` > 0 AND lscChannelPermissions.channelID < 0 " +
+                "UNION " +
+                "SELECT" + 
+                " lscChannelPermissions.channelID, ownerID, displayName, motd, comparisonKey, memberless, !ISNULL(password) AS password," + 
+                " mailingList, cspa, temporary, 1 AS subscribed, estimatedMemberCount " +
+                " FROM lscGeneralChannels" +
+                " LEFT JOIN lscChannelPermissions ON lscGeneralChannels.channelID = lscChannelPermissions.channelID" +
+                $" WHERE accessor = @characterID AND `mode` > 0 AND lscChannelPermissions.channelID > {MIN_CHANNEL_ENTITY_ID} AND lscChannelPermissions.channelID < {MAX_CHANNEL_ENTITY_ID}",
                 new Dictionary<string, object>()
                 {
                     {"@characterID", characterID}
@@ -220,7 +230,7 @@ namespace Node.Database
             }
         }
 
-        public Row GetChannelInfoByRelatedEntity(int relatedEntityID, int characterID)
+        public Row GetChannelInfoByRelatedEntity(int relatedEntityID, int characterID, bool maillist = false)
         {
             MySqlConnection connection = null;
             MySqlDataReader reader = Database.PrepareQuery(ref connection,
@@ -229,11 +239,12 @@ namespace Node.Database
                 " mailingList, cspa, temporary, !ISNULL(lscChannelPermissions.accessor) AS subscribed, 0 AS languageRestriction " +
                 " FROM lscGeneralChannels" +
                 " LEFT JOIN lscChannelPermissions USING (channelID)" +
-                " WHERE accessor = @characterID AND relatedEntityID = @relatedEntityID",
+                " WHERE accessor = @characterID AND relatedEntityID = @relatedEntityID AND mailingList = @mailingList",
                 new Dictionary<string, object>()
                 {
                     {"@characterID", characterID},
-                    {"@relatedEntityID", relatedEntityID}
+                    {"@relatedEntityID", relatedEntityID},
+                    {"@mailingList", maillist}
                 }
             );
             
