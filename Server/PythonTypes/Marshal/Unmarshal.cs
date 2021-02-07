@@ -248,7 +248,7 @@ namespace PythonTypes.Marshal
                 case Opcode.IntegerSignedShort:
                     return new PyInteger(mReader.ReadInt16());
                 case Opcode.IntegerByte:
-                    return new PyInteger(mReader.ReadByte());
+                    return new PyInteger(mReader.ReadSByte());
                 case Opcode.IntegerOne:
                     return new PyInteger(1);
                 case Opcode.IntegerZero:
