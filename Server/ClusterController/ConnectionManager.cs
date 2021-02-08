@@ -31,6 +31,7 @@ using Common.Database;
 using Common.Logging;
 using Common.Network;
 using MySqlX.XDevAPI;
+using PythonTypes.Types.Network;
 using PythonTypes.Types.Primitives;
 
 namespace ClusterController
@@ -184,6 +185,201 @@ namespace ClusterController
                     throw new Exception($"Trying to notify a non-existant node {nodeID}");
 
                 this.Nodes[nodeID].Socket.Send(packet);
+            }
+        }
+
+        public void NotifyBySolarSystemID2(PyPacket packet, PyAddressBroadcast destination)
+        {
+            lock (this.Clients)
+            {
+                foreach (PyDataType idData in destination.IDsOfInterest)
+                {
+                    PyInteger id = idData as PyInteger;
+                            
+                    foreach (KeyValuePair<long, ClientConnection> entry in this.Clients)
+                    {
+                        if (entry.Value.SolarSystemID2 == id)
+                        {
+                            // use the key instead of AccountID as this should be faster
+                            packet.UserID = entry.Key;
+                            // queue the packet for the user
+                            entry.Value.Socket.Send(packet);
+                        }
+                    }
+                }
+            }
+        }
+
+        public void NotifyByConstellationID(PyPacket packet, PyAddressBroadcast destination)
+        {
+            lock (this.Clients)
+            {
+                foreach (PyDataType idData in destination.IDsOfInterest)
+                {
+                    PyInteger id = idData as PyInteger;
+                            
+                    foreach (KeyValuePair<long, ClientConnection> entry in this.Clients)
+                    {
+                        if (entry.Value.ConstellationID == id)
+                        {
+                            // use the key instead of AccountID as this should be faster
+                            packet.UserID = entry.Key;
+                            // queue the packet for the user
+                            entry.Value.Socket.Send(packet);
+                        }
+                    }
+                }
+            }
+        }
+
+        public void NotifyByCorporationID(PyPacket packet, PyAddressBroadcast destination)
+        {
+            lock (this.Clients)
+            {
+                foreach (PyDataType idData in destination.IDsOfInterest)
+                {
+                    PyInteger id = idData as PyInteger;
+                            
+                    foreach (KeyValuePair<long, ClientConnection> entry in this.Clients)
+                    {
+                        if (entry.Value.CorporationID == id)
+                        {
+                            // use the key instead of AccountID as this should be faster
+                            packet.UserID = entry.Key;
+                            // queue the packet for the user
+                            entry.Value.Socket.Send(packet);
+                        }
+                    }
+                }
+            }
+        }
+
+        public void NotifyByRegionID(PyPacket packet, PyAddressBroadcast destination)
+        {
+            lock (this.Clients)
+            {
+                foreach (PyDataType idData in destination.IDsOfInterest)
+                {
+                    PyInteger id = idData as PyInteger;
+                            
+                    foreach (KeyValuePair<long, ClientConnection> entry in this.Clients)
+                    {
+                        if (entry.Value.RegionID == id)
+                        {
+                            // use the key instead of AccountID as this should be faster
+                            packet.UserID = entry.Key;
+                            // queue the packet for the user
+                            entry.Value.Socket.Send(packet);
+                        }
+                    }
+                }
+            }
+        }
+
+        public void NotifyByCharacterID(PyPacket packet, PyAddressBroadcast destination)
+        {
+            lock (this.Clients)
+            {
+                PyList idlist = destination.IDsOfInterest;
+
+                foreach (PyDataType idData in idlist)
+                {
+                    PyInteger id = idData as PyInteger;
+                            
+                    foreach (KeyValuePair<long, ClientConnection> entry in this.Clients)
+                    {
+                        if (entry.Value.CharacterID == id)
+                        {
+                            // use the key instead of AccountID as this should be faster
+                            packet.UserID = entry.Key;
+                            // change the ids of interest to hide the character's we've notified
+                            destination.IDsOfInterest = new PyDataType[] {id};
+                            // queue the packet for the user
+                            entry.Value.Socket.Send(packet);
+                        }
+                    }
+                }
+            }
+        }
+
+        public void NotifyByStationID(PyPacket packet, PyAddressBroadcast destination)
+        {
+            lock (this.Clients)
+            {
+                PyList idlist = destination.IDsOfInterest;
+
+                foreach (PyDataType idData in idlist)
+                {
+                    PyInteger id = idData as PyInteger;
+                            
+                    foreach (KeyValuePair<long, ClientConnection> entry in this.Clients)
+                    {
+                        if (entry.Value.StationID == id)
+                        {
+                            // use the key instead of AccountID as this should be faster
+                            packet.UserID = entry.Key;
+                            // queue the packet for the user
+                            entry.Value.Socket.Send(packet);
+                        }
+                    }
+                }
+            }
+        }
+
+        public void NotifyByAllianceID(PyPacket packet, PyAddressBroadcast destination)
+        {
+            lock (this.Clients)
+            {
+                PyList idlist = destination.IDsOfInterest;
+
+                foreach (PyDataType idData in idlist)
+                {
+                    PyInteger id = idData as PyInteger;
+                            
+                    foreach (KeyValuePair<long, ClientConnection> entry in this.Clients)
+                    {
+                        if (entry.Value.AllianceID == id)
+                        {
+                            // use the key instead of AccountID as this should be faster
+                            packet.UserID = entry.Key;
+                            // queue the packet for the user
+                            entry.Value.Socket.Send(packet);
+                        }
+                    }
+                }
+            }
+        }
+
+        public void NotifyByNodeID(PyPacket packet, PyAddressBroadcast destination)
+        {
+            lock (this.Nodes)
+            {
+                PyList idlist = destination.IDsOfInterest;
+
+                foreach (PyDataType idData in idlist)
+                {
+                    PyInteger id = idData as PyInteger;
+                            
+                    foreach (KeyValuePair<long, NodeConnection> entry in this.Nodes)
+                    {
+                        if (entry.Value.NodeID == id)
+                        {
+                            // use the key instead of AccountID as this should be faster
+                            packet.UserID = entry.Key;
+                            // queue the packet for the user
+                            entry.Value.Socket.Send(packet);
+                        }
+                    }
+                }
+            }
+        }
+
+        public void NotifyAllNodes(PyPacket packet)
+        {
+            lock (this.Nodes)
+            {
+                foreach (KeyValuePair<long, NodeConnection> entry in this.Nodes)
+                    entry.Value.Socket.Send(packet);
             }
         }
     }

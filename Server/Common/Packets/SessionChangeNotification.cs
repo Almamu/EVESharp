@@ -7,6 +7,13 @@ namespace Common.Packets
     {
         public int clueless = 0;
         public PyDictionary changes = new PyDictionary();
+        /// <summary>
+        /// List of nodes interested in the session change
+        ///
+        /// This is used by LIVE to know what nodes need to know about the client
+        /// All in all, EVESharp takes a different approach where all nodes know
+        /// about all the clients so this is mainly useless for us
+        /// </summary>
         public PyList nodesOfInterest = new PyList();
 
         public static implicit operator PyTuple(SessionChangeNotification notification)

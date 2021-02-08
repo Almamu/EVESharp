@@ -68,192 +68,6 @@ namespace ClusterController
             (packet.Payload[0] as PyList)?.Add(handleMessage);
             (packet.Payload[0] as PyList)?.Add(writing);
         }
-
-        private void NotifyBySolarSystemID2(PyPacket packet, PyAddressBroadcast destination)
-        {
-            lock (this.ConnectionManager.Clients)
-            {
-                foreach (PyDataType idData in destination.IDsOfInterest)
-                {
-                    PyInteger id = idData as PyInteger;
-                            
-                    foreach (KeyValuePair<long, ClientConnection> entry in this.ConnectionManager.Clients)
-                    {
-                        if (entry.Value.SolarSystemID2 == id)
-                        {
-                            // use the key instead of AccountID as this should be faster
-                            packet.UserID = entry.Key;
-                            // queue the packet for the user
-                            entry.Value.Socket.Send(packet);
-                        }
-                    }
-                }
-            }
-        }
-
-        private void NotifyByConstellationID(PyPacket packet, PyAddressBroadcast destination)
-        {
-            lock (this.ConnectionManager.Clients)
-            {
-                foreach (PyDataType idData in destination.IDsOfInterest)
-                {
-                    PyInteger id = idData as PyInteger;
-                            
-                    foreach (KeyValuePair<long, ClientConnection> entry in this.ConnectionManager.Clients)
-                    {
-                        if (entry.Value.ConstellationID == id)
-                        {
-                            // use the key instead of AccountID as this should be faster
-                            packet.UserID = entry.Key;
-                            // queue the packet for the user
-                            entry.Value.Socket.Send(packet);
-                        }
-                    }
-                }
-            }
-        }
-
-        private void NotifyByCorporationID(PyPacket packet, PyAddressBroadcast destination)
-        {
-            lock (this.ConnectionManager.Clients)
-            {
-                foreach (PyDataType idData in destination.IDsOfInterest)
-                {
-                    PyInteger id = idData as PyInteger;
-                            
-                    foreach (KeyValuePair<long, ClientConnection> entry in this.ConnectionManager.Clients)
-                    {
-                        if (entry.Value.CorporationID == id)
-                        {
-                            // use the key instead of AccountID as this should be faster
-                            packet.UserID = entry.Key;
-                            // queue the packet for the user
-                            entry.Value.Socket.Send(packet);
-                        }
-                    }
-                }
-            }
-        }
-
-        private void NotifyByRegionID(PyPacket packet, PyAddressBroadcast destination)
-        {
-            lock (this.ConnectionManager.Clients)
-            {
-                foreach (PyDataType idData in destination.IDsOfInterest)
-                {
-                    PyInteger id = idData as PyInteger;
-                            
-                    foreach (KeyValuePair<long, ClientConnection> entry in this.ConnectionManager.Clients)
-                    {
-                        if (entry.Value.RegionID == id)
-                        {
-                            // use the key instead of AccountID as this should be faster
-                            packet.UserID = entry.Key;
-                            // queue the packet for the user
-                            entry.Value.Socket.Send(packet);
-                        }
-                    }
-                }
-            }
-        }
-
-        private void NotifyByCharacterID(PyPacket packet, PyAddressBroadcast destination)
-        {
-            lock (this.ConnectionManager.Clients)
-            {
-                PyList idlist = destination.IDsOfInterest;
-
-                foreach (PyDataType idData in idlist)
-                {
-                    PyInteger id = idData as PyInteger;
-                            
-                    foreach (KeyValuePair<long, ClientConnection> entry in this.ConnectionManager.Clients)
-                    {
-                        if (entry.Value.CharacterID == id)
-                        {
-                            // use the key instead of AccountID as this should be faster
-                            packet.UserID = entry.Key;
-                            // change the ids of interest to hide the character's we've notified
-                            destination.IDsOfInterest = new PyDataType[] {id};
-                            // queue the packet for the user
-                            entry.Value.Socket.Send(packet);
-                        }
-                    }
-                }
-            }
-        }
-
-        private void NotifyByStationID(PyPacket packet, PyAddressBroadcast destination)
-        {
-            lock (this.ConnectionManager.Clients)
-            {
-                PyList idlist = destination.IDsOfInterest;
-
-                foreach (PyDataType idData in idlist)
-                {
-                    PyInteger id = idData as PyInteger;
-                            
-                    foreach (KeyValuePair<long, ClientConnection> entry in this.ConnectionManager.Clients)
-                    {
-                        if (entry.Value.StationID == id)
-                        {
-                            // use the key instead of AccountID as this should be faster
-                            packet.UserID = entry.Key;
-                            // queue the packet for the user
-                            entry.Value.Socket.Send(packet);
-                        }
-                    }
-                }
-            }
-        }
-
-        private void NotifyByAllianceID(PyPacket packet, PyAddressBroadcast destination)
-        {
-            lock (this.ConnectionManager.Clients)
-            {
-                PyList idlist = destination.IDsOfInterest;
-
-                foreach (PyDataType idData in idlist)
-                {
-                    PyInteger id = idData as PyInteger;
-                            
-                    foreach (KeyValuePair<long, ClientConnection> entry in this.ConnectionManager.Clients)
-                    {
-                        if (entry.Value.AllianceID == id)
-                        {
-                            // use the key instead of AccountID as this should be faster
-                            packet.UserID = entry.Key;
-                            // queue the packet for the user
-                            entry.Value.Socket.Send(packet);
-                        }
-                    }
-                }
-            }
-        }
-
-        private void NotifyByNodeID(PyPacket packet, PyAddressBroadcast destination)
-        {
-            lock (this.ConnectionManager.Nodes)
-            {
-                PyList idlist = destination.IDsOfInterest;
-
-                foreach (PyDataType idData in idlist)
-                {
-                    PyInteger id = idData as PyInteger;
-                            
-                    foreach (KeyValuePair<long, NodeConnection> entry in this.ConnectionManager.Nodes)
-                    {
-                        if (entry.Value.NodeID == id)
-                        {
-                            // use the key instead of AccountID as this should be faster
-                            packet.UserID = entry.Key;
-                            // queue the packet for the user
-                            entry.Value.Socket.Send(packet);
-                        }
-                    }
-                }
-            }
-        }
         
         private void HandleNotification(PyPacket packet)
         {
@@ -278,33 +92,30 @@ namespace ClusterController
             switch (destination.IDType)
             {
                 case "solarsystemid2":
-                    this.NotifyBySolarSystemID2(packet, destination);
+                    this.ConnectionManager.NotifyBySolarSystemID2(packet, destination);
                     break;
-                
                 case "constellationid":
-                    this.NotifyByConstellationID(packet, destination);
+                    this.ConnectionManager.NotifyByConstellationID(packet, destination);
                     break;
-                
                 case "corpid":
-                    this.NotifyByCorporationID(packet, destination);
+                    this.ConnectionManager.NotifyByCorporationID(packet, destination);
                     break;
-                
                 case "regionid":
-                    this.NotifyByRegionID(packet, destination);
+                    this.ConnectionManager.NotifyByRegionID(packet, destination);
                     break;
                 case "charid":
-                    this.NotifyByCharacterID(packet, destination);
+                    this.ConnectionManager.NotifyByCharacterID(packet, destination);
                     break;
                 case "stationid":
-                    this.NotifyByStationID(packet, destination);
+                    this.ConnectionManager.NotifyByStationID(packet, destination);
                     break;
                 case "allianceid":
-                    this.NotifyByAllianceID(packet, destination);
+                    this.ConnectionManager.NotifyByAllianceID(packet, destination);
+                    break;
+                case "nodeid":
+                    this.ConnectionManager.NotifyByNodeID(packet, destination);
                     break;
                 // TODO: IMPLEMENT OTHER NOTIFICATION ID TYPES BASED ON THE CLIENT CODE IF THEY'RE ACTUALLY USEFUL
-                case "nodeid":
-                    this.NotifyByNodeID(packet, destination);
-                    break;
                 default:
                     Log.Error($"Unexpected broadcast with idtype {destination.IDType.Value} and negative userID (autofill by ClusterController)");
                     break;
@@ -376,9 +187,9 @@ namespace ClusterController
             {
                 // relay packet if needed
                 case PyPacket.PacketType.CALL_RSP:
+                case PyPacket.PacketType.CALL_REQ:
                 case PyPacket.PacketType.ERRORRESPONSE:
                 case PyPacket.PacketType.PING_RSP:
-                case PyPacket.PacketType.CALL_REQ:
                     this.RelayPacket(packet);
                     break;
                 case PyPacket.PacketType.SESSIONCHANGENOTIFICATION:

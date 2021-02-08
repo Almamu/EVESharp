@@ -148,7 +148,7 @@ namespace ClusterController
         protected override void OnConnectionLost()
         {
             // remove the user from the correct lists
-            if (this.Session.ContainsKey("userid") == false)
+            if (this.AccountID == 0)
             {
                 this.ConnectionManager.RemoveUnauthenticatedClientConnection(this);                
             }
@@ -431,10 +431,9 @@ namespace ClusterController
                 return;
 
             PyDataType client = SetSessionChangeDestination(packet);
-            PyDataType node = SetSessionChangeDestination(packet, NodeID);
 
             this.Socket.Send(client);
-            this.ConnectionManager.NotifyNode(NodeID, node);
+            this.ConnectionManager.NotifyAllNodes(packet);
         }
 
         public PyPacket CreateEmptySessionChange()
@@ -446,12 +445,6 @@ namespace ClusterController
             if (scn.changes.Length == 0)
                 // Nothing to do
                 return null;
-
-            Dictionary<long, NodeConnection> nodes = this.ConnectionManager.Nodes;
-
-            // Add all the nodeIDs
-            foreach (KeyValuePair<long, NodeConnection> node in nodes)
-                scn.nodesOfInterest.Add(node.Key);
 
             PyPacket packet = new PyPacket(PyPacket.PacketType.SESSIONCHANGENOTIFICATION);
 
