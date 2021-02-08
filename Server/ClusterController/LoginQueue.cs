@@ -25,12 +25,12 @@
 using System;
 using System.Collections.Generic;
 using System.Threading;
-using ClusterControler.Configuration;
-using ClusterControler.Database;
+using ClusterController.Configuration;
+using ClusterController.Database;
 using Common.Logging;
 using Common.Packets;
 
-namespace ClusterControler
+namespace ClusterController
 {
     public class LoginQueue
     {
@@ -72,7 +72,7 @@ namespace ClusterControler
                     this.AccountDB.CreateAccount(entry.Request.user_name, entry.Request.user_password, (ulong) this.Configuration.Role);                    
                 }
 
-            if ((this.AccountDB.LoginPlayer(entry.Request.user_name, entry.Request.user_password, ref accountID, ref banned, ref role) == false) || (banned == true))
+            if (this.AccountDB.LoginPlayer(entry.Request.user_name, entry.Request.user_password, ref accountID, ref banned, ref role) == false || banned == true)
             {
                 Log.Trace(": Rejected by database");
 

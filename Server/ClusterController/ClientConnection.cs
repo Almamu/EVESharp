@@ -1,17 +1,18 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using ClusterControler.Database;
+using ClusterController.Database;
 using Common.Constants;
 using Common.Database;
 using Common.Game;
 using Common.Logging;
 using Common.Network;
 using Common.Packets;
+using MySql.Data.MySqlClient.Authentication;
 using PythonTypes.Types.Network;
 using PythonTypes.Types.Primitives;
 
-namespace ClusterControler
+namespace ClusterController
 {
     public class ClientConnection : Connection
     {
@@ -19,12 +20,110 @@ namespace ClusterControler
         public int NodeID { get; private set; }
         public Session Session { get; }
         private GeneralDB GeneralDB { get; }
-        public long AccountID => this.Session["userid"] as PyInteger;
-        public int SolarSystemID2 => this.Session["solarsystemid2"] as PyInteger;
-        public int ConstellationID => this.Session["constellationid"] as PyInteger;
-        public int CorporationID => this.Session["corpid"] as PyInteger;
-        public int RegionID => this.Session["regionid"] as PyInteger;
-        public int CharacterID => this.Session["charid"] as PyInteger;
+
+        public long AccountID
+        {
+            get
+            {
+                PyDataType userid = this.Session["userid"];
+
+                if (userid is PyInteger useridInt)
+                    return useridInt;
+
+                return 0;
+            }
+        }
+
+        public int SolarSystemID2
+        {
+            get
+            {
+                PyDataType solarsystemid2 = this.Session["solarsystemid2"];
+
+                if (solarsystemid2 is PyInteger solarsystemid2Int)
+                    return solarsystemid2Int;
+
+                return 0;
+            }
+        }
+
+        public int ConstellationID
+        {
+            get
+            {
+                PyDataType constellationid = this.Session["constellationid"];
+
+                if (constellationid is PyInteger constellationidInt)
+                    return constellationidInt;
+
+                return 0;
+            }
+        }
+
+        public int CorporationID
+        {
+            get
+            {
+                PyDataType corpid = this.Session["corpid"];
+
+                if (corpid is PyInteger corpidInt)
+                    return corpidInt;
+
+                return 0;
+            }
+        }
+
+        public int RegionID
+        {
+            get
+            {
+                PyDataType regionid = this.Session["regionid"];
+
+                if (regionid is PyInteger regionidInt)
+                    return regionidInt;
+
+                return 0;
+            }
+        }
+
+        public int CharacterID
+        {
+            get
+            {
+                PyDataType charid = this.Session["charid"];
+
+                if (charid is PyInteger charidInt)
+                    return charidInt;
+
+                return 0;
+            }
+        }
+
+        public int StationID
+        {
+            get
+            {
+                PyDataType stationid = this.Session["stationid"];
+
+                if (stationid is PyInteger stationidInt)
+                    return stationidInt;
+
+                return 0;
+            }
+        }
+
+        public int AllianceID
+        {
+            get
+            {
+                PyDataType allianceid = this.Session["allianceid"];
+
+                if (allianceid is PyInteger allianceidInt)
+                    return allianceidInt;
+
+                return 0;
+            }
+        }
         
         public ClientConnection(EVEClientSocket socket, ConnectionManager connectionManager, GeneralDB generalDB, Logger logger)
             : base(socket, connectionManager)

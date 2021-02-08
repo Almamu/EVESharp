@@ -26,7 +26,7 @@ using System.Collections.Generic;
 using Common.Database;
 using MySql.Data.MySqlClient;
 
-namespace ClusterControler.Database
+namespace ClusterController.Database
 {
     public class AccountDB : DatabaseAccessor
     {

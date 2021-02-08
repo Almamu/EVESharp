@@ -29,7 +29,7 @@ using Common.Logging;
 using MySql.Data.MySqlClient;
 using PythonTypes.Types.Primitives;
 
-namespace ClusterControler.Database
+namespace ClusterController.Database
 {
     public class GeneralDB : DatabaseAccessor
     {

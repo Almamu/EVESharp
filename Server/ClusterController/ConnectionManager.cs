@@ -25,7 +25,7 @@
 using System;
 using System.Collections.Generic;
 using System.Net.Sockets;
-using ClusterControler.Database;
+using ClusterController.Database;
 using Common.Constants;
 using Common.Database;
 using Common.Logging;
@@ -33,25 +33,25 @@ using Common.Network;
 using MySqlX.XDevAPI;
 using PythonTypes.Types.Primitives;
 
-namespace ClusterControler
+namespace ClusterController
 {
     public class ConnectionManager
     {
+        private const int MAX_NODE_ID = 0xFFFF;
+        
         public LoginQueue LoginQueue { get; }
         private GeneralDB GeneralDB { get; }
         public int ClientsCount => Clients.Count;
         public int NodesCount => Nodes.Count;
-        public Dictionary<long, NodeConnection> Nodes => this.mNodeConnections;
-        public Dictionary<long, ClientConnection> Clients => this.mClientConnections;
+        public Dictionary<long, NodeConnection> Nodes { get; } = new Dictionary<long, NodeConnection>();
+        public Dictionary<long, ClientConnection> Clients { get; } = new Dictionary<long, ClientConnection>();
+        public List<ClientConnection> UnauthenticatedClientConnections { get; } = new List<ClientConnection>();
+
+        public List<UnauthenticatedConnection> UnauthenticatedConnections { get; } = new List<UnauthenticatedConnection>();
 
         private Channel Log { get; set; }
 
         private long mLastNodeID = 0;
-
-        private readonly List<UnauthenticatedConnection> mUnauthenticatedConnections = new List<UnauthenticatedConnection>();
-        private readonly List<ClientConnection> mUnauthenticatedClientConnections = new List<ClientConnection>();
-        private readonly Dictionary<long, ClientConnection> mClientConnections = new Dictionary<long, ClientConnection>();
-        private readonly Dictionary<long, NodeConnection> mNodeConnections = new Dictionary<long, NodeConnection>();
 
         public ConnectionManager(LoginQueue loginQueue, GeneralDB generalDB, Logger logger)
         {
@@ -62,102 +62,129 @@ namespace ClusterControler
 
         public void AddUnauthenticatedConnection(EVEClientSocket socket)
         {
-            this.mUnauthenticatedConnections.Add(
-                new UnauthenticatedConnection(socket, this, Log.Logger)
-            );
+            lock (this.UnauthenticatedConnections)
+                this.UnauthenticatedConnections.Add(
+                    new UnauthenticatedConnection(socket, this, Log.Logger)
+                );
         }
 
         public void RemoveUnauthenticatedConnection(UnauthenticatedConnection connection)
         {
-            this.mUnauthenticatedConnections.Remove(connection);
+            lock (this.UnauthenticatedConnections)
+                this.UnauthenticatedConnections.Remove(connection);
         }
 
         public void AddUnauthenticatedClientConnection(EVEClientSocket socket)
         {
-            this.mUnauthenticatedClientConnections.Add(new ClientConnection(socket, this, this.GeneralDB, Log.Logger));
+            lock (this.UnauthenticatedClientConnections)
+                this.UnauthenticatedClientConnections.Add(new ClientConnection(socket, this, this.GeneralDB, Log.Logger));
         }
 
         public void RemoveUnauthenticatedClientConnection(ClientConnection connection)
         {
-            this.mUnauthenticatedClientConnections.Remove(connection);
+            lock (this.UnauthenticatedClientConnections)
+                this.UnauthenticatedClientConnections.Remove(connection);
         }
 
         public void AddAuthenticatedClientConnection(ClientConnection connection)
         {
-            // if there's already an user connected with this account inmediately log it off
-            if (this.mClientConnections.ContainsKey(connection.AccountID) == true)
+            lock (this.Clients)
             {
-                ClientConnection con = this.mClientConnections[connection.AccountID];
-
-                this.mClientConnections.Remove(connection.AccountID);
-
-                try
+                // if there's already an user connected with this account inmediately log it off
+                if (this.Clients.ContainsKey(connection.AccountID) == true)
                 {
-                    // try to disconnect the user
-                    // there might be situations where the client is already disconnected
-                    // and the connection is just hung in there
-                    // so exceptions from this can be ignored
-                    con.Socket.ForcefullyDisconnect();
+                    ClientConnection con = this.Clients[connection.AccountID];
+
+                    this.Clients.Remove(connection.AccountID);
+
+                    try
+                    {
+                        // try to disconnect the user
+                        // there might be situations where the client is already disconnected
+                        // and the connection is just hung in there
+                        // so exceptions from this can be ignored
+                        con.Socket.ForcefullyDisconnect();
+                    }
+                    catch (Exception)
+                    {
+                        // ignored
+                    }
                 }
-                catch (Exception)
-                {
-                    // ignored
-                }
+
+                this.Clients.Add(connection.AccountID, connection);
             }
-
-            this.mClientConnections.Add(connection.AccountID, connection);
         }
 
         public void RemoveAuthenticatedClientConnection(ClientConnection connection)
         {
-            // before removing it, ensure that the connection wasn't replaced by anyone already
-            if (this.mClientConnections[connection.AccountID] == connection)
-                this.mClientConnections.Remove(connection.AccountID);
+            lock (this.Clients)
+            {
+                // before removing it, ensure that the connection wasn't replaced by anyone already
+                if (this.Clients[connection.AccountID] == connection)
+                    this.Clients.Remove(connection.AccountID);
+            }
         }
 
         public void AddNodeConnection(EVEClientSocket socket)
         {
-            if (this.mNodeConnections.Count >= 0xFFFF)
-                throw new Exception("Cannot accept more nodes in the connection manager, reached maximum of 0xFFFF");
-
-            if (this.mNodeConnections.ContainsKey(Network.PROXY_NODE_ID) == false)
-                this.mNodeConnections.Add(Network.PROXY_NODE_ID, new NodeConnection(socket, this, Log.Logger, Network.PROXY_NODE_ID));
-            else
+            lock (this.Nodes)
             {
-                // find an unused nodeID
-                while (this.mNodeConnections.ContainsKey(this.mLastNodeID) == true)
-                {
-                    this.mLastNodeID++;
-                    // ensure that we do not exceed the limit
-                    if (this.mLastNodeID > 0xFFFF)
-                        this.mLastNodeID = 0;
-                }
+                if (this.Nodes.Count >= MAX_NODE_ID)
+                    throw new Exception($"Cannot accept more nodes in the connection manager, reached maximum of {MAX_NODE_ID}");
 
-                // finally assign it to the new node
-                this.mNodeConnections.Add(this.mLastNodeID, new NodeConnection(socket, this, Log.Logger, this.mLastNodeID));
+                if (this.Nodes.ContainsKey(Network.PROXY_NODE_ID) == false)
+                    this.Nodes.Add(Network.PROXY_NODE_ID, new NodeConnection(socket, this, Log.Logger, Network.PROXY_NODE_ID));
+                else
+                {
+                    int iterations = 0;
+                    
+                    // find an unused nodeID
+                    while (this.Nodes.ContainsKey(this.mLastNodeID) == true)
+                    {
+                        this.mLastNodeID++;
+                        // ensure that we do not exceed the limit
+                        if (this.mLastNodeID > MAX_NODE_ID)
+                            this.mLastNodeID = 0;
+
+                        iterations++;
+
+                        if (iterations > MAX_NODE_ID)
+                            throw new Exception("Cannot find a free node slot to assign to this node");
+                    }
+
+                    // finally assign it to the new node
+                    this.Nodes.Add(this.mLastNodeID, new NodeConnection(socket, this, Log.Logger, this.mLastNodeID));
+                }
             }
         }
 
         public void RemoveNodeConnection(NodeConnection connection)
         {
             // TODO: CHECK FOR PROXY NODE BEING DELETED AND TRY TO ASSIGN ANY OTHER
-            this.mNodeConnections.Remove(connection.NodeID);
+            lock (this.Nodes)
+                this.Nodes.Remove(connection.NodeID);
         }
 
         public void NotifyClient(int clientID, PyDataType packet)
         {
-            if (this.Clients.ContainsKey(clientID) == false)
-                throw new Exception($"Trying to notify a not connected client {clientID}");
+            lock (this.Clients)
+            {
+                if (this.Clients.ContainsKey(clientID) == false)
+                    throw new Exception($"Trying to notify a not connected client {clientID}");
 
-            this.Clients[clientID].Socket.Send(packet);
+                this.Clients[clientID].Socket.Send(packet);
+            }
         }
 
         public void NotifyNode(int nodeID, PyDataType packet)
         {
-            if (this.Nodes.ContainsKey(nodeID) == false)
-                throw new Exception($"Trying to notify a non-existant node {nodeID}");
+            lock (this.Nodes)
+            {
+                if (this.Nodes.ContainsKey(nodeID) == false)
+                    throw new Exception($"Trying to notify a non-existant node {nodeID}");
 
-            this.Nodes[nodeID].Socket.Send(packet);
+                this.Nodes[nodeID].Socket.Send(packet);
+            }
         }
     }
 }

@@ -3,7 +3,7 @@ using Common.Network;
 using Common.Packets;
 using PythonTypes.Types.Primitives;
 
-namespace ClusterControler
+namespace ClusterController
 {
     public abstract class Connection
     {

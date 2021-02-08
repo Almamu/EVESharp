@@ -2,7 +2,7 @@ using System;
 using Common.Constants;
 using IniParser.Model;
 
-namespace ClusterControler.Configuration
+namespace ClusterController.Configuration
 {
     public class Authentication
     {

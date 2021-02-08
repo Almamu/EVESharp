@@ -22,7 +22,7 @@
     Creator: Almamu
 */
 
-namespace ClusterControler
+namespace ClusterController
 {
     public enum LoginStatus
     {

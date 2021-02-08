@@ -24,8 +24,8 @@
 
 using System;
 using System.Threading;
-using ClusterControler.Database;
 using ClusterController.Configuration;
+using ClusterController.Database;
 using Common.Constants;
 using Common.Database;
 using Common.Logging;
@@ -34,7 +34,7 @@ using Common.Network;
 using Configuration;
 using SimpleInjector;
 
-namespace ClusterControler
+namespace ClusterController
 {
     class Program
     {

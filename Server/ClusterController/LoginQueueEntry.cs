@@ -24,7 +24,7 @@
 
 using Common.Packets;
 
-namespace ClusterControler
+namespace ClusterController
 {
     public class LoginQueueEntry
     {

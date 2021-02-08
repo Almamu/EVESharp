@@ -1,4 +1,3 @@
-using ClusterControler.Configuration;
 using ClusterController.Configuration;
 using Common.Configuration;
 using IniParser;
