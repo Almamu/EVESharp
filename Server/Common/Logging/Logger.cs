@@ -31,14 +31,17 @@ namespace Common.Logging
 
         public Channel CreateLogChannel(string name, bool suppress = false)
         {
-            if (this.mChannels.ContainsKey(name) == true)
-                return this.mChannels[name];
+            lock (this.mChannels)
+            {
+                if (this.mChannels.ContainsKey(name) == true)
+                    return this.mChannels[name];
 
-            Channel channel = new Channel(name, this, suppress);
+                Channel channel = new Channel(name, this, suppress);
 
-            this.mChannels.Add(name, channel);
+                this.mChannels.Add(name, channel);
 
-            return channel;
+                return channel;
+            }
         }
 
         public void Write(MessageType messageType, string message, Channel channel)
