@@ -349,8 +349,14 @@ namespace Node.Services.Characters
             Character character = this.ItemManager.LoadItem(characterID) as Character;
 
             if (character.AccountID != call.Client.AccountID)
-                throw new CustomError("The selected character does not belong to this account, aborting...");
-            
+            {
+                // unload character
+                this.ItemManager.UnloadItem(character);
+                
+                // throw proper error
+                throw new CustomError("The selected character does not belong to this account, aborting...");                
+            }
+
             // update the session data for this client
             call.Client.CharacterID = character.ID;
             call.Client.CorporationID = character.CorporationID;
@@ -383,11 +389,12 @@ namespace Node.Services.Characters
             // the online status must be persisted after update, so force the entity to be updated in the database
             character.Persist();
             
+            // unload the character, let the session change handler handle everything
             // TODO: CHECK IF THE PLAYER IS GOING TO SPAWN IN THIS NODE AND IF IT IS NOT, UNLOAD IT FROM THE ITEM MANAGER
-            
-            // TODO: SEND CHARACTER CONNECTION NOTIFICATION
-            // TODO: send "OnContactLoggedOn" to all the friends in the list as long as they're online
-            // TODO: send "OnCharNowInStation" to all the characters in this station
+            List<int> onlineFriends = this.DB.GetOnlineFriendList(character);
+
+            foreach (int friendID in onlineFriends)
+                call.Client.ClusterConnection.SendNotification("OnContactLoggedOn", "charid", friendID, new PyTuple(1) { [0] = character.ID });
 
             return null;
         }

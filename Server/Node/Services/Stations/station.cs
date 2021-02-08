@@ -39,16 +39,20 @@ namespace Node.Services.Stations
             if (call.Client.StationID == null)
                 throw new CanOnlyDoInStations();
 
-            Station station = this.ItemManager.Stations[(int) call.Client.StationID];
+            Station station = this.ItemManager.GetStation((int) call.Client.StationID);
             PyList result = new PyList();
             
             foreach (KeyValuePair<int, Character> pair in station.Guests)
             {
                 // TODO: UPDATE WHEN FACTION WARS ARE SUPPORTED
-                result.Add(new PyTuple(new PyDataType[]
-                {
-                    pair.Value.CharacterID, pair.Value.Corporation.ID, pair.Value.Corporation.AllianceID, 0 // facWarID
-                }));
+                result.Add(new PyTuple(4)
+                    {
+                        [0] = pair.Value.CharacterID,
+                        [1] = pair.Value.Corporation.ID,
+                        [2] = pair.Value.Corporation.AllianceID,
+                        [3] = 0 // facWarID
+                    }
+                );
             }
 
             return result;

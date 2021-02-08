@@ -137,7 +137,7 @@ namespace Node.Inventory
         public Station GetStation(int stationID)
         {
             if (ItemManager.IsStationID(stationID) == false)
-                throw new ArgumentOutOfRangeException($"The id {stationID}does not belong to a station");
+                throw new ArgumentOutOfRangeException($"The id {stationID} does not belong to a station");
 
             return this.GetItem(stationID) as Station;
         }

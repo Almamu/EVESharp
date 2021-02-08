@@ -16,13 +16,6 @@ namespace Node.Services.Chat
 {
     public class LSC : Service
     {
-        private const string CHANNEL_TYPE_NORMAL = "normal";
-        private const string CHANNEL_TYPE_GLOBAL = "global";
-        private const string CHANNEL_TYPE_SOLARSYSTEMID2 = "solarsystemid2";
-        private const string CHANNEL_TYPE_REGIONID = "regionid";
-        private const string CHANNEL_TYPE_CORPID = "corpid";
-        private const string CHANNEL_TYPE_CONSTELLATIONID = "constellationid";
-        
         private MessagesDB MessagesDB { get; }
         private ChatDB DB { get; }
         private CharacterDB CharacterDB { get; }
@@ -70,7 +63,7 @@ namespace Node.Services.Chat
                     if (channelID > ChatDB.MIN_CHANNEL_ENTITY_ID && channelID < ChatDB.MAX_CHANNEL_ENTITY_ID)
                         entityID = channelID;
                     // get the full channel identifier
-                    channelType = CHANNEL_TYPE_NORMAL;
+                    channelType = ChatDB.CHANNEL_TYPE_NORMAL;
                     break;
                 case PyTuple tuple:
                     this.ParseTupleChannelIdentifier(tuple, out channelID, out channelType, out entityID);
@@ -94,7 +87,7 @@ namespace Node.Services.Chat
 
         public PyDataType GetChannels(CallInformation call)
         {
-            return this.DB.GetChannelsForCharacter(call.Client.EnsureCharacterIsSelected());
+            return this.DB.GetChannelsForCharacter(call.Client.EnsureCharacterIsSelected(), call.Client.CorporationID);
         }
 
         public PyDataType GetChannels(PyInteger reload, CallInformation call)
@@ -104,7 +97,7 @@ namespace Node.Services.Chat
 
         public PyDataType GetMembers(PyDataType channel, CallInformation call)
         {
-            call.Client.EnsureCharacterIsSelected();
+            int callerCharacterID = call.Client.EnsureCharacterIsSelected();
 
             int channelID;
             string channelType;
@@ -119,7 +112,7 @@ namespace Node.Services.Chat
                 return null;
             }
             
-            return this.DB.GetChannelMembers(channelID);
+            return this.DB.GetChannelMembers(channelID, callerCharacterID);
         }
 
         private static PyDataType GenerateLSCNotification(string type, PyDataType channel, PyTuple args, Client client)
@@ -161,10 +154,10 @@ namespace Node.Services.Chat
             Rowset mods = null;
             Rowset chars = null;
             
-            if (typeValue != CHANNEL_TYPE_REGIONID && typeValue != CHANNEL_TYPE_CONSTELLATIONID && typeValue != CHANNEL_TYPE_SOLARSYSTEMID2)
+            if (typeValue != ChatDB.CHANNEL_TYPE_REGIONID && typeValue != ChatDB.CHANNEL_TYPE_CONSTELLATIONID && typeValue != ChatDB.CHANNEL_TYPE_SOLARSYSTEMID2)
             {
                 mods = this.DB.GetChannelMods(actualChannelID);
-                chars = this.DB.GetChannelMembers(actualChannelID);
+                chars = this.DB.GetChannelMembers(actualChannelID, callerCharacterID);
                 
                 // the extra field is at the end
                 int extraIndex = chars.Header.Count - 1;
@@ -220,7 +213,7 @@ namespace Node.Services.Chat
                     throw new LSCCannotJoin("The specified channel cannot be found: " + PrettyPrinter.FromDataType(channel));
                 }
 
-                if (channelType == CHANNEL_TYPE_NORMAL)
+                if (channelType == ChatDB.CHANNEL_TYPE_NORMAL)
                     channelIDExtended = channelID;
                 else
                 {
@@ -236,12 +229,12 @@ namespace Node.Services.Chat
                 
                 // send notifications only on channels that should be receiving notifications
                 // we don't want people in local to know about players unless they talk there
-                if (channelType != CHANNEL_TYPE_REGIONID && channelType != CHANNEL_TYPE_CONSTELLATIONID && channelType != CHANNEL_TYPE_SOLARSYSTEMID2)
+                if (channelType != ChatDB.CHANNEL_TYPE_REGIONID && channelType != ChatDB.CHANNEL_TYPE_CONSTELLATIONID && channelType != ChatDB.CHANNEL_TYPE_SOLARSYSTEMID2)
                 {
                     PyDataType notification =
                         GenerateLSCNotification("JoinChannel", channelIDExtended, new PyTuple(0), call.Client);
 
-                    if (channelType == CHANNEL_TYPE_NORMAL)
+                    if (channelType == ChatDB.CHANNEL_TYPE_NORMAL)
                     {
                         if (channelID < ChatDB.MIN_CHANNEL_ENTITY_ID)
                         {
@@ -272,7 +265,7 @@ namespace Node.Services.Chat
                     // most of the time this indicates a destroyed channel
                     // so build a destroy notification and let the client know this channel
                     // can be removed from it's lists
-                    if (channelType == CHANNEL_TYPE_NORMAL && channelID != entityID)
+                    if (channelType == ChatDB.CHANNEL_TYPE_NORMAL && channelID != entityID)
                     {
                         // notify everyone in the channel only when it should
                         PyDataType notification =
@@ -317,14 +310,14 @@ namespace Node.Services.Chat
             }
 
             // ensure the player is allowed to chat in there
-            if (channelType == CHANNEL_TYPE_NORMAL && this.DB.IsPlayerAllowedToChat(channelID, callerCharacterID) == false)
+            if (channelType == ChatDB.CHANNEL_TYPE_NORMAL && this.DB.IsPlayerAllowedToChat(channelID, callerCharacterID) == false)
                 throw new LSCCannotSendMessage("Insufficient permissions");
-            if (channelType != CHANNEL_TYPE_NORMAL && this.DB.IsPlayerAllowedToChatOnRelatedEntity((int) entityID, callerCharacterID) == false)
+            if (channelType != ChatDB.CHANNEL_TYPE_NORMAL && this.DB.IsPlayerAllowedToChatOnRelatedEntity((int) entityID, callerCharacterID) == false)
                 throw new LSCCannotSendMessage("Insufficient permissions");
 
             PyTuple notificationBody = new PyTuple(1) {[0] = message};
             
-            if (channelType == CHANNEL_TYPE_NORMAL)
+            if (channelType == ChatDB.CHANNEL_TYPE_NORMAL)
             {
                 PyDataType notification =
                     GenerateLSCNotification("SendMessage", channelID, notificationBody, call.Client);
@@ -411,13 +404,13 @@ namespace Node.Services.Chat
             if (this.DB.IsCharacterMemberOfChannel(channelID, callerCharacterID) == false)
                 return null;
             
-            if (channelType != CHANNEL_TYPE_CORPID && channelType != CHANNEL_TYPE_SOLARSYSTEMID2 && announce == 1)
+            if (channelType != ChatDB.CHANNEL_TYPE_CORPID && channelType != ChatDB.CHANNEL_TYPE_SOLARSYSTEMID2 && announce == 1)
             {
                 // notify everyone in the channel only when it should
                 PyDataType notification =
                     GenerateLSCNotification("LeaveChannel", channel, new PyTuple(0), call.Client);
                 
-                if (channelType != CHANNEL_TYPE_NORMAL)
+                if (channelType != ChatDB.CHANNEL_TYPE_NORMAL)
                     call.Client.ClusterConnection.SendNotification("OnLSC", channelType, new PyDataType [] { channel }, notification);
                 else
                 {
@@ -450,7 +443,7 @@ namespace Node.Services.Chat
             this.DB.JoinChannel(channelID, callerCharacterID, ChatDB.CHATROLE_CREATOR);
             
             Rowset mods = this.DB.GetChannelMods(channelID);
-            Rowset chars = this.DB.GetChannelMembers(channelID);
+            Rowset chars = this.DB.GetChannelMembers(channelID, callerCharacterID);
                         
             // the extra field is at the end
             int extraIndex = chars.Header.Count - 1;
@@ -522,6 +515,9 @@ namespace Node.Services.Chat
 
             call.Client.ClusterConnection.SendNotification("OnLSC", "charid", characters, notification);
             
+            // TODO: CHECK IF THIS IS A CHARACTER'S ADDRESS BOOK AND CHECK FOR OTHER CHARACTER'S ADDRESSBOOK STATUS
+            // TODO: TO ENSURE THEY DON'T HAVE US BLOCKED
+            
             return null;
         }
 
@@ -562,7 +558,10 @@ namespace Node.Services.Chat
                         }
                     )
                 );
-            }
+            } 
+            
+            // return an empty response to the original calling client, this should get mechanism going for the JoinChannel notification
+            call.OriginalCall.Client.SendCallResponse(call.OriginalCall, null);
             
             // character has accepted, notify all users of the channel
             string channelType = this.DB.GetChannelType(call.ChannelID);
@@ -572,17 +571,14 @@ namespace Node.Services.Chat
 
             // you should only be able to invite to global channels as of now
             // TODO: CORP CHANNELS SHOULD BE SUPPORTED TOO
-            if (channelType == CHANNEL_TYPE_NORMAL)
+            if (channelType == ChatDB.CHANNEL_TYPE_NORMAL)
             {
                 // get users in the channel that are online now
                 PyList characters = this.DB.GetOnlineCharsOnChannel(call.ChannelID);
 
                 // notify them all
                 call.OriginalCall.Client.ClusterConnection.SendNotification("OnLSC", "charid", characters, notification);  
-            } 
-            
-            // return an empty response to the original calling client
-            call.OriginalCall.Client.SendCallResponse(call.OriginalCall, null);
+            }
         }
 
         public void InviteTimeoutCallback(RemoteCall callInfo)

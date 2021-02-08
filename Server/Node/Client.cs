@@ -99,6 +99,20 @@ namespace Node
                         Station station = this.ItemFactory.ItemManager.GetStation (intNewStationID);
 
                         station.Guests[characterID] = this.ItemFactory.ItemManager.LoadItem(characterID) as Character;
+
+                        // notify station guests
+                        this.ClusterConnection.SendNotification("OnCharNowInStation", "stationid", intNewStationID,
+                            new PyTuple(1)
+                            {
+                                [0] = new PyTuple(4)
+                                {
+                                    [0] = characterID,
+                                    [1] = this.CorporationID,
+                                    [2] = this.AllianceID,
+                                    [3] = this.WarFactionID
+                                }
+                            }
+                        );
                     }
 
                     if (intOldStationID != 0)
@@ -106,6 +120,20 @@ namespace Node
                         Station station = this.ItemFactory.ItemManager.GetStation(intOldStationID);
 
                         station.Guests.Remove(characterID);
+
+                        // notify station guests
+                        this.ClusterConnection.SendNotification("OnCharNoLongerInStation", "stationid", intOldStationID,
+                            new PyTuple(1)
+                            {
+                                [0] = new PyTuple(4)
+                                {
+                                    [0] = characterID,
+                                    [1] = this.CorporationID,
+                                    [2] = this.AllianceID,
+                                    [3] = this.WarFactionID
+                                }
+                            }
+                        );
                     }
                 }
             }

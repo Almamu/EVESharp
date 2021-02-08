@@ -1,3 +1,4 @@
+using System;
 using Common.Services;
 using Node.Database;
 using Node.Inventory;
@@ -9,26 +10,36 @@ namespace Node.Services.Characters
 {
     public class onlineStatus : Service
     {
-        private CharacterDB DB { get; }
+        private ChatDB ChatDB { get; }
+        private CharacterDB CharacterDB { get; }
         private ItemManager ItemManager { get; }
         
-        public onlineStatus(CharacterDB db, ItemManager itemManager)
+        public onlineStatus(ChatDB chatDB, CharacterDB characterDB, ItemManager itemManager)
         {
-            this.DB = db;
+            this.ChatDB = chatDB;
+            this.CharacterDB = characterDB;
             this.ItemManager = itemManager;
         }
 
         public PyDataType GetInitialState(CallInformation call)
         {
-            Character character = this.ItemManager.LoadItem(call.Client.EnsureCharacterIsSelected()) as Character;
-            
-            return this.DB.GetFriendsList(character);
+            // TODO: CHECK IF THE OTHER CHARACTER HAS US IN THEIR ADDRESSBOOK
+            return this.ChatDB.GetAddressBookMembers(call.Client.EnsureCharacterIsSelected());
         }
 
         public PyDataType GetOnlineStatus(PyInteger characterID, CallInformation call)
         {
-            // TODO: PROPERLY IMPLEMENT THIS
-            return false;
+            // TODO: CHECK IF THE OTHER CHARACTER HAS US IN THEIR ADDRESSBOOK?
+            try
+            {
+                Character character = this.ItemManager.GetItem(characterID) as Character;
+
+                return character.Online;
+            }
+            catch (Exception)
+            {
+                return this.CharacterDB.IsOnline(characterID);
+            }
         }
     }
 }

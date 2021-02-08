@@ -10,6 +10,13 @@ namespace Node.Database
 {
     public class ChatDB : DatabaseAccessor
     {
+        public const string CHANNEL_TYPE_NORMAL = "normal";
+        public const string CHANNEL_TYPE_GLOBAL = "global";
+        public const string CHANNEL_TYPE_SOLARSYSTEMID2 = "solarsystemid2";
+        public const string CHANNEL_TYPE_REGIONID = "regionid";
+        public const string CHANNEL_TYPE_CORPID = "corpid";
+        public const string CHANNEL_TYPE_CONSTELLATIONID = "constellationid";
+        
         public const int MIN_CHANNEL_ENTITY_ID = 1000;
         public const int MAX_CHANNEL_ENTITY_ID = 2100000000;
         
@@ -29,7 +36,7 @@ namespace Node.Database
         public void GrantAccessToStandardChannels(int characterID)
         {
             Database.PrepareQuery(
-                "INSERT INTO lscChannelPermissions(channelID, accessor, mode) SELECT channelID, @characterID AS accessor, @mode AS `mode` FROM lscGeneralChannels WHERE channelID < 1000",
+                $"INSERT INTO lscChannelPermissions(channelID, accessor, mode) SELECT channelID, @characterID AS accessor, @mode AS `mode` FROM lscGeneralChannels WHERE channelID < {MIN_CHANNEL_ENTITY_ID}",
                 new Dictionary<string, object>()
                 {
                     {"@characterID", characterID},
@@ -163,7 +170,7 @@ namespace Node.Database
             );
         }
 
-        public Rowset GetChannelsForCharacter(int characterID)
+        public Rowset GetChannelsForCharacter(int characterID, int corporationID)
         {
             return Database.PrepareRowsetQuery(
                 "SELECT" + 
@@ -178,10 +185,11 @@ namespace Node.Database
                 " mailingList, cspa, temporary, 1 AS subscribed, estimatedMemberCount " +
                 " FROM lscGeneralChannels" +
                 " LEFT JOIN lscChannelPermissions ON lscGeneralChannels.channelID = lscChannelPermissions.channelID" +
-                $" WHERE accessor = @characterID AND `mode` > 0 AND lscChannelPermissions.channelID > {MIN_CHANNEL_ENTITY_ID} AND lscChannelPermissions.channelID < {MAX_CHANNEL_ENTITY_ID}",
+                $" WHERE accessor = @characterID AND `mode` > 0 AND lscChannelPermissions.channelID > 0 AND ((lscChannelPermissions.channelID < {MIN_CHANNEL_ENTITY_ID} AND lscChannelPermissions.channelID != @characterID) OR lscChannelPermissions.channelID = @corporationID)",
                 new Dictionary<string, object>()
                 {
-                    {"@characterID", characterID}
+                    {"@characterID", characterID},
+                    {"@corporationID", corporationID}
                 }
             );
         }
@@ -258,15 +266,41 @@ namespace Node.Database
             }
         }
 
-        public Rowset GetChannelMembers(int channelID)
+        public CRowset GetAddressBookMembers(int characterID)
         {
-            return Database.PrepareRowsetQuery(
-                "SELECT accessor AS charID, corporationID AS corpID, allianceID, 0 AS warFactionID, account.role AS role, 0 AS extra FROM lscChannelPermissions LEFT JOIN chrInformation ON accessor = characterID LEFT JOIN corporation USING(corporationID) LEFT JOIN account ON account.accountID = chrInformation.accountID WHERE channelID = @channelID AND account.online = 1",
+            return Database.PrepareCRowsetQuery(
+                "SELECT accessor AS characterID, online FROM lscChannelPermissions, chrInformation WHERE channelID = @characterID AND chrInformation.characterID = lscChannelPermissions.accessor",
                 new Dictionary<string, object>()
                 {
-                    {"@channelID", channelID}
+                    {"@characterID", characterID}
                 }
             );
+        }
+
+        public Rowset GetChannelMembers(int channelID, int characterID)
+        {
+            // TODO: SEEMS THAT CHANNELS ARE USED FOR ADDRESSBOOK TOO?! WTF CCP?! TAKE THAT INTO ACCOUNT
+            if (channelID == characterID)
+            {
+                return Database.PrepareRowsetQuery(
+                    "SELECT accessor AS charID, corporationID AS corpID, allianceID, 0 AS warFactionID, account.role AS role, 0 AS extra FROM lscChannelPermissions LEFT JOIN chrInformation ON accessor = characterID LEFT JOIN corporation USING(corporationID) LEFT JOIN account ON account.accountID = chrInformation.accountID WHERE channelID = @channelID AND accessor != @characterID",
+                    new Dictionary<string, object>()
+                    {
+                        {"@channelID", channelID},
+                        {"@characterID", characterID}
+                    }
+                );
+            }
+            else
+            {
+                return Database.PrepareRowsetQuery(
+                    "SELECT accessor AS charID, corporationID AS corpID, allianceID, 0 AS warFactionID, account.role AS role, 0 AS extra FROM lscChannelPermissions LEFT JOIN chrInformation ON accessor = characterID LEFT JOIN corporation USING(corporationID) LEFT JOIN account ON account.accountID = chrInformation.accountID WHERE channelID = @channelID AND account.online = 1",
+                    new Dictionary<string, object>()
+                    {
+                        {"@channelID", channelID}
+                    }
+                );
+            }
         }
 
         public Rowset GetChannelMods(int channelID)
@@ -392,7 +426,7 @@ namespace Node.Database
         public string GetChannelType(int channelID)
         {
             if (channelID < 0)
-                return "normal";
+                return CHANNEL_TYPE_NORMAL;
             
             MySqlConnection connection = null;
             MySqlDataReader reader = Database.PrepareQuery(ref connection,
@@ -407,7 +441,7 @@ namespace Node.Database
             using (reader)
             {
                 if (reader.Read() == false)
-                    return "normal";
+                    return CHANNEL_TYPE_NORMAL;
 
                 return this.ChannelNameToChannelType(reader.GetString(0));
             }
@@ -447,13 +481,13 @@ namespace Node.Database
         public string ChannelNameToChannelType(string channelName)
         {
             if (channelName == "System Channels\\Corp")
-                return "corpid";
+                return CHANNEL_TYPE_CORPID;
             if (channelName == "System Channels\\Region")
-                return "regionid";
+                return CHANNEL_TYPE_REGIONID;
             if (channelName == "System Channels\\Constellation")
-                return "constellationid";
+                return CHANNEL_TYPE_CONSTELLATIONID;
             if (channelName == "System Channels\\Local")
-                return "solarsystemid2";
+                return CHANNEL_TYPE_SOLARSYSTEMID2;
             if (channelName == "System Channels\\Alliance")
                 return "allianceid";
             if (channelName == "System Channels\\Gang")
@@ -465,9 +499,9 @@ namespace Node.Database
             if (channelName == "System Channels\\War Faction")
                 return "warfactionid";
             if (channelName == "System Channels\\Global")
-                return "global";
+                return CHANNEL_TYPE_GLOBAL;
 
-            return "normal";
+            return CHANNEL_TYPE_NORMAL;
         }
 
         public bool IsCharacterMemberOfChannel(int channelID, int characterID)

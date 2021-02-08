@@ -486,17 +486,48 @@ namespace Node.Database
             );
         }
 
-        public PyDataType GetFriendsList(Character character)
+        public PyDataType IsOnline(int characterID)
         {
-            return Database.PrepareRowsetQuery(
-                "SELECT friendID AS characterID, online" + 
-                " FROM chrFriends, chrInformation" +
-                " WHERE chrFriends.characterID = @characterID AND chrInformation.characterID = chrFriends.friendID",
+            MySqlConnection connection = null;
+            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+                "SELECT online FROM chrInformation WHERE characterID = @characterID",
+                new Dictionary<string, object>()
+                {
+                    {"@characterID", characterID}
+                }
+            );
+            
+            using(connection)
+            using (reader)
+            {
+                if (reader.Read() == false)
+                    return false;
+
+                return reader.GetBoolean(0);
+            }
+        }
+
+        public List<int> GetOnlineFriendList(Character character)
+        {
+            MySqlConnection connection = null;
+            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+                "SELECT accessor AS characterID FROM lscChannelPermissions, chrInformation WHERE lscChannelPermissions.channelID = @characterID AND chrInformation.characterID = lscChannelPermissions.accessor and chrInformation.online = 1",
                 new Dictionary<string, object>()
                 {
                     {"@characterID", character.ID}
                 }
             );
+            
+            using (connection)
+            using (reader)
+            {
+                List<int> result = new List<int>();
+                
+                while(reader.Read() == true)
+                    result.Add(reader.GetInt32(0));
+
+                return result;
+            }
         }
 
         public void UpdateCharacterInformation(Character character)
