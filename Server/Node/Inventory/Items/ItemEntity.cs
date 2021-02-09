@@ -82,7 +82,7 @@ namespace Node.Inventory.Items
 
         public string Name
         {
-            get => mName;
+            get => mName ?? Type.Name;
             set 
             {
                 mName = value;
@@ -189,6 +189,8 @@ namespace Node.Inventory.Items
                 this.Dirty = true;
             }
         }
+
+        public bool HasName => this.mName != null;
         
         public ItemEntity(string entityName, int entityId, ItemType type, int ownerID,
             int locationID, ItemFlags entityFlag, bool entityContraband, bool entitySingleton,

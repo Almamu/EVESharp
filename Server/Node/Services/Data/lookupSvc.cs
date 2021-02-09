@@ -49,5 +49,17 @@ namespace Node.Services.Data
             
             return this.DB.LookupCharacters(criteria, exact);
         }
+
+        public PyDataType LookupStations(PyString criteria, PyDataType exactMatch, CallInformation call)
+        {
+            bool exact = false;
+
+            if (exactMatch is PyBool exactBool)
+                exact = exactBool;
+            else if (exactMatch is PyInteger exactInteger)
+                exact = exactInteger != 0;
+            
+            return this.DB.LookupStations(criteria, exact);
+        }
     }
 }

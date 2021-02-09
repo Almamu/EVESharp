@@ -11,7 +11,6 @@ DROP TABLE IF EXISTS `entity`;
 
 CREATE TABLE `entity` (
   `itemID` int(10) unsigned NOT NULL auto_increment,
-  `itemName` varchar(85) NOT NULL default '',
   `typeID` int(10) unsigned NOT NULL default '0',
   `ownerID` int(10) unsigned NOT NULL default '0',
   `locationID` int(10) unsigned NOT NULL default '0',
@@ -42,59 +41,65 @@ CREATE TABLE `entity_attributes` (
 /**
  * Insert owner for the EVE System
  */
-INSERT INTO entity (itemID, itemName, singleton, quantity)
-  VALUES (0, '(none)', 1, 1);
+INSERT INTO entity (itemID, singleton, quantity)
+  VALUES (0, 1, 1);
+INSERT INTO evenames (itemID, itemName, typeID, groupID, categoryID)
+  VALUES (0, '(none)', 0, 0, 0);
 /*
  * Static record of EVE System
  */
-INSERT INTO entity (itemID, itemName, singleton, quantity)
-  VALUES (1, 'EVE System', 1, 1);
+INSERT INTO entity (itemID, singleton, quantity)
+  VALUES (1, 1, 1);
+INSERT INTO evenames (itemID, itemName, typeID, groupID, categoryID)
+  VALUES (1, 'EVE System', 0, 0, 0);
 /*
  * Static record for Recycler
  */
-INSERT INTO entity (itemID, itemName, singleton, quantity)
-  VALUES (6, 'Recycler', 1, 1);
+INSERT INTO entity (itemID, singleton, quantity)
+  VALUES (6, 1, 1);
+INSERT INTO evenames (itemID, itemName, typeID, groupID, categoryID)
+  VALUES (6, 'Recycler', 0, 0, 0);
 /*
  * Insert factions
  */
-INSERT INTO entity (itemID, itemName, typeID, ownerID, locationID, singleton, quantity)
-  SELECT factionID, factionName, 30, corporationID, solarSystemID, 1, 1
+INSERT INTO entity (itemID, typeID, ownerID, locationID, singleton, quantity)
+  SELECT factionID, 30, corporationID, solarSystemID, 1, 1
     FROM chrFactions;
 /*
  * Insert regions
  */
-INSERT INTO entity (itemID, itemName, typeID, ownerID, locationID, x, y, z, singleton, quantity)
-  SELECT regionID, regionName, 3, 1, 9, x, y, z, 1, 1
+INSERT INTO entity (itemID, typeID, ownerID, locationID, x, y, z, singleton, quantity)
+  SELECT regionID, 3, 1, 9, x, y, z, 1, 1
     FROM mapRegions;
 /*
  * Insert constellations
  */
-INSERT INTO entity (itemID, itemName, typeID, ownerID, locationID, x, y, z, singleton, quantity)
-  SELECT constellationID, constellationName, 4, 1, regionID, x, y, z, 1, 1
+INSERT INTO entity (itemID, typeID, ownerID, locationID, x, y, z, singleton, quantity)
+  SELECT constellationID, 4, 1, regionID, x, y, z, 1, 1
     FROM mapConstellations;
 /*
  * Insert solar systems
  */
-INSERT INTO entity (itemID, itemName, typeID, ownerID, locationID, singleton, quantity, x, y, z)
- SELECT solarSystemID, solarSystemName, 5, 1, constellationID, 1, 1, x, y, z
+INSERT INTO entity (itemID, typeID, ownerID, locationID, singleton, quantity, x, y, z)
+ SELECT solarSystemID, 5, 1, constellationID, 1, 1, x, y, z
  FROM mapSolarSystems;
 /*
  * Insert stations
  */
-INSERT INTO entity (itemID, itemName, typeID, ownerID, locationID, singleton, quantity, x, y, z)
- SELECT stationID, stationName, stationTypeID, corporationID, solarSystemID, 1, 1, x, y, z
+INSERT INTO entity (itemID, typeID, ownerID, locationID, singleton, quantity, x, y, z)
+ SELECT stationID, stationTypeID, corporationID, solarSystemID, 1, 1, x, y, z
  FROM staStations;
 /*
  * Insert static characters to entity table
  */
-INSERT INTO entity (itemID, itemName, typeID, ownerID, locationID, singleton, quantity)
- SELECT characterID, characterName, typeID, 1, stationID, 1, 1
+INSERT INTO entity (itemID, typeID, ownerID, locationID, singleton, quantity)
+ SELECT characterID, typeID, 1, stationID, 1, 1
   FROM chrStatic;
 /*
  * Insert corporations
  */
-INSERT INTO entity (itemID, itemName, typeID, ownerID, locationID, singleton, quantity)
-  SELECT crp.corporationID, crp.corporationName, 2, npc.factionID, crp.stationID, 1, 1
+INSERT INTO entity (itemID, typeID, ownerID, locationID, singleton, quantity)
+  SELECT crp.corporationID, 2, npc.factionID, crp.stationID, 1, 1
     FROM crpStatic AS crp
     LEFT JOIN crpNPCCorporations AS npc USING (corporationID);
 /*
@@ -116,5 +121,7 @@ INSERT INTO invTypes(typeID, groupID, typeName, description, radius, mass, volum
 /*
  * Copy over the universes in mapUniverse to entity
  */
-INSERT INTO entity (itemID, itemName, typeID, ownerID, locationID, singleton, quantity, x, y, z)
-  SELECT universeID, universeName, 1, 1, 1, 1, 1, x, y, z FROM mapUniverse;
+INSERT INTO entity (itemID, typeID, ownerID, locationID, singleton, quantity, x, y, z)
+  SELECT universeID, 1, 1, 1, 1, 1, x, y, z FROM mapUniverse;
+INSERT INTO evenames (itemID, itemName, typeID, groupID, categoryID)
+  SELECT universeID, universeName, 1, 0, 0 FROM mapUniverse;

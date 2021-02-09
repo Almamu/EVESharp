@@ -65,6 +65,6 @@ INSERT INTO corporation
  FROM crpStatic;
 
 /*
- * Replace CEOs on the corporations to known characters, we don't know info about the CEOs
+ * Replace CEOs on the corporations to known characters, we don't know info about the CEOs, just their names
  */
 UPDATE corporation SET ceoID = (SELECT characterID FROM chrInformation WHERE corporationID = corporationID LIMIT 1);

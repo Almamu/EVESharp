@@ -1,21 +1,19 @@
 ﻿using System.Collections.Generic;
 using Common.Database;
 using Node.Inventory;
+using Node.Inventory.Items;
 using PythonTypes.Types.Database;
 
 namespace Node.Database
 {
     public class LookupDB : DatabaseAccessor
     {
-        public Rowset LookupCharacters(string namePart, bool exact)
+        public Rowset LookupStations(string namePart, bool exact)
         {
             if (exact == true)
             {
                 return Database.PrepareRowsetQuery(
-                    "SELECT characterID, itemName AS characterName, typeID " +
-                    "FROM chrInformation " +
-                    "LEFT JOIN entity ON characterID = itemID " +
-                    $"WHERE itemName = @namePart",
+                    "SELECT stationID, stationName, stationTypeID AS typeID FROM staStations WHERE stationName = @namePart",
                     new Dictionary<string, object>()
                     {
                         {"@namePart", namePart}
@@ -25,10 +23,31 @@ namespace Node.Database
             else
             {
                 return Database.PrepareRowsetQuery(
-                    "SELECT characterID, itemName AS characterName, typeID " +
-                    "FROM chrInformation " +
-                    "LEFT JOIN entity ON characterID = itemID " +
-                    $"WHERE itemName LIKE @namePart",
+                    "SELECT stationID, stationName, stationTypeID AS typeID FROM staStations WHERE stationName LIKE @namePart",
+                    new Dictionary<string, object>()
+                    {
+                        {"@namePart", namePart + "%"}
+                    }
+                );
+            }
+        }
+        
+        public Rowset LookupCharacters(string namePart, bool exact)
+        {
+            if (exact == true)
+            {
+                return Database.PrepareRowsetQuery(
+                    $"SELECT itemID AS characterID, itemName AS characterName, typeID FROM evenames WHERE groupID = {ItemGroups.Character} AND itemName = @namePart",
+                    new Dictionary<string, object>()
+                    {
+                        {"@namePart", namePart}
+                    }
+                );                
+            }
+            else
+            {
+                return Database.PrepareRowsetQuery(
+                    $"SELECT itemID AS characterID, itemName AS characterName, typeID FROM evenames WHERE groupID = {ItemGroups.Character} AND itemName LIKE @namePart",
                     new Dictionary<string, object>()
                     {
                         {"@namePart", namePart + "%"}
@@ -42,10 +61,7 @@ namespace Node.Database
             if (exact == true)
             {
                 return Database.PrepareRowsetQuery(
-                    "SELECT characterID, itemName AS characterName, typeID " +
-                    "FROM chrInformation " +
-                    "LEFT JOIN entity ON characterID = itemID " +
-                    $"WHERE characterID >= {ItemManager.USERGENERATED_ID_MIN} AND itemName = @namePart",
+                    $"SELECT itemName AS itemID, itemName AS characterName, typeID FROM evenames WHERE itemID >= {ItemManager.USERGENERATED_ID_MIN} AND groupID = {ItemGroups.Character} AND itemName = @namePart",
                     new Dictionary<string, object>()
                     {
                         {"@namePart", namePart}
@@ -55,10 +71,7 @@ namespace Node.Database
             else
             {
                 return Database.PrepareRowsetQuery(
-                    "SELECT characterID, itemName AS characterName, typeID " +
-                    "FROM chrInformation " +
-                    "LEFT JOIN entity ON characterID = itemID " +
-                    $"WHERE characterID >= {ItemManager.USERGENERATED_ID_MIN} AND itemName LIKE @namePart",
+                    $"SELECT itemName AS itemID, itemName AS characterName, typeID FROM evenames WHERE itemID >= {ItemManager.USERGENERATED_ID_MIN} AND groupID = {ItemGroups.Character} AND itemName LIKE @namePart",
                     new Dictionary<string, object>()
                     {
                         {"@namePart", namePart + "%"}
@@ -72,15 +85,7 @@ namespace Node.Database
             if (exact == true)
             {
                 return Database.PrepareRowsetQuery(
-                    "SELECT characterID AS ownerID, itemName AS ownerName, typeID " +
-                    "FROM chrInformation " +
-                    "LEFT JOIN entity ON characterID = itemID " +
-                    $"WHERE itemName = @namePart AND characterID >= {ItemManager.USERGENERATED_ID_MIN} " +
-                    "UNION " +
-                    "SELECT corporationID AS ownerID, itemName AS ownerName, typeID " +
-                    "FROM corporation " +
-                    "LEFT JOIN entity ON corporationID = itemID " +
-                    $"WHERE itemName = @namePart AND corporationID >= {ItemManager.USERGENERATED_ID_MIN}",
+                    $"SELECT itemID as ownerID, itemName AS ownerName, typeID FROM evenames WHERE categoryID = {ItemCategories.Owner} AND itemName = @namePart",
                     new Dictionary<string, object>()
                     {
                         {"@namePart", namePart}
@@ -90,15 +95,7 @@ namespace Node.Database
             else
             {
                 return Database.PrepareRowsetQuery(
-                    "SELECT characterID AS ownerID, itemName AS ownerName, typeID " +
-                    "FROM chrInformation " +
-                    "LEFT JOIN entity ON characterID = itemID " +
-                    $"WHERE itemName LIKE @namePart AND characterID >= {ItemManager.USERGENERATED_ID_MIN} " +
-                    "UNION " +
-                    "SELECT corporationID AS ownerID, itemName AS ownerName, typeID " +
-                    "FROM corporation " +
-                    "LEFT JOIN entity ON corporationID = itemID " +
-                    $"WHERE itemName LIKE @namePart AND corporationID >= {ItemManager.USERGENERATED_ID_MIN}",
+                    $"SELECT itemID as ownerID, itemName AS ownerName, typeID FROM evenames WHERE categoryID = {ItemCategories.Owner} AND itemName LIKE @namePart",
                     new Dictionary<string, object>()
                     {
                         {"@namePart", namePart + "%"}

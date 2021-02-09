@@ -74,7 +74,7 @@ namespace Node.Database
             
             MySqlConnection connection = null;
             MySqlDataReader reader = Database.PrepareQuery(ref connection,
-                "SELECT itemName FROM chrShipInsurances LEFT JOIN entity ON itemID = chrShipInsurances.ownerID WHERE shipID = @shipID",
+                "SELECT itemName FROM chrShipInsurances LEFT JOIN evenames ON itemID = chrShipInsurances.ownerID WHERE shipID = @shipID",
                 new Dictionary<string, object>()
                 {
                     {"@shipID", shipID}

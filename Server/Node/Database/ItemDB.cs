@@ -253,7 +253,7 @@ namespace Node.Database
         {
             MySqlConnection connection = null;
             MySqlCommand command = Database.PrepareQuery(ref connection,
-                $"SELECT itemID, itemName, typeID, ownerID, locationID, flag, contraband, singleton, quantity, x, y, z, custominfo FROM entity WHERE itemID < {ItemManager.USERGENERATED_ID_MIN}"
+                $"SELECT itemID, evenames.itemName, entity.typeID, ownerID, locationID, flag, contraband, singleton, quantity, x, y, z, custominfo FROM entity LEFT JOIN evenames USING(itemID) WHERE itemID < {ItemManager.USERGENERATED_ID_MIN}"
             );
             
             using (connection)
@@ -276,7 +276,7 @@ namespace Node.Database
         {
             ItemType itemType = this.TypeManager[reader.GetInt32(2)];
             Item newItem = new Item(
-                reader.GetString(1), // itemName
+                reader.GetStringOrNull(1), // itemName
                 reader.GetInt32(0), // itemID
                 itemType, // typeID
                 reader.GetInt32(3), // ownerID
@@ -304,7 +304,7 @@ namespace Node.Database
         {
             MySqlConnection connection = null;
             MySqlDataReader reader = Database.PrepareQuery(ref connection,
-                "SELECT itemID, itemName, typeID, ownerID, locationID, flag, contraband, singleton, quantity, x, y, z, custominfo FROM entity WHERE itemID = @itemID",
+                "SELECT itemID, evenames.itemName, entity.typeID, ownerID, locationID, flag, contraband, singleton, quantity, x, y, z, customInfo FROM entity LEFT JOIN evenames USING (itemID) WHERE itemID = @itemID",
                 new Dictionary<string, object>()
                 {
                     {"@itemID", itemID}
@@ -710,11 +710,10 @@ namespace Node.Database
         public ulong CreateItem(string itemName, ItemType type, ItemEntity owner, ItemEntity location, ItemFlags flag,
             bool contraband, bool singleton, int quantity, double x, double y, double z, string customInfo)
         {
-            return Database.PrepareQueryLID(
-                "INSERT INTO entity(itemID, itemName, typeID, ownerID, locationID, flag, contraband, singleton, quantity, x, y, z, customInfo)VALUES(NULL, @itemName, @typeID, @ownerID, @locationID, @flag, @contraband, @singleton, @quantity, @x, @y, @z, @customInfo)",
+            ulong newItemID = Database.PrepareQueryLID(
+                "INSERT INTO entity(itemID, typeID, ownerID, locationID, flag, contraband, singleton, quantity, x, y, z, customInfo)VALUES(NULL, @typeID, @ownerID, @locationID, @flag, @contraband, @singleton, @quantity, @x, @y, @z, @customInfo)",
                 new Dictionary<string, object>()
                 {
-                    {"@itemName", itemName},
                     {"@typeID", type.ID},
                     {"@ownerID", owner?.ID},
                     {"@locationID", location?.ID},
@@ -728,16 +727,33 @@ namespace Node.Database
                     {"@customInfo", customInfo}
                 }
             );
+
+            if (itemName != null)
+            {
+                // create the item name entry if needed
+                Database.PrepareQuery(
+                    "INSERT INTO evenames(itemID, itemName, categoryID, groupID, typeID)VALUES(@itemID, @itemName, @categoryID, @groupID, @typeID)",
+                    new Dictionary<string, object>()
+                    {
+                        {"@itemID", newItemID},
+                        {"@itemName", itemName},
+                        {"@categoryID", type.Group.Category.ID},
+                        {"@groupID", type.Group.ID},
+                        {"@typeID", type.ID}
+                    }
+                );
+            }
+
+            return newItemID;
         }
 
         public ulong CreateItem(string itemName, int typeID, int owner, int? location, ItemFlags flag, bool contraband,
             bool singleton, int quantity, double x, double y, double z, string customInfo)
         {
-            return Database.PrepareQueryLID(
-                "INSERT INTO entity(itemID, itemName, typeID, ownerID, locationID, flag, contraband, singleton, quantity, x, y, z, customInfo)VALUES(NULL, @itemName, @typeID, @ownerID, @locationID, @flag, @contraband, @singleton, @quantity, @x, @y, @z, @customInfo)",
+            ulong newItemID = Database.PrepareQueryLID(
+                "INSERT INTO entity(itemID, typeID, ownerID, locationID, flag, contraband, singleton, quantity, x, y, z, customInfo)VALUES(NULL, @typeID, @ownerID, @locationID, @flag, @contraband, @singleton, @quantity, @x, @y, @z, @customInfo)",
                 new Dictionary<string, object>()
                 {
-                    {"@itemName", itemName},
                     {"@typeID", typeID},
                     {"@ownerID", owner},
                     {"@locationID", location},
@@ -751,6 +767,26 @@ namespace Node.Database
                     {"@customInfo", customInfo}
                 }
             );
+
+            if (itemName != null)
+            {
+                ItemType type = this.TypeManager[typeID];
+                
+                // create the item name entry if needed
+                Database.PrepareQuery(
+                    "INSERT INTO evenames(itemID, itemName, categoryID, groupID, typeID)VALUES(@itemID, @itemName, @categoryID, @groupID, @typeID)",
+                    new Dictionary<string, object>()
+                    {
+                        {"@itemID", newItemID},
+                        {"@itemName", itemName},
+                        {"@categoryID", type.Group.Category.ID},
+                        {"@groupID", type.Group.ID},
+                        {"@typeID", type.ID}
+                    }
+                );
+            }
+
+            return newItemID;
         }
 
         public ulong CreateShip(ItemType shipType, ItemEntity location, Character owner)
@@ -988,7 +1024,7 @@ namespace Node.Database
         public void PersistEntity(ItemEntity item)
         {
             Database.PrepareQuery(
-                "UPDATE entity SET itemName = @itemName, typeID = @typeID, ownerID = @ownerID, locationID = @locationID, flag = @flag, contraband = @contraband, singleton = @singleton, quantity = @quantity, x = @x, y = @y, z = @z, customInfo = @customInfo WHERE itemID = @itemID",
+                "UPDATE entity SET typeID = @typeID, ownerID = @ownerID, locationID = @locationID, flag = @flag, contraband = @contraband, singleton = @singleton, quantity = @quantity, x = @x, y = @y, z = @z, customInfo = @customInfo WHERE itemID = @itemID",
                 new Dictionary<string, object>()
                 {
                     {"@itemName", item.Name},
@@ -1006,6 +1042,22 @@ namespace Node.Database
                     {"@itemID", item.ID}
                 }
             );
+
+            if (item.HasName)
+            {
+                // save item name if exists
+                Database.PrepareQuery(
+                    "REPLACE INTO evenames (itemID, itemName, categoryID, groupID, typeID)VALUES(@itemID, @itemName, @categoryID, @groupID, @typeID)",
+                    new Dictionary<string, object>()
+                    {
+                        {"@itemID", item.ID},
+                        {"@itemName", item.Name},
+                        {"@categoryID", item.Type.Group.Category.ID},
+                        {"@groupID", item.Type.Group.ID},
+                        {"@typeID", item.Type.ID}
+                    }
+                );
+            }
         }
 
         public void PersistAttributeList(ItemEntity item, AttributeList list)

@@ -1,0 +1,10 @@
+/* Factions are up to date */
+/* Regions are up to date */
+/* SolarSystems are up to date */
+/* Constellations are up to date */
+/* List of missing stations */
+SELECT itemID, stationID, itemName, stationName FROM evenames LEFT JOIN staStations ON itemID = stationID WHERE groupID = 15 AND stationID IS NULL;
+/* List of missing corporations */
+SELECT itemID, corporationID, itemName FROM evenames LEFT JOIN crpStatic ON itemID = corporationID WHERE typeID = 2 AND corporationID IS NULL;
+/* List of missing characters */
+SELECT itemID, characterID, itemName FROM evenames LEFT JOIN chrInformation ON itemID = characterID WHERE groupID = 1 AND characterID IS NULL;
