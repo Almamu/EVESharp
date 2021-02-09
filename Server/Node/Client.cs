@@ -29,6 +29,7 @@ using Node.Inventory;
 using Node.Inventory.Items;
 using Node.Inventory.Items.Attributes;
 using Node.Inventory.Items.Types;
+using Node.Inventory.SystemEntities;
 using Node.Network;
 using PythonTypes.Types.Exceptions;
 using PythonTypes.Types.Network;
@@ -78,7 +79,6 @@ namespace Node
 
             int characterID = this.mSession["charid"] as PyInteger;
             
-            // TODO: CHECK IF THE OLD OR NEW STATION ARE REALLY MANAGED BY THIS NODE
             // has the player got into a station?
             if (this.mSession.ContainsKey("stationid") == true)
             {
@@ -97,44 +97,74 @@ namespace Node
                     if (intNewStationID != 0)
                     {
                         Station station = this.ItemFactory.ItemManager.GetStation (intNewStationID);
+                        SolarSystem solarSystem = this.ItemFactory.ItemManager.GetSolarSystem(station.SolarSystemID);
 
-                        station.Guests[characterID] = this.ItemFactory.ItemManager.LoadItem(characterID) as Character;
+                        if (solarSystem.BelongsToUs == true)
+                        {
+                            station.Guests[characterID] = this.ItemFactory.ItemManager.LoadItem(characterID) as Character;
 
-                        // notify station guests
-                        this.ClusterConnection.SendNotification("OnCharNowInStation", "stationid", intNewStationID,
-                            new PyTuple(1)
-                            {
-                                [0] = new PyTuple(4)
+                            // notify station guests
+                            this.ClusterConnection.SendNotification("OnCharNowInStation", "stationid", intNewStationID,
+                                new PyTuple(1)
                                 {
-                                    [0] = characterID,
-                                    [1] = this.CorporationID,
-                                    [2] = this.AllianceID,
-                                    [3] = this.WarFactionID
+                                    [0] = new PyTuple(4)
+                                    {
+                                        [0] = characterID,
+                                        [1] = this.CorporationID,
+                                        [2] = this.AllianceID,
+                                        [3] = this.WarFactionID
+                                    }
                                 }
-                            }
-                        );
+                            );
+                        }
                     }
 
                     if (intOldStationID != 0)
                     {
                         Station station = this.ItemFactory.ItemManager.GetStation(intOldStationID);
+                        SolarSystem solarSystem = this.ItemFactory.ItemManager.GetSolarSystem(station.SolarSystemID);
 
-                        station.Guests.Remove(characterID);
+                        if (solarSystem.BelongsToUs == true)
+                        {
+                            station.Guests.Remove(characterID);
 
-                        // notify station guests
-                        this.ClusterConnection.SendNotification("OnCharNoLongerInStation", "stationid", intOldStationID,
-                            new PyTuple(1)
-                            {
-                                [0] = new PyTuple(4)
+                            // notify station guests
+                            this.ClusterConnection.SendNotification("OnCharNoLongerInStation", "stationid", intOldStationID,
+                                new PyTuple(1)
                                 {
-                                    [0] = characterID,
-                                    [1] = this.CorporationID,
-                                    [2] = this.AllianceID,
-                                    [3] = this.WarFactionID
+                                    [0] = new PyTuple(4)
+                                    {
+                                        [0] = characterID,
+                                        [1] = this.CorporationID,
+                                        [2] = this.AllianceID,
+                                        [3] = this.WarFactionID
+                                    }
                                 }
-                            }
-                        );
+                            );
+                        }
                     }
+                }
+            }
+
+            if (this.Session.ContainsKey("solarsystemid2") == true)
+            {
+                PyDataType newSolarSystemID2 = this.mSession["solarsystemid2"];
+                PyDataType oldSolarSystemID2 = this.mSession.GetPrevious("solarsystemid2");
+                int intNewSolarSystemID2 = 0;
+                int intOldSolarSystemID2 = 0;
+
+                if (oldSolarSystemID2 is PyInteger oldID)
+                    intOldSolarSystemID2 = oldID;
+                if (newSolarSystemID2 is PyInteger newID)
+                    intNewSolarSystemID2 = newID;
+
+                // load character if required
+                if (intNewSolarSystemID2 != intOldSolarSystemID2 && intNewSolarSystemID2 > 0)
+                {
+                    SolarSystem solarSystem = this.ItemFactory.ItemManager.GetSolarSystem(intNewSolarSystemID2);
+
+                    if (solarSystem.BelongsToUs == true)
+                        this.ItemFactory.ItemManager.LoadItem(characterID);
                 }
             }
         }
@@ -184,6 +214,37 @@ namespace Node
             
             // and finally send the client the required data
             this.ClusterConnection.Socket.Send(sessionChangeNotification);
+            
+            // do some checks for unloading data for the character of this client if required
+            // TODO: FIND A BETTER PLACE TO DO THIS AS RIGHT NOW EVERYTIME THE PLAYER CHANGES SOLAR SYSTEM IT'S DATA
+            // TODO: IS UNLOADED AND LOADED AGAIN, WHICH IS LESS THAN DESIRABLE
+            if (this.Session.ContainsKey("solarsystemid2") == true)
+            {
+                PyDataType newSolarSystemID2 = this.mSession["solarsystemid2"];
+                PyDataType oldSolarSystemID2 = this.mSession.GetPrevious("solarsystemid2");
+                int intNewSolarSystemID2 = 0;
+                int intOldSolarSystemID2 = 0;
+
+                if (oldSolarSystemID2 is PyInteger oldID)
+                    intOldSolarSystemID2 = oldID;
+                if (newSolarSystemID2 is PyInteger newID)
+                    intNewSolarSystemID2 = newID;
+
+                if (intOldSolarSystemID2 > 0 && intOldSolarSystemID2 != intNewSolarSystemID2)
+                {
+                    SolarSystem oldSolarSystem = this.ItemFactory.ItemManager.GetSolarSystem(intOldSolarSystemID2);
+                    SolarSystem newSolarSystem = this.ItemFactory.ItemManager.GetSolarSystem(intNewSolarSystemID2);
+
+                    if (oldSolarSystem.BelongsToUs == false && newSolarSystem.BelongsToUs == true)
+                    {
+                        this.ItemFactory.ItemManager.LoadItem(this.EnsureCharacterIsSelected());
+                    }
+                    else if (oldSolarSystem.BelongsToUs == true && newSolarSystem.BelongsToUs == false)
+                    {
+                        this.ItemFactory.ItemManager.UnloadItem(this.EnsureCharacterIsSelected());
+                    }
+                }
+            }
         }
 
         public Session Session => this.mSession;

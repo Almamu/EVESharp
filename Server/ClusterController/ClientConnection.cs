@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using ClusterController.Database;
 using Common.Constants;
 using Common.Database;
@@ -17,9 +18,9 @@ namespace ClusterController
     public class ClientConnection : Connection
     {
         private Channel Log { get; }
-        public int NodeID { get; private set; }
         public Session Session { get; }
         private GeneralDB GeneralDB { get; }
+        public long NodeID { get; set; }
 
         public long AccountID
         {
@@ -314,15 +315,28 @@ namespace ClusterController
                 // search for the node in the list
                 if (pyPacket.Source is PyAddressClient == false)
                     throw new Exception("Received a packet coming from a client trying to spoof the address");
+
+                long destNodeID = dest.NodeID;
                 
-                this.ConnectionManager.NotifyNode((int) dest.NodeID, pyPacket);
+                // change destination node if the node it looks for is us (node 0)
+                if (destNodeID == 0)
+                {
+                    pyPacket.Destination = new PyAddressNode(this.NodeID, dest.CallID, dest.Service);
+                    destNodeID = this.NodeID;
+                }
+
+                // send the packet to the correct node
+                this.ConnectionManager.NotifyNode(destNodeID, pyPacket);
             }
             else if (pyPacket.Destination is PyAddressAny)
             {
                 // send packet to node proxy
-                Log.Trace("Sending service request from any to proxy node");
+                Log.Trace("Sending service request to any node");
 
-                this.ConnectionManager.NotifyNode((int) Network.PROXY_NODE_ID, pyPacket);
+                // request to any should be routed to whatever node we want
+                // there might be a good algorithm for determining this
+                // but for now use the node this player belongs to and call it a day
+                this.ConnectionManager.NotifyNode(this.NodeID, pyPacket);
             }
             else
             {
@@ -360,8 +374,6 @@ namespace ClusterController
                 // We should check for a exact number of nodes here when we have the needed infraestructure
                 if (this.ConnectionManager.NodesCount > 0)
                 {
-                    this.NodeID = Network.PROXY_NODE_ID;
-
                     AuthenticationRsp rsp = new AuthenticationRsp();
 
                     // String "None" marshaled
@@ -371,7 +383,7 @@ namespace ClusterController
                     rsp.func_marshaled_code = func_marshaled_code;
                     rsp.verification = false;
                     rsp.cluster_usercount = this.ConnectionManager.ClientsCount;
-                    rsp.proxy_nodeid = this.NodeID;
+                    rsp.proxy_nodeid = 0; // ProxyNodeID is 0
                     rsp.user_logonqueueposition = 1;
                     rsp.challenge_responsehash = "55087";
 
@@ -392,6 +404,8 @@ namespace ClusterController
                     this.Socket.Send(rsp);
                     // set second to last packet handler
                     this.Socket.SetReceiveCallback(ReceiveLoginResultResponse);
+                    // set our NodeID to something sensible
+                    this.NodeID = this.ConnectionManager.Nodes.Keys.First();
                 }
                 else
                 {
@@ -460,7 +474,7 @@ namespace ClusterController
 
         public PyDataType SetSessionChangeDestination(PyPacket packet)
         {
-            packet.Source = new PyAddressNode(NodeID, 0);
+            packet.Source = new PyAddressNode(Network.PROXY_NODE_ID, 0);
             packet.Destination = new PyAddressClient(this.Session["userid"] as PyInteger, 0);
 
             return packet;

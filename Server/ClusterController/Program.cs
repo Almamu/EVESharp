@@ -70,10 +70,12 @@ namespace ClusterController
                 sContainer.Register<DatabaseConnection>(Lifestyle.Singleton);
                 sContainer.Register<LoginQueue>(Lifestyle.Singleton);
                 sContainer.Register<ConnectionManager>(Lifestyle.Singleton);
+                sContainer.Register<SystemManager>(Lifestyle.Singleton);
                 sContainer.RegisterInstance(General.LoadFromFile("configuration.conf", sContainer));
                 
                 sContainer.Register<AccountDB>(Lifestyle.Singleton);
                 sContainer.Register<GeneralDB>(Lifestyle.Singleton);
+                sContainer.Register<SolarSystemDB>(Lifestyle.Singleton);
                 // disable auto-verification on the container as it triggers creation of instances before they're needed
                 sContainer.Options.EnableAutoVerification = false;
                 
@@ -108,8 +110,12 @@ namespace ClusterController
                 sChannel.Warning("Initializing EVESharp Cluster Controler and Proxy");
                 sChannel.Debug("Initializing EVESharp Cluster Controler and Proxy");
                 sChannel.Trace("Initializing EVESharp Cluster Controler and Proxy");
-
+                
                 sConnectionManager = sContainer.GetInstance<ConnectionManager>();
+
+                // initialize system manager information
+                sContainer.GetInstance<SystemManager>().Init(sConnectionManager);
+                
                 Listening listening = sContainer.GetInstance<Listening>();
                 
                 try

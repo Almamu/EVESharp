@@ -60,6 +60,7 @@ namespace Node.Inventory.SystemEntities
             this.mRadius = radius;
             this.mSunTypeId = sunTypeId;
             this.mSecurityClass = securityClass;
+            this.mBelongsToUs = false;
         }
 
         private int mRegionId;
@@ -78,6 +79,7 @@ namespace Node.Inventory.SystemEntities
         private double mRadius;
         private int mSunTypeId;
         private string mSecurityClass;
+        private bool mBelongsToUs;
 
         public int RegionID
         {
@@ -199,6 +201,12 @@ namespace Node.Inventory.SystemEntities
             get => mSecurityClass;
         }
 
+        public bool BelongsToUs
+        {
+            get => this.mBelongsToUs;
+            set => this.mBelongsToUs = value;
+        }
+        
         protected override void LoadContents(ItemFlags ignoreFlags = ItemFlags.None)
         {
             throw new NotImplementedException();

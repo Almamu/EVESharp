@@ -38,7 +38,10 @@ namespace ClusterController
 {
     public class ConnectionManager
     {
-        private const int MAX_NODE_ID = 0xFFFF;
+        /// <summary>
+        /// Lower ids are proxy nodes, this number is arbitrarily selected
+        /// </summary>
+        private const int GAME_NODE_IDS = 1000000;
         
         public LoginQueue LoginQueue { get; }
         private GeneralDB GeneralDB { get; }
@@ -50,14 +53,16 @@ namespace ClusterController
 
         public List<UnauthenticatedConnection> UnauthenticatedConnections { get; } = new List<UnauthenticatedConnection>();
 
+        private SystemManager SystemManager { get; }
         private Channel Log { get; set; }
 
-        private long mLastNodeID = 0;
+        private long mLastNodeID = 1;
 
-        public ConnectionManager(LoginQueue loginQueue, GeneralDB generalDB, Logger logger)
+        public ConnectionManager(LoginQueue loginQueue, SystemManager systemManager, GeneralDB generalDB, Logger logger)
         {
             this.Log = logger.CreateLogChannel("ConnectionManager");
             this.LoginQueue = loginQueue;
+            this.SystemManager = systemManager;
             this.GeneralDB = generalDB;
         }
 
@@ -128,35 +133,10 @@ namespace ClusterController
 
         public void AddNodeConnection(EVEClientSocket socket)
         {
+            long nodeID = this.mLastNodeID++;
+
             lock (this.Nodes)
-            {
-                if (this.Nodes.Count >= MAX_NODE_ID)
-                    throw new Exception($"Cannot accept more nodes in the connection manager, reached maximum of {MAX_NODE_ID}");
-
-                if (this.Nodes.ContainsKey(Network.PROXY_NODE_ID) == false)
-                    this.Nodes.Add(Network.PROXY_NODE_ID, new NodeConnection(socket, this, Log.Logger, Network.PROXY_NODE_ID));
-                else
-                {
-                    int iterations = 0;
-                    
-                    // find an unused nodeID
-                    while (this.Nodes.ContainsKey(this.mLastNodeID) == true)
-                    {
-                        this.mLastNodeID++;
-                        // ensure that we do not exceed the limit
-                        if (this.mLastNodeID > MAX_NODE_ID)
-                            this.mLastNodeID = 0;
-
-                        iterations++;
-
-                        if (iterations > MAX_NODE_ID)
-                            throw new Exception("Cannot find a free node slot to assign to this node");
-                    }
-
-                    // finally assign it to the new node
-                    this.Nodes.Add(this.mLastNodeID, new NodeConnection(socket, this, Log.Logger, this.mLastNodeID));
-                }
-            }
+                this.Nodes.Add(nodeID, new NodeConnection(socket, this, this.SystemManager, Log.Logger, nodeID));
         }
 
         public void RemoveNodeConnection(NodeConnection connection)
@@ -166,7 +146,7 @@ namespace ClusterController
                 this.Nodes.Remove(connection.NodeID);
         }
 
-        public void NotifyClient(int clientID, PyDataType packet)
+        public void NotifyClient(long clientID, PyDataType packet)
         {
             lock (this.Clients)
             {
@@ -177,7 +157,7 @@ namespace ClusterController
             }
         }
 
-        public void NotifyNode(int nodeID, PyDataType packet)
+        public void NotifyNode(long nodeID, PyDataType packet)
         {
             lock (this.Nodes)
             {

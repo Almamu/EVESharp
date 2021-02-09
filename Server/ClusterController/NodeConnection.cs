@@ -10,17 +10,20 @@ namespace ClusterController
 {
     public class NodeConnection : Connection
     {
-        private Channel Log { get; set; }
-        public long NodeID { get; private set; }
+        private SystemManager SystemManager { get; }
+        private Channel Log { get; }
+        public long NodeID { get; }
+        public int SolarSystemLoadedCount { get; set; }
 
-        public NodeConnection(EVEClientSocket socket, ConnectionManager connectionManager, Logger logger, long nodeID)
+        public NodeConnection(EVEClientSocket socket, ConnectionManager connectionManager, SystemManager systemManager, Logger logger, long nodeID)
             : base(socket, connectionManager)
         {
             // TODO: FREE THE LOG CHANNEL ONCE THE NODE IS MARKED AS DISCONNECTED
             this.Log = logger.CreateLogChannel($"Node-{this.Socket.GetRemoteAddress()}");
             this.NodeID = nodeID;
+            this.SystemManager = systemManager;
             // send node change notification
-            this.SendNodeChangeNotification();
+            this.SendNodeInitialState();
             // assign callbacks to the socket
             this.Socket.SetReceiveCallback(ReceivePacketCallback);
         }
@@ -34,13 +37,9 @@ namespace ClusterController
             this.Socket.ForcefullyDisconnect();
         }
 
-        private void SendNodeChangeNotification()
+        private void SendNodeInitialState()
         {
-            NodeInfo nodeInfo = new NodeInfo();
-
-            nodeInfo.nodeID = NodeID;
-            // solar systems to be loaded by the node
-            nodeInfo.solarSystems.Add(new PyNone());
+            NodeInfo nodeInfo = new NodeInfo {nodeID = NodeID};
 
             Log.Debug($"Notifying node {nodeInfo.nodeID:X4} of it's new ID");
 
@@ -147,12 +146,44 @@ namespace ClusterController
             // update the local copy of the session too
             client.UpdateSession(packet);
 
-            lock (this.ConnectionManager.Nodes)
+            // check if the session change includes solar system change and ensure at least one node has the solar system loaded
+            PyDataType newSolarsystemid2 = client.Session.GetCurrent("solarsystemid2");
+            PyDataType oldSolarsystemid2 = client.Session.GetPrevious("solarsystemid2");
+            int newSolarsystemid2int = 0;
+            int oldSolarsystemid2int = 0;
+
+            if (newSolarsystemid2 is PyInteger)
+                newSolarsystemid2int = newSolarsystemid2 as PyInteger;
+            if (oldSolarsystemid2 is PyInteger)
+                oldSolarsystemid2int = oldSolarsystemid2 as PyInteger;
+
+            // the solar system changed, ensure it's loaded and if not ensure one node loads it at least
+            if (newSolarsystemid2 != oldSolarsystemid2)
             {
-                // notify all the nodes in the cluster
-                foreach (KeyValuePair<long, NodeConnection> pair in this.ConnectionManager.Nodes)
-                    pair.Value.Socket.Send(packet);
+                if (this.SystemManager.IsSolarSystemLoaded(newSolarsystemid2int) == false)
+                {
+                    long nodeID = this.SystemManager.LoadSolarSystem(newSolarsystemid2int);
+                    
+                    // TODO: TAKE THIS OUT OF HERE AND BUILD A PROPER METHOD FOR NOTIFICATION SENDING
+                    // build a packet for this node
+                    PyPacket notification = new PyPacket(PyPacket.PacketType.NOTIFICATION);
+
+                    notification.Source = new PyAddressAny(0);
+                    notification.Destination = new PyAddressNode(nodeID, 0);
+                    notification.Payload = new PyTuple(2) {[0] = "OnSolarSystemLoad", [1] = new PyTuple(1) { [0] = newSolarsystemid2int} };
+                    notification.OutOfBounds = new PyDictionary();
+                    notification.UserID = 0;
+                    
+                    // tell the node to mark the solar system as loaded
+                    this.ConnectionManager.Nodes[nodeID].Socket.Send(notification);
+                    
+                    // set the new nodeID for the client
+                    client.NodeID = nodeID;
+                }
             }
+
+            // notify the nodes with the session changes now
+            this.ConnectionManager.NotifyAllNodes(packet);
         }
 
         private void RelayPacket(PyPacket packet)

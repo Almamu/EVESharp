@@ -84,7 +84,7 @@ namespace Node.Network
                 this.Socket.Send(reply);
 
                 // set the new handler
-                this.Socket.SetReceiveCallback(ReceiveNodeInfoCallback);
+                this.Socket.SetReceiveCallback(ReceiveNodeInitialState);
             }
             catch (Exception e)
             {
@@ -93,7 +93,7 @@ namespace Node.Network
             }
         }
 
-        private void ReceiveNodeInfoCallback(PyDataType ar)
+        private void ReceiveNodeInitialState(PyDataType ar)
         {
             if (ar is PyObjectData == false)
                 throw new Exception($"Expected PyObjectData for machoNet.nodeInfo but got {ar.GetType()}");
@@ -320,8 +320,76 @@ namespace Node.Network
             this.ServiceManager.ReceivedRemoteCallAnswer(dest.CallID, subStream.Stream);
         }
 
+        private void HandleOnSolarSystemLoaded(PyTuple data)
+        {
+            if (data.Count != 1)
+            {
+                Log.Error("Received OnSolarSystemLoad notification with the wrong format");
+                return;
+            }
+
+            PyDataType first = data[0];
+
+            if (first is PyInteger == false)
+            {
+                Log.Error("Received OnSolarSystemLoad notification with the wrong format");
+                return;
+            }
+
+            PyInteger solarSystemID = first as PyInteger;
+
+            // mark as loaded
+            this.SystemManager.LoadSolarSystem(solarSystemID);
+        }
+
+        private void HandleBroadcastNotification(PyPacket packet)
+        {
+            // this packet is an internal one
+            if (packet.Payload.Count != 2)
+            {
+                Log.Error("Received ClusterController notification with the wrong format");
+                return;
+            }
+
+            PyDataType first = packet.Payload[0];
+            PyDataType second = packet.Payload[1];
+
+            if (first is PyString == false)
+            {
+                Log.Error("Received ClusterController notification with the wrong format");
+                return;
+            }
+
+            if (second is PyTuple == false)
+            {
+                Log.Error("Received ClusterController notification with the wrong format");
+                return;
+            }
+
+            PyString notification = first as PyString;
+            PyTuple arguments = second as PyTuple;
+
+            Log.Debug($"Received a notification from ClusterController of type {notification.Value}");
+            
+            switch (notification)
+            {
+                case "OnSolarSystemLoad":
+                    this.HandleOnSolarSystemLoaded(arguments);
+                    break;
+                default:
+                    Log.Fatal("Received ClusterController notification with the wrong format");
+                    break;
+            }
+        }
+
         private void HandleNotification(PyPacket packet, Client client)
         {
+            if (packet.Source is PyAddressAny)
+            {
+                this.HandleBroadcastNotification(packet);
+                return;
+            }
+            
             PyTuple callInfo = ((packet.Payload[0] as PyTuple)[1] as PySubStream).Stream as PyTuple;
 
             PyList objectIDs = callInfo[0] as PyList;

@@ -40,6 +40,8 @@ namespace Node.Inventory
         public const int NPC_CORPORATION_ID_MAX = 2000000;
         public const int CELESTIAL_ID_MIN = 40000000;
         public const int CELESTIAL_ID_MAX = 50000000;
+        public const int SOLARSYSTEM_ID_MIN = 30000000;
+        public const int SOLARSYSTEM_ID_MAX = 40000000;
         public const int STATION_ID_MIN = 60000000;
         public const int STATION_ID_MAX = 70000000;
         public const int NPC_CHARACTER_ID_MIN = 10000;
@@ -106,6 +108,11 @@ namespace Node.Inventory
             return itemID >= STATION_ID_MIN && itemID < STATION_ID_MAX;
         }
 
+        public static bool IsSolarSystemID(int itemID)
+        {
+            return itemID >= SOLARSYSTEM_ID_MIN && itemID < SOLARSYSTEM_ID_MAX;
+        }
+
         public static bool IsNPCCorporationID(int itemID)
         {
             return itemID >= NPC_CORPORATION_ID_MIN && itemID < NPC_CORPORATION_ID_MAX;
@@ -140,6 +147,14 @@ namespace Node.Inventory
                 throw new ArgumentOutOfRangeException($"The id {stationID} does not belong to a station");
 
             return this.GetItem(stationID) as Station;
+        }
+
+        public SolarSystem GetSolarSystem(int solarSystemID)
+        {
+            if (ItemManager.IsSolarSystemID(solarSystemID) == false)
+                throw new ArgumentOutOfRangeException($"The id {solarSystemID} does not belong to a solar system");
+            
+            return this.GetItem(solarSystemID) as SolarSystem;
         }
 
         private ItemEntity PerformItemLoad(ItemEntity item)
@@ -384,6 +399,20 @@ namespace Node.Inventory
             }
             catch
             {
+                // ignored
+            }
+        }
+
+        public void UnloadItem(int itemID)
+        {
+            try
+            {
+                this.mItemList.Remove(itemID);
+                this.ItemDB.UnloadItem(itemID);
+            }
+            catch
+            {
+                // ignored
             }
         }
 
