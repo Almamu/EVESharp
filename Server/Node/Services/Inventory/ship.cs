@@ -15,35 +15,65 @@ namespace Node.Services.Inventory
         private ItemEntity Location { get; }
         private ItemManager ItemManager { get; }
         private TypeManager TypeManager { get; }
-        public ship(ItemManager itemManager, TypeManager typeManager, BoundServiceManager manager) : base(manager)
+        private SystemManager SystemManager { get; }
+        public ship(ItemManager itemManager, TypeManager typeManager, SystemManager systemManager, BoundServiceManager manager) : base(manager)
         {
             this.ItemManager = itemManager;
             this.TypeManager = typeManager;
+            this.SystemManager = systemManager;
         }
 
-        protected ship(ItemEntity location, ItemManager itemManager, TypeManager typeManager,
-            BoundServiceManager manager) : this(itemManager, typeManager, manager)
+        protected ship(ItemEntity location, ItemManager itemManager, TypeManager typeManager, SystemManager systemManager,
+            BoundServiceManager manager) : this(itemManager, typeManager, systemManager, manager)
         {
             this.Location = location;
         }
 
-        protected override BoundService CreateBoundInstance(PyDataType objectData)
+        public override PyInteger MachoResolveObject(PyTuple objectData, PyInteger zero, CallInformation call)
         {
-            /**
-             * [0] => stationID/solarSystemID
-             * [1] => groupID
+            /*
+             * objectData [0] => entityID (station or solar system)
+             * objectData [1] => groupID (station or solar system)
+             */
+
+            PyDataType first = objectData[0];
+            PyDataType second = objectData[1];
+
+            if (first is PyInteger == false || second is PyInteger == false)
+                throw new CustomError("Cannot resolve object");
+
+            PyInteger entityID = first as PyInteger;
+            PyInteger groupID = second as PyInteger;
+
+            int solarSystemID = 0;
+
+            if (groupID == (int) ItemGroups.SolarSystem)
+                solarSystemID = this.ItemManager.GetSolarSystem(entityID).ID;
+            else if (groupID == (int) ItemGroups.Station)
+                solarSystemID = this.ItemManager.GetStation(entityID).SolarSystemID;
+            else
+                throw new CustomError("Unknown item's groupID");
+
+            if (this.SystemManager.SolarSystemBelongsToUs(solarSystemID) == true)
+                return this.BoundServiceManager.Container.NodeID;
+
+            return this.SystemManager.GetNodeSolarSystemBelongsTo(solarSystemID);
+        }
+
+        protected override BoundService CreateBoundInstance(PyDataType objectData, CallInformation call)
+        {
+            /*
+             * objectData [0] => entityID (station or solar system)
+             * objectData [1] => groupID (station or solar system)
              */
 
             if (objectData is PyTuple == false)
                 throw new CustomError("Cannot bind ship service to unknown object");
 
             PyTuple tuple = objectData as PyTuple;
-
-            if (tuple.Count != 2)
-                throw new CustomError("Cannot bind ship service to unknown object");
-
-            if (tuple[0] is PyInteger == false || tuple[1] is PyInteger == false)
-                throw new CustomError("Cannot bind ship service to unknown object");
+            
+            if (this.MachoResolveObject(tuple, 0, call) != this.BoundServiceManager.Container.NodeID)
+                throw new CustomError("Trying to bind an object that does not belong to us!");
 
             PyInteger locationID = tuple[0] as PyInteger;
             PyInteger group = tuple[1] as PyInteger;
@@ -58,7 +88,7 @@ namespace Node.Services.Inventory
             if (location.Type.Group.ID != group)
                 throw new CustomError("Location and group do not match");
 
-            return new ship(location, this.ItemManager, this.TypeManager, this.BoundServiceManager);
+            return new ship(location, this.ItemManager, this.TypeManager, this.SystemManager, this.BoundServiceManager);
         }
 
         public PyDataType LeaveShip(CallInformation call)

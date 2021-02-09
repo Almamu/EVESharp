@@ -16,25 +16,41 @@ namespace Node.Services.Inventory
         private InsuranceDB DB { get; }
         private ItemManager ItemManager { get; }
         private MarketDB MarketDB { get; }
+        private SystemManager SystemManager { get; }
         
-        public insuranceSvc(ItemManager itemManager, InsuranceDB db, MarketDB marketDB, BoundServiceManager manager) : base(manager)
+        public insuranceSvc(ItemManager itemManager, InsuranceDB db, MarketDB marketDB, SystemManager systemManager, BoundServiceManager manager) : base(manager)
         {
             this.DB = db;
             this.ItemManager = itemManager;
             this.MarketDB = marketDB;
+            this.SystemManager = systemManager;
         }
 
-        protected insuranceSvc(ItemManager itemManager, InsuranceDB db, MarketDB marketDB, int stationID, BoundServiceManager manager) : base (manager)
+        protected insuranceSvc(ItemManager itemManager, InsuranceDB db, MarketDB marketDB, SystemManager systemManager, BoundServiceManager manager, int stationID) : base (manager)
         {
             this.mStationID = stationID;
             this.DB = db;
             this.ItemManager = itemManager;
             this.MarketDB = marketDB;
+            this.SystemManager = systemManager;
         }
-        
-        protected override BoundService CreateBoundInstance(PyDataType objectData)
+
+        public override PyInteger MachoResolveObject(PyInteger stationID, PyInteger zero, CallInformation call)
         {
-            return new insuranceSvc(this.ItemManager, this.DB, this.MarketDB, objectData as PyInteger, this.BoundServiceManager);
+            int solarSystemID = this.ItemManager.GetStation(stationID).SolarSystemID;
+
+            if (this.SystemManager.SolarSystemBelongsToUs(solarSystemID) == true)
+                return this.BoundServiceManager.Container.NodeID;
+
+            return this.SystemManager.GetNodeSolarSystemBelongsTo(solarSystemID);
+        }
+
+        protected override BoundService CreateBoundInstance(PyDataType objectData, CallInformation call)
+        {
+            if (this.MachoResolveObject(objectData as PyInteger, 0, call) != this.BoundServiceManager.Container.NodeID)
+                throw new CustomError("Trying to bind an object that does not belong to us!");
+            
+            return new insuranceSvc(this.ItemManager, this.DB, this.MarketDB, this.SystemManager, this.BoundServiceManager, objectData as PyInteger);
         }
 
         public PyDataType GetContracts(CallInformation call)

@@ -71,6 +71,16 @@ namespace Node
             this.mLoadedSolarSystems.Add(solarSystemID, solarSystem);
         }
 
+        public bool SolarSystemBelongsToUs(int solarSystemID)
+        {
+            return this.ItemFactory.ItemManager.GetSolarSystem(solarSystemID).BelongsToUs;
+        }
+
+        public long GetNodeSolarSystemBelongsTo(int solarSystemID)
+        {
+            return this.GeneralDB.GetNodeWhereSolarSystemIsLoaded(solarSystemID);
+        }
+        
         public SystemManager(GeneralDB generalDB, ItemFactory itemFactory)
         {
             this.GeneralDB = generalDB;

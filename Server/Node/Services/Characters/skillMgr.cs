@@ -22,25 +22,43 @@ namespace Node.Services.Characters
         private SkillDB DB { get; }
         private ItemManager ItemManager { get; }
         private TimerManager TimerManager { get; }
+        private SystemManager SystemManager { get; }
         private Channel Log { get; }
         
-        public skillMgr(SkillDB db, ItemManager itemManager, TimerManager timerManager, BoundServiceManager manager, Logger logger) : base(manager)
+        public skillMgr(SkillDB db, ItemManager itemManager, TimerManager timerManager, SystemManager systemManager, BoundServiceManager manager, Logger logger) : base(manager)
         {
             this.DB = db;
             this.ItemManager = itemManager;
             this.TimerManager = timerManager;
+            this.SystemManager = systemManager;
             this.Log = logger.CreateLogChannel("SkillManager");
         }
 
-        protected override BoundService CreateBoundInstance(PyDataType objectData)
+        public override PyInteger MachoResolveObject(PyTuple objectData, PyInteger zero, CallInformation call)
         {
             /*
              * objectData [0] => entityID (station or solar system)
              * objectData [1] => groupID (station or solar system)
              */
-            PyTuple tupleData = objectData as PyTuple;
+
+            // object data in this situation is not useful because the game looks for the SOL node that is processing
+            // this information, but we don't have any SOL nodes in our model, just plain simple nodes
+            // so to ensure the skillMgr operates properly the best way is to check where the character is loaded
+            // and direct it towards that node
+            int solarSystemID = call.Client.SolarSystemID2;
+
+            if (this.SystemManager.SolarSystemBelongsToUs(solarSystemID) == true)
+                return this.BoundServiceManager.Container.NodeID;
+
+            return this.SystemManager.GetNodeSolarSystemBelongsTo(solarSystemID);
+        }
+
+        protected override BoundService CreateBoundInstance(PyDataType objectData, CallInformation call)
+        {
+            if (this.MachoResolveObject(objectData as PyTuple, 0, call) != this.BoundServiceManager.Container.NodeID)
+                throw new CustomError("Trying to bind an object that does not belong to us!");
             
-            return new skillMgr(this.DB, this.ItemManager, this.TimerManager, this.BoundServiceManager, this.BoundServiceManager.Logger);
+            return new skillMgr(this.DB, this.ItemManager, this.TimerManager, this.SystemManager, this.BoundServiceManager, this.BoundServiceManager.Logger);
         }
 
         public PyDataType GetSkillQueue(CallInformation call)

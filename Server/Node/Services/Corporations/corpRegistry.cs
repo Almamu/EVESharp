@@ -32,7 +32,14 @@ namespace Node.Services.Corporations
             this.mIsMaster = isMaster;
         }
 
-        protected override BoundService CreateBoundInstance(PyDataType objectData)
+        public override PyInteger MachoResolveObject(PyTuple objectData, PyInteger zero, CallInformation call)
+        {
+            // TODO: CORPORATIONS DO NOT HAVE ANY MANAGEMENT CENTER DEFINED AS OF NOW
+            // TODO: SO THIS MIGHT DESYNC THEM BETWEEN NODES, BUT SHOULD BE ENOUGH FOR NOW
+            return this.BoundServiceManager.Container.NodeID;
+        }
+
+        protected override BoundService CreateBoundInstance(PyDataType objectData, CallInformation call)
         {
             PyTuple data = objectData as PyTuple;
             

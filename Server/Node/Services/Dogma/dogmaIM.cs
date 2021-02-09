@@ -16,27 +16,53 @@ namespace Node.Services.Dogma
 {
     public class dogmaIM : BoundService
     {
-        private int mObjectID;
         private ItemManager ItemManager { get; }
         private AttributeManager AttributeManager { get; }
-        public dogmaIM(ItemManager itemManager, AttributeManager attributeManager, BoundServiceManager manager) : base(manager)
+        private SystemManager SystemManager { get; }
+        public dogmaIM(ItemManager itemManager, AttributeManager attributeManager, SystemManager systemManager, BoundServiceManager manager) : base(manager)
         {
             this.ItemManager = itemManager;
             this.AttributeManager = attributeManager;
+            this.SystemManager = systemManager;
         }
 
-        private dogmaIM(ItemManager itemManager, AttributeManager attributeManager, BoundServiceManager manager, int objectID) : base(manager)
+        public override PyInteger MachoResolveObject(PyTuple objectData, PyInteger zero, CallInformation call)
         {
-            this.ItemManager = itemManager;
-            this.AttributeManager = attributeManager;
-            this.mObjectID = objectID;
+            /*
+             * objectData [0] => entityID (station or solar system)
+             * objectData [1] => groupID (station or solar system)
+             */
+
+            PyDataType first = objectData[0];
+            PyDataType second = objectData[1];
+
+            if (first is PyInteger == false || second is PyInteger == false)
+                throw new CustomError("Cannot resolve object");
+
+            PyInteger entityID = first as PyInteger;
+            PyInteger groupID = second as PyInteger;
+
+            int solarSystemID = 0;
+
+            if (groupID == (int) ItemGroups.SolarSystem)
+                solarSystemID = this.ItemManager.GetSolarSystem(entityID).ID;
+            else if (groupID == (int) ItemGroups.Station)
+                solarSystemID = this.ItemManager.GetStation(entityID).SolarSystemID;
+            else
+                throw new CustomError("Unknown item's groupID");
+
+            if (this.SystemManager.SolarSystemBelongsToUs(solarSystemID) == true)
+                return this.BoundServiceManager.Container.NodeID;
+
+            return this.SystemManager.GetNodeSolarSystemBelongsTo(solarSystemID);
         }
 
-        protected override BoundService CreateBoundInstance(PyDataType objectData)
+        protected override BoundService CreateBoundInstance(PyDataType objectData, CallInformation call)
         {
-            PyTuple tupleData = objectData as PyTuple;
-            
-            return new dogmaIM(this.ItemManager, this.AttributeManager, this.BoundServiceManager, tupleData[0] as PyInteger);
+            if (this.MachoResolveObject(objectData as PyTuple, 0, call) != this.BoundServiceManager.Container.NodeID)
+                throw new CustomError("Trying to bind an object that does not belong to us!");
+
+            return new dogmaIM(this.ItemManager, this.AttributeManager, this.SystemManager, this.BoundServiceManager);
         }
 
         public PyDataType ShipGetInfo(CallInformation call)

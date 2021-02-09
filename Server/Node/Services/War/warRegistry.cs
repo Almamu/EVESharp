@@ -17,7 +17,16 @@ namespace Node.Services.War
             this.mObjectID = objectID;
         }
 
-        protected override BoundService CreateBoundInstance(PyDataType objectData)
+        public override PyInteger MachoResolveObject(PyTuple objectData, PyInteger zero, CallInformation call)
+        {
+            /*
+             * [0] => alliance or corp id
+             * [1] => is master
+             */
+            return this.BoundServiceManager.Container.NodeID;
+        }
+
+        protected override BoundService CreateBoundInstance(PyDataType objectData, CallInformation call)
         {
             PyTuple tupleData = objectData as PyTuple;
             

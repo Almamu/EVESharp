@@ -21,17 +21,33 @@ namespace Node.Services.Stations
         private MarketDB MarketDB { get; }
         private ItemManager ItemManager { get; }
         private TypeManager TypeManager { get; }
-        public corpStationMgr(ItemDB itemDB, MarketDB marketDB, ItemManager itemManager, TypeManager typeManager, BoundServiceManager manager) : base(manager)
+        private SystemManager SystemManager { get; }
+        
+        public corpStationMgr(ItemDB itemDB, MarketDB marketDB, ItemManager itemManager, TypeManager typeManager, SystemManager systemManager, BoundServiceManager manager) : base(manager)
         {
             this.ItemDB = itemDB;
             this.MarketDB = marketDB;
             this.ItemManager = itemManager;
             this.TypeManager = typeManager;
+            this.SystemManager = systemManager;
         }
 
-        protected override BoundService CreateBoundInstance(PyDataType objectData)
+        public override PyInteger MachoResolveObject(PyInteger stationID, PyInteger zero, CallInformation call)
         {
-            return new corpStationMgr(this.ItemDB, this.MarketDB, this.ItemManager, this.TypeManager, this.BoundServiceManager);
+            int solarSystemID = this.ItemManager.GetStation(stationID).SolarSystemID;
+
+            if (this.SystemManager.SolarSystemBelongsToUs(solarSystemID) == true)
+                return this.BoundServiceManager.Container.NodeID;
+
+            return this.SystemManager.GetNodeSolarSystemBelongsTo(solarSystemID);
+        }
+
+        protected override BoundService CreateBoundInstance(PyDataType objectData, CallInformation call)
+        {
+            if (this.MachoResolveObject(objectData as PyInteger, 0, call) != this.BoundServiceManager.Container.NodeID)
+                throw new CustomError("Trying to bind an object that does not belong to us!");
+
+            return new corpStationMgr(this.ItemDB, this.MarketDB, this.ItemManager, this.TypeManager, this.SystemManager, this.BoundServiceManager);
         }
 
         public PyDataType GetCorporateStationOffice(CallInformation call)

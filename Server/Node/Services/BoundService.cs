@@ -24,11 +24,9 @@ namespace Node.Services
         /// <param name="zero"></param>
         /// <param name="call"></param>
         /// <returns>The node where this object is stored</returns>
-        public PyDataType MachoResolveObject(PyTuple objectData, PyInteger zero, CallInformation call)
+        public virtual PyInteger MachoResolveObject(PyTuple objectData, PyInteger zero, CallInformation call)
         {
-            PyInteger objectID = objectData[0] as PyInteger;
-            
-            return this.BoundServiceManager.Container.NodeID;
+            throw new NotImplementedException();
         }
 
         /// <summary>
@@ -38,13 +36,13 @@ namespace Node.Services
         ///
         /// TODO: FOR NOW JUST RETURN OUR NODE ID AND BE HAPPY ABOUT IT
         /// </summary>
-        /// <param name="objectID"></param>
+        /// <param name="stationID"></param>
         /// <param name="zero"></param>
         /// <param name="call"></param>
         /// <returns>The node where this object is stored</returns>
-        public PyDataType MachoResolveObject(PyInteger objectID, PyInteger zero, CallInformation call)
+        public virtual PyInteger MachoResolveObject(PyInteger stationID, PyInteger zero, CallInformation call)
         {
-            return this.BoundServiceManager.Container.NodeID;
+            throw new NotImplementedException();
         }
         
         /// <summary>
@@ -125,7 +123,7 @@ namespace Node.Services
         protected PyDataType MachoBindObject(PyDataType objectData, PyDataType callInfo, CallInformation call)
         {
             // create the bound instance and register it in the bound services
-            BoundService instance = this.CreateBoundInstance(objectData);
+            BoundService instance = this.CreateBoundInstance(objectData, call);
 
             // bind the service
             int boundID = this.BoundServiceManager.BoundService(instance);
@@ -177,7 +175,7 @@ namespace Node.Services
         /// <param name="objectData">The information required for the instantiation</param>
         /// <returns>The new boudn service</returns>
         /// <exception cref="NotImplementedException">If this has not been implemented by the class</exception>
-        protected virtual BoundService CreateBoundInstance(PyDataType objectData)
+        protected virtual BoundService CreateBoundInstance(PyDataType objectData, CallInformation call)
         {
             throw new NotImplementedException();
         }

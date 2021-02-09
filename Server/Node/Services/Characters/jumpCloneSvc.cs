@@ -5,9 +5,11 @@ using Node.Exceptions.jumpCloneSvc;
 using Node.Inventory;
 using Node.Inventory.Items;
 using Node.Inventory.Items.Types;
+using Node.Inventory.SystemEntities;
 using Node.Market;
 using Node.Network;
 using PythonTypes.Types.Database;
+using PythonTypes.Types.Exceptions;
 using PythonTypes.Types.Primitives;
 
 namespace Node.Services.Characters
@@ -18,16 +20,49 @@ namespace Node.Services.Characters
         private MarketDB MarketDB { get; }
         private ItemManager ItemManager { get; }
         private TypeManager TypeManager { get; }
+        private SystemManager SystemManager { get; }
         
-        public jumpCloneSvc(ItemDB itemDB, MarketDB marketDB, ItemManager itemManager, TypeManager typeManager, BoundServiceManager manager) : base(manager)
+        public jumpCloneSvc(ItemDB itemDB, MarketDB marketDB, ItemManager itemManager, TypeManager typeManager, SystemManager systemManager, BoundServiceManager manager) : base(manager)
         {
             this.ItemDB = itemDB;
             this.MarketDB = marketDB;
             this.ItemManager = itemManager;
             this.TypeManager = typeManager;
+            this.SystemManager = systemManager;
         }
-        
-        protected override BoundService CreateBoundInstance(PyDataType objectData)
+
+        public override PyInteger MachoResolveObject(PyTuple objectData, PyInteger zero, CallInformation call)
+        {
+            /*
+             * objectData [0] => entityID (station or solar system)
+             * objectData [1] => groupID (station or solar system)
+             */
+
+            PyDataType first = objectData[0];
+            PyDataType second = objectData[1];
+
+            if (first is PyInteger == false || second is PyInteger == false)
+                throw new CustomError("Cannot resolve object");
+
+            PyInteger entityID = first as PyInteger;
+            PyInteger groupID = second as PyInteger;
+
+            int solarSystemID = 0;
+
+            if (groupID == (int) ItemGroups.SolarSystem)
+                solarSystemID = this.ItemManager.GetSolarSystem(entityID).ID;
+            else if (groupID == (int) ItemGroups.Station)
+                solarSystemID = this.ItemManager.GetStation(entityID).SolarSystemID;
+            else
+                throw new CustomError("Unknown item's groupID");
+
+            if (this.SystemManager.SolarSystemBelongsToUs(solarSystemID) == true)
+                return this.BoundServiceManager.Container.NodeID;
+
+            return this.SystemManager.GetNodeSolarSystemBelongsTo(solarSystemID);
+        }
+
+        protected override BoundService CreateBoundInstance(PyDataType objectData, CallInformation call)
         {
             PyTuple tupleData = objectData as PyTuple;
             
@@ -35,8 +70,11 @@ namespace Node.Services.Characters
              * objectData [0] => entityID (station or solar system)
              * objectData [1] => groupID (station or solar system)
              */
-            
-            return new jumpCloneSvc(this.ItemDB, this.MarketDB, this.ItemManager, this.TypeManager, this.BoundServiceManager);
+
+            if (this.MachoResolveObject(tupleData, 0, call) != this.BoundServiceManager.Container.NodeID)
+                throw new CustomError("Trying to bind an object that does not belong to us!");
+
+            return new jumpCloneSvc(this.ItemDB, this.MarketDB, this.ItemManager, this.TypeManager, this.SystemManager, this.BoundServiceManager);
         }
 
         public PyDataType GetCloneState(CallInformation call)
@@ -114,10 +152,8 @@ namespace Node.Services.Characters
             if (injectedSkills.ContainsKey((int) ItemTypes.InfomorphPsychology) == false)
                 throw new JumpCharStoringMaxClonesNone();
 
-            long maximumClonesAvailable = 0;
-            
             // the skill is needed to be able to have installed clones
-            maximumClonesAvailable = injectedSkills[(int) ItemTypes.InfomorphPsychology].Level;
+            long maximumClonesAvailable = injectedSkills[(int) ItemTypes.InfomorphPsychology].Level;
 
             // get list of clones (excluding the medical clone)
             Rowset clones = this.ItemDB.GetClonesForCharacter(character.ID, (int) character.ActiveCloneID);

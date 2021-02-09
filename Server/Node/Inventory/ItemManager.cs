@@ -394,7 +394,7 @@ namespace Node.Inventory
             {
                 mItemList.Remove(item.ID);
 
-                // Update the database informationf
+                // Update the database informationi
                 this.ItemDB.UnloadItem(item.ID);
             }
             catch

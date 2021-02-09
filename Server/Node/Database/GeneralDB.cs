@@ -24,6 +24,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Data;
 using Common.Database;
 using MySql.Data.MySqlClient;
 using Node.Data;
@@ -33,51 +34,32 @@ namespace Node.Database
 {
     public class GeneralDB : DatabaseAccessor
     {
-        public List<int> GetUnloadedSolarSystems()
+        public long GetNodeWhereSolarSystemIsLoaded(int solarSystemID)
         {
             MySqlConnection connection = null;
-            MySqlDataReader reader = Database.Query(
-                ref connection, "SELECT solarSystemID FROM solarsystemsloaded WHERE nodeID = 0"
+            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+                "SELECT nodeID FROM entity WHERE itemID = @solarSystemID",
+                new Dictionary<string, object>()
+                {
+                    {"@solarSystemID", solarSystemID}
+                }
             );
-
-            using (connection)
+            
+            using(connection)
             using (reader)
             {
-                List<int> result = new List<int>();
+                if (reader.Read() == false)
+                    throw new Exception("The solar system is not loaded by any node");
 
-                while (reader.Read() == true)
-                    result.Add(reader.GetInt32(0));
+                long nodeID = reader.GetInt64(0);
 
-                return result;
+                if (nodeID == 0)
+                    throw new Exception("The solar system is not loaded by any node");
+
+                return nodeID;
             }
         }
-
-        public void MarkSolarSystemAsLoaded(SolarSystem solarSystem)
-        {
-            try
-            {
-                Database.PrepareQuery(
-                    "UPDATE solarsystemsloaded SET nodeID = @nodeID WHERE solarSystemID = @solarSystemID", new Dictionary<string, object>()
-                    {
-                        {"@nodeID", Program.NodeID},
-                        {"@solarSystemID", solarSystem.ID}
-                    }
-                );
-            }
-            catch (Exception e)
-            {
-                throw new Exception("Cannot change solarSystem {solarSystemID} status to loaded", e);
-            }
-        }
-
-        public void MarkSolarSystemAsUnloaded(SolarSystem solarSystem)
-        {
-            Database.PrepareQuery("UPDATE solarsystemsloaded SET nodeID = 0 WHERE solarSystemID = @solarSystemID", new Dictionary<string, object>()
-            {
-                {"@solarSystemID", solarSystem.ID}
-            });
-        }
-
+        
         public Dictionary<string, Constant> LoadConstants()
         {
             MySqlConnection connection = null;

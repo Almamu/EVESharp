@@ -36,6 +36,7 @@ namespace Node.Inventory
         public GroupManager GroupManager { get; private set; }
         public TypeManager TypeManager { get; private set; }
         public StationManager StationManager { get; private set; }
+        public SystemManager SystemManager { get; private set; }
         public ItemDB ItemDB { get; private set; }
         public SkillDB SkillDB { get; private set; }
         public CharacterDB CharacterDB { get; private set; }
@@ -59,7 +60,8 @@ namespace Node.Inventory
             this.StationDB = this.DependencyInjection.GetInstance<StationDB>();
             this.MarketDB = this.DependencyInjection.GetInstance<MarketDB>();
             this.InsuranceDB = this.DependencyInjection.GetInstance<InsuranceDB>();
-            
+
+            this.SystemManager = this.DependencyInjection.GetInstance<SystemManager>();
             // station manager goes first
             this.StationManager = this.DependencyInjection.GetInstance<StationManager>();
             // attribute manager goes first
