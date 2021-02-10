@@ -7,7 +7,7 @@ namespace Node.Inventory.Items.Types
         public Item(
             string entityName, int entityId, ItemType type, int ownerID, int locationID,
             ItemFlags entityFlag, bool entityContraband, bool entitySingleton, int entityQuantity,
-            double entityX, double entityY, double entityZ,
+            double? entityX, double? entityY, double? entityZ,
             string entityCustomInfo, AttributeList attributes, ItemFactory itemFactory
         ) : base(
             entityName, entityId, type, ownerID, locationID, entityFlag,

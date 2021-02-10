@@ -16,7 +16,7 @@ namespace Node.Database
 	            " agtAgents.corporationID, bloodlineTypes.bloodlineID, chrInformation.gender" +
 	            " FROM agtAgents" +
 	            " LEFT JOIN chrInformation on chrInformation.characterID = agtAgents.agentID" +
-	            " LEFT JOIN entity ON entity.itemID = chrInformation.characterID" +
+	            " LEFT JOIN invItems ON invItems.itemID = chrInformation.characterID" +
 	            " LEFT JOIN bloodlineTypes USING (typeID)"
 	        );
         }

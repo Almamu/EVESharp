@@ -31,7 +31,7 @@ namespace Node.Database
         {
             return (int) this.ItemDB.CreateItem(
                 skill.Name, skill, character, character, ItemFlags.Skill,
-                false, true, 1, 0, 0, 0, null
+                false, true, 1, null, null, null, null
             );
         }
 

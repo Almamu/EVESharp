@@ -35,7 +35,7 @@ namespace Node.Database
         public PyDataType GetContractsForShipsOnStation(int characterID, int stationID)
         {
             return Database.PreparePackedRowListQuery(
-                "SELECT chrShipInsurances.ownerID, shipID, fraction, startDate, endDate FROM chrShipInsurances LEFT JOIN entity ON entity.itemID = shipID WHERE chrShipInsurances.ownerID = @characterID AND entity.locationID = @stationID",
+                "SELECT chrShipInsurances.ownerID, shipID, fraction, startDate, endDate FROM chrShipInsurances LEFT JOIN invItems ON invItems.itemID = shipID WHERE chrShipInsurances.ownerID = @characterID AND invItems.locationID = @stationID",
                 new Dictionary<string, object>()
                 {
                     {"@characterID", characterID},
@@ -46,7 +46,7 @@ namespace Node.Database
         public PyDataType GetContractsForShipsOnStationIncludingCorp(int characterID, int corporationID, int stationID)
         {
             return Database.PreparePackedRowListQuery(
-                "SELECT chrShipInsurances.ownerID, shipID, fraction, startDate, endDate FROM chrShipInsurances LEFT JOIN entity ON entity.itemID = shipID WHERE (chrShipInsurances.ownerID = @characterID OR chrShipInsurances.ownerID = @corporationID) AND entity.locationID = @stationID",
+                "SELECT chrShipInsurances.ownerID, shipID, fraction, startDate, endDate FROM chrShipInsurances LEFT JOIN invItems ON invItems.itemID = shipID WHERE (chrShipInsurances.ownerID = @characterID OR chrShipInsurances.ownerID = @corporationID) AND invItems.locationID = @stationID",
                 new Dictionary<string, object>()
                 {
                     {"@characterID", characterID},

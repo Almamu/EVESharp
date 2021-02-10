@@ -284,7 +284,6 @@ namespace Node.Services.Chat
 
         public PyDataType GetMyMessages(CallInformation call)
         {
-            // TODO: CHANGE THIS TO USE THE ACCESSOR COLUMN IN lscChannelPermissions
             return this.MessagesDB.GetMailHeaders(call.Client.EnsureCharacterIsSelected());
         }
         
@@ -694,7 +693,10 @@ namespace Node.Services.Chat
 
         public PyDataType GetMessageDetails(PyInteger channelID, PyInteger messageID, CallInformation call)
         {
-            // TODO: CHECK FOR PERMISSIONS ON lscChannelPermissions
+            // ensure the player is allowed to read messages off this mail list
+            if (this.DB.IsPlayerAllowedToRead(channelID, call.Client.EnsureCharacterIsSelected()) == false)
+                return null;
+            
             return this.MessagesDB.GetMessageDetails(channelID, messageID);
         }
 

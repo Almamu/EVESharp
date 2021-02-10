@@ -38,7 +38,7 @@ namespace Node.Database
         {
             MySqlConnection connection = null;
             MySqlDataReader reader = Database.PrepareQuery(ref connection,
-                "SELECT nodeID FROM entity WHERE itemID = @solarSystemID",
+                "SELECT nodeID FROM invItems WHERE itemID = @solarSystemID",
                 new Dictionary<string, object>()
                 {
                     {"@solarSystemID", solarSystemID}

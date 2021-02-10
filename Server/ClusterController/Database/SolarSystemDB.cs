@@ -13,7 +13,7 @@ namespace ClusterController.Database
         {
             MySqlConnection connection = null;
             MySqlDataReader reader = Database.PrepareQuery(ref connection,
-                "SELECT nodeID FROM entity WHERE itemID = @itemID",
+                "SELECT nodeID FROM invItems WHERE itemID = @itemID",
                 new Dictionary<string, object>()
                 {
                     {"@itemID", solarSystemID}
@@ -33,7 +33,7 @@ namespace ClusterController.Database
         public void SetSolarSystemNodeID(int solarSystemID, long nodeID)
         {
             Database.PrepareQuery(
-                "UPDATE entity SET nodeID = @nodeID WHERE itemID = @itemID",
+                "UPDATE invItems SET nodeID = @nodeID WHERE itemID = @itemID",
                 new Dictionary<string, object>()
                 {
                     {"@nodeID", nodeID},
@@ -45,7 +45,7 @@ namespace ClusterController.Database
         public void ClearSolarSystemNodeID()
         {
             Database.Query(
-                $"UPDATE entity SET nodeID = 0 WHERE itemID >= {SOLARSYSTEM_ID_MIN} AND itemID < {SOLARSYSTEM_ID_MAX}"
+                $"UPDATE invItems SET nodeID = 0 WHERE itemID >= {SOLARSYSTEM_ID_MIN} AND itemID < {SOLARSYSTEM_ID_MAX}"
             );
         }
         

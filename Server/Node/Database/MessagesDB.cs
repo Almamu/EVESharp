@@ -104,7 +104,7 @@ namespace Node.Database
 	        // check mailbox type
 	        MySqlConnection connection = null;
 	        MySqlDataReader reader = Database.PrepareQuery(ref connection,
-		        "SELECT groupID FROM entity LEFT JOIN invTypes USING(typeID) WHERE itemID = @itemID",
+		        "SELECT groupID FROM invItems LEFT JOIN invTypes USING(typeID) WHERE itemID = @itemID",
 		        new Dictionary<string, object>()
 		        {
 			        {"@itemID", channelID}

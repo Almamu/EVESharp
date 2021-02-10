@@ -61,11 +61,13 @@ namespace Node.Inventory.Items
         private bool mContraband;
         private bool mSingleton;
         private int mQuantity; // TODO: DEPRECATE THIS AND USE QUANTITY ATTRIBUTE
-        private double mX;
-        private double mY;
-        private double mZ;
+        private double? mX;
+        private double? mY;
+        private double? mZ;
         private string mCustomInfo;
         private AttributeList mAttributes;
+        private bool mHadName;
+        private bool mHadPosition;
 
         public int ID => mID;
         public AttributeList Attributes => mAttributes;
@@ -150,7 +152,7 @@ namespace Node.Inventory.Items
             }
         }
 
-        public double X
+        public double? X
         {
             get => mX;
             set
@@ -160,7 +162,7 @@ namespace Node.Inventory.Items
             }
         }
 
-        public double Y
+        public double? Y
         {
             get => mY;
             set
@@ -170,7 +172,7 @@ namespace Node.Inventory.Items
             }
         }
 
-        public double Z
+        public double? Z
         {
             get => mZ;
             set
@@ -191,11 +193,13 @@ namespace Node.Inventory.Items
         }
 
         public bool HasName => this.mName != null;
+        public virtual bool HasPosition => this.X != null && this.Y != null && this.Z != null;
+        public bool HadName => this.mHadName;
+        public bool HadPosition => this.mHadPosition;
         
         public ItemEntity(string entityName, int entityId, ItemType type, int ownerID,
             int locationID, ItemFlags entityFlag, bool entityContraband, bool entitySingleton,
-            int entityQuantity, double entityX, double entityY, double entityZ, string entityCustomInfo,
-            AttributeList attributes, ItemFactory itemFactory)
+            int entityQuantity, double? x, double? y, double? z, string entityCustomInfo, AttributeList attributes, ItemFactory itemFactory)
         {
             this.mName = entityName;
             this.mID = entityId;
@@ -206,21 +210,22 @@ namespace Node.Inventory.Items
             this.mContraband = entityContraband;
             this.mSingleton = entitySingleton;
             this.mQuantity = entityQuantity;
-            this.mX = entityX;
-            this.mY = entityY;
-            this.mZ = entityZ;
             this.mCustomInfo = entityCustomInfo;
             this.mAttributes = attributes;
+            this.mX = x;
+            this.mY = y;
+            this.mZ = z;
 
             this.mItemFactory = itemFactory;
+            this.mHadName = entityName != null;
+            this.mHadPosition = x != null && y != null && z != null;
         }
 
         public ItemEntity(string entityName, int entityId, ItemType type, ItemEntity entityOwner,
             ItemEntity entityLocation, ItemFlags entityFlag, bool entityContraband, bool entitySingleton,
-            int entityQuantity, double entityX, double entityY, double entityZ, string entityCustomInfo,
-            AttributeList attributes, ItemFactory itemFactory) : this(
+            int entityQuantity, double? x, double? y, double? z, string entityCustomInfo, AttributeList attributes, ItemFactory itemFactory) : this(
             entityName, entityId, type, entityOwner.ID, entityLocation.ID, entityFlag, entityContraband,
-            entitySingleton, entityQuantity, entityX, entityY, entityZ, entityCustomInfo, attributes, itemFactory)
+            entitySingleton, entityQuantity, x, y, z, entityCustomInfo, attributes, itemFactory)
         {
         }
 

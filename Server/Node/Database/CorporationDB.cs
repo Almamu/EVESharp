@@ -154,7 +154,7 @@ namespace Node.Database
                 " 0 AS grantableRolesAtOther, 0 AS divisionID, 0 AS squadronID, locationID AS baseID, " +
                 " 0 AS blockRoles, gender " +
                 "FROM chrInformation " +
-                "LEFT JOIN entity ON entity.itemID = chrInformation.activeCloneID " +
+                "LEFT JOIN invItems ON invItems.itemID = chrInformation.activeCloneID " +
                 "WHERE corporationID=@corporationID AND characterID=@characterID",
                 new Dictionary<string, object>()
                 {
@@ -197,7 +197,7 @@ namespace Node.Database
             string query = "SELECT" +
                            " itemID, stationID, typeID, officeFolderID " +
                            "FROM chrInformation " +
-                           "LEFT JOIN entity ON entity.itemID = chrInformation.activeCloneID " +
+                           "LEFT JOIN invItems ON invItems.itemID = chrInformation.activeCloneID " +
                            "WHERE corporationID=@corporationID AND itemID IN (";
 
             foreach (PyDataType id in itemIDs)

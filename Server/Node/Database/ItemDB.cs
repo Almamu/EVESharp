@@ -253,7 +253,7 @@ namespace Node.Database
         {
             MySqlConnection connection = null;
             MySqlCommand command = Database.PrepareQuery(ref connection,
-                $"SELECT itemID, evenames.itemName, entity.typeID, ownerID, locationID, flag, contraband, singleton, quantity, x, y, z, custominfo FROM entity LEFT JOIN evenames USING(itemID) WHERE itemID < {ItemManager.USERGENERATED_ID_MIN}"
+                $"SELECT itemID, evenames.itemName, invItems.typeID, ownerID, locationID, flag, contraband, singleton, quantity, x, y, z, custominfo FROM invItems LEFT JOIN evenames USING(itemID) LEFT JOIN invPositions USING (itemID) WHERE itemID < {ItemManager.USERGENERATED_ID_MIN}"
             );
             
             using (connection)
@@ -285,9 +285,9 @@ namespace Node.Database
                 reader.GetBoolean(6), // contraband
                 reader.GetBoolean(7), // singleton
                 reader.GetInt32(8), // quantity
-                reader.GetDouble(9), // x
-                reader.GetDouble(10), // y
-                reader.GetDouble(11), // z
+                reader.GetDoubleOrNull(9), // x
+                reader.GetDoubleOrNull(10), // y
+                reader.GetDoubleOrNull(11), // z
                 reader.GetStringOrDefault(12), // customInfo
                 new AttributeList(
                     this.ItemFactory,
@@ -304,7 +304,7 @@ namespace Node.Database
         {
             MySqlConnection connection = null;
             MySqlDataReader reader = Database.PrepareQuery(ref connection,
-                "SELECT itemID, evenames.itemName, entity.typeID, ownerID, locationID, flag, contraband, singleton, quantity, x, y, z, customInfo FROM entity LEFT JOIN evenames USING (itemID) WHERE itemID = @itemID",
+                "SELECT itemID, evenames.itemName, invItems.typeID, ownerID, locationID, flag, contraband, singleton, quantity, x, y, z, customInfo FROM invItems LEFT JOIN evenames USING (itemID) LEFT JOIN invPositions USING (itemID) WHERE itemID = @itemID",
                 new Dictionary<string, object>()
                 {
                     {"@itemID", itemID}
@@ -325,7 +325,7 @@ namespace Node.Database
                 
                 // Update the database information
                 Database.PrepareQuery(
-                    "UPDATE entity SET nodeID = @nodeID WHERE itemID = @itemID",
+                    "UPDATE invItems SET nodeID = @nodeID WHERE itemID = @itemID",
                     new Dictionary<string, object>()
                     {
                         {"@nodeID", Program.NodeID},
@@ -341,7 +341,7 @@ namespace Node.Database
         {
             MySqlConnection connection = null;
             MySqlDataReader reader = Database.PrepareQuery(ref connection,
-                "SELECT itemID FROM entity WHERE locationID = @inventoryID",
+                "SELECT itemID FROM invItems WHERE locationID = @inventoryID",
                 new Dictionary<string, object>()
                 {
                     {"@inventoryID", inventoryID}
@@ -368,7 +368,7 @@ namespace Node.Database
         {
             MySqlConnection connection = null;
             MySqlDataReader reader = Database.PrepareQuery(ref connection,
-                "SELECT typeID FROM entity WHERE itemID = @itemID", new Dictionary<string, object>()
+                "SELECT typeID FROM invItems WHERE itemID = @itemID", new Dictionary<string, object>()
                 {
                     {"@itemID", itemID}
                 }
@@ -393,7 +393,7 @@ namespace Node.Database
         {
             MySqlConnection connection = null;
             MySqlDataReader reader = Database.PrepareQuery(ref connection,
-                "SELECT locationID FROM entity WHERE itemID = @itemID",
+                "SELECT locationID FROM invItems WHERE itemID = @itemID",
                 new Dictionary<string, object>()
                 {
                     {"@itemID", itemID}
@@ -708,10 +708,10 @@ namespace Node.Database
         }
 
         public ulong CreateItem(string itemName, ItemType type, ItemEntity owner, ItemEntity location, ItemFlags flag,
-            bool contraband, bool singleton, int quantity, double x, double y, double z, string customInfo)
+            bool contraband, bool singleton, int quantity, double? x, double? y, double? z, string customInfo)
         {
             ulong newItemID = Database.PrepareQueryLID(
-                "INSERT INTO entity(itemID, typeID, ownerID, locationID, flag, contraband, singleton, quantity, x, y, z, customInfo)VALUES(NULL, @typeID, @ownerID, @locationID, @flag, @contraband, @singleton, @quantity, @x, @y, @z, @customInfo)",
+                "INSERT INTO invItems(itemID, typeID, ownerID, locationID, flag, contraband, singleton, quantity, customInfo)VALUES(NULL, @typeID, @ownerID, @locationID, @flag, @contraband, @singleton, @quantity, @customInfo)",
                 new Dictionary<string, object>()
                 {
                     {"@typeID", type.ID},
@@ -744,14 +744,29 @@ namespace Node.Database
                 );
             }
 
+            if (x != null && y != null && z != null)
+            {
+                // create the entry for item position
+                Database.PrepareQuery(
+                    "INSERT INTO invPositions(itemID, x, y, z)VALUES(@itemID, @x, @y, @z)",
+                    new Dictionary<string, object>()
+                    {
+                        {"@itemID", newItemID},
+                        {"@x", x},
+                        {"@y", y},
+                        {"@z", z}
+                    }
+                );
+            }
+
             return newItemID;
         }
 
         public ulong CreateItem(string itemName, int typeID, int owner, int? location, ItemFlags flag, bool contraband,
-            bool singleton, int quantity, double x, double y, double z, string customInfo)
+            bool singleton, int quantity, double? x, double? y, double? z, string customInfo)
         {
             ulong newItemID = Database.PrepareQueryLID(
-                "INSERT INTO entity(itemID, typeID, ownerID, locationID, flag, contraband, singleton, quantity, x, y, z, customInfo)VALUES(NULL, @typeID, @ownerID, @locationID, @flag, @contraband, @singleton, @quantity, @x, @y, @z, @customInfo)",
+                "INSERT INTO invItems(itemID, typeID, ownerID, locationID, flag, contraband, singleton, quantity, customInfo)VALUES(NULL, @typeID, @ownerID, @locationID, @flag, @contraband, @singleton, @quantity, @customInfo)",
                 new Dictionary<string, object>()
                 {
                     {"@typeID", typeID},
@@ -761,9 +776,6 @@ namespace Node.Database
                     {"@contraband", contraband},
                     {"@singleton", singleton},
                     {"@quantity", quantity},
-                    {"@x", x},
-                    {"@y", y},
-                    {"@z", z},
                     {"@customInfo", customInfo}
                 }
             );
@@ -786,6 +798,21 @@ namespace Node.Database
                 );
             }
 
+            if (x != null && y != null && z != null)
+            {
+                // create the entry for item position
+                Database.PrepareQuery(
+                    "INSERT INTO invPositions(itemID, x, y, z)VALUES(@itemID, @x, @y, @z)",
+                    new Dictionary<string, object>()
+                    {
+                        {"@itemID", newItemID},
+                        {"@x", x},
+                        {"@y", y},
+                        {"@z", z}
+                    }
+                );
+            }
+
             return newItemID;
         }
 
@@ -793,7 +820,7 @@ namespace Node.Database
         {
             return this.CreateItem(
                 $"{owner.Name}'s {shipType.Name}", shipType, owner, location, ItemFlags.Hangar,
-                false, true, 1, 0, 0, 0, null
+                false, true, 1, null, null, null, null
             );
         }
 
@@ -801,7 +828,7 @@ namespace Node.Database
         {
             MySqlConnection connection = null;
             MySqlDataReader reader = Database.PrepareQuery(ref connection,
-                "SELECT itemID FROM entity WHERE locationID = @locationID AND flag != @flag",
+                "SELECT itemID FROM invItems WHERE locationID = @locationID AND flag != @flag",
                 new Dictionary<string, object>()
                 {
                     {"@locationID", locationID},
@@ -827,7 +854,7 @@ namespace Node.Database
         {
             MySqlConnection connection = null;
             MySqlDataReader reader = Database.PrepareQuery(ref connection,
-                "SELECT itemID FROM entity WHERE locationID = @locationID AND ownerID = @ownerID",
+                "SELECT itemID FROM invItems WHERE locationID = @locationID AND ownerID = @ownerID",
                 new Dictionary<string, object>()
                 {
                     {"@locationID", locationID},
@@ -968,7 +995,7 @@ namespace Node.Database
             if (itemID < ItemManager.USERGENERATED_ID_MIN)
                 return;
             
-            Database.PrepareQuery("UPDATE entity SET nodeID = 0 WHERE itemID = @itemID", new Dictionary<string, object>()
+            Database.PrepareQuery("UPDATE invItems SET nodeID = 0 WHERE itemID = @itemID", new Dictionary<string, object>()
                 {
                     {"@itemID", itemID}
                 }
@@ -979,7 +1006,7 @@ namespace Node.Database
         {
             MySqlConnection connection = null;
             MySqlDataReader reader = Database.PrepareQuery(ref connection,
-                "SELECT attributeID, valueInt, valueFloat FROM entity_attributes WHERE itemID = @itemID",
+                "SELECT attributeID, valueInt, valueFloat FROM invItemsAttributes WHERE itemID = @itemID",
                 new Dictionary<string, object>()
                 {
                     {"@itemID", itemID}
@@ -1024,7 +1051,7 @@ namespace Node.Database
         public void PersistEntity(ItemEntity item)
         {
             Database.PrepareQuery(
-                "UPDATE entity SET typeID = @typeID, ownerID = @ownerID, locationID = @locationID, flag = @flag, contraband = @contraband, singleton = @singleton, quantity = @quantity, x = @x, y = @y, z = @z, customInfo = @customInfo WHERE itemID = @itemID",
+                "UPDATE invItems SET typeID = @typeID, ownerID = @ownerID, locationID = @locationID, flag = @flag, contraband = @contraband, singleton = @singleton, quantity = @quantity, customInfo = @customInfo WHERE itemID = @itemID",
                 new Dictionary<string, object>()
                 {
                     {"@itemName", item.Name},
@@ -1035,14 +1062,12 @@ namespace Node.Database
                     {"@contraband", item.Contraband},
                     {"@singleton", item.Singleton},
                     {"@quantity", item.Quantity},
-                    {"@x", item.X},
-                    {"@y", item.Y},
-                    {"@z", item.Z},
                     {"@customInfo", item.CustomInfo},
                     {"@itemID", item.ID}
                 }
             );
 
+            // ensure naming information is up to date
             if (item.HasName)
             {
                 // save item name if exists
@@ -1058,6 +1083,40 @@ namespace Node.Database
                     }
                 );
             }
+            else if (item.HadName)
+            {
+                Database.PrepareQuery(
+                    "DELETE FROM evenames WHERE itemID = @itemID",
+                    new Dictionary<string, object>()
+                    {
+                        {"@itemID", item.ID}
+                    }
+                );
+            }
+
+            if (item.HasPosition)
+            {
+                Database.PrepareQuery(
+                    "REPLACE INTO invPositions (itemID, x, y, z)VALUES(@itemID, @x, @y, @z)",
+                    new Dictionary<string, object>()
+                    {
+                        {"@itemID", item.ID},
+                        {"@x", item.X},
+                        {"@y", item.Y},
+                        {"@z", item.Z}
+                    }
+                );
+            }
+            else if (item.HadPosition)
+            {
+                Database.PrepareQuery(
+                    "DELETE FROM invPositions WHERE itemID = @itemID",
+                    new Dictionary<string, object>()
+                    {
+                        {"@itemID", item.ID}
+                    }
+                );
+            }
         }
 
         public void PersistAttributeList(ItemEntity item, AttributeList list)
@@ -1065,7 +1124,7 @@ namespace Node.Database
             MySqlConnection connection = null;
             MySqlCommand command = Database.PrepareQuery(
                 ref connection,
-                "REPLACE INTO entity_attributes(itemID, attributeID, valueInt, valueFloat) VALUE (@itemID, @attributeID, @valueInt, @valueFloat)"
+                "REPLACE INTO invItemsAttributes(itemID, attributeID, valueInt, valueFloat) VALUE (@itemID, @attributeID, @valueInt, @valueFloat)"
             );
 
             using (connection)
@@ -1120,7 +1179,7 @@ namespace Node.Database
             return Database.PrepareCRowsetQuery(
                 "SELECT stationID, COUNT(itemID) AS itemCount, COUNT(invBlueprints.blueprintID) AS blueprintCount " +
                 "FROM staStations " +
-                "LEFT JOIN entity ON locationID = stationID " +
+                "LEFT JOIN invItems ON locationID = stationID " +
                 "LEFT JOIN invBlueprints ON invBlueprints.blueprintID = itemID " +
                 "WHERE ownerID=@characterID AND flag=@hangarFlag " +
                 "GROUP BY stationID",
@@ -1135,10 +1194,10 @@ namespace Node.Database
         public PyDataType ListStationItems(int stationID, int ownerID)
         {
             return Database.PrepareCRowsetQuery(
-                "SELECT itemID, entity.typeID, locationID, ownerID, flag, contraband, singleton, quantity,"+
+                "SELECT itemID, invItems.typeID, locationID, ownerID, flag, contraband, singleton, quantity,"+
                 " invTypes.groupID, invGroups.categoryID " +
-                "FROM entity " +
-                "LEFT JOIN invTypes ON entity.typeID = invTypes.typeID " +
+                "FROM invItems " +
+                "LEFT JOIN invTypes ON invItems.typeID = invTypes.typeID " +
                 "LEFT JOIN invGroups ON invTypes.groupID = invGroups.groupID " +
                 "WHERE ownerID=@ownerID AND locationID=@stationID AND flag=@hangarFlag",
                 new Dictionary<string, object>()
@@ -1154,7 +1213,7 @@ namespace Node.Database
         {
             // TODO: CACHE THIS IN A INTERMEDIATE TABLE TO MAKE THINGS EASIER TO QUERY
             return Database.PrepareRowsetQuery(
-                "SELECT itemID AS jumpCloneID, typeID, locationID FROM entity WHERE flag = @cloneFlag AND ownerID = @characterID AND itemID != @activeCloneID AND locationID IN(SELECT stationID FROM staStations)",
+                "SELECT itemID AS jumpCloneID, typeID, locationID FROM invItems WHERE flag = @cloneFlag AND ownerID = @characterID AND itemID != @activeCloneID AND locationID IN(SELECT stationID FROM staStations)",
                 new Dictionary<string, object>()
                 {
                     {"@cloneFlag", ItemFlags.Clone},
@@ -1167,7 +1226,7 @@ namespace Node.Database
         public PyDataType GetClonesInShipForCharacter(int characterID)
         {
             return Database.PrepareRowsetQuery(
-                "SELECT itemID AS jumpCloneID, typeID, locationID FROM entity WHERE flag = @cloneFlag AND ownerID = @characterID AND locationID NOT IN(SELECT stationID FROM staStations)",
+                "SELECT itemID AS jumpCloneID, typeID, locationID FROM invItems WHERE flag = @cloneFlag AND ownerID = @characterID AND locationID NOT IN(SELECT stationID FROM staStations)",
                 new Dictionary<string, object>()
                 {
                     {"@cloneFlag", ItemFlags.Clone},
@@ -1179,7 +1238,7 @@ namespace Node.Database
         public PyDataType GetImplantsForCharacterClones(int characterID)
         {
             return Database.PrepareRowsetQuery(
-                "SELECT entity.itemID, entity.typeID, entity.locationID as jumpCloneID FROM entity LEFT JOIN entity second ON entity.locationID = second.itemID  WHERE entity.flag = @implantFlag AND second.flag = @cloneFlag AND second.ownerID = @characterID",
+                "SELECT invItems.itemID, invItems.typeID, invItems.locationID as jumpCloneID FROM invItems LEFT JOIN invItems second ON invItems.locationID = second.itemID  WHERE invItems.flag = @implantFlag AND second.flag = @cloneFlag AND second.ownerID = @characterID",
                 new Dictionary<string, object>()
                 {
                     {"@characterID", characterID},
@@ -1192,13 +1251,20 @@ namespace Node.Database
         public void DestroyItem(ItemEntity item)
         {
             Database.PrepareQuery(
-                "DELETE FROM entity WHERE itemID = @itemID",
+                "DELETE FROM invItems WHERE itemID = @itemID",
                 new Dictionary<string, object>()
                 {
                     {"@itemID", item.ID}
                 }
             );
-            Database.PrepareQuery("DELETE FROM entity_attributes WHERE itemID = @itemID",
+            Database.PrepareQuery(
+                "DELETE FROM eveNames WHERE itemID = @itemID",
+                new Dictionary<string, object>()
+                {
+                    {"@itemID", item.ID}
+                }
+            );
+            Database.PrepareQuery("DELETE FROM invItemsAttributes WHERE itemID = @itemID",
                 new Dictionary<string, object>()
                 {
                     {"@itemID", item.ID}

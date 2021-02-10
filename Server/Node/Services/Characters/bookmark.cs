@@ -36,8 +36,13 @@ namespace Node.Services.Characters
 
             ItemEntity item = this.ItemManager.GetItem(itemID);
 
+            if (item.HasPosition == false)
+            {
+                throw new CustomError("Cannot bookmark a non-location item");
+            }
+
             ulong bookmarkID = this.DB.CreateBookmark(call.Client.EnsureCharacterIsSelected(), item.ID, item.Type.ID,
-                name, comment, item.X, item.Y, item.Z, item.LocationID);
+                name, comment, (double) item.X, (double) item.Y, (double) item.Z, item.LocationID);
 
             PyDataType bookmark = KeyVal.FromDictionary(new PyDictionary
                 {

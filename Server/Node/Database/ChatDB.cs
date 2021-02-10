@@ -379,6 +379,28 @@ namespace Node.Database
             }
         }
 
+        public bool IsPlayerAllowedToRead(int channelID, int characterID)
+        {
+            MySqlConnection connection = null;
+            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+                "SELECT `mode` FROM lscChannelPermissions WHERE channelID = @channelID AND accessor = @characterID",
+                new Dictionary<string, object>()
+                {
+                    {"@channelID", channelID},
+                    {"@characterID", characterID}
+                }
+            );
+            
+            using (connection)
+            using (reader)
+            {
+                if (reader.Read() == false)
+                    return false;
+
+                return (reader.GetInt32(0) & CHATROLE_LISTENER) == CHATROLE_LISTENER;
+            }
+        }
+
         public bool IsPlayerAllowedToChatOnRelatedEntity(int relatedEntityID, int characterID)
         {
             MySqlConnection connection = null;
