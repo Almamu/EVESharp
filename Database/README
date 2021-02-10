@@ -5,7 +5,7 @@ ORIGINAL FILE WITH SOME MODIFICATIONS:
 DATABASE INSTALLATION GUIDE:
 =============================
  1. Download official EVE database dump:
-     http://eve.no-ip.de/apo15/apo15-mysql5-v1.sql.bz2
+     https://files.evesharp.dev/apoc/apo15-mysql5-v1.sql.bz2
     Unpack it - you should get file with ".sql" extension.
 
  2. Go to subdirectory utils and:
