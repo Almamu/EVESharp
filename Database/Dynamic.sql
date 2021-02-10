@@ -288,38 +288,6 @@ CREATE TABLE `droneState` (
 
 /*Data for the table `droneState` */
 
-
-/*Table structure for table `eveMail` */
-
-DROP TABLE IF EXISTS `eveMail`;
-
-CREATE TABLE `eveMail` (
-  `channelID` int(10) unsigned NOT NULL default '0',
-  `messageID` int(10) unsigned NOT NULL auto_increment,
-  `senderID` int(10) unsigned NOT NULL default '0',
-  `subject` varchar(255) NOT NULL default '',
-  `created` bigint(20) unsigned NOT NULL default '0',
-  `read` tinyint(3) unsigned NOT NULL default '0',
-  PRIMARY KEY  (`messageID`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
-/*Data for the table `eveMail` */
-
-/*Table structure for table `eveMailDetails` */
-
-DROP TABLE IF EXISTS `eveMailDetails`;
-
-CREATE TABLE `eveMailDetails` (
-  `attachmentID` int(10) unsigned NOT NULL auto_increment,
-  `messageID` int(10) unsigned NOT NULL default '0',
-  `mimeTypeID` int(10) unsigned NOT NULL default '0',
-  `attachment` longtext NOT NULL,
-  PRIMARY KEY  (`attachmentID`),
-  KEY `messageID` (`messageID`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
-/*Data for the table `eveMailDetails` */
-
 /*Table structure for table `invBlueprints` */
 
 DROP TABLE IF EXISTS `invBlueprints`;

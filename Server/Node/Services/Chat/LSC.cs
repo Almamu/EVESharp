@@ -284,6 +284,7 @@ namespace Node.Services.Chat
 
         public PyDataType GetMyMessages(CallInformation call)
         {
+            // TODO: CHANGE THIS TO USE THE ACCESSOR COLUMN IN lscChannelPermissions
             return this.MessagesDB.GetMailHeaders(call.Client.EnsureCharacterIsSelected());
         }
         
@@ -657,6 +658,60 @@ namespace Node.Services.Chat
             throw new ProvisionalResponse(new PyString("OnDummy"), new PyTuple(0));
         }
 
+        public PyDataType Page(PyList destinationMailboxes, PyString subject, PyString message, CallInformation call)
+        {
+            int callerCharacterID = call.Client.EnsureCharacterIsSelected();
+            
+            foreach (PyDataType destinationID in destinationMailboxes)
+            {
+                // only mail to integer channel id's are supported
+                if (destinationID is PyInteger == false)
+                    continue;
+                
+                ulong messageID = this.MessagesDB.StoreMail(destinationID as PyInteger, callerCharacterID, subject, message, out string mailboxType);
+                
+                // send notification to the destination
+                PyTuple notification = new PyTuple(5)
+                {
+                    [0] = destinationMailboxes,
+                    [1] = messageID,
+                    [2] = callerCharacterID,
+                    [3] = subject,
+                    [4] = DateTime.UtcNow.ToFileTimeUtc()
+                };
+                
+                // *multicastID are a special broadcast type that allows to notify different users based on things like charid or corpid
+                // under the same notification, making things easier for us
+                // sadly supporting that is more painful that actually spamming the cluster controller with single corpid or charid type broadcast
+                // but supporting multicastIDs would be perfect
+                
+                // the list of id's on a *multicastID would be a PyTuple with the type and the id in it, instead of just a list of integers
+                call.Client.ClusterConnection.SendNotification("OnMessage", mailboxType, destinationID as PyInteger, notification);
+            }
+            
+            return null;
+        }
+
+        public PyDataType GetMessageDetails(PyInteger channelID, PyInteger messageID, CallInformation call)
+        {
+            // TODO: CHECK FOR PERMISSIONS ON lscChannelPermissions
+            return this.MessagesDB.GetMessageDetails(channelID, messageID);
+        }
+
+        public PyDataType MarkMessagesRead(PyList messageIDs, CallInformation call)
+        {
+            // TODO: CHECK FOR PERMISSIONS ON lscChannelPermissions
+            foreach (PyDataType messageID in messageIDs)
+            {
+                if (messageID is PyInteger == false)
+                    continue;
+                
+                this.MessagesDB.MarkMessagesRead(call.Client.EnsureCharacterIsSelected(), messageID as PyInteger);
+            }
+            
+            return null;
+        }
+        
         class InviteExtraInfo
         {
             public CallInformation OriginalCall { get; set; }

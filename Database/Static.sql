@@ -525,21 +525,6 @@ CREATE TABLE `chrSkins` (
 
 insert  into `chrSkins`(`skinID`,`skinName`) values (1,'1'),(2,'2'),(3,'3'),(4,'4'),(5,'5'),(6,'6'),(7,'7'),(8,'8'),(9,'10'),(10,'11'),(11,'9'),(12,'Normal'),(13,'Bright'),(14,'Pale'),(15,'Smooth'),(16,'Tan'),(17,'Ancient'),(18,'Contrasted'),(19,'Old'),(20,'Golden'),(21,'regular'),(22,'Sick'),(23,'Dark'),(24,'Caldari'),(25,'12'),(26,'glossy'),(27,'oily'),(28,'veins'),(29,'redveins'),(30,'Asian 1'),(31,'Brown smooth'),(32,'Brown'),(33,'Fair asian'),(34,'Fair'),(35,'Fairest'),(36,'Normal shiny'),(37,'Very bright'),(38,'Smooth pale'),(39,'Smooth asian'),(40,'Fair shiny 2'),(41,'Fair shiny'),(42,'Brown shiny'),(43,'Asian 3'),(44,'Asian 2'),(45,'Soft pale'),(46,'Soft dark asian'),(47,'Soft asian'),(48,'Reynir'),(49,'Japanes'),(50,'Normal smooth'),(51,'Normal glossy'),(52,'Glossy asian'),(53,'Asian glossy 2'),(54,'Smooth lowgloss'),(55,'Smooth glossy'),(56,'Lowgloss'),(57,'Hi contrast gloss'),(58,'Glossy'),(59,'Dark tone'),(60,'Smooth contrast'),(61,'Middle east dark'),(62,'Glossy 2'),(63,'Asian light'),(64,'Asian dark'),(65,'Asian'),(66,'Hicontrast'),(67,'Tanned'),(68,'Nocturnal'),(69,'Light asian'),(70,'Dark asian'),(71,'Casual');
 
-/*Table structure for table `eveMailMimeType` */
-
-DROP TABLE IF EXISTS `eveMailMimeType`;
-
-CREATE TABLE `eveMailMimeType` (
-  `mimeTypeID` int(10) unsigned NOT NULL auto_increment,
-  `mimeType` text NOT NULL,
-  `binary` tinyint(3) unsigned NOT NULL default '0',
-  PRIMARY KEY  (`mimeTypeID`)
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8;
-
-/*Data for the table `eveMailMimeType` */
-
-insert  into `eveMailMimeType`(`mimeTypeID`,`mimeType`,`binary`) values (1,'text/plain',0);
-
 /*Table structure for table `factionRaces` */
 
 DROP TABLE IF EXISTS `factionRaces`;
