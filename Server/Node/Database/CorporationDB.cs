@@ -595,5 +595,16 @@ namespace Node.Database
                 }
             );
         }
+
+        public PyDataType GetPublicInfo(int corporationID)
+        {
+            return Database.PrepareKeyValQuery(
+                "SELECT corporationID, corporationName, allianceID, stationID, ceoID, creatorID, taxRate, memberCount, shares, tickerName, url, description, deleted FROM corporation WHERE corporationID = @corporationID",
+                new Dictionary<string, object>()
+                {
+                    {"@corporationID", corporationID}
+                }
+            );
+        }
     }
 }

@@ -1,6 +1,7 @@
 using Common.Services;
 using Node.Database;
 using Node.Network;
+using PythonTypes.Types.Database;
 using PythonTypes.Types.Primitives;
 
 namespace Node.Services.Corporations
@@ -68,6 +69,26 @@ namespace Node.Services.Corporations
                 [0] = this.DB.GetMedalsList(corporationID),
                 [1] = this.DB.GetMedalsDetails(corporationID)
             };
+        }
+
+        public PyDataType GetCorpInfo(PyInteger corporationID, CallInformation call)
+        {
+            DBRowDescriptor descriptor = new DBRowDescriptor();
+
+            descriptor.Columns.Add(new DBRowDescriptor.Column("corporationID", FieldType.I4));
+            descriptor.Columns.Add(new DBRowDescriptor.Column("typeID", FieldType.I4));
+            descriptor.Columns.Add(new DBRowDescriptor.Column("buyDate", FieldType.FileTime));
+            descriptor.Columns.Add(new DBRowDescriptor.Column("buyPrice", FieldType.CY));
+            descriptor.Columns.Add(new DBRowDescriptor.Column("buyQuantity", FieldType.I4));
+            descriptor.Columns.Add(new DBRowDescriptor.Column("buyStationID", FieldType.I4));
+            descriptor.Columns.Add(new DBRowDescriptor.Column("sellDate", FieldType.FileTime));
+            descriptor.Columns.Add(new DBRowDescriptor.Column("sellPrice", FieldType.CY));
+            descriptor.Columns.Add(new DBRowDescriptor.Column("sellQuantity", FieldType.I4));
+            descriptor.Columns.Add(new DBRowDescriptor.Column("sellStationID", FieldType.I4));
+            descriptor.Columns.Add(new DBRowDescriptor.Column("agtBuyPrice", FieldType.CY));
+            descriptor.Columns.Add(new DBRowDescriptor.Column("agtSellPrice", FieldType.CY));
+            
+            return new CRowset(descriptor);
         }
     }
 }

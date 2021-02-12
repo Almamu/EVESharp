@@ -475,7 +475,7 @@ namespace Common.Database
         /// the result
         /// </summary>
         /// <param name="query">The prepared query</param>
-        /// <returns>The Rowset object representing the result</returns>
+        /// <returns>The IntRowDictionary object representing the result</returns>
         public PyDataType PrepareIntRowDictionary(string query, int keyColumnIndex)
         {
             try
@@ -483,6 +483,41 @@ namespace Common.Database
                 MySqlConnection connection = null;
                 // create the correct command
                 MySqlCommand command = this.PrepareQuery(ref connection, query);
+
+                MySqlDataReader reader = command.ExecuteReader();
+                
+                using (connection)
+                using (reader)
+                {
+                    // run the prepared statement
+                    return IntRowDictionary.FromMySqlDataReader(reader, keyColumnIndex);
+                }
+            }
+            catch (Exception e)
+            {
+                Log.Error($"MySQL error: {e.Message}");
+                throw;
+            }
+        }
+        
+        /// <summary>
+        /// Runs one prepared query with the given values as parameters and returns a IntRowDictionary representing
+        /// the result
+        /// </summary>
+        /// <param name="query">The prepared query</param>
+        /// <param name="values">The key-value pair of values to use when running the query</param>
+        /// <returns>The IntRowDictionary object representing the result</returns>
+        public PyDataType PrepareIntRowDictionary(string query, int keyColumnIndex, Dictionary<string, object> values)
+        {
+            try
+            {
+                MySqlConnection connection = null;
+                // create the correct command
+                MySqlCommand command = this.PrepareQuery(ref connection, query);
+                
+                // add values
+                foreach (KeyValuePair<string, object> pair in values)
+                    command.Parameters.AddWithValue(pair.Key, pair.Value);
 
                 MySqlDataReader reader = command.ExecuteReader();
                 

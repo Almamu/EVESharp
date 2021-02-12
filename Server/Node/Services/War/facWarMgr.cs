@@ -39,7 +39,15 @@ namespace Node.Services.War
              * ["occupierID"] = Faction ID - I guess faction ID that controls the system
              * ["factionID"] = Faction ID - I guess original faction ID that controled the system?
              */
-            this.CacheStorage.StoreCall("facWarMgr", "GetFacWarSystems", new PyDictionary (), DateTime.UtcNow.ToFileTimeUtc());
+            if (this.CacheStorage.Exists("facWarMgr", "GetFacWarSystems") == false)
+            {
+                this.CacheStorage.StoreCall(
+                    "facWarMgr",
+                    "GetFacWarSystems",
+                    new PyDictionary (),
+                    DateTime.UtcNow.ToFileTimeUtc()
+                );                
+            }
 
             return PyCacheMethodCallResult.FromCacheHint(
                 this.CacheStorage.GetHint("facWarMgr", "GetFacWarSystems")

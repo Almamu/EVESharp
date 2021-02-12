@@ -205,5 +205,15 @@ namespace Node.Database
             }
         }
 
+        public PyDataType GetStationSolarSystemsByOwner(int ownerID)
+        {
+            return Database.PrepareRowsetQuery(
+                "SELECT corporationID, solarSystemID FROM staStations WHERE corporationID = @corporationID",
+                new Dictionary<string, object>()
+                {
+                    {"@corporationID", ownerID}
+                }
+            );
+        }
     }
 }

@@ -25,6 +25,7 @@
 using System;
 using Common.Game;
 using Common.Packets;
+using Node.Exceptions;
 using Node.Inventory;
 using Node.Inventory.Items;
 using Node.Inventory.Items.Attributes;
@@ -636,6 +637,21 @@ namespace Node
                 throw new UserError("NoCharacterSelected");
 
             return (int) characterID;
+        }
+
+        /// <summary>
+        /// Checks session data to ensure the character is in a station
+        /// </summary>
+        /// <returns>The StationID where the character is at</returns>
+        /// <exception cref="CanOnlyDoInStations"></exception>
+        public int EnsureCharacterIsInStation()
+        {
+            int? stationID = this.StationID;
+
+            if (stationID == null)
+                throw new CanOnlyDoInStations();
+
+            return (int) stationID;
         }
     }
 }

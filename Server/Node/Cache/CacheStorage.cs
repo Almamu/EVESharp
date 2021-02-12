@@ -294,6 +294,11 @@ namespace Node
             return this.mCacheData.ContainsKey(name);
         }
 
+        public bool Exists(string service, string method)
+        {
+            return this.mCacheData.ContainsKey($"{service}::{method}");
+        }
+
         public PyDataType GenerateObjectIDForCall(string service, string method)
         {
             return new PyTuple(new PyDataType []
@@ -361,6 +366,10 @@ namespace Node
         {
             Log.Debug($"Loading cache data for {name} of type {type}");
 
+            // if the cache already exists do not generate it again!
+            if (this.Exists(name) == true)
+                return;
+
             try
             {
                 MySqlConnection connection = null;
@@ -406,6 +415,10 @@ namespace Node
         {
             Log.Debug($"Loading cache data for {service}::{method} of type {type}");
 
+            // if the cache already exists do not generate it again!
+            if (this.Exists(service, method) == true)
+                return;
+            
             try
             {
                 MySqlConnection connection = null;

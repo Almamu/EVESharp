@@ -73,5 +73,10 @@ namespace Node.Services.Config
         {
             return this.DB.GetMultiInvTypesEx(typeIDs);
         }
+
+        public PyDataType GetStationSolarSystemsByOwner(PyInteger ownerID, CallInformation call)
+        {
+            return this.DB.GetStationSolarSystemsByOwner(ownerID);
+        }
     }
 }

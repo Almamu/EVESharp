@@ -93,6 +93,7 @@ namespace Node
         public insuranceSvc insuranceSvc { get; }
         public slash slash { get; }
         public ship ship { get; }
+        public corpmgr corpmgr { get; }
         
         public ServiceManager(
             NodeContainer container, CacheStorage storage, Logger logger, TimerManager timerManager,
@@ -134,7 +135,8 @@ namespace Node
             lookupSvc lookupSvc,
             insuranceSvc insuranceSvc,
             slash slash,
-            ship ship)
+            ship ship,
+            corpmgr corpmgr)
         {
             this.Container = container;
             this.CacheStorage = storage;
@@ -182,6 +184,7 @@ namespace Node
             this.insuranceSvc = insuranceSvc;
             this.slash = slash;
             this.ship = ship;
+            this.corpmgr = corpmgr;
         }
 
         /// <summary>
