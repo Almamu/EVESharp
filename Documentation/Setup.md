@@ -23,7 +23,6 @@ source Oficial.sql;
 source Static.sql;
 source Dynamic.sql;
 source Server.sql;
-source Prime.sql;
 ```
 
 With this the database should be ready.
