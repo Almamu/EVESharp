@@ -31,9 +31,15 @@ namespace ClusterController.Configuration
 
             foreach (string role in rolelist)
             {
+                string trimedRole = role.Trim();
+
+                // ignore empty roles
+                if (trimedRole == "")
+                    continue;
+                
                 Roles roleValue;
 
-                if (Roles.TryParse(role.Trim(), out roleValue) == false)
+                if (Roles.TryParse(trimedRole, out roleValue) == false)
                     throw new Exception($"Unknown role value {role.Trim()}");
 
                 this.Role |= (long) roleValue;
