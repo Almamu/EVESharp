@@ -109,9 +109,6 @@ namespace Node.Services.Config
             if (isCelestial is PyInteger celestialInt)
                 isCelestialBool = celestialInt.Value == 1;
 
-            Log.Debug(
-                $"GetMapConnections with arguments: {itemID.Value}, {isRegionBool}, {isConstellationBool}, {isSolarSystemBool}, {isCelestialBool} {unknown2?.Value}");
-
             if (isRegionBool == true)
             {
                 return this.DB.GetMapRegionConnection(itemID);
@@ -123,6 +120,10 @@ namespace Node.Services.Config
             if (isSolarSystemBool == true)
             {
                 return this.DB.GetMapSolarSystemConnection(itemID);
+            }
+            if (isCelestialBool == true)
+            {
+                Log.Error("GetMapConnections called with celestial id. Not implemented yet!");
             }
             
             return null;

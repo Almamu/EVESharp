@@ -48,7 +48,7 @@ namespace Node.Database
             int typeID, int quantity, double price, int stationID, int regionID, bool corpTransaction = false)
         {
             Database.PrepareQuery(
-                "INSERT INTO market_transactions(transactionDateTime, typeID, quantity, price, transactionType, characterID, clientID, regionID, stationID, corpTransaction)VALUE(@transactionDateTime, @typeID, @quantity, @price, @transactionType, @characterID, @clientID, @regionID, @stationID, @corpTransaction)",
+                "INSERT INTO mktTransactions(transactionDateTime, typeID, quantity, price, transactionType, characterID, clientID, regionID, stationID, corpTransaction)VALUE(@transactionDateTime, @typeID, @quantity, @price, @transactionType, @characterID, @clientID, @regionID, @stationID, @corpTransaction)",
                 new Dictionary<string, object>()
                 {
                     {"@transactionDateTime", DateTime.UtcNow.ToFileTimeUtc()},
@@ -77,7 +77,7 @@ namespace Node.Database
             string query =
                 "SELECT transactionID, transactionDateTime, typeID, quantity, price, transactionType," +
                 "0 AS corpTransaction, clientID, stationID " +
-                "FROM market_transactions WHERE characterID=@characterID AND quantity >= @quantity AND price >= @price";
+                "FROM mktTransactions WHERE characterID=@characterID AND quantity >= @quantity AND price >= @price";
 
             if (sellBuy != TransactionType.Either)
             {
@@ -106,7 +106,7 @@ namespace Node.Database
                 "SELECT" +
                 " orderID, typeID, charID, regionID, stationID, `range`, bid, price, volEntered, volRemaining," +
                 " issued, orderState, minVolume, contraband, accountID, duration, isCorp, solarSystemID, escrow " +
-                "FROM market_orders " +
+                "FROM mktOrders " +
                 "WHERE charID=@characterID",
                 new Dictionary<string, object>()
                 {
@@ -118,7 +118,7 @@ namespace Node.Database
         public PyDataType GetStationAsks(int stationID)
         {
             return Database.PrepareIntRowDictionary(
-                "SELECT typeID, MAX(price) AS price, volRemaining, stationID FROM market_orders WHERE stationID = @stationID GROUP BY typeID", 0,
+                "SELECT typeID, MAX(price) AS price, volRemaining, stationID FROM mktOrders WHERE stationID = @stationID GROUP BY typeID", 0,
                 new Dictionary<string, object>()
                 {
                     {"@stationID", stationID}
@@ -129,7 +129,7 @@ namespace Node.Database
         public PyDataType GetSystemAsks(int solarSystemID)
         {
             return Database.PrepareIntRowDictionary(
-                "SELECT typeID, MAX(price) AS price, volRemaining, stationID FROM market_orders WHERE solarSystemID = @solarSystemID GROUP BY typeID", 0,
+                "SELECT typeID, MAX(price) AS price, volRemaining, stationID FROM mktOrders WHERE solarSystemID = @solarSystemID GROUP BY typeID", 0,
                 new Dictionary<string, object>()
                 {
                     {"@solarSystemID", solarSystemID}
@@ -140,7 +140,7 @@ namespace Node.Database
         public PyDataType GetRegionBest(int regionID)
         {
             return Database.PrepareIntRowDictionary(
-                "SELECT typeID, MAX(price) AS price, volRemaining, stationID FROM market_orders WHERE regionID = @regionID GROUP BY typeID", 0,
+                "SELECT typeID, MAX(price) AS price, volRemaining, stationID FROM mktOrders WHERE regionID = @regionID GROUP BY typeID", 0,
                 new Dictionary<string, object>()
                 {
                     {"@regionID", regionID}
@@ -148,27 +148,28 @@ namespace Node.Database
             );
         }
 
-        public PyList GetOrders(int regionID, int typeID)
+        public PyList GetOrders(int regionID, int currentSolarSystem, int typeID)
         {
-            // TODO: PRECALCULATE THE JUMP COLUMN AND USE A SIMPLE LEFT JOIN FOR THIS
             return new PyDataType[]
             {
                 Database.PrepareCRowsetQuery(
-                    "SELECT price, volRemaining, typeID, `range`, orderID, volEntered, minVolume, bid, issued, duration, stationID, regionID, solarSystemID, jumps FROM market_orders WHERE regionID = @regionID AND typeID = @typeID AND bid = @bid",
+                    "SELECT price, volRemaining, typeID, `range`, orderID, volEntered, minVolume, bid, issued, duration, stationID, regionID, solarSystemID, jumps FROM mktOrders, mapPrecalculatedSolarSystemJumps WHERE mapPrecalculatedSolarSystemJumps.fromSolarSystemID = solarSystemID AND mapPrecalculatedSolarSystemJumps.toSolarSystemID = @currentSolarSystem AND regionID = @regionID AND typeID = @typeID AND bid = @bid",
                     new Dictionary<string, object>()
                     {
                         {"@regionID", regionID},
                         {"@typeID", typeID},
-                        {"@bid", TransactionType.Sell}
+                        {"@bid", TransactionType.Sell},
+                        {"@currentSolarSystem", currentSolarSystem}
                     }
                 ),
                 Database.PrepareCRowsetQuery(
-                    "SELECT price, volRemaining, typeID, `range`, orderID, volEntered, minVolume, bid, issued, duration, stationID, regionID, solarSystemID, jumps FROM market_orders WHERE regionID = @regionID AND typeID = @typeID AND bid = @bid",
+                    "SELECT price, volRemaining, typeID, `range`, orderID, volEntered, minVolume, bid, issued, duration, stationID, regionID, solarSystemID, jumps FROM mktOrders, mapPrecalculatedSolarSystemJumps WHERE mapPrecalculatedSolarSystemJumps.fromSolarSystemID = solarSystemID AND mapPrecalculatedSolarSystemJumps.toSolarSystemID = @currentSolarSystem AND regionID = @regionID AND typeID = @typeID AND bid = @bid",
                     new Dictionary<string, object>()
                     {
                         {"@regionID", regionID},
                         {"@typeID", typeID},
-                        {"@bid", TransactionType.Buy}
+                        {"@bid", TransactionType.Buy},
+                        {"@currentSolarSystem", currentSolarSystem}
                     }
                 ),
             };

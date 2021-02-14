@@ -89,7 +89,7 @@ namespace Node.Services.Market
         {
             call.Client.EnsureCharacterIsSelected();
             
-            return this.DB.GetOrders(call.Client.RegionID, typeID);
+            return this.DB.GetOrders(call.Client.RegionID, call.Client.SolarSystemID2, typeID);
         }
     }
 }

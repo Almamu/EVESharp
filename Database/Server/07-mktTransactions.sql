@@ -1,9 +1,9 @@
 
-/*Table structure for table `market_transactions` */
+/*Table structure for table `mktTransactions` */
 
-DROP TABLE IF EXISTS `market_transactions`;
+DROP TABLE IF EXISTS `mktTransactions`;
 
-CREATE TABLE `market_transactions` (
+CREATE TABLE `mktTransactions` (
   `transactionID` int(10) unsigned NOT NULL auto_increment,
   `transactionDateTime` bigint(20) unsigned NOT NULL default '0',
   `typeID` int(10) unsigned NOT NULL default '0',
@@ -19,4 +19,4 @@ CREATE TABLE `market_transactions` (
   KEY `regionID` (`regionID`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-/*Data for the table `market_transactions` */
+/*Data for the table `mktTransactions` */
