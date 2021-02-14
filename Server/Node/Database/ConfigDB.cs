@@ -216,7 +216,7 @@ namespace Node.Database
             );
         }
 
-        public PyList GetMapConnectionsByUniverse(int universeID)
+        public PyList GetMapRegionConnection(int universeID)
         {
             MySqlConnection connection = null;
             MySqlDataReader reader = Database.PrepareQuery(ref connection,
@@ -245,7 +245,80 @@ namespace Node.Database
                             [6] = reader.GetInt32(5),
                             [7] = reader.GetInt32(6),
                             [8] = reader.GetInt32(7),
-                            [9] = reader.GetInt32(8),
+                        }
+                    );
+                }
+
+                return result;
+            }
+        }
+
+        public PyList GetMapConstellationConnection(int regionID)
+        {
+            MySqlConnection connection = null;
+            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+                "SELECT fromRegionID, fromConstellationID, toConstellationID, toRegionID FROM mapConstellationJumps WHERE fromRegionID = @locationID",
+                new Dictionary<string, object>()
+                {
+                    {"@locationID", regionID}
+                }
+            );
+            
+            using(connection)
+            using (reader)
+            {
+                PyList result = new PyList();
+
+                while (reader.Read() == true)
+                {
+                    result.Add(new PyTuple(9)
+                        {
+                            [0] = "",
+                            [1] = reader.GetInt32(0),
+                            [2] = reader.GetInt32(1),
+                            [3] = 0,
+                            [4] = 0,
+                            [5] = 0,
+                            [6] = 0,
+                            [7] = reader.GetInt32(2),
+                            [8] = reader.GetInt32(3),
+                        }
+                    );
+                }
+
+                return result;
+            }
+        }
+
+        public PyList GetMapSolarSystemConnection(int constellationID)
+        {
+            MySqlConnection connection = null;
+            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+                "SELECT fromRegionID, fromConstellationID, fromSolarSystemID, toSolarSystemID, toConstellationID, toRegionID FROM mapSolarSystemJumps WHERE fromConstellationID = @locationID",
+                new Dictionary<string, object>()
+                {
+                    {"@locationID", constellationID}
+                }
+            );
+            
+            using(connection)
+            using (reader)
+            {
+                PyList result = new PyList();
+
+                while (reader.Read() == true)
+                {
+                    result.Add(new PyTuple(9)
+                        {
+                            [0] = "",
+                            [1] = reader.GetInt32(0),
+                            [2] = reader.GetInt32(1),
+                            [3] = reader.GetInt32(2),
+                            [4] = 0,
+                            [5] = 0,
+                            [6] = reader.GetInt32(3),
+                            [7] = reader.GetInt32(4),
+                            [8] = reader.GetInt32(5),
                         }
                     );
                 }

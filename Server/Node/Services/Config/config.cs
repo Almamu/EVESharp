@@ -112,9 +112,17 @@ namespace Node.Services.Config
             Log.Debug(
                 $"GetMapConnections with arguments: {itemID.Value}, {isRegionBool}, {isConstellationBool}, {isSolarSystemBool}, {isCelestialBool} {unknown2?.Value}");
 
-            if (itemID == this.ItemManager.LocationUniverse.ID)
+            if (isRegionBool == true)
             {
-                return this.DB.GetMapConnectionsByUniverse(itemID);
+                return this.DB.GetMapRegionConnection(itemID);
+            }
+            if (isConstellationBool == true)
+            {
+                return this.DB.GetMapConstellationConnection(itemID);
+            }
+            if (isSolarSystemBool == true)
+            {
+                return this.DB.GetMapSolarSystemConnection(itemID);
             }
             
             return null;

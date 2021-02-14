@@ -40,14 +40,19 @@ namespace Common.Network
         {
             lock (this.mInputStream)
             {
-                while (this.mInputStream.Position != this.mInputStream.Length)
+                while (this.mInputStream.Position <= (this.mInputStream.Length - 4))
                 {
                     // get size flag
                     int size = this.mInputReader.ReadInt32();
 
                     // ensure this packet is completely received
                     if ((size + this.mInputStream.Position) > this.mInputStream.Length)
-                        return this.mOutputQueue.Count;
+                    {
+                        // go back to the size indicator
+                        this.mInputReader.BaseStream.Seek(-4, SeekOrigin.Current);
+                        
+                        return this.mOutputQueue.Count;                        
+                    }
 
                     lock (this.mOutputQueue)
                         // read the packet's data and queue it on the packets queue
