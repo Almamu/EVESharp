@@ -289,5 +289,31 @@ namespace Node.Database
                 }
             );
         }
+
+        public CRowset GetOldPriceHistory(int regionID, int typeID)
+        {
+            return Database.PrepareCRowsetQuery(
+                "SELECT historyDate, lowPrice, highPrice, avgPrice, volume, orders FROM mktHistoryOld WHERE regionID = @regionID AND typeID = @typeID",
+                new Dictionary<string, object>()
+                {
+                    {"@regionID", regionID},
+                    {"@typeID", typeID}
+                }
+            );
+        }
+
+        public CRowset GetNewPriceHistory(int regionID, int typeID)
+        {
+            return Database.PrepareCRowsetQuery(
+                "SELECT transactionDateTime - (transactionDateTime % @dayLength) AS historyDate, MIN(price) AS lowPrice, MAX(price) AS highPrice, AVG(price) AS avgPrice, SUM(quantity) AS volume, COUNT(*) AS orders FROM mktTransactions WHERE regionID = @regionID AND typeID = @typeID AND transactionType = @transactionType GROUP BY historyDate",
+                new Dictionary<string, object>()
+                {
+                    {"@dayLength", TimeSpan.TicksPerDay},
+                    {"@regionID", regionID},
+                    {"@typeID", typeID},
+                    {"@transactionType", TransactionType.Buy}
+                }
+            );
+        }
     }
 }

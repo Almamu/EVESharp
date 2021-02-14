@@ -2,6 +2,7 @@
 using Common.Services;
 using Node.Database;
 using Node.Network;
+using Org.BouncyCastle.Crypto.Parameters;
 using PythonTypes.Types.Complex;
 using PythonTypes.Types.Primitives;
 
@@ -90,6 +91,24 @@ namespace Node.Services.Market
             call.Client.EnsureCharacterIsSelected();
             
             return this.DB.GetOrders(call.Client.RegionID, call.Client.SolarSystemID2, typeID);
+        }
+
+        public PyDataType StartupCheck(CallInformation call)
+        {
+            // this function is called when "buy this" is pressed in the market
+            // seems to do some specific check on the status
+            // but we can roll with no return info for it :D
+            return null;
+        }
+
+        public PyDataType GetOldPriceHistory(PyInteger typeID, CallInformation call)
+        {
+            return this.DB.GetOldPriceHistory(call.Client.RegionID, typeID);
+        }
+
+        public PyDataType GetNewPriceHistory(PyInteger typeID, CallInformation call)
+        {
+            return this.DB.GetNewPriceHistory(call.Client.RegionID, typeID);
         }
     }
 }

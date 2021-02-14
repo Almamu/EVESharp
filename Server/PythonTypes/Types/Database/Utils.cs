@@ -32,10 +32,10 @@ namespace PythonTypes.Types.Database
             if (type == typeof(sbyte)) return FieldType.I1;
             if (type == typeof(byte)) return FieldType.UI1;
             if (type == typeof(byte[])) return FieldType.Bytes;
-            if (type == typeof(double)) return FieldType.R8;
+            if (type == typeof(double) || type == typeof(decimal)) return FieldType.R8;
             if (type == typeof(float)) return FieldType.R4;
             if (type == typeof(bool)) return FieldType.Bool;
-            
+
             throw new InvalidDataException($"Unknown field type {type}");
         }
         
@@ -62,7 +62,7 @@ namespace PythonTypes.Types.Database
                 case FieldType.I4: return reader.GetInt32(index);
                 case FieldType.UI4: return reader.GetUInt32(index);
                 case FieldType.R4: return reader.GetFloat(index);
-                case FieldType.R8: return reader.GetDouble(index);
+                case FieldType.R8: return (double) reader.GetValue(index);
                 case FieldType.Bool: return reader.GetBoolean(index);
                 case FieldType.I1: return reader.GetSByte(index);
                 case FieldType.UI1: return reader.GetByte(index);
