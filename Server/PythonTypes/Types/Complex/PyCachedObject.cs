@@ -1,4 +1,5 @@
 using System;
+using System.Text;
 using PythonTypes.Compression;
 using PythonTypes.Types.Primitives;
 
@@ -64,6 +65,67 @@ namespace PythonTypes.Types.Complex
             args[6] = cachedObject.ObjectID;
 
             return new PyObjectData(TYPE_NAME, args);
+        }
+
+        public static implicit operator PyCachedObject(PyDataType cachedObject)
+        {
+            PyCachedObject result = new PyCachedObject();
+            
+            if (cachedObject is PyObjectData == false)
+                throw new Exception("Expected PyObjectData");
+
+            PyObjectData data = cachedObject as PyObjectData;
+
+            if (data.Arguments is PyTuple == false)
+                throw new Exception("PyObjectData's arguments must be Tuple");
+
+            PyTuple args = data.Arguments as PyTuple;
+
+            if (args.Count != 7)
+                throw new Exception("PyObjectData's arguments must have 7 elements");
+
+            PyDataType version = args[0];
+
+            if (version is PyTuple == false)
+                throw new Exception("Version content is not a Tuple");
+
+            PyTuple versionTuple = version as PyTuple;
+
+            if (versionTuple.Count != 2)
+                throw new Exception("Version information does not have 2 elements in it");
+
+            if (versionTuple[0] is PyInteger == false)
+                throw new Exception("Timestamp is not correct, must be integer");
+
+            if (versionTuple[1] is PyInteger == false)
+                throw new Exception("Version is not correct, must be integer");
+            
+            result.Timestamp = versionTuple[0] as PyInteger;
+            result.Version = versionTuple[0] as PyInteger;
+
+            if (args[1] is PyNone == false)
+                throw new Exception("Second arg is not none");
+
+            if (args[2] is PyInteger == false)
+                throw new Exception("Node ID is not integer");
+            if (args[3] is PyInteger == false)
+                throw new Exception("Shared is not integer");
+            if (args[4] is PyString)
+                result.Cache = new PyBuffer (Encoding.UTF7.GetBytes(args[4] as PyString));
+            if (args[4] is PyBuffer)
+                result.Cache = args[4] as PyBuffer;
+            if (result.Cache == null)
+                throw new Exception("Cache data not loaded");
+
+            if (args[5] is PyInteger)
+                result.Compressed = args[5] as PyInteger;
+            if (args[5] is PyBool)
+                result.Compressed = (args[5] as PyBool).Value ? 1 : 0;
+
+            result.NodeID = args[2] as PyInteger;
+            result.ObjectID = args[6];
+            
+            return result;
         }
 
         public static PyCachedObject FromCacheHint(PyCacheHint cacheInfo, PyDataType data)
