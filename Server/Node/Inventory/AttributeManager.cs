@@ -44,7 +44,8 @@ namespace Node.Inventory
             this.ItemDB = itemDB;
         }
         
-        public AttributeInfo this[int id] { get => this.mAttributes[id]; }
+        public AttributeInfo this[int id] => this.mAttributes[id];
+        public AttributeInfo this[AttributeEnum id] => this[(int) id];
 
         public void Load()
         {

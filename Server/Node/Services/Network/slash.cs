@@ -39,6 +39,7 @@ namespace Node.Services.Network
                         this.CreateCmd(parts, call);
                         break;
                     case "/giveskills":
+                    case "/giveskill":
                         this.GiveSkillCmd(parts, call);
                         break;
                     default:

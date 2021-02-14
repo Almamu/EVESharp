@@ -485,5 +485,55 @@ namespace Node.Services.Characters
 
             return null;
         }
+
+        public PyDataType CharAddImplant(PyInteger itemID, CallInformation call)
+        {
+            Character character = this.ItemManager.GetItem(call.Client.EnsureCharacterIsSelected()) as Character;
+            // get the item and plug it into our brain now!
+            ItemEntity item = this.ItemManager.LoadItem(itemID);
+            
+            // ensure the item is somewhere we can interact with it
+            if (item.LocationID != call.Client.ShipID && item.LocationID != call.Client.StationID)
+                throw new CustomError("You do not have direct access to this implant");
+
+            int oldLocationID = item.LocationID;
+            ItemFlags oldFlag = item.Flag;
+            
+            item.LocationID = call.Client.EnsureCharacterIsSelected();
+            item.Flag = ItemFlags.Implant;
+
+            call.Client.NotifyItemLocationChange(item, oldFlag, oldLocationID);
+
+            // add the item to the inventory it belongs
+            character.AddItem(item);
+
+            item.Persist();
+            
+            return null;
+        }
+
+        public PyDataType RemoveImplantFromCharacter(PyInteger itemID, CallInformation call)
+        {
+            Character character = this.ItemManager.GetItem(call.Client.EnsureCharacterIsSelected()) as Character;
+
+            if (character.Items.ContainsKey(itemID) == false)
+                throw new CustomError("This implant is not in your brain!");
+
+            // move the item to the recycler and then remove it
+            ItemEntity item = character.Items[itemID];
+
+            // remove it from our inventory
+            character.RemoveItem(item);
+            
+            item.LocationID = ItemManager.LocationRecycler.ID;
+            
+            // notify the change
+            call.Client.NotifyItemLocationChange(item, item.Flag, character.ID);
+            
+            // now destroy the item
+            item.Destroy();
+            
+            return null;
+        }
     }
 }

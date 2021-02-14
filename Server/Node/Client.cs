@@ -509,10 +509,10 @@ namespace Node
         {
             PyTuple notification = new PyTuple(new PyDataType[]
             {
-                item.GetEntityRow(), changes
+                "OnItemChange", item.GetEntityRow(), changes
             });
 
-            this.ClusterConnection.SendNotification("OnItemChange", "charid", (int) this.CharacterID, notification);
+            this.PendingNotifications.Add(notification);
         }
 
         /// <summary>
