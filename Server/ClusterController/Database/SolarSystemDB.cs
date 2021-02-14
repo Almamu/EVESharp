@@ -45,7 +45,7 @@ namespace ClusterController.Database
         public void ClearSolarSystemNodeID()
         {
             Database.Query(
-                $"UPDATE invItems SET nodeID = 0 WHERE itemID >= {SOLARSYSTEM_ID_MIN} AND itemID < {SOLARSYSTEM_ID_MAX}"
+                $"UPDATE invItems SET nodeID = 0"
             );
         }
         

@@ -496,6 +496,13 @@ namespace Node.Services.Characters
             // ensure the item is somewhere we can interact with it
             if (item.LocationID != call.Client.ShipID && item.LocationID != call.Client.StationID)
                 throw new CustomError("You do not have direct access to this implant");
+
+            // check if the slot is free or not
+            character.EnsureFreeImplantSlot(item);
+            
+            // check ownership and skills required to plug in the implant
+            item.EnsureOwnership(character);
+            item.CheckPrerequisites(character);
             
             // separate the item if there's more than one
             if (item.Quantity > 1)
@@ -513,13 +520,6 @@ namespace Node.Services.Characters
                 item = this.ItemManager.CreateSimpleItem(item.Type, item.OwnerID, 0,
                     ItemFlags.None, 1, item.Contraband, item.Singleton);
             }
-
-            // check if the slot is free or not
-            character.EnsureFreeImplantSlot(item);
-            
-            // check ownership and skills required to plug in the implant
-            item.EnsureOwnership(character);
-            item.CheckPrerequisites(character);
 
             int oldLocationID = item.LocationID;
             ItemFlags oldFlag = item.Flag;

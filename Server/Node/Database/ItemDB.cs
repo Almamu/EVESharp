@@ -22,6 +22,7 @@
     Creator: Almamu
 */
 
+using System;
 using System.Collections.Generic;
 using Common.Database;
 using MySql.Data.MySqlClient;
@@ -305,7 +306,7 @@ namespace Node.Database
         {
             MySqlConnection connection = null;
             MySqlDataReader reader = Database.PrepareQuery(ref connection,
-                "SELECT itemID, eveNames.itemName, invItems.typeID, ownerID, locationID, flag, contraband, singleton, quantity, x, y, z, customInfo FROM invItems LEFT JOIN eveNames USING (itemID) LEFT JOIN invPositions USING (itemID) WHERE itemID = @itemID",
+                "SELECT itemID, eveNames.itemName, invItems.typeID, ownerID, locationID, flag, contraband, singleton, quantity, x, y, z, customInfo, nodeID FROM invItems LEFT JOIN eveNames USING (itemID) LEFT JOIN invPositions USING (itemID) WHERE itemID = @itemID",
                 new Dictionary<string, object>()
                 {
                     {"@itemID", itemID}
@@ -323,7 +324,10 @@ namespace Node.Database
                 // the non-user generated items cannot be owned by any node
                 if (itemID < ItemManager.USERGENERATED_ID_MIN)
                     return newItem;
-                
+
+                if (reader.IsDBNull(13) == false && reader.GetInt32(13) != 0)
+                    throw new Exception("Trying to load an item that is loaded on another node!");
+                    
                 // Update the database information
                 Database.PrepareQuery(
                     "UPDATE invItems SET nodeID = @nodeID WHERE itemID = @itemID",
@@ -667,6 +671,11 @@ namespace Node.Database
         public Ship LoadShip(ItemEntity item)
         {
             return new Ship(item);
+        }
+
+        public Implant LoadImplant(ItemEntity item)
+        {
+            return new Implant(item);
         }
 
         public Station LoadStation(ItemEntity item)

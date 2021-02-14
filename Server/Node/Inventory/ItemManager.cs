@@ -201,6 +201,10 @@ namespace Node.Inventory
                 case (int) ItemCategories.Accessories:
                     item = LoadAccessories(item);
                     break;
+                
+                case (int) ItemCategories.Implant:
+                    item = LoadImplant(item);
+                    break;
             }
 
             this.mItemList.Add(item.ID, item);
@@ -287,6 +291,11 @@ namespace Node.Inventory
         private ItemEntity LoadShip(ItemEntity item)
         {
             return this.ItemDB.LoadShip(item);
+        }
+
+        private Implant LoadImplant(ItemEntity item)
+        {
+            return this.ItemDB.LoadImplant(item);
         }
 
         private ItemEntity LoadSolarSystem(ItemEntity item)

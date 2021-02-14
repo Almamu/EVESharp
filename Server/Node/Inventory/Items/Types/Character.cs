@@ -572,7 +572,7 @@ namespace Node.Inventory.Items.Types
             foreach (KeyValuePair<int, Implant> pair in this.PluggedInImplants)
             {
                 // the implant does not use any slot, here for sanity checking
-                if (pair.Value.Attributes.AttributeExists(implantSlot) == false)
+                if (pair.Value.Attributes.AttributeExists(AttributeEnum.implantness) == false)
                     continue;
 
                 if (pair.Value.Attributes[AttributeEnum.implantness].Integer == implantSlot)
