@@ -18,7 +18,7 @@ namespace Node.Database
 
         public PyDataType GetMultiOwnersEx(PyList ids)
         {
-            string query = "SELECT itemID as ownerID, itemName as ownerName, typeID FROM evenames WHERE itemID IN (";
+            string query = "SELECT itemID as ownerID, itemName as ownerName, typeID FROM eveNames WHERE itemID IN (";
             Dictionary<string, object> parameters = new Dictionary<string,object>();
 
             foreach (PyDataType id in ids)
@@ -60,7 +60,7 @@ namespace Node.Database
         
         public PyDataType GetMultiLocationsEx(PyList ids)
         {
-            string query = "SELECT itemID as locationID, itemName as locationName, x, y, z FROM invItems LEFT JOIN evenames USING(itemID) LEFT JOIN invPositions USING (itemID) WHERE itemID IN (";
+            string query = "SELECT itemID as locationID, itemName as locationName, x, y, z FROM invItems LEFT JOIN eveNames USING(itemID) LEFT JOIN invPositions USING (itemID) WHERE itemID IN (";
             Dictionary<string, object> parameters = new Dictionary<string,object>();
 
             foreach (PyDataType id in ids)

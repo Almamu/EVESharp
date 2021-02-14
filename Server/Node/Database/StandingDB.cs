@@ -26,7 +26,7 @@ namespace Node.Database
         public PyDataType GetCharPrime(int characterID)
         {
             return Database.PrepareRowsetQuery(
-                "SELECT itemID as ownerID, itemName as ownerName, typeID FROM chrStandings, evenames WHERE characterID = @characterID AND evenames.itemID = chrStandings.toID",
+                "SELECT itemID as ownerID, itemName as ownerName, typeID FROM chrStandings, eveNames WHERE characterID = @characterID AND eveNames.itemID = chrStandings.toID",
                 new Dictionary<string, object>()
                 {
                     {"@characterID", characterID}

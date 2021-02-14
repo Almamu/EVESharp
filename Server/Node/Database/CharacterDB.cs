@@ -36,7 +36,7 @@ namespace Node.Database
                 " morph2s, morph2w, morph3e, morph3n, morph3s, morph3w," +
                 " morph4e, morph4n, morph4s, morph4w" +
                 " FROM chrInformation " +
-                "	LEFT JOIN evenames ON characterID = itemID" +
+                "	LEFT JOIN eveNames ON characterID = itemID" +
                 " WHERE accountID = @accountID",
                 new Dictionary<string, object>()
                 {
@@ -61,7 +61,7 @@ namespace Node.Database
                     " securityRating,chrInformation.balance,chrInformation.stationID,solarSystemID,constellationID,regionID," +
                     " petitionMessage,logonMinutes,tickerName" +
                     " FROM chrInformation " +
-                    "	LEFT JOIN evenames ON characterID = itemID" +
+                    "	LEFT JOIN eveNames ON characterID = itemID" +
                     "	LEFT JOIN corporation USING (corporationID)" +
                     "	LEFT JOIN bloodlineTypes USING (typeID)" +
                     " WHERE characterID=@characterID AND accountID = @accountID",
@@ -111,7 +111,7 @@ namespace Node.Database
             MySqlConnection connection = null;
             MySqlDataReader reader = Database.PrepareQuery(
                 ref connection,
-                $"SELECT COUNT(*) FROM chrInformation LEFT JOIN evenames ON characterID = itemID WHERE itemName LIKE @characterName",
+                $"SELECT COUNT(*) FROM chrInformation LEFT JOIN eveNames ON characterID = itemID WHERE itemName LIKE @characterName",
                 new Dictionary<string, object>()
                 {
                     {"@characterName", characterName}
@@ -629,7 +629,7 @@ namespace Node.Database
         {
             // return the 100 topmost bounties
             return Database.PrepareRowsetQuery(
-                "SELECT characterID, itemName AS ownerName, bounty, 0 AS online FROM chrBounties, evenames WHERE evenames.itemID = chrBounties.ownerID ORDER BY bounty DESC LIMIT 100"
+                "SELECT characterID, itemName AS ownerName, bounty, 0 AS online FROM chrBounties, eveNames WHERE eveNames.itemID = chrBounties.ownerID ORDER BY bounty DESC LIMIT 100"
             );
         }
 
@@ -661,7 +661,7 @@ namespace Node.Database
             return Database.PrepareKeyValQuery(
                 "SELECT gender, createDateTime, itemName AS charName, bloodlineName, raceName " +
                 "FROM chrInformation " + 
-                "LEFT JOIN evenames ON evenames.itemID = chrInformation.characterID " +
+                "LEFT JOIN eveNames ON eveNames.itemID = chrInformation.characterID " +
                 "LEFT JOIN chrAncestries USING (ancestryID) " +
                 "LEFT JOIN chrBloodlines USING (bloodlineID) " +
                 "LEFT JOIN chrRaces USING (raceID) " +
@@ -744,7 +744,7 @@ namespace Node.Database
         {
             MySqlConnection connection = null;
             MySqlDataReader reader = Database.PrepareQuery(ref connection,
-                "SELECT itemName FROM evenames WHERE itemID = @characterID",
+                "SELECT itemName FROM eveNames WHERE itemID = @characterID",
                 new Dictionary<string, object>()
                 {
                     {"@characterID", characterID}

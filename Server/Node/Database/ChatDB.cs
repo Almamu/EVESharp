@@ -317,7 +317,7 @@ namespace Node.Database
         {
             MySqlConnection connection = null;
             MySqlDataReader reader = Database.PrepareQuery(ref connection,
-                "SELECT itemID AS ownerID, itemName AS ownerName, typeID FROM evenames WHERE itemID = @characterID",
+                "SELECT itemID AS ownerID, itemName AS ownerName, typeID FROM eveNames WHERE itemID = @characterID",
                 new Dictionary<string, object>()
                 {
                     {"@characterID", characterID}

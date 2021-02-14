@@ -60,17 +60,17 @@ namespace Node.Database
                 "   friendID, enemyID, publicShares, initialPrice," +
                 "   minSecurity, scattered, fringe, corridor, hub, border," +
                 "   factionID, sizeFactor, stationCount, stationSystemCount," +
-                "   stationID, ceoID, evenames.itemName AS ceoName" +
+                "   stationID, ceoID, eveNames.itemName AS ceoName" +
                 " FROM crpNPCCorporations" +
                 " JOIN corporation USING (corporationID)" +
-                "   LEFT JOIN evenames ON ceoID = evenames.itemID", 0
+                "   LEFT JOIN eveNames ON ceoID = eveNames.itemID", 0
             );
         }
 
         public PyDataType GetEveOwners(int corporationID)
         {
             return Database.PrepareRowsetQuery(
-                "SELECT characterID as ownerID, itemName AS ownerName, typeID FROM chrInformation, evenames WHERE evenames.itemID = chrInformation.characterID AND corporationID = @corporationID",
+                "SELECT characterID as ownerID, itemName AS ownerName, typeID FROM chrInformation, eveNames WHERE eveNames.itemID = chrInformation.characterID AND corporationID = @corporationID",
                 new Dictionary<string, object>()
                 {
                     {"@corporationID", corporationID}

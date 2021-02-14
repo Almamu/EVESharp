@@ -52,21 +52,21 @@ CREATE TABLE `invItemsAttributes` (
  */
 INSERT INTO invItems (itemID, singleton, quantity)
   VALUES (0, 1, 1);
-INSERT INTO evenames (itemID, itemName, typeID, groupID, categoryID)
+INSERT INTO eveNames (itemID, itemName, typeID, groupID, categoryID)
   VALUES (0, '(none)', 0, 0, 0);
 /*
  * Static record of EVE System
  */
 INSERT INTO invItems (itemID, singleton, quantity)
   VALUES (1, 1, 1);
-INSERT INTO evenames (itemID, itemName, typeID, groupID, categoryID)
+INSERT INTO eveNames (itemID, itemName, typeID, groupID, categoryID)
   VALUES (1, 'EVE System', 0, 0, 0);
 /*
  * Static record for Recycler
  */
 INSERT INTO invItems (itemID, singleton, quantity)
   VALUES (6, 1, 1);
-INSERT INTO evenames (itemID, itemName, typeID, groupID, categoryID)
+INSERT INTO eveNames (itemID, itemName, typeID, groupID, categoryID)
   VALUES (6, 'Recycler', 0, 0, 0);
 /*
  * Static records for universes
@@ -74,7 +74,7 @@ INSERT INTO evenames (itemID, itemName, typeID, groupID, categoryID)
 INSERT INTO invItems (itemID, typeID, singleton, quantity)
   SELECT universeID, 1, 1, 1
     FROM mapUniverse;
-INSERT INTO evenames (itemID, itemName, typeID, groupID, categoryID)
+INSERT INTO eveNames (itemID, itemName, typeID, groupID, categoryID)
   SELECT universeID, universeName, 1, 0, 0
     FROM mapUniverse;
 INSERT INTO invPositions (itemID, x, y, z)
@@ -96,10 +96,10 @@ INSERT INTO invItems (itemID, typeID, ownerID, locationID, singleton, quantity)
 /*
  * Insert missing names
  */
-INSERT INTO evenames (itemID, itemName, typeID, groupID, categoryID)
+INSERT INTO eveNames (itemID, itemName, typeID, groupID, categoryID)
   SELECT itemID, itemName, typeID, groupID, categoryID
     FROM mapDenormalize LEFT JOIN invGroups USING (groupID) WHERE itemID IN (
-      SELECT mapDenormalize.itemID FROM mapdenormalize LEFT JOIN evenames ON evenames.itemID = mapdenormalize.itemID WHERE evenames.itemName IS NULL
+      SELECT mapDenormalize.itemID FROM mapDenormalize LEFT JOIN eveNames ON eveNames.itemID = mapDenormalize.itemID WHERE eveNames.itemName IS NULL
     );
 /*
  * Insert missing positions
@@ -107,7 +107,7 @@ INSERT INTO evenames (itemID, itemName, typeID, groupID, categoryID)
 INSERT INTO invPositions (itemID, x, y, z)
   SELECT itemID, x, y, z
     FROM mapDenormalize WHERE itemID IN (
-      SELECT mapDenormalize.itemID FROM mapDenormalize LEFT JOIN invPositions ON invPositions.itemID = mapdenormalize.itemID WHERE invPositions.itemID IS NULL
+      SELECT mapDenormalize.itemID FROM mapDenormalize LEFT JOIN invPositions ON invPositions.itemID = mapDenormalize.itemID WHERE invPositions.itemID IS NULL
     );
 /*
  * Insert static characters to invItems table

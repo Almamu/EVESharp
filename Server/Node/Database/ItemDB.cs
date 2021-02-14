@@ -254,7 +254,7 @@ namespace Node.Database
             // TODO: THIS NEEDS SOME CHANGE, WE'RE LOADING HALF A MILLION ITEMS INTO MEMORY
             MySqlConnection connection = null;
             MySqlCommand command = Database.PrepareQuery(ref connection,
-                $"SELECT itemID, evenames.itemName, invItems.typeID, ownerID, locationID, flag, contraband, singleton, quantity, x, y, z, custominfo FROM invItems LEFT JOIN evenames USING(itemID) LEFT JOIN invPositions USING (itemID) WHERE itemID < {ItemManager.USERGENERATED_ID_MIN} AND (groupID = {(int) ItemGroups.Station} OR groupID = {(int) ItemGroups.Faction} OR groupID = {(int) ItemGroups.SolarSystem} OR groupID = {(int) ItemGroups.Corporation} OR groupID = {(int) ItemGroups.System})"
+                $"SELECT itemID, eveNames.itemName, invItems.typeID, ownerID, locationID, flag, contraband, singleton, quantity, x, y, z, custominfo FROM invItems LEFT JOIN eveNames USING(itemID) LEFT JOIN invPositions USING (itemID) WHERE itemID < {ItemManager.USERGENERATED_ID_MIN} AND (groupID = {(int) ItemGroups.Station} OR groupID = {(int) ItemGroups.Faction} OR groupID = {(int) ItemGroups.SolarSystem} OR groupID = {(int) ItemGroups.Corporation} OR groupID = {(int) ItemGroups.System})"
             );
             
             using (connection)
@@ -305,7 +305,7 @@ namespace Node.Database
         {
             MySqlConnection connection = null;
             MySqlDataReader reader = Database.PrepareQuery(ref connection,
-                "SELECT itemID, evenames.itemName, invItems.typeID, ownerID, locationID, flag, contraband, singleton, quantity, x, y, z, customInfo FROM invItems LEFT JOIN evenames USING (itemID) LEFT JOIN invPositions USING (itemID) WHERE itemID = @itemID",
+                "SELECT itemID, eveNames.itemName, invItems.typeID, ownerID, locationID, flag, contraband, singleton, quantity, x, y, z, customInfo FROM invItems LEFT JOIN eveNames USING (itemID) LEFT JOIN invPositions USING (itemID) WHERE itemID = @itemID",
                 new Dictionary<string, object>()
                 {
                     {"@itemID", itemID}
@@ -733,7 +733,7 @@ namespace Node.Database
             {
                 // create the item name entry if needed
                 Database.PrepareQuery(
-                    "INSERT INTO evenames(itemID, itemName, categoryID, groupID, typeID)VALUES(@itemID, @itemName, @categoryID, @groupID, @typeID)",
+                    "INSERT INTO eveNames(itemID, itemName, categoryID, groupID, typeID)VALUES(@itemID, @itemName, @categoryID, @groupID, @typeID)",
                     new Dictionary<string, object>()
                     {
                         {"@itemID", newItemID},
@@ -787,7 +787,7 @@ namespace Node.Database
                 
                 // create the item name entry if needed
                 Database.PrepareQuery(
-                    "INSERT INTO evenames(itemID, itemName, categoryID, groupID, typeID)VALUES(@itemID, @itemName, @categoryID, @groupID, @typeID)",
+                    "INSERT INTO eveNames(itemID, itemName, categoryID, groupID, typeID)VALUES(@itemID, @itemName, @categoryID, @groupID, @typeID)",
                     new Dictionary<string, object>()
                     {
                         {"@itemID", newItemID},
@@ -1073,7 +1073,7 @@ namespace Node.Database
             {
                 // save item name if exists
                 Database.PrepareQuery(
-                    "REPLACE INTO evenames (itemID, itemName, categoryID, groupID, typeID)VALUES(@itemID, @itemName, @categoryID, @groupID, @typeID)",
+                    "REPLACE INTO eveNames (itemID, itemName, categoryID, groupID, typeID)VALUES(@itemID, @itemName, @categoryID, @groupID, @typeID)",
                     new Dictionary<string, object>()
                     {
                         {"@itemID", item.ID},
@@ -1087,7 +1087,7 @@ namespace Node.Database
             else if (item.HadName)
             {
                 Database.PrepareQuery(
-                    "DELETE FROM evenames WHERE itemID = @itemID",
+                    "DELETE FROM eveNames WHERE itemID = @itemID",
                     new Dictionary<string, object>()
                     {
                         {"@itemID", item.ID}
