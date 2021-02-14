@@ -2,7 +2,7 @@ using System.IO;
 
 namespace PythonTypes
 {
-    internal static class Extensions
+    public static class Extensions
     {
         /// <summary>
         /// Writes a marshal opcode to the stream
