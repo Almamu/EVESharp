@@ -83,5 +83,10 @@ namespace Node.Services.Navigation
                 new PyDataType [] { "fromID", "rank" }
             );
         }
+
+        public PyDataType GetStuckSystems(CallInformation call)
+        {
+            return new PyDictionary();
+        }
     }
 }

@@ -251,9 +251,10 @@ namespace Node.Database
 
         public List<ItemEntity> LoadStaticItems()
         {
+            // TODO: THIS NEEDS SOME CHANGE, WE'RE LOADING HALF A MILLION ITEMS INTO MEMORY
             MySqlConnection connection = null;
             MySqlCommand command = Database.PrepareQuery(ref connection,
-                $"SELECT itemID, evenames.itemName, invItems.typeID, ownerID, locationID, flag, contraband, singleton, quantity, x, y, z, custominfo FROM invItems LEFT JOIN evenames USING(itemID) LEFT JOIN invPositions USING (itemID) WHERE itemID < {ItemManager.USERGENERATED_ID_MIN}"
+                $"SELECT itemID, evenames.itemName, invItems.typeID, ownerID, locationID, flag, contraband, singleton, quantity, x, y, z, custominfo FROM invItems LEFT JOIN evenames USING(itemID) LEFT JOIN invPositions USING (itemID) WHERE itemID < {ItemManager.USERGENERATED_ID_MIN} AND (groupID = {(int) ItemGroups.Station} OR groupID = {(int) ItemGroups.Faction} OR groupID = {(int) ItemGroups.SolarSystem} OR groupID = {(int) ItemGroups.Corporation} OR groupID = {(int) ItemGroups.System})"
             );
             
             using (connection)

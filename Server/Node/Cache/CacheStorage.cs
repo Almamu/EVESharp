@@ -28,6 +28,8 @@ using Common.Database;
 using Common.Logging;
 using MySql.Data.MySqlClient;
 using Node.Inventory;
+using Node.Inventory.Items;
+using PythonTypes.Marshal;
 using PythonTypes.Types.Complex;
 using PythonTypes.Types.Database;
 using PythonTypes.Types.Primitives;
@@ -121,7 +123,7 @@ namespace Node
             "SELECT graphicID, url3D, urlWeb, icon, urlSound, explosionID FROM eveGraphics",
             "SELECT celestialID, description FROM mapCelestialDescriptions",
             "SELECT certificateID, categoryID, classID, grade, iconID, corpID, description, 0 AS dataID FROM crtCertificates",
-            $"SELECT itemID AS locationID, itemName as locationName, x, y, z FROM invItems LEFT JOIN evenames USING (itemID) LEFT JOIN invPositions USING (itemID) WHERE (categoryID = 2 OR categoryID = 3) AND itemID < {ItemManager.USERGENERATED_ID_MIN}",
+            $"SELECT itemID AS locationID, itemName as locationName, x, y, z FROM invItems LEFT JOIN evenames USING (itemID) LEFT JOIN invPositions USING (itemID) WHERE (groupID = {(int) ItemGroups.Station} OR groupID = {(int) ItemGroups.Constellation} OR groupID = {(int) ItemGroups.SolarSystem} OR groupID = {(int) ItemGroups.Region}) AND itemID < {ItemManager.USERGENERATED_ID_MIN}",
             "SELECT factionID, typeID, standingLoss, confiscateMinSec, fineByValue, attackMinSec FROM invContrabandTypes",
             "SELECT relationshipID, parentID, parentTypeID, parentLevel, childID, childTypeID FROM crtRelationships",
             "SELECT unitID,unitName,displayName FROM eveUnits",
@@ -322,24 +324,28 @@ namespace Node
 
         public void Store(string name, PyDataType data, long timestamp)
         {
-            PyCacheHint hint = PyCacheHint.FromPyObject(name, data, timestamp, this.mContainer.NodeID);
+            byte[] marshalData = Marshal.ToByteArray(data);
+            
+            PyCacheHint hint = PyCacheHint.FromPyObject(name, marshalData, timestamp, this.mContainer.NodeID);
 
             // save cache hint
             this.mCacheHints[name] = hint;
             // save cache object
-            this.mCacheData[name] = PyCachedObject.FromCacheHint(hint, data);
+            this.mCacheData[name] = PyCachedObject.FromCacheHint(hint, marshalData);
         }
 
         public void StoreCall(string service, string method, PyDataType data, long timestamp)
         {
+            byte[] marshalData = Marshal.ToByteArray(data);
+            
             string index = $"{service}::{method}";
             PyDataType objectID = this.GenerateObjectIDForCall(service, method);
-            PyCacheHint hint = PyCacheHint.FromPyObject(objectID, data, timestamp, this.mContainer.NodeID);
+            PyCacheHint hint = PyCacheHint.FromPyObject(objectID, marshalData, timestamp, this.mContainer.NodeID);
             
             // save cache hint
             this.mCacheHints[index] = hint;
             // save cache object
-            this.mCacheData[index] = PyCachedObject.FromCacheHint(hint, data);
+            this.mCacheData[index] = PyCachedObject.FromCacheHint(hint, marshalData);
         }
 
         public PyDictionary GetHints(Dictionary<string, string> list)

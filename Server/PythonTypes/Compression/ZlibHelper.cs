@@ -1,4 +1,5 @@
 using System.IO;
+using System.IO.Compression;
 using Org.BouncyCastle.Utilities.Zlib;
 
 namespace PythonTypes.Compression
@@ -26,7 +27,7 @@ namespace PythonTypes.Compression
         public static byte[] Compress(byte[] input)
         {
             var sourceStream = new MemoryStream();
-            var stream = new ZOutputStream(sourceStream, -1);
+            var stream = new ZOutputStream(sourceStream, 1);
             // write zlib header
             stream.Write(input);
             stream.Finish();

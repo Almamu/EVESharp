@@ -69,47 +69,46 @@ INSERT INTO invItems (itemID, singleton, quantity)
 INSERT INTO evenames (itemID, itemName, typeID, groupID, categoryID)
   VALUES (6, 'Recycler', 0, 0, 0);
 /*
+ * Static records for universes
+ */
+INSERT INTO invItems (itemID, typeID, singleton, quantity)
+  SELECT universeID, 1, 1, 1
+    FROM mapUniverse;
+INSERT INTO evenames (itemID, itemName, typeID, groupID, categoryID)
+  SELECT universeID, universeName, 1, 0, 0
+    FROM mapUniverse;
+INSERT INTO invPositions (itemID, x, y, z)
+  SELECT universeID, x, y, z
+    FROM mapUniverse;
+/*
  * Insert factions
  */
 INSERT INTO invItems (itemID, typeID, ownerID, locationID, singleton, quantity)
   SELECT factionID, 30, corporationID, solarSystemID, 1, 1
     FROM chrFactions;
 /*
- * Insert regions
+ * Insert any map item
  */
 INSERT INTO invItems (itemID, typeID, ownerID, locationID, singleton, quantity)
-  SELECT regionID, 3, 1, 9, 1, 1
-    FROM mapRegions;
-INSERT INTO invPositions (itemID, x, y, z)
-  SELECT regionID, x, y, z
-    FROM mapRegions;
+  SELECT itemID, typeID, IF(staStations.corporationID IS NULL, 1, staStations.corporationID), IF(mapDenormalize.solarSystemID IS NULL, IF(mapDenormalize.constellationID IS NULL, IF(mapDenormalize.regionID IS NULL, 9, mapDenormalize.regionID), mapDenormalize.constellationID), mapDenormalize.solarSystemID), 1, 1
+    FROM mapDenormalize
+      LEFT JOIN staStations ON staStations.stationID = mapDenormalize.itemID;
 /*
- * Insert constellations
+ * Insert missing names
  */
-INSERT INTO invItems (itemID, typeID, ownerID, locationID, singleton, quantity)
-  SELECT constellationID, 4, 1, regionID, x, y, z, 1, 1
-    FROM mapConstellations;
-INSERT INTO invPositions (itemID, x, y, z)
-  SELECT constellationID, x, y, z
-    FROM mapConstellations;
+INSERT INTO evenames (itemID, itemName, typeID, groupID, categoryID)
+  SELECT itemID, itemName, typeID, groupID, categoryID
+    FROM mapDenormalize LEFT JOIN invGroups USING (groupID) WHERE itemID IN (
+      SELECT mapDenormalize.itemID FROM mapdenormalize LEFT JOIN evenames ON evenames.itemID = mapdenormalize.itemID WHERE evenames.itemName IS NULL
+    );
 /*
- * Insert solar systems
+ * Insert missing positions
  */
-INSERT INTO invItems (itemID, typeID, ownerID, locationID, singleton, quantity)
-  SELECT solarSystemID, 5, 1, constellationID, 1, 1
-    FROM mapSolarSystems;
 INSERT INTO invPositions (itemID, x, y, z)
-  SELECT solarSystemID, x, y, z
-    FROM mapSolarSystems;
-/*
- * Insert stations
- */
-INSERT INTO invItems (itemID, typeID, ownerID, locationID, singleton, quantity)
-  SELECT stationID, stationTypeID, corporationID, solarSystemID, 1, 1
-    FROM staStations;
-INSERT INTO invPositions (itemID, x, y, z)
-  SELECT stationID, x, y, z
-    FROM staStations;
+  SELECT itemID, x, y, z
+    FROM mapDenormalize WHERE itemID IN (
+      SELECT mapDenormalize.itemID FROM mapDenormalize LEFT JOIN invPositions ON invPositions.itemID = mapdenormalize.itemID WHERE invPositions.itemID IS NULL
+    );
 /*
  * Insert static characters to invItems table
  */
@@ -139,15 +138,3 @@ INSERT INTO dgmTypeAttributes(typeID, attributeID, valueInt, valueFloat) SELECT 
  * Create the invTypes entry for the universe item type
  */
 INSERT INTO invTypes(typeID, groupID, typeName, description, radius, mass, volume, capacity, portionSize, basePrice, published, chanceOfDuplicating)VALUES(1, 0, "Universe", "EVE Online Universe that contains everything in-game", (SELECT radius FROM mapUniverse LIMIT 1), 0, 0, 0, 0, 0, 0, 0);
-/*
- * Copy over the universes in mapUniverse to invItems
- */
-INSERT INTO invItems (itemID, typeID, ownerID, locationID, singleton, quantity)
-  SELECT universeID, 1, 1, 1, 1, 1
-    FROM mapUniverse;
-INSERT INTO evenames (itemID, itemName, typeID, groupID, categoryID)
-  SELECT universeID, universeName, 1, 0, 0
-    FROM mapUniverse;
-INSERT INTO invPositions (itemID, x, y, z)
-  SELECT universeID, x, y, z
-    FROM mapUniverse;

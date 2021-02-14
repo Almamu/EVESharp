@@ -6,6 +6,8 @@ Take in mind that this version might have regression bugs and other problems tha
 # Static data dump database files
 Thankfully CCP provides official database dumps of their static data. This data has proven to be very useful for the emulator's development. Each release corresponds with different patch versions. The last compatible release with EVESharp can be downloaded from [here](https://files.evemu.dev/apoc/apo15-mysql5-v1.sql.bz2)
 
+On top of this file, EVESharp requires a table with precalculated jump distances between solar systems for it to work. This file can be obtained [here](https://files.evesharp.dev/apoc/mapPrecalculatedSolarSystemJumps.sql.gz) or can be generated using the script under [Tools/precalculateSolarSystemJumps](../Tools/precalculateSolarSystemJumps).
+
 # EVE Online client
 The EVESharp server is compatible with EVE Online Aprocrypha 6.14.101786 which can be downloaded from [here](https://files.evemu.dev/apoc/client/)
 

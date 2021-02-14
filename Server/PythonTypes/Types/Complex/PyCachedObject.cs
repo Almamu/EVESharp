@@ -128,7 +128,7 @@ namespace PythonTypes.Types.Complex
             return result;
         }
 
-        public static PyCachedObject FromCacheHint(PyCacheHint cacheInfo, PyDataType data)
+        public static PyCachedObject FromCacheHint(PyCacheHint cacheInfo, byte[] data)
         {
             PyCachedObject cachedObject = new PyCachedObject();
 
@@ -136,7 +136,7 @@ namespace PythonTypes.Types.Complex
             cachedObject.ObjectID = cacheInfo.ObjectID;
             cachedObject.Shared = 1;
             cachedObject.Compressed = 1;
-            cachedObject.Cache = new PyBuffer(ZlibHelper.Compress(PythonTypes.Marshal.Marshal.ToByteArray(data)));
+            cachedObject.Cache = new PyBuffer(ZlibHelper.Compress(data));
             cachedObject.Timestamp = cacheInfo.CacheTime;
             cachedObject.Version = cacheInfo.Version;
 

@@ -1,3 +1,4 @@
+using Common.Logging;
 using Common.Services;
 using Node.Database;
 using Node.Inventory;
@@ -10,10 +11,14 @@ namespace Node.Services.Config
     public class config : Service
     {
         private ConfigDB DB { get; }
+        private Channel Log { get; }
+        private ItemManager ItemManager { get; }
         
-        public config(ConfigDB db)
+        public config(ConfigDB db, ItemManager itemManager, Logger log)
         {
             this.DB = db;
+            this.ItemManager = itemManager;
+            this.Log = log.CreateLogChannel("Map");
         }
 
         public PyDataType GetMultiOwnersEx(PyList ids, CallInformation call)
@@ -77,6 +82,42 @@ namespace Node.Services.Config
         public PyDataType GetStationSolarSystemsByOwner(PyInteger ownerID, CallInformation call)
         {
             return this.DB.GetStationSolarSystemsByOwner(ownerID);
+        }
+
+        public PyDataType GetMapConnections(PyInteger itemID, PyDataType isRegion, PyDataType isConstellation,
+            PyDataType isSolarSystem, PyDataType isCelestial, PyInteger unknown2 = null, CallInformation call = null)
+        {
+            bool isRegionBool = false;
+            bool isConstellationBool = false;
+            bool isSolarSystemBool = false;
+            bool isCelestialBool = false;
+
+            if (isRegion is PyBool regionBool)
+                isRegionBool = regionBool;
+            if (isRegion is PyInteger regionInt)
+                isRegionBool = regionInt.Value == 1;
+            if (isConstellation is PyBool constellationBool)
+                isConstellationBool = constellationBool;
+            if (isConstellation is PyInteger constellationInt)
+                isConstellationBool = constellationInt.Value == 1;
+            if (isSolarSystem is PyBool solarSystemBool)
+                isSolarSystemBool = solarSystemBool;
+            if (isSolarSystem is PyInteger solarSystemInt)
+                isSolarSystemBool = solarSystemInt.Value == 1;
+            if (isCelestial is PyBool celestialBool)
+                isCelestialBool = celestialBool;
+            if (isCelestial is PyInteger celestialInt)
+                isCelestialBool = celestialInt.Value == 1;
+
+            Log.Debug(
+                $"GetMapConnections with arguments: {itemID.Value}, {isRegionBool}, {isConstellationBool}, {isSolarSystemBool}, {isCelestialBool} {unknown2?.Value}");
+
+            if (itemID == this.ItemManager.LocationUniverse.ID)
+            {
+                return this.DB.GetMapConnectionsByUniverse(itemID);
+            }
+            
+            return null;
         }
     }
 }

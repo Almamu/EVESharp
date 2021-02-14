@@ -16,9 +16,10 @@ Once the database is created, generate the .sql files to be imported into the da
 
 These scripts will generate two .sql files named "Server.sql" and "Official.sql" on the "Database" directory. These files will be used during the following steps to import into the database.
 
-Once everything is generated the only thing left is to perform the static data dump import. Extract the ```apo15-mysql5-v1.sql.bz2``` file into the "Database" directory. This should create an sql file ```apo15-mysql5-v1.sql```. This file has to be imported first, followed by the emulator's SQL files:
+Once everything is generated the only thing left is to perform the static data dump import. Extract the ```apo15-mysql5-v1.sql.bz2``` and ```mapPrecalculatedSolarSystemJumps.sql.gz``` files into the "Database" directory. This should create two sql files ```apo15-mysql5-v1.sql``` and ```mapPrecalculatedSolarSystemJumps.sql```. These files have to be imported first, followed by the emulator's SQL files.
 ```
 source apo15-mysql5-v1.sql;
+source mapPrecalculatedSolarSystemJumps.sql;
 source Oficial.sql;
 source Static.sql;
 source Dynamic.sql;
