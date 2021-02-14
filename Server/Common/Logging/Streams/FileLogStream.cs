@@ -9,7 +9,6 @@ namespace Common.Logging.Streams
     {
         private readonly Configuration.FileLog mConfiguration = null;
         private Queue<StreamMessage> mQueue = new Queue<StreamMessage>();
-        private readonly Semaphore mSemaphore = new Semaphore(1, 1);
         private readonly FileStream mFile = null;
         private readonly StreamWriter mWriter = null;
 
@@ -29,28 +28,27 @@ namespace Common.Logging.Streams
         {
             StreamMessage entry = new StreamMessage(messageType, message, channel);
 
-            this.mSemaphore.WaitOne();
-            this.mQueue.Enqueue(entry);
-            this.mSemaphore.Release();
+            lock (this.mQueue)
+                this.mQueue.Enqueue(entry);
         }
 
         public void Flush()
         {
-            this.mSemaphore.WaitOne();
-
-            // if there is no message pending there is not an actual reason to flush the stream
-            // so just release the semaphore and return
-            if (this.mQueue.Count == 0)
+            Queue<StreamMessage> queue;
+            
+            lock (this.mQueue)
             {
-                this.mSemaphore.Release();
-                return;
+                // if there is no message pending there is not an actual reason to flush the stream
+                // so just release the semaphore and return
+                if (this.mQueue.Count == 0)
+                {
+                    return;
+                }
+
+                // clone the queue so the services that need to write messages do not have to wait for the write to finish
+                queue = this.mQueue;
+                this.mQueue = new Queue<StreamMessage>();
             }
-
-            // clone the queue so the services that need to write messages do not have to wait for the write to finish
-            Queue<StreamMessage> queue = this.mQueue;
-            this.mQueue = new Queue<StreamMessage>();
-
-            this.mSemaphore.Release();
 
             while (queue.Count > 0)
             {

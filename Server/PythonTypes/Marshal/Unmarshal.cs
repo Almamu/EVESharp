@@ -39,22 +39,21 @@ namespace PythonTypes.Marshal
         }
 
         private Stream mStream;
-        private BinaryReader mReader;
+        protected BinaryReader mReader;
         private PyDataType[] mSavedList;
         private int mCurrentSavedIndex;
         private int[] mSavedElementsMap;
 
-        private Unmarshal(Stream stream)
+        protected Unmarshal(Stream stream)
         {
             this.mStream = stream;
-            this.mReader = new BinaryReader(this.mStream);
         }
 
         /// <summary>
         /// Processes the marshal buffer header and decompress the data if needed
         /// </summary>
         /// <exception cref="InvalidDataException">If the header is not a correct marshal header</exception>
-        private void ProcessPacketHeader()
+        protected virtual void ProcessPacketHeader()
         {
             // check the header and ensure we use the correct stream to read from it
             byte header = (byte) this.mStream.ReadByte();
@@ -62,7 +61,7 @@ namespace PythonTypes.Marshal
             if (header == Specification.ZlibHeader)
             {
                 this.mStream.Seek(-1, SeekOrigin.Current);
-                this.mStream = new ZInputStream(this.mStream);
+                this.mStream = ZlibHelper.DecompressStream(this.mStream);
                 header = (byte) this.mStream.ReadByte();
             }
 
@@ -103,7 +102,7 @@ namespace PythonTypes.Marshal
             }
         }
 
-        private PyDataType ProcessOpcode(Opcode opcode)
+        protected virtual PyDataType ProcessOpcode(Opcode opcode)
         {
             // perform decode
             switch (opcode)
@@ -178,7 +177,7 @@ namespace PythonTypes.Marshal
         /// <param name="expectHeader">Whether the unmarshaler should check for a Marshal header or not</param>
         /// <returns></returns>
         /// <exception cref="InvalidDataException">If any error was found during the unmarshal process</exception>
-        private PyDataType Process(bool expectHeader = true)
+        protected virtual PyDataType Process(bool expectHeader = true)
         {
             if (expectHeader)
                 this.ProcessPacketHeader();
@@ -197,7 +196,7 @@ namespace PythonTypes.Marshal
             return data;
         }
 
-        private PyDataType ProcessIntegerVar(Opcode opcode)
+        protected virtual PyDataType ProcessIntegerVar(Opcode opcode)
         {
             if (opcode != Opcode.IntegerVar)
                 throw new InvalidDataException($"Trying to parse a {opcode} as integer var");
@@ -237,7 +236,7 @@ namespace PythonTypes.Marshal
         /// <param name="opcode">Type of object to parse</param>
         /// <returns>The decoded python type</returns>
         /// <exception cref="InvalidDataException">If any error was detected in the data</exception>
-        private PyDataType ProcessInteger(Opcode opcode)
+        protected virtual PyDataType ProcessInteger(Opcode opcode)
         {
             switch (opcode)
             {
@@ -269,7 +268,7 @@ namespace PythonTypes.Marshal
         /// <param name="opcode">Type of object to parse</param>
         /// <returns>The decoded python type</returns>
         /// <exception cref="InvalidDataException">If any error was found in the data</exception>
-        private PyDataType ProcessNone(Opcode opcode)
+        protected virtual PyDataType ProcessNone(Opcode opcode)
         {
             if (opcode != Opcode.None)
                 throw new InvalidDataException($"Trying to parse a {opcode} as None");
@@ -286,7 +285,7 @@ namespace PythonTypes.Marshal
         /// <param name="opcode">Type of object to parse</param>
         /// <returns>The decoded python type</returns>
         /// <exception cref="InvalidDataException">If any error was found in the data</exception>
-        private PyDataType ProcessBuffer(Opcode opcode)
+        protected virtual PyDataType ProcessBuffer(Opcode opcode)
         {
             if (opcode != Opcode.Buffer)
                 throw new InvalidDataException($"Trying to parse a {opcode} as Buffer");
@@ -306,7 +305,7 @@ namespace PythonTypes.Marshal
         /// <param name="opcode">Type of object to parse</param>
         /// <returns>The decoded python type</returns>
         /// <exception cref="InvalidDataException">If any error was found in the data</exception>
-        private PyDataType ProcessBool(Opcode opcode)
+        protected virtual PyDataType ProcessBool(Opcode opcode)
         {
             switch (opcode)
             {
@@ -329,7 +328,7 @@ namespace PythonTypes.Marshal
         /// <param name="opcode">Type of object to parse</param>
         /// <returns>The decoded python type</returns>
         /// <exception cref="InvalidDataException">If any error was found in the data</exception>
-        private PyDataType ProcessDecimal(Opcode opcode)
+        protected virtual PyDataType ProcessDecimal(Opcode opcode)
         {
             switch (opcode)
             {
@@ -351,7 +350,7 @@ namespace PythonTypes.Marshal
         /// <param name="opcode">Type of object to parse</param>
         /// <returns>The decoded python type</returns>
         /// <exception cref="InvalidDataException">If any error was found in the data</exception>
-        private PyDataType ProcessToken(Opcode opcode)
+        protected virtual PyDataType ProcessToken(Opcode opcode)
         {
             if (opcode != Opcode.Token)
                 throw new InvalidDataException($"Trying to parse a {opcode} as Token");
@@ -380,7 +379,7 @@ namespace PythonTypes.Marshal
         /// <param name="opcode">Type of object to parse</param>
         /// <returns>The decoded python type</returns>
         /// <exception cref="InvalidDataException">If any error was found in the data</exception>
-        private PyDataType ProcessString(Opcode opcode)
+        protected virtual PyDataType ProcessString(Opcode opcode)
         {
             switch (opcode)
             {
@@ -442,7 +441,7 @@ namespace PythonTypes.Marshal
         /// <param name="opcode">Type of object to parse</param>
         /// <returns>The decoded python type</returns>
         /// <exception cref="InvalidDataException">If any error was found in the data</exception>
-        private PyDataType ProcessTuple(Opcode opcode)
+        protected virtual PyDataType ProcessTuple(Opcode opcode)
         {
             switch (opcode)
             {
@@ -484,7 +483,7 @@ namespace PythonTypes.Marshal
         /// <param name="opcode">Type of object to parse</param>
         /// <returns>The decoded python type</returns>
         /// <exception cref="InvalidDataException">If any error was found in the data</exception>
-        private PyDataType ProcessList(Opcode opcode)
+        protected virtual PyDataType ProcessList(Opcode opcode)
         {
             switch (opcode)
             {
@@ -519,7 +518,7 @@ namespace PythonTypes.Marshal
         /// <param name="opcode">Type of object to parse</param>
         /// <returns>The decoded python type</returns>
         /// <exception cref="InvalidDataException">If any error was found in the data</exception>
-        private PyDataType ProcessDictionary(Opcode opcode)
+        protected virtual PyDataType ProcessDictionary(Opcode opcode)
         {
             if (opcode != Opcode.Dictionary)
                 throw new InvalidDataException($"Trying to parse a {opcode} as Dictionary");
@@ -547,7 +546,7 @@ namespace PythonTypes.Marshal
         /// <param name="opcode">Type of object to parse</param>
         /// <returns>The decoded python type</returns>
         /// <exception cref="InvalidDataException">If any error was found in the data</exception>
-        private PyDataType ProcessPackedRow(Opcode opcode)
+        protected virtual PyDataType ProcessPackedRow(Opcode opcode)
         {
             if (opcode != Opcode.PackedRow)
                 throw new InvalidDataException($"Trying to parse a {opcode} as PackedRow");
@@ -624,7 +623,7 @@ namespace PythonTypes.Marshal
         /// <param name="opcode">Type of object to parse</param>
         /// <returns>The decoded python type</returns>
         /// <exception cref="InvalidDataException">If any error was found in the data</exception>
-        private PyDataType ProcessObjectData(Opcode opcode)
+        protected virtual PyDataType ProcessObjectData(Opcode opcode)
         {
             if (opcode != Opcode.ObjectData)
                 throw new InvalidDataException($"Trying to parse a {opcode} as ObjectData");
@@ -644,7 +643,7 @@ namespace PythonTypes.Marshal
         /// <param name="opcode">Type of object to parse</param>
         /// <returns>The decoded python type</returns>
         /// <exception cref="InvalidDataException">If any error was found in the data</exception>
-        private PyDataType ProcessObject(Opcode opcode)
+        protected virtual PyDataType ProcessObject(Opcode opcode)
         {
             if (opcode != Opcode.ObjectType1 && opcode != Opcode.ObjectType2)
                 throw new InvalidDataException($"Trying to parse a {opcode} as ObjectEx");
@@ -682,7 +681,7 @@ namespace PythonTypes.Marshal
         /// <param name="opcode">Type of object to parse</param>
         /// <returns>The decoded python type</returns>
         /// <exception cref="InvalidDataException">If any error was found in the data</exception>
-        private PyDataType ProcessSubStruct(Opcode opcode)
+        protected virtual PyDataType ProcessSubStruct(Opcode opcode)
         {
             if (opcode != Opcode.SubStruct)
                 throw new InvalidDataException($"Trying to parse a {opcode} as SubStruct");
@@ -701,7 +700,7 @@ namespace PythonTypes.Marshal
         /// <param name="opcode">Type of object to parse</param>
         /// <returns>The decoded python type</returns>
         /// <exception cref="InvalidDataException">If any error was found in the data</exception>
-        private PyDataType ProcessSubStream(Opcode opcode)
+        protected virtual PyDataType ProcessSubStream(Opcode opcode)
         {
             if (opcode != Opcode.SubStream)
                 throw new InvalidDataException($"Trying to parse a {opcode} as SubStream");
@@ -742,7 +741,7 @@ namespace PythonTypes.Marshal
         /// <param name="opcode">Type of object to parse</param>
         /// <returns>The decoded python type</returns>
         /// <exception cref="InvalidDataException">If any error was found in the data</exception>
-        private PyDataType ProcessChecksumedStream(Opcode opcode)
+        protected virtual PyDataType ProcessChecksumedStream(Opcode opcode)
         {
             if (opcode != Opcode.ChecksumedStream)
                 throw new InvalidDataException($"Trying to parse a {opcode} as ChecksumedStream");
