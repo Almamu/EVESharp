@@ -2,7 +2,9 @@ using System.Collections.Generic;
 using System.Linq;
 using Node.Database;
 using Node.Exceptions;
+using Node.Exceptions.character;
 using Node.Inventory.Items.Attributes;
+using PythonTypes.Types.Exceptions;
 using PythonTypes.Types.Primitives;
 
 namespace Node.Inventory.Items.Types
@@ -431,6 +433,16 @@ namespace Node.Inventory.Items.Types
             this.Items
                 .Where(x => (x.Value.Flag == ItemFlags.Skill || x.Value.Flag == ItemFlags.SkillInTraining) && x.Value is Skill)
                 .ToDictionary(dict => dict.Value.Type.ID, dict => dict.Value as Skill);
+
+        public Dictionary<int, Implant> PluggedInImplants =>
+            this.Items
+                .Where(x => x.Value.Flag == ItemFlags.Implant && x.Value is Implant)
+                .ToDictionary(dict => dict.Key, dict => dict.Value as Implant);
+
+        public Dictionary<int, Implant> PluggedInImplantsByTypeID =>
+            this.Items
+                .Where(x => x.Value.Flag == ItemFlags.Implant && x.Value is Implant)
+                .ToDictionary(dict => dict.Key, dict => dict.Value as Implant);
         
         protected override void LoadContents(ItemFlags ignoreFlags = ItemFlags.None)
         {
@@ -551,6 +563,21 @@ namespace Node.Inventory.Items.Types
         {
             if (this.Balance < needed)
                 throw new NotEnoughMoney(this.Balance, needed);
+        }
+
+        public void EnsureFreeImplantSlot(ItemEntity implant)
+        {
+            int implantSlot = (int) implant.Attributes[AttributeEnum.implantness].Integer;
+
+            foreach (KeyValuePair<int, Implant> pair in this.PluggedInImplants)
+            {
+                // the implant does not use any slot, here for sanity checking
+                if (pair.Value.Attributes.AttributeExists(implantSlot) == false)
+                    continue;
+
+                if (pair.Value.Attributes[AttributeEnum.implantness].Integer == implantSlot)
+                    throw new OnlyOneImplantActive(implant);
+            }
         }
         
         protected override void SaveToDB()

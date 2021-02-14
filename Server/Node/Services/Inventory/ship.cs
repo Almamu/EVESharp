@@ -135,13 +135,11 @@ namespace Node.Services.Inventory
             if (newShip.Singleton == false)
                 throw new UserError("TooFewSubSystemsToUndock");
 
-            if (newShip.OwnerID != callerCharacterID)
-                throw new MktNotOwner();
-
             // TODO: CHECKS FOR IN-SPACE BOARDING!
             
             // check skills required to board the given ship
-            newShip.CheckShipPrerequisites(character);
+            newShip.EnsureOwnership(character);
+            newShip.CheckPrerequisites(character);
             
             // move the character into this new ship
             character.LocationID = newShip.ID;

@@ -489,17 +489,42 @@ namespace Node.Services.Characters
         public PyDataType CharAddImplant(PyInteger itemID, CallInformation call)
         {
             Character character = this.ItemManager.GetItem(call.Client.EnsureCharacterIsSelected()) as Character;
+
             // get the item and plug it into our brain now!
             ItemEntity item = this.ItemManager.LoadItem(itemID);
             
             // ensure the item is somewhere we can interact with it
             if (item.LocationID != call.Client.ShipID && item.LocationID != call.Client.StationID)
                 throw new CustomError("You do not have direct access to this implant");
+            
+            // separate the item if there's more than one
+            if (item.Quantity > 1)
+            {
+                item.Quantity--;
+                
+                // notify the client of the stack change
+                call.Client.NotifyItemQuantityChange(item, item.Quantity + 1);
+                
+                // save the item to the database
+                item.Persist();
+                
+                // create the new item with a default location and flag
+                // this way the item location change notification is only needed once
+                item = this.ItemManager.CreateSimpleItem(item.Type, item.OwnerID, 0,
+                    ItemFlags.None, 1, item.Contraband, item.Singleton);
+            }
+
+            // check if the slot is free or not
+            character.EnsureFreeImplantSlot(item);
+            
+            // check ownership and skills required to plug in the implant
+            item.EnsureOwnership(character);
+            item.CheckPrerequisites(character);
 
             int oldLocationID = item.LocationID;
             ItemFlags oldFlag = item.Flag;
             
-            item.LocationID = call.Client.EnsureCharacterIsSelected();
+            item.LocationID = character.ID;
             item.Flag = ItemFlags.Implant;
 
             call.Client.NotifyItemLocationChange(item, oldFlag, oldLocationID);
@@ -507,6 +532,7 @@ namespace Node.Services.Characters
             // add the item to the inventory it belongs
             character.AddItem(item);
 
+            // persist item changes to database
             item.Persist();
             
             return null;
@@ -521,17 +547,12 @@ namespace Node.Services.Characters
 
             // move the item to the recycler and then remove it
             ItemEntity item = character.Items[itemID];
-
-            // remove it from our inventory
-            character.RemoveItem(item);
             
-            item.LocationID = ItemManager.LocationRecycler.ID;
+            // now destroy the item
+            this.ItemManager.DestroyItem(item);
             
             // notify the change
             call.Client.NotifyItemLocationChange(item, item.Flag, character.ID);
-            
-            // now destroy the item
-            item.Destroy();
             
             return null;
         }

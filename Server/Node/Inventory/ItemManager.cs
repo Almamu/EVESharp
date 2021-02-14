@@ -59,9 +59,9 @@ namespace Node.Inventory
 
         public Dictionary<int, Station> Stations => this.mStations;
         public Dictionary<int, SolarSystem> SolarSystems => this.mSolarSystems;
-        public ItemEntity LocationSystem { get; private set; }
-        public ItemEntity LocationRecycler { get; private set; }
-        public ItemEntity LocationUniverse { get; private set; }
+        public EVESystem LocationSystem { get; private set; }
+        public EVESystem LocationRecycler { get; private set; }
+        public EVESystem LocationUniverse { get; private set; }
         public ItemEntity SecureCommerceCommision { get; private set; }
 
         public void Load()
@@ -77,9 +77,9 @@ namespace Node.Inventory
             Log.Info($"Preloaded {this.mItemList.Count} static items");
             
             // store useful items like recycler and system
-            this.LocationRecycler = this.GetItem(this.NodeContainer.Constants["locationRecycler"]);
-            this.LocationSystem = this.GetItem(this.NodeContainer.Constants["locationSystem"]);
-            this.LocationUniverse = this.GetItem(this.NodeContainer.Constants["locationUniverse"]);
+            this.LocationRecycler = this.GetItem(this.NodeContainer.Constants["locationRecycler"]) as EVESystem;
+            this.LocationSystem = this.GetItem(this.NodeContainer.Constants["locationSystem"]) as EVESystem;
+            this.LocationUniverse = this.GetItem(this.NodeContainer.Constants["locationUniverse"]) as EVESystem;
             this.SecureCommerceCommision = this.GetItem(this.NodeContainer.Constants["ownerSecureCommerceCommission"]);
         }
 
@@ -166,6 +166,11 @@ namespace Node.Inventory
 
             switch (item.Type.Group.Category.ID)
             {
+                // catch all for system items
+                case (int) ItemCategories.System:
+                    item = LoadSystem(item);
+                    break;
+                
                 // celestial items are a kind of subcategory
                 // load them in specific ways based on the type of celestial item
                 case (int) ItemCategories.Celestial:
@@ -216,6 +221,11 @@ namespace Node.Inventory
         public bool IsItemLoaded(int itemID)
         {
             return mItemList.ContainsKey(itemID);
+        }
+
+        private ItemEntity LoadSystem(ItemEntity item)
+        {
+            return new EVESystem(item);
         }
 
         private ItemEntity LoadCelestial(ItemEntity item)
