@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Common.Logging;
 using Node.Database;
+using Node.Exceptions.character;
 using Node.Exceptions.skillMgr;
 using Node.Inventory;
 using Node.Inventory.Items;
@@ -490,6 +491,9 @@ namespace Node.Services.Characters
         {
             Character character = this.ItemManager.GetItem(call.Client.EnsureCharacterIsSelected()) as Character;
 
+            if (character.SkillQueue.Count > 0)
+                throw new FailedPlugInImplant();
+            
             // get the item and plug it into our brain now!
             ItemEntity item = this.ItemManager.LoadItem(itemID);
             
