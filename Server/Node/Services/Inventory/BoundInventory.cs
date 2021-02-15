@@ -170,8 +170,6 @@ namespace Node.Services.Inventory
                     
                     // simple, move the item
                     item.LocationID = this.mInventory.ID;
-                    
-                    // is this really something we have to take into account? I'm not sure...
                     item.Flag = (ItemFlags) (int) flag;
                     
                     item.Persist();
@@ -203,7 +201,9 @@ namespace Node.Services.Inventory
                         ItemInventory inventory = this.ItemManager.GetItem(item.LocationID) as ItemInventory;
 
                         // remove the item from the inventory
-                        inventory.Items.Remove(item.ID);
+                        inventory.RemoveItem(item);
+                        
+                        // TODO: TAKE INTO ACCOUNT META INVENTORIES
                     }
 
                     int oldLocationID = item.LocationID;

@@ -49,7 +49,7 @@ namespace Node.Services.Network
             return res;
         }
 
-        public PyDataType SendClientStackTraceAlert(PyTuple stackInfo, PyString stackTrace, PyString type, CallInformation call)
+        public PyDataType SendClientStackTraceAlert(PyTuple stackInfo, PyString stackTrace, PyString type, PyDataType extra = null, CallInformation call = null)
         {
             Log.Fatal(
                 "Received the following client's stack trace:" + Environment.NewLine +

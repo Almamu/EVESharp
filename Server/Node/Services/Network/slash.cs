@@ -17,11 +17,30 @@ namespace Node.Services.Network
     {
         private TypeManager TypeManager { get; }
         private ItemManager ItemManager { get; }
+
+        private Dictionary<string, Action<string[], CallInformation>> mCommands =
+            new Dictionary<string, Action<string[], CallInformation>>();
         
         public slash(TypeManager typeManager, ItemManager itemManager)
         {
             this.TypeManager = typeManager;
             this.ItemManager = itemManager;
+            
+            // register commands
+            this.mCommands["create"] = CreateCmd;
+            this.mCommands["createitem"] = CreateCmd;
+            this.mCommands["giveskills"] = GiveSkillCmd;
+            this.mCommands["giveskill"] = GiveSkillCmd;
+        }
+
+        private string GetCommandListForClient()
+        {
+            string result = "";
+
+            foreach (KeyValuePair<string, Action<string[], CallInformation>> pair in this.mCommands)
+                result += $"'{pair.Key}',";
+
+            return $"[{result}]";
         }
         
         public PyDataType SlashCmd(PyString line, CallInformation call)
@@ -33,18 +52,14 @@ namespace Node.Services.Network
             {
                 string[] parts = line.Value.Split(' ');
 
-                switch (parts[0])
-                {
-                    case "/create":
-                        this.CreateCmd(parts, call);
-                        break;
-                    case "/giveskills":
-                    case "/giveskill":
-                        this.GiveSkillCmd(parts, call);
-                        break;
-                    default:
-                        throw new SlashError("Unknown command: " + line.Value);
-                }
+                // get the command name
+                string command = parts[0].TrimStart('/');
+
+                // only a "/" means the client is requesting the list of commands available
+                if (command.Length == 0 || this.mCommands.ContainsKey(command) == false)
+                    throw new SlashError("Commands: " + this.GetCommandListForClient());
+
+                this.mCommands[command].Invoke(parts, call);
             }
             catch (SlashError)
             {

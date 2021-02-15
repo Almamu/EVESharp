@@ -102,6 +102,11 @@ namespace Node
                 foreach (MethodInfo method in methods)
                 {
                     ParameterInfo[] parameters = method.GetParameters();
+
+                    // ignore functions that do not have enough parameters in them
+                    if (parameters.Length < (payload.Count + 1))
+                        continue;
+                    
                     object[] parameterList = new object[parameters.Length];
 
                     // set last parameters as these are the only ones that do not change
@@ -111,6 +116,7 @@ namespace Node
                     
                     for (int i = 0; i < parameterList.Length - 1; i++)
                     {
+                        // ensure the parameter count list matches
                         // search for a method that has enough parameters to handle this call
                         if (i >= payload.Count)
                         {

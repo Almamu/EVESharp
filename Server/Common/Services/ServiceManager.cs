@@ -33,6 +33,11 @@ namespace Common.Services
                 foreach (MethodInfo method in methods)
                 {
                     ParameterInfo[] parameters = method.GetParameters();
+                    
+                    // ignore functions that do not have enough parameters in them
+                    if (parameters.Length < (arguments.Count + 1))
+                        continue;
+
                     object[] parameterList = new object[parameters.Length];
                     
                     // set last parameters as these are the only ones that do not change
