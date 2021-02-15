@@ -582,10 +582,10 @@ namespace Node.Database
             }
         }
 
-        public PyDataType GetJournal(int characterID, int? refTypeID, int accountKey, long minDate)
+        public PyDataType GetJournal(int characterID, int? refTypeID, int accountKey, long maxDate)
         {
             // add one day to the minimum date to get the maximum date
-            long maxDate = DateTime.FromFileTimeUtc(minDate).AddDays(-1).ToFileTimeUtc();
+            long minDate = DateTime.FromFileTimeUtc(maxDate).AddDays(-1).ToFileTimeUtc();
             
             Dictionary<string, object> parameters = new Dictionary<string, object>()
             {
@@ -599,7 +599,7 @@ namespace Node.Database
                 "SELECT transactionID, transactionDate, referenceID, entryTypeID," +
                 " ownerID1, ownerID2, accountKey, amount, balance, description " +
                 "FROM market_journal " +
-                "WHERE (ownerID1=@characterID OR ownerID2=@characterID) AND accountKey=@accountKey AND transactionDate <= @minDate AND transactionDate >= @maxDate";
+                "WHERE (ownerID1=@characterID OR ownerID2=@characterID) AND accountKey=@accountKey AND transactionDate >= @minDate AND transactionDate <= @maxDate";
 
             if (refTypeID != null)
             {
@@ -648,10 +648,11 @@ namespace Node.Database
             
             // add the bounty to the player
             Database.PrepareQuery(
-                "UPDATE chrInformation SET bounty = bounty + @bounty",
+                "UPDATE chrInformation SET bounty = bounty + @bounty WHERE characterID = @characterID",
                 new Dictionary<string, object>()
                 {
-                    {"@bounty", bounty}
+                    {"@bounty", bounty},
+                    {"@characterID", characterID}
                 }
             );
         }

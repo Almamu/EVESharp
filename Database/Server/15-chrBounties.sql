@@ -1,8 +1,9 @@
 DROP TABLE IF EXISTS `chrBounties`;
 
 CREATE TABLE `chrBounties` (
-	`characterID` INT UNSIGNED NOT NULL,
-	`ownerID` INT UNSIGNED NOT NULL,
-	`bounty` DOUBLE NOT NULL,
-	PRIMARY KEY (`characterID`, `ownerID`)
+	`bountyID` INT(11) NOT NULL AUTO_INCREMENT,
+	`characterID` INT(10) UNSIGNED NOT NULL,
+	`ownerID` INT(10) UNSIGNED NOT NULL,
+	`bounty` DOUBLE(22,0) NOT NULL,
+	PRIMARY KEY (`bountyID`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
