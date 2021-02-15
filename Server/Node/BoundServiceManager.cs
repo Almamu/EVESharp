@@ -116,7 +116,6 @@ namespace Node
                     
                     for (int i = 0; i < parameterList.Length - 1; i++)
                     {
-                        // ensure the parameter count list matches
                         // search for a method that has enough parameters to handle this call
                         if (i >= payload.Count)
                         {
