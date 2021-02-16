@@ -147,6 +147,14 @@ namespace Common.Network
                 return;
             }
 
+            // receiving 0 bytes means the socket has to be closed
+            if (state.Received == 0)
+            {
+                this.ForcefullyDisconnect();
+                this.FireOnConnectionLostHandler();
+                return;
+            }
+
             // queue the packets and process them
             this.mPacketizer.QueuePackets(state.Buffer, state.Received);
             this.mPacketizer.ProcessPackets();

@@ -43,9 +43,23 @@ namespace Common.Network
             this.mOnConnectionLost = onConnectionLostHandler;
         }
 
+        protected void FireOnConnectionLostHandler()
+        {
+            try
+            {
+                this.mOnConnectionLost?.Invoke();
+            }
+            catch (Exception)
+            {
+                // ignored as these are not really important
+            }
+        }
+
         protected void HandleException(Exception ex)
         {
-            bool handled = false;
+            // object disposed exception happens if we try to double-close the connection
+            // we don't really care about those, so just mark them as handled
+            bool handled = ex is ObjectDisposedException;
             
             // check for specific disconnection scenarios
             if (ex is SocketException socketException)
@@ -72,7 +86,7 @@ namespace Common.Network
                     case SocketError.ProtocolOption:
                     case SocketError.HostNotFound:
                         handled = true;
-                        this.mOnConnectionLost?.Invoke();
+                        this.FireOnConnectionLostHandler();
                         break;
                 }
             }
@@ -91,8 +105,11 @@ namespace Common.Network
 
         public void ForcefullyDisconnect()
         {
+            // disconnect and shutdown the socket
             this.Socket.Disconnect(false);
             this.Socket.Shutdown(SocketShutdown.Both);
+            // finally close it
+            this.Socket.Close();
         }
 
         public string GetRemoteAddress()
