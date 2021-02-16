@@ -152,10 +152,10 @@ namespace ClusterController
             int newSolarsystemid2int = 0;
             int oldSolarsystemid2int = 0;
 
-            if (newSolarsystemid2 is PyInteger)
-                newSolarsystemid2int = newSolarsystemid2 as PyInteger;
-            if (oldSolarsystemid2 is PyInteger)
-                oldSolarsystemid2int = oldSolarsystemid2 as PyInteger;
+            if (newSolarsystemid2 is PyInteger newSolarsystemid2integer)
+                newSolarsystemid2int = newSolarsystemid2integer;
+            if (oldSolarsystemid2 is PyInteger oldSolarsystemid2integer)
+                oldSolarsystemid2int = oldSolarsystemid2integer;
 
             // the solar system changed, ensure it's loaded and if not ensure one node loads it at least
             if (newSolarsystemid2 != oldSolarsystemid2)
@@ -164,18 +164,8 @@ namespace ClusterController
                 {
                     long nodeID = this.SystemManager.LoadSolarSystem(newSolarsystemid2int);
                     
-                    // TODO: TAKE THIS OUT OF HERE AND BUILD A PROPER METHOD FOR NOTIFICATION SENDING
-                    // build a packet for this node
-                    PyPacket notification = new PyPacket(PyPacket.PacketType.NOTIFICATION);
-
-                    notification.Source = new PyAddressAny(0);
-                    notification.Destination = new PyAddressNode(nodeID, 0);
-                    notification.Payload = new PyTuple(2) {[0] = "OnSolarSystemLoad", [1] = new PyTuple(1) { [0] = newSolarsystemid2int} };
-                    notification.OutOfBounds = new PyDictionary();
-                    notification.UserID = 0;
-                    
-                    // tell the node to mark the solar system as loaded
-                    this.ConnectionManager.Nodes[nodeID].Socket.Send(notification);
+                    // send a notification to the node
+                    this.ConnectionManager.NotifyNode(nodeID, "OnSolarSystemLoad", new PyTuple (1) { [0] = newSolarsystemid2int});
                     
                     // set the new nodeID for the client
                     client.NodeID = nodeID;

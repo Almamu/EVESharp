@@ -124,27 +124,12 @@ namespace Common.Network
 
         private void BeginReceive(byte[] buffer, AsyncCallback callback)
         {
-            try
-            {
-                this.Socket.BeginReceive(buffer, 0, buffer.Length, SocketFlags.None, callback, new ReceiveCallbackState(buffer));
-            }
-            catch (Exception e)
-            {
-                this.HandleException(e);
-            }
+            this.Socket.BeginReceive(buffer, 0, buffer.Length, SocketFlags.None, callback, new ReceiveCallbackState(buffer));
         }
 
         private int EndReceive(IAsyncResult asyncResult)
         {
-            try
-            {
-                return this.Socket.EndReceive(asyncResult);
-            }
-            catch (Exception e)
-            {
-                this.HandleException(e);
-                throw;
-            }
+            return this.Socket.EndReceive(asyncResult);
         }
 
         private void ReceiveCallback(IAsyncResult asyncResult)
@@ -155,9 +140,10 @@ namespace Common.Network
             {
                 state.Received = this.EndReceive(asyncResult);
             }
-            catch (Exception)
+            catch (Exception e)
             {
                 // an exception here means the connection closed
+                this.HandleException(e);
                 return;
             }
 
@@ -181,9 +167,6 @@ namespace Common.Network
 #if DEBUG
             this.mPacketLog.Trace(PrettyPrinter.FromDataType(packet));
 #endif
-
-            MemoryStream stream = new MemoryStream();
-            BinaryWriter writer = new BinaryWriter(stream);
             // marshal the packet first
             byte[] encodedPacket = PythonTypes.Marshal.Marshal.ToByteArray(packet);
 
@@ -191,12 +174,15 @@ namespace Common.Network
             if (encodedPacket.Length > Constants.Network.MAX_PACKET_SIZE)
                 encodedPacket = ZlibHelper.Compress(encodedPacket);
 
-            // write the size to the stream
-            writer.Write(encodedPacket.Length);
-            // finally copy the packet buffer
-            writer.Write(encodedPacket);
+            // generate the final buffer
+            byte[] packetBuffer = new byte[encodedPacket.Length + sizeof(int)];
+            
+            // write the packet size and the buffer to the new buffer
+            Buffer.BlockCopy(BitConverter.GetBytes(encodedPacket.Length), 0, packetBuffer, 0, sizeof(int));
+            Buffer.BlockCopy(encodedPacket, 0, packetBuffer, sizeof(int), encodedPacket.Length);
+            
             // after processing the whole packet queue the actual data
-            this.Send(stream.ToArray());
+            this.Send(packetBuffer);
         }
 
         /// <summary>
@@ -207,9 +193,7 @@ namespace Common.Network
         {
             // add the buffer to the output queue when the queue is not in use
             lock (this.mOutputQueue)
-            {
                 this.mOutputQueue.Enqueue(buffer);
-            }
 
             this.FlushSendingQueue();
         }

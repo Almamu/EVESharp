@@ -7,32 +7,25 @@ namespace Common.Network
     public class StreamPacketizer
     {
         private readonly MemoryStream mInputStream = new MemoryStream();
-        private readonly BinaryWriter mInputWriter = null;
         private readonly BinaryReader mInputReader = null;
         private readonly Queue<byte[]> mOutputQueue = new Queue<byte[]>();
 
-        public int PacketCount
-        {
-            get => this.mOutputQueue.Count;
-            private set { }
-        }
+        public int PacketCount => this.mOutputQueue.Count;
 
         public StreamPacketizer()
         {
             this.mInputReader = new BinaryReader(this.mInputStream);
-            this.mInputWriter = new BinaryWriter(this.mInputStream);
         }
 
-        // Lots of thread safe code here to prevent data corruption
         public void QueuePackets(byte[] data, int bytes)
         {
             lock (this.mInputStream)
             {
                 // go to the end of the memory stream and write the data
-                this.mInputWriter.Seek(0, SeekOrigin.End);
-                this.mInputWriter.Write(data, 0, bytes);
+                this.mInputStream.Seek(0, SeekOrigin.End);
+                this.mInputStream.Write(data, 0, bytes);
                 // return to the beginning of the stream
-                this.mInputWriter.Seek(0, SeekOrigin.Begin);
+                this.mInputStream.Seek(0, SeekOrigin.Begin);
             }
         }
 
@@ -46,19 +39,17 @@ namespace Common.Network
                     int size = this.mInputReader.ReadInt32();
 
                     // ensure this packet is completely received
-                    if ((size + this.mInputStream.Position) > this.mInputStream.Length)
+                    if (size + this.mInputStream.Position > this.mInputStream.Length)
                     {
                         // go back to the size indicator
-                        this.mInputReader.BaseStream.Seek(-4, SeekOrigin.Current);
+                        this.mInputStream.Seek(-4, SeekOrigin.Current);
                         
-                        return this.mOutputQueue.Count;                        
+                        return this.PacketCount;                        
                     }
 
+                    // read the packet's data and queue it on the packets queue
                     lock (this.mOutputQueue)
-                        // read the packet's data and queue it on the packets queue
-                    {
                         this.mOutputQueue.Enqueue(this.mInputReader.ReadBytes(size));
-                    }
 
                     // remove the packet from the stream
                     byte[] currentBuffer = this.mInputStream.GetBuffer();
@@ -74,16 +65,14 @@ namespace Common.Network
                     this.mInputStream.Seek(0, SeekOrigin.Begin);
                 }
 
-                return this.mOutputQueue.Count;
+                return this.PacketCount;
             }
         }
 
         public byte[] PopItem()
         {
             lock (this.mOutputQueue)
-            {
                 return this.mOutputQueue.Dequeue();
-            }
         }
     }
 }

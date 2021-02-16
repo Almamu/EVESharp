@@ -148,6 +148,8 @@ namespace ClusterController
 
         protected override void OnConnectionLost()
         {
+            Log.Warning("Client closed the connection");
+            
             // remove the user from the correct lists
             if (this.AccountID == 0)
             {
@@ -157,6 +159,9 @@ namespace ClusterController
             {
                 // authenticated users are somewhat special as they also have to be free'd from the nodes
                 this.ConnectionManager.RemoveAuthenticatedClientConnection(this);
+                
+                // notify the node of the disconnection of the user
+                this.ConnectionManager.NotifyAllNodes("OnClientDisconnected", new PyTuple(0));
             }
             
             // and free the socket resources
@@ -249,18 +254,20 @@ namespace ClusterController
                 throw new Exception($"Expected tuple to have 3 items but got {data.Count}");
 
             // Handshake sent when we are mostly in
-            HandshakeAck ack = new HandshakeAck();
+            HandshakeAck ack = new HandshakeAck
+            {
+                live_updates = this.GeneralDB.FetchLiveUpdates(),
+                jit = this.Session["languageID"] as PyString,
+                userid = this.Session["userid"] as PyInteger,
+                maxSessionTime = new PyNone(),
+                userType = Common.Constants.AccountType.User,
+                role = this.Session["role"] as PyInteger,
+                address = this.Session["address"] as PyString,
+                inDetention = new PyNone(),
+                client_hashes = new PyList(),
+                user_clientid = this.Session["userid"] as PyInteger
+            };
 
-            ack.live_updates = this.GeneralDB.FetchLiveUpdates();
-            ack.jit = this.Session["languageID"] as PyString;
-            ack.userid = this.Session["userid"] as PyInteger;
-            ack.maxSessionTime = new PyNone();
-            ack.userType = Common.Constants.AccountType.User;
-            ack.role = this.Session["role"] as PyInteger;
-            ack.address = this.Session["address"] as PyString;
-            ack.inDetention = new PyNone();
-            ack.client_hashes = new PyList();
-            ack.user_clientid = this.Session["userid"] as PyInteger;
 
             // send the response first
             this.Socket.Send(ack);

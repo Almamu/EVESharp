@@ -35,10 +35,7 @@ namespace Common.Network
 
         public void SetExceptionHandler(Action<Exception> exceptionHandler)
         {
-            if (exceptionHandler == null)
-                throw new ArgumentNullException(nameof(exceptionHandler));
-
-            this.mExceptionHandler = exceptionHandler;
+            this.mExceptionHandler = exceptionHandler ?? throw new ArgumentNullException(nameof(exceptionHandler));
         }
 
         public void SetOnConnectionLostHandler(Action onConnectionLostHandler)
@@ -48,8 +45,8 @@ namespace Common.Network
 
         protected void HandleException(Exception ex)
         {
-            // first call the custom exception handler
-            this.mExceptionHandler.Invoke(ex);
+            bool handled = false;
+            
             // check for specific disconnection scenarios
             if (ex is SocketException socketException)
             {
@@ -67,10 +64,22 @@ namespace Common.Network
                     case SocketError.OperationAborted:
                     case SocketError.Shutdown:
                     case SocketError.TimedOut:
+                    case SocketError.ConnectionRefused:
+                    case SocketError.HostDown:
+                    case SocketError.NoData:
+                    case SocketError.NotConnected:
+                    case SocketError.NotInitialized:
+                    case SocketError.ProtocolOption:
+                    case SocketError.HostNotFound:
+                        handled = true;
                         this.mOnConnectionLost?.Invoke();
                         break;
                 }
             }
+            
+            // call the custom exception handler only if the exception cannot be handled by the socket itself
+            if (handled == false)
+                this.mExceptionHandler.Invoke(ex);
         }
 
         protected abstract void DefaultExceptionHandler(Exception ex);

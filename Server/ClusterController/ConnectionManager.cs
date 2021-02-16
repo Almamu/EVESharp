@@ -168,6 +168,20 @@ namespace ClusterController
             }
         }
 
+        public void NotifyNode(long nodeID, string type, PyTuple data)
+        {
+            PyPacket notification = new PyPacket(PyPacket.PacketType.NOTIFICATION);
+            
+            notification.Source = new PyAddressAny(0);
+            notification.Destination = new PyAddressNode(nodeID);
+            notification.Payload = new PyTuple(2) {[0] = type, [1] = data };
+            notification.OutOfBounds = new PyDictionary();
+            notification.UserID = 0;
+            
+            lock (this.Nodes)
+                this.Nodes[nodeID].Socket.Send(notification);
+        }
+
         public void NotifyBySolarSystemID2(PyPacket packet, PyAddressBroadcast destination)
         {
             lock (this.Clients)
@@ -360,6 +374,27 @@ namespace ClusterController
             {
                 foreach (KeyValuePair<long, NodeConnection> entry in this.Nodes)
                     entry.Value.Socket.Send(packet);
+            }
+        }
+
+        public void NotifyAllNodes(string type, PyTuple data)
+        {
+            PyPacket notification = new PyPacket(PyPacket.PacketType.NOTIFICATION);
+            
+            notification.Source = new PyAddressAny(0);
+            notification.Payload = new PyTuple(2) {[0] = type, [1] = data };
+            notification.OutOfBounds = new PyDictionary();
+            notification.UserID = 0;
+
+            lock (this.Nodes)
+            {
+                foreach (KeyValuePair<long, NodeConnection> entry in this.Nodes)
+                {
+                    // update destination and send
+                    notification.Destination = new PyAddressNode(entry.Key);
+
+                    entry.Value.Socket.Send(notification);
+                }
             }
         }
     }
