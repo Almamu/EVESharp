@@ -1,4 +1,6 @@
-﻿namespace Node.Inventory.Items
+﻿using System.Collections.Generic;
+
+namespace Node.Inventory.Items
 {
     public class ItemInventoryByOwnerID : ItemInventory
     {
@@ -15,7 +17,23 @@
             {
                 this.ContentsLoaded = true;
 
-                this.mItems = this.mItemFactory.ItemManager.LoadItemsLocatedAtByOwner(this, this.ItemOwnerID);
+                this.mItems = this.ItemFactory.ItemManager.LoadItemsLocatedAtByOwner(this, this.ItemOwnerID);
+            }
+        }
+
+        public override void Unload()
+        {
+            // meta inventories should not unload the original item
+            if (this.ContentsLoaded == true)
+            {
+                this.ContentsLoaded = false;
+                
+                lock (this.Items)
+                    foreach (KeyValuePair<int, ItemEntity> pair in this.Items)
+                        if(this.ItemFactory.ItemManager.IsItemLoaded(pair.Key) == true)
+                            pair.Value.Unload();
+
+                this.Items = null;
             }
         }
     }

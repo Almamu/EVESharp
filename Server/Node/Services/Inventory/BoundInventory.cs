@@ -18,7 +18,7 @@ namespace Node.Services.Inventory
         private NodeContainer NodeContainer { get; }
         private ItemManager ItemManager { get; }
 
-        public BoundInventory(ItemDB itemDB, ItemInventory item, ItemManager itemManager, NodeContainer nodeContainer, BoundServiceManager manager) : base(manager)
+        public BoundInventory(ItemDB itemDB, ItemInventory item, ItemManager itemManager, NodeContainer nodeContainer, BoundServiceManager manager, Client client) : base(manager, client)
         {
             this.mInventory = item;
             this.mFlag = ItemFlags.None;
@@ -27,7 +27,7 @@ namespace Node.Services.Inventory
             this.NodeContainer = nodeContainer;
         }
 
-        public BoundInventory(ItemDB itemDB, ItemInventory item, ItemFlags flag, ItemManager itemManager, NodeContainer nodeContainer, BoundServiceManager manager) : base(manager)
+        public BoundInventory(ItemDB itemDB, ItemInventory item, ItemFlags flag, ItemManager itemManager, NodeContainer nodeContainer, BoundServiceManager manager, Client client) : base(manager, client)
         {
             this.mInventory = item;
             this.mFlag = flag;
@@ -381,9 +381,9 @@ namespace Node.Services.Inventory
             return null;
         }
 
-        public static PyDataType BindInventory(ItemDB itemDB, ItemInventory item, ItemFlags flag, ItemManager itemManager, NodeContainer nodeContainer, BoundServiceManager boundServiceManager)
+        public static PyDataType BindInventory(ItemDB itemDB, ItemInventory item, ItemFlags flag, ItemManager itemManager, NodeContainer nodeContainer, BoundServiceManager boundServiceManager, Client client)
         {
-            BoundService instance = new BoundInventory(itemDB, item, flag, itemManager, nodeContainer, boundServiceManager);
+            BoundService instance = new BoundInventory(itemDB, item, flag, itemManager, nodeContainer, boundServiceManager, client);
             // bind the service
             int boundID = boundServiceManager.BoundService(instance);
             // build the bound service string

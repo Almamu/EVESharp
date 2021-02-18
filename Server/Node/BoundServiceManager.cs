@@ -4,6 +4,7 @@ using System.Reflection;
 using System.Runtime.ExceptionServices;
 using Common.Logging;
 using Common.Services.Exceptions;
+using Node.Network;
 using Node.Services;
 using PythonTypes.Types.Primitives;
 
@@ -23,7 +24,7 @@ namespace Node
         public Logger Logger { get; }
         
         private int mNextBoundID = 1;
-        private Dictionary<int, BoundService> mBoundServices;
+        private readonly Dictionary<int, BoundService> mBoundServices;
         private Channel Log { get; }
 
         public BoundServiceManager(NodeContainer container, Logger logger)
@@ -41,12 +42,15 @@ namespace Node
         /// <returns>The boundID of this service</returns>
         public int BoundService(BoundService service)
         {
-            int boundID = this.mNextBoundID++;
+            lock (this.mBoundServices)
+            {
+                int boundID = this.mNextBoundID++;
 
-            // add the service to the bound services map
-            this.mBoundServices[boundID] = service;
+                // add the service to the bound services map
+                this.mBoundServices[boundID] = service;
 
-            return boundID;
+                return boundID;
+            }
         }
 
         /// <summary>
@@ -56,7 +60,9 @@ namespace Node
         public void FreeBoundService(int boundID)
         {
             Log.Debug($"Freeing bound service {boundID}");
-            this.mBoundServices.Remove(boundID);
+            
+            lock (this.mBoundServices)
+                this.mBoundServices.Remove(boundID);
         }
         
         /// <param name="boundID">The boundID to generate the string for</param>
@@ -64,6 +70,31 @@ namespace Node
         public string BuildBoundServiceString(int boundID)
         {
             return $"N={this.Container.NodeID}:{boundID}";
+        }
+
+        /// <summary>
+        /// Notifies the bound service manager that the client disconnected
+        /// This frees all the bound services this client has requested
+        /// </summary>
+        /// <param name="client">The client that disconnected</param>
+        public void OnClientDisconnected(Client client)
+        {
+            List<int> boundServiceIDsToRemove = new List<int>();
+            
+            // search in all bound services and ensure the ones belonging to this client are free
+            lock (this.mBoundServices)
+            {
+                foreach (KeyValuePair<int, BoundService> pair in this.mBoundServices)
+                {
+                    // if the bound service belongs to this client
+                    // add it to the removal list
+                    if (pair.Value.Client == client)
+                        boundServiceIDsToRemove.Add(pair.Key);
+                }
+
+                foreach (int key in boundServiceIDsToRemove)
+                    this.FreeBoundService(key);
+            }
         }
         
         /// <summary>
@@ -77,7 +108,7 @@ namespace Node
         /// <returns>The result of the call</returns>
         /// <exception cref="ServiceDoesNotExistsException">If the boundID doesn't match any registered bound service</exception>
         /// <exception cref="ServiceDoesNotContainCallException">If the service was found but no matching call was found</exception>
-        public PyDataType ServiceCall(int boundID, string call, PyTuple payload, object extraInformation)
+        public PyDataType ServiceCall(int boundID, string call, PyTuple payload, CallInformation callInformation)
         {
             BoundService serviceInstance = this.mBoundServices[boundID];
          
@@ -110,7 +141,7 @@ namespace Node
                     object[] parameterList = new object[parameters.Length];
 
                     // set last parameters as these are the only ones that do not change
-                    parameterList[^1] = extraInformation;
+                    parameterList[^1] = callInformation;
 
                     bool match = true;
                     

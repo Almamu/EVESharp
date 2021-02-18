@@ -26,7 +26,18 @@ namespace Node.Services.Characters
         private SystemManager SystemManager { get; }
         private Channel Log { get; }
         
-        public skillMgr(SkillDB db, ItemManager itemManager, TimerManager timerManager, SystemManager systemManager, BoundServiceManager manager, Logger logger) : base(manager)
+        public skillMgr(SkillDB db, ItemManager itemManager, TimerManager timerManager, SystemManager systemManager,
+            BoundServiceManager manager, Logger logger) : base(manager, null)
+        {
+            this.DB = db;
+            this.ItemManager = itemManager;
+            this.TimerManager = timerManager;
+            this.SystemManager = systemManager;
+            this.Log = logger.CreateLogChannel("SkillManager");
+        }
+
+        protected skillMgr(SkillDB db, ItemManager itemManager, TimerManager timerManager, SystemManager systemManager,
+            BoundServiceManager manager, Logger logger, Client client) : base(manager, client)
         {
             this.DB = db;
             this.ItemManager = itemManager;
@@ -59,7 +70,7 @@ namespace Node.Services.Characters
             if (this.MachoResolveObject(objectData as PyTuple, 0, call) != this.BoundServiceManager.Container.NodeID)
                 throw new CustomError("Trying to bind an object that does not belong to us!");
             
-            return new skillMgr(this.DB, this.ItemManager, this.TimerManager, this.SystemManager, this.BoundServiceManager, this.BoundServiceManager.Logger);
+            return new skillMgr(this.DB, this.ItemManager, this.TimerManager, this.SystemManager, this.BoundServiceManager, this.BoundServiceManager.Logger, call.Client);
         }
 
         public PyDataType GetSkillQueue(CallInformation call)

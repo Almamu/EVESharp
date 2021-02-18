@@ -23,6 +23,8 @@
 */
 
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
+using Common.Configuration;
 
 namespace Node.Inventory.Items
 {
@@ -30,7 +32,7 @@ namespace Node.Inventory.Items
     {
         public ItemInventory(ItemEntity from) : base(from.Name, from.ID, from.Type, from.OwnerID, from.LocationID,
             from.Flag, from.Contraband, from.Singleton, from.Quantity, from.X, from.Y, from.Z, from.CustomInfo,
-            from.Attributes, from.mItemFactory)
+            from.Attributes, from.ItemFactory)
         {
         }
 
@@ -40,7 +42,7 @@ namespace Node.Inventory.Items
             {
                 this.mContentsLoaded = true;
 
-                this.mItems = this.mItemFactory.ItemManager.LoadItemsLocatedAt(this, ignoreFlags);
+                this.mItems = this.ItemFactory.ItemManager.LoadItemsLocatedAt(this, ignoreFlags);
             }
         }
 
@@ -59,6 +61,8 @@ namespace Node.Inventory.Items
 
                 return this.mItems;
             }
+            
+            protected set => this.mItems = value;
         }
 
         public virtual void AddItem(ItemEntity item)
@@ -87,8 +91,9 @@ namespace Node.Inventory.Items
             if (this.mContentsLoaded == true)
             {
                 // persist all the items
-                foreach (KeyValuePair<int, ItemEntity> pair in this.mItems)
-                    pair.Value.Persist();
+                lock(this.Items)
+                    foreach (KeyValuePair<int, ItemEntity> pair in this.Items)
+                        pair.Value.Persist();
             }
         }
 
@@ -97,11 +102,30 @@ namespace Node.Inventory.Items
             // first destroy all the items inside this inventory
             // this might trigger the item loading mechanism but it's needed to ensure
             // that all the childs are removed off the database too
-            this.mItemFactory.ItemManager.DestroyItems(this.Items);
+            this.ItemFactory.ItemManager.DestroyItems(this.Items);
 
             // finally call our base destroy method as this will get rid of the item from the database
             // for good
             base.Destroy();
+        }
+
+        public override void Unload()
+        {
+            base.Unload();
+            
+            // unload all the items loaded in this inventory if they're loaded
+            if (this.ContentsLoaded == true)
+            {
+                this.ContentsLoaded = false;
+                
+                lock(this.Items)
+                    foreach (KeyValuePair<int, ItemEntity> pair in this.Items)
+                        if(this.ItemFactory.ItemManager.IsItemLoaded(pair.Key) == true)
+                            pair.Value.Unload();
+
+                // set the item list to null again
+                this.mItems = null;
+            }
         }
 
         protected Dictionary<int, ItemEntity> mItems;

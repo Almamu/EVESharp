@@ -24,7 +24,7 @@ namespace Node.Inventory.Items.Types
                 return;
 
             int typeID = (int) this.Attributes[AttributeEnum.prereqimplant].Integer;
-            ItemType type = this.mItemFactory.TypeManager[typeID];
+            ItemType type = this.ItemFactory.TypeManager[typeID];
 
             if (character.PluggedInImplantsByTypeID.ContainsKey(typeID) == false)
                 throw new PrereqImplantMissing(type);

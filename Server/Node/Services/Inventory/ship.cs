@@ -16,7 +16,7 @@ namespace Node.Services.Inventory
         private ItemManager ItemManager { get; }
         private TypeManager TypeManager { get; }
         private SystemManager SystemManager { get; }
-        public ship(ItemManager itemManager, TypeManager typeManager, SystemManager systemManager, BoundServiceManager manager) : base(manager)
+        public ship(ItemManager itemManager, TypeManager typeManager, SystemManager systemManager, BoundServiceManager manager) : base(manager, null)
         {
             this.ItemManager = itemManager;
             this.TypeManager = typeManager;
@@ -24,7 +24,7 @@ namespace Node.Services.Inventory
         }
 
         protected ship(ItemEntity location, ItemManager itemManager, TypeManager typeManager, SystemManager systemManager,
-            BoundServiceManager manager) : this(itemManager, typeManager, systemManager, manager)
+            BoundServiceManager manager, Client client) : this(itemManager, typeManager, systemManager, manager)
         {
             this.Location = location;
         }
@@ -88,7 +88,7 @@ namespace Node.Services.Inventory
             if (location.Type.Group.ID != group)
                 throw new CustomError("Location and group do not match");
 
-            return new ship(location, this.ItemManager, this.TypeManager, this.SystemManager, this.BoundServiceManager);
+            return new ship(location, this.ItemManager, this.TypeManager, this.SystemManager, this.BoundServiceManager, call.Client);
         }
 
         public PyDataType LeaveShip(CallInformation call)

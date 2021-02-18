@@ -18,7 +18,7 @@ namespace Node.Services.Inventory
         private MarketDB MarketDB { get; }
         private SystemManager SystemManager { get; }
         
-        public insuranceSvc(ItemManager itemManager, InsuranceDB db, MarketDB marketDB, SystemManager systemManager, BoundServiceManager manager) : base(manager)
+        public insuranceSvc(ItemManager itemManager, InsuranceDB db, MarketDB marketDB, SystemManager systemManager, BoundServiceManager manager) : base(manager, null)
         {
             this.DB = db;
             this.ItemManager = itemManager;
@@ -26,7 +26,7 @@ namespace Node.Services.Inventory
             this.SystemManager = systemManager;
         }
 
-        protected insuranceSvc(ItemManager itemManager, InsuranceDB db, MarketDB marketDB, SystemManager systemManager, BoundServiceManager manager, int stationID) : base (manager)
+        protected insuranceSvc(ItemManager itemManager, InsuranceDB db, MarketDB marketDB, SystemManager systemManager, BoundServiceManager manager, int stationID, Client client) : base (manager, client)
         {
             this.mStationID = stationID;
             this.DB = db;
@@ -50,7 +50,7 @@ namespace Node.Services.Inventory
             if (this.MachoResolveObject(objectData as PyInteger, 0, call) != this.BoundServiceManager.Container.NodeID)
                 throw new CustomError("Trying to bind an object that does not belong to us!");
             
-            return new insuranceSvc(this.ItemManager, this.DB, this.MarketDB, this.SystemManager, this.BoundServiceManager, objectData as PyInteger);
+            return new insuranceSvc(this.ItemManager, this.DB, this.MarketDB, this.SystemManager, this.BoundServiceManager, objectData as PyInteger, call.Client);
         }
 
         public PyDataType GetContracts(CallInformation call)

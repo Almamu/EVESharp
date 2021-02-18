@@ -13,7 +13,7 @@ namespace Node.Services.Corporations
         private Dictionary<PyDataType, int> RowsIndex = new Dictionary<PyDataType, int>();
         private Corporation Corporation { get; }
         private CorporationDB DB { get; }
-        public MembersSparseRowsetService(Corporation corporation, CorporationDB db, SparseRowsetHeader rowsetHeader, BoundServiceManager manager) : base(rowsetHeader, manager)
+        public MembersSparseRowsetService(Corporation corporation, CorporationDB db, SparseRowsetHeader rowsetHeader, BoundServiceManager manager, Client client) : base(rowsetHeader, manager, client)
         {
             this.DB = db;
             this.Corporation = corporation;

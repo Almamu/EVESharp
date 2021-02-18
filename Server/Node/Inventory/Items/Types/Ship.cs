@@ -22,7 +22,7 @@ namespace Node.Inventory.Items.Types
             base.Destroy();
             
             // remove insurance off the database
-            this.mItemFactory.InsuranceDB.UnInsureShip(this.ID);
+            this.ItemFactory.InsuranceDB.UnInsureShip(this.ID);
         }
     }
 }

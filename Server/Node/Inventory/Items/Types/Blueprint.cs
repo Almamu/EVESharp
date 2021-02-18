@@ -81,7 +81,7 @@ namespace Node.Inventory.Items.Types
 
         protected override void SaveToDB()
         {
-            this.mItemFactory.ItemDB.PersistBlueprint(this.ID, this.Copy, this.MaterialLevel, this.ProductivityLevel, this.LicensedProductionRunsRemaining);
+            this.ItemFactory.ItemDB.PersistBlueprint(this.ID, this.Copy, this.MaterialLevel, this.ProductivityLevel, this.LicensedProductionRunsRemaining);
         }
     }
 }

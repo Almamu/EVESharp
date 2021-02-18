@@ -8,11 +8,11 @@ namespace Node.Services.War
     {
         private int mObjectID;
         
-        public warRegistry(BoundServiceManager manager) : base(manager)
+        public warRegistry(BoundServiceManager manager) : base(manager, null)
         {
         }
 
-        private warRegistry(BoundServiceManager manager, int objectID) : base(manager)
+        private warRegistry(BoundServiceManager manager, int objectID, Client client) : base(manager, client)
         {
             this.mObjectID = objectID;
         }
@@ -30,7 +30,7 @@ namespace Node.Services.War
         {
             PyTuple tupleData = objectData as PyTuple;
             
-            return new warRegistry(this.BoundServiceManager, tupleData[0] as PyInteger);
+            return new warRegistry(this.BoundServiceManager, tupleData[0] as PyInteger, call.Client);
         }
 
         public PyDataType GetWars(PyInteger ownerID, CallInformation call)

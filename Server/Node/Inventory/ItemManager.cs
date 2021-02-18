@@ -325,7 +325,7 @@ namespace Node.Inventory
         public ItemEntity CreateSimpleItem(ItemType type, int owner, int location, ItemFlags flag, int quantity = 1,
             bool contraband = false, bool singleton = false)
         {
-            return this.CreateSimpleItem(type.Name, type.ID, owner, location, flag, quantity, contraband, singleton);
+            return this.CreateSimpleItem(null, type.ID, owner, location, flag, quantity, contraband, singleton);
         }
 
         public ItemEntity CreateSimpleItem(string itemName, int typeID, int ownerID, int locationID, ItemFlags flag,
@@ -372,7 +372,7 @@ namespace Node.Inventory
         public ItemEntity CreateSimpleItem(ItemType type, ItemEntity owner, ItemEntity location, ItemFlags flags,
             int quantity = 1, bool contraband = false, bool singleton = false)
         {
-            return this.CreateSimpleItem(type.Name, type, owner, location, flags, contraband, singleton, quantity, 0, 0,
+            return this.CreateSimpleItem(null, type, owner, location, flags, contraband, singleton, quantity, 0, 0,
                 0, null);
         }
 
@@ -411,11 +411,18 @@ namespace Node.Inventory
 
         public void UnloadItem(ItemEntity item)
         {
+            // TODO: UNLOADING PROCESS SHOULD BE IMPROVED AS RIGHT NOW WE CHECK FOR EXISTANCE BEFORE CALLING UNLOADITEM
+            if (this.mItemList.ContainsKey(item.ID) == false)
+                return;
+            
             try
             {
-                mItemList.Remove(item.ID);
+                Log.Info($"Unloading item {item.ID}");
+                
+                // remove the item
+                this.mItemList.Remove(item.ID);
 
-                // Update the database informationi
+                // update the ownership information
                 this.ItemDB.UnloadItem(item.ID);
             }
             catch
@@ -426,15 +433,7 @@ namespace Node.Inventory
 
         public void UnloadItem(int itemID)
         {
-            try
-            {
-                this.mItemList.Remove(itemID);
-                this.ItemDB.UnloadItem(itemID);
-            }
-            catch
-            {
-                // ignored
-            }
+            this.UnloadItem(this.GetItem(itemID));
         }
 
         public void DestroyItem(ItemEntity item)

@@ -23,7 +23,16 @@ namespace Node.Services.Stations
         private TypeManager TypeManager { get; }
         private SystemManager SystemManager { get; }
         
-        public corpStationMgr(ItemDB itemDB, MarketDB marketDB, ItemManager itemManager, TypeManager typeManager, SystemManager systemManager, BoundServiceManager manager) : base(manager)
+        public corpStationMgr(ItemDB itemDB, MarketDB marketDB, ItemManager itemManager, TypeManager typeManager, SystemManager systemManager, BoundServiceManager manager) : base(manager, null)
+        {
+            this.ItemDB = itemDB;
+            this.MarketDB = marketDB;
+            this.ItemManager = itemManager;
+            this.TypeManager = typeManager;
+            this.SystemManager = systemManager;
+        }
+        
+        protected corpStationMgr(ItemDB itemDB, MarketDB marketDB, ItemManager itemManager, TypeManager typeManager, SystemManager systemManager, BoundServiceManager manager, Client client) : base(manager, client)
         {
             this.ItemDB = itemDB;
             this.MarketDB = marketDB;
@@ -47,7 +56,7 @@ namespace Node.Services.Stations
             if (this.MachoResolveObject(objectData as PyInteger, 0, call) != this.BoundServiceManager.Container.NodeID)
                 throw new CustomError("Trying to bind an object that does not belong to us!");
 
-            return new corpStationMgr(this.ItemDB, this.MarketDB, this.ItemManager, this.TypeManager, this.SystemManager, this.BoundServiceManager);
+            return new corpStationMgr(this.ItemDB, this.MarketDB, this.ItemManager, this.TypeManager, this.SystemManager, this.BoundServiceManager, call.Client);
         }
 
         public PyDataType GetCorporateStationOffice(CallInformation call)

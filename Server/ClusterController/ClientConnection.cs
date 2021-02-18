@@ -161,7 +161,7 @@ namespace ClusterController
                 this.ConnectionManager.RemoveAuthenticatedClientConnection(this);
                 
                 // notify the node of the disconnection of the user
-                this.ConnectionManager.NotifyAllNodes("OnClientDisconnected", new PyTuple(0));
+                this.ConnectionManager.NotifyAllNodes("OnClientDisconnected", new PyTuple(1) { [0] = this.AccountID });
             }
             
             // and free the socket resources

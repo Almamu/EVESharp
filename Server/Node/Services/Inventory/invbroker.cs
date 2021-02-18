@@ -17,7 +17,7 @@ namespace Node.Services.Inventory
         private NodeContainer NodeContainer { get; }
         private SystemManager SystemManager { get; }
 
-        public invbroker(ItemDB itemDB, ItemManager itemManager, NodeContainer nodeContainer, SystemManager systemManager, BoundServiceManager manager) : base(manager)
+        public invbroker(ItemDB itemDB, ItemManager itemManager, NodeContainer nodeContainer, SystemManager systemManager, BoundServiceManager manager) : base(manager, null)
         {
             this.ItemManager = itemManager;
             this.ItemDB = itemDB;
@@ -25,7 +25,7 @@ namespace Node.Services.Inventory
             this.SystemManager = systemManager;
         }
 
-        private invbroker(ItemDB itemDB, ItemManager itemManager, NodeContainer nodeContainer, SystemManager systemManager, BoundServiceManager manager, int objectID) : base(manager)
+        private invbroker(ItemDB itemDB, ItemManager itemManager, NodeContainer nodeContainer, SystemManager systemManager, BoundServiceManager manager, int objectID, Client client) : base(manager, client)
         {
             this.ItemManager = itemManager;
             this.ItemDB = itemDB;
@@ -76,7 +76,7 @@ namespace Node.Services.Inventory
             if (this.MachoResolveObject(tupleData, 0, call) != this.NodeContainer.NodeID)
                 throw new CustomError("Trying to bind an object that does not belong to us!");
             
-            return new invbroker(this.ItemDB, this.ItemManager, this.NodeContainer, this.SystemManager, this.BoundServiceManager, tupleData[0] as PyInteger);
+            return new invbroker(this.ItemDB, this.ItemManager, this.NodeContainer, this.SystemManager, this.BoundServiceManager, tupleData[0] as PyInteger, call.Client);
         }
 
         public PyDataType GetInventoryFromId(PyInteger itemID, PyInteger one, CallInformation call)
@@ -93,7 +93,7 @@ namespace Node.Services.Inventory
                 callerCharacterID);
 
             // create an instance of the inventory service and bind it to the item data
-            return BoundInventory.BindInventory(this.ItemDB, inventoryByOwner, ItemFlags.None, this.ItemManager, this.NodeContainer, this.BoundServiceManager);
+            return BoundInventory.BindInventory(this.ItemDB, inventoryByOwner, ItemFlags.None, this.ItemManager, this.NodeContainer, this.BoundServiceManager, call.Client);
         }
 
         public PyDataType GetInventory(PyInteger containerID, PyNone none, CallInformation call)
@@ -133,7 +133,7 @@ namespace Node.Services.Inventory
                 callerCharacterID);
             
             // create an instance of the inventory service and bind it to the item data
-            return BoundInventory.BindInventory(this.ItemDB, inventoryByOwner, flag, this.ItemManager, this.NodeContainer, this.BoundServiceManager);
+            return BoundInventory.BindInventory(this.ItemDB, inventoryByOwner, flag, this.ItemManager, this.NodeContainer, this.BoundServiceManager, call.Client);
         }
 
         public PyDataType TrashItems(PyList itemIDs, CallInformation call)

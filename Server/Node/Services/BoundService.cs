@@ -8,9 +8,14 @@ namespace Node.Services
     public abstract class BoundService : Service
     {
         public BoundServiceManager BoundServiceManager { get; }
-        public BoundService(BoundServiceManager manager)
+        /// <summary>
+        /// The client that owns this bound service
+        /// </summary>
+        public Client Client { get; }
+        public BoundService(BoundServiceManager manager, Client client)
         {
             this.BoundServiceManager = manager;
+            this.Client = client;
         }
 
         /// <summary>

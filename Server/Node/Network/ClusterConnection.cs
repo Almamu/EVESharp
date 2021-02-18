@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Text.RegularExpressions;
 using Common.Constants;
@@ -6,6 +7,8 @@ using Common.Logging;
 using Common.Network;
 using Common.Packets;
 using Node.Database;
+using Node.Inventory;
+using Node.Inventory.Items;
 using Node.Inventory.Items.Types;
 using PythonTypes;
 using PythonTypes.Types.Exceptions;
@@ -25,6 +28,7 @@ namespace Node.Network
         public EVEClientSocket Socket { get; }
         private NodeContainer Container { get; }
         private SystemManager SystemManager { get; }
+        private ItemManager ItemManager { get; }
         private ServiceManager ServiceManager { get; }
         private ClientManager ClientManager { get; }
         private BoundServiceManager BoundServiceManager { get; }
@@ -32,8 +36,8 @@ namespace Node.Network
         private AccountDB AccountDB { get; }
 
         public ClusterConnection(NodeContainer container, SystemManager systemManager, ServiceManager serviceManager,
-            ClientManager clientManager, BoundServiceManager boundServiceManager, Logger logger, Container dependencyInjector,
-            AccountDB accountDB)
+            ClientManager clientManager, BoundServiceManager boundServiceManager, ItemManager itemManager,
+            Logger logger, Container dependencyInjector, AccountDB accountDB)
         {
             this.Log = logger.CreateLogChannel("ClusterConnection");
 #if DEBUG
@@ -45,6 +49,7 @@ namespace Node.Network
             this.ClientManager = clientManager;
             this.BoundServiceManager = boundServiceManager;
             this.DependencyInjector = dependencyInjector;
+            this.ItemManager = itemManager;
             this.Container = container;
             this.AccountDB = accountDB;
             this.Socket = new EVEClientSocket(this.Log);
@@ -342,6 +347,47 @@ namespace Node.Network
             this.SystemManager.LoadSolarSystem(solarSystemID);
         }
 
+        private void HandleOnClientDisconnected(PyTuple data)
+        {
+            if (data.Count != 1)
+            {
+                Log.Error("Received OnClientDisconnected notification with the wrong format");
+                return;
+            }
+
+            PyDataType first = data[0];
+
+            if (first is PyInteger == false)
+            {
+                Log.Error("Received OnClientDisconnected notification with the wrong format");
+                return;
+            }
+
+            PyInteger clientID = first as PyInteger;
+            
+            // remove the client from the session list and free it's data
+            if (this.ClientManager.Contains(clientID) == false)
+            {
+                Log.Error($"Received OnClientDisconnected notification for an unknown client {clientID}");
+                return;
+            }
+
+            // get the client, search for it's common items and meta inventories and free them
+            Client client = this.ClientManager.Get(clientID);
+            
+            // clear bound services for this character
+            this.BoundServiceManager.OnClientDisconnected(client);
+            
+            if (client.CharacterID != null)
+            {
+                // unload the item
+                this.ItemManager.GetItem(client.EnsureCharacterIsSelected()).Unload();
+            }
+
+            // finally remove the client from the manager
+            this.ClientManager.Remove(clientID);
+        }
+
         private void HandleBroadcastNotification(PyPacket packet)
         {
             // this packet is an internal one
@@ -375,6 +421,9 @@ namespace Node.Network
             {
                 case "OnSolarSystemLoad":
                     this.HandleOnSolarSystemLoaded(arguments);
+                    break;
+                case "OnClientDisconnected":
+                    this.HandleOnClientDisconnected(arguments);
                     break;
                 default:
                     Log.Fatal("Received ClusterController notification with the wrong format");

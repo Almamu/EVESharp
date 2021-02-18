@@ -273,7 +273,7 @@ namespace Node.Inventory.Items.Types
             get
             {
                 if (this.mActiveClone == null)
-                    this.mActiveClone = this.mItemFactory.ItemManager.LoadItem((int) this.ActiveCloneID) as Clone;
+                    this.mActiveClone = this.ItemFactory.ItemManager.LoadItem((int) this.ActiveCloneID) as Clone;
 
                 return this.mActiveClone;
             }
@@ -282,7 +282,7 @@ namespace Node.Inventory.Items.Types
             {
                 // free the current active clone (if loaded)
                 if (this.mActiveClone != null)
-                    this.mItemFactory.ItemManager.UnloadItem(this.mActiveClone);
+                    this.ItemFactory.ItemManager.UnloadItem(this.mActiveClone);
                 
                 this.ActiveCloneID = value.ID;
                 this.mActiveClone = value;
@@ -413,7 +413,7 @@ namespace Node.Inventory.Items.Types
                 if (this.mCorporation != null)
                     return this.mCorporation;
 
-                this.mCorporation = this.mItemFactory.ItemManager.LoadItem(this.CorporationID) as Corporation;
+                this.mCorporation = this.ItemFactory.ItemManager.LoadItem(this.CorporationID) as Corporation;
 
                 return this.mCorporation;
             }
@@ -455,7 +455,7 @@ namespace Node.Inventory.Items.Types
                 .Where(x => x.Value.Flag == ItemFlags.SkillInTraining && x.Value is Skill)
                 .ToDictionary(dict => dict.Key, dict => dict.Value as Skill);
 
-            this.mSkillQueue = base.mItemFactory.CharacterDB.LoadSkillQueue(this, skillQueue);
+            this.mSkillQueue = base.ItemFactory.CharacterDB.LoadSkillQueue(this, skillQueue);
             
             // iterate the skill queue and generate timers for the skills
             foreach (SkillQueueEntry entry in this.mSkillQueue)
@@ -500,7 +500,7 @@ namespace Node.Inventory.Items.Types
             skill.Persist();
             
             // create history entry
-            this.mItemFactory.SkillDB.CreateSkillHistoryRecord(skill.Type, this, SkillHistoryReason.SkillTrainingComplete,
+            this.ItemFactory.SkillDB.CreateSkillHistoryRecord(skill.Type, this, SkillHistoryReason.SkillTrainingComplete,
                 skill.Points);
 
             // finally remove it off the skill queue
@@ -530,7 +530,7 @@ namespace Node.Inventory.Items.Types
             }
 
             // create history entry
-            this.mItemFactory.SkillDB.CreateSkillHistoryRecord(skill.Type, this, SkillHistoryReason.SkillTrainingStarted,
+            this.ItemFactory.SkillDB.CreateSkillHistoryRecord(skill.Type, this, SkillHistoryReason.SkillTrainingStarted,
                 skill.Points);
             
             // persists the skill queue
@@ -585,7 +585,7 @@ namespace Node.Inventory.Items.Types
             base.SaveToDB();
 
             // update the relevant character information
-            this.mItemFactory.CharacterDB.UpdateCharacterInformation(this);
+            this.ItemFactory.CharacterDB.UpdateCharacterInformation(this);
         }
 
         public override void Destroy()
@@ -595,6 +595,14 @@ namespace Node.Inventory.Items.Types
                 this.TimerManager.DequeueItemTimer(entry.Skill.ID, entry.Skill.ExpiryTime);
 
             base.Destroy();
+        }
+
+        public override void Unload()
+        {
+            // check for metainventories that belong to us
+            this.ItemFactory.ItemManager.MetaInventoryManager.FreeOwnerInventories(this.ID);
+            
+            base.Unload();
         }
 
         public override void Dispose()

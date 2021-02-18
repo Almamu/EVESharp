@@ -18,13 +18,13 @@ namespace Node.Services.Corporations
 
         private CorporationDB DB { get; }
         private ItemManager ItemManager { get; }
-        public corpRegistry(CorporationDB db, ItemManager itemManager, BoundServiceManager manager) : base(manager)
+        public corpRegistry(CorporationDB db, ItemManager itemManager, BoundServiceManager manager) : base(manager, null)
         {
             this.DB = db;
             this.ItemManager = itemManager;
         }
 
-        protected corpRegistry(CorporationDB db, ItemManager itemManager, Corporation corp, int isMaster, BoundServiceManager manager) : base (manager)
+        protected corpRegistry(CorporationDB db, ItemManager itemManager, Corporation corp, int isMaster, BoundServiceManager manager, Client client) : base (manager, client)
         {
             this.DB = db;
             this.ItemManager = itemManager;
@@ -49,7 +49,7 @@ namespace Node.Services.Corporations
              */
             Corporation corp = this.ItemManager.LoadItem(data[0] as PyInteger) as Corporation;
             
-            return new corpRegistry(this.DB, this.ItemManager, corp, data[1] as PyInteger, this.BoundServiceManager);
+            return new corpRegistry(this.DB, this.ItemManager, corp, data[1] as PyInteger, this.BoundServiceManager, call.Client);
         }
 
         public PyDataType GetEveOwners(CallInformation call)
@@ -85,7 +85,7 @@ namespace Node.Services.Corporations
             
             // create a service for handling it's calls
             MembersSparseRowsetService svc =
-                new MembersSparseRowsetService(this.Corporation, this.DB, rowsetHeader, this.BoundServiceManager);
+                new MembersSparseRowsetService(this.Corporation, this.DB, rowsetHeader, this.BoundServiceManager, call.Client);
 
             rowsetHeader.BoundObjectIdentifier = svc.MachoBindObject(dict, call.Client);
             
@@ -105,7 +105,7 @@ namespace Node.Services.Corporations
             
             // create a service for handling it's calls
             OfficesSparseRowsetService svc =
-                new OfficesSparseRowsetService(this.Corporation, this.DB, rowsetHeader, this.BoundServiceManager);
+                new OfficesSparseRowsetService(this.Corporation, this.DB, rowsetHeader, this.BoundServiceManager, call.Client);
 
             rowsetHeader.BoundObjectIdentifier = svc.MachoBindObject(dict, call.Client);
             

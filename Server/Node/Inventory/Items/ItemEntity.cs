@@ -37,9 +37,9 @@ namespace Node.Inventory.Items
 {
     public abstract class ItemEntity : DatabaseEntity
     {
-        public ItemFactory mItemFactory = null;
+        public ItemFactory ItemFactory { get; }
 
-        public static DBRowDescriptor sEntityItemDescriptor = new DBRowDescriptor()
+        public static readonly DBRowDescriptor sEntityItemDescriptor = new DBRowDescriptor()
         {
             Columns =
             {
@@ -221,7 +221,7 @@ namespace Node.Inventory.Items
             this.mY = y;
             this.mZ = z;
 
-            this.mItemFactory = itemFactory;
+            this.ItemFactory = itemFactory;
             this.mHadName = entityName != null;
             this.mHadPosition = x != null && y != null && z != null;
         }
@@ -234,15 +234,15 @@ namespace Node.Inventory.Items
         {
         }
 
-        public ItemEntity(ItemEntity from) : this(from.Name, from.ID, from.Type, from.OwnerID, from.LocationID, from.Flag,
+        public ItemEntity(ItemEntity from) : this(from.HasName ? from.Name : null, from.ID, from.Type, from.OwnerID, from.LocationID, from.Flag,
             from.Contraband, from.Singleton, from.Quantity, from.X, from.Y, from.Z, from.CustomInfo, from.Attributes,
-            from.mItemFactory)
+            from.ItemFactory)
         {
         }
 
         protected override void SaveToDB()
         {
-            this.mItemFactory.ItemDB.PersistEntity(this);
+            this.ItemFactory.ItemDB.PersistEntity(this);
         }
 
         public override void Persist()
@@ -258,7 +258,19 @@ namespace Node.Inventory.Items
         {
             base.Destroy();
 
-            this.mItemFactory.ItemDB.DestroyItem(this);
+            this.ItemFactory.ItemDB.DestroyItem(this);
+        }
+
+        /// <summary>
+        /// Unloads this item from the ItemFactory and ensures it's free'd
+        /// </summary>
+        public virtual void Unload()
+        {
+            // persist the item to the database
+            this.Persist();
+            
+            // unload ourselves off the database
+            this.ItemFactory.ItemManager.UnloadItem(this);
         }
 
         public PyPackedRow GetEntityRow()
@@ -297,10 +309,10 @@ namespace Node.Inventory.Items
             int skillLevel = (int) this.Attributes[skillLevelRequirement];
 
             if (skills.ContainsKey(skillTypeID) == false)
-                throw new SkillMissingException(this.mItemFactory.TypeManager[skillTypeID].Name);
+                throw new SkillMissingException(this.ItemFactory.TypeManager[skillTypeID].Name);
 
             if (skills[skillTypeID].Level < skillLevel)
-                throw new SkillMissingException(this.mItemFactory.TypeManager[skillTypeID].Name);
+                throw new SkillMissingException(this.ItemFactory.TypeManager[skillTypeID].Name);
         }
 
         public virtual void CheckPrerequisites(Character character)

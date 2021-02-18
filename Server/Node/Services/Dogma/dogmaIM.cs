@@ -19,7 +19,15 @@ namespace Node.Services.Dogma
         private ItemManager ItemManager { get; }
         private AttributeManager AttributeManager { get; }
         private SystemManager SystemManager { get; }
-        public dogmaIM(ItemManager itemManager, AttributeManager attributeManager, SystemManager systemManager, BoundServiceManager manager) : base(manager)
+        public dogmaIM(ItemManager itemManager, AttributeManager attributeManager, SystemManager systemManager, BoundServiceManager manager) : base(manager, null)
+        {
+            this.ItemManager = itemManager;
+            this.AttributeManager = attributeManager;
+            this.SystemManager = systemManager;
+        }
+
+        protected dogmaIM(ItemManager itemManager, AttributeManager attributeManager, SystemManager systemManager,
+            BoundServiceManager manager, Client client) : base(manager, client)
         {
             this.ItemManager = itemManager;
             this.AttributeManager = attributeManager;
