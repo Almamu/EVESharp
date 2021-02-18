@@ -417,8 +417,6 @@ namespace Node.Inventory
             
             try
             {
-                Log.Info($"Unloading item {item.ID}");
-                
                 // remove the item
                 this.mItemList.Remove(item.ID);
 

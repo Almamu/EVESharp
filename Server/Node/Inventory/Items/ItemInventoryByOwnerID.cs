@@ -21,7 +21,7 @@ namespace Node.Inventory.Items
             }
         }
 
-        public override void Unload()
+        public override void Dispose()
         {
             // meta inventories should not unload the original item
             if (this.ContentsLoaded == true)
@@ -31,7 +31,7 @@ namespace Node.Inventory.Items
                 lock (this.Items)
                     foreach (KeyValuePair<int, ItemEntity> pair in this.Items)
                         if(this.ItemFactory.ItemManager.IsItemLoaded(pair.Key) == true)
-                            pair.Value.Unload();
+                            pair.Value.Dispose();
 
                 this.Items = null;
             }

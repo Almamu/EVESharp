@@ -381,7 +381,7 @@ namespace Node.Network
             if (client.CharacterID != null)
             {
                 // unload the item
-                this.ItemManager.GetItem(client.EnsureCharacterIsSelected()).Unload();
+                this.ItemManager.GetItem(client.EnsureCharacterIsSelected()).Dispose();
             }
 
             // finally remove the client from the manager

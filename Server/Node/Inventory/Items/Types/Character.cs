@@ -588,33 +588,33 @@ namespace Node.Inventory.Items.Types
             this.ItemFactory.CharacterDB.UpdateCharacterInformation(this);
         }
 
-        public override void Destroy()
+        private void RemoveTimers()
         {
-            // remove all timers this user might have
-            foreach (SkillQueueEntry entry in this.mSkillQueue)
-                this.TimerManager.DequeueItemTimer(entry.Skill.ID, entry.Skill.ExpiryTime);
-
-            base.Destroy();
-        }
-
-        public override void Unload()
-        {
-            // check for metainventories that belong to us
-            this.ItemFactory.ItemManager.MetaInventoryManager.FreeOwnerInventories(this.ID);
-            
-            base.Unload();
-        }
-
-        public override void Dispose()
-        {
-            base.Dispose();
-            
             // remove timers if loaded
             if (this.ContentsLoaded)
             {
                 foreach (SkillQueueEntry entry in this.mSkillQueue)
                     this.TimerManager.DequeueItemTimer(entry.Skill.ID, entry.Skill.ExpiryTime);
             }
+        }
+        
+        public override void Destroy()
+        {
+            this.RemoveTimers();
+
+            base.Destroy();
+        }
+
+        public override void Dispose()
+        {
+            // check for metainventories that belong to us
+            this.ItemFactory.ItemManager.MetaInventoryManager.FreeOwnerInventories(this.ID);
+            
+            // remove timers
+            this.RemoveTimers();
+            
+            // finally call parent's unload method
+            base.Dispose();
         }
     }
 }

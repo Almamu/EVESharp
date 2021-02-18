@@ -261,10 +261,7 @@ namespace Node.Inventory.Items
             this.ItemFactory.ItemDB.DestroyItem(this);
         }
 
-        /// <summary>
-        /// Unloads this item from the ItemFactory and ensures it's free'd
-        /// </summary>
-        public virtual void Unload()
+        public override void Dispose()
         {
             // persist the item to the database
             this.Persist();

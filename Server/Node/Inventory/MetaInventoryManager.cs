@@ -52,7 +52,7 @@ namespace Node.Inventory
                     // unload off the MetaInventories list
                     this.MetaInventories[metaInventory.ID].Remove(ownerID);
                     // signal the inventory to unload itself
-                    metaInventory.Unload();
+                    metaInventory.Dispose();
                 }
             }
         }

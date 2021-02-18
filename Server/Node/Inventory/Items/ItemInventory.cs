@@ -109,9 +109,9 @@ namespace Node.Inventory.Items
             base.Destroy();
         }
 
-        public override void Unload()
+        public override void Dispose()
         {
-            base.Unload();
+            base.Dispose();
             
             // unload all the items loaded in this inventory if they're loaded
             if (this.ContentsLoaded == true)
@@ -121,7 +121,7 @@ namespace Node.Inventory.Items
                 lock(this.Items)
                     foreach (KeyValuePair<int, ItemEntity> pair in this.Items)
                         if(this.ItemFactory.ItemManager.IsItemLoaded(pair.Key) == true)
-                            pair.Value.Unload();
+                            pair.Value.Dispose();
 
                 // set the item list to null again
                 this.mItems = null;

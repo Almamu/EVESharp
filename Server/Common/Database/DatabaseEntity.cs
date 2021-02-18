@@ -1,6 +1,8 @@
+using System;
+
 namespace Common.Database
 {
-    public abstract class DatabaseEntity
+    public abstract class DatabaseEntity : IDisposable
     {
         /// <summary>
         /// Indicates if the object was modified or not since the last read/write from the database
