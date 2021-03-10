@@ -30,8 +30,11 @@ using Node.Inventory;
 using Node.Inventory.Items;
 using Node.Inventory.Items.Attributes;
 using Node.Inventory.Items.Types;
+using Node.Inventory.Notifications;
 using Node.Inventory.SystemEntities;
 using Node.Network;
+using Node.Skills.Notifications;
+using PythonTypes.Types.Complex;
 using PythonTypes.Types.Exceptions;
 using PythonTypes.Types.Network;
 using PythonTypes.Types.Primitives;
@@ -49,7 +52,7 @@ namespace Node
         public ClusterConnection ClusterConnection { get; }
         public ServiceManager ServiceManager { get; }
         private ItemFactory ItemFactory { get; }
-        private PyList PendingNotifications { get; set; }
+        private PyList PendingMultiEvents { get; set; }
         
         public Client(NodeContainer container, ClusterConnection clusterConnection, ServiceManager serviceManager, ItemFactory itemFactory)
         {
@@ -57,7 +60,7 @@ namespace Node
             this.ClusterConnection = clusterConnection;
             this.ServiceManager = serviceManager;
             this.ItemFactory = itemFactory;
-            this.PendingNotifications = new PyList();
+            this.PendingMultiEvents = new PyList();
         }
 
         /// <summary>
@@ -453,18 +456,30 @@ namespace Node
         }
 
         /// <summary>
+        /// Adds a MultiEvent notification to the list of pending notifications to be sent
+        /// </summary>
+        /// <param name="entry">The MultiEvent entry to enqueu</param>
+        public void NotifyMultiEvent(PyMultiEventEntry entry)
+        {
+            lock (this.PendingMultiEvents)
+                this.PendingMultiEvents.Add(entry);
+        }
+
+        /// <summary>
         /// Notifies the client of a change in the quantity on a specific item
         /// </summary>
         /// <param name="item">The item to notify about</param>
         /// <param name="oldQuantity">The old quantity the item had</param>
         public void NotifyItemQuantityChange(ItemEntity item, int oldQuantity)
         {
-            PyDictionary changes = new PyDictionary
-            {
-                [(int) ItemChange.Quantity] = oldQuantity
-            };
+            if (item.Quantity != oldQuantity)
+                return;
 
-            this.NotifyItemChange(item, changes);
+            OnItemChange notification = new OnItemChange(item);
+
+            notification.AddChange(ItemChange.Quantity, oldQuantity);
+
+            this.NotifyMultiEvent(notification);
         }
         
         /// <summary>
@@ -475,14 +490,17 @@ namespace Node
         /// <param name="oldLocation">The old location ID</param>
         public void NotifyItemLocationChange(ItemEntity item, ItemFlags oldFlag, int oldLocation)
         {
-            PyDictionary changes = new PyDictionary();
-            
-            if (oldFlag != item.Flag)
-                changes[(int) ItemChange.Flag] = (int) oldFlag;
-            if (oldLocation != item.LocationID)
-                changes[(int) ItemChange.LocationID] = oldLocation;
+            if (oldFlag == item.Flag && oldLocation == item.LocationID)
+                return;
 
-            this.NotifyItemChange(item, changes);
+            OnItemChange notification = new OnItemChange(item);
+
+            if (oldFlag != item.Flag)
+                notification.AddChange(ItemChange.Flag, (int) oldFlag);
+            if (oldLocation != item.LocationID)
+                notification.AddChange(ItemChange.LocationID, oldLocation);
+
+            this.NotifyMultiEvent(notification);
         }
 
         /// <summary>
@@ -492,27 +510,14 @@ namespace Node
         /// <param name="oldSingleton">The old value of the singleton flag</param>
         public void NotifySingletonChange(ItemEntity item, bool oldSingleton)
         {
-            PyDictionary changes = new PyDictionary();
+            if (oldSingleton == item.Singleton)
+                return;
+            
+            OnItemChange notification = new OnItemChange(item);
 
-            if (oldSingleton != item.Singleton)
-                changes[(int) ItemChange.Singleton] = oldSingleton;
+            notification.AddChange(ItemChange.Singleton, oldSingleton);
 
-            this.NotifyItemChange(item, changes);
-        }
-
-        /// <summary>
-        /// Notifies the client of a item change in one of their inventories
-        /// </summary>
-        /// <param name="item">The item to notify about</param>
-        /// <param name="changes">List of old data for the item that has changed</param>
-        protected void NotifyItemChange(ItemEntity item, PyDictionary changes)
-        {
-            PyTuple notification = new PyTuple(new PyDataType[]
-            {
-                "OnItemChange", item.GetEntityRow(), changes
-            });
-
-            this.PendingNotifications.Add(notification);
+            this.NotifyMultiEvent(notification);
         }
 
         /// <summary>
@@ -523,66 +528,7 @@ namespace Node
         {
             this.NotifyItemLocationChange(item, ItemFlags.None, 0);
         }
-
-        /// <summary>
-        /// Queues a OnSkillTrained notification for this client
-        /// </summary>
-        /// <param name="skill"></param>
-        public void NotifySkillTrained(Skill skill)
-        {
-            PyTuple onSkillTrained = new PyTuple(new PyDataType[]
-                {
-                    "OnSkillTrained", skill.ID
-                }
-            );
-
-            this.PendingNotifications.Add(onSkillTrained);
-        }
-
-        /// <summary>
-        /// Queues a OnSkillTrainingStopped notification for this client
-        /// </summary>
-        /// <param name="skill"></param>
-        public void NotifySkillTrainingStopped(Skill skill)
-        {
-            PyTuple onSkillTrainingStopped = new PyTuple(new PyDataType[]
-                {
-                    "OnSkillTrainingStopped", skill.ID, 0
-                }
-            );
-            
-            this.PendingNotifications.Add(onSkillTrainingStopped);
-        }
-
-        /// <summary>
-        /// Queues a OnSkillStartTraining notification for this client
-        /// </summary>
-        /// <param name="skill"></param>
-        public void NotifySkillStartTraining(Skill skill)
-        {
-            PyTuple onSkillStartTraining = new PyTuple(new PyDataType[]
-                {
-                    "OnSkillStartTraining", skill.ID, skill.ExpiryTime
-                }
-            );
-
-            this.PendingNotifications.Add(onSkillStartTraining);
-        }
-
-        /// <summary>
-        /// Queues a OnSkillInjected notification for this client
-        /// </summary>
-        public void NotifySkillInjected()
-        {
-            PyTuple onSkillStartTraining = new PyTuple(new PyDataType[]
-                {
-                    "OnSkillInjected"
-                }
-            );
-
-            this.PendingNotifications.Add(onSkillStartTraining);
-        }
-
+        
         /// <summary>
         /// Checks if there's any pending notifications and sends them to the client
         ///
@@ -590,12 +536,15 @@ namespace Node
         /// </summary>
         public void SendPendingNotifications()
         {
-            if (this.PendingNotifications.Count > 0)
+            lock (this.PendingMultiEvents)
             {
-                this.ClusterConnection.SendNotification("OnMultiEvent", "charid", (int) this.CharacterID,
-                    new PyTuple(1) {[0] = this.PendingNotifications});
+                if (this.PendingMultiEvents.Count > 0)
+                {
+                    this.ClusterConnection.SendNotification("OnMultiEvent", "charid", (int) this.CharacterID,
+                        new PyTuple(1) {[0] = this.PendingMultiEvents});
 
-                this.PendingNotifications = new PyList();
+                    this.PendingMultiEvents = new PyList();
+                }
             }
 
             if (this.Session.IsDirty)

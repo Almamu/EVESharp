@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using Common.Constants;
 using Common.Services;
 using Node.Database;
@@ -9,6 +10,7 @@ using Node.Inventory;
 using Node.Inventory.Items;
 using Node.Inventory.Items.Types;
 using Node.Network;
+using Node.Skills.Notifications;
 using PythonTypes.Types.Primitives;
 
 namespace Node.Services.Network
@@ -132,7 +134,7 @@ namespace Node.Services.Network
                         skill.Level = level;
                         skill.Persist();
                         call.Client.NotifyItemLocationChange(skill, skill.Flag, skill.LocationID);
-                        call.Client.NotifySkillTrained(skill);
+                        call.Client.NotifyMultiEvent(new OnSkillTrained(skill));
                     }
                     else
                     {
@@ -141,7 +143,7 @@ namespace Node.Services.Network
                             SkillHistoryReason.GMGiveSkill);
                         
                         call.Client.NotifyNewItem(skill);
-                        call.Client.NotifySkillInjected();
+                        call.Client.NotifyMultiEvent(new OnSkillInjected());
                         skill.Persist();
                     }
                 }
@@ -158,7 +160,7 @@ namespace Node.Services.Network
                     skill.Level = level;
                     skill.Persist();
                     call.Client.NotifyItemLocationChange(skill, skill.Flag, skill.LocationID);
-                    call.Client.NotifySkillTrained(skill);
+                    call.Client.NotifyMultiEvent(new OnSkillTrained(skill));
                 }
                 else
                 {
@@ -167,7 +169,7 @@ namespace Node.Services.Network
                         SkillHistoryReason.GMGiveSkill);
 
                     call.Client.NotifyNewItem(skill);
-                    call.Client.NotifySkillInjected();
+                    call.Client.NotifyMultiEvent(new OnSkillInjected());
                     skill.Persist();
                 }
             }

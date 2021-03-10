@@ -4,6 +4,7 @@ using Node.Database;
 using Node.Exceptions;
 using Node.Exceptions.character;
 using Node.Inventory.Items.Attributes;
+using Node.Skills.Notifications;
 using PythonTypes.Types.Exceptions;
 using PythonTypes.Types.Primitives;
 
@@ -468,7 +469,7 @@ namespace Node.Inventory.Items.Types
                 if (this.ClientManager.Contains(this.AccountID) == true)
                 {
                     // skill was trained, send the success message
-                    this.ClientManager.Get(this.AccountID).NotifySkillStartTraining(this.mSkillQueue[0].Skill);                
+                    this.ClientManager.Get(this.AccountID).NotifyMultiEvent(new OnSkillStartTraining(this.mSkillQueue[0].Skill));
                 }
             }
         }
@@ -494,7 +495,7 @@ namespace Node.Inventory.Items.Types
                 this.ClientManager.Get(this.AccountID).NotifyItemLocationChange(skill, ItemFlags.SkillInTraining, this.ID);
             
                 // skill was trained, send the success message
-                this.ClientManager.Get(this.AccountID).NotifySkillTrained(skill);                
+                this.ClientManager.Get(this.AccountID).NotifyMultiEvent(new OnSkillTrained(skill));                
             }
 
             skill.Persist();
@@ -526,7 +527,7 @@ namespace Node.Inventory.Items.Types
                 this.ClientManager.Get(this.AccountID).NotifyItemLocationChange(skill, ItemFlags.Skill, this.ID);
             
                 // skill was trained, send the success message
-                this.ClientManager.Get(this.AccountID).NotifySkillStartTraining(skill);                
+                this.ClientManager.Get(this.AccountID).NotifyMultiEvent(new OnSkillStartTraining (skill));                
             }
 
             // create history entry

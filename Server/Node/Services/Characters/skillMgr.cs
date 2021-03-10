@@ -10,6 +10,7 @@ using Node.Inventory.Items;
 using Node.Inventory.Items.Attributes;
 using Node.Inventory.Items.Types;
 using Node.Network;
+using Node.Skills.Notifications;
 using PythonTypes.Types.Exceptions;
 using PythonTypes.Types.Primitives;
 
@@ -161,8 +162,8 @@ namespace Node.Services.Characters
             }
             
             // send the skill injected notification to refresh windows if needed
-            call.Client.NotifySkillInjected();
-            
+            call.Client.NotifyMultiEvent(new OnSkillInjected());
+
             return null;
         }
         
@@ -201,7 +202,7 @@ namespace Node.Services.Characters
                     call.Client.NotifyItemLocationChange(entry.Skill, ItemFlags.SkillInTraining, (int) entry.Skill.LocationID);
             
                     // send notification of skill training stopped
-                    call.Client.NotifySkillTrainingStopped(entry.Skill);
+                    call.Client.NotifyMultiEvent(new OnSkillTrainingStopped(entry.Skill));
 
                     // create history entry
                     this.DB.CreateSkillHistoryRecord(entry.Skill.Type, character, SkillHistoryReason.SkillTrainingCancelled,
@@ -258,7 +259,7 @@ namespace Node.Services.Characters
                     call.Client.NotifyItemLocationChange(skill, ItemFlags.Skill, (int) skill.LocationID);
             
                     // skill was trained, send the success message
-                    call.Client.NotifySkillStartTraining(skill);
+                    call.Client.NotifyMultiEvent(new OnSkillStartTraining (skill));
                 
                     // create history entry
                     this.DB.CreateSkillHistoryRecord(skill.Type, character, SkillHistoryReason.SkillTrainingStarted,
@@ -300,7 +301,7 @@ namespace Node.Services.Characters
             call.Client.NotifyItemLocationChange(skill, ItemFlags.Skill, (int) skill.LocationID);
             
             // skill started training
-            call.Client.NotifySkillStartTraining(skill);
+            call.Client.NotifyMultiEvent(new OnSkillStartTraining (skill));
             
             // create history entry
             this.DB.CreateSkillHistoryRecord(skill.Type, character, SkillHistoryReason.SkillTrainingStarted,
@@ -365,7 +366,7 @@ namespace Node.Services.Characters
                 call.Client.NotifyItemLocationChange(entry.Skill, ItemFlags.SkillInTraining, (int) entry.Skill.LocationID);
                 
                 // notify the skill is not in training anymore
-                call.Client.NotifySkillTrainingStopped(entry.Skill);
+                call.Client.NotifyMultiEvent(new OnSkillTrainingStopped(entry.Skill));
                 
                 // create history entry
                 this.DB.CreateSkillHistoryRecord(entry.Skill.Type, character, SkillHistoryReason.SkillTrainingCancelled,
