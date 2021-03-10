@@ -455,13 +455,17 @@ namespace Node
         /// <param name="item">The item to notify about</param>
         public void NotifyAttributeChange(ItemAttribute attribute, ItemEntity item)
         {
-            PyTuple notification = new PyTuple(new PyDataType[]
-                {
-                    attribute.Info.Name, item.GetEntityRow(), attribute
-                }
-            );
+            this.NotifyMultiEvent(new OnModuleAttributeChange(item, attribute));
+        }
 
-            this.ClusterConnection.SendNotification("OnAttribute", "charid", (int) this.CharacterID, notification);
+        public void NotifyAttributeChange(AttributeEnum[] attributes, ItemEntity item)
+        {
+            OnModuleAttributeChanges changes = new OnModuleAttributeChanges();
+
+            foreach (AttributeEnum attribute in attributes)
+                changes.AddChange(new OnModuleAttributeChange(item, item.Attributes[attribute]));
+
+            this.NotifyMultiEvent(changes);
         }
 
         /// <summary>
@@ -470,25 +474,18 @@ namespace Node
         /// <param name="attributes">The list of attributes that have changed</param>
         /// <param name="items">The list of items those attributes belong to</param>
         /// <exception cref="ArgumentOutOfRangeException">If the list of attributes and items is not the same size</exception>
-        public void NotifyMultipleAttributeChange(ItemAttribute[] attributes, ItemEntity[] items)
+        public void NotifyAttributeChange(ItemAttribute[] attributes, ItemEntity[] items)
         {
             if (attributes.Length != items.Length)
                 throw new ArgumentOutOfRangeException(
                     "attributes list and items list must have the same amount of elements");
 
-            PyList notification = new PyList();
+            OnModuleAttributeChanges changes = new OnModuleAttributeChanges();
 
             for (int i = 0; i < attributes.Length; i++)
-            {
-                notification.Add(new PyTuple(new PyDataType[]
-                        {
-                            attributes[i].Info.Name, items[i].GetEntityRow(), attributes[i]
-                        }
-                    )
-                );
-            }
+                changes.AddChange(new OnModuleAttributeChange(items[i], attributes[i]));
 
-            this.ClusterConnection.SendNotification("OnAttributes", "charid", (int) this.CharacterID, new PyTuple (new PyDataType [] { notification }));
+            this.NotifyMultiEvent(changes);
         }
 
         /// <summary>
@@ -496,27 +493,20 @@ namespace Node
         /// </summary>
         /// <param name="attributes">The list of attributes that have changed</param>
         /// <param name="item">The item these attributes belong to</param>
-        public void NotifyMultipleAttributeChange(ItemAttribute[] attributes, ItemEntity item)
+        public void NotifyAttributeChange(ItemAttribute[] attributes, ItemEntity item)
         {
-            PyList notification = new PyList();
+            OnModuleAttributeChanges changes = new OnModuleAttributeChanges();
 
-            for (int i = 0; i < attributes.Length; i++)
-            {
-                notification.Add(new PyTuple(new PyDataType[]
-                        {
-                            attributes[i].Info.Name, item.GetEntityRow(), attributes[i]
-                        }
-                    )
-                );
-            }
+            foreach (ItemAttribute attribute in attributes)
+                changes.AddChange(new OnModuleAttributeChange(item, attribute));
 
-            this.ClusterConnection.SendNotification("OnAttributes", "charid", (int) this.CharacterID, new PyTuple (new PyDataType [] { notification }));
+            this.NotifyMultiEvent(changes);
         }
 
         /// <summary>
         /// Adds a MultiEvent notification to the list of pending notifications to be sent
         /// </summary>
-        /// <param name="entry">The MultiEvent entry to enqueu</param>
+        /// <param name="entry">The MultiEvent entry to enqueue</param>
         public void NotifyMultiEvent(PyMultiEventEntry entry)
         {
             lock (this.PendingMultiEvents)

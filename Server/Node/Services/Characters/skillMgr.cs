@@ -91,13 +91,15 @@ namespace Node.Services.Characters
                     entry.Skill.Level = entry.TargetLevel;
                     entry.Skill.Flag = ItemFlags.Skill;
                     entry.Skill.ExpiryTime = 0;
-                    
+
                     // add the skill to the list of trained skills for the big notification
                     skillTypeIDs.Add(entry.Skill.Type.ID);
                     toRemove.Add(entry);
                     
                     // update it's location in the client if needed
                     this.Client.NotifyMultiEvent(OnItemChange.BuildLocationChange(entry.Skill, ItemFlags.SkillInTraining));
+                    // also notify attribute changes
+                    this.Client.NotifyAttributeChange(new AttributeEnum[] { AttributeEnum.skillPoints, AttributeEnum.skillLevel}, entry.Skill);
                 }
             }
 
@@ -159,13 +161,10 @@ namespace Node.Services.Characters
             skill.Level = skill.Level + 1;
             skill.ExpiryTime = 0;
             
-            // let the client know of the new attributes
-            this.Client.NotifyMultipleAttributeChange(
-                new ItemAttribute[] { skill.Attributes[AttributeEnum.skillLevel], skill.Attributes[AttributeEnum.skillPoints]},
-                skill
-            );
             // make sure the client is aware of the new item's status
             this.Client.NotifyMultiEvent(OnItemChange.BuildLocationChange(skill, ItemFlags.SkillInTraining));
+            // also notify attribute changes
+            this.Client.NotifyAttributeChange(new AttributeEnum[] { AttributeEnum.skillPoints, AttributeEnum.skillLevel}, skill);
             this.Client.NotifyMultiEvent(new OnSkillTrained(skill));
             this.Client.SendPendingNotifications();
 
@@ -676,7 +675,7 @@ namespace Node.Services.Characters
             this.Character.Persist();
             
             // notify the game of the change on the character
-            call.Client.NotifyMultipleAttributeChange(
+            call.Client.NotifyAttributeChange(
                 new ItemAttribute[]
                 {
                     this.Character.Attributes[AttributeEnum.charisma],
