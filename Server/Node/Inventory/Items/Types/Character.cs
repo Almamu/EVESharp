@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Node.Database;
@@ -113,9 +114,6 @@ namespace Node.Inventory.Items.Types
             this.mNextReSpecTime = nextReSpecTime;
             this.mTimeLastJump = timeLastJump;
             this.mTitleMask = titleMask;
-            
-            // add respec timer if available
-            this.AddTimers();
         }
 
         private ClientManager ClientManager { get; }
@@ -404,6 +402,10 @@ namespace Node.Inventory.Items.Types
         {
             get
             {
+                // if the contents are not loaded then that needs to happen first
+                if (this.ContentsLoaded == false)
+                    this.LoadContents();
+                
                 // accessing the skillQueue might be a modification attempt
                 // so the character must be marked as dirty
                 this.Dirty = true;
@@ -461,93 +463,13 @@ namespace Node.Inventory.Items.Types
                 .ToDictionary(dict => dict.Key, dict => dict.Value as Skill);
 
             this.mSkillQueue = base.ItemFactory.CharacterDB.LoadSkillQueue(this, skillQueue);
-            
-            // iterate the skill queue and generate timers for the skills
-            foreach (SkillQueueEntry entry in this.mSkillQueue)
-                if (entry.Skill.ExpiryTime != 0)
-                    this.TimerManager.EnqueueItemTimer(entry.Skill.ExpiryTime, SkillTrainingCompleted, entry.Skill.ID);
-            
-            // send notification of the first skill being in the queue
-            if (this.mSkillQueue.Count > 0)
-            {
-                if (this.ClientManager.Contains(this.AccountID) == true)
-                {
-                    // skill was trained, send the success message
-                    this.ClientManager.Get(this.AccountID).NotifyMultiEvent(new OnSkillStartTraining(this.mSkillQueue[0].Skill));
-                }
-            }
         }
 
-        private void CalculateSkillPoints()
+        public void CalculateSkillPoints()
         {
             foreach (KeyValuePair<int, Skill> skills in this.InjectedSkills)
                 // increase our skillpoints count with all the trained skills
                 this.mSkillPoints += skills.Value.Points;
-        }
-
-        public void OnNextReSpecAvailable(int itemID)
-        {
-            // update respec values
-            this.NextReSpecTime = 0;
-            this.FreeReSpecs = 1;
-        }
-        
-        public void SkillTrainingCompleted(int itemID)
-        {
-            Skill skill = this.Items[itemID] as Skill;
-            
-            // set the skill to the proper flag and set the correct attributes
-            skill.Flag = ItemFlags.Skill;
-            skill.Level = skill.Level + 1;
-            
-            // notify the client of a change in the item's flag
-            if (this.ClientManager.Contains(this.AccountID) == true)
-            {
-                this.ClientManager.Get(this.AccountID).NotifyMultiEvent(OnItemChange.BuildLocationChange(skill, ItemFlags.SkillInTraining));
-            
-                // skill was trained, send the success message
-                this.ClientManager.Get(this.AccountID).NotifyMultiEvent(new OnSkillTrained(skill));                
-            }
-
-            skill.Persist();
-            
-            // create history entry
-            this.ItemFactory.SkillDB.CreateSkillHistoryRecord(skill.Type, this, SkillHistoryReason.SkillTrainingComplete,
-                skill.Points);
-
-            // finally remove it off the skill queue
-            this.SkillQueue.RemoveAll(x => x.Skill.ID == skill.ID);
-
-            this.CalculateSkillPoints();
-            
-            // get the next skill from the queue (if any) and send the client proper notifications
-            if (this.SkillQueue.Count == 0)
-            {
-                // persists the skill queue
-                this.Dirty = true;
-                this.Persist();
-                return;
-            }
-
-            skill = this.SkillQueue[0].Skill;
-            
-            skill.Flag = ItemFlags.SkillInTraining;
-            
-            if (this.ClientManager.Contains(this.AccountID) == true)
-            {
-                this.ClientManager.Get(this.AccountID).NotifyMultiEvent(OnItemChange.BuildLocationChange(skill, ItemFlags.Skill));
-            
-                // skill was trained, send the success message
-                this.ClientManager.Get(this.AccountID).NotifyMultiEvent(new OnSkillStartTraining (skill));                
-            }
-
-            // create history entry
-            this.ItemFactory.SkillDB.CreateSkillHistoryRecord(skill.Type, this, SkillHistoryReason.SkillTrainingStarted,
-                skill.Points);
-            
-            // persists the skill queue
-            this.Dirty = true;
-            this.Persist();
         }
 
         public double GetSkillPointsPerMinute(Skill skill)
@@ -598,44 +520,6 @@ namespace Node.Inventory.Items.Types
 
             // update the relevant character information
             this.ItemFactory.CharacterDB.UpdateCharacterInformation(this);
-        }
-
-        private void AddTimers()
-        {
-            if (this.FreeReSpecs == 0 && this.NextReSpecTime > 0)
-                this.TimerManager.EnqueueItemTimer(this.mNextReSpecTime, OnNextReSpecAvailable, this.ID);
-        }
-
-        private void RemoveTimers()
-        {
-            // remove timers if loaded
-            if (this.ContentsLoaded)
-            {
-                foreach (SkillQueueEntry entry in this.mSkillQueue)
-                    this.TimerManager.DequeueItemTimer(entry.Skill.ID, entry.Skill.ExpiryTime);
-            }
-            
-            // remove respec timer too
-            this.TimerManager.DequeueItemTimer(this.ID, this.mNextReSpecTime);
-        }
-        
-        public override void Destroy()
-        {
-            this.RemoveTimers();
-
-            base.Destroy();
-        }
-
-        public override void Dispose()
-        {
-            // check for metainventories that belong to us
-            this.ItemFactory.ItemManager.MetaInventoryManager.FreeOwnerInventories(this.ID);
-            
-            // remove timers
-            this.RemoveTimers();
-            
-            // finally call parent's unload method
-            base.Dispose();
         }
     }
 }

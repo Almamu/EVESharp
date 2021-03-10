@@ -21,6 +21,12 @@ namespace Common.Game
             this.IsDirty = false;
         }
 
+        public Session(PyDictionary from)
+        {
+            this.mSession = from;
+            this.IsDirty = false;
+        }
+
         public void SetCurrent(string key, PyDataType value)
         {
             lock (this.mSession)

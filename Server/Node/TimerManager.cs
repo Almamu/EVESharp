@@ -64,7 +64,7 @@ namespace Node
         }
 
         /// <summary>
-        /// Removes the item timer that matches the given criteri<
+        /// Removes the item timer that matches the given criteria
         /// </summary>
         /// <param name="itemID"></param>
         /// <param name="dateTime"></param>
@@ -75,7 +75,7 @@ namespace Node
         }
 
         /// <summary>
-        /// Removes the call timer that matches the given criteri<
+        /// Removes the call timer that matches the given criteria
         /// </summary>
         /// <param name="callID"></param>
         public void DequeueCallTimer(int callID)
@@ -138,6 +138,7 @@ namespace Node
             catch (Exception e)
             {
                 Log.Fatal($"Timer thread stopped: {e.Message}, timed events won't work from now on!!");
+                Log.Fatal(e.StackTrace);
             }
         }
     }

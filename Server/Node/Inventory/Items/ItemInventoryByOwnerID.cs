@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 namespace Node.Inventory.Items
 {
@@ -21,20 +22,9 @@ namespace Node.Inventory.Items
             }
         }
 
-        public override void Dispose()
+        public override void Destroy()
         {
-            // meta inventories should not unload the original item
-            if (this.ContentsLoaded == true)
-            {
-                this.ContentsLoaded = false;
-                
-                lock (this.Items)
-                    foreach (KeyValuePair<int, ItemEntity> pair in this.Items)
-                        if(this.ItemFactory.ItemManager.IsItemLoaded(pair.Key) == true)
-                            pair.Value.Dispose();
-
-                this.Items = null;
-            }
+            throw new NotSupportedException("Meta Inventories cannot be destroyed!");
         }
     }
 }

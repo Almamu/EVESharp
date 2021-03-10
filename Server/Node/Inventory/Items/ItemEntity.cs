@@ -265,9 +265,6 @@ namespace Node.Inventory.Items
         {
             // persist the item to the database
             this.Persist();
-            
-            // unload ourselves off the database
-            this.ItemFactory.ItemManager.UnloadItem(this);
         }
 
         public PyPackedRow GetEntityRow()

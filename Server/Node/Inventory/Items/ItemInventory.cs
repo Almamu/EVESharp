@@ -118,11 +118,6 @@ namespace Node.Inventory.Items
             {
                 this.ContentsLoaded = false;
                 
-                lock(this.Items)
-                    foreach (KeyValuePair<int, ItemEntity> pair in this.Items)
-                        if(this.ItemFactory.ItemManager.IsItemLoaded(pair.Key) == true)
-                            pair.Value.Dispose();
-
                 // set the item list to null again
                 this.mItems = null;
             }

@@ -184,5 +184,13 @@ namespace Node.Services
         {
             throw new NotImplementedException();
         }
+
+        /// <summary>
+        /// Method called when this service is free'd to perform any required cleanup
+        /// </summary>
+        public virtual void OnServiceFree()
+        {
+            
+        }
     }
 }

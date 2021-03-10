@@ -374,15 +374,12 @@ namespace Node.Network
 
             // get the client, search for it's common items and meta inventories and free them
             Client client = this.ClientManager.Get(clientID);
-            
+
             // clear bound services for this character
             this.BoundServiceManager.OnClientDisconnected(client);
             
-            if (client.CharacterID != null)
-            {
-                // unload the item
-                this.ItemManager.GetItem(client.EnsureCharacterIsSelected()).Dispose();
-            }
+            // ensure the client is removed from other places where it shouldn't be
+            client.OnClientDisconnected();
 
             // finally remove the client from the manager
             this.ClientManager.Remove(clientID);

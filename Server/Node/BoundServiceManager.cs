@@ -89,7 +89,12 @@ namespace Node
                     // if the bound service belongs to this client
                     // add it to the removal list
                     if (pair.Value.Client == client)
-                        boundServiceIDsToRemove.Add(pair.Key);
+                    {
+                        // notify the service that we're freeing it
+                        pair.Value.OnServiceFree();
+                        // add it to the free'd list for removal off the list
+                        boundServiceIDsToRemove.Add(pair.Key);                        
+                    }
                 }
 
                 foreach (int key in boundServiceIDsToRemove)

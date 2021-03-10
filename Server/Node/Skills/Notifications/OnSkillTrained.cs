@@ -7,7 +7,7 @@ namespace Node.Skills.Notifications
 {
     public class OnSkillTrained : PyMultiEventEntry
     {
-        public const string NOTIFICATION_NAME = "OnSkillTrained";
+        private const string NOTIFICATION_NAME = "OnSkillTrained";
         
         /// <summary>
         /// The skill this notification is about

@@ -61,6 +61,7 @@ namespace Node.Inventory
         public Dictionary<int, SolarSystem> SolarSystems => this.mSolarSystems;
         public EVESystem LocationSystem { get; private set; }
         public EVESystem LocationRecycler { get; private set; }
+        public EVESystem LocationMarket { get; private set; }
         public EVESystem LocationUniverse { get; private set; }
         public ItemEntity SecureCommerceCommision { get; private set; }
 
@@ -80,6 +81,7 @@ namespace Node.Inventory
             this.LocationRecycler = this.GetItem(this.NodeContainer.Constants["locationRecycler"]) as EVESystem;
             this.LocationSystem = this.GetItem(this.NodeContainer.Constants["locationSystem"]) as EVESystem;
             this.LocationUniverse = this.GetItem(this.NodeContainer.Constants["locationUniverse"]) as EVESystem;
+            this.LocationMarket = this.GetItem(this.NodeContainer.Constants["locationMarket"]) as EVESystem;
             this.SecureCommerceCommision = this.GetItem(this.NodeContainer.Constants["ownerSecureCommerceCommission"]);
         }
 
@@ -415,25 +417,25 @@ namespace Node.Inventory
         public void UnloadItem(ItemEntity item)
         {
             // TODO: UNLOADING PROCESS SHOULD BE IMPROVED AS RIGHT NOW WE CHECK FOR EXISTANCE BEFORE CALLING UNLOADITEM
-            if (this.mItemList.ContainsKey(item.ID) == false)
+            if (this.IsItemLoaded(item.ID) == false)
                 return;
-            
-            try
-            {
-                // remove the item
-                this.mItemList.Remove(item.ID);
 
-                // update the ownership information
-                this.ItemDB.UnloadItem(item.ID);
-            }
-            catch
-            {
-                // ignored
-            }
+            // remove the item
+            this.mItemList.Remove(item.ID);
+            
+            // dispose of it
+            item.Dispose();
+
+            // update the ownership information
+            this.ItemDB.UnloadItem(item.ID);
         }
 
         public void UnloadItem(int itemID)
         {
+            // TODO: UNLOADING PROCESS SHOULD BE IMPROVED AS RIGHT NOW WE CHECK FOR EXISTANCE BEFORE CALLING UNLOADITEM
+            if (this.IsItemLoaded(itemID) == false)
+                return;
+            
             this.UnloadItem(this.GetItem(itemID));
         }
 
@@ -466,7 +468,7 @@ namespace Node.Inventory
                 }
             }
 
-            // set the item to the recycler location
+            // set the item to the recycler location and remove it from any inventory that it might be left in
             item.LocationID = this.LocationRecycler.ID;
 
             // finally remove the item off the database

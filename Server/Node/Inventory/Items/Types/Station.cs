@@ -48,7 +48,7 @@ namespace Node.Inventory.Items.Types
         public double DockingCostPerVolume => mDockingCostPerVolume;
         public double MaxShipVolumeDockable => mMaxShipVolumeDockable;
         public int OfficeRentalCost => mOfficeRentalCost;
-        public int SolarSystemID => (int) this.LocationID;
+        public int SolarSystemID => this.LocationID;
         public int ConstellationID => mConstellationID;
         public int RegionID => mRegionID;
         public double ReprocessingEfficiency => mReprocessingEfficiency;

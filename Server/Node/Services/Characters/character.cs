@@ -380,10 +380,7 @@ namespace Node.Services.Characters
             call.Client.RolesAtHQ = character.RolesAtHq;
             call.Client.RolesAtOther = character.RolesAtOther;
             call.Client.ShipID = character.LocationID;
-            
-            // TODO: CHECK WHAT NODE HAS THE SOLAR SYSTEM LOADED AND PROPERLY LET THE CLIENT KNOW
-            call.Client.SendSessionChange();
-            
+
             // update the character and set it's only flag to true
             character.Online = 1;
             // the online status must be persisted after update, so force the entity to be updated in the database
@@ -396,6 +393,12 @@ namespace Node.Services.Characters
             foreach (int friendID in onlineFriends)
                 call.Client.ClusterConnection.SendNotification("OnContactLoggedOn", "charid", friendID, new PyTuple(1) { [0] = character.ID });
 
+            // unload the character
+            this.ItemManager.UnloadItem(characterID);
+            
+            // finally send the session change
+            call.Client.SendSessionChange();
+            
             return null;
         }
 
