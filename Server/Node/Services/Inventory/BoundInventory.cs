@@ -4,6 +4,7 @@ using Node.Database;
 using Node.Exceptions;
 using Node.Inventory;
 using Node.Inventory.Items;
+using Node.Inventory.Notifications;
 using Node.Network;
 using PythonTypes.Types.Database;
 using PythonTypes.Types.Primitives;
@@ -85,8 +86,8 @@ namespace Node.Services.Inventory
                 // set the new location for the item
                 item.LocationID = this.mInventory.ID;
                 item.Flag = this.mFlag;
-                
-                call.Client.NotifyItemLocationChange(item, oldFlag, oldLocationID);
+
+                call.Client.NotifyMultiEvent(OnItemChange.BuildLocationChange(item, oldFlag, oldLocationID));
                 
                 // finally add the item to this inventory
                 this.mInventory.AddItem(item);
@@ -123,8 +124,8 @@ namespace Node.Services.Inventory
                 // set the new location for the item
                 item.LocationID = this.mInventory.ID;
                 item.Flag = this.mFlag;
-                
-                call.Client.NotifyItemLocationChange(item, oldFlag, oldLocationID);
+
+                call.Client.NotifyMultiEvent(OnItemChange.BuildLocationChange(item, oldFlag, oldLocationID));
                 
                 // finally add the item to this inventory
                 this.mInventory.AddItem(item);
@@ -159,9 +160,9 @@ namespace Node.Services.Inventory
                     // persist it to the database
                     clone.Persist();
                     // notify the client of the new item
-                    call.Client.NotifyNewItem(clone);
+                    call.Client.NotifyMultiEvent(OnItemChange.BuildNewItemChange(clone));
                     // and notify the amount change
-                    call.Client.NotifyItemQuantityChange(item, item.Quantity + quantity);
+                    call.Client.NotifyMultiEvent(OnItemChange.BuildQuantityChange(item, item.Quantity + quantity));
                 }
                 else
                 {
@@ -178,7 +179,7 @@ namespace Node.Services.Inventory
                     this.mInventory.AddItem(item);
                     
                     // notify the client
-                    call.Client.NotifyItemLocationChange(item, oldFlag, oldLocation);
+                    call.Client.NotifyMultiEvent(OnItemChange.BuildLocationChange(item, oldFlag, oldLocation));
                 }
             }
             else
@@ -215,7 +216,7 @@ namespace Node.Services.Inventory
                     item.Persist();
                     this.mInventory.AddItem(item);
                     // notify the client of the location change
-                    call.Client.NotifyItemLocationChange(item, oldFlag, oldLocationID);
+                    call.Client.NotifyMultiEvent(OnItemChange.BuildLocationChange(item, oldFlag, oldLocationID));
                 }
                 else
                 {
@@ -226,8 +227,8 @@ namespace Node.Services.Inventory
                     // subtract the quantity off the original item
                     item.Quantity -= quantity;
                     // notify the changes to the client
-                    call.Client.NotifyItemQuantityChange(item, item.Quantity + quantity);
-                    call.Client.NotifyNewItem(clone);
+                    call.Client.NotifyMultiEvent(OnItemChange.BuildQuantityChange(item, item.Quantity + quantity));
+                    call.Client.NotifyMultiEvent(OnItemChange.BuildNewItemChange(clone));
                     // persist the item changes in the database
                     clone.Persist();
                     item.Persist();
@@ -257,7 +258,7 @@ namespace Node.Services.Inventory
                 if (this.mInventory.Items.ContainsKey(toItemID) == false)
                     continue;
 
-                ItemEntity fromItem = this.ItemManager.LoadItem(fromItemID);
+                ItemEntity fromItem = this.ItemManager.GetItem(fromItemID);
                 ItemEntity toItem = this.mInventory.Items[toItemID];
 
                 // ignore singleton items
@@ -272,19 +273,19 @@ namespace Node.Services.Inventory
                     // remove the item
                     this.ItemManager.DestroyItem(fromItem);
                     // notify the client about the item too
-                    call.Client.NotifyItemLocationChange(fromItem, fromItem.Flag, oldLocationID);
+                    call.Client.NotifyMultiEvent(OnItemChange.BuildLocationChange(fromItem, oldLocationID));
                 }
                 else
                 {
                     // change the item's quantity
                     fromItem.Quantity -= quantity;
                     // notify the client about the change
-                    call.Client.NotifyItemQuantityChange(fromItem, fromItem.Quantity + quantity);
+                    call.Client.NotifyMultiEvent(OnItemChange.BuildQuantityChange(fromItem, fromItem.Quantity + quantity));
                     fromItem.Persist();
                 }
 
                 toItem.Quantity += quantity;
-                call.Client.NotifyItemQuantityChange(toItem, toItem.Quantity - quantity);
+                call.Client.NotifyMultiEvent(OnItemChange.BuildQuantityChange(toItem, toItem.Quantity - quantity));
                 toItem.Persist();
             }
             
@@ -325,10 +326,10 @@ namespace Node.Services.Inventory
                     // add the quantity of the first item to the second
                     secondItem.Quantity += firstItem.Quantity;
                     // also create the notification for the user
-                    call.Client.NotifyItemQuantityChange(secondItem, oldQuantity);
+                    call.Client.NotifyMultiEvent(OnItemChange.BuildQuantityChange(secondItem, oldQuantity));
                     this.ItemManager.DestroyItem(firstItem);
                     // notify the client about the item too
-                    call.Client.NotifyItemLocationChange(firstItem, firstItem.Flag, secondItem.LocationID);
+                    call.Client.NotifyMultiEvent(OnItemChange.BuildLocationChange(firstItem, firstItem.Flag, secondItem.LocationID));
                     // ensure the second item is saved to database too
                     secondItem.Persist();
                     // finally break this loop as the merge was already done
@@ -367,10 +368,10 @@ namespace Node.Services.Inventory
                     // add the quantity of the first item to the second
                     secondItem.Quantity += firstItem.Quantity;
                     // also create the notification for the user
-                    call.Client.NotifyItemQuantityChange(secondItem, oldQuantity);
+                    call.Client.NotifyMultiEvent(OnItemChange.BuildQuantityChange(secondItem, oldQuantity));
                     this.ItemManager.DestroyItem(firstItem);
                     // notify the client about the item too
-                    call.Client.NotifyItemLocationChange(firstItem, firstItem.Flag, secondItem.LocationID);
+                    call.Client.NotifyMultiEvent(OnItemChange.BuildLocationChange(firstItem, firstItem.Flag, secondItem.LocationID));
                     // ensure the second item is saved to database too
                     secondItem.Persist();
                     // finally break this loop as the merge was already done

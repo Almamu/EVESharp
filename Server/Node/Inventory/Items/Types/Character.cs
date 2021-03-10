@@ -4,6 +4,7 @@ using Node.Database;
 using Node.Exceptions;
 using Node.Exceptions.character;
 using Node.Inventory.Items.Attributes;
+using Node.Inventory.Notifications;
 using Node.Skills.Notifications;
 using PythonTypes.Types.Exceptions;
 using PythonTypes.Types.Primitives;
@@ -112,6 +113,9 @@ namespace Node.Inventory.Items.Types
             this.mNextReSpecTime = nextReSpecTime;
             this.mTimeLastJump = timeLastJump;
             this.mTitleMask = titleMask;
+            
+            // add respec timer if available
+            this.AddTimers();
         }
 
         private ClientManager ClientManager { get; }
@@ -480,6 +484,13 @@ namespace Node.Inventory.Items.Types
                 // increase our skillpoints count with all the trained skills
                 this.mSkillPoints += skills.Value.Points;
         }
+
+        public void OnNextReSpecAvailable(int itemID)
+        {
+            // update respec values
+            this.NextReSpecTime = 0;
+            this.FreeReSpecs = 1;
+        }
         
         public void SkillTrainingCompleted(int itemID)
         {
@@ -492,7 +503,7 @@ namespace Node.Inventory.Items.Types
             // notify the client of a change in the item's flag
             if (this.ClientManager.Contains(this.AccountID) == true)
             {
-                this.ClientManager.Get(this.AccountID).NotifyItemLocationChange(skill, ItemFlags.SkillInTraining, this.ID);
+                this.ClientManager.Get(this.AccountID).NotifyMultiEvent(OnItemChange.BuildLocationChange(skill, ItemFlags.SkillInTraining));
             
                 // skill was trained, send the success message
                 this.ClientManager.Get(this.AccountID).NotifyMultiEvent(new OnSkillTrained(skill));                
@@ -524,7 +535,7 @@ namespace Node.Inventory.Items.Types
             
             if (this.ClientManager.Contains(this.AccountID) == true)
             {
-                this.ClientManager.Get(this.AccountID).NotifyItemLocationChange(skill, ItemFlags.Skill, this.ID);
+                this.ClientManager.Get(this.AccountID).NotifyMultiEvent(OnItemChange.BuildLocationChange(skill, ItemFlags.Skill));
             
                 // skill was trained, send the success message
                 this.ClientManager.Get(this.AccountID).NotifyMultiEvent(new OnSkillStartTraining (skill));                
@@ -589,6 +600,12 @@ namespace Node.Inventory.Items.Types
             this.ItemFactory.CharacterDB.UpdateCharacterInformation(this);
         }
 
+        private void AddTimers()
+        {
+            if (this.FreeReSpecs == 0 && this.NextReSpecTime > 0)
+                this.TimerManager.EnqueueItemTimer(this.mNextReSpecTime, OnNextReSpecAvailable, this.ID);
+        }
+
         private void RemoveTimers()
         {
             // remove timers if loaded
@@ -597,6 +614,9 @@ namespace Node.Inventory.Items.Types
                 foreach (SkillQueueEntry entry in this.mSkillQueue)
                     this.TimerManager.DequeueItemTimer(entry.Skill.ID, entry.Skill.ExpiryTime);
             }
+            
+            // remove respec timer too
+            this.TimerManager.DequeueItemTimer(this.ID, this.mNextReSpecTime);
         }
         
         public override void Destroy()

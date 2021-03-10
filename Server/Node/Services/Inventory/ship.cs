@@ -4,6 +4,7 @@ using Node.Exceptions.ship;
 using Node.Inventory;
 using Node.Inventory.Items;
 using Node.Inventory.Items.Types;
+using Node.Inventory.Notifications;
 using Node.Network;
 using PythonTypes.Types.Exceptions;
 using PythonTypes.Types.Primitives;
@@ -105,8 +106,8 @@ namespace Node.Services.Inventory
             // change character's location to the pod
             character.LocationID = capsule.ID;
             // notify the client about the item changes
-            call.Client.NotifyItemLocationChange(capsule, ItemFlags.Capsule, capsule.LocationID);
-            call.Client.NotifyItemLocationChange(character, ItemFlags.Pilot, (int) call.Client.ShipID);
+            call.Client.NotifyMultiEvent(OnItemChange.BuildLocationChange(capsule, ItemFlags.Capsule, capsule.LocationID));
+            call.Client.NotifyMultiEvent(OnItemChange.BuildLocationChange(character, ItemFlags.Pilot, call.Client.ShipID));
             // update session
             call.Client.ShipID = capsule.ID;
             
@@ -146,7 +147,7 @@ namespace Node.Services.Inventory
             // finally update the session
             call.Client.ShipID = newShip.ID;
             // notify the client about the change in location
-            call.Client.NotifyItemLocationChange(character, ItemFlags.Pilot, currentShip.ID);
+            call.Client.NotifyMultiEvent(OnItemChange.BuildLocationChange(character, ItemFlags.Pilot, currentShip.ID));
 
             character.Persist();
 
@@ -158,7 +159,7 @@ namespace Node.Services.Inventory
                 // destroy the pod from the database
                 this.ItemManager.DestroyItem(currentShip);
                 // notify the player of the item change
-                call.Client.NotifyItemLocationChange(currentShip, currentShip.Flag, this.Location.ID);
+                call.Client.NotifyMultiEvent(OnItemChange.BuildLocationChange(currentShip, this.Location.ID));
             }
             
             return null;
@@ -190,13 +191,13 @@ namespace Node.Services.Inventory
                 ship.Quantity -= 1;
                 ship.Persist();
                 // notify the quantity change
-                call.Client.NotifyItemQuantityChange(ship, ship.Quantity + 1);
+                call.Client.NotifyMultiEvent(OnItemChange.BuildQuantityChange(ship, ship.Quantity + 1));
   
                 // create the new item in the database
                 Station station = this.ItemManager.GetStation((int) call.Client.StationID);
                 ship = this.ItemManager.CreateShip(ship.Type, station, character);
                 // notify the new item
-                call.Client.NotifyNewItem(ship);
+                call.Client.NotifyMultiEvent(OnItemChange.BuildNewItemChange(ship));
                 // ensure the item is in the meta inventory
                 try
                 {
@@ -214,7 +215,7 @@ namespace Node.Services.Inventory
             {
                 // stack of one, simple as changing the singleton flag
                 ship.Singleton = true;
-                call.Client.NotifySingletonChange(ship, false);                
+                call.Client.NotifyMultiEvent(OnItemChange.BuildSingletonChange(ship, false));                
             }
 
             // save the ship

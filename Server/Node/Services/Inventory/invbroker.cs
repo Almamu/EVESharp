@@ -2,6 +2,7 @@ using Node.Database;
 using Node.Exceptions;
 using Node.Inventory;
 using Node.Inventory.Items;
+using Node.Inventory.Notifications;
 using Node.Network;
 using PythonTypes.Types.Exceptions;
 using PythonTypes.Types.Primitives;
@@ -151,11 +152,12 @@ namespace Node.Services.Inventory
 
                 ItemEntity item = this.ItemManager.GetItem(itemID as PyInteger);
                 // store it's location id
-                int oldLocationID = item.LocationID;
+                int oldLocation = item.LocationID;
+                ItemFlags oldFlag = item.Flag;
                 // remove the item off the ItemManager
                 this.ItemManager.DestroyItem(item);
                 // notify the client of the change
-                call.Client.NotifyItemLocationChange(item, item.Flag, oldLocationID);
+                call.Client.NotifyMultiEvent(OnItemChange.BuildLocationChange(item, oldFlag, oldLocation));
             }
             
             return null;

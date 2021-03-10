@@ -48,10 +48,8 @@ namespace Node.Inventory.Items.Types
 
         public double GetSkillPointsForLevel(long level)
         {
-            if (level > 5)
+            if (level > 5 || level == 0)
                 return 0;
-            if (level == 0)
-                return TimeConstant * 250;
 
             return Math.Ceiling (TimeConstant * 250 * Math.Pow(2, 2.5 * (level - 1)));
         }

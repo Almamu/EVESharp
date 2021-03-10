@@ -38,8 +38,9 @@ namespace PythonTypes.Types.Complex
             int i = 1;
 
             // add the rest of the data to the notification
-            foreach (PyDataType entry in data)
-                result[i++] = entry;
+            if (data != null)
+                foreach (PyDataType entry in data)
+                    result[i++] = entry;
 
             return result;
         }

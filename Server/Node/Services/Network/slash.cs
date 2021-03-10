@@ -9,6 +9,7 @@ using Node.Exceptions.slash;
 using Node.Inventory;
 using Node.Inventory.Items;
 using Node.Inventory.Items.Types;
+using Node.Inventory.Notifications;
 using Node.Network;
 using Node.Skills.Notifications;
 using PythonTypes.Types.Primitives;
@@ -99,7 +100,7 @@ namespace Node.Services.Network
             item.Persist();
             
             // send client a notification so they can display the item in the hangar
-            call.Client.NotifyNewItem(item);
+            call.Client.NotifyMultiEvent(OnItemChange.BuildNewItemChange(item));
         }
 
         private void GiveSkillCmd(string[] argv, CallInformation call)
@@ -133,7 +134,6 @@ namespace Node.Services.Network
 
                         skill.Level = level;
                         skill.Persist();
-                        call.Client.NotifyItemLocationChange(skill, skill.Flag, skill.LocationID);
                         call.Client.NotifyMultiEvent(new OnSkillTrained(skill));
                     }
                     else
@@ -141,10 +141,9 @@ namespace Node.Services.Network
                         // skill not injected, create it, inject and done
                         Skill skill = this.ItemManager.CreateSkill(pair.Value, character, level,
                             SkillHistoryReason.GMGiveSkill);
-                        
-                        call.Client.NotifyNewItem(skill);
+
+                        call.Client.NotifyMultiEvent(OnItemChange.BuildNewItemChange(skill));
                         call.Client.NotifyMultiEvent(new OnSkillInjected());
-                        skill.Persist();
                     }
                 }
             }
@@ -159,7 +158,6 @@ namespace Node.Services.Network
 
                     skill.Level = level;
                     skill.Persist();
-                    call.Client.NotifyItemLocationChange(skill, skill.Flag, skill.LocationID);
                     call.Client.NotifyMultiEvent(new OnSkillTrained(skill));
                 }
                 else
@@ -168,9 +166,8 @@ namespace Node.Services.Network
                     Skill skill = this.ItemManager.CreateSkill(this.TypeManager[skillTypeID], character, level,
                         SkillHistoryReason.GMGiveSkill);
 
-                    call.Client.NotifyNewItem(skill);
+                    call.Client.NotifyMultiEvent(OnItemChange.BuildNewItemChange(skill));
                     call.Client.NotifyMultiEvent(new OnSkillInjected());
-                    skill.Persist();
                 }
             }
         }

@@ -9,6 +9,7 @@ using Node.Inventory;
 using Node.Inventory.Items;
 using Node.Inventory.Items.Attributes;
 using Node.Inventory.Items.Types;
+using Node.Inventory.Notifications;
 using Node.Network;
 using Node.Skills.Notifications;
 using PythonTypes.Types.Exceptions;
@@ -127,11 +128,10 @@ namespace Node.Services.Characters
 
                         // save to database
                         skill.Persist();
-                        newStack.Persist();
 
                         // finally notify the client
-                        call.Client.NotifyItemQuantityChange(skill, skill.Quantity + 1);
-                        call.Client.NotifyNewItem(newStack);
+                        call.Client.NotifyMultiEvent(OnItemChange.BuildQuantityChange(skill, skill.Quantity + 1));
+                        call.Client.NotifyMultiEvent(OnItemChange.BuildNewItemChange(newStack));
                     }
                     else
                     {
@@ -142,12 +142,18 @@ namespace Node.Services.Characters
                         // now set the new values
                         skill.LocationID = callerCharacterID;
                         skill.Flag = ItemFlags.Skill;
+                        skill.Level = 0;
+                        skill.Singleton = true;
+                        
+                        // ensure the character has the skill in his/her brain
+                        character.AddItem(skill);
 
                         // ensure the changes are saved
                         skill.Persist();
 
                         // notify the character of the change in the item
-                        call.Client.NotifyItemLocationChange(skill, oldFlag, oldLocationID);
+                        call.Client.NotifyMultiEvent(OnItemChange.BuildLocationChange(skill, oldFlag, oldLocationID));
+                        call.Client.NotifyMultiEvent(OnItemChange.BuildSingletonChange(skill, false));
                     }
                 }
                 catch (CharacterAlreadyKnowsSkill)
@@ -199,7 +205,7 @@ namespace Node.Services.Characters
                     this.TimerManager.DequeueItemTimer(entry.Skill.ID, entry.Skill.ExpiryTime);
                     entry.Skill.Flag = ItemFlags.Skill;
                     
-                    call.Client.NotifyItemLocationChange(entry.Skill, ItemFlags.SkillInTraining, (int) entry.Skill.LocationID);
+                    call.Client.NotifyMultiEvent(OnItemChange.BuildLocationChange(entry.Skill, ItemFlags.SkillInTraining));
             
                     // send notification of skill training stopped
                     call.Client.NotifyMultiEvent(new OnSkillTrainingStopped(entry.Skill));
@@ -255,8 +261,8 @@ namespace Node.Services.Characters
                 if (first == true)
                 {
                     skill.Flag = ItemFlags.SkillInTraining;
-                    
-                    call.Client.NotifyItemLocationChange(skill, ItemFlags.Skill, (int) skill.LocationID);
+
+                    call.Client.NotifyMultiEvent(OnItemChange.BuildLocationChange(skill, ItemFlags.Skill));
             
                     // skill was trained, send the success message
                     call.Client.NotifyMultiEvent(new OnSkillStartTraining (skill));
@@ -297,8 +303,8 @@ namespace Node.Services.Characters
                 
             skill.ExpiryTime = expiryTime.ToFileTimeUtc();
             skill.Flag = ItemFlags.SkillInTraining;
-                    
-            call.Client.NotifyItemLocationChange(skill, ItemFlags.Skill, (int) skill.LocationID);
+
+            call.Client.NotifyMultiEvent(OnItemChange.BuildLocationChange(skill, ItemFlags.Skill));
             
             // skill started training
             call.Client.NotifyMultiEvent(new OnSkillStartTraining (skill));
@@ -362,8 +368,8 @@ namespace Node.Services.Characters
                 entry.Skill.ExpiryTime = 0;
                 entry.Skill.Flag = ItemFlags.Skill;
                 entry.Skill.Persist();
-                    
-                call.Client.NotifyItemLocationChange(entry.Skill, ItemFlags.SkillInTraining, (int) entry.Skill.LocationID);
+
+                call.Client.NotifyMultiEvent(OnItemChange.BuildLocationChange(entry.Skill, ItemFlags.SkillInTraining));
                 
                 // notify the skill is not in training anymore
                 call.Client.NotifyMultiEvent(new OnSkillTrainingStopped(entry.Skill));
@@ -468,7 +474,8 @@ namespace Node.Services.Characters
             character.FreeReSpecs--;
             
             // if respec is zero now means we don't have any free respecs until a year later
-            character.NextReSpecTime = DateTime.UtcNow.AddYears(1).ToFileTimeUtc();
+            if (character.FreeReSpecs == 0)
+                character.NextReSpecTime = DateTime.UtcNow.AddYears(1).ToFileTimeUtc();
             
             // finally set our attributes to the correct values
             character.Charisma = charisma;
@@ -526,7 +533,7 @@ namespace Node.Services.Characters
                 item.Quantity--;
                 
                 // notify the client of the stack change
-                call.Client.NotifyItemQuantityChange(item, item.Quantity + 1);
+                call.Client.NotifyMultiEvent(OnItemChange.BuildQuantityChange(item, item.Quantity + 1));
                 
                 // save the item to the database
                 item.Persist();
@@ -543,7 +550,7 @@ namespace Node.Services.Characters
             item.LocationID = character.ID;
             item.Flag = ItemFlags.Implant;
 
-            call.Client.NotifyItemLocationChange(item, oldFlag, oldLocationID);
+            call.Client.NotifyMultiEvent(OnItemChange.BuildLocationChange(item, oldFlag, oldLocationID));
 
             // add the item to the inventory it belongs
             character.AddItem(item);
@@ -568,7 +575,7 @@ namespace Node.Services.Characters
             this.ItemManager.DestroyItem(item);
             
             // notify the change
-            call.Client.NotifyItemLocationChange(item, item.Flag, character.ID);
+            call.Client.NotifyMultiEvent(OnItemChange.BuildLocationChange(item, character.ID));
             
             return null;
         }

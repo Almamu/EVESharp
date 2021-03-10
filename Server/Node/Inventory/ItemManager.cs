@@ -392,6 +392,9 @@ namespace Node.Inventory
             if (reason != SkillHistoryReason.None)
                 this.SkillDB.CreateSkillHistoryRecord(skillType, character, reason, skill.GetSkillPointsForLevel(level));
 
+            // persist the skill to the database
+            skill.Persist();
+            
             return skill;
         }
 
