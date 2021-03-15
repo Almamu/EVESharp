@@ -81,7 +81,7 @@ namespace Node.Inventory
             this.LocationRecycler = this.GetItem(this.NodeContainer.Constants["locationRecycler"]) as EVESystem;
             this.LocationSystem = this.GetItem(this.NodeContainer.Constants["locationSystem"]) as EVESystem;
             this.LocationUniverse = this.GetItem(this.NodeContainer.Constants["locationUniverse"]) as EVESystem;
-            this.LocationMarket = this.GetItem(this.NodeContainer.Constants["locationMarket"]) as EVESystem;
+            // this.LocationMarket = this.GetItem(this.NodeContainer.Constants["locationMarket"]) as EVESystem;
             this.SecureCommerceCommision = this.GetItem(this.NodeContainer.Constants["ownerSecureCommerceCommission"]);
         }
 
