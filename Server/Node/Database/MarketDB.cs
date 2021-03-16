@@ -375,7 +375,6 @@ namespace Node.Database
                 
                 while (reader.Read() == true)
                 {
-                
                     // build the MarketOrder object
                     orders.Add(
                         new MarketOrder(
@@ -416,38 +415,14 @@ namespace Node.Database
                 }
             ).Close();
         }
-
-        public int GetAvailableItemQuantity(int locationID1, int locationID2, int ownerID1, int typeID)
-        {
-            MySqlConnection connection = null;
-            MySqlDataReader reader = Database.PrepareQuery(ref connection,
-                "SELECT SUM(quantity) FROM invItems WHERE typeID = @typeID AND (locationID = @locationID1 OR locationID = @locationID2) AND ownerID = @ownerID1",
-                new Dictionary<string, object>()
-                {
-                    {"@locationID1", locationID1},
-                    {"@locationID2", locationID2},
-                    {"@ownerID1", ownerID1},
-                    {"@typeID", typeID}
-                }
-            );
-            
-            using (connection)
-            using (reader)
-            {
-                if (reader.Read() == false)
-                    return 0;
-
-                return reader.GetInt32(0);
-            }
-        }
-
+        
         public class ItemQuantityEntry
         {
             public int ItemID { get; set; }
             public int Quantity { get; set; }
             public int OriginalQuantity { get; set; }
             public int NodeID { get; set; }
-        };
+        }
         
         public Dictionary<int, ItemQuantityEntry> PrepareItemForOrder(MySqlConnection connection, int typeID, int locationID1, int locationID2, int quantity, int ownerID1)
         {
@@ -467,7 +442,6 @@ namespace Node.Database
             
             using (reader)
             {
-
                 while (reader.Read() == true)
                 {
                     int itemID = reader.GetInt32(0);

@@ -13,6 +13,9 @@ namespace Node.Database
 
         public int GetJumpsBetweenSolarSystems(int fromSolarSystemID, int toSolarSystemID)
         {
+            if (fromSolarSystemID == toSolarSystemID)
+                return 0;
+            
             MySqlConnection connection = null;
             MySqlDataReader reader = Database.PrepareQuery(ref connection,
                 "SELECT jumps FROM mapPrecalculatedSolarSystemJumps WHERE fromSolarSystemID = @fromSolarSystemID AND toSolarSystemID = @toSolarSystemID",
