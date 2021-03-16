@@ -669,6 +669,49 @@ namespace Common.Database
             }
         }
 
+        public void GetLock(ref MySqlConnection connection, string lockName)
+        {
+            try
+            {
+                if (connection == null)
+                {
+                    connection = new MySqlConnection(this.mConnectionString);
+                    connection.Open();
+                }
+
+                MySqlCommand command = new MySqlCommand("SELECT GET_LOCK (@lockName, 0xFFFFFFFF);", connection);
+
+                command.Parameters.AddWithValue("@lockName", lockName);
+
+                command.ExecuteNonQuery();
+            }
+            catch (Exception e)
+            {
+                Log.Error($"MySQL error: {e.Message}");
+                throw;
+            }
+        }
+
+        public void ReleaseLock(MySqlConnection connection, string lockName)
+        {
+            try
+            {
+                if (connection == null)
+                    throw new ArgumentNullException(nameof(connection), "A valid connection is required");
+
+                MySqlCommand command = new MySqlCommand($"SELECT RELEASE_LOCK (@lockName);", connection);
+
+                command.Parameters.AddWithValue("@lockName", lockName);
+                
+                command.ExecuteNonQuery();
+            }
+            catch (Exception e)
+            {
+                Log.Error($"MySQL error: {e.Message}");
+                throw;
+            }
+        }
+
         public MySqlDataReader Query(ref MySqlConnection connection, string query)
         {
             try

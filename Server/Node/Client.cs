@@ -56,19 +56,24 @@ namespace Node
         private ItemFactory ItemFactory { get; }
         private TimerManager TimerManager { get; }
         private PyList PendingMultiEvents { get; set; }
+        private CharacterManager CharacterManager { get; }
+        private SystemManager SystemManager { get; }
         
-        public Client(NodeContainer container, ClusterConnection clusterConnection, ServiceManager serviceManager, TimerManager timerManager, ItemFactory itemFactory)
+        public Client(NodeContainer container, ClusterConnection clusterConnection, ServiceManager serviceManager, TimerManager timerManager, ItemFactory itemFactory, CharacterManager characterManager, SystemManager systemManager)
         {
             this.Container = container;
             this.ClusterConnection = clusterConnection;
             this.ServiceManager = serviceManager;
             this.TimerManager = timerManager;
             this.ItemFactory = itemFactory;
+            this.CharacterManager = characterManager;
+            this.SystemManager = systemManager;
             this.PendingMultiEvents = new PyList();
         }
 
-        private void OnCharEnteredStation(Station station)
+        private void OnCharEnteredStation(int stationID)
         {
+            Station station = this.ItemFactory.ItemManager.GetStation(stationID);
             station.Guests[(int) this.CharacterID] = this.ItemFactory.ItemManager.GetItem((int) this.CharacterID) as Character;
 
             // notify station guests
@@ -86,8 +91,9 @@ namespace Node
             );
         }
 
-        private void OnCharLeftStation(Station station)
+        private void OnCharLeftStation(int stationID)
         {
+            Station station = this.ItemFactory.ItemManager.GetStation(stationID);
             station.Guests.Remove((int) this.CharacterID);
 
             // notify station guests
@@ -114,62 +120,40 @@ namespace Node
             // free meta inventories for this client
             this.ItemFactory.ItemManager.MetaInventoryManager.FreeOwnerInventories((int) this.CharacterID);
             
-            if (this.StationID != null)
-            {
-                Station station = this.ItemFactory.ItemManager.GetStation ((int) this.StationID);
-                SolarSystem solarSystem = this.ItemFactory.ItemManager.GetSolarSystem(station.SolarSystemID);
+            if (this.StationID != null && this.SystemManager.StationBelongsToUs((int) this.StationID) == true)
+                this.OnCharLeftStation((int) this.StationID);
 
-                if (solarSystem.BelongsToUs == true)
-                    this.OnCharLeftStation(station);
-            }
-            
             // remove timers
             this.ItemFactory.ItemManager.UnloadItem((int) this.CharacterID);
             this.ItemFactory.ItemManager.UnloadItem((int) this.ShipID);
+            
+            // remove character off the list
+            this.CharacterManager.RemoveCharacter((int) this.CharacterID);
         }
 
         private void OnSolarSystemChanged(int? oldSolarSystemID, int? newSolarSystemID)
         {
-            SolarSystem newSolarSystem = this.ItemFactory.ItemManager.GetSolarSystem((int) newSolarSystemID);
-            
             // load the character information if it's not loaded in already
-            if (newSolarSystem.BelongsToUs == true && this.ItemFactory.ItemManager.IsItemLoaded((int) this.CharacterID) == false)
-            {
+            if (this.SystemManager.SolarSystemBelongsToUs((int) newSolarSystemID) == true && this.ItemFactory.ItemManager.IsItemLoaded((int) this.CharacterID) == false)
                 // load the character into this node
                 this.ItemFactory.ItemManager.LoadItem((int) this.CharacterID);
-            }
-            
+
             // check if the old solar system belong to us (and this new one doesnt) and unload things
             if (oldSolarSystemID == null)
                 return;
 
-            SolarSystem oldSolarSystem = this.ItemFactory.ItemManager.GetSolarSystem((int) oldSolarSystemID);
-
-            if (oldSolarSystem.BelongsToUs == true && newSolarSystem.BelongsToUs == false)
-            {
+            if (this.SystemManager.SolarSystemBelongsToUs((int) oldSolarSystemID) == true && this.SystemManager.SolarSystemBelongsToUs((int) newSolarSystemID) == false)
+                // unload the character from this node
                 this.ItemFactory.ItemManager.UnloadItem((int) this.CharacterID);
-            }
         }
 
         private void OnStationChanged(int? oldStationID, int? newStationID)
         {
-            if (oldStationID != null)
-            {
-                Station station = this.ItemFactory.ItemManager.GetStation((int) oldStationID);
-                SolarSystem solarSystem = this.ItemFactory.ItemManager.GetSolarSystem(station.SolarSystemID);
-                
-                if (solarSystem.BelongsToUs == true)
-                    this.OnCharLeftStation(station);
-            }
+            if (oldStationID != null && this.SystemManager.StationBelongsToUs((int) oldStationID) == true)
+                this.OnCharLeftStation((int) oldStationID);
 
-            if (newStationID != null)
-            {
-                Station station = this.ItemFactory.ItemManager.GetStation((int) newStationID);
-                SolarSystem solarSystem = this.ItemFactory.ItemManager.GetSolarSystem(station.SolarSystemID);
-
-                if (solarSystem.BelongsToUs == true)
-                    this.OnCharEnteredStation(station);
-            }
+            if (newStationID != null && this.SystemManager.StationBelongsToUs((int) newStationID) == true)
+                this.OnCharEnteredStation((int) newStationID);
         }
 
         private void HandleSessionDifferencies(Session session)
@@ -185,6 +169,9 @@ namespace Node
                     return;
 
                 int characterID = (int) this.CharacterID;
+                
+                // ensure the character is in the list
+                this.CharacterManager.AddCharacter(characterID, this);
                 
                 if (session.ContainsKey("solarsystemid2") == true)
                 {

@@ -121,7 +121,7 @@ namespace Node.Services.Network
             {
                 // player wants all the skills!
                 IEnumerable<KeyValuePair<int, ItemType>> skillTypes =
-                    this.TypeManager.Where(x => x.Value.Group.Category.ID == (int) ItemCategories.Skill);
+                    this.TypeManager.Where(x => x.Value.Group.Category.ID == (int) ItemCategories.Skill && x.Value.Published == true);
 
                 Dictionary<int, Skill> injectedSkills = character.InjectedSkillsByTypeID;
 

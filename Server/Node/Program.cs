@@ -94,7 +94,8 @@ namespace Node
                 sContainer.Register<BoundServiceManager>(Lifestyle.Singleton);
                 sContainer.Register<ClusterConnection>(Lifestyle.Singleton);
                 sContainer.Register<Client>(Lifestyle.Transient);
-                
+                sContainer.Register<CharacterManager>(Lifestyle.Singleton);
+
                 // register the database accessors dependencies
                 sContainer.Register<AccountDB>(Lifestyle.Singleton);
                 sContainer.Register<AgentDB>(Lifestyle.Singleton);
@@ -114,6 +115,7 @@ namespace Node
                 sContainer.Register<StationDB>(Lifestyle.Singleton);
                 sContainer.Register<LookupDB>(Lifestyle.Singleton);
                 sContainer.Register<InsuranceDB>(Lifestyle.Singleton);
+                sContainer.Register<SolarSystemDB>(Lifestyle.Singleton);
 
                 // register all the services
                 sContainer.Register<account>(Lifestyle.Singleton);

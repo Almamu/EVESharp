@@ -24,5 +24,9 @@ namespace Node
         /// The function to call when the timeout is reached
         /// </summary>
         public Action<RemoteCall> TimeoutCallback { get; set; }
+        /// <summary>
+        /// Related node
+        /// </summary>
+        public int NodeID { get; set; }
     }
 }

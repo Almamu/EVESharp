@@ -10,6 +10,8 @@ using Node.Database;
 using Node.Inventory;
 using Node.Inventory.Items;
 using Node.Inventory.Items.Types;
+using Node.Inventory.Notifications;
+using Node.Inventory.SystemEntities;
 using PythonTypes;
 using PythonTypes.Types.Exceptions;
 using PythonTypes.Types.Network;
@@ -34,10 +36,11 @@ namespace Node.Network
         private BoundServiceManager BoundServiceManager { get; }
         private Container DependencyInjector { get; }
         private AccountDB AccountDB { get; }
+        private CharacterManager CharacterManager { get; }
 
         public ClusterConnection(NodeContainer container, SystemManager systemManager, ServiceManager serviceManager,
             ClientManager clientManager, BoundServiceManager boundServiceManager, ItemManager itemManager,
-            Logger logger, Container dependencyInjector, AccountDB accountDB)
+            Logger logger, Container dependencyInjector, AccountDB accountDB, CharacterManager characterManager)
         {
             this.Log = logger.CreateLogChannel("ClusterConnection");
 #if DEBUG
@@ -52,6 +55,7 @@ namespace Node.Network
             this.ItemManager = itemManager;
             this.Container = container;
             this.AccountDB = accountDB;
+            this.CharacterManager = characterManager;
             this.Socket = new EVEClientSocket(this.Log);
             this.Socket.SetReceiveCallback(ReceiveLowLevelVersionExchangeCallback);
             this.Socket.SetExceptionHandler(HandleException);
@@ -385,6 +389,105 @@ namespace Node.Network
             this.ClientManager.Remove(clientID);
         }
 
+        private void HandleOnItemUpdate(PyTuple data)
+        {
+            if (data.Count != 2)
+            {
+                Log.Error("Received OnItemUpdate notification with the wrong format");
+                return;
+            }
+
+            PyDataType first = data[0];
+
+            if (first is PyInteger == false)
+            {
+                Log.Error("Received OnItemUpdate notification with the wrong format");
+                return;
+            }
+
+            PyDataType second = data[1];
+
+            if (second is PyDictionary == false)
+            {
+                Log.Error("Received OnItemUpdate notification with the wrong format");
+                return;
+            }
+
+            PyInteger itemID = first as PyInteger;
+            PyDictionary changes = second as PyDictionary;
+            
+            // search for the item in our item factory and update it (and it's parents) if needed
+            if (this.ItemManager.IsItemLoaded(itemID) == false)
+            {
+                // we trust that the notification got to the correct node
+                // load the item and check the owner, if it's logged in and the locationID is loaded by us
+                // that means the item should be kept here
+                // fingers crossed
+                ItemEntity newItem = this.ItemManager.GetItem(itemID);
+
+                if (this.ItemManager.IsItemLoaded(newItem.LocationID) == false)
+                {
+                    // this item should not be loaded, so unload and return
+                    this.ItemManager.UnloadItem(newItem);
+                    return;
+                }
+
+                ItemEntity location = this.ItemManager.GetItem(newItem.LocationID);
+
+                if (location is Station == true && this.SystemManager.SolarSystemBelongsToUs(location.LocationID) == false)
+                {
+                    // the item should not be loaded, so unload and return
+                    this.ItemManager.UnloadItem(newItem);
+                    return;
+                }
+
+                if (location is SolarSystem == true && this.SystemManager.SolarSystemBelongsToUs(location.ID) == false)
+                {
+                    // the item should not be loaded, so unload and return
+                    this.ItemManager.UnloadItem(newItem);
+                    return;
+                }
+                
+                // now check if the owner is logged in
+                if (this.CharacterManager.IsClientConnected(newItem.OwnerID) == false)
+                {
+                    this.ItemManager.UnloadItem(newItem);
+                    return;
+                }
+            }
+
+            ItemEntity item = this.ItemManager.GetItem(itemID);
+
+            OnItemChange itemChange = new OnItemChange(item);
+            
+            // update item and build change notification
+            if (changes.ContainsKey("locationID") == true)
+            {
+                itemChange.AddChange(ItemChange.LocationID, item.LocationID);
+                item.LocationID = changes["locationID"] as PyInteger;
+            }
+            if (changes.ContainsKey("quantity") == true)
+            {
+                itemChange.AddChange(ItemChange.Quantity, item.Quantity);
+                item.Quantity = changes["quantity"] as PyInteger;
+            }
+            if (changes.ContainsKey("ownerID") == true)
+            {
+                itemChange.AddChange(ItemChange.OwnerID, item.OwnerID);
+                item.OwnerID = changes["ownerID"] as PyInteger;
+            }
+            
+            // TODO: IDEALLY THIS WOULD BE ENQUEUED SO ALL OF THEM ARE SENT AT THE SAME TIME
+            // TODO: BUT FOR NOW THIS SHOULD SUFFICE
+            // send the notification
+            this.SendNotification("OnMultiEvent", "charid", (int) item.OwnerID,
+                new PyTuple(1) {[0] = new PyList(1) {[0] = itemChange}});
+            
+            // the item is removed off the database if the new location is 0
+            if (item.LocationID == 0)
+                item.Destroy();
+        }
+
         private void HandleBroadcastNotification(PyPacket packet)
         {
             // this packet is an internal one
@@ -421,6 +524,9 @@ namespace Node.Network
                     break;
                 case "OnClientDisconnected":
                     this.HandleOnClientDisconnected(arguments);
+                    break;
+                case "OnItemUpdate":
+                    this.HandleOnItemUpdate(arguments);
                     break;
                 default:
                     Log.Fatal("Received ClusterController notification with the wrong format");
@@ -491,7 +597,7 @@ namespace Node.Network
                 this.BoundServiceManager.FreeBoundService(boundID);
             }
         }
-
+        
         private void ReceiveNormalPacketCallback(PyDataType ar)
         {
             PyPacket packet = ar;
@@ -700,6 +806,25 @@ namespace Node.Network
 
             this.Socket.Send(packet);
         }
+        
+        /// <summary>
+        /// Sends a notification from this node to the specified node
+        /// </summary>
+        /// <param name="nodeID">The nodeID to notify</param>
+        /// <param name="type">The type of notification</param>
+        /// <param name="data">The notification's data</param>
+        public void SendNodeNotification(long nodeID, string type, PyTuple data)
+        {
+            PyPacket notification = new PyPacket(PyPacket.PacketType.NOTIFICATION);
+            
+            notification.Source = new PyAddressAny(0);
+            notification.Destination = new PyAddressBroadcast(new PyList(1) {[0] = nodeID}, "nodeid");
+            notification.Payload = new PyTuple(2) {[0] = type, [1] = data };
+            notification.OutOfBounds = new PyDictionary();
+            notification.UserID = -1;
+            
+            this.Socket.Send(notification);
+        }
 
         public void SendProvisionalResponse(CallInformation answerTo, ProvisionalResponse response)
         {
@@ -766,6 +891,13 @@ namespace Node.Network
             result.Payload = new PyTuple(new PyDataType[] {new PySubStream(content)});
 
             this.Socket.Send(result);
+        }
+
+        private void NodeSendServiceCall(int nodeID, string service, string call, PyTuple args, PyDictionary namedPayload,
+            Action<RemoteCall, PyDataType> callback, Action<RemoteCall> timeoutCallback, object extraInfo = null, int timeoutSeconds = 0)
+        {
+            // node's do not have notion of nodes so just let the cluster controller know
+            int callID = this.ServiceManager.ExpectRemoteServiceResult(callback, nodeID, extraInfo, timeoutCallback, timeoutSeconds);
         }
 
         private void ClientSendServiceCall(int clientID, string service, string call, PyTuple args, PyDictionary namedPayload,

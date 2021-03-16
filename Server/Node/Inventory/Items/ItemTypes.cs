@@ -12,7 +12,14 @@ namespace Node.Inventory.Items
         CloneGradeAlpha = 164,
         Capsule = 670,
         DamageControlI = 2046,
+        Trade = 3443,
+        Retail = 3444,
+        BrokerRelations = 3446,
         Learning = 3374,
+        Marketing = 16598,
+        Wholesale = 16596,
+        Accounting = 16622,
+        Tycoon = 18580,
         InfomorphPsychology = 24242
     }
 }

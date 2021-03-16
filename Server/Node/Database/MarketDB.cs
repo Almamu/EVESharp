@@ -3,13 +3,15 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using Common.Database;
 using MySql.Data.MySqlClient;
+using Node.Inventory;
+using Node.Inventory.Items;
 using Node.Market;
 using PythonTypes.Types.Database;
 using PythonTypes.Types.Primitives;
 
 namespace Node.Database
 {
-    public enum TransactionType
+    public enum TransactionType : int
     {
         Sell = 0,
         Buy = 1,
@@ -18,8 +20,13 @@ namespace Node.Database
     
     public class MarketDB : DatabaseAccessor
     {
-        public MarketDB(DatabaseConnection db) : base(db)
+        private ItemManager ItemManager { get; }
+        private TypeManager TypeManager { get; }
+        
+        public MarketDB(ItemManager itemManager, TypeManager typeManager, DatabaseConnection db) : base(db)
         {
+            this.ItemManager = itemManager;
+            this.TypeManager = typeManager;
         }
 
         public void CreateJournalForCharacter(MarketReference reference, int ownerID1,
@@ -103,11 +110,7 @@ namespace Node.Database
         public PyDataType GetCharOrders(int characterID)
         {
             return Database.PrepareRowsetQuery(
-                "SELECT" +
-                " orderID, typeID, charID, regionID, stationID, `range`, bid, price, volEntered, volRemaining," +
-                " issued, orderState, minVolume, contraband, accountID, duration, isCorp, solarSystemID, escrow " +
-                "FROM mktOrders " +
-                "WHERE charID=@characterID",
+                "SELECT orderID, typeID, charID, regionID, stationID, `range`, bid, price, volEntered, volRemaining, issued, minVolume, accountID, duration, isCorp, solarSystemID FROM mktOrders LEFT JOIN staStations USING (stationID) WHERE charID = @characterID",
                 new Dictionary<string, object>()
                 {
                     {"@characterID", characterID}
@@ -129,7 +132,7 @@ namespace Node.Database
         public PyDataType GetSystemAsks(int solarSystemID)
         {
             return Database.PrepareIntRowDictionary(
-                "SELECT typeID, MAX(price) AS price, volRemaining, stationID FROM mktOrders WHERE solarSystemID = @solarSystemID GROUP BY typeID", 0,
+                "SELECT typeID, MAX(price) AS price, volRemaining, stationID FROM mktOrders LEFT JOIN staStations USING (stationID) WHERE solarSystemID = @solarSystemID GROUP BY typeID", 0,
                 new Dictionary<string, object>()
                 {
                     {"@solarSystemID", solarSystemID}
@@ -140,7 +143,7 @@ namespace Node.Database
         public PyDataType GetRegionBest(int regionID)
         {
             return Database.PrepareIntRowDictionary(
-                "SELECT typeID, MAX(price) AS price, volRemaining, stationID FROM mktOrders WHERE regionID = @regionID GROUP BY typeID", 0,
+                "SELECT typeID, MAX(price) AS price, volRemaining, stationID FROM mktOrders LEFT JOIN staStations USING (stationID) WHERE regionID = @regionID GROUP BY typeID", 0,
                 new Dictionary<string, object>()
                 {
                     {"@regionID", regionID}
@@ -153,7 +156,7 @@ namespace Node.Database
             return new PyDataType[]
             {
                 Database.PrepareCRowsetQuery(
-                    "SELECT price, volRemaining, typeID, `range`, orderID, volEntered, minVolume, bid, issued, duration, stationID, regionID, solarSystemID, jumps FROM mktOrders, mapPrecalculatedSolarSystemJumps WHERE mapPrecalculatedSolarSystemJumps.fromSolarSystemID = solarSystemID AND mapPrecalculatedSolarSystemJumps.toSolarSystemID = @currentSolarSystem AND regionID = @regionID AND typeID = @typeID AND bid = @bid",
+                    "SELECT price, volRemaining, typeID, `range`, orderID, volEntered, minVolume, bid, issued, duration, stationID, regionID, solarSystemID, jumps FROM mktOrders LEFT JOIN staStations USING (stationID) LEFT JOIN mapPrecalculatedSolarSystemJumps ON mapPrecalculatedSolarSystemJumps.fromSolarSystemID = solarSystemID WHERE mapPrecalculatedSolarSystemJumps.toSolarSystemID = @currentSolarSystem AND regionID = @regionID AND typeID = @typeID AND bid = @bid",
                     new Dictionary<string, object>()
                     {
                         {"@regionID", regionID},
@@ -163,7 +166,7 @@ namespace Node.Database
                     }
                 ),
                 Database.PrepareCRowsetQuery(
-                    "SELECT price, volRemaining, typeID, `range`, orderID, volEntered, minVolume, bid, issued, duration, stationID, regionID, solarSystemID, jumps FROM mktOrders, mapPrecalculatedSolarSystemJumps WHERE mapPrecalculatedSolarSystemJumps.fromSolarSystemID = solarSystemID AND mapPrecalculatedSolarSystemJumps.toSolarSystemID = @currentSolarSystem AND regionID = @regionID AND typeID = @typeID AND bid = @bid",
+                    "SELECT price, volRemaining, typeID, `range`, orderID, volEntered, minVolume, bid, issued, duration, stationID, regionID, solarSystemID, jumps FROM mktOrders LEFT JOIN staStations USING (stationID) LEFT JOIN mapPrecalculatedSolarSystemJumps ON mapPrecalculatedSolarSystemJumps.fromSolarSystemID = solarSystemID WHERE mapPrecalculatedSolarSystemJumps.toSolarSystemID = @currentSolarSystem AND regionID = @regionID AND typeID = @typeID AND bid = @bid",
                     new Dictionary<string, object>()
                     {
                         {"@regionID", regionID},
@@ -314,6 +317,250 @@ namespace Node.Database
                     {"@transactionType", TransactionType.Buy}
                 }
             );
+        }
+
+        public int CountCharsOrders(int characterID)
+        {
+            MySqlConnection connection = null;
+            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+                "SELECT COUNT(*) FROM mktOrders WHERE charID = @characterID",
+                new Dictionary<string, object>()
+                {
+                    {"@characterID", characterID}
+                }
+            );
+            
+            using (connection)
+            using (reader)
+            {
+                if (reader.Read() == false)
+                    return 0;
+
+                return reader.GetInt32(0);
+            }
+        }
+
+        /// <summary>
+        /// Special situation for Market
+        ///
+        /// Acquires the table lock for the orders table
+        /// This allows to take exclusive control over it and perform any actions required
+        /// </summary>
+        /// <returns></returns>
+        public MySqlConnection AcquireMarketLock()
+        {
+            MySqlConnection connection = null;
+            Database.GetLock(ref connection, "market");
+
+            return connection;
+        }
+
+        public MarketOrder[] FindMatchingOrders(MySqlConnection connection, TransactionType transactionType, double price, int typeID, int quantity)
+        {
+            // TODO: TAKE INTO ACCOUNT THE RANGE OF ORDERS
+            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+                "SELECT orderID, typeID, itemID, charID, stationID AS locationID, price, accountID, volRemaining, minVolume FROM mktOrders WHERE bid = @transactionType AND price = @price AND typeID = @typeID AND minVolume >= @quantity ORDER BY price",
+                new Dictionary<string, object>()
+                {
+                    {"@transactionType", transactionType},
+                    {"@price", price},
+                    {"@typeID", typeID},
+                    {"@quantity", quantity}
+                }
+            );
+
+            using (reader)
+            {
+                List<MarketOrder> orders = new List<MarketOrder>();
+                
+                while (reader.Read() == true)
+                {
+                
+                    // build the MarketOrder object
+                    orders.Add(
+                        new MarketOrder(
+                            reader.GetInt32(0),
+                            reader.GetInt32(1),
+                            reader.GetInt32(2),
+                            reader.GetInt32(3),
+                            reader.GetInt32(4),
+                            reader.GetDouble(5),
+                            reader.GetInt32(6),
+                            reader.GetInt32(7),
+                            reader.GetInt32(8)
+                        )
+                    );
+                }
+
+                return orders.ToArray();
+            }
+        }
+
+        public void UpdateOrderRemainingQuantity(MySqlConnection connection, int orderID, int newQuantityRemaining)
+        {
+            Database.PrepareQuery(ref connection, "UPDATE mktOrders SET volRemaining = @quantity WHERE orderID = @orderID",
+                new Dictionary<string, object>()
+                {
+                    {"@orderID", orderID},
+                    {"@quantity", newQuantityRemaining}
+                }
+            ).Close();
+        }
+
+        public void RemoveOrder(MySqlConnection connection, int orderID)
+        {
+            Database.PrepareQuery(ref connection, "DELETE FROM mktOrders WHERE orderID = @orderID",
+                new Dictionary<string, object>()
+                {
+                    {"@orderID", orderID}
+                }
+            ).Close();
+        }
+
+        public int GetAvailableItemQuantity(int locationID1, int locationID2, int ownerID1, int typeID)
+        {
+            MySqlConnection connection = null;
+            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+                "SELECT SUM(quantity) FROM invItems WHERE typeID = @typeID AND (locationID = @locationID1 OR locationID = @locationID2) AND ownerID = @ownerID1",
+                new Dictionary<string, object>()
+                {
+                    {"@locationID1", locationID1},
+                    {"@locationID2", locationID2},
+                    {"@ownerID1", ownerID1},
+                    {"@typeID", typeID}
+                }
+            );
+            
+            using (connection)
+            using (reader)
+            {
+                if (reader.Read() == false)
+                    return 0;
+
+                return reader.GetInt32(0);
+            }
+        }
+
+        public class ItemQuantityEntry
+        {
+            public int ItemID { get; set; }
+            public int Quantity { get; set; }
+            public int OriginalQuantity { get; set; }
+            public int NodeID { get; set; }
+        };
+        
+        public Dictionary<int, ItemQuantityEntry> PrepareItemForOrder(MySqlConnection connection, int typeID, int locationID1, int locationID2, int quantity, int ownerID1)
+        {
+            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+                "SELECT itemID, quantity, nodeID FROM invItems WHERE typeID = @typeID AND (locationID = @locationID1 OR locationID = @locationID2) AND ownerID = @ownerID1",
+                new Dictionary<string, object>()
+                {
+                    {"@locationID1", locationID1},
+                    {"@locationID2", locationID2},
+                    {"@ownerID1", ownerID1},
+                    {"@typeID", typeID}
+                }
+            );
+            
+            Dictionary<int, ItemQuantityEntry> itemIDToQuantityLeft = new Dictionary<int, ItemQuantityEntry>();
+            int quantityLeft = quantity;
+            
+            using (reader)
+            {
+
+                while (reader.Read() == true)
+                {
+                    int itemID = reader.GetInt32(0);
+                    int itemQuantity = reader.GetInt32(1);
+
+                    ItemQuantityEntry entry = new ItemQuantityEntry()
+                    {
+                        ItemID = itemID,
+                        OriginalQuantity = itemQuantity,
+                        Quantity = itemQuantity - Math.Min(itemQuantity, quantityLeft),
+                        NodeID = reader.GetInt32(2)
+                    };
+
+                    itemIDToQuantityLeft[itemID] = entry;
+
+                    quantityLeft -= Math.Min(itemQuantity, quantityLeft);
+
+                    if (quantityLeft == 0)
+                        break;
+                }
+            }
+
+            if (quantityLeft > 0)
+            {
+                // there's not enough items for this sale!!
+                return null;
+            }
+            
+            // now iterate all the itemIDs, the ones that have a quantity of 0 must be moved to the correct container
+            foreach (KeyValuePair<int, ItemQuantityEntry> entry in itemIDToQuantityLeft)
+            {
+                // the item is just gone, remove it
+                if (entry.Value.Quantity == 0)
+                {
+                    Database.PrepareQuery(ref connection, "DELETE FROM invItems WHERE itemID = @itemID",
+                        new Dictionary<string, object>()
+                        {
+                            {"@itemID", entry.Key}
+                        }
+                    ).Close();
+                }
+                else
+                {
+                    // reduce the item quantity available
+                    Database.PrepareQuery(ref connection,
+                        "UPDATE invItems SET quantity = @quantity WHERE itemID = @itemID",
+                        new Dictionary<string, object>()
+                        {
+                            {"@itemID", entry.Key},
+                            {"@quantity", entry.Value.Quantity}
+                        }
+                    ).Close();
+                }
+            }
+
+            // everything should be up to date, return the list of changes done so the market can notify the required nodes
+            return itemIDToQuantityLeft;
+        }
+
+        public void PlaceSellOrder(MySqlConnection connection, int typeID, int itemID, int ownerID, int stationID, int range, double price, int volEntered, int volRemaining, int minVolume, int accountID, long duration, bool isCorp)
+        {
+            Database.PrepareQuery(ref connection,
+                "INSERT INTO mktOrders(typeID, itemID, charID, stationID, `range`, bid, price, volEntered, volRemaining, issued, minVolume, accountID, duration, isCorp)VALUES(@typeID, @itemID, @ownerID, @stationID, @range, @sell, @price, @volEntered, @volRemaining, @issued, @minVolume, @accountID, @duration, @isCorp)",
+                new Dictionary<string, object>()
+                {
+                    {"@typeID", typeID},
+                    {"@itemID", itemID},
+                    {"@ownerID", ownerID},
+                    {"@stationID", stationID},
+                    {"@range", range},
+                    {"@sell", TransactionType.Sell},
+                    {"@price", price},
+                    {"@volEntered", volEntered},
+                    {"@volRemaining", volRemaining},
+                    {"@issued", DateTime.UtcNow.ToFileTimeUtc()},
+                    {"@minVolume", minVolume},
+                    {"@accountID", accountID},
+                    {"@duration", duration},
+                    {"@isCorp", isCorp}
+                }
+            ).Close();
+        }
+
+        /// <summary>
+        /// Special situation for Market
+        ///
+        /// Frees the table lock for the orders table
+        /// This allows to take exclusive control over it and perform any actions required
+        /// </summary>
+        /// <param name="connection"></param>
+        public void ReleaseMarketLock(MySqlConnection connection)
+        {
+            Database.ReleaseLock(connection, "market");
         }
     }
 }

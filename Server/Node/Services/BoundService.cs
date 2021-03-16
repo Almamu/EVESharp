@@ -190,7 +190,6 @@ namespace Node.Services
         /// </summary>
         public virtual void OnServiceFree()
         {
-            
         }
     }
 }

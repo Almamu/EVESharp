@@ -21,7 +21,7 @@ namespace Node.Inventory
             this.mStationTypes = this.StationDB.LoadStationTypes();
             this.mServices = this.StationDB.LoadServices();
         }
-        
+
         public Dictionary<int, StationOperations> Operations => this.mOperations;
         public Dictionary<int, StationType> StationTypes => this.mStationTypes;
         public Dictionary<int, string> Services => this.mServices;

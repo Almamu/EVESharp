@@ -1281,6 +1281,38 @@ namespace Node.Database
                 }
             );
         }
+
+        public void UpdateItemOwner(int itemID, int newOwnerID)
+        {
+            Database.PrepareQuery("UPDATE invItems SET ownerID = @ownerID WHERE itemID = @itemID",
+                new Dictionary<string, object>()
+                {
+                    {"@itemID", itemID},
+                    {"@ownerID", newOwnerID}
+                }
+            );
+        }
+
+        public int GetItemNode(int itemID)
+        {
+            MySqlConnection connection = null;
+            MySqlDataReader reader = Database.PrepareQuery(ref connection, 
+                "SELECT nodeID FROM invItems WHERE itemID = @itemID",
+                new Dictionary<string, object>()
+                {
+                    {"@itemID", itemID}
+                }
+            );
+            
+            using (connection)
+            using (reader)
+            {
+                if (reader.Read() == false)
+                    return 0;
+
+                return reader.GetInt32(0);
+            }
+        }
         
         public ItemDB(DatabaseConnection db, ItemFactory factory, ClientManager clientManager, TimerManager timerManager) : base(db)
         {

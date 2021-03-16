@@ -62,12 +62,19 @@ INSERT INTO invItems (itemID, singleton, quantity)
 INSERT INTO eveNames (itemID, itemName, typeID, groupID, categoryID)
   VALUES (1, 'EVE System', 0, 0, 0);
 /*
+ * Static record for the EVE Market
+ */
+INSERT INTO invItems (itemID, singleton, quantity)
+  VALUES (3, 1, 1);
+INSERT INTO eveNames (itemID, itemName, typeID, groupID, categoryID)
+  VALUES (3, 'EVE Market', 0, 0, 0);
+/*
  * Static record for Recycler
  */
 INSERT INTO invItems (itemID, singleton, quantity)
   VALUES (6, 1, 1);
 INSERT INTO eveNames (itemID, itemName, typeID, groupID, categoryID)
-  VALUES (6, 'Recycler', 0, 0, 0);
+  VALUES (6, 'EVE Recycler', 0, 0, 0);
 /*
  * Static records for universes
  */

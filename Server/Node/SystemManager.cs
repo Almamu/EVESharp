@@ -25,6 +25,7 @@
 using System.Collections.Generic;
 using Node.Database;
 using Node.Inventory;
+using Node.Inventory.Items.Types;
 using Node.Inventory.SystemEntities;
 using PythonTypes.Types.Primitives;
 
@@ -71,9 +72,23 @@ namespace Node
             this.mLoadedSolarSystems.Add(solarSystemID, solarSystem);
         }
 
+        public bool StationBelongsToUs(int stationID)
+        {
+            Station station = this.ItemFactory.ItemManager.GetStation(stationID);
+
+            return this.SolarSystemBelongsToUs(station.SolarSystemID);
+        }
+
         public bool SolarSystemBelongsToUs(int solarSystemID)
         {
             return this.ItemFactory.ItemManager.GetSolarSystem(solarSystemID).BelongsToUs;
+        }
+
+        public long GetNodeStationBelongsTo(int stationID)
+        {
+            Station station = this.ItemFactory.ItemManager.GetStation(stationID);
+
+            return this.GetNodeSolarSystemBelongsTo(station.LocationID);
         }
 
         public long GetNodeSolarSystemBelongsTo(int solarSystemID)

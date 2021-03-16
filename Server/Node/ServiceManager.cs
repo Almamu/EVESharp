@@ -25,6 +25,7 @@
 using System;
 using System.Collections.Generic;
 using Common.Logging;
+using Node.Exceptions.corpStationMgr;
 using Node.Services.Account;
 using Node.Services.CacheSvc;
 using Node.Services.Characters;
@@ -235,21 +236,11 @@ namespace Node
         /// <summary>
         /// Reserves a slot in the call list and prepares timeout timers in case the call wait time expires 
         /// </summary>
-        /// <param name="callback">The function to call when the answer is received</param>
-        /// <param name="client">The client that is getting the call</param>
-        /// <param name="extraInfo">Any extra information to store for later usage</param>
-        /// <param name="timeoutCallback">The function to call if the call timeout expires</param>
+        /// <param name="entry">The RemoteCall entry to associate with this call</param>
         /// <param name="timeoutSeconds">The amount of seconds to wait until timing out</param>
         /// <returns>The callID to be notified to the client</returns>
-        public int ExpectRemoteServiceResult(Action<RemoteCall, PyDataType> callback, Client client, object extraInfo = null,
-            Action<RemoteCall> timeoutCallback = null, int timeoutSeconds = 0)
+        private int ExpectRemoteServiceResult(RemoteCall entry, int timeoutSeconds = 0)
         {
-            // generate the proper remote call object
-            RemoteCall entry = new RemoteCall
-            {
-                Callback = callback, ExtraInfo = extraInfo, TimeoutCallback = timeoutCallback, Client = client
-            };
-            
             // get the new callID
             int callID = ++this.mNextCallID;
 
@@ -267,6 +258,46 @@ namespace Node
             }
 
             return callID;
+        }
+
+        /// <summary>
+        /// Reserves a slot in the call list and prepares timeout timers in case the call wait time expires 
+        /// </summary>
+        /// <param name="callback">The function to call when the answer is received</param>
+        /// <param name="client">The client that is getting the call</param>
+        /// <param name="extraInfo">Any extra information to store for later usage</param>
+        /// <param name="timeoutCallback">The function to call if the call timeout expires</param>
+        /// <param name="timeoutSeconds">The amount of seconds to wait until timing out</param>
+        /// <returns>The callID to be notified to the client</returns>
+        public int ExpectRemoteServiceResult(Action<RemoteCall, PyDataType> callback, Client client, object extraInfo = null,
+            Action<RemoteCall> timeoutCallback = null, int timeoutSeconds = 0)
+        {
+            RemoteCall entry = new RemoteCall
+            {
+                Callback = callback, ExtraInfo = extraInfo, TimeoutCallback = timeoutCallback, Client = client
+            };
+
+            return this.ExpectRemoteServiceResult(entry, timeoutSeconds);
+        }
+
+        /// <summary>
+        /// Reserves a slot in the call list and prepares timeout timers in case the call wait time expires 
+        /// </summary>
+        /// <param name="callback">The function to call when the answer is received</param>
+        /// <param name="nodeID">The node that is getting the call</param>
+        /// <param name="extraInfo">Any extra information to store for later usage</param>
+        /// <param name="timeoutCallback">The function to call if the call timeout expires</param>
+        /// <param name="timeoutSeconds">The amount of seconds to wait until timing out</param>
+        /// <returns>The callID to be notified to the client</returns>
+        public int ExpectRemoteServiceResult(Action<RemoteCall, PyDataType> callback, int nodeID, object extraInfo = null,
+            Action<RemoteCall> timeoutCallback = null, int timeoutSeconds = 0)
+        {
+            RemoteCall entry = new RemoteCall
+            {
+                Callback = callback, ExtraInfo = extraInfo, TimeoutCallback = timeoutCallback, Client = null, NodeID = nodeID
+            };
+
+            return this.ExpectRemoteServiceResult(entry, timeoutSeconds);
         }
     }
 }

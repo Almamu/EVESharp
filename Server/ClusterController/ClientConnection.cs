@@ -159,7 +159,7 @@ namespace ClusterController
             {
                 // authenticated users are somewhat special as they also have to be free'd from the nodes
                 this.ConnectionManager.RemoveAuthenticatedClientConnection(this);
-                
+
                 // notify the node of the disconnection of the user
                 this.ConnectionManager.NotifyAllNodes("OnClientDisconnected", new PyTuple(1) { [0] = this.AccountID });
             }

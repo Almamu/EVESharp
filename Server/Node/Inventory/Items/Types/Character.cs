@@ -476,13 +476,15 @@ namespace Node.Inventory.Items.Types
         {
             ItemAttribute primarySpPerMin = this.Attributes[skill.PrimaryAttribute.Integer];
             ItemAttribute secondarySpPerMin = this.Attributes[skill.SecondaryAttribute.Integer];
-            
+
             long skillLearningLevel = 0;
 
-            Dictionary<int,Skill> injectedSkillsByTypeID = this.InjectedSkillsByTypeID;
+            {
+                Skill learningSkill = null;
 
-            if (injectedSkillsByTypeID.ContainsKey((int) ItemTypes.Learning) == true)
-                skillLearningLevel = injectedSkillsByTypeID[(int) ItemTypes.Learning].Level;
+                if (this.InjectedSkillsByTypeID.TryGetValue((int) ItemTypes.Learning, out learningSkill) == true)
+                    skillLearningLevel = learningSkill.Level;
+            }
 
             double spPerMin = primarySpPerMin + (secondarySpPerMin / 2.0f);
             spPerMin = spPerMin * (1.0f + (0.02f * skillLearningLevel));
@@ -491,6 +493,21 @@ namespace Node.Inventory.Items.Types
                 spPerMin = spPerMin * 2.0f;
 
             return spPerMin;
+        }
+
+        public long GetSkillLevel(ItemTypes skillTypeID)
+        {
+            return this.GetSkillLevel((int) skillTypeID);
+        }
+
+        public long GetSkillLevel(int skillTypeID)
+        {
+            Skill skill = null;
+
+            if (this.InjectedSkillsByTypeID.TryGetValue(skillTypeID, out skill) == false)
+                return 0;
+
+            return skill.Level;
         }
 
         public void EnsureEnoughBalance(double needed)
