@@ -303,16 +303,18 @@ namespace Node.Services.Market
         {
             // check distance for the order
             this.CheckSellOrderDistancePermissions(character, stationID);
+            
             // TODO: ADD SUPPORT FOR CORPORATIONS!
             
             // everything is checked already, perform table locking and do all the job here
             using MySqlConnection connection = this.DB.AcquireMarketLock();
             try
             {
+                // move the items to update
+                this.PlaceSellOrderCharUpdateItems(connection, call.Client, stationID, typeID, quantity);
+                
                 if (duration == 0)
                 {
-                    // move the items to update
-                    this.PlaceSellOrderCharUpdateItems(connection, call.Client, stationID, typeID, quantity);
                     // finally create the records in the market database
                     this.PlaceImmediateSellOrderChar(connection, character, itemID, typeID, stationID, quantity, price, call.Client);
                 }
