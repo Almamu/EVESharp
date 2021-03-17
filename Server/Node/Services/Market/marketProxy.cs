@@ -5,6 +5,7 @@ using Common.Services;
 using MySql.Data.MySqlClient;
 using Node.Database;
 using Node.Exceptions;
+using Node.Exceptions.jumpCloneSvc;
 using Node.Exceptions.marketProxy;
 using Node.Inventory;
 using Node.Inventory.Items;
@@ -515,10 +516,6 @@ namespace Node.Services.Market
                     // now ensure the item is present where it should be
                     if (order.UnitsLeft == quantityToBuy)
                     {
-                        this.ItemDB.UpdateItemLocation(order.ItemID, stationID);
-                        this.ItemDB.UpdateItemOwner(order.ItemID, character.ID);
-                        this.ItemDB.UpdateItemQuantity(order.ItemID, quantityToBuy);
-
                         // now notify the nodes about the change, if the item is loaded anywhere this should be enough
                         long stationNode = this.SystemManager.GetNodeStationBelongsTo(stationID);
 
@@ -528,6 +525,12 @@ namespace Node.Services.Market
                             this.NotifyItemChange(call.Client.ClusterConnection, stationNode, order.ItemID, "ownerID", character.ID);
                             this.NotifyItemChange(call.Client.ClusterConnection, stationNode, order.ItemID, "locationID", stationID);
                             this.NotifyItemChange(call.Client.ClusterConnection, stationNode, order.ItemID, "quantity", quantityToBuy);
+                        }
+                        else
+                        {
+                            this.ItemDB.UpdateItemLocation(order.ItemID, stationID);
+                            this.ItemDB.UpdateItemOwner(order.ItemID, character.ID);
+                            this.ItemDB.UpdateItemQuantity(order.ItemID, quantityToBuy);
                         }
                     }
                     else
@@ -627,6 +630,135 @@ namespace Node.Services.Market
             else if (bid == (int) TransactionType.Buy)
             {
                 this.PlaceBuyOrderChar(typeID, character, stationID, quantity, price, duration, minVolume, range, brokerCost, call);
+            }
+            
+            return null;
+        }
+
+        public PyDataType CancelCharOrder(PyInteger orderID, PyInteger regionID, CallInformation call)
+        {
+            int callerCharacterID = call.Client.EnsureCharacterIsSelected();
+
+            Character character = this.ItemManager.GetItem(callerCharacterID) as Character;
+            
+            using MySqlConnection connection = this.DB.AcquireMarketLock();
+            try
+            {
+                MarketOrder order =  this.DB.GetOrderById(connection, orderID);
+
+                if (order.CharacterID != callerCharacterID)
+                    throw new MktOrderDidNotMatch();
+
+                long currentTime = DateTime.UtcNow.ToFileTimeUtc();
+                // check for timers, no changes in less than 5 minutes
+                if (currentTime < order.Issued + TimeSpan.TicksPerMinute * 5)
+                    throw new MktOrderDelay((order.Issued + TimeSpan.TicksPerMinute * 5) - currentTime);
+
+                // check for escrow
+                if (order.Escrow > 0.0 && order.Bid == TransactionType.Buy)
+                {
+                    character.Balance += order.Escrow;
+                    character.Persist();
+                    this.DB.CreateJournalForCharacter(MarketReference.MarketEscrow, order.CharacterID, order.CharacterID, null, null, order.Escrow, character.Balance, "", 1000);
+
+                    call.Client.NotifyBalanceUpdate(character.Balance);
+                }
+
+                if (order.Bid == TransactionType.Sell)
+                {
+                    // check what node this item should be loaded at
+                    long stationNode = this.SystemManager.GetNodeStationBelongsTo(order.LocationID);
+
+                    if (stationNode > 0)
+                    {
+                        this.NotifyItemChange(call.Client.ClusterConnection, stationNode, order.ItemID, "locationID", order.LocationID);
+                        this.NotifyItemChange(call.Client.ClusterConnection, stationNode, order.ItemID, "quantity", order.UnitsLeft);
+                    }
+                    else
+                    {
+                        // move the item back to the player's inventory
+                        this.ItemDB.UpdateItemLocation(order.ItemID, order.LocationID);
+                        this.ItemDB.UpdateItemQuantity(order.ItemID, order.UnitsLeft);
+                    }
+                }
+                
+                // finally remove the order
+                this.DB.RemoveOrder(connection, order.OrderID);
+                // send a OnOwnOrderChange notification
+                call.Client.NotifyMultiEvent(new OnOwnOrderChanged(order.TypeID, "Removed"));
+            }
+            finally
+            {
+                this.DB.ReleaseMarketLock(connection);
+            }
+            
+            return null;
+        }
+
+        public PyDataType ModifyCharOrder(PyInteger orderID, PyDecimal newPrice, PyInteger bid, PyInteger stationID, PyInteger solarSystemID, PyDecimal price, PyInteger volRemaining, PyInteger issued, CallInformation call)
+        {
+            int callerCharacterID = call.Client.EnsureCharacterIsSelected();
+
+            Character character = this.ItemManager.GetItem(callerCharacterID) as Character;
+            
+            using MySqlConnection connection = this.DB.AcquireMarketLock();
+            try
+            {
+                MarketOrder order =  this.DB.GetOrderById(connection, orderID);
+
+                if (order.CharacterID != callerCharacterID)
+                    throw new MktOrderDidNotMatch();
+
+                long currentTime = DateTime.UtcNow.ToFileTimeUtc();
+                // check for timers, no changes in less than 5 minutes
+                if (currentTime < order.Issued + TimeSpan.TicksPerMinute * 5)
+                    throw new MktOrderDelay((order.Issued + TimeSpan.TicksPerMinute * 5) - currentTime);
+
+                // ensure the order hasn't been modified since the user saw it on the screen
+                if ((int) order.Bid != bid || order.LocationID != stationID || order.Price != price ||
+                    order.UnitsLeft != volRemaining || order.Issued != issued)
+                    throw new MktOrderDidNotMatch();
+                
+                // get the modification broker's fee
+                double brokerCost = 0.0;
+                double newEscrow = 0.0;
+
+                this.CalculateBrokerCost(character.GetSkillLevel(ItemTypes.BrokerRelations), volRemaining, (newPrice - price), out brokerCost);
+                
+                if (order.Bid == TransactionType.Buy)
+                {
+                    // calculate the difference in escrow
+                    newEscrow = volRemaining * newPrice;
+                    double escrowDiff = order.Escrow - newEscrow;
+                    // make sure the character has enough to pay for the difference + broker
+                    character.EnsureEnoughBalance(escrowDiff + brokerCost);
+                    // first add the difference
+                    character.Balance -= escrowDiff;
+                    // create the record for the journal
+                    this.DB.CreateJournalForCharacter(MarketReference.MarketEscrow, order.CharacterID, order.CharacterID, null, null, escrowDiff, character.Balance, "", 1000);    
+                }
+                else
+                {
+                    // sell orders only have to take into account broker cost
+                    character.EnsureEnoughBalance(brokerCost);
+                }
+                
+                // now subtract the broker cost
+                character.Balance -= brokerCost;
+                // create journal entry for the broker fee
+                this.DB.CreateJournalForCharacter(MarketReference.Brokerfee, character.ID, character.ID, null, null, -brokerCost, character.Balance, "", 1000);
+                // persist the character
+                character.Persist();
+                // everything looks okay, update the price of the order
+                this.DB.UpdatePrice(connection, order.OrderID, newPrice, newEscrow);
+                // notify the balance change
+                call.Client.NotifyBalanceUpdate(character.Balance);
+                // send a OnOwnOrderChange notification
+                call.Client.NotifyMultiEvent(new OnOwnOrderChanged(order.TypeID, "Modified"));
+            }
+            finally
+            {
+                this.DB.ReleaseMarketLock(connection);
             }
             
             return null;

@@ -424,6 +424,28 @@ namespace Node.Network
                 // that means the item should be kept here
                 // fingers crossed
                 ItemEntity newItem = this.ItemManager.LoadItem(itemID);
+            
+                // check if the inventory that loads this item is loaded
+                // and ensure the item is added in there
+                if (this.ItemManager.IsItemLoaded(newItem.LocationID) == true)
+                {
+                    ItemInventory inventory = this.ItemManager.GetItem(newItem.LocationID) as ItemInventory;
+
+                    inventory.AddItem(newItem);
+                
+                    // look for any metainventories too
+                    try
+                    {
+                        ItemInventory metaInventory =
+                            this.ItemManager.MetaInventoryManager.GetOwnerInventoriesAtLocation(newItem.LocationID, newItem.OwnerID);
+
+                        metaInventory.AddItem(newItem);
+                    }
+                    catch (ArgumentOutOfRangeException)
+                    {
+                        // ignore the exception, this is expected when no meta inventories are registered
+                    }
+                }
 
                 if (this.ItemManager.IsItemLoaded(newItem.LocationID) == false)
                 {
@@ -484,10 +506,13 @@ namespace Node.Network
             // send the notification
             this.SendNotification("OnMultiEvent", "charid", (int) item.OwnerID,
                 new PyTuple(1) {[0] = new PyList(1) {[0] = itemChange}});
-            
-            // the item is removed off the database if the new location is 0
+
             if (item.LocationID == 0)
+                // the item is removed off the database if the new location is 0
                 item.Destroy();
+            else
+                // save the item if the new location is not removal
+                item.Persist();
         }
 
         private void HandleOnBalanceUpdate(PyTuple data)

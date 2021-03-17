@@ -1,4 +1,6 @@
-﻿namespace Node.Market
+﻿using Node.Database;
+
+namespace Node.Market
 {
     public class MarketOrder
     {
@@ -14,8 +16,10 @@
         public int Range { get; }
         public int Jumps { get; }
         public double Escrow { get; }
+        public TransactionType Bid { get; }
+        public long Issued { get; }
 
-        public MarketOrder(int orderID, int typeID, int itemID, int characterID, int locationID, double price, int accountID, int unitsLeft, int minimumUnits, int range, int jumps, double escrow)
+        public MarketOrder(int orderID, int typeID, int itemID, int characterID, int locationID, double price, int accountID, int unitsLeft, int minimumUnits, int range, int jumps, double escrow, TransactionType bid, long issued)
         {
             this.OrderID = orderID;
             this.TypeID = typeID;
@@ -29,6 +33,8 @@
             this.Range = range;
             this.Jumps = jumps;
             this.Escrow = escrow;
+            this.Bid = bid;
+            this.Issued = issued;
         }
     }
 }

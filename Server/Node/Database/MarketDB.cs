@@ -358,7 +358,7 @@ namespace Node.Database
         public MarketOrder[] FindMatchingBuyOrders(MySqlConnection connection, double price, int typeID, int characterID, int solarSystemID)
         {
             MySqlDataReader reader = Database.PrepareQuery(ref connection,
-                "SELECT orderID, typeID, itemID, charID, stationID AS locationID, price, accountID, volRemaining, minVolume, `range`, jumps, escrow FROM mktOrders LEFT JOIN staStations USING(stationID) LEFT JOIN mapPrecalculatedSolarSystemJumps ON solarSystemID = fromSolarSystemID AND toSolarsystemID = @solarSystemID WHERE bid = @transactionType AND price >= @price AND typeID = @typeID AND charID != @characterID ORDER BY price",
+                "SELECT orderID, typeID, itemID, charID, stationID AS locationID, price, accountID, volRemaining, minVolume, `range`, jumps, escrow, issued FROM mktOrders LEFT JOIN staStations USING(stationID) LEFT JOIN mapPrecalculatedSolarSystemJumps ON solarSystemID = fromSolarSystemID AND toSolarsystemID = @solarSystemID WHERE bid = @transactionType AND price >= @price AND typeID = @typeID AND charID != @characterID ORDER BY price",
                 new Dictionary<string, object>()
                 {
                     {"@transactionType", TransactionType.Buy},
@@ -389,7 +389,9 @@ namespace Node.Database
                             reader.GetInt32(8),
                             reader.GetInt32(9),
                             reader.GetInt32(10),
-                            reader.IsDBNull(11) == false ? reader.GetDouble(11) : 0
+                            reader.IsDBNull(11) == false ? reader.GetDouble(11) : 0,
+                            TransactionType.Buy,
+                            reader.GetInt64(12)
                         )
                     );
                 }
@@ -401,7 +403,7 @@ namespace Node.Database
         public MarketOrder[] FindMatchingSellOrders(MySqlConnection connection, double price, int typeID, int characterID, int solarSystemID)
         {
             MySqlDataReader reader = Database.PrepareQuery(ref connection,
-                "SELECT orderID, typeID, itemID, charID, stationID AS locationID, price, accountID, volRemaining, minVolume, `range`, jumps, escrow FROM mktOrders LEFT JOIN staStations USING(stationID) LEFT JOIN mapPrecalculatedSolarSystemJumps ON solarSystemID = fromSolarSystemID AND toSolarsystemID = @solarSystemID WHERE bid = @transactionType AND price <= @price AND typeID = @typeID AND charID != @characterID ORDER BY price",
+                "SELECT orderID, typeID, itemID, charID, stationID AS locationID, price, accountID, volRemaining, minVolume, `range`, jumps, escrow, issued FROM mktOrders LEFT JOIN staStations USING(stationID) LEFT JOIN mapPrecalculatedSolarSystemJumps ON solarSystemID = fromSolarSystemID AND toSolarsystemID = @solarSystemID WHERE bid = @transactionType AND price <= @price AND typeID = @typeID AND charID != @characterID ORDER BY price",
                 new Dictionary<string, object>()
                 {
                     {"@transactionType", TransactionType.Sell},
@@ -423,7 +425,7 @@ namespace Node.Database
                         new MarketOrder(
                             reader.GetInt32(0),
                             reader.GetInt32(1),
-                            reader.GetInt32(2),
+                            reader.IsDBNull(2) == false ? reader.GetInt32(2) : 0,
                             reader.GetInt32(3),
                             reader.GetInt32(4),
                             reader.GetDouble(5),
@@ -432,7 +434,9 @@ namespace Node.Database
                             reader.GetInt32(8),
                             reader.GetInt32(9),
                             reader.GetInt32(10),
-                            reader.GetDouble(11)
+                            reader.IsDBNull(11) == false ? reader.GetDouble(11) : 0,
+                            TransactionType.Sell,
+                            reader.GetInt64(12)
                         )
                     );
                 }
@@ -449,6 +453,18 @@ namespace Node.Database
                     {"@orderID", orderID},
                     {"@quantity", newQuantityRemaining},
                     {"@escrowCost", escrowCost}
+                }
+            ).Close();
+        }
+
+        public void UpdatePrice(MySqlConnection connection, int orderID, double newPrice, double newEscrow)
+        {
+            Database.PrepareQuery(ref connection, "UPDATE mktOrders SET price = @price, escrow = @escrowCost WHERE orderID = @orderID",
+                new Dictionary<string, object>()
+                {
+                    {"@orderID", orderID},
+                    {"@price", newPrice},
+                    {"@escrowCost", newEscrow}
                 }
             ).Close();
         }
@@ -607,6 +623,40 @@ namespace Node.Database
         public void ReleaseMarketLock(MySqlConnection connection)
         {
             Database.ReleaseLock(connection, "market");
+        }
+
+        public MarketOrder GetOrderById(MySqlConnection connection, int orderID)
+        {
+            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+                "SELECT orderID, typeID, itemID, charID, stationID AS locationID, price, accountID, volRemaining, minVolume, `range`, escrow, bid, issued FROM mktOrders LEFT JOIN staStations USING(stationID) WHERE orderID = @orderID",
+                new Dictionary<string, object>()
+                {
+                    {"@orderID", orderID}
+                }
+            );
+
+            using (reader)
+            {
+                if (reader.Read() == false)
+                    return null;
+
+                return new MarketOrder(
+                    reader.GetInt32(0),
+                    reader.GetInt32(1),
+                    reader.IsDBNull(2) == false ? reader.GetInt32(2) : 0,
+                    reader.GetInt32(3),
+                    reader.GetInt32(4),
+                    reader.GetDouble(5),
+                    reader.GetInt32(6),
+                    reader.GetInt32(7),
+                    reader.GetInt32(8),
+                    reader.GetInt32(9),
+                    0,
+                    reader.IsDBNull(10) == false ? reader.GetDouble(10) : 0,
+                    reader.GetInt32(11) == ((int) TransactionType.Buy) ? TransactionType.Buy : TransactionType.Sell,
+                    reader.GetInt64(12)
+                );
+            }
         }
     }
 }

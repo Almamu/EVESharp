@@ -512,7 +512,7 @@ namespace Node.Inventory.Items.Types
 
         public void EnsureEnoughBalance(double needed)
         {
-            if (this.Balance < needed)
+            if (needed > 0.0 && this.Balance < needed)
                 throw new NotEnoughMoney(this.Balance, needed);
         }
 
