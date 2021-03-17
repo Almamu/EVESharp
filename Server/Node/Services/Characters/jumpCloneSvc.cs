@@ -157,14 +157,11 @@ namespace Node.Services.Characters
             Character character = this.ItemManager.LoadItem(callerCharacterID) as Character;
             
             // check the maximum number of clones the character has assigned
-            Dictionary<int, Skill> injectedSkills = character.InjectedSkillsByTypeID;
+            long maximumClonesAvailable = character.GetSkillLevel(ItemTypes.InfomorphPsychology);
             
             // the skill is not trained
-            if (injectedSkills.ContainsKey((int) ItemTypes.InfomorphPsychology) == false)
+            if (maximumClonesAvailable == 0)
                 throw new JumpCharStoringMaxClonesNone();
-
-            // the skill is needed to be able to have installed clones
-            long maximumClonesAvailable = injectedSkills[(int) ItemTypes.InfomorphPsychology].Level;
 
             // get list of clones (excluding the medical clone)
             Rowset clones = this.ItemDB.GetClonesForCharacter(character.ID, (int) character.ActiveCloneID);
