@@ -265,7 +265,7 @@ namespace Node.Services.Market
             int solarSystemID = this.ItemManager.GetStation(stationID).SolarSystemID;
             
             // look for matching buy orders
-            MarketOrder[] orders = this.DB.FindMatchingBuyOrders(connection, price, typeID, quantity, solarSystemID);
+            MarketOrder[] orders = this.DB.FindMatchingBuyOrders(connection, price, typeID, character.ID, solarSystemID);
             
             // ensure there's at least some that match
             this.CheckMatchingBuyOrders(orders, quantity, stationID);
@@ -450,7 +450,7 @@ namespace Node.Services.Market
             int solarSystemID = this.ItemManager.GetStation(stationID).SolarSystemID;
 
             // look for matching sell orders
-            MarketOrder[] orders = this.DB.FindMatchingSellOrders(connection, price, typeID, quantity, solarSystemID);
+            MarketOrder[] orders = this.DB.FindMatchingSellOrders(connection, price, typeID, character.ID, solarSystemID);
             
             // ensure there's at least some that match
             this.CheckMatchingSellOrders(orders, quantity, solarSystemID);

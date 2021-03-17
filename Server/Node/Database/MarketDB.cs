@@ -355,16 +355,17 @@ namespace Node.Database
             return connection;
         }
 
-        public MarketOrder[] FindMatchingBuyOrders(MySqlConnection connection, double price, int typeID, int quantity, int solarSystemID)
+        public MarketOrder[] FindMatchingBuyOrders(MySqlConnection connection, double price, int typeID, int characterID, int solarSystemID)
         {
             MySqlDataReader reader = Database.PrepareQuery(ref connection,
-                "SELECT orderID, typeID, itemID, charID, stationID AS locationID, price, accountID, volRemaining, minVolume, `range`, jumps, escrow FROM mktOrders LEFT JOIN staStations USING(stationID) LEFT JOIN mapPrecalculatedSolarSystemJumps ON solarSystemID = fromSolarSystemID AND toSolarsystemID = @solarSystemID WHERE bid = @transactionType AND price >= @price AND typeID = @typeID ORDER BY price",
+                "SELECT orderID, typeID, itemID, charID, stationID AS locationID, price, accountID, volRemaining, minVolume, `range`, jumps, escrow FROM mktOrders LEFT JOIN staStations USING(stationID) LEFT JOIN mapPrecalculatedSolarSystemJumps ON solarSystemID = fromSolarSystemID AND toSolarsystemID = @solarSystemID WHERE bid = @transactionType AND price >= @price AND typeID = @typeID AND charID != @characterID ORDER BY price",
                 new Dictionary<string, object>()
                 {
                     {"@transactionType", TransactionType.Buy},
                     {"@price", price},
                     {"@typeID", typeID},
-                    {"@solarSystemID", solarSystemID}
+                    {"@solarSystemID", solarSystemID},
+                    {"@characterID", characterID}
                 }
             );
 
@@ -397,16 +398,17 @@ namespace Node.Database
             }
         }
 
-        public MarketOrder[] FindMatchingSellOrders(MySqlConnection connection, double price, int typeID, int quantity, int solarSystemID)
+        public MarketOrder[] FindMatchingSellOrders(MySqlConnection connection, double price, int typeID, int characterID, int solarSystemID)
         {
             MySqlDataReader reader = Database.PrepareQuery(ref connection,
-                "SELECT orderID, typeID, itemID, charID, stationID AS locationID, price, accountID, volRemaining, minVolume, `range`, jumps, escrow FROM mktOrders LEFT JOIN staStations USING(stationID) LEFT JOIN mapPrecalculatedSolarSystemJumps ON solarSystemID = fromSolarSystemID AND toSolarsystemID = @solarSystemID WHERE bid = @transactionType AND price <= @price AND typeID = @typeID ORDER BY price",
+                "SELECT orderID, typeID, itemID, charID, stationID AS locationID, price, accountID, volRemaining, minVolume, `range`, jumps, escrow FROM mktOrders LEFT JOIN staStations USING(stationID) LEFT JOIN mapPrecalculatedSolarSystemJumps ON solarSystemID = fromSolarSystemID AND toSolarsystemID = @solarSystemID WHERE bid = @transactionType AND price <= @price AND typeID = @typeID AND charID != @characterID ORDER BY price",
                 new Dictionary<string, object>()
                 {
                     {"@transactionType", TransactionType.Sell},
                     {"@price", price},
                     {"@typeID", typeID},
-                    {"@solarSystemID", solarSystemID}
+                    {"@solarSystemID", solarSystemID},
+                    {"@characterID", characterID}
                 }
             );
 
