@@ -152,6 +152,23 @@ namespace Node.Services.Market
             profit = (price * quantity) - tax;
         }
 
+        private void CalculateBrokerCost(long brokerLevel, int quantity, double price, out double brokerCost)
+        {
+            double brokerPercentage = ((double) this.NodeContainer.Constants["marketCommissionPercentage"] / 100) * (1 - brokerLevel * 0.05);
+
+            // TODO: GET THE STANDINGS FOR THE CHARACTER
+            double factionStanding = 0.0;
+            double corpStanding = 0.0;
+
+            double weightedStanding = (0.7 * factionStanding + 0.3 * corpStanding) / 10.0;
+
+            brokerPercentage = brokerPercentage * Math.Pow(2.0, -2 * weightedStanding);
+            brokerCost = price * quantity * brokerPercentage;
+
+            if (brokerCost < this.NodeContainer.Constants["mktMinimumFee"])
+                brokerCost = this.NodeContainer.Constants["mktMinimumFee"];
+        }
+        
         private void NotifyItemChange(ClusterConnection connection, long nodeID, int itemID, string key, PyDataType newValue)
         {
             connection.SendNodeNotification(nodeID, "OnItemUpdate",
@@ -236,6 +253,7 @@ namespace Node.Services.Market
                     // create the required records for the wallet
                     this.DB.CreateJournalForCharacter(MarketReference.MarketTransaction, character.ID, order.CharacterID, null, profit, character.Balance + profit + tax, null, 1000);
                     this.DB.CreateJournalForCharacter(MarketReference.TransactionTax, character.ID, null, null, tax, character.Balance + profit, null, 1000);
+                    this.DB.CreateTransactionForCharacter(character.ID, order.CharacterID, TransactionType.Sell, typeID, quantityToSell, price * quantityToSell, stationID);
                     
                     // update balance for this character
                     character.Balance += profit;
@@ -299,7 +317,7 @@ namespace Node.Services.Market
             }
         }
 
-        private void PlaceSellOrderChar(int itemID, Character character, int stationID, int quantity, int typeID, int duration, double price, int minVolume, int range, CallInformation call)
+        private void PlaceSellOrderChar(int itemID, Character character, int stationID, int quantity, int typeID, int duration, double price, int minVolume, int range, double brokerCost, CallInformation call)
         {
             // check distance for the order
             this.CheckSellOrderDistancePermissions(character, stationID);
@@ -320,11 +338,6 @@ namespace Node.Services.Market
                 }
                 else
                 {
-                    // TODO: ensure that the character has enough money to pay for the broker's fee
-                    // formula should be something along these lines: 5%-(0.3%*BrokerRelationsLevel)-(0.03%*FactionStanding)-(0.02%*CorpStanding)
-                    // source: https://support.eveonline.com/hc/en-us/articles/203218962-Broker-Fee-and-Sales-Tax
-                    // there's a minimum of 100 ISK
-                    
                     // create the new item that will be used by the market
                     ItemEntity item = this.ItemManager.CreateSimpleItem(
                         this.TypeManager[typeID], (int) call.Client.CharacterID, this.ItemManager.LocationMarket.ID, ItemFlags.None, quantity
@@ -332,12 +345,17 @@ namespace Node.Services.Market
                     
                     // finally place the order
                     this.DB.PlaceSellOrder(connection, item.Type.ID, item.ID, item.OwnerID, stationID, range, price, quantity, quantity, minVolume, 1000, duration, false);
-                        
                     // unload the item, we do not want it to be held by anyone
                     this.ItemManager.UnloadItem(item);
-                        
                     // send a OnOwnOrderChange notification
                     call.Client.NotifyMultiEvent(new OnOwnOrderChanged(typeID, "Add"));
+                    // update balance for this character
+                    character.Balance -= brokerCost;
+                    character.Persist();
+                    // create record in the journal
+                    this.DB.CreateJournalForCharacter(MarketReference.Brokerfee, character.ID, null, null, brokerCost, character.Balance - brokerCost, "", 1000);
+                    // send notification for the wallet to be updated
+                    call.Client.NotifyBalanceUpdate(character.Balance);
                 }
             }
             finally
@@ -357,6 +375,7 @@ namespace Node.Services.Market
              */
             // get solarSystem for the station
             Character character = this.ItemManager.GetItem(call.Client.EnsureCharacterIsSelected()) as Character;
+            double brokerCost = 0.0;
             
             // if the order is not immediate check the amount of orders the character has
             if (duration != 0)
@@ -366,6 +385,11 @@ namespace Node.Services.Market
 
                 if (maximumOrders <= currentOrders)
                     throw new MarketExceededOrderCount(currentOrders, maximumOrders);
+                
+                // calculate broker costs for the order
+                this.CalculateBrokerCost(character.GetSkillLevel(ItemTypes.BrokerRelations), quantity, price, out brokerCost);
+                // make sure the character has enough balance for the broker costs
+                character.EnsureEnoughBalance(brokerCost);
             }
             
             // check if the character has the Marketing skill and calculate distances
@@ -374,7 +398,7 @@ namespace Node.Services.Market
                 if (itemID is PyInteger == false)
                     throw new CustomError("Unexpected data!");
 
-                this.PlaceSellOrderChar(itemID as PyInteger, character, stationID, quantity, typeID, duration, price, minVolume, range, call);
+                this.PlaceSellOrderChar(itemID as PyInteger, character, stationID, quantity, typeID, duration, price, minVolume, range, brokerCost, call);
             }
             else if (bid == (int) TransactionType.Buy)
             {

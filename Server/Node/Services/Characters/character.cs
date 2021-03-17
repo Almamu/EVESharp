@@ -254,6 +254,7 @@ namespace Node.Services.Characters
                 this.CreateCharacter(characterName, ancestry, genderID, appearance, currentTime, call);
             Station station = this.ItemManager.GetStation(character.StationID);
 
+            // TODO: CREATE DEFAULT STANDINGS FOR THE CHARACTER
             // change character attributes based on the picked ancestry
             character.Charisma = bloodline.Charisma + ancestry.Charisma;
             character.Intelligence = bloodline.Intelligence + ancestry.Intelligence;

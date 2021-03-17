@@ -52,10 +52,10 @@ namespace Node.Database
         }
 
         public void CreateTransactionForCharacter(int characterID, int? clientID, TransactionType sellBuy,
-            int typeID, int quantity, double price, int stationID, int regionID, bool corpTransaction = false)
+            int typeID, int quantity, double price, int stationID, bool corpTransaction = false)
         {
             Database.PrepareQuery(
-                "INSERT INTO mktTransactions(transactionDateTime, typeID, quantity, price, transactionType, characterID, clientID, regionID, stationID, corpTransaction)VALUE(@transactionDateTime, @typeID, @quantity, @price, @transactionType, @characterID, @clientID, @regionID, @stationID, @corpTransaction)",
+                "INSERT INTO mktTransactions(transactionDateTime, typeID, quantity, price, transactionType, characterID, clientID, stationID, corpTransaction)VALUE(@transactionDateTime, @typeID, @quantity, @price, @transactionType, @characterID, @clientID, @stationID, @corpTransaction)",
                 new Dictionary<string, object>()
                 {
                     {"@transactionDateTime", DateTime.UtcNow.ToFileTimeUtc()},
@@ -65,7 +65,6 @@ namespace Node.Database
                     {"@transactionType", (int) sellBuy},
                     {"@characterID", characterID},
                     {"@clientID", clientID},
-                    {"@regionID", regionID},
                     {"@stationID", stationID},
                     {"@corpTransaction", corpTransaction}
                 }
@@ -308,7 +307,7 @@ namespace Node.Database
         public CRowset GetNewPriceHistory(int regionID, int typeID)
         {
             return Database.PrepareCRowsetQuery(
-                "SELECT transactionDateTime - (transactionDateTime % @dayLength) AS historyDate, MIN(price) AS lowPrice, MAX(price) AS highPrice, AVG(price) AS avgPrice, SUM(quantity) AS volume, COUNT(*) AS orders FROM mktTransactions WHERE regionID = @regionID AND typeID = @typeID AND transactionType = @transactionType GROUP BY historyDate",
+                "SELECT transactionDateTime - (transactionDateTime % @dayLength) AS historyDate, MIN(price) AS lowPrice, MAX(price) AS highPrice, AVG(price) AS avgPrice, SUM(quantity) AS volume, COUNT(*) AS orders FROM mktTransactions LEFT JOIN staStations USING (stationID) WHERE regionID = @regionID AND typeID = @typeID AND transactionType = @transactionType GROUP BY historyDate",
                 new Dictionary<string, object>()
                 {
                     {"@dayLength", TimeSpan.TicksPerDay},

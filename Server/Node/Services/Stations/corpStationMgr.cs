@@ -222,7 +222,7 @@ namespace Node.Services.Stations
             // create the wallet entry
             this.MarketDB.CreateTransactionForCharacter(
                 callerCharacterID, 1, TransactionType.Buy, newCloneType.ID, 1, newCloneType.BasePrice,
-                station.ID, station.RegionID 
+                station.ID 
             );
 
             // update active clone's information
