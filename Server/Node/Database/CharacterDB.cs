@@ -629,7 +629,7 @@ namespace Node.Database
         {
             // return the 100 topmost bounties
             return Database.PrepareRowsetQuery(
-                "SELECT characterID, itemName AS ownerName, bounty, 0 AS online FROM chrBounties, eveNames WHERE eveNames.itemID = chrBounties.ownerID ORDER BY bounty DESC LIMIT 100"
+                "SELECT characterID, itemName AS ownerName, SUM(bounty) AS bounty, 0 AS online FROM chrBounties, eveNames WHERE eveNames.itemID = chrBounties.ownerID GROUP BY characterID ORDER BY bounty DESC LIMIT 100"
             );
         }
 
