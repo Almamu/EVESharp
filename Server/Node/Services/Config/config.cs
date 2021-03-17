@@ -55,7 +55,7 @@ namespace Node.Services.Config
 
         // THESE PARAMETERS AREN'T REALLY USED ANYMORE THIS FUNCTION IS USUALLY CALLED WITH LOCATIONID, 0, 0, 0, 1, 0
         public PyDataType GetMapObjects(PyInteger locationID, PyInteger wantRegions, PyInteger wantConstellations,
-            PyInteger wantSystems, PyInteger wantItems, PyInteger unknown)
+            PyInteger wantSystems, PyInteger wantItems, PyInteger unknown, CallInformation call)
         {
             return this.DB.GetMapObjects(locationID);
         }
