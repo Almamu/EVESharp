@@ -1282,6 +1282,17 @@ namespace Node.Database
             );
         }
 
+        public void UpdateItemLocation(int itemID, int newLocationID)
+        {
+            Database.PrepareQuery("UPDATE invItems SET ownerID = @locationID WHERE itemID = @itemID",
+                new Dictionary<string, object>()
+                {
+                    {"@itemID", itemID},
+                    {"@locationID", newLocationID}
+                }
+            );
+        }
+
         public void UpdateItemOwner(int itemID, int newOwnerID)
         {
             Database.PrepareQuery("UPDATE invItems SET ownerID = @ownerID WHERE itemID = @itemID",
@@ -1289,6 +1300,17 @@ namespace Node.Database
                 {
                     {"@itemID", itemID},
                     {"@ownerID", newOwnerID}
+                }
+            );
+        }
+
+        public void UpdateItemQuantity(int itemID, int newQuantity)
+        {
+            Database.PrepareQuery("UPDATE invItems SET quantity = @quantity WHERE itemID = @itemID",
+                new Dictionary<string, object>()
+                {
+                    {"@itemID", itemID},
+                    {"@quantity", newQuantity}
                 }
             );
         }

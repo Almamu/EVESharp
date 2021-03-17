@@ -114,7 +114,7 @@ namespace Node.Services.Inventory
             this.DB.InsureShip(item.ID, isCorpItem == 0 ? callerCharacterID : call.Client.CorporationID, fraction / 5);
             
             this.MarketDB.CreateJournalForCharacter(
-                MarketReference.Insurance, character.ID, this.ItemManager.SecureCommerceCommision.ID, -item.ID,
+                MarketReference.Insurance, character.ID, character.ID, this.ItemManager.SecureCommerceCommision.ID, -item.ID,
                 -insuranceCost, character.Balance, $"Insurance fee for {item.Name}", 1000
             );
             

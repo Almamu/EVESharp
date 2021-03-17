@@ -49,7 +49,7 @@ namespace Node.Services.Characters
             
             // create a record in the market transactions
             this.MarketDB.CreateJournalForCharacter(
-                MarketReference.Bounty, character.ID, null, characterID,
+                MarketReference.Bounty, character.ID, character.ID, null, characterID,
                 -bounty, character.Balance, $"Added to bounty prize", 1000
             );
             

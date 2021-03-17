@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Dynamic;
 using Common.Services;
 using MySql.Data.MySqlClient;
 using Node.Database;
@@ -121,8 +122,18 @@ namespace Node.Services.Market
         public PyDataType GetOrders(PyInteger typeID, CallInformation call)
         {
             call.Client.EnsureCharacterIsSelected();
-            
-            return this.DB.GetOrders(call.Client.RegionID, call.Client.SolarSystemID2, typeID);
+         
+            // dirty little hack, but should do the trick
+            this.CacheStorage.StoreCall(
+                "marketProxy",
+                "GetOrders_" + typeID,
+                this.DB.GetOrders(call.Client.RegionID, call.Client.SolarSystemID2, typeID),
+                DateTime.UtcNow.ToFileTimeUtc()
+            );
+
+            PyDataType cacheHint = this.CacheStorage.GetHint("marketProxy", "GetOrders_" + typeID);
+
+            return PyCacheMethodCallResult.FromCacheHint(cacheHint);
         }
 
         public PyDataType StartupCheck(CallInformation call)
@@ -180,28 +191,65 @@ namespace Node.Services.Market
             );
         }
 
+        private void NotifyBalanceChange(ClusterConnection connection, long nodeID, int characterID, double newBalance)
+        {
+            connection.SendNodeNotification(nodeID, "OnBalanceUpdate",
+                new PyTuple(2)
+                {
+                    [0] = characterID,
+                    [1] = newBalance
+                }
+            );
+        }
+
         private void CheckSellOrderDistancePermissions(Character character, int stationID)
         {
-            int solarSystemID = this.ItemManager.GetStation(stationID).LocationID;
-            int jumps = this.SolarSystemDB.GetJumpsBetweenSolarSystems(character.SolarSystemID, solarSystemID);
+            Station station = this.ItemManager.GetStation(stationID);
+
+            if (character.RegionID != station.RegionID)
+                throw new MktInvalidRegion();
+            
+            int jumps = this.SolarSystemDB.GetJumpsBetweenSolarSystems(character.SolarSystemID, station.SolarSystemID);
             long marketingSkillLevel = character.GetSkillLevel(ItemTypes.Marketing);
             long maximumDistance = JumpsPerSkillLevel[marketingSkillLevel];
 
             if (maximumDistance == -1 && character.StationID != stationID)
                 throw new MktCantSellItemOutsideStation(jumps);
-            if (character.SolarSystemID != solarSystemID && maximumDistance < jumps)
+            if (character.SolarSystemID != station.SolarSystemID && maximumDistance < jumps)
                 throw new MktCantSellItem2(jumps, maximumDistance);
         }
 
-        private void CheckMatchingOrders(MarketOrder[] orders, int quantity)
+        private void CheckBuyOrderDistancePermissions(Character character, int stationID)
+        {
+            Station station = this.ItemManager.GetStation(stationID);
+
+            if (character.RegionID != station.RegionID)
+                throw new MktInvalidRegion();
+            
+            int jumps = this.SolarSystemDB.GetJumpsBetweenSolarSystems(character.SolarSystemID, station.SolarSystemID);
+            long procurementSkillLevel = character.GetSkillLevel(ItemTypes.Procurement);
+            long maximumDistance = JumpsPerSkillLevel[procurementSkillLevel];
+
+            if (maximumDistance == -1 && character.StationID != stationID)
+                throw new MktCantSellItemOutsideStation(jumps);
+            if (character.SolarSystemID != station.SolarSystemID && maximumDistance < jumps)
+                throw new MktCantSellItem2(jumps, maximumDistance);
+        }
+        
+        private void CheckMatchingBuyOrders(MarketOrder[] orders, int quantity, int stationID)
         {
             // ensure there's enough satisfiable orders for the player
             foreach (MarketOrder order in orders)
             {
+                // ensure the order is in the range
+                if (order.Range == -1 && order.LocationID != stationID)
+                    continue;
+                if (order.Range != -1 && order.Range < order.Jumps)
+                    continue;
                 if (order.UnitsLeft <= quantity)
                     quantity -= order.UnitsLeft;
                 if ((order.UnitsLeft <= order.MinimumUnits && order.UnitsLeft <= quantity) || order.MinimumUnits <= quantity)
-                    quantity -= order.UnitsLeft;
+                    quantity -= Math.Min(order.UnitsLeft, quantity);
                 if (quantity <= 0)
                     break;
             }
@@ -214,19 +262,43 @@ namespace Node.Services.Market
 
         private void PlaceImmediateSellOrderChar(MySqlConnection connection, Character character, int itemID, int typeID, int stationID, int quantity, double price, Client client)
         {
+            int solarSystemID = this.ItemManager.GetStation(stationID).SolarSystemID;
+            
             // look for matching buy orders
-            MarketOrder[] orders = this.DB.FindMatchingOrders(connection, TransactionType.Buy, price, typeID, quantity);
+            MarketOrder[] orders = this.DB.FindMatchingBuyOrders(connection, price, typeID, quantity, solarSystemID);
             
             // ensure there's at least some that match
-            this.CheckMatchingOrders(orders, quantity);
+            this.CheckMatchingBuyOrders(orders, quantity, stationID);
 
             // there's at least SOME orders that can be satisfied, let's start satisfying them one by one whenever possible
             foreach (MarketOrder order in orders)
             {
                 int quantityToSell = 0;
                 
+                // ensure the order is in the range
+                if (order.Range == -1 && order.LocationID != stationID)
+                    continue;
+                if (order.Range != -1 && order.Range < order.Jumps)
+                    continue;
+                
                 if (order.UnitsLeft <= quantity)
                 {
+                    // if there's any kind of escrow left ensure that the character receives it back
+                    double escrowLeft = order.Escrow - order.UnitsLeft * price;
+
+                    if (escrowLeft > 0.0)
+                    {
+                        double balance = this.CharacterDB.GetCharacterBalance(order.CharacterID) + escrowLeft;
+                        this.DB.CreateJournalForCharacter(MarketReference.MarketEscrow, order.CharacterID, order.CharacterID, null, null, escrowLeft, balance, "", 1000);
+                        this.CharacterDB.SetCharacterBalance(order.CharacterID, balance);
+                    
+                        // if the character is loaded in any node inform that node of the change in wallet
+                        int characterNode = this.ItemDB.GetItemNode(order.CharacterID);
+                    
+                        if (characterNode > 0)
+                            this.NotifyBalanceChange(client.ClusterConnection, characterNode, order.CharacterID, balance);
+                    }
+                    
                     // this order is fully satisfiable, so do that
                     // remove the order off the database if it's fully satisfied
                     this.DB.RemoveOrder(connection, order.OrderID);
@@ -237,9 +309,9 @@ namespace Node.Services.Market
                 else if (order.MinimumUnits <= quantity)
                 {
                     // we can satisfy SOME of the order
-                    this.DB.UpdateOrderRemainingQuantity(connection, order.OrderID, order.UnitsLeft - quantity);
+                    this.DB.UpdateOrderRemainingQuantity(connection, order.OrderID, order.UnitsLeft - quantity, quantity * price);
                     // the quantity we're selling is already depleted if the code got here
-                    quantityToSell = order.UnitsLeft - quantity;
+                    quantityToSell = quantity;
                     quantity = 0;
                 }
 
@@ -251,43 +323,33 @@ namespace Node.Services.Market
                     this.CalculateSalesTax(character.GetSkillLevel(ItemTypes.Accounting), order.UnitsLeft, order.Price, out tax, out profit);
 
                     // create the required records for the wallet
-                    this.DB.CreateJournalForCharacter(MarketReference.MarketTransaction, character.ID, order.CharacterID, null, profit, character.Balance + profit + tax, null, 1000);
-                    this.DB.CreateJournalForCharacter(MarketReference.TransactionTax, character.ID, null, null, tax, character.Balance + profit, null, 1000);
-                    this.DB.CreateTransactionForCharacter(character.ID, order.CharacterID, TransactionType.Sell, typeID, quantityToSell, price * quantityToSell, stationID);
-                    
+                    this.DB.CreateJournalForCharacter(MarketReference.MarketTransaction, character.ID, order.CharacterID, character.ID, null, profit, character.Balance + profit + tax, "", 1000);
+                    this.DB.CreateJournalForCharacter(MarketReference.TransactionTax, character.ID, character.ID, null, null, -tax, character.Balance + profit, "", 1000);
+                    this.DB.CreateTransactionForCharacter(character.ID, order.CharacterID, TransactionType.Sell, typeID, quantityToSell, price, stationID);
+                    this.DB.CreateTransactionForCharacter(order.CharacterID, character.ID, TransactionType.Buy, typeID, quantityToSell, price, stationID);
+
                     // update balance for this character
                     character.Balance += profit;
                     
                     // send notification for the wallet to be updated
                     client.NotifyBalanceUpdate(character.Balance);
                     
-                    // accounting has been taken into account, start moving items
-                    if (quantity == 0)
-                    {
-                        // easier to move the item to it's new forever home
-                        this.ItemDB.UpdateItemOwner(itemID, order.CharacterID);
-                        
-                        // now notify the nodes about the change, if the item is loaded anywhere this should be enough
-                        int itemNode = this.ItemDB.GetItemNode(itemID);
+                    // create the new item that will be used by the player
+                    ItemEntity item = this.ItemManager.CreateSimpleItem(
+                        this.TypeManager[typeID], order.CharacterID, this.ItemManager.LocationMarket.ID, ItemFlags.Hangar, quantityToSell
+                    );
+                    // immediately unload it, if it has to be loaded the OnItemUpdate notification will take care of that
+                    this.ItemManager.UnloadItem(item);
 
-                        if (itemNode > 0)
-                            this.NotifyItemChange(client.ClusterConnection, itemNode, itemID, "ownerID", order.CharacterID);
-                    }
-                    else
-                    {
-                        // create the new item that will be used by the player
-                        ItemEntity item = this.ItemManager.CreateSimpleItem(
-                            this.TypeManager[typeID], order.CharacterID, stationID, ItemFlags.Hangar, quantity
-                        );
-                        // immediately unload it, if it has to be loaded the OnItemUpdate notification will take care of that
-                        this.ItemManager.UnloadItem(item);
-
-                        long stationNode = this.SystemManager.GetNodeStationBelongsTo(stationID);
-                        
-                        // notify the node about the item
-                        this.NotifyItemChange(client.ClusterConnection, stationNode, item.ID, "locationID", stationID);
-                    }
+                    long stationNode = this.SystemManager.GetNodeStationBelongsTo(stationID);
+                    
+                    // notify the node about the item
+                    this.NotifyItemChange(client.ClusterConnection, stationNode, item.ID, "locationID", stationID);
                 }
+
+                // ensure we do not sell more than we have
+                if (quantity == 0)
+                    break;
             }
         }
 
@@ -317,7 +379,7 @@ namespace Node.Services.Market
             }
         }
 
-        private void PlaceSellOrderChar(int itemID, Character character, int stationID, int quantity, int typeID, int duration, double price, int minVolume, int range, double brokerCost, CallInformation call)
+        private void PlaceSellOrderChar(int itemID, Character character, int stationID, int quantity, int typeID, int duration, double price, int range, double brokerCost, CallInformation call)
         {
             // check distance for the order
             this.CheckSellOrderDistancePermissions(character, stationID);
@@ -340,23 +402,22 @@ namespace Node.Services.Market
                 {
                     // create the new item that will be used by the market
                     ItemEntity item = this.ItemManager.CreateSimpleItem(
-                        this.TypeManager[typeID], (int) call.Client.CharacterID, this.ItemManager.LocationMarket.ID, ItemFlags.None, quantity
+                        this.TypeManager[typeID], character.ID, this.ItemManager.LocationMarket.ID, ItemFlags.Hangar, quantity
                     );
-                    
                     // finally place the order
-                    this.DB.PlaceSellOrder(connection, item.Type.ID, item.ID, item.OwnerID, stationID, range, price, quantity, quantity, minVolume, 1000, duration, false);
+                    this.DB.PlaceSellOrder(connection, item.Type.ID, item.ID, item.OwnerID, stationID, range, price, quantity, 1000, duration, false);
                     // unload the item, we do not want it to be held by anyone
                     this.ItemManager.UnloadItem(item);
-                    // send a OnOwnOrderChange notification
-                    call.Client.NotifyMultiEvent(new OnOwnOrderChanged(typeID, "Add"));
                     // update balance for this character
                     character.Balance -= brokerCost;
                     character.Persist();
                     // create record in the journal
-                    this.DB.CreateJournalForCharacter(MarketReference.Brokerfee, character.ID, null, null, brokerCost, character.Balance - brokerCost, "", 1000);
+                    this.DB.CreateJournalForCharacter(MarketReference.Brokerfee, character.ID, character.ID, null, null, -brokerCost, character.Balance - brokerCost, "", 1000);
                     // send notification for the wallet to be updated
                     call.Client.NotifyBalanceUpdate(character.Balance);
                 }
+                // send a OnOwnOrderChange notification
+                call.Client.NotifyMultiEvent(new OnOwnOrderChanged(typeID, "Add"));
             }
             finally
             {
@@ -365,14 +426,177 @@ namespace Node.Services.Market
             }
         }
 
+        private void CheckMatchingSellOrders(MarketOrder[] orders, int quantity, int stationID)
+        {
+            foreach (MarketOrder order in orders)
+            {
+                if (order.Range == -1 && order.LocationID != stationID)
+                    continue;
+                if (order.Range != -1 && order.Range < order.Jumps)
+                    continue;
+                
+                quantity -= Math.Min(quantity, order.UnitsLeft);
+
+                if (quantity == 0)
+                    break;
+            }
+
+            if (quantity > 0)
+                throw new MktOrderDidNotMatch();
+        }
+
+        private void PlaceImmediateBuyOrderChar(MySqlConnection connection, int typeID, Character character, int stationID, int quantity, double price, int range, CallInformation call)
+        {
+            int solarSystemID = this.ItemManager.GetStation(stationID).SolarSystemID;
+
+            // look for matching sell orders
+            MarketOrder[] orders = this.DB.FindMatchingSellOrders(connection, price, typeID, quantity, solarSystemID);
+            
+            // ensure there's at least some that match
+            this.CheckMatchingSellOrders(orders, quantity, solarSystemID);
+
+            foreach (MarketOrder order in orders)
+            {
+                int quantityToBuy = 0;
+
+                if (order.Range == -1 && order.LocationID != stationID)
+                    continue;
+                if (order.Range != -1 && order.Range < order.Jumps)
+                    continue;
+                
+                if (order.UnitsLeft <= quantity)
+                {
+                    // the order was completed, remove it from the database
+                    this.DB.RemoveOrder(connection, order.OrderID);
+                    
+                    // increase the amount of bought items
+                    quantityToBuy = order.UnitsLeft;
+                    quantity -= order.UnitsLeft;
+                }
+                else
+                {
+                    // part of the sell order was satisfied
+                    this.DB.UpdateOrderRemainingQuantity(connection, order.OrderID, order.UnitsLeft - quantity, 0);
+
+                    quantityToBuy = quantity;
+                    quantity = 0;
+                }
+
+                if (quantityToBuy > 0)
+                {
+                    double profit, tax;
+                    double balance = this.CharacterDB.GetCharacterBalance(order.CharacterID);
+
+                    this.CalculateSalesTax(this.CharacterDB.GetSkillLevelForCharacter(ItemTypes.Accounting, order.CharacterID), quantityToBuy, price, out tax, out profit);
+
+                    balance += profit;
+
+                    character.Balance -= quantityToBuy * price;
+                    character.Persist();
+                    
+                    this.DB.CreateJournalForCharacter(MarketReference.MarketEscrow, character.ID, character.ID, null, null, -quantityToBuy * price, character.Balance, "", 1000);
+                    this.DB.CreateJournalForCharacter(MarketReference.MarketTransaction, order.CharacterID, character.ID, order.CharacterID, null, price * quantityToBuy, balance + tax, "", 1000);
+                    this.DB.CreateJournalForCharacter(MarketReference.TransactionTax, order.CharacterID, order.CharacterID, null, null, -tax, balance, "", 1000);
+                    this.DB.CreateTransactionForCharacter(character.ID, order.CharacterID, TransactionType.Buy, typeID, quantityToBuy, price, stationID);
+                    this.DB.CreateTransactionForCharacter(order.CharacterID, character.ID, TransactionType.Sell, typeID, quantityToBuy, price, stationID);
+                    
+                    // save the balance of the character
+                    this.CharacterDB.SetCharacterBalance(order.CharacterID, balance);
+                    
+                    // if the character is loaded in any node inform that node of the change in wallet
+                    int characterNode = this.ItemDB.GetItemNode(order.CharacterID);
+                    
+                    if (characterNode > 0)
+                        this.NotifyBalanceChange(call.Client.ClusterConnection, characterNode, order.CharacterID, balance);
+                    
+                    // notify this character of the balance update too
+                    call.Client.NotifyBalanceUpdate(character.Balance);
+                    
+                    // now ensure the item is present where it should be
+                    if (order.UnitsLeft == quantityToBuy)
+                    {
+                        this.ItemDB.UpdateItemLocation(order.ItemID, stationID);
+                        this.ItemDB.UpdateItemOwner(order.ItemID, character.ID);
+                        this.ItemDB.UpdateItemQuantity(order.ItemID, quantityToBuy);
+
+                        // now notify the nodes about the change, if the item is loaded anywhere this should be enough
+                        long stationNode = this.SystemManager.GetNodeStationBelongsTo(stationID);
+
+                        if (stationNode > 0)
+                        {
+                            // send proper notifications for owner and location changes
+                            this.NotifyItemChange(call.Client.ClusterConnection, stationNode, order.ItemID, "ownerID", character.ID);
+                            this.NotifyItemChange(call.Client.ClusterConnection, stationNode, order.ItemID, "locationID", stationID);
+                            this.NotifyItemChange(call.Client.ClusterConnection, stationNode, order.ItemID, "quantity", quantityToBuy);
+                        }
+                    }
+                    else
+                    {
+                        // create the new item that will be used by the player
+                        ItemEntity item = this.ItemManager.CreateSimpleItem(
+                            this.TypeManager[typeID], character.ID, this.ItemManager.LocationMarket.ID, ItemFlags.Hangar, quantityToBuy
+                        );
+                        // immediately unload it, if it has to be loaded the OnItemUpdate notification will take care of that
+                        this.ItemManager.UnloadItem(item);
+
+                        long stationNode = this.SystemManager.GetNodeStationBelongsTo(stationID);
+
+                        // notify the node about the item
+                        this.NotifyItemChange(call.Client.ClusterConnection, stationNode, item.ID, "locationID", stationID);
+                    }
+                }
+
+                // ensure we do not buy more than we need
+                if (quantity == 0)
+                    break;
+            }
+        }
+
+        private void PlaceBuyOrderChar(int typeID, Character character, int stationID, int quantity, double price, int duration, int minVolume, int range, double brokerCost, CallInformation call)
+        {
+            // ensure the character can place the order where he's trying to
+            this.CheckBuyOrderDistancePermissions(character, stationID);
+            // make sure the character has enough money
+            character.EnsureEnoughBalance(quantity * price);
+            
+            using MySqlConnection connection = this.DB.AcquireMarketLock();
+            try
+            {
+                if (duration == 0)
+                {
+                    this.PlaceImmediateBuyOrderChar(connection, typeID, character, stationID, quantity, price, range, call);
+                }
+                else
+                {
+                    // make sure the character can pay the escrow
+                    character.EnsureEnoughBalance(quantity * price);
+                    // place the buy order
+                    this.DB.PlaceBuyOrder(connection, typeID, character.ID, stationID, range, price, quantity, minVolume, 1000, duration, false);
+                    // update balance for this character
+                    character.Balance -= brokerCost;
+                    // create record in the journal for the brokers fee and the escrow
+                    this.DB.CreateJournalForCharacter(MarketReference.Brokerfee, character.ID, character.ID, null, null, -brokerCost, character.Balance, "", 1000);
+                    character.Balance -= quantity * price;
+                    character.Persist();
+                    this.DB.CreateJournalForCharacter(MarketReference.MarketEscrow, character.ID, character.ID, null, null, -quantity * price, character.Balance, "", 1000);
+                    // finally notify the character of the balance change
+                    call.Client.NotifyBalanceUpdate(character.Balance);
+                }
+                
+                // send a OnOwnOrderChange notification
+                call.Client.NotifyMultiEvent(new OnOwnOrderChanged(typeID, "Add"));
+            }
+            finally
+            {
+                this.DB.ReleaseMarketLock(connection);
+            }
+            
+        }
+
         public PyDataType PlaceCharOrder(PyInteger stationID, PyInteger typeID, PyDecimal price, PyInteger quantity,
             PyInteger bid, PyInteger range, PyDataType itemID, PyInteger minVolume, PyInteger duration, PyBool useCorp,
             PyDataType located, CallInformation call)
         {
-            // TODO: PROPERLY HANDLE THE RANGE PARAMETER
-            /*
-             * {1: 'station', 3: 'solarsystem', 4: 'constellation', 5: 'region'}
-             */
             // get solarSystem for the station
             Character character = this.ItemManager.GetItem(call.Client.EnsureCharacterIsSelected()) as Character;
             double brokerCost = 0.0;
@@ -398,11 +622,11 @@ namespace Node.Services.Market
                 if (itemID is PyInteger == false)
                     throw new CustomError("Unexpected data!");
 
-                this.PlaceSellOrderChar(itemID as PyInteger, character, stationID, quantity, typeID, duration, price, minVolume, range, brokerCost, call);
+                this.PlaceSellOrderChar(itemID as PyInteger, character, stationID, quantity, typeID, duration, price, range, brokerCost, call);
             }
             else if (bid == (int) TransactionType.Buy)
             {
-                // HANDLE BUY ORDER
+                this.PlaceBuyOrderChar(typeID, character, stationID, quantity, price, duration, minVolume, range, brokerCost, call);
             }
             
             return null;

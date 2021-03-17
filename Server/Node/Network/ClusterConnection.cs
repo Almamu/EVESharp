@@ -423,7 +423,7 @@ namespace Node.Network
                 // load the item and check the owner, if it's logged in and the locationID is loaded by us
                 // that means the item should be kept here
                 // fingers crossed
-                ItemEntity newItem = this.ItemManager.GetItem(itemID);
+                ItemEntity newItem = this.ItemManager.LoadItem(itemID);
 
                 if (this.ItemManager.IsItemLoaded(newItem.LocationID) == false)
                 {
@@ -466,11 +466,13 @@ namespace Node.Network
                 itemChange.AddChange(ItemChange.LocationID, item.LocationID);
                 item.LocationID = changes["locationID"] as PyInteger;
             }
+            
             if (changes.ContainsKey("quantity") == true)
             {
                 itemChange.AddChange(ItemChange.Quantity, item.Quantity);
                 item.Quantity = changes["quantity"] as PyInteger;
             }
+            
             if (changes.ContainsKey("ownerID") == true)
             {
                 itemChange.AddChange(ItemChange.OwnerID, item.OwnerID);
@@ -486,6 +488,52 @@ namespace Node.Network
             // the item is removed off the database if the new location is 0
             if (item.LocationID == 0)
                 item.Destroy();
+        }
+
+        private void HandleOnBalanceUpdate(PyTuple data)
+        {
+            if (data.Count != 2)
+            {
+                Log.Error("Received OnItemUpdate notification with the wrong format");
+                return;
+            }
+
+            PyDataType first = data[0];
+
+            if (first is PyInteger == false)
+            {
+                Log.Error("Received OnItemUpdate notification with the wrong format");
+                return;
+            }
+
+            PyDataType second = data[1];
+
+            if (second is PyDecimal == false)
+            {
+                Log.Error("Received OnItemUpdate notification with the wrong format");
+                return;
+            }
+
+            PyInteger characterID = first as PyInteger;
+            PyDecimal newBalance = second as PyDecimal;
+
+            if (this.ItemManager.IsItemLoaded(characterID) == false)
+            {
+                Log.Warning("Received a wallet update for a character that does not belong to us...");
+                return;
+            }
+
+            Character character = this.ItemManager.GetItem(characterID) as Character;
+
+            character.Balance = newBalance;
+            character.Persist();
+            
+            PyTuple notification = new PyTuple(new PyDataType[]
+            {
+                "cash", characterID, newBalance
+            });
+            
+            this.SendNotification("OnAccountChange", "charid", (int) characterID, notification);
         }
 
         private void HandleBroadcastNotification(PyPacket packet)
@@ -527,6 +575,9 @@ namespace Node.Network
                     break;
                 case "OnItemUpdate":
                     this.HandleOnItemUpdate(arguments);
+                    break;
+                case "OnBalanceUpdate":
+                    this.HandleOnBalanceUpdate(arguments);
                     break;
                 default:
                     Log.Fatal("Received ClusterController notification with the wrong format");

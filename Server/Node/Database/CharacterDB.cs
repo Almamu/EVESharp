@@ -599,7 +599,7 @@ namespace Node.Database
                 "SELECT transactionID, transactionDate, referenceID, entryTypeID," +
                 " ownerID1, ownerID2, accountKey, amount, balance, description " +
                 "FROM market_journal " +
-                "WHERE (ownerID1=@characterID OR ownerID2=@characterID) AND accountKey=@accountKey AND transactionDate >= @minDate AND transactionDate <= @maxDate";
+                "WHERE charID = @characterID AND accountKey=@accountKey AND transactionDate >= @minDate AND transactionDate <= @maxDate";
 
             if (refTypeID != null)
             {
@@ -759,6 +759,60 @@ namespace Node.Database
                     return "";
 
                 return reader.GetString(0);
+            }
+        }
+
+        public double GetCharacterBalance(int characterID)
+        {
+            MySqlConnection connection = null;
+            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+                "SELECT balance FROM chrInformation WHERE characterID = @characterID",
+                new Dictionary<string, object>()
+                {
+                    {"@characterID", characterID}
+                }
+            );
+            
+            using (connection)
+            using (reader)
+            {
+                if (reader.Read() == false)
+                    return 0.0;
+
+                return reader.GetDouble(0);
+            }
+        }
+
+        public void SetCharacterBalance(int characterID, double balance)
+        {
+            Database.PrepareQuery("UPDATE chrInformation SET balance = @balance WHERE characterID = @characterID",
+                new Dictionary<string, object>()
+                {
+                    {"@balance", balance},
+                    {"@characterID", characterID}
+                }
+            );
+        }
+
+        public int GetSkillLevelForCharacter(ItemTypes skill, int characterID)
+        {
+            MySqlConnection connection = null;
+            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+                "SELECT valueInt FROM invItemsAttributes LEFT JOIN invItems USING(itemID) WHERE typeID = @skillTypeID AND ownerID = @characterID",
+                new Dictionary<string, object>()
+                {
+                    {"@skillTypeID", (int) skill},
+                    {"@characterID", characterID}
+                }
+            );
+            
+            using (connection)
+            using (reader)
+            {
+                if (reader.Read() == false)
+                    return 0;
+
+                return reader.GetInt32(0);
             }
         }
     }

@@ -16,6 +16,7 @@ namespace Node.Inventory.Items
         Retail = 3444,
         BrokerRelations = 3446,
         Learning = 3374,
+        Procurement = 16594,
         Marketing = 16598,
         Wholesale = 16596,
         Accounting = 16622,

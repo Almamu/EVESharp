@@ -137,7 +137,7 @@ namespace Node.Services.Inventory
             return BoundInventory.BindInventory(this.ItemDB, inventoryByOwner, flag, this.ItemManager, this.NodeContainer, this.BoundServiceManager, call.Client);
         }
 
-        public PyDataType TrashItems(PyList itemIDs, CallInformation call)
+        public PyDataType TrashItems(PyList itemIDs, PyInteger stationID, CallInformation call)
         {
             foreach (PyDataType itemID in itemIDs)
             {

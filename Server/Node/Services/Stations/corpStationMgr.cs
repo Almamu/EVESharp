@@ -153,7 +153,7 @@ namespace Node.Services.Stations
             character.Balance -= CLONE_CONTRACT_COST;
 
             this.MarketDB.CreateJournalForCharacter(
-                MarketReference.CloneTransfer, character.ID, null, station.ID,
+                MarketReference.CloneTransfer, character.ID, character.ID, null, station.ID,
                 -CLONE_CONTRACT_COST, character.Balance, $"Moved clone to {station.Name}", 1000
             );
             
