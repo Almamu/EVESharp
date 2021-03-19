@@ -76,6 +76,26 @@ namespace Common.Database
             }
         }
 
+        public ulong PrepareQueryLID(ref MySqlConnection connection, string query, Dictionary<string, object> values)
+        {
+            try
+            {
+                MySqlCommand command = this.PrepareQuery(ref connection, query);
+                
+                // add values
+                this.AddNamedParameters(values, command);
+
+                command.ExecuteNonQuery();
+
+                return (ulong) command.LastInsertedId;
+            }
+            catch (Exception e)
+            {
+                Log.Error($"MySQL error: {e.Message}");
+                throw;
+            }
+        }
+
         public void Query(string query)
         {
             try

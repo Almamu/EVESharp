@@ -539,6 +539,11 @@ namespace Node.Database
             // now iterate all the itemIDs, the ones that have a quantity of 0 must be moved to the correct container
             foreach ((int itemID, ItemQuantityEntry entry) in itemIDToQuantityLeft)
             {
+                // if the item is loaded in any node do not update the item
+                // that's the responsibility of the other node
+                if (entry.NodeID != 0)
+                    continue;
+                
                 // the item is just gone, remove it
                 if (entry.Quantity == 0)
                 {

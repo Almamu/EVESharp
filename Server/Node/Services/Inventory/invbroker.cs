@@ -173,6 +173,8 @@ namespace Node.Services.Inventory
                 this.ItemManager.DestroyItem(item);
                 // notify the client of the change
                 call.Client.NotifyMultiEvent(OnItemChange.BuildLocationChange(item, oldFlag, oldLocation));
+                // TODO: CHECK IF THE ITEM HAS ANY META INVENTORY AND/OR BOUND SERVICE
+                // TODO: AND FREE THOSE TOO SO THE ITEMS CAN BE REMOVED OFF THE DATABASE
             }
             
             return null;

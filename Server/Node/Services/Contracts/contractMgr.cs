@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using Common.Services;
@@ -6,6 +7,7 @@ using Node.Database;
 using Node.Inventory;
 using Node.Inventory.Items;
 using Node.Inventory.Items.Types;
+using Node.Inventory.Notifications;
 using Node.Network;
 using PythonTypes.Types.Database;
 using PythonTypes.Types.Exceptions;
@@ -21,14 +23,16 @@ namespace Node.Services.Contracts
         private MarketDB MarketDB { get; }
         private ItemManager ItemManager { get; }
         private TypeManager TypeManager { get; }
+        private SystemManager SystemManager { get; }
 
-        public contractMgr(ContractDB db, ItemDB itemDB, MarketDB marketDB, ItemManager itemManager, TypeManager typeManager)
+        public contractMgr(ContractDB db, ItemDB itemDB, MarketDB marketDB, ItemManager itemManager, TypeManager typeManager, SystemManager systemManager)
         {
             this.DB = db;
             this.ItemDB = itemDB;
             this.MarketDB = marketDB;
             this.ItemManager = itemManager;
             this.TypeManager = typeManager;
+            this.SystemManager = systemManager;
         }
 
         public PyDataType NumRequiringAttention(CallInformation call)
@@ -78,22 +82,47 @@ namespace Node.Services.Contracts
 
             return this.DB.GetItemsInStationForPlayer(call.Client.EnsureCharacterIsSelected(), stationID);
         }
-
-        private void PrepareItemsForCourierContract(PyList<PyList<PyInteger>> itemList, Station station, int ownerID, int shipID)
+        
+        private void NotifyItemChange(ClusterConnection connection, long nodeID, int itemID, string key, PyDataType newValue)
         {
-            using MySqlConnection connection = this.MarketDB.AcquireMarketLock();
-            try
+            connection.SendNodeNotification(nodeID, "OnItemUpdate",
+                new PyTuple(2)
+                {
+                    [0] = itemID,
+                    [1] = new PyDictionary() { [key] = newValue}
+                }
+            );
+        }
+
+        private void PrepareItemsForCourierContract(MySqlConnection connection,
+            ulong contractID, ClusterConnection clusterConnection, PyList itemList, Station station, int ownerID,
+            int shipID)
+        {
+            // create the container in the system to ensure it's not visible to the player
+            Container container = this.ItemManager.CreateSimpleItem(this.TypeManager[ItemTypes.PlasticWrap],
+                this.ItemManager.LocationSystem.ID, station.ID, ItemFlags.None) as Container;
+            
+            Dictionary<int, ContractDB.ItemQuantityEntry> items =
+                this.DB.PrepareItemsForContract(connection, contractID, itemList, station, ownerID, container.ID, shipID);
+
+            double volume = 0;
+            int crateID = container.ID;
+            
+            // unload the container crate so the node can load it properly
+            this.ItemManager.UnloadItem(container);
+            
+            // notify the changes in the items to the nodes
+            foreach ((int itemID, ContractDB.ItemQuantityEntry item) in items)
             {
-                Crate crate = this.ItemManager.CreateSimpleItem(this.TypeManager[ItemTypes.PlasticWrap],
-                    ownerID, station.ID, ItemFlags.None) as Crate;
-                
-                Dictionary<int, ContractDB.ItemQuantityEntry> items =
-                    this.DB.PrepareItemsForOrder(connection, itemList, station, ownerID, crate.ID, shipID);
+                // tell the correct node about the change
+                this.NotifyItemChange(clusterConnection, item.NodeID, itemID, "locationID", crateID);
+
+                // ensure the volume is taken into account
+                volume += item.Volume;
             }
-            finally
-            {
-                this.MarketDB.ReleaseMarketLock(connection);
-            }
+            
+            // update the contract with the crate and the new volume
+            this.DB.UpdateContractCrateAndVolume(ref connection, contractID, crateID, volume);
         }
         
         public PyDataType CreateContract(PyInteger contractType, PyInteger availability, PyInteger assigneeID,
@@ -101,37 +130,47 @@ namespace Node.Services.Contracts
             PyInteger reward, PyInteger collateral, PyString title, PyString description, CallInformation call)
         {
             int callerCharacterID = call.Client.EnsureCharacterIsSelected();
-            int crateID = 0;
             Station station = this.ItemManager.GetStation(startStationID);
-            
-            switch ((int) contractType)
+
+            using MySqlConnection connection = this.MarketDB.AcquireMarketLock();
+            try
             {
-                case (int) ContractTypes.Auction:
-                    break;
-                case (int) ContractTypes.Courier:
-                    this.PrepareItemsForCourierContract(
-                        (call.NamedPayload["itemList"] as PyList).GetEnumerable<PyList<PyInteger>>(),
-                        station,
-                        callerCharacterID,
-                        (int) call.Client.ShipID
-                    );
-                    break;
-                case (int) ContractTypes.Loan:
-                    break;
-                case (int) ContractTypes.ItemExchange:
-                    break;
-                default:
-                    throw new UserError("Unknown contract type");
-                    break;
+                // named payload contains itemList, flag, requestItemTypeList and forCorp
+                ulong contractID = this.DB.CreateContract(connection, call.Client.EnsureCharacterIsSelected(),
+                    call.Client.CorporationID, call.Client.AllianceID, (ContractTypes) (int) contractType, availability,
+                    assigneeID, expireTime, duration, startStationID, endStationID, price, reward, collateral, title,
+                    description, 1000);
+                
+                switch ((int) contractType)
+                {
+                    case (int) ContractTypes.Auction:
+                        break;
+                    case (int) ContractTypes.Courier:
+                        this.PrepareItemsForCourierContract(
+                            connection,
+                            contractID,
+                            call.Client.ClusterConnection,
+                            call.NamedPayload["itemList"] as PyList,
+                            station,
+                            callerCharacterID,
+                            (int) call.Client.ShipID
+                        );
+                        break;
+                    case (int) ContractTypes.Loan:
+                        break;
+                    case (int) ContractTypes.ItemExchange:
+                        break;
+                    default:
+                        throw new UserError("Unknown contract type");
+                        break;
+                }
+                
+                return contractID;
             }
-            
-            // TODO: CALCULATE DIFFERENT THINGS BASED ON CONTRACT TYPE
-            
-            // named payload contains itemList, flag, requestItemTypeList and forCorp
-            return this.DB.CreateContract(call.Client.EnsureCharacterIsSelected(), call.Client.CorporationID, call.Client.AllianceID,
-                (ContractTypes) (int) contractType, availability, assigneeID, expireTime, duration, startStationID,
-                endStationID, price, reward, collateral, title, description, 0.0, 0, 1000
-            );
+            finally
+            {
+                this.MarketDB.ReleaseMarketLock(connection);
+            }
         }
 
         public PyDataType GetContractList(PyObjectData filtersKeyval, CallInformation call)

@@ -163,13 +163,12 @@ namespace Node.Database
             );
         }
 
-        public ulong CreateContract(int characterID, int corporationID, int? allianceID, ContractTypes type, int availability,
+        public ulong CreateContract(MySqlConnection connection, int characterID, int corporationID, int? allianceID, ContractTypes type, int availability,
             int? assigneeID, int expireTime, int duration, int startStationID, int endStationID, double price,
-            double reward, double collateral, string title, string description, double volume, int crateID,
-            int issuerWalletID)
+            double reward, double collateral, string title, string description, int issuerWalletID)
         {
-            return Database.PrepareQueryLID(
-                "INSERT INTO conContracts(issuerID, issuerCorpID, type, availability, assigneeID, expiretime, numDays, startStationID, endStationID, price, reward, collateral, title, description, forCorp, status, isAccepted, acceptorID, dateIssued, dateExpired, dateAccepted, dateCompleted, volume, requiresAttentionByOwner, requiresAttentionByAssignee, crateID, issuerWalletKey, issuerAllianceID, acceptorWalletKey)VALUES(@issuerID, @issuerCorpID, @type, @availability, @assigneeID, @expiretime, @numDays, @startStationID, @endStationID, @price, @reward, @collateral, @title, @description, @forCorp, @status, @isAccepted, @acceptorID, @dateIssued, @dateExpired, @dateAccepted, @dateCompleted, @volume, @requiresAttentionByOwner, @requiresAttentionByAssignee, @crateID, @issuerWalletKey, @issuerAllianceID, @acceptorWalletKey)",
+            return Database.PrepareQueryLID(ref connection,
+                "INSERT INTO conContracts(issuerID, issuerCorpID, type, availability, assigneeID, expiretime, numDays, startStationID, endStationID, price, reward, collateral, title, description, forCorp, status, isAccepted, acceptorID, dateIssued, dateExpired, dateAccepted, dateCompleted, requiresAttentionByOwner, requiresAttentionByAssignee, issuerWalletKey, issuerAllianceID, acceptorWalletKey)VALUES(@issuerID, @issuerCorpID, @type, @availability, @assigneeID, @expiretime, @numDays, @startStationID, @endStationID, @price, @reward, @collateral, @title, @description, @forCorp, @status, @isAccepted, @acceptorID, @dateIssued, @dateExpired, @dateAccepted, @dateCompleted, @requiresAttentionByOwner, @requiresAttentionByAssignee, @issuerWalletKey, @issuerAllianceID, @acceptorWalletKey)",
                 new Dictionary<string, object>()
                 {
                     {"@issuerID", characterID},
@@ -191,13 +190,11 @@ namespace Node.Database
                     {"@isAccepted", 0},
                     {"@acceptorID", null},
                     {"@dateIssued", DateTime.UtcNow.ToFileTimeUtc ()},
-                    {"@dateExpired", null},
+                    {"@dateExpired", DateTime.UtcNow.AddMinutes(expireTime).ToFileTimeUtc ()},
                     {"@dateAccepted", null},
                     {"@dateCompleted", null},
-                    {"@volume", volume},
                     {"@requiresAttentionByOwner", 0},
-                    {"@requiresAttentionByAssignee", 0},
-                    {"@crateID", crateID},
+                    {"@requiresAttentionByAssignee", 1},
                     {"@issuerWalletKey", issuerWalletID},
                     {"@issuerAllianceID", allianceID},
                     {"@acceptorWalletKey", null}
@@ -270,15 +267,19 @@ namespace Node.Database
         public class ItemQuantityEntry
         {
             public int ItemID { get; set; }
+            public int TypeID { get; set; }
+            public int Quantity { get; set; }
             public int NodeID { get; set; }
+            public double Volume { get; set; }
         }
         
-        public Dictionary<int, ItemQuantityEntry> PrepareItemsForOrder(MySqlConnection connection, PyList<PyList<PyInteger>> itemList, Station station, int ownerID, int crateID, int shipID)
+        public Dictionary<int, ItemQuantityEntry> PrepareItemsForContract(MySqlConnection connection, ulong contractID, PyList itemList, Station station, int ownerID, int crateID, int shipID)
         {
             Dictionary<int, ItemQuantityEntry> items = new Dictionary<int, ItemQuantityEntry>();
 
-            foreach (PyList<PyInteger> itemEntry in itemList)
+            foreach (PyList itemEntryList in itemList)
             {
+                PyList<PyInteger> itemEntry = itemEntryList.GetEnumerable<PyInteger>(); 
                 PyInteger itemID = itemEntry[0];
                 PyInteger quantity = itemEntry[1];
 
@@ -286,13 +287,14 @@ namespace Node.Database
                     throw new ConCannotTradeCurrentShip();
                 
                 MySqlDataReader reader = Database.PrepareQuery(ref connection,
-                    "SELECT quantity, nodeID, IF(valueFloat IS NULL, valueInt, valueFloat) AS value, typeID, categoryID, singleton, contraband FROM invItems LEFT JOIN invTypes USING(typeID) LEFT JOIN invGroups USING(groupID) LEFT JOIN invItemsAttributes USING(itemID) WHERE itemID = @itemID AND locationID = @locationID AND ownerID = @ownerID AND attributeID = @damage",
+                    "SELECT quantity, nodeID, IF(dmg.valueFloat IS NULL, dmg.valueInt, dmg.valueFloat) AS damage, invItems.typeID, categoryID, singleton, contraband, IF(vol.attributeID IS NULL, IF(vold.valueFloat IS NULL, vold.valueInt, vold.valueFloat), IF(vol.valueFloat IS NULL, vol.valueInt, vol.valueFloat)) AS volume FROM invItems LEFT JOIN invTypes USING(typeID) LEFT JOIN invGroups USING(groupID) LEFT JOIN invItemsAttributes dmg ON invItems.itemID = dmg.itemID AND dmg.attributeID = @damage LEFT JOIN invItemsAttributes vol ON vol.itemID = invItems.itemID AND vol.attributeID = @volume LEFT JOIN dgmTypeAttributes vold ON vold.typeID = invItems.typeID AND vold.attributeID = @volume WHERE invItems.itemID = @itemID AND locationID = @locationID AND ownerID = @ownerID",
                     new Dictionary<string, object>()
                     {
                         {"@locationID", station.ID},
                         {"@ownerID", ownerID},
                         {"@itemID", itemID},
-                        {"@damage", (int) AttributeEnum.damage}
+                        {"@damage", (int) AttributeEnum.damage},
+                        {"@volume", (int) AttributeEnum.volume}
                     }
                 );
 
@@ -302,27 +304,36 @@ namespace Node.Database
                     if (reader.Read() == false)
                         throw new ConCannotTradeItemSanity();
 
+                    int typeID = reader.GetInt32(3);
+                    double volume = 0;
+
                     Type damageValue = reader.GetFieldType(2);
 
                     if (damageValue == typeof(long) && reader.GetInt64(2) > 0)
-                        throw new ConCannotTradeDamagedItem(this.TypeManager[reader.GetInt32(3)].Name);
+                        throw new ConCannotTradeDamagedItem(this.TypeManager[typeID].Name);
             
                     int itemQuantity = reader.GetInt32(0);
 
                     if (reader.GetInt32(4) == (int) ItemCategories.Ship && itemQuantity == 1 && reader.GetBoolean(5) == false)
-                        throw new ConCannotTradeNonSingletonShip(this.TypeManager[reader.GetInt32(3)].Name, station.Name);
+                        throw new ConCannotTradeNonSingletonShip(this.TypeManager[typeID].Name, station.Name);
 
                     if (reader.GetBoolean(6) == true)
-                        throw new ConCannotTradeContraband(this.TypeManager[reader.GetInt32(3)].Name);
+                        throw new ConCannotTradeContraband(this.TypeManager[typeID].Name);
 
                     // quantity MUST match for this operation to succeed
                     if (itemQuantity != quantity)
                         throw new ConCannotTradeItemSanity();
 
+                    if (reader.IsDBNull(7) == false)
+                        volume = reader.GetDouble(7);
+
                     ItemQuantityEntry entry = new ItemQuantityEntry()
                     {
                         ItemID = itemID,
-                        NodeID = reader.GetInt32(1)
+                        TypeID = typeID,
+                        Quantity = itemQuantity,
+                        NodeID = reader.GetInt32(1),
+                        Volume = volume * itemQuantity
                     };
 
                     items[itemID] = entry;
@@ -330,8 +341,26 @@ namespace Node.Database
             }
             
             // all the items pass the checks, move them in the database
-            foreach ((int itemID, ItemQuantityEntry _) in items)
+            foreach ((int itemID, ItemQuantityEntry item) in items)
             {
+                // create the records in the contract table
+                Database.PrepareQuery(
+                    ref connection,
+                    "INSERT INTO conItems(contractID, itemTypeID, quantity, inCrate, itemID)VALUES(@contractID, @itemTypeID, @quantity, @inCrate, @itemID)",
+                    new Dictionary<string, object>()
+                    {
+                        {"@contractID", contractID},
+                        {"@itemTypeID", item.TypeID},
+                        {"@quantity", item.Quantity},
+                        {"@inCrate", 1},
+                        {"@itemID", itemID}
+                    }
+                ).Close();
+                
+                // do not update the item in the database if the item belongs to any node
+                if (item.NodeID != 0)
+                    continue;
+                
                 Database.PrepareQuery(ref connection,
                     "UPDATE invItems SET locationID = @crateID WHERE itemID = @itemID",
                     new Dictionary<string, object>()
@@ -339,10 +368,24 @@ namespace Node.Database
                         {"@itemID", itemID},
                         {"@crateID", crateID}
                     }
-                );
+                ).Close();
             }
 
             return items;
+        }
+
+        public void UpdateContractCrateAndVolume(ref MySqlConnection connection, ulong contractID, int crateID, double volume)
+        {
+            Database.PrepareQuery(
+                ref connection,
+                "UPDATE conContracts SET crateID = @crateID, volume = @volume WHERE contractID = @contractID",
+                new Dictionary<string, object>()
+                {
+                    {"@crateID", crateID},
+                    {"@volume", volume},
+                    {"@contractID", contractID}
+                }
+            ).Close();
         }
     }
 }
