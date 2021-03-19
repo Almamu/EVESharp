@@ -23,6 +23,7 @@ namespace Node.Inventory.Items
         Accounting = 16622,
         Tycoon = 18580,
         InfomorphPsychology = 24242,
-        GeneralFreightContainer = 24445
+        GeneralFreightContainer = 24445,
+        Contracting = 25235
     }
 }

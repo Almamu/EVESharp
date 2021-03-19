@@ -64,6 +64,7 @@ namespace Node.Inventory
         public EVESystem LocationRecycler { get; private set; }
         public EVESystem LocationMarket { get; private set; }
         public EVESystem LocationUniverse { get; private set; }
+        public EVESystem LocationTemp { get; private set; }
         public ItemEntity SecureCommerceCommision { get; private set; }
 
         /// <summary>
@@ -84,6 +85,7 @@ namespace Node.Inventory
             this.LocationSystem = this.GetItem<EVESystem>(this.NodeContainer.Constants["locationSystem"]);
             this.LocationUniverse = this.GetItem<EVESystem>(this.NodeContainer.Constants["locationUniverse"]);
             this.LocationMarket = this.GetItem<EVESystem>(this.NodeContainer.Constants["locationMarket"]);
+            this.LocationTemp = this.GetItem<EVESystem>(this.NodeContainer.Constants["locationTemp"]);
             this.SecureCommerceCommision = this.GetItem(this.NodeContainer.Constants["ownerSecureCommerceCommission"]);
         }
 

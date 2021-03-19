@@ -45,6 +45,30 @@ namespace Node.Database
             this.TypeManager = typeManager;
         }
 
+        public int GetOutstandingContractsCountForPlayer(int characterID)
+        {
+            MySqlConnection connection = null;
+            MySqlDataReader reader = Database.PrepareQuery(
+                ref connection,
+                "SELECT COUNT(*) AS contractCount FROM conContracts WHERE issuerID = @characterID and forCorp = @forCorp AND status = @outstandingStatus",
+                new Dictionary<string, object>()
+                {
+                    {"@characterID", characterID},
+                    {"@forCorp", 0},
+                    {"@outstandingStatus", ContractStatus.Outstanding}
+                }
+            );
+            
+            using (connection)
+            using (reader)
+            {
+                if (reader.Read() == false)
+                    return 0;
+
+                return reader.GetInt32(0);
+            }
+        }
+        
         public PyDataType NumRequiringAttention(int characterID, int corporationID)
         {
             return Database.PrepareKeyValQuery(

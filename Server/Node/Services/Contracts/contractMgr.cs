@@ -4,6 +4,7 @@ using System.Runtime.CompilerServices;
 using Common.Services;
 using MySql.Data.MySqlClient;
 using Node.Database;
+using Node.Exceptions.contractMgr;
 using Node.Inventory;
 using Node.Inventory.Items;
 using Node.Inventory.Items.Types;
@@ -129,7 +130,34 @@ namespace Node.Services.Contracts
             PyInteger expireTime, PyInteger duration, PyInteger startStationID, PyInteger endStationID, PyInteger price,
             PyInteger reward, PyInteger collateral, PyString title, PyString description, CallInformation call)
         {
+            // check for limits on contract creation
             int callerCharacterID = call.Client.EnsureCharacterIsSelected();
+            
+            if (duration < 1 || expireTime < 1440)
+                throw new ConDurationZero();
+
+            if (startStationID == endStationID)
+                throw new ConDestinationSame();
+
+            PyBool forCorp;
+
+            call.NamedPayload.TryGetValue("forCorp", out forCorp);
+
+            Character character = this.ItemManager.GetItem<Character>(callerCharacterID);
+            
+            if (forCorp == false)
+            {
+                // check limits for the character
+                long maximumContracts = 1 + 4 * character.GetSkillLevel(ItemTypes.Contracting);
+
+                if (maximumContracts <= this.DB.GetOutstandingContractsCountForPlayer(callerCharacterID))
+                    throw new ConTooManyContractsMax(maximumContracts);
+            }
+            else
+            {
+                throw new UserError("Not supported yet!");
+            }
+            
             Station station = this.ItemManager.GetStation(startStationID);
 
             using MySqlConnection connection = this.MarketDB.AcquireMarketLock();

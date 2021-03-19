@@ -129,6 +129,20 @@ namespace PythonTypes.Types.Primitives
             return this.mDictionary.TryGetValue(key, out value);
         }
 
+        public bool TryGetValue<T>(PyDataType key, out T value) where T : PyDataType
+        {
+            PyDataType tmp;
+
+            if (this.TryGetValue(key, out tmp) == true)
+            {
+                value = tmp as T;
+                return true;
+            }
+
+            value = null;
+            return false;
+        }
+
         public void Add(PyDataType key, PyDataType value)
         {
             this.mDictionary.Add(key, value);
