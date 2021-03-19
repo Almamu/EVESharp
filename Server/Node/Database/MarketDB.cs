@@ -260,13 +260,12 @@ namespace Node.Database
             PyDictionary finalResult = new PyDictionary();
             PyNone key = new PyNone();
 
-            foreach (PyDataType entry in result.Rows)
+            foreach (PyList row in result.Rows)
             {
-                PyList row = entry as PyList;
                 PyInteger marketGroupID = row[0] as PyInteger;
                 PyDataType parentGroupID = row[1];
 
-                PyList types = new PyList();
+                PyList<PyInteger> types = new PyList<PyInteger>();
 
                 if (marketTypeIDsMap.ContainsKey(marketGroupID) == true)
                     foreach (int typeID in marketTypeIDsMap[marketGroupID])
@@ -534,15 +533,15 @@ namespace Node.Database
             }
             
             // now iterate all the itemIDs, the ones that have a quantity of 0 must be moved to the correct container
-            foreach (KeyValuePair<int, ItemQuantityEntry> entry in itemIDToQuantityLeft)
+            foreach ((int itemID, ItemQuantityEntry entry) in itemIDToQuantityLeft)
             {
                 // the item is just gone, remove it
-                if (entry.Value.Quantity == 0)
+                if (entry.Quantity == 0)
                 {
                     Database.PrepareQuery(ref connection, "DELETE FROM invItems WHERE itemID = @itemID",
                         new Dictionary<string, object>()
                         {
-                            {"@itemID", entry.Key}
+                            {"@itemID", itemID}
                         }
                     ).Close();
                 }
@@ -553,8 +552,8 @@ namespace Node.Database
                         "UPDATE invItems SET quantity = @quantity WHERE itemID = @itemID",
                         new Dictionary<string, object>()
                         {
-                            {"@itemID", entry.Key},
-                            {"@quantity", entry.Value.Quantity}
+                            {"@itemID", itemID},
+                            {"@quantity", entry.Quantity}
                         }
                     ).Close();
                 }

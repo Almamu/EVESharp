@@ -22,7 +22,7 @@ namespace PythonTypes.Types.Database
         private const string ROW_TYPE_NAME = "util.Row";
         
         protected PyList Headers { get; }
-        protected PyDictionary Lines { get; }
+        protected PyDictionary<PyInteger, PyList> Lines { get; }
         /// <summary>
         /// The field used to index the Rowset
         /// </summary>
@@ -31,7 +31,7 @@ namespace PythonTypes.Types.Database
         public IndexRowset(string idName, PyList headers)
         {
             this.Headers = headers;
-            this.Lines = new PyDictionary();
+            this.Lines = new PyDictionary<PyInteger, PyList>();
             this.IDName = idName;
         }
 

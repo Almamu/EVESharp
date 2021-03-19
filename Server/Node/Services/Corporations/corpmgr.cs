@@ -18,5 +18,10 @@ namespace Node.Services.Corporations
         {
             return this.DB.GetPublicInfo(corporationID);
         }
+
+        public PyDataType GetCorporationIDForCharacter(PyInteger characterID, CallInformation call)
+        {
+            return this.DB.GetCorporationIDForCharacter(characterID);
+        }
     }
 }

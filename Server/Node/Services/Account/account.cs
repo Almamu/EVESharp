@@ -68,7 +68,12 @@ namespace Node.Services.Account
         public PyDataType GetJournal(PyInteger marketKey, PyInteger fromDate, PyInteger entryTypeID,
             PyBool isCorpWallet, PyInteger transactionID, PyInteger rev, CallInformation call)
         {
-            return this.DB.GetJournal(call.Client.EnsureCharacterIsSelected(), entryTypeID, marketKey, fromDate);
+            int? transactionIDint = null;
+
+            if (transactionID != null)
+                transactionIDint = transactionID;
+            
+            return this.DB.GetJournal(call.Client.EnsureCharacterIsSelected(), entryTypeID, marketKey, fromDate, transactionIDint);
         }
     }
 }

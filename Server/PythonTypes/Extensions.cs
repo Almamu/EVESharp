@@ -1,4 +1,8 @@
+using System.Collections.Generic;
 using System.IO;
+using Org.BouncyCastle.Crypto.Modes.Gcm;
+using PythonTypes.Types.Primitives;
+using Renci.SshNet.Security;
 
 namespace PythonTypes
 {

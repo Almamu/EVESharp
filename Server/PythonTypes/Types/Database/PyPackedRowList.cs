@@ -13,10 +13,10 @@ namespace PythonTypes.Types.Database
         /// returns it's PyDataType representation, ready to be sent to the EVE Online client
         /// </summary>
         /// <param name="reader"></param>
-        public static PyList FromMySqlDataReader(MySqlDataReader reader)
+        public static PyList<PyPackedRow> FromMySqlDataReader(MySqlDataReader reader)
         {
             DBRowDescriptor descriptor = DBRowDescriptor.FromMySqlReader(reader);
-            PyList list = new PyList();
+            PyList<PyPackedRow> list = new PyList<PyPackedRow>();
 
             while (reader.Read() == true)
             {

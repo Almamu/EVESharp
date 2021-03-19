@@ -16,7 +16,7 @@ namespace Node
             this.mCharacters.Remove(characterID);
         }
 
-        public bool IsClientConnected(int characterID)
+        public bool IsCharacterConnected(int characterID)
         {
             return this.mCharacters.ContainsKey(characterID);
         }

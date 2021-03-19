@@ -85,7 +85,7 @@ namespace Node.Database
             if (exact == true)
             {
                 return Database.PrepareRowsetQuery(
-                    $"SELECT itemID as ownerID, itemName AS ownerName, typeID FROM eveNames WHERE categoryID = {(int) ItemCategories.Owner} AND itemName = @namePart",
+                    $"SELECT itemID as ownerID, itemName AS ownerName, typeID, groupID FROM eveNames WHERE categoryID = {(int) ItemCategories.Owner} AND itemName = @namePart",
                     new Dictionary<string, object>()
                     {
                         {"@namePart", namePart}
@@ -95,7 +95,7 @@ namespace Node.Database
             else
             {
                 return Database.PrepareRowsetQuery(
-                    $"SELECT itemID as ownerID, itemName AS ownerName, typeID FROM eveNames WHERE categoryID = {(int) ItemCategories.Owner} AND itemName LIKE @namePart",
+                    $"SELECT itemID as ownerID, itemName AS ownerName, typeID, groupID FROM eveNames WHERE categoryID = {(int) ItemCategories.Owner} AND itemName LIKE @namePart",
                     new Dictionary<string, object>()
                     {
                         {"@namePart", namePart + "%"}

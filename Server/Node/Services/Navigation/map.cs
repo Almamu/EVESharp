@@ -37,23 +37,23 @@ namespace Node.Services.Navigation
                 "serviceID", "serviceName"
             });
             
-            foreach (KeyValuePair<int, Station> pair in this.ItemManager.Stations)
+            foreach ((int _, Station station) in this.ItemManager.Stations)
                 stations.Rows.Add((PyList) new PyDataType []
                 {
-                    pair.Value.ID, pair.Value.LocationID, pair.Value.Operations.OperationID, pair.Value.StationType.ID, pair.Value.OwnerID
+                    station.ID, station.LocationID, station.Operations.OperationID, station.StationType.ID, station.OwnerID
                 });
 
-            foreach (KeyValuePair<int, StationOperations> pair in this.StationManager.Operations)
-                foreach (int serviceID in pair.Value.Services)
+            foreach ((int _, StationOperations operation) in this.StationManager.Operations)
+                foreach (int serviceID in operation.Services)
                     operationServices.Rows.Add((PyList) new PyDataType[]
                     {
-                        pair.Value.OperationID, serviceID
+                        operation.OperationID, serviceID
                     });
 
-            foreach (KeyValuePair<int, string> pair in this.StationManager.Services)
+            foreach ((int serviceID, string name) in this.StationManager.Services)
                 services.Rows.Add((PyList) new PyDataType[]
                 {
-                    pair.Key, pair.Value
+                    serviceID, name
                 });
             
             return new PyTuple(new PyDataType[]

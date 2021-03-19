@@ -46,7 +46,7 @@ namespace Node.Services.Characters
             this.ItemManager = itemManager;
             this.TimerManager = timerManager;
             this.SystemManager = systemManager;
-            this.Character = this.ItemManager.GetItem(client.EnsureCharacterIsSelected()) as Character;
+            this.Character = this.ItemManager.GetItem<Character>(client.EnsureCharacterIsSelected());
             this.Log = logger.CreateLogChannel("SkillManager");
 
             this.InitializeCharacter();
@@ -246,9 +246,6 @@ namespace Node.Services.Characters
 
         public PyDataType InjectSkillIntoBrain(PyList itemIDs, CallInformation call)
         {
-            int callerCharacterID = call.Client.EnsureCharacterIsSelected();
-            Character character = this.ItemManager.GetItem(callerCharacterID) as Character;
-            
             foreach (PyDataType item in itemIDs)
             {
                 if (item is PyInteger == false)
@@ -259,18 +256,17 @@ namespace Node.Services.Characters
                 try
                 {
                     // get the item by it's ID and change the location of it
-                    Skill skill = this.ItemManager.GetItem(itemID) as Skill;
+                    Skill skill = this.ItemManager.GetItem<Skill>(itemID);
 
                     // check if the character already has this skill injected
-                    if (character.InjectedSkillsByTypeID.ContainsKey(skill.Type.ID) == true)
+                    if (this.Character.InjectedSkillsByTypeID.ContainsKey(skill.Type.ID) == true)
                         throw new CharacterAlreadyKnowsSkill(skill.Type);
 
                     // is this a stack of skills?
                     if (skill.Quantity > 1)
                     {
                         // add one of the skill into the character's brain
-                        Skill newStack =
-                            this.ItemManager.CreateSkill(skill.Type, character, 0, SkillHistoryReason.None);
+                        Skill newStack = this.ItemManager.CreateSkill(skill.Type, this.Character, 0, SkillHistoryReason.None);
 
                         // subtract one from the quantity
                         skill.Quantity -= 1;
@@ -289,13 +285,13 @@ namespace Node.Services.Characters
                         ItemFlags oldFlag = skill.Flag;
 
                         // now set the new values
-                        skill.LocationID = callerCharacterID;
+                        skill.LocationID = this.Character.ID;
                         skill.Flag = ItemFlags.Skill;
                         skill.Level = 0;
                         skill.Singleton = true;
                         
                         // ensure the character has the skill in his/her brain
-                        character.AddItem(skill);
+                        this.Character.AddItem(skill);
 
                         // ensure the changes are saved
                         skill.Persist();
@@ -311,7 +307,7 @@ namespace Node.Services.Characters
                 }
                 catch (Exception)
                 {
-                    Log.Error($"Cannot inject itemID {itemID} into {callerCharacterID}'s brain...");
+                    Log.Error($"Cannot inject itemID {itemID} into {this.Character.ID}'s brain...");
                     throw;
                 }
             }
@@ -745,12 +741,9 @@ namespace Node.Services.Characters
 
         public PyDataType RemoveImplantFromCharacter(PyInteger itemID, CallInformation call)
         {
-            if (this.Character.Items.ContainsKey(itemID) == false)
+            if (this.Character.Items.TryGetValue(itemID, out ItemEntity item) == false)
                 throw new CustomError("This implant is not in your brain!");
 
-            // move the item to the recycler and then remove it
-            ItemEntity item = this.Character.Items[itemID];
-            
             // now destroy the item
             this.ItemManager.DestroyItem(item);
             

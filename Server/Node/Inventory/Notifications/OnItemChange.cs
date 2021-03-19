@@ -42,8 +42,8 @@ namespace Node.Inventory.Notifications
         {
             PyDictionary result = new PyDictionary();
 
-            foreach (KeyValuePair<ItemChange, PyDataType> pair in this.Changes)
-                result[(int) pair.Key] = pair.Value;
+            foreach ((ItemChange changeType, PyDataType value) in this.Changes)
+                result[(int) changeType] = value;
 
             return result;
         }

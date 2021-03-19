@@ -93,10 +93,8 @@ namespace Common.Game
                 PyDictionary result = new PyDictionary();
 
                 // iterate through the session data
-                foreach (KeyValuePair<PyDataType, PyDataType> pair in this.mSession)
+                foreach ((PyString key, PyTuple value) in this.mSession.GetEnumerable<PyString, PyTuple>())
                 {
-                    PyTuple value = pair.Value as PyTuple;
-
                     PyDataType last = value[0];
                     PyDataType current = value[1];
 
@@ -104,7 +102,7 @@ namespace Common.Game
                     if (last != current)
                     {
                         // create a new tuple to send as the session-change notification
-                        result[pair.Key] = new PyTuple(new PyDataType[] { last, current });
+                        result[key] = new PyTuple(new PyDataType[] { last, current });
 
                         // update the data in the session to reflect no change
                         value[0] = value[1];
@@ -120,8 +118,8 @@ namespace Common.Game
         public void LoadChanges(PyDictionary changes)
         {
             // parse the encoded changes and update the current values
-            foreach (KeyValuePair<PyDataType, PyDataType> pair in changes)
-                this[pair.Key as PyString] = (pair.Value as PyTuple)[1];
+            foreach ((PyString key, PyTuple value) in changes.GetEnumerable<PyString, PyTuple>())
+                this[key] = value[1];
 
             // session is not dirty if we're updating from the changes of another node
             this.IsDirty = false;

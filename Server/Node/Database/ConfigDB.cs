@@ -21,8 +21,8 @@ namespace Node.Database
             string query = "SELECT itemID as ownerID, itemName as ownerName, typeID FROM eveNames WHERE itemID IN (";
             Dictionary<string, object> parameters = new Dictionary<string,object>();
 
-            foreach (PyDataType id in ids)
-                parameters["@itemID" + parameters.Count.ToString("X")] = (int) (id as PyInteger);
+            foreach (PyInteger id in ids.GetEnumerable<PyInteger>())
+                parameters["@itemID" + parameters.Count.ToString("X")] = (int) id;
 
             // prepare the correct list of arguments
             query += String.Join(',', parameters.Keys) + ")";
@@ -42,8 +42,8 @@ namespace Node.Database
             string query = "SELECT graphicID, url3D, urlWeb, icon, urlSound, explosionID FROM eveGraphics WHERE graphicID IN (";
             Dictionary<string, object> parameters = new Dictionary<string,object>();
 
-            foreach (PyDataType id in ids)
-                parameters["@graphicID" + parameters.Count.ToString("X")] = (int) (id as PyInteger);
+            foreach (PyInteger id in ids.GetEnumerable<PyInteger>())
+                parameters["@graphicID" + parameters.Count.ToString("X")] = (int) id;
 
             // prepare the correct list of arguments
             query += String.Join(',', parameters.Keys) + ")";
@@ -63,8 +63,8 @@ namespace Node.Database
             string query = "SELECT itemID as locationID, itemName as locationName, x, y, z FROM invItems LEFT JOIN eveNames USING(itemID) LEFT JOIN invPositions USING (itemID) WHERE itemID IN (";
             Dictionary<string, object> parameters = new Dictionary<string,object>();
 
-            foreach (PyDataType id in ids)
-                parameters["@itemID" + parameters.Count.ToString("X")] = (int) (id as PyInteger);
+            foreach (PyInteger id in ids.GetEnumerable<PyInteger>())
+                parameters["@itemID" + parameters.Count.ToString("X")] = (int) id;
 
             // prepare the correct list of arguments
             query += String.Join(',', parameters.Keys) + ")";
@@ -84,8 +84,8 @@ namespace Node.Database
             string query = "SELECT allianceID, shortName FROM alliance_shortnames WHERE allianceID IN (";
             Dictionary<string, object> parameters = new Dictionary<string,object>();
 
-            foreach (PyDataType id in ids)
-                parameters["@itemID" + parameters.Count.ToString("X")] = (int) (id as PyInteger);
+            foreach (PyInteger id in ids.GetEnumerable<PyInteger>())
+                parameters["@itemID" + parameters.Count.ToString("X")] = (int) id;
 
             // prepare the correct list of arguments
             query += String.Join(',', parameters.Keys) + ")";
@@ -111,10 +111,9 @@ namespace Node.Database
             );
             
             // iterate all the results and create the list based on the concatenated column
-            foreach (PyDataType lineData in result.Rows)
+            foreach (PyList line in result.Rows)
             {
                 // get destinations string
-                PyList line = lineData as PyList;
                 PyDataType firstItem = line[0];
 
                 // ignore null entries
@@ -189,8 +188,8 @@ namespace Node.Database
             string query = "SELECT typeID, groupID, typeName, description, graphicID, radius, mass, volume, capacity, portionSize, raceID, basePrice, published, marketGroupID, chanceOfDuplicating, dataID FROM invTypes WHERE typeID IN (";
             Dictionary<string, object> parameters = new Dictionary<string,object>();
 
-            foreach (PyDataType id in ids)
-                parameters["@typeID" + parameters.Count.ToString("X")] = (int) (id as PyInteger);
+            foreach (PyInteger id in ids.GetEnumerable<PyInteger>())
+                parameters["@typeID" + parameters.Count.ToString("X")] = (int) id;
 
             // prepare the correct list of arguments
             query += String.Join(',', parameters.Keys) + ")";

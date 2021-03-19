@@ -265,12 +265,12 @@ namespace Node.Services.Characters
             // get skills by race and create them
             Dictionary<int, int> skills = this.DB.GetBasicSkillsByRace(bloodline.RaceID);
 
-            foreach (KeyValuePair<int, int> pair in skills)
+            foreach ((int skillTypeID, int level) in skills)
             {
-                ItemType skillType = this.TypeManager[pair.Key];
+                ItemType skillType = this.TypeManager[skillTypeID];
                     
                 // create the skill at the required level
-                this.ItemManager.CreateSkill(skillType, character, pair.Value);
+                this.ItemManager.CreateSkill(skillType, character, level);
             }
             
             // create the ship for the character
@@ -467,13 +467,9 @@ namespace Node.Services.Characters
 
             int index = 0;
             
-            foreach (PyDataType id in ids)
+            foreach (PyInteger id in ids.GetEnumerable<PyInteger>())
             {
-                // ignore non-integers
-                if (id is PyInteger == false)
-                    continue;
-
-                Rowset dbResult = this.DB.GetCharacterAppearanceInfo(id as PyInteger);
+                Rowset dbResult = this.DB.GetCharacterAppearanceInfo(id);
 
                 if (dbResult.Rows.Count != 0)
                     result[index] = dbResult;

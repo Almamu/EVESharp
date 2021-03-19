@@ -601,7 +601,7 @@ namespace Node.Services.Market
             PyDataType located, CallInformation call)
         {
             // get solarSystem for the station
-            Character character = this.ItemManager.GetItem(call.Client.EnsureCharacterIsSelected()) as Character;
+            Character character = this.ItemManager.GetItem<Character>(call.Client.EnsureCharacterIsSelected());
             double brokerCost = 0.0;
             
             // if the order is not immediate check the amount of orders the character has
@@ -639,7 +639,7 @@ namespace Node.Services.Market
         {
             int callerCharacterID = call.Client.EnsureCharacterIsSelected();
 
-            Character character = this.ItemManager.GetItem(callerCharacterID) as Character;
+            Character character = this.ItemManager.GetItem<Character>(callerCharacterID);
             
             using MySqlConnection connection = this.DB.AcquireMarketLock();
             try
@@ -699,7 +699,7 @@ namespace Node.Services.Market
         {
             int callerCharacterID = call.Client.EnsureCharacterIsSelected();
 
-            Character character = this.ItemManager.GetItem(callerCharacterID) as Character;
+            Character character = this.ItemManager.GetItem<Character>(callerCharacterID);
             
             using MySqlConnection connection = this.DB.AcquireMarketLock();
             try

@@ -74,7 +74,7 @@ namespace Node
         private void OnCharEnteredStation(int stationID)
         {
             Station station = this.ItemFactory.ItemManager.GetStation(stationID);
-            station.Guests[(int) this.CharacterID] = this.ItemFactory.ItemManager.GetItem((int) this.CharacterID) as Character;
+            station.Guests[(int) this.CharacterID] = this.ItemFactory.ItemManager.GetItem<Character>((int) this.CharacterID);
 
             // notify station guests
             this.ClusterConnection.SendNotification("OnCharNowInStation", "stationid", station.ID,
@@ -134,7 +134,7 @@ namespace Node
         private void OnSolarSystemChanged(int? oldSolarSystemID, int? newSolarSystemID)
         {
             // load the character information if it's not loaded in already
-            if (this.SystemManager.SolarSystemBelongsToUs((int) newSolarSystemID) == true && this.ItemFactory.ItemManager.IsItemLoaded((int) this.CharacterID) == false)
+            if (this.SystemManager.SolarSystemBelongsToUs((int) newSolarSystemID) == true)
                 // load the character into this node
                 this.ItemFactory.ItemManager.LoadItem((int) this.CharacterID);
 

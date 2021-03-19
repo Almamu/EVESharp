@@ -84,16 +84,16 @@ namespace Node
             // search in all bound services and ensure the ones belonging to this client are free
             lock (this.mBoundServices)
             {
-                foreach (KeyValuePair<int, BoundService> pair in this.mBoundServices)
+                foreach ((int boundID, BoundService service) in this.mBoundServices)
                 {
                     // if the bound service belongs to this client
                     // add it to the removal list
-                    if (pair.Value.Client == client)
+                    if (service.Client == client)
                     {
                         // notify the service that we're freeing it
-                        pair.Value.OnServiceFree();
+                        service.OnServiceFree();
                         // add it to the free'd list for removal off the list
-                        boundServiceIDsToRemove.Add(pair.Key);                        
+                        boundServiceIDsToRemove.Add(boundID);                        
                     }
                 }
 

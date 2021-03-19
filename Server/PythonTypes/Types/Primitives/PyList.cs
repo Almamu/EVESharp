@@ -1,5 +1,6 @@
 #region
 
+using System;
 using System.Collections;
 using System.Collections.Generic;
 
@@ -7,10 +8,76 @@ using System.Collections.Generic;
 
 namespace PythonTypes.Types.Primitives
 {
-    public class PyList : PyDataType, IEnumerable<PyDataType>
+    public interface IPyListEnumerable<T> : IEnumerable where T : PyDataType
     {
-        private readonly List<PyDataType> mList;
+        new IPyListEnumerator<T> GetEnumerator();
+    }
 
+    public interface IPyListEnumerator<T> : IEnumerator<T> where T : PyDataType
+    {
+    }
+    
+    public class PyListEnumerator<T> : IPyListEnumerator<T> where T : PyDataType
+    {
+        protected IEnumerator<PyDataType> mEnumerator;
+
+        public PyListEnumerator(IEnumerator<PyDataType> enumerator)
+        {
+            this.mEnumerator = enumerator;
+        }
+        
+        public bool MoveNext()
+        {
+            return this.mEnumerator.MoveNext();
+        }
+
+        public void Reset()
+        {
+            this.mEnumerator.Reset();
+        }
+
+        public T Current => this.mEnumerator.Current as T;
+
+        object? IEnumerator.Current => Current;
+
+        public void Dispose()
+        {
+            this.mEnumerator.Dispose();
+        }
+    }
+    
+    public class PyList<T> : PyList, IPyListEnumerable<T> where T : PyDataType
+    {
+        public PyList() : base()
+        {
+        }
+
+        public PyList(int capacity) : base(capacity)
+        {
+        }
+
+        public PyList(PyDataType[] data) : base(data)
+        {
+        }
+
+        public PyList(List<PyDataType> seed) : base(seed)
+        {
+        }
+
+        public new void Add(T value)
+        {
+            base.Add(value);
+        }
+
+        public IPyListEnumerator<T> GetEnumerator()
+        {
+            return new PyListEnumerator<T>(this.mList.GetEnumerator());
+        }
+    }
+    
+    public class PyList : PyDataType, IPyListEnumerable<PyDataType>
+    {
+        protected readonly List<PyDataType> mList;
         public PyList() : base(PyObjectType.List)
         {
             this.mList = new List<PyDataType>();
@@ -24,6 +91,11 @@ namespace PythonTypes.Types.Primitives
         public PyList(PyDataType[] data) : base(PyObjectType.List)
         {
             this.mList = new List<PyDataType>(data);
+        }
+
+        public PyList(List<PyDataType> seed) : base(PyObjectType.List)
+        {
+            this.mList = seed;
         }
 
         public void Add(PyDataType pyDataType)
@@ -49,10 +121,16 @@ namespace PythonTypes.Types.Primitives
             set => this.mList[index] = value;
         }
 
-        public IEnumerator<PyDataType> GetEnumerator()
+        public IPyListEnumerator<PyDataType> GetEnumerator()
         {
-            return this.mList.GetEnumerator();
+            return new PyListEnumerator<PyDataType>(this.mList.GetEnumerator());
         }
+        
+        public PyList<T> GetEnumerable<T>() where T : PyDataType
+        {
+            return new PyList<T>(this.mList);
+        }
+
 
         IEnumerator IEnumerable.GetEnumerator()
         {

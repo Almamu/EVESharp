@@ -190,14 +190,14 @@ namespace ClusterController
                 {
                     PyInteger id = idData as PyInteger;
                             
-                    foreach (KeyValuePair<long, ClientConnection> entry in this.Clients)
+                    foreach ((long userID, ClientConnection connection) in this.Clients)
                     {
-                        if (entry.Value.SolarSystemID2 == id)
+                        if (connection.SolarSystemID2 == id)
                         {
                             // use the key instead of AccountID as this should be faster
-                            packet.UserID = entry.Key;
+                            packet.UserID = userID;
                             // queue the packet for the user
-                            entry.Value.Socket.Send(packet);
+                            connection.Socket.Send(packet);
                         }
                     }
                 }
@@ -212,14 +212,14 @@ namespace ClusterController
                 {
                     PyInteger id = idData as PyInteger;
                             
-                    foreach (KeyValuePair<long, ClientConnection> entry in this.Clients)
+                    foreach ((long userID, ClientConnection connection) in this.Clients)
                     {
-                        if (entry.Value.ConstellationID == id)
+                        if (connection.ConstellationID == id)
                         {
                             // use the key instead of AccountID as this should be faster
-                            packet.UserID = entry.Key;
+                            packet.UserID = userID;
                             // queue the packet for the user
-                            entry.Value.Socket.Send(packet);
+                            connection.Socket.Send(packet);
                         }
                     }
                 }
@@ -234,14 +234,14 @@ namespace ClusterController
                 {
                     PyInteger id = idData as PyInteger;
                             
-                    foreach (KeyValuePair<long, ClientConnection> entry in this.Clients)
+                    foreach ((long userID, ClientConnection connection) in this.Clients)
                     {
-                        if (entry.Value.CorporationID == id)
+                        if (connection.CorporationID == id)
                         {
                             // use the key instead of AccountID as this should be faster
-                            packet.UserID = entry.Key;
+                            packet.UserID = userID;
                             // queue the packet for the user
-                            entry.Value.Socket.Send(packet);
+                            connection.Socket.Send(packet);
                         }
                     }
                 }
@@ -256,14 +256,14 @@ namespace ClusterController
                 {
                     PyInteger id = idData as PyInteger;
                             
-                    foreach (KeyValuePair<long, ClientConnection> entry in this.Clients)
+                    foreach ((long userID, ClientConnection connection) in this.Clients)
                     {
-                        if (entry.Value.RegionID == id)
+                        if (connection.RegionID == id)
                         {
                             // use the key instead of AccountID as this should be faster
-                            packet.UserID = entry.Key;
+                            packet.UserID = userID;
                             // queue the packet for the user
-                            entry.Value.Socket.Send(packet);
+                            connection.Socket.Send(packet);
                         }
                     }
                 }
@@ -280,16 +280,16 @@ namespace ClusterController
                 {
                     PyInteger id = idData as PyInteger;
                             
-                    foreach (KeyValuePair<long, ClientConnection> entry in this.Clients)
+                    foreach ((long userID, ClientConnection connection) in this.Clients)
                     {
-                        if (entry.Value.CharacterID == id)
+                        if (connection.CharacterID == id)
                         {
                             // use the key instead of AccountID as this should be faster
-                            packet.UserID = entry.Key;
+                            packet.UserID = userID;
                             // change the ids of interest to hide the character's we've notified
                             destination.IDsOfInterest = new PyDataType[] {id};
                             // queue the packet for the user
-                            entry.Value.Socket.Send(packet);
+                            connection.Socket.Send(packet);
                         }
                     }
                 }
@@ -306,14 +306,14 @@ namespace ClusterController
                 {
                     PyInteger id = idData as PyInteger;
                             
-                    foreach (KeyValuePair<long, ClientConnection> entry in this.Clients)
+                    foreach ((long userID, ClientConnection connection) in this.Clients)
                     {
-                        if (entry.Value.StationID == id)
+                        if (connection.StationID == id)
                         {
                             // use the key instead of AccountID as this should be faster
-                            packet.UserID = entry.Key;
+                            packet.UserID = userID;
                             // queue the packet for the user
-                            entry.Value.Socket.Send(packet);
+                            connection.Socket.Send(packet);
                         }
                     }
                 }
@@ -330,14 +330,14 @@ namespace ClusterController
                 {
                     PyInteger id = idData as PyInteger;
                             
-                    foreach (KeyValuePair<long, ClientConnection> entry in this.Clients)
+                    foreach ((long userID, ClientConnection connection) in this.Clients)
                     {
-                        if (entry.Value.AllianceID == id)
+                        if (connection.AllianceID == id)
                         {
                             // use the key instead of AccountID as this should be faster
-                            packet.UserID = entry.Key;
+                            packet.UserID = userID;
                             // queue the packet for the user
-                            entry.Value.Socket.Send(packet);
+                            connection.Socket.Send(packet);
                         }
                     }
                 }
@@ -354,14 +354,14 @@ namespace ClusterController
                 {
                     PyInteger id = idData as PyInteger;
                             
-                    foreach (KeyValuePair<long, NodeConnection> entry in this.Nodes)
+                    foreach ((long nodeID, NodeConnection connection) in this.Nodes)
                     {
-                        if (entry.Value.NodeID == id)
+                        if (connection.NodeID == id)
                         {
                             // use the key instead of AccountID as this should be faster
-                            packet.UserID = entry.Key;
+                            packet.UserID = nodeID;
                             // queue the packet for the user
-                            entry.Value.Socket.Send(packet);
+                            connection.Socket.Send(packet);
                         }
                     }
                 }
@@ -372,8 +372,8 @@ namespace ClusterController
         {
             lock (this.Nodes)
             {
-                foreach (KeyValuePair<long, NodeConnection> entry in this.Nodes)
-                    entry.Value.Socket.Send(packet);
+                foreach ((long _, NodeConnection connection) in this.Nodes)
+                    connection.Socket.Send(packet);
             }
         }
 
@@ -388,12 +388,12 @@ namespace ClusterController
 
             lock (this.Nodes)
             {
-                foreach (KeyValuePair<long, NodeConnection> entry in this.Nodes)
+                foreach ((long nodeID, NodeConnection connection) in this.Nodes)
                 {
                     // update destination and send
-                    notification.Destination = new PyAddressNode(entry.Key);
+                    notification.Destination = new PyAddressNode(nodeID);
 
-                    entry.Value.Socket.Send(notification);
+                    connection.Socket.Send(notification);
                 }
             }
         }

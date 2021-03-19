@@ -92,7 +92,7 @@ namespace Node.Services.Network
             
             // create a new item with the correct locationID
             Station location = this.ItemManager.GetStation((int) call.Client.StationID);
-            Character character = this.ItemManager.GetItem(call.Client.EnsureCharacterIsSelected()) as Character;
+            Character character = this.ItemManager.GetItem<Character>(call.Client.EnsureCharacterIsSelected());
             
             ItemType itemType = this.TypeManager[typeID];
             ItemEntity item = this.ItemManager.CreateSimpleItem(itemType, character, location, ItemFlags.Hangar, quantity);
@@ -115,7 +115,7 @@ namespace Node.Services.Network
             if (target != "me")
                 throw new SlashError("giveskill only supports me for now");
 
-            Character character = this.ItemManager.GetItem(call.Client.EnsureCharacterIsSelected()) as Character;
+            Character character = this.ItemManager.GetItem<Character>(call.Client.EnsureCharacterIsSelected());
             
             if (skillType == "all")
             {

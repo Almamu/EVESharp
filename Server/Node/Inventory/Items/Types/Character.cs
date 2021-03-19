@@ -467,9 +467,9 @@ namespace Node.Inventory.Items.Types
 
         public void CalculateSkillPoints()
         {
-            foreach (KeyValuePair<int, Skill> skills in this.InjectedSkills)
+            foreach ((int itemID, Skill skill) in this.InjectedSkills)
                 // increase our skillpoints count with all the trained skills
-                this.mSkillPoints += skills.Value.Points;
+                this.mSkillPoints += skill.Points;
         }
 
         public double GetSkillPointsPerMinute(Skill skill)
@@ -516,18 +516,18 @@ namespace Node.Inventory.Items.Types
                 throw new NotEnoughMoney(this.Balance, needed);
         }
 
-        public void EnsureFreeImplantSlot(ItemEntity implant)
+        public void EnsureFreeImplantSlot(ItemEntity newImplant)
         {
-            int implantSlot = (int) implant.Attributes[AttributeEnum.implantness].Integer;
+            int implantSlot = (int) newImplant.Attributes[AttributeEnum.implantness].Integer;
 
-            foreach (KeyValuePair<int, Implant> pair in this.PluggedInImplants)
+            foreach ((int _, Implant implant) in this.PluggedInImplants)
             {
                 // the implant does not use any slot, here for sanity checking
-                if (pair.Value.Attributes.AttributeExists(AttributeEnum.implantness) == false)
+                if (implant.Attributes.AttributeExists(AttributeEnum.implantness) == false)
                     continue;
 
-                if (pair.Value.Attributes[AttributeEnum.implantness].Integer == implantSlot)
-                    throw new OnlyOneImplantActive(implant);
+                if (implant.Attributes[AttributeEnum.implantness].Integer == implantSlot)
+                    throw new OnlyOneImplantActive(newImplant);
             }
         }
         

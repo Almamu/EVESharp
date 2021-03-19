@@ -352,8 +352,8 @@ namespace Node
         {
             PyDictionary hints = new PyDictionary();
 
-            foreach (KeyValuePair<string, string> pair in list)
-                hints[pair.Value] = this.GetHint(pair.Key);
+            foreach ((string key, string value) in list)
+                hints[value] = this.GetHint(key);
 
             return hints;
         }
@@ -473,9 +473,9 @@ namespace Node
 
             int i = 0;
 
-            foreach (KeyValuePair<string, string> pair in names)
+            foreach ((string key, string _) in names)
             {
-                Load(pair.Key, queries[i], types[i]);
+                Load(key, queries[i], types[i]);
                 i++;
             }
         }

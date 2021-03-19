@@ -59,8 +59,8 @@ namespace Common.Database
                 MySqlCommand command = this.PrepareQuery(ref connection, query);
                 
                 // add values
-                foreach (KeyValuePair<string, object> pair in values)
-                    command.Parameters.AddWithValue(pair.Key, pair.Value);
+                foreach ((string namedParameter, object value) in values)
+                    command.Parameters.AddWithValue(namedParameter, value);
 
                 using (connection)
                 using (command)
@@ -96,6 +96,12 @@ namespace Common.Database
                 Log.Error($"MySQL error: {e.Message}");
                 throw;
             }
+        }
+
+        private void AddNamedParameters(Dictionary<string, object> parameters, MySqlCommand command)
+        {
+            foreach ((string parameterName, object value) in parameters)
+                command.Parameters.AddWithValue(parameterName, value);
         }
 
         /// <summary>
@@ -142,8 +148,7 @@ namespace Common.Database
                 MySqlCommand command = this.PrepareQuery(ref connection, query);
                 
                 // add values
-                foreach (KeyValuePair<string, object> pair in values)
-                    command.Parameters.AddWithValue(pair.Key, pair.Value);
+                this.AddNamedParameters(values, command);
                 
                 // run the prepared statement
                 return command.ExecuteReader();
@@ -170,8 +175,7 @@ namespace Common.Database
                 MySqlCommand command = this.PrepareQuery(ref connection, query);
                 
                 // add values
-                foreach (KeyValuePair<string, object> pair in values)
-                    command.Parameters.AddWithValue(pair.Key, pair.Value);
+                this.AddNamedParameters(values, command);
 
                 MySqlDataReader reader = command.ExecuteReader();
                 
@@ -234,8 +238,7 @@ namespace Common.Database
                 MySqlCommand command = this.PrepareQuery(ref connection, query);
                 
                 // add values
-                foreach (KeyValuePair<string, object> pair in values)
-                    command.Parameters.AddWithValue(pair.Key, pair.Value);
+                this.AddNamedParameters(values, command);
 
                 MySqlDataReader reader = command.ExecuteReader();
                 
@@ -298,8 +301,7 @@ namespace Common.Database
                 MySqlCommand command = this.PrepareQuery(ref connection, query);
                 
                 // add values
-                foreach (KeyValuePair<string, object> pair in values)
-                    command.Parameters.AddWithValue(pair.Key, pair.Value);
+                this.AddNamedParameters(values, command);
 
                 MySqlDataReader reader = command.ExecuteReader();
                 
@@ -361,8 +363,7 @@ namespace Common.Database
                 MySqlCommand command = this.PrepareQuery(ref connection, query);
                 
                 // add values
-                foreach (KeyValuePair<string, object> pair in values)
-                    command.Parameters.AddWithValue(pair.Key, pair.Value);
+                this.AddNamedParameters(values, command);
 
                 MySqlDataReader reader = command.ExecuteReader();
                 
@@ -516,8 +517,7 @@ namespace Common.Database
                 MySqlCommand command = this.PrepareQuery(ref connection, query);
                 
                 // add values
-                foreach (KeyValuePair<string, object> pair in values)
-                    command.Parameters.AddWithValue(pair.Key, pair.Value);
+                this.AddNamedParameters(values, command);
 
                 MySqlDataReader reader = command.ExecuteReader();
                 
@@ -581,8 +581,7 @@ namespace Common.Database
                 MySqlCommand command = this.PrepareQuery(ref connection, query);
                 
                 // add values
-                foreach (KeyValuePair<string, object> pair in values)
-                    command.Parameters.AddWithValue(pair.Key, pair.Value);
+                this.AddNamedParameters(values, command);
 
                 MySqlDataReader reader = command.ExecuteReader();
                 
@@ -591,6 +590,40 @@ namespace Common.Database
                 {
                     // run the prepared statement
                     return DictRowlist.FromMySqlDataReader(reader);
+                }
+            }
+            catch (Exception e)
+            {
+                Log.Error($"MySQL error: {e.Message}");
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Runs one prepared query with the given values as parameters and returns a KeyVal representing the result.
+        /// KeyVals only hold ONE row
+        /// </summary>
+        /// <param name="query">The prepared query</param>
+        /// <param name="values">The key-value pair of values to use when running the query</param>
+        /// <returns>The PyDataType object representing the result</returns>
+        public PyDataType PrepareKeyValQuery(string query)
+        {
+            try
+            {
+                MySqlConnection connection = null;
+                // create the correct command
+                MySqlCommand command = this.PrepareQuery(ref connection, query);
+
+                MySqlDataReader reader = command.ExecuteReader();
+                
+                using (connection)
+                using (reader)
+                {
+                    if (reader.Read() == false)
+                        return null;
+                    
+                    // run the prepared statement
+                    return KeyVal.FromMySqlDataReader(reader);
                 }
             }
             catch (Exception e)
@@ -616,8 +649,7 @@ namespace Common.Database
                 MySqlCommand command = this.PrepareQuery(ref connection, query);
 
                 // add values
-                foreach (KeyValuePair<string, object> pair in values)
-                    command.Parameters.AddWithValue(pair.Key, pair.Value);
+                this.AddNamedParameters(values, command);
 
                 MySqlDataReader reader = command.ExecuteReader();
                 
@@ -656,8 +688,7 @@ namespace Common.Database
                 using (connection)
                 {
                     // add values
-                    foreach (KeyValuePair<string, object> pair in values)
-                        command.Parameters.AddWithValue(pair.Key, pair.Value);
+                    this.AddNamedParameters(values, command);
                     // run the command
                     return command.ExecuteNonQuery();
                 }

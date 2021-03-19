@@ -256,7 +256,7 @@ namespace PythonTypes.Marshal
             writer.WriteOpcode(Opcode.Dictionary);
             writer.WriteSizeEx(dictionary.Length);
 
-            foreach (KeyValuePair<PyDataType, PyDataType> pair in dictionary)
+            foreach (PyDictionaryKeyValuePair pair in dictionary)
             {
                 Process(writer, pair.Value);
                 Process(writer, pair.Key);
@@ -364,7 +364,7 @@ namespace PythonTypes.Marshal
 
             if (data.Dictionary.Length > 0)
             {
-                foreach (KeyValuePair<PyDataType, PyDataType> entry in data.Dictionary)
+                foreach (PyDictionaryKeyValuePair<PyDataType,PyDataType> entry in data.Dictionary)
                 {
                     Process(writer, entry.Key);
                     Process(writer, entry.Value);

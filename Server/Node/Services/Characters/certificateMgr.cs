@@ -75,13 +75,10 @@ namespace Node.Services.Characters
         {
             int callerCharacterID = call.Client.EnsureCharacterIsSelected();
             
-            // TODO: WE MIGHT WANT TO CHECK AND ENSURE THAT THE CHARACTER BELONGS TO US BEFORE DOING ANYTHING ELSE HERE
-            if (this.ItemManager.IsItemLoaded(callerCharacterID) == false)
+            if (this.ItemManager.TryGetItem(callerCharacterID, out Character character) == false)
                 throw new CustomError("This request should arrive on the node that has this character loaded, not here");
 
             List<CertificateRelationship> requirements = this.DB.GetCertificateRequirements(certificateID);
-            Character character = this.ItemManager.LoadItem(callerCharacterID) as Character;
-
             Dictionary<int, Skill> skills = character.InjectedSkillsByTypeID;
 
             foreach (CertificateRelationship relationship in requirements)
@@ -122,8 +119,8 @@ namespace Node.Services.Characters
         {
             call.Client.EnsureCharacterIsSelected();
             
-            foreach (KeyValuePair<PyDataType, PyDataType> update in updates)
-                this.UpdateCertificateFlags(update.Key as PyInteger, update.Value as PyInteger, call);
+            foreach ((PyInteger key, PyInteger value) in updates.GetEnumerable<PyInteger,PyInteger>())
+                this.UpdateCertificateFlags(key, value, call);
 
             return null;
         }

@@ -120,7 +120,7 @@ namespace Node.Network
             Log.Debug("Found machoNet.nodeInfo, our new node id is " + nodeinfo.nodeID.ToString("X4"));
 
             // load the specified solar systems
-            this.SystemManager.LoadSolarSystems(nodeinfo.solarSystems);
+            this.SystemManager.LoadSolarSystems(nodeinfo.solarSystems.GetEnumerable<PyInteger>());
 
             // finally set the new packet handler
             this.Socket.SetReceiveCallback(ReceiveNormalPacketCallback);
@@ -415,90 +415,60 @@ namespace Node.Network
 
             PyInteger itemID = first as PyInteger;
             PyDictionary changes = second as PyDictionary;
+            ItemEntity item = this.ItemManager.LoadItem(itemID, out bool loadRequired);
             
-            // search for the item in our item factory and update it (and it's parents) if needed
-            if (this.ItemManager.IsItemLoaded(itemID) == false)
+            // if the item was just loaded there's extra things to take into account
+            // as the item might not even need a notification to the character it belongs to
+            if (loadRequired == true)
             {
-                // we trust that the notification got to the correct node
+                // trust that the notification got to the correct node
                 // load the item and check the owner, if it's logged in and the locationID is loaded by us
                 // that means the item should be kept here
-                // fingers crossed
-                ItemEntity newItem = this.ItemManager.LoadItem(itemID);
-            
-                // check if the inventory that loads this item is loaded
-                // and ensure the item is added in there
-                if (this.ItemManager.IsItemLoaded(newItem.LocationID) == true)
-                {
-                    ItemInventory inventory = this.ItemManager.GetItem(newItem.LocationID) as ItemInventory;
-
-                    inventory.AddItem(newItem);
-                
-                    // look for any metainventories too
-                    try
-                    {
-                        ItemInventory metaInventory =
-                            this.ItemManager.MetaInventoryManager.GetOwnerInventoriesAtLocation(newItem.LocationID, newItem.OwnerID);
-
-                        metaInventory.AddItem(newItem);
-                    }
-                    catch (ArgumentOutOfRangeException)
-                    {
-                        // ignore the exception, this is expected when no meta inventories are registered
-                    }
-                }
-
-                if (this.ItemManager.IsItemLoaded(newItem.LocationID) == false)
+                if (this.ItemManager.TryGetItem(item.LocationID, out ItemEntity location) == false || this.CharacterManager.IsCharacterConnected(item.OwnerID) == false)
                 {
                     // this item should not be loaded, so unload and return
-                    this.ItemManager.UnloadItem(newItem);
+                    this.ItemManager.UnloadItem(item);
                     return;
                 }
 
-                ItemEntity location = this.ItemManager.GetItem(newItem.LocationID);
+                bool locationBelongsToUs = true;
 
-                if (location is Station == true && this.SystemManager.SolarSystemBelongsToUs(location.LocationID) == false)
+                switch (location)
                 {
-                    // the item should not be loaded, so unload and return
-                    this.ItemManager.UnloadItem(newItem);
-                    return;
+                    case Station _:
+                        locationBelongsToUs = this.SystemManager.StationBelongsToUs(location.ID);
+                        break;
+                    case SolarSystem _:
+                        locationBelongsToUs = this.SystemManager.SolarSystemBelongsToUs(location.ID);
+                        break;
                 }
 
-                if (location is SolarSystem == true && this.SystemManager.SolarSystemBelongsToUs(location.ID) == false)
+                if (locationBelongsToUs == false)
                 {
-                    // the item should not be loaded, so unload and return
-                    this.ItemManager.UnloadItem(newItem);
-                    return;
-                }
-                
-                // now check if the owner is logged in
-                if (this.CharacterManager.IsClientConnected(newItem.OwnerID) == false)
-                {
-                    this.ItemManager.UnloadItem(newItem);
+                    this.ItemManager.UnloadItem(item);
                     return;
                 }
             }
-
-            ItemEntity item = this.ItemManager.GetItem(itemID);
 
             OnItemChange itemChange = new OnItemChange(item);
             
             // update item and build change notification
-            if (changes.ContainsKey("locationID") == true)
+            if (changes.TryGetValue("locationID", out PyDataType newLocation) == true && newLocation is PyInteger newLocationID)
             {
                 itemChange.AddChange(ItemChange.LocationID, item.LocationID);
-                item.LocationID = changes["locationID"] as PyInteger;
+                item.LocationID = newLocationID;
             }
             
-            if (changes.ContainsKey("quantity") == true)
+            if (changes.TryGetValue ("quantity", out PyDataType newQuantity) == true && newQuantity is PyInteger newQuantityInt)
             {
                 itemChange.AddChange(ItemChange.Quantity, item.Quantity);
-                item.Quantity = changes["quantity"] as PyInteger;
+                item.Quantity = newQuantityInt;
             }
             
-            if (changes.ContainsKey("ownerID") == true)
+            if (changes.TryGetValue("ownerID", out PyDataType newOwner) == true && newOwner is PyInteger newOwnerID)
             {
                 itemChange.AddChange(ItemChange.OwnerID, item.OwnerID);
-                item.OwnerID = changes["ownerID"] as PyInteger;
+                item.OwnerID = newOwnerID;
             }
             
             // TODO: IDEALLY THIS WOULD BE ENQUEUED SO ALL OF THEM ARE SENT AT THE SAME TIME
@@ -507,8 +477,8 @@ namespace Node.Network
             this.SendNotification("OnMultiEvent", "charid", (int) item.OwnerID,
                 new PyTuple(1) {[0] = new PyList(1) {[0] = itemChange}});
 
-            if (item.LocationID == 0)
-                // the item is removed off the database if the new location is 0
+            if (item.LocationID == this.ItemManager.LocationRecycler.ID)
+                // the item is removed off the database if the new location is the recycler
                 item.Destroy();
             else
                 // save the item if the new location is not removal
@@ -541,14 +511,12 @@ namespace Node.Network
 
             PyInteger characterID = first as PyInteger;
             PyDecimal newBalance = second as PyDecimal;
-
-            if (this.ItemManager.IsItemLoaded(characterID) == false)
+            
+            if (this.ItemManager.TryGetItem(characterID, out Character character) == false)
             {
                 Log.Warning("Received a wallet update for a character that does not belong to us...");
                 return;
             }
-
-            Character character = this.ItemManager.GetItem(characterID) as Character;
 
             character.Balance = newBalance;
             character.Persist();
@@ -631,23 +599,15 @@ namespace Node.Network
             
             // search for the given objects in the bound service
             // and sure they're freed
-            foreach (PyDataType objectID in objectIDs)
+            foreach (PyTuple objectID in objectIDs.GetEnumerable<PyTuple>())
             {
-                if (objectID is PyTuple == false)
-                {
-                    Log.Fatal("Got a ClientHasReleasedTheseObjects for an unknown object id");
-                    continue;
-                }
-                
-                PyTuple tuple = objectID as PyTuple;
-                
-                if (tuple[0] is PyString == false)
+                if (objectID[0] is PyString == false)
                 {
                     Log.Fatal("Expected bound call with bound string, but got something different");
                     return;
                 }
 
-                string boundString = tuple[0] as PyString;
+                string boundString = objectID[0] as PyString;
 
                 // parse the bound string to get back proper node and bound ids
                 Match regexMatch = Regex.Match(boundString, "N=([0-9]+):([0-9]+)");

@@ -26,6 +26,7 @@ using System;
 using System.Collections.Generic;
 using Common.Logging;
 using Node.Database;
+using Node.Inventory.Exceptions;
 using Node.Inventory.Items;
 using Node.Inventory.Items.Types;
 using Node.Inventory.SystemEntities;
@@ -65,41 +66,122 @@ namespace Node.Inventory
         public EVESystem LocationUniverse { get; private set; }
         public ItemEntity SecureCommerceCommision { get; private set; }
 
+        /// <summary>
+        /// Initializes the item manager and loads the required items
+        /// </summary>
         public void Load()
         {
             // load all the items in the database that do not belong to any user (so-called static items)
             List<ItemEntity> items = this.ItemDB.LoadStaticItems();
 
             foreach (ItemEntity item in items)
-            {
                 this.PerformItemLoad(item);
-            }
 
             Log.Info($"Preloaded {this.mItemList.Count} static items");
             
             // store useful items like recycler and system
-            this.LocationRecycler = this.GetItem(this.NodeContainer.Constants["locationRecycler"]) as EVESystem;
-            this.LocationSystem = this.GetItem(this.NodeContainer.Constants["locationSystem"]) as EVESystem;
-            this.LocationUniverse = this.GetItem(this.NodeContainer.Constants["locationUniverse"]) as EVESystem;
-            this.LocationMarket = this.GetItem(this.NodeContainer.Constants["locationMarket"]) as EVESystem;
+            this.LocationRecycler = this.GetItem<EVESystem>(this.NodeContainer.Constants["locationRecycler"]);
+            this.LocationSystem = this.GetItem<EVESystem>(this.NodeContainer.Constants["locationSystem"]);
+            this.LocationUniverse = this.GetItem<EVESystem>(this.NodeContainer.Constants["locationUniverse"]);
+            this.LocationMarket = this.GetItem<EVESystem>(this.NodeContainer.Constants["locationMarket"]);
             this.SecureCommerceCommision = this.GetItem(this.NodeContainer.Constants["ownerSecureCommerceCommission"]);
         }
 
-        public ItemEntity LoadItem(int itemID)
+        /// <summary>
+        /// Checks if an item exists and returns it
+        /// </summary>
+        /// <param name="itemID">The item to get</param>
+        /// <param name="item">Where to put the item</param>
+        /// <returns>Whether the item exists in the manager or not</returns>
+        public bool TryGetItem(int itemID, out ItemEntity item)
         {
-            if (IsItemLoaded(itemID) == false)
-            {
-                return this.PerformItemLoad(this.ItemDB.LoadItem(itemID));
-            }
-            else
-            {
-                return this.mItemList[itemID];
-            }
+            return this.mItemList.TryGetValue(itemID, out item);
         }
 
+        /// <summary>
+        /// Shorthand method to get an item of an specific type
+        /// </summary>
+        /// <param name="itemID"></param>
+        /// <param name="item"></param>
+        /// <typeparam name="T"></typeparam>
+        /// <returns></returns>
+        public bool TryGetItem<T>(int itemID, out T item) where T : ItemEntity
+        {
+            item = null;
+            
+            if (this.mItemList.TryGetValue(itemID, out ItemEntity tmp) == false || tmp is T == false)
+                return false;
+
+            item = (T) tmp;
+            
+            return true;
+        }
+
+        /// <summary>
+        /// Loads an item if it's not already loaded and returns it'
+        /// </summary>
+        /// <param name="itemID">The item to load</param>
+        /// <returns>The loaded item</returns>
+        public ItemEntity LoadItem(int itemID)
+        {
+            if (this.TryGetItem(itemID, out ItemEntity item) == false)
+                return this.PerformItemLoad(this.ItemDB.LoadItem(itemID));
+
+            return item;
+        }
+
+        /// <summary>
+        /// Loads an item if it's not already loaded and returns it
+        /// </summary>
+        /// <param name="itemID">The item to load</param>
+        /// <param name="loadRequired">Whether the item was loaded or already existed</param>
+        /// <returns>The loaded item</returns>
+        public ItemEntity LoadItem(int itemID, out bool loadRequired)
+        {
+            if (this.TryGetItem(itemID, out ItemEntity item) == false)
+            {
+                loadRequired = true;
+                
+                return this.PerformItemLoad(this.ItemDB.LoadItem(itemID));
+            }
+
+            loadRequired = false;
+
+            return item;
+        }
+        
+        /// <summary>
+        /// Loads an item if it's not already loaded and returns it'
+        /// </summary>
+        /// <param name="itemID">The item to load</param>
+        /// <returns>The loaded item</returns>
+        public ItemEntity LoadItem<T>(int itemID) where T : ItemEntity
+        {
+            return this.LoadItem(itemID) as T;
+        }
+
+        public ItemEntity LoadItem<T>(int itemID, out bool loadRequired) where T : ItemEntity
+        {
+            return this.LoadItem(itemID, out loadRequired) as T;
+        }
+
+        /// <summary>
+        /// Gets the given item
+        /// </summary>
+        /// <param name="itemID">The item to get</param>
+        /// <returns>The item</returns>
+        /// <exception cref="ItemNotLoadedException">If the item doesn't exist</exception>
         public ItemEntity GetItem(int itemID)
         {
-            return this.mItemList[itemID];
+            if (this.TryGetItem(itemID, out ItemEntity item) == false)
+                throw new ItemNotLoadedException(itemID);
+
+            return item;
+        }
+
+        public T GetItem<T>(int itemID) where T : ItemEntity
+        {
+            return this.GetItem(itemID) as T;
         }
 
         public static bool IsFactionID(int itemID)
@@ -137,6 +219,12 @@ namespace Node.Inventory
             return itemID < USERGENERATED_ID_MIN;
         }
         
+        /// <summary>
+        /// Gets the <see cref="ItemEntity"/> of the given faction
+        /// </summary>
+        /// <param name="factionID">The factionID to get</param>
+        /// <returns>The item</returns>
+        /// <exception cref="ArgumentOutOfRangeException">If the id is not a faction</exception>
         public Faction GetFaction(int factionID)
         {
             if (ItemManager.IsFactionID(factionID) == false)
@@ -144,7 +232,13 @@ namespace Node.Inventory
 
             return this.GetItem(factionID) as Faction;
         }
-
+        
+        /// <summary>
+        /// Gets the <see cref="ItemEntity"/> of the given station
+        /// </summary>
+        /// <param name="stationID">The stationID to get</param>
+        /// <returns>The item</returns>
+        /// <exception cref="ArgumentOutOfRangeException">If the id is not a station</exception>
         public Station GetStation(int stationID)
         {
             if (ItemManager.IsStationID(stationID) == false)
@@ -152,7 +246,13 @@ namespace Node.Inventory
 
             return this.GetItem(stationID) as Station;
         }
-
+        
+        /// <summary>
+        /// Gets the <see cref="ItemEntity"/> of the given solar system
+        /// </summary>
+        /// <param name="solarSystemID">The solarSystemID to get</param>
+        /// <returns>The item</returns>
+        /// <exception cref="ArgumentOutOfRangeException">If the id is not a solar system</exception>
         public SolarSystem GetSolarSystem(int solarSystemID)
         {
             if (ItemManager.IsSolarSystemID(solarSystemID) == false)
@@ -161,6 +261,11 @@ namespace Node.Inventory
             return this.GetItem(solarSystemID) as SolarSystem;
         }
 
+        /// <summary>
+        /// Performs the extra, additional steps required for loading the given item
+        /// </summary>
+        /// <param name="item">The item to load</param>
+        /// <returns>The new instance of the item with the extra information loaded</returns>
         private ItemEntity PerformItemLoad(ItemEntity item)
         {
             if (item == null)
@@ -208,9 +313,18 @@ namespace Node.Inventory
                     item = LoadImplant(item);
                     break;
             }
+            
+            // check if there's an inventory loaded that should contain this item
+            if (this.mItemList.TryGetValue(item.LocationID, out ItemEntity location) == true && location is ItemInventory inventory)
+                inventory.AddItem(item);
+            
+            // notify the meta inventory manager about the new item
+            this.MetaInventoryManager.OnItemLoaded(item);
 
+            // ensure the item is in the loaded list
             this.mItemList.Add(item.ID, item);
 
+            // finally return the item
             return item;
         }
 
@@ -337,31 +451,7 @@ namespace Node.Inventory
             int itemID = (int) this.ItemDB.CreateItem(itemName, typeID, ownerID, locationID, flag, contraband, singleton,
                 quantity, 0, 0, 0, null);
 
-            ItemEntity entity = this.LoadItem(itemID);
-            
-            // check if the inventory that loads this item is loaded
-            // and ensure the item is added in there
-            if (this.IsItemLoaded(entity.LocationID) == true)
-            {
-                ItemInventory inventory = this.GetItem(entity.LocationID) as ItemInventory;
-
-                inventory.AddItem(entity);
-                
-                // look for any metainventories too
-                try
-                {
-                    ItemInventory metaInventory =
-                        this.MetaInventoryManager.GetOwnerInventoriesAtLocation(entity.LocationID, entity.OwnerID);
-
-                    metaInventory.AddItem(entity);
-                }
-                catch (ArgumentOutOfRangeException)
-                {
-                    // ignore the exception, this is expected when no meta inventories are registered
-                }
-            }
-
-            return entity;
+            return this.LoadItem(itemID);
         }
         
         public ItemEntity CreateSimpleItem(string itemName, ItemType type, ItemEntity owner, ItemEntity location, ItemFlags flag,
@@ -416,13 +506,9 @@ namespace Node.Inventory
 
         public void UnloadItem(ItemEntity item)
         {
-            // TODO: UNLOADING PROCESS SHOULD BE IMPROVED AS RIGHT NOW WE CHECK FOR EXISTANCE BEFORE CALLING UNLOADITEM
-            if (this.IsItemLoaded(item.ID) == false)
+            if (this.mItemList.Remove(item.ID) == false)
                 return;
 
-            // remove the item
-            this.mItemList.Remove(item.ID);
-            
             // dispose of it
             item.Dispose();
 
@@ -432,43 +518,26 @@ namespace Node.Inventory
 
         public void UnloadItem(int itemID)
         {
-            // TODO: UNLOADING PROCESS SHOULD BE IMPROVED AS RIGHT NOW WE CHECK FOR EXISTANCE BEFORE CALLING UNLOADITEM
-            if (this.IsItemLoaded(itemID) == false)
+            if (this.TryGetItem(itemID, out ItemEntity item) == false)
                 return;
             
-            this.UnloadItem(this.GetItem(itemID));
+            this.UnloadItem(item);
         }
 
         public void DestroyItem(ItemEntity item)
         {
-            if (this.IsItemLoaded(item.ID) == false)
+            // remove the item off the list and throw an exception if the item wasn't loaded in this item manager
+            if (this.mItemList.Remove(item.ID) == false)
                 throw new ArgumentException("Cannot destroy an item that was not loaded by this item manager");
 
-            // remove the item from the list
-            this.mItemList.Remove(item.ID);
+            // ensure the meta inventories know this item is not there anymore
+            this.MetaInventoryManager.OnItemDestroyed(item);
             
-            // check if there are inventories loaded for this item
-            if (this.IsItemLoaded(item.LocationID) == true)
-            {
-                ItemInventory inventory = this.GetItem(item.LocationID) as ItemInventory;
-                
-                // remove the item from the inventory
+            // make sure the location it's at knows the item is no more
+            if (this.TryGetItem(item.LocationID, out ItemEntity location) == true && location is ItemInventory inventory)
                 inventory.RemoveItem(item);
-                
-                // try to remove from meta inventories too
-                try
-                {
-                    ItemInventory metaInventory =
-                        this.MetaInventoryManager.GetOwnerInventoriesAtLocation(item.LocationID, item.OwnerID);
-
-                    metaInventory.RemoveItem(item);
-                }
-                catch (ArgumentOutOfRangeException)
-                {
-                }
-            }
-
-            // set the item to the recycler location and remove it from any inventory that it might be left in
+            
+            // set the item to the recycler location just in case something has a reference to it somewhere
             item.LocationID = this.LocationRecycler.ID;
 
             // finally remove the item off the database

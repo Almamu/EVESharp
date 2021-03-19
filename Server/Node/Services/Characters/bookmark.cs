@@ -79,13 +79,9 @@ namespace Node.Services.Characters
         {
             List<int> idsList = new List<int>();
             
-            foreach (PyDataType bookmarkID in bookmarkIDs)
+            foreach (PyInteger bookmarkID in bookmarkIDs.GetEnumerable<PyInteger>())
             {
-                // ignore incorrect onews
-                if (bookmarkID is PyInteger == false)
-                    continue;
-                
-                idsList.Add(bookmarkID as PyInteger);
+                idsList.Add(bookmarkID);
             }
             
             this.DB.DeleteBookmark(idsList, call.Client.EnsureCharacterIsSelected());

@@ -582,7 +582,7 @@ namespace Node.Database
             }
         }
 
-        public PyDataType GetJournal(int characterID, int? refTypeID, int accountKey, long maxDate)
+        public PyDataType GetJournal(int characterID, int? refTypeID, int accountKey, long maxDate, int? startTransactionID)
         {
             // add one day to the minimum date to get the maximum date
             long minDate = DateTime.FromFileTimeUtc(maxDate).AddDays(-1).ToFileTimeUtc();
@@ -606,6 +606,14 @@ namespace Node.Database
                 query += " AND entryTypeID=@entryTypeID";
                 parameters["@entryTypeID"] = (int) refTypeID;
             }
+
+            if (startTransactionID != null)
+            {
+                query += " AND transactionID > @startTransactionID";
+                parameters["@startTransactionID"] = (int) startTransactionID;
+            }
+
+            query += " ORDER BY transactionID DESC";
 
             return Database.PrepareRowsetQuery(query, parameters);
         }

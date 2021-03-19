@@ -108,11 +108,8 @@ namespace Node.Services.Characters
             // if the clone is not loaded the clone cannot be removed, players can only remove clones from where they're at
             int callerCharacterID = call.Client.EnsureCharacterIsSelected();
             
-            if (this.ItemManager.IsItemLoaded(jumpCloneID) == false)
+            if (this.ItemManager.TryGetItem(jumpCloneID, out ItemEntity clone) == false)
                 throw new JumpCantDestroyNonLocalClone();
-
-            ItemEntity clone = this.ItemManager.LoadItem(jumpCloneID);
-
             if (clone.LocationID != call.Client.LocationID)
                 throw new JumpCantDestroyNonLocalClone();
             if (clone.OwnerID != callerCharacterID)

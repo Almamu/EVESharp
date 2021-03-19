@@ -96,7 +96,7 @@ namespace Node.Services.Stations
         public PyDataType GetPotentialHomeStations(CallInformation call)
         {
             List<Station> availableStations = this.GetPotentialHomeStations(call.Client);
-            Rowset result = new Rowset((PyList) new PyDataType[]
+            Rowset result = new Rowset(new PyDataType[]
                 {
                     "stationID", "typeID", "serviceMask", 
                 }
@@ -105,7 +105,7 @@ namespace Node.Services.Stations
             // build the return
             foreach (Station station in availableStations)
             {
-                result.Rows.Add((PyList) new PyDataType[]
+                result.Rows.Add(new PyDataType[]
                     {
                         station.ID, station.Type.ID, station.Operations.ServiceMask
                     }

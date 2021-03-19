@@ -73,10 +73,8 @@ namespace Node.Services.War
 
         public PyDataType GetSecurityRating(PyInteger characterID, CallInformation call)
         {
-            if (this.ItemManager.IsItemLoaded(characterID) == true)
+            if (this.ItemManager.TryGetItem(characterID, out Character character) == true)
             {
-                Character character = this.ItemManager.GetItem(characterID) as Character;
-
                 return character.SecurityRating;
             }
             else

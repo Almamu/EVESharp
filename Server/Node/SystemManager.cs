@@ -38,18 +38,13 @@ namespace Node
 
         private readonly Dictionary<int, SolarSystem> mLoadedSolarSystems = new Dictionary<int, SolarSystem>();
 
-        public void LoadSolarSystems(PyList solarSystems)
+        public void LoadSolarSystems(PyList<PyInteger> solarSystems)
         {
             if (solarSystems.Count == 0)
                 return;
 
-            foreach (PyDataType solarSystem in solarSystems)
+            foreach (PyInteger solarSystemID in solarSystems)
             {
-                if (solarSystem is PyInteger == false)
-                    continue;
-
-                int solarSystemID = solarSystem as PyInteger;
-
                 if (this.mLoadedSolarSystems.ContainsKey(solarSystemID) == true)
                     continue;
 

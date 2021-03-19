@@ -42,14 +42,14 @@ namespace Node.Services.Stations
             Station station = this.ItemManager.GetStation((int) call.Client.StationID);
             PyList result = new PyList();
             
-            foreach (KeyValuePair<int, Character> pair in station.Guests)
+            foreach ((int _, Character character) in station.Guests)
             {
                 // TODO: UPDATE WHEN FACTION WARS ARE SUPPORTED
                 result.Add(new PyTuple(4)
                     {
-                        [0] = pair.Value.CharacterID,
-                        [1] = pair.Value.Corporation.ID,
-                        [2] = pair.Value.Corporation.AllianceID,
+                        [0] = character.CharacterID,
+                        [1] = character.Corporation.ID,
+                        [2] = character.Corporation.AllianceID,
                         [3] = 0 // facWarID
                     }
                 );

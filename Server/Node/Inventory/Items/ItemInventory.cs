@@ -40,9 +40,8 @@ namespace Node.Inventory.Items
         {
             lock (this)
             {
-                this.mContentsLoaded = true;
-
                 this.mItems = this.ItemFactory.ItemManager.LoadItemsLocatedAt(this, ignoreFlags);
+                this.mContentsLoaded = true;
             }
         }
 
@@ -73,7 +72,8 @@ namespace Node.Inventory.Items
             if (this.mContentsLoaded == false)
                 return;
             
-            this.Items[item.ID] = item;
+            lock (this.Items)
+                this.Items[item.ID] = item;
         }
 
         public void RemoveItem(ItemEntity item)
@@ -81,7 +81,8 @@ namespace Node.Inventory.Items
             if (this.mContentsLoaded == false)
                 return;
 
-            this.Items.Remove(item.ID);
+            lock (this.Items)
+                this.Items.Remove(item.ID);
         }
 
         protected override void SaveToDB()
@@ -92,8 +93,8 @@ namespace Node.Inventory.Items
             {
                 // persist all the items
                 lock(this.Items)
-                    foreach (KeyValuePair<int, ItemEntity> pair in this.Items)
-                        pair.Value.Persist();
+                    foreach ((int _, ItemEntity item) in this.Items)
+                        item.Persist();
             }
         }
 

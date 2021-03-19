@@ -12,17 +12,17 @@ namespace PythonTypes.Types.Database
         private const string TYPE_NAME = "dbutil.CRowset";
         public DBRowDescriptor Header { get; private set; }
         private PyList Columns { get; set; }
-        private PyList Rows { get; set; }
+        private PyList<PyPackedRow> Rows { get; set; }
 
         public CRowset(DBRowDescriptor descriptor)
         {
             this.Header = descriptor;
-            this.Rows = new PyList();
+            this.Rows = new PyList<PyPackedRow>();
 
             this.PrepareColumnNames();
         }
 
-        public CRowset(DBRowDescriptor descriptor, PyList rows)
+        public CRowset(DBRowDescriptor descriptor, PyList<PyPackedRow> rows)
         {
             this.Header = descriptor;
             this.Rows = rows;
@@ -79,7 +79,7 @@ namespace PythonTypes.Types.Database
 
             DBRowDescriptor descriptor = (data.Header[1] as PyDictionary)["header"];
 
-            return new CRowset(descriptor, data.List);
+            return new CRowset(descriptor, data.List.GetEnumerable<PyPackedRow>());
         }
 
         /// <summary>

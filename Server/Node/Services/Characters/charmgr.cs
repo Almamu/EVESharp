@@ -39,7 +39,7 @@ namespace Node.Services.Characters
         public PyDataType AddToBounty(PyInteger characterID, PyInteger bounty, CallInformation call)
         {
             // get character's object
-            Character character = this.ItemManager.GetItem(call.Client.EnsureCharacterIsSelected()) as Character;
+            Character character = this.ItemManager.GetItem<Character>(call.Client.EnsureCharacterIsSelected());
             
             // ensure there's enough balance
             character.EnsureEnoughBalance(bounty);
@@ -57,10 +57,8 @@ namespace Node.Services.Characters
             this.DB.AddToBounty(call.Client.EnsureCharacterIsSelected(), characterID, bounty);
 
             // update our record if the player is loaded in memory
-            if (this.ItemManager.IsItemLoaded(characterID) == true)
+            if (this.ItemManager.TryGetItem(characterID, out Character destination) == true)
             {
-                Character destination = this.ItemManager.GetItem(characterID) as Character;
-
                 destination.Bounty += bounty;
                 destination.Persist();
             }

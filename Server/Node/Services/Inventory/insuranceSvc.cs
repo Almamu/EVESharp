@@ -85,13 +85,12 @@ namespace Node.Services.Inventory
         {
             int callerCharacterID = call.Client.EnsureCharacterIsSelected();
             
-            if (this.ItemManager.IsItemLoaded(itemID) == false)
+            if (this.ItemManager.TryGetItem(itemID, out Ship item) == false)
                 throw new CustomError("Ships not loaded for player and hangar!");
 
-            Ship item = this.ItemManager.GetItem(itemID) as Ship;
-            Character character = this.ItemManager.GetItem(callerCharacterID) as Character;
+            Character character = this.ItemManager.GetItem<Character>(callerCharacterID);
 
-            if ((isCorpItem == 1 && item.OwnerID != call.Client.CorporationID) && item.OwnerID != callerCharacterID)
+            if (isCorpItem == 1 && item.OwnerID != call.Client.CorporationID && item.OwnerID != callerCharacterID)
                 throw new MktNotOwner();
 
             if (item.Singleton == false)
@@ -133,11 +132,10 @@ namespace Node.Services.Inventory
         {
             int callerCharacterID = call.Client.EnsureCharacterIsSelected();
             
-            if (this.ItemManager.IsItemLoaded(itemID) == false)
+            if (this.ItemManager.TryGetItem(itemID, out Ship item) == false)
                 throw new CustomError("Ships not loaded for player and hangar!");
 
-            Ship item = this.ItemManager.GetItem(itemID) as Ship;
-            Character character = this.ItemManager.GetItem(callerCharacterID) as Character;
+            Character character = this.ItemManager.GetItem<Character>(callerCharacterID);
 
             if (item.OwnerID != call.Client.CorporationID && item.OwnerID != callerCharacterID)
                 throw new MktNotOwner();

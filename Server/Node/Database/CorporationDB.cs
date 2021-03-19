@@ -200,8 +200,8 @@ namespace Node.Database
                            "LEFT JOIN invItems ON invItems.itemID = chrInformation.activeCloneID " +
                            "WHERE corporationID=@corporationID AND itemID IN (";
 
-            foreach (PyDataType id in itemIDs)
-                parameters["@itemID" + parameters.Count.ToString("X")] = (int) (id as PyInteger);
+            foreach (PyInteger id in itemIDs.GetEnumerable<PyInteger>())
+                parameters["@itemID" + parameters.Count.ToString("X")] = (int) id;
 
             // prepare the correct list of arguments
             query += String.Join(',', parameters.Keys) + ")";
@@ -318,8 +318,8 @@ namespace Node.Database
                            "FROM chrInformation " +
                            "WHERE corporationID=@corporationID AND characterID IN (";
 
-            foreach (PyDataType id in characterIDs)
-                parameters["@characterID" + parameters.Count.ToString("X")] = (int) (id as PyInteger);
+            foreach (PyInteger id in characterIDs.GetEnumerable<PyInteger>())
+                parameters["@characterID" + parameters.Count.ToString("X")] = (int) id;
 
             // prepare the correct list of arguments
             query += String.Join(',', parameters.Keys) + ")";
@@ -605,6 +605,27 @@ namespace Node.Database
                     {"@corporationID", corporationID}
                 }
             );
+        }
+
+        public PyDataType GetCorporationIDForCharacter(int characterID)
+        {
+            MySqlConnection connection = null;
+            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+                "SELECT corporationID FROM chrInformation WHERE characterID = @characterID",
+                new Dictionary<string, object>()
+                {
+                    {"@characterID", characterID}
+                }
+            );
+            
+            using (connection)
+            using (reader)
+            {
+                if (reader.Read() == false)
+                    return 0;
+
+                return reader.GetInt32(0);
+            }
         }
     }
 }

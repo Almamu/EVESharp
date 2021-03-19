@@ -603,10 +603,9 @@ namespace Node.Services.Chat
                 
                 if (ItemManager.IsNPC(characterID) == true)
                 {
-                    // NPCs should be loaded, so the character instance can be used willy-nilly
-                    Character npcChar = this.ItemManager.GetItem(characterID) as Character;
-
-                    throw new ChtNPC(npcChar.Name);
+                    throw new ChtNPC(
+                        this.ItemManager.GetItem<Character>(characterID).Name
+                    );
                 }
                 
                 // ensure our character has admin perms first
@@ -616,8 +615,8 @@ namespace Node.Services.Chat
                 // ensure the character is not there already
                 if (this.DB.IsCharacterMemberOfChannel(channelID, characterID) == true)
                     throw new ChtAlreadyInChannel(this.CharacterDB.GetCharacterName(characterID));
-                
-                Character character = this.ItemManager.GetItem(callerCharacterID) as Character;
+
+                Character character = this.ItemManager.GetItem<Character>(callerCharacterID);
 
                 PyTuple args = new PyTuple(4)
                 {
@@ -661,13 +660,9 @@ namespace Node.Services.Chat
         {
             int callerCharacterID = call.Client.EnsureCharacterIsSelected();
             
-            foreach (PyDataType destinationID in destinationMailboxes)
+            foreach (PyInteger destinationID in destinationMailboxes.GetEnumerable<PyInteger>())
             {
-                // only mail to integer channel id's are supported
-                if (destinationID is PyInteger == false)
-                    continue;
-                
-                ulong messageID = this.MessagesDB.StoreMail(destinationID as PyInteger, callerCharacterID, subject, message, out string mailboxType);
+                ulong messageID = this.MessagesDB.StoreMail(destinationID, callerCharacterID, subject, message, out string mailboxType);
                 
                 // send notification to the destination
                 PyTuple notification = new PyTuple(5)
@@ -685,7 +680,7 @@ namespace Node.Services.Chat
                 // but supporting multicastIDs would be perfect
                 
                 // the list of id's on a *multicastID would be a PyTuple with the type and the id in it, instead of just a list of integers
-                call.Client.ClusterConnection.SendNotification("OnMessage", mailboxType, destinationID as PyInteger, notification);
+                call.Client.ClusterConnection.SendNotification("OnMessage", mailboxType, destinationID, notification);
             }
             
             return null;
@@ -703,12 +698,9 @@ namespace Node.Services.Chat
         public PyDataType MarkMessagesRead(PyList messageIDs, CallInformation call)
         {
             // TODO: CHECK FOR PERMISSIONS ON lscChannelPermissions
-            foreach (PyDataType messageID in messageIDs)
+            foreach (PyInteger messageID in messageIDs.GetEnumerable<PyInteger>())
             {
-                if (messageID is PyInteger == false)
-                    continue;
-                
-                this.MessagesDB.MarkMessagesRead(call.Client.EnsureCharacterIsSelected(), messageID as PyInteger);
+                this.MessagesDB.MarkMessagesRead(call.Client.EnsureCharacterIsSelected(), messageID);
             }
             
             return null;

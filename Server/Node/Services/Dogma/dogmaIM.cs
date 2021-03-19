@@ -94,9 +94,9 @@ namespace Node.Services.Dogma
 	            ship.ID, ship.GetEntityRow(), ship.GetEffects (), ship.Attributes, DateTime.UtcNow.ToFileTime()
 	        );
 
-            foreach (KeyValuePair<int, ItemEntity> pair in ship.Items)
+            foreach ((int _, ItemEntity item) in ship.Items)
             {
-                switch (pair.Value.Flag)
+                switch (item.Flag)
                 {
                     case ItemFlags.HiSlot0:
                     case ItemFlags.HiSlot1:
@@ -132,10 +132,10 @@ namespace Node.Services.Dogma
                     case ItemFlags.RigSlot6:
                     case ItemFlags.RigSlot7:
                         itemInfo.AddRow(
-                            pair.Value.ID,
-                            pair.Value.GetEntityRow(),
-                            pair.Value.GetEffects (),
-                            pair.Value.Attributes,
+                            item.ID,
+                            item.GetEntityRow(),
+                            item.GetEffects (),
+                            item.Attributes,
                             DateTime.UtcNow.ToFileTime()
                         );
                         break;
@@ -160,19 +160,19 @@ namespace Node.Services.Dogma
                 character.ID, character.GetEntityRow(), character.GetEffects(), character.Attributes, DateTime.UtcNow.ToFileTime()
             );
 
-            foreach (KeyValuePair<int, ItemEntity> pair in character.Items)
+            foreach ((int _, ItemEntity item) in character.Items)
             {
-                switch (pair.Value.Flag)
+                switch (item.Flag)
                 {
                     case ItemFlags.Booster:
                     case ItemFlags.Implant:
                     case ItemFlags.Skill:
                     case ItemFlags.SkillInTraining:
                         itemInfo.AddRow(
-                            pair.Value.ID,
-                            pair.Value.GetEntityRow(),
-                            pair.Value.GetEffects (),
-                            pair.Value.Attributes,
+                            item.ID,
+                            item.GetEntityRow(),
+                            item.GetEffects (),
+                            item.Attributes,
                             DateTime.UtcNow.ToFileTime()
                         );
                         break;

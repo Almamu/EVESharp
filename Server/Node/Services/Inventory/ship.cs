@@ -81,10 +81,8 @@ namespace Node.Services.Inventory
 
             if (group != (int) ItemGroups.Station && group != (int) ItemGroups.SolarSystem)
                 throw new CustomError("Cannot bind ship service to non-solarsystem and non-station locations");
-            if (this.ItemManager.IsItemLoaded(locationID) == false)
+            if (this.ItemManager.TryGetItem(locationID, out ItemEntity location) == false)
                 throw new CustomError("This bind request does not belong here");
-
-            ItemEntity location = this.ItemManager.GetItem(locationID);
 
             if (location.Type.Group.ID != group)
                 throw new CustomError("Location and group do not match");
@@ -96,7 +94,7 @@ namespace Node.Services.Inventory
         {
             int callerCharacterID = call.Client.EnsureCharacterIsSelected();
 
-            Character character = this.ItemManager.GetItem(callerCharacterID) as Character;
+            Character character = this.ItemManager.GetItem<Character>(callerCharacterID);
             // get the item type
             ItemType capsuleType = this.TypeManager[ItemTypes.Capsule];
             // create a pod for this character
@@ -123,15 +121,14 @@ namespace Node.Services.Inventory
         public PyDataType Board(PyInteger itemID, CallInformation call)
         {
             int callerCharacterID = call.Client.EnsureCharacterIsSelected();
-            
+
             // ensure the item is loaded somewhere in this node
             // this will usually be taken care by the EVE Client
-            if (this.ItemManager.IsItemLoaded(itemID) == false)
+            if (this.ItemManager.TryGetItem(itemID, out Ship newShip) == false)
                 throw new CustomError("Ships not loaded for player and hangar!");
 
-            Ship newShip = this.ItemManager.GetItem(itemID) as Ship;
-            Character character = this.ItemManager.GetItem(callerCharacterID) as Character;
-            Ship currentShip = this.ItemManager.GetItem((int) call.Client.ShipID) as Ship;
+            Character character = this.ItemManager.GetItem<Character>(callerCharacterID);
+            Ship currentShip = this.ItemManager.GetItem<Ship>((int) call.Client.ShipID);
 
             if (newShip.Singleton == false)
                 throw new UserError("TooFewSubSystemsToUndock");
@@ -171,11 +168,10 @@ namespace Node.Services.Inventory
             
             // ensure the item is loaded somewhere in this node
             // this will usually be taken care by the EVE Client
-            if (this.ItemManager.IsItemLoaded(itemID) == false)
+            if (this.ItemManager.TryGetItem(itemID, out Ship ship) == false)
                 throw new CustomError("Ships not loaded for player and hangar!");
 
-            Ship ship = this.ItemManager.GetItem(itemID) as Ship;
-            Character character = this.ItemManager.GetItem(callerCharacterID) as Character;
+            Character character = this.ItemManager.GetItem<Character>(callerCharacterID);
 
             if (ship.OwnerID != callerCharacterID)
                 throw new AssembleOwnShipsOnly();
@@ -198,18 +194,6 @@ namespace Node.Services.Inventory
                 ship = this.ItemManager.CreateShip(ship.Type, station, character);
                 // notify the new item
                 call.Client.NotifyMultiEvent(OnItemChange.BuildNewItemChange(ship));
-                // ensure the item is in the meta inventory
-                try
-                {
-                    ItemInventory metaInventory =
-                        this.ItemManager.MetaInventoryManager.GetOwnerInventoriesAtLocation(ship.LocationID, character.ID);
-
-                    metaInventory.AddItem(ship);
-                }
-                catch (Exception)
-                {
-                    
-                }
             }
             else
             {

@@ -41,9 +41,9 @@ namespace Node.Services.Inventory
         {        
             CRowset result = new CRowset(ItemEntity.sEntityItemDescriptor);
 
-            foreach (KeyValuePair<int, ItemEntity> pair in this.mInventory.Items)
-                if (this.mFlag == ItemFlags.None || pair.Value.Flag == this.mFlag)
-                    result.Add(pair.Value.GetEntityRow());
+            foreach ((int _, ItemEntity item) in this.mInventory.Items)
+                if (this.mFlag == ItemFlags.None || item.Flag == this.mFlag)
+                    result.Add(item.GetEntityRow());
 
             return result;
         }
@@ -69,69 +69,35 @@ namespace Node.Services.Inventory
             return this.mInventory.GetEntityRow();
         }
 
+        private void MoveItemHere(ItemEntity item, ItemFlags newFlag, Client relatedClient)
+        {
+            // remove item off the old inventory if required
+            if (this.ItemManager.TryGetItem(item.LocationID, out ItemInventory inventory) == true)
+                inventory.RemoveItem(item);
+            
+            // get the old location stored as it'll be used in the notifications
+            int oldLocation = item.LocationID;
+            ItemFlags oldFlag = item.Flag;
+            
+            // set the new location for the item
+            item.LocationID = this.mInventory.ID;
+            item.Flag = newFlag;
+            
+            // notify the character about the change
+            Client.NotifyMultiEvent(OnItemChange.BuildLocationChange(item, oldFlag, oldLocation));
+            // update meta inventories too
+            this.ItemManager.MetaInventoryManager.OnItemMoved(item, oldLocation, this.mInventory.ID);
+            
+            // finally persist the item changes
+            item.Persist();
+        }
+
         public PyDataType Add(PyInteger itemID, CallInformation call)
         {
             if (itemID == call.Client.ShipID)
                 throw new CantMoveActiveShip();
-            
-            // the item has to be moved to this inventory completely
-            if (this.ItemManager.IsItemLoaded(itemID) == false)
-            {
-                ItemEntity item = this.ItemManager.LoadItem(itemID);
 
-                // get old information
-                int oldLocationID = item.LocationID;
-                ItemFlags oldFlag = item.Flag;
-                
-                // set the new location for the item
-                item.LocationID = this.mInventory.ID;
-                item.Flag = this.mFlag;
-
-                call.Client.NotifyMultiEvent(OnItemChange.BuildLocationChange(item, oldFlag, oldLocationID));
-                
-                // finally add the item to this inventory
-                this.mInventory.AddItem(item);
-
-                item.Persist();
-            }
-            else
-            {
-                ItemEntity item = this.ItemManager.GetItem(itemID);
-                
-                // remove item off the old inventory
-                if (this.ItemManager.IsItemLoaded(item.LocationID) == true)
-                {
-                    ItemInventory inventory = this.ItemManager.GetItem(item.LocationID) as ItemInventory;
-
-                    inventory.RemoveItem(item);
-                }
-                
-                // remove item off the meta inventories
-                try
-                {
-                    this.ItemManager.MetaInventoryManager
-                        .GetOwnerInventoriesAtLocation(item.LocationID, item.OwnerID)
-                        .RemoveItem(item);
-                }
-                catch (ArgumentOutOfRangeException)
-                {
-                }
-                
-                // get old information
-                int oldLocationID = item.LocationID;
-                ItemFlags oldFlag = item.Flag;
-                
-                // set the new location for the item
-                item.LocationID = this.mInventory.ID;
-                item.Flag = this.mFlag;
-
-                call.Client.NotifyMultiEvent(OnItemChange.BuildLocationChange(item, oldFlag, oldLocationID));
-                
-                // finally add the item to this inventory
-                this.mInventory.AddItem(item);
-
-                item.Persist();
-            }
+            this.MoveItemHere(this.ItemManager.LoadItem(itemID), this.mFlag, call.Client);
 
             return null;
         }
@@ -142,97 +108,32 @@ namespace Node.Services.Inventory
                 throw new CantMoveActiveShip();
 
             // TODO: ADD CONSTRAINTS CHECKS FOR THE FLAG
-            if (this.ItemManager.IsItemLoaded(itemID) == false)
-            {
-                // not loaded item, the steps are simpler as the server doesn't really know much about it
-                ItemEntity item = this.ItemManager.LoadItem(itemID);
+            ItemEntity item = this.ItemManager.LoadItem(itemID);
 
-                if (quantity < item.Quantity)
-                {
-                    // subtract the quantities and create the new item
-                    item.Quantity -= quantity;
-                    item.Persist();
-                    
-                    // create a new item with the same specs as the original
-                    ItemEntity clone = this.ItemManager.CreateSimpleItem(item.Type, item.OwnerID, this.mInventory.ID, (ItemFlags) (int) flag, quantity,
-                        item.Contraband, item.Singleton);
-                    
-                    // persist it to the database
-                    clone.Persist();
-                    // notify the client of the new item
-                    call.Client.NotifyMultiEvent(OnItemChange.BuildNewItemChange(clone));
-                    // and notify the amount change
-                    call.Client.NotifyMultiEvent(OnItemChange.BuildQuantityChange(item, item.Quantity + quantity));
-                }
-                else
-                {
-                    int oldLocation = item.LocationID;
-                    ItemFlags oldFlag = item.Flag;
-                    
-                    // simple, move the item
-                    item.LocationID = this.mInventory.ID;
-                    item.Flag = (ItemFlags) (int) flag;
-                    
-                    item.Persist();
-                        
-                    // add it to the inventory
-                    this.mInventory.AddItem(item);
-                    
-                    // notify the client
-                    call.Client.NotifyMultiEvent(OnItemChange.BuildLocationChange(item, oldFlag, oldLocation));
-                }
+            // ensure there's enough quantity in the stack to split it
+            if (quantity > item.Quantity)
+                return null;
+
+            if (quantity == item.Quantity)
+            {
+                // the item is being moved completely, the easiest way is to remove from the old inventory
+                // and put it in the new one
+                this.MoveItemHere(item, (ItemFlags) (int) flag, call.Client);
             }
             else
             {
-                ItemEntity item = this.ItemManager.GetItem(itemID);
-
-                // ensure there's enough quantity in the stack to split it
-                if (quantity > item.Quantity)
-                    return null;
-
-                if (quantity == item.Quantity)
-                {
-                    // the item is being moved completely, the easiest way is to remove from the old inventory
-                    // and put it in the new one
-                    
-                    // this means we require access to the original inventory to remove the item from there
-                    // and thus we have to be extra careful
-                    if (this.ItemManager.IsItemLoaded(item.LocationID) == true)
-                    {
-                        ItemInventory inventory = this.ItemManager.GetItem(item.LocationID) as ItemInventory;
-
-                        // remove the item from the inventory
-                        inventory.RemoveItem(item);
-                        
-                        // TODO: TAKE INTO ACCOUNT META INVENTORIES
-                    }
-
-                    int oldLocationID = item.LocationID;
-                    ItemFlags oldFlag = item.Flag;
-
-                    item.LocationID = this.mInventory.ID;
-                    item.Flag = (ItemFlags) (int) flag;
-
-                    item.Persist();
-                    this.mInventory.AddItem(item);
-                    // notify the client of the location change
-                    call.Client.NotifyMultiEvent(OnItemChange.BuildLocationChange(item, oldFlag, oldLocationID));
-                }
-                else
-                {
-                    // create a new item with the same specs as the original
-                    ItemEntity clone = this.ItemManager.CreateSimpleItem(item.Type, item.OwnerID, this.mInventory.ID, (ItemFlags) (int) flag, quantity,
-                        item.Contraband, item.Singleton);
-            
-                    // subtract the quantity off the original item
-                    item.Quantity -= quantity;
-                    // notify the changes to the client
-                    call.Client.NotifyMultiEvent(OnItemChange.BuildQuantityChange(item, item.Quantity + quantity));
-                    call.Client.NotifyMultiEvent(OnItemChange.BuildNewItemChange(clone));
-                    // persist the item changes in the database
-                    clone.Persist();
-                    item.Persist();
-                }
+                // create a new item with the same specs as the original
+                ItemEntity clone = this.ItemManager.CreateSimpleItem(item.Type, item.OwnerID, this.mInventory.ID, (ItemFlags) (int) flag, quantity,
+                    item.Contraband, item.Singleton);
+        
+                // subtract the quantity off the original item
+                item.Quantity -= quantity;
+                // notify the changes to the client
+                call.Client.NotifyMultiEvent(OnItemChange.BuildQuantityChange(item, item.Quantity + quantity));
+                call.Client.NotifyMultiEvent(OnItemChange.BuildNewItemChange(clone));
+                // persist the item changes in the database
+                clone.Persist();
+                item.Persist();
             }
             
             return null;
@@ -255,11 +156,10 @@ namespace Node.Services.Inventory
                 PyInteger toItemID = tuple[1] as PyInteger;
                 PyInteger quantity = tuple[2] as PyInteger;
 
-                if (this.mInventory.Items.ContainsKey(toItemID) == false)
+                if (this.mInventory.Items.TryGetValue(toItemID, out ItemEntity toItem) == false)
                     continue;
 
                 ItemEntity fromItem = this.ItemManager.GetItem(fromItemID);
-                ItemEntity toItem = this.mInventory.Items[toItemID];
 
                 // ignore singleton items
                 if (fromItem.Singleton == true || toItem.Singleton == true)
@@ -269,7 +169,6 @@ namespace Node.Services.Inventory
                 if (quantity == fromItem.Quantity)
                 {
                     int oldLocationID = fromItem.LocationID;
-                    
                     // remove the item
                     this.ItemManager.DestroyItem(fromItem);
                     // notify the client about the item too
@@ -300,22 +199,17 @@ namespace Node.Services.Inventory
         public PyDataType StackAll(PyInteger locationFlag, CallInformation call)
         {
             // TODO: ADD CONSTRAINTS CHECKS FOR THE LOCATIONFLAG
-            foreach (int firstItemID in this.mInventory.Items.Keys)
+            foreach ((int firstItemID, ItemEntity firstItem) in this.mInventory.Items)
             {
-                ItemEntity firstItem = this.mInventory.Items[firstItemID];
-                
                 // singleton items are not even checked
                 if (firstItem.Singleton == true || firstItem.Flag != (ItemFlags) (int) locationFlag)
                     continue;
                 
-                foreach (int secondItemID in this.mInventory.Items.Keys)
+                foreach ((int secondItemID, ItemEntity secondItem) in this.mInventory.Items)
                 {
                     // ignore the same itemID as they cannot really be merged
                     if (firstItemID == secondItemID)
                         continue;
-                    
-                    ItemEntity secondItem = this.mInventory.Items[secondItemID];
-                    
                     // ignore the item if it's singleton
                     if (secondItem.Singleton == true || secondItem.Flag != (ItemFlags) (int) locationFlag)
                         continue;
@@ -342,22 +236,17 @@ namespace Node.Services.Inventory
         
         public PyDataType StackAll(CallInformation call)
         {
-            foreach (int firstItemID in this.mInventory.Items.Keys)
+            foreach ((int firstItemID, ItemEntity firstItem) in this.mInventory.Items)
             {
-                ItemEntity firstItem = this.mInventory.Items[firstItemID];
-                
                 // singleton items are not even checked
                 if (firstItem.Singleton == true)
                     continue;
                 
-                foreach (int secondItemID in this.mInventory.Items.Keys)
+                foreach ((int secondItemID, ItemEntity secondItem) in this.mInventory.Items)
                 {
                     // ignore the same itemID as they cannot really be merged
                     if (firstItemID == secondItemID)
                         continue;
-                    
-                    ItemEntity secondItem = this.mInventory.Items[secondItemID];
-                    
                     // ignore the item if it's singleton
                     if (secondItem.Singleton == true)
                         continue;

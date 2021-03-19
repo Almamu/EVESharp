@@ -165,8 +165,8 @@ namespace Node.Services.Corporations
 
             int number = 0;
 
-            foreach (KeyValuePair<int, string> title in titles)
-                dictForKeyVal["title" + (++number)] = title.Value;
+            foreach ((int _, string name) in titles)
+                dictForKeyVal["title" + (++number)] = name;
             
             // we're supposed to be from the same corp, so add the extra information manually
             // TODO: TEST WITH USERS FROM OTHER CORPS
