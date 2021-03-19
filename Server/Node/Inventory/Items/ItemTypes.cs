@@ -15,12 +15,14 @@ namespace Node.Inventory.Items
         Trade = 3443,
         Retail = 3444,
         BrokerRelations = 3446,
+        PlasticWrap = 3468,
         Learning = 3374,
         Procurement = 16594,
         Marketing = 16598,
         Wholesale = 16596,
         Accounting = 16622,
         Tycoon = 18580,
-        InfomorphPsychology = 24242
+        InfomorphPsychology = 24242,
+        GeneralFreightContainer = 24445
     }
 }

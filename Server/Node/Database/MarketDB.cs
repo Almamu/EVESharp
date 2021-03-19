@@ -489,7 +489,7 @@ namespace Node.Database
         public Dictionary<int, ItemQuantityEntry> PrepareItemForOrder(MySqlConnection connection, int typeID, int locationID1, int locationID2, int quantity, int ownerID1)
         {
             MySqlDataReader reader = Database.PrepareQuery(ref connection,
-                "SELECT itemID, quantity, nodeID FROM invItems WHERE typeID = @typeID AND (locationID = @locationID1 OR locationID = @locationID2) AND ownerID = @ownerID1",
+                "SELECT itemID, quantity, singleton, nodeID FROM invItems WHERE typeID = @typeID AND (locationID = @locationID1 OR locationID = @locationID2) AND ownerID = @ownerID1",
                 new Dictionary<string, object>()
                 {
                     {"@locationID1", locationID1},
@@ -509,12 +509,16 @@ namespace Node.Database
                     int itemID = reader.GetInt32(0);
                     int itemQuantity = reader.GetInt32(1);
 
+                    // singletons cannot be sold
+                    if (reader.GetBoolean(2) == true)
+                        continue;
+
                     ItemQuantityEntry entry = new ItemQuantityEntry()
                     {
                         ItemID = itemID,
                         OriginalQuantity = itemQuantity,
                         Quantity = itemQuantity - Math.Min(itemQuantity, quantityLeft),
-                        NodeID = reader.GetInt32(2)
+                        NodeID = reader.GetInt32(3)
                     };
 
                     itemIDToQuantityLeft[itemID] = entry;
@@ -561,6 +565,29 @@ namespace Node.Database
 
             // everything should be up to date, return the list of changes done so the market can notify the required nodes
             return itemIDToQuantityLeft;
+        }
+
+        public void CheckRepackagedItem(MySqlConnection connection, int itemID, out bool singleton)
+        {
+            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+                "SELECT singleton FROM invItems WHERE itemID = @itemID",
+                new Dictionary<string, object>()
+                {
+                    {"@itemID", itemID}
+                }
+            );
+
+            using (reader)
+            {
+                if (reader.Read() == false)
+                {
+                    // just in case do not allow the user to sell this item
+                    singleton = true;
+                    return;
+                }
+
+                singleton = reader.GetBoolean(0);
+            }
         }
 
         public void PlaceSellOrder(MySqlConnection connection, int typeID, int itemID, int ownerID, int stationID, int range, double price, int volEntered, int accountID, long duration, bool isCorp)

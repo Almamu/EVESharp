@@ -360,6 +360,8 @@ namespace Node.Inventory
                     return this.LoadConstellation(item);
                 case (int) ItemGroups.Region:
                     return this.LoadRegion(item);
+                case (int) ItemGroups.FreightContainer:
+                    return this.LoadCrate(item);
                 default:
                     Log.Warning($"Loading celestial {item.ID} from item group {item.Type.Group.ID} as normal item");
                     return item;
@@ -436,6 +438,11 @@ namespace Node.Inventory
         private ItemEntity LoadRegion(ItemEntity item)
         {
             return this.ItemDB.LoadRegion(item);
+        }
+
+        private ItemEntity LoadCrate(ItemEntity item)
+        {
+            return new Crate(item);
         }
 
         public ItemEntity CreateSimpleItem(ItemType type, int owner, int location, ItemFlags flag, int quantity = 1,

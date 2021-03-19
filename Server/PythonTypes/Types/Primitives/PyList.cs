@@ -73,6 +73,12 @@ namespace PythonTypes.Types.Primitives
         {
             return new PyListEnumerator<T>(this.mList.GetEnumerator());
         }
+
+        public T this[int index]
+        {
+            get => base[index] as T;
+            set => base[index] = value;
+        }
     }
     
     public class PyList : PyDataType, IPyListEnumerable<PyDataType>

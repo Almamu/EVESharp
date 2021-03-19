@@ -1,3 +1,4 @@
+using System;
 using MySql.Data.MySqlClient;
 using PythonTypes.Types.Primitives;
 
@@ -31,6 +32,20 @@ namespace PythonTypes.Types.Database
         public static PyDataType FromDictionary(PyDictionary columns)
         {
             return new PyObjectData(OBJECT_NAME, columns);
+        }
+
+        /// <summary>
+        /// Converts a KeyVal to a normal PyDictionary
+        /// </summary>
+        /// <param name="from">The KeyVal to convert to a dictionary</param>
+        /// <returns>The information in the keyval</returns>
+        /// <exception cref="InvalidCastException">If the type is not a keyval</exception>
+        public static PyDictionary ToDictionary(PyObjectData from)
+        {
+            if (from.Name != OBJECT_NAME)
+                throw new InvalidCastException($"Trying to cast a {from.Name} to a {OBJECT_NAME}");
+            
+            return from.Arguments as PyDictionary;
         }
     }
 }

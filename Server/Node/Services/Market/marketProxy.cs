@@ -391,6 +391,16 @@ namespace Node.Services.Market
             using MySqlConnection connection = this.DB.AcquireMarketLock();
             try
             {
+                // check if the item is singleton and throw a exception about it
+                {
+                    bool singleton = false;
+                    
+                    this.DB.CheckRepackagedItem(connection, itemID, out singleton);
+
+                    if (singleton == true)
+                        throw new RepackageBeforeSelling(this.TypeManager[typeID].Name);
+                }
+                
                 // move the items to update
                 this.PlaceSellOrderCharUpdateItems(connection, call.Client, stationID, typeID, quantity);
                 

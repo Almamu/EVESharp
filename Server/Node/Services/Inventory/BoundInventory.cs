@@ -55,8 +55,8 @@ namespace Node.Services.Inventory
             // TODO: take into account blueprintsOnly
             if (forCorp == 1)
                 return this.ItemDB.ListStations(call.Client.CorporationID);
-            else
-                return this.ItemDB.ListStations(callerCharacterID);
+            
+            return this.ItemDB.ListStations(callerCharacterID);
         }
 
         public PyDataType ListStationItems(PyInteger stationID, CallInformation call)
@@ -97,7 +97,17 @@ namespace Node.Services.Inventory
             if (itemID == call.Client.ShipID)
                 throw new CantMoveActiveShip();
 
-            this.MoveItemHere(this.ItemManager.LoadItem(itemID), this.mFlag, call.Client);
+            this.MoveItemHere(this.ItemManager.GetItem(itemID), this.mFlag, call.Client);
+
+            return null;
+        }
+
+        public PyDataType Add(PyInteger itemID, PyInteger quantity, CallInformation call)
+        {
+            if (itemID == call.Client.ShipID)
+                throw new CantMoveActiveShip();
+
+            this.MoveItemHere(this.ItemManager.GetItem(itemID), this.mFlag, call.Client);
 
             return null;
         }
@@ -108,7 +118,7 @@ namespace Node.Services.Inventory
                 throw new CantMoveActiveShip();
 
             // TODO: ADD CONSTRAINTS CHECKS FOR THE FLAG
-            ItemEntity item = this.ItemManager.LoadItem(itemID);
+            ItemEntity item = this.ItemManager.GetItem(itemID);
 
             // ensure there's enough quantity in the stack to split it
             if (quantity > item.Quantity)
@@ -242,6 +252,8 @@ namespace Node.Services.Inventory
                 if (firstItem.Singleton == true)
                     continue;
                 
+                // there's some specific groups that cannot be assembled even if they're singleton
+                
                 foreach ((int secondItemID, ItemEntity secondItem) in this.mInventory.Items)
                 {
                     // ignore the same itemID as they cannot really be merged
@@ -289,6 +301,12 @@ namespace Node.Services.Inventory
 
             // after the service is bound the call can be run (if required)
             return new PySubStruct(new PySubStream(boundServiceInformation));
+        }
+
+        public PyDataType BreakPlasticWrap(PyInteger crateID, CallInformation call)
+        {
+            // TODO: ensure this item is a plastic wrap and mark the contract as void
+            return null;
         }
     }
 }

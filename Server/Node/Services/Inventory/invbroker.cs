@@ -1,7 +1,9 @@
 using Node.Database;
 using Node.Exceptions;
+using Node.Exceptions.ship;
 using Node.Inventory;
 using Node.Inventory.Items;
+using Node.Inventory.Items.Types;
 using Node.Inventory.Notifications;
 using Node.Network;
 using PythonTypes.Types.Exceptions;
@@ -80,21 +82,39 @@ namespace Node.Services.Inventory
             return new invbroker(this.ItemDB, this.ItemManager, this.NodeContainer, this.SystemManager, this.BoundServiceManager, tupleData[0] as PyInteger, call.Client);
         }
 
+        private ItemInventory CheckInventoryBeforeLoading(ItemEntity inventoryItem)
+        {
+            // also make sure it's a container
+            if (inventoryItem is ItemInventory == false)
+                throw new ItemNotContainer(inventoryItem.ID);
+            
+            // extra check, ensure it's a singleton if not a station
+            if (inventoryItem is Station == false && inventoryItem.Singleton == false)
+                throw new AssembleCCFirst();
+            
+            return inventoryItem as ItemInventory;
+        }
+
+        private PyDataType BindInventory(ItemInventory inventoryItem, int characterID, Client client, ItemFlags flag)
+        {
+            // build the meta inventory item now
+            ItemInventory inventoryByOwner = this.ItemManager.MetaInventoryManager.RegisterMetaInventoryForOwnerID(inventoryItem,
+                characterID);
+            
+            // create an instance of the inventory service and bind it to the item data
+            return BoundInventory.BindInventory(this.ItemDB, inventoryByOwner, flag, this.ItemManager, this.NodeContainer, this.BoundServiceManager, client);
+        }
+
         public PyDataType GetInventoryFromId(PyInteger itemID, PyInteger one, CallInformation call)
         {
             int callerCharacterID = call.Client.EnsureCharacterIsSelected();
             ItemEntity inventoryItem = this.ItemManager.LoadItem(itemID);
 
-            // also make sure it's a container
-            if (inventoryItem is ItemInventory == false)
-                throw new ItemNotContainer(itemID);
-
-            // build the meta inventory item now
-            ItemInventory inventoryByOwner = this.ItemManager.MetaInventoryManager.RegisterMetaInventoryForOwnerID(inventoryItem as ItemInventory,
-                callerCharacterID);
-
-            // create an instance of the inventory service and bind it to the item data
-            return BoundInventory.BindInventory(this.ItemDB, inventoryByOwner, ItemFlags.None, this.ItemManager, this.NodeContainer, this.BoundServiceManager, call.Client);
+            return this.BindInventory(
+                this.CheckInventoryBeforeLoading(inventoryItem),
+                callerCharacterID,
+                call.Client, ItemFlags.None
+            );
         }
 
         public PyDataType GetInventory(PyInteger containerID, PyNone none, CallInformation call)
@@ -125,16 +145,11 @@ namespace Node.Services.Inventory
             // get the inventory item first
             ItemEntity inventoryItem = this.ItemManager.LoadItem(this.mObjectID);
 
-            // also make sure it's a container
-            if (inventoryItem is ItemInventory == false)
-                throw new ItemNotContainer(inventoryItem.ID);
-
-            // build the meta inventory item now
-            ItemInventory inventoryByOwner = this.ItemManager.MetaInventoryManager.RegisterMetaInventoryForOwnerID(inventoryItem as ItemInventory,
-                callerCharacterID);
-            
-            // create an instance of the inventory service and bind it to the item data
-            return BoundInventory.BindInventory(this.ItemDB, inventoryByOwner, flag, this.ItemManager, this.NodeContainer, this.BoundServiceManager, call.Client);
+            return this.BindInventory(
+                this.CheckInventoryBeforeLoading(inventoryItem),
+                callerCharacterID,
+                call.Client, flag
+            );
         }
 
         public PyDataType TrashItems(PyList itemIDs, PyInteger stationID, CallInformation call)
@@ -165,7 +180,7 @@ namespace Node.Services.Inventory
         
         public PyDataType SetLabel(PyInteger itemID, PyString newLabel, CallInformation call)
         {
-            ItemEntity item = this.ItemManager.LoadItem(itemID);
+            ItemEntity item = this.ItemManager.GetItem(itemID);
 
             // ensure the itemID is owned by the client's character
             if (item.OwnerID != call.Client.EnsureCharacterIsSelected())
@@ -181,6 +196,40 @@ namespace Node.Services.Inventory
                 call.Client.ShipID = call.Client.ShipID;
 
             // TODO: CHECK IF ITEM BELONGS TO CORP AND NOTIFY CHARACTERS IN THIS NODE?
+            return null;
+        }
+
+        public PyDataType AssembleCargoContainer(PyInteger containerID, PyNone ignored, PyDecimal ignored2,
+            CallInformation call)
+        {
+            ItemEntity item = this.ItemManager.GetItem(containerID);
+
+            if (item.OwnerID != call.Client.EnsureCharacterIsSelected())
+                throw new TheItemIsNotYoursToTake(containerID);
+            
+            // ensure the item is a cargo container
+            switch (item.Type.Group.ID)
+            {
+                case (int) ItemGroups.CargoContainer:
+                case (int) ItemGroups.SecureCargoContainer:
+                case (int) ItemGroups.AuditLogSecureContainer:
+                case (int) ItemGroups.FreightContainer:
+                case (int) ItemGroups.Tool:
+                case (int) ItemGroups.MobileWarpDisruptor:
+                    break;
+                default:
+                    throw new ItemNotContainer(containerID);
+            }
+
+            bool oldSingleton = item.Singleton;
+            
+            // update singleton
+            item.Singleton = true;
+            item.Persist();
+
+            // notify the client
+            call.Client.NotifyMultiEvent(OnItemChange.BuildSingletonChange(item, oldSingleton));
+
             return null;
         }
     }

@@ -155,7 +155,7 @@ namespace PythonTypes.Types.Primitives
             set => this.mDictionary[index] = value;
         }
 
-        public IPyDictionaryEnumerable<T1, T2> GetEnumerable<T1, T2>() where T1 : PyDataType where T2 : PyDataType
+        public PyDictionary<T1, T2> GetEnumerable<T1, T2>() where T1 : PyDataType where T2 : PyDataType
         {
             return new PyDictionary<T1, T2>(this.mDictionary);
         }
