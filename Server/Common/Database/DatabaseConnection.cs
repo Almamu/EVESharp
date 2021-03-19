@@ -59,8 +59,7 @@ namespace Common.Database
                 MySqlCommand command = this.PrepareQuery(ref connection, query);
                 
                 // add values
-                foreach ((string namedParameter, object value) in values)
-                    command.Parameters.AddWithValue(namedParameter, value);
+                this.AddNamedParameters(values, command);
 
                 using (connection)
                 using (command)
