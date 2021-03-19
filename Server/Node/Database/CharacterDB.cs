@@ -584,8 +584,8 @@ namespace Node.Database
 
         public PyDataType GetJournal(int characterID, int? refTypeID, int accountKey, long maxDate, int? startTransactionID)
         {
-            // add one day to the minimum date to get the maximum date
-            long minDate = DateTime.FromFileTimeUtc(maxDate).AddDays(-1).ToFileTimeUtc();
+            // get the last 30 days of journal
+            long minDate = DateTime.FromFileTimeUtc(maxDate).AddDays(-30).ToFileTimeUtc();
             
             Dictionary<string, object> parameters = new Dictionary<string, object>()
             {
