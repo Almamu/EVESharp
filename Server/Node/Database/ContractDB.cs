@@ -32,6 +32,7 @@ using Node.Inventory.Items;
 using Node.Inventory.Items.Attributes;
 using Node.Inventory.Items.Types;
 using Node.Services.Contracts;
+using PythonTypes.Types.Collections;
 using PythonTypes.Types.Primitives;
 
 namespace Node.Database

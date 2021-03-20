@@ -13,6 +13,7 @@ using Node.Inventory.Items.Types;
 using Node.Inventory.Notifications;
 using Node.Inventory.SystemEntities;
 using PythonTypes;
+using PythonTypes.Types.Collections;
 using PythonTypes.Types.Exceptions;
 using PythonTypes.Types.Network;
 using PythonTypes.Types.Primitives;

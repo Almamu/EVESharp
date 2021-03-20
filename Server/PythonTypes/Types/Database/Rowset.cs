@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using MySql.Data.MySqlClient;
+using PythonTypes.Types.Collections;
 using PythonTypes.Types.Primitives;
 
 namespace PythonTypes.Types.Database

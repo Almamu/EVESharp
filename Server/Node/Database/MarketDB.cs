@@ -6,6 +6,7 @@ using MySql.Data.MySqlClient;
 using Node.Inventory;
 using Node.Inventory.Items;
 using Node.Market;
+using PythonTypes.Types.Collections;
 using PythonTypes.Types.Database;
 using PythonTypes.Types.Primitives;
 

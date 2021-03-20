@@ -5,6 +5,7 @@ using System.Reflection;
 using System.Runtime.ExceptionServices;
 using PythonTypes.Types.Primitives;
 using Common.Services.Exceptions;
+using PythonTypes.Types.Collections;
 
 namespace Common.Services
 {

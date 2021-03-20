@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Common.Database;
 using MySql.Data.MySqlClient;
 using Node.Inventory.Items;
+using PythonTypes.Types.Collections;
 using PythonTypes.Types.Database;
 using PythonTypes.Types.Primitives;
 

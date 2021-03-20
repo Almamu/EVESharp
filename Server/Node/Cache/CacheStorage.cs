@@ -30,6 +30,7 @@ using MySql.Data.MySqlClient;
 using Node.Inventory;
 using Node.Inventory.Items;
 using PythonTypes.Marshal;
+using PythonTypes.Types.Collections;
 using PythonTypes.Types.Complex;
 using PythonTypes.Types.Database;
 using PythonTypes.Types.Primitives;

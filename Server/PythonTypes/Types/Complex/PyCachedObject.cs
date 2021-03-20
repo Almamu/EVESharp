@@ -1,6 +1,7 @@
 using System;
 using System.Text;
 using PythonTypes.Compression;
+using PythonTypes.Types.Collections;
 using PythonTypes.Types.Primitives;
 
 namespace PythonTypes.Types.Complex

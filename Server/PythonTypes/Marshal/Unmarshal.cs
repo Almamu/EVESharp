@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using Org.BouncyCastle.Utilities.Zlib;
 using PythonTypes.Compression;
+using PythonTypes.Types.Collections;
 using PythonTypes.Types.Database;
 using PythonTypes.Types.Primitives;
 

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Common.Database;
 using MySql.Data.MySqlClient;
+using PythonTypes.Types.Collections;
 using PythonTypes.Types.Database;
 using PythonTypes.Types.Primitives;
 

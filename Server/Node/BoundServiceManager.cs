@@ -6,6 +6,7 @@ using Common.Logging;
 using Common.Services.Exceptions;
 using Node.Network;
 using Node.Services;
+using PythonTypes.Types.Collections;
 using PythonTypes.Types.Primitives;
 
 namespace Node

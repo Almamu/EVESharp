@@ -8,6 +8,7 @@ using Node.Inventory;
 using Node.Inventory.Items.Types;
 using Node.Network;
 using PythonTypes;
+using PythonTypes.Types.Collections;
 using PythonTypes.Types.Database;
 using PythonTypes.Types.Exceptions;
 using PythonTypes.Types.Primitives;
@@ -394,7 +395,7 @@ namespace Node.Services.Chat
             {
                 this.ParseChannelIdentifier(channel, out channelID, out channelType);
             }
-            catch (InvalidDataException ex)
+            catch (InvalidDataException)
             {
                 Log.Error("Error parsing channel identifier for LeaveChannel");
                 return null;

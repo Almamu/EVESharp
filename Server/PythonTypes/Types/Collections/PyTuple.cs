@@ -3,8 +3,9 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using PythonTypes.Types.Database;
+using PythonTypes.Types.Primitives;
 
-namespace PythonTypes.Types.Primitives
+namespace PythonTypes.Types.Collections
 {
     public class PyTuple : PyDataType, IEnumerable<PyDataType>
     {

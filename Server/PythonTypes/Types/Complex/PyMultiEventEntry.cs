@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
+using PythonTypes.Types.Collections;
 using PythonTypes.Types.Primitives;
 
 namespace PythonTypes.Types.Complex

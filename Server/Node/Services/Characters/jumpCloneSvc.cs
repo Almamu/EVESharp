@@ -8,6 +8,7 @@ using Node.Inventory.Items.Types;
 using Node.Inventory.SystemEntities;
 using Node.Market;
 using Node.Network;
+using PythonTypes.Types.Collections;
 using PythonTypes.Types.Database;
 using PythonTypes.Types.Exceptions;
 using PythonTypes.Types.Primitives;

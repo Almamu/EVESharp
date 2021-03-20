@@ -7,6 +7,7 @@ using Node.Exceptions.character;
 using Node.Inventory.Items.Attributes;
 using Node.Inventory.Notifications;
 using Node.Skills.Notifications;
+using PythonTypes.Types.Collections;
 using PythonTypes.Types.Exceptions;
 using PythonTypes.Types.Primitives;
 

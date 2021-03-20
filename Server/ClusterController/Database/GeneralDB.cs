@@ -27,6 +27,7 @@ using System.Collections.Generic;
 using Common.Database;
 using Common.Logging;
 using MySql.Data.MySqlClient;
+using PythonTypes.Types.Collections;
 using PythonTypes.Types.Primitives;
 
 namespace ClusterController.Database

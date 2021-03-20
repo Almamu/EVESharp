@@ -10,6 +10,7 @@ using Node.Inventory.Items;
 using Node.Inventory.Items.Types;
 using Node.Inventory.Notifications;
 using Node.Network;
+using PythonTypes.Types.Collections;
 using PythonTypes.Types.Database;
 using PythonTypes.Types.Exceptions;
 using PythonTypes.Types.Primitives;
@@ -195,7 +196,6 @@ namespace Node.Services.Contracts
                         break;
                     default:
                         throw new UserError("Unknown contract type");
-                        break;
                 }
                 
                 if (contractType == (int) ContractTypes.ItemExchange)

@@ -2,6 +2,7 @@
 using System.Runtime.CompilerServices;
 using MySql.Data.MySqlClient;
 using Org.BouncyCastle.Crypto.Encodings;
+using PythonTypes.Types.Collections;
 using PythonTypes.Types.Primitives;
 
 namespace PythonTypes.Types.Database

@@ -6,6 +6,7 @@ using Node.Inventory.Items;
 using Node.Inventory.Items.Types;
 using Node.Inventory.Notifications;
 using Node.Network;
+using PythonTypes.Types.Collections;
 using PythonTypes.Types.Exceptions;
 using PythonTypes.Types.Primitives;
 

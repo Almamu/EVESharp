@@ -10,6 +10,7 @@ using Common.Logging;
 using Common.Network;
 using Common.Packets;
 using MySql.Data.MySqlClient.Authentication;
+using PythonTypes.Types.Collections;
 using PythonTypes.Types.Network;
 using PythonTypes.Types.Primitives;
 

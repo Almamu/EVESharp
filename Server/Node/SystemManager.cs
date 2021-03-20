@@ -27,6 +27,7 @@ using Node.Database;
 using Node.Inventory;
 using Node.Inventory.Items.Types;
 using Node.Inventory.SystemEntities;
+using PythonTypes.Types.Collections;
 using PythonTypes.Types.Primitives;
 
 namespace Node

@@ -3,6 +3,7 @@ using System.Runtime.CompilerServices;
 using System.Security.Permissions;
 using MySql.Data.MySqlClient;
 using Org.BouncyCastle.Security;
+using PythonTypes.Types.Collections;
 using PythonTypes.Types.Primitives;
 
 namespace PythonTypes.Types.Database

@@ -31,6 +31,7 @@ using Common.Database;
 using Common.Logging;
 using Common.Network;
 using MySqlX.XDevAPI;
+using PythonTypes.Types.Collections;
 using PythonTypes.Types.Network;
 using PythonTypes.Types.Primitives;
 

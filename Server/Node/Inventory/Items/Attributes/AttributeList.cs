@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using PythonTypes.Types.Collections;
 using PythonTypes.Types.Primitives;
 
 namespace Node.Inventory.Items.Attributes

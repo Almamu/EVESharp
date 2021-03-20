@@ -1,51 +1,9 @@
-#region
-
-using System;
 using System.Collections;
 using System.Collections.Generic;
+using PythonTypes.Types.Primitives;
 
-#endregion
-
-namespace PythonTypes.Types.Primitives
+namespace PythonTypes.Types.Collections
 {
-    public interface IPyListEnumerable<T> : IEnumerable where T : PyDataType
-    {
-        new IPyListEnumerator<T> GetEnumerator();
-    }
-
-    public interface IPyListEnumerator<T> : IEnumerator<T> where T : PyDataType
-    {
-    }
-    
-    public class PyListEnumerator<T> : IPyListEnumerator<T> where T : PyDataType
-    {
-        protected IEnumerator<PyDataType> mEnumerator;
-
-        public PyListEnumerator(IEnumerator<PyDataType> enumerator)
-        {
-            this.mEnumerator = enumerator;
-        }
-        
-        public bool MoveNext()
-        {
-            return this.mEnumerator.MoveNext();
-        }
-
-        public void Reset()
-        {
-            this.mEnumerator.Reset();
-        }
-
-        public T Current => this.mEnumerator.Current as T;
-
-        object? IEnumerator.Current => Current;
-
-        public void Dispose()
-        {
-            this.mEnumerator.Dispose();
-        }
-    }
-    
     public class PyList<T> : PyList, IPyListEnumerable<T> where T : PyDataType
     {
         public PyList() : base()
@@ -136,7 +94,6 @@ namespace PythonTypes.Types.Primitives
         {
             return new PyList<T>(this.mList);
         }
-
 
         IEnumerator IEnumerable.GetEnumerator()
         {

@@ -36,6 +36,7 @@ using Node.Inventory.Notifications;
 using Node.Inventory.SystemEntities;
 using Node.Network;
 using Node.Skills.Notifications;
+using PythonTypes.Types.Collections;
 using PythonTypes.Types.Complex;
 using PythonTypes.Types.Exceptions;
 using PythonTypes.Types.Network;
