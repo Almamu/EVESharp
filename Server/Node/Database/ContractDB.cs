@@ -132,46 +132,91 @@ namespace Node.Database
             );
         }
 
-        public PyDataType GetContractsForOwner(int characterID, int corporationID)
+        public PyDataType GetContractsForOwner(int ownerID, int? contractType, int? contractStatus)
         {
-            return Database.PrepareCRowsetQuery(
-                "SELECT contractID, issuerID, issuerCorpID, type, availability, assigneeID, expiretime, numDays, startStationID, start.solarSystemID AS startSolarSystemID, start.regionID AS startRegionID, endStationID, end.solarSystemID AS endSolarSystemID, end.regionID AS endRegionID, price, reward, collateral, title, description, forCorp, status, isAccepted, acceptorID, dateIssued, dateExpired, dateAccepted, dateCompleted, volume, requiresAttentionByOwner, requiresAttentionByAssignee, crateID, issuerWalletKey, issuerAllianceID, acceptorWalletKey FROM conContracts LEFT JOIN staStations AS start ON start.stationID = startStationID LEFT JOIN staStations AS end ON end.stationID = endStationID WHERE (issuerID = @characterID AND forCorp = @notForCorp) OR (issuerCorpID = @corporationID AND forCorp = @forCorp)",
-                new Dictionary<string, object>()
-                {
-                    {"@characterID", characterID},
-                    {"@corporationID", corporationID},
-                    {"@notForCorp", 0},
-                    {"@forCorp", 1}
-                }
-            );
+            string contractQuery =
+                "SELECT contractID, issuerID, issuerCorpID, type, availability, assigneeID, expiretime, numDays, startStationID, start.solarSystemID AS startSolarSystemID, start.regionID AS startRegionID, endStationID, end.solarSystemID AS endSolarSystemID, end.regionID AS endRegionID, price, reward, collateral, title, description, forCorp, status, isAccepted, acceptorID, dateIssued, dateExpired, dateAccepted, dateCompleted, volume, requiresAttentionByOwner, requiresAttentionByAssignee, crateID, issuerWalletKey, issuerAllianceID, acceptorWalletKey FROM conContracts LEFT JOIN staStations AS start ON start.stationID = startStationID LEFT JOIN staStations AS end ON end.stationID = endStationID WHERE ((issuerID = @ownerID AND forCorp = @notForCorp) OR (issuerCorpID = @ownerID AND forCorp = @forCorp))";
+
+            Dictionary<string, object> values = new Dictionary<string, object>()
+            {
+                {"@ownerID", ownerID},
+                {"@notForCorp", 0},
+                {"@forCorp", 1},
+            };
+
+            if (contractType != null)
+            {
+                contractQuery += " AND type = @contractType";
+                values["@contractType"] = contractType;
+            }
+
+            if (contractStatus != null)
+            {
+                contractQuery += " AND status = @contractStatus";
+                values["@contractStatus"] = contractStatus;
+            }
+            
+            return Database.PrepareCRowsetQuery(contractQuery, values);
         }
 
-        public PyDataType GetContractBidsForOwner(int characterID, int corporationID)
+        public PyDataType GetContractBidsForOwner(int ownerID, int? contractType, int? contractStatus)
         {
+            string bidsQuery =
+                "SELECT bidID, contractID, conBids.issuerID, quantity, conBids.issuerCorpID, issuerStationID FROM conBids LEFT JOIN conContracts USING (contractID) WHERE (conContracts.issuerID = @ownerID AND conContracts.forCorp = @notForCorp) OR (conContracts.issuerCorpID = @ownerID AND conContracts.forCorp = @forCorp)";
+            Dictionary<string, object> values = new Dictionary<string, object>()
+            {
+                {"@ownerID", ownerID},
+                {"@forCorp", 1},
+                {"@notForCorp", 0}
+            };
+            
+            if (contractType != null)
+            {
+                bidsQuery += " AND type = @contractType";
+                values["@contractType"] = contractType;
+            }
+
+            if (contractStatus != null)
+            {
+                bidsQuery += " AND status = @contractStatus";
+                values["@contractStatus"] = contractStatus;
+            }
+            
             return Database.PrepareIntRowDictionary(
-                "SELECT bidID, contractID, conBids.issuerID, quantity, conBids.issuerCorpID, issuerStationID FROM conBids WHERE issuerID = @characterID OR issuerCorpID = @corporationID",
+                bidsQuery,
                 1,
-                new Dictionary<string, object>()
-                {
-                    {"@characterID", characterID},
-                    {"@corporationID", corporationID}
-                }
+                values
             );
         }
 
-        public PyDataType GetContractItemsForOwner(int characterID, int corporationID)
+        public PyDataType GetContractItemsForOwner(int ownerID, int? contractType, int? contractStatus)
         {
             // TODO: INCLUDE BLUEPRINT INFORMATION!
+            string itemsQuery =
+                "SELECT contractID, itemTypeID, quantity, inCrate FROM conItems LEFT JOIN conContracts USING (contractID) WHERE (issuerID = @ownerID AND forCorp = @notForCorp) OR (issuerCorpID = @ownerID AND forCorp = @forCorp)";
+            Dictionary<string, object> values = new Dictionary<string, object>()
+            {
+                {"@ownerID", ownerID},
+                {"@notForCorp", 0},
+                {"@forCorp", 1}
+            };
+            
+            if (contractType != null)
+            {
+                itemsQuery += " AND type = @contractType";
+                values["@contractType"] = contractType;
+            }
+
+            if (contractStatus != null)
+            {
+                itemsQuery += " AND status = @contractStatus";
+                values["@contractStatus"] = contractStatus;
+            }
+            
             return Database.PrepareIntRowDictionary(
-                "SELECT contractID, itemTypeID, quantity, inCrate FROM conItems LEFT JOIN conContracts USING (contractID) WHERE (issuerID = @characterID AND forCorp = @notForCorp) OR (issuerCorpID = @corporationID AND forCorp = @forCorp)",
+                itemsQuery,
                 0,
-                new Dictionary<string, object>()
-                {
-                    {"@characterID", characterID},
-                    {"@corporationID", corporationID},
-                    {"@notForCorp", 0},
-                    {"@forCorp", 1}
-                }
+                values
             );
         }
 
@@ -410,6 +455,17 @@ namespace Node.Database
                     {"@contractID", contractID}
                 }
             ).Close();
+        }
+
+        public PyDataType GetItemsInContainer(int characterID, int containerID)
+        {
+            return Database.PreparePackedRowListQuery(
+                "SELECT itemID, typeID, quantity FROM invItems WHERE locationID = @containerID",
+                new Dictionary<string, object>()
+                {
+                    {"@containerID", containerID}
+                }
+            );
         }
     }
 }

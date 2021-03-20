@@ -53,8 +53,10 @@ namespace Node.Services.Contracts
             return this.DB.CollectMyPageInfo(call.Client.EnsureCharacterIsSelected(), call.Client.CorporationID);
         }
 
-        public PyDataType GetContractListForOwner(PyInteger ownerID, PyInteger contractStatus, PyInteger contractType, PyInteger action, CallInformation call)
+        public PyDataType GetContractListForOwner(PyInteger ownerID, PyInteger contractStatus, PyInteger contractType, PyBool issuedToUs, CallInformation call)
         {
+            int? contractTypeInt = null;
+            int? contractStatusInt = null;
             int? startContractID = null;
             PyDataType pyStartContractID = null;
 
@@ -64,13 +66,17 @@ namespace Node.Services.Contracts
                 startContractID = pyStartContractID as PyInteger;
             
             int resultsPerPage = call.NamedPayload["num"] as PyInteger;
-            int characterID = call.Client.EnsureCharacterIsSelected();
+
+            if (contractStatus != null)
+                contractStatusInt = contractStatus;
+            if (contractType != null)
+                contractTypeInt = contractType;
             
             return KeyVal.FromDictionary(new PyDictionary()
                 {
-                    ["contracts"] = this.DB.GetContractsForOwner(characterID, call.Client.CorporationID),
-                    ["bids"] = this.DB.GetContractBidsForOwner(characterID, call.Client.CorporationID),
-                    ["items"] = this.DB.GetContractItemsForOwner(characterID, call.Client.CorporationID)
+                    ["contracts"] = this.DB.GetContractsForOwner(ownerID, contractTypeInt, contractStatusInt),
+                    ["bids"] = this.DB.GetContractBidsForOwner(ownerID, contractTypeInt, contractStatusInt),
+                    ["items"] = this.DB.GetContractItemsForOwner(ownerID, contractTypeInt, contractStatusInt)
                 }
             );
         }
@@ -230,6 +236,12 @@ namespace Node.Services.Contracts
             PyInteger flag, CallInformation call)
         {
             return null;
+        }
+
+        public PyDataType GetItemsInContainer(PyInteger locationID, PyInteger containerID, PyInteger forCorp,
+            PyInteger flag, CallInformation call)
+        {
+            return this.DB.GetItemsInContainer(call.Client.EnsureCharacterIsSelected(), containerID);
         }
     }
 }
