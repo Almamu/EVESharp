@@ -155,7 +155,7 @@ namespace Node.Services.Contracts
             if (forCorp == false)
             {
                 // check limits for the character
-                long maximumContracts = 1 + 4 * character.GetSkillLevel(ItemTypes.Contracting);
+                long maximumContracts = 1 + (4 * character.GetSkillLevel(ItemTypes.Contracting));
 
                 if (maximumContracts <= this.DB.GetOutstandingContractsCountForPlayer(callerCharacterID))
                     throw new ConTooManyContractsMax(maximumContracts);

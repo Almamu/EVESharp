@@ -191,7 +191,6 @@ namespace Node.Database
 
         public PyDataType GetContractItemsForOwner(int ownerID, int? contractType, int? contractStatus)
         {
-            // TODO: INCLUDE BLUEPRINT INFORMATION!
             string itemsQuery =
                 "SELECT contractID, itemTypeID AS typeID, quantity, inCrate, materialLevel, productivityLevel, licensedProductionRunsRemaining AS bpRuns FROM conItems LEFT JOIN invBlueprints USING(itemID) LEFT JOIN conContracts USING (contractID) WHERE (issuerID = @ownerID AND forCorp = @notForCorp) OR (issuerCorpID = @ownerID AND forCorp = @forCorp) ORDER BY contractID";
             Dictionary<string, object> values = new Dictionary<string, object>()
