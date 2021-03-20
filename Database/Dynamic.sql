@@ -288,21 +288,6 @@ CREATE TABLE `droneState` (
 
 /*Data for the table `droneState` */
 
-/*Table structure for table `invBlueprints` */
-
-DROP TABLE IF EXISTS `invBlueprints`;
-
-CREATE TABLE `invBlueprints` (
-  `blueprintID` int(10) unsigned NOT NULL,
-  `copy` tinyint(1) unsigned NOT NULL default '0',
-  `materialLevel` int(10) unsigned NOT NULL default '0',
-  `productivityLevel` int(10) unsigned NOT NULL default '0',
-  `licensedProductionRunsRemaining` int(10) NOT NULL default '-1',
-  PRIMARY KEY  (`blueprintID`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
-/*Data for the table `invBlueprints` */
-
 /*Table structure for table `npcStandings` */
 
 DROP TABLE IF EXISTS `npcStandings`;

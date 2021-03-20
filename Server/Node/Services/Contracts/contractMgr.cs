@@ -101,9 +101,8 @@ namespace Node.Services.Contracts
             );
         }
 
-        private void PrepareItemsForCourierContract(MySqlConnection connection,
-            ulong contractID, ClusterConnection clusterConnection, PyList itemList, Station station, int ownerID,
-            int shipID)
+        private void PrepareItemsForCourierOrAuctionContract(MySqlConnection connection, ulong contractID,
+            ClusterConnection clusterConnection, PyList itemList, Station station, int ownerID, int shipID)
         {
             // create the container in the system to ensure it's not visible to the player
             Container container = this.ItemManager.CreateSimpleItem(this.TypeManager[ItemTypes.PlasticWrap],
@@ -133,15 +132,17 @@ namespace Node.Services.Contracts
         }
         
         public PyDataType CreateContract(PyInteger contractType, PyInteger availability, PyInteger assigneeID,
-            PyInteger expireTime, PyInteger duration, PyInteger startStationID, PyInteger endStationID, PyInteger price,
-            PyInteger reward, PyInteger collateral, PyString title, PyString description, CallInformation call)
+            PyInteger expireTime, PyInteger courierContractDuration, PyInteger startStationID, PyInteger endStationID, PyInteger priceOrStartingBid,
+            PyInteger reward, PyInteger collateralOrBuyoutPrice, PyString title, PyString description, CallInformation call)
         {
+            if (assigneeID != null && (ItemManager.IsNPC(assigneeID) == true || ItemManager.IsNPCCorporationID(assigneeID) == true))
+                throw new ConNPCNotAllowed();
+            
             // check for limits on contract creation
             int callerCharacterID = call.Client.EnsureCharacterIsSelected();
             
-            if (duration < 1 || expireTime < 1440)
+            if (expireTime < 1440 || (courierContractDuration < 1 && contractType == (int) ContractTypes.Courier))
                 throw new ConDurationZero();
-
             if (startStationID == endStationID)
                 throw new ConDestinationSame();
 
@@ -172,15 +173,15 @@ namespace Node.Services.Contracts
                 // named payload contains itemList, flag, requestItemTypeList and forCorp
                 ulong contractID = this.DB.CreateContract(connection, call.Client.EnsureCharacterIsSelected(),
                     call.Client.CorporationID, call.Client.AllianceID, (ContractTypes) (int) contractType, availability,
-                    assigneeID, expireTime, duration, startStationID, endStationID, price, reward, collateral, title,
-                    description, 1000);
-                
+                    assigneeID, expireTime, courierContractDuration, startStationID, endStationID, priceOrStartingBid,
+                    reward, collateralOrBuyoutPrice, title, description, 1000);
+
                 switch ((int) contractType)
                 {
+                    case (int) ContractTypes.ItemExchange:
                     case (int) ContractTypes.Auction:
-                        break;
                     case (int) ContractTypes.Courier:
-                        this.PrepareItemsForCourierContract(
+                        this.PrepareItemsForCourierOrAuctionContract(
                             connection,
                             contractID,
                             call.Client.ClusterConnection,
@@ -192,12 +193,13 @@ namespace Node.Services.Contracts
                         break;
                     case (int) ContractTypes.Loan:
                         break;
-                    case (int) ContractTypes.ItemExchange:
-                        break;
                     default:
                         throw new UserError("Unknown contract type");
                         break;
                 }
+                
+                if (contractType == (int) ContractTypes.ItemExchange)
+                    this.DB.PrepareRequestedItems(connection, contractID, call.NamedPayload["requestItemTypeList"] as PyList);
                 
                 return contractID;
             }
@@ -229,6 +231,19 @@ namespace Node.Services.Contracts
 
         public PyDataType DeleteContract(PyInteger contractID, PyObjectData keyVal, CallInformation call)
         {
+            using MySqlConnection connection = this.MarketDB.AcquireMarketLock();
+            try
+            {
+                // get contract type and status
+                
+                // get the items back to where they belong (if any)
+                
+                // 
+            }
+            finally
+            {
+                this.MarketDB.ReleaseMarketLock(connection);
+            }
             return null;
         }
 

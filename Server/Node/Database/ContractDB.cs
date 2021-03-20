@@ -193,7 +193,7 @@ namespace Node.Database
         {
             // TODO: INCLUDE BLUEPRINT INFORMATION!
             string itemsQuery =
-                "SELECT contractID, itemTypeID, quantity, inCrate FROM conItems LEFT JOIN conContracts USING (contractID) WHERE (issuerID = @ownerID AND forCorp = @notForCorp) OR (issuerCorpID = @ownerID AND forCorp = @forCorp)";
+                "SELECT contractID, itemTypeID AS typeID, quantity, inCrate, materialLevel, productivityLevel, licensedProductionRunsRemaining AS bpRuns FROM conItems LEFT JOIN invBlueprints USING(itemID) LEFT JOIN conContracts USING (contractID) WHERE (issuerID = @ownerID AND forCorp = @notForCorp) OR (issuerCorpID = @ownerID AND forCorp = @forCorp) ORDER BY contractID";
             Dictionary<string, object> values = new Dictionary<string, object>()
             {
                 {"@ownerID", ownerID},
@@ -213,7 +213,7 @@ namespace Node.Database
                 values["@contractStatus"] = contractStatus;
             }
             
-            return Database.PrepareIntRowDictionary(
+            return Database.PrepareIntPackedRowListDictionary(
                 itemsQuery,
                 0,
                 values
@@ -223,17 +223,18 @@ namespace Node.Database
         public PyDataType GetItemsInStationForPlayer(int characterID, int stationID)
         {
             return Database.PrepareRowsetQuery(
-                "SELECT itemID, typeID, categoryID, groupID, singleton, quantity, flag, contraband FROM invItems LEFT JOIN invTypes USING (typeID) LEFT JOIN invGroups USING (groupID) WHERE ownerID = @characterID AND locationID = @stationID",
+                "SELECT itemID, typeID, categoryID, groupID, singleton, quantity, flag, contraband FROM invItems LEFT JOIN invTypes USING (typeID) LEFT JOIN invGroups USING (groupID) WHERE ownerID = @characterID AND locationID = @stationID AND flag = @flagHangar",
                 new Dictionary<string, object>()
                 {
                     {"@characterID", characterID},
-                    {"@stationID", stationID}
+                    {"@stationID", stationID},
+                    {"@flagHangar", ItemFlags.Hangar}
                 }
             );
         }
 
         public ulong CreateContract(MySqlConnection connection, int characterID, int corporationID, int? allianceID, ContractTypes type, int availability,
-            int? assigneeID, int expireTime, int duration, int startStationID, int endStationID, double price,
+            int? assigneeID, int expireTime, int duration, int startStationID, int? endStationID, double price,
             double reward, double collateral, string title, string description, int issuerWalletID)
         {
             return Database.PrepareQueryLID(ref connection,
@@ -300,7 +301,7 @@ namespace Node.Database
         public PyDataType GetContractItems(int contractID, int characterID, int corporationID)
         {
             return Database.PrepareRowsetQuery(
-                "SELECT itemTypeID, quantity, inCrate, itemID FROM conItems  LEFT JOIN conContracts USING(contractID) WHERE ((availability = 1 AND (conContracts.issuerID = @characterID OR conContracts.issuerCorpID = @corporationID OR assigneeID = @characterID OR assigneeID = @corporationID OR acceptorID = @characterID OR acceptorID = @corporationID)) OR availability = 0) AND contractID = @contractID",
+                "SELECT itemTypeID AS typeID, quantity, inCrate, itemID, materialLevel, productivityLevel, licensedProductionRunsRemaining AS bpRuns FROM conItems LEFT JOIN invBlueprints USING(itemID) LEFT JOIN conContracts USING(contractID) WHERE ((availability = 1 AND (conContracts.issuerID = @characterID OR conContracts.issuerCorpID = @corporationID OR assigneeID = @characterID OR assigneeID = @corporationID OR acceptorID = @characterID OR acceptorID = @corporationID)) OR availability = 0) AND contractID = @contractID",
                 new Dictionary<string, object>()
                 {
                     {"@characterID", characterID},
@@ -466,6 +467,39 @@ namespace Node.Database
                     {"@containerID", containerID}
                 }
             );
+        }
+
+        public void PrepareRequestedItems(MySqlConnection connection, ulong contractID, PyList requestItemTypeList)
+        {
+            string query = "INSERT INTO conItems(contractID, itemTypeID, quantity, inCrate)VALUES";
+            Dictionary<string, object> values = new Dictionary<string, object>()
+            {
+                {"@contractID", contractID},
+                {"@inCrate", 0}
+            };
+
+            int entry = 0;
+            
+            foreach (PyList itemTypeList in requestItemTypeList)
+            {
+                PyList<PyInteger> itemEntry = itemTypeList.GetEnumerable<PyInteger>();
+                PyInteger typeID = itemEntry[0];
+                PyInteger quantity = itemEntry[1];
+
+                query += $"(@contractID, @typeID{entry}, @quantity{entry}, @inCrate)";
+                values[$"@typeID{entry}"] = typeID;
+                values[$"@quantity{entry}"] = quantity;
+
+                if (entry > 0)
+                    query += ",";
+
+                entry++;
+            }
+            
+            // remove the last ','
+            query.TrimEnd(',');
+
+            Database.PrepareQuery(ref connection, query, values).Close();
         }
     }
 }

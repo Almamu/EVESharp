@@ -589,6 +589,70 @@ namespace Common.Database
                 throw;
             }
         }
+        
+        /// <summary>
+        /// Runs one prepared query with the given values as parameters and returns an IntPackedRowListDictionary representing
+        /// the result
+        /// </summary>
+        /// <param name="query">The prepared query</param>
+        /// <returns>The IntRowDictionary object representing the result</returns>
+        public PyDataType PrepareIntPackedRowListDictionary(string query, int keyColumnIndex)
+        {
+            try
+            {
+                MySqlConnection connection = null;
+                // create the correct command
+                MySqlCommand command = this.PrepareQuery(ref connection, query);
+
+                MySqlDataReader reader = command.ExecuteReader();
+                
+                using (connection)
+                using (reader)
+                {
+                    // run the prepared statement
+                    return IntPackedRowListDictionary.FromMySqlDataReader(reader, keyColumnIndex);
+                }
+            }
+            catch (Exception e)
+            {
+                Log.Error($"MySQL error: {e.Message}");
+                throw;
+            }
+        }
+        
+        /// <summary>
+        /// Runs one prepared query with the given values as parameters and returns an IntPackedRowListDictionary representing
+        /// the result
+        /// </summary>
+        /// <param name="query">The prepared query</param>
+        /// <param name="values">The key-value pair of values to use when running the query</param>
+        /// <returns>The IntRowDictionary object representing the result</returns>
+        public PyDataType PrepareIntPackedRowListDictionary(string query, int keyColumnIndex, Dictionary<string, object> values)
+        {
+            try
+            {
+                MySqlConnection connection = null;
+                // create the correct command
+                MySqlCommand command = this.PrepareQuery(ref connection, query);
+                
+                // add values
+                this.AddNamedParameters(values, command);
+
+                MySqlDataReader reader = command.ExecuteReader();
+                
+                using (connection)
+                using (reader)
+                {
+                    // run the prepared statement
+                    return IntPackedRowListDictionary.FromMySqlDataReader(reader, keyColumnIndex);
+                }
+            }
+            catch (Exception e)
+            {
+                Log.Error($"MySQL error: {e.Message}");
+                throw;
+            }
+        }
 
         /// <summary>
         /// Runs one prepared query with the given values as parameters and returns a RowList representing

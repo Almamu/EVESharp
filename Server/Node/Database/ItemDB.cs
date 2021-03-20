@@ -440,7 +440,7 @@ namespace Node.Database
         {
             MySqlConnection connection = null;
             MySqlDataReader reader = Database.PrepareQuery(ref connection,
-                "SELECT copy, materialLevel, productivityLevel, licensedProductionRunsRemaining FROM invBlueprints WHERE blueprintID = @itemID",
+                "SELECT copy, materialLevel, productivityLevel, licensedProductionRunsRemaining FROM invBlueprints WHERE itemID = @itemID",
                 new Dictionary<string, object>()
                 {
                     {"@itemID", item.ID}
@@ -1187,10 +1187,10 @@ namespace Node.Database
         public PyDataType ListStations(int ownerID)
         {
             return Database.PrepareCRowsetQuery(
-                "SELECT stationID, COUNT(itemID) AS itemCount, COUNT(invBlueprints.blueprintID) AS blueprintCount " +
+                "SELECT stationID, COUNT(itemID) AS itemCount, COUNT(invBlueprints.itemID) AS blueprintCount " +
                 "FROM staStations " +
                 "LEFT JOIN invItems ON locationID = stationID " +
-                "LEFT JOIN invBlueprints ON invBlueprints.blueprintID = itemID " +
+                "LEFT JOIN invBlueprints USING(itemID) " +
                 "WHERE ownerID=@characterID AND flag=@hangarFlag " +
                 "GROUP BY stationID",
                 new Dictionary<string, object>()

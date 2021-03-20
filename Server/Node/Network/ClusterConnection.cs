@@ -17,6 +17,7 @@ using PythonTypes.Types.Exceptions;
 using PythonTypes.Types.Network;
 using PythonTypes.Types.Primitives;
 using SimpleInjector;
+using Container = SimpleInjector.Container;
 
 namespace Node.Network
 {
