@@ -5,6 +5,8 @@ using Node.Inventory;
 using Node.Inventory.Items.Types;
 using Node.Market;
 using Node.Network;
+using PythonTypes.Types.Collections;
+using PythonTypes.Types.Database;
 using PythonTypes.Types.Exceptions;
 using PythonTypes.Types.Primitives;
 
@@ -53,14 +55,16 @@ namespace Node.Services.Inventory
             return new insuranceSvc(this.ItemManager, this.DB, this.MarketDB, this.SystemManager, this.BoundServiceManager, objectData as PyInteger, call.Client);
         }
 
-        public PyDataType GetContracts(CallInformation call)
+        public PyList<PyPackedRow> GetContracts(CallInformation call)
         {
             if (this.mStationID == 0)
             {
-                if (call.Client.ShipID == null)
+                int? shipID = call.Client.ShipID;
+                
+                if (shipID is null)
                     throw new CustomError($"The character is not onboard any ship");
                 
-                return this.DB.GetContractForShip(call.Client.EnsureCharacterIsSelected(), (int) call.Client.ShipID);
+                return this.DB.GetContractForShip(call.Client.EnsureCharacterIsSelected(), (int) shipID);
             }
             else
             {
@@ -68,12 +72,12 @@ namespace Node.Services.Inventory
             }
         }
 
-        public PyDataType GetContractForShip(PyInteger itemID, CallInformation call)
+        public PyList<PyPackedRow> GetContractForShip(PyInteger itemID, CallInformation call)
         {
             return this.DB.GetContractForShip(call.Client.EnsureCharacterIsSelected(), itemID);
         }
 
-        public PyDataType GetContracts(PyInteger includeCorp, CallInformation call)
+        public PyList<PyPackedRow> GetContracts(PyInteger includeCorp, CallInformation call)
         {
             if (includeCorp == 0)
                 return this.DB.GetContractsForShipsOnStation(call.Client.EnsureCharacterIsSelected(), this.mStationID);
@@ -81,7 +85,7 @@ namespace Node.Services.Inventory
                 return this.DB.GetContractsForShipsOnStationIncludingCorp(call.Client.EnsureCharacterIsSelected(), call.Client.CorporationID, this.mStationID);
         }
 
-        public PyDataType InsureShip(PyInteger itemID, PyDecimal insuranceCost, PyInteger isCorpItem, CallInformation call)
+        public PyBool InsureShip(PyInteger itemID, PyDecimal insuranceCost, PyInteger isCorpItem, CallInformation call)
         {
             int callerCharacterID = call.Client.EnsureCharacterIsSelected();
             

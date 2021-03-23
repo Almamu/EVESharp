@@ -152,20 +152,14 @@ namespace Node.Services.Inventory
 
         public PyDataType MultiMerge(PyList merges, CallInformation call)
         {
-            foreach (PyDataType merge in merges)
+            foreach (PyTuple merge in merges.GetEnumerable<PyTuple>())
             {
-                // ignore wrong multimerge formats
-                if (merge is PyTuple == false)
+                if (merge[0] is PyInteger == false || merge[1] is PyInteger == false || merge[2] is PyInteger == false)
                     continue;
 
-                PyTuple tuple = merge as PyTuple;
-
-                if (tuple[0] is PyInteger == false || tuple[1] is PyInteger == false || tuple[2] is PyInteger == false)
-                    continue;
-
-                PyInteger fromItemID = tuple[0] as PyInteger;
-                PyInteger toItemID = tuple[1] as PyInteger;
-                PyInteger quantity = tuple[2] as PyInteger;
+                PyInteger fromItemID = merge[0] as PyInteger;
+                PyInteger toItemID = merge[1] as PyInteger;
+                PyInteger quantity = merge[2] as PyInteger;
 
                 if (this.mInventory.Items.TryGetValue(toItemID, out ItemEntity toItem) == false)
                     continue;
@@ -284,7 +278,7 @@ namespace Node.Services.Inventory
             return null;
         }
 
-        public static PyDataType BindInventory(ItemDB itemDB, ItemInventory item, ItemFlags flag, ItemManager itemManager, NodeContainer nodeContainer, BoundServiceManager boundServiceManager, Client client)
+        public static PySubStruct BindInventory(ItemDB itemDB, ItemInventory item, ItemFlags flag, ItemManager itemManager, NodeContainer nodeContainer, BoundServiceManager boundServiceManager, Client client)
         {
             BoundService instance = new BoundInventory(itemDB, item, flag, itemManager, nodeContainer, boundServiceManager, client);
             // bind the service
@@ -295,10 +289,11 @@ namespace Node.Services.Inventory
             // TODO: the expiration time is 1 day, might be better to properly support this?
             // TODO: investigate these a bit more closely in the future
             // TODO: i'm not so sure about the expiration time
-            PyTuple boundServiceInformation = new PyTuple(new PyDataType[]
+            PyTuple boundServiceInformation = new PyTuple(2)
             {
-                boundServiceStr, DateTime.UtcNow.Add(TimeSpan.FromDays(1)).ToFileTime()
-            });
+                [0] = boundServiceStr,
+                [1] = DateTime.UtcNow.Add(TimeSpan.FromDays(1)).ToFileTime()
+            };
 
             // after the service is bound the call can be run (if required)
             return new PySubStruct(new PySubStream(boundServiceInformation));

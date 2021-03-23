@@ -20,7 +20,7 @@ namespace Node.Services.Tutorial
             });
         }
 
-        public PyDataType GetContextHelp(CallInformation call)
+        public PyList GetContextHelp(CallInformation call)
         {
             return new PyList();
         }

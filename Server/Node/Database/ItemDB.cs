@@ -41,6 +41,7 @@ namespace Node.Database
         private ItemFactory ItemFactory { get; }
         private ClientManager ClientManager { get; }
         private TimerManager TimerManager { get; }
+        private NodeContainer Container { get; }
         private AttributeManager AttributeManager => this.ItemFactory.AttributeManager;
         private GroupManager GroupManager => this.ItemFactory.GroupManager;
         private CategoryManager CategoryManager => this.ItemFactory.CategoryManager;
@@ -333,7 +334,7 @@ namespace Node.Database
                     "UPDATE invItems SET nodeID = @nodeID WHERE itemID = @itemID",
                     new Dictionary<string, object>()
                     {
-                        {"@nodeID", Program.NodeID},
+                        {"@nodeID", this.Container.NodeID},
                         {"@itemID", itemID}
                     }
                 );
@@ -361,78 +362,6 @@ namespace Node.Database
                 while (reader.Read()) itemList.Add(reader.GetInt32(0));
 
                 return itemList;
-            }
-        }
-
-        /// <summary>
-        /// WARNING: ONLY USE WHEN THE ITEM IS NOT STATIC DATA AND DOES NOT BELONG TO OUR NODE!
-        /// </summary>
-        /// <param name="itemID"></param>
-        /// <returns></returns>
-        public PyInteger GetItemTypeID(int itemID)
-        {
-            MySqlConnection connection = null;
-            MySqlDataReader reader = Database.PrepareQuery(ref connection,
-                "SELECT typeID FROM invItems WHERE itemID = @itemID", new Dictionary<string, object>()
-                {
-                    {"@itemID", itemID}
-                }
-            );
-            
-            using(connection)
-            using (reader)
-            {
-                if (reader.Read() == false)
-                    return null;
-
-                return reader.GetInt32(0);
-            }
-        }
-
-        /// <summary>
-        /// WARNING: ONLY USE WHEN THE ITEM IS NOT STATIC DATA AND DOES NOT BELONG TO OUR NODE!
-        /// </summary>
-        /// <param name="itemID"></param>
-        /// <returns></returns>
-        public PyInteger GetItemLocationID(int itemID)
-        {
-            MySqlConnection connection = null;
-            MySqlDataReader reader = Database.PrepareQuery(ref connection,
-                "SELECT locationID FROM invItems WHERE itemID = @itemID",
-                new Dictionary<string, object>()
-                {
-                    {"@itemID", itemID}
-                }
-            );
-            
-            using (connection)
-            using (reader)
-            {
-                if (reader.Read() == false)
-                    return null;
-
-                return reader.GetInt32(0);
-            }
-        }
-        
-        public int GetCategoryID(int typeID)
-        {
-            MySqlConnection connection = null;
-            MySqlDataReader reader = Database.PrepareQuery(ref connection,
-                "SELECT invCategories.categoryID FROM invCategories LEFT JOIN invTypes ON invTypes.typeID = @typeID LEFT JOIN invGroups ON invGroups.groupID = invTypes.groupID WHERE invCategories.categoryID = invGroups.groupID",
-                new Dictionary<string, object>()
-                {
-                    {"@typeID",typeID}
-                }
-            );
-
-            using (connection)
-            using (reader)
-            {
-                if (reader.Read() == false)
-                    return 0;
-
-                return reader.GetInt32(0);
             }
         }
 
@@ -738,7 +667,7 @@ namespace Node.Database
                 }
             );
 
-            if (itemName != null)
+            if (itemName is not null)
             {
                 // create the item name entry if needed
                 Database.PrepareQuery(
@@ -754,7 +683,7 @@ namespace Node.Database
                 );
             }
 
-            if (x != null && y != null && z != null)
+            if (x is not null && y is not null && z is not null)
             {
                 // create the entry for item position
                 Database.PrepareQuery(
@@ -790,7 +719,7 @@ namespace Node.Database
                 }
             );
 
-            if (itemName != null)
+            if (itemName is not null)
             {
                 ItemType type = this.TypeManager[typeID];
                 
@@ -808,7 +737,7 @@ namespace Node.Database
                 );
             }
 
-            if (x != null && y != null && z != null)
+            if (x is not null && y is not null && z is not null)
             {
                 // create the entry for item position
                 Database.PrepareQuery(
@@ -1012,7 +941,7 @@ namespace Node.Database
             );
         }
 
-        public Dictionary<int, ItemAttribute> LoadAttributesForItem(int itemID)
+        private Dictionary<int, ItemAttribute> LoadAttributesForItem(int itemID)
         {
             MySqlConnection connection = null;
             MySqlDataReader reader = Database.PrepareQuery(ref connection,
@@ -1184,7 +1113,7 @@ namespace Node.Database
             );
         }
 
-        public PyDataType ListStations(int ownerID)
+        public CRowset ListStations(int ownerID)
         {
             return Database.PrepareCRowsetQuery(
                 "SELECT stationID, COUNT(itemID) AS itemCount, COUNT(invBlueprints.itemID) AS blueprintCount " +
@@ -1201,7 +1130,7 @@ namespace Node.Database
             );
         }
 
-        public PyDataType ListStationItems(int stationID, int ownerID)
+        public CRowset ListStationItems(int stationID, int ownerID)
         {
             return Database.PrepareCRowsetQuery(
                 "SELECT itemID, invItems.typeID, locationID, ownerID, flag, contraband, singleton, quantity,"+
@@ -1233,7 +1162,7 @@ namespace Node.Database
             );
         }
 
-        public PyDataType GetClonesInShipForCharacter(int characterID)
+        public Rowset GetClonesInShipForCharacter(int characterID)
         {
             return Database.PrepareRowsetQuery(
                 "SELECT itemID AS jumpCloneID, typeID, locationID FROM invItems WHERE flag = @cloneFlag AND ownerID = @characterID AND locationID NOT IN(SELECT stationID FROM staStations)",
@@ -1245,7 +1174,7 @@ namespace Node.Database
             );
         }
         
-        public PyDataType GetImplantsForCharacterClones(int characterID)
+        public Rowset GetImplantsForCharacterClones(int characterID)
         {
             return Database.PrepareRowsetQuery(
                 "SELECT invItems.itemID, invItems.typeID, invItems.locationID as jumpCloneID FROM invItems LEFT JOIN invItems second ON invItems.locationID = second.itemID  WHERE invItems.flag = @implantFlag AND second.flag = @cloneFlag AND second.ownerID = @characterID",
@@ -1336,11 +1265,12 @@ namespace Node.Database
             }
         }
         
-        public ItemDB(DatabaseConnection db, ItemFactory factory, ClientManager clientManager, TimerManager timerManager) : base(db)
+        public ItemDB(DatabaseConnection db, ItemFactory factory, ClientManager clientManager, TimerManager timerManager, NodeContainer container) : base(db)
         {
             this.ItemFactory = factory;
             this.ClientManager = clientManager;
             this.TimerManager = timerManager;
+            this.Container = container;
         }
     }
 }

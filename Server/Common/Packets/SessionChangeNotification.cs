@@ -7,7 +7,7 @@ namespace Common.Packets
     public class SessionChangeNotification
     {
         public int clueless = 0;
-        public PyDictionary changes = new PyDictionary();
+        public PyDictionary Changes = new PyDictionary();
         /// <summary>
         /// List of nodes interested in the session change
         ///
@@ -15,16 +15,19 @@ namespace Common.Packets
         /// All in all, EVESharp takes a different approach where all nodes know
         /// about all the clients so this is mainly useless for us
         /// </summary>
-        public PyList nodesOfInterest = new PyList();
+        public PyList NodesOfInterest = new PyList();
 
         public static implicit operator PyTuple(SessionChangeNotification notification)
         {
-            return new PyTuple(new PyDataType[]
+            return new PyTuple(2)
+            {
+                [0] = new PyTuple(2)
                 {
-                    new PyTuple(new PyDataType[] {notification.clueless, notification.changes}),
-                    notification.nodesOfInterest
-                }
-            );
+                    [0] = notification.clueless,
+                    [1] = notification.Changes
+                },
+                [1] = notification.NodesOfInterest
+            };
         }
 
         public static implicit operator SessionChangeNotification(PyTuple origin)
@@ -43,12 +46,13 @@ namespace Common.Packets
                 throw new InvalidDataException("Session data doesn't contain a integer as first element");
             if (sessionData[1] is PyDictionary == false)
                 throw new InvalidDataException("Session data doesn't contain a dictionary with the actual data");
-            
-            SessionChangeNotification scn = new SessionChangeNotification();
 
-            scn.nodesOfInterest = origin[1] as PyList;
-            scn.clueless = sessionData[0] as PyInteger;
-            scn.changes = sessionData[1] as PyDictionary;
+            SessionChangeNotification scn = new SessionChangeNotification
+            {
+                NodesOfInterest = origin[1] as PyList,
+                clueless = sessionData[0] as PyInteger,
+                Changes = sessionData[1] as PyDictionary
+            };
 
             return scn;
         }

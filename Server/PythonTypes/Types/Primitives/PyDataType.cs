@@ -5,17 +5,14 @@ namespace PythonTypes.Types.Primitives
 {
     public class PyDataType
     {
-        private PyObjectType Type { get; }
-
-        protected PyDataType(PyObjectType type)
+        protected PyDataType()
         {
-            this.Type = type;
         }
 
         public static implicit operator PyDataType(string str)
         {
-            if (str == null)
-                return new PyNone();
+            if (str is null)
+                return null;
 
             return new PyString(str);
         }
@@ -62,48 +59,48 @@ namespace PythonTypes.Types.Primitives
 
         public static implicit operator PyDataType(long? value)
         {
-            if (value == null)
-                return new PyNone();
+            if (value is null)
+                return null;
 
             return new PyInteger((long) value);
         }
 
         public static implicit operator PyDataType(int? value)
         {
-            if (value == null)
-                return new PyNone();
+            if (value is null)
+                return null;
 
             return new PyInteger((int) value);
         }
 
         public static implicit operator PyDataType(short? value)
         {
-            if (value == null)
-                return new PyNone();
+            if (value is null)
+                return null;
 
             return new PyInteger((short) value);
         }
 
         public static implicit operator PyDataType(byte? value)
         {
-            if (value == null)
-                return new PyNone();
+            if (value is null)
+                return null;
 
             return new PyInteger((byte) value);
         }
 
         public static implicit operator PyDataType(sbyte? value)
         {
-            if (value == null)
-                return new PyNone();
+            if (value is null)
+                return null;
 
             return new PyInteger((sbyte) value);
         }
 
         public static implicit operator PyDataType(byte[] value)
         {
-            if (value == null)
-                return new PyNone();
+            if (value is null)
+                return null;
 
             return new PyBuffer(value);
         }
@@ -125,31 +122,41 @@ namespace PythonTypes.Types.Primitives
 
         public static implicit operator PyDataType(float? value)
         {
-            if (value == null)
-                return new PyNone();
+            if (value is null)
+                return null;
 
             return new PyDecimal((float) value);
         }
 
         public static implicit operator PyDataType(double? value)
         {
-            if (value == null)
-                return new PyNone();
+            if (value is null)
+                return null;
 
             return new PyDecimal((double) value);
         }
 
         public static implicit operator PyDataType(bool? value)
         {
-            if (value == null)
-                return new PyNone();
+            if (value is null)
+                return null;
 
             return new PyBool((bool) value);
         }
-
+        
         public static implicit operator PyDataType(Dictionary<PyDataType, PyDataType> value)
         {
             return new PyDictionary(value);
+        }
+
+        public static implicit operator PyDataType(List<PyDataType> value)
+        {
+            return new PyList(value);
+        }
+
+        public static implicit operator PyDataType(PyDataType[] value)
+        {
+            return new PyTuple(value);
         }
     }
 }

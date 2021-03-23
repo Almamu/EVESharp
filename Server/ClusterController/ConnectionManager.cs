@@ -98,10 +98,8 @@ namespace ClusterController
             lock (this.Clients)
             {
                 // if there's already an user connected with this account inmediately log it off
-                if (this.Clients.ContainsKey(connection.AccountID) == true)
+                if (this.Clients.TryGetValue(connection.AccountID, out ClientConnection con) == true)
                 {
-                    ClientConnection con = this.Clients[connection.AccountID];
-
                     this.Clients.Remove(connection.AccountID);
 
                     try
@@ -275,12 +273,8 @@ namespace ClusterController
         {
             lock (this.Clients)
             {
-                PyList idlist = destination.IDsOfInterest;
-
-                foreach (PyDataType idData in idlist)
+                foreach (PyInteger id in destination.IDsOfInterest.GetEnumerable<PyInteger>())
                 {
-                    PyInteger id = idData as PyInteger;
-                            
                     foreach ((long userID, ClientConnection connection) in this.Clients)
                     {
                         if (connection.CharacterID == id)
@@ -301,12 +295,8 @@ namespace ClusterController
         {
             lock (this.Clients)
             {
-                PyList idlist = destination.IDsOfInterest;
-
-                foreach (PyDataType idData in idlist)
+                foreach (PyInteger id in destination.IDsOfInterest.GetEnumerable<PyInteger>())
                 {
-                    PyInteger id = idData as PyInteger;
-                            
                     foreach ((long userID, ClientConnection connection) in this.Clients)
                     {
                         if (connection.StationID == id)
@@ -325,12 +315,8 @@ namespace ClusterController
         {
             lock (this.Clients)
             {
-                PyList idlist = destination.IDsOfInterest;
-
-                foreach (PyDataType idData in idlist)
+                foreach (PyInteger id in destination.IDsOfInterest.GetEnumerable<PyInteger>())
                 {
-                    PyInteger id = idData as PyInteger;
-                            
                     foreach ((long userID, ClientConnection connection) in this.Clients)
                     {
                         if (connection.AllianceID == id)
@@ -349,12 +335,8 @@ namespace ClusterController
         {
             lock (this.Nodes)
             {
-                PyList idlist = destination.IDsOfInterest;
-
-                foreach (PyDataType idData in idlist)
+                foreach (PyInteger id in destination.IDsOfInterest.GetEnumerable<PyInteger>())
                 {
-                    PyInteger id = idData as PyInteger;
-                            
                     foreach ((long nodeID, NodeConnection connection) in this.Nodes)
                     {
                         if (connection.NodeID == id)

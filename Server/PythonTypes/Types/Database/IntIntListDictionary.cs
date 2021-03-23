@@ -17,9 +17,9 @@ namespace PythonTypes.Types.Database
         /// </summary>
         /// <param name="reader">The MySqlDataReader to read the data from</param>
         /// <returns></returns>
-        public static PyDataType FromMySqlDataReader(MySqlDataReader reader)
+        public static PyDictionary<PyInteger,PyList<PyInteger>> FromMySqlDataReader(MySqlDataReader reader)
         {
-            PyDictionary result = new PyDictionary();
+            PyDictionary<PyInteger,PyList<PyInteger>> result = new PyDictionary<PyInteger,PyList<PyInteger>>();
 
             Type keyType = reader.GetFieldType(0);
             Type valType = reader.GetFieldType(1);
@@ -35,7 +35,7 @@ namespace PythonTypes.Types.Database
             // get first key and start preparing the values
             int key = 0;
             
-            PyList currentList = new PyList();
+            PyList<PyInteger> currentList = new PyList<PyInteger>();
             
             while (reader.Read() == true)
             {
@@ -53,7 +53,7 @@ namespace PythonTypes.Types.Database
                     if (key != 0)
                         result[key] = currentList;
                     
-                    currentList = new PyList();
+                    currentList = new PyList<PyInteger>();
                     key = newKey;
                 }
                 

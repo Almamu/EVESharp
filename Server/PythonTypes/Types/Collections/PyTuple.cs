@@ -11,12 +11,12 @@ namespace PythonTypes.Types.Collections
     {
         private readonly PyDataType[] mList;
 
-        public PyTuple(int size) : base(PyObjectType.Tuple)
+        public PyTuple(int size) : base()
         {
             this.mList = new PyDataType[size];
         }
 
-        public PyTuple(PyDataType[] data) : base(PyObjectType.Tuple)
+        public PyTuple(PyDataType[] data) : base()
         {
             this.mList = data;
         }
@@ -26,20 +26,19 @@ namespace PythonTypes.Types.Collections
         // but as we're using the array directly in the PyTuple if we try to add something that's not a PyNone
         // an exception will be thrown
         // these exceptions are launched to prevent this situation
-        public PyTuple(PyNone[] data) : base(PyObjectType.Tuple) { ThrowInstantiationError(); }
-        public PyTuple(PyString[] data) : base(PyObjectType.Tuple) { ThrowInstantiationError(); }
-        public PyTuple(PyDecimal[] data) : base(PyObjectType.Tuple) { ThrowInstantiationError(); }
-        public PyTuple(PyList[] data) : base(PyObjectType.Tuple) { ThrowInstantiationError(); }
-        public PyTuple(PyTuple[] data) : base(PyObjectType.Tuple) { ThrowInstantiationError(); }
-        public PyTuple(PyInteger[] data) : base(PyObjectType.Tuple) { ThrowInstantiationError(); }
-        public PyTuple(PySubStream[] data) : base(PyObjectType.Tuple) { ThrowInstantiationError(); }
-        public PyTuple(PyPackedRow[] data) : base(PyObjectType.Tuple) { ThrowInstantiationError(); }
-        public PyTuple(PyChecksumedStream[] data) : base(PyObjectType.Tuple) { ThrowInstantiationError(); }
-        public PyTuple(PyBuffer[] data) : base(PyObjectType.Tuple) { ThrowInstantiationError(); }
-        public PyTuple(PyBool[] data) : base(PyObjectType.Tuple) { ThrowInstantiationError(); }
-        public PyTuple(PyObject[] data) : base(PyObjectType.Tuple) { ThrowInstantiationError(); }
-        public PyTuple(PyObjectData[] data) : base(PyObjectType.Tuple) { ThrowInstantiationError(); }
-        public PyTuple(PyToken[] data) : base(PyObjectType.Tuple) { ThrowInstantiationError(); }
+        public PyTuple(PyString[] data) : base() { ThrowInstantiationError(); }
+        public PyTuple(PyDecimal[] data) : base() { ThrowInstantiationError(); }
+        public PyTuple(PyList[] data) : base() { ThrowInstantiationError(); }
+        public PyTuple(PyTuple[] data) : base() { ThrowInstantiationError(); }
+        public PyTuple(PyInteger[] data) : base() { ThrowInstantiationError(); }
+        public PyTuple(PySubStream[] data) : base() { ThrowInstantiationError(); }
+        public PyTuple(PyPackedRow[] data) : base() { ThrowInstantiationError(); }
+        public PyTuple(PyChecksumedStream[] data) : base() { ThrowInstantiationError(); }
+        public PyTuple(PyBuffer[] data) : base() { ThrowInstantiationError(); }
+        public PyTuple(PyBool[] data) : base() { ThrowInstantiationError(); }
+        public PyTuple(PyObject[] data) : base() { ThrowInstantiationError(); }
+        public PyTuple(PyObjectData[] data) : base() { ThrowInstantiationError(); }
+        public PyTuple(PyToken[] data) : base() { ThrowInstantiationError(); }
 
         private static void ThrowInstantiationError()
         {
@@ -72,6 +71,18 @@ namespace PythonTypes.Types.Collections
             return GetEnumerator();
         }
 
+        public bool TryGetValue<T>(int key, out T value) where T : PyDataType
+        {
+            if (key < this.mList.Length)
+            {
+                value = this.mList[key] as T;
+                return true;
+            }
+
+            value = null;
+            return false;
+        }
+
         public void CopyTo(PyTuple destination, int sourceIndex, int destinationIndex, int count)
         {
             // perform some boundaries checks to ensure the data fits
@@ -88,6 +99,11 @@ namespace PythonTypes.Types.Collections
                 this.mList, sourceIndex,
                 destination.mList, destinationIndex, count
             );
+        }
+
+        public static implicit operator PyTuple(PyDataType[] array)
+        {
+            return new PyTuple(array);
         }
     }
 }

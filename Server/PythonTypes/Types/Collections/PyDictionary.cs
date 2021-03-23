@@ -24,18 +24,24 @@ namespace PythonTypes.Types.Collections
         {
             return new PyDictionaryEnumerator<TKey, TValue>(this.mDictionary.GetEnumerator());
         }
+
+        public TValue this[TKey index]
+        {
+            get => this.mDictionary[index] as TValue;
+            set => this.mDictionary[index] = value;
+        }
     }
     
     public class PyDictionary : PyDataType, IPyDictionaryEnumerable<PyDataType, PyDataType>
     {
         protected readonly Dictionary<PyDataType, PyDataType> mDictionary;
 
-        public PyDictionary() : base(PyObjectType.Dictionary)
+        public PyDictionary() : base()
         {
             this.mDictionary = new Dictionary<PyDataType, PyDataType>();
         }
 
-        public PyDictionary(Dictionary<PyDataType, PyDataType> seed) : base(PyObjectType.Dictionary)
+        public PyDictionary(Dictionary<PyDataType, PyDataType> seed) : base()
         {
             this.mDictionary = seed;
         }

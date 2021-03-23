@@ -24,6 +24,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using Common.Game;
 using Common.Packets;
 using Node.Database;
@@ -56,11 +57,15 @@ namespace Node
         public ServiceManager ServiceManager { get; }
         private ItemFactory ItemFactory { get; }
         private TimerManager TimerManager { get; }
-        private PyList PendingMultiEvents { get; set; }
+        private PyList<PyTuple> PendingMultiEvents { get; set; }
         private CharacterManager CharacterManager { get; }
         private SystemManager SystemManager { get; }
-        
-        public Client(NodeContainer container, ClusterConnection clusterConnection, ServiceManager serviceManager, TimerManager timerManager, ItemFactory itemFactory, CharacterManager characterManager, SystemManager systemManager)
+        private NotificationManager NotificationManager { get; }
+        private MachoNet MachoNet { get; }
+
+        public Client(NodeContainer container, ClusterConnection clusterConnection, ServiceManager serviceManager,
+            TimerManager timerManager, ItemFactory itemFactory, CharacterManager characterManager,
+            SystemManager systemManager, NotificationManager notificationManager, MachoNet machoNet)
         {
             this.Container = container;
             this.ClusterConnection = clusterConnection;
@@ -69,7 +74,9 @@ namespace Node
             this.ItemFactory = itemFactory;
             this.CharacterManager = characterManager;
             this.SystemManager = systemManager;
-            this.PendingMultiEvents = new PyList();
+            this.NotificationManager = notificationManager;
+            this.PendingMultiEvents = new PyList<PyTuple>();
+            this.MachoNet = machoNet;
         }
 
         private void OnCharEnteredStation(int stationID)
@@ -78,7 +85,7 @@ namespace Node
             station.Guests[(int) this.CharacterID] = this.ItemFactory.ItemManager.GetItem<Character>((int) this.CharacterID);
 
             // notify station guests
-            this.ClusterConnection.SendNotification("OnCharNowInStation", "stationid", station.ID,
+            this.NotificationManager.NotifyStation(station.ID, "OnCharNowInStation",
                 new PyTuple(1)
                 {
                     [0] = new PyTuple(4)
@@ -98,7 +105,7 @@ namespace Node
             station.Guests.Remove((int) this.CharacterID);
 
             // notify station guests
-            this.ClusterConnection.SendNotification("OnCharNoLongerInStation", "stationid", station.ID,
+            this.NotificationManager.NotifyStation(station.ID, "OnCharNoLongerInStation",
                 new PyTuple(1)
                 {
                     [0] = new PyTuple(4)
@@ -115,13 +122,13 @@ namespace Node
         public void OnClientDisconnected()
         {
             // no character selected means no worries
-            if (this.CharacterID == null)
+            if (this.CharacterID is null)
                 return;
             
             // free meta inventories for this client
             this.ItemFactory.ItemManager.MetaInventoryManager.FreeOwnerInventories((int) this.CharacterID);
             
-            if (this.StationID != null && this.SystemManager.StationBelongsToUs((int) this.StationID) == true)
+            if (this.StationID is not null && this.SystemManager.StationBelongsToUs((int) this.StationID) == true)
                 this.OnCharLeftStation((int) this.StationID);
 
             // remove timers
@@ -140,7 +147,7 @@ namespace Node
                 this.ItemFactory.ItemManager.LoadItem((int) this.CharacterID);
 
             // check if the old solar system belong to us (and this new one doesnt) and unload things
-            if (oldSolarSystemID == null)
+            if (oldSolarSystemID is null)
                 return;
 
             if (this.SystemManager.SolarSystemBelongsToUs((int) oldSolarSystemID) == true && this.SystemManager.SolarSystemBelongsToUs((int) newSolarSystemID) == false)
@@ -150,10 +157,10 @@ namespace Node
 
         private void OnStationChanged(int? oldStationID, int? newStationID)
         {
-            if (oldStationID != null && this.SystemManager.StationBelongsToUs((int) oldStationID) == true)
+            if (oldStationID is not null && this.SystemManager.StationBelongsToUs((int) oldStationID) == true)
                 this.OnCharLeftStation((int) oldStationID);
 
-            if (newStationID != null && this.SystemManager.StationBelongsToUs((int) newStationID) == true)
+            if (newStationID is not null && this.SystemManager.StationBelongsToUs((int) newStationID) == true)
                 this.OnCharEnteredStation((int) newStationID);
         }
 
@@ -219,12 +226,17 @@ namespace Node
         {
             lock (this.mSession)
             {
+                if (packet.Payload.TryGetValue(0, out PyTuple sessionData) == false)
+                    throw new InvalidDataException("SessionChangeNotification expected a payload of size 1");
+                if (sessionData.TryGetValue(1, out PyDictionary differences) == false)
+                    throw new InvalidDataException("SessionChangeNotification expected a differences collection");
+                
                 // load the new session data
-                this.mSession.LoadChanges((packet.Payload[0] as PyTuple)[1] as PyDictionary);
+                this.mSession.LoadChanges(differences);
                 // normalize the values in the session
-                this.mSession.LoadChanges((packet.Payload[0] as PyTuple)[1] as PyDictionary);
+                this.mSession.LoadChanges(differences);
                 // handle the differencies
-                this.HandleSessionDifferencies(new Session((packet.Payload[0] as PyTuple)[1] as PyDictionary));
+                this.HandleSessionDifferencies(new Session(differences.GetEnumerable<PyString, PyTuple>()));
             }
         }
 
@@ -236,30 +248,28 @@ namespace Node
         private PyPacket CreateEmptySessionChange(NodeContainer container)
         {
             // Fill all the packet data, except the dest/source
-            SessionChangeNotification scn = new SessionChangeNotification();
-            scn.changes = Session.GenerateSessionChange();
+            SessionChangeNotification scn = new SessionChangeNotification
+            {
+                Changes = Session.GenerateSessionChange()
+            };
 
-            if (scn.changes.Length == 0)
+            if (scn.Changes.Length == 0)
                 // Nothing to do
                 return null;
             
             // add ourselves as nodes of interest
             // TODO: DETECT NODE OF INTEREST BASED ON THE SERVER THAT HAS THE SOLAR SYSTEM LOADED IN
-            scn.nodesOfInterest.Add(container.NodeID);
+            scn.NodesOfInterest.Add(container.NodeID);
 
-            PyPacket packet = new PyPacket(PyPacket.PacketType.SESSIONCHANGENOTIFICATION);
-
-            packet.Source = new PyAddressNode(container.NodeID);
-            packet.Destination = new PyAddressClient(this.Session["userid"] as PyInteger);
-            packet.UserID = this.Session["userid"] as PyInteger;
-
-            packet.Payload = scn;
-
-            packet.OutOfBounds = new PyDictionary()
+            PyPacket packet = new PyPacket(PyPacket.PacketType.SESSIONCHANGENOTIFICATION)
             {
-                {"channel", "sessionchange"}
+                Source = new PyAddressNode(container.NodeID),
+                Destination = new PyAddressClient(this.Session["userid"] as PyInteger),
+                UserID = this.Session["userid"] as PyInteger,
+                Payload = scn,
+                OutOfBounds = new PyDictionary() {{"channel", "sessionchange"}}
             };
-
+            
             return packet;
         }
 
@@ -272,7 +282,7 @@ namespace Node
             PyPacket sessionChangeNotification = this.CreateEmptySessionChange(this.Container);
             
             // and finally send the client the required data
-            this.ClusterConnection.Socket.Send(sessionChangeNotification);
+            this.ClusterConnection.Send(sessionChangeNotification);
         }
 
         public Session Session => this.mSession;
@@ -419,12 +429,14 @@ namespace Node
         /// <param name="balance">The new balance</param>
         public void NotifyBalanceUpdate(double balance)
         {
-            PyTuple notification = new PyTuple(new PyDataType[]
+            PyTuple notification = new PyTuple(3)
             {
-                "cash", this.CharacterID, balance
-            });
+                [0] = "cash",
+                [1] = this.CharacterID,
+                [2] = balance
+            };
             
-            this.ClusterConnection.SendNotification("OnAccountChange", "charid", (int) this.CharacterID, notification);
+            this.NotificationManager.NotifyCharacter((int) this.CharacterID, "OnAccountChange", notification);
         }
 
         /// <summary>
@@ -433,7 +445,7 @@ namespace Node
         /// </summary>
         public void NotifyCloneUpdate()
         {
-            this.ClusterConnection.SendNotification("OnJumpCloneCacheInvalidated", "charid", (int) this.CharacterID, new PyTuple(0));
+            this.NotificationManager.NotifyCharacter((int) this.CharacterID, "OnJumpCloneCacheInvalidated",new PyTuple (0));
         }
 
         /// <summary>
@@ -512,10 +524,10 @@ namespace Node
             {
                 if (this.PendingMultiEvents.Count > 0)
                 {
-                    this.ClusterConnection.SendNotification("OnMultiEvent", "charid", (int) this.CharacterID,
+                    this.NotificationManager.NotifyCharacter((int) this.CharacterID, "OnMultiEvent", 
                         new PyTuple(1) {[0] = this.PendingMultiEvents});
 
-                    this.PendingMultiEvents = new PyList();
+                    this.PendingMultiEvents = new PyList<PyTuple>();
                 }
             }
 
@@ -527,23 +539,13 @@ namespace Node
         }
 
         /// <summary>
-        /// Sends a response to a call performed by the client
-        /// </summary>
-        /// <param name="answerTo">The call to answer to</param>
-        /// <param name="result">The data to send as response</param>
-        public void SendCallResponse(CallInformation answerTo, PyDataType result)
-        {
-            this.ClusterConnection.SendCallResult(answerTo, result);
-        }
-
-        /// <summary>
         /// Sends an exception to a call performed by the client
         /// </summary>
         /// <param name="call">The call to answer with the exception</param>
         /// <param name="content">The contents of the exception</param>
         public void SendException(CallInformation call, PyDataType content)
         {
-            this.ClusterConnection.SendException(call, content);
+            this.MachoNet.SendException(call, content);
         }
 
         /// <summary>
@@ -554,7 +556,7 @@ namespace Node
         {
             int? characterID = this.CharacterID;
 
-            if (characterID == null)
+            if (characterID is null)
                 throw new UserError("NoCharacterSelected");
 
             return (int) characterID;
@@ -569,7 +571,7 @@ namespace Node
         {
             int? stationID = this.StationID;
 
-            if (stationID == null)
+            if (stationID is null)
                 throw new CanOnlyDoInStations();
 
             return (int) stationID;

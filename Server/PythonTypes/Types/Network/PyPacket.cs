@@ -110,15 +110,16 @@ namespace PythonTypes.Types.Network
 
         public static implicit operator PyDataType(PyPacket packet)
         {
-            PyTuple args = new PyTuple(6);
-
-            args[0] = (int) packet.Type;
-            args[1] = packet.Source;
-            args[2] = packet.Destination;
-            args[3] = (packet.UserID == 0) ? (PyDataType) new PyNone() : packet.UserID;
-            args[4] = packet.Payload;
-            args[5] = packet.OutOfBounds;
-
+            PyTuple args = new PyTuple(6)
+            {
+                [0] = (int) packet.Type,
+                [1] = packet.Source,
+                [2] = packet.Destination,
+                [3] = (packet.UserID == 0) ? null : packet.UserID,
+                [4] = packet.Payload,
+                [5] = packet.OutOfBounds
+            };
+            
             return new PyObjectData(packet.TypeString, args);
         }
 
@@ -146,7 +147,7 @@ namespace PythonTypes.Types.Network
             result.Type = (PacketType) (int) (packetData[0] as PyInteger);
             result.Source = (PyAddress) packetData[1];
             result.Destination = (PyAddress) packetData[2];
-            result.UserID = (packetData[3] is PyNone) ? 0 : (long) (packetData[3] as PyInteger);
+            result.UserID = (packetData[3] is null) ? 0 : (long) (packetData[3] as PyInteger);
             result.Payload = packetData[4] as PyTuple;
             result.OutOfBounds = packetData[5] as PyDictionary;
 

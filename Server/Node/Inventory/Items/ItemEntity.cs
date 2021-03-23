@@ -198,8 +198,8 @@ namespace Node.Inventory.Items
             }
         }
 
-        public bool HasName => this.mName != null;
-        public virtual bool HasPosition => this.X != null && this.Y != null && this.Z != null;
+        public bool HasName => this.mName is not null;
+        public virtual bool HasPosition => this.X is not null && this.Y is not null && this.Z is not null;
         public bool HadName => this.mHadName;
         public bool HadPosition => this.mHadPosition;
         
@@ -223,8 +223,8 @@ namespace Node.Inventory.Items
             this.mZ = z;
 
             this.ItemFactory = itemFactory;
-            this.mHadName = entityName != null;
-            this.mHadPosition = x != null && y != null && z != null;
+            this.mHadName = entityName is not null;
+            this.mHadPosition = x is not null && y is not null && z is not null;
         }
 
         public ItemEntity(string entityName, int entityId, ItemType type, ItemEntity entityOwner,

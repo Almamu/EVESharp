@@ -26,8 +26,9 @@ namespace Node.Services.Contracts
         private ItemManager ItemManager { get; }
         private TypeManager TypeManager { get; }
         private SystemManager SystemManager { get; }
+        private NotificationManager NotificationManager { get; }
 
-        public contractMgr(ContractDB db, ItemDB itemDB, MarketDB marketDB, ItemManager itemManager, TypeManager typeManager, SystemManager systemManager)
+        public contractMgr(ContractDB db, ItemDB itemDB, MarketDB marketDB, ItemManager itemManager, TypeManager typeManager, SystemManager systemManager, NotificationManager notificationManager)
         {
             this.DB = db;
             this.ItemDB = itemDB;
@@ -35,6 +36,7 @@ namespace Node.Services.Contracts
             this.ItemManager = itemManager;
             this.TypeManager = typeManager;
             this.SystemManager = systemManager;
+            this.NotificationManager = notificationManager;
         }
 
         public PyDataType NumRequiringAttention(CallInformation call)
@@ -93,7 +95,7 @@ namespace Node.Services.Contracts
         
         private void NotifyItemChange(ClusterConnection connection, long nodeID, int itemID, string key, PyDataType newValue)
         {
-            connection.SendNodeNotification(nodeID, "OnItemUpdate",
+            this.NotificationManager.NotifyNode(nodeID, "OnItemUpdate",
                 new PyTuple(2)
                 {
                     [0] = itemID,
@@ -103,7 +105,7 @@ namespace Node.Services.Contracts
         }
 
         private void PrepareItemsForCourierOrAuctionContract(MySqlConnection connection, ulong contractID,
-            ClusterConnection clusterConnection, PyList itemList, Station station, int ownerID, int shipID)
+            ClusterConnection clusterConnection, PyList<PyList> itemList, Station station, int ownerID, int shipID)
         {
             // create the container in the system to ensure it's not visible to the player
             Container container = this.ItemManager.CreateSimpleItem(this.TypeManager[ItemTypes.PlasticWrap],
@@ -149,7 +151,8 @@ namespace Node.Services.Contracts
 
             PyBool forCorp;
 
-            call.NamedPayload.TryGetValue("forCorp", out forCorp);
+            if (call.NamedPayload.TryGetValue("forCorp", out forCorp) == false)
+                forCorp = false;
 
             Character character = this.ItemManager.GetItem<Character>(callerCharacterID);
             
@@ -186,7 +189,7 @@ namespace Node.Services.Contracts
                             connection,
                             contractID,
                             call.Client.ClusterConnection,
-                            call.NamedPayload["itemList"] as PyList,
+                            (call.NamedPayload["itemList"] as PyList).GetEnumerable<PyList>(),
                             station,
                             callerCharacterID,
                             (int) call.Client.ShipID
@@ -199,7 +202,7 @@ namespace Node.Services.Contracts
                 }
                 
                 if (contractType == (int) ContractTypes.ItemExchange)
-                    this.DB.PrepareRequestedItems(connection, contractID, call.NamedPayload["requestItemTypeList"] as PyList);
+                    this.DB.PrepareRequestedItems(connection, contractID, (call.NamedPayload["requestItemTypeList"] as PyList).GetEnumerable<PyList>());
                 
                 return contractID;
             }

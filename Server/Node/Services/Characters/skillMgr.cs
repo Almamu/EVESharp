@@ -81,7 +81,7 @@ namespace Node.Services.Characters
                 
             // iterate the skill queue and generate a timer for the first skill that must be trained
             // this also prepares the correct notification for multiple skill training done
-            PyList skillTypeIDs = new PyList();
+            PyList<PyInteger> skillTypeIDs = new PyList<PyInteger>();
             List<Character.SkillQueueEntry> toRemove = new List<Character.SkillQueueEntry>();
 
             foreach (Character.SkillQueueEntry entry in this.Character.SkillQueue)
@@ -247,17 +247,12 @@ namespace Node.Services.Characters
 
         public PyDataType InjectSkillIntoBrain(PyList itemIDs, CallInformation call)
         {
-            foreach (PyDataType item in itemIDs)
+            foreach (PyInteger item in itemIDs.GetEnumerable<PyInteger>())
             {
-                if (item is PyInteger == false)
-                    continue;
-
-                int itemID = item as PyInteger;
-                
                 try
                 {
                     // get the item by it's ID and change the location of it
-                    Skill skill = this.ItemManager.GetItem<Skill>(itemID);
+                    Skill skill = this.ItemManager.GetItem<Skill>(item);
 
                     // check if the character already has this skill injected
                     if (this.Character.InjectedSkillsByTypeID.ContainsKey(skill.Type.ID) == true)
@@ -308,7 +303,7 @@ namespace Node.Services.Characters
                 }
                 catch (Exception)
                 {
-                    Log.Error($"Cannot inject itemID {itemID} into {this.Character.ID}'s brain...");
+                    Log.Error($"Cannot inject itemID {item} into {this.Character.ID}'s brain...");
                     throw;
                 }
             }
@@ -368,7 +363,7 @@ namespace Node.Services.Characters
             DateTime startDateTime = DateTime.UtcNow;
             bool first = true;
             
-            foreach (PyTuple entry in queue)
+            foreach (PyTuple entry in queue.GetEnumerable<PyTuple>())
             {
                 // ignore wrong entries
                 if (entry.Count != 2)
@@ -431,16 +426,18 @@ namespace Node.Services.Characters
             Skill skill = this.Character.InjectedSkills.First(x => x.Value.Type.ID == typeID).Value;
             
             // do not start the skill training if the level is 5 already
-            if (skill == null || skill.Level == 5)
+            if (skill is null || skill.Level == 5)
                 return null;
 
-            PyList queue = new PyList(1);
-
-            queue[0] = new PyTuple(2)
+            PyList<PyTuple> queue = new PyList<PyTuple>(1)
             {
-                [0] = typeID,
-                [1] = skill.Level + 1
+                [0] = new PyTuple(2)
+                {
+                    [0] = typeID,
+                    [1] = skill.Level + 1
+                }
             };
+
 
             // build a list of skills to train based off the original queue
             // but with the new skill on top
@@ -450,7 +447,8 @@ namespace Node.Services.Characters
                 if (entry.Skill.Type.ID == typeID)
                     continue;
 
-                queue.Add(new PyTuple(2)
+                queue.Add(
+                    new PyTuple(2)
                     {
                         [0] = entry.Skill.Type.ID,
                         [1] = entry.TargetLevel
@@ -526,10 +524,10 @@ namespace Node.Services.Characters
             Skill skill = this.Character.InjectedSkills.First(x => x.Value.Type.ID == typeID).Value;
             
             // do not start the skill training if the level is 5 already
-            if (skill == null || skill.Level == 5)
+            if (skill is null || skill.Level == 5)
                 return null;
 
-            PyList queue = new PyList();
+            PyList<PyTuple> queue = new PyList<PyTuple>();
 
             bool alreadyAdded = false;
             
@@ -541,7 +539,8 @@ namespace Node.Services.Characters
                 if (entry.Skill.Type.ID == typeID && entry.TargetLevel == level)
                     alreadyAdded = true;
 
-                queue.Add(new PyTuple(2)
+                queue.Add(
+                    new PyTuple(2)
                     {
                         [0] = entry.Skill.Type.ID,
                         [1] = entry.TargetLevel
@@ -551,7 +550,8 @@ namespace Node.Services.Characters
 
             if (alreadyAdded == false)
             {
-                queue.Add(new PyTuple(2)
+                queue.Add(
+                    new PyTuple(2)
                     {
                         [0] = typeID,
                         [1] = level
@@ -571,9 +571,9 @@ namespace Node.Services.Characters
             return null;
         }
 
-        public PyDataType GetRespecInfo(CallInformation call)
+        public PyDictionary<PyString, PyInteger> GetRespecInfo(CallInformation call)
         {
-            return new PyDictionary
+            return new PyDictionary<PyString, PyInteger>
             {
                 ["nextRespecTime"] = this.Character.NextReSpecTime,
                 ["freeRespecs"] = this.Character.FreeReSpecs
@@ -602,10 +602,10 @@ namespace Node.Services.Characters
                     attribute = AttributeEnum.perceptionBonus;
                     break;
                 default:
-                    return new PyList();
+                    return new PyList<PyTuple>();
             }
             
-            PyList modifiers = new PyList();
+            PyList<PyTuple> modifiers = new PyList<PyTuple>();
             
             foreach (KeyValuePair<int, ItemEntity> modifier in this.Character.Modifiers)
             {
@@ -616,12 +616,15 @@ namespace Node.Services.Characters
                     // TODO: THE THIRD PARAMETER HERE WAS DECIDED RANDOMLY BASED ON THE CODE ITSELF
                     // TODO: BUT THAT DOESN'T MEAN THAT IT'S ENTIRELY CORRECT
                     // TODO: SO MAYBE CHECK IF THIS IS CORRECT SOMETIME AFTER
-                    modifiers.Add(new PyTuple(new PyDataType []
+                    modifiers.Add(
+                        new PyTuple(4)
                         {
-                            modifier.Value.ID, modifier.Value.Type.ID, 2,
-                            modifier.Value.Attributes[attribute]                            
+                            [0] = modifier.Value.ID,
+                            [1] = modifier.Value.Type.ID,
+                            [2] = 2,
+                            [3] = modifier.Value.Attributes[attribute]                            
                         }
-                    ));
+                    );
                 }
             }
             

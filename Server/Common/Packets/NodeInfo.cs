@@ -13,10 +13,12 @@ namespace Common.Packets
 
         public static implicit operator PyDataType(NodeInfo info)
         {
-            return new PyObjectData(TYPE_NAME, new PyTuple(new PyDataType[]
-            {
-                info.nodeID, info.solarSystems,
-            }));
+            return new PyObjectData(TYPE_NAME, new PyTuple(2)
+                {
+                    [0] = info.nodeID,
+                    [1] = info.solarSystems
+                }
+            );
         }
 
         public static implicit operator NodeInfo(PyDataType info)
@@ -31,10 +33,12 @@ namespace Common.Packets
 
             PyTuple arguments = data.Arguments as PyTuple;
 
-            NodeInfo result = new NodeInfo();
+            NodeInfo result = new NodeInfo
+            {
+                nodeID = arguments[0] as PyInteger,
+                solarSystems = arguments[1] as PyList
+            };
 
-            result.nodeID = arguments[0] as PyInteger;
-            result.solarSystems = arguments[1] as PyList;
 
             return result;
         }

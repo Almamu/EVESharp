@@ -274,7 +274,7 @@ namespace PythonTypes.Marshal
             if (opcode != Opcode.None)
                 throw new InvalidDataException($"Trying to parse a {opcode} as None");
 
-            return new PyNone();
+            return null;
         }
 
         /// <summary>
@@ -491,10 +491,10 @@ namespace PythonTypes.Marshal
                 case Opcode.ListEmpty:
                     return new PyList();
                 case Opcode.ListOne:
-                    return new PyList(new PyDataType[]
+                    return new PyList(1)
                     {
-                        this.Process(false)
-                    });
+                        [0] = this.Process(false)
+                    };
                 case Opcode.List:
                 {
                     uint count = this.mReader.ReadSizeEx();

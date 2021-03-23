@@ -60,12 +60,13 @@ namespace Node.Services.Characters
         private TypeManager TypeManager { get; }
         private CacheStorage CacheStorage { get; }
         private NodeContainer Container { get; }
+        private NotificationManager NotificationManager { get; }
         private readonly Dictionary<int, Bloodline> mBloodlineCache = null;
         private readonly Dictionary<int, Ancestry> mAncestriesCache = null;
         private readonly Configuration.Character mConfiguration = null;
         private readonly Channel Log = null;
 
-        public character(CacheStorage cacheStorage, CharacterDB db, ChatDB chatDB, ItemManager itemManager, TypeManager typeManager, Logger logger, Configuration.Character configuration, NodeContainer container)
+        public character(CacheStorage cacheStorage, CharacterDB db, ChatDB chatDB, ItemManager itemManager, TypeManager typeManager, Logger logger, Configuration.Character configuration, NodeContainer container, NotificationManager notificationManager)
         {
             this.Log = logger.CreateLogChannel("character");
             this.mConfiguration = configuration;
@@ -75,6 +76,7 @@ namespace Node.Services.Characters
             this.TypeManager = typeManager;
             this.CacheStorage = cacheStorage;
             this.Container = container;
+            this.NotificationManager = notificationManager;
             this.mBloodlineCache = this.DB.GetBloodlineInformation();
             this.mAncestriesCache = this.DB.GetAncestryInformation(this.mBloodlineCache);
         }
@@ -109,26 +111,26 @@ namespace Node.Services.Characters
             string characterName = name;
             
             if (characterName.Length < 3)
-                return new PyInteger((int) NameValidationResults.TooShort);
+                return (int) NameValidationResults.TooShort;
 
             // character name length is maximum 24 characters based on the error messages used for the user
             if (characterName.Length > 24)
-                return new PyInteger((int) NameValidationResults.TooLong);
+                return (int) NameValidationResults.TooLong;
 
             // ensure only alphanumeric characters and/or spaces are used
             if (Regex.IsMatch(characterName, "^[a-zA-Z0-9 ]*$") == false)
-                return new PyInteger((int) NameValidationResults.IllegalCharacters);
+                return (int) NameValidationResults.IllegalCharacters;
 
             // no more than one space allowed
             if (characterName.IndexOf(' ') != characterName.LastIndexOf(' '))
-                return new PyInteger((int) NameValidationResults.MoreThanOneSpace);
+                return (int) NameValidationResults.MoreThanOneSpace;
 
             // ensure there is no character registered with this name already
             if (this.DB.IsCharacterNameTaken(characterName) == true)
-                return new PyInteger((int) NameValidationResults.Taken);
+                return (int) NameValidationResults.Taken;
 
             // TODO: IMPLEMENT BANLIST OF WORDS
-            return new PyInteger((int) NameValidationResults.Valid);
+            return (int) NameValidationResults.Valid;
         }
 
         private void GetRandomCareerForRace(int raceID, out int careerID, out int schoolID, out int careerSpecialityID,
@@ -328,7 +330,6 @@ namespace Node.Services.Characters
             this.ItemManager.UnloadItem(character);
             
             // finally return the new character's ID and wait for the subsequent calls from the EVE client :)
-            
             return character.ID;
         }
 
@@ -337,18 +338,19 @@ namespace Node.Services.Characters
             return this.DB.GetCharacterSelectionInfo(characterID, call.Client.AccountID);
         }
 
-        public PyDataType SelectCharacterID(PyInteger characterID, PyBool loadDungeon, PyNone secondChoiceID,
+        public PyDataType SelectCharacterID(PyInteger characterID, PyBool loadDungeon, PyDataType secondChoiceID,
             CallInformation call)
         {
             return this.SelectCharacterID(characterID, loadDungeon == true ? 1 : 0, secondChoiceID, call);
         }
+        
         // TODO: THIS PyNone SHOULD REALLY BE AN INTEGER, ALTHOUGH THIS FUNCTIONALITY IS NOT USED
         // TODO: IT REVEALS AN IMPORTANT ISSUE, WE CAN'T HAVE A WILDCARD PARAMETER PyDataType
-        public PyDataType SelectCharacterID(PyInteger characterID, PyInteger loadDungeon, PyNone secondChoiceID,
+        public PyDataType SelectCharacterID(PyInteger characterID, PyInteger loadDungeon, PyDataType secondChoiceID,
             CallInformation call)
         {
             // ensure the character belongs to the current account
-            Character character = this.ItemManager.LoadItem(characterID) as Character;
+            Character character = this.ItemManager.LoadItem<Character>(characterID);
 
             if (character.AccountID != call.Client.AccountID)
             {
@@ -390,11 +392,12 @@ namespace Node.Services.Characters
             
             // unload the character, let the session change handler handle everything
             // TODO: CHECK IF THE PLAYER IS GOING TO SPAWN IN THIS NODE AND IF IT IS NOT, UNLOAD IT FROM THE ITEM MANAGER
-            List<int> onlineFriends = this.DB.GetOnlineFriendList(character);
+            PyList<PyInteger> onlineFriends = this.DB.GetOnlineFriendList(character);
 
-            foreach (int friendID in onlineFriends)
-                call.Client.ClusterConnection.SendNotification("OnContactLoggedOn", "charid", friendID, new PyTuple(1) { [0] = character.ID });
-
+            this.NotificationManager.NotifyCharacters(
+                onlineFriends, "OnContactLoggedOn", new PyTuple(1) {[0] = character.ID}
+            );
+            
             // unload the character
             this.ItemManager.UnloadItem(characterID);
             
@@ -411,16 +414,16 @@ namespace Node.Services.Characters
 
         public PyDataType GetOwnerNoteLabels(CallInformation call)
         {
-            Character character = this.ItemManager.LoadItem(call.Client.EnsureCharacterIsSelected()) as Character;
+            Character character = this.ItemManager.GetItem<Character>(call.Client.EnsureCharacterIsSelected());
 
             return this.DB.GetOwnerNoteLabels(character);
         }
 
         public PyDataType GetCloneTypeID(CallInformation call)
         {
-            Character character = this.ItemManager.LoadItem(call.Client.EnsureCharacterIsSelected()) as Character;
+            Character character = this.ItemManager.GetItem<Character>(call.Client.EnsureCharacterIsSelected());
 
-            if (character.ActiveCloneID == null)
+            if (character.ActiveCloneID is null)
                 throw new CustomError("You do not have any medical clone...");
 
             return character.ActiveClone.Type.ID;
@@ -428,9 +431,9 @@ namespace Node.Services.Characters
 
         public PyDataType GetHomeStation(CallInformation call)
         {
-            Character character = this.ItemManager.LoadItem(call.Client.EnsureCharacterIsSelected()) as Character;
+            Character character = this.ItemManager.GetItem<Character>(call.Client.EnsureCharacterIsSelected());
 
-            if (character.ActiveCloneID == null)
+            if (character.ActiveCloneID is null)
                 throw new CustomError("You do not have any medical clone...");
 
             return character.ActiveClone.LocationID;
@@ -438,14 +441,14 @@ namespace Node.Services.Characters
 
         public PyDataType GetCharacterDescription(PyInteger characterID, CallInformation call)
         {
-            Character character = this.ItemManager.LoadItem(call.Client.EnsureCharacterIsSelected()) as Character;
+            Character character = this.ItemManager.GetItem<Character>(call.Client.EnsureCharacterIsSelected());
             
             return character.Description;
         }
 
         public PyDataType SetCharacterDescription(PyString newBio, CallInformation call)
         {
-            Character character = this.ItemManager.LoadItem(call.Client.EnsureCharacterIsSelected()) as Character;
+            Character character = this.ItemManager.GetItem<Character>(call.Client.EnsureCharacterIsSelected());
 
             character.Description = newBio;
             character.Persist();

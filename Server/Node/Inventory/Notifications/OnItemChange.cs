@@ -39,12 +39,12 @@ namespace Node.Inventory.Notifications
         /// Builds the correct PyDictionary for the changes described by this notification
         /// </summary>
         /// <returns></returns>
-        private PyDictionary BuildChangeDictionary()
+        private PyDictionary<PyInteger, PyDataType> BuildChangeDictionary()
         {
-            PyDictionary result = new PyDictionary();
+            PyDictionary<PyInteger, PyDataType> result = new PyDictionary<PyInteger, PyDataType>();
 
-            foreach ((ItemChange changeType, PyDataType value) in this.Changes)
-                result[(int) changeType] = value;
+            foreach ((ItemChange changeType, PyDataType oldValue) in this.Changes)
+                result[(int) changeType] = oldValue;
 
             return result;
         }

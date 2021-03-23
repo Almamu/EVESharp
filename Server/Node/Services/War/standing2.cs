@@ -15,23 +15,26 @@ namespace Node.Services.War
         private StandingDB DB { get; }
         private CacheStorage CacheStorage { get; }
         private ItemManager ItemManager { get; }
+        private NotificationManager NotificationManager { get; }
         
-        public standing2(CacheStorage cacheStorage, StandingDB db, ItemManager itemManager)
+        public standing2(CacheStorage cacheStorage, StandingDB db, ItemManager itemManager, NotificationManager notificationManager)
         {
             this.CacheStorage = cacheStorage;
             this.DB = db;
             this.ItemManager = itemManager;
+            this.NotificationManager = notificationManager;
         }
 
-        public PyDataType GetMyKillRights(CallInformation call)
+        public PyTuple GetMyKillRights(CallInformation call)
         {
             PyDictionary killRights = new PyDictionary();
             PyDictionary killedRights = new PyDictionary();
 
-            return new PyTuple(new PyDataType[]
+            return new PyTuple(2)
             {
-                killRights, killedRights
-            });
+                [0] = killRights,
+                [1] = killedRights
+            };
         }
 
         public PyDataType GetNPCNPCStandings(CallInformation call)
@@ -43,21 +46,21 @@ namespace Node.Services.War
                 CacheStorage.CacheObjectType.Rowset
             );
 
-            PyDataType cacheHint = this.CacheStorage.GetHint("standing2", "GetNPCNPCStandings");
-
-            return PyCacheMethodCallResult.FromCacheHint(cacheHint);
+            return PyCacheMethodCallResult.FromCacheHint(
+                this.CacheStorage.GetHint("standing2", "GetNPCNPCStandings")
+            );
         }
 
-        public PyDataType GetCharStandings(CallInformation call)
+        public PyTuple GetCharStandings(CallInformation call)
         {
             int callerCharacterID = call.Client.EnsureCharacterIsSelected();
 
-            return new PyTuple(new PyDataType[]
+            return new PyTuple(3)
             {
-                this.DB.GetCharStandings(callerCharacterID),
-                this.DB.GetCharPrime(callerCharacterID),
-                this.DB.GetCharNPCStandings(callerCharacterID)
-            });
+                [0] = this.DB.GetCharStandings(callerCharacterID),
+                [1] = this.DB.GetCharPrime(callerCharacterID),
+                [2] = this.DB.GetCharNPCStandings(callerCharacterID)
+            };
         }
 
         public PyDataType GetStandingTransactions(PyInteger from, PyInteger to, PyInteger direction, PyInteger eventID,
@@ -72,7 +75,7 @@ namespace Node.Services.War
             return this.DB.GetStandingTransactions(from, to, direction, eventID, eventTypeID, eventDateTime);
         }
 
-        public PyDataType GetSecurityRating(PyInteger characterID, CallInformation call)
+        public PyDecimal GetSecurityRating(PyInteger characterID, CallInformation call)
         {
             if (this.ItemManager.TryGetItem(characterID, out Character character) == true)
             {
@@ -105,9 +108,12 @@ namespace Node.Services.War
             };
             
             // send the same notification to both players
-            call.Client.ClusterConnection.SendNotification("OnStandingSet", "charid", callerCharacterID, call.Client, notification);
-            call.Client.ClusterConnection.SendNotification("OnStandingSet", "charid", characterID, notification);
-            
+            this.NotificationManager.NotifyCharacters(
+                new PyDataType[] { callerCharacterID, characterID },
+                "OnStandingSet",
+                notification
+            );
+
             return null;
         }
     }

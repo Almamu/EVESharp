@@ -36,16 +36,22 @@ namespace PythonTypes.Types.Network
 
         public static implicit operator PyDataType(PyException ex)
         {
-            PyTuple data = new PyTuple(ex.Extra == null ? 1 : 2);
-
-            data[0] = ex.Reason;
-
-            if (ex.Extra != null)
+            PyTuple data = new PyTuple(ex.Extra is null ? 1 : 2)
+            {
+                [0] = ex.Reason
+            };
+            
+            if (ex.Extra is not null)
                 data[1] = ex.Extra;
             
             return new PyObject(
                 false,
-                new PyTuple(new PyDataType[] {ex.Type, data, ex.Keywords})
+                new PyTuple(3)
+                {
+                    [0] = ex.Type,
+                    [1] = data,
+                    [2] = ex.Keywords
+                }
             );
         }
 

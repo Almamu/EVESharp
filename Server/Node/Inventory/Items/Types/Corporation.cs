@@ -146,7 +146,7 @@ namespace Node.Inventory.Items.Types
         public Row GetCorporationInfoRow()
         {
             return new Row(
-                (PyList) new PyDataType[]
+                new PyDataType[]
                 {
                     "corporationID", "corporationName", "description", "tickerName", "url", "taxRate",
                     "minimumJoinStanding", "corporationType", "hasPlayerPersonnelManager", "sendCharTerminationMessage",
@@ -156,7 +156,7 @@ namespace Node.Inventory.Items.Types
                     "division7", "walletDivision1", "walletDivision2", "walletDivision3", "walletDivision4",
                     "walletDivision5", "walletDivision6", "walletDivision7", "deleted"
                 },
-                (PyList) new PyDataType []
+                new PyDataType []
                 {
                     this.ID, this.Name, this.Description, this.TickerName, this.Url, this.TaxRate,
                     this.MinimumJoinStanding, this.CorporationType, this.HasPlayerPersonnelManager,

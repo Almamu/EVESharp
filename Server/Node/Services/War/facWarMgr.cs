@@ -28,9 +28,9 @@ namespace Node.Services.War
                 CacheStorage.CacheObjectType.IntIntDict
             );
 
-            PyDataType cacheHint = this.CacheStorage.GetHint("facWarMgr", "GetWarFactions");
-
-            return PyCacheMethodCallResult.FromCacheHint(cacheHint);
+            return PyCacheMethodCallResult.FromCacheHint(
+                this.CacheStorage.GetHint("facWarMgr", "GetWarFactions")
+            );
         }
 
         public PyDataType GetFacWarSystems(CallInformation call)
@@ -57,14 +57,14 @@ namespace Node.Services.War
 
         public PyDataType GetCharacterRankOverview(PyInteger characterID, CallInformation call)
         {
-            return new Rowset((PyList) new PyDataType[]
+            return new Rowset(new PyDataType[]
                 {
                     "currentRank", "highestRank", "factionID", "lastModified"
                 }
             );
         }
 
-        public PyDataType GetFactionMilitiaCorporation(PyInteger factionID, CallInformation call)
+        public PyInteger GetFactionMilitiaCorporation(PyInteger factionID, CallInformation call)
         {
             return this.ItemManager.GetFaction(factionID).MilitiaCorporationId;
         }

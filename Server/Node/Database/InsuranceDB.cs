@@ -26,13 +26,15 @@ using System;
 using System.Collections.Generic;
 using Common.Database;
 using MySql.Data.MySqlClient;
+using PythonTypes.Types.Collections;
+using PythonTypes.Types.Database;
 using PythonTypes.Types.Primitives;
 
 namespace Node.Database
 {
     public class InsuranceDB : DatabaseAccessor
     {
-        public PyDataType GetContractsForShipsOnStation(int characterID, int stationID)
+        public PyList<PyPackedRow> GetContractsForShipsOnStation(int characterID, int stationID)
         {
             return Database.PreparePackedRowListQuery(
                 "SELECT chrShipInsurances.ownerID, shipID, fraction, startDate, endDate FROM chrShipInsurances LEFT JOIN invItems ON invItems.itemID = shipID WHERE chrShipInsurances.ownerID = @characterID AND invItems.locationID = @stationID",
@@ -43,7 +45,7 @@ namespace Node.Database
                 }
             );
         }
-        public PyDataType GetContractsForShipsOnStationIncludingCorp(int characterID, int corporationID, int stationID)
+        public PyList<PyPackedRow> GetContractsForShipsOnStationIncludingCorp(int characterID, int corporationID, int stationID)
         {
             return Database.PreparePackedRowListQuery(
                 "SELECT chrShipInsurances.ownerID, shipID, fraction, startDate, endDate FROM chrShipInsurances LEFT JOIN invItems ON invItems.itemID = shipID WHERE (chrShipInsurances.ownerID = @characterID OR chrShipInsurances.ownerID = @corporationID) AND invItems.locationID = @stationID",
@@ -56,7 +58,7 @@ namespace Node.Database
             );
         }
 
-        public PyDataType GetContractForShip(int characterID, int shipID)
+        public PyList<PyPackedRow> GetContractForShip(int characterID, int shipID)
         {
             return Database.PreparePackedRowListQuery(
                 "SELECT ownerID, shipID, fraction, startDate, endDate FROM chrShipInsurances WHERE ownerID = @characterID AND shipID = @shipID",

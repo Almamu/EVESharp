@@ -23,7 +23,7 @@ namespace Node.Services.Navigation
             this.CacheStorage = cacheStorage;
         }
 
-        public PyDataType GetStationExtraInfo(CallInformation call)
+        public PyTuple GetStationExtraInfo(CallInformation call)
         {
             Rowset stations = new Rowset(new PyDataType []
             {
@@ -39,28 +39,30 @@ namespace Node.Services.Navigation
             });
             
             foreach ((int _, Station station) in this.ItemManager.Stations)
-                stations.Rows.Add((PyList) new PyDataType []
+                stations.Rows.Add(new PyDataType []
                 {
                     station.ID, station.LocationID, station.Operations.OperationID, station.StationType.ID, station.OwnerID
                 });
 
             foreach ((int _, StationOperations operation) in this.StationManager.Operations)
                 foreach (int serviceID in operation.Services)
-                    operationServices.Rows.Add((PyList) new PyDataType[]
+                    operationServices.Rows.Add(new PyDataType[]
                     {
                         operation.OperationID, serviceID
                     });
 
             foreach ((int serviceID, string name) in this.StationManager.Services)
-                services.Rows.Add((PyList) new PyDataType[]
+                services.Rows.Add(new PyDataType[]
                 {
                     serviceID, name
                 });
             
-            return new PyTuple(new PyDataType[]
+            return new PyTuple(3)
             {
-                stations, operationServices, services
-            });
+                [0] = stations,
+                [1] = operationServices,
+                [2] = services
+            };
         }
 
         public PyDataType GetSolarSystemPseudoSecurities(CallInformation call)
@@ -85,7 +87,7 @@ namespace Node.Services.Navigation
             );
         }
 
-        public PyDataType GetStuckSystems(CallInformation call)
+        public PyDictionary GetStuckSystems(CallInformation call)
         {
             return new PyDictionary();
         }

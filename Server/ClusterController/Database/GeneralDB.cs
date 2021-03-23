@@ -36,7 +36,7 @@ namespace ClusterController.Database
     {
         private Channel Log { get; }
 
-        public PyList FetchLiveUpdates()
+        public PyList<PyObjectData> FetchLiveUpdates()
         {
             try
             {
@@ -48,7 +48,7 @@ namespace ClusterController.Database
                 using (connection)
                 using (reader)
                 {
-                    PyList result = new PyList();
+                    PyList<PyObjectData> result = new PyList<PyObjectData>();
 
                     while (reader.Read())
                     {

@@ -60,7 +60,7 @@ namespace Node.Services.Stations
             return new corpStationMgr(this.ItemDB, this.MarketDB, this.ItemManager, this.TypeManager, this.SystemManager, this.BoundServiceManager, call.Client);
         }
 
-        public PyDataType GetCorporateStationOffice(CallInformation call)
+        public PyList GetCorporateStationOffice(CallInformation call)
         {
             // TODO: IMPLEMENT WHEN CORPORATION SUPPORT IS IN PLACE
             return new PyList();
@@ -69,9 +69,7 @@ namespace Node.Services.Stations
         public PyDataType DoStandingCheckForStationService(PyInteger stationServiceID, CallInformation call)
         {
             call.Client.EnsureCharacterIsSelected();
-
-            if (call.Client.StationID == null)
-                throw new CanOnlyDoInStations();
+            call.Client.EnsureCharacterIsInStation();
             
             // TODO: CHECK ACTUAL STANDING VALUE
             
@@ -80,17 +78,17 @@ namespace Node.Services.Stations
 
         private List<Station> GetPotentialHomeStations(Client client)
         {
-            if (client.StationID == null)
-                throw new CanOnlyDoInStations();
-
-            List<Station> availableStations = new List<Station>();
+            int stationID = client.EnsureCharacterIsInStation();
             
-            Character character = this.ItemManager.LoadItem(client.EnsureCharacterIsSelected()) as Character;
+            Character character = this.ItemManager.GetItem<Character>(client.EnsureCharacterIsSelected());
 
             // TODO: CHECK STANDINGS TO ENSURE THIS STATION CAN BE USED
-            availableStations.Add(this.ItemManager.Stations[(int) client.StationID]);
-            availableStations.Add(this.ItemManager.Stations[character.Corporation.StationID]);
-
+            List<Station> availableStations = new List<Station>
+            {
+                this.ItemManager.Stations[stationID],
+                this.ItemManager.Stations[character.Corporation.StationID]
+            };
+            
             return availableStations;
         }
         
@@ -119,15 +117,14 @@ namespace Node.Services.Stations
         public PyDataType SetHomeStation(PyInteger stationID, CallInformation call)
         {
             int callerCharacterID = call.Client.EnsureCharacterIsSelected();
-            if (call.Client.StationID == null)
-                throw new CanOnlyDoInStations();
+            call.Client.EnsureCharacterIsInStation();
             
-            Character character = this.ItemManager.LoadItem(callerCharacterID) as Character;
+            Character character = this.ItemManager.GetItem<Character>(callerCharacterID);
             
             // ensure the station selected is in the list of available stations for this character
             Station station = this.GetPotentialHomeStations(call.Client).Find(x => x.ID == stationID);
 
-            if (station == null)
+            if (station is null)
                 throw new CustomError("The selected station is not in your allowed list...");
 
             // we could check if the current station is the same as the new one
@@ -174,7 +171,7 @@ namespace Node.Services.Stations
             return null;
         }
 
-        public PyDataType DoesPlayersCorpHaveJunkAtStation(CallInformation call)
+        public PyBool DoesPlayersCorpHaveJunkAtStation(CallInformation call)
         {
             if (ItemManager.IsNPCCorporationID(call.Client.CorporationID) == true)
                 return false;
@@ -183,17 +180,17 @@ namespace Node.Services.Stations
             return false;
         }
 
-        public PyDataType GetCorporateStationInfo(CallInformation call)
+        public PyTuple GetCorporateStationInfo(CallInformation call)
         {
             return new PyTuple(3)
             {
-                [0] = new PyNone(), // eveowners list
-                [1] = new PyNone(), // corporations list
-                [2] = new PyNone()  // offices list
+                [0] = null, // eveowners list
+                [1] = null, // corporations list
+                [2] = null  // offices list
             };
         }
 
-        public PyDataType GetNumberOfUnrentedOffices(CallInformation call)
+        public PyInteger GetNumberOfUnrentedOffices(CallInformation call)
         {
             // TODO: PROPERLY IMPLEMENT THIS, NPC STATIONS HAVE A LIMIT OF 24 OFFICES
             return 0;
@@ -202,18 +199,17 @@ namespace Node.Services.Stations
         public PyDataType SetCloneTypeID(PyInteger cloneTypeID, CallInformation call)
         {
             int callerCharacterID = call.Client.EnsureCharacterIsSelected();
+            int stationID = call.Client.EnsureCharacterIsInStation();
             
-            Character character = this.ItemManager.LoadItem(callerCharacterID) as Character;
+            Character character = this.ItemManager.GetItem<Character>(callerCharacterID);
             ItemType newCloneType = this.TypeManager[cloneTypeID];
 
-            if (call.Client.StationID == null)
-                throw new CanOnlyDoInStations();
             if (newCloneType.Group.ID != (int) ItemGroups.Clone)
                 throw new CustomError("Only clone types allowed!");
             if (character.ActiveClone.Type.BasePrice > newCloneType.BasePrice)
                 throw new MedicalThisCloneIsWorse();
 
-            Station station = this.ItemManager.GetStation((int) call.Client.StationID);
+            Station station = this.ItemManager.GetStation(stationID);
             
             // ensure the character has enough money in the account for the upgrade
             character.EnsureEnoughBalance(newCloneType.BasePrice);

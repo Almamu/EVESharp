@@ -33,10 +33,11 @@ namespace PythonTypes.Types.Database
                 rows.Add(linedata);
             }
 
-            return new PyTuple(new PyDataType[]
+            return new PyTuple(2)
             {
-                columns, rows
-            });
+                [0] = columns,
+                [1] = rows
+            };
         }
     }
 }

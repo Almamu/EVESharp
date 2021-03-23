@@ -30,7 +30,7 @@ namespace Node.Services.Corporations
 
         public override PyDataType FetchByKey(PyList keyList, CallInformation call)
         {
-            return this.DB.GetMembers(keyList, this.Corporation.ID, this.SparseRowset, this.RowsIndex);
+            return this.DB.GetMembers(keyList.GetEnumerable<PyInteger>(), this.Corporation.ID, this.SparseRowset, this.RowsIndex);
         }
     }
 }

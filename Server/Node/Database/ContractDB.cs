@@ -33,6 +33,7 @@ using Node.Inventory.Items.Attributes;
 using Node.Inventory.Items.Types;
 using Node.Services.Contracts;
 using PythonTypes.Types.Collections;
+using PythonTypes.Types.Database;
 using PythonTypes.Types.Primitives;
 
 namespace Node.Database
@@ -133,7 +134,7 @@ namespace Node.Database
             );
         }
 
-        public PyDataType GetContractsForOwner(int ownerID, int? contractType, int? contractStatus)
+        public CRowset GetContractsForOwner(int ownerID, int? contractType, int? contractStatus)
         {
             string contractQuery =
                 "SELECT contractID, issuerID, issuerCorpID, type, availability, assigneeID, expiretime, numDays, startStationID, start.solarSystemID AS startSolarSystemID, start.regionID AS startRegionID, endStationID, end.solarSystemID AS endSolarSystemID, end.regionID AS endRegionID, price, reward, collateral, title, description, forCorp, status, isAccepted, acceptorID, dateIssued, dateExpired, dateAccepted, dateCompleted, volume, requiresAttentionByOwner, requiresAttentionByAssignee, crateID, issuerWalletKey, issuerAllianceID, acceptorWalletKey FROM conContracts LEFT JOIN staStations AS start ON start.stationID = startStationID LEFT JOIN staStations AS end ON end.stationID = endStationID WHERE ((issuerID = @ownerID AND forCorp = @notForCorp) OR (issuerCorpID = @ownerID AND forCorp = @forCorp))";
@@ -220,7 +221,7 @@ namespace Node.Database
             );
         }
 
-        public PyDataType GetItemsInStationForPlayer(int characterID, int stationID)
+        public Rowset GetItemsInStationForPlayer(int characterID, int stationID)
         {
             return Database.PrepareRowsetQuery(
                 "SELECT itemID, typeID, categoryID, groupID, singleton, quantity, flag, contraband FROM invItems LEFT JOIN invTypes USING (typeID) LEFT JOIN invGroups USING (groupID) WHERE ownerID = @characterID AND locationID = @stationID AND flag = @flagHangar",
@@ -272,7 +273,7 @@ namespace Node.Database
             );
         }
 
-        public PyDataType GetContractInformation(int contractID, int characterID, int corporationID)
+        public PyPackedRow GetContractInformation(int contractID, int characterID, int corporationID)
         {
             return Database.PreparePackedRowQuery(
                 "SELECT contractID, issuerID, issuerCorpID, type, availability, assigneeID, expiretime, numDays, startStationID, start.solarSystemID AS startSolarSystemID, start.regionID AS startRegionID, endStationID, end.solarSystemID AS endSolarSystemID, end.regionID AS endRegionID, price, reward, collateral, title, description, forCorp, status, isAccepted, acceptorID, dateIssued, dateExpired, dateAccepted, dateCompleted, volume, requiresAttentionByOwner, requiresAttentionByAssignee, crateID, issuerWalletKey, issuerAllianceID, acceptorWalletKey FROM conContracts LEFT JOIN staStations AS start ON start.stationID = startStationID LEFT JOIN staStations AS end ON end.stationID = endStationID WHERE ((availability = 1 AND (issuerID = @characterID OR issuerCorpID = @corporationID OR assigneeID = @characterID OR assigneeID = @corporationID OR acceptorID = @characterID OR acceptorID = @corporationID)) OR availability = 0) AND contractID = @contractID",
@@ -285,7 +286,7 @@ namespace Node.Database
             );
         }
         
-        public PyDataType GetContractBids(int contractID, int characterID, int corporationID)
+        public Rowset GetContractBids(int contractID, int characterID, int corporationID)
         {
             return Database.PrepareRowsetQuery(
                 "SELECT bidID, contractID, conBids.issuerID, quantity, conBids.issuerCorpID, issuerStationID FROM conBids LEFT JOIN conContracts USING(contractID) WHERE ((availability = 1 AND (conContracts.issuerID = @characterID OR conContracts.issuerCorpID = @corporationID OR assigneeID = @characterID OR assigneeID = @corporationID OR acceptorID = @characterID OR acceptorID = @corporationID)) OR availability = 0) AND contractID = @contractID",
@@ -298,7 +299,7 @@ namespace Node.Database
             );
         }
         
-        public PyDataType GetContractItems(int contractID, int characterID, int corporationID)
+        public Rowset GetContractItems(int contractID, int characterID, int corporationID)
         {
             return Database.PrepareRowsetQuery(
                 "SELECT itemTypeID AS typeID, quantity, inCrate, itemID, materialLevel, productivityLevel, licensedProductionRunsRemaining AS bpRuns FROM conItems LEFT JOIN invBlueprints USING(itemID) LEFT JOIN conContracts USING(contractID) WHERE ((availability = 1 AND (conContracts.issuerID = @characterID OR conContracts.issuerCorpID = @corporationID OR assigneeID = @characterID OR assigneeID = @corporationID OR acceptorID = @characterID OR acceptorID = @corporationID)) OR availability = 0) AND contractID = @contractID",
@@ -343,7 +344,7 @@ namespace Node.Database
             public double Volume { get; set; }
         }
         
-        public Dictionary<int, ItemQuantityEntry> PrepareItemsForContract(MySqlConnection connection, ulong contractID, PyList itemList, Station station, int ownerID, int crateID, int shipID)
+        public Dictionary<int, ItemQuantityEntry> PrepareItemsForContract(MySqlConnection connection, ulong contractID, PyList<PyList> itemList, Station station, int ownerID, int crateID, int shipID)
         {
             Dictionary<int, ItemQuantityEntry> items = new Dictionary<int, ItemQuantityEntry>();
 
@@ -458,7 +459,7 @@ namespace Node.Database
             ).Close();
         }
 
-        public PyDataType GetItemsInContainer(int characterID, int containerID)
+        public PyList<PyPackedRow> GetItemsInContainer(int characterID, int containerID)
         {
             return Database.PreparePackedRowListQuery(
                 "SELECT itemID, typeID, quantity FROM invItems WHERE locationID = @containerID",
@@ -469,7 +470,7 @@ namespace Node.Database
             );
         }
 
-        public void PrepareRequestedItems(MySqlConnection connection, ulong contractID, PyList requestItemTypeList)
+        public void PrepareRequestedItems(MySqlConnection connection, ulong contractID, PyList<PyList> requestItemTypeList)
         {
             string query = "INSERT INTO conItems(contractID, itemTypeID, quantity, inCrate)VALUES";
             Dictionary<string, object> values = new Dictionary<string, object>()

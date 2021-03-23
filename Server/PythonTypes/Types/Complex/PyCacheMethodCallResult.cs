@@ -17,28 +17,25 @@ namespace PythonTypes.Types.Complex
 
         public static implicit operator PyDataType(PyCacheMethodCallResult cachedObject)
         {
-            if (cachedObject.CacheHint == null)
+            if (cachedObject.CacheHint is null)
                 throw new Exception("CacheHint data is null");
 
-            PyTuple args = new PyTuple(3);
-            PyDictionary versionCheck = new PyDictionary();
-
-            versionCheck["versionCheck"] = "run";
-
-            args[0] = versionCheck;
-            args[1] = cachedObject.CacheHint;
-            args[2] = new PyNone();
+            PyTuple args = new PyTuple(3)
+            {
+                [0] = new PyDictionary {["versionCheck"] = "run"},
+                [1] = cachedObject.CacheHint,
+                [2] = null
+            };
 
             return new PyObjectData(TYPE_NAME, args);
         }
 
         public static PyCacheMethodCallResult FromCacheHint(PyDataType cacheInfo)
         {
-            PyCacheMethodCallResult cachedObject = new PyCacheMethodCallResult();
-
-            cachedObject.CacheHint = cacheInfo;
-
-            return cachedObject;
+            return new PyCacheMethodCallResult
+            {
+                CacheHint = cacheInfo
+            };
         }
     }
 }

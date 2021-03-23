@@ -19,7 +19,7 @@ namespace PythonTypes.Types.Complex
         public void AddRow(int warID, int declaredByID, int againstID, long timeDeclared, long timeFinished,
             int retracted, int retractedBy, int billID, int mutual)
         {
-            this.AddRow(warID, (PyList) new PyDataType[]
+            this.AddRow(warID, new PyDataType[]
             {
                 warID, declaredByID, againstID, timeDeclared, timeFinished, retracted, retractedBy, billID, mutual
             });

@@ -17,20 +17,29 @@ namespace Node.Services.Chat
 {
     public class LSC : Service
     {
+        /// <summary>
+        /// The type of notification used through the whole LSC service
+        /// </summary>
+        private const string NOTIFICATION_TYPE = "OnLSC";
+        
         private MessagesDB MessagesDB { get; }
         private ChatDB DB { get; }
         private CharacterDB CharacterDB { get; }
         private Channel Log;
         private ItemManager ItemManager { get; }
         private NodeContainer NodeContainer { get; }
-        
-        public LSC(ChatDB db, MessagesDB messagesDB, CharacterDB characterDB, ItemManager itemManager, NodeContainer nodeContainer, Logger logger)
+        private NotificationManager NotificationManager { get; }
+        private MachoNet MachoNet { get; }
+
+        public LSC(ChatDB db, MessagesDB messagesDB, CharacterDB characterDB, ItemManager itemManager, NodeContainer nodeContainer, Logger logger, NotificationManager notificationManager, MachoNet machoNet)
         {
             this.DB = db;
             this.MessagesDB = messagesDB;
             this.CharacterDB = characterDB;
             this.ItemManager = itemManager;
             this.NodeContainer = nodeContainer;
+            this.NotificationManager = notificationManager;
+            this.MachoNet = machoNet;
             this.Log = logger.CreateLogChannel("LSC");
         }
 
@@ -74,7 +83,7 @@ namespace Node.Services.Chat
             }
             
             // ensure the channelID is the correct one and not an entityID
-            if (entityID != null)
+            if (entityID is not null)
                 channelID = this.DB.GetChannelIDFromRelatedEntity((int) entityID, channelID == entityID);
                 
             if (channelID == 0)
@@ -116,7 +125,7 @@ namespace Node.Services.Chat
             return this.DB.GetChannelMembers(channelID, callerCharacterID);
         }
 
-        private static PyDataType GenerateLSCNotification(string type, PyDataType channel, PyTuple args, Client client)
+        private static PyTuple GenerateLSCNotification(string type, PyDataType channel, PyTuple args, Client client)
         {
             PyTuple who = new PyTuple(6)
             {
@@ -143,7 +152,7 @@ namespace Node.Services.Chat
         {
             Row info;
 
-            if (channelID < ChatDB.MIN_CHANNEL_ENTITY_ID || entityID == null || channelID >= ChatDB.MAX_CHANNEL_ENTITY_ID)
+            if (channelID < ChatDB.MIN_CHANNEL_ENTITY_ID || entityID is null || channelID >= ChatDB.MAX_CHANNEL_ENTITY_ID)
                 info = this.DB.GetChannelInfo(channelID, callerCharacterID);
             else
                 info = this.DB.GetChannelInfoByRelatedEntity((int) entityID, callerCharacterID, channelID == entityID);
@@ -192,11 +201,11 @@ namespace Node.Services.Chat
             };
         }
         
-        public PyDataType JoinChannels(PyList channels, PyInteger role, CallInformation call)
+        public PyList<PyTuple> JoinChannels(PyList channels, PyInteger role, CallInformation call)
         {
             int callerCharacterID = call.Client.EnsureCharacterIsSelected();
 
-            PyList result = new PyList();
+            PyList<PyTuple> result = new PyList<PyTuple>();
 
             foreach (PyDataType channel in channels)
             {
@@ -232,7 +241,7 @@ namespace Node.Services.Chat
                 // we don't want people in local to know about players unless they talk there
                 if (channelType != ChatDB.CHANNEL_TYPE_REGIONID && channelType != ChatDB.CHANNEL_TYPE_CONSTELLATIONID && channelType != ChatDB.CHANNEL_TYPE_SOLARSYSTEMID2)
                 {
-                    PyDataType notification =
+                    PyTuple notification =
                         GenerateLSCNotification("JoinChannel", channelIDExtended, new PyTuple(0), call.Client);
 
                     if (channelType == ChatDB.CHANNEL_TYPE_NORMAL)
@@ -240,16 +249,16 @@ namespace Node.Services.Chat
                         if (channelID < ChatDB.MIN_CHANNEL_ENTITY_ID)
                         {
                             // get users in the channel that are online now
-                            PyList characters = this.DB.GetOnlineCharsOnChannel(channelID);
+                            PyList<PyInteger> characters = this.DB.GetOnlineCharsOnChannel(channelID);
 
                             // notify them all
-                            call.Client.ClusterConnection.SendNotification("OnLSC", "charid", characters, notification);  
+                            this.NotificationManager.NotifyCharacters(characters, NOTIFICATION_TYPE, notification);
                         }
                     }
                     else
                     {
                         // notify all players on the channel
-                        call.Client.ClusterConnection.SendNotification("OnLSC", channelType, new PyDataType [] { entityID }, notification);                            
+                        this.NotificationManager.SendNotification(NOTIFICATION_TYPE, channelType, new PyDataType [] { entityID }, notification);                            
                     }
                 }
 
@@ -269,11 +278,11 @@ namespace Node.Services.Chat
                     if (channelType == ChatDB.CHANNEL_TYPE_NORMAL && channelID != entityID)
                     {
                         // notify everyone in the channel only when it should
-                        PyDataType notification =
+                        PyTuple notification =
                             GenerateLSCNotification("DestroyChannel", channelID, new PyTuple(0), call.Client);
 
                         // notify all characters in the channel
-                        call.Client.ClusterConnection.SendNotification("OnLSC", "charid", callerCharacterID, call.Client, notification);
+                        this.NotificationManager.NotifyCharacter(callerCharacterID, "OnLSC", notification);
                     }
                     
                     Log.Error($"LSC could not get channel information. Error: {e.Message}");
@@ -320,14 +329,11 @@ namespace Node.Services.Chat
             
             if (channelType == ChatDB.CHANNEL_TYPE_NORMAL)
             {
-                PyDataType notification =
+                PyTuple notification =
                     GenerateLSCNotification("SendMessage", channelID, notificationBody, call.Client);
 
-                call.Client.ClusterConnection.SendNotification(
-                    "OnLSC",
-                    "charid",
-                    this.DB.GetOnlineCharsOnChannel(channelID),
-                    notification
+                this.NotificationManager.NotifyCharacters(
+                    this.DB.GetOnlineCharsOnChannel(channelID), NOTIFICATION_TYPE, notification
                 );
             }
             else
@@ -341,11 +347,11 @@ namespace Node.Services.Chat
                     }
                 };
                 
-                PyDataType notification =
+                PyTuple notification =
                     GenerateLSCNotification("SendMessage", identifier, notificationBody, call.Client);
-
-                call.Client.ClusterConnection.SendNotification(
-                    "OnLSC",
+                
+                this.NotificationManager.SendNotification(
+                    NOTIFICATION_TYPE,
                     channelType,
                     new PyDataType [] { entityID },
                     notification
@@ -408,17 +414,16 @@ namespace Node.Services.Chat
             if (channelType != ChatDB.CHANNEL_TYPE_CORPID && channelType != ChatDB.CHANNEL_TYPE_SOLARSYSTEMID2 && announce == 1)
             {
                 // notify everyone in the channel only when it should
-                PyDataType notification =
+                PyTuple notification =
                     GenerateLSCNotification("LeaveChannel", channel, new PyTuple(0), call.Client);
                 
                 if (channelType != ChatDB.CHANNEL_TYPE_NORMAL)
-                    call.Client.ClusterConnection.SendNotification("OnLSC", channelType, new PyDataType [] { channel }, notification);
+                    this.NotificationManager.SendNotification(NOTIFICATION_TYPE, channelType, new PyDataType [] { channel }, notification);
                 else
                 {
-                    // get users in the channel that are online now
-                    PyList characters = this.DB.GetOnlineCharsOnChannel(channelID);
-
-                    call.Client.ClusterConnection.SendNotification("OnLSC", "charid", characters, notification);
+                    this.NotificationManager.NotifyCharacters(
+                        this.DB.GetOnlineCharsOnChannel(channelID), NOTIFICATION_TYPE, notification
+                    );
                 }
             }
 
@@ -475,17 +480,17 @@ namespace Node.Services.Chat
                 throw new LSCCannotDestroy("Insufficient permissions");
 
             // get users in the channel that are online now
-            PyList characters = this.DB.GetOnlineCharsOnChannel(channelID);
+            PyList<PyInteger> characters = this.DB.GetOnlineCharsOnChannel(channelID);
             
             // remove channel off the database
             this.DB.DestroyChannel(channelID);
             
             // notify everyone in the channel only when it should
-            PyDataType notification =
+            PyTuple notification =
                 GenerateLSCNotification("DestroyChannel", channelID, new PyTuple(0), call.Client);
 
             // notify all characters in the channel
-            call.Client.ClusterConnection.SendNotification("OnLSC", "charid", characters, notification);
+            this.NotificationManager.NotifyCharacters(characters, NOTIFICATION_TYPE, notification);
 
             return null;
         }
@@ -503,18 +508,18 @@ namespace Node.Services.Chat
             {
                 [0] = characterID,
                 [1] = accessLevel,
-                [2] = new PyNone(),
+                [2] = null,
                 [3] = accessLevel,
                 [4] = "",
                 [5] = accessLevel == ChatDB.CHATROLE_CREATOR
             };
             
-            PyDataType notification = GenerateLSCNotification("AccessControl", channelID, args, call.Client);
+            PyTuple notification = GenerateLSCNotification("AccessControl", channelID, args, call.Client);
             
             // get users in the channel that are online now
-            PyList characters = this.DB.GetOnlineCharsOnChannel(channelID);
-
-            call.Client.ClusterConnection.SendNotification("OnLSC", "charid", characters, notification);
+            this.NotificationManager.NotifyCharacters(
+                this.DB.GetOnlineCharsOnChannel(channelID), NOTIFICATION_TYPE, notification
+            );
             
             // TODO: CHECK IF THIS IS A CHARACTER'S ADDRESS BOOK AND CHECK FOR OTHER CHARACTER'S ADDRESSBOOK STATUS
             // TODO: TO ENSURE THEY DON'T HAVE US BLOCKED
@@ -527,13 +532,13 @@ namespace Node.Services.Chat
             int callerCharacterID = call.Client.EnsureCharacterIsSelected();
 
             // announce leaving, important in private channels
-            PyDataType notification =
+            PyTuple notification =
                 GenerateLSCNotification("LeaveChannel", channelID, new PyTuple(0), call.Client);
             
             // get users in the channel that are online now
-            PyList characters = this.DB.GetOnlineCharsOnChannel(channelID);
-
-            call.Client.ClusterConnection.SendNotification("OnLSC", "charid", characters, notification);
+            this.NotificationManager.NotifyCharacters(
+                this.DB.GetOnlineCharsOnChannel(channelID), NOTIFICATION_TYPE, notification
+            );
 
             this.DB.LeaveChannel(channelID, callerCharacterID);
             
@@ -559,26 +564,25 @@ namespace Node.Services.Chat
                         }
                     )
                 );
-            } 
+            }
             
             // return an empty response to the original calling client, this should get mechanism going for the JoinChannel notification
-            call.OriginalCall.Client.SendCallResponse(call.OriginalCall, null);
+            this.MachoNet.SendCallResult(call.OriginalCall, null);
             
             // character has accepted, notify all users of the channel
             string channelType = this.DB.GetChannelType(call.ChannelID);
             
-            PyDataType notification =
+            PyTuple notification =
                 GenerateLSCNotification("JoinChannel", call.ChannelID, new PyTuple(0), callInfo.Client);
 
             // you should only be able to invite to global channels as of now
             // TODO: CORP CHANNELS SHOULD BE SUPPORTED TOO
             if (channelType == ChatDB.CHANNEL_TYPE_NORMAL)
             {
-                // get users in the channel that are online now
-                PyList characters = this.DB.GetOnlineCharsOnChannel(call.ChannelID);
-
-                // notify them all
-                call.OriginalCall.Client.ClusterConnection.SendNotification("OnLSC", "charid", characters, notification);  
+                // notify all the characters in the channel
+                this.NotificationManager.NotifyCharacters(
+                    this.DB.GetOnlineCharsOnChannel(call.ChannelID), NOTIFICATION_TYPE, notification
+                );  
             }
         }
 
@@ -637,7 +641,7 @@ namespace Node.Services.Chat
                 };
                 
                 // no timeout for this call
-                call.Client.ClusterConnection.SendServiceCall(
+                this.MachoNet.SendServiceCall(
                     characterID,
                     "LSC", "ChatInvite", args, new PyDictionary(),
                     InviteAnswerCallback, InviteTimeoutCallback,
@@ -681,7 +685,8 @@ namespace Node.Services.Chat
                 // but supporting multicastIDs would be perfect
                 
                 // the list of id's on a *multicastID would be a PyTuple with the type and the id in it, instead of just a list of integers
-                call.Client.ClusterConnection.SendNotification("OnMessage", mailboxType, destinationID, notification);
+                // TODO: IMPLEMENT MULTICASTING IN THE CLUSTER
+                this.NotificationManager.SendNotification("OnMessage", mailboxType, destinationID, notification);
             }
             
             return null;

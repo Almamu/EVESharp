@@ -4,7 +4,7 @@ namespace PythonTypes.Types.Primitives
     {
         public PyDataType Data { get; }
 
-        public PyChecksumedStream(PyDataType data) : base(PyObjectType.ChecksumedStream)
+        public PyChecksumedStream(PyDataType data) : base()
         {
             this.Data = data;
         }

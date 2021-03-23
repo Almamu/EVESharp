@@ -32,9 +32,7 @@ namespace Node.Services.Characters
             // TODO: CHECK IF THE OTHER CHARACTER HAS US IN THEIR ADDRESSBOOK?
             try
             {
-                Character character = this.ItemManager.GetItem<Character>(characterID);
-
-                return character.Online;
+                return this.ItemManager.GetItem<Character>(characterID).Online;
             }
             catch (Exception)
             {

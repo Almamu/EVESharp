@@ -6,6 +6,7 @@ using Node.Data;
 using Node.Inventory;
 using Node.Inventory.Items;
 using Node.Inventory.Items.Types;
+using PythonTypes.Types.Collections;
 using PythonTypes.Types.Database;
 using PythonTypes.Types.Primitives;
 
@@ -22,7 +23,7 @@ namespace Node.Database
             this.ItemDB = itemDB;
         }
 
-        public PyDataType GetCharacterList(int accountID)
+        public Rowset GetCharacterList(int accountID)
         {
             MySqlConnection connection = null;
             MySqlDataReader reader = Database.PrepareQuery(ref connection,
@@ -51,7 +52,7 @@ namespace Node.Database
             }
         }
 
-        public PyDataType GetCharacterSelectionInfo(int characterID, int accountID)
+        public Rowset GetCharacterSelectionInfo(int characterID, int accountID)
         {
             MySqlConnection connection = null;
             MySqlDataReader reader = Database.PrepareQuery(
@@ -95,7 +96,7 @@ namespace Node.Database
             );
         }
 
-        public PyDataType GetPublicInfo3(int characterID)
+        public Rowset GetPublicInfo3(int characterID)
         {
             return Database.PrepareRowsetQuery(
                 "SELECT bounty, title, startDateTime, description, corporationID FROM chrInformation WHERE characterID=@characterID",
@@ -429,7 +430,7 @@ namespace Node.Database
             return skills;
         }
 
-        public PyDataType GetKeyMap()
+        public Rowset GetKeyMap()
         {
             MySqlConnection connection = null;
             MySqlDataReader reader = Database.Query(ref connection,
@@ -475,7 +476,7 @@ namespace Node.Database
             }
         }
 
-        public PyDataType GetOwnerNoteLabels(Character character)
+        public Rowset GetOwnerNoteLabels(Character character)
         {
             return Database.PrepareRowsetQuery(
                 "SELECT noteID, label FROM chrOwnerNote WHERE ownerID = @ownerID",
@@ -486,7 +487,7 @@ namespace Node.Database
             );
         }
 
-        public PyDataType IsOnline(int characterID)
+        public bool IsOnline(int characterID)
         {
             MySqlConnection connection = null;
             MySqlDataReader reader = Database.PrepareQuery(ref connection,
@@ -507,7 +508,7 @@ namespace Node.Database
             }
         }
 
-        public List<int> GetOnlineFriendList(Character character)
+        public PyList<PyInteger> GetOnlineFriendList(Character character)
         {
             MySqlConnection connection = null;
             MySqlDataReader reader = Database.PrepareQuery(ref connection,
@@ -521,7 +522,7 @@ namespace Node.Database
             using (connection)
             using (reader)
             {
-                List<int> result = new List<int>();
+                PyList<PyInteger> result = new PyList<PyInteger>();
                 
                 while(reader.Read() == true)
                     result.Add(reader.GetInt32(0));
@@ -582,7 +583,7 @@ namespace Node.Database
             }
         }
 
-        public PyDataType GetJournal(int characterID, int? refTypeID, int accountKey, long maxDate, int? startTransactionID)
+        public Rowset GetJournal(int characterID, int? refTypeID, int accountKey, long maxDate, int? startTransactionID)
         {
             // get the last 30 days of journal
             long minDate = DateTime.FromFileTimeUtc(maxDate).AddDays(-30).ToFileTimeUtc();
@@ -601,16 +602,16 @@ namespace Node.Database
                 "FROM market_journal " +
                 "WHERE charID = @characterID AND accountKey=@accountKey AND transactionDate >= @minDate AND transactionDate <= @maxDate";
 
-            if (refTypeID != null)
+            if (refTypeID is not null)
             {
                 query += " AND entryTypeID=@entryTypeID";
-                parameters["@entryTypeID"] = (int) refTypeID;
+                parameters["@entryTypeID"] = refTypeID;
             }
 
-            if (startTransactionID != null)
+            if (startTransactionID is not null)
             {
                 query += " AND transactionID > @startTransactionID";
-                parameters["@startTransactionID"] = (int) startTransactionID;
+                parameters["@startTransactionID"] = startTransactionID;
             }
 
             query += " ORDER BY transactionID DESC";
@@ -618,7 +619,7 @@ namespace Node.Database
             return Database.PrepareRowsetQuery(query, parameters);
         }
 
-        public PyDataType GetRecentShipKillsAndLosses(int characterID, int count, int? startIndex)
+        public Rowset GetRecentShipKillsAndLosses(int characterID, int count, int? startIndex)
         {
             // TODO: WRITE A GENERATOR FOR THE KILL LOGS, THESE SEEM TO BE KIND OF AN XML FILE WITH ALL THE INFORMATION
             // TODO: FOR MORE INFORMATION CHECK CombatLog_CopyText ON eveCommonUtils.py

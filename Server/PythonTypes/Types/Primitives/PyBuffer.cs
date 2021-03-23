@@ -5,7 +5,7 @@ namespace PythonTypes.Types.Primitives
         public byte[] Value { get; }
         public int Length => this.Value.Length;
 
-        public PyBuffer(byte[] value) : base(PyObjectType.Buffer)
+        public PyBuffer(byte[] value) : base()
         {
             this.Value = value;
         }

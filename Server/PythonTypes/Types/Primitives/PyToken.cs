@@ -17,12 +17,12 @@ namespace PythonTypes.Types.Primitives
 
         public override int GetHashCode()
         {
-            return (Token != null ? Token.GetHashCode() : 0);
+            return (Token is not null ? Token.GetHashCode() : 0);
         }
 
         public string Token { get; }
 
-        public PyToken(string token) : base(PyObjectType.Token)
+        public PyToken(string token) : base()
         {
             this.Token = token;
         }
@@ -41,7 +41,7 @@ namespace PythonTypes.Types.Primitives
         {
             if (ReferenceEquals(null, obj) == true)
             {
-                if (value == null)
+                if (value is null)
                     return true;
 
                 return false;

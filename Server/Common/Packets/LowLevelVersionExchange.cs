@@ -23,11 +23,15 @@ namespace Common.Packets
             if (exchange.Count != 6)
                 throw new InvalidDataException("LowLevelVersionExchange must have 6 elements");
 
-            LowLevelVersionExchange result = new LowLevelVersionExchange();
-
-            result.birthday = exchange[0] as PyInteger;
-            result.machoVersion = exchange[1] as PyInteger;
-
+            LowLevelVersionExchange result = new LowLevelVersionExchange
+            {
+                birthday = exchange[0] as PyInteger,
+                machoVersion = exchange[1] as PyInteger,
+                version = exchange[3] as PyDecimal,
+                build = exchange[4] as PyInteger,
+                codename = exchange[5] as PyString,
+            };
+            
             if (exchange[2] is PyString)
             {
                 result.isNode = true;
@@ -38,21 +42,20 @@ namespace Common.Packets
                 result.usercount = exchange[2] as PyInteger;
             }
 
-            result.version = exchange[3] as PyDecimal;
-            result.build = exchange[4] as PyInteger;
-            result.codename = exchange[5] as PyString;
-
             return result;
         }
 
         public static implicit operator PyDataType(LowLevelVersionExchange exchange)
         {
-            return new PyTuple(new PyDataType[]
+            return new PyTuple(6)
             {
-                exchange.birthday, exchange.machoVersion,
-                (exchange.isNode == true) ? (PyDataType) exchange.nodeIdentifier : exchange.usercount, exchange.version,
-                exchange.build, exchange.codename + "@" + exchange.region
-            });
+                [0] = exchange.birthday,
+                [1] = exchange.machoVersion,
+                [2] = (exchange.isNode == true) ? exchange.nodeIdentifier : exchange.usercount,
+                [3] = exchange.version,
+                [4] = exchange.build,
+                [5] = exchange.codename + "@" + exchange.region
+            };
         }
     }
 }

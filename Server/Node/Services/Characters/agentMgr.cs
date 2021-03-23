@@ -22,11 +22,11 @@ namespace Node.Services.Characters
 
         public PyDataType GetMyJournalDetails(CallInformation call)
         {
-            return new PyTuple(new PyDataType[]
+            return new PyTuple(2)
             {
-                new PyList(), // missions
-                new PyList() // research
-            });
+                [0] = new PyList(), // missions
+                [1] = new PyList() // research
+            };
         }
 
         public PyDataType GetMyEpicJournalDetails(CallInformation call)

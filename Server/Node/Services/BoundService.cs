@@ -64,7 +64,7 @@ namespace Node.Services
         /// <returns></returns>
         public PyDataType MachoBindObject(PyTuple objectData, PyTuple callInfo, CallInformation call)
         {
-            return this.MachoBindObject(objectData, callInfo as PyDataType, call);
+            return this.MachoBindObject(objectData as PyDataType, callInfo as PyDataType, call);
         }
         
         /// <summary>
@@ -78,9 +78,9 @@ namespace Node.Services
         /// <param name="callInfo">The information on the call</param>
         /// <param name="call">The call object with extra information</param>
         /// <returns></returns>
-        public PyDataType MachoBindObject(PyTuple objectData, PyNone callInfo, CallInformation call)
+        public PyDataType MachoBindObject(PyTuple objectData, PyDataType callInfo, CallInformation call)
         {
-            return this.MachoBindObject(objectData, callInfo as PyDataType, call);
+            return this.MachoBindObject(objectData as PyDataType, callInfo, call);
         }
         
         /// <summary>
@@ -94,9 +94,9 @@ namespace Node.Services
         /// <param name="callInfo">The information on the call</param>
         /// <param name="call">The call object with extra information</param>
         /// <returns></returns>
-        public PyDataType MachoBindObject(PyInteger objectID, PyNone callInfo, CallInformation call)
+        public PyDataType MachoBindObject(PyInteger objectID, PyDataType callInfo, CallInformation call)
         {
-            return this.MachoBindObject(objectID, callInfo as PyDataType, call);
+            return this.MachoBindObject(objectID as PyDataType, callInfo, call);
         }
         
         /// <summary>
@@ -112,7 +112,7 @@ namespace Node.Services
         /// <returns></returns>
         public PyDataType MachoBindObject(PyInteger objectID, PyTuple callInfo, CallInformation call)
         {
-            return this.MachoBindObject(objectID, callInfo as PyDataType, call);
+            return this.MachoBindObject(objectID as PyDataType, callInfo as PyDataType, call);
         }
         
         /// <summary>
@@ -126,7 +126,7 @@ namespace Node.Services
         /// <param name="callInfo">The information on the call</param>
         /// <param name="call">The call object with extra information</param>
         /// <returns></returns>
-        protected PyDataType MachoBindObject(PyDataType objectData, PyDataType callInfo, CallInformation call)
+        protected PyTuple MachoBindObject(PyDataType objectData, PyDataType callInfo, CallInformation call)
         {
             // create the bound instance and register it in the bound services
             BoundService instance = this.CreateBoundInstance(objectData, call);
@@ -139,19 +139,20 @@ namespace Node.Services
             // TODO: the expiration time is 1 day, might be better to properly support this?
             // TODO: investigate these a bit more closely in the future
             // TODO: i'm not so sure about the expiration time
-            PyTuple boundServiceInformation = new PyTuple(new PyDataType[]
+            PyTuple boundServiceInformation = new PyTuple(2)
             {
-                boundServiceStr, DateTime.UtcNow.Add(TimeSpan.FromDays(1)).ToFileTime()
-            });
+                [0] = boundServiceStr,
+                [1] = DateTime.UtcNow.Add(TimeSpan.FromDays(1)).ToFileTime()
+            };
 
             // after the service is bound the call can be run (if required)
-            PyTuple result = new PyTuple(2);
-
-            result[0] = new PySubStruct(new PySubStream(boundServiceInformation));
-
-            if (callInfo is PyNone)
-                result[1] = null;
-            else
+            PyTuple result = new PyTuple(2)
+            {
+                [0] = new PySubStruct(new PySubStream(boundServiceInformation)),
+                [1] = null
+            };
+            
+            if (callInfo is not null)
             {
                 PyTuple data = callInfo as PyTuple;
                 string func = data[0] as PyString;

@@ -26,6 +26,7 @@ using System;
 using System.Collections.Generic;
 using Common.Logging;
 using MySql.Data.MySqlClient;
+using PythonTypes.Types.Collections;
 using PythonTypes.Types.Database;
 using PythonTypes.Types.Primitives;
 
@@ -306,12 +307,12 @@ namespace Common.Database
         }
 
         /// <summary>
-        /// Runs one prepared query with the given values as parameters and returns a Rowset representing the result
+        /// Runs one prepared query with the given values as parameters and returns a PyPackedRow representing the first result
         /// </summary>
         /// <param name="query">The prepared query</param>
         /// <param name="values">The key-value pair of values to use when running the query</param>
         /// <returns>The Rowset object representing the result</returns>
-        public PyDataType PreparePackedRowQuery(string query, Dictionary<string, object> values)
+        public PyPackedRow PreparePackedRowQuery(string query, Dictionary<string, object> values)
         {
             try
             {
@@ -347,7 +348,7 @@ namespace Common.Database
         /// <param name="query">The prepared query</param>
         /// <param name="values">The key-value pair of values to use when running the query</param>
         /// <returns>The Rowset object representing the result</returns>
-        public PyDataType PreparePackedRowListQuery(string query, Dictionary<string, object> values)
+        public PyList<PyPackedRow> PreparePackedRowListQuery(string query, Dictionary<string, object> values)
         {
             try
             {
@@ -470,7 +471,7 @@ namespace Common.Database
         /// </summary>
         /// <param name="query">The prepared query</param>
         /// <returns>The Rowset object representing the result</returns>
-        public PyDataType PrepareIntIntDictionary(string query)
+        public PyDictionary<PyInteger,PyInteger> PrepareIntIntDictionary(string query)
         {
             try
             {
@@ -502,7 +503,7 @@ namespace Common.Database
         /// </summary>
         /// <param name="query">The prepared query</param>
         /// <returns>The Rowset object representing the result</returns>
-        public PyDataType PrepareIntIntListDictionary(string query)
+        public PyDictionary<PyInteger,PyList<PyInteger>> PrepareIntIntListDictionary(string query)
         {
             try
             {
@@ -532,7 +533,7 @@ namespace Common.Database
         /// </summary>
         /// <param name="query">The prepared query</param>
         /// <returns>The IntRowDictionary object representing the result</returns>
-        public PyDataType PrepareIntRowDictionary(string query, int keyColumnIndex)
+        public PyDictionary PrepareIntRowDictionary(string query, int keyColumnIndex)
         {
             try
             {
@@ -563,7 +564,7 @@ namespace Common.Database
         /// <param name="query">The prepared query</param>
         /// <param name="values">The key-value pair of values to use when running the query</param>
         /// <returns>The IntRowDictionary object representing the result</returns>
-        public PyDataType PrepareIntRowDictionary(string query, int keyColumnIndex, Dictionary<string, object> values)
+        public PyDictionary PrepareIntRowDictionary(string query, int keyColumnIndex, Dictionary<string, object> values)
         {
             try
             {

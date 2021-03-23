@@ -17,12 +17,12 @@ namespace PythonTypes.Types.Database
 
         private readonly Dictionary<string, PyDataType> mValues = new Dictionary<string, PyDataType>();
 
-        public PyPackedRow(DBRowDescriptor descriptor) : base(PyObjectType.PackedRow)
+        public PyPackedRow(DBRowDescriptor descriptor) : base()
         {
             this.Header = descriptor;
         }
 
-        public PyPackedRow(DBRowDescriptor descriptor, Dictionary<string, PyDataType> values) : base(PyObjectType.PackedRow)
+        public PyPackedRow(DBRowDescriptor descriptor, Dictionary<string, PyDataType> values) : base()
         {
             this.Header = descriptor;
 

@@ -232,7 +232,7 @@ namespace ClusterController
         {
             AuthenticationReq request = packet;
 
-            if (request.user_password == null)
+            if (request.user_password is null)
             {
                 Log.Trace("Rejected by server; requesting plain password");
                 // request the user a plain password
@@ -260,16 +260,15 @@ namespace ClusterController
                 live_updates = this.GeneralDB.FetchLiveUpdates(),
                 jit = this.Session["languageID"] as PyString,
                 userid = this.Session["userid"] as PyInteger,
-                maxSessionTime = new PyNone(),
+                maxSessionTime = null,
                 userType = Common.Constants.AccountType.User,
                 role = this.Session["role"] as PyInteger,
                 address = this.Session["address"] as PyString,
-                inDetention = new PyNone(),
+                inDetention = null,
                 client_hashes = new PyList(),
                 user_clientid = this.Session["userid"] as PyInteger
             };
-
-
+            
             // send the response first
             this.Socket.Send(ack);
             // send the session change
@@ -299,20 +298,23 @@ namespace ClusterController
             if (pyPacket.Type == PyPacket.PacketType.PING_REQ)
             {
                 // alter package to include the times the data
-                PyTuple handleMessage = new PyTuple(3);
 
                 // this time should come from the stream packetizer or the socket itself
                 // but there's no way we're adding time tracking for all the goddamned packets
                 // so this should be sufficient
-                handleMessage[0] = DateTime.UtcNow.ToFileTime();
-                handleMessage[1] = DateTime.UtcNow.ToFileTime();
-                handleMessage[2] = "proxy::handle_message";
-                
-                PyTuple writing = new PyTuple(3);
+                PyTuple handleMessage = new PyTuple(3)
+                {
+                    [0] = DateTime.UtcNow.ToFileTime(),
+                    [1] = DateTime.UtcNow.ToFileTime(),
+                    [2] = "proxy::handle_message"
+                };
 
-                writing[0] = DateTime.UtcNow.ToFileTime();
-                writing[1] = DateTime.UtcNow.ToFileTime();
-                writing[2] = "proxy::writing";
+                PyTuple writing = new PyTuple(3)
+                {
+                    [0] = DateTime.UtcNow.ToFileTime(),
+                    [1] = DateTime.UtcNow.ToFileTime(),
+                    [2] = "proxy::writing"
+                };
 
                 (pyPacket.Payload[0] as PyList)?.Add(handleMessage);
                 (pyPacket.Payload[0] as PyList)?.Add(writing);
@@ -449,7 +451,7 @@ namespace ClusterController
         {
             PyPacket packet = CreateEmptySessionChange();
 
-            if (packet == null)
+            if (packet is null)
                 return;
 
             PyDataType client = SetSessionChangeDestination(packet);
@@ -461,21 +463,24 @@ namespace ClusterController
         public PyPacket CreateEmptySessionChange()
         {
             // Fill all the packet data, except the dest/source
-            SessionChangeNotification scn = new SessionChangeNotification();
-            scn.changes = Session.GenerateSessionChange();
+            SessionChangeNotification scn = new SessionChangeNotification
+            {
+                Changes = Session.GenerateSessionChange()
+            };
 
-            if (scn.changes.Length == 0)
+            if (scn.Changes.Length == 0)
                 // Nothing to do
                 return null;
 
-            PyPacket packet = new PyPacket(PyPacket.PacketType.SESSIONCHANGENOTIFICATION);
-
-            packet.UserID = this.Session["userid"] as PyInteger;
-
-            packet.Payload = scn;
-
-            packet.OutOfBounds = new PyDictionary();
-            packet.OutOfBounds["channel"] = "sessionchange";
+            PyPacket packet = new PyPacket(PyPacket.PacketType.SESSIONCHANGENOTIFICATION)
+            {
+                UserID = this.Session["userid"] as PyInteger,
+                Payload = scn,
+                OutOfBounds = new PyDictionary
+                {
+                    ["channel"] = "sessionchange"
+                }
+            };
 
             return packet;
         }
@@ -499,7 +504,12 @@ namespace ClusterController
         
         public void UpdateSession(PyPacket packet)
         {
-            this.Session.LoadChanges((packet.Payload[0] as PyTuple)[1] as PyDictionary);
+            if (packet.Payload.TryGetValue(0, out PyTuple sessionData) == false)
+                throw new InvalidDataException("SessionChangeNotification expected a payload of size 1");
+            if (sessionData.TryGetValue(1, out PyDictionary differences) == false)
+                throw new InvalidDataException("SessionChangeNotification expected a differences collection");
+
+            this.Session.LoadChanges(differences);
         }
 
     }

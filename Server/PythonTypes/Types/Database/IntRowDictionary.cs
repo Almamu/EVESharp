@@ -14,7 +14,7 @@ namespace PythonTypes.Types.Database
         /// </summary>
         /// <param name="reader">The MySqlDataReader to read the data from</param>
         /// <returns></returns>
-        public static PyDataType FromMySqlDataReader(MySqlDataReader reader, int keyColumnIndex)
+        public static PyDictionary FromMySqlDataReader(MySqlDataReader reader, int keyColumnIndex)
         {
             PyDictionary result = new PyDictionary();
             PyList header = new PyList(reader.FieldCount);

@@ -93,7 +93,7 @@ namespace Node.Services.Characters
         {
             int callerCharacterID = call.Client.EnsureCharacterIsSelected();
             
-            Character character = this.ItemManager.LoadItem(callerCharacterID) as Character;
+            Character character = this.ItemManager.GetItem<Character>(callerCharacterID);
 
             return KeyVal.FromDictionary(new PyDictionary
                 {
@@ -148,11 +148,9 @@ namespace Node.Services.Characters
         public PyDataType InstallCloneInStation(CallInformation call)
         {
             int callerCharacterID = call.Client.EnsureCharacterIsSelected();
-
-            if (call.Client.StationID == null)
-                throw new CanOnlyDoInStations();
+            int stationID = call.Client.EnsureCharacterIsInStation();
             
-            Character character = this.ItemManager.LoadItem(callerCharacterID) as Character;
+            Character character = this.ItemManager.GetItem<Character>(callerCharacterID);
             
             // check the maximum number of clones the character has assigned
             long maximumClonesAvailable = character.GetSkillLevel(ItemTypes.InfomorphPsychology);
@@ -177,7 +175,7 @@ namespace Node.Services.Characters
             ItemType cloneType = this.TypeManager[ItemTypes.CloneGradeAlpha];
             
             // get character's station
-            Station station = this.ItemManager.GetStation((int) call.Client.StationID);
+            Station station = this.ItemManager.GetStation(stationID);
             
             // create a new clone on the itemDB
             Clone clone = this.ItemManager.CreateClone(cloneType, station, character);

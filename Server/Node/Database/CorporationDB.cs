@@ -14,42 +14,42 @@ namespace Node.Database
         {
         }
 
-        public PyDataType ListAllCorpFactions()
+        public PyDictionary<PyInteger,PyInteger> ListAllCorpFactions()
         {
             return Database.PrepareIntIntDictionary("SELECT corporationID, factionID from crpNPCCorporations");
         }
 
-        public PyDataType ListAllFactionStationCount()
+        public PyDictionary<PyInteger,PyInteger> ListAllFactionStationCount()
         {
             return Database.PrepareIntIntDictionary("SELECT factionID, COUNT(stationID) FROM crpNPCCorporations LEFT JOIN staStations USING (corporationID) GROUP BY factionID");
         }
 
-        public PyDataType ListAllFactionSolarSystemCount()
+        public PyDictionary<PyInteger,PyInteger> ListAllFactionSolarSystemCount()
         {
             return Database.PrepareIntIntDictionary("SELECT factionID, COUNT(solarSystemID) FROM crpNPCCorporations GROUP BY factionID");
         }
 
-        public PyDataType ListAllFactionRegions()
+        public PyDictionary<PyInteger,PyList<PyInteger>> ListAllFactionRegions()
         {
             return Database.PrepareIntIntListDictionary("SELECT factionID, regionID FROM mapRegions WHERE factionID IS NOT NULL ORDER BY factionID");
         }
 
-        public PyDataType ListAllFactionConstellations()
+        public PyDictionary<PyInteger,PyList<PyInteger>> ListAllFactionConstellations()
         {
             return Database.PrepareIntIntListDictionary("SELECT factionID, constellationID FROM mapConstellations WHERE factionID IS NOT NULL ORDER BY factionID");
         }
 
-        public PyDataType ListAllFactionSolarSystems()
+        public PyDictionary<PyInteger,PyList<PyInteger>> ListAllFactionSolarSystems()
         {
             return Database.PrepareIntIntListDictionary("SELECT factionID, solarSystemID FROM mapSolarSystems WHERE factionID IS NOT NULL ORDER BY factionID");
         }
 
-        public PyDataType ListAllFactionRaces()
+        public PyDictionary<PyInteger,PyList<PyInteger>> ListAllFactionRaces()
         {
             return Database.PrepareIntIntListDictionary("SELECT factionID, raceID FROM factionRaces WHERE factionID IS NOT NULL ORDER BY factionID");
         }
 
-        public PyDataType ListAllNPCCorporationInfo()
+        public PyDictionary ListAllNPCCorporationInfo()
         {
             return Database.PrepareIntRowDictionary(
                 "SELECT " +
@@ -68,7 +68,7 @@ namespace Node.Database
             );
         }
 
-        public PyDataType GetEveOwners(int corporationID)
+        public Rowset GetEveOwners(int corporationID)
         {
             return Database.PrepareRowsetQuery(
                 "SELECT characterID as ownerID, itemName AS ownerName, typeID FROM chrInformation, eveNames WHERE eveNames.itemID = chrInformation.characterID AND corporationID = @corporationID",
@@ -79,14 +79,14 @@ namespace Node.Database
             );
         }
 
-        public PyDataType GetNPCDivisions()
+        public Rowset GetNPCDivisions()
         {
             return Database.PrepareRowsetQuery(
                 "SELECT divisionID, divisionName, description, leaderType from crpNPCDivisions"
             );
         }
 
-        public PyDataType GetSharesByShareholder(int characterID)
+        public Rowset GetSharesByShareholder(int characterID)
         {
             return Database.PrepareRowsetQuery(
                 "SELECT corporationID, shares FROM crpCharShares WHERE characterID=@characterID",
@@ -97,7 +97,7 @@ namespace Node.Database
             );
         }
 
-        public PyDataType GetMedalsReceived(int characterID)
+        public Rowset GetMedalsReceived(int characterID)
         {
             return Database.PrepareRowsetQuery(
                 "SELECT medalID, title, description, ownerID, issuerID, date, reason, status FROM chrMedals WHERE characterID=@characterID",
@@ -108,7 +108,7 @@ namespace Node.Database
             );
         }
 
-        public PyDataType GetEmploymentRecord(int characterID)
+        public Rowset GetEmploymentRecord(int characterID)
         {
             return Database.PrepareRowsetQuery(
                 "SELECT corporationID, startDate, deleted FROM chrEmployment WHERE characterID=@characterID",
@@ -119,7 +119,7 @@ namespace Node.Database
             );
         }
 
-        public PyDecimal GetLPForCharacterCorp(int corporationID, int characterID)
+        public double GetLPForCharacterCorp(int corporationID, int characterID)
         {
             MySqlConnection connection = null;
             MySqlDataReader reader = Database.PrepareQuery(ref connection,
@@ -191,7 +191,7 @@ namespace Node.Database
             }
         }
 
-        public PyDataType GetOffices(PyList itemIDs, int corporationID, SparseRowsetHeader header, Dictionary<PyDataType, int> rowsIndex)
+        public PyList<PyTuple> GetOffices(PyList<PyInteger> itemIDs, int corporationID, SparseRowsetHeader header, Dictionary<PyDataType, int> rowsIndex)
         {
             Dictionary<string, object> parameters = new Dictionary<string, object>();
             
@@ -201,7 +201,7 @@ namespace Node.Database
                            "LEFT JOIN invItems ON invItems.itemID = chrInformation.activeCloneID " +
                            "WHERE corporationID=@corporationID AND itemID IN (";
 
-            foreach (PyInteger id in itemIDs.GetEnumerable<PyInteger>())
+            foreach (PyInteger id in itemIDs)
                 parameters["@itemID" + parameters.Count.ToString("X")] = (int) id;
 
             // prepare the correct list of arguments
@@ -223,7 +223,7 @@ namespace Node.Database
             }
         }
 
-        public PyDataType GetOffices(int corporationID, int startPos, int limit, SparseRowsetHeader header, Dictionary<PyDataType, int> rowsIndex)
+        public PyList<PyTuple> GetOffices(int corporationID, int startPos, int limit, SparseRowsetHeader header, Dictionary<PyDataType, int> rowsIndex)
         {
             MySqlConnection connection = null;
             MySqlDataReader reader = Database.PrepareQuery(ref connection,
@@ -264,12 +264,12 @@ namespace Node.Database
             using (reader)
             {
                 if (reader.Read() == false)
-                    return new SparseRowsetHeader(0, (PyList) new PyDataType[]
+                    return new SparseRowsetHeader(0, new PyDataType[]
                     {
                         "itemID", "stationID", "typeID", "officeFolderID"
                     });
                 
-                return new SparseRowsetHeader(reader.GetInt32(0), (PyList) new PyDataType[]
+                return new SparseRowsetHeader(reader.GetInt32(0), new PyDataType[]
                 {
                     "itemID", "stationID", "typeID", "officeFolderID"
                 });
@@ -302,7 +302,7 @@ namespace Node.Database
             }
         }
         
-        public PyDataType GetMembers(PyList characterIDs, int corporationID, SparseRowsetHeader header, Dictionary<PyDataType, int> rowsIndex)
+        public PyList<PyTuple> GetMembers(PyList<PyInteger> characterIDs, int corporationID, SparseRowsetHeader header, Dictionary<PyDataType, int> rowsIndex)
         {
             // TODO: GENERATE PROPER FIELDS FOR THE FOLLOWING FIELDS
             // TODO: titleMask, grantableRoles, grantableRolesAtHQ, grantableRolesAtBase, grantableRolesAtOther
@@ -319,7 +319,7 @@ namespace Node.Database
                            "FROM chrInformation " +
                            "WHERE corporationID=@corporationID AND characterID IN (";
 
-            foreach (PyInteger id in characterIDs.GetEnumerable<PyInteger>())
+            foreach (PyInteger id in characterIDs)
                 parameters["@characterID" + parameters.Count.ToString("X")] = (int) id;
 
             // prepare the correct list of arguments
@@ -336,7 +336,7 @@ namespace Node.Database
             }
         }
 
-        public PyDataType GetMembers(int corporationID, int startPos, int limit, SparseRowsetHeader header, Dictionary<PyDataType, int> rowsIndex)
+        public PyList<PyTuple> GetMembers(int corporationID, int startPos, int limit, SparseRowsetHeader header, Dictionary<PyDataType, int> rowsIndex)
         {
             // TODO: GENERATE PROPER FIELDS FOR THE FOLLOWING FIELDS
             // TODO: titleMask, grantableRoles, grantableRolesAtHQ, grantableRolesAtBase, grantableRolesAtOther
@@ -384,14 +384,14 @@ namespace Node.Database
             using (reader)
             {
                 if (reader.Read() == false)
-                    return new SparseRowsetHeader(0, (PyList) new PyDataType[]
+                    return new SparseRowsetHeader(0, new PyDataType[]
                     {
                         "characterID", "title", "startDateTime", "roles", "rolesAtHQ", "rolesAtBase", "rolesAtOther",
                         "titleMask", "grantableRoles", "grantableRolesAtHQ", "grantableRolesAtBase", "gender",
                         "grantableRolesAtOther", "divisionID", "squadronID", "baseID", "blockRoles"
                     });
 
-                return new SparseRowsetHeader(reader.GetInt32(0), (PyList) new PyDataType[]
+                return new SparseRowsetHeader(reader.GetInt32(0), new PyDataType[]
                 {
                     "characterID", "title", "startDateTime", "roles", "rolesAtHQ", "rolesAtBase", "rolesAtOther",
                     "titleMask", "grantableRoles", "grantableRolesAtHQ", "grantableRolesAtBase", "gender",
@@ -400,17 +400,17 @@ namespace Node.Database
             }
         }
 
-        public PyDataType GetRoleGroups()
+        public Rowset GetRoleGroups()
         {
             return Database.PrepareRowsetQuery("SELECT roleGroupID, roleMask, roleGroupName, isDivisional, appliesTo, appliesToGrantable FROM crpRoleGroups");
         }
 
-        public PyDataType GetRoles()
+        public Rowset GetRoles()
         {
             return Database.PrepareRowsetQuery("SELECT roleID, roleName, shortDescription, description FROM crpRoles");
         }
 
-        public PyDataType GetDivisions()
+        public Rowset GetDivisions()
         {
             // TODO: THESE MIGHT BE CUSTOMIZABLE (most likely)
             // TODO: BUT FOR NOW THESE SHOULD BE ENOUGH
@@ -435,7 +435,7 @@ namespace Node.Database
             );
         }
 
-        public PyDataType GetMemberTrackingInfoSimple(int corporationID)
+        public Rowset GetMemberTrackingInfoSimple(int corporationID)
         {
             return Database.PrepareRowsetQuery(
                 "SELECT characterID, IF(online = 1, -1, IF(lastOnline = 0, NULL, (@currentTicks - lastOnline) / @ticksPerHour)) AS lastOnline FROM chrInformation WHERE corporationID = @corporationID",
@@ -500,37 +500,37 @@ namespace Node.Database
             );
         }
 
-        public PyDataType GetRecruitmentAds(int? regionID, double? skillPoints, int? typeMask, int? raceMask,
+        public Rowset GetRecruitmentAds(int? regionID, double? skillPoints, int? typeMask, int? raceMask,
             int? isInAlliance, int? minMembers, int? maxMembers)
         {
             Dictionary<string, object> parameters = new Dictionary<string, object>();
             string query =
                 "SELECT adID, crpRecruitmentAds.corporationID, typeMask, crpRecruitmentAds.description, crpRecruitmentAds.stationID, corporation.allowedMemberRaceIDs AS raceMask, corporation.allianceID FROM crpRecruitmentAds LEFT JOIN corporation ON corporation.corporationID = crpRecruitmentAds.corporationID WHERE 1=1";
 
-            if (regionID != null)
+            if (regionID is not null)
             {
                 // query += " AND "
             }
 
-            if (skillPoints != null)
+            if (skillPoints is not null)
             {
                 query += " AND minimumSkillPoints >= @skillPoints";
                 parameters["@skillPoints"] = skillPoints;
             }
 
-            if (typeMask != null)
+            if (typeMask is not null)
             {
                 query += " AND typeMask & @typeMask > 0";
                 parameters["@typeMask"] = typeMask;
             }
 
-            if (raceMask != null)
+            if (raceMask is not null)
             {
                 query += " AND corporation.allowedMemberRaceIDs & @raceMask > 0";
                 parameters["@raceMask"] = raceMask;
             }
 
-            if (isInAlliance != null)
+            if (isInAlliance is not null)
             {
                 if (isInAlliance == 0)
                     query += " AND corporation.allianceID = 0";
@@ -538,13 +538,13 @@ namespace Node.Database
                     query += " AND corporation.allianceID > 0";
             }
 
-            if (minMembers != null)
+            if (minMembers is not null)
             {
                 query += " AND corporation.memberCount > @minMembers";
                 parameters["@minMembers"] = minMembers;
             }
 
-            if (maxMembers != null)
+            if (maxMembers is not null)
             {
                 query += " AND corporation.memberCount < @maxMembers";
                 parameters["@maxMembers"] = maxMembers;
@@ -553,7 +553,7 @@ namespace Node.Database
             return Database.PrepareRowsetQuery(query, parameters);
         }
 
-        public PyDataType GetMedalsList(int corporationID)
+        public Rowset GetMedalsList(int corporationID)
         {
             return Database.PrepareRowsetQuery(
                 "SELECT medalID, title, description, date, creatorID, noRecepients FROM crpMedals WHERE corporationID = @corporationID",
@@ -564,7 +564,7 @@ namespace Node.Database
             );
         }
 
-        public PyDataType GetMedalsDetails(int corporationID)
+        public Rowset GetMedalsDetails(int corporationID)
         {
             return Database.PrepareRowsetQuery(
                 "SELECT crpMedals.medalID, part, graphic, color FROM crpMedalParts LEFT JOIN crpMedals ON crpMedals.medalID = crpMedalParts.medalID WHERE corporationID = @corporationID",
@@ -608,7 +608,7 @@ namespace Node.Database
             );
         }
 
-        public PyDataType GetCorporationIDForCharacter(int characterID)
+        public int GetCorporationIDForCharacter(int characterID)
         {
             MySqlConnection connection = null;
             MySqlDataReader reader = Database.PrepareQuery(ref connection,

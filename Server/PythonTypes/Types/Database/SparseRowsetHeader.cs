@@ -53,19 +53,21 @@ namespace PythonTypes.Types.Database
         /// <param name="reader"></param>
         /// <param name="header"></param>
         /// <returns></returns>
-        public PyDataType DataFromMySqlReader(int pkFieldIndex, MySqlDataReader reader, Dictionary<PyDataType, int> rowsIndex)
+        public PyList<PyTuple> DataFromMySqlReader(int pkFieldIndex, MySqlDataReader reader, Dictionary<PyDataType, int> rowsIndex)
         {
-            PyList result = new PyList();
+            PyList<PyTuple> result = new PyList<PyTuple>();
 
             while (reader.Read() == true)
             {
                 PyDataType keyValue = Utils.ObjectFromColumn(reader, pkFieldIndex);
                 
-                result.Add(new PyTuple(new PyDataType[]
-                        {
-                            keyValue, rowsIndex[keyValue], Row.FromMySqlDataReader(reader, this.Headers) 
-                        }
-                    )
+                result.Add(
+                    new PyTuple(3)
+                    {
+                        [0] = keyValue,
+                        [1] = rowsIndex[keyValue],
+                        [2] = Row.FromMySqlDataReader(reader, this.Headers) 
+                    }
                 );
             }
             

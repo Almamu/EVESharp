@@ -25,7 +25,9 @@
 using System;
 using System.Collections.Generic;
 using Common.Database;
+using PythonTypes.Types.Collections;
 using PythonTypes.Types.Database;
+using PythonTypes.Types.Primitives;
 
 namespace Node.Database
 {
@@ -67,7 +69,7 @@ namespace Node.Database
             );
         }
 
-        public void DeleteBookmark(List<int> bookmarkIDs, int ownerID)
+        public void DeleteBookmark(PyList<PyInteger> bookmarkIDs, int ownerID)
         {
             // do not remove anything if the count is not greater than 0
             if (bookmarkIDs.Count == 0)

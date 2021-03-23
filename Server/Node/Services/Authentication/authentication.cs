@@ -26,6 +26,7 @@ using Common.Services;
 using Node.Configuration;
 using Node.Network;
 using PythonTypes.Types.Collections;
+using PythonTypes.Types.Database;
 using PythonTypes.Types.Primitives;
 
 namespace Node.Services.Network
@@ -42,18 +43,18 @@ namespace Node.Services.Network
         public PyDataType GetPostAuthenticationMessage(CallInformation call)
         {
             if (this.mConfiguration.MessageType == AuthenticationMessageType.NoMessage)
-                return new PyNone();
+                return null;
 
             if (this.mConfiguration.MessageType == AuthenticationMessageType.HTMLMessage)
             {
-                PyDictionary keyvalData = new PyDictionary();
-
-                keyvalData["message"] = this.mConfiguration.Message;
-
-                return new PyObjectData("util.KeyVal", keyvalData);
+                return KeyVal.FromDictionary(new PyDictionary
+                    {
+                        ["message"] = this.mConfiguration.Message
+                    }
+                );
             }
 
-            return new PyNone();
+            return null;
         }
     }
 }

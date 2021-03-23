@@ -39,8 +39,9 @@ namespace Node.Services.Market
         private NodeContainer NodeContainer { get; }
         private ClientManager ClientManager { get; }
         private SystemManager SystemManager { get; }
+        private NotificationManager NotificationManager { get; }
         
-        public marketProxy(MarketDB db, CharacterDB characterDB, ItemDB itemDB, SolarSystemDB solarSystemDB, ItemManager itemManager, TypeManager typeManager, CacheStorage cacheStorage, NodeContainer nodeContainer, ClientManager clientManager, SystemManager systemManager)
+        public marketProxy(MarketDB db, CharacterDB characterDB, ItemDB itemDB, SolarSystemDB solarSystemDB, ItemManager itemManager, TypeManager typeManager, CacheStorage cacheStorage, NodeContainer nodeContainer, ClientManager clientManager, SystemManager systemManager, NotificationManager notificationManager)
         {
             this.DB = db;
             this.CharacterDB = characterDB;
@@ -52,10 +53,11 @@ namespace Node.Services.Market
             this.NodeContainer = nodeContainer;
             this.ClientManager = clientManager;
             this.SystemManager = systemManager;
+            this.NotificationManager = notificationManager;
         }
 
-        public PyDataType CharGetNewTransactions(PyInteger sellBuy, PyInteger typeID, PyNone clientID,
-            PyInteger quantity, PyNone fromDate, PyNone maxPrice, PyInteger minPrice, CallInformation call)
+        public PyDataType CharGetNewTransactions(PyInteger sellBuy, PyInteger typeID, PyDataType clientID,
+            PyInteger quantity, PyDataType fromDate, PyDataType maxPrice, PyInteger minPrice, CallInformation call)
         {
             int callerCharacterID = call.Client.EnsureCharacterIsSelected();
             
@@ -75,7 +77,7 @@ namespace Node.Services.Market
             }
             
             return this.DB.CharGetNewTransactions(
-                callerCharacterID, clientID, transactionType, typeID as PyInteger, quantity, minPrice
+                callerCharacterID, null, transactionType, typeID, quantity, minPrice
             );
         }
 
@@ -184,18 +186,18 @@ namespace Node.Services.Market
         
         private void NotifyItemChange(ClusterConnection connection, long nodeID, int itemID, string key, PyDataType newValue)
         {
-            connection.SendNodeNotification(nodeID, "OnItemUpdate",
+            this.NotificationManager.NotifyNode(nodeID, "OnItemUpdate",
                 new PyTuple(2)
                 {
                     [0] = itemID,
-                    [1] = new PyDictionary() { [key] = newValue}
+                    [1] = new PyDictionary() {[key] = newValue}
                 }
             );
         }
 
         private void NotifyBalanceChange(ClusterConnection connection, long nodeID, int characterID, double newBalance)
         {
-            connection.SendNodeNotification(nodeID, "OnBalanceUpdate",
+            this.NotificationManager.NotifyNode(nodeID, "OnBalanceUpdate",
                 new PyTuple(2)
                 {
                     [0] = characterID,
@@ -361,11 +363,11 @@ namespace Node.Services.Market
             
             // depending on where the character that is placing the order, the way to detect the items should be different
             if (stationID == client.StationID)
-                items = this.DB.PrepareItemForOrder(connection, typeID, (int) client.StationID, (int) client.ShipID, quantity, (int) client.CharacterID);
+                items = this.DB.PrepareItemForOrder(connection, typeID, stationID, client.ShipID ?? -1, quantity, (int) client.CharacterID);
             else
                 items = this.DB.PrepareItemForOrder(connection, typeID, stationID, -1, quantity, (int) client.CharacterID);
 
-            if (items == null)
+            if (items is null)
                 throw new NotEnoughQuantity(this.TypeManager[typeID]);
 
             // now notify the nodes about the changes on the other items (if required)

@@ -4,7 +4,7 @@ namespace PythonTypes.Types.Primitives
     {
         public PyDataType Definition { get; set; }
 
-        public PySubStruct(PyDataType definition) : base(PyObjectType.SubStruct)
+        public PySubStruct(PyDataType definition) : base()
         {
             this.Definition = definition;
         }

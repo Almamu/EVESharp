@@ -96,7 +96,7 @@ namespace Node.Services.Inventory
             return inventoryItem as ItemInventory;
         }
 
-        private PyDataType BindInventory(ItemInventory inventoryItem, int characterID, Client client, ItemFlags flag)
+        private PySubStruct BindInventory(ItemInventory inventoryItem, int characterID, Client client, ItemFlags flag)
         {
             // build the meta inventory item now
             ItemInventory inventoryByOwner = this.ItemManager.MetaInventoryManager.RegisterMetaInventoryForOwnerID(inventoryItem,
@@ -106,7 +106,7 @@ namespace Node.Services.Inventory
             return BoundInventory.BindInventory(this.ItemDB, inventoryByOwner, flag, this.ItemManager, this.NodeContainer, this.BoundServiceManager, client);
         }
 
-        public PyDataType GetInventoryFromId(PyInteger itemID, PyInteger one, CallInformation call)
+        public PySubStruct GetInventoryFromId(PyInteger itemID, PyInteger one, CallInformation call)
         {
             int callerCharacterID = call.Client.EnsureCharacterIsSelected();
             ItemEntity inventoryItem = this.ItemManager.LoadItem(itemID);
@@ -118,7 +118,7 @@ namespace Node.Services.Inventory
             );
         }
 
-        public PyDataType GetInventory(PyInteger containerID, PyNone none, CallInformation call)
+        public PySubStruct GetInventory(PyInteger containerID, PyDataType none, CallInformation call)
         {
             int callerCharacterID = call.Client.EnsureCharacterIsSelected();
             
@@ -155,18 +155,13 @@ namespace Node.Services.Inventory
 
         public PyDataType TrashItems(PyList itemIDs, PyInteger stationID, CallInformation call)
         {
-            foreach (PyDataType itemID in itemIDs)
+            foreach (PyInteger itemID in itemIDs.GetEnumerable<PyInteger>())
             {
-                // ignore non integer values and the current
-                if (itemID is PyInteger integer == false)
-                    continue;
-                PyInteger value = itemID as PyInteger;
-
                 // do not trash the active ship
-                if (value == call.Client.ShipID)
+                if (itemID == call.Client.ShipID)
                     throw new CantMoveActiveShip();
 
-                ItemEntity item = this.ItemManager.GetItem(itemID as PyInteger);
+                ItemEntity item = this.ItemManager.GetItem(itemID);
                 // store it's location id
                 int oldLocation = item.LocationID;
                 ItemFlags oldFlag = item.Flag;
@@ -202,7 +197,7 @@ namespace Node.Services.Inventory
             return null;
         }
 
-        public PyDataType AssembleCargoContainer(PyInteger containerID, PyNone ignored, PyDecimal ignored2,
+        public PyDataType AssembleCargoContainer(PyInteger containerID, PyDataType ignored, PyDecimal ignored2,
             CallInformation call)
         {
             ItemEntity item = this.ItemManager.GetItem(containerID);

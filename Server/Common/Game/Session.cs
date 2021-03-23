@@ -7,7 +7,7 @@ namespace Common.Game
 {
     public class Session
     {
-        private PyDictionary mSession;
+        private PyDictionary<PyString,PyTuple> mSession;
         public bool IsDirty { get; private set; }
         
         public PyDataType this[string key]
@@ -18,11 +18,11 @@ namespace Common.Game
 
         public Session()
         {
-            this.mSession = new PyDictionary();
+            this.mSession = new PyDictionary<PyString,PyTuple>();
             this.IsDirty = false;
         }
 
-        public Session(PyDictionary from)
+        public Session(PyDictionary<PyString,PyTuple> from)
         {
             this.mSession = from;
             this.IsDirty = false;
@@ -36,16 +36,15 @@ namespace Common.Game
             
                 if (this.mSession.ContainsKey(key) == false)
                 {
-                    PyTuple var = new PyTuple(2);
-
-                    var[0] = new PyNone();
-                    var[1] = value;
-
-                    this.mSession[key] = var;
+                    this.mSession[key] = new PyTuple(2)
+                    {
+                        [0] = null,
+                        [1] = value
+                    };
                 }
                 else
                 {
-                    PyTuple tmp = this.mSession[key] as PyTuple;
+                    PyTuple tmp = this.mSession[key];
 
                     tmp[0] = tmp[1];
                     tmp[1] = value;
@@ -59,10 +58,8 @@ namespace Common.Game
         {
             lock (this.mSession)
             {
-                if (this.mSession.ContainsKey(key) == false)
-                    return new PyNone();
-
-                PyTuple pair = this.mSession[key] as PyTuple;
+                if (this.mSession.TryGetValue(key, out PyTuple pair) == false)
+                    return null;
 
                 return pair[1];
             }
@@ -72,10 +69,8 @@ namespace Common.Game
         {
             lock (this.mSession)
             {
-                if (this.mSession.ContainsKey(key) == false)
-                    return new PyNone();
-
-                PyTuple pair = this.mSession[key] as PyTuple;
+                if (this.mSession.TryGetValue(key, out PyTuple pair) == false)
+                    return null;
 
                 return pair[0];
             }
@@ -94,7 +89,7 @@ namespace Common.Game
                 PyDictionary result = new PyDictionary();
 
                 // iterate through the session data
-                foreach ((PyString key, PyTuple value) in this.mSession.GetEnumerable<PyString, PyTuple>())
+                foreach ((PyString key, PyTuple value) in this.mSession)
                 {
                     PyDataType last = value[0];
                     PyDataType current = value[1];
@@ -103,7 +98,7 @@ namespace Common.Game
                     if (last != current)
                     {
                         // create a new tuple to send as the session-change notification
-                        result[key] = new PyTuple(new PyDataType[] { last, current });
+                        result[key] = new PyTuple(2) { [0] = last, [1] = current };
 
                         // update the data in the session to reflect no change
                         value[0] = value[1];

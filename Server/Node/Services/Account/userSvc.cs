@@ -26,10 +26,10 @@ namespace Node.Services.Account
             return new PyList();
         }
 
-        public PyNone ClaimRedeemTokens(PyList tokens, PyInteger characterID, CallInformation call)
+        public PyDataType ClaimRedeemTokens(PyList tokens, PyInteger characterID, CallInformation call)
         {
             // TODO: IMPLEMENT SUPPORT FOR USER REWARDS
-            return new PyNone();
+            return null;
         }
     }
 }

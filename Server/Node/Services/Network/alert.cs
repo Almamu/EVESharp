@@ -40,14 +40,13 @@ namespace Node.Services.Network
             this.Log = logger.CreateLogChannel("alert");
         }
 
-        public PyDataType BeanCount(PyInteger stackID, CallInformation call)
+        public PyTuple BeanCount(PyInteger stackID, CallInformation call)
         {
-            PyTuple res = new PyTuple(2);
-
-            res[0] = new PyNone();
-            res[1] = new PyInteger(0);
-
-            return res;
+            return new PyTuple(2)
+            {
+                [0] = null,
+                [1] = 0
+            };
         }
 
         public PyDataType SendClientStackTraceAlert(PyTuple stackInfo, PyString stackTrace, PyString type, PyDataType extra = null, CallInformation call = null)
@@ -59,15 +58,15 @@ namespace Node.Services.Network
                 stackTrace.Value
             );
             
-            // The client should receive anything to know that the stack trace arrived to the server
-            return new PyNone();
+            // the client should receive anything to know that the stack trace arrived to the server
+            return null;
         }
 
         public PyDataType BeanDelivery(PyDictionary beanCounts, CallInformation call)
         {
             // I'm not joking, send me the stack trace NOW!!!
             // :P
-            return new PyNone();
+            return null;
         }
     }
 }

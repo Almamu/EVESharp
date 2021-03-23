@@ -187,7 +187,7 @@ namespace Node.Services.Corporations
         {
             // this just returns a list of itemIDs (locations) that are locked
             // most likely used by the corp stuff for SOMETHING(tm)
-            return new PyList();
+            return new PyList<PyInteger>();
         }
     }
 }

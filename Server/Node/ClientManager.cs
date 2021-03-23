@@ -44,5 +44,16 @@ namespace Node
         {
             this.mClients.Remove(userID);
         }
+
+        /// <summary>
+        /// Tries to get the Client instance under the given userID
+        /// </summary>
+        /// <param name="userID">The user to get</param>
+        /// <param name="client">The output</param>
+        /// <returns>Whether the client was found or not</returns>
+        public bool TryGetClient(long userID, out Client client)
+        {
+            return this.mClients.TryGetValue(userID, out client);
+        }
     }
 }

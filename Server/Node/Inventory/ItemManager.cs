@@ -157,12 +157,12 @@ namespace Node.Inventory
         /// </summary>
         /// <param name="itemID">The item to load</param>
         /// <returns>The loaded item</returns>
-        public ItemEntity LoadItem<T>(int itemID) where T : ItemEntity
+        public T LoadItem<T>(int itemID) where T : ItemEntity
         {
             return this.LoadItem(itemID) as T;
         }
 
-        public ItemEntity LoadItem<T>(int itemID, out bool loadRequired) where T : ItemEntity
+        public T LoadItem<T>(int itemID, out bool loadRequired) where T : ItemEntity
         {
             return this.LoadItem(itemID, out loadRequired) as T;
         }
@@ -270,7 +270,7 @@ namespace Node.Inventory
         /// <returns>The new instance of the item with the extra information loaded</returns>
         private ItemEntity PerformItemLoad(ItemEntity item)
         {
-            if (item == null)
+            if (item is null)
                 return null;
 
             switch (item.Type.Group.Category.ID)

@@ -137,7 +137,7 @@ namespace ClusterController
             }
             catch (Exception e)
             {
-                if (sLog == null || sChannel == null)
+                if (sLog is null || sChannel is null)
                 {
                     Console.WriteLine(e.ToString());
                 }

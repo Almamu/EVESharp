@@ -71,7 +71,6 @@ namespace PythonTypes
             switch (obj)
             {
                 case null:
-                case PyNone _:
                     this.ProcessNone();
                     break;
                 case PyString pyString:

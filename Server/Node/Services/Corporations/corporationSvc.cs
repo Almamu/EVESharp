@@ -16,14 +16,19 @@ namespace Node.Services.Corporations
             this.DB = db;
         }
 
-        public PyDataType GetFactionInfo(CallInformation call)
+        public PyTuple GetFactionInfo(CallInformation call)
         {
-            return new PyTuple(new PyDataType[]
+            return new PyTuple(8)
             {
-                this.DB.ListAllCorpFactions(), this.DB.ListAllFactionRegions(), this.DB.ListAllFactionConstellations(),
-                this.DB.ListAllFactionSolarSystems(), this.DB.ListAllFactionRaces(), this.DB.ListAllFactionStationCount(),
-                this.DB.ListAllFactionSolarSystemCount(), this.DB.ListAllNPCCorporationInfo()
-            });
+                [0] = this.DB.ListAllCorpFactions(),
+                [1] = this.DB.ListAllFactionRegions(),
+                [2] = this.DB.ListAllFactionConstellations(),
+                [3] = this.DB.ListAllFactionSolarSystems(),
+                [4] = this.DB.ListAllFactionRaces(),
+                [5] = this.DB.ListAllFactionStationCount(),
+                [6] = this.DB.ListAllFactionSolarSystemCount(),
+                [7] = this.DB.ListAllNPCCorporationInfo()
+            };
         }
 
         public PyDataType GetNPCDivisions(CallInformation call)
@@ -31,14 +36,13 @@ namespace Node.Services.Corporations
             return this.DB.GetNPCDivisions();
         }
 
-        public PyDataType GetMedalsReceived(PyInteger characterID, CallInformation call)
+        public PyTuple GetMedalsReceived(PyInteger characterID, CallInformation call)
         {
-            return new PyTuple(new PyDataType[]
-                {
-                    this.DB.GetMedalsReceived(characterID),
-                    new PyList() // medal data, rowset medalID, part, layer, graphic, color
-                }
-            );
+            return new PyTuple(2)
+            {
+                [0] = this.DB.GetMedalsReceived(characterID),
+                [1] = new PyList() // medal data, rowset medalID, part, layer, graphic, color
+            };
         }
 
         public PyDataType GetEmploymentRecord(PyInteger characterID, CallInformation call)
@@ -63,7 +67,7 @@ namespace Node.Services.Corporations
             return this.DB.GetRecruitmentAds(regionID, skillPoints, typeMask, raceMask, isInAlliance, minMembers, maxMembers);
         }
 
-        public PyDataType GetAllCorpMedals(PyInteger corporationID, CallInformation call)
+        public PyTuple GetAllCorpMedals(PyInteger corporationID, CallInformation call)
         {
             return new PyTuple(2)
             {

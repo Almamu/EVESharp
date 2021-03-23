@@ -24,23 +24,22 @@ namespace Node.Services.Config
 
         public PyDataType GetMultiOwnersEx(PyList ids, CallInformation call)
         {
-            // return item data from the entity table and call it a day
-            return this.DB.GetMultiOwnersEx(ids);
+            return this.DB.GetMultiOwnersEx(ids.GetEnumerable<PyInteger>());
         }
 
         public PyDataType GetMultiGraphicsEx(PyList ids, CallInformation call)
         {
-            return this.DB.GetMultiGraphicsEx(ids);
+            return this.DB.GetMultiGraphicsEx(ids.GetEnumerable<PyInteger>());
         }
 
         public PyDataType GetMultiLocationsEx(PyList ids, CallInformation call)
         {
-            return this.DB.GetMultiLocationsEx(ids);
+            return this.DB.GetMultiLocationsEx(ids.GetEnumerable<PyInteger>());
         }
 
         public PyDataType GetMultiAllianceShortNamesEx(PyList ids, CallInformation call)
         {
-            return this.DB.GetMultiAllianceShortNamesEx(ids);
+            return this.DB.GetMultiAllianceShortNamesEx(ids.GetEnumerable<PyInteger>());
         }
 
         public PyDataType GetMap(PyInteger solarSystemID, CallInformation call)
@@ -77,7 +76,7 @@ namespace Node.Services.Config
 
         public PyDataType GetMultiInvTypesEx(PyList typeIDs, CallInformation call)
         {
-            return this.DB.GetMultiInvTypesEx(typeIDs);
+            return this.DB.GetMultiInvTypesEx(typeIDs.GetEnumerable<PyInteger>());
         }
 
         public PyDataType GetStationSolarSystemsByOwner(PyInteger ownerID, CallInformation call)
@@ -111,22 +110,14 @@ namespace Node.Services.Config
                 isCelestialBool = celestialInt.Value == 1;
 
             if (isRegionBool == true)
-            {
                 return this.DB.GetMapRegionConnection(itemID);
-            }
             if (isConstellationBool == true)
-            {
                 return this.DB.GetMapConstellationConnection(itemID);
-            }
             if (isSolarSystemBool == true)
-            {
                 return this.DB.GetMapSolarSystemConnection(itemID);
-            }
             if (isCelestialBool == true)
-            {
                 Log.Error("GetMapConnections called with celestial id. Not implemented yet!");
-            }
-            
+
             return null;
         }
     }

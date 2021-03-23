@@ -36,11 +36,11 @@ namespace PythonTypes.Types.Database
 
             public static implicit operator PyDataType(Column column)
             {
-                return new PyTuple(new PyDataType[]
+                return new PyTuple(2)
                 {
-                    column.Name,
-                    (int) column.Type
-                });
+                    [0] = column.Name,
+                    [1] = (int) column.Type
+                };
             }
 
             public static implicit operator Column(PyDataType column)
@@ -74,11 +74,11 @@ namespace PythonTypes.Types.Database
             foreach (Column col in descriptor.Columns)
                 args[index++] = col;
 
-            args = new PyTuple(new PyDataType[] {args});
+            args = new PyTuple(1) {[0] = args};
             // build the args tuple
             return new PyObject(
                 false,
-                new PyTuple(new PyDataType[] { new PyToken(TYPE_NAME), args })
+                new PyTuple(2) { [0] = new PyToken(TYPE_NAME), [1] = args }
             );
         }
 

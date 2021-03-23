@@ -37,27 +37,32 @@ namespace PythonTypes.Types.Collections
             get => base[index] as T;
             set => base[index] = value;
         }
+
+        public static implicit operator PyList<T>(PyDataType[] array)
+        {
+            return new PyList<T>(array);
+        }
     }
     
     public class PyList : PyDataType, IPyListEnumerable<PyDataType>
     {
         protected readonly List<PyDataType> mList;
-        public PyList() : base(PyObjectType.List)
+        public PyList() : base()
         {
             this.mList = new List<PyDataType>();
         }
 
-        public PyList(int capacity) : base(PyObjectType.List)
+        public PyList(int capacity) : base()
         {
             this.mList = new List<PyDataType>(new PyDataType[capacity]);
         }
 
-        public PyList(PyDataType[] data) : base(PyObjectType.List)
+        public PyList(PyDataType[] data) : base()
         {
             this.mList = new List<PyDataType>(data);
         }
 
-        public PyList(List<PyDataType> seed) : base(PyObjectType.List)
+        public PyList(List<PyDataType> seed) : base()
         {
             this.mList = seed;
         }
@@ -105,7 +110,7 @@ namespace PythonTypes.Types.Collections
             return new PyList(array);
         }
 
-        public PyTuple AsTuple()
+        public PyTuple ToTuple()
         {
             return new PyTuple(this.mList.ToArray());
         }

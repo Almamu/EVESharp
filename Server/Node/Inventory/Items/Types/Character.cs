@@ -22,10 +22,11 @@ namespace Node.Inventory.Items.Types
             
             public static implicit operator PyDataType(SkillQueueEntry from)
             {
-                return new PyTuple(new PyDataType[]
+                return new PyTuple(2)
                 {
-                    from.Skill.Type.ID, from.TargetLevel
-                });
+                    [0] = from.Skill.Type.ID,
+                    [1] = from.TargetLevel
+                };
             }
         }
         

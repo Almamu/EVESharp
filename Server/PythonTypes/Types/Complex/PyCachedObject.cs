@@ -45,25 +45,29 @@ namespace PythonTypes.Types.Complex
 
         public static implicit operator PyDataType(PyCachedObject cachedObject)
         {
-            if (cachedObject.Cache == null)
+            if (cachedObject.Cache is null)
                 throw new Exception("Cache data is null");
 
-            if (cachedObject.ObjectID == null)
+            if (cachedObject.ObjectID is null)
                 throw new Exception("objectID is null");
 
-            PyTuple args = new PyTuple(7);
-            PyTuple version = new PyTuple(2);
+            PyTuple version = new PyTuple(2)
+            {
+                [0] = cachedObject.Timestamp,
+                [1] = cachedObject.Version
+            };
 
-            version[0] = cachedObject.Timestamp;
-            version[1] = cachedObject.Version;
+            PyTuple args = new PyTuple(7)
+            {
+                [0] = version,
+                [1] = null,
+                [2] = cachedObject.NodeID,
+                [3] = cachedObject.Shared,
+                [4] = cachedObject.Cache,
+                [5] = cachedObject.Compressed,
+                [6] = cachedObject.ObjectID
+            };
 
-            args[0] = version;
-            args[1] = new PyNone();
-            args[2] = cachedObject.NodeID;
-            args[3] = cachedObject.Shared;
-            args[4] = cachedObject.Cache;
-            args[5] = cachedObject.Compressed;
-            args[6] = cachedObject.ObjectID;
 
             return new PyObjectData(TYPE_NAME, args);
         }
@@ -104,7 +108,7 @@ namespace PythonTypes.Types.Complex
             result.Timestamp = versionTuple[0] as PyInteger;
             result.Version = versionTuple[0] as PyInteger;
 
-            if (args[1] is PyNone == false)
+            if (args[1] is not null == false)
                 throw new Exception("Second arg is not none");
 
             if (args[2] is PyInteger == false)
@@ -115,7 +119,7 @@ namespace PythonTypes.Types.Complex
                 result.Cache = new PyBuffer (Encoding.UTF7.GetBytes(args[4] as PyString));
             if (args[4] is PyBuffer)
                 result.Cache = args[4] as PyBuffer;
-            if (result.Cache == null)
+            if (result.Cache is null)
                 throw new Exception("Cache data not loaded");
 
             if (args[5] is PyInteger)

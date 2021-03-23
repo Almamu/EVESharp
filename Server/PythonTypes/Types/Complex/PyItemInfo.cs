@@ -18,7 +18,7 @@ namespace PythonTypes.Types.Complex
 
         public void AddRow(int itemID, PyPackedRow entityRow, PyDictionary effects, PyDictionary attributes, long time)
         {
-            this.AddRow(itemID, (PyList) new PyDataType[]
+            this.AddRow(itemID, new PyDataType[]
             {
                 itemID, entityRow, effects, attributes, time
             });

@@ -33,12 +33,12 @@ namespace Common.Logging
         {
             lock (this.mChannels)
             {
-                if (this.mChannels.ContainsKey(name) == true)
-                    return this.mChannels[name];
+                if (this.mChannels.TryGetValue(name, out Channel channel) == false)
+                {
+                    channel = new Channel(name, this, suppress);
 
-                Channel channel = new Channel(name, this, suppress);
-
-                this.mChannels.Add(name, channel);
+                    this.mChannels.Add(name, channel);
+                }
 
                 return channel;
             }

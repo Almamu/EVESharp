@@ -53,207 +53,197 @@ namespace Node
 {
     class Program
     {
-        private static NodeContainer sNodeContainer = null;
-        private static CacheStorage sCacheStorage = null;
-        private static DatabaseConnection sDatabase = null;
-        private static General sConfiguration = null;
-        private static Logger sLog = null;
-        private static Channel sChannel = null;
-
-        private static Container sContainer = null;
-        static public long NodeID
-        {
-            get => sNodeContainer.NodeID;
-            private set { }
-        }
-
         static void Main(string[] argv)
         {
+            Channel logChannel = null;
+            Logger log = null;
+            Thread logFlushing = null;
+            
             try
             {
                 // create the dependency injector container
-                sContainer = new Container();
+                Container dependencies = new Container();
                 
                 // register basic dependencies first
-                sContainer.Register<Logger>(Lifestyle.Singleton);
-                sContainer.Register<DatabaseConnection>(Lifestyle.Singleton);
-                sContainer.Register<ClientManager>(Lifestyle.Singleton);
-                sContainer.Register<NodeContainer>(Lifestyle.Singleton);
-                sContainer.Register<CacheStorage>(Lifestyle.Singleton);
-                sContainer.Register<ItemManager>(Lifestyle.Singleton);
-                sContainer.Register<MetaInventoryManager>(Lifestyle.Singleton);
-                sContainer.Register<AttributeManager>(Lifestyle.Singleton);
-                sContainer.Register<TypeManager>(Lifestyle.Singleton);
-                sContainer.Register<CategoryManager>(Lifestyle.Singleton);
-                sContainer.Register<GroupManager>(Lifestyle.Singleton);
-                sContainer.Register<StationManager>(Lifestyle.Singleton);
-                sContainer.Register<ItemFactory>(Lifestyle.Singleton);
-                sContainer.Register<TimerManager>(Lifestyle.Singleton);
-                sContainer.Register<SystemManager>(Lifestyle.Singleton);
-                sContainer.Register<ServiceManager>(Lifestyle.Singleton);
-                sContainer.Register<BoundServiceManager>(Lifestyle.Singleton);
-                sContainer.Register<ClusterConnection>(Lifestyle.Singleton);
-                sContainer.Register<Client>(Lifestyle.Transient);
-                sContainer.Register<CharacterManager>(Lifestyle.Singleton);
+                dependencies.Register<Logger>(Lifestyle.Singleton);
+                dependencies.Register<DatabaseConnection>(Lifestyle.Singleton);
+                dependencies.Register<ClientManager>(Lifestyle.Singleton);
+                dependencies.Register<NodeContainer>(Lifestyle.Singleton);
+                dependencies.Register<CacheStorage>(Lifestyle.Singleton);
+                dependencies.Register<ItemManager>(Lifestyle.Singleton);
+                dependencies.Register<MetaInventoryManager>(Lifestyle.Singleton);
+                dependencies.Register<AttributeManager>(Lifestyle.Singleton);
+                dependencies.Register<TypeManager>(Lifestyle.Singleton);
+                dependencies.Register<CategoryManager>(Lifestyle.Singleton);
+                dependencies.Register<GroupManager>(Lifestyle.Singleton);
+                dependencies.Register<StationManager>(Lifestyle.Singleton);
+                dependencies.Register<ItemFactory>(Lifestyle.Singleton);
+                dependencies.Register<TimerManager>(Lifestyle.Singleton);
+                dependencies.Register<SystemManager>(Lifestyle.Singleton);
+                dependencies.Register<ServiceManager>(Lifestyle.Singleton);
+                dependencies.Register<BoundServiceManager>(Lifestyle.Singleton);
+                dependencies.Register<ClusterConnection>(Lifestyle.Singleton);
+                dependencies.Register<CharacterManager>(Lifestyle.Singleton);
+                dependencies.Register<NotificationManager>(Lifestyle.Singleton);
+                dependencies.Register<MachoNet>(Lifestyle.Singleton);
 
                 // register the database accessors dependencies
-                sContainer.Register<AccountDB>(Lifestyle.Singleton);
-                sContainer.Register<AgentDB>(Lifestyle.Singleton);
-                sContainer.Register<BookmarkDB>(Lifestyle.Singleton);
-                sContainer.Register<CertificatesDB>(Lifestyle.Singleton);
-                sContainer.Register<CharacterDB>(Lifestyle.Singleton);
-                sContainer.Register<ChatDB>(Lifestyle.Singleton);
-                sContainer.Register<ConfigDB>(Lifestyle.Singleton);
-                sContainer.Register<ContractDB>(Lifestyle.Singleton);
-                sContainer.Register<CorporationDB>(Lifestyle.Singleton);
-                sContainer.Register<GeneralDB>(Lifestyle.Singleton);
-                sContainer.Register<ItemDB>(Lifestyle.Singleton);
-                sContainer.Register<MarketDB>(Lifestyle.Singleton);
-                sContainer.Register<MessagesDB>(Lifestyle.Singleton);
-                sContainer.Register<SkillDB>(Lifestyle.Singleton);
-                sContainer.Register<StandingDB>(Lifestyle.Singleton);
-                sContainer.Register<StationDB>(Lifestyle.Singleton);
-                sContainer.Register<LookupDB>(Lifestyle.Singleton);
-                sContainer.Register<InsuranceDB>(Lifestyle.Singleton);
-                sContainer.Register<SolarSystemDB>(Lifestyle.Singleton);
+                dependencies.Register<AccountDB>(Lifestyle.Singleton);
+                dependencies.Register<AgentDB>(Lifestyle.Singleton);
+                dependencies.Register<BookmarkDB>(Lifestyle.Singleton);
+                dependencies.Register<CertificatesDB>(Lifestyle.Singleton);
+                dependencies.Register<CharacterDB>(Lifestyle.Singleton);
+                dependencies.Register<ChatDB>(Lifestyle.Singleton);
+                dependencies.Register<ConfigDB>(Lifestyle.Singleton);
+                dependencies.Register<ContractDB>(Lifestyle.Singleton);
+                dependencies.Register<CorporationDB>(Lifestyle.Singleton);
+                dependencies.Register<GeneralDB>(Lifestyle.Singleton);
+                dependencies.Register<ItemDB>(Lifestyle.Singleton);
+                dependencies.Register<MarketDB>(Lifestyle.Singleton);
+                dependencies.Register<MessagesDB>(Lifestyle.Singleton);
+                dependencies.Register<SkillDB>(Lifestyle.Singleton);
+                dependencies.Register<StandingDB>(Lifestyle.Singleton);
+                dependencies.Register<StationDB>(Lifestyle.Singleton);
+                dependencies.Register<LookupDB>(Lifestyle.Singleton);
+                dependencies.Register<InsuranceDB>(Lifestyle.Singleton);
+                dependencies.Register<SolarSystemDB>(Lifestyle.Singleton);
 
                 // register all the services
-                sContainer.Register<account>(Lifestyle.Singleton);
-                sContainer.Register<machoNet>(Lifestyle.Singleton);
-                sContainer.Register<objectCaching>(Lifestyle.Singleton);
-                sContainer.Register<alert>(Lifestyle.Singleton);
-                sContainer.Register<authentication>(Lifestyle.Singleton);
-                sContainer.Register<character>(Lifestyle.Singleton);
-                sContainer.Register<userSvc>(Lifestyle.Singleton);
-                sContainer.Register<charmgr>(Lifestyle.Singleton);
-                sContainer.Register<config>(Lifestyle.Singleton);
-                sContainer.Register<dogmaIM>(Lifestyle.Singleton);
-                sContainer.Register<invbroker>(Lifestyle.Singleton);
-                sContainer.Register<warRegistry>(Lifestyle.Singleton);
-                sContainer.Register<station>(Lifestyle.Singleton);
-                sContainer.Register<map>(Lifestyle.Singleton);
-                sContainer.Register<skillMgr>(Lifestyle.Singleton);
-                sContainer.Register<contractMgr>(Lifestyle.Singleton);
-                sContainer.Register<corpStationMgr>(Lifestyle.Singleton);
-                sContainer.Register<bookmark>(Lifestyle.Singleton);
-                sContainer.Register<LSC>(Lifestyle.Singleton);
-                sContainer.Register<onlineStatus>(Lifestyle.Singleton);
-                sContainer.Register<billMgr>(Lifestyle.Singleton);
-                sContainer.Register<facWarMgr>(Lifestyle.Singleton);
-                sContainer.Register<corporationSvc>(Lifestyle.Singleton);
-                sContainer.Register<clientStatsMgr>(Lifestyle.Singleton);
-                sContainer.Register<voiceMgr>(Lifestyle.Singleton);
-                sContainer.Register<standing2>(Lifestyle.Singleton);
-                sContainer.Register<tutorialSvc>(Lifestyle.Singleton);
-                sContainer.Register<agentMgr>(Lifestyle.Singleton);
-                sContainer.Register<corpRegistry>(Lifestyle.Singleton);
-                sContainer.Register<marketProxy>(Lifestyle.Singleton);
-                sContainer.Register<stationSvc>(Lifestyle.Singleton);
-                sContainer.Register<certificateMgr>(Lifestyle.Singleton);
-                sContainer.Register<jumpCloneSvc>(Lifestyle.Singleton);
-                sContainer.Register<LPSvc>(Lifestyle.Singleton);
-                sContainer.Register<lookupSvc>(Lifestyle.Singleton);
-                sContainer.Register<insuranceSvc>(Lifestyle.Singleton);
-                sContainer.Register<slash>(Lifestyle.Singleton);
-                sContainer.Register<ship>(Lifestyle.Singleton);
-                sContainer.Register<corpmgr>(Lifestyle.Singleton);
+                dependencies.Register<account>(Lifestyle.Singleton);
+                dependencies.Register<machoNet>(Lifestyle.Singleton);
+                dependencies.Register<objectCaching>(Lifestyle.Singleton);
+                dependencies.Register<alert>(Lifestyle.Singleton);
+                dependencies.Register<authentication>(Lifestyle.Singleton);
+                dependencies.Register<character>(Lifestyle.Singleton);
+                dependencies.Register<userSvc>(Lifestyle.Singleton);
+                dependencies.Register<charmgr>(Lifestyle.Singleton);
+                dependencies.Register<config>(Lifestyle.Singleton);
+                dependencies.Register<dogmaIM>(Lifestyle.Singleton);
+                dependencies.Register<invbroker>(Lifestyle.Singleton);
+                dependencies.Register<warRegistry>(Lifestyle.Singleton);
+                dependencies.Register<station>(Lifestyle.Singleton);
+                dependencies.Register<map>(Lifestyle.Singleton);
+                dependencies.Register<skillMgr>(Lifestyle.Singleton);
+                dependencies.Register<contractMgr>(Lifestyle.Singleton);
+                dependencies.Register<corpStationMgr>(Lifestyle.Singleton);
+                dependencies.Register<bookmark>(Lifestyle.Singleton);
+                dependencies.Register<LSC>(Lifestyle.Singleton);
+                dependencies.Register<onlineStatus>(Lifestyle.Singleton);
+                dependencies.Register<billMgr>(Lifestyle.Singleton);
+                dependencies.Register<facWarMgr>(Lifestyle.Singleton);
+                dependencies.Register<corporationSvc>(Lifestyle.Singleton);
+                dependencies.Register<clientStatsMgr>(Lifestyle.Singleton);
+                dependencies.Register<voiceMgr>(Lifestyle.Singleton);
+                dependencies.Register<standing2>(Lifestyle.Singleton);
+                dependencies.Register<tutorialSvc>(Lifestyle.Singleton);
+                dependencies.Register<agentMgr>(Lifestyle.Singleton);
+                dependencies.Register<corpRegistry>(Lifestyle.Singleton);
+                dependencies.Register<marketProxy>(Lifestyle.Singleton);
+                dependencies.Register<stationSvc>(Lifestyle.Singleton);
+                dependencies.Register<certificateMgr>(Lifestyle.Singleton);
+                dependencies.Register<jumpCloneSvc>(Lifestyle.Singleton);
+                dependencies.Register<LPSvc>(Lifestyle.Singleton);
+                dependencies.Register<lookupSvc>(Lifestyle.Singleton);
+                dependencies.Register<insuranceSvc>(Lifestyle.Singleton);
+                dependencies.Register<slash>(Lifestyle.Singleton);
+                dependencies.Register<ship>(Lifestyle.Singleton);
+                dependencies.Register<corpmgr>(Lifestyle.Singleton);
                 
-                sContainer.RegisterInstance(General.LoadFromFile("configuration.conf", sContainer));
+                dependencies.RegisterInstance(General.LoadFromFile("configuration.conf", dependencies));
                 // disable auto-verification on the container as it triggers creation of instances before they're needed
-                sContainer.Options.EnableAutoVerification = false;
+                dependencies.Options.EnableAutoVerification = false;
                 
-                sConfiguration = sContainer.GetInstance<General>(); // TODO: REMOVE THIS ONCE ALL THE CODE USES DEPENDENCY INJECTION
+                General configuration = dependencies.GetInstance<General>();
 
-                sLog = sContainer.GetInstance<Logger>();
+                log = dependencies.GetInstance<Logger>();
 
-                sChannel = sLog.CreateLogChannel("main");
+                logChannel = log.CreateLogChannel("main");
                 // add log streams
-                sLog.AddLogStream(new ConsoleLogStream());
+                log.AddLogStream(new ConsoleLogStream());
 
-                // TODO: REMOVE WHEN THE WHOLE APP USES DEPENDENCY INJECTION
-                if (sConfiguration.LogLite.Enabled == true)
-                    sLog.AddLogStream(new LogLiteStream("Node", sLog, sConfiguration.LogLite));
-                if (sConfiguration.FileLog.Enabled == true)
-                    sLog.AddLogStream(new FileLogStream(sConfiguration.FileLog));
+                if (configuration.LogLite.Enabled == true)
+                    log.AddLogStream(new LogLiteStream("Node", log, configuration.LogLite));
+                if (configuration.FileLog.Enabled == true)
+                    log.AddLogStream(new FileLogStream(configuration.FileLog));
 
                 // run a thread for log flushing
-                new Thread(() =>
+                logFlushing = new Thread(() =>
                 {
                     while (true)
                     {
-                        sLog.Flush();
+                        log.Flush();
                         Thread.Sleep(1);
                     }
-                }).Start();
+                });
+                logFlushing.Start();
 
-                sChannel.Info("Initializing EVESharp Node");
-                sChannel.Fatal("Initializing EVESharp Node");
-                sChannel.Error("Initializing EVESharp Node");
-                sChannel.Warning("Initializing EVESharp Node");
-                sChannel.Debug("Initializing EVESharp Node");
-                sChannel.Trace("Initializing EVESharp Node");
+                logChannel.Info("Initializing EVESharp Node");
+                logChannel.Fatal("Initializing EVESharp Node");
+                logChannel.Error("Initializing EVESharp Node");
+                logChannel.Warning("Initializing EVESharp Node");
+                logChannel.Debug("Initializing EVESharp Node");
+                logChannel.Trace("Initializing EVESharp Node");
                 
                 // connect to the database
-                sDatabase = sContainer.GetInstance<DatabaseConnection>();
+                dependencies.GetInstance<DatabaseConnection>();
                 // sDatabase.Query("SET global max_allowed_packet=1073741824");
                 
                 // create the node container
-                sNodeContainer = sContainer.GetInstance<NodeContainer>();
-
-                sChannel.Info("Initializing timer manager");
-                sContainer.GetInstance<TimerManager>().Start();
-                sChannel.Debug("Done");
+                dependencies.GetInstance<NodeContainer>();
                 
-                sChannel.Info("Priming cache...");
-                sCacheStorage = sContainer.GetInstance<CacheStorage>();
+                logChannel.Info("Initializing timer manager");
+                dependencies.GetInstance<TimerManager>().Start();
+                logChannel.Debug("Done");
+                
+                logChannel.Info("Priming cache...");
+                CacheStorage cacheStorage = dependencies.GetInstance<CacheStorage>();
                 // prime bulk data
-                sCacheStorage.Load(
+                cacheStorage.Load(
                     CacheStorage.LoginCacheTable,
                     CacheStorage.LoginCacheQueries,
                     CacheStorage.LoginCacheTypes
                 );
                 // prime character creation cache
-                sCacheStorage.Load(
+                cacheStorage.Load(
                     CacheStorage.CreateCharacterCacheTable,
                     CacheStorage.CreateCharacterCacheQueries,
                     CacheStorage.CreateCharacterCacheTypes
                 );
                 // prime character appearance cache
-                sCacheStorage.Load(
+                cacheStorage.Load(
                     CacheStorage.CharacterAppearanceCacheTable,
                     CacheStorage.CharacterAppearanceCacheQueries,
                     CacheStorage.CharacterAppearanceCacheTypes
                 );
-                sChannel.Debug("Done");
-                sChannel.Info("Initializing item factory");
-                sContainer.GetInstance<ItemFactory>().Init();
-                sChannel.Debug("Done");
+                logChannel.Debug("Done");
+                logChannel.Info("Initializing item factory");
+                dependencies.GetInstance<ItemFactory>().Init();
+                logChannel.Debug("Done");
 
-                sChannel.Info("Initializing solar system manager");
-                sContainer.GetInstance<SystemManager>();
-                sChannel.Debug("Done");
+                logChannel.Info("Initializing solar system manager");
+                dependencies.GetInstance<SystemManager>();
+                logChannel.Debug("Done");
+
+                dependencies.GetInstance<MachoNet>().ConnectToProxy();
                 
-                sChannel.Info("Connecting to proxy...");
-
-                ClusterConnection clusterConnection = sContainer.GetInstance<ClusterConnection>();
-                clusterConnection.Socket.Connect(sConfiguration.Proxy.Hostname, sConfiguration.Proxy.Port);
-
-                sChannel.Trace("Node startup done");
+                logChannel.Trace("Node startup done");
 
                 while (true)
                     Thread.Sleep(1);
             }
             catch (Exception e)
             {
-                if (sChannel == null || sLog == null)
+                if (logChannel is null || log is null)
                 {
                     Console.WriteLine(e.ToString());
                 }
                 else
                 {
-                    sChannel?.Error(e.ToString());
-                    sChannel?.Fatal("Node stopped...");
-                    sLog?.Flush();                    
+                    logChannel?.Error(e.ToString());
+                    logChannel?.Fatal("Node stopped...");
+                    log?.Flush();
+                    // stop the logging thread
+                    logFlushing?.Interrupt();
                 }
             }
         }

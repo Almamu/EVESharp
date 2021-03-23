@@ -60,9 +60,9 @@ namespace PythonTypes.Types.Network
                 throw new InvalidDataException($"Trying to cast a different PyAddress ({type}) to PyAddressAny");
 
             return new PyAddressNode(
-                data[1] is PyNone ? null : data[1] as PyInteger,
-                data[3] is PyNone ? null : data[3] as PyInteger,
-                data[2] is PyNone ? null : data[2] as PyString
+                data[1] as PyInteger,
+                data[3] as PyInteger,
+                data[2] as PyString
             );
         }
     }

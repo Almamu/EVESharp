@@ -21,30 +21,32 @@ namespace Common.Packets
 
         public static implicit operator PyDataType(AuthenticationRsp rsp)
         {
-            PyDictionary info = new PyDictionary();
-
-            info["macho_version"] = rsp.macho_version;
-            info["boot_version"] = rsp.boot_version;
-            info["boot_build"] = rsp.boot_build;
-            info["boot_codename"] = rsp.boot_codename;
-            info["boot_region"] = rsp.boot_region;
-            info["cluster_usercount"] = rsp.cluster_usercount;
-            info["proxy_nodeid"] = rsp.proxy_nodeid;
-            info["user_logonqueueposition"] = rsp.user_logonqueueposition;
-            info["challenge_responsehash"] = rsp.challenge_responsehash;
-
-            PyTuple extra = new PyTuple(new PyDataType[]
+            PyDictionary info = new PyDictionary
             {
-                rsp.func_marshaled_code,
-                rsp.verification
-            });
+                ["macho_version"] = rsp.macho_version,
+                ["boot_version"] = rsp.boot_version,
+                ["boot_build"] = rsp.boot_build,
+                ["boot_codename"] = rsp.boot_codename,
+                ["boot_region"] = rsp.boot_region,
+                ["cluster_usercount"] = rsp.cluster_usercount,
+                ["proxy_nodeid"] = rsp.proxy_nodeid,
+                ["user_logonqueueposition"] = rsp.user_logonqueueposition,
+                ["challenge_responsehash"] = rsp.challenge_responsehash
+            };
 
-            return new PyTuple(new PyDataType[]
+            PyTuple extra = new PyTuple(2)
             {
-                rsp.serverChallenge,
-                extra, rsp.context,
-                info
-            });
+                [0] = rsp.func_marshaled_code,
+                [1] = rsp.verification
+            };
+
+            return new PyTuple(4)
+            {
+                [0] = rsp.serverChallenge,
+                [1] = extra,
+                [2] = rsp.context,
+                [3] = info
+            };
         }
     }
 }

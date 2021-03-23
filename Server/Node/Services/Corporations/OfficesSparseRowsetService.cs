@@ -31,7 +31,7 @@ namespace Node.Services.Corporations
 
         public override PyDataType FetchByKey(PyList keyList, CallInformation call)
         {
-            return this.DB.GetOffices(keyList, this.Corporation.ID, this.SparseRowset, this.RowsIndex);
+            return this.DB.GetOffices(keyList.GetEnumerable<PyInteger>(), this.Corporation.ID, this.SparseRowset, this.RowsIndex);
         }
     }
 }

@@ -14,9 +14,9 @@ namespace PythonTypes.Types.Database
         /// </summary>
         /// <param name="reader">The MySqlDataReader to read the data from</param>
         /// <returns></returns>
-        public static PyDataType FromMySqlDataReader(MySqlDataReader reader)
+        public static PyDictionary<PyInteger,PyInteger> FromMySqlDataReader(MySqlDataReader reader)
         {
-            PyDictionary result = new PyDictionary();
+            PyDictionary<PyInteger,PyInteger> result = new PyDictionary<PyInteger,PyInteger>();
 
             Type keyType = reader.GetFieldType(0);
             Type valType = reader.GetFieldType(1);

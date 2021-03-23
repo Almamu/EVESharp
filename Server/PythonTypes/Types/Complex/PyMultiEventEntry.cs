@@ -27,7 +27,7 @@ namespace PythonTypes.Types.Complex
         /// <returns>The list of items to add after the notification type</returns>
         protected abstract List<PyDataType> GetElements();
 
-        public static implicit operator PyDataType(PyMultiEventEntry multiEventEntry)
+        public static implicit operator PyTuple(PyMultiEventEntry multiEventEntry)
         {
             List<PyDataType> data = multiEventEntry.GetElements();
             
@@ -39,7 +39,7 @@ namespace PythonTypes.Types.Complex
             int i = 1;
 
             // add the rest of the data to the notification
-            if (data != null)
+            if (data is not null)
                 foreach (PyDataType entry in data)
                     result[i++] = entry;
 

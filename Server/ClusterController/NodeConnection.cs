@@ -50,21 +50,23 @@ namespace ClusterController
         private static void HandlePingRsp(PyPacket packet)
         {
             // alter package to include the times the data
-            PyTuple handleMessage = new PyTuple(3);
+            PyTuple handleMessage = new PyTuple(3)
+            {
+                // this time should come from the stream packetizer or the socket itself
+                // but there's no way we're adding time tracking for all the goddamned packets
+                // so this should be sufficient
+                [0] = DateTime.UtcNow.ToFileTime(),
+                [1] = DateTime.UtcNow.ToFileTime(),
+                [2] = "proxy::handle_message"
+            };
 
-            // this time should come from the stream packetizer or the socket itself
-            // but there's no way we're adding time tracking for all the goddamned packets
-            // so this should be sufficient
-            handleMessage[0] = DateTime.UtcNow.ToFileTime();
-            handleMessage[1] = DateTime.UtcNow.ToFileTime();
-            handleMessage[2] = "proxy::handle_message";
-                
-            PyTuple writing = new PyTuple(3);
-
-            writing[0] = DateTime.UtcNow.ToFileTime();
-            writing[1] = DateTime.UtcNow.ToFileTime();
-            writing[2] = "proxy::writing";
-                
+            PyTuple writing = new PyTuple(3)
+            {
+                [0] = DateTime.UtcNow.ToFileTime(),
+                [1] = DateTime.UtcNow.ToFileTime(),
+                [2] = "proxy::writing"
+            };
+            
             (packet.Payload[0] as PyList)?.Add(handleMessage);
             (packet.Payload[0] as PyList)?.Add(writing);
         }

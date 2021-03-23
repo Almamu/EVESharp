@@ -12,10 +12,12 @@ namespace Common.Packets
 
         public static implicit operator PyDataType(ClientSessionData sessionData)
         {
-            return new PyObjectData(TYPE_NAME, new PyTuple(new PyDataType[]
-            {
-                sessionData.session, sessionData.clientID
-            }));
+            return new PyObjectData(TYPE_NAME, new PyTuple(2)
+                {
+                    [0] = sessionData.session,
+                    [1] = sessionData.clientID
+                }
+            );
         }
 
         public static implicit operator ClientSessionData(PyDataType sessionData)

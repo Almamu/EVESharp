@@ -63,11 +63,11 @@ namespace Common.Services
                             PyDataType element = arguments[i];
                         
                             // check parameter types
-                            if (parameters[i].ParameterType == element.GetType() ||
-                                parameters[i].ParameterType == element.GetType().BaseType)
-                                parameterList[i] = element;
-                            else if (parameters[i].IsOptional == true || element is PyNone)
+                            if (element is null || parameters[i].IsOptional == true)
                                 parameterList[i] = null;
+                            else if (parameters[i].ParameterType == element.GetType() ||
+                                     parameters[i].ParameterType == element.GetType().BaseType)
+                                parameterList[i] = element;
                             else
                             {
                                 match = false;

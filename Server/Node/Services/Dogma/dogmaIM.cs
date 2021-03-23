@@ -77,13 +77,15 @@ namespace Node.Services.Dogma
         public PyDataType ShipGetInfo(CallInformation call)
         {
             int callerCharacterID = call.Client.EnsureCharacterIsSelected();
+            int? shipID = call.Client.ShipID;
             
-            if (call.Client.ShipID == null)
+            if (shipID is null)
                 throw new CustomError($"The character is not aboard any ship");
             
-            Ship ship = this.ItemManager.LoadItem((int) call.Client.ShipID) as Ship;
+            // TODO: RE-EVALUATE WHERE THE SHIP LOADING IS PERFORMED, SHIPGETINFO DOESN'T LOOK LIKE A GOOD PLACE TO DO IT
+            Ship ship = this.ItemManager.LoadItem<Ship>((int) shipID);
 
-            if (ship == null)
+            if (ship is null)
                 throw new CustomError($"Cannot get information for ship {call.Client.ShipID}");
             if (ship.OwnerID != callerCharacterID)
                 throw new CustomError("The ship you're trying to get info off does not belong to you");
@@ -150,9 +152,9 @@ namespace Node.Services.Dogma
         {
             int callerCharacterID = call.Client.EnsureCharacterIsSelected();
 
-            Character character = this.ItemManager.LoadItem(callerCharacterID) as Character;
+            Character character = this.ItemManager.GetItem<Character>(callerCharacterID);
 
-            if (character == null)
+            if (character is null)
                 throw new CustomError($"Cannot get information for character {callerCharacterID}");
 
             PyItemInfo itemInfo = new PyItemInfo();
@@ -193,11 +195,11 @@ namespace Node.Services.Dogma
                 throw new TheItemIsNotYoursToTake(itemID);
             
             return new Row(
-                (PyList) new PyDataType[]
+                new PyDataType[]
                 {
                     "itemID", "invItem", "activeEffects", "attributes", "time"
                 },
-                (PyList) new PyDataType[]
+                new PyDataType[]
                 {
                     item.ID, item.GetEntityRow(), item.GetEffects(), item.Attributes, DateTime.UtcNow.ToFileTimeUtc()
                 }
@@ -216,9 +218,9 @@ namespace Node.Services.Dogma
         {
             int callerCharacterID = call.Client.EnsureCharacterIsSelected();
             
-            Character character = this.ItemManager.LoadItem(callerCharacterID) as Character;
+            Character character = this.ItemManager.GetItem<Character>(callerCharacterID);
 
-            if (character == null)
+            if (character is null)
                 throw new CustomError($"Cannot get information for character {callerCharacterID}");
 
             return new PyDictionary
@@ -236,7 +238,7 @@ namespace Node.Services.Dogma
             return this.LogAttribute(itemID, attributeID, "", call);
         }
 
-        public PyDataType LogAttribute(PyInteger itemID, PyInteger attributeID, PyString reason, CallInformation call)
+        public PyList LogAttribute(PyInteger itemID, PyInteger attributeID, PyString reason, CallInformation call)
         {
             int role = call.Client.Role;
             int roleMask = (int) (Roles.ROLE_GDH | Roles.ROLE_QA | Roles.ROLE_PROGRAMMER | Roles.ROLE_GMH);
@@ -251,7 +253,7 @@ namespace Node.Services.Dogma
             
             // we don't know the actual values of the returned function
             // but it should be enough to fill the required data by the client
-            return (PyList) new PyDataType[]
+            return new PyDataType[]
             {
                 null,
                 null,

@@ -120,7 +120,7 @@ namespace Node
          
             Log.Trace($"Calling {serviceInstance.GetType().Name}::{call} on bound service {boundID}");
             
-            if(serviceInstance == null)
+            if(serviceInstance is null)
                 throw new ServiceDoesNotExistsException($"Bound Service {boundID}");
 
             // ensure that only public methods that are part of the instance can be called
@@ -169,11 +169,11 @@ namespace Node
                             PyDataType element = payload[i];
                         
                             // check parameter types
-                            if (parameters[i].ParameterType == element.GetType() ||
-                                parameters[i].ParameterType == element.GetType().BaseType)
-                                parameterList[i] = element;
-                            else if (parameters[i].IsOptional == true || element is PyNone)
+                            if (parameters[i].IsOptional == true || element is null)
                                 parameterList[i] = null;
+                            else if (parameters[i].ParameterType == element.GetType() ||
+                                     parameters[i].ParameterType == element.GetType().BaseType)
+                                parameterList[i] = element;
                             else
                             {
                                 match = false;
@@ -194,7 +194,7 @@ namespace Node
                 // throw the InnerException if possible
                 // ExceptionDispatchInfo is used to preserve the stacktrace of the inner exception
                 // getting rid of cryptic stack traces that do not really tell much about the error
-                if (e.InnerException != null)
+                if (e.InnerException is not null)
                     ExceptionDispatchInfo.Throw(e.InnerException);
 
                 // if no internal exception was found re-throw the original exception

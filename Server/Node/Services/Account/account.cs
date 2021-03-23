@@ -23,7 +23,7 @@ namespace Node.Services.Account
 
         private PyDataType GetCashBalance(Client client)
         {
-            Character character = this.ItemManager.LoadItem(client.EnsureCharacterIsSelected()) as Character;
+            Character character = this.ItemManager.GetItem<Character>(client.EnsureCharacterIsSelected());
 
             return character.Balance;
         }

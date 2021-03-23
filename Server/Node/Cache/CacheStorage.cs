@@ -49,7 +49,7 @@ namespace Node
             IndexRowset = 5
         }
 
-        public static Dictionary<string, string> LoginCacheTable = new Dictionary<string, string>()
+        public static readonly Dictionary<string, string> LoginCacheTable = new Dictionary<string, string>()
         {
             {"config.BulkData.ramactivities", "config.BulkData.ramactivities"},
             {"config.BulkData.billtypes", "config.BulkData.billtypes"},
@@ -91,7 +91,7 @@ namespace Node
             {"config.BulkData.invmetatypes", "config.BulkData.invmetatypes"},
         };
 
-        public static string[] LoginCacheQueries =
+        public static readonly string[] LoginCacheQueries =
         {
             "SELECT activityID, activityName, iconNo, description, published FROM ramActivities",
             "SELECT billTypeID, billTypeName, description FROM billTypes",
@@ -133,7 +133,7 @@ namespace Node
             "SELECT typeID, parentTypeID, metaGroupID FROM invMetaTypes"
         };
 
-        public static CacheObjectType[] LoginCacheTypes =
+        public static readonly CacheObjectType[] LoginCacheTypes =
         {
             CacheObjectType.TupleSet,
             CacheObjectType.TupleSet,
@@ -175,7 +175,7 @@ namespace Node
             CacheObjectType.CRowset
         };
 
-        public static Dictionary<string, string> CreateCharacterCacheTable = new Dictionary<string, string>()
+        public static readonly Dictionary<string, string> CreateCharacterCacheTable = new Dictionary<string, string>()
         {
             {"charCreationInfo.bl_eyebrows", "eyebrows"},
             {"charCreationInfo.bl_eyes", "eyes"},
@@ -196,7 +196,7 @@ namespace Node
             {"charCreationInfo.bl_makeups", "makeups"}
         };
 
-        public static string[] CreateCharacterCacheQueries = new string[]
+        public static readonly string[] CreateCharacterCacheQueries = new string[]
         {
             "SELECT bloodlineID, gender, eyebrowsID, npc FROM chrBLEyebrows",
             "SELECT bloodlineID, gender, eyesID, npc FROM chrBLEyes",
@@ -217,7 +217,7 @@ namespace Node
             "SELECT bloodlineID, gender, makeupID, npc FROM chrBLMakeups"
         };
 
-        public static CacheObjectType[] CreateCharacterCacheTypes = new CacheObjectType[]
+        public static readonly CacheObjectType[] CreateCharacterCacheTypes = new CacheObjectType[]
         {
             CacheObjectType.Rowset,
             CacheObjectType.Rowset,
@@ -238,7 +238,7 @@ namespace Node
             CacheObjectType.Rowset
         };
 
-        public static Dictionary<string, string> CharacterAppearanceCacheTable = new Dictionary<string, string>()
+        public static readonly Dictionary<string, string> CharacterAppearanceCacheTable = new Dictionary<string, string>()
         {
             {"charCreationInfo.eyebrows", "eyebrows"},
             {"charCreationInfo.eyes", "eyes"},
@@ -254,7 +254,7 @@ namespace Node
             {"charCreationInfo.lipsticks", "lipsticks"}
         };
 
-        public static string[] CharacterAppearanceCacheQueries = new string[]
+        public static readonly string[] CharacterAppearanceCacheQueries = new string[]
         {
             "SELECT eyebrowsID, eyebrowsName FROM chrEyebrows",
             "SELECT eyesID, eyesName FROM chrEyes",
@@ -270,7 +270,7 @@ namespace Node
             "SELECT lipstickID, lipstickName FROM chrLipsticks"
         };
 
-        public static CacheObjectType[] CharacterAppearanceCacheTypes = new CacheObjectType[]
+        public static readonly CacheObjectType[] CharacterAppearanceCacheTypes = new CacheObjectType[]
         {
             CacheObjectType.Rowset,
             CacheObjectType.Rowset,
@@ -288,9 +288,9 @@ namespace Node
 
         private readonly Dictionary<string, PyDataType> mCacheData = new Dictionary<string, PyDataType>();
         private readonly PyDictionary mCacheHints = new PyDictionary();
-        private readonly NodeContainer mContainer = null;
-
-        private Channel Log { get; set; }
+        
+        private NodeContainer Container { get; }
+        private Channel Log { get; }
 
         public bool Exists(string name)
         {
@@ -304,13 +304,16 @@ namespace Node
 
         public PyDataType GenerateObjectIDForCall(string service, string method)
         {
-            return new PyTuple(new PyDataType []
+            return new PyTuple(3)
             {
-                "Method Call", "server", new PyTuple (new PyDataType []
+                [0] = "Method Call",
+                [1] = "server",
+                [2] = new PyTuple (2)
                 {
-                    service, method
-                })
-            });
+                    [0] = service,
+                    [1] = method
+                }
+            };
         }
 
         public PyDataType Get(string name)
@@ -327,7 +330,7 @@ namespace Node
         {
             byte[] marshalData = Marshal.ToByteArray(data);
             
-            PyCacheHint hint = PyCacheHint.FromPyObject(name, marshalData, timestamp, this.mContainer.NodeID);
+            PyCacheHint hint = PyCacheHint.FromPyObject(name, marshalData, timestamp, this.Container.NodeID);
 
             // save cache hint
             this.mCacheHints[name] = hint;
@@ -341,7 +344,7 @@ namespace Node
             
             string index = $"{service}::{method}";
             PyDataType objectID = this.GenerateObjectIDForCall(service, method);
-            PyCacheHint hint = PyCacheHint.FromPyObject(objectID, marshalData, timestamp, this.mContainer.NodeID);
+            PyCacheHint hint = PyCacheHint.FromPyObject(objectID, marshalData, timestamp, this.Container.NodeID);
             
             // save cache hint
             this.mCacheHints[index] = hint;
@@ -484,7 +487,7 @@ namespace Node
         public CacheStorage(NodeContainer container, DatabaseConnection db, Logger logger) : base(db)
         {
             this.Log = logger.CreateLogChannel("CacheStorage");
-            this.mContainer = container;
+            this.Container = container;
         }
     }
 }

@@ -34,9 +34,9 @@ namespace Node.Services.Characters
                 CacheStorage.CacheObjectType.Rowset
             );
 
-            PyDataType cacheHint = this.CacheStorage.GetHint("certificateMgr", "GetAllShipCertificateRecommendations");
-
-            return PyCacheMethodCallResult.FromCacheHint(cacheHint);
+            return PyCacheMethodCallResult.FromCacheHint(
+                this.CacheStorage.GetHint("certificateMgr", "GetAllShipCertificateRecommendations")
+            );
         }
 
         public PyDataType GetCertificateCategories(CallInformation call)
@@ -48,9 +48,9 @@ namespace Node.Services.Characters
                 CacheStorage.CacheObjectType.IndexRowset
             );
 
-            PyDataType cacheHint = this.CacheStorage.GetHint("certificateMgr", "GetCertificateCategories");
-
-            return PyCacheMethodCallResult.FromCacheHint(cacheHint);
+            return PyCacheMethodCallResult.FromCacheHint(
+                this.CacheStorage.GetHint("certificateMgr", "GetCertificateCategories")
+            );
         }
 
         public PyDataType GetCertificateClasses(CallInformation call)
@@ -62,9 +62,9 @@ namespace Node.Services.Characters
                 CacheStorage.CacheObjectType.IndexRowset
             );
 
-            PyDataType cacheHint = this.CacheStorage.GetHint("certificateMgr", "GetCertificateClasses");
-
-            return PyCacheMethodCallResult.FromCacheHint(cacheHint);
+            return PyCacheMethodCallResult.FromCacheHint(
+                this.CacheStorage.GetHint("certificateMgr", "GetCertificateClasses")
+            );
         }
 
         public PyDataType GetMyCertificates(CallInformation call)
@@ -75,10 +75,8 @@ namespace Node.Services.Characters
         public PyBool GrantCertificate(PyInteger certificateID, CallInformation call)
         {
             int callerCharacterID = call.Client.EnsureCharacterIsSelected();
+            Character character = this.ItemManager.GetItem<Character>(callerCharacterID);
             
-            if (this.ItemManager.TryGetItem(callerCharacterID, out Character character) == false)
-                throw new CustomError("This request should arrive on the node that has this character loaded, not here");
-
             List<CertificateRelationship> requirements = this.DB.GetCertificateRequirements(certificateID);
             Dictionary<int, Skill> skills = character.InjectedSkillsByTypeID;
 
@@ -98,9 +96,9 @@ namespace Node.Services.Characters
         {
             call.Client.EnsureCharacterIsSelected();
 
-            PyList result = new PyList();
+            PyList<PyInteger> result = new PyList<PyInteger>();
 
-            foreach (PyInteger certificateID in certificateList)
+            foreach (PyInteger certificateID in certificateList.GetEnumerable<PyInteger>())
             {
                 if (this.GrantCertificate(certificateID, call) == true)
                     result.Add(certificateID);

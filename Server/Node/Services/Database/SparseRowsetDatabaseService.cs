@@ -28,10 +28,12 @@ namespace Node.Services.Database
             // TODO: the expiration time is 1 day, might be better to properly support this?
             // TODO: investigate these a bit more closely in the future
             // TODO: i'm not so sure about the expiration time
-            PyTuple boundServiceInformation = new PyTuple(new PyDataType[]
+            PyTuple boundServiceInformation = new PyTuple(3)
             {
-                boundServiceStr, dictPayload, DateTime.UtcNow.Add(TimeSpan.FromDays(1)).ToFileTime()
-            });
+                [0] = boundServiceStr,
+                [1] = dictPayload,
+                [2] = DateTime.UtcNow.Add(TimeSpan.FromDays(1)).ToFileTime()
+            };
 
             return new PySubStruct(new PySubStream(boundServiceInformation));
         }

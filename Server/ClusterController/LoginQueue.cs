@@ -110,7 +110,7 @@ namespace ClusterController
                     {
                         LoginQueueEntry now = this.Queue.Dequeue();
 
-                        if (now == null) 
+                        if (now is null) 
                             continue;
 
                         HandleLogin(now);

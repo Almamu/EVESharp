@@ -22,12 +22,12 @@ namespace PythonTypes.Types.Network
         {
             return new PyObjectData(
                 OBJECT_TYPE,
-                new PyTuple(new PyDataType[]
+                new PyTuple(3)
                 {
-                    value.Type,
-                    value.Service,
-                    value.ID
-                })
+                    [0] = value.Type,
+                    [1] = value.Service,
+                    [2] = value.ID
+                }
             );
         }
 
@@ -43,7 +43,7 @@ namespace PythonTypes.Types.Network
                 throw new InvalidDataException($"Trying to cast unknown object to PyAddressAny");
 
             return new PyAddressAny(
-                data[2] is PyNone ? null : data[2] as PyInteger,
+                data[2] as PyInteger,
                 data[1] as PyString
             );
         }

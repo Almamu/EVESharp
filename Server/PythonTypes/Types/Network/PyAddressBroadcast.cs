@@ -40,7 +40,7 @@ namespace PythonTypes.Types.Network
             return new PyAddressBroadcast(
                 data[2] as PyList,
                 data[3] as PyString,
-                (data[1] is PyNone) ? null : data[1] as PyString
+                data[1] as PyString
             );
         }
 
@@ -48,13 +48,13 @@ namespace PythonTypes.Types.Network
         {
             return new PyObjectData(
                 OBJECT_TYPE,
-                new PyTuple(new PyDataType[]
+                new PyTuple(4)
                 {
-                    value.Type,
-                    value.Service,
-                    value.IDsOfInterest,
-                    value.IDType,
-                })
+                    [0] = value.Type,
+                    [1] = value.Service,
+                    [2] = value.IDsOfInterest,
+                    [3] = value.IDType,
+                }
             );
         }
     }

@@ -9,7 +9,7 @@ namespace PythonTypes.Types.Primitives
         public PyList List { get; }
         public PyDictionary Dictionary { get; }
 
-        public PyObject(bool isType2, PyTuple header, PyList list = null, PyDictionary dict = null) : base(PyObjectType.Object)
+        public PyObject(bool isType2, PyTuple header, PyList list = null, PyDictionary dict = null) : base()
         {
             this.IsType2 = isType2;
             this.Header = header;

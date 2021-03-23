@@ -16,11 +16,13 @@ namespace Node.Services.Characters
     {
         private BookmarkDB DB { get; }
         private ItemManager ItemManager { get; }
+        private MachoNet MachoNet { get; }
         
-        public bookmark(BookmarkDB db, ItemManager itemManager)
+        public bookmark(BookmarkDB db, ItemManager itemManager, MachoNet machoNet)
         {
             this.DB = db;
             this.ItemManager = itemManager;
+            this.MachoNet = machoNet;
         }
 
         public PyDataType GetBookmarks(CallInformation call)
@@ -28,7 +30,7 @@ namespace Node.Services.Characters
             return this.DB.GetBookmarks(call.Client.EnsureCharacterIsSelected());
         }
 
-        public PyDataType BookmarkLocation(PyInteger itemID, PyNone unk, PyString name, PyString comment, CallInformation call)
+        public PyDataType BookmarkLocation(PyInteger itemID, PyDataType unk, PyString name, PyString comment, CallInformation call)
         {
             if (ItemManager.IsStaticData(itemID) == false)
             {
@@ -61,8 +63,8 @@ namespace Node.Services.Characters
             );
             
             // send a request to the client to update the bookmarks
-            call.Client.ClusterConnection.SendServiceCall(call.Client, "addressbook", "OnBookmarkAdd",
-                new PyTuple(1) { [0] = bookmark }, new PyDictionary(), null, null, null, 0);
+            this.MachoNet.SendServiceCall(call.Client, "addressbook", "OnBookmarkAdd",
+                new PyTuple(1) {[0] = bookmark}, new PyDictionary(), null);
             
             return new PyTuple (7)
             {
@@ -78,14 +80,7 @@ namespace Node.Services.Characters
 
         public PyDataType DeleteBookmarks(PyList bookmarkIDs, CallInformation call)
         {
-            List<int> idsList = new List<int>();
-            
-            foreach (PyInteger bookmarkID in bookmarkIDs.GetEnumerable<PyInteger>())
-            {
-                idsList.Add(bookmarkID);
-            }
-            
-            this.DB.DeleteBookmark(idsList, call.Client.EnsureCharacterIsSelected());
+            this.DB.DeleteBookmark(bookmarkIDs.GetEnumerable<PyInteger>(), call.Client.EnsureCharacterIsSelected());
 
             return null;
         }

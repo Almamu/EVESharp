@@ -73,7 +73,7 @@ namespace Node.Database
             );
         }
 
-        public PyDataType CharGetNewTransactions(int characterID, int? clientID, TransactionType sellBuy, int? typeID, int quantity, int minPrice)
+        public Rowset CharGetNewTransactions(int characterID, int? clientID, TransactionType sellBuy, int? typeID, int quantity, int minPrice)
         {
             Dictionary<string, object> parameters = new Dictionary<string, object>()
             {
@@ -108,7 +108,7 @@ namespace Node.Database
             return Database.PrepareRowsetQuery(query, parameters);
         }
 
-        public PyDataType GetCharOrders(int characterID)
+        public Rowset GetCharOrders(int characterID)
         {
             return Database.PrepareRowsetQuery(
                 "SELECT orderID, typeID, charID, regionID, stationID, `range`, bid, price, volEntered, volRemaining, issued, minVolume, accountID, duration, isCorp, solarSystemID, escrow FROM mktOrders LEFT JOIN staStations USING (stationID) WHERE charID = @characterID",
@@ -119,7 +119,7 @@ namespace Node.Database
             );
         }
 
-        public PyDataType GetStationAsks(int stationID)
+        public PyDictionary GetStationAsks(int stationID)
         {
             return Database.PrepareIntRowDictionary(
                 "SELECT typeID, MAX(price) AS price, volRemaining, stationID FROM mktOrders WHERE stationID = @stationID GROUP BY typeID", 0,
@@ -130,7 +130,7 @@ namespace Node.Database
             );
         }
 
-        public PyDataType GetSystemAsks(int solarSystemID)
+        public PyDictionary GetSystemAsks(int solarSystemID)
         {
             return Database.PrepareIntRowDictionary(
                 "SELECT typeID, MAX(price) AS price, volRemaining, stationID FROM mktOrders LEFT JOIN staStations USING (stationID) WHERE solarSystemID = @solarSystemID GROUP BY typeID", 0,
@@ -141,7 +141,7 @@ namespace Node.Database
             );
         }
 
-        public PyDataType GetRegionBest(int regionID)
+        public PyDictionary GetRegionBest(int regionID)
         {
             return Database.PrepareIntRowDictionary(
                 "SELECT typeID, MAX(price) AS price, volRemaining, stationID FROM mktOrders LEFT JOIN staStations USING (stationID) WHERE regionID = @regionID GROUP BY typeID", 0,
@@ -203,7 +203,7 @@ namespace Node.Database
                 map[groupID].AddRange(marketToTypeID[groupID]);
         }
 
-        public PyDataType GetMarketGroups()
+        public PyObjectData GetMarketGroups()
         {
             // this one is a messy boy, there is a util.FilterRowset which is just used here presumably
             // due to this being an exclusive case, better build it manually and call it a day
@@ -268,18 +268,18 @@ namespace Node.Database
 
                 PyList<PyInteger> types = new PyList<PyInteger>();
 
-                if (marketTypeIDsMap.ContainsKey(marketGroupID) == true)
-                    foreach (int typeID in marketTypeIDsMap[marketGroupID])
+                if (marketTypeIDsMap.TryGetValue(marketGroupID, out List<int> typeIDsMap) == true)
+                    foreach (int typeID in typeIDsMap)
                         types.Add(typeID);
 
                 row[6] = types;
 
                 PyDataType resultKey = parentGroupID ?? key;
 
-                if (finalResult.ContainsKey(resultKey) == false)
-                    finalResult[resultKey] = new PyList();
-                
-                (finalResult[resultKey] as PyList).Add(row);
+                if (finalResult.TryGetValue(resultKey, out PyList values) == false)
+                    finalResult[resultKey] = values = new PyList();
+
+                values.Add(row);
             }
 
             return new PyObjectData("util.FilterRowset", new PyDictionary

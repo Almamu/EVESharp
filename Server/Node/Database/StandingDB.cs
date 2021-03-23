@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Common.Database;
 using MySql.Data.MySqlClient;
+using PythonTypes.Types.Database;
 using PythonTypes.Types.Primitives;
 
 namespace Node.Database
@@ -12,7 +13,7 @@ namespace Node.Database
         {
         }
 
-        public PyDataType GetCharStandings(int characterID)
+        public Rowset GetCharStandings(int characterID)
         {
             return Database.PrepareRowsetQuery(
                 "SELECT toID, standing FROM chrStandings WHERE characterID = @characterID",
@@ -23,7 +24,7 @@ namespace Node.Database
             );
         }
 
-        public PyDataType GetCharPrime(int characterID)
+        public Rowset GetCharPrime(int characterID)
         {
             return Database.PrepareRowsetQuery(
                 "SELECT itemID as ownerID, itemName as ownerName, typeID FROM chrStandings, eveNames WHERE characterID = @characterID AND eveNames.itemID = chrStandings.toID",
@@ -34,7 +35,7 @@ namespace Node.Database
             );
         }
 
-        public PyDataType GetCharNPCStandings(int characterID)
+        public Rowset GetCharNPCStandings(int characterID)
         {
             return Database.PrepareRowsetQuery(
                 "SELECT fromID, standing FROM chrNPCStandings WHERE characterID = @characterID",
@@ -45,7 +46,7 @@ namespace Node.Database
             );
         }
 
-        public PyDataType GetStandingTransactions(int? fromID, int? toID, int? direction, int? eventID, int? eventTypeID,
+        public Rowset GetStandingTransactions(int? fromID, int? toID, int? direction, int? eventID, int? eventTypeID,
             long? eventDateTime)
         {
             // to understand what int_1, int_2 and int_3 mean check FmtStandingTransaction on eveFormat.py

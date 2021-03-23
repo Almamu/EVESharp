@@ -17,12 +17,12 @@ namespace Node.Database
             this.NodeContainer = nodeContainer;
         }
 
-        public PyDataType GetMultiOwnersEx(PyList ids)
+        public PyDataType GetMultiOwnersEx(PyList<PyInteger> ids)
         {
             string query = "SELECT itemID as ownerID, itemName as ownerName, typeID FROM eveNames WHERE itemID IN (";
             Dictionary<string, object> parameters = new Dictionary<string,object>();
 
-            foreach (PyInteger id in ids.GetEnumerable<PyInteger>())
+            foreach (PyInteger id in ids)
                 parameters["@itemID" + parameters.Count.ToString("X")] = (int) id;
 
             // prepare the correct list of arguments
@@ -38,12 +38,12 @@ namespace Node.Database
             }
         }
 
-        public PyDataType GetMultiGraphicsEx(PyList ids)
+        public PyDataType GetMultiGraphicsEx(PyList<PyInteger> ids)
         {
             string query = "SELECT graphicID, url3D, urlWeb, icon, urlSound, explosionID FROM eveGraphics WHERE graphicID IN (";
             Dictionary<string, object> parameters = new Dictionary<string,object>();
 
-            foreach (PyInteger id in ids.GetEnumerable<PyInteger>())
+            foreach (PyInteger id in ids)
                 parameters["@graphicID" + parameters.Count.ToString("X")] = (int) id;
 
             // prepare the correct list of arguments
@@ -59,12 +59,12 @@ namespace Node.Database
             }
         }
         
-        public PyDataType GetMultiLocationsEx(PyList ids)
+        public PyDataType GetMultiLocationsEx(PyList<PyInteger> ids)
         {
             string query = "SELECT itemID as locationID, itemName as locationName, x, y, z FROM invItems LEFT JOIN eveNames USING(itemID) LEFT JOIN invPositions USING (itemID) WHERE itemID IN (";
             Dictionary<string, object> parameters = new Dictionary<string,object>();
 
-            foreach (PyInteger id in ids.GetEnumerable<PyInteger>())
+            foreach (PyInteger id in ids)
                 parameters["@itemID" + parameters.Count.ToString("X")] = (int) id;
 
             // prepare the correct list of arguments
@@ -80,12 +80,12 @@ namespace Node.Database
             }
         }
         
-        public PyDataType GetMultiAllianceShortNamesEx(PyList ids)
+        public PyDataType GetMultiAllianceShortNamesEx(PyList<PyInteger> ids)
         {
             string query = "SELECT allianceID, shortName FROM alliance_shortnames WHERE allianceID IN (";
             Dictionary<string, object> parameters = new Dictionary<string,object>();
 
-            foreach (PyInteger id in ids.GetEnumerable<PyInteger>())
+            foreach (PyInteger id in ids)
                 parameters["@itemID" + parameters.Count.ToString("X")] = (int) id;
 
             // prepare the correct list of arguments
@@ -184,12 +184,12 @@ namespace Node.Database
             );
         }
 
-        public PyDataType GetMultiInvTypesEx(PyList ids)
+        public PyDataType GetMultiInvTypesEx(PyList<PyInteger> ids)
         {
             string query = "SELECT typeID, groupID, typeName, description, graphicID, radius, mass, volume, capacity, portionSize, raceID, basePrice, published, marketGroupID, chanceOfDuplicating, dataID FROM invTypes WHERE typeID IN (";
             Dictionary<string, object> parameters = new Dictionary<string,object>();
 
-            foreach (PyInteger id in ids.GetEnumerable<PyInteger>())
+            foreach (PyInteger id in ids)
                 parameters["@typeID" + parameters.Count.ToString("X")] = (int) id;
 
             // prepare the correct list of arguments
@@ -205,7 +205,7 @@ namespace Node.Database
             }
         }
 
-        public PyDataType GetStationSolarSystemsByOwner(int ownerID)
+        public Rowset GetStationSolarSystemsByOwner(int ownerID)
         {
             return Database.PrepareRowsetQuery(
                 "SELECT corporationID, solarSystemID FROM staStations WHERE corporationID = @corporationID",
@@ -216,7 +216,7 @@ namespace Node.Database
             );
         }
 
-        public PyList GetMapRegionConnection(int universeID)
+        public PyList<PyTuple> GetMapRegionConnection(int universeID)
         {
             MySqlConnection connection = null;
             MySqlDataReader reader = Database.PrepareQuery(ref connection,
@@ -230,11 +230,12 @@ namespace Node.Database
             using(connection)
             using (reader)
             {
-                PyList result = new PyList();
+                PyList<PyTuple> result = new PyList<PyTuple>();
 
                 while (reader.Read() == true)
                 {
-                    result.Add(new PyTuple(9)
+                    result.Add(
+                        new PyTuple(9)
                         {
                             [0] = "",
                             [1] = reader.GetInt32(0),
@@ -253,7 +254,7 @@ namespace Node.Database
             }
         }
 
-        public PyList GetMapConstellationConnection(int regionID)
+        public PyList<PyTuple> GetMapConstellationConnection(int regionID)
         {
             MySqlConnection connection = null;
             MySqlDataReader reader = Database.PrepareQuery(ref connection,
@@ -267,11 +268,12 @@ namespace Node.Database
             using(connection)
             using (reader)
             {
-                PyList result = new PyList();
+                PyList<PyTuple> result = new PyList<PyTuple>();
 
                 while (reader.Read() == true)
                 {
-                    result.Add(new PyTuple(9)
+                    result.Add(
+                        new PyTuple(9)
                         {
                             [0] = "",
                             [1] = reader.GetInt32(0),
@@ -290,7 +292,7 @@ namespace Node.Database
             }
         }
 
-        public PyList GetMapSolarSystemConnection(int constellationID)
+        public PyList<PyTuple> GetMapSolarSystemConnection(int constellationID)
         {
             MySqlConnection connection = null;
             MySqlDataReader reader = Database.PrepareQuery(ref connection,
@@ -304,11 +306,12 @@ namespace Node.Database
             using(connection)
             using (reader)
             {
-                PyList result = new PyList();
+                PyList<PyTuple> result = new PyList<PyTuple>();
 
                 while (reader.Read() == true)
                 {
-                    result.Add(new PyTuple(9)
+                    result.Add(
+                        new PyTuple(9)
                         {
                             [0] = "",
                             [1] = reader.GetInt32(0),

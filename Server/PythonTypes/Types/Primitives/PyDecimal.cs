@@ -31,13 +31,13 @@ namespace PythonTypes.Types.Primitives
         public double Value { get; }
         public DecimalTypeEnum DecimalType { get; }
 
-        public PyDecimal(double value) : base(PyObjectType.Decimal)
+        public PyDecimal(double value) : base()
         {
             this.Value = value;
             this.DecimalType = DecimalTypeEnum.Double;
         }
 
-        public PyDecimal(float value) : base(PyObjectType.Decimal)
+        public PyDecimal(float value) : base()
         {
             this.Value = value;
             this.DecimalType = DecimalTypeEnum.Float;

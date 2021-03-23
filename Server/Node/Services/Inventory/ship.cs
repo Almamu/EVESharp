@@ -91,7 +91,7 @@ namespace Node.Services.Inventory
             return new ship(location, this.ItemManager, this.TypeManager, this.SystemManager, this.BoundServiceManager, call.Client);
         }
 
-        public PyDataType LeaveShip(CallInformation call)
+        public PyInteger LeaveShip(CallInformation call)
         {
             int callerCharacterID = call.Client.EnsureCharacterIsSelected();
 
@@ -166,6 +166,7 @@ namespace Node.Services.Inventory
         public PyDataType AssembleShip(PyInteger itemID, CallInformation call)
         {
             int callerCharacterID = call.Client.EnsureCharacterIsSelected();
+            int stationID = call.Client.EnsureCharacterIsInStation();
             
             // ensure the item is loaded somewhere in this node
             // this will usually be taken care by the EVE Client
@@ -191,7 +192,7 @@ namespace Node.Services.Inventory
                 call.Client.NotifyMultiEvent(OnItemChange.BuildQuantityChange(ship, ship.Quantity + 1));
   
                 // create the new item in the database
-                Station station = this.ItemManager.GetStation((int) call.Client.StationID);
+                Station station = this.ItemManager.GetStation(stationID);
                 ship = this.ItemManager.CreateShip(ship.Type, station, character);
                 // notify the new item
                 call.Client.NotifyMultiEvent(OnItemChange.BuildNewItemChange(ship));
@@ -211,15 +212,9 @@ namespace Node.Services.Inventory
 
         public PyDataType AssembleShip(PyList itemIDs, CallInformation call)
         {
-            foreach (PyDataType itemID in itemIDs)
-            {
-                // ignore item
-                if (itemID is PyInteger == false)
-                    continue;
+            foreach (PyInteger itemID in itemIDs.GetEnumerable<PyInteger>())
+                this.AssembleShip(itemID, call);
 
-                this.AssembleShip(itemID as PyInteger, call);
-            }
-            
             return null;
         }
     }

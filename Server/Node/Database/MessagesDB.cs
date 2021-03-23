@@ -15,7 +15,7 @@ namespace Node.Database
         {
         }
 
-        public PyDataType GetMailHeaders(int channelID)
+        public Rowset GetMailHeaders(int channelID)
         {
             return Database.PrepareRowsetQuery(
 	            "SELECT channelID, messageID, senderID, subject, created, `read` FROM eveMail WHERE channelID = @channelID",
@@ -26,7 +26,7 @@ namespace Node.Database
 	        );
         }
 
-        public PyDataType GetMessageDetails(int channelID, int messageID)
+        public PyTuple GetMessageDetails(int channelID, int messageID)
         {
 	        // TODO: SIMPLIFY TABLE STRUCTURE, ATTACHMENTS ARE NOT SUPPORTED
 	        MySqlConnection connection = null;

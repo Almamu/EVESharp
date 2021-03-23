@@ -68,7 +68,7 @@ namespace PythonTypes.Types.Database
 
             return new PyObject(
                 true,
-                new PyTuple(new PyDataType[] { new PyTuple(new PyDataType[] { new PyToken(TYPE_NAME) }), keywords }),
+                new PyTuple(2) { [0] = new PyTuple(1) { [0] = new PyToken(TYPE_NAME) }, [1] = keywords },
                 rowset.Rows
             );
         }

@@ -38,120 +38,117 @@ namespace Node.Services.Network
             this.CacheStorage = cacheStorage;
         }
 
-        public PyDataType GetInitVals(CallInformation call)
+        public PyTuple GetInitVals(CallInformation call)
         {
             if (this.CacheStorage.Exists("machoNet.serviceInfo") == false)
             {
-                // Cache does not exists, create it
-                PyDictionary dict = new PyDictionary();
-
                 // this cached object indicates where the packets should be directed to when the client
                 // wants to communicate with a service (as in PyAddress types or integers)
-                dict["trademgr"] = "station";
-                dict["tutorialSvc"] = "station";
-                dict["bookmark"] = "station";
-                dict["slash"] = "station";
-                dict["wormholeMgr"] = "station";
-                dict["account"] = "station";
-                dict["gangSvc"] = "station";
-                dict["contractMgr"] = "station";
-
-                dict["LSC"] = "location";
-                dict["station"] = "location";
-                dict["config"] = "locationPreferred";
-
-                dict["scanMgr"] = "solarsystem";
-                dict["keeper"] = "solarsystem";
-                
-                dict["stationSvc"] = new PyNone();
-                dict["zsystem"] = new PyNone();
-                dict["invbroker"] = new PyNone();
-                dict["droneMgr"] = new PyNone();
-                dict["userSvc"] = new PyNone();
-                dict["map"] = new PyNone();
-                dict["beyonce"] = new PyNone();
-                dict["standing2"] = new PyNone();
-                dict["ram"] = new PyNone();
-                dict["DB"] = new PyNone();
-                dict["posMgr"] = new PyNone();
-                dict["voucher"] = new PyNone();
-                dict["entity"] = new PyNone();
-                dict["damageTracker"] = new PyNone();
-                dict["agentMgr"] = new PyNone();
-                dict["dogmaIM"] = new PyNone();
-                dict["machoNet"] = new PyNone();
-                dict["dungeonExplorationMgr"] = new PyNone();
-                dict["watchdog"] = new PyNone();
-                dict["ship"] = new PyNone();
-                dict["DB2"] = new PyNone();
-                dict["market"] = new PyNone();
-                dict["dungeon"] = new PyNone();
-                dict["npcSvc"] = new PyNone();
-                dict["sessionMgr"] = new PyNone();
-                dict["allianceRegistry"] = new PyNone();
-                dict["cache"] = new PyNone();
-                dict["character"] = new PyNone();
-                dict["factory"] = new PyNone();
-                dict["facWarMgr"] = new PyNone();
-                dict["corpStationMgr"] = new PyNone();
-                dict["authentication"] = new PyNone();
-                dict["effectCompiler"] = new PyNone();
-                dict["charmgr"] = new PyNone();
-                dict["BSD"] = new PyNone();
-                dict["reprocessingSvc"] = new PyNone();
-                dict["billingMgr"] = new PyNone();
-                dict["billMgr"] = new PyNone();
-                dict["lookupSvc"] = new PyNone();
-                dict["emailreader"] = new PyNone();
-                dict["lootSvc"] = new PyNone();
-                dict["http"] = new PyNone();
-                dict["repairSvc"] = new PyNone();
-                dict["gagger"] = new PyNone();
-                dict["dataconfig"] = new PyNone();
-                dict["lien"] = new PyNone();
-                dict["i2"] = new PyNone();
-                dict["pathfinder"] = new PyNone();
-                dict["alert"] = new PyNone();
-                dict["director"] = new PyNone();
-                dict["dogma"] = new PyNone();
-                dict["aggressionMgr"] = new PyNone();
-                dict["corporationSvc"] = new PyNone();
-                dict["certificateMgr"] = new PyNone();
-                dict["clones"] = new PyNone();
-                dict["jumpCloneSvc"] = new PyNone();
-                dict["insuranceSvc"] = new PyNone();
-                dict["corpmgr"] = new PyNone();
-                dict["warRegistry"] = new PyNone();
-                dict["corpRegistry"] = new PyNone();
-                dict["objectCaching"] = new PyNone();
-                dict["counter"] = new PyNone();
-                dict["petitioner"] = new PyNone();
-                dict["LPSvc"] = new PyNone();
-                dict["clientStatsMgr"] = new PyNone();
-                dict["jumpbeaconsvc"] = new PyNone();
-                dict["debug"] = new PyNone();
-                dict["languageSvc"] = new PyNone();
-                dict["skillMgr"] = new PyNone();
-                dict["voiceMgr"] = new PyNone();
-                dict["onlineStatus"] = new PyNone();
-                dict["gangSvcObjectHandler"] = new PyNone();
+                PyDictionary dict = new PyDictionary
+                {
+                    ["trademgr"] = "station",
+                    ["tutorialSvc"] = "station",
+                    ["bookmark"] = "station",
+                    ["slash"] = "station",
+                    ["wormholeMgr"] = "station",
+                    ["account"] = "station",
+                    ["gangSvc"] = "station",
+                    ["contractMgr"] = "station",
+                    
+                    ["LSC"] = "location",
+                    ["station"] = "location",
+                    ["config"] = "locationPreferred",
+                    
+                    ["scanMgr"] = "solarsystem",
+                    ["keeper"] = "solarsystem",
+                    
+                    ["stationSvc"] = null,
+                    ["zsystem"] = null,
+                    ["invbroker"] = null,
+                    ["droneMgr"] = null,
+                    ["userSvc"] = null,
+                    ["map"] = null,
+                    ["beyonce"] = null,
+                    ["standing2"] = null,
+                    ["ram"] = null,
+                    ["DB"] = null,
+                    ["posMgr"] = null,
+                    ["voucher"] = null,
+                    ["entity"] = null,
+                    ["damageTracker"] = null,
+                    ["agentMgr"] = null,
+                    ["dogmaIM"] = null,
+                    ["machoNet"] = null,
+                    ["dungeonExplorationMgr"] = null,
+                    ["watchdog"] = null,
+                    ["ship"] = null,
+                    ["DB2"] = null,
+                    ["market"] = null,
+                    ["dungeon"] = null,
+                    ["npcSvc"] = null,
+                    ["sessionMgr"] = null,
+                    ["allianceRegistry"] = null,
+                    ["cache"] = null,
+                    ["character"] = null,
+                    ["factory"] = null,
+                    ["facWarMgr"] = null,
+                    ["corpStationMgr"] = null,
+                    ["authentication"] = null,
+                    ["effectCompiler"] = null,
+                    ["charmgr"] = null,
+                    ["BSD"] = null,
+                    ["reprocessingSvc"] = null,
+                    ["billingMgr"] = null,
+                    ["billMgr"] = null,
+                    ["lookupSvc"] = null,
+                    ["emailreader"] = null,
+                    ["lootSvc"] = null,
+                    ["http"] = null,
+                    ["repairSvc"] = null,
+                    ["gagger"] = null,
+                    ["dataconfig"] = null,
+                    ["lien"] = null,
+                    ["i2"] = null,
+                    ["pathfinder"] = null,
+                    ["alert"] = null,
+                    ["director"] = null,
+                    ["dogma"] = null,
+                    ["aggressionMgr"] = null,
+                    ["corporationSvc"] = null,
+                    ["certificateMgr"] = null,
+                    ["clones"] = null,
+                    ["jumpCloneSvc"] = null,
+                    ["insuranceSvc"] = null,
+                    ["corpmgr"] = null,
+                    ["warRegistry"] = null,
+                    ["corpRegistry"] = null,
+                    ["objectCaching"] = null,
+                    ["counter"] = null,
+                    ["petitioner"] = null,
+                    ["LPSvc"] = null,
+                    ["clientStatsMgr"] = null,
+                    ["jumpbeaconsvc"] = null,
+                    ["debug"] = null,
+                    ["languageSvc"] = null,
+                    ["skillMgr"] = null,
+                    ["voiceMgr"] = null,
+                    ["onlineStatus"] = null,
+                    ["gangSvcObjectHandler"] = null
+                };
 
                 this.CacheStorage.Store("machoNet.serviceInfo", dict, DateTime.UtcNow.ToFileTimeUtc());
             }
 
-            PyDataType srvInfo = this.CacheStorage.GetHint("machoNet.serviceInfo");
-            PyTuple res = new PyTuple(2);
-            PyDictionary initvals = this.CacheStorage.GetHints(CacheStorage.LoginCacheTable);
-
-            res[0] = srvInfo;
-            res[1] = initvals;
-
-            return res;
+            return new PyTuple(2)
+            {
+                [0] = this.CacheStorage.GetHint("machoNet.serviceInfo"),
+                [1] = this.CacheStorage.GetHints(CacheStorage.LoginCacheTable)
+            };
         }
 
-        public PyDataType GetTime(CallInformation call)
+        public PyInteger GetTime(CallInformation call)
         {
-            return new PyInteger(DateTime.UtcNow.ToFileTimeUtc());
+            return DateTime.UtcNow.ToFileTimeUtc();
         }
     }
 }

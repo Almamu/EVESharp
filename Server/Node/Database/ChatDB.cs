@@ -314,7 +314,7 @@ namespace Node.Database
                 }
             );
         }
-        public PyDataType GetExtraInfo(int characterID)
+        public Row GetExtraInfo(int characterID)
         {
             MySqlConnection connection = null;
             MySqlDataReader reader = Database.PrepareQuery(ref connection,
@@ -335,7 +335,7 @@ namespace Node.Database
             }
         }
 
-        public PyList GetOnlineCharsOnChannel(int channelID)
+        public PyList<PyInteger> GetOnlineCharsOnChannel(int channelID)
         {
             MySqlConnection connection = null;
             MySqlDataReader reader = Database.PrepareQuery(ref connection,
@@ -349,7 +349,7 @@ namespace Node.Database
             using (connection)
             using (reader)
             {
-                PyList result = new PyList();
+                PyList<PyInteger> result = new PyList<PyInteger>();
 
                 while (reader.Read() == true)
                     result.Add(reader.GetInt32(0));

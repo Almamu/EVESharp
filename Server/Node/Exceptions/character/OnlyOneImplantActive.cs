@@ -7,7 +7,7 @@ namespace Node.Exceptions.character
 {
     public class OnlyOneImplantActive : UserError
     {
-        public OnlyOneImplantActive(ItemEntity implant) : base("OnlyOneImplantActive", new PyDictionary() { ["typeName" ] = implant.Name})
+        public OnlyOneImplantActive(ItemEntity implant) : base("OnlyOneImplantActive", new PyDictionary() { ["typeName"] = implant.Name })
         {
         }
     }
