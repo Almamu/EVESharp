@@ -1,9 +1,13 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Node.Database;
 using Node.Exceptions;
+using Node.Exceptions.inventory;
 using Node.Inventory;
 using Node.Inventory.Items;
+using Node.Inventory.Items.Attributes;
+using Node.Inventory.Items.Types;
 using Node.Inventory.Notifications;
 using Node.Network;
 using PythonTypes.Types.Collections;
@@ -70,6 +74,25 @@ namespace Node.Services.Inventory
             return this.mInventory.GetEntityRow();
         }
 
+        private void PreMoveItemCheck(ItemEntity item, ItemFlags flag, double quantityToMove)
+        {
+            if (this.mInventory.Type.ID == (int) ItemTypes.Capsule)
+            {
+                throw new CantTakeInSpaceCapsule();
+            }
+            if (this.mInventory is Ship)
+            {
+                // check destination cargo
+                double currentVolume =
+                    this.mInventory.Items.Sum(x => (x.Value.Flag != flag) ? 0.0 : x.Value.Quantity * x.Value.Attributes[AttributeEnum.volume]);
+
+                double newVolume = item.Attributes[AttributeEnum.volume] * quantityToMove + currentVolume;
+
+                if (newVolume > this.mInventory.Attributes[AttributeEnum.capacity])
+                    throw new NotEnoughCargoSpace(currentVolume, this.mInventory.Attributes[AttributeEnum.capacity] - currentVolume);
+            }
+        }
+
         private void MoveItemHere(ItemEntity item, ItemFlags newFlag, Client relatedClient)
         {
             // remove item off the old inventory if required
@@ -98,7 +121,10 @@ namespace Node.Services.Inventory
             if (itemID == call.Client.ShipID)
                 throw new CantMoveActiveShip();
 
-            this.MoveItemHere(this.ItemManager.GetItem(itemID), this.mFlag, call.Client);
+            ItemEntity item = this.ItemManager.GetItem(itemID);
+            
+            this.PreMoveItemCheck(item, this.mFlag, item.Quantity);
+            this.MoveItemHere(item, this.mFlag, call.Client);
 
             return null;
         }
@@ -108,7 +134,10 @@ namespace Node.Services.Inventory
             if (itemID == call.Client.ShipID)
                 throw new CantMoveActiveShip();
 
-            this.MoveItemHere(this.ItemManager.GetItem(itemID), this.mFlag, call.Client);
+            ItemEntity item = this.ItemManager.GetItem(itemID);
+            
+            this.PreMoveItemCheck(item, this.mFlag, item.Quantity);
+            this.MoveItemHere(item, this.mFlag, call.Client);
 
             return null;
         }
@@ -124,6 +153,9 @@ namespace Node.Services.Inventory
             // ensure there's enough quantity in the stack to split it
             if (quantity > item.Quantity)
                 return null;
+            
+            // check that there's enough space left
+            this.PreMoveItemCheck(item, this.mFlag, quantity);
 
             if (quantity == item.Quantity)
             {

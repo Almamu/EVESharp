@@ -98,12 +98,14 @@ namespace Node.Services.Inventory
 
         private PySubStruct BindInventory(ItemInventory inventoryItem, int characterID, Client client, ItemFlags flag)
         {
-            // build the meta inventory item now
-            ItemInventory inventoryByOwner = this.ItemManager.MetaInventoryManager.RegisterMetaInventoryForOwnerID(inventoryItem,
-                characterID);
+            ItemInventory inventory = inventoryItem;
+            
+            // create a meta inventory only if required
+            if (inventoryItem is not Ship && inventoryItem is not Station)
+                inventory = this.ItemManager.MetaInventoryManager.RegisterMetaInventoryForOwnerID(inventoryItem, characterID);
             
             // create an instance of the inventory service and bind it to the item data
-            return BoundInventory.BindInventory(this.ItemDB, inventoryByOwner, flag, this.ItemManager, this.NodeContainer, this.BoundServiceManager, client);
+            return BoundInventory.BindInventory(this.ItemDB, inventory, flag, this.ItemManager, this.NodeContainer, this.BoundServiceManager, client);
         }
 
         public PySubStruct GetInventoryFromId(PyInteger itemID, PyInteger one, CallInformation call)
