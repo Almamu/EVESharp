@@ -4,7 +4,6 @@ using PythonTypes.Types.Primitives;
 
 namespace PythonTypes.Types.Collections
 {
-
     /// <summary>
     /// Special PyDictionary used for iterating normal PyDictionaries
     /// </summary>

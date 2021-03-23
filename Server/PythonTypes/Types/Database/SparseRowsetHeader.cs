@@ -44,8 +44,7 @@ namespace PythonTypes.Types.Database
                 [1] = rowsetHeader.BoundObjectIdentifier,
                 [2] = rowsetHeader.Count
             };
-
-
+            
             return new PyObjectData(TYPE_NAME, container);
         }
 

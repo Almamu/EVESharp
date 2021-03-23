@@ -6,7 +6,7 @@ namespace PythonTypes
     /// Extracted from this stackoverflow post
     /// https://stackoverflow.com/questions/311165/how-do-you-convert-a-byte-array-to-a-hexadecimal-string-and-vice-versa/24343727#24343727
     /// </summary>
-    public class HexDump
+    public static class HexDump
     {
         private static readonly uint[] Lookup32 = CreateLookup32();
 
@@ -30,7 +30,7 @@ namespace PythonTypes
             {
                 var val = lookup32[bytes[i]];
                 result[2 * i] = (char) val;
-                result[2 * i + 1] = (char) (val >> 16);
+                result[(2 * i) + 1] = (char) (val >> 16);
             }
 
             return new string(result);

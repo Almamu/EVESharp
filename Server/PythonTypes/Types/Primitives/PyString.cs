@@ -28,7 +28,6 @@ namespace PythonTypes.Types.Primitives
         public StringTableUtils.EntryList StringTableEntryIndex { get; }
         public bool IsUTF8 { get; }
 
-
         public PyString(string value, bool isUTF8 = false)
         {
             this.Value = value;
