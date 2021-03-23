@@ -22,17 +22,17 @@ namespace PythonTypes.Types.Collections
         {
         }
 
-        public new void Add(T value)
+        public void Add(T value)
         {
             base.Add(value);
         }
 
-        public IPyListEnumerator<T> GetEnumerator()
+        public new IPyListEnumerator<T> GetEnumerator()
         {
             return new PyListEnumerator<T>(this.mList.GetEnumerator());
         }
 
-        public T this[int index]
+        public new T this[int index]
         {
             get => base[index] as T;
             set => base[index] = value;
@@ -103,16 +103,6 @@ namespace PythonTypes.Types.Collections
         IEnumerator IEnumerable.GetEnumerator()
         {
             return GetEnumerator();
-        }
-
-        public static implicit operator PyList(PyDataType[] array)
-        {
-            return new PyList(array);
-        }
-
-        public PyTuple ToTuple()
-        {
-            return new PyTuple(this.mList.ToArray());
         }
     }
 }

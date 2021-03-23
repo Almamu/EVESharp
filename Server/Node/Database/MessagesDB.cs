@@ -46,24 +46,42 @@ namespace Node.Database
 			        return new PyTuple(0);
 
 		        Row mimeTypeRow = new Row(
-			        new PyDataType[]
+			        new PyList(3)
 			        {
-				        "mimeTypeID", "mimeType", "binary"
+				        [0] = "mimeTypeID",
+				        [1] = "mimeType",
+				        [2] = "binary"
 			        },
-			        new PyDataType []
+			        new PyList(3)
 			        {
-				        reader.GetInt32(5), reader.GetString(6), reader.GetInt32(7)
+				        [0] = reader.GetInt32(5),
+				        [1] = reader.GetString(6),
+				        [2] = reader.GetInt32(7)
 			        }
 		        );
 
 		        Row entryRow = new Row(
-			        new PyDataType []
+			        new PyList(8)
 			        {
-				        "channelID", "messageID", "senderID", "subject", "body", "created", "mimeType", "deleted"
+				        [0] = "channelID",
+				        [1] = "messageID",
+				        [2] = "senderID",
+				        [3] = "subject",
+				        [4] = "body",
+				        [5] = "created",
+				        [6] = "mimeType",
+				        [7] = "deleted"
 			        },
-			        new PyDataType []
+			        new PyList(8)
 			        {
-				        reader.GetInt32(0), reader.GetInt32(1), reader.GetInt32(2), reader.GetString(3), reader.GetString(4), reader.GetInt64(8), mimeTypeRow, false
+				        [0] = reader.GetInt32(0),
+				        [1] = reader.GetInt32(1),
+				        [2] = reader.GetInt32(2),
+				        [3] = reader.GetString(3),
+				        [4] = reader.GetString(4),
+				        [5] = reader.GetInt64(8),
+				        [6] = mimeTypeRow,
+				        [7] = false
 			        }
 			    );
 		        

@@ -153,10 +153,5 @@ namespace PythonTypes.Types.Primitives
         {
             return new PyList(value);
         }
-
-        public static implicit operator PyDataType(PyDataType[] value)
-        {
-            return new PyTuple(value);
-        }
     }
 }

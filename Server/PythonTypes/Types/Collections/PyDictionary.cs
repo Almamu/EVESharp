@@ -19,7 +19,7 @@ namespace PythonTypes.Types.Collections
         {
         }
 
-        public IPyDictionaryEnumerator<TKey, TValue> GetEnumerator()
+        public new IPyDictionaryEnumerator<TKey, TValue> GetEnumerator()
         {
             return new PyDictionaryEnumerator<TKey, TValue>(this.mDictionary.GetEnumerator());
         }

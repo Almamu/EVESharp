@@ -264,14 +264,20 @@ namespace Node.Database
             using (reader)
             {
                 if (reader.Read() == false)
-                    return new SparseRowsetHeader(0, new PyDataType[]
+                    return new SparseRowsetHeader(0, new PyList(4)
                     {
-                        "itemID", "stationID", "typeID", "officeFolderID"
+                        [0] = "itemID",
+                        [1] = "stationID",
+                        [2] = "typeID",
+                        [3] = "officeFolderID"
                     });
                 
-                return new SparseRowsetHeader(reader.GetInt32(0), new PyDataType[]
+                return new SparseRowsetHeader(reader.GetInt32(0), new PyList(4)
                 {
-                    "itemID", "stationID", "typeID", "officeFolderID"
+                    [0] = "itemID",
+                    [1] = "stationID",
+                    [2] = "typeID",
+                    [3] = "officeFolderID"
                 });
             }
         }
@@ -384,18 +390,46 @@ namespace Node.Database
             using (reader)
             {
                 if (reader.Read() == false)
-                    return new SparseRowsetHeader(0, new PyDataType[]
+                    return new SparseRowsetHeader(0, new PyList(17)
                     {
-                        "characterID", "title", "startDateTime", "roles", "rolesAtHQ", "rolesAtBase", "rolesAtOther",
-                        "titleMask", "grantableRoles", "grantableRolesAtHQ", "grantableRolesAtBase", "gender",
-                        "grantableRolesAtOther", "divisionID", "squadronID", "baseID", "blockRoles"
+                        [0]  = "characterID",
+                        [1]  = "title",
+                        [2]  = "startDateTime",
+                        [3]  = "roles",
+                        [4]  = "rolesAtHQ",
+                        [5]  = "rolesAtBase",
+                        [6]  = "rolesAtOther",
+                        [7]  = "titleMask",
+                        [8]  = "grantableRoles",
+                        [9]  = "grantableRolesAtHQ",
+                        [10] = "grantableRolesAtBase",
+                        [11] = "gender",
+                        [12] = "grantableRolesAtOther",
+                        [13] = "divisionID",
+                        [14] = "squadronID",
+                        [15] = "baseID",
+                        [16] = "blockRoles",
                     });
 
-                return new SparseRowsetHeader(reader.GetInt32(0), new PyDataType[]
+                return new SparseRowsetHeader(reader.GetInt32(0), new PyList(17)
                 {
-                    "characterID", "title", "startDateTime", "roles", "rolesAtHQ", "rolesAtBase", "rolesAtOther",
-                    "titleMask", "grantableRoles", "grantableRolesAtHQ", "grantableRolesAtBase", "gender",
-                    "grantableRolesAtOther", "divisionID", "squadronID", "baseID", "blockRoles"
+                    [0]  = "characterID",
+                    [1]  = "title",
+                    [2]  = "startDateTime",
+                    [3]  = "roles",
+                    [4]  = "rolesAtHQ",
+                    [5]  = "rolesAtBase",
+                    [6]  = "rolesAtOther",
+                    [7]  = "titleMask",
+                    [8]  = "grantableRoles",
+                    [9]  = "grantableRolesAtHQ",
+                    [10] = "grantableRolesAtBase",
+                    [11] = "gender",
+                    [12] = "grantableRolesAtOther",
+                    [13] = "divisionID",
+                    [14] = "squadronID",
+                    [15] = "baseID",
+                    [16] = "blockRoles",
                 });
             }
         }

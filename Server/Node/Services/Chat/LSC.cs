@@ -182,10 +182,10 @@ namespace Node.Services.Chat
             else
             {
                 // build empty rowsets for channels that should not reveal anyone unless they talk
-                mods = new Rowset(new PyDataType[]
-                    {"accessor", "mode", "untilWhen", "originalMode", "admin", "reason"});
-                chars = new Rowset(new PyDataType[]
-                    {"charID", "corpID", "allianceID", "warFactionID", "role", "extra"});
+                mods = new Rowset(new PyList(6)
+                    {[0] = "accessor", [1] = "mode", [2] = "untilWhen", [3] = "originalMode", [4] = "admin", [5] = "reason"});
+                chars = new Rowset(new PyList(6)
+                    {[0] = "charID",[1] = "corpID", [2] = "allianceID", [3] = "warFactionID", [4] = "role", [5] = "extra"});
             }
 
             return new PyTuple(3)
@@ -258,7 +258,7 @@ namespace Node.Services.Chat
                     else
                     {
                         // notify all players on the channel
-                        this.NotificationManager.SendNotification(NOTIFICATION_TYPE, channelType, new PyDataType [] { entityID }, notification);                            
+                        this.NotificationManager.SendNotification(NOTIFICATION_TYPE, channelType, new PyList(1) {[0] = entityID}, notification);                            
                     }
                 }
 
@@ -353,7 +353,7 @@ namespace Node.Services.Chat
                 this.NotificationManager.SendNotification(
                     NOTIFICATION_TYPE,
                     channelType,
-                    new PyDataType [] { entityID },
+                    new PyList(1) {[0] = entityID},
                     notification
                 );
 
@@ -418,7 +418,7 @@ namespace Node.Services.Chat
                     GenerateLSCNotification("LeaveChannel", channel, new PyTuple(0), call.Client);
                 
                 if (channelType != ChatDB.CHANNEL_TYPE_NORMAL)
-                    this.NotificationManager.SendNotification(NOTIFICATION_TYPE, channelType, new PyDataType [] { channel }, notification);
+                    this.NotificationManager.SendNotification(NOTIFICATION_TYPE, channelType, new PyList(1) {[0] = channel}, notification);
                 else
                 {
                     this.NotificationManager.NotifyCharacters(

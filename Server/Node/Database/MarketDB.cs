@@ -154,9 +154,9 @@ namespace Node.Database
 
         public PyList GetOrders(int regionID, int currentSolarSystem, int typeID)
         {
-            return new PyDataType[]
+            return new PyList(2)
             {
-                Database.PrepareCRowsetQuery(
+                [0] = Database.PrepareCRowsetQuery(
                     "SELECT price, volRemaining, typeID, `range`, orderID, volEntered, minVolume, bid, issued, duration, stationID, regionID, solarSystemID, jumps FROM mktOrders LEFT JOIN staStations USING (stationID) LEFT JOIN mapPrecalculatedSolarSystemJumps ON mapPrecalculatedSolarSystemJumps.fromSolarSystemID = solarSystemID WHERE mapPrecalculatedSolarSystemJumps.toSolarSystemID = @currentSolarSystem AND regionID = @regionID AND typeID = @typeID AND bid = @bid",
                     new Dictionary<string, object>()
                     {
@@ -166,7 +166,7 @@ namespace Node.Database
                         {"@currentSolarSystem", currentSolarSystem}
                     }
                 ),
-                Database.PrepareCRowsetQuery(
+                [1] = Database.PrepareCRowsetQuery(
                     "SELECT price, volRemaining, typeID, `range`, orderID, volEntered, minVolume, bid, issued, duration, stationID, regionID, solarSystemID, jumps FROM mktOrders LEFT JOIN staStations USING (stationID) LEFT JOIN mapPrecalculatedSolarSystemJumps ON mapPrecalculatedSolarSystemJumps.fromSolarSystemID = solarSystemID WHERE mapPrecalculatedSolarSystemJumps.toSolarSystemID = @currentSolarSystem AND regionID = @regionID AND typeID = @typeID AND bid = @bid",
                     new Dictionary<string, object>()
                     {

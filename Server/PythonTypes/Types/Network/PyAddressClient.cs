@@ -38,13 +38,13 @@ namespace PythonTypes.Types.Network
         {
             return new PyObjectData(
                 OBJECT_TYPE,
-                new PyTuple(new PyDataType[]
+                new PyTuple(4)
                 {
-                    value.Type,
-                    value.ClientID,
-                    value.CallID,
-                    value.Service
-                })
+                    [0] = value.Type,
+                    [1] = value.ClientID,
+                    [2] = value.CallID,
+                    [3] = value.Service
+                }
             );
         }
 

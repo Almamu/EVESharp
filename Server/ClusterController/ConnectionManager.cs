@@ -282,7 +282,7 @@ namespace ClusterController
                             // use the key instead of AccountID as this should be faster
                             packet.UserID = userID;
                             // change the ids of interest to hide the character's we've notified
-                            destination.IDsOfInterest = new PyDataType[] {id};
+                            destination.IDsOfInterest = new PyList(1) {[0] = id};
                             // queue the packet for the user
                             connection.Socket.Send(packet);
                         }

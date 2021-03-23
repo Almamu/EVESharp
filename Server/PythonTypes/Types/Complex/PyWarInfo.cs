@@ -9,9 +9,17 @@ namespace PythonTypes.Types.Complex
     /// </summary>
     public class PyWarInfo : IndexRowset
     {
-        public PyWarInfo() : base("warID", new PyDataType[]
+        public PyWarInfo() : base("warID", new PyList(9)
         {
-            "warID", "declaredByID", "againstID", "timeDeclared", "timeFinished", "retracted", "retractedBy", "billID", "mutual"
+            [0] = "warID",
+            [1] = "declaredByID",
+            [2] = "againstID",
+            [3] = "timeDeclared",
+            [4] = "timeFinished",
+            [5] = "retracted",
+            [6] = "retractedBy",
+            [7] = "billID",
+            [8] = "mutual"
         })
         {
         }
@@ -19,9 +27,17 @@ namespace PythonTypes.Types.Complex
         public void AddRow(int warID, int declaredByID, int againstID, long timeDeclared, long timeFinished,
             int retracted, int retractedBy, int billID, int mutual)
         {
-            this.AddRow(warID, new PyDataType[]
+            this.AddRow(warID, new PyList(9)
             {
-                warID, declaredByID, againstID, timeDeclared, timeFinished, retracted, retractedBy, billID, mutual
+                [0] = warID,
+                [1] = declaredByID,
+                [2] = againstID,
+                [3] = timeDeclared,
+                [4] = timeFinished,
+                [5] = retracted,
+                [6] = retractedBy,
+                [8] = billID,
+                [9] = mutual
             });
         }
     }

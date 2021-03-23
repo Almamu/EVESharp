@@ -24,6 +24,7 @@
 
 using System;
 using Node.Inventory.Items;
+using PythonTypes.Types.Collections;
 using PythonTypes.Types.Database;
 using PythonTypes.Types.Primitives;
 
@@ -228,15 +229,39 @@ namespace Node.Inventory.SystemEntities
             // TODO: CHECK WHERE WE CAN FETCH allianceID, sovereigntyLevel and constellationSovereignty
             // TODO: AS THESE SEEM TO BE DYNAMIC VALUES
             return new Row(
-                new PyDataType[]
+                new PyList(14)
                 {
-                    "solarSystemID", "solarSystemName", "x", "y", "z", "radius", "security", "constellationID",
-                    "factionID", "sunTypeID", "regionID", "allianceID", "sovereigntyLevel", "constellationSovereignty"
+                    [0]  = "solarSystemID",
+                    [1]  = "solarSystemName",
+                    [2]  = "x",
+                    [3]  = "y",
+                    [4]  = "z",
+                    [5]  = "radius",
+                    [6]  = "security",
+                    [7]  = "constellationID",
+                    [8]  = "factionID",
+                    [9]  = "sunTypeID",
+                    [10] = "regionID",
+                    [11] = "allianceID",
+                    [12] = "sovereigntyLevel",
+                    [13] = "constellationSovereignty"
                 },
-                new PyDataType[]
+                new PyList(14)
                 {
-                    this.ID, this.Name, this.X, this.Y, this.Z, this.Radius, this.Security, this.ConstellationID,
-                    this.FactionID, this.SunTypeID, this.RegionID, null, 0, 0
+                    [0]  = this.ID,
+                    [1]  = this.Name,
+                    [2]  = this.X,
+                    [3]  = this.Y,
+                    [4]  = this.Z,
+                    [5]  = this.Radius,
+                    [6]  = this.Security,
+                    [7]  = this.ConstellationID,
+                    [8]  = this.FactionID,
+                    [9]  = this.SunTypeID,
+                    [10] = this.RegionID,
+                    [11] = null,
+                    [12] = 0,
+                    [13] = 0
                 }
             );
         }

@@ -39,7 +39,6 @@ namespace ClusterController
     class Program
     {
         private static General sConfiguration = null;
-        private static LoginQueue sLoginQueue = null;
         private static ConnectionManager sConnectionManager = null;
         private static Logger sLog = null;
         private static Channel sChannel = null;

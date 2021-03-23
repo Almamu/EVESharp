@@ -457,16 +457,16 @@ namespace PythonTypes.Marshal
                     return tuple;
                 }
                 case Opcode.TupleOne:
-                    return new PyTuple(new PyDataType[]
+                    return new PyTuple(1)
                     {
-                        this.Process(false)
-                    });
+                        [0] = this.Process(false)
+                    };
                 case Opcode.TupleTwo:
-                    return new PyTuple(new PyDataType[]
+                    return new PyTuple(2)
                     {
-                        this.Process(false),
-                        this.Process(false)
-                    });
+                        [0] = this.Process(false),
+                        [1] = this.Process(false)
+                    };
                 case Opcode.TupleEmpty:
                     return new PyTuple(0);
                 default:

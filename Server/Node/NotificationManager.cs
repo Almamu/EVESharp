@@ -99,7 +99,7 @@ namespace Node
 
         public void SendNotification(string notificationType, string idType, int id, PyDataType data)
         {
-            this.SendNotification(notificationType, idType, new PyDataType[] {id}, data);
+            this.SendNotification(notificationType, idType, new PyList(1) {[0] = id}, data);
         }
         
         public void SendNotification(string notificationType, string idType, PyList idsOfInterest, PyDataType data)

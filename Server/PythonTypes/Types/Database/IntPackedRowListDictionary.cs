@@ -42,7 +42,6 @@ namespace PythonTypes.Types.Database
                     continue;
 
                 int newKey = reader.GetInt32(keyColumnIndex);
-                int val = 0;
 
                 // if the read key doesn't match the one read earlier
                 if (newKey != key)

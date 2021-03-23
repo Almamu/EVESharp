@@ -57,9 +57,12 @@ namespace Node.Services.War
 
         public PyDataType GetCharacterRankOverview(PyInteger characterID, CallInformation call)
         {
-            return new Rowset(new PyDataType[]
+            return new Rowset(new PyList(4)
                 {
-                    "currentRank", "highestRank", "factionID", "lastModified"
+                    [0] = "currentRank",
+                    [1] = "highestRank",
+                    [2] = "factionID",
+                    [3] = "lastModified"
                 }
             );
         }

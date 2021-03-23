@@ -25,36 +25,48 @@ namespace Node.Services.Navigation
 
         public PyTuple GetStationExtraInfo(CallInformation call)
         {
-            Rowset stations = new Rowset(new PyDataType []
+            Rowset stations = new Rowset(new PyList(5)
             {
-                "stationID", "solarSystemID", "operationID", "stationTypeID", "ownerID"
+                [0] = "stationID",
+                [1] = "solarSystemID",
+                [2] = "operationID",
+                [3] = "stationTypeID",
+                [4] = "ownerID"
             });
-            Rowset operationServices = new Rowset(new PyDataType[]
+            Rowset operationServices = new Rowset(new PyList(2)
             {
-                "operationID", "serviceID"
+                [0] = "operationID",
+                [1] = "serviceID"
             });
-            Rowset services = new Rowset(new PyDataType[]
+            Rowset services = new Rowset(new PyList(2)
             {
-                "serviceID", "serviceName"
+                [0] = "serviceID",
+                [1] = "serviceName"
             });
             
             foreach ((int _, Station station) in this.ItemManager.Stations)
-                stations.Rows.Add(new PyDataType []
+                stations.Rows.Add(new PyList(5)
                 {
-                    station.ID, station.LocationID, station.Operations.OperationID, station.StationType.ID, station.OwnerID
+                    [0] = station.ID,
+                    [1] = station.LocationID,
+                    [2] = station.Operations.OperationID,
+                    [3] = station.StationType.ID,
+                    [4] = station.OwnerID
                 });
 
             foreach ((int _, StationOperations operation) in this.StationManager.Operations)
                 foreach (int serviceID in operation.Services)
-                    operationServices.Rows.Add(new PyDataType[]
+                    operationServices.Rows.Add(new PyList(2)
                     {
-                        operation.OperationID, serviceID
+                        [0] = operation.OperationID,
+                        [1] = serviceID
                     });
 
             foreach ((int serviceID, string name) in this.StationManager.Services)
-                services.Rows.Add(new PyDataType[]
+                services.Rows.Add(new PyList(2)
                 {
-                    serviceID, name
+                    [0] = serviceID,
+                    [1] = name
                 });
             
             return new PyTuple(3)
@@ -83,7 +95,11 @@ namespace Node.Services.Navigation
         public PyDataType GetMyExtraMapInfoAgents(CallInformation call)
         {
             return new Rowset(
-                new PyDataType [] { "fromID", "rank" }
+                new PyList(2)
+                {
+                    [0] = "fromID",
+                    [1] = "rank"
+                }
             );
         }
 

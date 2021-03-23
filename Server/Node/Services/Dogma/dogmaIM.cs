@@ -195,13 +195,21 @@ namespace Node.Services.Dogma
                 throw new TheItemIsNotYoursToTake(itemID);
             
             return new Row(
-                new PyDataType[]
+                new PyList(5)
                 {
-                    "itemID", "invItem", "activeEffects", "attributes", "time"
+                    [0] = "itemID",
+                    [1] = "invItem",
+                    [2] = "activeEffects",
+                    [3] = "attributes",
+                    [4] = "time"
                 },
-                new PyDataType[]
+                new PyList(5)
                 {
-                    item.ID, item.GetEntityRow(), item.GetEffects(), item.Attributes, DateTime.UtcNow.ToFileTimeUtc()
+                    [0] = item.ID,
+                    [1] = item.GetEntityRow(),
+                    [2] = item.GetEffects(),
+                    [3] = item.Attributes,
+                    [4] = DateTime.UtcNow.ToFileTimeUtc()
                 }
             );
         }
@@ -238,7 +246,7 @@ namespace Node.Services.Dogma
             return this.LogAttribute(itemID, attributeID, "", call);
         }
 
-        public PyList LogAttribute(PyInteger itemID, PyInteger attributeID, PyString reason, CallInformation call)
+        public PyList<PyString> LogAttribute(PyInteger itemID, PyInteger attributeID, PyString reason, CallInformation call)
         {
             int role = call.Client.Role;
             int roleMask = (int) (Roles.ROLE_GDH | Roles.ROLE_QA | Roles.ROLE_PROGRAMMER | Roles.ROLE_GMH);
@@ -253,13 +261,13 @@ namespace Node.Services.Dogma
             
             // we don't know the actual values of the returned function
             // but it should be enough to fill the required data by the client
-            return new PyDataType[]
+            return new PyList<PyString>(5)
             {
-                null,
-                null,
-                $"Server value: {item.Attributes[attributeID]}",
-                $"Base value: {AttributeManager.DefaultAttributes[item.Type.ID][attributeID]}",
-                $"Reason: {reason}"
+                [0] = null,
+                [1] = null,
+                [2] = $"Server value: {item.Attributes[attributeID]}",
+                [3] = $"Base value: {AttributeManager.DefaultAttributes[item.Type.ID][attributeID]}",
+                [4] = $"Reason: {reason}"
             };
         }
     }

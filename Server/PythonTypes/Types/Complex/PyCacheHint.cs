@@ -30,18 +30,19 @@ namespace PythonTypes.Types.Complex
 
         public static implicit operator PyDataType(PyCacheHint cacheHint)
         {
-            PyTuple timestamp = new PyTuple(new PyDataType[]
+            PyTuple timestamp = new PyTuple(2)
             {
-                cacheHint.CacheTime, cacheHint.Version
-            });
+                [0] = cacheHint.CacheTime,
+                [1] = cacheHint.Version
+            };
 
             return new PyObjectData(TYPE_NAME,
-                new PyTuple(new[]
+                new PyTuple(3)
                 {
-                    cacheHint.ObjectID,
-                    cacheHint.NodeID,
-                    timestamp
-                })
+                    [0] = cacheHint.ObjectID,
+                    [1] = cacheHint.NodeID,
+                    [2] = timestamp
+                }
             );
         }
 
