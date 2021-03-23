@@ -270,5 +270,25 @@ namespace Node.Services.Dogma
                 [4] = $"Reason: {reason}"
             };
         }
+
+        public PyDataType Activate(PyInteger itemID, PyString effect, PyDataType target, PyDataType repeat, CallInformation call)
+        {
+            ShipModule module = this.ItemManager.GetItem<ShipModule>(itemID);
+
+            if (effect == "online")
+                return module.PutOnline(call.Client);
+            
+            return null;
+        }
+
+        public PyDataType Deactivate(PyInteger itemID, PyString effect, CallInformation call)
+        {
+            ShipModule module = this.ItemManager.GetItem<ShipModule>(itemID);
+
+            if (effect == "online")
+                return module.PutOffline(call.Client);
+            
+            return null;
+        }
     }
 }

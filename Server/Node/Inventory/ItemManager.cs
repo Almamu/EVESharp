@@ -314,6 +314,10 @@ namespace Node.Inventory
                 case (int) ItemCategories.Implant:
                     item = LoadImplant(item);
                     break;
+                
+                case (int) ItemCategories.Module:
+                    item = LoadModule(item);
+                    break;
             }
             
             // check if there's an inventory loaded that should contain this item
@@ -449,6 +453,11 @@ namespace Node.Inventory
         private ItemEntity LoadContainer(ItemEntity item)
         {
             return new Container(item);
+        }
+
+        private ShipModule LoadModule(ItemEntity item)
+        {
+            return new ShipModule(item);
         }
 
         public ItemEntity CreateSimpleItem(ItemType type, int owner, int location, ItemFlags flag, int quantity = 1,

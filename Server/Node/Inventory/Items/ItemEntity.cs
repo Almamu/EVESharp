@@ -288,7 +288,7 @@ namespace Node.Inventory.Items
             return new PyPackedRow(sEntityItemDescriptor, values);
         }
         
-        public PyDictionary GetEffects()
+        public virtual PyDictionary GetEffects()
         {
             // for now return no data
             return new PyDictionary();

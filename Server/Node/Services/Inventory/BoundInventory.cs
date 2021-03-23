@@ -12,6 +12,7 @@ using Node.Inventory.Notifications;
 using Node.Network;
 using PythonTypes.Types.Collections;
 using PythonTypes.Types.Database;
+using PythonTypes.Types.Exceptions;
 using PythonTypes.Types.Primitives;
 
 namespace Node.Services.Inventory
@@ -80,20 +81,26 @@ namespace Node.Services.Inventory
             {
                 throw new CantTakeInSpaceCapsule();
             }
-            if (this.mInventory is Ship)
+            
+            // perform checks only on cargo
+            if (this.mInventory is Ship ship && flag == ItemFlags.Cargo)
             {
                 // check destination cargo
                 double currentVolume =
-                    this.mInventory.Items.Sum(x => (x.Value.Flag != flag) ? 0.0 : x.Value.Quantity * x.Value.Attributes[AttributeEnum.volume]);
+                    ship.Items.Sum(x => (x.Value.Flag != flag) ? 0.0 : x.Value.Quantity * x.Value.Attributes[AttributeEnum.volume]);
 
                 double newVolume = item.Attributes[AttributeEnum.volume] * quantityToMove + currentVolume;
+                double volumeMultiplier = ship.ActiveModules
+                    .Select(x => x.Value.Attributes[AttributeEnum.cargoCapacityMultiplier])
+                    .Aggregate(1.0, (a, x) => x * a);
+                double maxVolume = this.mInventory.Attributes[AttributeEnum.capacity] * volumeMultiplier;
 
-                if (newVolume > this.mInventory.Attributes[AttributeEnum.capacity])
+                if (newVolume > maxVolume)
                     throw new NotEnoughCargoSpace(currentVolume, this.mInventory.Attributes[AttributeEnum.capacity] - currentVolume);
             }
         }
 
-        private void MoveItemHere(ItemEntity item, ItemFlags newFlag, Client relatedClient)
+        private void MoveItemHere(ItemEntity item, ItemFlags newFlag)
         {
             // remove item off the old inventory if required
             if (this.ItemManager.TryGetItem(item.LocationID, out ItemInventory inventory) == true)
@@ -103,17 +110,101 @@ namespace Node.Services.Inventory
             int oldLocation = item.LocationID;
             ItemFlags oldFlag = item.Flag;
             
-            // set the new location for the item
-            item.LocationID = this.mInventory.ID;
-            item.Flag = newFlag;
+            // special situation, if the old location is a module slot ensure the item is first offlined
+            if (oldFlag == ItemFlags.HiSlot0 || oldFlag == ItemFlags.HiSlot1 || oldFlag == ItemFlags.HiSlot2 ||
+                oldFlag == ItemFlags.HiSlot3 || oldFlag == ItemFlags.HiSlot4 || oldFlag == ItemFlags.HiSlot5 ||
+                oldFlag == ItemFlags.HiSlot6 || oldFlag == ItemFlags.HiSlot7 || oldFlag == ItemFlags.MedSlot0 ||
+                oldFlag == ItemFlags.MedSlot1 || oldFlag == ItemFlags.MedSlot2 || oldFlag == ItemFlags.MedSlot3 ||
+                oldFlag == ItemFlags.MedSlot4 || oldFlag == ItemFlags.MedSlot5 || oldFlag == ItemFlags.MedSlot6 ||
+                oldFlag == ItemFlags.MedSlot7 || oldFlag == ItemFlags.LoSlot0 || oldFlag == ItemFlags.LoSlot1 ||
+                oldFlag == ItemFlags.LoSlot2 || oldFlag == ItemFlags.LoSlot3 || oldFlag == ItemFlags.LoSlot4 ||
+                oldFlag == ItemFlags.LoSlot5 || oldFlag == ItemFlags.LoSlot6 || oldFlag == ItemFlags.LoSlot7)
+            {
+                if (item is ShipModule module)
+                    module.PutOffline(Client);
+            }
             
-            // notify the character about the change
-            Client.NotifyMultiEvent(OnItemChange.BuildLocationChange(item, oldFlag, oldLocation));
-            // update meta inventories too
-            this.ItemManager.MetaInventoryManager.OnItemMoved(item, oldLocation, this.mInventory.ID);
+            // extra special situation, is the new flag an autofit one?
+            if (newFlag == ItemFlags.AutoFit)
+            {
+                // determine where to put the item
+                
+            }
             
-            // finally persist the item changes
-            item.Persist();
+            // special situation, if the new location is a module slot ensure the item is a singleton (TODO: HANDLE CHARGES TOO)
+            if (newFlag == ItemFlags.HiSlot0 || newFlag == ItemFlags.HiSlot1 || newFlag == ItemFlags.HiSlot2 ||
+                newFlag == ItemFlags.HiSlot3 || newFlag == ItemFlags.HiSlot4 || newFlag == ItemFlags.HiSlot5 ||
+                newFlag == ItemFlags.HiSlot6 || newFlag == ItemFlags.HiSlot7 || newFlag == ItemFlags.MedSlot0 ||
+                newFlag == ItemFlags.MedSlot1 || newFlag == ItemFlags.MedSlot2 || newFlag == ItemFlags.MedSlot3 ||
+                newFlag == ItemFlags.MedSlot4 || newFlag == ItemFlags.MedSlot5 || newFlag == ItemFlags.MedSlot6 ||
+                newFlag == ItemFlags.MedSlot7 || newFlag == ItemFlags.LoSlot0 || newFlag == ItemFlags.LoSlot1 ||
+                newFlag == ItemFlags.LoSlot2 || newFlag == ItemFlags.LoSlot3 || newFlag == ItemFlags.LoSlot4 ||
+                newFlag == ItemFlags.LoSlot5 || newFlag == ItemFlags.LoSlot6 || newFlag == ItemFlags.LoSlot7)
+            {
+                ShipModule module = null;
+                
+                if (item.Quantity == 1)
+                {
+                    OnItemChange changes = new OnItemChange(item);
+
+                    if (item.Singleton == false)
+                        changes.AddChange(ItemChange.Singleton, item.Singleton);
+
+                    item.LocationID = this.mInventory.ID;
+                    item.Flag = newFlag;
+                    item.Singleton = true;
+
+                    changes
+                        .AddChange(ItemChange.LocationID, oldLocation)
+                        .AddChange(ItemChange.Flag, (int) oldFlag);
+            
+                    // notify the character about the change
+                    Client.NotifyMultiEvent(changes);
+                    // update meta inventories too
+                    this.ItemManager.MetaInventoryManager.OnItemMoved(item, oldLocation, this.mInventory.ID);
+            
+                    // finally persist the item changes
+                    item.Persist();
+
+                    if (item is ShipModule shipModule)
+                        module = shipModule;
+                }
+                else
+                {
+                    // item is not a singleton, create a new item, decrease quantity and send notifications
+                    ItemEntity newItem = this.ItemManager.CreateSimpleItem(item.Type, item.OwnerID, this.mInventory.ID, newFlag, 1, false,
+                        true);
+
+                    item.Quantity -= 1;
+                    
+                    // notify the quantity change and the new item
+                    Client.NotifyMultiEvent(OnItemChange.BuildQuantityChange(item, item.Quantity + 1));
+                    Client.NotifyMultiEvent(OnItemChange.BuildLocationChange(newItem, ItemFlags.None, 0));
+                    
+                    item.Persist();
+
+                    if (newItem is ShipModule shipModule)
+                        module = shipModule;
+                }
+
+                // put the module online after fitting it
+                module?.PutOnline(Client);
+                module?.Persist();
+            }
+            else
+            {
+                // set the new location for the item
+                item.LocationID = this.mInventory.ID;
+                item.Flag = newFlag;
+            
+                // notify the character about the change
+                Client.NotifyMultiEvent(OnItemChange.BuildLocationChange(item, oldFlag, oldLocation));
+                // update meta inventories too
+                this.ItemManager.MetaInventoryManager.OnItemMoved(item, oldLocation, this.mInventory.ID);
+            
+                // finally persist the item changes
+                item.Persist();
+            }
         }
 
         public PyDataType Add(PyInteger itemID, CallInformation call)
@@ -124,7 +215,7 @@ namespace Node.Services.Inventory
             ItemEntity item = this.ItemManager.GetItem(itemID);
             
             this.PreMoveItemCheck(item, this.mFlag, item.Quantity);
-            this.MoveItemHere(item, this.mFlag, call.Client);
+            this.MoveItemHere(item, this.mFlag);
 
             return null;
         }
@@ -137,7 +228,7 @@ namespace Node.Services.Inventory
             ItemEntity item = this.ItemManager.GetItem(itemID);
             
             this.PreMoveItemCheck(item, this.mFlag, item.Quantity);
-            this.MoveItemHere(item, this.mFlag, call.Client);
+            this.MoveItemHere(item, this.mFlag);
 
             return null;
         }
@@ -157,11 +248,12 @@ namespace Node.Services.Inventory
             // check that there's enough space left
             this.PreMoveItemCheck(item, this.mFlag, quantity);
 
+            // TODO: COPY THIS LOGIC OVER TO MOVEITEMHERE TO ENSURE THAT THIS ALSO FOLLOWS RULES REGARDING MODULES
             if (quantity == item.Quantity)
             {
                 // the item is being moved completely, the easiest way is to remove from the old inventory
                 // and put it in the new one
-                this.MoveItemHere(item, (ItemFlags) (int) flag, call.Client);
+                this.MoveItemHere(item, (ItemFlags) (int) flag);
             }
             else
             {
@@ -177,6 +269,30 @@ namespace Node.Services.Inventory
                 // persist the item changes in the database
                 clone.Persist();
                 item.Persist();
+            }
+            
+            return null;
+        }
+
+        public PyDataType MultiAdd(PyList adds, PyInteger quantity, PyInteger flag, CallInformation call)
+        {
+            if (quantity == null)
+            {
+                // null quantity means all the items in the list
+                foreach (PyInteger itemID in adds.GetEnumerable<PyInteger>())
+                {
+                    ItemEntity item = this.ItemManager.GetItem(itemID);
+                    
+                    // check and then move the item
+                    this.PreMoveItemCheck(item, (ItemFlags) (int) flag, item.Quantity);
+                    this.MoveItemHere(item, (ItemFlags) (int) flag);
+                }
+            }
+            else
+            {
+                // an specific quantity means we'll need to grab part of the stacks selected
+
+                throw new CustomError("Not supported yet!");
             }
             
             return null;

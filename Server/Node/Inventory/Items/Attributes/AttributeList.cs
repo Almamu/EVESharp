@@ -55,6 +55,11 @@ namespace Node.Inventory.Items.Attributes
             set => this[(int) index] = value;
         }
 
+        public bool TryGetAttribute(AttributeEnum index, out ItemAttribute attrib)
+        {
+            return this.mItemAttributes.TryGetValue((int) index, out attrib) || this.mDefaultAttributes.TryGetValue((int) index, out attrib);
+        }
+
         public bool AttributeExists(ItemAttribute attribute)
         {
             return this.AttributeExists(attribute.Info.ID);

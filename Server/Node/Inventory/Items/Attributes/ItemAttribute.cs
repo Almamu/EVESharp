@@ -313,6 +313,22 @@ namespace Node.Inventory.Items.Attributes
             return clone;
         }
 
+        public static bool operator ==(ItemAttribute attrib, int value)
+        {
+            switch (attrib.ValueType)
+            {
+                case ItemAttributeValueType.Integer:
+                    return attrib.Integer == value;
+                default:
+                    return attrib.Float == value;
+            }
+        }
+
+        public static bool operator !=(ItemAttribute attrib, int value)
+        {
+            return !(attrib == value);
+        }
+
         public static implicit operator double(ItemAttribute attrib)
         {
             switch (attrib.ValueType)
