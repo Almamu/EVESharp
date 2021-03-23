@@ -63,8 +63,11 @@ namespace Node.Services.Inventory
                 
                 if (shipID is null)
                     throw new CustomError($"The character is not onboard any ship");
-                
-                return this.DB.GetContractForShip(call.Client.EnsureCharacterIsSelected(), (int) shipID);
+
+                return new PyList<PyPackedRow>(1)
+                {
+                    [0] = this.DB.GetContractForShip(call.Client.EnsureCharacterIsSelected(), (int) shipID)
+                };
             }
             else
             {
@@ -72,7 +75,7 @@ namespace Node.Services.Inventory
             }
         }
 
-        public PyList<PyPackedRow> GetContractForShip(PyInteger itemID, CallInformation call)
+        public PyPackedRow GetContractForShip(PyInteger itemID, CallInformation call)
         {
             return this.DB.GetContractForShip(call.Client.EnsureCharacterIsSelected(), itemID);
         }

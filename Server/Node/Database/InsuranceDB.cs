@@ -58,9 +58,9 @@ namespace Node.Database
             );
         }
 
-        public PyList<PyPackedRow> GetContractForShip(int characterID, int shipID)
+        public PyPackedRow GetContractForShip(int characterID, int shipID)
         {
-            return Database.PreparePackedRowListQuery(
+            return Database.PreparePackedRowQuery(
                 "SELECT ownerID, shipID, fraction, startDate, endDate FROM chrShipInsurances WHERE ownerID = @characterID AND shipID = @shipID",
                 new Dictionary<string, object>()
                 {
