@@ -24,6 +24,7 @@
 
 using System.Collections.Generic;
 using Node.Inventory.Items.Attributes;
+using Node.Inventory.Items.Dogma;
 
 namespace Node.Inventory.Items
 {
@@ -45,11 +46,13 @@ namespace Node.Inventory.Items
         public int MarketGroupID { get; }
         public double ChanceOfDuplicating { get; }
         public Dictionary<int, ItemAttribute> Attributes { get; }
+        public Dictionary<int, Effect> Effects { get; }
         
         public ItemType(int id, ItemGroup group, string name, string description,
             int graphicID, double radius, double mass, double volume, double capacity,
             int portionSize, int raceID, double basePrice, bool published, int marketGroupId,
-            double chanceOfDuplicating, Dictionary<int, ItemAttribute> defaultAttributes)
+            double chanceOfDuplicating, Dictionary<int, ItemAttribute> defaultAttributes,
+            Dictionary<int, Effect> effects)
         {
             this.ID = id;
             this.Group = group;
@@ -67,6 +70,7 @@ namespace Node.Inventory.Items
             this.MarketGroupID = marketGroupId;
             this.ChanceOfDuplicating = chanceOfDuplicating;
             this.Attributes = defaultAttributes;
+            this.Effects = effects;
         }
     }
 }

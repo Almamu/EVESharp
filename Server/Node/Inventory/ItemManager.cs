@@ -54,9 +54,9 @@ namespace Node.Inventory
         private Channel Log { get; }
         private NodeContainer NodeContainer { get; }
         public MetaInventoryManager MetaInventoryManager { get; }
-        private Dictionary<int, ItemEntity> mItemList = new Dictionary<int, ItemEntity>();
-        private Dictionary<int, Station> mStations = new Dictionary<int, Station>();
-        private Dictionary<int, SolarSystem> mSolarSystems = new Dictionary<int, SolarSystem>();
+        private readonly Dictionary<int, ItemEntity> mItemList = new Dictionary<int, ItemEntity>();
+        private readonly Dictionary<int, Station> mStations = new Dictionary<int, Station>();
+        private readonly Dictionary<int, SolarSystem> mSolarSystems = new Dictionary<int, SolarSystem>();
 
         public Dictionary<int, Station> Stations => this.mStations;
         public Dictionary<int, SolarSystem> SolarSystems => this.mSolarSystems;
@@ -66,6 +66,7 @@ namespace Node.Inventory
         public EVESystem LocationUniverse { get; private set; }
         public EVESystem LocationTemp { get; private set; }
         public ItemEntity SecureCommerceCommision { get; private set; }
+        public DogmaExpressionManager DogmaExpressionManager { get; }
 
         /// <summary>
         /// Initializes the item manager and loads the required items
@@ -577,7 +578,8 @@ namespace Node.Inventory
                 this.DestroyItem(item);
         }
         
-        public ItemManager(Logger logger, ItemDB itemDB, SkillDB skillDB, NodeContainer nodeContainer, MetaInventoryManager metaInventoryManager)
+        public ItemManager(Logger logger, ItemDB itemDB, SkillDB skillDB, NodeContainer nodeContainer,
+            MetaInventoryManager metaInventoryManager, DogmaExpressionManager dogmaExpressionManager)
         {
             // create a log channel for the rare occurence of the ItemManager wanting to log something
             this.Log = logger.CreateLogChannel("ItemManager");
@@ -585,6 +587,7 @@ namespace Node.Inventory
             this.SkillDB = skillDB;
             this.NodeContainer = nodeContainer;
             this.MetaInventoryManager = metaInventoryManager;
+            this.DogmaExpressionManager = dogmaExpressionManager;
         }
     }
 }

@@ -6,22 +6,22 @@ namespace Common.Database
     {
         public static int? GetInt32OrNull(this MySqlDataReader reader, int columnIndex)
         {
-            return reader.IsDBNull(columnIndex) ? default : reader.GetInt32(columnIndex);
+            return reader.IsDBNull(columnIndex) ? null : reader.GetInt32(columnIndex);
         }
         
         public static long? GetInt64OrNull(this MySqlDataReader reader, int columnIndex)
         {
-            return reader.IsDBNull(columnIndex) ? default : reader.GetInt64(columnIndex);
+            return reader.IsDBNull(columnIndex) ? null : reader.GetInt64(columnIndex);
         }
         
         public static double? GetDoubleOrNull(this MySqlDataReader reader, int columnIndex)
         {
-            return reader.IsDBNull(columnIndex) ? default : reader.GetDouble(columnIndex);
+            return reader.IsDBNull(columnIndex) ? null : reader.GetDouble(columnIndex);
         }
         
         public static string GetStringOrNull(this MySqlDataReader reader, int columnIndex)
         {
-            return reader.IsDBNull(columnIndex) ? default : reader.GetString(columnIndex);
+            return reader.IsDBNull(columnIndex) ? null : reader.GetString(columnIndex);
         }
         
         public static int GetInt32OrDefault(this MySqlDataReader reader, int columnIndex, int defaultValue = 0)

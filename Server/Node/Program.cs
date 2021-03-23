@@ -86,6 +86,7 @@ namespace Node
                 dependencies.Register<CharacterManager>(Lifestyle.Singleton);
                 dependencies.Register<NotificationManager>(Lifestyle.Singleton);
                 dependencies.Register<MachoNet>(Lifestyle.Singleton);
+                dependencies.Register<DogmaExpressionManager>(Lifestyle.Singleton);
 
                 // register the database accessors dependencies
                 dependencies.Register<AccountDB>(Lifestyle.Singleton);
@@ -107,6 +108,7 @@ namespace Node
                 dependencies.Register<LookupDB>(Lifestyle.Singleton);
                 dependencies.Register<InsuranceDB>(Lifestyle.Singleton);
                 dependencies.Register<SolarSystemDB>(Lifestyle.Singleton);
+                dependencies.Register<DogmaDB>(Lifestyle.Singleton);
 
                 // register all the services
                 dependencies.Register<account>(Lifestyle.Singleton);

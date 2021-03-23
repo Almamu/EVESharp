@@ -43,7 +43,6 @@ namespace Node.Inventory
         public StationDB StationDB { get; private set; }
         public MarketDB MarketDB { get; private set; }
         public InsuranceDB InsuranceDB { get; private set; }
-        
         private Container DependencyInjection { get; }
         
         public ItemFactory(NodeContainer container, Container dependencyInjection)

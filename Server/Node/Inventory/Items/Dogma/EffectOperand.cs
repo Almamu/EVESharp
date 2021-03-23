@@ -1,6 +1,6 @@
 ﻿namespace Node.Inventory.Items.Attributes
 {
-    public enum DogmaEffectOperand
+    public enum EffectOperand
     {
         ADD = 1,
         AGGM = 2,

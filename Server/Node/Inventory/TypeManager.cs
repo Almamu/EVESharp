@@ -33,6 +33,7 @@ namespace Node.Inventory
     {
         private ItemDB ItemDB { get; }
         private Dictionary<int, ItemType> mTypes = null;
+        public DogmaExpressionManager ExpressionManager { get; }
 
         public void Load()
         {
@@ -55,9 +56,10 @@ namespace Node.Inventory
         public IEnumerable<ItemType> Values => this.mTypes.Values;
         public int Count => this.mTypes.Count;
 
-        public TypeManager(ItemDB itemDB)
+        public TypeManager(ItemDB itemDB, DogmaExpressionManager dogmaExpressionManager)
         {
             this.ItemDB = itemDB;
+            this.ExpressionManager = dogmaExpressionManager;
         }
 
         public IEnumerator<KeyValuePair<int, ItemType>> GetEnumerator()

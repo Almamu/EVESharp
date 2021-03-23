@@ -29,6 +29,7 @@ using MySql.Data.MySqlClient;
 using Node.Inventory;
 using Node.Inventory.Items;
 using Node.Inventory.Items.Attributes;
+using Node.Inventory.Items.Dogma;
 using Node.Inventory.Items.Types;
 using Node.Inventory.SystemEntities;
 using PythonTypes.Types.Database;
@@ -77,11 +78,85 @@ namespace Node.Database
                 return itemCategories;
             }
         }
+        
+        private Dictionary<int, Dictionary<int, Effect>> LoadItemEffects()
+        {
+            MySqlConnection connection = null;
+            MySqlDataReader reader = Database.Query(ref connection,
+                "SELECT effectID, effectName, effectCategory, preExpression, postExpression, description, guid, graphicID, isOffensive, isAssistance, durationAttributeID, trackingSpeedAttributeID, dischargeAttributeID, rangeAttributeID, falloffAttributeID, disallowAutoRepeat, published, displayName, isWarpSafe, rangeChance, electronicChance, propulsionChance, distribution, sfxName, npcUsageChanceAttributeID, npcActivationChanceAttributeID, fittingUsageChanceAttributeID FROM dgmEffects"
+            );
+            
+            Dictionary<int, Effect> effects = new Dictionary<int, Effect>();
+
+            using (connection)
+            {
+                using (reader)
+                {
+
+                    while (reader.Read() == true)
+                    {
+                        effects[reader.GetInt32(0)] = new Effect(
+                            reader.GetInt32(0),
+                            reader.GetString(1),
+                            reader.GetInt32(2),
+                            reader.GetInt32(3),
+                            reader.GetInt32(4),
+                            reader.GetString(5),
+                            reader.GetStringOrNull(6),
+                            reader.GetInt32OrNull(7),
+                            reader.GetBoolean(8),
+                            reader.GetBoolean(9),
+                            reader.GetInt32OrNull(10),
+                            reader.GetInt32OrNull(11),
+                            reader.GetInt32OrNull(12),
+                            reader.GetInt32OrNull(13),
+                            reader.GetInt32OrNull(14),
+                            reader.GetBoolean(15),
+                            reader.GetBoolean(16),
+                            reader.GetString(17),
+                            reader.GetBoolean(18),
+                            reader.GetBoolean(19),
+                            reader.GetBoolean(20),
+                            reader.GetBoolean(21),
+                            reader.GetInt32OrNull(22),
+                            reader.GetStringOrNull(23),
+                            reader.GetInt32OrNull(24),
+                            reader.GetInt32OrNull(25),
+                            reader.GetInt32OrNull(26)
+                        );
+                    }
+                }
+                
+                reader = Database.Query(ref connection, "SELECT typeID, effectID FROM dgmTypeEffects");
+                
+                using(connection)
+                using (reader)
+                {
+                    Dictionary<int, Dictionary<int, Effect>> typeEffects = new Dictionary<int, Dictionary<int, Effect>>();
+
+                    while (reader.Read() == true)
+                    {
+                        int typeID = reader.GetInt32(0);
+                        int effectID = reader.GetInt32(1);
+
+                        // ignore effects that were not loaded
+                        if (typeEffects.TryGetValue(typeID, out Dictionary<int, Effect> typeEffect) == false)
+                            typeEffect = typeEffects[typeID] = new Dictionary<int, Effect>();
+
+                        typeEffect[effectID] = effects[effectID];
+                    }
+
+                    return typeEffects;
+                }
+            }
+        }
 
         public Dictionary<int, ItemType> LoadItemTypes()
         {
+            // item effects should be loaded before as they're needed for the types instantiation
+            Dictionary<int, Dictionary<int, Effect>> effects = this.LoadItemEffects();
+            
             MySqlConnection connection = null;
-
             MySqlDataReader reader = Database.Query(ref connection,
                 "SELECT typeID, groupID, typeName, description, graphicID, radius, mass, volume, capacity, portionSize, raceID, basePrice, published, marketGroupID, chanceOfDuplicating FROM invTypes"
             );
@@ -101,6 +176,9 @@ namespace Node.Database
                         defaultAttributes = this.AttributeManager.DefaultAttributes[typeID];
                     else
                         defaultAttributes = new Dictionary<int, ItemAttribute>();
+
+                    if (effects.TryGetValue(typeID, out Dictionary<int, Effect> typeEffects) == false)
+                        typeEffects = new Dictionary<int, Effect>();
                     
                     ItemType type = new ItemType(
                         typeID,
@@ -118,7 +196,8 @@ namespace Node.Database
                         reader.GetBoolean(12),
                         reader.GetInt32OrDefault(13),
                         reader.GetDouble(14),
-                        defaultAttributes
+                        defaultAttributes,
+                        typeEffects
                     );
 
                     itemTypes[type.ID] = type;
@@ -1101,7 +1180,7 @@ namespace Node.Database
         public void PersistBlueprint(int itemID, bool copy, int materialLevel, int productivityLevel, int licensedProductionRunsRemaining)
         {
             Database.PrepareQuery(
-                "UPDATE invBlueprints SET copy = @copy, materialLevel = @materialLevel, productivityLevel = @productivityLevel, licensedProductionRunsRemaining = @licensedProductionRunsRemaining WHERE blueprintID = @itemID",
+                "UPDATE invBlueprints SET copy = @copy, materialLevel = @materialLevel, productivityLevel = @productivityLevel, licensedProductionRunsRemaining = @licensedProductionRunsRemaining WHERE itemID = @itemID",
                 new Dictionary<string, object>()
                 {
                     {"@itemID", itemID},

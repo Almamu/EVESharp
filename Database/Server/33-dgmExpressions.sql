@@ -1,4 +1,6 @@
 DROP TABLE IF EXISTS `dgmExpressions`;
+
+CREATE TABLE `dgmExpressions` (
   `expressionID` int(11) NOT NULL,
   `operandID` int(11) DEFAULT NULL,
   `arg1` int(11) DEFAULT NULL,
