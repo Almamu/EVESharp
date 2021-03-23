@@ -9,7 +9,7 @@ using PythonTypes.Types.Primitives;
 
 namespace Node.Services.War
 {
-    public class facWarMgr : Service
+    public class facWarMgr : IService
     {
         private CacheStorage CacheStorage { get; }
         private ItemManager ItemManager { get; }

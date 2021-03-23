@@ -12,7 +12,7 @@ using PythonTypes.Types.Primitives;
 
 namespace Node.Services.Characters
 {
-    public class bookmark : Service
+    public class bookmark : IService
     {
         private BookmarkDB DB { get; }
         private ItemManager ItemManager { get; }

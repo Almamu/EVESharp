@@ -40,9 +40,9 @@ namespace ClusterController
 
         private void SendNodeInitialState()
         {
-            NodeInfo nodeInfo = new NodeInfo {nodeID = NodeID};
+            NodeInfo nodeInfo = new NodeInfo {NodeID = NodeID};
 
-            Log.Debug($"Notifying node {nodeInfo.nodeID:X4} of it's new ID");
+            Log.Debug($"Notifying node {nodeInfo.NodeID:X4} of it's new ID");
 
             this.Socket.Send(nodeInfo);
         }

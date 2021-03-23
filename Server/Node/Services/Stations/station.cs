@@ -9,7 +9,7 @@ using PythonTypes.Types.Primitives;
 
 namespace Node.Services.Stations
 {
-    public class station : Service
+    public class station : IService
     {
         private ItemManager ItemManager { get; }
         public station(ItemManager itemManager) 

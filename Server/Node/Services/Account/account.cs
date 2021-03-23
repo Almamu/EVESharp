@@ -9,7 +9,7 @@ using PythonTypes.Types.Primitives;
 
 namespace Node.Services.Account
 {
-    public class account : Service
+    public class account : IService
     {
         private CharacterDB DB { get; }
         private ItemManager ItemManager { get; }

@@ -7,7 +7,7 @@ namespace Common.Game
 {
     public class Session
     {
-        private PyDictionary<PyString,PyTuple> mSession;
+        private readonly PyDictionary<PyString,PyTuple> mSession;
         public bool IsDirty { get; private set; }
         
         public PyDataType this[string key]

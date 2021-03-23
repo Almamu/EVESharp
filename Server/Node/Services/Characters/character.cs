@@ -41,7 +41,7 @@ using PythonTypes.Types.Primitives;
 
 namespace Node.Services.Characters
 {
-    public class character : Service
+    public class character : IService
     {
         enum NameValidationResults
         {

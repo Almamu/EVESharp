@@ -7,7 +7,7 @@ using PythonTypes.Types.Primitives;
 
 namespace Node.Services.Corporations
 {
-    public class corporationSvc : Service
+    public class corporationSvc : IService
     {
         private CorporationDB DB { get; }
         

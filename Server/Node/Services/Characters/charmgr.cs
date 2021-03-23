@@ -8,7 +8,7 @@ using PythonTypes.Types.Primitives;
 
 namespace Node.Services.Characters
 {
-    public class charmgr : Service
+    public class charmgr : IService
     {
         private CharacterDB DB { get; }
         private MarketDB MarketDB { get; }

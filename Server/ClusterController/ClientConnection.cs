@@ -257,16 +257,16 @@ namespace ClusterController
             // Handshake sent when we are mostly in
             HandshakeAck ack = new HandshakeAck
             {
-                live_updates = this.GeneralDB.FetchLiveUpdates(),
-                jit = this.Session["languageID"] as PyString,
-                userid = this.Session["userid"] as PyInteger,
-                maxSessionTime = null,
-                userType = Common.Constants.AccountType.User,
-                role = this.Session["role"] as PyInteger,
-                address = this.Session["address"] as PyString,
-                inDetention = null,
-                client_hashes = new PyList(),
-                user_clientid = this.Session["userid"] as PyInteger
+                LiveUpdates = this.GeneralDB.FetchLiveUpdates(),
+                JIT = this.Session["languageID"] as PyString,
+                UserID = this.Session["userid"] as PyInteger,
+                MaxSessionTime = null,
+                UserType = Common.Constants.AccountType.USER,
+                Role = this.Session["role"] as PyInteger,
+                Address = this.Session["address"] as PyString,
+                InDetention = null,
+                ClientHashes = new PyList(),
+                UserClientID = this.Session["userid"] as PyInteger
             };
             
             // send the response first
@@ -364,15 +364,17 @@ namespace ClusterController
         {
             Log.Debug("Sending LowLevelVersionExchange...");
 
-            LowLevelVersionExchange data = new LowLevelVersionExchange();
+            LowLevelVersionExchange data = new LowLevelVersionExchange
+            {
+                Codename = Common.Constants.Game.CODENAME,
+                Birthday = Common.Constants.Game.BIRTHDAY,
+                Build = Common.Constants.Game.BUILD,
+                MachoVersion = Common.Constants.Game.MACHO_VERSION,
+                Version = Common.Constants.Game.VERSION,
+                UserCount = this.ConnectionManager.ClientsCount,
+                Region = Common.Constants.Game.REGION
+            };
 
-            data.codename = Common.Constants.Game.codename;
-            data.birthday = Common.Constants.Game.birthday;
-            data.build = Common.Constants.Game.build;
-            data.machoVersion = Common.Constants.Game.machoVersion;
-            data.version = Common.Constants.Game.version;
-            data.usercount = this.ConnectionManager.ClientsCount;
-            data.region = Common.Constants.Game.region;
 
             this.Socket.Send(data);
         }
@@ -397,14 +399,14 @@ namespace ClusterController
                     rsp.user_logonqueueposition = 1;
                     rsp.challenge_responsehash = "55087";
 
-                    rsp.macho_version = Common.Constants.Game.machoVersion;
-                    rsp.boot_version = Common.Constants.Game.version;
-                    rsp.boot_build = Common.Constants.Game.build;
-                    rsp.boot_codename = Common.Constants.Game.codename;
-                    rsp.boot_region = Common.Constants.Game.region;
+                    rsp.macho_version = Common.Constants.Game.MACHO_VERSION;
+                    rsp.boot_version = Common.Constants.Game.VERSION;
+                    rsp.boot_build = Common.Constants.Game.BUILD;
+                    rsp.boot_codename = Common.Constants.Game.CODENAME;
+                    rsp.boot_region = Common.Constants.Game.REGION;
 
                     // setup session
-                    this.Session["userType"] = Common.Constants.AccountType.User;
+                    this.Session["userType"] = Common.Constants.AccountType.USER;
                     this.Session["userid"] = accountID;
                     this.Session["role"] = role;
                     // move the connection to the authenticated user list

@@ -9,7 +9,7 @@ using Common.Network;
 
 namespace Common.Logging.Streams
 {
-    public class LogLiteStream : LogStream
+    public class LogLiteStream : ILogStream
     {
         enum ConnectionMessage
         {
@@ -28,7 +28,7 @@ namespace Common.Logging.Streams
             SEVERITY_ERR,
         }
 
-        private static Dictionary<MessageType, Severity> MessageTypeToSeverity = new Dictionary<MessageType, Severity>()
+        private static readonly Dictionary<MessageType, Severity> MessageTypeToSeverity = new Dictionary<MessageType, Severity>()
         {
             {MessageType.Info, Severity.SEVERITY_INFO},
             {MessageType.Debug, Severity.SEVERITY_INFO},
@@ -42,17 +42,15 @@ namespace Common.Logging.Streams
 
         private Queue<StreamMessage> mQueue = new Queue<StreamMessage>();
 
-        private readonly LogLite mConfiguration = null;
         private readonly EVEClientSocket mSocket = null;
-        private Channel Log { get; set; }
+        private Channel Log { get; }
         private bool Enabled { get; set; }
-        private string Name { get; set; }
-        private string ExecutablePath { get; set; }
-        private long PID { get; set; }
+        private string Name { get; }
+        private string ExecutablePath { get; }
+        private long PID { get; }
 
         public LogLiteStream(string name, Logger logger, LogLite configuration)
         {
-            this.mConfiguration = configuration;
             this.Log = logger.CreateLogChannel("LogLiteBridge");
 
             this.Enabled = true;
@@ -62,7 +60,7 @@ namespace Common.Logging.Streams
             this.mSocket = new EVEClientSocket(this.Log);
             this.mSocket.SetOnConnectionLostHandler(OnConnectionLost);
             this.mSocket.SetExceptionHandler(OnException);
-            this.mSocket.Connect(this.mConfiguration.Hostname, int.Parse(this.mConfiguration.Port));
+            this.mSocket.Connect(configuration.Hostname, int.Parse(configuration.Port));
 
             // send the connection message
             this.SendConnectionMessage();

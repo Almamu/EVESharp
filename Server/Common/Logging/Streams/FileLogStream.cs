@@ -5,22 +5,19 @@ using System.Threading;
 
 namespace Common.Logging.Streams
 {
-    public class FileLogStream : LogStream
+    public class FileLogStream : ILogStream
     {
-        private readonly Configuration.FileLog mConfiguration = null;
         private Queue<StreamMessage> mQueue = new Queue<StreamMessage>();
         private readonly FileStream mFile = null;
         private readonly StreamWriter mWriter = null;
 
         public FileLogStream(Configuration.FileLog configuration)
         {
-            this.mConfiguration = configuration;
-
             // create directory and log file
-            if (Directory.Exists(this.mConfiguration.Directory) == false)
-                Directory.CreateDirectory(this.mConfiguration.Directory);
+            if (Directory.Exists(configuration.Directory) == false)
+                Directory.CreateDirectory(configuration.Directory);
 
-            this.mFile = File.OpenWrite(Path.Join(this.mConfiguration.Directory, this.mConfiguration.LogFile));
+            this.mFile = File.OpenWrite(Path.Join(configuration.Directory, configuration.LogFile));
             this.mWriter = new StreamWriter(this.mFile);
         }
 

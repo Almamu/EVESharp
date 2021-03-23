@@ -7,15 +7,15 @@ namespace Common.Packets
     class ClientSessionData
     {
         private const string TYPE_NAME = "macho.sessionInitialState";
-        public PyDictionary session = new PyDictionary();
-        public int clientID = 0;
+        public PyDictionary SessionData = new PyDictionary();
+        public int ClientID = 0;
 
         public static implicit operator PyDataType(ClientSessionData sessionData)
         {
             return new PyObjectData(TYPE_NAME, new PyTuple(2)
                 {
-                    [0] = sessionData.session,
-                    [1] = sessionData.clientID
+                    [0] = sessionData.SessionData,
+                    [1] = sessionData.ClientID
                 }
             );
         }
@@ -34,8 +34,8 @@ namespace Common.Packets
 
             ClientSessionData result = new ClientSessionData();
 
-            result.session = arguments[0] as PyDictionary;
-            result.clientID = arguments[1] as PyInteger;
+            result.SessionData = arguments[0] as PyDictionary;
+            result.ClientID = arguments[1] as PyInteger;
 
             return result;
         }

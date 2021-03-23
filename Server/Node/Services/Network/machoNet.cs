@@ -30,7 +30,7 @@ using PythonTypes.Types.Primitives;
 
 namespace Node.Services.Network
 {
-    public class machoNet : Service
+    public class machoNet : IService
     {
         private CacheStorage CacheStorage { get; }
         public machoNet(CacheStorage cacheStorage)

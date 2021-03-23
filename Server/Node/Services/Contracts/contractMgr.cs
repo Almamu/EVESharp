@@ -17,7 +17,7 @@ using PythonTypes.Types.Primitives;
 
 namespace Node.Services.Contracts
 {
-    public class contractMgr : Service
+    public class contractMgr : IService
     {
         // TODO: THE TYPEID FOR THE BOX IS 24445
         private ContractDB DB { get; }

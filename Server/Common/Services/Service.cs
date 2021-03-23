@@ -1,6 +1,6 @@
 ﻿namespace Common.Services
 {
-    public interface Service
+    public interface IService
     {
     }
 }

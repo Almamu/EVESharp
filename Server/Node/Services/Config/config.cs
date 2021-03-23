@@ -9,7 +9,7 @@ using PythonTypes.Types.Primitives;
 
 namespace Node.Services.Config
 {
-    public class config : Service
+    public class config : IService
     {
         private ConfigDB DB { get; }
         private Channel Log { get; }

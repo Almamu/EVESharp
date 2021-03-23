@@ -11,7 +11,7 @@ using PythonTypes.Types.Primitives;
 
 namespace Node.Services.Navigation
 {
-    public class map : Service
+    public class map : IService
     {
         private ItemManager ItemManager { get; }
         private StationManager StationManager { get; }

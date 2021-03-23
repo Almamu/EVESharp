@@ -15,7 +15,7 @@ using PythonTypes.Types.Primitives;
 
 namespace Node.Services.Chat
 {
-    public class LSC : Service
+    public class LSC : IService
     {
         /// <summary>
         /// The type of notification used through the whole LSC service

@@ -31,7 +31,7 @@ using PythonTypes.Types.Primitives;
 
 namespace Node.Services.CacheSvc
 {
-    public class objectCaching : Service
+    public class objectCaching : IService
     {
         private Channel Log { get; }
         private CacheStorage CacheStorage { get; }

@@ -6,7 +6,7 @@ namespace Common.Packets
 {
     public class ClientCommand
     {
-        public string Command { get; set; }
+        public string Command { get; }
 
         public ClientCommand(string command)
         {

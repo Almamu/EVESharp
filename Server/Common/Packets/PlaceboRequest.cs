@@ -6,12 +6,8 @@ namespace Common.Packets
 {
     public class PlaceboRequest
     {
-        public PyString Command { get; set; }
-        public PyDictionary Arguments { get; set; }
-
-        public PlaceboRequest()
-        {
-        }
+        public PyString Command { get; }
+        public PyDictionary Arguments { get; }
 
         public PlaceboRequest(PyString command, PyDictionary arguments)
         {

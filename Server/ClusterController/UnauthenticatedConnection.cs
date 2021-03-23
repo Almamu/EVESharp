@@ -36,13 +36,13 @@ namespace ClusterController
 
             LowLevelVersionExchange data = new LowLevelVersionExchange
             {
-                codename = Common.Constants.Game.codename,
-                birthday = Common.Constants.Game.birthday,
-                build = Common.Constants.Game.build,
-                machoVersion = Common.Constants.Game.machoVersion,
-                version = Common.Constants.Game.version,
-                usercount = this.ConnectionManager.ClientsCount,
-                region = Common.Constants.Game.region
+                Codename = Common.Constants.Game.CODENAME,
+                Birthday = Common.Constants.Game.BIRTHDAY,
+                Build = Common.Constants.Game.BUILD,
+                MachoVersion = Common.Constants.Game.MACHO_VERSION,
+                Version = Common.Constants.Game.VERSION,
+                UserCount = this.ConnectionManager.ClientsCount,
+                Region = Common.Constants.Game.REGION
             };
 
             this.Socket.Send(data);
@@ -55,7 +55,7 @@ namespace ClusterController
                 LowLevelVersionExchange exchange = this.CheckLowLevelVersionExchange(ar);
 
                 // TODO: CHECK NETWORK OF THE NODE TO ENSURE UNAUTHORIZED CONNECTIONS DONT REACH A NODE STATE
-                if (exchange.isNode)
+                if (exchange.IsNode)
                     this.ConvertToNodeConnection();
                 else
                     this.ConvertToClientConnection();

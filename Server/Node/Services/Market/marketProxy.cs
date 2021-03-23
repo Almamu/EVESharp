@@ -22,7 +22,7 @@ using PythonTypes.Types.Primitives;
 
 namespace Node.Services.Market
 {
-    public class marketProxy : Service
+    public class marketProxy : IService
     {
         private static readonly int[] JumpsPerSkillLevel = new int[]
         {

@@ -9,7 +9,7 @@ namespace Common.Network
         public Channel Log { get; }
         public int Port { get; }
 
-        public EVEServerSocket(int port, Channel logChannel) : base()
+        public EVEServerSocket(int port, Channel logChannel)
         {
             this.Log = logChannel;
             this.Port = port;

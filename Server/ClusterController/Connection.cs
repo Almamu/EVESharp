@@ -25,18 +25,18 @@ namespace ClusterController
         {
             LowLevelVersionExchange data = exchange;
 
-            if (data.birthday != Common.Constants.Game.birthday)
+            if (data.Birthday != Common.Constants.Game.BIRTHDAY)
                 throw new Exception("Wrong birthday in LowLevelVersionExchange");
-            if (data.build != Common.Constants.Game.build)
+            if (data.Build != Common.Constants.Game.BUILD)
                 throw new Exception("Wrong build in LowLevelVersionExchange");
-            if (data.codename != Common.Constants.Game.codename + "@" + Common.Constants.Game.region)
+            if (data.Codename != Common.Constants.Game.CODENAME + "@" + Common.Constants.Game.REGION)
                 throw new Exception("Wrong codename in LowLevelVersionExchange");
-            if (data.machoVersion != Common.Constants.Game.machoVersion)
+            if (data.MachoVersion != Common.Constants.Game.MACHO_VERSION)
                 throw new Exception("Wrong machoVersion in LowLevelVersionExchange");
-            if (data.version != Common.Constants.Game.version)
+            if (data.Version != Common.Constants.Game.VERSION)
                 throw new Exception("Wrong version in LowLevelVersionExchange");
-            if (data.isNode == true)
-                if (data.nodeIdentifier != "Node")
+            if (data.IsNode == true)
+                if (data.NodeIdentifier != "Node")
                     throw new Exception("Wrong node string in LowLevelVersionExchange");
 
             return data;

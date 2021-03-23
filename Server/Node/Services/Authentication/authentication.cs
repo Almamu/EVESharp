@@ -31,7 +31,7 @@ using PythonTypes.Types.Primitives;
 
 namespace Node.Services.Network
 {
-    public class authentication : Service
+    public class authentication : IService
     {
         private readonly Authentication mConfiguration = null;
 

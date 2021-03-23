@@ -15,7 +15,7 @@ namespace Common.Logging
 
     public class Logger
     {
-        private readonly List<LogStream> mStreams = new List<LogStream>();
+        private readonly List<ILogStream> mStreams = new List<ILogStream>();
         private readonly Dictionary<string, Channel> mChannels = new Dictionary<string, Channel>();
         private Configuration.Logging mConfiguration = null;
 
@@ -24,7 +24,7 @@ namespace Common.Logging
             this.mConfiguration = configuration;
         }
 
-        public void AddLogStream(LogStream newStream)
+        public void AddLogStream(ILogStream newStream)
         {
             this.mStreams.Add(newStream);
         }
@@ -46,18 +46,18 @@ namespace Common.Logging
 
         public void Write(MessageType messageType, string message, Channel channel)
         {
-            // supress message if required
+            // suppress message if required
             if (channel.Suppress == true && this.mConfiguration.EnableChannels.Contains(channel.Name) == false)
                 return;
 
             // iterate all the log streams and queue the messages
-            foreach (LogStream stream in this.mStreams)
+            foreach (ILogStream stream in this.mStreams)
                 stream.Write(messageType, message, channel);
         }
 
         public void Flush()
         {
-            foreach (LogStream stream in this.mStreams)
+            foreach (ILogStream stream in this.mStreams)
                 stream.Flush();
         }
     }

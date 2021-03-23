@@ -6,7 +6,7 @@ using PythonTypes.Types.Primitives;
 
 namespace Node.Services.Tutorial
 {
-    public class tutorialSvc : Service
+    public class tutorialSvc : IService
     {
         public tutorialSvc()
         {

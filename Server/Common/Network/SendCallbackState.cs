@@ -2,7 +2,7 @@ namespace Common.Network
 {
     public class SendCallbackState
     {
-        public byte[] Buffer { get; set; }
+        public byte[] Buffer { get; }
         public int Sent { get; set; }
 
         public SendCallbackState(byte[] buffer)

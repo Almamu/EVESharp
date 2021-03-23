@@ -6,7 +6,7 @@ using PythonTypes.Types.Primitives;
 
 namespace Node.Services
 {
-    public abstract class BoundService : Service
+    public abstract class BoundService : IService
     {
         public BoundServiceManager BoundServiceManager { get; }
         /// <summary>

@@ -16,7 +16,7 @@ using PythonTypes.Types.Primitives;
 
 namespace Node.Services.Network
 {
-    public class slash : Service
+    public class slash : IService
     {
         private TypeManager TypeManager { get; }
         private ItemManager ItemManager { get; }

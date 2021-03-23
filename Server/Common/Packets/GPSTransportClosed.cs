@@ -11,26 +11,25 @@ namespace Common.Packets
 
         public GPSTransportClosed(string type) : base(TYPE_NAME, type, null, new PyDictionary())
         {
-            this.reasonArgs = new PyDictionary();
-            this.clock = DateTime.UtcNow.ToFileTimeUtc();
-            this.region = Common.Constants.Game.region;
+            this.Clock = DateTime.UtcNow.ToFileTimeUtc();
+            this.Region = Common.Constants.Game.REGION;
             this.Reason = type;
-            this.version = Common.Constants.Game.version;
-            this.build = Common.Constants.Game.build;
-            this.codename = Common.Constants.Game.codename;
-            this.machoVersion = Common.Constants.Game.machoVersion;
+            this.Version = Common.Constants.Game.VERSION;
+            this.Build = Common.Constants.Game.BUILD;
+            this.Codename = Common.Constants.Game.CODENAME;
+            this.MachoVersion = Common.Constants.Game.MACHO_VERSION;
         }
 
         public static implicit operator PyDataType(GPSTransportClosed exception)
         {
-            exception.Keywords["reasonArgs"] = exception.reasonArgs;
-            exception.Keywords["clock"] = exception.clock;
-            exception.Keywords["region"] = exception.region;
+            exception.Keywords["reasonArgs"] = exception.ReasonArgs;
+            exception.Keywords["clock"] = exception.Clock;
+            exception.Keywords["region"] = exception.Region;
             exception.Keywords["reason"] = exception.Reason;
-            exception.Keywords["version"] = exception.version;
-            exception.Keywords["build"] = exception.build;
-            exception.Keywords["codename"] = exception.codename;
-            exception.Keywords["machoVersion"] = exception.machoVersion;
+            exception.Keywords["version"] = exception.Version;
+            exception.Keywords["build"] = exception.Build;
+            exception.Keywords["codename"] = exception.Codename;
+            exception.Keywords["machoVersion"] = exception.MachoVersion;
 
             return exception as PyException;
         }
@@ -42,33 +41,33 @@ namespace Common.Packets
             if (ex.Type != TYPE_NAME)
                 throw new Exception($"Expected type {TYPE_NAME} but got {ex.Type}");
 
-            GPSTransportClosed result = new GPSTransportClosed(ex.Reason);
-
-            result.Keywords = ex.Keywords;
-
-            result.reasonArgs = ex.Keywords["reasonArgs"] as PyDictionary;
-            result.clock = ex.Keywords["clock"] as PyInteger;
-            result.region = ex.Keywords["region"] as PyString;
-            result.Reason = ex.Keywords["reason"] as PyString;
-            result.version = ex.Keywords["version"] as PyDecimal;
-            result.build = ex.Keywords["build"] as PyInteger;
-            result.codename = ex.Keywords["codename"] as PyString;
-            result.machoVersion = ex.Keywords["machoVersion"] as PyInteger;
+            GPSTransportClosed result = new GPSTransportClosed(ex.Reason)
+            {
+                Keywords = ex.Keywords,
+                ReasonArgs = ex.Keywords["reasonArgs"] as PyDictionary,
+                Clock = ex.Keywords["clock"] as PyInteger,
+                Region = ex.Keywords["region"] as PyString,
+                Reason = ex.Keywords["reason"] as PyString,
+                Version = ex.Keywords["version"] as PyDecimal,
+                Build = ex.Keywords["build"] as PyInteger,
+                Codename = ex.Keywords["codename"] as PyString,
+                MachoVersion = ex.Keywords["machoVersion"] as PyInteger
+            };
 
             return result;
         }
 
-        public string exception_type = "";
+        public string ExceptionType { get; init; }
         public string message = "";
-        public string origin = "";
-        public PyDictionary reasonArgs = new PyDictionary();
-        public long clock = 0;
-        public PyDataType loggedOnUserCount = null;
-        public string region = "";
-        public double version = 0.0;
-        public int build = 0;
-        public string reasonCode = "";
-        public string codename = "";
-        public int machoVersion = 0;
+        public string Origin { get; init; }
+        public PyDictionary ReasonArgs { get; init; } = new PyDictionary();
+        public long Clock { get; init; }
+        public PyDataType LoggedOnUserCount { get; init; }
+        public string Region { get; init; }
+        public double Version { get; init; }
+        public int Build { get; init; }
+        public string ReasonCode { get; init; }
+        public string Codename { get; init; }
+        public int MachoVersion { get; init; }
     }
 }

@@ -4,10 +4,10 @@ namespace Common.Configuration
 {
     public class Database
     {
-        public string Username { get; set; }
-        public string Password { get; set; }
-        public string Hostname { get; set; }
-        public string Name { get; set; }
+        public string Username { get; private set; }
+        public string Password { get; private set; }
+        public string Hostname { get; private set; }
+        public string Name { get; private set; }
 
         public void Load(KeyDataCollection section)
         {

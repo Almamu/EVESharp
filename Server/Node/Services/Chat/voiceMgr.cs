@@ -4,7 +4,7 @@ using PythonTypes.Types.Primitives;
 
 namespace Node.Services.Chat
 {
-    public class voiceMgr : Service
+    public class voiceMgr : IService
     {
         public voiceMgr()
         {

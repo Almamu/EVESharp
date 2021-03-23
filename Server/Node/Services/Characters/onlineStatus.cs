@@ -8,7 +8,7 @@ using PythonTypes.Types.Primitives;
 
 namespace Node.Services.Characters
 {
-    public class onlineStatus : Service
+    public class onlineStatus : IService
     {
         private ChatDB ChatDB { get; }
         private CharacterDB CharacterDB { get; }

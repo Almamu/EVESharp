@@ -5,7 +5,7 @@ using PythonTypes.Types.Primitives;
 
 namespace Node.Services.Network
 {
-    public class clientStatsMgr : Service
+    public class clientStatsMgr : IService
     {
         public clientStatsMgr()
         {

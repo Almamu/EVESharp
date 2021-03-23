@@ -8,15 +8,15 @@ namespace Common.Packets
     {
         private const string TYPE_NAME = "machoNet.nodeInfo";
 
-        public long nodeID = 0;
-        public PyList solarSystems = new PyList();
+        public long NodeID { get; init; }
+        public PyList SolarSystems { get; init; }
 
         public static implicit operator PyDataType(NodeInfo info)
         {
             return new PyObjectData(TYPE_NAME, new PyTuple(2)
                 {
-                    [0] = info.nodeID,
-                    [1] = info.solarSystems
+                    [0] = info.NodeID,
+                    [1] = info.SolarSystems
                 }
             );
         }
@@ -35,8 +35,8 @@ namespace Common.Packets
 
             NodeInfo result = new NodeInfo
             {
-                nodeID = arguments[0] as PyInteger,
-                solarSystems = arguments[1] as PyList
+                NodeID = arguments[0] as PyInteger,
+                SolarSystems = arguments[1] as PyList
             };
 
 

@@ -31,7 +31,7 @@ using PythonTypes.Types.Primitives;
 
 namespace Node.Services.Network
 {
-    public class alert : Service
+    public class alert : IService
     {
         private Channel Log { get; }
 

@@ -6,8 +6,8 @@ namespace Common.Packets
 {
     public class SessionChangeNotification
     {
-        public int clueless = 0;
-        public PyDictionary Changes = new PyDictionary();
+        private int mClueless = 0;
+        public PyDictionary Changes { get; init; }
         /// <summary>
         /// List of nodes interested in the session change
         ///
@@ -15,7 +15,7 @@ namespace Common.Packets
         /// All in all, EVESharp takes a different approach where all nodes know
         /// about all the clients so this is mainly useless for us
         /// </summary>
-        public PyList NodesOfInterest = new PyList();
+        public PyList NodesOfInterest { get; init; }
 
         public static implicit operator PyTuple(SessionChangeNotification notification)
         {
@@ -23,7 +23,7 @@ namespace Common.Packets
             {
                 [0] = new PyTuple(2)
                 {
-                    [0] = notification.clueless,
+                    [0] = notification.mClueless,
                     [1] = notification.Changes
                 },
                 [1] = notification.NodesOfInterest
@@ -50,7 +50,7 @@ namespace Common.Packets
             SessionChangeNotification scn = new SessionChangeNotification
             {
                 NodesOfInterest = origin[1] as PyList,
-                clueless = sessionData[0] as PyInteger,
+                mClueless = sessionData[0] as PyInteger,
                 Changes = sessionData[1] as PyDictionary
             };
 

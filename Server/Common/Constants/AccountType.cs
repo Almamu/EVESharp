@@ -2,7 +2,7 @@
 {
     public static class AccountType
     {
-        public static int User = 1;
-        public static int Trial = 23;
+        public const int USER = 1;
+        public const int TRIAL = 23;
     }
 }

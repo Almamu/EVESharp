@@ -5,7 +5,7 @@ using PythonTypes.Types.Primitives;
 
 namespace Node.Services.Corporations
 {
-    public class corpmgr : Service
+    public class corpmgr : IService
     {
         private CorporationDB DB { get; }
         

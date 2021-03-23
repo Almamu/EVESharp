@@ -10,7 +10,7 @@ using PythonTypes.Types.Primitives;
 
 namespace Node.Services.War
 {
-    public class standing2 : Service
+    public class standing2 : IService
     {
         private StandingDB DB { get; }
         private CacheStorage CacheStorage { get; }

@@ -34,20 +34,21 @@ namespace Common.Database
 {
     public class DatabaseConnection
     {
-        private Channel Log { get; set; }
+        private Channel Log { get; }
         private readonly string mConnectionString;
         private readonly Queue<string> mQueryQueue = new Queue<string>();
 
         public DatabaseConnection(Configuration.Database configuration, Logger logger)
         {
-            MySqlConnectionStringBuilder stringBuilder = new MySqlConnectionStringBuilder();
-
-            stringBuilder.Server = configuration.Hostname;
-            stringBuilder.Database = configuration.Name;
-            stringBuilder.UserID = configuration.Username;
-            stringBuilder.Password = configuration.Password;
-            stringBuilder.MinimumPoolSize = 10;
-
+            MySqlConnectionStringBuilder stringBuilder = new MySqlConnectionStringBuilder
+            {
+                Server = configuration.Hostname,
+                Database = configuration.Name,
+                UserID = configuration.Username,
+                Password = configuration.Password,
+                MinimumPoolSize = 10
+            };
+            
             this.mConnectionString = stringBuilder.ToString();
             this.Log = logger.CreateLogChannel("Database");
         }
@@ -532,6 +533,7 @@ namespace Common.Database
         /// the result
         /// </summary>
         /// <param name="query">The prepared query</param>
+        /// <param name="keyColumnIndex">The column to use as index for the IntRowDictionary</param>
         /// <returns>The IntRowDictionary object representing the result</returns>
         public PyDictionary PrepareIntRowDictionary(string query, int keyColumnIndex)
         {
@@ -556,12 +558,13 @@ namespace Common.Database
                 throw;
             }
         }
-        
+
         /// <summary>
         /// Runs one prepared query with the given values as parameters and returns a IntRowDictionary representing
         /// the result
         /// </summary>
         /// <param name="query">The prepared query</param>
+        /// <param name="keyColumnIndex">The column to use as key for the IntRowDictionary</param>
         /// <param name="values">The key-value pair of values to use when running the query</param>
         /// <returns>The IntRowDictionary object representing the result</returns>
         public PyDictionary PrepareIntRowDictionary(string query, int keyColumnIndex, Dictionary<string, object> values)
@@ -590,12 +593,13 @@ namespace Common.Database
                 throw;
             }
         }
-        
+
         /// <summary>
         /// Runs one prepared query with the given values as parameters and returns an IntPackedRowListDictionary representing
         /// the result
         /// </summary>
         /// <param name="query">The prepared query</param>
+        /// <param name="keyColumnIndex">The column to use as key for the IntPackedRowListDictionary</param>
         /// <returns>The IntRowDictionary object representing the result</returns>
         public PyDataType PrepareIntPackedRowListDictionary(string query, int keyColumnIndex)
         {
@@ -620,12 +624,13 @@ namespace Common.Database
                 throw;
             }
         }
-        
+
         /// <summary>
         /// Runs one prepared query with the given values as parameters and returns an IntPackedRowListDictionary representing
         /// the result
         /// </summary>
         /// <param name="query">The prepared query</param>
+        /// <param name="keyColumnIndex">The column to use as key for the IntPackedRowListDictionary</param>
         /// <param name="values">The key-value pair of values to use when running the query</param>
         /// <returns>The IntRowDictionary object representing the result</returns>
         public PyDataType PrepareIntPackedRowListDictionary(string query, int keyColumnIndex, Dictionary<string, object> values)
@@ -724,7 +729,6 @@ namespace Common.Database
         /// KeyVals only hold ONE row
         /// </summary>
         /// <param name="query">The prepared query</param>
-        /// <param name="values">The key-value pair of values to use when running the query</param>
         /// <returns>The PyDataType object representing the result</returns>
         public PyDataType PrepareKeyValQuery(string query)
         {

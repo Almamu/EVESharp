@@ -6,7 +6,7 @@ namespace Common.Network
 {
     public abstract class EVESocket
     {
-        protected Socket Socket { get; private set; }
+        protected Socket Socket { get; init; }
         private Action<Exception> mExceptionHandler = null;
         private Action mOnConnectionLost = null;
 
@@ -116,7 +116,7 @@ namespace Common.Network
         {
             IPEndPoint endPoint = this.Socket.RemoteEndPoint as IPEndPoint;
 
-            return endPoint.Address.ToString();
+            return endPoint?.Address.ToString();
         }
     }
 }

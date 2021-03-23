@@ -5,7 +5,7 @@ using PythonTypes.Types.Primitives;
 
 namespace Node.Services.Account
 {
-    public class billMgr : Service
+    public class billMgr : IService
     {
         private CacheStorage CacheStorage { get; }
         public billMgr(CacheStorage cacheStorage)

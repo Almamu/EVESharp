@@ -12,7 +12,7 @@ using PythonTypes.Types.Primitives;
 
 namespace Node.Services.Characters
 {
-    public class certificateMgr : Service
+    public class certificateMgr : IService
     {
         private CertificatesDB DB { get; }
         private ItemManager ItemManager { get; }

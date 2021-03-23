@@ -15,10 +15,10 @@ namespace Common.Services
         {
             object serviceObject = GetType().GetProperty(service)?.GetValue(this);
             
-            if(serviceObject == null || serviceObject is Service == false)
+            if(serviceObject == null || serviceObject is IService == false)
                 throw new ServiceDoesNotExistsException(service);
 
-            Service serviceInstance = serviceObject as Service;
+            IService serviceInstance = serviceObject as IService;
             List<MethodInfo> methods = serviceInstance
                 .GetType()
                 .GetMethods(BindingFlags.Public | BindingFlags.Instance)

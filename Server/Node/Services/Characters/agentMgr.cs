@@ -6,7 +6,7 @@ using PythonTypes.Types.Primitives;
 
 namespace Node.Services.Characters
 {
-    public class agentMgr : Service
+    public class agentMgr : IService
     {
         private AgentDB DB { get; }
         

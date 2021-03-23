@@ -5,7 +5,7 @@ using PythonTypes.Types.Primitives;
 
 namespace Node.Services.Stations
 {
-    public class stationSvc : Service
+    public class stationSvc : IService
     {
         private ItemManager ItemManager { get; }
         public stationSvc(ItemManager itemManager)

@@ -3,11 +3,11 @@
     public static class Game
     {
         // Apocrypha version info
-        public static double version = 6.14;
-        public static int build = 101786;
-        public static string codename = "EVE-EVE-RELEASE";
-        public static int birthday = 170472;
-        public static int machoVersion = 219;
-        public static string region = "ccp";
+        public const double VERSION = 6.14;
+        public const int BUILD = 101786;
+        public const string CODENAME = "EVE-EVE-RELEASE";
+        public const int BIRTHDAY = 170472;
+        public const int MACHO_VERSION = 219;
+        public const string REGION = "ccp";
     }
 }

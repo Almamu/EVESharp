@@ -7,7 +7,7 @@ namespace Common.Logging.Streams
         public MessageType Type { get; }
         public string Message { get; }
         public Channel Channel { get; }
-        public DateTimeOffset Time { get; private set; }
+        public DateTimeOffset Time { get; }
 
         public StreamMessage(MessageType type, string message, Channel channel)
         {

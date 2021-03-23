@@ -5,7 +5,7 @@ using PythonTypes.Types.Primitives;
 
 namespace Node.Services.Account
 {
-    public class userSvc : Service
+    public class userSvc : IService
     {
         public userSvc()
         {

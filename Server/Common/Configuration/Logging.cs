@@ -5,7 +5,7 @@ namespace Common.Configuration
 {
     public class Logging
     {
-        public List<string> EnableChannels = new List<string>();
+        public readonly List<string> EnableChannels = new List<string>();
 
         public void Load(KeyDataCollection collection)
         {

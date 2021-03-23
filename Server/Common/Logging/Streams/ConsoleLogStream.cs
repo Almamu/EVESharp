@@ -4,7 +4,7 @@ using System.Threading;
 
 namespace Common.Logging.Streams
 {
-    public class ConsoleLogStream : LogStream
+    public class ConsoleLogStream : ILogStream
     {
         private Queue<StreamMessage> mQueue = new Queue<StreamMessage>();
 

@@ -101,17 +101,18 @@ namespace Node.Network
                 LowLevelVersionExchange exchange = CheckLowLevelVersionExchange(ar);
 
                 // reply with the node LowLevelVersionExchange
-                LowLevelVersionExchange reply = new LowLevelVersionExchange();
-
-                reply.codename = Common.Constants.Game.codename;
-                reply.birthday = Common.Constants.Game.birthday;
-                reply.build = Common.Constants.Game.build;
-                reply.machoVersion = Common.Constants.Game.machoVersion;
-                reply.version = Common.Constants.Game.version;
-                reply.region = Common.Constants.Game.region;
-                reply.isNode = true;
-                reply.nodeIdentifier = "Node";
-
+                LowLevelVersionExchange reply = new LowLevelVersionExchange
+                {
+                    Codename = Common.Constants.Game.CODENAME,
+                    Birthday = Common.Constants.Game.BIRTHDAY,
+                    Build = Common.Constants.Game.BUILD,
+                    MachoVersion = Common.Constants.Game.MACHO_VERSION,
+                    Version = Common.Constants.Game.VERSION,
+                    Region = Common.Constants.Game.REGION,
+                    IsNode = true,
+                    NodeIdentifier = "Node"
+                };
+                
                 this.ClusterConnection.Send(reply);
 
                 // set the new handler
@@ -137,12 +138,12 @@ namespace Node.Network
             // Update our local info
             NodeInfo nodeinfo = info;
 
-            this.Container.NodeID = nodeinfo.nodeID;
+            this.Container.NodeID = nodeinfo.NodeID;
 
-            Log.Debug("Found machoNet.nodeInfo, our new node id is " + nodeinfo.nodeID.ToString("X4"));
+            Log.Debug("Found machoNet.nodeInfo, our new node id is " + nodeinfo.NodeID.ToString("X4"));
 
             // load the specified solar systems
-            this.SystemManager.LoadSolarSystems(nodeinfo.solarSystems.GetEnumerable<PyInteger>());
+            this.SystemManager.LoadSolarSystems(nodeinfo.SolarSystems.GetEnumerable<PyInteger>());
 
             // finally set the new packet handler
             this.ClusterConnection.SetReceiveCallback(ReceiveNormalPacketCallback);
@@ -701,24 +702,24 @@ namespace Node.Network
         {
             LowLevelVersionExchange data = exchange;
 
-            if (data.birthday != Common.Constants.Game.birthday)
+            if (data.Birthday != Common.Constants.Game.BIRTHDAY)
                 throw new Exception("Wrong birthday in LowLevelVersionExchange");
 
-            if (data.build != Common.Constants.Game.build)
+            if (data.Build != Common.Constants.Game.BUILD)
                 throw new Exception("Wrong build in LowLevelVersionExchange");
 
-            if (data.codename != Common.Constants.Game.codename + "@" + Common.Constants.Game.region)
+            if (data.Codename != Common.Constants.Game.CODENAME + "@" + Common.Constants.Game.REGION)
                 throw new Exception("Wrong codename in LowLevelVersionExchange");
 
-            if (data.machoVersion != Common.Constants.Game.machoVersion)
+            if (data.MachoVersion != Common.Constants.Game.MACHO_VERSION)
                 throw new Exception("Wrong machoVersion in LowLevelVersionExchange");
 
-            if (data.version != Common.Constants.Game.version)
+            if (data.Version != Common.Constants.Game.VERSION)
                 throw new Exception("Wrong version in LowLevelVersionExchange");
 
-            if (data.isNode == true)
+            if (data.IsNode == true)
             {
-                if (data.nodeIdentifier != "Node")
+                if (data.NodeIdentifier != "Node")
                     throw new Exception("Wrong node string in LowLevelVersionExchange");
             }
             
