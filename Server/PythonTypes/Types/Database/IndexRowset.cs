@@ -60,9 +60,10 @@ namespace PythonTypes.Types.Database
         /// <summary>
         /// Simple helper method that creates a correct IndexRowset and returns
         /// it's PyDataType representation, ready to be sent to the EVE Online client
-        ///
+        /// 
         /// </summary>
         /// <param name="reader">The MySqlDataReader to read the data from</param>
+        /// <param name="indexField">The field to use as index for the rowset</param>
         /// <returns></returns>
         public static IndexRowset FromMySqlDataReader(MySqlDataReader reader, int indexField)
         {

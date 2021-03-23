@@ -6,7 +6,7 @@ namespace PythonTypes.Types.Collections
 {
     public class PyListEnumerator<T> : IPyListEnumerator<T> where T : PyDataType
     {
-        protected IEnumerator<PyDataType> mEnumerator;
+        protected readonly IEnumerator<PyDataType> mEnumerator;
 
         public PyListEnumerator(IEnumerator<PyDataType> enumerator)
         {

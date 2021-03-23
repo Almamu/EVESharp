@@ -13,16 +13,16 @@ namespace PythonTypes.Types.Database
         /// <summary>
         /// The header for this PyPackedRow
         /// </summary>
-        public DBRowDescriptor Header { get; private set; }
+        public DBRowDescriptor Header { get; }
 
         private readonly Dictionary<string, PyDataType> mValues = new Dictionary<string, PyDataType>();
 
-        public PyPackedRow(DBRowDescriptor descriptor) : base()
+        public PyPackedRow(DBRowDescriptor descriptor)
         {
             this.Header = descriptor;
         }
 
-        public PyPackedRow(DBRowDescriptor descriptor, Dictionary<string, PyDataType> values) : base()
+        public PyPackedRow(DBRowDescriptor descriptor, Dictionary<string, PyDataType> values)
         {
             this.Header = descriptor;
 

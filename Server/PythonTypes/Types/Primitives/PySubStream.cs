@@ -4,7 +4,7 @@ namespace PythonTypes.Types.Primitives
     {
         public PyDataType Stream { get; }
 
-        public PySubStream(PyDataType stream) : base()
+        public PySubStream(PyDataType stream)
         {
             this.Stream = stream;
         }

@@ -47,16 +47,16 @@ namespace PythonTypes.Types.Complex
 
         public static implicit operator PyCacheHint(PyDataType from)
         {
-            PyCacheHint cacheHint = new PyCacheHint();
             PyTuple container = from as PyTuple;
             PyTuple timestamp = container[2] as PyTuple;
 
-            cacheHint.ObjectID = container[1];
-            cacheHint.NodeID = container[3] as PyInteger;
-            cacheHint.CacheTime = timestamp[0] as PyInteger;
-            cacheHint.Version = timestamp[1] as PyInteger;
-
-            return cacheHint;
+            return new PyCacheHint
+            {
+                ObjectID = container[1],
+                NodeID = container[3] as PyInteger,
+                CacheTime = timestamp[0] as PyInteger,
+                Version = timestamp[1] as PyInteger
+            };
         }
 
         /// <summary>
@@ -69,14 +69,13 @@ namespace PythonTypes.Types.Complex
         /// <returns></returns>
         public static PyCacheHint FromBuffer(string name, byte[] data, long timestamp, long nodeID)
         {
-            PyCacheHint cacheHint = new PyCacheHint();
-
-            cacheHint.Version = (int) CRC32.Checksum(data);
-            cacheHint.NodeID = nodeID;
-            cacheHint.ObjectID = new PyString(name);
-            cacheHint.CacheTime = timestamp;
-
-            return cacheHint;
+            return new PyCacheHint
+            {
+                Version = (int) CRC32.Checksum(data),
+                NodeID = nodeID,
+                ObjectID = new PyString(name),
+                CacheTime = timestamp
+            };
         }
         
         /// <summary>
@@ -89,14 +88,13 @@ namespace PythonTypes.Types.Complex
         /// <returns></returns>
         public static PyCacheHint FromBuffer(PyDataType objectID, byte[] data, long timestamp, long nodeID)
         {
-            PyCacheHint cacheHint = new PyCacheHint();
-
-            cacheHint.Version = (int) CRC32.Checksum(data);
-            cacheHint.NodeID = nodeID;
-            cacheHint.ObjectID = objectID;
-            cacheHint.CacheTime = timestamp;
-
-            return cacheHint;
+            return new PyCacheHint
+            {
+                Version = (int) CRC32.Checksum(data),
+                NodeID = nodeID,
+                ObjectID = objectID,
+                CacheTime = timestamp
+            };
         }
         
         /// <summary>

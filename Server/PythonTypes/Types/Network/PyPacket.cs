@@ -37,7 +37,7 @@ namespace PythonTypes.Types.Network
         /// <summary>
         /// Names of all the packet types, these should always match to properly identify a packet
         /// </summary>
-        public static string[] PacketTypeString = 
+        public static readonly string[] PacketTypeString = 
         {
             "macho.AuthenticationReq",
             "macho.AuthenticationRsp",
@@ -87,8 +87,8 @@ namespace PythonTypes.Types.Network
         /// Out of bounds data with extra information for machoNet or other services
         /// </summary>
         public PyDictionary OutOfBounds { get; set; }
-        public string TypeString { get => PacketTypeString[(int) this.Type]; }
-        
+        public string TypeString => PacketTypeString [(int) this.Type];
+
         protected PyPacket()
         {
             this.Type = PacketType.__Fake_Invalid_Type;
@@ -141,7 +141,7 @@ namespace PythonTypes.Types.Network
             PyObjectData objectData = data as PyObjectData;
             PyTuple packetData = objectData.Arguments as PyTuple;
 
-            if (packetData.Count != 6)
+            if (packetData is null || packetData.Count != 6)
                 throw new InvalidDataException();
 
             result.Type = (PacketType) (int) (packetData[0] as PyInteger);

@@ -15,6 +15,6 @@ namespace PythonTypes.Types.Exceptions
             this.Keywords["dict"] = this.Dictionary;
         }
 
-        public PyDictionary Dictionary { get => this.Extra as PyDictionary; }
+        public PyDictionary Dictionary => this.Extra as PyDictionary;
     }
 }

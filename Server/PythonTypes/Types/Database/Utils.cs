@@ -55,10 +55,6 @@ namespace PythonTypes.Types.Database
             if (reader.IsDBNull(index) == true)
                 return null;
             
-            // special case for decimals...
-            if (reader.GetFieldType(index) == typeof(decimal))
-                return (double) reader.GetDecimal(index);
-            
             switch (type)
             {
                 case FieldType.I2: return reader.GetInt16(index);
@@ -66,7 +62,7 @@ namespace PythonTypes.Types.Database
                 case FieldType.I4: return reader.GetInt32(index);
                 case FieldType.UI4: return reader.GetUInt32(index);
                 case FieldType.R4: return reader.GetFloat(index);
-                case FieldType.R8: return reader.GetDouble(index);
+                case FieldType.R8: return reader.GetFieldType(index) == typeof(decimal) ? (double) reader.GetDecimal(index) : reader.GetDouble(index);
                 case FieldType.Bool: return reader.GetBoolean(index);
                 case FieldType.I1: return reader.GetSByte(index);
                 case FieldType.UI1: return reader.GetByte(index);

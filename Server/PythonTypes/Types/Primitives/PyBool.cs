@@ -23,7 +23,7 @@ namespace PythonTypes.Types.Primitives
 
         public bool Value { get; }
 
-        public PyBool(bool value) : base()
+        public PyBool(bool value)
         {
             this.Value = value;
         }

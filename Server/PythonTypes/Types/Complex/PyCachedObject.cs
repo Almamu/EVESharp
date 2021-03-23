@@ -135,17 +135,16 @@ namespace PythonTypes.Types.Complex
 
         public static PyCachedObject FromCacheHint(PyCacheHint cacheInfo, byte[] data)
         {
-            PyCachedObject cachedObject = new PyCachedObject();
-
-            cachedObject.NodeID = cacheInfo.NodeID;
-            cachedObject.ObjectID = cacheInfo.ObjectID;
-            cachedObject.Shared = 1;
-            cachedObject.Compressed = 1;
-            cachedObject.Cache = new PyBuffer(ZlibHelper.Compress(data));
-            cachedObject.Timestamp = cacheInfo.CacheTime;
-            cachedObject.Version = cacheInfo.Version;
-
-            return cachedObject;
+            return new PyCachedObject
+            {
+                NodeID = cacheInfo.NodeID,
+                ObjectID = cacheInfo.ObjectID,
+                Shared = 1,
+                Compressed = 1,
+                Cache = new PyBuffer(ZlibHelper.Compress(data)),
+                Timestamp = cacheInfo.CacheTime,
+                Version = cacheInfo.Version
+            };
         }
     }
 }

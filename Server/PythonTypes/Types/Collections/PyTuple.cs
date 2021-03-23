@@ -11,12 +11,12 @@ namespace PythonTypes.Types.Collections
     {
         private readonly PyDataType[] mList;
 
-        public PyTuple(int size) : base()
+        public PyTuple(int size)
         {
             this.mList = new PyDataType[size];
         }
 
-        public PyTuple(PyDataType[] data) : base()
+        public PyTuple(PyDataType[] data)
         {
             this.mList = data;
         }
@@ -26,19 +26,20 @@ namespace PythonTypes.Types.Collections
         // but as we're using the array directly in the PyTuple if we try to add something that's not a PyNone
         // an exception will be thrown
         // these exceptions are launched to prevent this situation
-        public PyTuple(PyString[] data) : base() { ThrowInstantiationError(); }
-        public PyTuple(PyDecimal[] data) : base() { ThrowInstantiationError(); }
-        public PyTuple(PyList[] data) : base() { ThrowInstantiationError(); }
-        public PyTuple(PyTuple[] data) : base() { ThrowInstantiationError(); }
-        public PyTuple(PyInteger[] data) : base() { ThrowInstantiationError(); }
-        public PyTuple(PySubStream[] data) : base() { ThrowInstantiationError(); }
-        public PyTuple(PyPackedRow[] data) : base() { ThrowInstantiationError(); }
-        public PyTuple(PyChecksumedStream[] data) : base() { ThrowInstantiationError(); }
-        public PyTuple(PyBuffer[] data) : base() { ThrowInstantiationError(); }
-        public PyTuple(PyBool[] data) : base() { ThrowInstantiationError(); }
-        public PyTuple(PyObject[] data) : base() { ThrowInstantiationError(); }
-        public PyTuple(PyObjectData[] data) : base() { ThrowInstantiationError(); }
-        public PyTuple(PyToken[] data) : base() { ThrowInstantiationError(); }
+        // TODO: GET RID OF THIS IN FAVOR OF THE OBJECT INITIALIZATION SYNTAX? 
+        public PyTuple(PyString[] data) { ThrowInstantiationError(); }
+        public PyTuple(PyDecimal[] data) { ThrowInstantiationError(); }
+        public PyTuple(PyList[] data) { ThrowInstantiationError(); }
+        public PyTuple(PyTuple[] data) { ThrowInstantiationError(); }
+        public PyTuple(PyInteger[] data) { ThrowInstantiationError(); }
+        public PyTuple(PySubStream[] data) { ThrowInstantiationError(); }
+        public PyTuple(PyPackedRow[] data) { ThrowInstantiationError(); }
+        public PyTuple(PyChecksumedStream[] data) { ThrowInstantiationError(); }
+        public PyTuple(PyBuffer[] data) { ThrowInstantiationError(); }
+        public PyTuple(PyBool[] data) { ThrowInstantiationError(); }
+        public PyTuple(PyObject[] data) { ThrowInstantiationError(); }
+        public PyTuple(PyObjectData[] data) { ThrowInstantiationError(); }
+        public PyTuple(PyToken[] data) { ThrowInstantiationError(); }
 
         private static void ThrowInstantiationError()
         {

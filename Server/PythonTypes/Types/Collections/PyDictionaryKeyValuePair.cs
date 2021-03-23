@@ -5,7 +5,7 @@ namespace PythonTypes.Types.Collections
 {
     public class PyDictionaryKeyValuePair
     {
-        protected KeyValuePair<PyDataType, PyDataType> mPair;
+        protected readonly KeyValuePair<PyDataType, PyDataType> mPair;
         
         public PyDictionaryKeyValuePair(KeyValuePair<PyDataType, PyDataType> pair)
         {

@@ -51,14 +51,14 @@ namespace PythonTypes.Types.Network
 
         public static implicit operator PyDataType(PyAddress address)
         {
-            if (address is PyAddressAny)
-                return address as PyAddressAny;
-            if (address is PyAddressBroadcast)
-                return address as PyAddressBroadcast;
-            if (address is PyAddressClient)
-                return address as PyAddressClient;
-            if (address is PyAddressNode)
-                return address as PyAddressNode;
+            if (address is PyAddressAny any)
+                return any;
+            if (address is PyAddressBroadcast broadcast)
+                return broadcast;
+            if (address is PyAddressClient client)
+                return client;
+            if (address is PyAddressNode node)
+                return node;
             throw new InvalidDataException();
         }
     }

@@ -22,7 +22,7 @@ namespace PythonTypes.Types.Primitives
 
         public string Token { get; }
 
-        public PyToken(string token) : base()
+        public PyToken(string token)
         {
             this.Token = token;
         }

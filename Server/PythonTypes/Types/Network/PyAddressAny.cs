@@ -15,7 +15,7 @@ namespace PythonTypes.Types.Network
         public PyAddressAny(PyInteger id, PyString service = null) : base(TYPE_ANY)
         {
             this.Service = service;
-            this.ID = ID;
+            this.ID = id;
         }
 
         public static implicit operator PyDataType(PyAddressAny value)

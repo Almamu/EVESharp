@@ -14,7 +14,7 @@ namespace PythonTypes
         /// <summary>
         /// The character used for an indention level
         /// </summary>
-        private const string Indention = "  ";
+        private const string INDENTATION_CHARACTER = "  ";
 
         /// <summary>
         /// The output buffer used to write the values to
@@ -52,7 +52,7 @@ namespace PythonTypes
         {
             // add indentation to the string
             for (int i = 0; i < this.mIndentation; i++)
-                this.mStringBuilder.Append(Indention);
+                this.mStringBuilder.Append(INDENTATION_CHARACTER);
         }
 
         /// <summary>

@@ -29,14 +29,14 @@ namespace PythonTypes.Types.Primitives
         public bool IsUTF8 { get; }
 
 
-        public PyString(string value, bool isUTF8 = false) : base()
+        public PyString(string value, bool isUTF8 = false)
         {
             this.Value = value;
             this.IsStringTableEntry = false;
             this.IsUTF8 = isUTF8;
         }
 
-        public PyString(StringTableUtils.EntryList entry) : base()
+        public PyString(StringTableUtils.EntryList entry)
         {
             this.Value = StringTableUtils.Entries[(int) entry];
             this.IsStringTableEntry = true;

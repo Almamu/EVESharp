@@ -8,7 +8,7 @@ namespace PythonTypes
     /// </summary>
     public class HexDump
     {
-        private static readonly uint[] _lookup32 = CreateLookup32();
+        private static readonly uint[] Lookup32 = CreateLookup32();
 
         private static uint[] CreateLookup32()
         {
@@ -24,7 +24,7 @@ namespace PythonTypes
 
         public static string ByteArrayToHexViaLookup32(byte[] bytes)
         {
-            var lookup32 = _lookup32;
+            var lookup32 = Lookup32;
             var result = new char[bytes.Length * 2];
             for (int i = 0; i < bytes.Length; i++)
             {

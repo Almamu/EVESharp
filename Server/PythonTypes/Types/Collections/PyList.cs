@@ -6,7 +6,7 @@ namespace PythonTypes.Types.Collections
 {
     public class PyList<T> : PyList, IPyListEnumerable<T> where T : PyDataType
     {
-        public PyList() : base()
+        public PyList()
         {
         }
 
@@ -47,22 +47,22 @@ namespace PythonTypes.Types.Collections
     public class PyList : PyDataType, IPyListEnumerable<PyDataType>
     {
         protected readonly List<PyDataType> mList;
-        public PyList() : base()
+        public PyList()
         {
             this.mList = new List<PyDataType>();
         }
 
-        public PyList(int capacity) : base()
+        public PyList(int capacity)
         {
             this.mList = new List<PyDataType>(new PyDataType[capacity]);
         }
 
-        public PyList(PyDataType[] data) : base()
+        public PyList(PyDataType[] data)
         {
             this.mList = new List<PyDataType>(data);
         }
 
-        public PyList(List<PyDataType> seed) : base()
+        public PyList(List<PyDataType> seed)
         {
             this.mList = seed;
         }

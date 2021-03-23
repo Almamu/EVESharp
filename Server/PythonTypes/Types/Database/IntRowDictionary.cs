@@ -13,6 +13,7 @@ namespace PythonTypes.Types.Database
         /// it's PyDataType representation, ready to be sent to the EVE Online client
         /// </summary>
         /// <param name="reader">The MySqlDataReader to read the data from</param>
+        /// <param name="keyColumnIndex">The column to use as index for the IntRowDictionary</param>
         /// <returns></returns>
         public static PyDictionary FromMySqlDataReader(MySqlDataReader reader, int keyColumnIndex)
         {

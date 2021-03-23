@@ -20,11 +20,11 @@ namespace PythonTypes.Types.Database
         /// <summary>
         /// The number of records found
         /// </summary>
-        public int Count { get; private set; }
+        public int Count { get; }
         /// <summary>
         /// The columns of the result
         /// </summary>
-        public PyList Headers { get; private set; }
+        public PyList Headers { get; }
         /// <summary>
         /// The Bound ID for this SparseRowset
         /// </summary>
@@ -38,20 +38,23 @@ namespace PythonTypes.Types.Database
 
         public static implicit operator PyDataType(SparseRowsetHeader rowsetHeader)
         {
-            PyTuple container = new PyTuple(3);
+            PyTuple container = new PyTuple(3)
+            {
+                [0] = rowsetHeader.Headers,
+                [1] = rowsetHeader.BoundObjectIdentifier,
+                [2] = rowsetHeader.Count
+            };
 
-            container[0] = rowsetHeader.Headers;
-            container[1] = rowsetHeader.BoundObjectIdentifier;
-            container[2] = rowsetHeader.Count;
 
             return new PyObjectData(TYPE_NAME, container);
         }
-        
+
         /// <summary>
         /// Simple helper method that creates rows to be returned from a SparseRowset-based bound service
         /// </summary>
-        /// <param name="reader"></param>
-        /// <param name="header"></param>
+        /// <param name="pkFieldIndex">The field to use as primary key</param>
+        /// <param name="reader">The reader to read data from the database</param>
+        /// <param name="rowsIndex">The indexed rows</param>
         /// <returns></returns>
         public PyList<PyTuple> DataFromMySqlReader(int pkFieldIndex, MySqlDataReader reader, Dictionary<PyDataType, int> rowsIndex)
         {

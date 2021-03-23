@@ -11,9 +11,9 @@ namespace PythonTypes.Types.Database
     public class CRowset
     {
         private const string TYPE_NAME = "dbutil.CRowset";
-        public DBRowDescriptor Header { get; private set; }
+        public DBRowDescriptor Header { get; }
         private PyList Columns { get; set; }
-        private PyList<PyPackedRow> Rows { get; set; }
+        private PyList<PyPackedRow> Rows { get; }
 
         public CRowset(DBRowDescriptor descriptor)
         {

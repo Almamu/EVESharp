@@ -22,7 +22,7 @@ namespace PythonTypes.Types.Exceptions
         /// The data to pass on to the eventID
         /// </summary>
         public PyTuple Arguments { get; }
-        public int Timeout { get; } = DEFAULT_TIMEOUT;
+        public int Timeout { get; }
 
         public ProvisionalResponse(PyString eventID, PyTuple arguments, int timeout = DEFAULT_TIMEOUT)
         {

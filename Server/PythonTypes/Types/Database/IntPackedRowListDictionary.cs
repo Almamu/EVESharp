@@ -11,11 +11,12 @@ namespace PythonTypes.Types.Database
         /// <summary>
         /// Simple helper method that creates a correct IntegerIntegerListDictionary and returns
         /// it's PyDataType representation, ready to be sent to the EVE Online client
-        ///
+        /// 
         /// IMPORTANT: The first field MUST be ordered (direction doesn't matter) for this method
         /// to properly work
         /// </summary>
         /// <param name="reader">The MySqlDataReader to read the data from</param>
+        /// <param name="keyColumnIndex">The column to use as index for the IntPackedRowListDictionary</param>
         /// <returns></returns>
         public static PyDataType FromMySqlDataReader(MySqlDataReader reader, int keyColumnIndex)
         {

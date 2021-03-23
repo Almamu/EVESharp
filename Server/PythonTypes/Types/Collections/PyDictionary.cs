@@ -12,7 +12,7 @@ namespace PythonTypes.Types.Collections
     /// <typeparam name="TValue"></typeparam>
     public class PyDictionary<TKey, TValue> : PyDictionary, IPyDictionaryEnumerable<TKey, TValue> where TKey : PyDataType where TValue : PyDataType
     {
-        public PyDictionary() : base()
+        public PyDictionary()
         {
         }
 
@@ -36,12 +36,12 @@ namespace PythonTypes.Types.Collections
     {
         protected readonly Dictionary<PyDataType, PyDataType> mDictionary;
 
-        public PyDictionary() : base()
+        public PyDictionary()
         {
             this.mDictionary = new Dictionary<PyDataType, PyDataType>();
         }
 
-        public PyDictionary(Dictionary<PyDataType, PyDataType> seed) : base()
+        public PyDictionary(Dictionary<PyDataType, PyDataType> seed)
         {
             this.mDictionary = seed;
         }

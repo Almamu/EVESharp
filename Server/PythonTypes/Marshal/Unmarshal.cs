@@ -59,14 +59,14 @@ namespace PythonTypes.Marshal
             // check the header and ensure we use the correct stream to read from it
             byte header = (byte) this.mStream.ReadByte();
 
-            if (header == Specification.ZlibHeader)
+            if (header == Specification.ZLIB_HEADER)
             {
                 this.mStream.Seek(-1, SeekOrigin.Current);
                 this.mStream = ZlibHelper.DecompressStream(this.mStream);
                 header = (byte) this.mStream.ReadByte();
             }
 
-            if (header != Specification.MarshalHeader)
+            if (header != Specification.MARSHAL_HEADER)
                 throw new InvalidDataException($"Expected Marshal header, but got {header}");
 
             // create the reader
@@ -185,8 +185,8 @@ namespace PythonTypes.Marshal
 
             // read the type's opcode from the stream
             byte header = this.mReader.ReadByte();
-            Opcode opcode = (Opcode) (header & Specification.OpcodeMask);
-            bool save = (header & Specification.SaveMask) == Specification.SaveMask;
+            Opcode opcode = (Opcode) (header & Specification.OPCODE_MASK);
+            bool save = (header & Specification.SAVE_MASK) == Specification.SAVE_MASK;
 
             PyDataType data = this.ProcessOpcode(opcode);
 
@@ -653,13 +653,13 @@ namespace PythonTypes.Marshal
             PyList list = new PyList();
             PyDictionary dict = new PyDictionary();
 
-            while (this.mReader.PeekChar() != Marshal.PackedTerminator)
+            while (this.mReader.PeekChar() != Marshal.PACKED_TERMINATOR)
                 list.Add(this.Process(false));
 
             // ignore packed terminator
             this.mReader.ReadByte();
 
-            while (this.mReader.PeekChar() != Marshal.PackedTerminator)
+            while (this.mReader.PeekChar() != Marshal.PACKED_TERMINATOR)
             {
                 PyString key = this.Process(false) as PyString;
                 PyDataType value = this.Process(false);

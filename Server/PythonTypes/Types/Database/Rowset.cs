@@ -71,11 +71,13 @@ namespace PythonTypes.Types.Database
         public static implicit operator PyDataType(Rowset rowset)
         {
             // create the main container for the util.Rowset
-            PyDictionary arguments = new PyDictionary();
-            // store the header and specify the type of rows the Rowset contains
-            arguments["header"] = rowset.Header;
-            arguments["RowClass"] = new PyToken(ROW_TYPE_NAME);
-            arguments["lines"] = rowset.Rows;
+            PyDictionary arguments = new PyDictionary
+            {
+                // store the header and specify the type of rows the Rowset contains
+                ["header"] = rowset.Header,
+                ["RowClass"] = new PyToken(ROW_TYPE_NAME),
+                ["lines"] = rowset.Rows
+            };
 
             return new PyObjectData(TYPE_NAME, arguments);
         }

@@ -5,7 +5,7 @@ namespace PythonTypes
     /// </summary>
     public static class Adler32
     {
-        private const int ModuloPrime = 65521;
+        private const int MODULO_PRIME = 65521;
 
         public static uint Checksum(byte[] data)
         {
@@ -27,8 +27,8 @@ namespace PythonTypes
                     s2 = s2 + s1;
                 }
 
-                s1 %= ModuloPrime;
-                s2 %= ModuloPrime;
+                s1 %= MODULO_PRIME;
+                s2 %= MODULO_PRIME;
             }
 
             checksum = (s2 << 16) | s1;

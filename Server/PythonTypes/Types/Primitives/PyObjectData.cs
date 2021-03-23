@@ -5,7 +5,7 @@ namespace PythonTypes.Types.Primitives
         public PyString Name { get; }
         public PyDataType Arguments { get; }
 
-        public PyObjectData(PyString name, PyDataType arguments) : base()
+        public PyObjectData(PyString name, PyDataType arguments)
         {
             this.Name = name;
             this.Arguments = arguments;

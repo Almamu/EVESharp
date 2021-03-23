@@ -7,7 +7,7 @@ namespace PythonTypes.Compression
     /// <summary>
     /// Small utilities to work with Zlib-compressed data
     /// </summary>
-    public class ZlibHelper
+    public static class ZlibHelper
     {
         /// <summary>
         /// Creates a stream to decompress the data in another <paramref name="stream" />

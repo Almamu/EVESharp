@@ -9,7 +9,7 @@ namespace PythonTypes.Types.Collections
     /// </summary>
     public class PyDictionaryEnumerator<TKey, TValue> : IPyDictionaryEnumerator<TKey, TValue> where TKey : PyDataType where TValue : PyDataType
     {
-        private IEnumerator<KeyValuePair<PyDataType,PyDataType>> mEnumerator;
+        private readonly IEnumerator<KeyValuePair<PyDataType,PyDataType>> mEnumerator;
         
         public PyDictionaryEnumerator(IEnumerator<KeyValuePair<PyDataType,PyDataType>> parent)
         {

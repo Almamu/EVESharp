@@ -204,7 +204,7 @@ namespace PythonTypes.Marshal
             agent_StorylineMissionDetails,
         }
 
-        public static string[] Entries = new string[]
+        public static readonly string[] Entries = new string[]
         {
             "*corpid",
             "*locationid",

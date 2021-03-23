@@ -34,25 +34,25 @@ namespace PythonTypes.Types.Primitives
 
         public IntegerTypeEnum IntegerType { get; }
 
-        public PyInteger(long value) : base()
+        public PyInteger(long value)
         {
             this.Value = value;
             this.IntegerType = IntegerTypeEnum.Long;
         }
 
-        public PyInteger(int value) : base()
+        public PyInteger(int value)
         {
             this.Value = value;
             this.IntegerType = IntegerTypeEnum.Int;
         }
 
-        public PyInteger(short value) : base()
+        public PyInteger(short value)
         {
             this.Value = value;
             this.IntegerType = IntegerTypeEnum.Short;
         }
 
-        public PyInteger(byte value) : base()
+        public PyInteger(byte value)
         {
             this.Value = value;
             this.IntegerType = IntegerTypeEnum.Byte;

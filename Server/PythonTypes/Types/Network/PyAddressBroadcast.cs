@@ -9,7 +9,7 @@ namespace PythonTypes.Types.Network
         /// <summary>
         /// The service that originated the broadcast
         /// </summary>
-        public PyString Service { get; set; }
+        public PyString Service { get; }
         /// <summary>
         /// Narrowcast for the ids that should be notified
         /// </summary>
@@ -17,7 +17,7 @@ namespace PythonTypes.Types.Network
         /// <summary>
         /// The field by which the narrowcast will be performed
         /// </summary>
-        public PyString IDType { get; set; }
+        public PyString IDType { get; }
 
         public PyAddressBroadcast(PyList idsOfInterest, PyString idType, PyString service = null) : base(TYPE_BROADCAST)
         {

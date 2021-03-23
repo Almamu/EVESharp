@@ -1,9 +1,7 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
-using MySqlX.XDevAPI.Relational;
 using PythonTypes.Compression;
 using PythonTypes.Types.Collections;
 using PythonTypes.Types.Database;
@@ -15,12 +13,12 @@ namespace PythonTypes.Marshal
     /// Takes care of parsing marshalled data from the Python-side into C# objects that the
     /// project can use to process the input data
     /// </summary>
-    public class Marshal
+    public static class Marshal
     {
         /// <summary>
         /// Separator for the PyObject's data
         /// </summary>
-        public const byte PackedTerminator = 0x2D;
+        public const byte PACKED_TERMINATOR = 0x2D;
 
         /// <summary>
         /// Converts the given <paramref name="data" /> python type into a byte stream
@@ -51,7 +49,7 @@ namespace PythonTypes.Marshal
             if (writeHeader)
             {
                 // write the marshal magic header
-                writer.Write(Specification.MarshalHeader);
+                writer.Write(Specification.MARSHAL_HEADER);
                 // save-list isn't supported yet in the marshal (and will likely never be)
                 writer.Write(0);
             }
@@ -192,14 +190,14 @@ namespace PythonTypes.Marshal
         }
 
         /// <summary>
-        /// Converts the given <paramref name="data"/> to it's byte array representation.
+        /// Converts the given <paramref name="token"/> to it's byte array representation.
         /// Tokens are basic ASCII strings with a variable length up to 255 bytes
         ///
         /// The following opcodes are supported
         /// <seealso cref="Opcode.Token" /> 2 bytes minimum, the string data comes right after the length indicator
         /// </summary>
         /// <param name="writer">Where to write the encoded data to</param>
-        /// <param name="data">The value to write</param>
+        /// <param name="token">The value to write</param>
         private static void ProcessToken(BinaryWriter writer, PyToken token)
         {
             writer.WriteOpcode(Opcode.Token);
@@ -208,7 +206,7 @@ namespace PythonTypes.Marshal
         }
 
         /// <summary>
-        /// Converts the given <paramref name="data"/> to it's byte array representation.
+        /// Converts the given <paramref name="boolean"/> to it's byte array representation.
         /// Booleans are encoded to their specific opcode as they only have two possible values
         ///
         /// The following opcodes are supported
@@ -216,7 +214,7 @@ namespace PythonTypes.Marshal
         /// <seealso cref="Opcode.BoolFalse" /> 1 byte, value = false
         /// </summary>
         /// <param name="writer">Where to write the encoded data to</param>
-        /// <param name="data">The value to write</param>
+        /// <param name="boolean">The value to write</param>
         private static void ProcessBool(BinaryWriter writer, PyBool boolean)
         {
             if (boolean)
@@ -226,7 +224,7 @@ namespace PythonTypes.Marshal
         }
 
         /// <summary>
-        /// Converts the given <paramref name="data"/> to it's byte array representation.
+        /// Converts the given <paramref name="buffer"/> to it's byte array representation.
         /// Buffer are basic, binary byte arrays that do not follow any specific format
         /// Their length is variable and is indicated by an extended size indicator
         ///
@@ -243,7 +241,7 @@ namespace PythonTypes.Marshal
         }
 
         /// <summary>
-        /// Converts the given <paramref name="data"/> to it's byte array representation.
+        /// Converts the given <paramref name="dictionary"/> to it's byte array representation.
         /// Dictionaries are complex, massive objects that encode other python objects
         /// Uses extended size indicator to specify the amount of key-value pairs available
         ///
@@ -265,7 +263,7 @@ namespace PythonTypes.Marshal
         }
 
         /// <summary>
-        /// Converts the given <paramref name="data"/> to it's byte array representation.
+        /// Converts the given <paramref name="list"/> to it's byte array representation.
         /// Lists are a bit simpler than dictionaries, the opcode can indicate the length of the list, and there is also
         /// support for extended size indicatos 
         ///
@@ -332,7 +330,7 @@ namespace PythonTypes.Marshal
         /// on how the header data is created.  
         ///
         /// Both types have a Tuple as header, a list of items and a dictionary of items. The list and dictionary of items
-        /// do not have any kind of size indication, instead their ends are marked by a specific flag <see cref="PackedTerminator"/>
+        /// do not have any kind of size indication, instead their ends are marked by a specific flag <see cref="PACKED_TERMINATOR"/>
         /// and they are encoded one after the other. The Header, List elements and Dictionary elements are normal python types
         /// so anything can be inside them.
         ///
@@ -341,8 +339,8 @@ namespace PythonTypes.Marshal
         /// the key is encoded first and the value after it
         /// 
         /// The following opcodes are supported
-        /// <seealso cref="Opcode.Type1" />
-        /// <seealso cref="Opcode.Type2" />
+        /// <seealso cref="Opcode.ObjectType1" />
+        /// <seealso cref="Opcode.ObjectType2" />
         /// </summary>
         /// <param name="writer">Where to write the encoded data to</param>
         /// <param name="data">The value to write</param>
@@ -361,7 +359,7 @@ namespace PythonTypes.Marshal
                     Process(writer, entry);
             }
 
-            writer.Write(PackedTerminator);
+            writer.Write(PACKED_TERMINATOR);
 
             if (data.Dictionary.Length > 0)
             {
@@ -372,7 +370,7 @@ namespace PythonTypes.Marshal
                 }
             }
 
-            writer.Write(PackedTerminator);
+            writer.Write(PACKED_TERMINATOR);
         }
 
         /// <summary>
@@ -488,7 +486,7 @@ namespace PythonTypes.Marshal
         }
 
         /// <summary>
-        /// Converts the given <paramref name="data"/> to it's byte array representation.
+        /// Converts the given <paramref name="tuple"/> to it's byte array representation.
         /// Tuples are a special kind of container, they do not grow automatically, could be seen as simple, static lists
         ///
         /// The following opcodes are supported
@@ -519,7 +517,7 @@ namespace PythonTypes.Marshal
         }
 
         /// <summary>
-        /// Converts the given <paramref name="data"/> to it's byte array representation.
+        /// Converts the given <paramref name="packedRow"/> to it's byte array representation.
         /// Packed rows are the big elephant in the room. These are a direct representation of a row in any of the tables
         /// the server has and are composed of 3 parts.
         ///
