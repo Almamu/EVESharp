@@ -8,6 +8,7 @@ namespace Common.Packets
     {
         private int mClueless = 0;
         public PyDictionary Changes { get; init; }
+
         /// <summary>
         /// List of nodes interested in the session change
         ///
@@ -15,7 +16,7 @@ namespace Common.Packets
         /// All in all, EVESharp takes a different approach where all nodes know
         /// about all the clients so this is mainly useless for us
         /// </summary>
-        public PyList NodesOfInterest { get; init; }
+        public PyList NodesOfInterest { get; init; } = new PyList();
 
         public static implicit operator PyTuple(SessionChangeNotification notification)
         {

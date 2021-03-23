@@ -9,7 +9,7 @@ namespace Common.Packets
         private const string TYPE_NAME = "machoNet.nodeInfo";
 
         public long NodeID { get; init; }
-        public PyList SolarSystems { get; init; }
+        public PyList SolarSystems { get; init; } = new PyList();
 
         public static implicit operator PyDataType(NodeInfo info)
         {
