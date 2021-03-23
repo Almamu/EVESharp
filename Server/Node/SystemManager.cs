@@ -60,7 +60,7 @@ namespace Node
 
         public void LoadSolarSystem(int solarSystemID)
         {
-            SolarSystem solarSystem = this.ItemFactory.ItemManager.GetSolarSystem(solarSystemID);
+            SolarSystem solarSystem = this.ItemFactory.ItemManager.GetStaticSolarSystem(solarSystemID);
 
             solarSystem.BelongsToUs = true;
             
@@ -70,19 +70,19 @@ namespace Node
 
         public bool StationBelongsToUs(int stationID)
         {
-            Station station = this.ItemFactory.ItemManager.GetStation(stationID);
+            Station station = this.ItemFactory.ItemManager.GetStaticStation(stationID);
 
             return this.SolarSystemBelongsToUs(station.SolarSystemID);
         }
 
         public bool SolarSystemBelongsToUs(int solarSystemID)
         {
-            return this.ItemFactory.ItemManager.GetSolarSystem(solarSystemID).BelongsToUs;
+            return this.ItemFactory.ItemManager.GetStaticSolarSystem(solarSystemID).BelongsToUs;
         }
 
         public long GetNodeStationBelongsTo(int stationID)
         {
-            Station station = this.ItemFactory.ItemManager.GetStation(stationID);
+            Station station = this.ItemFactory.ItemManager.GetStaticStation(stationID);
 
             return this.GetNodeSolarSystemBelongsTo(station.LocationID);
         }

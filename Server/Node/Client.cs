@@ -81,7 +81,7 @@ namespace Node
 
         private void OnCharEnteredStation(int stationID)
         {
-            Station station = this.ItemFactory.ItemManager.GetStation(stationID);
+            Station station = this.ItemFactory.ItemManager.GetStaticStation(stationID);
             station.Guests[(int) this.CharacterID] = this.ItemFactory.ItemManager.GetItem<Character>((int) this.CharacterID);
 
             // notify station guests
@@ -101,7 +101,7 @@ namespace Node
 
         private void OnCharLeftStation(int stationID)
         {
-            Station station = this.ItemFactory.ItemManager.GetStation(stationID);
+            Station station = this.ItemFactory.ItemManager.GetStaticStation(stationID);
             station.Guests.Remove((int) this.CharacterID);
 
             // notify station guests

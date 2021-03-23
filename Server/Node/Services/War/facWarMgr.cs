@@ -66,7 +66,7 @@ namespace Node.Services.War
 
         public PyInteger GetFactionMilitiaCorporation(PyInteger factionID, CallInformation call)
         {
-            return this.ItemManager.GetFaction(factionID).MilitiaCorporationId;
+            return this.ItemManager.GetStaticFaction(factionID).MilitiaCorporationId;
         }
     }
 }

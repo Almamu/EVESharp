@@ -62,9 +62,9 @@ namespace Node.Services.Characters
             int solarSystemID = 0;
 
             if (groupID == (int) ItemGroups.SolarSystem)
-                solarSystemID = this.ItemManager.GetSolarSystem(entityID).ID;
+                solarSystemID = this.ItemManager.GetStaticSolarSystem(entityID).ID;
             else if (groupID == (int) ItemGroups.Station)
-                solarSystemID = this.ItemManager.GetStation(entityID).SolarSystemID;
+                solarSystemID = this.ItemManager.GetStaticStation(entityID).SolarSystemID;
             else
                 throw new CustomError("Unknown item's groupID");
 
@@ -175,7 +175,7 @@ namespace Node.Services.Characters
             ItemType cloneType = this.TypeManager[ItemTypes.CloneGradeAlpha];
             
             // get character's station
-            Station station = this.ItemManager.GetStation(stationID);
+            Station station = this.ItemManager.GetStaticStation(stationID);
             
             // create a new clone on the itemDB
             Clone clone = this.ItemManager.CreateClone(cloneType, station, character);

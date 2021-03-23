@@ -50,9 +50,9 @@ namespace Node.Services.Inventory
             int solarSystemID = 0;
 
             if (groupID == (int) ItemGroups.SolarSystem)
-                solarSystemID = this.ItemManager.GetSolarSystem(entityID).ID;
+                solarSystemID = this.ItemManager.GetStaticSolarSystem(entityID).ID;
             else if (groupID == (int) ItemGroups.Station)
-                solarSystemID = this.ItemManager.GetStation(entityID).SolarSystemID;
+                solarSystemID = this.ItemManager.GetStaticStation(entityID).SolarSystemID;
             else
                 throw new CustomError("Unknown item's groupID");
 
@@ -192,7 +192,7 @@ namespace Node.Services.Inventory
                 call.Client.NotifyMultiEvent(OnItemChange.BuildQuantityChange(ship, ship.Quantity + 1));
   
                 // create the new item in the database
-                Station station = this.ItemManager.GetStation(stationID);
+                Station station = this.ItemManager.GetStaticStation(stationID);
                 ship = this.ItemManager.CreateShip(ship.Type, station, character);
                 // notify the new item
                 call.Client.NotifyMultiEvent(OnItemChange.BuildNewItemChange(ship));

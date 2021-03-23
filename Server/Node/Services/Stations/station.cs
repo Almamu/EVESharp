@@ -21,7 +21,7 @@ namespace Node.Services.Stations
         {
             int stationID = call.Client.EnsureCharacterIsInStation();
 
-            Station station = this.ItemManager.GetStation(stationID);
+            Station station = this.ItemManager.GetStaticStation(stationID);
 
             return new PyTuple(5)
             {
@@ -37,7 +37,7 @@ namespace Node.Services.Stations
         {
             int stationID = call.Client.EnsureCharacterIsInStation();
 
-            Station station = this.ItemManager.GetStation(stationID);
+            Station station = this.ItemManager.GetStaticStation(stationID);
             PyList<PyTuple> result = new PyList<PyTuple>();
             
             foreach ((int _, Character character) in station.Guests)

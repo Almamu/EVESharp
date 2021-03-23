@@ -255,7 +255,7 @@ namespace Node.Services.Characters
 
             Character character =
                 this.CreateCharacter(characterName, ancestry, genderID, appearance, currentTime, call);
-            Station station = this.ItemManager.GetStation(character.StationID);
+            Station station = this.ItemManager.GetStaticStation(character.StationID);
 
             // TODO: CREATE DEFAULT STANDINGS FOR THE CHARACTER
             // change character attributes based on the picked ancestry

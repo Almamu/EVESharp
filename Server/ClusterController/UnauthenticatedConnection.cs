@@ -34,15 +34,16 @@ namespace ClusterController
         {
             Log.Debug("Sending LowLevelVersionExchange...");
 
-            LowLevelVersionExchange data = new LowLevelVersionExchange();
-
-            data.codename = Common.Constants.Game.codename;
-            data.birthday = Common.Constants.Game.birthday;
-            data.build = Common.Constants.Game.build;
-            data.machoVersion = Common.Constants.Game.machoVersion;
-            data.version = Common.Constants.Game.version;
-            data.usercount = this.ConnectionManager.ClientsCount;
-            data.region = Common.Constants.Game.region;
+            LowLevelVersionExchange data = new LowLevelVersionExchange
+            {
+                codename = Common.Constants.Game.codename,
+                birthday = Common.Constants.Game.birthday,
+                build = Common.Constants.Game.build,
+                machoVersion = Common.Constants.Game.machoVersion,
+                version = Common.Constants.Game.version,
+                usercount = this.ConnectionManager.ClientsCount,
+                region = Common.Constants.Game.region
+            };
 
             this.Socket.Send(data);
         }

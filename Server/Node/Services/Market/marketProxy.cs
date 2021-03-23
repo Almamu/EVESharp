@@ -208,7 +208,7 @@ namespace Node.Services.Market
 
         private void CheckSellOrderDistancePermissions(Character character, int stationID)
         {
-            Station station = this.ItemManager.GetStation(stationID);
+            Station station = this.ItemManager.GetStaticStation(stationID);
 
             if (character.RegionID != station.RegionID)
                 throw new MktInvalidRegion();
@@ -225,7 +225,7 @@ namespace Node.Services.Market
 
         private void CheckBuyOrderDistancePermissions(Character character, int stationID)
         {
-            Station station = this.ItemManager.GetStation(stationID);
+            Station station = this.ItemManager.GetStaticStation(stationID);
 
             if (character.RegionID != station.RegionID)
                 throw new MktInvalidRegion();
@@ -266,7 +266,7 @@ namespace Node.Services.Market
 
         private void PlaceImmediateSellOrderChar(MySqlConnection connection, Character character, int itemID, int typeID, int stationID, int quantity, double price, Client client)
         {
-            int solarSystemID = this.ItemManager.GetStation(stationID).SolarSystemID;
+            int solarSystemID = this.ItemManager.GetStaticStation(stationID).SolarSystemID;
             
             // look for matching buy orders
             MarketOrder[] orders = this.DB.FindMatchingBuyOrders(connection, price, typeID, character.ID, solarSystemID);
@@ -461,7 +461,7 @@ namespace Node.Services.Market
 
         private void PlaceImmediateBuyOrderChar(MySqlConnection connection, int typeID, Character character, int stationID, int quantity, double price, int range, CallInformation call)
         {
-            int solarSystemID = this.ItemManager.GetStation(stationID).SolarSystemID;
+            int solarSystemID = this.ItemManager.GetStaticStation(stationID).SolarSystemID;
 
             // look for matching sell orders
             MarketOrder[] orders = this.DB.FindMatchingSellOrders(connection, price, typeID, character.ID, solarSystemID);

@@ -278,7 +278,7 @@ namespace Node.Inventory.Items.Types
             get
             {
                 if (this.mActiveClone == null)
-                    this.mActiveClone = this.ItemFactory.ItemManager.LoadItem((int) this.ActiveCloneID) as Clone;
+                    this.mActiveClone = this.ItemFactory.ItemManager.LoadItem<Clone>((int) this.ActiveCloneID);
 
                 return this.mActiveClone;
             }

@@ -149,9 +149,7 @@ namespace Node.Services.Contracts
             if (startStationID == endStationID)
                 throw new ConDestinationSame();
 
-            PyBool forCorp;
-
-            if (call.NamedPayload.TryGetValue("forCorp", out forCorp) == false)
+            if (call.NamedPayload.TryGetValue("forCorp", out PyBool forCorp) == false)
                 forCorp = false;
 
             Character character = this.ItemManager.GetItem<Character>(callerCharacterID);
@@ -169,7 +167,7 @@ namespace Node.Services.Contracts
                 throw new UserError("Not supported yet!");
             }
             
-            Station station = this.ItemManager.GetStation(startStationID);
+            Station station = this.ItemManager.GetStaticStation(startStationID);
 
             using MySqlConnection connection = this.MarketDB.AcquireMarketLock();
             try

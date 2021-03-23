@@ -44,7 +44,7 @@ namespace Node.Services.Stations
 
         public override PyInteger MachoResolveObject(PyInteger stationID, PyInteger zero, CallInformation call)
         {
-            int solarSystemID = this.ItemManager.GetStation(stationID).SolarSystemID;
+            int solarSystemID = this.ItemManager.GetStaticStation(stationID).SolarSystemID;
 
             if (this.SystemManager.SolarSystemBelongsToUs(solarSystemID) == true)
                 return this.BoundServiceManager.Container.NodeID;
@@ -209,7 +209,7 @@ namespace Node.Services.Stations
             if (character.ActiveClone.Type.BasePrice > newCloneType.BasePrice)
                 throw new MedicalThisCloneIsWorse();
 
-            Station station = this.ItemManager.GetStation(stationID);
+            Station station = this.ItemManager.GetStaticStation(stationID);
             
             // ensure the character has enough money in the account for the upgrade
             character.EnsureEnoughBalance(newCloneType.BasePrice);

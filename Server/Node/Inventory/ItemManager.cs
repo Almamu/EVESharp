@@ -227,12 +227,12 @@ namespace Node.Inventory
         /// <param name="factionID">The factionID to get</param>
         /// <returns>The item</returns>
         /// <exception cref="ArgumentOutOfRangeException">If the id is not a faction</exception>
-        public Faction GetFaction(int factionID)
+        public Faction GetStaticFaction(int factionID)
         {
             if (ItemManager.IsFactionID(factionID) == false)
                 throw new ArgumentOutOfRangeException($"The id {factionID} does not belong to a faction");
 
-            return this.GetItem(factionID) as Faction;
+            return this.GetItem<Faction>(factionID);
         }
         
         /// <summary>
@@ -241,12 +241,12 @@ namespace Node.Inventory
         /// <param name="stationID">The stationID to get</param>
         /// <returns>The item</returns>
         /// <exception cref="ArgumentOutOfRangeException">If the id is not a station</exception>
-        public Station GetStation(int stationID)
+        public Station GetStaticStation(int stationID)
         {
             if (ItemManager.IsStationID(stationID) == false)
                 throw new ArgumentOutOfRangeException($"The id {stationID} does not belong to a station");
 
-            return this.GetItem(stationID) as Station;
+            return this.GetItem<Station>(stationID);
         }
         
         /// <summary>
@@ -255,12 +255,12 @@ namespace Node.Inventory
         /// <param name="solarSystemID">The solarSystemID to get</param>
         /// <returns>The item</returns>
         /// <exception cref="ArgumentOutOfRangeException">If the id is not a solar system</exception>
-        public SolarSystem GetSolarSystem(int solarSystemID)
+        public SolarSystem GetStaticSolarSystem(int solarSystemID)
         {
             if (ItemManager.IsSolarSystemID(solarSystemID) == false)
                 throw new ArgumentOutOfRangeException($"The id {solarSystemID} does not belong to a solar system");
             
-            return this.GetItem(solarSystemID) as SolarSystem;
+            return this.GetItem<SolarSystem>(solarSystemID);
         }
 
         /// <summary>
@@ -477,15 +477,14 @@ namespace Node.Inventory
         public ItemEntity CreateSimpleItem(ItemType type, ItemEntity owner, ItemEntity location, ItemFlags flags,
             int quantity = 1, bool contraband = false, bool singleton = false)
         {
-            return this.CreateSimpleItem(null, type, owner, location, flags, contraband, singleton, quantity, 0, 0,
-                0, null);
+            return this.CreateSimpleItem(null, type, owner, location, flags, contraband, singleton, quantity);
         }
 
         public Skill CreateSkill(ItemType skillType, Character character, int level = 0, SkillHistoryReason reason = SkillHistoryReason.SkillTrainingComplete)
         {
             int skillID = this.SkillDB.CreateSkill(skillType, character);
 
-            Skill skill = this.LoadItem(skillID) as Skill;
+            Skill skill = this.LoadItem<Skill>(skillID);
 
             // update skill level
             skill.Level = level;
@@ -507,7 +506,7 @@ namespace Node.Inventory
         {
             int shipID = (int) this.ItemDB.CreateShip(shipType, location, owner);
 
-            Ship ship = this.LoadItem(shipID) as Ship;
+            Ship ship = this.LoadItem<Ship>(shipID);
 
             return ship;
         }

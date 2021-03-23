@@ -39,7 +39,7 @@ namespace Node.Services.Inventory
 
         public override PyInteger MachoResolveObject(PyInteger stationID, PyInteger zero, CallInformation call)
         {
-            int solarSystemID = this.ItemManager.GetStation(stationID).SolarSystemID;
+            int solarSystemID = this.ItemManager.GetStaticStation(stationID).SolarSystemID;
 
             if (this.SystemManager.SolarSystemBelongsToUs(solarSystemID) == true)
                 return this.BoundServiceManager.Container.NodeID;

@@ -91,7 +91,7 @@ namespace Node.Services.Network
                 throw new SlashError("The specified typeID doesn't exist");
             
             // create a new item with the correct locationID
-            Station location = this.ItemManager.GetStation((int) call.Client.StationID);
+            Station location = this.ItemManager.GetStaticStation((int) call.Client.StationID);
             Character character = this.ItemManager.GetItem<Character>(call.Client.EnsureCharacterIsSelected());
             
             ItemType itemType = this.TypeManager[typeID];

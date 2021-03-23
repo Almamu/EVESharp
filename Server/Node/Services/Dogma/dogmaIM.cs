@@ -54,9 +54,9 @@ namespace Node.Services.Dogma
             int solarSystemID = 0;
 
             if (groupID == (int) ItemGroups.SolarSystem)
-                solarSystemID = this.ItemManager.GetSolarSystem(entityID).ID;
+                solarSystemID = this.ItemManager.GetStaticSolarSystem(entityID).ID;
             else if (groupID == (int) ItemGroups.Station)
-                solarSystemID = this.ItemManager.GetStation(entityID).SolarSystemID;
+                solarSystemID = this.ItemManager.GetStaticStation(entityID).SolarSystemID;
             else
                 throw new CustomError("Unknown item's groupID");
 

@@ -228,7 +228,7 @@ namespace Node.Services.Characters
 
         public PyDataType GetSkillQueue(CallInformation call)
         {
-            Character character = this.ItemManager.LoadItem(call.Client.EnsureCharacterIsSelected()) as Character;
+            Character character = this.ItemManager.GetItem<Character>(call.Client.EnsureCharacterIsSelected());
 
             PyList skillQueueList = new PyList(character.SkillQueue.Count);
 

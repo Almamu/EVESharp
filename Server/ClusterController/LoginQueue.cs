@@ -44,11 +44,12 @@ namespace ClusterController
             // Just to be thread safe
             lock (this.Queue)
             {
-                LoginQueueEntry entry = new LoginQueueEntry();
-
-                entry.Connection = connection;
-                entry.Request = request;
-
+                LoginQueueEntry entry = new LoginQueueEntry
+                {
+                    Connection = connection,
+                    Request = request
+                };
+                
                 this.Queue.Enqueue(entry);
             }
         }
