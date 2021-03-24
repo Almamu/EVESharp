@@ -332,7 +332,6 @@ namespace Node.Database
 
         public List<ItemEntity> LoadStaticItems()
         {
-            // TODO: THIS NEEDS SOME CHANGE, WE'RE LOADING HALF A MILLION ITEMS INTO MEMORY
             MySqlConnection connection = null;
             MySqlCommand command = Database.PrepareQuery(ref connection,
                 $"SELECT itemID, eveNames.itemName, invItems.typeID, ownerID, locationID, flag, contraband, singleton, quantity, x, y, z, custominfo FROM invItems LEFT JOIN eveNames USING(itemID) LEFT JOIN invPositions USING (itemID) WHERE itemID < {ItemManager.USERGENERATED_ID_MIN} AND (groupID = {(int) ItemGroups.Station} OR groupID = {(int) ItemGroups.Faction} OR groupID = {(int) ItemGroups.SolarSystem} OR groupID = {(int) ItemGroups.Corporation} OR groupID = {(int) ItemGroups.System})"
@@ -725,6 +724,46 @@ namespace Node.Database
             return new Clone(item);
         }
 
+        private void SaveItemName(ulong itemID, ItemType type, string itemName)
+        {
+            // save item name if exists
+            Database.PrepareQuery(
+                "REPLACE INTO eveNames (itemID, itemName, categoryID, groupID, typeID)VALUES(@itemID, @itemName, @categoryID, @groupID, @typeID)",
+                new Dictionary<string, object>()
+                {
+                    {"@itemID", itemID},
+                    {"@itemName", itemName},
+                    {"@categoryID", type.Group.Category.ID},
+                    {"@groupID", type.Group.ID},
+                    {"@typeID", type.ID}
+                }
+            );
+        }
+
+        private void SaveItemPosition(ulong itemID, double? x, double? y, double? z)
+        {
+            Database.PrepareQuery(
+                "REPLACE INTO invPositions (itemID, x, y, z)VALUES(@itemID, @x, @y, @z)",
+                new Dictionary<string, object>()
+                {
+                    {"@itemID", itemID},
+                    {"@x", x},
+                    {"@y", y},
+                    {"@z", z}
+                }
+            );
+        }
+
+        private void SaveItemName(ItemEntity item)
+        {
+            this.SaveItemName((ulong) item.ID, item.Type, item.Name);
+        }
+
+        private void SaveItemPosition(ItemEntity item)
+        {
+            this.SaveItemPosition((ulong) item.ID, item.X, item.Y, item.Z);
+        }
+
         public ulong CreateItem(string itemName, ItemType type, ItemEntity owner, ItemEntity location, ItemFlags flag,
             bool contraband, bool singleton, int quantity, double? x, double? y, double? z, string customInfo)
         {
@@ -747,35 +786,9 @@ namespace Node.Database
             );
 
             if (itemName is not null)
-            {
-                // create the item name entry if needed
-                Database.PrepareQuery(
-                    "INSERT INTO eveNames(itemID, itemName, categoryID, groupID, typeID)VALUES(@itemID, @itemName, @categoryID, @groupID, @typeID)",
-                    new Dictionary<string, object>()
-                    {
-                        {"@itemID", newItemID},
-                        {"@itemName", itemName},
-                        {"@categoryID", type.Group.Category.ID},
-                        {"@groupID", type.Group.ID},
-                        {"@typeID", type.ID}
-                    }
-                );
-            }
-
+                this.SaveItemName(newItemID, type, itemName);
             if (x is not null && y is not null && z is not null)
-            {
-                // create the entry for item position
-                Database.PrepareQuery(
-                    "INSERT INTO invPositions(itemID, x, y, z)VALUES(@itemID, @x, @y, @z)",
-                    new Dictionary<string, object>()
-                    {
-                        {"@itemID", newItemID},
-                        {"@x", x},
-                        {"@y", y},
-                        {"@z", z}
-                    }
-                );
-            }
+                this.SaveItemPosition(newItemID, x, y, z);
 
             return newItemID;
         }
@@ -799,37 +812,9 @@ namespace Node.Database
             );
 
             if (itemName is not null)
-            {
-                ItemType type = this.TypeManager[typeID];
-                
-                // create the item name entry if needed
-                Database.PrepareQuery(
-                    "INSERT INTO eveNames(itemID, itemName, categoryID, groupID, typeID)VALUES(@itemID, @itemName, @categoryID, @groupID, @typeID)",
-                    new Dictionary<string, object>()
-                    {
-                        {"@itemID", newItemID},
-                        {"@itemName", itemName},
-                        {"@categoryID", type.Group.Category.ID},
-                        {"@groupID", type.Group.ID},
-                        {"@typeID", type.ID}
-                    }
-                );
-            }
-
+                this.SaveItemName(newItemID, this.TypeManager[typeID], itemName);
             if (x is not null && y is not null && z is not null)
-            {
-                // create the entry for item position
-                Database.PrepareQuery(
-                    "INSERT INTO invPositions(itemID, x, y, z)VALUES(@itemID, @x, @y, @z)",
-                    new Dictionary<string, object>()
-                    {
-                        {"@itemID", newItemID},
-                        {"@x", x},
-                        {"@y", y},
-                        {"@z", z}
-                    }
-                );
-            }
+                this.SaveItemPosition(newItemID, x, y, z);
 
             return newItemID;
         }
@@ -1088,18 +1073,7 @@ namespace Node.Database
             // ensure naming information is up to date
             if (item.HasName)
             {
-                // save item name if exists
-                Database.PrepareQuery(
-                    "REPLACE INTO eveNames (itemID, itemName, categoryID, groupID, typeID)VALUES(@itemID, @itemName, @categoryID, @groupID, @typeID)",
-                    new Dictionary<string, object>()
-                    {
-                        {"@itemID", item.ID},
-                        {"@itemName", item.Name},
-                        {"@categoryID", item.Type.Group.Category.ID},
-                        {"@groupID", item.Type.Group.ID},
-                        {"@typeID", item.Type.ID}
-                    }
-                );
+                this.SaveItemName(item);
             }
             else if (item.HadName)
             {
@@ -1114,16 +1088,7 @@ namespace Node.Database
 
             if (item.HasPosition)
             {
-                Database.PrepareQuery(
-                    "REPLACE INTO invPositions (itemID, x, y, z)VALUES(@itemID, @x, @y, @z)",
-                    new Dictionary<string, object>()
-                    {
-                        {"@itemID", item.ID},
-                        {"@x", item.X},
-                        {"@y", item.Y},
-                        {"@z", item.Z}
-                    }
-                );
+                this.SaveItemPosition(item);
             }
             else if (item.HadPosition)
             {
