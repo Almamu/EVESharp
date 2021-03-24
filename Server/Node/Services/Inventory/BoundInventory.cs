@@ -188,7 +188,7 @@ namespace Node.Services.Inventory
                 }
 
                 // put the module online after fitting it
-                module?.PutOnline(Client);
+                // module?.PutOnline(Client);
                 module?.Persist();
             }
             else

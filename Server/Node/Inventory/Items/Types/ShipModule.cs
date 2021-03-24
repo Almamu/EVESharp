@@ -47,28 +47,8 @@ namespace Node.Inventory.Items.Types
             return this.mEffects;
         }
 
-        public bool IsOnline()
-        {
-            return this.Attributes[AttributeEnum.isOnline] == 1;
-        }
-
         public bool PutOffline(Client client)
         {
-            if (this.IsOnline() == false)
-                return true;
-            
-            // reduce the cpu and power load on the ship
-            Ship ship = this.ItemFactory.ItemManager.GetItem<Ship>(this.LocationID);
-
-            if (ship is null)
-                return false;
-
-            if (this.Attributes.TryGetAttribute(AttributeEnum.cpu, out ItemAttribute cpu) == true)
-                client.NotifyAttributeChange(ship.CPULoad -= cpu, ship);
-
-            if (this.Attributes.TryGetAttribute(AttributeEnum.power, out ItemAttribute power) == true)
-                client.NotifyAttributeChange(ship.PowerLoad -= power, ship);
-            
             // remove the effect
             this.mEffects.Remove(16);
             
@@ -91,55 +71,11 @@ namespace Node.Inventory.Items.Types
             
             client.NotifyMultiEvent(effect);
             
-            // mark the module as not online
-            this.Attributes[AttributeEnum.isOnline].Integer = 0;
-            
             return true;
         }
         
         public bool PutOnline(Client client)
         {
-            // only singletons can be put online
-            if (this.Singleton == false)
-                return false;
-            if (this.IsOnline() == true)
-                return true;
-            
-            // ensure the character has the required skills
-            this.CheckPrerequisites(this.ItemFactory.ItemManager.GetItem<Character>(client.EnsureCharacterIsSelected()));
-            
-            // perform pre-requirement checks
-            Ship ship = this.ItemFactory.ItemManager.GetItem<Ship>(this.LocationID);
-            
-            // ensure the parent has enough resources available
-            if (ship is null)
-                return false;
-
-            ItemAttribute cpuLoad = ship.CPULoad;
-            ItemAttribute cpu = this.Attributes[AttributeEnum.cpu];
-
-            // TODO: SEND THE PLAYER MESSAGES ABOUT WHY THIS CANNOT BE DONE
-            if (cpu + cpuLoad > ship.CPUOutput)
-                return false;
-
-            ItemAttribute powerLoad = ship.PowerLoad;
-            ItemAttribute power = this.Attributes[AttributeEnum.power];
-            
-            if (power + powerLoad > ship.PowerOutput)
-                return false;
-            // TODO: CHECK FOR IN-SPACE AND ENSURE THERE'S AT LEAST 75% OF CAP AVAILABLE
-
-            // increase cpu and power load in the ship
-            powerLoad = ship.PowerLoad += power;
-            cpuLoad = ship.CPULoad += cpu;
-            
-            // notify owner of the changes in the attributes
-            client.NotifyAttributeChange(powerLoad, ship);
-            client.NotifyAttributeChange(cpuLoad, ship);
-
-            // finally set the module online
-            this.Attributes[AttributeEnum.isOnline].Integer = 1;
-            
             // store the effect in the list for this module
             this.mEffects[16] = new PyList()
             {
@@ -164,8 +100,6 @@ namespace Node.Inventory.Items.Types
                 0,
                 null
             };
-            
-            client.NotifyAttributeChange(this.Attributes[AttributeEnum.isOnline], this);
             
             // send the OnGodmaShipEffect event to the client
             OnGodmaShipEffect effect = new OnGodmaShipEffect

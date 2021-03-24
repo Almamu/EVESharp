@@ -1,4 +1,5 @@
-﻿using Node.Inventory.Items.Attributes;
+﻿using Node.Dogma;
+using Node.Inventory.Items.Attributes;
 
 namespace Node.Inventory.Items.Dogma
 {
@@ -10,6 +11,13 @@ namespace Node.Inventory.Items.Dogma
         public string ExpressionName { get; init; }
         public Expression FirstArgument { get; set; }
         public Expression SecondArgument { get; set; }
-        public int? AttributeID { get; init; }
+        public AttributeEnum? AttributeID { get; init; }
+        public int? ItemTypeID { get; init; }
+        public byte[] VMCode { get; private set; }
+
+        public void Compile()
+        {
+            this.VMCode = new Compiler().CompileExpression(this);
+        }
     }
 }

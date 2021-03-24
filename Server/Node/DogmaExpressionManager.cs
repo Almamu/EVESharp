@@ -1,7 +1,6 @@
 ﻿using System.Collections.Generic;
 using Common.Logging;
 using Node.Database;
-using Node.Inventory.Items;
 using Node.Inventory.Items.Attributes;
 using Node.Inventory.Items.Dogma;
 using Node.Inventory.Items.Types;
@@ -24,14 +23,8 @@ namespace Node
         }
 
         public Expression this[int index] => this.Expressions[index];
-
-        public void ApplyEffects(ItemEntity item, Expression expression, Character character, Ship ship)
-        {
-            
-        }
-
-        private void CalculateAttributeValue(ItemEntity source, AttributeEnum attribSource, ItemEntity dest, AttributeEnum attribDest)
-
+        
+        public void ApplyEffects(ShipModule item, Expression expression, Character character, Ship ship)
         {
             
         }

@@ -5,8 +5,8 @@
         public int EffectID { get; }
         public string EffectName { get; }
         public int EffectCategory { get; }
-        public int PreExpression { get; }
-        public int PostExpression { get; }
+        public Expression PreExpression { get; }
+        public Expression PostExpression { get; }
         public string Description { get; }
         public string GUID { get; }
         public int? GraphicID { get; }
@@ -30,39 +30,39 @@
         public int? NPCActivationChangeAttributeID { get; }
         public int? FittingUsageChanceAttributeID { get; }
 
-        public Effect(int effect, string effectName, int effectCategory, int preExpression, int postExpression,
+        public Effect(int effect, string effectName, int effectCategory, Expression preExpression, Expression postExpression,
             string description, string guid, int? graphic, bool isOffensive, bool isAssistance, int? durationAttribute,
             int? trackingSpeedAttribute, int? dischargeAttribute, int? rangeAttribute, int? fallofAttribute,
             bool disallowAutoRepeat, bool published, string displayName, bool isWarpSafe, bool rangeChance,
             bool electronicChance, bool propulsionChance, int? distribution, string sfxName, int? npcUsageChanceAttribute,
             int? npcActivationChangeAttribute, int? fittingUsageChanceAttribute)
         {
-            EffectID = effect;
-            EffectName = effectName;
-            EffectCategory = effectCategory;
-            PreExpression = preExpression;
-            PostExpression = postExpression;
-            Description = description;
-            GUID = guid;
-            GraphicID = graphic;
-            IsOffensive = isOffensive;
-            IsAssistance = isAssistance;
-            DurationAttributeID = durationAttribute;
-            DischargeAttributeID = dischargeAttribute;
-            RangeAttributeID = rangeAttribute;
-            FallofAttributeID = fallofAttribute;
-            DisallowAutoRepeat = disallowAutoRepeat;
-            Published = published;
-            DisplayName = displayName;
-            IsWarpSafe = isWarpSafe;
-            RangeChance = rangeChance;
-            ElectronicChance = electronicChance;
-            PropulsionChance = propulsionChance;
-            Distribution = distribution;
-            SFXName = sfxName;
-            NPCUsageChanceAttributeID = npcUsageChanceAttribute;
-            NPCActivationChangeAttributeID = npcActivationChangeAttribute;
-            FittingUsageChanceAttributeID = fittingUsageChanceAttribute;
+            this.EffectID = effect;
+            this.EffectName = effectName;
+            this.EffectCategory = effectCategory;
+            this.PreExpression = preExpression;
+            this.PostExpression = postExpression;
+            this.Description = description;
+            this.GUID = guid;
+            this.GraphicID = graphic;
+            this.IsOffensive = isOffensive;
+            this.IsAssistance = isAssistance;
+            this.DurationAttributeID = durationAttribute;
+            this.DischargeAttributeID = dischargeAttribute;
+            this.RangeAttributeID = rangeAttribute;
+            this.FallofAttributeID = fallofAttribute;
+            this.DisallowAutoRepeat = disallowAutoRepeat;
+            this.Published = published;
+            this.DisplayName = displayName;
+            this.IsWarpSafe = isWarpSafe;
+            this.RangeChance = rangeChance;
+            this.ElectronicChance = electronicChance;
+            this.PropulsionChance = propulsionChance;
+            this.Distribution = distribution;
+            this.SFXName = sfxName;
+            this.NPCUsageChanceAttributeID = npcUsageChanceAttribute;
+            this.NPCActivationChangeAttributeID = npcActivationChangeAttribute;
+            this.FittingUsageChanceAttributeID = fittingUsageChanceAttribute;
         }
     }
 }

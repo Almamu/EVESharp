@@ -458,6 +458,21 @@ namespace Node
             this.NotifyMultiEvent(new OnModuleAttributeChange(item, attribute));
         }
 
+        /// <summary>
+        /// Notifies the client of a single attribute change on a specific item
+        /// </summary>
+        /// <param name="attribute">The attribute to notify about</param>
+        /// <param name="item">The item to notify about</param>
+        public void NotifyAttributeChange(AttributeEnum attribute, ItemEntity item)
+        {
+            this.NotifyMultiEvent(new OnModuleAttributeChange(item, item.Attributes[attribute]));
+        }
+
+        /// <summary>
+        /// Notifies the client of a multiple attribute change on a specific item
+        /// </summary>
+        /// <param name="attributes">The attributes to notify about</param>
+        /// <param name="item">The item to notify about</param>
         public void NotifyAttributeChange(AttributeEnum[] attributes, ItemEntity item)
         {
             OnModuleAttributeChanges changes = new OnModuleAttributeChanges();

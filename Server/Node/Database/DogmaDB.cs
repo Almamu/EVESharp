@@ -4,6 +4,7 @@ using System.Linq;
 using Common.Database;
 using Common.Logging;
 using MySql.Data.MySqlClient;
+using Node.Inventory.Items;
 using Node.Inventory.Items.Attributes;
 using Node.Inventory.Items.Dogma;
 
@@ -20,6 +21,7 @@ namespace Node.Database
             public int? FirstArgument;
             public int? SecondArgument;
             public int? AttributeID;
+            public int? ItemTypeID;
         }
         
         private Channel Log { get; init; }
@@ -55,6 +57,10 @@ namespace Node.Database
                 foreach((int _, DogmaExpressionStruct expression) in databaseLoad)
                     this.LoadExpression(expressions, databaseLoad, expression);
 
+                // compile all the expressions
+                foreach ((int _, Expression expression) in expressions)
+                    expression.Compile();
+                
                 return expressions;
             }
         }
@@ -78,7 +84,7 @@ namespace Node.Database
                 }
                 else
                 {
-                    this.LoadExpression(dogmaExpressions, expressionList, expressionList[(int) expressionToLoad.FirstArgument]);
+                    firstArgument = this.LoadExpression(dogmaExpressions, expressionList, expressionList[(int) expressionToLoad.FirstArgument]);
                 }
             }
 
@@ -91,7 +97,7 @@ namespace Node.Database
                 }
                 else
                 {
-                    this.LoadExpression(dogmaExpressions, expressionList, expressionList[(int) expressionToLoad.SecondArgument]);
+                    secondArgument = this.LoadExpression(dogmaExpressions, expressionList, expressionList[(int) expressionToLoad.SecondArgument]);
                 }
             }
 
@@ -104,7 +110,8 @@ namespace Node.Database
                 ExpressionValue = expressionToLoad.ExpressionValue,
                 FirstArgument = firstArgument,
                 SecondArgument = secondArgument,
-                AttributeID = expressionToLoad.AttributeID
+                AttributeID = expressionToLoad.AttributeID is null ? null : (AttributeEnum) expressionToLoad.AttributeID,
+                ItemTypeID = expressionToLoad.ItemTypeID
             };
         }
         

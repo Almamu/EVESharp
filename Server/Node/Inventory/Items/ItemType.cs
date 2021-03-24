@@ -23,6 +23,7 @@
 */
 
 using System.Collections.Generic;
+using System.Linq;
 using Node.Inventory.Items.Attributes;
 using Node.Inventory.Items.Dogma;
 
@@ -47,6 +48,7 @@ namespace Node.Inventory.Items
         public double ChanceOfDuplicating { get; }
         public Dictionary<int, ItemAttribute> Attributes { get; }
         public Dictionary<int, Effect> Effects { get; }
+        public Dictionary<string, Effect> EffectsByName { get; }
         
         public ItemType(int id, ItemGroup group, string name, string description,
             int graphicID, double radius, double mass, double volume, double capacity,
@@ -71,6 +73,7 @@ namespace Node.Inventory.Items
             this.ChanceOfDuplicating = chanceOfDuplicating;
             this.Attributes = defaultAttributes;
             this.Effects = effects;
+            this.EffectsByName = this.Effects.ToDictionary(x => x.Value.EffectName, x => x.Value);
         }
     }
 }

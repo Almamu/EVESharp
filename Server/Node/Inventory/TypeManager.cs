@@ -37,7 +37,7 @@ namespace Node.Inventory
 
         public void Load()
         {
-            this.mTypes = this.ItemDB.LoadItemTypes();
+            this.mTypes = this.ItemDB.LoadItemTypes(this.ExpressionManager);
         }
 
         public bool ContainsKey(int typeID)

@@ -1,10 +1,15 @@
 using System;
 using System.Collections.Generic;
 using Common.Constants;
+using Node.Dogma;
+using Node.Dogma.Interpreter;
+using Node.Dogma.Interpreter.Opcodes;
 using Node.Exceptions;
+using Node.Exceptions.dogma;
 using Node.Inventory;
 using Node.Inventory.Items;
 using Node.Inventory.Items.Attributes;
+using Node.Inventory.Items.Dogma;
 using Node.Inventory.Items.Types;
 using Node.Network;
 using PythonTypes.Types.Collections;
@@ -12,6 +17,7 @@ using PythonTypes.Types.Complex;
 using PythonTypes.Types.Database;
 using PythonTypes.Types.Exceptions;
 using PythonTypes.Types.Primitives;
+using Environment = Node.Inventory.Items.Dogma.Environment;
 
 namespace Node.Services.Dogma
 {
@@ -20,19 +26,23 @@ namespace Node.Services.Dogma
         private ItemManager ItemManager { get; }
         private AttributeManager AttributeManager { get; }
         private SystemManager SystemManager { get; }
-        public dogmaIM(ItemManager itemManager, AttributeManager attributeManager, SystemManager systemManager, BoundServiceManager manager) : base(manager, null)
+        private DogmaExpressionManager ExpressionManager { get; }
+        
+        public dogmaIM(ItemManager itemManager, AttributeManager attributeManager, SystemManager systemManager, BoundServiceManager manager, DogmaExpressionManager expressionManager) : base(manager, null)
         {
             this.ItemManager = itemManager;
             this.AttributeManager = attributeManager;
             this.SystemManager = systemManager;
+            this.ExpressionManager = expressionManager;
         }
 
         protected dogmaIM(ItemManager itemManager, AttributeManager attributeManager, SystemManager systemManager,
-            BoundServiceManager manager, Client client) : base(manager, client)
+            BoundServiceManager manager, DogmaExpressionManager expressionManager, Client client) : base(manager, client)
         {
             this.ItemManager = itemManager;
             this.AttributeManager = attributeManager;
             this.SystemManager = systemManager;
+            this.ExpressionManager = expressionManager;
         }
 
         public override PyInteger MachoResolveObject(PyTuple objectData, PyInteger zero, CallInformation call)
@@ -71,7 +81,7 @@ namespace Node.Services.Dogma
             if (this.MachoResolveObject(objectData as PyTuple, 0, call) != this.BoundServiceManager.Container.NodeID)
                 throw new CustomError("Trying to bind an object that does not belong to us!");
 
-            return new dogmaIM(this.ItemManager, this.AttributeManager, this.SystemManager, this.BoundServiceManager);
+            return new dogmaIM(this.ItemManager, this.AttributeManager, this.SystemManager, this.BoundServiceManager, this.ExpressionManager);
         }
 
         public PyDataType ShipGetInfo(CallInformation call)
@@ -271,22 +281,80 @@ namespace Node.Services.Dogma
             };
         }
 
-        public PyDataType Activate(PyInteger itemID, PyString effect, PyDataType target, PyDataType repeat, CallInformation call)
+        public PyDataType Activate(PyInteger itemID, PyString effectName, PyDataType target, PyDataType repeat, CallInformation call)
         {
             ShipModule module = this.ItemManager.GetItem<ShipModule>(itemID);
+            Ship ship = this.ItemManager.GetItem<Ship>((int) call.Client.ShipID);
+            Character character = this.ItemManager.GetItem<Character>(call.Client.EnsureCharacterIsSelected());
+            
+            // check if the module has the given effect in it's list
+            if (module.Type.EffectsByName.TryGetValue(effectName, out Effect effect) == false)
+                throw new EffectNotActivatible(module.Type);
 
-            if (effect == "online")
-                return module.PutOnline(call.Client);
+            // create the environment for this run
+            Node.Dogma.Interpreter.Environment env = new Node.Dogma.Interpreter.Environment()
+            {
+                Character = character,
+                Self = module,
+                Ship = ship,
+                Target = null,
+                Client = call.Client
+            };
+
+            Opcode opcode = new Interpreter(env).Run(effect.PreExpression.VMCode);
+            
+            if (opcode is OpcodeRunnable runnable)
+                runnable.Execute();
+            else if (opcode is OpcodeWithBooleanOutput booleanOutput)
+                booleanOutput.Execute();
+            else if (opcode is OpcodeWithDoubleOutput doubleOutput)
+                doubleOutput.Execute();
+
+            // ensure the module is saved
+            module.Persist();
+            
+            // TODO: REGISTER THE EFFECT IN SOME WAY
+            if (effectName == "online")
+                module.PutOnline(call.Client);
             
             return null;
         }
 
-        public PyDataType Deactivate(PyInteger itemID, PyString effect, CallInformation call)
+        public PyDataType Deactivate(PyInteger itemID, PyString effectName, CallInformation call)
         {
             ShipModule module = this.ItemManager.GetItem<ShipModule>(itemID);
+            Ship ship = this.ItemManager.GetItem<Ship>((int) call.Client.ShipID);
+            Character character = this.ItemManager.GetItem<Character>(call.Client.EnsureCharacterIsSelected());
+            
+            // check if the module has the given effect in it's list
+            if (module.Type.EffectsByName.TryGetValue(effectName, out Effect effect) == false)
+                throw new EffectNotActivatible(module.Type);
 
-            if (effect == "online")
-                return module.PutOffline(call.Client);
+            // create the environment for this run
+            Node.Dogma.Interpreter.Environment env = new Node.Dogma.Interpreter.Environment()
+            {
+                Character = character,
+                Self = module,
+                Ship = ship,
+                Target = null,
+                Client = call.Client
+            };
+
+            Opcode opcode = new Interpreter(env).Run(effect.PostExpression.VMCode);
+            
+            if (opcode is OpcodeRunnable runnable)
+                runnable.Execute();
+            else if (opcode is OpcodeWithBooleanOutput booleanOutput)
+                booleanOutput.Execute();
+            else if (opcode is OpcodeWithDoubleOutput doubleOutput)
+                doubleOutput.Execute();
+
+            // ensure the module is saved
+            module.Persist();
+            
+            // TODO: REGISTER THE EFFECT IN SOME WAY
+            if (effectName == "online")
+                module.PutOffline(call.Client);
             
             return null;
         }

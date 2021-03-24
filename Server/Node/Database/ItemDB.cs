@@ -79,7 +79,7 @@ namespace Node.Database
             }
         }
         
-        private Dictionary<int, Dictionary<int, Effect>> LoadItemEffects()
+        private Dictionary<int, Dictionary<int, Effect>> LoadItemEffects(DogmaExpressionManager expressionManager)
         {
             MySqlConnection connection = null;
             MySqlDataReader reader = Database.Query(ref connection,
@@ -92,15 +92,14 @@ namespace Node.Database
             {
                 using (reader)
                 {
-
                     while (reader.Read() == true)
                     {
                         effects[reader.GetInt32(0)] = new Effect(
                             reader.GetInt32(0),
                             reader.GetString(1),
                             reader.GetInt32(2),
-                            reader.GetInt32(3),
-                            reader.GetInt32(4),
+                            expressionManager[reader.GetInt32(3)],
+                            expressionManager[reader.GetInt32(4)],
                             reader.GetString(5),
                             reader.GetStringOrNull(6),
                             reader.GetInt32OrNull(7),
@@ -151,10 +150,10 @@ namespace Node.Database
             }
         }
 
-        public Dictionary<int, ItemType> LoadItemTypes()
+        public Dictionary<int, ItemType> LoadItemTypes(DogmaExpressionManager expressionManager)
         {
             // item effects should be loaded before as they're needed for the types instantiation
-            Dictionary<int, Dictionary<int, Effect>> effects = this.LoadItemEffects();
+            Dictionary<int, Dictionary<int, Effect>> effects = this.LoadItemEffects(expressionManager);
             
             MySqlConnection connection = null;
             MySqlDataReader reader = Database.Query(ref connection,
