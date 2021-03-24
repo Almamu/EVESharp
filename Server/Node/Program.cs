@@ -23,6 +23,7 @@
 */
 
 using System;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using Common.Database;
 using Common.Logging;
@@ -58,6 +59,8 @@ namespace Node
             Channel logChannel = null;
             Logger log = null;
             Thread logFlushing = null;
+            Semaphore cacheSemaphore = new Semaphore(0, 1);
+            Semaphore itemSemaphore = new Semaphore(0, 1);
             
             try
             {
@@ -171,10 +174,17 @@ namespace Node
                 // run a thread for log flushing
                 logFlushing = new Thread(() =>
                 {
-                    while (true)
+                    try
                     {
-                        log.Flush();
-                        Thread.Sleep(1);
+                        while (true)
+                        {
+                            log.Flush();
+                            Thread.Sleep(1);
+                        }
+                    }
+                    catch
+                    {
+                        // ignored
                     }
                 });
                 logFlushing.Start();
@@ -197,31 +207,48 @@ namespace Node
                 dependencies.GetInstance<TimerManager>().Start();
                 logChannel.Debug("Done");
                 
-                logChannel.Info("Priming cache...");
-                CacheStorage cacheStorage = dependencies.GetInstance<CacheStorage>();
-                // prime bulk data
-                cacheStorage.Load(
-                    CacheStorage.LoginCacheTable,
-                    CacheStorage.LoginCacheQueries,
-                    CacheStorage.LoginCacheTypes
-                );
-                // prime character creation cache
-                cacheStorage.Load(
-                    CacheStorage.CreateCharacterCacheTable,
-                    CacheStorage.CreateCharacterCacheQueries,
-                    CacheStorage.CreateCharacterCacheTypes
-                );
-                // prime character appearance cache
-                cacheStorage.Load(
-                    CacheStorage.CharacterAppearanceCacheTable,
-                    CacheStorage.CharacterAppearanceCacheQueries,
-                    CacheStorage.CharacterAppearanceCacheTypes
-                );
-                logChannel.Debug("Done");
-                logChannel.Info("Initializing item factory");
-                dependencies.GetInstance<ItemFactory>().Init();
+                // do some parallel initialization, cache priming and static item loading can be performed in parallel
+                // this makes the changes quicker
+                new Thread(() =>
+                {
+                    logChannel.Info("Priming cache...");
+                    CacheStorage cacheStorage = dependencies.GetInstance<CacheStorage>();
+                    // prime bulk data
+                    cacheStorage.Load(
+                        CacheStorage.LoginCacheTable,
+                        CacheStorage.LoginCacheQueries,
+                        CacheStorage.LoginCacheTypes
+                    );
+                    // prime character creation cache
+                    cacheStorage.Load(
+                        CacheStorage.CreateCharacterCacheTable,
+                        CacheStorage.CreateCharacterCacheQueries,
+                        CacheStorage.CreateCharacterCacheTypes
+                    );
+                    // prime character appearance cache
+                    cacheStorage.Load(
+                        CacheStorage.CharacterAppearanceCacheTable,
+                        CacheStorage.CharacterAppearanceCacheQueries,
+                        CacheStorage.CharacterAppearanceCacheTypes
+                    );
+                    cacheSemaphore.Release(1);
+                }).Start();
+                
                 logChannel.Debug("Done");
 
+                new Thread(() =>
+                {
+                    logChannel.Info("Initializing item factory");
+                    dependencies.GetInstance<ItemFactory>().Init();
+                    logChannel.Debug("Done");
+
+                    itemSemaphore.Release(1);
+                }).Start();
+                
+                // wait for both semaphores
+                cacheSemaphore.WaitOne();
+                itemSemaphore.WaitOne();
+                
                 logChannel.Info("Initializing solar system manager");
                 dependencies.GetInstance<SystemManager>();
                 logChannel.Debug("Done");
@@ -235,7 +262,7 @@ namespace Node
             }
             catch (Exception e)
             {
-                if (logChannel is null || log is null)
+                if (log is null || logChannel is null)
                 {
                     Console.WriteLine(e.ToString());
                 }
