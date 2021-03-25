@@ -2,7 +2,7 @@
 
 namespace Node.Dogma.Interpreter.Opcodes
 {
-    public class OpcodeDEFINT : Opcode
+    public class OpcodeDEFINT : OpcodeWithIntegerOutput
     {
         public int Value { get; private set; }
         
@@ -11,6 +11,11 @@ namespace Node.Dogma.Interpreter.Opcodes
             this.Value = int.Parse(reader.ReadString());
 
             return this;
+        }
+
+        public override int Execute()
+        {
+            return this.Value;
         }
 
         public OpcodeDEFINT(Interpreter interpreter) : base(interpreter)

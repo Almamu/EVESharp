@@ -24,6 +24,30 @@ namespace Node.Inventory.Items.Types
                     x.Value.Flag == ItemFlags.LoSlot6 || x.Value.Flag == ItemFlags.LoSlot7) && x.Value.Attributes[AttributeEnum.isOnline] == 1)
                 .ToDictionary(x => x.Key, x => x.Value);
         
+        public Dictionary<int, ItemEntity> HighSlotModules =>
+            this.Items
+                .Where(x =>
+                    (x.Value.Flag == ItemFlags.HiSlot0 || x.Value.Flag == ItemFlags.HiSlot1 || x.Value.Flag == ItemFlags.HiSlot2 ||
+                     x.Value.Flag == ItemFlags.HiSlot3 || x.Value.Flag == ItemFlags.HiSlot4 || x.Value.Flag == ItemFlags.HiSlot5 ||
+                     x.Value.Flag == ItemFlags.HiSlot6 || x.Value.Flag == ItemFlags.HiSlot7) && x.Value.Attributes[AttributeEnum.isOnline] == 1)
+                .ToDictionary(x => x.Key, x => x.Value);
+        
+        public Dictionary<int, ItemEntity> MediumSlotModules => 
+            this.Items
+                .Where(x =>
+                    (x.Value.Flag == ItemFlags.MedSlot0 || x.Value.Flag == ItemFlags.MedSlot1 || x.Value.Flag == ItemFlags.MedSlot2 ||
+                     x.Value.Flag == ItemFlags.MedSlot3 || x.Value.Flag == ItemFlags.MedSlot4 || x.Value.Flag == ItemFlags.MedSlot5 ||
+                     x.Value.Flag == ItemFlags.MedSlot6 || x.Value.Flag == ItemFlags.MedSlot7) && x.Value.Attributes[AttributeEnum.isOnline] == 1)
+                .ToDictionary(x => x.Key, x => x.Value);
+        
+        public Dictionary<int, ItemEntity> LowSlotModules => 
+            this.Items
+                .Where(x =>
+                    (x.Value.Flag == ItemFlags.LoSlot0 || x.Value.Flag == ItemFlags.LoSlot1 || x.Value.Flag == ItemFlags.LoSlot2 ||
+                     x.Value.Flag == ItemFlags.LoSlot3 || x.Value.Flag == ItemFlags.LoSlot4 || x.Value.Flag == ItemFlags.LoSlot5 ||
+                     x.Value.Flag == ItemFlags.LoSlot6 || x.Value.Flag == ItemFlags.LoSlot7) && x.Value.Attributes[AttributeEnum.isOnline] == 1)
+                .ToDictionary(x => x.Key, x => x.Value);
+        
         public Ship(ItemEntity from) : base(from)
         {
         }

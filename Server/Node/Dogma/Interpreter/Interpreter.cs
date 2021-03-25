@@ -36,6 +36,7 @@ namespace Node.Dogma.Interpreter
             this.mOpcodes[EffectOperand.EFF] = typeof(OpcodeEFF);
             this.mOpcodes[EffectOperand.DEFASSOCIATION] = typeof(OpcodeDEFASSOCIATION);
             this.mOpcodes[EffectOperand.UE] = typeof(OpcodeUE);
+            this.mOpcodes[EffectOperand.GT] = typeof(OpcodeGT);
         }
 
         public Opcode Step(BinaryReader reader)

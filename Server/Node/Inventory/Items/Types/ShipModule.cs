@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Runtime.InteropServices;
 using Node.Dogma.Interpreter;
 using Node.Dogma.Interpreter.Opcodes;
@@ -36,7 +37,7 @@ namespace Node.Inventory.Items.Types
             // special case, check for the isOnline attribute and put the module online if so
             if (this.Attributes[AttributeEnum.isOnline] == 1)
             {
-                GodmaShipEffect effect = this.Effects[16];
+                GodmaShipEffect effect = this.Effects[(int) EffectsEnum.Online];
 
                 effect.ShouldStart = true;
                 effect.StartTime = DateTime.UtcNow.ToFileTimeUtc();
@@ -164,14 +165,14 @@ namespace Node.Inventory.Items.Types
         private void ApplyEffectsByCategory(EffectCategory category, Client forClient)
         {
             foreach ((int _, GodmaShipEffect effect) in this.Effects)
-                if (effect.Effect.EffectCategory == category)
+                if (effect.Effect.EffectCategory == category && effect.ShouldStart == false)
                     this.ApplyEffect(effect.Effect, effect, forClient);
         }
 
         private void StopApplyingEffectsByCategory(EffectCategory category, Client forClient)
         {
             foreach ((int _, GodmaShipEffect effect) in this.Effects)
-                if (effect.Effect.EffectCategory == category)
+                if (effect.Effect.EffectCategory == category && effect.ShouldStart == true)
                     this.StopApplyingEffect(effect.Effect, effect, forClient);
         }
         
@@ -193,6 +194,21 @@ namespace Node.Inventory.Items.Types
         public void StopApplyingPassiveEffects(Client forClient)
         {
             this.StopApplyingEffectsByCategory(EffectCategory.Passive, forClient);
+        }
+
+        public bool IsHighSlot()
+        {
+            return this.Effects.ContainsKey((int) EffectsEnum.HighPower) == true;
+        }
+
+        public bool IsMediumSlot()
+        {
+            return this.Effects.ContainsKey((int) EffectsEnum.MedPower) == true;
+        }
+
+        public bool IsLowSlot()
+        {
+            return this.Effects.ContainsKey((int) EffectsEnum.LowPower) == true;
         }
     }
 }
