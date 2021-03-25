@@ -78,10 +78,8 @@ namespace Node.Services.Inventory
         private void PreMoveItemCheck(ItemEntity item, ItemFlags flag, double quantityToMove)
         {
             if (this.mInventory.Type.ID == (int) ItemTypes.Capsule)
-            {
                 throw new CantTakeInSpaceCapsule();
-            }
-            
+
             // perform checks only on cargo
             if (this.mInventory is Ship ship && flag == ItemFlags.Cargo)
             {
@@ -90,10 +88,7 @@ namespace Node.Services.Inventory
                     ship.Items.Sum(x => (x.Value.Flag != flag) ? 0.0 : x.Value.Quantity * x.Value.Attributes[AttributeEnum.volume]);
 
                 double newVolume = item.Attributes[AttributeEnum.volume] * quantityToMove + currentVolume;
-                double volumeMultiplier = ship.ActiveModules
-                    .Select(x => x.Value.Attributes[AttributeEnum.cargoCapacityMultiplier])
-                    .Aggregate(1.0, (a, x) => x * a);
-                double maxVolume = this.mInventory.Attributes[AttributeEnum.capacity] * volumeMultiplier;
+                double maxVolume = this.mInventory.Attributes[AttributeEnum.capacity];
 
                 if (newVolume > maxVolume)
                     throw new NotEnoughCargoSpace(currentVolume, this.mInventory.Attributes[AttributeEnum.capacity] - currentVolume);
@@ -254,7 +249,7 @@ namespace Node.Services.Inventory
                 return null;
             
             // check that there's enough space left
-            this.PreMoveItemCheck(item, this.mFlag, quantity);
+            this.PreMoveItemCheck(item, (ItemFlags) (int) flag, quantity);
 
             // TODO: COPY THIS LOGIC OVER TO MOVEITEMHERE TO ENSURE THAT THIS ALSO FOLLOWS RULES REGARDING MODULES
             if (quantity == item.Quantity)
