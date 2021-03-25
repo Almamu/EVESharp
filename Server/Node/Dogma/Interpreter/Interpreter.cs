@@ -32,6 +32,7 @@ namespace Node.Dogma.Interpreter
             this.mOpcodes[EffectOperand.OR] = typeof(OpcodeOR);
             this.mOpcodes[EffectOperand.COMBINE] = typeof(OpcodeCOMBINE);
             this.mOpcodes[EffectOperand.AIM] = typeof(OpcodeAIM);
+            this.mOpcodes[EffectOperand.RIM] = typeof(OpcodeRIM);
             this.mOpcodes[EffectOperand.EFF] = typeof(OpcodeEFF);
             this.mOpcodes[EffectOperand.DEFASSOCIATION] = typeof(OpcodeDEFASSOCIATION);
             this.mOpcodes[EffectOperand.UE] = typeof(OpcodeUE);

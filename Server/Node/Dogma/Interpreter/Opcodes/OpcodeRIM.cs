@@ -8,14 +8,14 @@ using Node.Inventory.Items.Dogma;
 namespace Node.Dogma.Interpreter.Opcodes
 {
     /// <summary>
-    /// AIM stands for AddItemModifier
+    /// RIM stands for RemoveItemModifier
     /// </summary>
-    public class OpcodeAIM : OpcodeRunnable
+    public class OpcodeRIM : OpcodeRunnable
     {
         public OpcodeEFF Change { get; private set; }
         public OpcodeDEFATTRIBUTE Attribute { get; private set; }
         
-        public OpcodeAIM(Interpreter interpreter) : base(interpreter)
+        public OpcodeRIM(Interpreter interpreter) : base(interpreter)
         {
         }
 
@@ -43,7 +43,7 @@ namespace Node.Dogma.Interpreter.Opcodes
             AttributeEnum attribute = this.Change.RightSide.AttributeToAffect.Attribute;
             
             // add the modifier to the attribute
-            item.Attributes[attribute].AddModifier(this.Change.LeftSide.Association, target.Attributes[this.Attribute.Attribute]);
+            item.Attributes[attribute].RemoveModifier(this.Change.LeftSide.Association, target.Attributes[this.Attribute.Attribute]);
             
             // notify the character
             this.Interpreter.Environment.Client.NotifyAttributeChange(attribute, item);

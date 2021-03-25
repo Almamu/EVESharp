@@ -121,7 +121,7 @@ namespace Node.Services.Inventory
                 oldFlag == ItemFlags.LoSlot5 || oldFlag == ItemFlags.LoSlot6 || oldFlag == ItemFlags.LoSlot7)
             {
                 if (item is ShipModule module)
-                    module.PutOffline(Client);
+                    module.StopApplyingEffect("online", Client);
             }
             
             // extra special situation, is the new flag an autofit one?
@@ -188,7 +188,7 @@ namespace Node.Services.Inventory
                 }
 
                 // put the module online after fitting it
-                // module?.PutOnline(Client);
+                module?.ApplyEffect("online", Client);
                 module?.Persist();
             }
             else

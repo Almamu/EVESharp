@@ -283,78 +283,14 @@ namespace Node.Services.Dogma
 
         public PyDataType Activate(PyInteger itemID, PyString effectName, PyDataType target, PyDataType repeat, CallInformation call)
         {
-            ShipModule module = this.ItemManager.GetItem<ShipModule>(itemID);
-            Ship ship = this.ItemManager.GetItem<Ship>((int) call.Client.ShipID);
-            Character character = this.ItemManager.GetItem<Character>(call.Client.EnsureCharacterIsSelected());
-            
-            // check if the module has the given effect in it's list
-            if (module.Type.EffectsByName.TryGetValue(effectName, out Effect effect) == false)
-                throw new EffectNotActivatible(module.Type);
-
-            // create the environment for this run
-            Node.Dogma.Interpreter.Environment env = new Node.Dogma.Interpreter.Environment()
-            {
-                Character = character,
-                Self = module,
-                Ship = ship,
-                Target = null,
-                Client = call.Client
-            };
-
-            Opcode opcode = new Interpreter(env).Run(effect.PreExpression.VMCode);
-            
-            if (opcode is OpcodeRunnable runnable)
-                runnable.Execute();
-            else if (opcode is OpcodeWithBooleanOutput booleanOutput)
-                booleanOutput.Execute();
-            else if (opcode is OpcodeWithDoubleOutput doubleOutput)
-                doubleOutput.Execute();
-
-            // ensure the module is saved
-            module.Persist();
-            
-            // TODO: REGISTER THE EFFECT IN SOME WAY
-            if (effectName == "online")
-                module.PutOnline(call.Client);
+            this.ItemManager.GetItem<ShipModule>(itemID).ApplyEffect(effectName, call.Client);
             
             return null;
         }
 
         public PyDataType Deactivate(PyInteger itemID, PyString effectName, CallInformation call)
         {
-            ShipModule module = this.ItemManager.GetItem<ShipModule>(itemID);
-            Ship ship = this.ItemManager.GetItem<Ship>((int) call.Client.ShipID);
-            Character character = this.ItemManager.GetItem<Character>(call.Client.EnsureCharacterIsSelected());
-            
-            // check if the module has the given effect in it's list
-            if (module.Type.EffectsByName.TryGetValue(effectName, out Effect effect) == false)
-                throw new EffectNotActivatible(module.Type);
-
-            // create the environment for this run
-            Node.Dogma.Interpreter.Environment env = new Node.Dogma.Interpreter.Environment()
-            {
-                Character = character,
-                Self = module,
-                Ship = ship,
-                Target = null,
-                Client = call.Client
-            };
-
-            Opcode opcode = new Interpreter(env).Run(effect.PostExpression.VMCode);
-            
-            if (opcode is OpcodeRunnable runnable)
-                runnable.Execute();
-            else if (opcode is OpcodeWithBooleanOutput booleanOutput)
-                booleanOutput.Execute();
-            else if (opcode is OpcodeWithDoubleOutput doubleOutput)
-                doubleOutput.Execute();
-
-            // ensure the module is saved
-            module.Persist();
-            
-            // TODO: REGISTER THE EFFECT IN SOME WAY
-            if (effectName == "online")
-                module.PutOffline(call.Client);
+            this.ItemManager.GetItem<ShipModule>(itemID).StopApplyingEffect(effectName, call.Client);
             
             return null;
         }

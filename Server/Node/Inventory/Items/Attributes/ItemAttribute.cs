@@ -22,9 +22,13 @@
     Creator: Almamu
 */
 
+using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using Common.Database;
+using Node.Dogma.Exception;
+using Node.Inventory.Items.Dogma;
 using PythonTypes.Types.Primitives;
 
 namespace Node.Inventory.Items.Attributes
@@ -41,6 +45,7 @@ namespace Node.Inventory.Items.Attributes
         private long mInteger;
         private double mFloat;
         private AttributeInfo mInfo;
+        private readonly List<AttributeModifier> mModifiers;
 
         public AttributeInfo Info => this.mInfo;
         public ItemAttributeValueType ValueType { get; protected set; }
@@ -71,20 +76,101 @@ namespace Node.Inventory.Items.Attributes
             }
         }
 
-        public ItemAttribute(AttributeInfo attribute, double value, bool newEntity = false)
+        public ItemAttribute(AttributeInfo attribute, double value, bool newEntity = false, List<AttributeModifier> modifiers = null)
         {
             this.mInfo = attribute;
             this.mFloat = value;
             this.ValueType = ItemAttributeValueType.Double;
             this.New = newEntity;
+            this.mModifiers = modifiers ?? new List<AttributeModifier>();
         }
 
-        public ItemAttribute(AttributeInfo attribute, long value, bool newEntity = false)
+        public ItemAttribute(AttributeInfo attribute, long value, bool newEntity = false, List<AttributeModifier> modifiers = null)
         {
             this.mInfo = attribute;
             this.mInteger = value;
             this.ValueType = ItemAttributeValueType.Integer;
             this.New = newEntity;
+            this.mModifiers = modifiers ?? new List<AttributeModifier>();
+        }
+
+        public void AddModifier(Association modificationType, ItemAttribute value)
+        {
+            this.mModifiers.Add(new AttributeModifier()
+                {
+                    Modification = modificationType,
+                    Value = value
+                }
+            );
+        }
+
+        public void RemoveModifier(Association modificationType, ItemAttribute value)
+        {
+            this.mModifiers.RemoveAll(x => ReferenceEquals(x.Value, value) == true && x.Modification == modificationType);
+        }
+
+        public ItemAttribute ApplyModififers()
+        {
+            // these objects should be shortlived
+            // so better clone them and do not modify the original attribute
+            ItemAttribute attribute = this.Clone();
+            
+            // perform pre changes
+            foreach (AttributeModifier modifier in this.mModifiers)
+            {
+                switch (modifier.Modification)
+                {
+                    case Association.PreAssignment:
+                        attribute = modifier.Value;
+                        break;
+                    case Association.SkillCheck:
+                        throw new DogmaMachineException("SkillCheck not supported yet");
+                    case Association.PreDiv:
+                        if (attribute != 0)
+                            attribute /= modifier.Value;
+                        break;
+                    case Association.PreMul:
+                        attribute *= modifier.Value;
+                        break;
+                    case Association.ModAdd:
+                        attribute += modifier.Value;
+                        break;
+                    case Association.ModSub:
+                        attribute -= modifier.Value;
+                        break;
+                    case Association.AddRate:
+                    case Association.SubRate:
+                        throw new DogmaMachineException("AddRate/SubRate not supported yet");
+                }
+            }
+            
+            // perform post changes
+            foreach (AttributeModifier modifier in this.mModifiers)
+            {
+                switch (modifier.Modification)
+                {
+                    case Association.PostAssignment:
+                        attribute = modifier.Value;
+                        break;
+                    case Association.SkillCheck:
+                        throw new DogmaMachineException("SkillCheck not supported yet");
+                    case Association.PostDiv:
+                        if (attribute != 0)
+                            attribute /= modifier.Value;
+                        break;
+                    case Association.PostMul:
+                        attribute *= modifier.Value;
+                        break;
+                    case Association.PostPercent:
+                        attribute *= (1.0 + (modifier.Value / 100.0));
+                        break;
+                    case Association.AddRate:
+                    case Association.SubRate:
+                        throw new DogmaMachineException("AddRate/SubRate not supported yet");
+                }
+            }
+
+            return attribute;
         }
 
         /// <summary>
@@ -114,12 +200,16 @@ namespace Node.Inventory.Items.Attributes
         
         public static implicit operator PyDataType(ItemAttribute attribute)
         {
-            switch (attribute.ValueType)
+            // when converting the attribute to a primitive value
+            // the important thing is to ensure that the value actually has all the modifiers applied
+            ItemAttribute final = attribute.ApplyModififers();
+
+            switch (final.ValueType)
             {
                 case ItemAttributeValueType.Double:
-                    return new PyDecimal(attribute.Float);
+                    return new PyDecimal(final.Float);
                 case ItemAttributeValueType.Integer:
-                    return new PyInteger(attribute.Integer);
+                    return new PyInteger(final.Integer);
                 default:
                     throw new InvalidDataException();
             }
@@ -331,12 +421,16 @@ namespace Node.Inventory.Items.Attributes
 
         public static implicit operator double(ItemAttribute attrib)
         {
-            switch (attrib.ValueType)
+            // when converting the attribute to a primitive value
+            // the important thing is to ensure that the value actually has all the modifiers applied
+            ItemAttribute final = attrib.ApplyModififers();
+            
+            switch (final.ValueType)
             {
                 case ItemAttributeValueType.Double:
-                    return attrib.Float;
+                    return final.Float;
                 default:
-                    return attrib.Integer;
+                    return final.Integer;
             }
         }
 
@@ -349,6 +443,11 @@ namespace Node.Inventory.Items.Attributes
 
             // this should never happen tho
             return "Unknown";
+        }
+
+        public override int GetHashCode()
+        {
+            return this.Info.ID;
         }
     }
 }
