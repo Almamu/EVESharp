@@ -67,25 +67,34 @@ namespace Node.Inventory.Items.Types
             
             Ship ship = this.ItemFactory.ItemManager.GetItem<Ship>((int) forClient.ShipID);
             Character character = this.ItemFactory.ItemManager.GetItem<Character>(forClient.EnsureCharacterIsSelected());
-            
-            // create the environment for this run
-            Node.Dogma.Interpreter.Environment env = new Node.Dogma.Interpreter.Environment()
-            {
-                Character = character,
-                Self = this,
-                Ship = ship,
-                Target = null,
-                Client = forClient
-            };
 
-            Opcode opcode = new Interpreter(env).Run(effect.PreExpression.VMCode);
+            try
+            {
+                // create the environment for this run
+                Node.Dogma.Interpreter.Environment env = new Node.Dogma.Interpreter.Environment()
+                {
+                    Character = character,
+                    Self = this,
+                    Ship = ship,
+                    Target = null,
+                    Client = forClient
+                };
+                
+                Opcode opcode = new Interpreter(env).Run(effect.PreExpression.VMCode);
             
-            if (opcode is OpcodeRunnable runnable)
-                runnable.Execute();
-            else if (opcode is OpcodeWithBooleanOutput booleanOutput)
-                booleanOutput.Execute();
-            else if (opcode is OpcodeWithDoubleOutput doubleOutput)
-                doubleOutput.Execute();
+                if (opcode is OpcodeRunnable runnable)
+                    runnable.Execute();
+                else if (opcode is OpcodeWithBooleanOutput booleanOutput)
+                    booleanOutput.Execute();
+                else if (opcode is OpcodeWithDoubleOutput doubleOutput)
+                    doubleOutput.Execute();
+            }
+            catch (Exception e)
+            {
+                // notify the client about it
+                forClient.NotifyMultiEvent(new OnGodmaShipEffect(godmaEffect));
+                throw;
+            }
 
             // ensure the module is saved
             this.Persist();
@@ -101,7 +110,7 @@ namespace Node.Inventory.Items.Types
             godmaEffect.Duration = duration;
             
             // notify the client about it
-            forClient.NotifyMultiEvent(new OnGodmaShipEffect(godmaEffect));
+            forClient?.NotifyMultiEvent(new OnGodmaShipEffect(godmaEffect));
             
             if (effect.EffectID == (int) EffectsEnum.Online)
                 this.ApplyOnlineEffects(forClient);
@@ -155,7 +164,7 @@ namespace Node.Inventory.Items.Types
             godmaEffect.Duration = 0;
             
             // notify the client about it
-            forClient.NotifyMultiEvent(new OnGodmaShipEffect(godmaEffect));
+            forClient?.NotifyMultiEvent(new OnGodmaShipEffect(godmaEffect));
 
             // online effect, this requires some special processing as all the passive effects should also be applied
             if (effect.EffectID == (int) EffectsEnum.Online)

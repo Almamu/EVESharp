@@ -16,7 +16,8 @@ namespace Node.Inventory.Items.Dogma
             PyDictionary result = new PyDictionary();
 
             foreach ((int effectID, GodmaShipEffect effect) in list)
-                result[effectID] = effect;
+                if (effect.ShouldStart == true)
+                    result[effectID] = effect;
             
             return result;
         }
