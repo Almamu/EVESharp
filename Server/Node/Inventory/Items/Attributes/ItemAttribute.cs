@@ -109,10 +109,8 @@ namespace Node.Inventory.Items.Attributes
             this.mModifiers.RemoveAll(x => ReferenceEquals(x.Value, value) == true && x.Modification == modificationType);
         }
 
-        public ItemAttribute ApplyModififers()
+        public ItemAttribute ApplyModifiers()
         {
-            // these objects should be shortlived
-            // so better clone them and do not modify the original attribute
             ItemAttribute attribute = this.Clone();
             
             // perform pre changes
@@ -182,9 +180,9 @@ namespace Node.Inventory.Items.Attributes
             switch (this.ValueType)
             {
                 case ItemAttributeValueType.Double:
-                    return new ItemAttribute(this.Info, this.Float, true);
+                    return new ItemAttribute(this.Info, this.Float, true, this.mModifiers);
                 case ItemAttributeValueType.Integer:
-                    return new ItemAttribute(this.Info, this.Integer, true);
+                    return new ItemAttribute(this.Info, this.Integer, true, this.mModifiers);
                 default:
                     throw new InvalidDataException();
             }
@@ -202,17 +200,14 @@ namespace Node.Inventory.Items.Attributes
         {
             // when converting the attribute to a primitive value
             // the important thing is to ensure that the value actually has all the modifiers applied
-            ItemAttribute final = attribute.ApplyModififers();
+            ItemAttribute final = attribute.ApplyModifiers();
 
-            switch (final.ValueType)
+            return final.ValueType switch
             {
-                case ItemAttributeValueType.Double:
-                    return new PyDecimal(final.Float);
-                case ItemAttributeValueType.Integer:
-                    return new PyInteger(final.Integer);
-                default:
-                    throw new InvalidDataException();
-            }
+                ItemAttributeValueType.Double => new PyDecimal(final.Float),
+                ItemAttributeValueType.Integer => new PyInteger(final.Integer),
+                _ => throw new InvalidDataException()
+            };
         }
 
         public static ItemAttribute operator *(ItemAttribute original, double value)
@@ -220,17 +215,22 @@ namespace Node.Inventory.Items.Attributes
             // clone the attribute but mark it as existant
             ItemAttribute clone = original.Clone();
             clone.New = false;
-            
-            // based on the types perform the appropiate operation
-            if (clone.ValueType == ItemAttributeValueType.Double)
-                clone.Float *= value;
-            else if (clone.ValueType == ItemAttributeValueType.Integer)
-                clone.Float = clone.Integer * value;
+
+            switch (clone.ValueType)
+            {
+                // based on the types perform the appropiate operation
+                case ItemAttributeValueType.Double:
+                    clone.Float *= value;
+                    break;
+                case ItemAttributeValueType.Integer:
+                    clone.Float = clone.Integer * value;
+                    break;
+            }
 
             return clone;
         }
 
-        public static ItemAttribute operator *(double value, ItemAttribute original)
+        public static double operator *(double value, ItemAttribute original)
         {
             return original * value;
         }
@@ -240,19 +240,19 @@ namespace Node.Inventory.Items.Attributes
             // clone the attribute but mark it as existant
             ItemAttribute clone = original.Clone();
             clone.New = false;
-            
-            // based on the types perform the appropiate operation
-            if (clone.ValueType == ItemAttributeValueType.Integer)
-                clone.Integer *= value;
-            else if (clone.ValueType == ItemAttributeValueType.Double)
-                clone.Float *= value;
+
+            switch (clone.ValueType)
+            {
+                // based on the types perform the appropiate operation
+                case ItemAttributeValueType.Integer:
+                    clone.Integer *= value;
+                    break;
+                case ItemAttributeValueType.Double:
+                    clone.Float *= value;
+                    break;
+            }
 
             return clone;
-        }
-
-        public static ItemAttribute operator *(int value, ItemAttribute original)
-        {
-            return original * value;
         }
 
         public static ItemAttribute operator *(ItemAttribute original, ItemAttribute value)
@@ -260,12 +260,33 @@ namespace Node.Inventory.Items.Attributes
             // clone the attribute but mark it as existant
             ItemAttribute clone = original.Clone();
             clone.New = false;
-            
-            // based on the types perform the appropiate operation
-            if (value.ValueType == ItemAttributeValueType.Integer)
-                clone *= value.Integer;
-            else if (value.ValueType == ItemAttributeValueType.Double)
-                clone *= value.Float;
+
+            switch (value.ValueType)
+            {
+                // based on the types perform the aproppiate operation
+                case ItemAttributeValueType.Integer:
+                    switch (clone.ValueType)
+                    {
+                        case ItemAttributeValueType.Double:
+                            clone.Float = clone.Integer * value.Float;
+                            break;
+                        case ItemAttributeValueType.Integer:
+                            clone.Float = (double) clone.Integer * value.Integer;
+                            break;
+                    }
+                    break;
+                case ItemAttributeValueType.Double:
+                    switch (clone.ValueType)
+                    {
+                        case ItemAttributeValueType.Double:
+                            clone.Float = clone.Float * value.Float;
+                            break;
+                        case ItemAttributeValueType.Integer:
+                            clone.Float = clone.Float * value.Integer;
+                            break;
+                    }
+                    break;
+            }
 
             return clone;
         }
@@ -275,12 +296,17 @@ namespace Node.Inventory.Items.Attributes
             // clone the attribute but mark it as existant
             ItemAttribute clone = original.Clone();
             clone.New = false;
-            
-            // based on the types perform the appropiate operation
-            if (clone.ValueType == ItemAttributeValueType.Double)
-                clone.Float /= value;
-            else if (clone.ValueType == ItemAttributeValueType.Integer)
-                clone.Float = clone.Integer / value;
+
+            switch (clone.ValueType)
+            {
+                // based on the types perform the appropiate operation
+                case ItemAttributeValueType.Integer:
+                    clone.Float = clone.Integer / value;
+                    break;
+                case ItemAttributeValueType.Double:
+                    clone.Float /= value;
+                    break;
+            }
 
             return clone;
         }
@@ -290,12 +316,17 @@ namespace Node.Inventory.Items.Attributes
             // clone the attribute but mark it as existant
             ItemAttribute clone = original.Clone();
             clone.New = false;
-            
-            // based on the types perform the appropiate operation
-            if (clone.ValueType == ItemAttributeValueType.Integer)
-                clone.Integer /= value;
-            else if (clone.ValueType == ItemAttributeValueType.Double)
-                clone.Float /= value;
+
+            switch (clone.ValueType)
+            {
+                // based on the types perform the appropiate operation
+                case ItemAttributeValueType.Integer:
+                    clone.Float = (double) clone.Integer / value;
+                    break;
+                case ItemAttributeValueType.Double:
+                    clone.Float /= value;
+                    break;
+            }
 
             return clone;
         }
@@ -305,12 +336,33 @@ namespace Node.Inventory.Items.Attributes
             // clone the attribute but mark it as existant
             ItemAttribute clone = original.Clone();
             clone.New = false;
-            
-            // based on the types perform the appropiate operation
-            if (value.ValueType == ItemAttributeValueType.Integer)
-                clone /= value.Integer;
-            else if (value.ValueType == ItemAttributeValueType.Double)
-                clone /= value.Float;
+
+            switch (value.ValueType)
+            {
+                // based on the types perform the aproppiate operation
+                case ItemAttributeValueType.Integer:
+                    switch (clone.ValueType)
+                    {
+                        case ItemAttributeValueType.Double:
+                            clone.Float = clone.Integer / value.Float;
+                            break;
+                        case ItemAttributeValueType.Integer:
+                            clone.Float = (double) clone.Integer / value.Integer;
+                            break;
+                    }
+                    break;
+                case ItemAttributeValueType.Double:
+                    switch (clone.ValueType)
+                    {
+                        case ItemAttributeValueType.Double:
+                            clone.Float = clone.Float / value.Float;
+                            break;
+                        case ItemAttributeValueType.Integer:
+                            clone.Float = clone.Float / value.Integer;
+                            break;
+                    }
+                    break;
+            }
 
             return clone;
         }
@@ -319,12 +371,17 @@ namespace Node.Inventory.Items.Attributes
             // clone the attribute but mark it as existant
             ItemAttribute clone = original.Clone();
             clone.New = false;
-            
-            // based on the types perform the appropiate operation
-            if (clone.ValueType == ItemAttributeValueType.Double)
-                clone.Float += value;
-            else if (clone.ValueType == ItemAttributeValueType.Integer)
-                clone.Float = clone.Integer + value;
+
+            switch (clone.ValueType)
+            {
+                // based on the types perform the appropiate operation
+                case ItemAttributeValueType.Double:
+                    clone.Float += value;
+                    break;
+                case ItemAttributeValueType.Integer:
+                    clone.Float += value;
+                    break;
+            }
 
             return clone;
         }
@@ -334,12 +391,17 @@ namespace Node.Inventory.Items.Attributes
             // clone the attribute but mark it as existant
             ItemAttribute clone = original.Clone();
             clone.New = false;
-            
-            // based on the types perform the appropiate operation
-            if (clone.ValueType == ItemAttributeValueType.Integer)
-                clone.Integer += value;
-            else if (clone.ValueType == ItemAttributeValueType.Double)
-                clone.Float += value;
+
+            switch (clone.ValueType)
+            {
+                // based on the types perform the appropiate operation
+                case ItemAttributeValueType.Integer:
+                    clone.Integer += value;
+                    break;
+                case ItemAttributeValueType.Double:
+                    clone.Float += value;
+                    break;
+            }
 
             return clone;
         }
@@ -349,15 +411,37 @@ namespace Node.Inventory.Items.Attributes
             // clone the attribute but mark it as existant
             ItemAttribute clone = original.Clone();
             clone.New = false;
-            
-            // based on the types perform the appropiate operation
-            if (value.ValueType == ItemAttributeValueType.Integer)
-                clone += value.Integer;
-            else if (value.ValueType == ItemAttributeValueType.Double)
-                clone += value.Float;
+
+            switch (value.ValueType)
+            {
+                // based on the types perform the aproppiate operation
+                case ItemAttributeValueType.Integer:
+                    switch (clone.ValueType)
+                    {
+                        case ItemAttributeValueType.Double:
+                            clone.Float = clone.Integer + value.Float;
+                            break;
+                        case ItemAttributeValueType.Integer:
+                            clone.Integer += value.Integer;
+                            break;
+                    }
+                    break;
+                case ItemAttributeValueType.Double:
+                    switch (clone.ValueType)
+                    {
+                        case ItemAttributeValueType.Double:
+                            clone.Float += value.Float;
+                            break;
+                        case ItemAttributeValueType.Integer:
+                            clone.Float += value.Integer;
+                            break;
+                    }
+                    break;
+            }
 
             return clone;
         }
+        
         public static ItemAttribute operator -(ItemAttribute original, double value)
         {
             // clone the attribute but mark it as existant
@@ -393,18 +477,41 @@ namespace Node.Inventory.Items.Attributes
             // clone the attribute but mark it as existant
             ItemAttribute clone = original.Clone();
             clone.New = false;
-            
-            // based on the types perform the appropiate operation
-            if (value.ValueType == ItemAttributeValueType.Integer)
-                clone -= value.Integer;
-            else if (value.ValueType == ItemAttributeValueType.Double)
-                clone -= value.Float;
+
+            switch (value.ValueType)
+            {
+                // based on the types perform the appropiate operation
+                case ItemAttributeValueType.Integer:
+                    switch (clone.ValueType)
+                    {
+                        case ItemAttributeValueType.Double:
+                            clone.Float = clone.Integer - value.Float;
+                            break;
+                        case ItemAttributeValueType.Integer:
+                            clone.Integer -= value.Integer;
+                            break;
+                    }
+                    break;
+                case ItemAttributeValueType.Double:
+                    switch (clone.ValueType)
+                    {
+                        case ItemAttributeValueType.Double:
+                            clone.Float -= value.Float;
+                            break;
+                        case ItemAttributeValueType.Integer:
+                            clone.Float -= value.Integer;
+                            break;
+                    }
+                    break;
+            }
 
             return clone;
         }
 
         public static bool operator ==(ItemAttribute attrib, int value)
         {
+            if (ReferenceEquals(null, attrib) == true) return false;
+            
             switch (attrib.ValueType)
             {
                 case ItemAttributeValueType.Integer:
@@ -423,13 +530,14 @@ namespace Node.Inventory.Items.Attributes
         {
             // when converting the attribute to a primitive value
             // the important thing is to ensure that the value actually has all the modifiers applied
-            ItemAttribute final = attrib.ApplyModififers();
+            ItemAttribute final = attrib.ApplyModifiers();
             
             switch (final.ValueType)
             {
                 case ItemAttributeValueType.Double:
                     return final.Float;
                 default:
+                case ItemAttributeValueType.Integer:
                     return final.Integer;
             }
         }
