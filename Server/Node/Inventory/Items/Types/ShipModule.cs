@@ -50,16 +50,22 @@ namespace Node.Inventory.Items.Types
 
         public void ApplyEffect(string effectName, Client forClient)
         {
-            Ship ship = this.ItemFactory.ItemManager.GetItem<Ship>((int) forClient.ShipID);
-            Character character = this.ItemFactory.ItemManager.GetItem<Character>(forClient.EnsureCharacterIsSelected());
-            
             // check if the module has the given effect in it's list
             if (this.Type.EffectsByName.TryGetValue(effectName, out Effect effect) == false)
                 throw new EffectNotActivatible(this.Type);
             if (this.Effects.TryGetEffect(effect.EffectID, out GodmaShipEffect godmaEffect) == false)
                 throw new CustomError("Cannot apply the given effect, our type has it but we dont");
+            
+            this.ApplyEffect(effect, godmaEffect, forClient);
+        }
+
+        private void ApplyEffect(Effect effect, GodmaShipEffect godmaEffect, Client forClient)
+        {
             if (godmaEffect.ShouldStart == true)
                 return;
+            
+            Ship ship = this.ItemFactory.ItemManager.GetItem<Ship>((int) forClient.ShipID);
+            Character character = this.ItemFactory.ItemManager.GetItem<Character>(forClient.EnsureCharacterIsSelected());
             
             // create the environment for this run
             Node.Dogma.Interpreter.Environment env = new Node.Dogma.Interpreter.Environment()
@@ -95,22 +101,30 @@ namespace Node.Inventory.Items.Types
             
             // notify the client about it
             forClient.NotifyMultiEvent(new OnGodmaShipEffect(godmaEffect));
+            
+            if (effect.EffectID == (int) EffectsEnum.Online)
+                this.ApplyOnlineEffects(forClient);
         }
 
         public void StopApplyingEffect(string effectName, Client forClient)
         {
-            Ship ship = this.ItemFactory.ItemManager.GetItem<Ship>((int) forClient.ShipID);
-            Character character = this.ItemFactory.ItemManager.GetItem<Character>(forClient.EnsureCharacterIsSelected());
-            
             // check if the module has the given effect in it's list
             if (this.Type.EffectsByName.TryGetValue(effectName, out Effect effect) == false)
                 throw new EffectNotActivatible(this.Type);
             if (this.Effects.TryGetEffect(effect.EffectID, out GodmaShipEffect godmaEffect) == false)
                 throw new CustomError("Cannot apply the given effect, our type has it but we dont");
 
+            this.StopApplyingEffect(effect, godmaEffect, forClient);
+        }
+
+        private void StopApplyingEffect(Effect effect, GodmaShipEffect godmaEffect, Client forClient)
+        {
             // ensure the effect is being applied before doing anything
             if (godmaEffect.ShouldStart == false)
                 return;
+            
+            Ship ship = this.ItemFactory.ItemManager.GetItem<Ship>((int) forClient.ShipID);
+            Character character = this.ItemFactory.ItemManager.GetItem<Character>(forClient.EnsureCharacterIsSelected());
             
             // create the environment for this run
             Node.Dogma.Interpreter.Environment env = new Node.Dogma.Interpreter.Environment()
@@ -141,6 +155,44 @@ namespace Node.Inventory.Items.Types
             
             // notify the client about it
             forClient.NotifyMultiEvent(new OnGodmaShipEffect(godmaEffect));
+
+            // online effect, this requires some special processing as all the passive effects should also be applied
+            if (effect.EffectID == (int) EffectsEnum.Online)
+                this.StopApplyingOnlineEffects(forClient);
+        }
+
+        private void ApplyEffectsByCategory(EffectCategory category, Client forClient)
+        {
+            foreach ((int _, GodmaShipEffect effect) in this.Effects)
+                if (effect.Effect.EffectCategory == category)
+                    this.ApplyEffect(effect.Effect, effect, forClient);
+        }
+
+        private void StopApplyingEffectsByCategory(EffectCategory category, Client forClient)
+        {
+            foreach ((int _, GodmaShipEffect effect) in this.Effects)
+                if (effect.Effect.EffectCategory == category)
+                    this.StopApplyingEffect(effect.Effect, effect, forClient);
+        }
+        
+        private void ApplyOnlineEffects(Client forClient)
+        {
+            this.ApplyEffectsByCategory(EffectCategory.Online, forClient);
+        }
+
+        private void StopApplyingOnlineEffects(Client forClient)
+        {
+            this.StopApplyingEffectsByCategory(EffectCategory.Online, forClient);
+        }
+
+        public void ApplyPassiveEffects(Client forClient)
+        {
+            this.ApplyEffectsByCategory(EffectCategory.Passive, forClient);
+        }
+
+        public void StopApplyingPassiveEffects(Client forClient)
+        {
+            this.StopApplyingEffectsByCategory(EffectCategory.Passive, forClient);
         }
     }
 }

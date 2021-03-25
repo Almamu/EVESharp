@@ -121,7 +121,13 @@ namespace Node.Services.Inventory
                 oldFlag == ItemFlags.LoSlot5 || oldFlag == ItemFlags.LoSlot6 || oldFlag == ItemFlags.LoSlot7)
             {
                 if (item is ShipModule module)
-                    module.StopApplyingEffect("online", Client);
+                {
+                    if (module.Attributes[AttributeEnum.isOnline] == 1)
+                        module.StopApplyingEffect("online", Client);
+
+                    // disable passive effects too
+                    module.StopApplyingPassiveEffects(Client);                    
+                }
             }
             
             // extra special situation, is the new flag an autofit one?
@@ -187,6 +193,8 @@ namespace Node.Services.Inventory
                         module = shipModule;
                 }
 
+                // apply all the passive effects
+                module?.ApplyPassiveEffects(Client);
                 // put the module online after fitting it
                 module?.ApplyEffect("online", Client);
                 module?.Persist();

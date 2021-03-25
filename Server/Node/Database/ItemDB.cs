@@ -97,7 +97,7 @@ namespace Node.Database
                         effects[reader.GetInt32(0)] = new Effect(
                             reader.GetInt32(0),
                             reader.GetString(1),
-                            reader.GetInt32(2),
+                            (EffectCategory) reader.GetInt32(2),
                             expressionManager[reader.GetInt32(3)],
                             expressionManager[reader.GetInt32(4)],
                             reader.GetString(5),

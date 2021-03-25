@@ -4,7 +4,7 @@
     {
         public int EffectID { get; }
         public string EffectName { get; }
-        public int EffectCategory { get; }
+        public EffectCategory EffectCategory { get; }
         public Expression PreExpression { get; }
         public Expression PostExpression { get; }
         public string Description { get; }
@@ -30,12 +30,13 @@
         public int? NPCActivationChangeAttributeID { get; }
         public int? FittingUsageChanceAttributeID { get; }
 
-        public Effect(int effect, string effectName, int effectCategory, Expression preExpression, Expression postExpression,
-            string description, string guid, int? graphic, bool isOffensive, bool isAssistance, int? durationAttribute,
-            int? trackingSpeedAttribute, int? dischargeAttribute, int? rangeAttribute, int? fallofAttribute,
-            bool disallowAutoRepeat, bool published, string displayName, bool isWarpSafe, bool rangeChance,
-            bool electronicChance, bool propulsionChance, int? distribution, string sfxName, int? npcUsageChanceAttribute,
-            int? npcActivationChangeAttribute, int? fittingUsageChanceAttribute)
+        public Effect(int effect, string effectName, EffectCategory effectCategory, Expression preExpression,
+            Expression postExpression, string description, string guid, int? graphic, bool isOffensive,
+            bool isAssistance, int? durationAttribute, int? trackingSpeedAttribute, int? dischargeAttribute,
+            int? rangeAttribute, int? fallofAttribute, bool disallowAutoRepeat, bool published, string displayName,
+            bool isWarpSafe, bool rangeChance, bool electronicChance, bool propulsionChance, int? distribution,
+            string sfxName, int? npcUsageChanceAttribute, int? npcActivationChangeAttribute,
+            int? fittingUsageChanceAttribute)
         {
             this.EffectID = effect;
             this.EffectName = effectName;
