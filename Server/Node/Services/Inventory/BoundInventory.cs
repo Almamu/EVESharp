@@ -118,17 +118,6 @@ namespace Node.Services.Inventory
 
                     // disable passive effects too
                     module.StopApplyingPassiveEffects(Client);
-                    
-                    // ensure the slot it was using is free'd
-                    if (this.ItemManager.TryGetItem(module.LocationID, out Ship ship) == true)
-                    {
-                        if (module.IsHighSlot() == true)
-                            ship.Attributes[AttributeEnum.hiSlots] += 1;
-                        else if (module.IsMediumSlot() == true)
-                            ship.Attributes[AttributeEnum.medSlots] += 1;
-                        else if (module.IsLowSlot() == true)
-                            ship.Attributes[AttributeEnum.lowSlots] += 1;
-                    }
                 }
             }
             
@@ -146,86 +135,74 @@ namespace Node.Services.Inventory
                     {
                         if (module.IsHighSlot() == true)
                         {
-                            if (ship.Attributes.TryGetAttribute(AttributeEnum.hiSlots, out ItemAttribute highSlots) == false)
+                            Dictionary<ItemFlags, ItemEntity> modules = ship.HighSlotModules;
+
+                            if (modules.Count >= ship.Attributes[AttributeEnum.hiSlots])
                                 throw new NoFreeShipSlots();
-                            if (highSlots == 0)
-                                throw new NoFreeShipSlots();
 
-                            ship.Attributes[AttributeEnum.hiSlots] -= 1;
-
-                            Dictionary<int, ItemEntity> modules = ship.ActiveModules;
-
-                            if (modules.TryGetValue((int) ItemFlags.HiSlot0, out _) == false)
+                            if (modules.TryGetValue(ItemFlags.HiSlot0, out _) == false)
                                 newFlag = ItemFlags.HiSlot0;
-                            else if (modules.TryGetValue((int) ItemFlags.HiSlot1, out _) == false)
+                            else if (modules.TryGetValue(ItemFlags.HiSlot1, out _) == false)
                                 newFlag = ItemFlags.HiSlot1;
-                            else if (modules.TryGetValue((int) ItemFlags.HiSlot2, out _) == false)
+                            else if (modules.TryGetValue(ItemFlags.HiSlot2, out _) == false)
                                 newFlag = ItemFlags.HiSlot2;
-                            else if (modules.TryGetValue((int) ItemFlags.HiSlot3, out _) == false)
+                            else if (modules.TryGetValue(ItemFlags.HiSlot3, out _) == false)
                                 newFlag = ItemFlags.HiSlot3;
-                            else if (modules.TryGetValue((int) ItemFlags.HiSlot4, out _) == false)
+                            else if (modules.TryGetValue(ItemFlags.HiSlot4, out _) == false)
                                 newFlag = ItemFlags.HiSlot4;
-                            else if (modules.TryGetValue((int) ItemFlags.HiSlot5, out _) == false)
+                            else if (modules.TryGetValue(ItemFlags.HiSlot5, out _) == false)
                                 newFlag = ItemFlags.HiSlot5;
-                            else if (modules.TryGetValue((int) ItemFlags.HiSlot6, out _) == false)
+                            else if (modules.TryGetValue(ItemFlags.HiSlot6, out _) == false)
                                 newFlag = ItemFlags.HiSlot6;
-                            else if (modules.TryGetValue((int) ItemFlags.HiSlot7, out _) == false)
+                            else if (modules.TryGetValue(ItemFlags.HiSlot7, out _) == false)
                                 newFlag = ItemFlags.HiSlot7;
                         }
                         else if (module.IsMediumSlot() == true)
                         {
-                            if (ship.Attributes.TryGetAttribute(AttributeEnum.medSlots, out ItemAttribute mediumSlots) == false)
+                            Dictionary<ItemFlags, ItemEntity> modules = ship.MediumSlotModules;
+
+                            if (modules.Count >= ship.Attributes[AttributeEnum.medSlots])
                                 throw new NoFreeShipSlots();
-                            if (mediumSlots == 0)
-                                throw new NoFreeShipSlots();
 
-                            ship.Attributes[AttributeEnum.medSlots] -= 1;
-
-                            Dictionary<int, ItemEntity> modules = ship.ActiveModules;
-
-                            if (modules.TryGetValue((int) ItemFlags.MedSlot0, out _) == false)
+                            if (modules.TryGetValue(ItemFlags.MedSlot0, out _) == false)
                                 newFlag = ItemFlags.MedSlot0;
-                            else if (modules.TryGetValue((int) ItemFlags.MedSlot1, out _) == false)
+                            else if (modules.TryGetValue(ItemFlags.MedSlot1, out _) == false)
                                 newFlag = ItemFlags.MedSlot1;
-                            else if (modules.TryGetValue((int) ItemFlags.MedSlot2, out _) == false)
+                            else if (modules.TryGetValue(ItemFlags.MedSlot2, out _) == false)
                                 newFlag = ItemFlags.MedSlot2;
-                            else if (modules.TryGetValue((int) ItemFlags.MedSlot3, out _) == false)
+                            else if (modules.TryGetValue(ItemFlags.MedSlot3, out _) == false)
                                 newFlag = ItemFlags.MedSlot3;
-                            else if (modules.TryGetValue((int) ItemFlags.MedSlot4, out _) == false)
+                            else if (modules.TryGetValue(ItemFlags.MedSlot4, out _) == false)
                                 newFlag = ItemFlags.MedSlot4;
-                            else if (modules.TryGetValue((int) ItemFlags.MedSlot5, out _) == false)
+                            else if (modules.TryGetValue(ItemFlags.MedSlot5, out _) == false)
                                 newFlag = ItemFlags.MedSlot5;
-                            else if (modules.TryGetValue((int) ItemFlags.MedSlot6, out _) == false)
+                            else if (modules.TryGetValue(ItemFlags.MedSlot6, out _) == false)
                                 newFlag = ItemFlags.MedSlot6;
-                            else if (modules.TryGetValue((int) ItemFlags.MedSlot7, out _) == false)
+                            else if (modules.TryGetValue(ItemFlags.MedSlot7, out _) == false)
                                 newFlag = ItemFlags.MedSlot7;
                         }
                         else if (module.IsLowSlot() == true)
                         {
-                            if (ship.Attributes.TryGetAttribute(AttributeEnum.lowSlots, out ItemAttribute lowSlots) == false)
+                            Dictionary<ItemFlags, ItemEntity> modules = ship.LowSlotModules;
+
+                            if (modules.Count >= ship.Attributes[AttributeEnum.lowSlots])
                                 throw new NoFreeShipSlots();
-                            if (lowSlots == 0)
-                                throw new NoFreeShipSlots();
 
-                            ship.Attributes[AttributeEnum.lowSlots] -= 1;
-
-                            Dictionary<int, ItemEntity> modules = ship.ActiveModules;
-
-                            if (modules.TryGetValue((int) ItemFlags.LoSlot0, out _) == false)
+                            if (modules.TryGetValue(ItemFlags.LoSlot0, out _) == false)
                                 newFlag = ItemFlags.LoSlot0;
-                            else if (modules.TryGetValue((int) ItemFlags.LoSlot1, out _) == false)
+                            else if (modules.TryGetValue(ItemFlags.LoSlot1, out _) == false)
                                 newFlag = ItemFlags.LoSlot1;
-                            else if (modules.TryGetValue((int) ItemFlags.LoSlot2, out _) == false)
+                            else if (modules.TryGetValue(ItemFlags.LoSlot2, out _) == false)
                                 newFlag = ItemFlags.LoSlot2;
-                            else if (modules.TryGetValue((int) ItemFlags.LoSlot3, out _) == false)
+                            else if (modules.TryGetValue(ItemFlags.LoSlot3, out _) == false)
                                 newFlag = ItemFlags.LoSlot3;
-                            else if (modules.TryGetValue((int) ItemFlags.LoSlot4, out _) == false)
+                            else if (modules.TryGetValue(ItemFlags.LoSlot4, out _) == false)
                                 newFlag = ItemFlags.LoSlot4;
-                            else if (modules.TryGetValue((int) ItemFlags.LoSlot5, out _) == false)
+                            else if (modules.TryGetValue(ItemFlags.LoSlot5, out _) == false)
                                 newFlag = ItemFlags.LoSlot5;
-                            else if (modules.TryGetValue((int) ItemFlags.LoSlot6, out _) == false)
+                            else if (modules.TryGetValue(ItemFlags.LoSlot6, out _) == false)
                                 newFlag = ItemFlags.LoSlot6;
-                            else if (modules.TryGetValue((int) ItemFlags.LoSlot7, out _) == false)
+                            else if (modules.TryGetValue(ItemFlags.LoSlot7, out _) == false)
                                 newFlag = ItemFlags.LoSlot7;
                         }
                     }
@@ -260,6 +237,7 @@ namespace Node.Services.Inventory
                 {
                     // apply all the passive effects (this also blocks the item fitting if the initialization fails)
                     module?.ApplyPassiveEffects(Client);
+                    // extra check, ensure that the character has the required skills
                 }
                 catch (UserError)
                 {
@@ -291,7 +269,7 @@ namespace Node.Services.Inventory
                     Client.NotifyMultiEvent(changes);
                     // update meta inventories too
                     this.ItemManager.MetaInventoryManager.OnItemMoved(item, oldLocation, this.mInventory.ID);
-            
+
                     // finally persist the item changes
                     item.Persist();
                 }
@@ -313,6 +291,9 @@ namespace Node.Services.Inventory
                         module = shipModule2;
                 }
 
+                // ensure the new inventory knows
+                this.mInventory.AddItem(item);
+
                 module?.Persist();
                 
                 // put the module online after fitting it
@@ -333,7 +314,10 @@ namespace Node.Services.Inventory
                 Client.NotifyMultiEvent(OnItemChange.BuildLocationChange(item, oldFlag, oldLocation));
                 // update meta inventories too
                 this.ItemManager.MetaInventoryManager.OnItemMoved(item, oldLocation, this.mInventory.ID);
-            
+
+                // ensure the new inventory knows
+                this.mInventory.AddItem(item);
+
                 // finally persist the item changes
                 item.Persist();
             }

@@ -22,7 +22,7 @@ namespace PythonTypes.Types.Database
         {
             Type type = reader.GetFieldType(index);
             
-            if (type == typeof(string)) return FieldType.WStr;
+            if (type == typeof(string)) return FieldType.Str;
             if (type == typeof(ulong)) return FieldType.UI8;
             if (type == typeof(long)) return FieldType.I8;
             if (type == typeof(uint)) return FieldType.UI4;
@@ -70,6 +70,7 @@ namespace PythonTypes.Types.Database
                 case FieldType.Bytes: return (byte[]) reader.GetValue(index);
                 case FieldType.I8: return reader.GetInt64(index);
                 case FieldType.WStr: return new PyString(reader.GetString(index), true);
+                case FieldType.Str: return new PyString(reader.GetString(index));
                 default:
                     throw new InvalidDataException($"Unknown data type {type}");
             }
