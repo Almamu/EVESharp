@@ -39,20 +39,17 @@ namespace PythonTypes.Types.Database
             this.Header = headers;
             this.Rows = rows;
         }
-        
+
         /// <summary>
         /// Simple helper method that creates a correct Rowset ready to be sent
         /// to the EVE Online client based on the given MySqlDataReader
         /// </summary>
+        /// <param name="connection">The connection used</param>
         /// <param name="reader"></param>
         /// <returns></returns>
-        public static Rowset FromMySqlDataReader(MySqlDataReader reader)
+        public static Rowset FromMySqlDataReader(IDatabaseConnection connection, MySqlDataReader reader)
         {
-            PyList headers = new PyList(reader.FieldCount);
-
-            for (int i = 0; i < reader.FieldCount; i++)
-                headers[i] = reader.GetName(i);
-            
+            connection.GetDatabaseHeaders(reader, out PyList<PyString> headers, out FieldType[] fieldTypes);
             Rowset result = new Rowset(headers);
 
             while (reader.Read() == true)
@@ -60,7 +57,7 @@ namespace PythonTypes.Types.Database
                 PyList row = new PyList(reader.FieldCount);
 
                 for (int i = 0; i < reader.FieldCount; i++)
-                    row[i] = Utils.ObjectFromColumn(reader, i);
+                    row[i] = IDatabaseConnection.ObjectFromColumn(reader, fieldTypes[i], i);
                 
                 result.Rows.Add(row);
             }

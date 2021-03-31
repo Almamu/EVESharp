@@ -173,6 +173,39 @@ namespace Node.Database
 
         public Rowset GetChannelsForCharacter(int characterID, int corporationID)
         {
+            Rowset firstQuery = Database.PrepareRowsetQuery(
+                "SELECT" +
+                " lscChannelPermissions.channelID, ownerID, displayName, motd, comparisonKey, memberless, !ISNULL(password) AS password," +
+                " mailingList, cspa, temporary, 1 AS subscribed, estimatedMemberCount " +
+                " FROM lscPrivateChannels" +
+                " LEFT JOIN lscChannelPermissions ON lscPrivateChannels.channelID = -lscChannelPermissions.channelID" +
+                " WHERE accessor = @characterID AND `mode` > 0 AND lscChannelPermissions.channelID < 0 ",
+                new Dictionary<string, object>()
+                {
+                    {"@characterID", characterID}
+                }
+            );
+
+            Rowset secondQuery = Database.PrepareRowsetQuery(
+                "SELECT" + 
+                " lscChannelPermissions.channelID, ownerID, displayName, motd, comparisonKey, memberless, !ISNULL(password) AS password," + 
+                " mailingList, cspa, temporary, 1 AS subscribed, estimatedMemberCount " +
+                " FROM lscGeneralChannels" +
+                " LEFT JOIN lscChannelPermissions ON lscGeneralChannels.channelID = lscChannelPermissions.channelID" +
+                $" WHERE accessor = @characterID AND `mode` > 0 AND lscChannelPermissions.channelID > 0 AND ((lscChannelPermissions.channelID < {MIN_CHANNEL_ENTITY_ID} AND lscChannelPermissions.channelID != @characterID) OR lscChannelPermissions.channelID = @corporationID)",
+                new Dictionary<string, object>()
+                {
+                    {"@characterID", characterID},
+                    {"@corporationID", corporationID}
+                }
+            );
+            
+            secondQuery.Rows.AddRange(firstQuery.Rows);
+
+            return secondQuery;
+            /*
+             * This is a more elegant solution, but the charset-guessing code goes nuts with the UNIONS as the tables are different
+             * and as such it's impossible to know what table it comes from
             return Database.PrepareRowsetQuery(
                 "SELECT" + 
                 " lscChannelPermissions.channelID, ownerID, displayName, motd, comparisonKey, memberless, !ISNULL(password) AS password," + 
@@ -193,6 +226,7 @@ namespace Node.Database
                     {"@corporationID", corporationID}
                 }
             );
+            */
         }
 
         public Row GetChannelInfo(int channelID, int characterID)
@@ -235,7 +269,7 @@ namespace Node.Database
                 if (reader.Read() == false)
                     throw new Exception($"Cannot find channel information for channelID {channelID} and characterID {characterID}");
 
-                return Row.FromMySqlDataReader(reader);
+                return Row.FromMySqlDataReader(Database, reader);
             }
         }
 
@@ -263,7 +297,7 @@ namespace Node.Database
                 if (reader.Read() == false)
                     throw new Exception($"Cannot find channel information for channel related to the entity {relatedEntityID} and characterID {characterID}");
 
-                return Row.FromMySqlDataReader(reader);
+                return Row.FromMySqlDataReader(Database, reader);
             }
         }
 
@@ -331,7 +365,7 @@ namespace Node.Database
                 if (reader.Read() == false)
                     return null;
 
-                return Row.FromMySqlDataReader(reader);
+                return Row.FromMySqlDataReader(Database, reader);
             }
         }
 

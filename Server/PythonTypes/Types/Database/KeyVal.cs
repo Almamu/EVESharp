@@ -8,18 +8,20 @@ namespace PythonTypes.Types.Database
     public class KeyVal
     {
         private const string OBJECT_NAME = "util.KeyVal";
+
         /// <summary>
         /// Simple helper method that creates the correct KeyVal data off a result row and
         /// returns it's PyDataType representation, ready to be sent to the EVE Online client
         /// </summary>
+        /// <param name="connection">The connection used</param>
         /// <param name="reader"></param>
         /// <returns></returns>
-        public static PyDataType FromMySqlDataReader(MySqlDataReader reader)
+        public static PyDataType FromMySqlDataReader(IDatabaseConnection connection, MySqlDataReader reader)
         {
             PyDictionary data = new PyDictionary();
 
             for (int i = 0; i < reader.FieldCount; i++)
-                data[reader.GetName(i)] = Utils.ObjectFromColumn(reader, i);
+                data[reader.GetName(i)] = IDatabaseConnection.ObjectFromColumn(reader, connection.GetFieldType(reader, i), i);
             
             return new PyObjectData(OBJECT_NAME, data);
         }

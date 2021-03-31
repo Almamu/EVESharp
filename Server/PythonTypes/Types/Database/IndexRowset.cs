@@ -62,17 +62,15 @@ namespace PythonTypes.Types.Database
         /// it's PyDataType representation, ready to be sent to the EVE Online client
         /// 
         /// </summary>
+        /// <param name="connection">The connection used</param>
         /// <param name="reader">The MySqlDataReader to read the data from</param>
         /// <param name="indexField">The field to use as index for the rowset</param>
         /// <returns></returns>
-        public static IndexRowset FromMySqlDataReader(MySqlDataReader reader, int indexField)
+        public static IndexRowset FromMySqlDataReader(IDatabaseConnection connection, MySqlDataReader reader, int indexField)
         {
             string indexFieldName = reader.GetName(indexField);
-            
-            PyList headers = new PyList(reader.FieldCount);
 
-            for (int i = 0; i < reader.FieldCount; i++)
-                headers[i] = reader.GetName(i);
+            connection.GetDatabaseHeaders(reader, out PyList<PyString> headers, out FieldType[] fieldTypes);
             
             IndexRowset rowset = new IndexRowset(indexFieldName, headers);
 
@@ -81,7 +79,7 @@ namespace PythonTypes.Types.Database
                 PyList row = new PyList(reader.FieldCount);
 
                 for (int i = 0; i < row.Count; i++)
-                    row[i] = Utils.ObjectFromColumn(reader, i);
+                    row[i] = IDatabaseConnection.ObjectFromColumn(reader, fieldTypes[i], i);
 
                 rowset.AddRow(reader.GetInt32(indexField), row);
             }

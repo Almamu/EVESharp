@@ -76,7 +76,7 @@ namespace Node.Database
                 return;
 
             Database.PrepareQuery(
-                "DELETE FROM chrBookmarks WHERE ownerID = @characterID AND bookmarkID IN(" + String.Join(',', bookmarkIDs) + ")",
+                "DELETE FROM chrBookmarks WHERE ownerID = @characterID AND bookmarkID IN(" + PyString.Join(',', bookmarkIDs) + ")",
                 new Dictionary<string, object>()
                 {
                     {"@characterID", ownerID}

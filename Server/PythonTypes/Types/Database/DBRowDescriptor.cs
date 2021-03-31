@@ -109,16 +109,17 @@ namespace PythonTypes.Types.Database
         /// <summary>
         /// Creates a new DBRowDescriptor based off a specific result set from a MySqlDataReader
         /// </summary>
+        /// <param name="connection">The database connection used</param>
         /// <param name="reader">The MySqlDataReader to use when creating the DBRowDescriptor</param>
         /// <returns>Instance of a new DBRowDescriptor</returns>
         /// <exception cref="InvalidDataException">If any error was found on the creation</exception>
-        public static DBRowDescriptor FromMySqlReader(MySqlDataReader reader)
+        public static DBRowDescriptor FromMySqlReader(IDatabaseConnection connection, MySqlDataReader reader)
         {
             DBRowDescriptor descriptor = new DBRowDescriptor();
 
             for (int i = 0; i < reader.FieldCount; i++)
             {
-                FieldType fieldType = Utils.GetFieldType(reader, i);
+                FieldType fieldType = connection.GetFieldType(reader, i);
 
                 descriptor.Columns.Add(
                     new Column(reader.GetName(i), fieldType)

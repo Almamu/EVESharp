@@ -10,6 +10,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ClusterController", "Cluste
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Node", "Node\Node.csproj", "{78C8FBA0-95A0-4FD6-B2E9-80AC22563D76}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PythonTypes.Unit", "PythonTypes.Unit\PythonTypes.Unit.csproj", "{DA7A3801-9E1C-4D6A-A59E-8F9F5704B3E5}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -36,5 +38,9 @@ Global
 		{78C8FBA0-95A0-4FD6-B2E9-80AC22563D76}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{78C8FBA0-95A0-4FD6-B2E9-80AC22563D76}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{78C8FBA0-95A0-4FD6-B2E9-80AC22563D76}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DA7A3801-9E1C-4D6A-A59E-8F9F5704B3E5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DA7A3801-9E1C-4D6A-A59E-8F9F5704B3E5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DA7A3801-9E1C-4D6A-A59E-8F9F5704B3E5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DA7A3801-9E1C-4D6A-A59E-8F9F5704B3E5}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

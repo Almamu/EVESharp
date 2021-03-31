@@ -392,22 +392,22 @@ namespace Node
                     switch (type)
                     {
                         case CacheObjectType.Rowset:
-                            cacheObject = Rowset.FromMySqlDataReader(reader);
+                            cacheObject = Rowset.FromMySqlDataReader(Database, reader);
                             break;
                         case CacheObjectType.CRowset:
-                            cacheObject = CRowset.FromMySqlDataReader(reader);
+                            cacheObject = CRowset.FromMySqlDataReader(Database, reader);
                             break;
                         case CacheObjectType.TupleSet:
-                            cacheObject = TupleSet.FromMySqlDataReader(reader);
+                            cacheObject = TupleSet.FromMySqlDataReader(Database, reader);
                             break;
                         case CacheObjectType.PackedRowList:
-                            cacheObject = PyPackedRowList.FromMySqlDataReader(reader);
+                            cacheObject = PyPackedRowList.FromMySqlDataReader(Database, reader);
                             break;
                         case CacheObjectType.IntIntDict:
                             cacheObject = IntIntDictionary.FromMySqlDataReader(reader);
                             break;
                         case CacheObjectType.IndexRowset:
-                            cacheObject = IndexRowset.FromMySqlDataReader(reader, 0);
+                            cacheObject = IndexRowset.FromMySqlDataReader(Database, reader, 0);
                             break;
                     }
 
@@ -441,22 +441,22 @@ namespace Node
                     switch (type)
                     {
                         case CacheObjectType.Rowset:
-                            cacheObject = Rowset.FromMySqlDataReader(reader);
+                            cacheObject = Rowset.FromMySqlDataReader(Database, reader);
                             break;
                         case CacheObjectType.CRowset:
-                            cacheObject = CRowset.FromMySqlDataReader(reader);
+                            cacheObject = CRowset.FromMySqlDataReader(Database, reader);
                             break;
                         case CacheObjectType.TupleSet:
-                            cacheObject = TupleSet.FromMySqlDataReader(reader);
+                            cacheObject = TupleSet.FromMySqlDataReader(Database, reader);
                             break;
                         case CacheObjectType.PackedRowList:
-                            cacheObject = PyPackedRowList.FromMySqlDataReader(reader);
+                            cacheObject = PyPackedRowList.FromMySqlDataReader(Database, reader);
                             break;
                         case CacheObjectType.IntIntDict:
                             cacheObject = IntIntDictionary.FromMySqlDataReader(reader);
                             break;
                         case CacheObjectType.IndexRowset:
-                            cacheObject = IndexRowset.FromMySqlDataReader(reader, 0);
+                            cacheObject = IndexRowset.FromMySqlDataReader(Database, reader, 0);
                             break;
                     }
 

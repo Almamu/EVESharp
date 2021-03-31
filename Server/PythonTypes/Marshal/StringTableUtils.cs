@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+
 namespace PythonTypes.Marshal
 {
     /// <summary>
@@ -204,7 +206,7 @@ namespace PythonTypes.Marshal
             agent_StorylineMissionDetails,
         }
 
-        public static readonly string[] Entries = new string[]
+        public static readonly List<string> Entries = new List<string>
         {
             "*corpid",
             "*locationid",

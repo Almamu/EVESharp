@@ -264,20 +264,34 @@ namespace Node.Database
             using (reader)
             {
                 if (reader.Read() == false)
-                    return new SparseRowsetHeader(0, new PyList(4)
+                    return new SparseRowsetHeader(0, new PyList<PyString>(4)
                     {
                         [0] = "itemID",
                         [1] = "stationID",
                         [2] = "typeID",
                         [3] = "officeFolderID"
+                    },
+                    new FieldType[4]
+                    {
+                        FieldType.I4,
+                        FieldType.I4,
+                        FieldType.I2,
+                        FieldType.I4
                     });
                 
-                return new SparseRowsetHeader(reader.GetInt32(0), new PyList(4)
+                return new SparseRowsetHeader(reader.GetInt32(0), new PyList<PyString>(4)
                 {
                     [0] = "itemID",
                     [1] = "stationID",
                     [2] = "typeID",
                     [3] = "officeFolderID"
+                },
+                new FieldType[4]
+                {
+                    FieldType.I4,
+                    FieldType.I4,
+                    FieldType.I2,
+                    FieldType.I4
                 });
             }
         }
@@ -390,7 +404,7 @@ namespace Node.Database
             using (reader)
             {
                 if (reader.Read() == false)
-                    return new SparseRowsetHeader(0, new PyList(17)
+                    return new SparseRowsetHeader(0, new PyList<PyString>(17)
                     {
                         [0]  = "characterID",
                         [1]  = "title",
@@ -409,9 +423,29 @@ namespace Node.Database
                         [14] = "squadronID",
                         [15] = "baseID",
                         [16] = "blockRoles",
+                    },
+                    new FieldType[17]
+                    {
+                        FieldType.I4,
+                        FieldType.Str,
+                        FieldType.I8,
+                        FieldType.I8,
+                        FieldType.I8,
+                        FieldType.I8,
+                        FieldType.I8,
+                        FieldType.I8,
+                        FieldType.I8,
+                        FieldType.I8,
+                        FieldType.I8,
+                        FieldType.I1,
+                        FieldType.I8,
+                        FieldType.I4,
+                        FieldType.I4,
+                        FieldType.I4,
+                        FieldType.I8
                     });
 
-                return new SparseRowsetHeader(reader.GetInt32(0), new PyList(17)
+                return new SparseRowsetHeader(reader.GetInt32(0), new PyList<PyString>(17)
                 {
                     [0]  = "characterID",
                     [1]  = "title",
@@ -430,6 +464,26 @@ namespace Node.Database
                     [14] = "squadronID",
                     [15] = "baseID",
                     [16] = "blockRoles",
+                },
+                new FieldType[17]
+                {
+                    FieldType.I4,
+                    FieldType.Str,
+                    FieldType.I8,
+                    FieldType.I8,
+                    FieldType.I8,
+                    FieldType.I8,
+                    FieldType.I8,
+                    FieldType.I8,
+                    FieldType.I8,
+                    FieldType.I8,
+                    FieldType.I8,
+                    FieldType.I1,
+                    FieldType.I8,
+                    FieldType.I4,
+                    FieldType.I4,
+                    FieldType.I4,
+                    FieldType.I8
                 });
             }
         }

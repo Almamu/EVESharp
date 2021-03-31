@@ -24,6 +24,8 @@
 
 using System;
 using System.Collections.Generic;
+using System.Data;
+using System.IO;
 using Common.Logging;
 using MySql.Data.MySqlClient;
 using PythonTypes.Types.Collections;
@@ -32,11 +34,11 @@ using PythonTypes.Types.Primitives;
 
 namespace Common.Database
 {
-    public class DatabaseConnection
+    public class DatabaseConnection : IDatabaseConnection
     {
+        public Dictionary<string, ColumnCharset> ColumnCharsets { get; init; } = new Dictionary<string, ColumnCharset>();
         private Channel Log { get; }
         private readonly string mConnectionString;
-        private readonly Queue<string> mQueryQueue = new Queue<string>();
 
         public DatabaseConnection(Configuration.Database configuration, Logger logger)
         {
@@ -51,6 +53,64 @@ namespace Common.Database
             
             this.mConnectionString = stringBuilder.ToString();
             this.Log = logger.CreateLogChannel("Database");
+            this.FetchDatabaseColumnCharsets(configuration);
+        }
+
+        private void FetchDatabaseColumnCharsets(Configuration.Database configuration)
+        {
+            this.Log.Debug("Populating column information from database");
+            
+            // perform a query to the information_schema database
+            MySqlConnectionStringBuilder stringBuilder = new MySqlConnectionStringBuilder
+            {
+                Server = configuration.Hostname,
+                Database = "information_schema",
+                UserID = configuration.Username,
+                Password = configuration.Password,
+                MinimumPoolSize = 10
+            };
+
+            // establish a connection to the information_schema database
+            MySqlConnection connection = new MySqlConnection(stringBuilder.ToString());
+
+            connection.Open();
+
+            using (connection)
+            {
+                MySqlCommand command = new MySqlCommand($"SELECT TABLE_NAME, COLUMN_NAME, CHARACTER_SET_NAME FROM COLUMNS WHERE TABLE_SCHEMA LIKE '{configuration.Name}' AND CHARACTER_SET_NAME IS NOT NULL", connection);
+                MySqlDataReader reader = command.ExecuteReader();
+
+                using (reader)
+                {
+                    // column information was fetched, store it somewhere so the Database Utils can use it
+                    while (reader.Read() == true)
+                    {
+                        string tableName = reader.GetString(0);
+                        string columnName = reader.GetString(1);
+                        string charset = reader.GetString(2);
+                        ColumnCharset value;
+
+                        switch (charset)
+                        {
+                            default:
+                                this.Log.Warning($"Unknown encoding {charset} for column {columnName} on table {tableName}, defaulting to utf8");
+                                value = ColumnCharset.Wide;
+                                break;
+                            case "utf8":
+                                value = ColumnCharset.Wide;
+                                break;
+                            case "ascii":
+                            case "latin1":
+                                value = ColumnCharset.Byte;
+                                break;
+                        }
+                        
+                        this.ColumnCharsets[$"{tableName}.{columnName}"] = value;
+                    }
+                }
+            }
+
+            this.Log.Debug("Column information populated properly");
         }
 
         public ulong PrepareQueryLID(string query, Dictionary<string, object> values)
@@ -204,7 +264,7 @@ namespace Common.Database
                 using (reader)
                 {
                     // run the prepared statement
-                    return CRowset.FromMySqlDataReader(reader);
+                    return CRowset.FromMySqlDataReader(this, reader);
                 }
             }
             catch (Exception e)
@@ -233,7 +293,7 @@ namespace Common.Database
                 using (reader)
                 {
                     // run the prepared statement
-                    return CRowset.FromMySqlDataReader(reader);
+                    return CRowset.FromMySqlDataReader(this, reader);
                 }
             }
             catch (Exception e)
@@ -267,7 +327,7 @@ namespace Common.Database
                 using (reader)
                 {
                     // run the prepared statement
-                    return IndexRowset.FromMySqlDataReader (reader, indexField);
+                    return IndexRowset.FromMySqlDataReader (this, reader, indexField);
                 }
             }
             catch (Exception e)
@@ -297,7 +357,7 @@ namespace Common.Database
                 using (reader)
                 {
                     // run the prepared statement
-                    return IndexRowset.FromMySqlDataReader (reader, indexField);
+                    return IndexRowset.FromMySqlDataReader (this, reader, indexField);
                 }
             }
             catch (Exception e)
@@ -333,7 +393,7 @@ namespace Common.Database
                         return null;
                     
                     // run the prepared statement
-                    return PyPackedRow.FromMySqlDataReader(reader, DBRowDescriptor.FromMySqlReader(reader));
+                    return PyPackedRow.FromMySqlDataReader(reader, DBRowDescriptor.FromMySqlReader(this, reader));
                 }
             }
             catch (Exception e)
@@ -366,7 +426,7 @@ namespace Common.Database
                 using (reader)
                 {
                     // run the prepared statement
-                    return PyPackedRowList.FromMySqlDataReader(reader);
+                    return PyPackedRowList.FromMySqlDataReader(this, reader);
                 }
             }
             catch (Exception e)
@@ -395,7 +455,7 @@ namespace Common.Database
                 using (reader)
                 {
                     // run the prepared statement
-                    return PyPackedRowList.FromMySqlDataReader(reader);
+                    return PyPackedRowList.FromMySqlDataReader(this, reader);
                 }
             }
             catch (Exception e)
@@ -428,7 +488,7 @@ namespace Common.Database
                 using (reader)
                 {
                     // run the prepared statement
-                    return Rowset.FromMySqlDataReader(reader);
+                    return Rowset.FromMySqlDataReader(this, reader);
                 }
             }
             catch (Exception e)
@@ -457,7 +517,7 @@ namespace Common.Database
                 using (reader)
                 {
                     // run the prepared statement
-                    return Rowset.FromMySqlDataReader(reader);
+                    return Rowset.FromMySqlDataReader(this, reader);
                 }
             }
             catch (Exception e)
@@ -549,7 +609,7 @@ namespace Common.Database
                 using (reader)
                 {
                     // run the prepared statement
-                    return IntRowDictionary.FromMySqlDataReader(reader, keyColumnIndex);
+                    return IntRowDictionary.FromMySqlDataReader(this, reader, keyColumnIndex);
                 }
             }
             catch (Exception e)
@@ -584,7 +644,7 @@ namespace Common.Database
                 using (reader)
                 {
                     // run the prepared statement
-                    return IntRowDictionary.FromMySqlDataReader(reader, keyColumnIndex);
+                    return IntRowDictionary.FromMySqlDataReader(this, reader, keyColumnIndex);
                 }
             }
             catch (Exception e)
@@ -615,7 +675,7 @@ namespace Common.Database
                 using (reader)
                 {
                     // run the prepared statement
-                    return IntPackedRowListDictionary.FromMySqlDataReader(reader, keyColumnIndex);
+                    return IntPackedRowListDictionary.FromMySqlDataReader(this, reader, keyColumnIndex);
                 }
             }
             catch (Exception e)
@@ -650,7 +710,7 @@ namespace Common.Database
                 using (reader)
                 {
                     // run the prepared statement
-                    return IntPackedRowListDictionary.FromMySqlDataReader(reader, keyColumnIndex);
+                    return IntPackedRowListDictionary.FromMySqlDataReader(this, reader, keyColumnIndex);
                 }
             }
             catch (Exception e)
@@ -680,7 +740,7 @@ namespace Common.Database
                 using (reader)
                 {
                     // run the prepared statement
-                    return DictRowlist.FromMySqlDataReader(reader);
+                    return DictRowlist.FromMySqlDataReader(this, reader);
                 }
             }
             catch (Exception e)
@@ -714,7 +774,7 @@ namespace Common.Database
                 using (reader)
                 {
                     // run the prepared statement
-                    return DictRowlist.FromMySqlDataReader(reader);
+                    return DictRowlist.FromMySqlDataReader(this, reader);
                 }
             }
             catch (Exception e)
@@ -747,7 +807,7 @@ namespace Common.Database
                         return null;
                     
                     // run the prepared statement
-                    return KeyVal.FromMySqlDataReader(reader);
+                    return KeyVal.FromMySqlDataReader(this, reader);
                 }
             }
             catch (Exception e)
@@ -784,7 +844,7 @@ namespace Common.Database
                         return null;
                     
                     // run the prepared statement
-                    return KeyVal.FromMySqlDataReader(reader);
+                    return KeyVal.FromMySqlDataReader(this, reader);
                 }
             }
             catch (Exception e)
@@ -888,13 +948,82 @@ namespace Common.Database
                 throw;
             }
         }
-
-        public void QueueQuery(string query)
+        
+        /// <summary>
+        /// Obtains important metadata used in the database functions
+        /// </summary>
+        /// <param name="reader">The reader to use</param>
+        /// <param name="headers">Where to put the headers</param>
+        /// <param name="fieldTypes">Where to put the field types</param>
+        public void GetDatabaseHeaders(MySqlDataReader reader, out PyList<PyString> headers, out FieldType[] fieldTypes)
         {
-            lock (this.mQueryQueue)
+            headers = new PyList<PyString>(reader.FieldCount);
+            fieldTypes = new FieldType[reader.FieldCount];
+
+            for (int i = 0; i < reader.FieldCount; i++)
             {
-                this.mQueryQueue.Enqueue(query);
+                headers[i] = reader.GetName(i);
+                fieldTypes[i] = GetFieldType(reader, i);
             }
+        }
+        
+        /// <summary>
+        /// Obtains the list of types for all the columns in this MySqlDataReader
+        /// </summary>
+        /// <param name="reader">The reader to use</param>
+        /// <returns></returns>
+        public FieldType[] GetFieldTypes(MySqlDataReader reader)
+        {
+            FieldType[] result = new FieldType[reader.FieldCount];
+
+            for (int i = 0; i < result.Length; i++)
+                result[i] = GetFieldType(reader, i);
+
+            return result;
+        }
+        
+        /// <summary>
+        /// Obtains the current field type off a MySqlDataReader for the given column
+        /// </summary>
+        /// <param name="reader">The data reader to use</param>
+        /// <param name="index">The column to get the type from</param>
+        /// <returns></returns>
+        /// <exception cref="InvalidDataException">If the type is not supported</exception>
+        public FieldType GetFieldType(MySqlDataReader reader, int index)
+        {
+            Type type = reader.GetFieldType(index);
+
+            if (type == typeof(string))
+            {
+                DataTable schema = reader.GetSchemaTable();
+                string tableName = (string) schema.Rows[index][schema.Columns["BaseTableName"]];
+                string columnName = (string) schema.Rows[index][schema.Columns["BaseColumnName"]];
+                
+                // default the charset to wide string if the column is not found
+                // this typically happens when a UNION query is used
+                if (this.ColumnCharsets.TryGetValue($"{tableName}.{columnName}", out ColumnCharset charset) == false)
+                {
+                    Log.Warning("Defaulting column type to wide string because the table name cannot be determined. This usually happens when writing UNION queries.");
+                    return FieldType.WStr;
+                }
+
+                return charset == ColumnCharset.Byte ? FieldType.Str : FieldType.WStr;
+            }
+            
+            if (type == typeof(ulong)) return FieldType.UI8;
+            if (type == typeof(long)) return FieldType.I8;
+            if (type == typeof(uint)) return FieldType.UI4;
+            if (type == typeof(int)) return FieldType.I4;
+            if (type == typeof(ushort)) return FieldType.UI2;
+            if (type == typeof(short)) return FieldType.I2;
+            if (type == typeof(sbyte)) return FieldType.I1;
+            if (type == typeof(byte)) return FieldType.UI1;
+            if (type == typeof(byte[])) return FieldType.Bytes;
+            if (type == typeof(double) || type == typeof(decimal)) return FieldType.R8;
+            if (type == typeof(float)) return FieldType.R4;
+            if (type == typeof(bool)) return FieldType.Bool;
+
+            throw new InvalidDataException($"Unknown field type {type}");
         }
     }
 }

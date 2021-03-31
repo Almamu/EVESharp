@@ -15,12 +15,13 @@ namespace PythonTypes.Types.Database
         /// IMPORTANT: The first field MUST be ordered (direction doesn't matter) for this method
         /// to properly work
         /// </summary>
+        /// <param name="connection">The connection used</param>
         /// <param name="reader">The MySqlDataReader to read the data from</param>
         /// <param name="keyColumnIndex">The column to use as index for the IntPackedRowListDictionary</param>
         /// <returns></returns>
-        public static PyDataType FromMySqlDataReader(MySqlDataReader reader, int keyColumnIndex)
+        public static PyDataType FromMySqlDataReader(IDatabaseConnection connection, MySqlDataReader reader, int keyColumnIndex)
         {
-            DBRowDescriptor descriptor = DBRowDescriptor.FromMySqlReader(reader);
+            DBRowDescriptor descriptor = DBRowDescriptor.FromMySqlReader(connection, reader);
             PyDictionary result = new PyDictionary();
 
             Type keyType = reader.GetFieldType(keyColumnIndex);

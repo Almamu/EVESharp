@@ -87,11 +87,12 @@ namespace PythonTypes.Types.Database
         /// Helper method to instantiate a dbutil.CRowset type from a MySqlDataReader, this consumes the result
         /// but does not close it, so calling code has to take care of this. Ideally, please use "using" statements
         /// </summary>
+        /// <param name="connection">The connection used</param>
         /// <param name="reader">The reader to use as source of the information</param>
         /// <returns>The CRowset object ready to be used</returns>
-        public static CRowset FromMySqlDataReader(MySqlDataReader reader)
+        public static CRowset FromMySqlDataReader(IDatabaseConnection connection, MySqlDataReader reader)
         {
-            DBRowDescriptor descriptor = DBRowDescriptor.FromMySqlReader(reader);
+            DBRowDescriptor descriptor = DBRowDescriptor.FromMySqlReader(connection, reader);
             CRowset rowset = new CRowset(descriptor);
 
             while (reader.Read() == true)

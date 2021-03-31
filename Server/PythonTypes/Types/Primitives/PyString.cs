@@ -1,4 +1,6 @@
+using System;
 using PythonTypes.Marshal;
+using PythonTypes.Types.Collections;
 
 namespace PythonTypes.Types.Primitives
 {
@@ -81,6 +83,11 @@ namespace PythonTypes.Types.Primitives
         public override string ToString()
         {
             return this.Value;
+        }
+
+        public static PyString Join<T>(char separator, PyList<T> collection) where T : PyDataType
+        {
+            return String.Join<T>(separator, collection);
         }
     }
 }

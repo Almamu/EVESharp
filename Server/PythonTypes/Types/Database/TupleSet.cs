@@ -13,22 +13,20 @@ namespace PythonTypes.Types.Database
         /// Simple helper method that creates a correct tupleset and returns
         /// it's PyDataType representation, ready to be sent to the EVE Online client
         /// </summary>
+        /// <param name="connection">The connection used</param>
         /// <param name="reader">The MySqlDataReader to read the data from</param>
         /// <returns></returns>
-        public static PyDataType FromMySqlDataReader(MySqlDataReader reader)
+        public static PyDataType FromMySqlDataReader(IDatabaseConnection connection, MySqlDataReader reader)
         {
-            PyList columns = new PyList(reader.FieldCount);
+            connection.GetDatabaseHeaders(reader, out PyList<PyString> columns, out FieldType[] fieldTypes);
             PyList rows = new PyList();
-
-            for (int i = 0; i < reader.FieldCount; i++)
-                columns[i] = new PyString(reader.GetName(i));
-
+            
             while (reader.Read() == true)
             {
                 PyList linedata = new PyList(columns.Count);
 
                 for (int i = 0; i < columns.Count; i++)
-                    linedata[i] = Utils.ObjectFromColumn(reader, i);
+                    linedata[i] = IDatabaseConnection.ObjectFromColumn(reader, fieldTypes[i], i);
 
                 rows.Add(linedata);
             }

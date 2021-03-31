@@ -34,7 +34,7 @@ namespace Node.Database
             using (connection)
             using (reader)
             {
-                return TupleSet.FromMySqlDataReader(reader);
+                return TupleSet.FromMySqlDataReader(Database, reader);
             }
         }
 
@@ -55,7 +55,7 @@ namespace Node.Database
             using (connection)
             using (reader)
             {
-                return TupleSet.FromMySqlDataReader(reader);
+                return TupleSet.FromMySqlDataReader(Database, reader);
             }
         }
         
@@ -76,7 +76,7 @@ namespace Node.Database
             using (connection)
             using (reader)
             {
-                return TupleSet.FromMySqlDataReader(reader);
+                return TupleSet.FromMySqlDataReader(Database, reader);
             }
         }
         
@@ -97,7 +97,7 @@ namespace Node.Database
             using (connection)
             using (reader)
             {
-                return TupleSet.FromMySqlDataReader(reader);
+                return TupleSet.FromMySqlDataReader(Database, reader);
             }
         }
 
@@ -201,7 +201,7 @@ namespace Node.Database
             using (connection)
             using (reader)
             {
-                return RowList.FromMySqlDataReader(reader);
+                return RowList.FromMySqlDataReader(Database, reader);
             }
         }
 

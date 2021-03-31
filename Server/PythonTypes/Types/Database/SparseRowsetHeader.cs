@@ -26,14 +26,19 @@ namespace PythonTypes.Types.Database
         /// </summary>
         public PyList Headers { get; }
         /// <summary>
+        /// The types for each column
+        /// </summary>
+        public FieldType[] FieldTypes { get; }
+        /// <summary>
         /// The Bound ID for this SparseRowset
         /// </summary>
         public PyDataType BoundObjectIdentifier { get; set; }
 
-        public SparseRowsetHeader(int count, PyList headers)
+        public SparseRowsetHeader(int count, PyList<PyString> headers, FieldType[] fieldTypes)
         {
             this.Count = count;
             this.Headers = headers;
+            this.FieldTypes = fieldTypes;
         }
 
         public static implicit operator PyDataType(SparseRowsetHeader rowsetHeader)
@@ -61,14 +66,14 @@ namespace PythonTypes.Types.Database
 
             while (reader.Read() == true)
             {
-                PyDataType keyValue = Utils.ObjectFromColumn(reader, pkFieldIndex);
+                PyDataType keyValue = IDatabaseConnection.ObjectFromColumn(reader, this.FieldTypes[pkFieldIndex], pkFieldIndex);
                 
                 result.Add(
                     new PyTuple(3)
                     {
                         [0] = keyValue,
                         [1] = rowsIndex[keyValue],
-                        [2] = Row.FromMySqlDataReader(reader, this.Headers) 
+                        [2] = Row.FromMySqlDataReader(reader, this.Headers, this.FieldTypes) 
                     }
                 );
             }

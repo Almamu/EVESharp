@@ -48,7 +48,7 @@ namespace Node.Database
             using (connection)
             using (reader)
             {
-                return Rowset.FromMySqlDataReader(reader);
+                return Rowset.FromMySqlDataReader(Database, reader);
             }
         }
 
@@ -76,7 +76,7 @@ namespace Node.Database
             using(connection)
             using (reader)
             {
-                return Rowset.FromMySqlDataReader(reader);
+                return Rowset.FromMySqlDataReader(Database, reader);
             }
         }
 
@@ -440,7 +440,7 @@ namespace Node.Database
             using (connection)
             using (reader)
             {
-                return Rowset.FromMySqlDataReader(reader);
+                return Rowset.FromMySqlDataReader(Database, reader);
             }
         }
 

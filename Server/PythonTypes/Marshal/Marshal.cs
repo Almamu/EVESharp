@@ -140,23 +140,23 @@ namespace PythonTypes.Marshal
         /// <param name="data">The value to write</param>
         private static void ProcessInteger(BinaryWriter writer, PyInteger data)
         {
-            if (data == 1)
+            if (data.Value == 1)
                 writer.WriteOpcode(Opcode.IntegerOne);
-            else if (data == 0)
+            else if (data.Value == 0)
                 writer.WriteOpcode(Opcode.IntegerZero);
-            else if (data == -1)
+            else if (data.Value == -1)
                 writer.WriteOpcode(Opcode.IntegerMinusOne);
-            else if (data > sbyte.MinValue && data < sbyte.MaxValue)
+            else if (data.Value >= sbyte.MinValue && data.Value <= sbyte.MaxValue)
             {
                 writer.WriteOpcode(Opcode.IntegerByte);
                 writer.Write((byte) data.Value);
             }
-            else if (data > short.MinValue && data < short.MaxValue)
+            else if (data.Value >= short.MinValue && data.Value <= short.MaxValue)
             {
                 writer.WriteOpcode(Opcode.IntegerSignedShort);
                 writer.Write((short) data.Value);
             }
-            else if (data > int.MinValue && data < int.MaxValue)
+            else if (data.Value >= int.MinValue && data.Value <= int.MaxValue)
             {
                 writer.WriteOpcode(Opcode.IntegerLong);
                 writer.Write((int) data.Value);
@@ -395,8 +395,8 @@ namespace PythonTypes.Marshal
         private static void ProcessString(BinaryWriter writer, PyString data)
         {
             if (data.Length == 0)
-                writer.WriteOpcode(Opcode.WStringEmpty);
-            else if (data.Length == 1)
+                writer.WriteOpcode(data.IsUTF8 == true ? Opcode.WStringEmpty : Opcode.StringEmpty);
+            else if (data.Length == 1 && data.IsUTF8 == false)
             {
                 writer.WriteOpcode(Opcode.StringChar);
                 writer.Write(Encoding.ASCII.GetBytes(data)[0]);
@@ -404,22 +404,37 @@ namespace PythonTypes.Marshal
             else if (data.IsStringTableEntry)
             {
                 writer.WriteOpcode(Opcode.StringTable);
-                writer.Write(((byte) data.StringTableEntryIndex) + 1);
-            }
-            else if (data.IsUTF8)
-            {
-                byte[] str = Encoding.UTF8.GetBytes(data.Value);
-                writer.WriteOpcode(Opcode.WStringUTF8);
-                writer.WriteSizeEx(str.Length);
-                writer.Write(str);
+                writer.Write((byte) (data.StringTableEntryIndex + 1));
             }
             else
             {
-                // TODO: ON SOME SITUATIONS A NORMAL STRING IS EXPECTED, PROVIDE A MECHANISM TO FORCE MARSHALING SUPPORT
-                writer.WriteOpcode(Opcode.StringLong);
-                writer.WriteSizeEx(data.Length);
-                // writer.Write(Encoding.UTF8.GetBytes(data.Value));
-                writer.Write(Encoding.ASCII.GetBytes(data.Value));
+                // do a quick lookup, is the string in the table entry?
+                int index = StringTableUtils.Entries.FindIndex(x => x == data.Value);
+
+                // string found in the table, write a string entry and return
+                if (index != -1)
+                {
+                    writer.WriteOpcode(Opcode.StringTable);
+                    writer.Write((byte) (index + 1));
+                    return;
+                }
+            
+                // no match found in the table, normal string found, write it to the marshal stream
+                if (data.IsUTF8)
+                {
+                    byte[] str = Encoding.UTF8.GetBytes(data.Value);
+                    writer.WriteOpcode(Opcode.WStringUTF8);
+                    writer.WriteSizeEx(str.Length);
+                    writer.Write(str);
+                }
+                else
+                {
+                    // NOTE: ShortString doesn't seem to be used on Apocrypha
+                    writer.WriteOpcode(Opcode.StringLong);
+                    writer.WriteSizeEx(data.Length);
+                    // writer.Write(Encoding.UTF8.GetBytes(data.Value));
+                    writer.Write(Encoding.ASCII.GetBytes(data.Value));
+                }
             }
         }
 

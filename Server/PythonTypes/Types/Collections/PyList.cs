@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using PythonTypes.Types.Primitives;
@@ -27,6 +28,11 @@ namespace PythonTypes.Types.Collections
             base.Add(value);
         }
 
+        IEnumerator<T> IEnumerable<T>.GetEnumerator()
+        {
+            return GetEnumerator();
+        }
+
         public new IPyListEnumerator<T> GetEnumerator()
         {
             return new PyListEnumerator<T>(this.mList.GetEnumerator());
@@ -41,6 +47,11 @@ namespace PythonTypes.Types.Collections
         public static implicit operator PyList<T>(PyDataType[] array)
         {
             return new PyList<T>(array);
+        }
+
+        public static implicit operator object[](PyList<T> original)
+        {
+            throw new NotSupportedException("This exception means that most likely what you're trying to achieve is not being done automatically by the compiler, please check the method you're passing this object to to ensure you get the real IEnumerable and not a different overload");
         }
     }
     
@@ -72,6 +83,11 @@ namespace PythonTypes.Types.Collections
             this.mList.Add(pyDataType);
         }
 
+        public void AddRange(IEnumerable<PyDataType> list)
+        {
+            this.mList.AddRange(list);
+        }
+
         public void Remove(int index)
         {
             this.mList.RemoveAt(index);
@@ -88,6 +104,11 @@ namespace PythonTypes.Types.Collections
         {
             get => this.mList[index];
             set => this.mList[index] = value;
+        }
+
+        IEnumerator<PyDataType> IEnumerable<PyDataType>.GetEnumerator()
+        {
+            return GetEnumerator();
         }
 
         public IPyListEnumerator<PyDataType> GetEnumerator()

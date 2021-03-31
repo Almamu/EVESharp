@@ -48,6 +48,7 @@ namespace PythonTypes.Marshal
         protected Unmarshal(Stream stream)
         {
             this.mStream = stream;
+            this.mReader = new BinaryReader(this.mStream);
         }
 
         /// <summary>
@@ -396,7 +397,7 @@ namespace PythonTypes.Marshal
                     );
                 case Opcode.StringTable:
                     return new PyString(
-                        StringTableUtils.Entries[this.mReader.ReadByte() - 1]
+                        (StringTableUtils.EntryList) (this.mReader.ReadByte() - 1)
                     );
                 case Opcode.StringLong:
                     return new PyString(
@@ -405,7 +406,7 @@ namespace PythonTypes.Marshal
                         )
                     );
                 case Opcode.WStringEmpty:
-                    return new PyString("");
+                    return new PyString("", true);
                 case Opcode.WStringUCS2:
                     return new PyString(
                         Encoding.Unicode.GetString(
@@ -422,7 +423,7 @@ namespace PythonTypes.Marshal
                     return new PyString(
                         Encoding.UTF8.GetString(
                             this.mReader.ReadBytes((int) this.mReader.ReadSizeEx())
-                        )
+                        ), true
                     );
 
                 default:

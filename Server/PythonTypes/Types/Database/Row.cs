@@ -34,31 +34,33 @@ namespace PythonTypes.Types.Database
 
             return new PyObjectData(ROW_TYPE_NAME, data);
         }
-        
+
         /// <summary>
         /// Simple helper method that creates the correct Row data off a result row and
         /// returns it's PyDataType representation, ready to be sent to the EVE Online client
         /// </summary>
         /// <param name="reader"></param>
         /// <param name="header"></param>
+        /// <param name="fieldTypes"></param>
         /// <returns></returns>
-        public static Row FromMySqlDataReader(MySqlDataReader reader, PyList header)
+        public static Row FromMySqlDataReader(MySqlDataReader reader, PyList header, FieldType[] fieldTypes)
         {
             PyList row = new PyList(reader.FieldCount);
 
             for (int i = 0; i < reader.FieldCount; i++)
-                row[i] = Utils.ObjectFromColumn(reader, i);
+                row[i] = IDatabaseConnection.ObjectFromColumn(reader, fieldTypes[i], i);
 
             return new Row(header, row);
         }
-        
+
         /// <summary>
         /// Simple helper method that creates the correct Row data off a result row and
         /// returns it's PyDataType representation, ready to be sent to the EVE Online client
         /// </summary>
+        /// <param name="connection">The connection used</param>
         /// <param name="reader"></param>
         /// <returns></returns>
-        public static Row FromMySqlDataReader(MySqlDataReader reader)
+        public static Row FromMySqlDataReader(IDatabaseConnection connection, MySqlDataReader reader)
         {
             PyList header = new PyList(reader.FieldCount);
             PyList row = new PyList(reader.FieldCount);
@@ -66,7 +68,7 @@ namespace PythonTypes.Types.Database
             for (int i = 0; i < reader.FieldCount; i++)
             {
                 header[i] = reader.GetName(i);
-                row[i] = Utils.ObjectFromColumn(reader, i);
+                row[i] = IDatabaseConnection.ObjectFromColumn(reader, connection.GetFieldType(reader, i), i);
             }
             
             return new Row(header, row);

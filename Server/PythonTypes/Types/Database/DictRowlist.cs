@@ -11,23 +11,22 @@ namespace PythonTypes.Types.Database
         /// <summary>
         /// Simple helper method that creates a correct DictRowList and returns
         /// it's PyDataType representation, ready to be sent to the EVE Online client
-        ///
+        /// 
         /// </summary>
+        /// <param name="connection">The connection used</param>
         /// <param name="reader">The MySqlDataReader to read the data from</param>
         /// <returns></returns>
-        public static PyDataType FromMySqlDataReader(MySqlDataReader reader)
+        public static PyDataType FromMySqlDataReader(IDatabaseConnection connection, MySqlDataReader reader)
         {
             PyDictionary result = new PyDictionary();
-            PyList header = new PyList(reader.FieldCount);
 
-            for (int i = 0; i < reader.FieldCount; i++)
-                header [i] = reader.GetName(i);
+            connection.GetDatabaseHeaders(reader, out PyList<PyString> header, out FieldType[] fieldTypes);
 
             int index = 0;
             
             while (reader.Read() == true)
             {
-                result[index++] = Row.FromMySqlDataReader(reader, header);
+                result[index++] = Row.FromMySqlDataReader(reader, header, fieldTypes);
             }
 
             return result;

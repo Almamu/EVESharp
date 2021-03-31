@@ -23,6 +23,7 @@
 */
 
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using ClusterController.Configuration;
 using ClusterController.Database;
@@ -32,6 +33,8 @@ using Common.Logging;
 using Common.Logging.Streams;
 using Common.Network;
 using Configuration;
+using PythonTypes.Types.Collections;
+using PythonTypes.Types.Primitives;
 using SimpleInjector;
 
 namespace ClusterController

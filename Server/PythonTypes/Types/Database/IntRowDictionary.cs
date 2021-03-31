@@ -12,20 +12,18 @@ namespace PythonTypes.Types.Database
         /// Simple helper method that creates a correct IntRowDictionary and returns
         /// it's PyDataType representation, ready to be sent to the EVE Online client
         /// </summary>
+        /// <param name="connection">The database connection</param>
         /// <param name="reader">The MySqlDataReader to read the data from</param>
         /// <param name="keyColumnIndex">The column to use as index for the IntRowDictionary</param>
         /// <returns></returns>
-        public static PyDictionary FromMySqlDataReader(MySqlDataReader reader, int keyColumnIndex)
+        public static PyDictionary FromMySqlDataReader(IDatabaseConnection connection, MySqlDataReader reader, int keyColumnIndex)
         {
             PyDictionary result = new PyDictionary();
-            PyList header = new PyList(reader.FieldCount);
-
-            for (int i = 0; i < reader.FieldCount; i++)
-                header [i] = reader.GetName(i);
+            connection.GetDatabaseHeaders(reader, out PyList<PyString> header, out FieldType[] fieldTypes);
 
             while (reader.Read() == true)
             {
-                result [reader.GetInt32(keyColumnIndex)] = Row.FromMySqlDataReader(reader, header);
+                result [reader.GetInt32(keyColumnIndex)] = Row.FromMySqlDataReader(reader, header, fieldTypes);
             }
             
             return result;

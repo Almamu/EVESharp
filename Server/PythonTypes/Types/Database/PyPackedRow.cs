@@ -52,7 +52,7 @@ namespace PythonTypes.Types.Database
             int i = 0;
 
             foreach (DBRowDescriptor.Column column in descriptor.Columns)
-                row[column.Name] = Utils.ObjectFromColumn(reader, i++);
+                row[column.Name] = IDatabaseConnection.ObjectFromColumn(reader, column.Type, i++);
 
             return row;
         }
