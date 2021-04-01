@@ -354,5 +354,20 @@ namespace Node.Inventory.Items
             if (this.OwnerID != character.ID)
                 throw new MktNotOwner();
         }
+
+        public bool IsInModuleSlot()
+        {
+            return this.Flag == ItemFlags.HiSlot0 || this.Flag == ItemFlags.HiSlot1 || this.Flag == ItemFlags.HiSlot2 ||
+                   this.Flag == ItemFlags.HiSlot3 || this.Flag == ItemFlags.HiSlot4 || this.Flag == ItemFlags.HiSlot5 ||
+                   this.Flag == ItemFlags.HiSlot6 || this.Flag == ItemFlags.HiSlot7 || this.Flag == ItemFlags.MedSlot0 ||
+                   this.Flag == ItemFlags.MedSlot1 || this.Flag == ItemFlags.MedSlot2 || this.Flag == ItemFlags.MedSlot3 ||
+                   this.Flag == ItemFlags.MedSlot4 || this.Flag == ItemFlags.MedSlot5 || this.Flag == ItemFlags.MedSlot6 ||
+                   this.Flag == ItemFlags.MedSlot7 || this.Flag == ItemFlags.LoSlot0 || this.Flag == ItemFlags.LoSlot1 ||
+                   this.Flag == ItemFlags.LoSlot2 || this.Flag == ItemFlags.LoSlot3 || this.Flag == ItemFlags.LoSlot4 ||
+                   this.Flag == ItemFlags.LoSlot5 || this.Flag == ItemFlags.LoSlot6 || this.Flag == ItemFlags.LoSlot7 ||
+                   this.Flag == ItemFlags.RigSlot0 || this.Flag == ItemFlags.RigSlot1 || this.Flag == ItemFlags.RigSlot2 ||
+                   this.Flag == ItemFlags.RigSlot3 || this.Flag == ItemFlags.RigSlot4 || this.Flag == ItemFlags.RigSlot5 ||
+                   this.Flag == ItemFlags.RigSlot6 || this.Flag == ItemFlags.RigSlot7;
+        }
     }
 }

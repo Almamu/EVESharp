@@ -101,6 +101,14 @@ namespace Node.Services.Inventory
             int oldLocation = item.LocationID;
             ItemFlags oldFlag = item.Flag;
             
+            // rig slots cannot be moded
+            if (oldFlag == ItemFlags.RigSlot0 || oldFlag == ItemFlags.RigSlot1 || oldFlag == ItemFlags.RigSlot2 ||
+                oldFlag == ItemFlags.RigSlot3 || oldFlag == ItemFlags.RigSlot4 || oldFlag == ItemFlags.RigSlot5 ||
+                oldFlag == ItemFlags.RigSlot6 || oldFlag == ItemFlags.RigSlot7)
+            {
+                throw new CannotRemoveUpgradeManually();
+            }
+            
             // special situation, if the old location is a module slot ensure the item is first offlined
             if (oldFlag == ItemFlags.HiSlot0 || oldFlag == ItemFlags.HiSlot1 || oldFlag == ItemFlags.HiSlot2 ||
                 oldFlag == ItemFlags.HiSlot3 || oldFlag == ItemFlags.HiSlot4 || oldFlag == ItemFlags.HiSlot5 ||
@@ -205,6 +213,30 @@ namespace Node.Services.Inventory
                             else if (modules.TryGetValue(ItemFlags.LoSlot7, out _) == false)
                                 newFlag = ItemFlags.LoSlot7;
                         }
+                        else if (module.IsRigSlot() == true)
+                        {
+                            Dictionary<ItemFlags, ItemEntity> modules = ship.RigSlots;
+
+                            if (modules.Count >= ship.Attributes[AttributeEnum.rigSlots])
+                                throw new NoFreeShipSlots();
+
+                            if (modules.TryGetValue(ItemFlags.RigSlot0, out _) == false)
+                                newFlag = ItemFlags.RigSlot0;
+                            else if (modules.TryGetValue(ItemFlags.RigSlot1, out _) == false)
+                                newFlag = ItemFlags.RigSlot1;
+                            else if (modules.TryGetValue(ItemFlags.RigSlot2, out _) == false)
+                                newFlag = ItemFlags.RigSlot2;
+                            else if (modules.TryGetValue(ItemFlags.RigSlot3, out _) == false)
+                                newFlag = ItemFlags.RigSlot3;
+                            else if (modules.TryGetValue(ItemFlags.RigSlot4, out _) == false)
+                                newFlag = ItemFlags.RigSlot4;
+                            else if (modules.TryGetValue(ItemFlags.RigSlot5, out _) == false)
+                                newFlag = ItemFlags.RigSlot5;
+                            else if (modules.TryGetValue(ItemFlags.RigSlot6, out _) == false)
+                                newFlag = ItemFlags.RigSlot6;
+                            else if (modules.TryGetValue(ItemFlags.RigSlot7, out _) == false)
+                                newFlag = ItemFlags.RigSlot7;
+                        }
                     }
                     // TODO: HANDLE CHARGES!
                     else
@@ -226,26 +258,16 @@ namespace Node.Services.Inventory
                 newFlag == ItemFlags.MedSlot4 || newFlag == ItemFlags.MedSlot5 || newFlag == ItemFlags.MedSlot6 ||
                 newFlag == ItemFlags.MedSlot7 || newFlag == ItemFlags.LoSlot0 || newFlag == ItemFlags.LoSlot1 ||
                 newFlag == ItemFlags.LoSlot2 || newFlag == ItemFlags.LoSlot3 || newFlag == ItemFlags.LoSlot4 ||
-                newFlag == ItemFlags.LoSlot5 || newFlag == ItemFlags.LoSlot6 || newFlag == ItemFlags.LoSlot7)
+                newFlag == ItemFlags.LoSlot5 || newFlag == ItemFlags.LoSlot6 || newFlag == ItemFlags.LoSlot7 ||
+                newFlag == ItemFlags.RigSlot0 || newFlag == ItemFlags.RigSlot1 || newFlag == ItemFlags.RigSlot2 ||
+                newFlag == ItemFlags.RigSlot3 || newFlag == ItemFlags.RigSlot4 || newFlag == ItemFlags.RigSlot5 ||
+                newFlag == ItemFlags.RigSlot6 || newFlag == ItemFlags.RigSlot7)
             {
                 ShipModule module = null;
 
                 if (item is ShipModule shipModule)
                     module = shipModule;
 
-                try
-                {
-                    // apply all the passive effects (this also blocks the item fitting if the initialization fails)
-                    module?.ApplyPassiveEffects(Client);
-                    // extra check, ensure that the character has the required skills
-                }
-                catch (UserError)
-                {
-                    // ensure that the passive effects that got applied already are removed from the item
-                    module?.StopApplyingPassiveEffects(Client);
-                    throw;
-                }
-            
                 // remove item off the old inventory if required
                 if (this.ItemManager.TryGetItem(item.LocationID, out ItemInventory inventory) == true)
                     inventory.RemoveItem(item);
@@ -287,8 +309,33 @@ namespace Node.Services.Inventory
                     
                     item.Persist();
 
+                    // replace reference so the following code handle things properly
+                    item = newItem;
+                    
                     if (item is ShipModule shipModule2)
                         module = shipModule2;
+                }
+                
+                try
+                {
+                    // apply all the passive effects (this also blocks the item fitting if the initialization fails)
+                    module?.ApplyPassiveEffects(Client);
+                    // extra check, ensure that the character has the required skills
+                }
+                catch (UserError)
+                {
+                    // ensure that the passive effects that got applied already are removed from the item
+                    module?.StopApplyingPassiveEffects(Client);
+
+                    int newOldLocation = item.LocationID;
+                    ItemFlags newOldFlag = item.Flag;
+                    
+                    // now undo the whole thing
+                    item.LocationID = oldLocation;
+                    item.Flag = oldFlag;
+                    
+                    Client.NotifyMultiEvent(OnItemChange.BuildLocationChange(item, newOldFlag, newOldLocation));
+                    throw;
                 }
 
                 // ensure the new inventory knows
@@ -296,8 +343,9 @@ namespace Node.Services.Inventory
 
                 module?.Persist();
                 
-                // put the module online after fitting it
-                module?.ApplyEffect("online", Client);
+                // put the module online after fitting it as long as it's a normal module
+                if (module?.IsRigSlot() == false)
+                    module?.ApplyEffect("online", Client);
             }
             else
             {
@@ -566,6 +614,34 @@ namespace Node.Services.Inventory
         public PyDataType BreakPlasticWrap(PyInteger crateID, CallInformation call)
         {
             // TODO: ensure this item is a plastic wrap and mark the contract as void
+            return null;
+        }
+
+        public PyDataType DestroyFitting(PyInteger itemID, CallInformation call)
+        {
+            ItemEntity item = this.mInventory.Items[itemID];
+
+            if (item.Flag == ItemFlags.RigSlot0 || item.Flag == ItemFlags.RigSlot1 || item.Flag == ItemFlags.RigSlot2 ||
+                item.Flag == ItemFlags.RigSlot3 || item.Flag == ItemFlags.RigSlot4 || item.Flag == ItemFlags.RigSlot5 ||
+                item.Flag == ItemFlags.RigSlot6 || item.Flag == ItemFlags.RigSlot7)
+            {
+
+                if (item is ShipModule module)
+                {
+                    // disable passive effects
+                    module.StopApplyingPassiveEffects(Client);
+                }
+                
+                int oldLocationID = item.LocationID;
+                ItemFlags oldFlag = item.Flag;
+                
+                // destroy the rig
+                this.ItemManager.DestroyItem(item);
+
+                // notify the client about the change
+                call.Client.NotifyMultiEvent(OnItemChange.BuildLocationChange(item, oldFlag, oldLocationID));
+            }
+            
             return null;
         }
     }

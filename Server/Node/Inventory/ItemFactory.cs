@@ -84,28 +84,7 @@ namespace Node.Inventory
             this.GroupManager.Load();
             this.TypeManager.Load();
             this.StationManager.Load();
-            
-            /*
-            // test code, remove before commit
-            ItemType type = this.TypeManager[1317];
 
-            Expression ex = type.Effects[16].PreExpression;
-
-            Compiler compiler = new Compiler();
-            byte[] machineCode = compiler.CompileExpression(ex);
-
-            Interpreter interpreter = new Interpreter(
-                new Environment()
-                {
-                    Self = null,
-                    Character = null,
-                    Ship = null,
-                    Target = null
-                }
-            );
-            
-            interpreter.Run(machineCode);*/
-            
             this.ItemManager.Load();
         }
     }

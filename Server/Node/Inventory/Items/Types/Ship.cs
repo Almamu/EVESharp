@@ -24,6 +24,14 @@ namespace Node.Inventory.Items.Types
                     x.Value.Flag == ItemFlags.LoSlot6 || x.Value.Flag == ItemFlags.LoSlot7)
                 .ToDictionary(x => x.Value.Flag, x => x.Value);
         
+        public Dictionary<ItemFlags, ItemEntity> RigSlots =>
+            this.Items
+                .Where(x =>
+                    x.Value.Flag == ItemFlags.RigSlot0 || x.Value.Flag == ItemFlags.RigSlot1 || x.Value.Flag == ItemFlags.RigSlot2 ||
+                    x.Value.Flag == ItemFlags.RigSlot3 || x.Value.Flag == ItemFlags.RigSlot4 || x.Value.Flag == ItemFlags.RigSlot5 ||
+                    x.Value.Flag == ItemFlags.RigSlot6 || x.Value.Flag == ItemFlags.RigSlot7)
+                .ToDictionary(x => x.Value.Flag, x => x.Value);
+        
         public Dictionary<ItemFlags, ItemEntity> HighSlotModules =>
             this.Items
                 .Where(x =>

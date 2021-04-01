@@ -33,14 +33,17 @@ namespace Node.Inventory.Items.Types
                     Duration = 0,
                 };
             }
-            
-            // special case, check for the isOnline attribute and put the module online if so
-            if (this.Attributes[AttributeEnum.isOnline] == 1)
-            {
-                GodmaShipEffect effect = this.Effects[(int) EffectsEnum.Online];
 
-                effect.ShouldStart = true;
-                effect.StartTime = DateTime.UtcNow.ToFileTimeUtc();
+            if (this.IsInModuleSlot() == true)
+            {
+                // apply passive effects
+                this.ApplyPassiveEffects();
+            
+                // special case, check for the isOnline attribute and put the module online if so
+                if (this.Attributes[AttributeEnum.isOnline] == 1)
+                {
+                    this.ApplyEffect("online");
+                }
             }
         }
         
@@ -49,7 +52,7 @@ namespace Node.Inventory.Items.Types
             return this.Effects;
         }
 
-        public void ApplyEffect(string effectName, Client forClient)
+        public void ApplyEffect(string effectName, Client forClient = null)
         {
             // check if the module has the given effect in it's list
             if (this.Type.EffectsByName.TryGetValue(effectName, out Effect effect) == false)
@@ -60,13 +63,13 @@ namespace Node.Inventory.Items.Types
             this.ApplyEffect(effect, godmaEffect, forClient);
         }
 
-        private void ApplyEffect(Effect effect, GodmaShipEffect godmaEffect, Client forClient)
+        private void ApplyEffect(Effect effect, GodmaShipEffect godmaEffect, Client forClient = null)
         {
             if (godmaEffect.ShouldStart == true)
                 return;
             
-            Ship ship = this.ItemFactory.ItemManager.GetItem<Ship>((int) forClient.ShipID);
-            Character character = this.ItemFactory.ItemManager.GetItem<Character>(forClient.EnsureCharacterIsSelected());
+            Ship ship = this.ItemFactory.ItemManager.GetItem<Ship>(this.LocationID);
+            Character character = this.ItemFactory.ItemManager.GetItem<Character>(this.OwnerID);
 
             try
             {
@@ -92,7 +95,7 @@ namespace Node.Inventory.Items.Types
             catch (Exception e)
             {
                 // notify the client about it
-                forClient.NotifyMultiEvent(new OnGodmaShipEffect(godmaEffect));
+                forClient?.NotifyMultiEvent(new OnGodmaShipEffect(godmaEffect));
                 throw;
             }
 
@@ -116,7 +119,7 @@ namespace Node.Inventory.Items.Types
                 this.ApplyOnlineEffects(forClient);
         }
 
-        public void StopApplyingEffect(string effectName, Client forClient)
+        public void StopApplyingEffect(string effectName, Client forClient = null)
         {
             // check if the module has the given effect in it's list
             if (this.Type.EffectsByName.TryGetValue(effectName, out Effect effect) == false)
@@ -127,14 +130,14 @@ namespace Node.Inventory.Items.Types
             this.StopApplyingEffect(effect, godmaEffect, forClient);
         }
 
-        private void StopApplyingEffect(Effect effect, GodmaShipEffect godmaEffect, Client forClient)
+        private void StopApplyingEffect(Effect effect, GodmaShipEffect godmaEffect, Client forClient = null)
         {
             // ensure the effect is being applied before doing anything
             if (godmaEffect.ShouldStart == false)
                 return;
             
-            Ship ship = this.ItemFactory.ItemManager.GetItem<Ship>((int) forClient.ShipID);
-            Character character = this.ItemFactory.ItemManager.GetItem<Character>(forClient.EnsureCharacterIsSelected());
+            Ship ship = this.ItemFactory.ItemManager.GetItem<Ship>(this.LocationID);
+            Character character = this.ItemFactory.ItemManager.GetItem<Character>(this.OwnerID);
             
             // create the environment for this run
             Node.Dogma.Interpreter.Environment env = new Node.Dogma.Interpreter.Environment()
@@ -171,36 +174,36 @@ namespace Node.Inventory.Items.Types
                 this.StopApplyingOnlineEffects(forClient);
         }
 
-        private void ApplyEffectsByCategory(EffectCategory category, Client forClient)
+        private void ApplyEffectsByCategory(EffectCategory category, Client forClient = null)
         {
             foreach ((int _, GodmaShipEffect effect) in this.Effects)
                 if (effect.Effect.EffectCategory == category && effect.ShouldStart == false)
                     this.ApplyEffect(effect.Effect, effect, forClient);
         }
 
-        private void StopApplyingEffectsByCategory(EffectCategory category, Client forClient)
+        private void StopApplyingEffectsByCategory(EffectCategory category, Client forClient = null)
         {
             foreach ((int _, GodmaShipEffect effect) in this.Effects)
                 if (effect.Effect.EffectCategory == category && effect.ShouldStart == true)
                     this.StopApplyingEffect(effect.Effect, effect, forClient);
         }
         
-        private void ApplyOnlineEffects(Client forClient)
+        private void ApplyOnlineEffects(Client forClient = null)
         {
             this.ApplyEffectsByCategory(EffectCategory.Online, forClient);
         }
 
-        private void StopApplyingOnlineEffects(Client forClient)
+        private void StopApplyingOnlineEffects(Client forClient = null)
         {
             this.StopApplyingEffectsByCategory(EffectCategory.Online, forClient);
         }
 
-        public void ApplyPassiveEffects(Client forClient)
+        public void ApplyPassiveEffects(Client forClient = null)
         {
             this.ApplyEffectsByCategory(EffectCategory.Passive, forClient);
         }
 
-        public void StopApplyingPassiveEffects(Client forClient)
+        public void StopApplyingPassiveEffects(Client forClient = null)
         {
             this.StopApplyingEffectsByCategory(EffectCategory.Passive, forClient);
         }
@@ -218,6 +221,11 @@ namespace Node.Inventory.Items.Types
         public bool IsLowSlot()
         {
             return this.Effects.ContainsKey((int) EffectsEnum.LowPower) == true;
+        }
+
+        public bool IsRigSlot()
+        {
+            return this.Effects.ContainsKey((int) EffectsEnum.RigSlot) == true;
         }
     }
 }

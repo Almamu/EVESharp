@@ -325,8 +325,9 @@ namespace Node.Inventory
             if (this.mItemList.TryGetValue(item.LocationID, out ItemEntity location) == true && location is ItemInventory inventory)
                 inventory.AddItem(item);
             
-            // notify the meta inventory manager about the new item
-            this.MetaInventoryManager.OnItemLoaded(item);
+            // notify the meta inventory manager about the new item only if the item is user-generated
+            if (item.ID >= USERGENERATED_ID_MIN)
+                this.MetaInventoryManager.OnItemLoaded(item);
 
             // ensure the item is in the loaded list
             this.mItemList.Add(item.ID, item);
@@ -561,6 +562,7 @@ namespace Node.Inventory
             
             // set the item to the recycler location just in case something has a reference to it somewhere
             item.LocationID = this.LocationRecycler.ID;
+            item.Flag = ItemFlags.None;
 
             // finally remove the item off the database
             item.Destroy();

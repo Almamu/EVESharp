@@ -206,12 +206,12 @@ namespace Node
                 logChannel.Info("Initializing timer manager");
                 dependencies.GetInstance<TimerManager>().Start();
                 logChannel.Debug("Done");
-                
+
                 // do some parallel initialization, cache priming and static item loading can be performed in parallel
                 // this makes the changes quicker
                 new Thread(() =>
                 {
-                    logChannel.Info("Priming cache...");
+                    logChannel.Info("Initializing cache");
                     CacheStorage cacheStorage = dependencies.GetInstance<CacheStorage>();
                     // prime bulk data
                     cacheStorage.Load(
@@ -231,16 +231,15 @@ namespace Node
                         CacheStorage.CharacterAppearanceCacheQueries,
                         CacheStorage.CharacterAppearanceCacheTypes
                     );
+                    logChannel.Info("Cache Initialized");
                     cacheSemaphore.Release(1);
                 }).Start();
-                
-                logChannel.Debug("Done");
 
                 new Thread(() =>
                 {
                     logChannel.Info("Initializing item factory");
                     dependencies.GetInstance<ItemFactory>().Init();
-                    logChannel.Debug("Done");
+                    logChannel.Debug("Item Factory Initialized");
 
                     itemSemaphore.Release(1);
                 }).Start();
