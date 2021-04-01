@@ -25,10 +25,12 @@ namespace Node.Services.Inventory
             this.SystemManager = systemManager;
         }
 
-        protected ship(ItemEntity location, ItemManager itemManager, TypeManager typeManager, SystemManager systemManager,
-            BoundServiceManager manager, Client client) : this(itemManager, typeManager, systemManager, manager)
+        protected ship(ItemEntity location, ItemManager itemManager, TypeManager typeManager, SystemManager systemManager, BoundServiceManager manager, Client client) : base(manager, client)
         {
             this.Location = location;
+            this.ItemManager = itemManager;
+            this.TypeManager = typeManager;
+            this.SystemManager = systemManager;
         }
 
         public override PyInteger MachoResolveObject(PyTuple objectData, PyInteger zero, CallInformation call)

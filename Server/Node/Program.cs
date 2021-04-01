@@ -153,6 +153,7 @@ namespace Node
                 dependencies.Register<slash>(Lifestyle.Singleton);
                 dependencies.Register<ship>(Lifestyle.Singleton);
                 dependencies.Register<corpmgr>(Lifestyle.Singleton);
+                dependencies.Register<repairSvc>(Lifestyle.Singleton);
                 
                 dependencies.RegisterInstance(General.LoadFromFile("configuration.conf", dependencies));
                 // disable auto-verification on the container as it triggers creation of instances before they're needed
