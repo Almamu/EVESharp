@@ -34,7 +34,7 @@ namespace Node.Dogma.Interpreter.Opcodes
                     item.Attributes[att.AttributeToAffect.Attribute].Integer = defint.Value;
                     
                     // notify the character
-                    this.Interpreter.Environment.Client.NotifyAttributeChange(attribute, item);
+                    this.Interpreter.Environment.Client?.NotifyAttributeChange(attribute, item);
                 }
             }
             else

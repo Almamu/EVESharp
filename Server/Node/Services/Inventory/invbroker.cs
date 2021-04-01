@@ -101,7 +101,7 @@ namespace Node.Services.Inventory
             ItemInventory inventory = inventoryItem;
             
             // create a meta inventory only if required
-            if (inventoryItem is not Ship && inventoryItem is not Station)
+            if (inventoryItem is not Ship && inventoryItem is not Character)
                 inventory = this.ItemManager.MetaInventoryManager.RegisterMetaInventoryForOwnerID(inventoryItem, characterID);
             
             // create an instance of the inventory service and bind it to the item data
