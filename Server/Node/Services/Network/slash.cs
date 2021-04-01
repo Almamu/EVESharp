@@ -105,6 +105,7 @@ namespace Node.Services.Network
 
         private void GiveSkillCmd(string[] argv, CallInformation call)
         {
+            // TODO: NOT NODE-SAFE, MUST REIMPLEMENT TAKING THAT INTO ACCOUNT!
             if (argv.Length != 4)
                 throw new SlashError("GiveSkill must have 4 arguments");
 

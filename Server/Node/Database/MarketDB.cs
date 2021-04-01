@@ -3,8 +3,10 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using Common.Database;
 using MySql.Data.MySqlClient;
+using Node.Exceptions.marketProxy;
 using Node.Inventory;
 using Node.Inventory.Items;
+using Node.Inventory.Items.Attributes;
 using Node.Market;
 using PythonTypes.Types.Collections;
 using PythonTypes.Types.Database;
@@ -485,18 +487,20 @@ namespace Node.Database
             public int Quantity { get; set; }
             public int OriginalQuantity { get; set; }
             public int NodeID { get; set; }
+            public double Damage { get; set; }
         }
         
         public Dictionary<int, ItemQuantityEntry> PrepareItemForOrder(MySqlConnection connection, int typeID, int locationID1, int locationID2, int quantity, int ownerID1)
         {
             MySqlDataReader reader = Database.PrepareQuery(ref connection,
-                "SELECT itemID, quantity, singleton, nodeID FROM invItems WHERE typeID = @typeID AND (locationID = @locationID1 OR locationID = @locationID2) AND ownerID = @ownerID1",
+                "SELECT invItems.itemID, quantity, singleton, nodeID, IF(valueInt IS NULL, valueFloat, valueInt) AS damage FROM invItems LEFT JOIN invItemsAttributes ON invItemsAttributes.itemID = invItems.itemID AND invItemsAttributes.attributeID = @damageAttributeID WHERE typeID = @typeID AND (locationID = @locationID1 OR locationID = @locationID2) AND ownerID = @ownerID1",
                 new Dictionary<string, object>()
                 {
                     {"@locationID1", locationID1},
                     {"@locationID2", locationID2},
                     {"@ownerID1", ownerID1},
-                    {"@typeID", typeID}
+                    {"@typeID", typeID},
+                    {"@damageAttributeID", (int) AttributeEnum.damage}
                 }
             );
             
@@ -519,7 +523,8 @@ namespace Node.Database
                         ItemID = itemID,
                         OriginalQuantity = itemQuantity,
                         Quantity = itemQuantity - Math.Min(itemQuantity, quantityLeft),
-                        NodeID = reader.GetInt32(3)
+                        NodeID = reader.GetInt32(3),
+                        Damage = reader.GetDoubleOrDefault(4)
                     };
 
                     itemIDToQuantityLeft[itemID] = entry;
@@ -535,6 +540,13 @@ namespace Node.Database
             {
                 // there's not enough items for this sale!!
                 return null;
+            }
+            
+            // preeliminary check, are items damaged?
+            foreach ((int _, ItemQuantityEntry entry) in itemIDToQuantityLeft)
+            {
+                if (entry.Damage > 0)
+                    throw new RepairBeforeSelling(this.TypeManager[typeID]);
             }
             
             // now iterate all the itemIDs, the ones that have a quantity of 0 must be moved to the correct container

@@ -518,6 +518,16 @@ namespace Node
             this.NotifyMultiEvent(changes);
         }
 
+        public void NotifyAttributeChange(AttributeEnum attribute, ItemEntity[] items)
+        {
+            OnModuleAttributeChanges changes = new OnModuleAttributeChanges();
+
+            foreach (ItemEntity item in items)
+                changes.AddChange(new OnModuleAttributeChange(item, item.Attributes[attribute]));
+            
+            this.NotifyMultiEvent(changes);
+        }
+
         /// <summary>
         /// Adds a MultiEvent notification to the list of pending notifications to be sent
         /// </summary>
