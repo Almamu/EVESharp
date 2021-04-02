@@ -149,5 +149,27 @@ namespace Node.Database
                 }
             );
         }
+
+        public double GetStanding(int from, int to)
+        {
+            MySqlConnection connection = null;
+            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+                "SELECT standing FROM chrStandings WHERE characterID = @fromID AND toID = @toID",
+                new Dictionary<string, object>()
+                {
+                    {"@fromID", from},
+                    {"@toID", to}
+                }
+            );
+            
+            using(connection)
+            using (reader)
+            {
+                if (reader.Read() == false)
+                    return 0.0;
+
+                return reader.GetDouble(0);
+            }
+        }
     }
 }

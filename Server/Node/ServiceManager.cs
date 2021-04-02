@@ -96,6 +96,7 @@ namespace Node
         public ship ship { get; }
         public corpmgr corpmgr { get; }
         public repairSvc repairSvc { get; }
+        public reprocessingSvc reprocessingSvc { get; }
         
         public ServiceManager(
             NodeContainer container, CacheStorage storage, Logger logger, TimerManager timerManager,
@@ -139,7 +140,8 @@ namespace Node
             slash slash,
             ship ship,
             corpmgr corpmgr,
-            repairSvc repairSvc)
+            repairSvc repairSvc,
+            reprocessingSvc reprocessingSvc)
         {
             this.Container = container;
             this.CacheStorage = storage;
@@ -189,6 +191,7 @@ namespace Node
             this.ship = ship;
             this.corpmgr = corpmgr;
             this.repairSvc = repairSvc;
+            this.reprocessingSvc = reprocessingSvc;
         }
 
         /// <summary>
