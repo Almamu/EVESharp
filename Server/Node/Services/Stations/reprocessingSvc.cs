@@ -283,7 +283,13 @@ namespace Node.Services.Stations
                 if (this.mInventory.Items.TryGetValue(itemID, out ItemEntity item) == false)
                     throw new MktNotOwner();
 
+                // reprocess the item
                 this.Reprocess(character, item, call.Client);
+                int oldLocationID = item.LocationID;
+                // finally remove the item from the inventories
+                this.ItemManager.DestroyItem(item);
+                // notify the client about the item being destroyed
+                call.Client.NotifyMultiEvent(OnItemChange.BuildLocationChange(item, oldLocationID));
             }
             
             return null;

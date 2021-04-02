@@ -562,7 +562,7 @@ namespace Node.Inventory
             
             // set the item to the recycler location just in case something has a reference to it somewhere
             item.LocationID = this.LocationRecycler.ID;
-            item.Flag = ItemFlags.None;
+            // item.Flag = ItemFlags.None;
 
             // finally remove the item off the database
             item.Destroy();
