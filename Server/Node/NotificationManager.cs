@@ -83,6 +83,10 @@ namespace Node
         /// <param name="data"></param>
         public void NotifyNode(long nodeID, string type, PyTuple data)
         {
+            // do not notify if the notification is for a non-existant node (nodeID = 0)
+            if (nodeID == 0)
+                return;
+            
             PyPacket notification = new PyPacket(PyPacket.PacketType.NOTIFICATION)
             {
                 Source = new PyAddressAny(0),
