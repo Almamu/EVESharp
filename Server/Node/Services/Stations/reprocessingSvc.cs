@@ -184,8 +184,6 @@ namespace Node.Services.Stations
             int leftovers = item.Quantity % item.Type.PortionSize;
             int quantityToProcess = item.Quantity - leftovers;
             
-            double efficiency = this.CalculateEfficiency(character, item.Type.ID);
-
             List<ReprocessingDB.Recoverables> recoverablesList = this.ReprocessingDB.GetRecoverables(item.Type.ID);
             Rowset recoverables = new Rowset(
                 new PyList(4)
@@ -201,6 +199,8 @@ namespace Node.Services.Stations
             {
                 int ratio = recoverable.AmountPerBatch * quantityToProcess / item.Type.PortionSize;
 
+                double efficiency = this.CalculateEfficiency(character, recoverable.TypeID);
+                
                 recoverables.Rows.Add(
                     new PyList(4)
                     {
@@ -247,8 +247,45 @@ namespace Node.Services.Stations
             return result;
         }
 
-        public PyDataType Reprocess(PyList itemIDs, PyDataType ownerID, PyDataType flag, PyBool unknown, PyList skipChecks)
+        private void Reprocess(Character character, ItemEntity item, Client client)
         {
+            if (item.Quantity < item.Type.PortionSize)
+                throw new QuantityLessThanMinimumPortion(item.Type);
+            
+            int leftovers = item.Quantity % item.Type.PortionSize;
+            int quantityToProcess = item.Quantity - leftovers;
+            
+            List<ReprocessingDB.Recoverables> recoverablesList = this.ReprocessingDB.GetRecoverables(item.Type.ID);
+
+            foreach (ReprocessingDB.Recoverables recoverable in recoverablesList)
+            {
+                int ratio = recoverable.AmountPerBatch * quantityToProcess / item.Type.PortionSize;
+
+                double efficiency = this.CalculateEfficiency(character, recoverable.TypeID);
+
+                int quantityForClient = (int) (efficiency * (1.0 - this.mCorporation.TaxRate) * ratio);
+                
+                // create the new item
+                ItemEntity newItem = this.ItemManager.CreateSimpleItem(this.TypeManager[recoverable.TypeID], character, this.mStation,
+                    ItemFlags.Hangar, quantityForClient);
+                // notify the client about the new item
+                client.NotifyMultiEvent(OnItemChange.BuildNewItemChange(newItem));
+            }
+        }
+
+        public PyDataType Reprocess(PyList itemIDs, PyInteger ownerID, PyInteger flag, PyBool unknown, PyList skipChecks, CallInformation call)
+        {
+            Character character = this.ItemManager.GetItem<Character>(call.Client.EnsureCharacterIsSelected());
+            
+            // TODO: TAKE INTO ACCOUNT OWNERID AND FLAG, THESE MOST LIKELY WILL BE USED BY CORP STUFF
+            foreach (PyInteger itemID in itemIDs.GetEnumerable<PyInteger>())
+            {
+                if (this.mInventory.Items.TryGetValue(itemID, out ItemEntity item) == false)
+                    throw new MktNotOwner();
+
+                this.Reprocess(character, item, call.Client);
+            }
+            
             return null;
         }
     }
