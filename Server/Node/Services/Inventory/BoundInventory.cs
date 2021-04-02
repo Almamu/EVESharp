@@ -462,6 +462,11 @@ namespace Node.Services.Inventory
             return null;
         }
 
+        public PyDataType MultiAdd(PyList adds, CallInformation call)
+        {
+            return this.MultiAdd(adds, null, (int) this.mFlag, call);
+        }
+
         public PyDataType MultiMerge(PyList merges, CallInformation call)
         {
             foreach (PyTuple merge in merges.GetEnumerable<PyTuple>())
