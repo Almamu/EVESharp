@@ -337,16 +337,16 @@ namespace ClusterController
             {
                 foreach (PyInteger id in destination.IDsOfInterest.GetEnumerable<PyInteger>())
                 {
-                    foreach ((long nodeID, NodeConnection connection) in this.Nodes)
+                    if (this.Nodes.TryGetValue(id, out NodeConnection connection) == false)
                     {
-                        if (connection.NodeID == id)
-                        {
-                            // use the key instead of AccountID as this should be faster
-                            packet.UserID = nodeID;
-                            // queue the packet for the user
-                            connection.Socket.Send(packet);
-                        }
+                        Log.Warning("Trying to notify a node that is not connected anymore...");
+                        continue;
                     }
+                    
+                    // use the key instead of AccountID as this should be faster
+                    packet.UserID = id;
+                    // queue the packet for the user
+                    connection.Socket.Send(packet);
                 }
             }
         }
