@@ -112,6 +112,7 @@ namespace Node
                 dependencies.Register<InsuranceDB>(Lifestyle.Singleton);
                 dependencies.Register<SolarSystemDB>(Lifestyle.Singleton);
                 dependencies.Register<DogmaDB>(Lifestyle.Singleton);
+                dependencies.Register<RepairDB>(Lifestyle.Singleton);
 
                 // register all the services
                 dependencies.Register<account>(Lifestyle.Singleton);

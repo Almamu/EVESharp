@@ -4,10 +4,12 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using Node.Database;
 using Node.Exceptions;
+using Node.Exceptions.repairSvc;
 using Node.Inventory;
 using Node.Inventory.Items;
 using Node.Inventory.Items.Attributes;
 using Node.Inventory.Items.Types;
+using Node.Inventory.Notifications;
 using Node.Market;
 using Node.Network;
 using Node.Services.Inventory;
@@ -28,20 +30,32 @@ namespace Node.Services.Stations
         private TypeManager TypeManager => this.ItemFactory.TypeManager;
         private ItemInventory mInventory;
         private MarketDB MarketDB { get; }
+        private RepairDB RepairDB { get; }
+        private InsuranceDB InsuranceDB { get; }
+        private NotificationManager NotificationManager { get; }
+        private NodeContainer Container { get; }
 
-        public repairSvc(MarketDB marketDb, ItemFactory itemFactory, SystemManager systemManager, BoundServiceManager manager) : base(manager, null)
+        public repairSvc(RepairDB repairDb, MarketDB marketDb, InsuranceDB insuranceDb, NodeContainer nodeContainer, NotificationManager notificationManager, ItemFactory itemFactory, SystemManager systemManager, BoundServiceManager manager) : base(manager, null)
         {
             this.ItemFactory = itemFactory;
             this.SystemManager = systemManager;
             this.MarketDB = marketDb;
+            this.RepairDB = repairDb;
+            this.InsuranceDB = insuranceDb;
+            this.NotificationManager = notificationManager;
+            this.Container = nodeContainer;
         }
         
-        protected repairSvc(MarketDB marketDb, ItemInventory inventory, ItemFactory itemFactory, SystemManager systemManager, BoundServiceManager manager, Client client) : base(manager, client)
+        protected repairSvc(RepairDB repairDb, MarketDB marketDb, InsuranceDB insuranceDb, NodeContainer nodeContainer, NotificationManager notificationManager, ItemInventory inventory, ItemFactory itemFactory, SystemManager systemManager, BoundServiceManager manager, Client client) : base(manager, client)
         {
             this.mInventory = inventory;
             this.ItemFactory = itemFactory;
             this.SystemManager = systemManager;
             this.MarketDB = marketDb;
+            this.RepairDB = repairDb;
+            this.InsuranceDB = insuranceDb;
+            this.NotificationManager = notificationManager;
+            this.Container = nodeContainer;
         }
 
         public override PyInteger MachoResolveObject(PyInteger stationID, PyInteger zero, CallInformation call)
@@ -68,7 +82,7 @@ namespace Node.Services.Stations
             
             ItemInventory inventory = this.ItemManager.MetaInventoryManager.RegisterMetaInventoryForOwnerID(station, call.Client.EnsureCharacterIsSelected());
 
-            return new repairSvc(this.MarketDB, inventory, this.ItemFactory, this.SystemManager, this.BoundServiceManager, call.Client);
+            return new repairSvc(this.RepairDB, this.MarketDB, this.InsuranceDB, this.Container, this.NotificationManager, inventory, this.ItemFactory, this.SystemManager, this.BoundServiceManager, call.Client);
         }
 
         public PyDataType GetDamageReports(PyList itemIDs, CallInformation call)
@@ -92,7 +106,7 @@ namespace Node.Services.Stations
                 {
                     foreach ((int _, ItemEntity module) in ship.Items)
                     {
-                        if (module.IsInModuleSlot() == false)
+                        if (module.IsInModuleSlot() == false && module.IsInRigSlot() == false)
                             continue;
 
                         quote.Rows.Add(
@@ -236,6 +250,109 @@ namespace Node.Services.Stations
             
             // notify changes on the damage attribute
             call.Client.NotifyAttributeChange(AttributeEnum.damage, items.ToArray());
+            
+            // save the character
+            character.Persist();
+            
+            return null;
+        }
+
+        private void NotifyItemChange(ClusterConnection connection, long nodeID, int itemID, string key, PyDataType newValue)
+        {
+            this.NotificationManager.NotifyNode(nodeID, "OnItemUpdate",
+                new PyTuple(2)
+                {
+                    [0] = itemID,
+                    [1] = new PyDictionary() {[key] = newValue}
+                }
+            );
+        }
+        
+        public PyDataType UnasembleItems(PyDictionary validIDsByStationID, PyList skipChecks, CallInformation call)
+        {
+            int characterID = call.Client.EnsureCharacterIsSelected();
+            List<RepairDB.ItemRepackageEntry> entries = new List<RepairDB.ItemRepackageEntry>();
+
+            bool ignoreContractVoiding = false;
+            bool ignoreRepackageWithUpgrades = false;
+            
+            foreach (PyString check in skipChecks.GetEnumerable<PyString>())
+            {
+                if (check == "RepairUnassembleVoidsContract")
+                    ignoreContractVoiding = true;
+                if (check == "ConfirmRepackageSomethingWithUpgrades")
+                    ignoreRepackageWithUpgrades = true;
+            }
+
+            foreach ((PyInteger stationID, PyList itemIDs) in validIDsByStationID.GetEnumerable<PyInteger, PyList>())
+            {
+                foreach (PyInteger itemID in itemIDs.GetEnumerable<PyInteger>())
+                {
+                    RepairDB.ItemRepackageEntry entry = this.RepairDB.GetItemToRepackage(itemID, characterID, stationID);
+
+                    if (entry.HasContract == true && ignoreContractVoiding == false)
+                        throw new RepairUnassembleVoidsContract(this.ItemFactory.TypeManager[entry.TypeID]);
+                    if (entry.HasUpgrades == true && ignoreRepackageWithUpgrades == false)
+                        throw new ConfirmRepackageSomethingWithUpgrades();
+                    if (entry.Damage != 0.0)
+                        throw new CantRepackageDamagedItem();
+
+                    entries.Add(entry);
+                }
+            }
+
+            foreach (RepairDB.ItemRepackageEntry entry in entries)
+            {
+                if (entry.Singleton == false)
+                    continue;
+                
+                // extra situation, the repair is happening on a item in our node, the client must know immediately
+                if (entry.NodeID == this.Container.NodeID || this.SystemManager.StationBelongsToUs(entry.LocationID) == true)
+                {
+                    ItemEntity item = this.ItemManager.LoadItem(entry.ItemID, out bool loadRequired);
+
+                    // the item is an inventory, take everything out!
+                    if (item is ItemInventory inventory)
+                    {
+                        foreach ((int _, ItemEntity itemInInventory) in inventory.Items)
+                        {
+                            // if the item is in a rig slot, destroy it
+                            if (itemInInventory.IsInRigSlot() == true)
+                            {
+                                ItemFlags oldFlag = itemInInventory.Flag;
+                                this.ItemManager.DestroyItem(itemInInventory);
+                                // notify the client about the change
+                                call.Client.NotifyMultiEvent(OnItemChange.BuildLocationChange(itemInInventory, oldFlag, entry.ItemID));
+                            }
+                            else
+                            {
+                                ItemFlags oldFlag = itemInInventory.Flag;
+                                // update item's location
+                                itemInInventory.LocationID = entry.LocationID;
+                                itemInInventory.Flag = ItemFlags.Hangar;
+                            
+                                // notify the client about the change
+                                call.Client.NotifyMultiEvent(OnItemChange.BuildLocationChange(itemInInventory, oldFlag, entry.ItemID));
+                                // save the item
+                                itemInInventory.Persist();
+                            }
+                        }
+                    }
+
+                    // load was required, the item is not needed anymore
+                    if (loadRequired == true)
+                    {
+                        this.ItemManager.UnloadItem(item);
+                    }
+                }
+                
+                // finally repackage the item
+                this.RepairDB.RepackageItem(entry.ItemID, entry.LocationID);
+                // notify the node about the change
+                this.NotifyItemChange(call.Client.ClusterConnection, entry.NodeID, entry.ItemID, "singleton", false);
+                // remove any insurance contract for the ship
+                this.InsuranceDB.UnInsureShip(entry.ItemID);
+            }
             
             return null;
         }

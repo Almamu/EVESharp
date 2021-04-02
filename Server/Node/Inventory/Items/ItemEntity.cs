@@ -364,8 +364,12 @@ namespace Node.Inventory.Items
                    this.Flag == ItemFlags.MedSlot4 || this.Flag == ItemFlags.MedSlot5 || this.Flag == ItemFlags.MedSlot6 ||
                    this.Flag == ItemFlags.MedSlot7 || this.Flag == ItemFlags.LoSlot0 || this.Flag == ItemFlags.LoSlot1 ||
                    this.Flag == ItemFlags.LoSlot2 || this.Flag == ItemFlags.LoSlot3 || this.Flag == ItemFlags.LoSlot4 ||
-                   this.Flag == ItemFlags.LoSlot5 || this.Flag == ItemFlags.LoSlot6 || this.Flag == ItemFlags.LoSlot7 ||
-                   this.Flag == ItemFlags.RigSlot0 || this.Flag == ItemFlags.RigSlot1 || this.Flag == ItemFlags.RigSlot2 ||
+                   this.Flag == ItemFlags.LoSlot5 || this.Flag == ItemFlags.LoSlot6 || this.Flag == ItemFlags.LoSlot7;
+        }
+
+        public bool IsInRigSlot()
+        {
+            return this.Flag == ItemFlags.RigSlot0 || this.Flag == ItemFlags.RigSlot1 || this.Flag == ItemFlags.RigSlot2 ||
                    this.Flag == ItemFlags.RigSlot3 || this.Flag == ItemFlags.RigSlot4 || this.Flag == ItemFlags.RigSlot5 ||
                    this.Flag == ItemFlags.RigSlot6 || this.Flag == ItemFlags.RigSlot7;
         }

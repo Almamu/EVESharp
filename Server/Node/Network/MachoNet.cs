@@ -486,22 +486,28 @@ namespace Node.Network
             OnItemChange itemChange = new OnItemChange(item);
             
             // update item and build change notification
-            if (changes.TryGetValue("locationID", out PyDataType newLocation) == true && newLocation is PyInteger newLocationID)
+            if (changes.TryGetValue("locationID", out PyInteger newLocationID) == true)
             {
                 itemChange.AddChange(ItemChange.LocationID, item.LocationID);
                 item.LocationID = newLocationID;
             }
             
-            if (changes.TryGetValue ("quantity", out PyDataType newQuantity) == true && newQuantity is PyInteger newQuantityInt)
+            if (changes.TryGetValue ("quantity", out PyInteger newQuantity) == true)
             {
                 itemChange.AddChange(ItemChange.Quantity, item.Quantity);
-                item.Quantity = newQuantityInt;
+                item.Quantity = newQuantity;
             }
             
-            if (changes.TryGetValue("ownerID", out PyDataType newOwner) == true && newOwner is PyInteger newOwnerID)
+            if (changes.TryGetValue("ownerID", out PyInteger newOwnerID) == true)
             {
                 itemChange.AddChange(ItemChange.OwnerID, item.OwnerID);
                 item.OwnerID = newOwnerID;
+            }
+
+            if (changes.TryGetValue("singleton", out PyBool newSingleton) == true)
+            {
+                itemChange.AddChange(ItemChange.Singleton, item.Singleton);
+                item.Singleton = newSingleton;
             }
             
             // TODO: IDEALLY THIS WOULD BE ENQUEUED SO ALL OF THEM ARE SENT AT THE SAME TIME

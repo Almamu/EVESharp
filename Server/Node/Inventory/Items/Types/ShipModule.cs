@@ -34,7 +34,7 @@ namespace Node.Inventory.Items.Types
                 };
             }
 
-            if (this.IsInModuleSlot() == true)
+            if (this.IsInModuleSlot() == true || this.IsInRigSlot() == true)
             {
                 // apply passive effects
                 this.ApplyPassiveEffects();
