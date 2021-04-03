@@ -23,10 +23,5 @@ namespace Node
         }
 
         public Expression this[int index] => this.Expressions[index];
-        
-        public void ApplyEffects(ShipModule item, Expression expression, Character character, Ship ship)
-        {
-            
-        }
     }
 }

@@ -144,6 +144,5 @@ namespace Node
             
             this.ClusterConnection.Send(packet);
         }
-
     }
 }

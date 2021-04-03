@@ -8,7 +8,6 @@ namespace Node.Exceptions.inventory
     {
         public NoFreeShipSlots() : base("NoFreeShipSlots")
         {
-            
         }
     }
 }

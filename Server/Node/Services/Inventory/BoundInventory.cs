@@ -110,22 +110,11 @@ namespace Node.Services.Inventory
             ItemFlags oldFlag = item.Flag;
             
             // rig slots cannot be moded
-            if (oldFlag == ItemFlags.RigSlot0 || oldFlag == ItemFlags.RigSlot1 || oldFlag == ItemFlags.RigSlot2 ||
-                oldFlag == ItemFlags.RigSlot3 || oldFlag == ItemFlags.RigSlot4 || oldFlag == ItemFlags.RigSlot5 ||
-                oldFlag == ItemFlags.RigSlot6 || oldFlag == ItemFlags.RigSlot7)
-            {
+            if (item.IsInRigSlot() == true)
                 throw new CannotRemoveUpgradeManually();
-            }
             
             // special situation, if the old location is a module slot ensure the item is first offlined
-            if (oldFlag == ItemFlags.HiSlot0 || oldFlag == ItemFlags.HiSlot1 || oldFlag == ItemFlags.HiSlot2 ||
-                oldFlag == ItemFlags.HiSlot3 || oldFlag == ItemFlags.HiSlot4 || oldFlag == ItemFlags.HiSlot5 ||
-                oldFlag == ItemFlags.HiSlot6 || oldFlag == ItemFlags.HiSlot7 || oldFlag == ItemFlags.MedSlot0 ||
-                oldFlag == ItemFlags.MedSlot1 || oldFlag == ItemFlags.MedSlot2 || oldFlag == ItemFlags.MedSlot3 ||
-                oldFlag == ItemFlags.MedSlot4 || oldFlag == ItemFlags.MedSlot5 || oldFlag == ItemFlags.MedSlot6 ||
-                oldFlag == ItemFlags.MedSlot7 || oldFlag == ItemFlags.LoSlot0 || oldFlag == ItemFlags.LoSlot1 ||
-                oldFlag == ItemFlags.LoSlot2 || oldFlag == ItemFlags.LoSlot3 || oldFlag == ItemFlags.LoSlot4 ||
-                oldFlag == ItemFlags.LoSlot5 || oldFlag == ItemFlags.LoSlot6 || oldFlag == ItemFlags.LoSlot7)
+            if (item.IsInModuleSlot() == true)
             {
                 if (item is ShipModule module)
                 {

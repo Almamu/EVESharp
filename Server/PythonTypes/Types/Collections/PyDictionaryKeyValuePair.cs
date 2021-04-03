@@ -24,7 +24,6 @@ namespace PythonTypes.Types.Collections
         public PyDataType Value => this.mPair.Value;
     }
     
-
     /// <summary>
     /// The equivalent to KeyValuePair to write custom deconstruct methods
     /// </summary>

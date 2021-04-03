@@ -357,13 +357,13 @@ namespace Node.Database
             return connection;
         }
 
-        public MarketOrder[] FindMatchingBuyOrders(MySqlConnection connection, double price, int typeID, int characterID, int solarSystemID)
+        public MarketOrder[] FindMatchingOrders(MySqlConnection connection, double price, int typeID, int characterID, int solarSystemID, TransactionType type)
         {
             MySqlDataReader reader = Database.PrepareQuery(ref connection,
                 "SELECT orderID, typeID, itemID, charID, stationID AS locationID, price, accountID, volRemaining, minVolume, `range`, jumps, escrow, issued FROM mktOrders LEFT JOIN staStations USING(stationID) LEFT JOIN mapPrecalculatedSolarSystemJumps ON solarSystemID = fromSolarSystemID AND toSolarsystemID = @solarSystemID WHERE bid = @transactionType AND price >= @price AND typeID = @typeID AND charID != @characterID ORDER BY price",
                 new Dictionary<string, object>()
                 {
-                    {"@transactionType", TransactionType.Buy},
+                    {"@transactionType", type},
                     {"@price", price},
                     {"@typeID", typeID},
                     {"@solarSystemID", solarSystemID},
@@ -392,52 +392,7 @@ namespace Node.Database
                             reader.GetInt32(9),
                             reader.GetInt32(10),
                             reader.IsDBNull(11) == false ? reader.GetDouble(11) : 0,
-                            TransactionType.Buy,
-                            reader.GetInt64(12)
-                        )
-                    );
-                }
-
-                return orders.ToArray();
-            }
-        }
-
-        public MarketOrder[] FindMatchingSellOrders(MySqlConnection connection, double price, int typeID, int characterID, int solarSystemID)
-        {
-            MySqlDataReader reader = Database.PrepareQuery(ref connection,
-                "SELECT orderID, typeID, itemID, charID, stationID AS locationID, price, accountID, volRemaining, minVolume, `range`, jumps, escrow, issued FROM mktOrders LEFT JOIN staStations USING(stationID) LEFT JOIN mapPrecalculatedSolarSystemJumps ON solarSystemID = fromSolarSystemID AND toSolarsystemID = @solarSystemID WHERE bid = @transactionType AND price <= @price AND typeID = @typeID AND charID != @characterID ORDER BY price",
-                new Dictionary<string, object>()
-                {
-                    {"@transactionType", TransactionType.Sell},
-                    {"@price", price},
-                    {"@typeID", typeID},
-                    {"@solarSystemID", solarSystemID},
-                    {"@characterID", characterID}
-                }
-            );
-
-            using (reader)
-            {
-                List<MarketOrder> orders = new List<MarketOrder>();
-                
-                while (reader.Read() == true)
-                {
-                    // build the MarketOrder object
-                    orders.Add(
-                        new MarketOrder(
-                            reader.GetInt32(0),
-                            reader.GetInt32(1),
-                            reader.IsDBNull(2) == false ? reader.GetInt32(2) : 0,
-                            reader.GetInt32(3),
-                            reader.GetInt32(4),
-                            reader.GetDouble(5),
-                            reader.GetInt32(6),
-                            reader.GetInt32(7),
-                            reader.GetInt32(8),
-                            reader.GetInt32(9),
-                            reader.GetInt32(10),
-                            reader.IsDBNull(11) == false ? reader.GetDouble(11) : 0,
-                            TransactionType.Sell,
+                            type,
                             reader.GetInt64(12)
                         )
                     );

@@ -372,6 +372,27 @@ namespace Node
             return this.mCacheHints[$"{service}::{method}"];
         }
 
+        private PyDataType QueryCacheObject(string query, CacheObjectType type)
+        {
+            MySqlConnection connection = null;
+            MySqlDataReader reader = Database.Query(ref connection, query);
+
+            using(connection)
+            using (reader)
+            {
+                return type switch
+                {
+                    CacheObjectType.Rowset => Rowset.FromMySqlDataReader(Database, reader),
+                    CacheObjectType.CRowset => CRowset.FromMySqlDataReader(Database, reader),
+                    CacheObjectType.TupleSet => TupleSet.FromMySqlDataReader(Database, reader),
+                    CacheObjectType.PackedRowList => PyPackedRowList.FromMySqlDataReader(Database, reader),
+                    CacheObjectType.IntIntDict => IntIntDictionary.FromMySqlDataReader(reader),
+                    CacheObjectType.IndexRowset => IndexRowset.FromMySqlDataReader(Database, reader, 0),
+                    _ => null
+                };
+            }
+        }
+
         private void Load(string name, string query, CacheObjectType type)
         {
             Log.Debug($"Loading cache data for {name} of type {type}");
@@ -382,37 +403,7 @@ namespace Node
 
             try
             {
-                MySqlConnection connection = null;
-                MySqlDataReader reader = Database.Query(ref connection, query);
-                PyDataType cacheObject = null;
-
-                using(connection)
-                using (reader)
-                {
-                    switch (type)
-                    {
-                        case CacheObjectType.Rowset:
-                            cacheObject = Rowset.FromMySqlDataReader(Database, reader);
-                            break;
-                        case CacheObjectType.CRowset:
-                            cacheObject = CRowset.FromMySqlDataReader(Database, reader);
-                            break;
-                        case CacheObjectType.TupleSet:
-                            cacheObject = TupleSet.FromMySqlDataReader(Database, reader);
-                            break;
-                        case CacheObjectType.PackedRowList:
-                            cacheObject = PyPackedRowList.FromMySqlDataReader(Database, reader);
-                            break;
-                        case CacheObjectType.IntIntDict:
-                            cacheObject = IntIntDictionary.FromMySqlDataReader(reader);
-                            break;
-                        case CacheObjectType.IndexRowset:
-                            cacheObject = IndexRowset.FromMySqlDataReader(Database, reader, 0);
-                            break;
-                    }
-
-                    Store(name, cacheObject, DateTime.UtcNow.ToFileTimeUtc());
-                }
+                Store(name, this.QueryCacheObject(query, type), DateTime.UtcNow.ToFileTimeUtc());
             }
             catch (Exception)
             {
@@ -431,37 +422,7 @@ namespace Node
             
             try
             {
-                MySqlConnection connection = null;
-                MySqlDataReader reader = Database.Query(ref connection, query);
-                PyDataType cacheObject = null;
-
-                using(connection)
-                using (reader)
-                {
-                    switch (type)
-                    {
-                        case CacheObjectType.Rowset:
-                            cacheObject = Rowset.FromMySqlDataReader(Database, reader);
-                            break;
-                        case CacheObjectType.CRowset:
-                            cacheObject = CRowset.FromMySqlDataReader(Database, reader);
-                            break;
-                        case CacheObjectType.TupleSet:
-                            cacheObject = TupleSet.FromMySqlDataReader(Database, reader);
-                            break;
-                        case CacheObjectType.PackedRowList:
-                            cacheObject = PyPackedRowList.FromMySqlDataReader(Database, reader);
-                            break;
-                        case CacheObjectType.IntIntDict:
-                            cacheObject = IntIntDictionary.FromMySqlDataReader(reader);
-                            break;
-                        case CacheObjectType.IndexRowset:
-                            cacheObject = IndexRowset.FromMySqlDataReader(Database, reader, 0);
-                            break;
-                    }
-
-                    StoreCall(service, method, cacheObject, DateTime.UtcNow.ToFileTimeUtc());
-                }
+                StoreCall(service, method, this.QueryCacheObject(query, type), DateTime.UtcNow.ToFileTimeUtc());
             }
             catch (Exception)
             {

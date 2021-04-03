@@ -4,7 +4,6 @@
     {
         public DogmaMachineException(string message) : base(message)
         {
-            
         }
     }
 }
