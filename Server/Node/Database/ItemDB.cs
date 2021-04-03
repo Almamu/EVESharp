@@ -126,9 +126,11 @@ namespace Node.Database
                     }
                 }
                 
+                // disable assignation warning as the connection is not null anymore
+                #pragma warning disable CS0728
                 reader = Database.Query(ref connection, "SELECT typeID, effectID FROM dgmTypeEffects");
-                
-                using(connection)
+                #pragma warning restore CS0728
+
                 using (reader)
                 {
                     Dictionary<int, Dictionary<int, Effect>> typeEffects = new Dictionary<int, Dictionary<int, Effect>>();

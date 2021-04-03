@@ -26,6 +26,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
+using System.Transactions;
 using Common.Database;
 using Node.Dogma.Exception;
 using Node.Inventory.Items.Dogma;
@@ -35,6 +36,30 @@ namespace Node.Inventory.Items.Attributes
 {
     public class ItemAttribute : DatabaseEntity
     {
+        private const double TOLERANCE = 0.0001;
+        protected bool Equals(ItemAttribute other)
+        {
+            if (this.ValueType == ItemAttributeValueType.Integer && other.ValueType == ItemAttributeValueType.Integer)
+                return this.Integer == other.Integer;
+            if (this.ValueType == ItemAttributeValueType.Double && other.ValueType == ItemAttributeValueType.Integer)
+                return Math.Abs(this.Float - other.Integer) < TOLERANCE;
+            if (this.ValueType == ItemAttributeValueType.Integer && other.ValueType == ItemAttributeValueType.Double)
+                return Math.Abs(other.Float - this.Integer) < TOLERANCE;
+            if (this.ValueType == ItemAttributeValueType.Double && other.ValueType == ItemAttributeValueType.Double)
+                return Math.Abs(this.Float - other.Float) < TOLERANCE;
+
+            return false;
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (ReferenceEquals(null, obj)) return false;
+            if (ReferenceEquals(this, obj)) return true;
+            if (obj.GetType() != this.GetType()) return false;
+            
+            return Equals((ItemAttribute) obj);
+        }
+
         // TODO: Create a PyNumber class to handle both integer and double values to easily access these and send them to the client?
         public enum ItemAttributeValueType
         {

@@ -39,9 +39,7 @@ namespace Node.Database
                     {"@damageAttributeID", (int) AttributeEnum.damage}
                 }
             );
-
-            ItemRepackageEntry entry;
-
+            
             using (connection)
             using (reader)
             {

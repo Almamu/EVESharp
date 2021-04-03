@@ -92,7 +92,7 @@ namespace Node.Inventory.Items.Types
                 else if (opcode is OpcodeWithDoubleOutput doubleOutput)
                     doubleOutput.Execute();
             }
-            catch (Exception e)
+            catch (Exception)
             {
                 // notify the client about it
                 forClient?.NotifyMultiEvent(new OnGodmaShipEffect(godmaEffect));

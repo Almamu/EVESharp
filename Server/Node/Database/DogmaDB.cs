@@ -21,7 +21,6 @@ namespace Node.Database
             public int? FirstArgument;
             public int? SecondArgument;
             public int? AttributeID;
-            public int? ItemTypeID;
         }
         
         private Channel Log { get; init; }
@@ -110,8 +109,7 @@ namespace Node.Database
                 ExpressionValue = expressionToLoad.ExpressionValue,
                 FirstArgument = firstArgument,
                 SecondArgument = secondArgument,
-                AttributeID = expressionToLoad.AttributeID is null ? null : (AttributeEnum) expressionToLoad.AttributeID,
-                ItemTypeID = expressionToLoad.ItemTypeID
+                AttributeID = expressionToLoad.AttributeID is null ? null : (AttributeEnum) expressionToLoad.AttributeID
             };
         }
         
