@@ -11,6 +11,7 @@ using Node.Inventory;
 using Node.Inventory.Items;
 using Node.Inventory.Items.Attributes;
 using Node.Inventory.Items.Types;
+using Node.Inventory.Items.Types.Stations;
 using Node.Inventory.Notifications;
 using Node.Market;
 using Node.Network;
@@ -86,7 +87,7 @@ namespace Node.Services.Stations
         protected override BoundService CreateBoundInstance(PyDataType objectData, CallInformation call)
         {
             if (objectData is PyInteger == false)
-                throw new CustomError("Cannot bind repairSvc service to unknown object");
+                throw new CustomError("Cannot bind reprocessingSvc service to unknown object");
 
             PyInteger stationID = objectData as PyInteger;
             
@@ -94,6 +95,14 @@ namespace Node.Services.Stations
                 throw new CustomError("Trying to bind an object that does not belong to us!");
 
             Station station = this.ItemManager.GetStaticStation(stationID);
+            
+            // check if the station has the required services
+            if (station.HasService(StationServices.ReprocessingPlant) == false)
+                throw new CustomError("This station does not allow for reprocessing plant services");
+            // ensure the player is in this station
+            if (station.ID != call.Client.StationID)
+                throw new CanOnlyDoInStations();
+            
             Corporation corporation = this.ItemManager.GetItem<Corporation>(station.OwnerID);
             ItemInventory inventory = this.ItemManager.MetaInventoryManager.RegisterMetaInventoryForOwnerID(station, call.Client.EnsureCharacterIsSelected());
 

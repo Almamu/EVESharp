@@ -1205,8 +1205,7 @@ namespace Node.Database
                 }
             );
         }
-
-
+        
         public Rowset GetClonesForCharacter(int characterID, int activeCloneID)
         {
             // TODO: CACHE THIS IN A INTERMEDIATE TABLE TO MAKE THINGS EASIER TO QUERY

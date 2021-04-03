@@ -5,6 +5,7 @@
         <Company>Almamu</Company>
         <Product>eveMarshal</Product>
         <LangVersion>9</LangVersion>
+        <Nullable>enable</Nullable>
     </PropertyGroup>
 
     <ItemGroup>

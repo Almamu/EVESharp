@@ -116,7 +116,7 @@ namespace PythonTypes.Types.Complex
             if (args[3] is PyInteger == false)
                 throw new Exception("Shared is not integer");
             if (args[4] is PyString)
-                result.Cache = new PyBuffer (Encoding.UTF7.GetBytes(args[4] as PyString));
+                throw new Exception("String contents are not supported yet");
             if (args[4] is PyBuffer)
                 result.Cache = args[4] as PyBuffer;
             if (result.Cache is null)

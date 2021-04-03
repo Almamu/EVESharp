@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Node.Data;
+using Node.Inventory.Items.Types.Stations;
 using PythonTypes.Types.Collections;
 using PythonTypes.Types.Database;
 using PythonTypes.Types.Primitives;
@@ -85,6 +86,11 @@ namespace Node.Inventory.Items.Types
             // TODO: CREATE OBJECTS FOR CONSTELLATION AND REGION ID SO THESE CAN BE FETCHED FROM MEMORY INSTEAD OF DATABASE
 
             return KeyVal.FromDictionary(data);
+        }
+
+        public bool HasService(StationServices service)
+        {
+            return (this.Operations.ServiceMask & (int) service) == (int) service;
         }
 
         public override void Destroy()

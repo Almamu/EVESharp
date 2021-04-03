@@ -9,6 +9,7 @@ using Node.Inventory;
 using Node.Inventory.Items;
 using Node.Inventory.Items.Attributes;
 using Node.Inventory.Items.Types;
+using Node.Inventory.Items.Types.Stations;
 using Node.Inventory.Notifications;
 using Node.Market;
 using Node.Network;
@@ -79,6 +80,13 @@ namespace Node.Services.Stations
                 throw new CustomError("Trying to bind an object that does not belong to us!");
 
             Station station = this.ItemManager.GetStaticStation(stationID);
+
+            // check if the station has the required services
+            if (station.HasService(StationServices.RepairFacilities) == false)
+                throw new CustomError("This station does not allow for reprocessing plant services");
+            // ensure the player is in this station
+            if (station.ID != call.Client.StationID)
+                throw new CanOnlyDoInStations();
             
             ItemInventory inventory = this.ItemManager.MetaInventoryManager.RegisterMetaInventoryForOwnerID(station, call.Client.EnsureCharacterIsSelected());
 
