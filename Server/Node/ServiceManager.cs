@@ -97,7 +97,9 @@ namespace Node
         public corpmgr corpmgr { get; }
         public repairSvc repairSvc { get; }
         public reprocessingSvc reprocessingSvc { get; }
-        
+        public ramProxy ramProxy { get; }
+        public factory factory { get; }
+
         public ServiceManager(
             NodeContainer container, CacheStorage storage, Logger logger, TimerManager timerManager,
             BoundServiceManager boundServiceManager,
@@ -141,7 +143,9 @@ namespace Node
             ship ship,
             corpmgr corpmgr,
             repairSvc repairSvc,
-            reprocessingSvc reprocessingSvc)
+            reprocessingSvc reprocessingSvc,
+            ramProxy ramProxy,
+            factory factory)
         {
             this.Container = container;
             this.CacheStorage = storage;
@@ -192,6 +196,8 @@ namespace Node
             this.corpmgr = corpmgr;
             this.repairSvc = repairSvc;
             this.reprocessingSvc = reprocessingSvc;
+            this.ramProxy = ramProxy;
+            this.factory = factory;
         }
 
         /// <summary>

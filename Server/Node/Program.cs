@@ -114,6 +114,8 @@ namespace Node
                 dependencies.Register<DogmaDB>(Lifestyle.Singleton);
                 dependencies.Register<RepairDB>(Lifestyle.Singleton);
                 dependencies.Register<ReprocessingDB>(Lifestyle.Singleton);
+                dependencies.Register<RAMDB>(Lifestyle.Singleton);
+                dependencies.Register<FactoryDB>(Lifestyle.Singleton);
 
                 // register all the services
                 dependencies.Register<account>(Lifestyle.Singleton);
@@ -157,6 +159,8 @@ namespace Node
                 dependencies.Register<corpmgr>(Lifestyle.Singleton);
                 dependencies.Register<repairSvc>(Lifestyle.Singleton);
                 dependencies.Register<reprocessingSvc>(Lifestyle.Singleton);
+                dependencies.Register<ramProxy>(Lifestyle.Singleton);
+                dependencies.Register<factory>(Lifestyle.Singleton);
                 
                 dependencies.RegisterInstance(General.LoadFromFile("configuration.conf", dependencies));
                 // disable auto-verification on the container as it triggers creation of instances before they're needed

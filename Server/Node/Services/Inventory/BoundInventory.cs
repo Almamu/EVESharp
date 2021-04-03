@@ -69,6 +69,14 @@ namespace Node.Services.Inventory
         {
             return this.ItemDB.ListStationItems(stationID, call.Client.EnsureCharacterIsSelected());
         }
+
+        public PyDataType ListStationBlueprintItems(PyInteger locationID, PyInteger stationID_, PyInteger isCorp, CallInformation call)
+        {
+            if (isCorp == 1)
+                return this.ItemDB.ListStationBlueprintItems(locationID, call.Client.CorporationID);
+
+            return this.ItemDB.ListStationBlueprintItems(locationID, call.Client.EnsureCharacterIsSelected());
+        }
         
         public PyDataType GetItem(CallInformation call)
         {

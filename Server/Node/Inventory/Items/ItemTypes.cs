@@ -31,7 +31,9 @@ namespace Node.Inventory.Items
         Connections = 3359,
         Learning = 3374,
         Refining = 3385,
+        MassProduction = 3387,
         RefineryEfficiency = 3389,
+        LaboratoryOperation = 3406,
         Trade = 3443,
         Retail = 3444,
         BrokerRelations = 3446,
@@ -61,7 +63,11 @@ namespace Node.Inventory.Items
         Accounting = 16622,
         Tycoon = 18580,
         InfomorphPsychology = 24242,
+        AdvancedLaboratoryOperation = 24624,
+        SupplyChainManagement = 24268,
+        ScientificNetworking = 24270,
         GeneralFreightContainer = 24445,
+        AdvancedMassProduction = 24625,
         Contracting = 25235
     }
 }

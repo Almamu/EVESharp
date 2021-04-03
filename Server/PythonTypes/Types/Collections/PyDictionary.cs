@@ -1,5 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
+using MySql.Data.MySqlClient;
+using PythonTypes.Types.Database;
 using PythonTypes.Types.Primitives;
 
 namespace PythonTypes.Types.Collections
@@ -28,6 +30,19 @@ namespace PythonTypes.Types.Collections
         {
             get => this.mDictionary[index] as TValue;
             set => this.mDictionary[index] = value;
+        }
+
+        public static PyDictionary<TKey, TValue> FromMySqlDataReader(IDatabaseConnection connection, MySqlDataReader reader)
+        {
+            PyDictionary<TKey, TValue> result = new PyDictionary<TKey, TValue>();
+            
+            for (int i = 0; i < reader.FieldCount; i++)
+            {
+                FieldType type = connection.GetFieldType(reader, i);
+                result[reader.GetName(i)] = IDatabaseConnection.ObjectFromColumn(reader, type, i);
+            }
+
+            return result;
         }
     }
     

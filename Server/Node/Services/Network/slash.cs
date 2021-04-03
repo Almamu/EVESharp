@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using Common.Constants;
+using Common.Logging;
 using Common.Services;
 using Node.Database;
 using Node.Exceptions.slash;
@@ -20,12 +21,14 @@ namespace Node.Services.Network
     {
         private TypeManager TypeManager { get; }
         private ItemManager ItemManager { get; }
+        private Channel Log { get; }
 
-        private Dictionary<string, Action<string[], CallInformation>> mCommands =
+        private readonly Dictionary<string, Action<string[], CallInformation>> mCommands =
             new Dictionary<string, Action<string[], CallInformation>>();
         
-        public slash(TypeManager typeManager, ItemManager itemManager)
+        public slash(Logger logger, TypeManager typeManager, ItemManager itemManager)
         {
+            this.Log = logger.CreateLogChannel("Slash");
             this.TypeManager = typeManager;
             this.ItemManager = itemManager;
             
@@ -70,6 +73,9 @@ namespace Node.Services.Network
             }
             catch (Exception e)
             {
+                this.Log.Error(e.Message);
+                this.Log.Error(e.StackTrace);
+                
                 throw new SlashError($"Runtime error: {e.Message}");
             }
             
