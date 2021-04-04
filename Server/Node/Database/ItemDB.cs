@@ -1158,7 +1158,7 @@ namespace Node.Database
             );
         }
 
-        public CRowset ListStations(int ownerID)
+        public CRowset ListStations(int ownerID, int blueprintsOnly)
         {
             return Database.PrepareCRowsetQuery(
                 "SELECT stationID, COUNT(itemID) AS itemCount, COUNT(invBlueprints.itemID) AS blueprintCount " +
@@ -1166,11 +1166,13 @@ namespace Node.Database
                 "LEFT JOIN invItems ON locationID = stationID " +
                 "LEFT JOIN invBlueprints USING(itemID) " +
                 "WHERE ownerID=@characterID AND flag=@hangarFlag " +
-                "GROUP BY stationID",
+                "GROUP BY stationID " +
+                "HAVING blueprintCount >= @minimumBlueprintCount",
                 new Dictionary<string, object>()
                 {
                     {"@characterID", ownerID},
-                    {"@hangarFlag", ItemFlags.Hangar}
+                    {"@hangarFlag", ItemFlags.Hangar},
+                    {"@minimumBlueprintCount", blueprintsOnly}
                 }
             );
         }

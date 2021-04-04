@@ -58,11 +58,7 @@ namespace Node.Services.Inventory
         {
             int callerCharacterID = call.Client.EnsureCharacterIsSelected();
             
-            // TODO: take into account blueprintsOnly
-            if (forCorp == 1)
-                return this.ItemDB.ListStations(call.Client.CorporationID);
-            
-            return this.ItemDB.ListStations(callerCharacterID);
+            return this.ItemDB.ListStations(forCorp == 1 ? call.Client.CorporationID : callerCharacterID, blueprintsOnly);
         }
 
         public PyDataType ListStationItems(PyInteger stationID, CallInformation call)
@@ -515,13 +511,13 @@ namespace Node.Services.Inventory
             throw new NotImplementedException("Stacking on passworded containers is not supported yet!");
         }
 
-        public PyDataType StackAll(PyInteger locationFlag, CallInformation call)
+        private void StackAll(ItemFlags locationFlag, CallInformation call)
         {
             // TODO: ADD CONSTRAINTS CHECKS FOR THE LOCATIONFLAG
             foreach ((int firstItemID, ItemEntity firstItem) in this.mInventory.Items)
             {
                 // singleton items are not even checked
-                if (firstItem.Singleton == true || firstItem.Flag != (ItemFlags) (int) locationFlag)
+                if (firstItem.Singleton == true || firstItem.Flag != locationFlag)
                     continue;
                 
                 foreach ((int secondItemID, ItemEntity secondItem) in this.mInventory.Items)
@@ -530,7 +526,7 @@ namespace Node.Services.Inventory
                     if (firstItemID == secondItemID)
                         continue;
                     // ignore the item if it's singleton
-                    if (secondItem.Singleton == true || secondItem.Flag != (ItemFlags) (int) locationFlag)
+                    if (secondItem.Singleton == true || secondItem.Flag != locationFlag)
                         continue;
                     // ignore the item check if they're not the same type ID
                     if (firstItem.Type.ID != secondItem.Type.ID)
@@ -549,46 +545,25 @@ namespace Node.Services.Inventory
                     break;
                 }
             }
+        }
+
+        public PyDataType StackAll(PyInteger locationFlag, CallInformation call)
+        {
+            if (this.mFlag != ItemFlags.None)
+                return null;
+            
+            this.StackAll((ItemFlags) (int) locationFlag, call);
 
             return null;
         }
         
         public PyDataType StackAll(CallInformation call)
         {
-            foreach ((int firstItemID, ItemEntity firstItem) in this.mInventory.Items)
-            {
-                // singleton items are not even checked
-                if (firstItem.Singleton == true)
-                    continue;
-                
-                // there's some specific groups that cannot be assembled even if they're singleton
-                
-                foreach ((int secondItemID, ItemEntity secondItem) in this.mInventory.Items)
-                {
-                    // ignore the same itemID as they cannot really be merged
-                    if (firstItemID == secondItemID)
-                        continue;
-                    // ignore the item if it's singleton
-                    if (secondItem.Singleton == true)
-                        continue;
-                    // ignore the item check if they're not the same type ID
-                    if (firstItem.Type.ID != secondItem.Type.ID)
-                        continue;
-                    int oldQuantity = secondItem.Quantity;
-                    // add the quantity of the first item to the second
-                    secondItem.Quantity += firstItem.Quantity;
-                    // also create the notification for the user
-                    call.Client.NotifyMultiEvent(OnItemChange.BuildQuantityChange(secondItem, oldQuantity));
-                    this.ItemManager.DestroyItem(firstItem);
-                    // notify the client about the item too
-                    call.Client.NotifyMultiEvent(OnItemChange.BuildLocationChange(firstItem, firstItem.Flag, secondItem.LocationID));
-                    // ensure the second item is saved to database too
-                    secondItem.Persist();
-                    // finally break this loop as the merge was already done
-                    break;
-                }
-            }
-
+            if (this.mFlag == ItemFlags.None)
+                return null;
+            
+            this.StackAll(this.mFlag, call);
+            
             return null;
         }
 
@@ -623,11 +598,8 @@ namespace Node.Services.Inventory
         {
             ItemEntity item = this.mInventory.Items[itemID];
 
-            if (item.Flag == ItemFlags.RigSlot0 || item.Flag == ItemFlags.RigSlot1 || item.Flag == ItemFlags.RigSlot2 ||
-                item.Flag == ItemFlags.RigSlot3 || item.Flag == ItemFlags.RigSlot4 || item.Flag == ItemFlags.RigSlot5 ||
-                item.Flag == ItemFlags.RigSlot6 || item.Flag == ItemFlags.RigSlot7)
+            if(item.IsInRigSlot() == true)
             {
-
                 if (item is ShipModule module)
                 {
                     // disable passive effects
@@ -642,6 +614,10 @@ namespace Node.Services.Inventory
 
                 // notify the client about the change
                 call.Client.NotifyMultiEvent(OnItemChange.BuildLocationChange(item, oldFlag, oldLocationID));
+            }
+            else
+            {
+                throw new CannotDestroyFittedItem();
             }
             
             return null;
