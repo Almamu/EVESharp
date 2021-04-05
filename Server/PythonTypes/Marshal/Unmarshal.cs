@@ -531,7 +531,7 @@ namespace PythonTypes.Marshal
             while (size-- > 0)
             {
                 PyDataType value = this.Process(false);
-                PyDataType key = this.Process(false);
+                PyDataType key = this.Process(false) ?? new PyNone();
 
                 dictionary[key] = value;
             }

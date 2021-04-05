@@ -479,7 +479,9 @@ namespace Node.Services.Inventory
                 // ignore singleton items
                 if (fromItem.Singleton == true || toItem.Singleton == true)
                     continue;
-                
+                // ignore items that are not the same type
+                if (fromItem.Type.ID != toItem.Type.ID)
+                    continue;
                 // if we're fully merging two stacks, just remove one item
                 if (quantity == fromItem.Quantity)
                 {

@@ -1180,11 +1180,10 @@ namespace Node.Database
         public CRowset ListStationItems(int locationID, int ownerID)
         {
             return Database.PrepareCRowsetQuery(
-                "SELECT itemID, invItems.typeID, locationID, ownerID, flag, contraband, singleton, quantity,"+
-                " invTypes.groupID, invGroups.categoryID " +
+                "SELECT itemID, typeID, locationID, ownerID, flag, contraband, singleton, quantity, groupID, categoryID " +
                 "FROM invItems " +
-                "LEFT JOIN invTypes ON invItems.typeID = invTypes.typeID " +
-                "LEFT JOIN invGroups ON invTypes.groupID = invGroups.groupID " +
+                "LEFT JOIN invTypes USING(typeID) " +
+                "LEFT JOIN invGroups USING(groupID) " +
                 "WHERE ownerID=@ownerID AND locationID=@locationID AND flag=@hangarFlag",
                 new Dictionary<string, object>()
                 {
@@ -1198,7 +1197,7 @@ namespace Node.Database
         public Rowset ListStationBlueprintItems(int locationID, int ownerID)
         {
             return Database.PrepareRowsetQuery(
-                "SELECT itemID, invItems.typeID, locationID, ownerID, flag, contraband, singleton, quantity, groupID, categoryID, copy, productivityLevel, materialLevel, licensedProductionRunsRemaining FROM invItems LEFT JOIN invTypes USING (typeID) LEFT JOIN invGroups USING (groupID) LEFT JOIN invBlueprints USING (itemID) WHERE ownerID = @ownerID AND locationID = @locationID AND categoryID = @blueprintCategoryID",
+                "SELECT itemID, typeID, locationID, ownerID, flag, contraband, singleton, quantity, groupID, categoryID, copy, productivityLevel, materialLevel, licensedProductionRunsRemaining FROM invItems LEFT JOIN invTypes USING (typeID) LEFT JOIN invGroups USING (groupID) LEFT JOIN invBlueprints USING (itemID) WHERE ownerID = @ownerID AND locationID = @locationID AND categoryID = @blueprintCategoryID",
                 new Dictionary<string, object>()
                 {
                     {"@ownerID", ownerID},
