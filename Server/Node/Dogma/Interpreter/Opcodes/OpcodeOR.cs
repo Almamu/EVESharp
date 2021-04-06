@@ -19,9 +19,9 @@ namespace Node.Dogma.Interpreter.Opcodes
             
             // ensure that both sides can return a value
             if (leftSide is not OpcodeWithBooleanOutput left)
-                throw new DogmaMachineException("The left side of an AND operand must return a boolean value");
+                throw new DogmaMachineException("The left side of an OR operand must return a boolean value");
             if (rightSide is not OpcodeWithBooleanOutput right)
-                throw new DogmaMachineException("The right side of an AND operand must return a boolean value");
+                throw new DogmaMachineException("The right side of an OR operand must return a boolean value");
 
             this.LeftSide = left;
             this.RightSide = right;

@@ -480,13 +480,9 @@ namespace Node.Inventory.Items.Types
             ItemAttribute secondarySpPerMin = this.Attributes[skill.SecondaryAttribute.Integer];
 
             long skillLearningLevel = 0;
-
-            {
-                Skill learningSkill = null;
-
-                if (this.InjectedSkillsByTypeID.TryGetValue((int) ItemTypes.Learning, out learningSkill) == true)
-                    skillLearningLevel = learningSkill.Level;
-            }
+            
+            if (this.InjectedSkillsByTypeID.TryGetValue((int) ItemTypes.Learning, out Skill learningSkill) == true)
+                skillLearningLevel = learningSkill.Level;
 
             double spPerMin = primarySpPerMin + (secondarySpPerMin / 2.0f);
             spPerMin = spPerMin * (1.0f + (0.02f * skillLearningLevel));
@@ -504,9 +500,7 @@ namespace Node.Inventory.Items.Types
 
         public long GetSkillLevel(int skillTypeID)
         {
-            Skill skill = null;
-
-            if (this.InjectedSkillsByTypeID.TryGetValue(skillTypeID, out skill) == false)
+            if (this.InjectedSkillsByTypeID.TryGetValue(skillTypeID, out Skill skill) == false)
                 return 0;
 
             return skill.Level;

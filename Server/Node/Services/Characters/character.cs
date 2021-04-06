@@ -164,59 +164,109 @@ namespace Node.Services.Characters
             throw new CustomError($"Cannot find location for corporation {corporationID}");
         }
 
+        private void ExtractExtraCharacterAppearance(PyDictionary data, out PyInteger accessoryID,
+            out PyInteger beardID, out PyInteger decoID, out PyInteger lipstickID, out PyInteger makeupID,
+            out PyDecimal morph1e, out PyDecimal morph1n, out PyDecimal morph1s, out PyDecimal morph1w,
+            out PyDecimal morph2e, out PyDecimal morph2n, out PyDecimal morph2s, out PyDecimal morph2w,
+            out PyDecimal morph3e, out PyDecimal morph3n, out PyDecimal morph3s, out PyDecimal morph3w,
+            out PyDecimal morph4e, out PyDecimal morph4n, out PyDecimal morph4s, out PyDecimal morph4w)
+        {
+            data.TryGetValue("accessoryID", out accessoryID);
+            data.TryGetValue("beardID", out beardID);
+            data.TryGetValue("decoID", out decoID);
+            data.TryGetValue("lipstickID", out lipstickID);
+            data.TryGetValue("makeupID", out makeupID);
+            data.TryGetValue("morph1e", out morph1e);
+            data.TryGetValue("morph1n", out morph1n);
+            data.TryGetValue("morph1s", out morph1s);
+            data.TryGetValue("morph1w", out morph1w);
+            data.TryGetValue("morph2e", out morph2e);
+            data.TryGetValue("morph2n", out morph2n);
+            data.TryGetValue("morph2s", out morph2s);
+            data.TryGetValue("morph2w", out morph2w);
+            data.TryGetValue("morph3e", out morph3e);
+            data.TryGetValue("morph3n", out morph3n);
+            data.TryGetValue("morph3s", out morph3s);
+            data.TryGetValue("morph3w", out morph3w);
+            data.TryGetValue("morph4e", out morph4e);
+            data.TryGetValue("morph4n", out morph4n);
+            data.TryGetValue("morph4s", out morph4s);
+            data.TryGetValue("morph4w", out morph4w);
+        }
+
+        private void ExtractCharacterAppearance(PyDictionary data, out PyInteger costumeID, out PyInteger eyebrowsID,
+            out PyInteger eyesID, out PyInteger hairID, out PyInteger skinID, out PyInteger backgroundID,
+            out PyInteger lightID, out PyDecimal headRotation1, out PyDecimal headRotation2,
+            out PyDecimal headRotation3, out PyDecimal eyeRotation1, out PyDecimal eyeRotation2,
+            out PyDecimal eyeRotation3, out PyDecimal camPos1, out PyDecimal camPos2, out PyDecimal camPos3)
+        {
+            if (data.TryGetValue("costumeID", out costumeID) == false)
+                throw new Exception("Cannot get costumeID from character appearance");
+            if (data.TryGetValue("eyebrowsID", out eyebrowsID) == false)
+                throw new Exception("Cannot get eyebrowsID from character appearance");
+            if (data.TryGetValue("eyesID", out eyesID) == false)
+                throw new Exception("Cannot get eyesID from character appearance");
+            if (data.TryGetValue("hairID", out hairID) == false)
+                throw new Exception("Cannot get hairID from character appearance");
+            if (data.TryGetValue("skinID", out skinID) == false)
+                throw new Exception("Cannot get skinID from character appearance");
+            if (data.TryGetValue("backgroundID", out backgroundID) == false)
+                throw new Exception("Cannot get backgroundID from character appearance");
+            if (data.TryGetValue("lightID", out lightID) == false)
+                throw new Exception("Cannot get lightID from character appearance");
+            if (data.TryGetValue("headRotation1", out headRotation1) == false)
+                throw new Exception("Cannot get headRotation1 from character appearance");
+            if (data.TryGetValue("headRotation2", out headRotation2) == false)
+                throw new Exception("Cannot get headRotation2 from character appearance");
+            if (data.TryGetValue("headRotation3", out headRotation3) == false)
+                throw new Exception("Cannot get headRotation3 from character appearance");
+            if (data.TryGetValue("eyeRotation1", out eyeRotation1) == false)
+                throw new Exception("Cannot get eyeRotation1 from character appearance");
+            if (data.TryGetValue("eyeRotation2", out eyeRotation2) == false)
+                throw new Exception("Cannot get eyeRotation2 from character appearance");
+            if (data.TryGetValue("eyeRotation3", out eyeRotation3) == false)
+                throw new Exception("Cannot get eyeRotation3 from character appearance");
+            if (data.TryGetValue("camPos1", out camPos1) == false)
+                throw new Exception("Cannot get camPos1 from character appearance");
+            if (data.TryGetValue("camPos2", out camPos2) == false)
+                throw new Exception("Cannot get camPos2 from character appearance");
+            if (data.TryGetValue("camPos3", out camPos3) == false)
+                throw new Exception("Cannot get camPos3 from character appearance");
+        }
+        
         private Character CreateCharacter(string characterName, Ancestry ancestry, int genderID, PyDictionary appearance, long currentTime, CallInformation call)
         {
             // load the item into memory
             ItemEntity owner = this.ItemManager.LocationSystem;
             
-            int stationID, solarSystemID, constellationID, regionID, corporationID, careerID, schoolID, careerSpecialityID;
-            
-            this.GetRandomCareerForRace(ancestry.Bloodline.RaceID, out careerID, out schoolID, out careerSpecialityID, out corporationID);
-            this.GetLocationForCorporation(corporationID, out stationID, out solarSystemID, out constellationID, out regionID);
+            this.GetRandomCareerForRace(ancestry.Bloodline.RaceID, out int careerID, out int schoolID, out int careerSpecialityID, out int corporationID);
+            this.GetLocationForCorporation(corporationID, out int stationID, out int solarSystemID, out int constellationID, out int regionID);
+            this.ExtractCharacterAppearance(appearance, out PyInteger costumeID, out PyInteger eyebrowsID,
+                out PyInteger eyesID, out PyInteger hairID, out PyInteger skinID, out PyInteger backgroundID,
+                out PyInteger lightID, out PyDecimal headRotation1, out PyDecimal headRotation2,
+                out PyDecimal headRotation3, out PyDecimal eyeRotation1, out PyDecimal eyeRotation2,
+                out PyDecimal eyeRotation3, out PyDecimal camPos1, out PyDecimal camPos2, out PyDecimal camPos3
+            );
+            this.ExtractExtraCharacterAppearance(appearance, out PyInteger accessoryID, out PyInteger beardID,
+                out PyInteger decoID, out PyInteger lipstickID, out PyInteger makeupID, out PyDecimal morph1e,
+                out PyDecimal morph1n, out PyDecimal morph1s, out PyDecimal morph1w, out PyDecimal morph2e,
+                out PyDecimal morph2n, out PyDecimal morph2s, out PyDecimal morph2w, out PyDecimal morph3e,
+                out PyDecimal morph3n, out PyDecimal morph3s, out PyDecimal morph3w, out PyDecimal morph4e,
+                out PyDecimal morph4n, out PyDecimal morph4s, out PyDecimal morph4w
+            );
             
             int itemID = this.DB.CreateCharacter(
                 ancestry.Bloodline.ItemType, characterName, owner, call.Client.AccountID, this.mConfiguration.Balance,
                 0.0, corporationID, 0, 0, 0, 0, 0,
                 currentTime, currentTime, currentTime, ancestry.ID,
                 careerID, schoolID, careerSpecialityID, genderID,
-                appearance.ContainsKey("accessoryID") ? appearance["accessoryID"] as PyInteger : null,
-                appearance.ContainsKey("beardID") ? appearance["beardID"] as PyInteger : null,
-                appearance["costumeID"] as PyInteger,
-                appearance.ContainsKey("decoID") ? appearance["decoID"] as PyInteger : null,
-                appearance["eyebrowsID"] as PyInteger,
-                appearance["eyesID"] as PyInteger,
-                appearance["hairID"] as PyInteger,
-                appearance.ContainsKey("lipstickID") ? appearance["lipstickID"] as PyInteger : null,
-                appearance.ContainsKey("makeupID") ? appearance["makeupID"] as PyInteger : null,
-                appearance["skinID"] as PyInteger,
-                appearance["backgroundID"] as PyInteger,
-                appearance["lightID"] as PyInteger,
-                appearance["headRotation1"] as PyDecimal,
-                appearance["headRotation2"] as PyDecimal,
-                appearance["headRotation3"] as PyDecimal,
-                appearance["eyeRotation1"] as PyDecimal,
-                appearance["eyeRotation2"] as PyDecimal,
-                appearance["eyeRotation3"] as PyDecimal,
-                appearance["camPos1"] as PyDecimal,
-                appearance["camPos2"] as PyDecimal,
-                appearance["camPos3"] as PyDecimal,
-                appearance.ContainsKey("morph1e") ? appearance["morph1e"] as PyDecimal : null,
-                appearance.ContainsKey("morph1n") ? appearance["morph1n"] as PyDecimal : null,
-                appearance.ContainsKey("morph1s") ? appearance["morph1s"] as PyDecimal : null,
-                appearance.ContainsKey("morph1w") ? appearance["morph1w"] as PyDecimal : null,
-                appearance.ContainsKey("morph2e") ? appearance["morph2e"] as PyDecimal : null,
-                appearance.ContainsKey("morph2n") ? appearance["morph2n"] as PyDecimal : null,
-                appearance.ContainsKey("morph2s") ? appearance["morph2s"] as PyDecimal : null,
-                appearance.ContainsKey("morph2w") ? appearance["morph2w"] as PyDecimal : null,
-                appearance.ContainsKey("morph3e") ? appearance["morph3e"] as PyDecimal : null,
-                appearance.ContainsKey("morph3n") ? appearance["morph3n"] as PyDecimal : null,
-                appearance.ContainsKey("morph3s") ? appearance["morph3s"] as PyDecimal : null,
-                appearance.ContainsKey("morph3w") ? appearance["morph3w"] as PyDecimal : null,
-                appearance.ContainsKey("morph4e") ? appearance["morph4e"] as PyDecimal : null,
-                appearance.ContainsKey("morph4n") ? appearance["morph4n"] as PyDecimal : null,
-                appearance.ContainsKey("morph4s") ? appearance["morph4s"] as PyDecimal : null,
-                appearance.ContainsKey("morph4w") ? appearance["morph4w"] as PyDecimal : null,
-                stationID, solarSystemID, constellationID, regionID);
+                accessoryID, beardID, costumeID, decoID, eyebrowsID, eyesID, hairID, lipstickID,
+                makeupID, skinID, backgroundID, lightID, headRotation1, headRotation2, headRotation3,
+                eyeRotation1, eyeRotation2, eyeRotation3, camPos1, camPos2, camPos3,
+                morph1e, morph1n, morph1s, morph1w, morph2e, morph2n, morph2s, morph2w,
+                morph3e, morph3n, morph3s, morph3w, morph4e, morph4n, morph4s, morph4w,
+                stationID, solarSystemID, constellationID, regionID
+            );
 
             return this.ItemManager.LoadItem(itemID) as Character;
         }

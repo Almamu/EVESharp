@@ -26,9 +26,9 @@ namespace Node.Dogma.Interpreter.Opcodes
             
             // ensure that both sides can return a value
             if (leftSide is not OpcodeEFF left)
-                throw new DogmaMachineException("The left side of a AIM operand must be EFF");
+                throw new DogmaMachineException("The left side of a RIM operand must be EFF");
             if (rightSide is not OpcodeDEFATTRIBUTE right)
-                throw new DogmaMachineException("The right side of a AIM operand must be DEFATTRIBUTE");
+                throw new DogmaMachineException("The right side of a RIM operand must be DEFATTRIBUTE");
             
             this.Change = left;
             this.Attribute = right;

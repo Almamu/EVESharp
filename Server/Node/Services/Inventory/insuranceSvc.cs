@@ -103,9 +103,7 @@ namespace Node.Services.Inventory
             if (item.Singleton == false)
                 throw new InsureShipFailed("Only assembled ships can be insured");
 
-            string ownerName = "";
-
-            if (this.DB.IsShipInsured(item.ID, out ownerName) == true)
+            if (this.DB.IsShipInsured(item.ID, out string ownerName) == true)
                 throw new InsureShipFailedSingleContract(ownerName);
             
             // check the user has enough money

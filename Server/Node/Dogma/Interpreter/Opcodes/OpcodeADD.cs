@@ -19,9 +19,9 @@ namespace Node.Dogma.Interpreter.Opcodes
             Opcode rightSide = this.Interpreter.Step(reader);
 
             if (leftSide is not OpcodeWithDoubleOutput left)
-                throw new DogmaMachineException("The left side of an GTE operand must return a double value");
+                throw new DogmaMachineException("The left side of an ADD operand must return a double value");
             if (rightSide is not OpcodeWithDoubleOutput right)
-                throw new DogmaMachineException("The right side of an GTE operand must return a double value");
+                throw new DogmaMachineException("The right side of an ADD operand must return a double value");
 
             this.LeftSide = left;
             this.RightSide = right;

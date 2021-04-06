@@ -37,9 +37,7 @@ namespace ClusterController.Configuration
                 if (trimedRole == "")
                     continue;
                 
-                Roles roleValue;
-
-                if (Roles.TryParse(trimedRole, out roleValue) == false)
+                if (Roles.TryParse(trimedRole, out Roles roleValue) == false)
                     throw new Exception($"Unknown role value {role.Trim()}");
 
                 this.Role |= (long) roleValue;
