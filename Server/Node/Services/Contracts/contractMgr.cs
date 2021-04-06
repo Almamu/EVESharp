@@ -88,7 +88,7 @@ namespace Node.Services.Contracts
         {
             // TODO: HANDLE CORPORATION!
             if (forCorp == 1)
-                throw new UserError("This call doesn't support forCorp parameter yet!");
+                throw new CustomError("This call doesn't support forCorp parameter yet!");
 
             return this.DB.GetItemsInStationForPlayer(call.Client.EnsureCharacterIsSelected(), stationID);
         }
@@ -164,7 +164,7 @@ namespace Node.Services.Contracts
             }
             else
             {
-                throw new UserError("Not supported yet!");
+                throw new CustomError("Not supported yet!");
             }
             
             Station station = this.ItemManager.GetStaticStation(startStationID);
@@ -196,7 +196,7 @@ namespace Node.Services.Contracts
                     case (int) ContractTypes.Loan:
                         break;
                     default:
-                        throw new UserError("Unknown contract type");
+                        throw new CustomError("Unknown contract type");
                 }
                 
                 if (contractType == (int) ContractTypes.ItemExchange)

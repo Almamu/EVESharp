@@ -29,7 +29,7 @@ namespace Node.Dogma.Interpreter.Opcodes
 
         public override bool Execute()
         {
-            throw new UserError(this.LeftSide.Definition);
+            throw new CustomError(this.LeftSide.Definition);
         }
     }
 }

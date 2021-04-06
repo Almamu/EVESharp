@@ -582,7 +582,7 @@ namespace Node
             int? characterID = this.CharacterID;
 
             if (characterID is null)
-                throw new UserError("NoCharacterSelected");
+                throw new CustomError("NoCharacterSelected");
 
             return (int) characterID;
         }

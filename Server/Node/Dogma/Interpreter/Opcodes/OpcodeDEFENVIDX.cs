@@ -44,7 +44,7 @@ namespace Node.Dogma.Interpreter.Opcodes
                 case Inventory.Items.Dogma.Environment.Other:
                 case Inventory.Items.Dogma.Environment.Charge:
                 default:
-                    throw new UserError("Unsupported target");
+                    throw new CustomError("Unsupported target");
             }
 
             return item;

@@ -42,6 +42,7 @@ namespace Node.Network
         private TimerManager TimerManager { get; }
         private General Configuration { get; }
         private Container DependencyInjection { get; }
+        private int mErrorCount = 0;
 
         public MachoNet(ClusterConnection clusterConnection, NodeContainer container, SystemManager systemManager,
             ClientManager clientManager, BoundServiceManager boundServiceManager, ItemFactory itemFactory,
@@ -268,6 +269,24 @@ namespace Node.Network
             catch (ProvisionalResponse provisional)
             {
                 this.SendProvisionalResponse(callInformation, provisional);
+            }
+            catch (Exception ex)
+            {
+                int errorID = ++this.mErrorCount;
+
+                Log.Fatal($"Detected non-client exception, registered as error {errorID}. Extra information: ");
+                Log.Fatal(ex.Message);
+                Log.Fatal(ex.StackTrace);
+                
+                // send client a proper notification about the error based on the roles
+                if ((callInformation.Client.Role & (int) Roles.ROLE_PROGRAMMER) == (int) Roles.ROLE_PROGRAMMER)
+                {
+                    this.SendException(callInformation, new CustomError($"An internal server error occurred.<br><b>Reference</b>: {errorID}<br><b>Message</b>: {ex.Message}<br><b>Stack trace</b>:<br>{ex.StackTrace.Replace("\n", "<br>")}"));
+                }
+                else
+                {
+                    this.SendException(callInformation, new CustomError($"An internal server error occurred. <b>Reference</b>: {errorID}"));
+                }
             }
         }
 

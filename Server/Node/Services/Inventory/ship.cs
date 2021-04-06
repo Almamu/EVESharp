@@ -134,7 +134,7 @@ namespace Node.Services.Inventory
             Ship currentShip = this.ItemManager.GetItem<Ship>((int) call.Client.ShipID);
 
             if (newShip.Singleton == false)
-                throw new UserError("TooFewSubSystemsToUndock");
+                throw new CustomError("TooFewSubSystemsToUndock");
 
             // TODO: CHECKS FOR IN-SPACE BOARDING!
             

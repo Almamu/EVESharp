@@ -7,18 +7,10 @@ namespace PythonTypes.Types.Exceptions
     /// <summary>
     /// Helper class to represent simple error messages for the client
     /// </summary>
-    public class CustomError : PyException
+    public class CustomError : UserError
     {
-        public CustomError(string error) : base("ccp_exceptions.UserError", "CustomError", 
-            new PyDictionary ()
-            {
-                {"error", error},
-            }, new PyDictionary())
+        public CustomError(string error) : base("CustomError", new PyDictionary {["error"] = error})
         {
-            this.Keywords["msg"] = this.Reason;
-            this.Keywords["dict"] = this.Dictionary;
         }
-
-        public PyDictionary Dictionary => this.Extra as PyDictionary;
     }
 }
