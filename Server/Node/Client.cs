@@ -419,6 +419,12 @@ namespace Node
             get => this.mSession["warfactionid"] as PyInteger;
             set => this.mSession["warfactionid"] = value;
         }
+
+        public int? RaceID
+        {
+            get => this.mSession["raceID"] as PyInteger;
+            set => this.mSession["raceID"] = value;
+        }
         
         /// <summary>
         /// Sends an OnAccountChange notification to the client to let it know that their ISK

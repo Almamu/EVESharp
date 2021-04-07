@@ -434,6 +434,7 @@ namespace Node.Services.Characters
             call.Client.RolesAtHQ = character.RolesAtHq;
             call.Client.RolesAtOther = character.RolesAtOther;
             call.Client.ShipID = character.LocationID;
+            call.Client.RaceID = this.mAncestriesCache[character.AncestryID].Bloodline.RaceID;
 
             // update the character and set it's only flag to true
             character.Online = 1;
