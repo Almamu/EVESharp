@@ -817,9 +817,12 @@ namespace Node.Services.Market
                     
             // if the character is loaded in any node inform that node of the change in wallet
             int characterNode = this.ItemDB.GetItemNode(order.CharacterID);
-                    
+
             if (characterNode > 0)
+            {
                 this.NotifyBalanceChange(characterNode, order.CharacterID, balance);
+                this.NotificationManager.NotifyCharacter(order.CharacterID, new OnOwnOrderChanged(order.TypeID, "Expiry", order.AccountID > 1000));
+            }
         }
 
         /// <summary>
@@ -836,7 +839,7 @@ namespace Node.Services.Market
             // notify the relevant node if required
             this.NotifyItemChange(this.SystemManager.GetNodeStationBelongsTo(order.LocationID), order.ItemID, "locationID", order.LocationID);
             // finally notify the character about the order change
-            this.NotificationManager.NotifyCharacter(order.CharacterID, new OnOwnOrderChanged(order.TypeID, "Add"));
+            this.NotificationManager.NotifyCharacter(order.CharacterID, new OnOwnOrderChanged(order.TypeID, "Expiry"));
         }
 
         /// <summary>
