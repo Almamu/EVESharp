@@ -11,8 +11,10 @@ using Node.Inventory;
 using Node.Inventory.Items;
 using Node.Inventory.Items.Types;
 using Node.Inventory.Notifications;
+using Node.Market;
 using Node.Network;
 using Node.Skills.Notifications;
+using PythonTypes.Types.Collections;
 using PythonTypes.Types.Primitives;
 
 namespace Node.Services.Network
@@ -22,21 +24,30 @@ namespace Node.Services.Network
         private TypeManager TypeManager { get; }
         private ItemManager ItemManager { get; }
         private Channel Log { get; }
+        private MarketDB MarketDB { get; }
+        private CharacterDB CharacterDB { get; }
+        private ItemDB ItemDB { get; }
+        private NotificationManager NotificationManager { get; }
 
         private readonly Dictionary<string, Action<string[], CallInformation>> mCommands =
             new Dictionary<string, Action<string[], CallInformation>>();
         
-        public slash(Logger logger, TypeManager typeManager, ItemManager itemManager)
+        public slash(Logger logger, TypeManager typeManager, ItemManager itemManager, MarketDB marketDB, CharacterDB characterDB, ItemDB itemDB, NotificationManager notificationManager)
         {
             this.Log = logger.CreateLogChannel("Slash");
             this.TypeManager = typeManager;
             this.ItemManager = itemManager;
-            
-            // register commands
+            this.MarketDB = marketDB;
+            this.CharacterDB = characterDB;
+            this.ItemDB = itemDB;
+            this.NotificationManager = notificationManager;
+
+                // register commands
             this.mCommands["create"] = CreateCmd;
             this.mCommands["createitem"] = CreateCmd;
             this.mCommands["giveskills"] = GiveSkillCmd;
             this.mCommands["giveskill"] = GiveSkillCmd;
+            this.mCommands["giveisk"] = GiveIskCmd;
         }
 
         private string GetCommandListForClient()
@@ -82,8 +93,75 @@ namespace Node.Services.Network
             return null;
         }
 
+        private void GiveIskCmd(string[] argv, CallInformation call)
+        {
+            if (argv.Length < 3)
+                throw new SlashError("giveisk takes two arguments");
+
+            string targetCharacter = argv[1];
+            
+            if (double.TryParse(argv[2], out double iskQuantity) == false)
+                throw new SlashError("giveisk second argument must be the ISK quantity to give");
+
+            int targetCharacterID = 0;
+            int originCharacterID = call.Client.EnsureCharacterIsSelected();
+            double finalBalance = 0;
+            
+            if (targetCharacter == "me")
+            {
+                targetCharacterID = originCharacterID;
+                
+                Character character = this.ItemManager.GetItem<Character>(targetCharacterID);
+
+                finalBalance = character.Balance += iskQuantity;
+                character.Persist();
+
+                call.Client.NotifyBalanceUpdate(character.Balance);
+            }
+            else
+            {
+                List<int> matches = this.CharacterDB.FindCharacters(targetCharacter);
+
+                if (matches.Count > 1)
+                    throw new SlashError("There's more than one character that matches the search criteria, please narrow it down");
+
+                targetCharacterID = matches[0];
+                
+                // determine the characterID first
+                double currentBalance = this.CharacterDB.GetCharacterBalance(targetCharacterID);
+
+                currentBalance += iskQuantity;
+
+                if (currentBalance < 0)
+                    throw new SlashError("The target character doesn't have enough ISK");
+
+                // save the balance of the character
+                this.CharacterDB.SetCharacterBalance(targetCharacterID, currentBalance);
+                    
+                // if the character is loaded in any node inform that node of the change in wallet
+                int characterNode = this.ItemDB.GetItemNode(targetCharacterID);
+                    
+                if (characterNode > 0)
+                    this.NotificationManager.NotifyNode(characterNode, "OnBalanceUpdate",
+                        new PyTuple(2)
+                        {
+                            [0] = targetCharacterID,
+                            [1] = currentBalance
+                        }
+                    );
+            }
+            
+            if (iskQuantity < 0)
+                this.MarketDB.CreateJournalForCharacter(MarketReference.GMCashTransfer, targetCharacterID, targetCharacterID, this.ItemManager.SecureCommerceCommision.ID, originCharacterID, iskQuantity, finalBalance, "", 1000);
+            else
+                this.MarketDB.CreateJournalForCharacter(MarketReference.GMCashTransfer, targetCharacterID, this.ItemManager.SecureCommerceCommision.ID, targetCharacterID, originCharacterID, iskQuantity, finalBalance, "", 1000);
+        }
+
         private void CreateCmd(string[] argv, CallInformation call)
         {
+            if (argv.Length < 2)
+                throw new SlashError("create takes at least one argument");
+            
             int typeID = int.Parse(argv[1]);
             int quantity = 1;
             

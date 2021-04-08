@@ -824,5 +824,30 @@ namespace Node.Database
                 return reader.GetInt32(0);
             }
         }
+
+        public List<int> FindCharacters(string namePart)
+        {
+            MySqlConnection connection = null;
+            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+                "SELECT itemID FROM chrInformation LEFT JOIN eveNames ON chrInformation.characterID = eveNames.itemID WHERE itemName LIKE @name",
+                new Dictionary<string, object>()
+                {
+                    {"@name", $"%{namePart}%"}
+                }
+            );
+            
+            using(connection)
+            using (reader)
+            {
+                List<int> result = new List<int>();
+                
+                while (reader.Read() == true)
+                {
+                    result.Add(reader.GetInt32(0));
+                }
+
+                return result;
+            }
+        }
     }
 }
