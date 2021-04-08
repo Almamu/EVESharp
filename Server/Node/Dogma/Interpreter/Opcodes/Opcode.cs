@@ -1,7 +1,6 @@
 ﻿using System.IO;
-using Node.Inventory.Items.Attributes;
 
-namespace Node.Dogma.Interpreter
+namespace Node.Dogma.Interpreter.Opcodes
 {
     public abstract class Opcode
     {

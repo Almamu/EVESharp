@@ -293,10 +293,10 @@ namespace Node.Inventory.Items.Attributes
                     switch (clone.ValueType)
                     {
                         case ItemAttributeValueType.Double:
-                            clone.Float = clone.Integer * value.Float;
+                            clone.Float *= value.Integer;
                             break;
                         case ItemAttributeValueType.Integer:
-                            clone.Float = (double) clone.Integer * value.Integer;
+                            clone.Integer *= value.Integer;
                             break;
                     }
                     break;
@@ -304,10 +304,10 @@ namespace Node.Inventory.Items.Attributes
                     switch (clone.ValueType)
                     {
                         case ItemAttributeValueType.Double:
-                            clone.Float = clone.Float * value.Float;
+                            clone.Float *= value.Float;
                             break;
                         case ItemAttributeValueType.Integer:
-                            clone.Float = clone.Float * value.Integer;
+                            clone.Float = clone.Integer * value.Float;
                             break;
                     }
                     break;
@@ -369,7 +369,7 @@ namespace Node.Inventory.Items.Attributes
                     switch (clone.ValueType)
                     {
                         case ItemAttributeValueType.Double:
-                            clone.Float = clone.Integer / value.Float;
+                            clone.Float /= value.Integer;
                             break;
                         case ItemAttributeValueType.Integer:
                             clone.Float = (double) clone.Integer / value.Integer;
@@ -380,10 +380,10 @@ namespace Node.Inventory.Items.Attributes
                     switch (clone.ValueType)
                     {
                         case ItemAttributeValueType.Double:
-                            clone.Float = clone.Float / value.Float;
+                            clone.Float /= value.Float;
                             break;
                         case ItemAttributeValueType.Integer:
-                            clone.Float = clone.Float / value.Integer;
+                            clone.Float = clone.Integer / value.Float;
                             break;
                     }
                     break;
@@ -404,7 +404,7 @@ namespace Node.Inventory.Items.Attributes
                     clone.Float += value;
                     break;
                 case ItemAttributeValueType.Integer:
-                    clone.Float += value;
+                    clone.Float = clone.Integer + value;
                     break;
             }
 
@@ -444,7 +444,7 @@ namespace Node.Inventory.Items.Attributes
                     switch (clone.ValueType)
                     {
                         case ItemAttributeValueType.Double:
-                            clone.Float = clone.Integer + value.Float;
+                            clone.Float += value.Integer;
                             break;
                         case ItemAttributeValueType.Integer:
                             clone.Integer += value.Integer;
@@ -458,7 +458,7 @@ namespace Node.Inventory.Items.Attributes
                             clone.Float += value.Float;
                             break;
                         case ItemAttributeValueType.Integer:
-                            clone.Float += value.Integer;
+                            clone.Float = clone.Integer + value.Float;
                             break;
                     }
                     break;
@@ -472,12 +472,17 @@ namespace Node.Inventory.Items.Attributes
             // clone the attribute but mark it as existant
             ItemAttribute clone = original.Clone();
             clone.New = false;
-            
-            // based on the types perform the appropiate operation
-            if (clone.ValueType == ItemAttributeValueType.Double)
-                clone.Float -= value;
-            else if (clone.ValueType == ItemAttributeValueType.Integer)
-                clone.Float = clone.Integer - value;
+
+            switch (clone.ValueType)
+            {
+                // based on the types perform the appropiate operation
+                case ItemAttributeValueType.Double:
+                    clone.Float -= value;
+                    break;
+                case ItemAttributeValueType.Integer:
+                    clone.Float = clone.Integer - value;
+                    break;
+            }
 
             return clone;
         }
@@ -487,12 +492,17 @@ namespace Node.Inventory.Items.Attributes
             // clone the attribute but mark it as existant
             ItemAttribute clone = original.Clone();
             clone.New = false;
-            
-            // based on the types perform the appropiate operation
-            if (clone.ValueType == ItemAttributeValueType.Integer)
-                clone.Integer -= value;
-            else if (clone.ValueType == ItemAttributeValueType.Double)
-                clone.Float -= value;
+
+            switch (clone.ValueType)
+            {
+                // based on the types perform the appropiate operation
+                case ItemAttributeValueType.Integer:
+                    clone.Integer -= value;
+                    break;
+                case ItemAttributeValueType.Double:
+                    clone.Float -= value;
+                    break;
+            }
 
             return clone;
         }
@@ -510,7 +520,7 @@ namespace Node.Inventory.Items.Attributes
                     switch (clone.ValueType)
                     {
                         case ItemAttributeValueType.Double:
-                            clone.Float = clone.Integer - value.Float;
+                            clone.Float -= value.Integer;
                             break;
                         case ItemAttributeValueType.Integer:
                             clone.Integer -= value.Integer;
@@ -524,7 +534,7 @@ namespace Node.Inventory.Items.Attributes
                             clone.Float -= value.Float;
                             break;
                         case ItemAttributeValueType.Integer:
-                            clone.Float -= value.Integer;
+                            clone.Float = clone.Integer - value.Float;
                             break;
                     }
                     break;
@@ -542,7 +552,7 @@ namespace Node.Inventory.Items.Attributes
                 case ItemAttributeValueType.Integer:
                     return attrib.Integer == value;
                 default:
-                    return attrib.Float == value;
+                    return Math.Abs(attrib.Float - value) < TOLERANCE;
             }
         }
 
