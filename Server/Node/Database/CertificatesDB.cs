@@ -24,25 +24,22 @@ namespace Node.Database
             );
         }
 
-        public List<CertificateRelationship> GetCertificateRequirements(int certificateID)
+        public Dictionary<int, List<CertificateRelationship>> GetCertificateRelationships()
         {
             MySqlConnection connection = null;
-            MySqlDataReader reader = Database.PrepareQuery(ref connection,
-                "SELECT relationshipID, parentID, parentTypeID, parentLevel, childID, childTypeID FROM crtRelationships WHERE parentID=@certificateID",
-                new Dictionary<string, object>()
-                {
-                    {"@certificateID", certificateID}
-                }
-            );
+            MySqlDataReader reader = Database.PrepareQuery(ref connection, "SELECT relationshipID, parentID, parentTypeID, parentLevel, childID, childTypeID FROM crtRelationships").ExecuteReader();
             
             using (connection)
             using (reader)
             {
-                List<CertificateRelationship> result = new List<CertificateRelationship>();
+                Dictionary<int, List<CertificateRelationship>> result = new Dictionary<int, List<CertificateRelationship>>();
                 
                 while (reader.Read() == true)
                 {
-                    result.Add(new CertificateRelationship()
+                    if (result.TryGetValue(reader.GetInt32(4), out var relationships) == false)
+                        relationships = result[reader.GetInt32(4)] = new List<CertificateRelationship>();
+                    
+                    relationships.Add(new CertificateRelationship()
                         {
                             RelationshipID = reader.GetInt32(0),
                             ParentID = reader.GetInt32(1),
@@ -61,7 +58,7 @@ namespace Node.Database
         public void GrantCertificate(int characterID, int certificateID)
         {
             Database.PrepareQuery(
-                "INSERT INTO chrCertificates(characterID, certificateID, grantDate, visibilityFlags)VALUES(@characterID, @certificateID, @grantDate, 0)",
+                "REPLACE INTO chrCertificates(characterID, certificateID, grantDate, visibilityFlags)VALUES(@characterID, @certificateID, @grantDate, 0)",
                 new Dictionary<string, object>()
                 {
                     {"@characterID", characterID},
@@ -93,6 +90,29 @@ namespace Node.Database
                     {"@characterID", characterID}
                 }
             );
+        }
+
+        public List<int> GetCertificateListForCharacter(int characterID)
+        {
+            MySqlConnection connection = null;
+            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+                "SELECT certificateID FROM chrCertificates WHERE characterID = @characterID",
+                new Dictionary<string, object>()
+                {
+                    {"@characterID", characterID}
+                }
+            );
+            
+            using(connection)
+            using (reader)
+            {
+                List<int> certificates = new List<int>();
+                
+                while (reader.Read() == true)
+                    certificates.Add(reader.GetInt32(0));
+
+                return certificates;
+            }
         }
     }
 }

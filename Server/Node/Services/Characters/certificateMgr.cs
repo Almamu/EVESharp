@@ -1,7 +1,9 @@
 ﻿using System.Collections.Generic;
 using Common.Services;
+using Node.Certificates.Notifications;
 using Node.Data;
 using Node.Database;
+using Node.Exceptions.certificateMgr;
 using Node.Inventory;
 using Node.Inventory.Items.Types;
 using Node.Network;
@@ -17,12 +19,16 @@ namespace Node.Services.Characters
         private CertificatesDB DB { get; }
         private ItemManager ItemManager { get; }
         private CacheStorage CacheStorage { get; }
+        private Dictionary<int, List<CertificateRelationship>> CertificateRelationships { get; }
         
         public certificateMgr(CertificatesDB db, ItemManager itemManager, CacheStorage cacheStorage)
         {
             this.DB = db;
             this.ItemManager = itemManager;
             this.CacheStorage = cacheStorage;
+
+            // get the full list of requirements
+            this.CertificateRelationships = this.DB.GetCertificateRelationships();
         }
 
         public PyDataType GetAllShipCertificateRecommendations(CallInformation call)
@@ -76,33 +82,70 @@ namespace Node.Services.Characters
         {
             int callerCharacterID = call.Client.EnsureCharacterIsSelected();
             Character character = this.ItemManager.GetItem<Character>(callerCharacterID);
-            
-            List<CertificateRelationship> requirements = this.DB.GetCertificateRequirements(certificateID);
-            Dictionary<int, Skill> skills = character.InjectedSkillsByTypeID;
 
-            foreach (CertificateRelationship relationship in requirements)
+            Dictionary<int, Skill> skills = character.InjectedSkillsByTypeID;
+            List<int> grantedCertificates = this.DB.GetCertificateListForCharacter(callerCharacterID);
+
+            if (grantedCertificates.Contains(certificateID) == true)
+                throw new CertificateAlreadyGranted();
+
+            if (this.CertificateRelationships.TryGetValue(certificateID, out List<CertificateRelationship> requirements) == true)
             {
-                if (skills.ContainsKey(relationship.ParentTypeID) == false || skills[relationship.ParentTypeID].Level < relationship.ParentLevel)
-                    return false;
+                foreach (CertificateRelationship relationship in requirements)
+                {
+                    if (relationship.ParentTypeID != 0 && (skills.TryGetValue(relationship.ParentTypeID, out Skill skill) == false || skill.Level < relationship.ParentLevel))
+                        throw new CertificateSkillPrerequisitesNotMet();
+                    if (relationship.ParentID != 0 && grantedCertificates.Contains(relationship.ParentID) == false)
+                        throw new CertificateCertPrerequisitesNotMet();
+                }
             }
             
             // if this line is reached, the character has all the requirements for this cert
             this.DB.GrantCertificate(callerCharacterID, certificateID);
             
-            return true;
+            // notify the character about the granting of the certificate
+            call.Client.NotifyMultiEvent(new OnCertificateIssued(certificateID));
+            
+            return null;
         }
 
         public PyDataType BatchCertificateGrant(PyList certificateList, CallInformation call)
         {
-            call.Client.EnsureCharacterIsSelected();
+            int callerCharacterID = call.Client.EnsureCharacterIsSelected();
+            Character character = this.ItemManager.GetItem<Character>(callerCharacterID);
 
             PyList<PyInteger> result = new PyList<PyInteger>();
+            Dictionary<int, Skill> skills = character.InjectedSkillsByTypeID;
+            List<int> grantedCertificates = this.DB.GetCertificateListForCharacter(callerCharacterID);
 
             foreach (PyInteger certificateID in certificateList.GetEnumerable<PyInteger>())
             {
-                if (this.GrantCertificate(certificateID, call) == true)
-                    result.Add(certificateID);
+                if (this.CertificateRelationships.TryGetValue(certificateID, out List<CertificateRelationship> relationships) == true)
+                {
+                    bool requirementsMet = true;
+                
+                    foreach (CertificateRelationship relationship in relationships)
+                    {
+                        if (relationship.ParentTypeID != 0 && (skills.TryGetValue(relationship.ParentTypeID, out Skill skill) == false || skill.Level < relationship.ParentLevel))
+                            requirementsMet = false;
+                        if (relationship.ParentID != 0 && grantedCertificates.Contains(relationship.ParentID) == false)
+                            requirementsMet = false;
+                    }
+
+                    if (requirementsMet == false)
+                        continue;
+                }
+                
+                // grant the certificate and add it to the list of granted certs
+                this.DB.GrantCertificate(callerCharacterID, certificateID);
+                // ensure the result includes that certificate list
+                result.Add(certificateID);
+                // add the cert to the list so certs that depend on others are properly granted
+                grantedCertificates.Add(certificateID);
             }
+            
+            // notify the client about the granting of certificates
+            call.Client.NotifyMultiEvent(new OnCertificateIssued());
 
             return result;
         }
