@@ -1,7 +1,7 @@
 ﻿using System;
 using PythonTypes.Types.Primitives;
 
-namespace Node
+namespace Node.Network
 {
     /// <summary>
     /// Stores information for the calls that are waiting an answer from a client/node

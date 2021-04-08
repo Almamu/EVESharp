@@ -25,6 +25,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using Node.Database;
+using Node.Dogma;
 using Node.Inventory.Items;
 
 namespace Node.Inventory
@@ -33,7 +34,7 @@ namespace Node.Inventory
     {
         private ItemDB ItemDB { get; }
         private Dictionary<int, ItemType> mTypes = null;
-        public DogmaExpressionManager ExpressionManager { get; }
+        public ExpressionManager ExpressionManager { get; }
 
         public void Load()
         {
@@ -56,10 +57,10 @@ namespace Node.Inventory
         public IEnumerable<ItemType> Values => this.mTypes.Values;
         public int Count => this.mTypes.Count;
 
-        public TypeManager(ItemDB itemDB, DogmaExpressionManager dogmaExpressionManager)
+        public TypeManager(ItemDB itemDB, ExpressionManager expressionManager)
         {
             this.ItemDB = itemDB;
-            this.ExpressionManager = dogmaExpressionManager;
+            this.ExpressionManager = expressionManager;
         }
 
         public IEnumerator<KeyValuePair<int, ItemType>> GetEnumerator()

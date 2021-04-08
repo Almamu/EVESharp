@@ -1,19 +1,17 @@
 ﻿using System.Collections.Generic;
 using Common.Logging;
 using Node.Database;
-using Node.Inventory.Items.Attributes;
 using Node.Inventory.Items.Dogma;
-using Node.Inventory.Items.Types;
 
-namespace Node
+namespace Node.Dogma
 {
-    public class DogmaExpressionManager
+    public class ExpressionManager
     {
         private Channel Log { get; }
         private DogmaDB DB { get; }
         private Dictionary<int, Expression> Expressions { get; }
         
-        public DogmaExpressionManager(DogmaDB db, Logger logger)
+        public ExpressionManager(DogmaDB db, Logger logger)
         {
             this.DB = db;
             this.Log = logger.CreateLogChannel("DogmaExpressionManager");

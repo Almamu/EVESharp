@@ -11,6 +11,7 @@ using Node.Inventory.Items;
 using Node.Inventory.Items.Types;
 using Node.Inventory.Notifications;
 using Node.Inventory.SystemEntities;
+using Node.Services;
 using PythonTypes;
 using PythonTypes.Types.Collections;
 using PythonTypes.Types.Exceptions;

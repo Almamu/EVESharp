@@ -1,5 +1,6 @@
 ﻿using Node.Inventory.Items;
 using Node.Inventory.Items.Types;
+using Node.Network;
 
 namespace Node.Dogma.Interpreter
 {

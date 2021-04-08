@@ -26,12 +26,14 @@ using System;
 using System.Collections.Generic;
 using Common.Database;
 using MySql.Data.MySqlClient;
+using Node.Dogma;
 using Node.Inventory;
 using Node.Inventory.Items;
 using Node.Inventory.Items.Attributes;
 using Node.Inventory.Items.Dogma;
 using Node.Inventory.Items.Types;
 using Node.Inventory.SystemEntities;
+using Node.Network;
 using PythonTypes.Types.Database;
 using PythonTypes.Types.Primitives;
 
@@ -79,7 +81,7 @@ namespace Node.Database
             }
         }
         
-        private Dictionary<int, Dictionary<int, Effect>> LoadItemEffects(DogmaExpressionManager expressionManager)
+        private Dictionary<int, Dictionary<int, Effect>> LoadItemEffects(ExpressionManager expressionManager)
         {
             MySqlConnection connection = null;
             MySqlDataReader reader = Database.Query(ref connection,
@@ -152,7 +154,7 @@ namespace Node.Database
             }
         }
 
-        public Dictionary<int, ItemType> LoadItemTypes(DogmaExpressionManager expressionManager)
+        public Dictionary<int, ItemType> LoadItemTypes(ExpressionManager expressionManager)
         {
             // item effects should be loaded before as they're needed for the types instantiation
             Dictionary<int, Dictionary<int, Effect>> effects = this.LoadItemEffects(expressionManager);

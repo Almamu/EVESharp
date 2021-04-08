@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace Node
+namespace Node.Network
 {
     /// <summary>
     /// Basic client manager to keep track of all the logged-in users in the cluster

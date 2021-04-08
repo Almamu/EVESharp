@@ -5,11 +5,10 @@ using System.Runtime.ExceptionServices;
 using Common.Logging;
 using Common.Services.Exceptions;
 using Node.Network;
-using Node.Services;
 using PythonTypes.Types.Collections;
 using PythonTypes.Types.Primitives;
 
-namespace Node
+namespace Node.Services
 {
     /// <summary>
     /// Special service manager that handles Bound objects from the client
@@ -110,7 +109,7 @@ namespace Node
         /// <param name="boundID">The boundID to call at</param>
         /// <param name="call">The method to call</param>
         /// <param name="payload">Parameters for the method</param>
-        /// <param name="extraInformation">Any extra information for the method call</param>
+        /// <param name="callInformation">Any extra information for the method call</param>
         /// <returns>The result of the call</returns>
         /// <exception cref="ServiceDoesNotExistsException">If the boundID doesn't match any registered bound service</exception>
         /// <exception cref="ServiceDoesNotContainCallException">If the service was found but no matching call was found</exception>

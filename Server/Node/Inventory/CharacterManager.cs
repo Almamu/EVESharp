@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
+using Node.Network;
 
-namespace Node
+namespace Node.Inventory
 {
     public class CharacterManager
     {

@@ -1,12 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using Node.Network;
+﻿using System.Collections.Generic;
+using Node.Inventory;
 using PythonTypes.Types.Collections;
 using PythonTypes.Types.Complex;
 using PythonTypes.Types.Network;
 using PythonTypes.Types.Primitives;
 
-namespace Node
+namespace Node.Network
 {
     public class NotificationManager
     {

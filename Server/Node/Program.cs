@@ -30,8 +30,10 @@ using Common.Logging;
 using Common.Logging.Streams;
 using Node.Configuration;
 using Node.Database;
+using Node.Dogma;
 using Node.Inventory;
 using Node.Network;
+using Node.Services;
 using Node.Services.Account;
 using Node.Services.CacheSvc;
 using Node.Services.Characters;
@@ -89,7 +91,7 @@ namespace Node
                 dependencies.Register<CharacterManager>(Lifestyle.Singleton);
                 dependencies.Register<NotificationManager>(Lifestyle.Singleton);
                 dependencies.Register<MachoNet>(Lifestyle.Singleton);
-                dependencies.Register<DogmaExpressionManager>(Lifestyle.Singleton);
+                dependencies.Register<ExpressionManager>(Lifestyle.Singleton);
 
                 // register the database accessors dependencies
                 dependencies.Register<AccountDB>(Lifestyle.Singleton);

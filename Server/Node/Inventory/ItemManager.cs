@@ -26,6 +26,7 @@ using System;
 using System.Collections.Generic;
 using Common.Logging;
 using Node.Database;
+using Node.Dogma;
 using Node.Inventory.Exceptions;
 using Node.Inventory.Items;
 using Node.Inventory.Items.Types;
@@ -66,7 +67,7 @@ namespace Node.Inventory
         public EVESystem LocationUniverse { get; private set; }
         public EVESystem LocationTemp { get; private set; }
         public ItemEntity SecureCommerceCommision { get; private set; }
-        public DogmaExpressionManager DogmaExpressionManager { get; }
+        public ExpressionManager ExpressionManager { get; }
 
         /// <summary>
         /// Initializes the item manager and loads the required items
@@ -581,7 +582,7 @@ namespace Node.Inventory
         }
         
         public ItemManager(Logger logger, ItemDB itemDB, SkillDB skillDB, NodeContainer nodeContainer,
-            MetaInventoryManager metaInventoryManager, DogmaExpressionManager dogmaExpressionManager)
+            MetaInventoryManager metaInventoryManager, ExpressionManager expressionManager)
         {
             // create a log channel for the rare occurence of the ItemManager wanting to log something
             this.Log = logger.CreateLogChannel("ItemManager");
@@ -589,7 +590,7 @@ namespace Node.Inventory
             this.SkillDB = skillDB;
             this.NodeContainer = nodeContainer;
             this.MetaInventoryManager = metaInventoryManager;
-            this.DogmaExpressionManager = dogmaExpressionManager;
+            this.ExpressionManager = expressionManager;
         }
     }
 }

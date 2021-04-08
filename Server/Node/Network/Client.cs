@@ -23,27 +23,23 @@
 */
 
 using System;
-using System.Collections.Generic;
 using System.IO;
 using Common.Game;
 using Common.Packets;
-using Node.Database;
 using Node.Exceptions;
 using Node.Inventory;
 using Node.Inventory.Items;
 using Node.Inventory.Items.Attributes;
 using Node.Inventory.Items.Types;
 using Node.Inventory.Notifications;
-using Node.Inventory.SystemEntities;
-using Node.Network;
-using Node.Skills.Notifications;
+using Node.Services;
 using PythonTypes.Types.Collections;
 using PythonTypes.Types.Complex;
 using PythonTypes.Types.Exceptions;
 using PythonTypes.Types.Network;
 using PythonTypes.Types.Primitives;
 
-namespace Node
+namespace Node.Network
 {
     /// <summary>
     /// Class that represents a normal client transport
