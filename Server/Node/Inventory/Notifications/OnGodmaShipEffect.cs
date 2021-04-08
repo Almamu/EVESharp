@@ -16,7 +16,7 @@ namespace Node.Inventory.Notifications
             this.EffectInfo = effectInfo;
         }
 
-        protected override List<PyDataType> GetElements()
+        public override List<PyDataType> GetElements()
         {
             return this.EffectInfo;
         }

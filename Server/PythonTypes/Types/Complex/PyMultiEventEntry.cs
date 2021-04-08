@@ -25,7 +25,7 @@ namespace PythonTypes.Types.Complex
         /// Generates the PyDataType elements that the notification should send
         /// </summary>
         /// <returns>The list of items to add after the notification type</returns>
-        protected abstract List<PyDataType> GetElements();
+        public abstract List<PyDataType> GetElements();
 
         public static implicit operator PyTuple(PyMultiEventEntry multiEventEntry)
         {

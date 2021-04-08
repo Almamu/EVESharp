@@ -184,7 +184,7 @@ namespace Node.Services.Market
                 brokerCost = this.NodeContainer.Constants["mktMinimumFee"];
         }
         
-        private void NotifyItemChange(ClusterConnection connection, long nodeID, int itemID, string key, PyDataType newValue)
+        private void NotifyItemChange(long nodeID, int itemID, string key, PyDataType newValue)
         {
             this.NotificationManager.NotifyNode(nodeID, "OnItemUpdate",
                 new PyTuple(2)
@@ -195,7 +195,7 @@ namespace Node.Services.Market
             );
         }
 
-        private void NotifyBalanceChange(ClusterConnection connection, long nodeID, int characterID, double newBalance)
+        private void NotifyBalanceChange(long nodeID, int characterID, double newBalance)
         {
             this.NotificationManager.NotifyNode(nodeID, "OnBalanceUpdate",
                 new PyTuple(2)
@@ -300,7 +300,7 @@ namespace Node.Services.Market
                         int characterNode = this.ItemDB.GetItemNode(order.CharacterID);
                     
                         if (characterNode > 0)
-                            this.NotifyBalanceChange(client.ClusterConnection, characterNode, order.CharacterID, balance);
+                            this.NotifyBalanceChange(characterNode, order.CharacterID, balance);
                     }
                     
                     // this order is fully satisfiable, so do that
@@ -348,7 +348,7 @@ namespace Node.Services.Market
                     long stationNode = this.SystemManager.GetNodeStationBelongsTo(stationID);
                     
                     // notify the node about the item
-                    this.NotifyItemChange(client.ClusterConnection, stationNode, item.ID, "locationID", stationID);
+                    this.NotifyItemChange(stationNode, item.ID, "locationID", stationID);
                 }
 
                 // ensure we do not sell more than we have
@@ -377,9 +377,9 @@ namespace Node.Services.Market
                     continue;
 
                 if (pair.Value.Quantity == 0)
-                    this.NotifyItemChange(client.ClusterConnection, pair.Value.NodeID, pair.Key, "locationID", this.ItemManager.LocationMarket.ID);
+                    this.NotifyItemChange(pair.Value.NodeID, pair.Key, "locationID", this.ItemManager.LocationMarket.ID);
                 else
-                    this.NotifyItemChange(client.ClusterConnection, pair.Value.NodeID, pair.Key, "quantity", pair.Value.Quantity);
+                    this.NotifyItemChange(pair.Value.NodeID, pair.Key, "quantity", pair.Value.Quantity);
             }
         }
 
@@ -491,6 +491,8 @@ namespace Node.Services.Market
                 {
                     // part of the sell order was satisfied
                     this.DB.UpdateOrderRemainingQuantity(connection, order.OrderID, order.UnitsLeft - quantity, 0);
+                    // ensure the item is also updated
+                    this.ItemDB.UpdateItemQuantity(order.ItemID, order.UnitsLeft - quantity);
 
                     quantityToBuy = quantity;
                     quantity = 0;
@@ -521,7 +523,7 @@ namespace Node.Services.Market
                     int characterNode = this.ItemDB.GetItemNode(order.CharacterID);
                     
                     if (characterNode > 0)
-                        this.NotifyBalanceChange(call.Client.ClusterConnection, characterNode, order.CharacterID, balance);
+                        this.NotifyBalanceChange(characterNode, order.CharacterID, balance);
                     
                     // notify this character of the balance update too
                     call.Client.NotifyBalanceUpdate(character.Balance);
@@ -535,9 +537,9 @@ namespace Node.Services.Market
                         if (stationNode > 0)
                         {
                             // send proper notifications for owner and location changes
-                            this.NotifyItemChange(call.Client.ClusterConnection, stationNode, order.ItemID, "ownerID", character.ID);
-                            this.NotifyItemChange(call.Client.ClusterConnection, stationNode, order.ItemID, "locationID", stationID);
-                            this.NotifyItemChange(call.Client.ClusterConnection, stationNode, order.ItemID, "quantity", quantityToBuy);
+                            this.NotifyItemChange(stationNode, order.ItemID, "ownerID", character.ID);
+                            this.NotifyItemChange(stationNode, order.ItemID, "locationID", stationID);
+                            this.NotifyItemChange(stationNode, order.ItemID, "quantity", quantityToBuy);
                         }
                         else
                         {
@@ -558,7 +560,7 @@ namespace Node.Services.Market
                         long stationNode = this.SystemManager.GetNodeStationBelongsTo(stationID);
 
                         // notify the node about the item
-                        this.NotifyItemChange(call.Client.ClusterConnection, stationNode, item.ID, "locationID", stationID);
+                        this.NotifyItemChange(stationNode, item.ID, "locationID", stationID);
                     }
                 }
 
@@ -606,7 +608,6 @@ namespace Node.Services.Market
             {
                 this.DB.ReleaseMarketLock(connection);
             }
-            
         }
 
         public PyDataType PlaceCharOrder(PyInteger stationID, PyInteger typeID, PyDecimal price, PyInteger quantity,
@@ -684,8 +685,8 @@ namespace Node.Services.Market
 
                     if (stationNode > 0)
                     {
-                        this.NotifyItemChange(call.Client.ClusterConnection, stationNode, order.ItemID, "locationID", order.LocationID);
-                        this.NotifyItemChange(call.Client.ClusterConnection, stationNode, order.ItemID, "quantity", order.UnitsLeft);
+                        this.NotifyItemChange(stationNode, order.ItemID, "locationID", order.LocationID);
+                        this.NotifyItemChange(stationNode, order.ItemID, "quantity", order.UnitsLeft);
                     }
                     else
                     {
@@ -777,6 +778,7 @@ namespace Node.Services.Market
             return null;
         }
 
+        /// <returns>The maximum active order count for the given <paramref name="character"/></returns>
         private int GetMaxOrderCountForCharacter(Character character)
         {
             Dictionary<int, Skill> injectedSkills = character.InjectedSkillsByTypeID;
@@ -793,6 +795,79 @@ namespace Node.Services.Market
                 tycoonLevel = (int) injectedSkills[(int) ItemTypes.Tycoon].Level;
             
             return 5 + tradeLevel * 4 + retailLevel * 8 + wholeSaleLevel * 16 + tycoonLevel * 32;
+        }
+
+        /// <summary>
+        /// Removes an expired buy order from the database and returns the leftover escrow back into the player's wallet
+        /// </summary>
+        /// <param name="connection">The database connection that acquired the lock</param>
+        /// <param name="order">The order to mark as expired</param>
+        private void BuyOrderExpired(MySqlConnection connection, MarketOrder order)
+        {
+            // remove order
+            this.DB.RemoveOrder(connection, order.OrderID);
+            
+            // return escrow to the character
+            double balance = this.CharacterDB.GetCharacterBalance(order.CharacterID);
+
+            this.DB.CreateJournalForCharacter(MarketReference.MarketEscrow, order.CharacterID, order.CharacterID, null, null, order.Escrow, balance, "", order.AccountID);
+            
+            // save the balance of the character
+            this.CharacterDB.SetCharacterBalance(order.CharacterID, balance + order.Escrow);
+                    
+            // if the character is loaded in any node inform that node of the change in wallet
+            int characterNode = this.ItemDB.GetItemNode(order.CharacterID);
+                    
+            if (characterNode > 0)
+                this.NotifyBalanceChange(characterNode, order.CharacterID, balance);
+        }
+
+        /// <summary>
+        /// Removes an expired sell order from the database and returns the leftover items back to the player's hangar
+        /// </summary>
+        /// <param name="connection">The database connection that acquired the lock</param>
+        /// <param name="order">The order to mark as expired</param>
+        private void SellOrderExpired(MySqlConnection connection, MarketOrder order)
+        {
+            // remove order
+            this.DB.RemoveOrder(connection, order.OrderID);
+            // take item back into station
+            this.ItemDB.UpdateItemLocation(order.ItemID, order.LocationID);
+            // notify the relevant node if required
+            this.NotifyItemChange(this.SystemManager.GetNodeStationBelongsTo(order.LocationID), order.ItemID, "locationID", order.LocationID);
+            // finally notify the character about the order change
+            this.NotificationManager.NotifyCharacter(order.CharacterID, new OnOwnOrderChanged(order.TypeID, "Add"));
+        }
+
+        /// <summary>
+        /// Checks orders that are expired, cancels them and returns the items to the hangar if required
+        /// </summary>
+        public void PerformTimedEvents()
+        {
+            using MySqlConnection connection = this.DB.AcquireMarketLock();
+            try
+            {
+                List<MarketOrder> orders = this.DB.GetExpiredOrders(connection);
+
+                foreach (MarketOrder order in orders)
+                {
+                    switch (order.Bid)
+                    {
+                        case TransactionType.Buy:
+                            // buy orders need to return the escrow
+                            this.BuyOrderExpired(connection, order);
+                            break;
+                        case TransactionType.Sell:
+                            // sell orders are a bit harder, the items have to go back to the player's hangar
+                            this.SellOrderExpired(connection, order);
+                            break;
+                    }
+                }
+            }
+            finally
+            {
+                this.DB.ReleaseMarketLock(connection);
+            }
         }
         
         // Marketing skill affects range of remote sell order placing

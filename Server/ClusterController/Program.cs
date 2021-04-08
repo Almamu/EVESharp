@@ -24,6 +24,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using ClusterController.Configuration;
 using ClusterController.Database;
@@ -134,8 +135,40 @@ namespace ClusterController
                     throw;
                 }
 
+                long lastPickedNodeID = 0;
+                
                 while (true)
-                    Thread.Sleep(1);
+                {
+                    // sleep for ten minutes
+                    Thread.Sleep(1000 * 60 * 10);
+                    
+                    // check for any nodes available and pick one from the list to handle timed events
+                    lock (sConnectionManager.Nodes)
+                    {
+                        // ignore the timed events if there's no nodes to handle them
+                        if (sConnectionManager.Nodes.Count == 0)
+                            continue;
+                        
+                        // get the first available node and request it to handle the timed events
+                        // TODO: ASSIGN SOME KIND OF LOAD INDICATION TO NODES TO ENSURE THAT ONLY LOW-LOADED ONES ARE USED?
+                        NodeConnection node = null;
+                        try
+                        {
+                            // get the next node available
+                            node = sConnectionManager.Nodes.First(x => x.Key > lastPickedNodeID).Value;
+                        }
+                        catch (InvalidOperationException)
+                        {
+                            // no extra node was found, so the first one has to be used
+                            node = sConnectionManager.Nodes.First().Value;
+                        }
+
+                        lastPickedNodeID = node.NodeID;
+                        
+                        sConnectionManager.NotifyNode(lastPickedNodeID, "OnClusterTimer", new PyTuple(0));
+                        sChannel.Info($"Requested node {lastPickedNodeID} to handle cluster-wide timed events");
+                    }
+                }
             }
             catch (Exception e)
             {

@@ -1,6 +1,8 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using Node.Network;
 using PythonTypes.Types.Collections;
+using PythonTypes.Types.Complex;
 using PythonTypes.Types.Network;
 using PythonTypes.Types.Primitives;
 
@@ -63,6 +65,24 @@ namespace Node
                 return;
 
             this.SendNotification(type, NOTIFICATION_TYPE_CHARACTER, characterID, notification);
+        }
+
+        public void NotifyCharacter(int characterID, PyMultiEventEntry entry)
+        {
+            // do not waste network resources on useless notifications
+            if (this.CharacterManager.IsCharacterConnected(characterID) == false)
+                return;
+
+            // generate a correct PyTuple and send it as a normal notification
+            List<PyDataType> elements = entry.GetElements();
+            PyTuple arguments = new PyTuple(elements.Count);
+            int i = 0;
+            
+            foreach (PyDataType element in elements)
+                arguments[i++] = element;
+            
+            // build a proper notification for this
+            this.SendNotification(entry.NotificationName, NOTIFICATION_TYPE_CHARACTER, characterID, arguments);
         }
 
         public void NotifyCorporation(int corporationID, string type, PyTuple notification)

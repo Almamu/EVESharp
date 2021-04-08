@@ -16,7 +16,7 @@ namespace Node.Skills.Notifications
             this.SkillTypeIDs = skillTypeIDs;
         }
 
-        protected override List<PyDataType> GetElements()
+        public override List<PyDataType> GetElements()
         {
             return new List<PyDataType>() {this.SkillTypeIDs};
         }

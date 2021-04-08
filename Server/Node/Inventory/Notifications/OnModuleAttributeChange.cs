@@ -21,7 +21,7 @@ namespace Node.Inventory.Notifications
             this.Attribute = attribute;
         }
 
-        protected override List<PyDataType> GetElements()
+        public override List<PyDataType> GetElements()
         {
             return new List<PyDataType>()
             {

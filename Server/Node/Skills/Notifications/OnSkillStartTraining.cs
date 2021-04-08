@@ -19,7 +19,7 @@ namespace Node.Skills.Notifications
             this.Skill = skill;
         }
 
-        protected override List<PyDataType> GetElements()
+        public override List<PyDataType> GetElements()
         {
             return new List<PyDataType>()
             {

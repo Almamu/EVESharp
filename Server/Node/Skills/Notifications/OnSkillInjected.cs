@@ -12,7 +12,7 @@ namespace Node.Skills.Notifications
         {
         }
 
-        protected override List<PyDataType> GetElements()
+        public override List<PyDataType> GetElements()
         {
             return null;
         }

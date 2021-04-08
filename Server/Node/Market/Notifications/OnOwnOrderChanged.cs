@@ -29,7 +29,7 @@ namespace Node.Market.Notifications
             this.IsCorp = isCorp;
         }
 
-        protected override List<PyDataType> GetElements()
+        public override List<PyDataType> GetElements()
         {
             return new List<PyDataType>()
             {

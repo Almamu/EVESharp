@@ -33,7 +33,7 @@ namespace Node.Database
         }
 
         public void CreateJournalForCharacter(MarketReference reference, int characterID, int ownerID1,
-            int? ownerID2, int? referenceID, double amount, double balance, string reason, int accountKey)
+            int? ownerID2, int? referenceID, double amount, double finalBalance, string reason, int accountKey)
         {
             reason = reason.Substring(0, Math.Min(reason.Length, 43));
             
@@ -48,7 +48,7 @@ namespace Node.Database
                     {"@ownerID2", ownerID2},
                     {"@referenceID", referenceID},
                     {"@amount", amount},
-                    {"@balance", balance},
+                    {"@balance", finalBalance},
                     {"@description", reason},
                     {"@accountKey", accountKey}
                 }
@@ -627,7 +627,7 @@ namespace Node.Database
         public MarketOrder GetOrderById(MySqlConnection connection, int orderID)
         {
             MySqlDataReader reader = Database.PrepareQuery(ref connection,
-                "SELECT orderID, typeID, itemID, charID, stationID AS locationID, price, accountID, volRemaining, minVolume, `range`, escrow, bid, issued FROM mktOrders LEFT JOIN staStations USING(stationID) WHERE orderID = @orderID",
+                "SELECT orderID, typeID, itemID, charID, stationID AS locationID, price, accountID, volRemaining, minVolume, `range`, escrow, bid, issued FROM mktOrders WHERE orderID = @orderID",
                 new Dictionary<string, object>()
                 {
                     {"@orderID", orderID}
@@ -655,6 +655,45 @@ namespace Node.Database
                     reader.GetInt32(11) == ((int) TransactionType.Buy) ? TransactionType.Buy : TransactionType.Sell,
                     reader.GetInt64(12)
                 );
+            }
+        }
+
+        public List<MarketOrder> GetExpiredOrders(MySqlConnection connection)
+        {
+            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+                "SELECT orderID, typeID, itemID, charID, stationID AS locationID, price, accountID, volRemaining, minVolume, `range`, escrow, bid, issued FROM mktOrders WHERE (issued + (duration * @ticksPerHour)) < @currentTime",
+                new Dictionary<string, object>()
+                {
+                    {"@ticksPerHour", TimeSpan.TicksPerDay},
+                    {"@currentTime", DateTime.UtcNow.ToFileTimeUtc()}
+                }
+            );
+
+            using (reader)
+            {
+                List<MarketOrder> orders = new List<MarketOrder>();
+                
+                while (reader.Read() == true)
+                {
+                    orders.Add(new MarketOrder(
+                        reader.GetInt32(0),
+                        reader.GetInt32(1),
+                        reader.IsDBNull(2) == false ? reader.GetInt32(2) : 0,
+                        reader.GetInt32(3),
+                        reader.GetInt32(4),
+                        reader.GetDouble(5),
+                        reader.GetInt32(6),
+                        reader.GetInt32(7),
+                        reader.GetInt32(8),
+                        reader.GetInt32(9),
+                        0,
+                        reader.IsDBNull(10) == false ? reader.GetDouble(10) : 0,
+                        reader.GetInt32(11) == ((int) TransactionType.Buy) ? TransactionType.Buy : TransactionType.Sell,
+                        reader.GetInt64(12)
+                    ));
+                }
+
+                return orders;
             }
         }
     }

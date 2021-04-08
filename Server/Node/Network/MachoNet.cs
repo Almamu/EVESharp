@@ -547,7 +547,7 @@ namespace Node.Network
         {
             if (data.Count != 2)
             {
-                Log.Error("Received OnItemUpdate notification with the wrong format");
+                Log.Error("Received OnBalanceUpdate notification with the wrong format");
                 return;
             }
 
@@ -555,7 +555,7 @@ namespace Node.Network
 
             if (first is PyInteger == false)
             {
-                Log.Error("Received OnItemUpdate notification with the wrong format");
+                Log.Error("Received OnBalanceUpdate notification with the wrong format");
                 return;
             }
 
@@ -563,7 +563,7 @@ namespace Node.Network
 
             if (second is PyDecimal == false)
             {
-                Log.Error("Received OnItemUpdate notification with the wrong format");
+                Log.Error("Received OnBalanceUpdate notification with the wrong format");
                 return;
             }
 
@@ -587,6 +587,13 @@ namespace Node.Network
             };
             
             this.NotificationManager.NotifyCharacter(characterID, "OnAccountChange", notification);
+        }
+
+        private void HandleOnClusterTimer(PyTuple data)
+        {
+            Log.Info("Received a cluster request to run timed events on services...");
+            
+            this.ServiceManager.marketProxy.PerformTimedEvents();
         }
 
         private void HandleBroadcastNotification(PyPacket packet)
@@ -631,6 +638,9 @@ namespace Node.Network
                     break;
                 case "OnBalanceUpdate":
                     this.HandleOnBalanceUpdate(arguments);
+                    break;
+                case "OnClusterTimer":
+                    this.HandleOnClusterTimer(arguments);
                     break;
                 default:
                     Log.Fatal("Received ClusterController notification with the wrong format");
