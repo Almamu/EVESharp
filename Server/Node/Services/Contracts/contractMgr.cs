@@ -9,6 +9,7 @@ using Node.Inventory;
 using Node.Inventory.Items;
 using Node.Inventory.Items.Types;
 using Node.Network;
+using Node.Notifications.Contracts;
 using PythonTypes.Types.Collections;
 using PythonTypes.Types.Database;
 using PythonTypes.Types.Exceptions;
@@ -40,6 +41,13 @@ namespace Node.Services.Contracts
 
         public PyDataType NumRequiringAttention(CallInformation call)
         {
+            // check for contracts that we've been outbid at and send notifications
+            // TODO: HANDLE CORPORATION CONTRACTS TOO!
+            List<int> contracts = this.DB.ActiveContractsForCharacter(call.Client.EnsureCharacterIsSelected());
+            
+            foreach (int contractID in contracts)
+                call.Client.NotifyMultiEvent(new OnContractOutbid(contractID));
+            
             return this.DB.NumRequiringAttention(call.Client.EnsureCharacterIsSelected(), call.Client.CorporationID);
         }
 
@@ -392,12 +400,48 @@ namespace Node.Services.Contracts
 
         public PyDataType PlaceBid(PyInteger contractID, PyInteger quantity, PyBool forCorp, PyObjectData locationData, CallInformation call)
         {
-            int bidderID = call.Client.EnsureCharacterIsSelected();
+            using MySqlConnection connection = this.MarketDB.AcquireMarketLock();
+            try
+            {
+                int bidderID = call.Client.EnsureCharacterIsSelected();
 
-            if (forCorp == true)
-                bidderID = call.Client.CorporationID;
+                if (forCorp == true)
+                    bidderID = call.Client.CorporationID;
+
+                ContractDB.Contract contract = this.DB.GetContract(connection, contractID);
+
+                // ensure the contract is still in progress
+                if (contract.Status != ContractStatus.Outstanding)
+                    throw new ConAuctionAlreadyClaimed();
+
+                int maximumBid = this.DB.GetMaximumBid(connection, contractID);
             
-            return this.DB.PlaceBid(contractID, quantity, bidderID);
+                // calculate next bid slot
+                maximumBid += (int) Math.Max((0.1 * contract.Price), 1000);
+
+                if (quantity < maximumBid)
+                    throw new ConBidTooLow(quantity, maximumBid);
+            
+                // check who we'd outbid first and notify them
+                this.DB.GetOutbids(connection, contractID, quantity, out List<int> characterIDs, out List<int> corporationIDs);
+
+                OnContractOutbid notification = new OnContractOutbid(contractID);
+
+                foreach (int corporationID in corporationIDs)
+                    if (corporationID != bidderID)
+                        this.NotificationManager.NotifyCorporation(corporationID, notification);
+
+                foreach (int characterID in characterIDs)
+                    if (characterID != bidderID)
+                        this.NotificationManager.NotifyCharacter(characterID, notification);
+
+                // finally place the bid
+                return this.DB.PlaceBid(connection, contractID, quantity, bidderID, forCorp);
+            }
+            finally
+            {
+                this.MarketDB.ReleaseMarketLock(connection);
+            }
         }
 
         public PyDataType HasFittedCharges(PyInteger stationID, PyInteger itemID, PyInteger forCorp, PyInteger flag, CallInformation call)

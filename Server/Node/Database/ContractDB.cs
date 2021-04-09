@@ -24,6 +24,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Diagnostics.Contracts;
 using Common.Database;
 using MySql.Data.MySqlClient;
@@ -633,17 +634,125 @@ namespace Node.Database
             );
         }
 
-        public ulong PlaceBid(int contractID, int amount, int bidderID)
+        public ulong PlaceBid(MySqlConnection connection, int contractID, int amount, int bidderID, bool forCorp)
         {
-            return Database.PrepareQueryLID(
-                "INSERT INTO conBids(contractID, bidderID, amount)VALUES(@contractID, @bidderID, @amount)",
+            return Database.PrepareQueryLID(ref connection,
+                "INSERT INTO conBids(contractID, bidderID, forCorp, amount)VALUES(@contractID, @bidderID, @forCorp, @amount)",
                 new Dictionary<string, object>()
                 {
                     {"@contractID", contractID},
                     {"@bidderID", bidderID},
+                    {"@forCorp", forCorp},
                     {"@amount", amount},
                 }
             );
+        }
+
+        public void GetOutbids(MySqlConnection connection, int contractID, int amount, out List<int> characterIDs, out List<int> corporationIDs)
+        {
+            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+                "SELECT bidderID, forCorp FROM conBids WHERE contractID = @contractID GROUP BY bidderID",
+                new Dictionary<string, object>()
+                {
+                    {"@contractID", contractID},
+                    {"@amount", amount}
+                }
+            );
+            
+            using (reader)
+            {
+                characterIDs = new List<int>();
+                corporationIDs = new List<int>();
+
+                while (reader.Read() == true)
+                {
+                    if (reader.GetBoolean(1) == true)
+                    {
+                        corporationIDs.Add(reader.GetInt32(0));
+                    }
+                    else
+                    {
+                        characterIDs.Add(reader.GetInt32(0));
+                    }
+                }
+            }
+        }
+
+        public int GetMaximumBid(MySqlConnection connection, int contractID)
+        {
+            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+                "SELECT MAX(amount) FROM conBids WHERE contractID = @contractID",
+                new Dictionary<string, object>()
+                {
+                    {"@contractID", contractID}
+                }
+            );
+            
+            using (reader)
+            {
+                if (reader.Read() == false)
+                    return 0;
+
+                return reader.GetInt32(0);
+            }
+        }
+
+        public class Contract
+        {
+            public int Price { get; init; }
+            public int Collateral { get; init; }
+            public ContractStatus Status { get; init; }
+        }
+
+        public Contract GetContract(MySqlConnection connection, int contractID)
+        {
+            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+                "SELECT price, collateral, status FROM conContracts WHERE contractID = @contractID",
+                new Dictionary<string, object>()
+                {
+                    {"@contractID", contractID}
+                }
+            );
+            
+            using (reader)
+            {
+                if (reader.Read() == false)
+                    return null;
+
+                return new Contract()
+                {
+                    Price = reader.GetInt32(0),
+                    Collateral = reader.GetInt32(1),
+                    Status = (ContractStatus) reader.GetInt32(2)
+                };
+            }
+        }
+
+        public List<int> ActiveContractsForCharacter(int bidderID)
+        {
+            MySqlConnection connection = null;
+            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+                "SELECT contractID, MAX(amount), (SELECT MAX(amount) FROM conBids b WHERE b.contractID = contractID) AS maximum FROM conBids LEFT JOIN conContracts USING(contractID) WHERE bidderID = @bidderID AND status = @outstandingStatus GROUP BY contractID;",
+                new Dictionary<string, object>()
+                {
+                    {"@bidderID", bidderID},
+                    {"@outstandingStatus", ContractStatus.Outstanding}
+                }
+            );
+            
+            using(connection)
+            using (reader)
+            {
+                List<int> result = new List<int>();
+
+                while (reader.Read() == true)
+                {
+                    if (reader.GetInt32(1) != reader.GetInt32(2))
+                        result.Add(reader.GetInt32(0));
+                }
+
+                return result;
+            }
         }
     }
 }
