@@ -450,12 +450,12 @@ namespace Node.Database
 
             if (notIssuedByIDs is not null && notIssuedByIDs.Count > 0)
             {
-                contractQuery += " AND issuerID NOT IN (" + String.Join<PyInteger>(',', notIssuedByIDs) + ") AND issuerCorpID NOT IN (" + String.Join<PyInteger>(',', notIssuedByIDs) + ")";
+                contractQuery += " AND (issuerID NOT IN (" + String.Join<PyInteger>(',', notIssuedByIDs) + ") AND forCorp = 0) AND (issuerCorpID NOT IN (" + String.Join<PyInteger>(',', notIssuedByIDs) + ") AND forCorp = 1)";
             }
 
             if (issuedByIDs is not null && issuedByIDs.Count > 0)
             {
-                contractQuery += " AND issuerID NOT IN (" + String.Join<PyInteger>(',', issuedByIDs) + ") AND issuerCorpID NOT IN (" + String.Join<PyInteger>(',', issuedByIDs) + ")";
+                contractQuery += " AND ((issuerID IN (" + String.Join<PyInteger>(',', issuedByIDs) + ") AND forCorp = 0) OR (issuerCorpID IN (" + String.Join<PyInteger>(',', issuedByIDs) + ") AND forCorp = 1)";
             }
 
             if (itemCategoryID is not null)
@@ -517,7 +517,7 @@ namespace Node.Database
 
             if (ownerID is not null)
             {
-                contractQuery += " AND (issuerID = @ownerID OR issuerCorpID = @ownerID)";
+                contractQuery += " AND ((issuerID = @ownerID AND forCorp = 0) OR (issuerCorpID = @ownerID AND forCorp = 1))";
                 values["@ownerID"] = ownerID;
             }
 

@@ -72,7 +72,7 @@ namespace Node.Services.Contracts
             List<int> contractList = this.DB.GetContractList(
                 startContractID, resultsPerPage, null, null, issuedByIDs, issuedToUs == true ? ownerID : null,
                 null, null,null, 0, 0, contractType, null,
-                call.Client.EnsureCharacterIsSelected(), call.Client.CorporationID, null,
+                call.Client.EnsureCharacterIsSelected(), call.Client.CorporationID, ownerID,
                 contractStatus, true
             );
 
