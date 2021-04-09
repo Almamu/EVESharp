@@ -57,28 +57,30 @@ namespace Node.Services.Contracts
 
         public PyDataType GetContractListForOwner(PyInteger ownerID, PyInteger contractStatus, PyInteger contractType, PyBool issuedToUs, CallInformation call)
         {
-            int? contractTypeInt = null;
-            int? contractStatusInt = null;
-            int? startContractID = null;
-            PyDataType pyStartContractID = null;
-
-            call.NamedPayload.TryGetValue("startContractID", out pyStartContractID);
-
-            if (pyStartContractID is PyInteger)
-                startContractID = pyStartContractID as PyInteger;
-            
+            call.NamedPayload.TryGetValue("startContractID", out PyInteger startContractID);
             int resultsPerPage = call.NamedPayload["num"] as PyInteger;
 
-            if (contractStatus != null)
-                contractStatusInt = contractStatus;
-            if (contractType != null)
-                contractTypeInt = contractType;
+            // limit the number of results to 100
+            if (resultsPerPage > 100)
+                resultsPerPage = 100;
+
+            PyList<PyInteger> issuedByIDs = null;
             
+            if (issuedToUs == false)
+                issuedByIDs = new PyList<PyInteger>(1) {[0] = ownerID};
+
+            List<int> contractList = this.DB.GetContractList(
+                startContractID, resultsPerPage, null, null, issuedByIDs, issuedToUs == true ? ownerID : null,
+                null, null,null, 0, 0, contractType, null,
+                call.Client.EnsureCharacterIsSelected(), call.Client.CorporationID, null,
+                contractStatus, true
+            );
+
             return KeyVal.FromDictionary(new PyDictionary()
                 {
-                    ["contracts"] = this.DB.GetContractsForOwner(ownerID, contractTypeInt, contractStatusInt),
-                    ["bids"] = this.DB.GetContractBidsForOwner(ownerID, contractTypeInt, contractStatusInt),
-                    ["items"] = this.DB.GetContractItemsForOwner(ownerID, contractTypeInt, contractStatusInt)
+                    ["contracts"] = this.DB.GetInformationForContractList(contractList),
+                    ["bids"] = this.DB.GetBidsForContractList(contractList),
+                    ["items"] = this.DB.GetItemsForContractList(contractList)
                 }
             );
         }
@@ -212,8 +214,55 @@ namespace Node.Services.Contracts
         public PyDataType GetContractList(PyObjectData filtersKeyval, CallInformation call)
         {
             PyDictionary<PyString, PyDataType> filters = KeyVal.ToDictionary(filtersKeyval).GetEnumerable<PyString, PyDataType>();
+            PyList<PyInteger> notIssuedByIDs = null;
+            PyList<PyInteger> issuedByIDs = null;
 
-            return null;
+            call.NamedPayload.TryGetValue("startContractID", out PyInteger startContractID);
+            int resultsPerPage = call.NamedPayload["num"] as PyInteger;
+
+            filters.TryGetValue("regionID", out PyInteger regionID);
+            filters.TryGetValue("stationID", out PyInteger stationID);
+            filters.TryGetValue("solarSystemID", out PyInteger solarSystemID);
+            filters.TryGetValue("itemTypeID", out PyInteger itemTypeID);
+            filters.TryGetValue("assigneeID", out PyInteger assigneeID);
+            filters.TryGetValue("itemGroupID", out PyInteger itemGroupID);
+            filters.TryGetValue("itemCategoryID", out PyInteger itemCategoryID);
+            filters.TryGetValue("priceMax", out PyInteger priceMax);
+            filters.TryGetValue("priceMin", out PyInteger priceMin);
+            filters.TryGetValue("type", out PyInteger type);
+            filters.TryGetValue("description", out PyString description);
+
+            if (filters.TryGetValue("issuedByIDs", out PyList issuedIDs) == true && issuedIDs is not null)
+                issuedByIDs = issuedIDs.GetEnumerable<PyInteger>();
+            if (filters.TryGetValue("notIssuedByIDs", out PyList notIssuedIDs) == true && notIssuedIDs is not null)
+                notIssuedByIDs = notIssuedIDs.GetEnumerable<PyInteger>();
+            
+            // limit the number of results to 100
+            if (resultsPerPage > 100)
+                resultsPerPage = 100;
+            
+            int locationID = 0;
+
+            if (stationID is not null)
+                locationID = stationID;
+            else if (solarSystemID is not null)
+                locationID = solarSystemID;
+            else if (regionID is not null)
+                locationID = regionID;
+
+            List<int> contractList = this.DB.GetContractList(
+                startContractID, resultsPerPage, itemTypeID, notIssuedByIDs, issuedByIDs, assigneeID,
+                locationID, itemGroupID, itemCategoryID, priceMax ?? 0, priceMin ?? 0, type, description,
+                call.Client.EnsureCharacterIsSelected(), call.Client.CorporationID
+            );
+
+            return KeyVal.FromDictionary(new PyDictionary()
+                {
+                    ["contracts"] = this.DB.GetInformationForContractList(contractList),
+                    ["bids"] = this.DB.GetBidsForContractList(contractList),
+                    ["items"] = this.DB.GetItemsForContractList(contractList)
+                }
+            );
         }
 
         public PyDataType GetContract(PyInteger contractID, CallInformation call)
@@ -268,11 +317,16 @@ namespace Node.Services.Contracts
             else
                 ownerID = call.Client.EnsureCharacterIsSelected();
 
+            List<int> contractList = this.DB.GetContractList(
+                null, 0, null, null, null, null, null, null, null, 0, 0,
+                null, null, call.Client.EnsureCharacterIsSelected(), call.Client.CorporationID, ownerID, null, true, true
+            );
+            
             return KeyVal.FromDictionary(new PyDictionary()
                 {
-                    ["contracts"] = this.DB.GetContractsForOwner(ownerID, null, (int) ContractStatus.Expired),
-                    ["bids"] = this.DB.GetContractBidsForOwner(ownerID, null, (int) ContractStatus.Expired),
-                    ["items"] = this.DB.GetContractItemsForOwner(ownerID, null, (int) ContractStatus.Expired)
+                    ["contracts"] = this.DB.GetInformationForContractList(contractList),
+                    ["bids"] = this.DB.GetBidsForContractList(contractList),
+                    ["items"] = this.DB.GetItemsForContractList(contractList)
                 }
             );
         }
@@ -286,11 +340,13 @@ namespace Node.Services.Contracts
             else
                 ownerID = call.Client.EnsureCharacterIsSelected();
 
+            List<int> contractList = this.DB.GetContractListByOwnerBids(ownerID);
+
             return KeyVal.FromDictionary(new PyDictionary()
                 {
-                    ["contracts"] = this.DB.GetContractsForOwnerByBids(ownerID, call.Client.CorporationID),
-                    ["bids"] = this.DB.GetContractBidsForOwnerByBids(ownerID, call.Client.CorporationID),
-                    ["items"] = this.DB.GetContractItemsForOwnerByBids(ownerID, call.Client.CorporationID)
+                    ["contracts"] = this.DB.GetInformationForContractList(contractList),
+                    ["bids"] = this.DB.GetBidsForContractList(contractList),
+                    ["items"] = this.DB.GetItemsForContractList(contractList)
                 }
             );
         }
@@ -304,26 +360,29 @@ namespace Node.Services.Contracts
             else
                 ownerID = call.Client.EnsureCharacterIsSelected();
 
+            List<int> contractList = null;
+
             if (acceptedByMe == true)
             {
-                return KeyVal.FromDictionary(new PyDictionary()
-                    {
-                        ["contracts"] = this.DB.GetContractsForOwnerByAcceptor(ownerID, null, (int) ContractStatus.InProgress),
-                        ["bids"] = this.DB.GetContractBidsForOwnerByAcceptor(ownerID, null, (int) ContractStatus.InProgress),
-                        ["items"] = this.DB.GetContractItemsForOwnerByAcceptor(ownerID, null, (int) ContractStatus.InProgress)
-                    }
-                );
+                contractList = this.DB.GetContractListByAcceptor(ownerID);
             }
             else
             {
-                return KeyVal.FromDictionary(new PyDictionary()
-                    {
-                        ["contracts"] = this.DB.GetContractsForOwner(ownerID, null, (int) ContractStatus.InProgress),
-                        ["bids"] = this.DB.GetContractBidsForOwner(ownerID, null, (int) ContractStatus.InProgress),
-                        ["items"] = this.DB.GetContractItemsForOwner(ownerID, null, (int) ContractStatus.InProgress)
-                    }
+                contractList = this.DB.GetContractList(
+                    null, 0, null, null, new PyList<PyInteger>(1){[0] = ownerID},
+                    null, null, null, null, 0, 0, null,
+                    null, call.Client.EnsureCharacterIsSelected(), call.Client.CorporationID,
+                    ownerID, null, true, true
                 );
             }
+
+            return KeyVal.FromDictionary(new PyDictionary()
+                {
+                    ["contracts"] = this.DB.GetInformationForContractList(contractList),
+                    ["bids"] = this.DB.GetBidsForContractList(contractList),
+                    ["items"] = this.DB.GetItemsForContractList(contractList)
+                }
+            );
         }
     }
 }
