@@ -197,7 +197,7 @@ namespace Node.Services.Market
         private void NotifyBalanceChange(long nodeID, int characterID, double newBalance)
         {
             this.NotificationManager.NotifyNode(nodeID, "OnBalanceUpdate",
-                new PyTuple(2)
+                new PyTuple(3)
                 {
                     [0] = characterID,
                     [1] = 1000,

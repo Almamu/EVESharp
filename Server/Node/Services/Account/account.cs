@@ -56,7 +56,7 @@ namespace Node.Services.Account
             this.CacheStorage.Load(
                 "account",
                 "GetEntryTypes",
-                "SELECT refTypeID AS entryTypeID, refTypeText AS entryTypeName, description FROM market_refTypes",
+                "SELECT refTypeID AS entryTypeID, refTypeText AS entryTypeName, description FROM mktRefTypes",
                 CacheStorage.CacheObjectType.Rowset
             );
 

@@ -678,10 +678,10 @@ namespace Node.Database
             }
         }
 
-        public int GetMaximumBid(MySqlConnection connection, int contractID)
+        public void GetMaximumBid(MySqlConnection connection, int contractID, out int bidderID, out int amount)
         {
             MySqlDataReader reader = Database.PrepareQuery(ref connection,
-                "SELECT MAX(amount) FROM conBids WHERE contractID = @contractID",
+                "SELECT amount, bidderID FROM conBids WHERE contractID = @contractID ORDER BY amount DESC LIMIT 1",
                 new Dictionary<string, object>()
                 {
                     {"@contractID", contractID}
@@ -691,9 +691,15 @@ namespace Node.Database
             using (reader)
             {
                 if (reader.Read() == false)
-                    return 0;
-
-                return reader.GetInt32(0);
+                {
+                    bidderID = 0;
+                    amount = 0;
+                }
+                else
+                {
+                    amount = reader.GetInt32(0);
+                    bidderID = reader.GetInt32(1);
+                }
             }
         }
 

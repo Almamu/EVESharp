@@ -8,6 +8,7 @@ using Node.Exceptions.contractMgr;
 using Node.Inventory;
 using Node.Inventory.Items;
 using Node.Inventory.Items.Types;
+using Node.Market;
 using Node.Network;
 using Node.Notifications.Contracts;
 using PythonTypes.Types.Collections;
@@ -23,20 +24,34 @@ namespace Node.Services.Contracts
         private ContractDB DB { get; }
         private ItemDB ItemDB { get; }
         private MarketDB MarketDB { get; }
+        private CharacterDB CharacterDB { get; }
         private ItemManager ItemManager { get; }
         private TypeManager TypeManager { get; }
         private SystemManager SystemManager { get; }
         private NotificationManager NotificationManager { get; }
 
-        public contractMgr(ContractDB db, ItemDB itemDB, MarketDB marketDB, ItemManager itemManager, TypeManager typeManager, SystemManager systemManager, NotificationManager notificationManager)
+        public contractMgr(ContractDB db, ItemDB itemDB, MarketDB marketDB, CharacterDB characterDB, ItemManager itemManager, TypeManager typeManager, SystemManager systemManager, NotificationManager notificationManager)
         {
             this.DB = db;
             this.ItemDB = itemDB;
             this.MarketDB = marketDB;
+            this.CharacterDB = characterDB;
             this.ItemManager = itemManager;
             this.TypeManager = typeManager;
             this.SystemManager = systemManager;
             this.NotificationManager = notificationManager;
+        }
+
+        private void NotifyBalanceChange(long nodeID, int characterID, double newBalance)
+        {
+            this.NotificationManager.NotifyNode(nodeID, "OnBalanceUpdate",
+                new PyTuple(3)
+                {
+                    [0] = characterID,
+                    [1] = 1000,
+                    [2] = newBalance
+                }
+            );
         }
 
         public PyDataType NumRequiringAttention(CallInformation call)
@@ -403,10 +418,29 @@ namespace Node.Services.Contracts
             using MySqlConnection connection = this.MarketDB.AcquireMarketLock();
             try
             {
+                // TODO: SUPPORT PROPER CORP WALLET
                 int bidderID = call.Client.EnsureCharacterIsSelected();
 
                 if (forCorp == true)
+                {
                     bidderID = call.Client.CorporationID;
+                    throw new UserError("Corp bidding is not supported for now!");
+                }
+                
+                // ensure there's enough balance left
+                Character character = this.ItemManager.GetItem<Character>(bidderID);
+                
+                character.EnsureEnoughBalance(quantity);
+                
+                // change the character's balance
+                character.Balance -= quantity;
+                character.Persist();
+                
+                // create the journal entry
+                this.MarketDB.CreateJournalForCharacter(MarketReference.ContractAuctionBid, character.ID, character.ID, null, null, -quantity, character.Balance, "", 1000);
+                
+                // update the player's balance
+                call.Client.NotifyBalanceUpdate(character.Balance);
 
                 ContractDB.Contract contract = this.DB.GetContract(connection, contractID);
 
@@ -414,13 +448,13 @@ namespace Node.Services.Contracts
                 if (contract.Status != ContractStatus.Outstanding)
                     throw new ConAuctionAlreadyClaimed();
 
-                int maximumBid = this.DB.GetMaximumBid(connection, contractID);
+                this.DB.GetMaximumBid(connection, contractID, out int maximumBidderID, out int maximumBid);
             
                 // calculate next bid slot
-                maximumBid += (int) Math.Max((0.1 * contract.Price), 1000);
+                int nextMinimumBid = maximumBid + (int) Math.Max((0.1 * contract.Price), 1000);
 
-                if (quantity < maximumBid)
-                    throw new ConBidTooLow(quantity, maximumBid);
+                if (quantity < nextMinimumBid)
+                    throw new ConBidTooLow(quantity, nextMinimumBid);
             
                 // check who we'd outbid first and notify them
                 this.DB.GetOutbids(connection, contractID, quantity, out List<int> characterIDs, out List<int> corporationIDs);
@@ -436,7 +470,24 @@ namespace Node.Services.Contracts
                         this.NotificationManager.NotifyCharacter(characterID, notification);
 
                 // finally place the bid
-                return this.DB.PlaceBid(connection, contractID, quantity, bidderID, forCorp);
+                ulong bidID = this.DB.PlaceBid(connection, contractID, quantity, bidderID, forCorp);
+                
+                // now return the money for the player that was the highest bidder
+                double balance = this.CharacterDB.GetCharacterBalance(maximumBidderID) + maximumBid;
+
+                // create the journal entry
+                this.MarketDB.CreateJournalForCharacter(MarketReference.ContractAuctionBidRefund, maximumBidderID, maximumBidderID, null, null, maximumBid, balance, "", 1000);
+                
+                // save the balance of the character
+                this.CharacterDB.SetCharacterBalance(maximumBidderID, balance);
+                    
+                // if the character is loaded in any node inform that node of the change in wallet
+                int characterNode = this.ItemDB.GetItemNode(maximumBidderID);
+                    
+                if (characterNode > 0)
+                    this.NotifyBalanceChange(characterNode, maximumBidderID, balance);
+
+                return bidID;
             }
             finally
             {
