@@ -9,14 +9,14 @@ namespace PythonTypes.Types.Complex
     /// <summary>
     /// This is not a real type in EVE, but should help construct notifications in an easier way 
     /// </summary>
-    public abstract class PyMultiEventEntry
+    public abstract class PyNotification
     {
         /// <summary>
         /// The name of this notification
         /// </summary>
         public string NotificationName { get; }
         
-        protected PyMultiEventEntry(string notificationName)
+        protected PyNotification(string notificationName)
         {
             this.NotificationName = notificationName;
         }
@@ -27,13 +27,13 @@ namespace PythonTypes.Types.Complex
         /// <returns>The list of items to add after the notification type</returns>
         public abstract List<PyDataType> GetElements();
 
-        public static implicit operator PyTuple(PyMultiEventEntry multiEventEntry)
+        public static implicit operator PyTuple(PyNotification notification)
         {
-            List<PyDataType> data = multiEventEntry.GetElements();
+            List<PyDataType> data = notification.GetElements();
             
             PyTuple result = new PyTuple(1 + (data?.Count ?? 0))
             {
-                [0] = multiEventEntry.NotificationName
+                [0] = notification.NotificationName
             };
 
             int i = 1;

@@ -2,9 +2,9 @@
 using PythonTypes.Types.Complex;
 using PythonTypes.Types.Primitives;
 
-namespace Node.Skills.Notifications
+namespace Node.Notifications.Skills
 {
-    public class OnSkillInjected : PyMultiEventEntry
+    public class OnSkillInjected : PyNotification
     {
         private const string NOTIFICATION_NAME = "OnSkillInjected";
         

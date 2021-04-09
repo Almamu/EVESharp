@@ -66,22 +66,19 @@ namespace Node.Network
             this.SendNotification(type, NOTIFICATION_TYPE_CHARACTER, characterID, notification);
         }
 
-        public void NotifyCharacter(int characterID, PyMultiEventEntry entry)
+        public void NotifyCharacters(PyList<PyInteger> characterIDs, PyNotification notification)
+        {
+            this.SendNotification(notification.NotificationName, NOTIFICATION_TYPE_CHARACTER, characterIDs, notification.GetElements());
+        }
+        
+        public void NotifyCharacter(int characterID, PyNotification entry)
         {
             // do not waste network resources on useless notifications
             if (this.CharacterManager.IsCharacterConnected(characterID) == false)
                 return;
-
-            // generate a correct PyTuple and send it as a normal notification
-            List<PyDataType> elements = entry.GetElements();
-            PyTuple arguments = new PyTuple(elements.Count);
-            int i = 0;
-            
-            foreach (PyDataType element in elements)
-                arguments[i++] = element;
             
             // build a proper notification for this
-            this.SendNotification(entry.NotificationName, NOTIFICATION_TYPE_CHARACTER, characterID, arguments);
+            this.SendNotification(entry.NotificationName, NOTIFICATION_TYPE_CHARACTER, characterID, entry.GetElements());
         }
 
         public void NotifyCorporation(int corporationID, string type, PyTuple notification)
@@ -89,9 +86,19 @@ namespace Node.Network
             this.SendNotification(type, NOTIFICATION_TYPE_CORPORATON, corporationID, notification);
         }
 
+        public void NotifyCorporation(int corporationID, PyNotification notification)
+        {
+            this.SendNotification(notification.NotificationName, NOTIFICATION_TYPE_CORPORATON, corporationID, notification.GetElements());
+        }
+
         public void NotifyStation(int stationID, string type, PyTuple notification)
         {
             this.SendNotification(type, NOTIFICATION_TYPE_STATION, stationID, notification);
+        }
+
+        public void NotifyStation(int stationID, PyNotification notification)
+        {
+            this.SendNotification(notification.NotificationName, NOTIFICATION_TYPE_STATION, stationID, notification.GetElements());
         }
 
         /// <summary>
@@ -120,12 +127,22 @@ namespace Node.Network
             this.ClusterConnection.Send(notification);
         }
 
-        public void SendNotification(string notificationType, string idType, int id, PyDataType data)
+        public void SendNotification(string idType, int id, PyNotification data)
+        {
+            this.SendNotification(data.NotificationName, idType, new PyList(1) {[0] = id}, data.GetElements());
+        }
+
+        public void SendNotification(string notificationType, string idType, int id, PyTuple data)
         {
             this.SendNotification(notificationType, idType, new PyList(1) {[0] = id}, data);
         }
+
+        public void SendNotification(string idType, PyList idsOfInterest, PyNotification data)
+        {
+            this.SendNotification(data.NotificationName, idType, idsOfInterest, data.GetElements());
+        }
         
-        public void SendNotification(string notificationType, string idType, PyList idsOfInterest, PyDataType data)
+        public void SendNotification(string notificationType, string idType, PyList idsOfInterest, PyTuple data)
         {
             PyTuple dataContainer = new PyTuple(2)
             {

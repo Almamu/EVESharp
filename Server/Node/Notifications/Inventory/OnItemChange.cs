@@ -1,13 +1,12 @@
 ﻿using System.Collections.Generic;
-using System.Runtime.CompilerServices;
 using Node.Inventory.Items;
 using PythonTypes.Types.Collections;
 using PythonTypes.Types.Complex;
 using PythonTypes.Types.Primitives;
 
-namespace Node.Inventory.Notifications
+namespace Node.Notifications.Inventory
 {
-    public class OnItemChange : PyMultiEventEntry
+    public class OnItemChange : PyNotification
     {
         public ItemEntity Item { get; }
         public Dictionary<ItemChange, PyDataType> Changes { get; } = new Dictionary<ItemChange, PyDataType>();

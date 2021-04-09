@@ -3,18 +3,18 @@ using Node.Inventory.Items.Types;
 using PythonTypes.Types.Complex;
 using PythonTypes.Types.Primitives;
 
-namespace Node.Skills.Notifications
+namespace Node.Notifications.Skills
 {
-    public class OnSkillTrainingStopped : PyMultiEventEntry
+    public class OnSkillStartTraining : PyNotification
     {
-        private const string NOTIFICATION_NAME = "OnSkillTrainingStopped";
+        private const string NOTIFICATION_NAME = "OnSkillStartTraining";
         
         /// <summary>
         /// The skill this notification is about
         /// </summary>
         public Skill Skill { get; }
         
-        public OnSkillTrainingStopped(Skill skill) : base(NOTIFICATION_NAME)
+        public OnSkillStartTraining(Skill skill) : base(NOTIFICATION_NAME)
         {
             this.Skill = skill;
         }
@@ -24,7 +24,7 @@ namespace Node.Skills.Notifications
             return new List<PyDataType>()
             {
                 this.Skill.ID,
-                0
+                this.Skill.ExpiryTime
             };
         }
     }

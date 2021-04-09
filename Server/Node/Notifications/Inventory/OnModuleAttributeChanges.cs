@@ -3,9 +3,9 @@ using PythonTypes.Types.Collections;
 using PythonTypes.Types.Complex;
 using PythonTypes.Types.Primitives;
 
-namespace Node.Inventory.Notifications
+namespace Node.Notifications.Inventory
 {
-    public class OnModuleAttributeChanges : PyMultiEventEntry
+    public class OnModuleAttributeChanges : PyNotification
     {
         private const string NOTITIFATION_NAME = "OnModuleAttributeChanges";
         

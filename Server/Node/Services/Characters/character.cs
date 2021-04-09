@@ -34,6 +34,7 @@ using Node.Inventory;
 using Node.Inventory.Items;
 using Node.Inventory.Items.Types;
 using Node.Network;
+using Node.Notifications.Chat;
 using PythonTypes.Types.Collections;
 using PythonTypes.Types.Database;
 using PythonTypes.Types.Exceptions;
@@ -446,7 +447,7 @@ namespace Node.Services.Characters
             PyList<PyInteger> onlineFriends = this.DB.GetOnlineFriendList(character);
 
             this.NotificationManager.NotifyCharacters(
-                onlineFriends, "OnContactLoggedOn", new PyTuple(1) {[0] = character.ID}
+                onlineFriends, new OnContactLoggedOn(character.ID)
             );
             
             // unload the character

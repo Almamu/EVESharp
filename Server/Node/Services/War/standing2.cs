@@ -3,6 +3,7 @@ using Node.Database;
 using Node.Inventory;
 using Node.Inventory.Items.Types;
 using Node.Network;
+using Node.Notifications.Character;
 using PythonTypes.Types.Collections;
 using PythonTypes.Types.Complex;
 using PythonTypes.Types.Exceptions;
@@ -99,19 +100,10 @@ namespace Node.Services.War
             this.DB.CreateStandingTransaction((int) StandingEventType.StandingPlayerSetStanding, callerCharacterID, characterID, standing, reason);
             this.DB.SetPlayerStanding(callerCharacterID, characterID, standing);
             
-            // send standing change notification to the player
-            PyTuple notification = new PyTuple(3)
-            {
-                [0] = callerCharacterID,
-                [1] = characterID,
-                [2] = standing
-            };
-            
             // send the same notification to both players
             this.NotificationManager.NotifyCharacters(
-                new PyDataType[] { callerCharacterID, characterID },
-                "OnStandingSet",
-                notification
+                new PyList<PyInteger>(2) { [0] = callerCharacterID, [1] = characterID },
+                new OnStandingSet(callerCharacterID, characterID, standing)
             );
 
             return null;

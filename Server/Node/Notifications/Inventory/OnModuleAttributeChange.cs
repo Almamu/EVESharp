@@ -1,14 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Security.Policy;
 using Node.Inventory.Items;
 using Node.Inventory.Items.Attributes;
 using PythonTypes.Types.Complex;
 using PythonTypes.Types.Primitives;
 
-namespace Node.Inventory.Notifications
+namespace Node.Notifications.Inventory
 {
-    public class OnModuleAttributeChange : PyMultiEventEntry
+    public class OnModuleAttributeChange : PyNotification
     {
         private const string NOTIFICATION_NAME = "OnModuleAttributeChange";
         

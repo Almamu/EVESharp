@@ -11,6 +11,11 @@ namespace PythonTypes.Types.Collections
     {
         private readonly PyDataType[] mList;
 
+        protected PyTuple(PyDataType[] original)
+        {
+            this.mList = original;
+        }
+        
         public PyTuple(int size)
         {
             this.mList = new PyDataType[size];
@@ -62,6 +67,11 @@ namespace PythonTypes.Types.Collections
                 this.mList, sourceIndex,
                 destination.mList, destinationIndex, count
             );
+        }
+
+        public static implicit operator PyTuple(List<PyDataType> data)
+        {
+            return new PyTuple(data.ToArray());
         }
     }
 }

@@ -1,12 +1,11 @@
 ﻿using System.Collections.Generic;
-using System.Security.Cryptography;
 using PythonTypes.Types.Complex;
 using PythonTypes.Types.Database;
 using PythonTypes.Types.Primitives;
 
-namespace Node.Market.Notifications
+namespace Node.Notifications.Market
 {
-    public class OnOwnOrderChanged : PyMultiEventEntry
+    public class OnOwnOrderChanged : PyNotification
     {
         private static readonly DBRowDescriptor DESCRIPTOR = new DBRowDescriptor()
         {

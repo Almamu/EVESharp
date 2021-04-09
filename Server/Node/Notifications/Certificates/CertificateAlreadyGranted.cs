@@ -1,7 +1,6 @@
-﻿using PythonTypes.Types.Collections;
-using PythonTypes.Types.Exceptions;
+﻿using PythonTypes.Types.Exceptions;
 
-namespace Node.Certificates.Notifications
+namespace Node.Notifications.Certificates
 {
     public class CertificateAlreadyGranted : UserError
     {

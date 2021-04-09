@@ -1,11 +1,10 @@
 ﻿using System.Collections.Generic;
-using PythonTypes.Types.Collections;
 using PythonTypes.Types.Complex;
 using PythonTypes.Types.Primitives;
 
-namespace Node.Certificates.Notifications
+namespace Node.Notifications.Certificates
 {
-    public class OnCertificateIssued : PyMultiEventEntry
+    public class OnCertificateIssued : PyNotification
     {
         private const string NOTIFICATION_NAME = "OnCertificateIssued";
         

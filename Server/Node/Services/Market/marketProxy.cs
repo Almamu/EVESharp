@@ -10,11 +10,10 @@ using Node.Exceptions.marketProxy;
 using Node.Inventory;
 using Node.Inventory.Items;
 using Node.Inventory.Items.Types;
-using Node.Inventory.Notifications;
 using Node.Inventory.SystemEntities;
 using Node.Market;
-using Node.Market.Notifications;
 using Node.Network;
+using Node.Notifications.Market;
 using PythonTypes.Types.Collections;
 using PythonTypes.Types.Complex;
 using PythonTypes.Types.Exceptions;
@@ -201,7 +200,8 @@ namespace Node.Services.Market
                 new PyTuple(2)
                 {
                     [0] = characterID,
-                    [1] = newBalance
+                    [1] = 1000,
+                    [2] = newBalance
                 }
             );
         }

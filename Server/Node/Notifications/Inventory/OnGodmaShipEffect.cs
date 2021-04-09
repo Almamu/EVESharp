@@ -1,13 +1,11 @@
 ﻿using System.Collections.Generic;
-using Node.Inventory.Items;
 using Node.Inventory.Items.Dogma;
-using PythonTypes.Types.Collections;
 using PythonTypes.Types.Complex;
 using PythonTypes.Types.Primitives;
 
-namespace Node.Inventory.Notifications
+namespace Node.Notifications.Inventory
 {
-    public class OnGodmaShipEffect : PyMultiEventEntry
+    public class OnGodmaShipEffect : PyNotification
     {
         public GodmaShipEffect EffectInfo { get; init; }
 

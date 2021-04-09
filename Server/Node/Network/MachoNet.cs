@@ -9,8 +9,9 @@ using Node.Database;
 using Node.Inventory;
 using Node.Inventory.Items;
 using Node.Inventory.Items.Types;
-using Node.Inventory.Notifications;
 using Node.Inventory.SystemEntities;
+using Node.Notifications.Character;
+using Node.Notifications.Inventory;
 using Node.Services;
 using PythonTypes;
 using PythonTypes.Types.Collections;
@@ -546,7 +547,7 @@ namespace Node.Network
 
         private void HandleOnBalanceUpdate(PyTuple data)
         {
-            if (data.Count != 2)
+            if (data.Count != 3)
             {
                 Log.Error("Received OnBalanceUpdate notification with the wrong format");
                 return;
@@ -561,15 +562,24 @@ namespace Node.Network
             }
 
             PyDataType second = data[1];
+            
+            if (second is PyInteger == false)
+            {
+                Log.Error("Received OnBalanceUpdate notification with the wrong format");
+                return;
+            }
 
-            if (second is PyDecimal == false)
+            PyDataType third = data[2];
+
+            if (third is PyDecimal == false)
             {
                 Log.Error("Received OnBalanceUpdate notification with the wrong format");
                 return;
             }
 
             PyInteger characterID = first as PyInteger;
-            PyDecimal newBalance = second as PyDecimal;
+            PyInteger walletKey = second as PyInteger;
+            PyDecimal newBalance = third as PyDecimal;
             
             if (this.ItemManager.TryGetItem(characterID, out Character character) == false)
             {
@@ -580,14 +590,7 @@ namespace Node.Network
             character.Balance = newBalance;
             character.Persist();
             
-            PyTuple notification = new PyTuple(3)
-            {
-                [0] = "cash",
-                [1] = characterID,
-                [2] = newBalance
-            };
-            
-            this.NotificationManager.NotifyCharacter(characterID, "OnAccountChange", notification);
+            this.NotificationManager.NotifyCharacter(characterID, new OnAccountChange(walletKey, characterID, newBalance));
         }
 
         private void HandleOnClusterTimer(PyTuple data)

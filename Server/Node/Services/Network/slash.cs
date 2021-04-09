@@ -10,10 +10,10 @@ using Node.Exceptions.slash;
 using Node.Inventory;
 using Node.Inventory.Items;
 using Node.Inventory.Items.Types;
-using Node.Inventory.Notifications;
 using Node.Market;
 using Node.Network;
-using Node.Skills.Notifications;
+using Node.Notifications.Inventory;
+using Node.Notifications.Skills;
 using PythonTypes.Types.Collections;
 using PythonTypes.Types.Primitives;
 
@@ -146,7 +146,8 @@ namespace Node.Services.Network
                         new PyTuple(2)
                         {
                             [0] = targetCharacterID,
-                            [1] = currentBalance
+                            [1] = 1000,
+                            [2] = currentBalance
                         }
                     );
             }

@@ -31,7 +31,10 @@ using Node.Inventory;
 using Node.Inventory.Items;
 using Node.Inventory.Items.Attributes;
 using Node.Inventory.Items.Types;
-using Node.Inventory.Notifications;
+using Node.Notifications.Character;
+using Node.Notifications.Clones;
+using Node.Notifications.Inventory;
+using Node.Notifications.Station;
 using Node.Services;
 using PythonTypes.Types.Collections;
 using PythonTypes.Types.Complex;
@@ -81,18 +84,7 @@ namespace Node.Network
             station.Guests[(int) this.CharacterID] = this.ItemFactory.ItemManager.GetItem<Character>((int) this.CharacterID);
 
             // notify station guests
-            this.NotificationManager.NotifyStation(station.ID, "OnCharNowInStation",
-                new PyTuple(1)
-                {
-                    [0] = new PyTuple(4)
-                    {
-                        [0] = this.CharacterID,
-                        [1] = this.CorporationID,
-                        [2] = this.AllianceID,
-                        [3] = this.WarFactionID
-                    }
-                }
-            );
+            this.NotificationManager.NotifyStation(station.ID, new OnCharNowInStation(this));
         }
 
         private void OnCharLeftStation(int stationID)
@@ -101,18 +93,7 @@ namespace Node.Network
             station.Guests.Remove((int) this.CharacterID);
 
             // notify station guests
-            this.NotificationManager.NotifyStation(station.ID, "OnCharNoLongerInStation",
-                new PyTuple(1)
-                {
-                    [0] = new PyTuple(4)
-                    {
-                        [0] = this.CharacterID,
-                        [1] = this.CorporationID,
-                        [2] = this.AllianceID,
-                        [3] = this.WarFactionID
-                    }
-                }
-            );
+            this.NotificationManager.NotifyStation(station.ID, new OnCharNoLongerInStation(this));
         }
 
         public void OnClientDisconnected()
@@ -431,14 +412,7 @@ namespace Node.Network
         /// <param name="balance">The new balance</param>
         public void NotifyBalanceUpdate(double balance)
         {
-            PyTuple notification = new PyTuple(3)
-            {
-                [0] = "cash",
-                [1] = this.CharacterID,
-                [2] = balance
-            };
-            
-            this.NotificationManager.NotifyCharacter((int) this.CharacterID, "OnAccountChange", notification);
+            this.NotificationManager.NotifyCharacter((int) this.CharacterID, new OnAccountChange(1000, (int) this.CharacterID, balance));
         }
 
         /// <summary>
@@ -447,7 +421,7 @@ namespace Node.Network
         /// </summary>
         public void NotifyCloneUpdate()
         {
-            this.NotificationManager.NotifyCharacter((int) this.CharacterID, "OnJumpCloneCacheInvalidated",new PyTuple (0));
+            this.NotificationManager.NotifyCharacter((int) this.CharacterID, new OnJumpCloneCacheInvalidated());
         }
 
         /// <summary>
@@ -534,7 +508,7 @@ namespace Node.Network
         /// Adds a MultiEvent notification to the list of pending notifications to be sent
         /// </summary>
         /// <param name="entry">The MultiEvent entry to enqueue</param>
-        public void NotifyMultiEvent(PyMultiEventEntry entry)
+        public void NotifyMultiEvent(PyNotification entry)
         {
             lock (this.PendingMultiEvents)
                 this.PendingMultiEvents.Add(entry);

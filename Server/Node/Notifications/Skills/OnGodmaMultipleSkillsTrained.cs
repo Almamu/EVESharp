@@ -3,9 +3,9 @@ using PythonTypes.Types.Collections;
 using PythonTypes.Types.Complex;
 using PythonTypes.Types.Primitives;
 
-namespace Node.Skills.Notifications
+namespace Node.Notifications.Skills
 {
-    public class OnGodmaMultipleSkillsTrained : PyMultiEventEntry
+    public class OnGodmaMultipleSkillsTrained : PyNotification
     {
         private const string NOTIFICATION_NAME = "OnGodmaMultipleSkillsTrained";
         
