@@ -550,6 +550,8 @@ namespace Node.Services.Market
                     }
                     else
                     {
+                        long stationNode = this.SystemManager.GetNodeStationBelongsTo(stationID);
+                        
                         // create the new item that will be used by the player
                         ItemEntity item = this.ItemManager.CreateSimpleItem(
                             this.TypeManager[typeID], character.ID, this.ItemManager.LocationMarket.ID, ItemFlags.Hangar, quantityToBuy
@@ -557,10 +559,11 @@ namespace Node.Services.Market
                         // immediately unload it, if it has to be loaded the OnItemUpdate notification will take care of that
                         this.ItemManager.UnloadItem(item);
 
-                        long stationNode = this.SystemManager.GetNodeStationBelongsTo(stationID);
-
-                        // notify the node about the item
-                        this.NotifyItemChange(stationNode, item.ID, "locationID", stationID);
+                        if (stationNode > 0)
+                            // notify the node about the item
+                            this.NotifyItemChange(stationNode, item.ID, "locationID", stationID);
+                        else
+                            this.ItemDB.UpdateItemLocation(item.ID, stationID);
                     }
                 }
 
@@ -834,12 +837,22 @@ namespace Node.Services.Market
         {
             // remove order
             this.DB.RemoveOrder(connection, order.OrderID);
-            // take item back into station
-            this.ItemDB.UpdateItemLocation(order.ItemID, order.LocationID);
-            // notify the relevant node if required
-            this.NotifyItemChange(this.SystemManager.GetNodeStationBelongsTo(order.LocationID), order.ItemID, "locationID", order.LocationID);
+            long stationNode = this.SystemManager.GetNodeStationBelongsTo(order.LocationID);
+
+            if (stationNode > 0)
+            {
+                // notify the relevant node
+                this.NotifyItemChange(this.SystemManager.GetNodeStationBelongsTo(order.LocationID), order.ItemID, "locationID", order.LocationID);
+            }
+            else
+            {
+                // take item back into station
+                this.ItemDB.UpdateItemLocation(order.ItemID, order.LocationID);
+            }
+            
             // finally notify the character about the order change
             this.NotificationManager.NotifyCharacter(order.CharacterID, new OnOwnOrderChanged(order.TypeID, "Expiry"));
+            // TODO: SEND AN EVEMAIL TO THE PLAYER?
         }
 
         /// <summary>

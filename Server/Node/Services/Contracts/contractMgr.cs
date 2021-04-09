@@ -258,5 +258,31 @@ namespace Node.Services.Contracts
         {
             return this.DB.GetItemsInContainer(call.Client.EnsureCharacterIsSelected(), containerID);
         }
+
+        public PyDataType GetMyExpiredContractList(PyBool isCorp, CallInformation call)
+        {
+            int callerCharacterID = call.Client.EnsureCharacterIsSelected();
+            
+            return KeyVal.FromDictionary(new PyDictionary()
+                {
+                    ["contracts"] = this.DB.GetContractsForOwner(callerCharacterID, null, (int) ContractStatus.Expired),
+                    ["bids"] = this.DB.GetContractBidsForOwner(callerCharacterID, null, (int) ContractStatus.Expired),
+                    ["items"] = this.DB.GetContractItemsForOwner(callerCharacterID, null, (int) ContractStatus.Expired)
+                }
+            );
+        }
+
+        public void PerformTimedEvents()
+        {
+            using MySqlConnection connection = this.MarketDB.AcquireMarketLock();
+            try
+            {
+                this.DB.UpdateExpiredContracts(connection);
+            }
+            finally
+            {
+                this.MarketDB.ReleaseMarketLock(connection);
+            }
+        }
     }
 }

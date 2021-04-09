@@ -1274,7 +1274,7 @@ namespace Node.Database
 
         public void UpdateItemLocation(int itemID, int newLocationID)
         {
-            Database.PrepareQuery("UPDATE invItems SET ownerID = @locationID WHERE itemID = @itemID",
+            Database.PrepareQuery("UPDATE invItems SET locationID = @locationID WHERE itemID = @itemID",
                 new Dictionary<string, object>()
                 {
                     {"@itemID", itemID},

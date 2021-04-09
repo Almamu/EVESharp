@@ -71,7 +71,7 @@ namespace PythonTypes.Types.Collections
 
         public static implicit operator PyTuple(List<PyDataType> data)
         {
-            return new PyTuple(data.ToArray());
+            return data == null ? null : new PyTuple(data.ToArray());
         }
     }
 }

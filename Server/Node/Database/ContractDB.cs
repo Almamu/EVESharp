@@ -75,14 +75,15 @@ namespace Node.Database
         {
             return Database.PrepareKeyValQuery(
                 "SELECT" +
-                " (SELECT COUNT(*) FROM conContracts WHERE issuerID = @characterID AND forCorp = @notForCorp AND requiresAttentionByOwner = 1) + (SELECT COUNT(*) FROM conContracts WHERE assigneeID = @characterID AND forCorp = @notForCorp AND requiresAttentionByAssignee = 1) AS n," +
-                " (SELECT COUNT(*) FROM conContracts WHERE issuerCorpID = @corporationID AND forCorp = @forCorp AND requiresAttentionByOwner = 1) + (SELECT COUNT(*) FROM conContracts WHERE assigneeID = @corporationID AND forCorp = @forCorp AND requiresAttentionByAssignee = 1) AS ncorp",
+                " (SELECT COUNT(*) FROM conContracts WHERE forCorp = @notForCorp AND ((issuerID = @characterID AND dateExpired < @currentTime) OR (acceptorID = @characterID AND dateCompleted <= @currentTime))) AS n," +
+                " (SELECT COUNT(*) FROM conContracts WHERE forCorp = @forCorp AND ((issuerCorpID = @corporationID AND dateExpired < @currentTime) OR (acceptorCorpID = @corporationID AND dateCompleted <= @currentTime))) AS ncorp",
                 new Dictionary<string, object>()
                 {
                     {"@characterID", characterID},
                     {"@corporationID", corporationID},
                     {"@forCorp", 1},
-                    {"@notForCorp", 0}
+                    {"@notForCorp", 0},
+                    {"@currentTime", DateTime.Now.ToFileTimeUtc()}
                 }
             );
         }
@@ -114,8 +115,8 @@ namespace Node.Database
                 " (SELECT COUNT(*) FROM conContracts WHERE status = @outstandingStatus AND issuerID = @characterID AND forCorp = @notForCorp) AS numOutstandingContractsNonCorp," +
                 " (SELECT COUNT(*) FROM conContracts WHERE status = @outstandingStatus AND issuerCorpID = @corporationID AND forCorp = @forCorp) AS numOutstandingContractsForCorp," +
                 " (SELECT COUNT(*) FROM conContracts WHERE status = @outstandingStatus AND issuerID = @characterID OR issuerCorpID = @corporationID) AS numOutstandingContracts," +
-                " (SELECT COUNT(*) FROM conContracts WHERE issuerID = @characterID AND forCorp = @notForCorp AND requiresAttentionByOwner = 1) + (SELECT COUNT(*) FROM conContracts WHERE assigneeID = @characterID AND forCorp = @notForCorp AND requiresAttentionByAssignee = 1) AS numRequiresAttention," +
-                " (SELECT COUNT(*) FROM conContracts WHERE issuerCorpID = @corporationID AND forCorp = @forCorp AND requiresAttentionByOwner = 1) + (SELECT COUNT(*) FROM conContracts WHERE assigneeID = @corporationID AND forCorp = @forCorp AND requiresAttentionByAssignee = 1) AS numRequiresAttentionCorp," +
+                " (SELECT COUNT(*) FROM conContracts WHERE forCorp = @notForCorp AND ((issuerID = @characterID AND dateExpired < @currentTime) OR (acceptorID = @characterID AND dateCompleted <= @currentTime))) AS numRequiresAttention," +
+                " (SELECT COUNT(*) FROM conContracts WHERE forCorp = @forCorp AND ((issuerCorpID = @corporationID AND dateExpired < @currentTime) OR (acceptorCorpID = @corporationID AND dateCompleted <= @currentTime))) AS numRequiresAttentionCorp," +
                 " (SELECT COUNT(*) FROM conContracts WHERE assigneeID = @characterID) AS numAssignedTo," +
                 " (SELECT COUNT(*) FROM conContracts WHERE assigneeID = @corporationID) AS numAssignedToCorp," +
                 " (SELECT COUNT(*) FROM conBids LEFT JOIN conContracts USING(contractID) WHERE conBids.issuerID = @characterID AND status = @outstandingStatus AND forCorp = @notForCorp) AS numBiddingOn," +
@@ -129,7 +130,8 @@ namespace Node.Database
                     {"@notForCorp", 0},
                     {"@forCorp", 1},
                     {"@corporationID", corporationID},
-                    {"@characterID", characterID}
+                    {"@characterID", characterID},
+                    {"@currentTime", DateTime.UtcNow.ToFileTimeUtc()}
                 }
             );
         }
@@ -137,7 +139,7 @@ namespace Node.Database
         public CRowset GetContractsForOwner(int ownerID, int? contractType, int? contractStatus)
         {
             string contractQuery =
-                "SELECT contractID, issuerID, issuerCorpID, type, availability, assigneeID, expiretime, numDays, startStationID, start.solarSystemID AS startSolarSystemID, start.regionID AS startRegionID, endStationID, end.solarSystemID AS endSolarSystemID, end.regionID AS endRegionID, price, reward, collateral, title, description, forCorp, status, isAccepted, acceptorID, dateIssued, dateExpired, dateAccepted, dateCompleted, volume, requiresAttentionByOwner, requiresAttentionByAssignee, crateID, issuerWalletKey, issuerAllianceID, acceptorWalletKey FROM conContracts LEFT JOIN staStations AS start ON start.stationID = startStationID LEFT JOIN staStations AS end ON end.stationID = endStationID WHERE ((issuerID = @ownerID AND forCorp = @notForCorp) OR (issuerCorpID = @ownerID AND forCorp = @forCorp))";
+                "SELECT contractID, issuerID, issuerCorpID, type, availability, assigneeID, expiretime, numDays, startStationID, start.solarSystemID AS startSolarSystemID, start.regionID AS startRegionID, endStationID, end.solarSystemID AS endSolarSystemID, end.regionID AS endRegionID, price, reward, collateral, title, description, forCorp, status, isAccepted, acceptorID, dateIssued, dateExpired, dateAccepted, dateCompleted, volume, crateID, issuerWalletKey, issuerAllianceID, acceptorWalletKey FROM conContracts LEFT JOIN staStations AS start ON start.stationID = startStationID LEFT JOIN staStations AS end ON end.stationID = endStationID WHERE ((issuerID = @ownerID AND forCorp = @notForCorp) OR (issuerCorpID = @ownerID AND forCorp = @forCorp))";
 
             Dictionary<string, object> values = new Dictionary<string, object>()
             {
@@ -239,7 +241,7 @@ namespace Node.Database
             double reward, double collateral, string title, string description, int issuerWalletID)
         {
             return Database.PrepareQueryLID(ref connection,
-                "INSERT INTO conContracts(issuerID, issuerCorpID, type, availability, assigneeID, expiretime, numDays, startStationID, endStationID, price, reward, collateral, title, description, forCorp, status, isAccepted, acceptorID, dateIssued, dateExpired, dateAccepted, dateCompleted, requiresAttentionByOwner, requiresAttentionByAssignee, issuerWalletKey, issuerAllianceID, acceptorWalletKey)VALUES(@issuerID, @issuerCorpID, @type, @availability, @assigneeID, @expiretime, @numDays, @startStationID, @endStationID, @price, @reward, @collateral, @title, @description, @forCorp, @status, @isAccepted, @acceptorID, @dateIssued, @dateExpired, @dateAccepted, @dateCompleted, @requiresAttentionByOwner, @requiresAttentionByAssignee, @issuerWalletKey, @issuerAllianceID, @acceptorWalletKey)",
+                "INSERT INTO conContracts(issuerID, issuerCorpID, type, availability, assigneeID, expiretime, numDays, startStationID, endStationID, price, reward, collateral, title, description, forCorp, status, isAccepted, acceptorID, dateIssued, dateExpired, dateAccepted, dateCompleted, issuerWalletKey, issuerAllianceID, acceptorWalletKey)VALUES(@issuerID, @issuerCorpID, @type, @availability, @assigneeID, @expiretime, @numDays, @startStationID, @endStationID, @price, @reward, @collateral, @title, @description, @forCorp, @status, @isAccepted, @acceptorID, @dateIssued, @dateExpired, @dateAccepted, @dateCompleted, @issuerWalletKey, @issuerAllianceID, @acceptorWalletKey)",
                 new Dictionary<string, object>()
                 {
                     {"@issuerID", characterID},
@@ -264,8 +266,6 @@ namespace Node.Database
                     {"@dateExpired", DateTime.UtcNow.AddMinutes(expireTime).ToFileTimeUtc ()},
                     {"@dateAccepted", null},
                     {"@dateCompleted", null},
-                    {"@requiresAttentionByOwner", 0},
-                    {"@requiresAttentionByAssignee", 1},
                     {"@issuerWalletKey", issuerWalletID},
                     {"@issuerAllianceID", allianceID},
                     {"@acceptorWalletKey", null}
@@ -276,7 +276,7 @@ namespace Node.Database
         public PyPackedRow GetContractInformation(int contractID, int characterID, int corporationID)
         {
             return Database.PreparePackedRowQuery(
-                "SELECT contractID, issuerID, issuerCorpID, type, availability, assigneeID, expiretime, numDays, startStationID, start.solarSystemID AS startSolarSystemID, start.regionID AS startRegionID, endStationID, end.solarSystemID AS endSolarSystemID, end.regionID AS endRegionID, price, reward, collateral, title, description, forCorp, status, isAccepted, acceptorID, dateIssued, dateExpired, dateAccepted, dateCompleted, volume, requiresAttentionByOwner, requiresAttentionByAssignee, crateID, issuerWalletKey, issuerAllianceID, acceptorWalletKey FROM conContracts LEFT JOIN staStations AS start ON start.stationID = startStationID LEFT JOIN staStations AS end ON end.stationID = endStationID WHERE ((availability = 1 AND (issuerID = @characterID OR issuerCorpID = @corporationID OR assigneeID = @characterID OR assigneeID = @corporationID OR acceptorID = @characterID OR acceptorID = @corporationID)) OR availability = 0) AND contractID = @contractID",
+                "SELECT contractID, issuerID, issuerCorpID, type, availability, assigneeID, expiretime, numDays, startStationID, start.solarSystemID AS startSolarSystemID, start.regionID AS startRegionID, endStationID, end.solarSystemID AS endSolarSystemID, end.regionID AS endRegionID, price, reward, collateral, title, description, forCorp, status, isAccepted, acceptorID, dateIssued, dateExpired, dateAccepted, dateCompleted, volume, crateID, issuerWalletKey, issuerAllianceID, acceptorWalletKey FROM conContracts LEFT JOIN staStations AS start ON start.stationID = startStationID LEFT JOIN staStations AS end ON end.stationID = endStationID WHERE ((availability = 1 AND (issuerID = @characterID OR issuerCorpID = @corporationID OR assigneeID = @characterID OR assigneeID = @corporationID OR acceptorID = @characterID OR acceptorID = @corporationID)) OR availability = 0) AND contractID = @contractID",
                 new Dictionary<string, object>()
                 {
                     {"@contractID", contractID},
@@ -501,6 +501,25 @@ namespace Node.Database
             query.TrimEnd(',');
 
             Database.PrepareQuery(ref connection, query, values).Close();
+        }
+
+        public Rowset GetExpiredContractsForOwner(int characterID, int corporationID)
+        {
+            return Database.PrepareRowsetQuery(
+                ""
+            );
+        }
+
+        public void UpdateExpiredContracts(MySqlConnection connection)
+        {
+            Database.PrepareQuery(ref connection,
+                "UPDATE conContracts SET status = @expiredStatus WHERE dateExpired <= @currentDate",
+                new Dictionary<string, object>()
+                {
+                    {"@expiredStatus", ContractStatus.Expired},
+                    {"@currentDate", DateTime.UtcNow.ToFileTimeUtc()}
+                }
+            ).Close();
         }
     }
 }

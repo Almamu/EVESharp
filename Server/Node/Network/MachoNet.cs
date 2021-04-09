@@ -598,6 +598,7 @@ namespace Node.Network
             Log.Info("Received a cluster request to run timed events on services...");
             
             this.ServiceManager.marketProxy.PerformTimedEvents();
+            this.ServiceManager.contractMgr.PerformTimedEvents();
         }
 
         private void HandleBroadcastNotification(PyPacket packet)

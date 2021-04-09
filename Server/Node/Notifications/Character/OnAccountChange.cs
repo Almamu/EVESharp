@@ -36,9 +36,9 @@ namespace Node.Notifications.Character
         {
             return new List<PyDataType>()
             {
-                [0] = this.Wallet,
-                [1] = this.OwnerID,
-                [2] = this.NewBalance
+                this.Wallet,
+                this.OwnerID,
+                this.NewBalance
             };
         }
     }
