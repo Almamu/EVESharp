@@ -261,27 +261,68 @@ namespace Node.Services.Contracts
 
         public PyDataType GetMyExpiredContractList(PyBool isCorp, CallInformation call)
         {
-            int callerCharacterID = call.Client.EnsureCharacterIsSelected();
-            
+            int ownerID = 0;
+
+            if (isCorp == true)
+                ownerID = call.Client.CorporationID;
+            else
+                ownerID = call.Client.EnsureCharacterIsSelected();
+
             return KeyVal.FromDictionary(new PyDictionary()
                 {
-                    ["contracts"] = this.DB.GetContractsForOwner(callerCharacterID, null, (int) ContractStatus.Expired),
-                    ["bids"] = this.DB.GetContractBidsForOwner(callerCharacterID, null, (int) ContractStatus.Expired),
-                    ["items"] = this.DB.GetContractItemsForOwner(callerCharacterID, null, (int) ContractStatus.Expired)
+                    ["contracts"] = this.DB.GetContractsForOwner(ownerID, null, (int) ContractStatus.Expired),
+                    ["bids"] = this.DB.GetContractBidsForOwner(ownerID, null, (int) ContractStatus.Expired),
+                    ["items"] = this.DB.GetContractItemsForOwner(ownerID, null, (int) ContractStatus.Expired)
                 }
             );
         }
 
-        public void PerformTimedEvents()
+        public PyDataType GetMyBids(PyBool isCorp, CallInformation call)
         {
-            using MySqlConnection connection = this.MarketDB.AcquireMarketLock();
-            try
+            int ownerID = 0;
+
+            if (isCorp == true)
+                ownerID = call.Client.CorporationID;
+            else
+                ownerID = call.Client.EnsureCharacterIsSelected();
+
+            return KeyVal.FromDictionary(new PyDictionary()
+                {
+                    ["contracts"] = this.DB.GetContractsForOwnerByBids(ownerID, call.Client.CorporationID),
+                    ["bids"] = this.DB.GetContractBidsForOwnerByBids(ownerID, call.Client.CorporationID),
+                    ["items"] = this.DB.GetContractItemsForOwnerByBids(ownerID, call.Client.CorporationID)
+                }
+            );
+        }
+
+        public PyDataType GetMyCurrentContractList(PyBool acceptedByMe, PyBool isCorp, CallInformation call)
+        {
+            int ownerID = 0;
+
+            if (isCorp == true)
+                ownerID = call.Client.CorporationID;
+            else
+                ownerID = call.Client.EnsureCharacterIsSelected();
+
+            if (acceptedByMe == true)
             {
-                this.DB.UpdateExpiredContracts(connection);
+                return KeyVal.FromDictionary(new PyDictionary()
+                    {
+                        ["contracts"] = this.DB.GetContractsForOwnerByAcceptor(ownerID, null, (int) ContractStatus.InProgress),
+                        ["bids"] = this.DB.GetContractBidsForOwnerByAcceptor(ownerID, null, (int) ContractStatus.InProgress),
+                        ["items"] = this.DB.GetContractItemsForOwnerByAcceptor(ownerID, null, (int) ContractStatus.InProgress)
+                    }
+                );
             }
-            finally
+            else
             {
-                this.MarketDB.ReleaseMarketLock(connection);
+                return KeyVal.FromDictionary(new PyDictionary()
+                    {
+                        ["contracts"] = this.DB.GetContractsForOwner(ownerID, null, (int) ContractStatus.InProgress),
+                        ["bids"] = this.DB.GetContractBidsForOwner(ownerID, null, (int) ContractStatus.InProgress),
+                        ["items"] = this.DB.GetContractItemsForOwner(ownerID, null, (int) ContractStatus.InProgress)
+                    }
+                );
             }
         }
     }

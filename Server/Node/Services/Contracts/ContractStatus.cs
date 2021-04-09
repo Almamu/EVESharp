@@ -2,6 +2,9 @@
 {
     public enum ContractStatus : int
     {
+        /// <summary>
+        /// WARNING: THE EXPIRED STATUS DOES NOT REALLY EXISTS, BUT IS USED INTERNALLY BY THE SERVER CODE
+        /// </summary>
         Expired = 8,
         Failed = 7,
         Rejected = 6,

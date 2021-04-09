@@ -24,6 +24,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.Contracts;
 using Common.Database;
 using MySql.Data.MySqlClient;
 using Node.Exceptions.contractMgr;
@@ -154,7 +155,13 @@ namespace Node.Database
                 values["@contractType"] = contractType;
             }
 
-            if (contractStatus != null)
+            if (contractStatus == (int) ContractStatus.Expired)
+            {
+                contractQuery += " AND dateExpired <= @currentTime";
+                values["@currentTime"] = DateTime.UtcNow.ToFileTimeUtc();
+            }
+            
+            if (contractStatus != null && contractStatus != (int) ContractStatus.Expired)
             {
                 contractQuery += " AND status = @contractStatus";
                 values["@contractStatus"] = contractStatus;
@@ -180,7 +187,13 @@ namespace Node.Database
                 values["@contractType"] = contractType;
             }
 
-            if (contractStatus != null)
+            if (contractStatus == (int) ContractStatus.Expired)
+            {
+                bidsQuery += " AND dateExpired <= @currentTime";
+                values["@currentTime"] = DateTime.UtcNow.ToFileTimeUtc();
+            }
+            
+            if (contractStatus != null && contractStatus != (int) ContractStatus.Expired)
             {
                 bidsQuery += " AND status = @contractStatus";
                 values["@contractStatus"] = contractStatus;
@@ -210,7 +223,13 @@ namespace Node.Database
                 values["@contractType"] = contractType;
             }
 
-            if (contractStatus != null)
+            if (contractStatus == (int) ContractStatus.Expired)
+            {
+                itemsQuery += " AND dateExpired <= @currentTime";
+                values["@currentTime"] = DateTime.UtcNow.ToFileTimeUtc();
+            }
+            
+            if (contractStatus != null && contractStatus != (int) ContractStatus.Expired)
             {
                 itemsQuery += " AND status = @contractStatus";
                 values["@contractStatus"] = contractStatus;
@@ -503,13 +522,6 @@ namespace Node.Database
             Database.PrepareQuery(ref connection, query, values).Close();
         }
 
-        public Rowset GetExpiredContractsForOwner(int characterID, int corporationID)
-        {
-            return Database.PrepareRowsetQuery(
-                ""
-            );
-        }
-
         public void UpdateExpiredContracts(MySqlConnection connection)
         {
             Database.PrepareQuery(ref connection,
@@ -521,5 +533,129 @@ namespace Node.Database
                 }
             ).Close();
         }
+
+        public CRowset GetContractsForOwnerByBids(int ownerID, int corporationID)
+        {
+            return Database.PrepareCRowsetQuery(
+                "SELECT contractID, conContracts.issuerID, conContracts.issuerCorpID, type, availability, assigneeID, expiretime, numDays, startStationID, start.solarSystemID AS startSolarSystemID, start.regionID AS startRegionID, endStationID, end.solarSystemID AS endSolarSystemID, end.regionID AS endRegionID, price, reward, collateral, title, description, forCorp, status, isAccepted, acceptorID, dateIssued, dateExpired, dateAccepted, dateCompleted, volume, crateID, issuerWalletKey, issuerAllianceID, acceptorWalletKey FROM conBids LEFT JOIN conContracts USING(contractID) LEFT JOIN staStations AS start ON start.stationID = startStationID LEFT JOIN staStations AS end ON end.stationID = endStationID WHERE conBids.issuerID = @ownerID",
+                new Dictionary<string, object>()
+                {
+                    {"@ownerID", ownerID}
+                }
+            );
+        }
+
+        public PyDataType GetContractBidsForOwnerByBids(int ownerID, int corporationID)
+        {
+            return Database.PrepareIntRowDictionary(
+                "SELECT bidID, contractID, conBids.issuerID, quantity, conBids.issuerCorpID, issuerStationID FROM conBids LEFT JOIN conContracts USING (contractID) WHERE conBids.issuerID = @ownerID",
+                1,
+                new Dictionary<string, object>()
+                {
+                    {"@ownerID", ownerID},
+                }
+            );
+        }
+
+        public PyDataType GetContractItemsForOwnerByBids(int ownerID, int corporationID)
+        {
+            return Database.PrepareIntPackedRowListDictionary(
+                "SELECT contractID, itemTypeID AS typeID, conItems.quantity, inCrate, materialLevel, productivityLevel, licensedProductionRunsRemaining AS bpRuns FROM conBids LEFT JOIN conItems USING(contractID) LEFT JOIN invBlueprints USING(itemID) LEFT JOIN conContracts USING (contractID) WHERE conBids.issuerID = @ownerID ORDER BY contractID",
+                0,
+                new Dictionary<string, object>()
+                {
+                    {"@ownerID", ownerID},
+                }
+            );
+        }
+        
+        
+        public CRowset GetContractsForOwnerByAcceptor(int ownerID, int? contractType, int? contractStatus)
+        {
+            string contractQuery =
+                "SELECT contractID, issuerID, issuerCorpID, type, availability, assigneeID, expiretime, numDays, startStationID, start.solarSystemID AS startSolarSystemID, start.regionID AS startRegionID, endStationID, end.solarSystemID AS endSolarSystemID, end.regionID AS endRegionID, price, reward, collateral, title, description, forCorp, status, isAccepted, acceptorID, dateIssued, dateExpired, dateAccepted, dateCompleted, volume, crateID, issuerWalletKey, issuerAllianceID, acceptorWalletKey FROM conContracts LEFT JOIN staStations AS start ON start.stationID = startStationID LEFT JOIN staStations AS end ON end.stationID = endStationID WHERE ((acceptorID = @ownerID AND forCorp = @notForCorp) OR (acceptorCorpID = @ownerID AND forCorp = @forCorp))";
+
+            Dictionary<string, object> values = new Dictionary<string, object>()
+            {
+                {"@ownerID", ownerID},
+                {"@notForCorp", 0},
+                {"@forCorp", 1},
+            };
+
+            if (contractType != null)
+            {
+                contractQuery += " AND type = @contractType";
+                values["@contractType"] = contractType;
+            }
+
+            if (contractStatus != null)
+            {
+                contractQuery += " AND status = @contractStatus";
+                values["@contractStatus"] = contractStatus;
+            }
+            
+            return Database.PrepareCRowsetQuery(contractQuery, values);
+        }
+
+        public PyDataType GetContractBidsForOwnerByAcceptor(int ownerID, int? contractType, int? contractStatus)
+        {
+            string bidsQuery =
+                "SELECT bidID, contractID, conBids.issuerID, quantity, conBids.issuerCorpID, issuerStationID FROM conBids LEFT JOIN conContracts USING (contractID) WHERE (conContracts.acceptorID = @ownerID AND conContracts.forCorp = @notForCorp) OR (conContracts.acceptorCorpID = @ownerID AND conContracts.forCorp = @forCorp)";
+            Dictionary<string, object> values = new Dictionary<string, object>()
+            {
+                {"@ownerID", ownerID},
+                {"@forCorp", 1},
+                {"@notForCorp", 0}
+            };
+            
+            if (contractType != null)
+            {
+                bidsQuery += " AND type = @contractType";
+                values["@contractType"] = contractType;
+            }
+
+            if (contractStatus != null)
+            {
+                bidsQuery += " AND status = @contractStatus";
+                values["@contractStatus"] = contractStatus;
+            }
+            
+            return Database.PrepareIntRowDictionary(
+                bidsQuery,
+                1,
+                values
+            );
+        }
+
+        public PyDataType GetContractItemsForOwnerByAcceptor(int ownerID, int? contractType, int? contractStatus)
+        {
+            string itemsQuery =
+                "SELECT contractID, itemTypeID AS typeID, quantity, inCrate, materialLevel, productivityLevel, licensedProductionRunsRemaining AS bpRuns FROM conItems LEFT JOIN invBlueprints USING(itemID) LEFT JOIN conContracts USING (contractID) WHERE (acceptorID = @ownerID AND forCorp = @notForCorp) OR (acceptorCorpID = @ownerID AND forCorp = @forCorp) ORDER BY contractID";
+            Dictionary<string, object> values = new Dictionary<string, object>()
+            {
+                {"@ownerID", ownerID},
+                {"@notForCorp", 0},
+                {"@forCorp", 1}
+            };
+            
+            if (contractType != null)
+            {
+                itemsQuery += " AND type = @contractType";
+                values["@contractType"] = contractType;
+            }
+
+            if (contractStatus != null)
+            {
+                itemsQuery += " AND status = @contractStatus";
+                values["@contractStatus"] = contractStatus;
+            }
+            
+            return Database.PrepareIntPackedRowListDictionary(
+                itemsQuery,
+                0,
+                values
+            );
+        }
+
     }
 }
