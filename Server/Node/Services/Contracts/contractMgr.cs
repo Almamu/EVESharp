@@ -372,7 +372,7 @@ namespace Node.Services.Contracts
                     null, 0, null, null, new PyList<PyInteger>(1){[0] = ownerID},
                     null, null, null, null, 0, 0, null,
                     null, call.Client.EnsureCharacterIsSelected(), call.Client.CorporationID,
-                    ownerID, null, true, true
+                    ownerID, (int) ContractStatus.InProgress, true, true
                 );
             }
 

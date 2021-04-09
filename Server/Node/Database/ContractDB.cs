@@ -450,12 +450,12 @@ namespace Node.Database
 
             if (notIssuedByIDs is not null && notIssuedByIDs.Count > 0)
             {
-                contractQuery += " AND (issuerID NOT IN (" + String.Join<PyInteger>(',', notIssuedByIDs) + ") AND forCorp = 0) AND (issuerCorpID NOT IN (" + String.Join<PyInteger>(',', notIssuedByIDs) + ") AND forCorp = 1)";
+                contractQuery += " AND ((issuerID NOT IN (" + String.Join<PyInteger>(',', notIssuedByIDs) + ") AND forCorp = 0) AND (issuerCorpID NOT IN (" + String.Join<PyInteger>(',', notIssuedByIDs) + ") AND forCorp = 1))";
             }
 
             if (issuedByIDs is not null && issuedByIDs.Count > 0)
             {
-                contractQuery += " AND ((issuerID IN (" + String.Join<PyInteger>(',', issuedByIDs) + ") AND forCorp = 0) OR (issuerCorpID IN (" + String.Join<PyInteger>(',', issuedByIDs) + ") AND forCorp = 1)";
+                contractQuery += " AND ((issuerID IN (" + String.Join<PyInteger>(',', issuedByIDs) + ") AND forCorp = 0) OR (issuerCorpID IN (" + String.Join<PyInteger>(',', issuedByIDs) + ") AND forCorp = 1))";
             }
 
             if (itemCategoryID is not null)
@@ -585,10 +585,11 @@ namespace Node.Database
         {
             MySqlConnection connection = null;
             MySqlDataReader reader = Database.PrepareQuery(ref connection,
-                "SELECT contractID FROM conContracts WHERE acceptorID = @acceptorID OR acceptorCorpID = @acceptorID",
+                "SELECT contractID FROM conContracts WHERE (acceptorID = @acceptorID OR acceptorCorpID = @acceptorID) AND status = @status",
                 new Dictionary<string, object>()
                 {
-                    {"@acceptorID", acceptorID}
+                    {"@acceptorID", acceptorID},
+                    {"@status", (int) ContractStatus.InProgress}
                 }
             );
             
