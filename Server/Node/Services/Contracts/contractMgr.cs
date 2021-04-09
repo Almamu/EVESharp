@@ -331,6 +331,11 @@ namespace Node.Services.Contracts
             );
         }
 
+        public PyDataType GetMyBids(PyInteger isCorp, CallInformation call)
+        {
+            return this.GetMyBids(isCorp == 1, call);
+        }
+
         public PyDataType GetMyBids(PyBool isCorp, CallInformation call)
         {
             int ownerID = 0;
@@ -383,6 +388,22 @@ namespace Node.Services.Contracts
                     ["items"] = this.DB.GetItemsForContractList(contractList)
                 }
             );
+        }
+
+        public PyDataType PlaceBid(PyInteger contractID, PyInteger quantity, PyBool forCorp, PyObjectData locationData, CallInformation call)
+        {
+            int bidderID = call.Client.EnsureCharacterIsSelected();
+
+            if (forCorp == true)
+                bidderID = call.Client.CorporationID;
+            
+            return this.DB.PlaceBid(contractID, quantity, bidderID);
+        }
+
+        public PyDataType HasFittedCharges(PyInteger stationID, PyInteger itemID, PyInteger forCorp, PyInteger flag, CallInformation call)
+        {
+            // TODO: IMPLEMENT THIS!
+            return null;
         }
     }
 }

@@ -122,9 +122,9 @@ namespace Node.Database
                 " (SELECT COUNT(*) FROM conContracts WHERE forCorp = @forCorp AND ((issuerCorpID = @corporationID AND dateExpired < @currentTime) OR (acceptorCorpID = @corporationID AND dateCompleted <= @currentTime))) AS numRequiresAttentionCorp," +
                 " (SELECT COUNT(*) FROM conContracts WHERE assigneeID = @characterID) AS numAssignedTo," +
                 " (SELECT COUNT(*) FROM conContracts WHERE assigneeID = @corporationID) AS numAssignedToCorp," +
-                " (SELECT COUNT(*) FROM conBids LEFT JOIN conContracts USING(contractID) WHERE conBids.issuerID = @characterID AND status = @outstandingStatus AND forCorp = @notForCorp) AS numBiddingOn," +
+                " (SELECT COUNT(DISTINCT contractID) FROM conBids LEFT JOIN conContracts USING(contractID) WHERE bidderID = @characterID AND status = @outstandingStatus) AS numBiddingOn," +
                 " (SELECT COUNT(*) FROM conContracts WHERE status = @inProgressStatus AND issuerID = @characterID AND forCorp = @notForCorp) AS numInProgress," +
-                " (SELECT COUNT(*) FROM conBids LEFT JOIN conContracts USING(contractID) WHERE conBids.issuerCorpID = @corporationID AND status = @outstandingStatus AND forCorp = @forCorp) AS numBiddingOnCorp," +
+                " (SELECT COUNT(DISTINCT contractID) FROM conBids LEFT JOIN conContracts USING(contractID) WHERE bidderID = @corporationID AND status = @outstandingStatus) AS numBiddingOnCorp," +
                 " (SELECT COUNT(*) FROM conContracts WHERE status = @inProgressStatus AND issuerCorpID = @corporationID AND forCorp = @forCorp) AS numInProgressCorp",
                 new Dictionary<string, object>()
                 {
@@ -205,7 +205,7 @@ namespace Node.Database
         public Rowset GetContractBids(int contractID, int characterID, int corporationID)
         {
             return Database.PrepareRowsetQuery(
-                "SELECT bidID, contractID, conBids.issuerID, quantity, conBids.issuerCorpID, issuerStationID FROM conBids LEFT JOIN conContracts USING(contractID) WHERE ((availability = 1 AND (conContracts.issuerID = @characterID OR conContracts.issuerCorpID = @corporationID OR assigneeID = @characterID OR assigneeID = @corporationID OR acceptorID = @characterID OR acceptorID = @corporationID)) OR availability = 0) AND contractID = @contractID",
+                "SELECT bidID, bidderID, amount FROM conBids WHERE contractID = @contractID ORDER BY amount DESC",
                 new Dictionary<string, object>()
                 {
                     {"@characterID", characterID},
@@ -218,7 +218,7 @@ namespace Node.Database
         public Rowset GetContractItems(int contractID, int characterID, int corporationID)
         {
             return Database.PrepareRowsetQuery(
-                "SELECT itemTypeID AS typeID, quantity, inCrate, itemID, materialLevel, productivityLevel, licensedProductionRunsRemaining AS bpRuns FROM conItems LEFT JOIN invBlueprints USING(itemID) LEFT JOIN conContracts USING(contractID) WHERE ((availability = 1 AND (conContracts.issuerID = @characterID OR conContracts.issuerCorpID = @corporationID OR assigneeID = @characterID OR assigneeID = @corporationID OR acceptorID = @characterID OR acceptorID = @corporationID)) OR availability = 0) AND contractID = @contractID",
+                "SELECT itemTypeID AS typeID, quantity, inCrate, itemID, materialLevel, productivityLevel, licensedProductionRunsRemaining AS bpRuns FROM conItems LEFT JOIN invBlueprints USING(itemID) WHERE contractID = @contractID",
                 new Dictionary<string, object>()
                 {
                     {"@characterID", characterID},
@@ -557,7 +557,7 @@ namespace Node.Database
         {
             MySqlConnection connection = null;
             MySqlDataReader reader = Database.PrepareQuery(ref connection,
-                "SELECT contractID FROM conBids WHERE issuerID = @ownerID OR issuerCorpID = @ownerID",
+                "SELECT contractID FROM conBids WHERE bidderID = @ownerID",
                 new Dictionary<string, object>()
                 {
                     {"@ownerID", ownerID}
@@ -620,8 +620,8 @@ namespace Node.Database
         public PyDataType GetBidsForContractList(List<int> contractList)
         {
             return Database.PrepareIntPackedRowListDictionary(
-                $"SELECT bidID, contractID, issuerID, quantity, issuerCorpID, issuerStationID FROM conBids WHERE contractID IN ({String.Join(',', contractList)}) ORDER BY contractID",
-                1
+                $"SELECT contractID, amount, bidderID FROM conBids WHERE contractID IN ({String.Join(',', contractList)}) ORDER BY contractID, amount DESC",
+                0
             );
         }
 
@@ -630,6 +630,19 @@ namespace Node.Database
             return Database.PrepareIntPackedRowListDictionary(
                 $"SELECT contractID, itemTypeID AS typeID, quantity, inCrate, materialLevel, productivityLevel, licensedProductionRunsRemaining AS bpRuns FROM conItems LEFT JOIN invBlueprints USING(itemID) WHERE contractID IN ({String.Join(',', contractList)}) ORDER BY contractID",
                 0
+            );
+        }
+
+        public ulong PlaceBid(int contractID, int amount, int bidderID)
+        {
+            return Database.PrepareQueryLID(
+                "INSERT INTO conBids(contractID, bidderID, amount)VALUES(@contractID, @bidderID, @amount)",
+                new Dictionary<string, object>()
+                {
+                    {"@contractID", contractID},
+                    {"@bidderID", bidderID},
+                    {"@amount", amount},
+                }
             );
         }
     }
