@@ -28,6 +28,7 @@ using System.Data;
 using System.Diagnostics.Contracts;
 using Common.Database;
 using MySql.Data.MySqlClient;
+using MySqlX.XDevAPI.Common;
 using Node.Exceptions.contractMgr;
 using Node.Inventory;
 using Node.Inventory.Items;
@@ -36,6 +37,7 @@ using Node.Inventory.Items.Types;
 using Node.Services.Contracts;
 using PythonTypes.Types.Collections;
 using PythonTypes.Types.Database;
+using PythonTypes.Types.Exceptions;
 using PythonTypes.Types.Primitives;
 
 namespace Node.Database
@@ -79,7 +81,7 @@ namespace Node.Database
             return Database.PrepareKeyValQuery(
                 "SELECT" +
                 " (SELECT COUNT(*) FROM conContracts WHERE forCorp = @notForCorp AND ((issuerID = @characterID AND dateExpired < @currentTime) OR (acceptorID = @characterID AND dateCompleted <= @currentTime))) AS n," +
-                " (SELECT COUNT(*) FROM conContracts WHERE forCorp = @forCorp AND ((issuerCorpID = @corporationID AND dateExpired < @currentTime) OR (acceptorCorpID = @corporationID AND dateCompleted <= @currentTime))) AS ncorp",
+                " (SELECT COUNT(*) FROM conContracts WHERE forCorp = @forCorp AND ((issuerCorpID = @corporationID AND dateExpired < @currentTime) OR (acceptorID = @corporationID AND dateCompleted <= @currentTime))) AS ncorp",
                 new Dictionary<string, object>()
                 {
                     {"@characterID", characterID},
@@ -118,9 +120,9 @@ namespace Node.Database
                 "SELECT" +
                 " (SELECT COUNT(*) FROM conContracts WHERE status = @outstandingStatus AND issuerID = @characterID AND forCorp = @notForCorp AND dateExpired > @currentTime) AS numOutstandingContractsNonCorp," +
                 " (SELECT COUNT(*) FROM conContracts WHERE status = @outstandingStatus AND issuerCorpID = @corporationID AND forCorp = @forCorp AND dateExpired > @currentTime) AS numOutstandingContractsForCorp," +
-                " (SELECT COUNT(*) FROM conContracts WHERE status = @outstandingStatus AND issuerID = @characterID OR issuerCorpID = @corporationID) AS numOutstandingContracts," +
+                " (SELECT COUNT(*) FROM conContracts WHERE status = @outstandingStatus AND (issuerID = @characterID OR issuerCorpID = @corporationID) AND dateExpired > @currentTime) AS numOutstandingContracts," +
                 " (SELECT COUNT(*) FROM conContracts WHERE forCorp = @notForCorp AND ((issuerID = @characterID AND dateExpired < @currentTime) OR (acceptorID = @characterID AND dateCompleted <= @currentTime))) AS numRequiresAttention," +
-                " (SELECT COUNT(*) FROM conContracts WHERE forCorp = @forCorp AND ((issuerCorpID = @corporationID AND dateExpired < @currentTime) OR (acceptorCorpID = @corporationID AND dateCompleted <= @currentTime))) AS numRequiresAttentionCorp," +
+                " (SELECT COUNT(*) FROM conContracts WHERE (forCorp = @forCorp AND issuerCorpID = @corporationID AND dateExpired < @currentTime) OR (acceptorID = @corporationID AND dateCompleted <= @currentTime)) AS numRequiresAttentionCorp," +
                 " (SELECT COUNT(*) FROM conContracts WHERE assigneeID = @characterID) AS numAssignedTo," +
                 " (SELECT COUNT(*) FROM conContracts WHERE assigneeID = @corporationID) AS numAssignedToCorp," +
                 " (SELECT COUNT(DISTINCT contractID) FROM conBids LEFT JOIN conContracts USING(contractID) WHERE bidderID = @characterID AND status = @outstandingStatus) AS numBiddingOn," +
@@ -299,6 +301,8 @@ namespace Node.Database
 
                     if (damageValue == typeof(long) && reader.GetInt64(2) > 0)
                         throw new ConCannotTradeDamagedItem(this.TypeManager[typeID].Name);
+                    if (damageValue == typeof(double) && reader.GetDouble(2) > 0)
+                        throw new ConCannotTradeDamagedItem(this.TypeManager[typeID].Name);
             
                     int itemQuantity = reader.GetInt32(0);
 
@@ -372,6 +376,32 @@ namespace Node.Database
                     {"@crateID", crateID},
                     {"@volume", volume},
                     {"@contractID", contractID}
+                }
+            ).Close();
+        }
+
+        public void UpdateContractStatus(ref MySqlConnection connection, int contractID, ContractStatus newStatus)
+        {
+            Database.PrepareQuery(
+                ref connection,
+                "UPDATE conContracts SET status = @status WHERE contractID = @contractID",
+                new Dictionary<string, object>()
+                {
+                    {"@contractID", contractID},
+                    {"@status", (int) newStatus}
+                }
+            ).Close();
+        }
+
+        public void UpdateAcceptorID(ref MySqlConnection connection, int contractID, int newAcceptorID)
+        {
+            Database.PrepareQuery(
+                ref connection,
+                "UPDATE conContracts SET acceptorID = @acceptorID WHERE contractID = @contractID",
+                new Dictionary<string, object>()
+                {
+                    {"@contractID", contractID},
+                    {"@acceptorID", newAcceptorID}
                 }
             ).Close();
         }
@@ -586,7 +616,7 @@ namespace Node.Database
         {
             MySqlConnection connection = null;
             MySqlDataReader reader = Database.PrepareQuery(ref connection,
-                "SELECT contractID FROM conContracts WHERE (acceptorID = @acceptorID OR acceptorCorpID = @acceptorID) AND status = @status",
+                "SELECT contractID FROM conContracts WHERE acceptorID = @acceptorID AND status = @status",
                 new Dictionary<string, object>()
                 {
                     {"@acceptorID", acceptorID},
@@ -705,15 +735,23 @@ namespace Node.Database
 
         public class Contract
         {
+            public int ID { get; init; }
             public int Price { get; init; }
             public int Collateral { get; init; }
+            public long ExpireTime { get; init; }
+            public int CrateID { get; init; }
+            public int StationID { get; init; }
             public ContractStatus Status { get; init; }
+            public ContractTypes Type { get; init; }
+            public int IssuerID { get; init; }
+            public int IssuerCorpID { get; init; }
+            public bool ForCorp { get; init; }
         }
 
         public Contract GetContract(MySqlConnection connection, int contractID)
         {
             MySqlDataReader reader = Database.PrepareQuery(ref connection,
-                "SELECT price, collateral, status FROM conContracts WHERE contractID = @contractID",
+                "SELECT price, collateral, status, type, dateExpired, crateID, startStationID, issuerID, issuerCorpID, forCorp FROM conContracts WHERE contractID = @contractID",
                 new Dictionary<string, object>()
                 {
                     {"@contractID", contractID}
@@ -727,22 +765,31 @@ namespace Node.Database
 
                 return new Contract()
                 {
+                    ID = contractID,
                     Price = reader.GetInt32(0),
                     Collateral = reader.GetInt32(1),
-                    Status = (ContractStatus) reader.GetInt32(2)
+                    Status = (ContractStatus) reader.GetInt32(2),
+                    Type = (ContractTypes) reader.GetInt32(3),
+                    ExpireTime = reader.GetInt64(4),
+                    CrateID = reader.GetInt32(5),
+                    StationID = reader.GetInt32(6),
+                    IssuerID = reader.GetInt32(7),
+                    IssuerCorpID = reader.GetInt32(8),
+                    ForCorp = reader.GetBoolean(9)
                 };
             }
         }
 
-        public List<int> ActiveContractsForCharacter(int bidderID)
+        public List<int> FetchLoginCharacterContractBids(int bidderID)
         {
             MySqlConnection connection = null;
             MySqlDataReader reader = Database.PrepareQuery(ref connection,
-                "SELECT contractID, MAX(amount), (SELECT MAX(amount) FROM conBids b WHERE b.contractID = contractID) AS maximum FROM conBids LEFT JOIN conContracts USING(contractID) WHERE bidderID = @bidderID AND status = @outstandingStatus GROUP BY contractID;",
+                "SELECT contractID, MAX(amount), (SELECT MAX(amount) FROM conBids b WHERE b.contractID = contractID) AS maximum FROM conBids LEFT JOIN conContracts USING(contractID) WHERE bidderID = @bidderID AND status = @outstandingStatus AND dateExpired < @currentTime GROUP BY contractID",
                 new Dictionary<string, object>()
                 {
                     {"@bidderID", bidderID},
-                    {"@outstandingStatus", ContractStatus.Outstanding}
+                    {"@outstandingStatus", ContractStatus.Outstanding},
+                    {"@currentTime", DateTime.UtcNow.ToFileTimeUtc()}
                 }
             );
             
@@ -759,6 +806,162 @@ namespace Node.Database
 
                 return result;
             }
+        }
+
+        public List<int> FetchLoginCharacterContractAssigned(int assigneeID)
+        {
+            MySqlConnection connection = null;
+            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+                "SELECT contractID FROM conContracts WHERE assigneeID = @assigneeID AND status = @outstandingStatus AND dateExpired < @currentTime",
+                new Dictionary<string, object>()
+                {
+                    {"@assigneeID", assigneeID},
+                    {"@outstandingStatus", ContractStatus.Outstanding},
+                    {"@currentTime", DateTime.UtcNow.ToFileTimeUtc()}
+                }
+            );
+            
+            using(connection)
+            using (reader)
+            {
+                List<int> result = new List<int>();
+
+                while (reader.Read() == true)
+                {
+                    result.Add(reader.GetInt32(0));
+                }
+
+                return result;
+            }
+        }
+
+        public Dictionary<int, int> GetRequiredItemTypeIDs(MySqlConnection connection, int contractID)
+        {
+            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+                "SELECT itemTypeID, SUM(quantity) AS quantity FROM conItems WHERE contractID = @contractID AND inCrate = 0 GROUP BY itemTypeID",
+                new Dictionary<string, object>()
+                {
+                    {"@contractID", contractID}
+                }
+            );
+
+            using (reader)
+            {
+                Dictionary<int, int> result = new Dictionary<int, int>();
+
+                while (reader.Read() == true)
+                    result[reader.GetInt32(0)] = reader.GetInt32(1);
+
+                return result;
+            }
+        }
+
+        public List<ItemQuantityEntry> CheckRequiredItemsAtStation(MySqlConnection connection, Station station, int ownerID, ItemFlags flag, Dictionary<int, int> requiredItemTypes)
+        {
+            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+                $"SELECT itemID, quantity, typeID, nodeID, IF(dmg.valueFloat IS NULL, dmg.valueInt, dmg.valueFloat) AS damage, categoryID, singleton, contraband FROM invItems LEFT JOIN invTypes USING(typeID) LEFT JOIN invGroups USING(groupID) LEFT JOIN invItemsAttributes dmg ON invItems.itemID = dmg.itemID AND dmg.attributeID = @damage WHERE typeID IN ({string.Join(',', requiredItemTypes.Keys)}) AND locationID = @locationID AND ownerID = @ownerID AND flag = @flag",
+                new Dictionary<string, object>()
+                {
+                    {"@locationID", station.ID},
+                    {"@ownerID", ownerID},
+                    {"@damage", (int) AttributeEnum.damage},
+                    {"@flag", (int) flag}
+                }
+            );
+
+            List<ItemQuantityEntry> itemsAtStation = new List<ItemQuantityEntry>();
+            
+            using (reader)
+            {
+                while (reader.Read() == true)
+                {
+                    int typeID = reader.GetInt32(1);
+
+                    Type damageValue = reader.GetFieldType(4);
+
+                    if (damageValue == typeof(long) && reader.GetInt64(4) > 0)
+                        throw new ConCannotTradeDamagedItem(this.TypeManager[typeID].Name);
+                    if (damageValue == typeof(double) && reader.GetDouble(4) > 0)
+                        throw new ConCannotTradeDamagedItem(this.TypeManager[typeID].Name);
+                    if (reader.GetBoolean(7) == false && reader.GetInt32(6) == (int) ItemCategories.Ship)
+                        throw new ConCannotTradeNonSingletonShip(this.TypeManager[typeID].Name, station.Name);
+                    if (reader.GetBoolean(8) == true)
+                        throw new ConCannotTradeContraband(this.TypeManager[typeID].Name);
+                    
+                    itemsAtStation.Add(
+                        new ItemQuantityEntry()
+                        {
+                            ItemID = reader.GetInt32(0),
+                            Quantity = reader.GetInt32(1),
+                            TypeID = typeID,
+                            NodeID = reader.GetInt32(3)
+                        }
+                    );
+                }
+            }
+
+            List<ItemQuantityEntry> modifiedItems = new List<ItemQuantityEntry>();
+            
+            // now that the list has been built check that the requirements are met
+            foreach ((int itemTypeID, int requiredQuantity) in requiredItemTypes)
+            {
+                int quantity = requiredQuantity;
+                // find all the items that match the criteria
+                List<ItemQuantityEntry> matchingItems = itemsAtStation.FindAll(x => x.TypeID == itemTypeID);
+                // now iterate them and ensure there's enough quantity
+                foreach (ItemQuantityEntry item in matchingItems)
+                {
+                    if (item.Quantity > quantity)
+                    {
+                        item.Quantity -= quantity;
+                        quantity = 0;
+                    }
+                    else
+                    {
+                        quantity -= item.Quantity;
+                        item.Quantity = 0;
+                    }
+                    
+                    // keep track of what items where modified
+                    modifiedItems.Add(item);
+
+                    if (quantity == 0)
+                        break;
+                }
+
+                // if the quantity required is not exhausted there was an error
+                if (quantity > 0)
+                    throw new ConReturnItemsMissingNonSingleton(this.TypeManager[itemTypeID].Name, station.Name);
+            }
+            
+            // iterate the modified items and update database if required
+            foreach (ItemQuantityEntry entry in modifiedItems)
+            {
+                // non-zero node ids means that the item is loaded
+                // so it's not the job of the database to perform the changes
+                if (entry.NodeID != 0)
+                    continue;
+                
+                // if the whole item changed it can be moved
+                if (entry.Quantity == 0)
+                    Database.PrepareQuery(ref connection, "DELETE FROM invItems WHERE itemID = @itemID",
+                        new Dictionary<string, object>()
+                        {
+                            {"@itemID", entry.ItemID}
+                        }
+                    ).Close();
+                else
+                    Database.PrepareQuery(ref connection,
+                        "UPDATE invItems SET quantity = @quantity WHERE itemID = @itemID",
+                        new Dictionary<string, object>()
+                        {
+                            {"@itemID", entry.ItemID},
+                            {"@quantity", entry.Quantity}
+                        }
+                    ).Close();
+            }
+
+            return itemsAtStation;
         }
     }
 }

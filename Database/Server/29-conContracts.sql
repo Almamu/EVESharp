@@ -20,7 +20,6 @@ CREATE TABLE `conContracts` (
   `status` INT(10) NOT NULL,
   `isAccepted` TINYINT(1) NOT NULL,
   `acceptorID` INT(10) NULL DEFAULT NULL,
-  `acceptorCorpID` INT(10) NULL DEFAULT NULL,
   `dateIssued` BIGINT(20) NOT NULL,
   `dateExpired` BIGINT(20) NOT NULL,
   `dateAccepted` BIGINT(20) NULL DEFAULT NULL,

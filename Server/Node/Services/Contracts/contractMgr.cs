@@ -58,10 +58,15 @@ namespace Node.Services.Contracts
         {
             // check for contracts that we've been outbid at and send notifications
             // TODO: HANDLE CORPORATION CONTRACTS TOO!
-            List<int> contracts = this.DB.ActiveContractsForCharacter(call.Client.EnsureCharacterIsSelected());
+            int callerCharacterID = call.Client.EnsureCharacterIsSelected();
             
-            foreach (int contractID in contracts)
+            List<int> outbidContracts = this.DB.FetchLoginCharacterContractBids(callerCharacterID);
+            List<int> assignedContracts = this.DB.FetchLoginCharacterContractAssigned(callerCharacterID);
+            
+            foreach (int contractID in outbidContracts)
                 call.Client.NotifyMultiEvent(new OnContractOutbid(contractID));
+            foreach (int contractID in assignedContracts)
+                call.Client.NotifyMultiEvent(new OnContractAssigned(contractID));
             
             return this.DB.NumRequiringAttention(call.Client.EnsureCharacterIsSelected(), call.Client.CorporationID);
         }
@@ -255,6 +260,9 @@ namespace Node.Services.Contracts
             filters.TryGetValue("type", out PyInteger type);
             filters.TryGetValue("description", out PyString description);
 
+            if (priceMax < 0 || priceMin < 0 || priceMax < priceMin)
+                throw new ConMinMaxPriceError();
+
             if (filters.TryGetValue("issuedByIDs", out PyList issuedIDs) == true && issuedIDs is not null)
                 issuedByIDs = issuedIDs.GetEnumerable<PyInteger>();
             if (filters.TryGetValue("notIssuedByIDs", out PyList notIssuedIDs) == true && notIssuedIDs is not null)
@@ -264,7 +272,7 @@ namespace Node.Services.Contracts
             if (resultsPerPage > 100)
                 resultsPerPage = 100;
             
-            int locationID = 0;
+            int? locationID = null;
 
             if (stationID is not null)
                 locationID = stationID;
@@ -291,6 +299,8 @@ namespace Node.Services.Contracts
         public PyDataType GetContract(PyInteger contractID, CallInformation call)
         {
             int callerCharacterID = call.Client.EnsureCharacterIsSelected();
+            
+            // TODO: Check for regionID ConWrongRegion
             
             return KeyVal.FromDictionary(new PyDictionary()
                 {
@@ -493,6 +503,86 @@ namespace Node.Services.Contracts
             {
                 this.MarketDB.ReleaseMarketLock(connection);
             }
+        }
+
+        private void AcceptItemExchangeContract(MySqlConnection connection, ClusterConnection clusterConnection, ContractDB.Contract contract, Station station, int ownerID, ItemFlags flag = ItemFlags.Hangar)
+        {
+            Dictionary<int, int> itemsToCheck = this.DB.GetRequiredItemTypeIDs(connection, contract.ID);
+            List<ContractDB.ItemQuantityEntry> changedItems =
+                this.DB.CheckRequiredItemsAtStation(connection, station, ownerID, flag, itemsToCheck);
+
+            foreach (ContractDB.ItemQuantityEntry change in changedItems)
+            {
+                // ignore items that are not in a node
+                if (change.NodeID == 0)
+                    continue;
+                
+                if (change.Quantity == 0)
+                    this.NotifyItemChange(clusterConnection, change.NodeID, change.ItemID, "locationID", this.ItemManager.LocationRecycler.ID);
+                else
+                    this.NotifyItemChange(clusterConnection, change.NodeID, change.ItemID, "quantity", change.Quantity);
+            }
+            
+            // move items attached to the contract to the new owner
+            
+            // the contract was properly accepted, update it's status
+            this.DB.UpdateContractStatus(ref connection, contract.ID, ContractStatus.Finished);
+            this.DB.UpdateAcceptorID(ref connection, contract.ID, ownerID);
+            // notify the contract as being accepted
+            if(contract.ForCorp == false)
+                this.NotificationManager.NotifyCharacter(contract.IssuerID, new OnContractAccepted(contract.ID));
+            else
+                this.NotificationManager.NotifyCorporation(contract.IssuerCorpID, new OnContractAccepted(contract.ID));
+        }
+
+        public PyDataType AcceptContract(PyInteger contractID, PyBool forCorp, CallInformation call)
+        {
+            if (forCorp == true)
+                throw new UserError("Cannot accept contracts for corporation yet");
+            
+            using MySqlConnection connection = this.MarketDB.AcquireMarketLock();
+            try
+            {
+                int callerCharacterID = call.Client.EnsureCharacterIsSelected();
+
+                // TODO: SUPPORT forCorp
+                ContractDB.Contract contract = this.DB.GetContract(connection, contractID);
+
+                if (contract.Status != ContractStatus.Outstanding)
+                    throw new ConContractNotOutstanding();
+                if (contract.ExpireTime < DateTime.UtcNow.ToFileTimeUtc())
+                    throw new ConContractExpired();
+
+                Station station = this.ItemManager.GetStaticStation(contract.StationID);
+                    
+                switch (contract.Type)
+                {
+                    case ContractTypes.ItemExchange:
+                        this.AcceptItemExchangeContract(connection, call.Client.ClusterConnection, contract, station, callerCharacterID);
+                        break;
+                    case ContractTypes.Auction:
+                        throw new CustomError("Auctions cannot be accepted!");
+                    case ContractTypes.Courier:
+                        throw new CustomError("Courier contracts not supported yet!");
+                    case ContractTypes.Loan:
+                        throw new CustomError("Loan contracts not supported yet!");
+                    case ContractTypes.Freeform:
+                        throw new CustomError("Freeform contracts not supported yet!");
+                    default:
+                        throw new CustomError("Unknown contract type to accept!");
+                }
+            }
+            finally
+            {
+                this.MarketDB.ReleaseMarketLock(connection);
+            }
+            
+            return null;
+        }
+
+        public PyDataType FinishAuction(PyInteger contractID, PyBool forCorp, CallInformation call)
+        {
+            return null;
         }
 
         public PyDataType HasFittedCharges(PyInteger stationID, PyInteger itemID, PyInteger forCorp, PyInteger flag, CallInformation call)
