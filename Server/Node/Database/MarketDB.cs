@@ -360,7 +360,7 @@ namespace Node.Database
         public MarketOrder[] FindMatchingOrders(MySqlConnection connection, double price, int typeID, int characterID, int solarSystemID, TransactionType type)
         {
             MySqlDataReader reader = Database.PrepareQuery(ref connection,
-                "SELECT orderID, typeID, itemID, charID, stationID AS locationID, price, accountID, volRemaining, minVolume, `range`, jumps, escrow, issued FROM mktOrders LEFT JOIN staStations USING(stationID) LEFT JOIN mapPrecalculatedSolarSystemJumps ON solarSystemID = fromSolarSystemID AND toSolarsystemID = @solarSystemID WHERE bid = @transactionType AND price >= @price AND typeID = @typeID AND charID != @characterID ORDER BY price",
+                "SELECT orderID, typeID, charID, stationID AS locationID, price, accountID, volRemaining, minVolume, `range`, jumps, escrow, issued FROM mktOrders LEFT JOIN staStations USING(stationID) LEFT JOIN mapPrecalculatedSolarSystemJumps ON solarSystemID = fromSolarSystemID AND toSolarsystemID = @solarSystemID WHERE bid = @transactionType AND price >= @price AND typeID = @typeID AND charID != @characterID AND `range` >= jumps ORDER BY price",
                 new Dictionary<string, object>()
                 {
                     {"@transactionType", type},
@@ -382,18 +382,17 @@ namespace Node.Database
                         new MarketOrder(
                             reader.GetInt32(0),
                             reader.GetInt32(1),
-                            reader.IsDBNull(2) == false ? reader.GetInt32(2) : 0,
+                            reader.GetInt32(2),
                             reader.GetInt32(3),
-                            reader.GetInt32(4),
-                            reader.GetDouble(5),
+                            reader.GetDouble(4),
+                            reader.GetInt32(5),
                             reader.GetInt32(6),
                             reader.GetInt32(7),
                             reader.GetInt32(8),
                             reader.GetInt32(9),
-                            reader.GetInt32(10),
-                            reader.IsDBNull(11) == false ? reader.GetDouble(11) : 0,
+                            reader.IsDBNull(10) == false ? reader.GetDouble(10) : 0,
                             type,
-                            reader.GetInt64(12)
+                            reader.GetInt64(11)
                         )
                     );
                 }
@@ -563,14 +562,13 @@ namespace Node.Database
             }
         }
 
-        public void PlaceSellOrder(MySqlConnection connection, int typeID, int itemID, int ownerID, int stationID, int range, double price, int volEntered, int accountID, long duration, bool isCorp)
+        public void PlaceSellOrder(MySqlConnection connection, int typeID, int ownerID, int stationID, int range, double price, int volEntered, int accountID, long duration, bool isCorp)
         {
             Database.PrepareQuery(ref connection,
-                "INSERT INTO mktOrders(typeID, itemID, charID, stationID, `range`, bid, price, volEntered, volRemaining, issued, minVolume, accountID, duration, isCorp, escrow)VALUES(@typeID, @itemID, @ownerID, @stationID, @range, @sell, @price, @volEntered, @volRemaining, @issued, @minVolume, @accountID, @duration, @isCorp, @escrow)",
+                "INSERT INTO mktOrders(typeID, charID, stationID, `range`, bid, price, volEntered, volRemaining, issued, minVolume, accountID, duration, isCorp, escrow)VALUES(@typeID, @ownerID, @stationID, @range, @sell, @price, @volEntered, @volRemaining, @issued, @minVolume, @accountID, @duration, @isCorp, @escrow)",
                 new Dictionary<string, object>()
                 {
                     {"@typeID", typeID},
-                    {"@itemID", itemID},
                     {"@ownerID", ownerID},
                     {"@stationID", stationID},
                     {"@range", range},
@@ -627,7 +625,7 @@ namespace Node.Database
         public MarketOrder GetOrderById(MySqlConnection connection, int orderID)
         {
             MySqlDataReader reader = Database.PrepareQuery(ref connection,
-                "SELECT orderID, typeID, itemID, charID, stationID AS locationID, price, accountID, volRemaining, minVolume, `range`, escrow, bid, issued FROM mktOrders WHERE orderID = @orderID",
+                "SELECT orderID, typeID, charID, stationID AS locationID, price, accountID, volRemaining, minVolume, `range`, escrow, bid, issued FROM mktOrders WHERE orderID = @orderID",
                 new Dictionary<string, object>()
                 {
                     {"@orderID", orderID}
@@ -642,18 +640,17 @@ namespace Node.Database
                 return new MarketOrder(
                     reader.GetInt32(0),
                     reader.GetInt32(1),
-                    reader.IsDBNull(2) == false ? reader.GetInt32(2) : 0,
+                    reader.GetInt32(2),
                     reader.GetInt32(3),
-                    reader.GetInt32(4),
-                    reader.GetDouble(5),
+                    reader.GetDouble(4),
+                    reader.GetInt32(5),
                     reader.GetInt32(6),
                     reader.GetInt32(7),
                     reader.GetInt32(8),
-                    reader.GetInt32(9),
                     0,
-                    reader.IsDBNull(10) == false ? reader.GetDouble(10) : 0,
-                    reader.GetInt32(11) == ((int) TransactionType.Buy) ? TransactionType.Buy : TransactionType.Sell,
-                    reader.GetInt64(12)
+                    reader.IsDBNull(9) == false ? reader.GetDouble(9) : 0,
+                    reader.GetInt32(10) == ((int) TransactionType.Buy) ? TransactionType.Buy : TransactionType.Sell,
+                    reader.GetInt64(11)
                 );
             }
         }
@@ -661,7 +658,7 @@ namespace Node.Database
         public List<MarketOrder> GetExpiredOrders(MySqlConnection connection)
         {
             MySqlDataReader reader = Database.PrepareQuery(ref connection,
-                "SELECT orderID, typeID, itemID, charID, stationID AS locationID, price, accountID, volRemaining, minVolume, `range`, escrow, bid, issued FROM mktOrders WHERE (issued + (duration * @ticksPerHour)) < @currentTime",
+                "SELECT orderID, typeID, charID, stationID AS locationID, price, accountID, volRemaining, minVolume, `range`, escrow, bid, issued FROM mktOrders WHERE (issued + (duration * @ticksPerHour)) < @currentTime",
                 new Dictionary<string, object>()
                 {
                     {"@ticksPerHour", TimeSpan.TicksPerDay},
@@ -678,18 +675,17 @@ namespace Node.Database
                     orders.Add(new MarketOrder(
                         reader.GetInt32(0),
                         reader.GetInt32(1),
-                        reader.IsDBNull(2) == false ? reader.GetInt32(2) : 0,
+                        reader.GetInt32(2),
                         reader.GetInt32(3),
-                        reader.GetInt32(4),
-                        reader.GetDouble(5),
+                        reader.GetDouble(4),
+                        reader.GetInt32(5),
                         reader.GetInt32(6),
                         reader.GetInt32(7),
                         reader.GetInt32(8),
-                        reader.GetInt32(9),
                         0,
-                        reader.IsDBNull(10) == false ? reader.GetDouble(10) : 0,
-                        reader.GetInt32(11) == ((int) TransactionType.Buy) ? TransactionType.Buy : TransactionType.Sell,
-                        reader.GetInt64(12)
+                        reader.IsDBNull(9) == false ? reader.GetDouble(9) : 0,
+                        reader.GetInt32(10) == ((int) TransactionType.Buy) ? TransactionType.Buy : TransactionType.Sell,
+                        reader.GetInt64(11)
                     ));
                 }
 

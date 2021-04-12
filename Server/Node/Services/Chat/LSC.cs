@@ -7,7 +7,7 @@ using Node.Exceptions;
 using Node.Inventory;
 using Node.Inventory.Items.Types;
 using Node.Network;
-using Node.Notifications.Chat;
+using Node.Notifications.Client.Chat;
 using PythonTypes;
 using PythonTypes.Types.Collections;
 using PythonTypes.Types.Database;

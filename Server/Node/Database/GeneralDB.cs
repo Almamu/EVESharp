@@ -49,14 +49,9 @@ namespace Node.Database
             using (reader)
             {
                 if (reader.Read() == false)
-                    throw new Exception("The solar system is not loaded by any node");
+                    return 0;
 
-                long nodeID = reader.GetInt64(0);
-
-                if (nodeID == 0)
-                    throw new Exception("The solar system is not loaded by any node");
-
-                return nodeID;
+                return reader.GetInt64(0);
             }
         }
         

@@ -7,7 +7,7 @@ using Node.Exceptions.dogma;
 using Node.Inventory.Items.Attributes;
 using Node.Inventory.Items.Dogma;
 using Node.Network;
-using Node.Notifications.Inventory;
+using Node.Notifications.Client.Inventory;
 using PythonTypes.Types.Collections;
 using PythonTypes.Types.Exceptions;
 using PythonTypes.Types.Primitives;

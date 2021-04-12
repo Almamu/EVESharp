@@ -1,5 +1,7 @@
 ﻿using System.Collections.Generic;
 using Node.Inventory;
+using Node.Notifications;
+using Node.Notifications.Nodes;
 using PythonTypes.Types.Collections;
 using PythonTypes.Types.Complex;
 using PythonTypes.Types.Network;
@@ -104,27 +106,26 @@ namespace Node.Network
         /// <summary>
         /// Send a notification to the given node
         /// </summary>
-        /// <param name="nodeID"></param>
-        /// <param name="type"></param>
-        /// <param name="data"></param>
-        public void NotifyNode(long nodeID, string type, PyTuple data)
+        /// <param name="nodeID">The node to notify</param>
+        /// <param name="notification">The notification to send</param>
+        public void NotifyNode(long nodeID, NodeNotification notification)
         {
             // do not notify if the notification is for a non-existant node (nodeID = 0)
             if (nodeID == 0)
                 return;
             
-            PyPacket notification = new PyPacket(PyPacket.PacketType.NOTIFICATION)
+            PyPacket packet = new PyPacket(PyPacket.PacketType.NOTIFICATION)
             {
                 Source = new PyAddressAny(0),
                 Destination = new PyAddressBroadcast(new PyList(1) {[0] = nodeID}, "nodeid"),
-                Payload = new PyTuple(2) {[0] = type, [1] = data},
+                Payload = notification,
                 OutOfBounds = new PyDictionary(),
                 
                 // set the userID to -1, this will indicate the cluster controller to fill it in
                 UserID = -1
             };
 
-            this.ClusterConnection.Send(notification);
+            this.ClusterConnection.Send(packet);
         }
 
         public void SendNotification(string idType, int id, PyNotification data)

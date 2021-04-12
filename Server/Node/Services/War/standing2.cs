@@ -3,7 +3,7 @@ using Node.Database;
 using Node.Inventory;
 using Node.Inventory.Items.Types;
 using Node.Network;
-using Node.Notifications.Character;
+using Node.Notifications.Client.Character;
 using PythonTypes.Types.Collections;
 using PythonTypes.Types.Complex;
 using PythonTypes.Types.Exceptions;

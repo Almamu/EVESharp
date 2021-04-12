@@ -12,8 +12,9 @@ using Node.Inventory.Items;
 using Node.Inventory.Items.Types;
 using Node.Market;
 using Node.Network;
-using Node.Notifications.Inventory;
-using Node.Notifications.Skills;
+using Node.Notifications.Client.Inventory;
+using Node.Notifications.Client.Skills;
+using Node.Notifications.Nodes.Character;
 using PythonTypes.Types.Collections;
 using PythonTypes.Types.Primitives;
 
@@ -142,14 +143,7 @@ namespace Node.Services.Network
                 int characterNode = this.ItemDB.GetItemNode(targetCharacterID);
                     
                 if (characterNode > 0)
-                    this.NotificationManager.NotifyNode(characterNode, "OnBalanceUpdate",
-                        new PyTuple(2)
-                        {
-                            [0] = targetCharacterID,
-                            [1] = 1000,
-                            [2] = currentBalance
-                        }
-                    );
+                    this.NotificationManager.NotifyNode(characterNode, new OnBalanceUpdate(targetCharacterID, 1000, currentBalance));
             }
             
             if (iskQuantity < 0)

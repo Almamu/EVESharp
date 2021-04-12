@@ -10,8 +10,9 @@ using Node.Inventory;
 using Node.Inventory.Items;
 using Node.Inventory.Items.Types;
 using Node.Inventory.SystemEntities;
-using Node.Notifications.Character;
-using Node.Notifications.Inventory;
+using Node.Notifications.Client.Character;
+using Node.Notifications.Client.Inventory;
+using Node.Notifications.Nodes.Character;
 using Node.Services;
 using PythonTypes;
 using PythonTypes.Types.Collections;
@@ -443,106 +444,102 @@ namespace Node.Network
             this.ClientManager.Remove(clientID);
         }
 
-        private void HandleOnItemUpdate(PyTuple data)
+        private void HandleOnItemUpdate(Notifications.Nodes.Inventory.OnItemChange change)
         {
-            if (data.Count != 2)
+            foreach ((PyInteger itemID, PyDictionary _changes) in change.Updates)
             {
-                Log.Error("Received OnItemUpdate notification with the wrong format");
-                return;
-            }
-
-            PyDataType first = data[0];
-
-            if (first is PyInteger == false)
-            {
-                Log.Error("Received OnItemUpdate notification with the wrong format");
-                return;
-            }
-
-            PyDataType second = data[1];
-
-            if (second is PyDictionary == false)
-            {
-                Log.Error("Received OnItemUpdate notification with the wrong format");
-                return;
-            }
-
-            PyInteger itemID = first as PyInteger;
-            PyDictionary changes = second as PyDictionary;
-            ItemEntity item = this.ItemManager.LoadItem(itemID, out bool loadRequired);
-            
-            // if the item was just loaded there's extra things to take into account
-            // as the item might not even need a notification to the character it belongs to
-            if (loadRequired == true)
-            {
-                // trust that the notification got to the correct node
-                // load the item and check the owner, if it's logged in and the locationID is loaded by us
-                // that means the item should be kept here
-                if (this.ItemManager.TryGetItem(item.LocationID, out ItemEntity location) == false || this.CharacterManager.IsCharacterConnected(item.OwnerID) == false)
+                PyDictionary<PyString, PyTuple> changes = _changes.GetEnumerable<PyString, PyTuple>();
+                
+                ItemEntity item = this.ItemManager.LoadItem(itemID, out bool loadRequired);
+                
+                // if the item was just loaded there's extra things to take into account
+                // as the item might not even need a notification to the character it belongs to
+                if (loadRequired == true)
                 {
-                    // this item should not be loaded, so unload and return
+                    // trust that the notification got to the correct node
+                    // load the item and check the owner, if it's logged in and the locationID is loaded by us
+                    // that means the item should be kept here
+                    if (this.ItemManager.TryGetItem(item.LocationID, out ItemEntity location) == false || this.CharacterManager.IsCharacterConnected(item.OwnerID) == false)
+                    {
+                        // this item should not be loaded, so unload and return
+                        this.ItemManager.UnloadItem(item);
+                        return;
+                    }
+
+                    bool locationBelongsToUs = true;
+
+                    switch (location)
+                    {
+                        case Station _:
+                            locationBelongsToUs = this.SystemManager.StationBelongsToUs(location.ID);
+                            break;
+                        case SolarSystem _:
+                            locationBelongsToUs = this.SystemManager.SolarSystemBelongsToUs(location.ID);
+                            break;
+                    }
+
+                    if (locationBelongsToUs == false)
+                    {
+                        this.ItemManager.UnloadItem(item);
+                        return;
+                    }
+                }
+
+                OnItemChange itemChange = new OnItemChange(item);
+                
+                // update item and build change notification
+                if (changes.TryGetValue("locationID", out PyTuple locationChange) == true)
+                {
+                    PyInteger oldValue = locationChange[0] as PyInteger;
+                    PyInteger newValue = locationChange[1] as PyInteger;
+                    
+                    itemChange.AddChange(ItemChange.LocationID, oldValue);
+                    item.LocationID = newValue;
+                }
+                
+                if (changes.TryGetValue ("quantity", out PyTuple quantityChange) == true)
+                {
+                    PyInteger oldValue = quantityChange[0] as PyInteger;
+                    PyInteger newValue = quantityChange[1] as PyInteger;
+
+                    itemChange.AddChange(ItemChange.Quantity, oldValue);
+                    item.Quantity = newValue;
+                }
+                
+                if (changes.TryGetValue("ownerID", out PyTuple ownerChange) == true)
+                {
+                    PyInteger oldValue = ownerChange[0] as PyInteger;
+                    PyInteger newValue = ownerChange[1] as PyInteger;
+
+                    itemChange.AddChange(ItemChange.OwnerID, oldValue);
+                    item.OwnerID = newValue;
+                }
+
+                if (changes.TryGetValue("singleton", out PyTuple singletonChange) == true)
+                {
+                    PyBool oldValue = singletonChange[0] as PyBool;
+                    PyBool newValue = singletonChange[1] as PyBool;
+
+                    itemChange.AddChange(ItemChange.Singleton, oldValue);
+                    item.Singleton = newValue;
+                }
+                
+                // TODO: IDEALLY THIS WOULD BE ENQUEUED SO ALL OF THEM ARE SENT AT THE SAME TIME
+                // TODO: BUT FOR NOW THIS SHOULD SUFFICE
+                // send the notification
+                this.NotificationManager.NotifyCharacter(item.OwnerID, "OnMultiEvent", 
+                    new PyTuple(1) {[0] = new PyList(1) {[0] = itemChange}});
+
+                if (item.LocationID == this.ItemManager.LocationRecycler.ID)
+                    // the item is removed off the database if the new location is the recycler
+                    item.Destroy();
+                else if (item.LocationID == this.ItemManager.LocationMarket.ID)
+                    // items that are moved to the market can be unloaded
                     this.ItemManager.UnloadItem(item);
-                    return;
-                }
-
-                bool locationBelongsToUs = true;
-
-                switch (location)
-                {
-                    case Station _:
-                        locationBelongsToUs = this.SystemManager.StationBelongsToUs(location.ID);
-                        break;
-                    case SolarSystem _:
-                        locationBelongsToUs = this.SystemManager.SolarSystemBelongsToUs(location.ID);
-                        break;
-                }
-
-                if (locationBelongsToUs == false)
-                {
-                    this.ItemManager.UnloadItem(item);
-                    return;
-                }
+                else
+                    // save the item if the new location is not removal
+                    item.Persist();    
             }
-
-            OnItemChange itemChange = new OnItemChange(item);
-            
-            // update item and build change notification
-            if (changes.TryGetValue("locationID", out PyInteger newLocationID) == true)
-            {
-                itemChange.AddChange(ItemChange.LocationID, item.LocationID);
-                item.LocationID = newLocationID;
-            }
-            
-            if (changes.TryGetValue ("quantity", out PyInteger newQuantity) == true)
-            {
-                itemChange.AddChange(ItemChange.Quantity, item.Quantity);
-                item.Quantity = newQuantity;
-            }
-            
-            if (changes.TryGetValue("ownerID", out PyInteger newOwnerID) == true)
-            {
-                itemChange.AddChange(ItemChange.OwnerID, item.OwnerID);
-                item.OwnerID = newOwnerID;
-            }
-
-            if (changes.TryGetValue("singleton", out PyBool newSingleton) == true)
-            {
-                itemChange.AddChange(ItemChange.Singleton, item.Singleton);
-                item.Singleton = newSingleton;
-            }
-            
-            // TODO: IDEALLY THIS WOULD BE ENQUEUED SO ALL OF THEM ARE SENT AT THE SAME TIME
-            // TODO: BUT FOR NOW THIS SHOULD SUFFICE
-            // send the notification
-            this.NotificationManager.NotifyCharacter(item.OwnerID, "OnMultiEvent", 
-                new PyTuple(1) {[0] = new PyList(1) {[0] = itemChange}});
-
-            if (item.LocationID == this.ItemManager.LocationRecycler.ID)
-                // the item is removed off the database if the new location is the recycler
-                item.Destroy();
-            else
-                // save the item if the new location is not removal
-                item.Persist();
         }
 
         private void HandleOnBalanceUpdate(PyTuple data)
@@ -609,42 +606,30 @@ namespace Node.Network
                 return;
             }
 
-            PyDataType first = packet.Payload[0];
-            PyDataType second = packet.Payload[1];
-
-            if (first is PyString == false)
+            if (packet.Payload[0] is not PyString notification)
             {
                 Log.Error("Received ClusterController notification with the wrong format");
                 return;
             }
-
-            if (second is PyTuple == false)
-            {
-                Log.Error("Received ClusterController notification with the wrong format");
-                return;
-            }
-
-            PyString notification = first as PyString;
-            PyTuple arguments = second as PyTuple;
-
+            
             Log.Debug($"Received a notification from ClusterController of type {notification.Value}");
             
             switch (notification)
             {
                 case "OnSolarSystemLoad":
-                    this.HandleOnSolarSystemLoaded(arguments);
+                    this.HandleOnSolarSystemLoaded(packet.Payload[1] as PyTuple);
                     break;
                 case "OnClientDisconnected":
-                    this.HandleOnClientDisconnected(arguments);
+                    this.HandleOnClientDisconnected(packet.Payload[1] as PyTuple);
                     break;
-                case "OnItemUpdate":
-                    this.HandleOnItemUpdate(arguments);
+                case Notifications.Nodes.Inventory.OnItemChange.NOTIFICATION_NAME:
+                    this.HandleOnItemUpdate(packet.Payload);
                     break;
-                case "OnBalanceUpdate":
-                    this.HandleOnBalanceUpdate(arguments);
+                case OnBalanceUpdate.NOTIFICATION_NAME:
+                    this.HandleOnBalanceUpdate(packet.Payload[1] as PyTuple);
                     break;
                 case "OnClusterTimer":
-                    this.HandleOnClusterTimer(arguments);
+                    this.HandleOnClusterTimer(packet.Payload[1] as PyTuple);
                     break;
                 default:
                     Log.Fatal("Received ClusterController notification with the wrong format");

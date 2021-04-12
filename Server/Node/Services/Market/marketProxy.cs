@@ -13,7 +13,9 @@ using Node.Inventory.Items.Types;
 using Node.Inventory.SystemEntities;
 using Node.Market;
 using Node.Network;
-using Node.Notifications.Market;
+using Node.Notifications.Client.Market;
+using Node.Notifications.Nodes.Character;
+using Node.Notifications.Nodes.Inventory;
 using PythonTypes.Types.Collections;
 using PythonTypes.Types.Complex;
 using PythonTypes.Types.Exceptions;
@@ -182,29 +184,6 @@ namespace Node.Services.Market
             if (brokerCost < this.NodeContainer.Constants["mktMinimumFee"])
                 brokerCost = this.NodeContainer.Constants["mktMinimumFee"];
         }
-        
-        private void NotifyItemChange(long nodeID, int itemID, string key, PyDataType newValue)
-        {
-            this.NotificationManager.NotifyNode(nodeID, "OnItemUpdate",
-                new PyTuple(2)
-                {
-                    [0] = itemID,
-                    [1] = new PyDictionary() {[key] = newValue}
-                }
-            );
-        }
-
-        private void NotifyBalanceChange(long nodeID, int characterID, double newBalance)
-        {
-            this.NotificationManager.NotifyNode(nodeID, "OnBalanceUpdate",
-                new PyTuple(3)
-                {
-                    [0] = characterID,
-                    [1] = 1000,
-                    [2] = newBalance
-                }
-            );
-        }
 
         private void CheckSellOrderDistancePermissions(Character character, int stationID)
         {
@@ -300,7 +279,7 @@ namespace Node.Services.Market
                         int characterNode = this.ItemDB.GetItemNode(order.CharacterID);
                     
                         if (characterNode > 0)
-                            this.NotifyBalanceChange(characterNode, order.CharacterID, balance);
+                            this.NotificationManager.NotifyNode(characterNode, new OnBalanceUpdate(order.CharacterID, order.AccountID, balance));
                     }
                     
                     // this order is fully satisfiable, so do that
@@ -340,15 +319,24 @@ namespace Node.Services.Market
                     
                     // create the new item that will be used by the player
                     ItemEntity item = this.ItemManager.CreateSimpleItem(
-                        this.TypeManager[typeID], order.CharacterID, this.ItemManager.LocationMarket.ID, ItemFlags.Hangar, quantityToSell
+                        this.TypeManager[typeID], order.CharacterID, stationID, ItemFlags.Hangar, quantityToSell
                     );
+                    
                     // immediately unload it, if it has to be loaded the OnItemUpdate notification will take care of that
                     this.ItemManager.UnloadItem(item);
-
-                    long stationNode = this.SystemManager.GetNodeStationBelongsTo(stationID);
                     
-                    // notify the node about the item
-                    this.NotifyItemChange(stationNode, item.ID, "locationID", stationID);
+                    // check if the station it's at is loaded and notify the node in question
+                    // if not take care of the item notification ourselves
+                    long stationNode = this.SystemManager.GetNodeStationBelongsTo(stationID);
+
+                    if (stationNode == 0 || this.SystemManager.StationBelongsToUs(stationID) == true)
+                    {
+                        this.NotificationManager.NotifyCharacter(item.OwnerID, Notifications.Client.Inventory.OnItemChange.BuildLocationChange(item, this.ItemManager.LocationMarket.ID));
+                    }
+                    else
+                    {
+                        this.NotificationManager.NotifyNode(stationNode, OnItemChange.BuildLocationChange(itemID, this.ItemManager.LocationMarket.ID, stationID));
+                    }
                 }
 
                 // ensure we do not sell more than we have
@@ -370,16 +358,45 @@ namespace Node.Services.Market
             if (items is null)
                 throw new NotEnoughQuantity(this.TypeManager[typeID]);
 
-            // now notify the nodes about the changes on the other items (if required)
-            foreach (KeyValuePair<int, MarketDB.ItemQuantityEntry> pair in items)
+            long stationNode = this.SystemManager.GetNodeStationBelongsTo(stationID);
+            
+            if (this.SystemManager.StationBelongsToUs(stationID) == true || stationNode == 0)
             {
-                if (pair.Value.NodeID == 0)
-                    continue;
+                // load the items here and send proper notifications
+                foreach ((int _, MarketDB.ItemQuantityEntry entry) in items)
+                {
+                    ItemEntity item = this.ItemManager.LoadItem(entry.ItemID);
 
-                if (pair.Value.Quantity == 0)
-                    this.NotifyItemChange(pair.Value.NodeID, pair.Key, "locationID", this.ItemManager.LocationMarket.ID);
-                else
-                    this.NotifyItemChange(pair.Value.NodeID, pair.Key, "quantity", pair.Value.Quantity);
+                    if (entry.Quantity == 0)
+                    {
+                        // item has to be destroyed
+                        this.ItemManager.DestroyItem(item);
+                        // notify item destroyal
+                        client.NotifyMultiEvent(Notifications.Client.Inventory.OnItemChange.BuildLocationChange(item, stationID));
+                    }
+                    else
+                    {
+                        // just a quantity change
+                        item.Quantity = entry.Quantity;
+                        // notify the client
+                        client.NotifyMultiEvent(Notifications.Client.Inventory.OnItemChange.BuildQuantityChange(item, entry.OriginalQuantity));
+                        // unload the item if it's not needed
+                        this.ItemManager.UnloadItem(item);
+                    }
+                }
+            }
+            else
+            {
+                // the item changes should be handled by a different node
+                OnItemChange changes = new OnItemChange();
+
+                foreach ((int _, MarketDB.ItemQuantityEntry entry) in items)
+                {
+                    if (entry.Quantity == 0)
+                        changes.AddChange(entry.ItemID, "locationID", stationID, this.ItemManager.LocationMarket.ID);
+                    else
+                        changes.AddChange(entry.ItemID, "quantity", entry.OriginalQuantity, entry.Quantity);
+                }
             }
         }
 
@@ -414,14 +431,8 @@ namespace Node.Services.Market
                 }
                 else
                 {
-                    // create the new item that will be used by the market
-                    ItemEntity item = this.ItemManager.CreateSimpleItem(
-                        this.TypeManager[typeID], character.ID, this.ItemManager.LocationMarket.ID, ItemFlags.Hangar, quantity
-                    );
                     // finally place the order
-                    this.DB.PlaceSellOrder(connection, item.Type.ID, item.ID, item.OwnerID, stationID, range, price, quantity, 1000, duration, false);
-                    // unload the item, we do not want it to be held by anyone
-                    this.ItemManager.UnloadItem(item);
+                    this.DB.PlaceSellOrder(connection, typeID, character.ID, stationID, range, price, quantity, 1000, duration, false);
                     // update balance for this character
                     character.Balance -= brokerCost;
                     character.Persist();
@@ -491,8 +502,6 @@ namespace Node.Services.Market
                 {
                     // part of the sell order was satisfied
                     this.DB.UpdateOrderRemainingQuantity(connection, order.OrderID, order.UnitsLeft - quantity, 0);
-                    // ensure the item is also updated
-                    this.ItemDB.UpdateItemQuantity(order.ItemID, order.UnitsLeft - quantity);
 
                     quantityToBuy = quantity;
                     quantity = 0;
@@ -523,47 +532,27 @@ namespace Node.Services.Market
                     int characterNode = this.ItemDB.GetItemNode(order.CharacterID);
                     
                     if (characterNode > 0)
-                        this.NotifyBalanceChange(characterNode, order.CharacterID, balance);
+                        this.NotificationManager.NotifyNode(characterNode, new OnBalanceUpdate(order.CharacterID, order.AccountID, balance));
                     
                     // notify this character of the balance update too
                     call.Client.NotifyBalanceUpdate(character.Balance);
                     
-                    // now ensure the item is present where it should be
-                    if (order.UnitsLeft == quantityToBuy)
-                    {
-                        // now notify the nodes about the change, if the item is loaded anywhere this should be enough
-                        long stationNode = this.SystemManager.GetNodeStationBelongsTo(stationID);
+                    long stationNode = this.SystemManager.GetNodeStationBelongsTo(stationID);
+                        
+                    // create the new item that will be used by the player
+                    ItemEntity item = this.ItemManager.CreateSimpleItem(
+                        this.TypeManager[typeID], character.ID, stationID, ItemFlags.Hangar, quantityToBuy
+                    );
+                    // immediately unload it, if it has to be loaded the OnItemUpdate notification will take care of that
+                    this.ItemManager.UnloadItem(item);
 
-                        if (stationNode > 0)
-                        {
-                            // send proper notifications for owner and location changes
-                            this.NotifyItemChange(stationNode, order.ItemID, "ownerID", character.ID);
-                            this.NotifyItemChange(stationNode, order.ItemID, "locationID", stationID);
-                            this.NotifyItemChange(stationNode, order.ItemID, "quantity", quantityToBuy);
-                        }
-                        else
-                        {
-                            this.ItemDB.UpdateItemLocation(order.ItemID, stationID);
-                            this.ItemDB.UpdateItemOwner(order.ItemID, character.ID);
-                            this.ItemDB.UpdateItemQuantity(order.ItemID, quantityToBuy);
-                        }
+                    if (stationNode == 0 || this.SystemManager.StationBelongsToUs(stationID) == true)
+                    {
+                        this.NotificationManager.NotifyCharacter(character.ID, Notifications.Client.Inventory.OnItemChange.BuildLocationChange(item, this.ItemManager.LocationMarket.ID));
                     }
                     else
                     {
-                        long stationNode = this.SystemManager.GetNodeStationBelongsTo(stationID);
-                        
-                        // create the new item that will be used by the player
-                        ItemEntity item = this.ItemManager.CreateSimpleItem(
-                            this.TypeManager[typeID], character.ID, this.ItemManager.LocationMarket.ID, ItemFlags.Hangar, quantityToBuy
-                        );
-                        // immediately unload it, if it has to be loaded the OnItemUpdate notification will take care of that
-                        this.ItemManager.UnloadItem(item);
-
-                        if (stationNode > 0)
-                            // notify the node about the item
-                            this.NotifyItemChange(stationNode, item.ID, "locationID", stationID);
-                        else
-                            this.ItemDB.UpdateItemLocation(item.ID, stationID);
+                        this.NotificationManager.NotifyNode(stationNode, OnItemChange.BuildLocationChange(item.ID, this.ItemManager.LocationMarket.ID, stationID));
                     }
                 }
 
@@ -683,19 +672,24 @@ namespace Node.Services.Market
 
                 if (order.Bid == TransactionType.Sell)
                 {
+                                            
+                    // create the new item that will be used by the player
+                    ItemEntity item = this.ItemManager.CreateSimpleItem(
+                        this.TypeManager[order.TypeID], character.ID, order.LocationID, ItemFlags.Hangar, order.UnitsLeft
+                    );
+                    // immediately unload it, if it has to be loaded the OnItemUpdate notification will take care of that
+                    this.ItemManager.UnloadItem(item);
+
                     // check what node this item should be loaded at
                     long stationNode = this.SystemManager.GetNodeStationBelongsTo(order.LocationID);
 
-                    if (stationNode > 0)
+                    if (stationNode == 0 || this.SystemManager.StationBelongsToUs(order.LocationID) == true)
                     {
-                        this.NotifyItemChange(stationNode, order.ItemID, "locationID", order.LocationID);
-                        this.NotifyItemChange(stationNode, order.ItemID, "quantity", order.UnitsLeft);
+                        this.NotificationManager.NotifyCharacter(character.ID, Notifications.Client.Inventory.OnItemChange.BuildLocationChange(item, this.ItemManager.LocationMarket.ID));
                     }
                     else
                     {
-                        // move the item back to the player's inventory
-                        this.ItemDB.UpdateItemLocation(order.ItemID, order.LocationID);
-                        this.ItemDB.UpdateItemQuantity(order.ItemID, order.UnitsLeft);
+                        this.NotificationManager.NotifyNode(stationNode, OnItemChange.BuildLocationChange(item.ID, this.ItemManager.LocationMarket.ID, order.LocationID));
                     }
                 }
                 
@@ -823,7 +817,7 @@ namespace Node.Services.Market
 
             if (characterNode > 0)
             {
-                this.NotifyBalanceChange(characterNode, order.CharacterID, balance);
+                this.NotificationManager.NotifyNode(characterNode, new OnBalanceUpdate(order.CharacterID, order.AccountID, balance));
                 this.NotificationManager.NotifyCharacter(order.CharacterID, new OnOwnOrderChanged(order.TypeID, "Expiry", order.AccountID > 1000));
             }
         }
@@ -837,17 +831,24 @@ namespace Node.Services.Market
         {
             // remove order
             this.DB.RemoveOrder(connection, order.OrderID);
+            // create the item back into the player's hanger
+                                    
+            // create the new item that will be used by the player
+            ItemEntity item = this.ItemManager.CreateSimpleItem(
+                this.TypeManager[order.TypeID], order.CharacterID, order.LocationID, ItemFlags.Hangar, order.UnitsLeft
+            );
+            // immediately unload it, if it has to be loaded the OnItemUpdate notification will take care of that
+            this.ItemManager.UnloadItem(item);
+
             long stationNode = this.SystemManager.GetNodeStationBelongsTo(order.LocationID);
 
-            if (stationNode > 0)
+            if (stationNode == 0 || this.SystemManager.StationBelongsToUs(order.LocationID) == true)
             {
-                // notify the relevant node
-                this.NotifyItemChange(this.SystemManager.GetNodeStationBelongsTo(order.LocationID), order.ItemID, "locationID", order.LocationID);
+                this.NotificationManager.NotifyCharacter(order.CharacterID, Notifications.Client.Inventory.OnItemChange.BuildLocationChange(item, this.ItemManager.LocationMarket.ID));
             }
             else
             {
-                // take item back into station
-                this.ItemDB.UpdateItemLocation(order.ItemID, order.LocationID);
+                this.NotificationManager.NotifyNode(stationNode, OnItemChange.BuildLocationChange(item.ID, this.ItemManager.LocationMarket.ID, order.LocationID));
             }
             
             // finally notify the character about the order change

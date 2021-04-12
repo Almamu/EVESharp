@@ -10,7 +10,9 @@ using Node.Inventory.Items;
 using Node.Inventory.Items.Types;
 using Node.Market;
 using Node.Network;
-using Node.Notifications.Contracts;
+using Node.Notifications.Client.Contracts;
+using Node.Notifications.Nodes.Character;
+using Node.Notifications.Nodes.Inventory;
 using PythonTypes.Types.Collections;
 using PythonTypes.Types.Database;
 using PythonTypes.Types.Exceptions;
@@ -40,18 +42,6 @@ namespace Node.Services.Contracts
             this.TypeManager = typeManager;
             this.SystemManager = systemManager;
             this.NotificationManager = notificationManager;
-        }
-
-        private void NotifyBalanceChange(long nodeID, int characterID, double newBalance)
-        {
-            this.NotificationManager.NotifyNode(nodeID, "OnBalanceUpdate",
-                new PyTuple(3)
-                {
-                    [0] = characterID,
-                    [1] = 1000,
-                    [2] = newBalance
-                }
-            );
         }
 
         public PyDataType NumRequiringAttention(CallInformation call)
@@ -121,17 +111,6 @@ namespace Node.Services.Contracts
 
             return this.DB.GetItemsInStationForPlayer(call.Client.EnsureCharacterIsSelected(), stationID);
         }
-        
-        private void NotifyItemChange(ClusterConnection connection, long nodeID, int itemID, string key, PyDataType newValue)
-        {
-            this.NotificationManager.NotifyNode(nodeID, "OnItemUpdate",
-                new PyTuple(2)
-                {
-                    [0] = itemID,
-                    [1] = new PyDictionary() { [key] = newValue}
-                }
-            );
-        }
 
         private void PrepareItemsForCourierOrAuctionContract(MySqlConnection connection, ulong contractID,
             ClusterConnection clusterConnection, PyList<PyList> itemList, Station station, int ownerID, int shipID)
@@ -144,23 +123,41 @@ namespace Node.Services.Contracts
                 this.DB.PrepareItemsForContract(connection, contractID, itemList, station, ownerID, container.ID, shipID);
 
             double volume = 0;
-            int crateID = container.ID;
             
-            // unload the container crate so the node can load it properly
-            this.ItemManager.UnloadItem(container);
+            // build notification for item changes
+            OnItemChange changes = new OnItemChange();
+            long stationNode = this.SystemManager.GetNodeStationBelongsTo(station.ID);
+            bool stationBelongsToUs = this.SystemManager.StationBelongsToUs(station.ID);
             
             // notify the changes in the items to the nodes
-            foreach ((int itemID, ContractDB.ItemQuantityEntry item) in items)
+            foreach ((int _, ContractDB.ItemQuantityEntry item) in items)
             {
-                // tell the correct node about the change
-                this.NotifyItemChange(clusterConnection, item.NodeID, itemID, "locationID", crateID);
+                if (stationNode == 0 || stationBelongsToUs == true)
+                {
+                    ItemEntity entity = this.ItemManager.LoadItem(item.ItemID);
+
+                    entity.LocationID = container.ID;
+                    entity.Persist();
+                    
+                    // notify the character
+                    this.NotificationManager.NotifyCharacter(ownerID, Notifications.Client.Inventory.OnItemChange.BuildLocationChange(entity, station.ID));
+                }
+                else
+                {
+                    // queue the notification
+                    changes.AddChange(item.ItemID, "locationID", station.ID, container.ID);
+                }
 
                 // ensure the volume is taken into account
                 volume += item.Volume;
             }
             
+            // notify the proper node if needed
+            if (changes.Updates.Count > 0)
+                this.NotificationManager.NotifyNode(stationNode, changes);
+            
             // update the contract with the crate and the new volume
-            this.DB.UpdateContractCrateAndVolume(ref connection, contractID, crateID, volume);
+            this.DB.UpdateContractCrateAndVolume(ref connection, contractID, container.ID, volume);
         }
         
         public PyDataType CreateContract(PyInteger contractType, PyInteger availability, PyInteger assigneeID,
@@ -207,6 +204,18 @@ namespace Node.Services.Contracts
                     assigneeID, expireTime, courierContractDuration, startStationID, endStationID, priceOrStartingBid,
                     reward, collateralOrBuyoutPrice, title, description, 1000);
 
+                // take reward from the character
+                if (reward > 0)
+                {
+                    character.Balance -= reward;
+                    character.Persist();
+                    
+                    this.MarketDB.CreateJournalForCharacter(MarketReference.ContractRewardAdded, character.ID, character.ID, null, null, -reward, character.Balance, "", 1000);
+                    call.Client.NotifyBalanceUpdate(character.Balance);
+                }
+                
+                // TODO: take broker's tax, deposit and sales tax
+                
                 switch ((int) contractType)
                 {
                     case (int) ContractTypes.ItemExchange:
@@ -461,7 +470,7 @@ namespace Node.Services.Contracts
                 this.DB.GetMaximumBid(connection, contractID, out int maximumBidderID, out int maximumBid);
             
                 // calculate next bid slot
-                int nextMinimumBid = maximumBid + (int) Math.Max((0.1 * contract.Price), 1000);
+                int nextMinimumBid = maximumBid + (int) Math.Max(0.1 * (double) contract.Price, 1000);
 
                 if (quantity < nextMinimumBid)
                     throw new ConBidTooLow(quantity, nextMinimumBid);
@@ -495,7 +504,7 @@ namespace Node.Services.Contracts
                 int characterNode = this.ItemDB.GetItemNode(maximumBidderID);
                     
                 if (characterNode > 0)
-                    this.NotifyBalanceChange(characterNode, maximumBidderID, balance);
+                    this.NotificationManager.NotifyNode(characterNode, new OnBalanceUpdate(maximumBidderID, 1000, balance));
 
                 return bidID;
             }
@@ -505,29 +514,109 @@ namespace Node.Services.Contracts
             }
         }
 
-        private void AcceptItemExchangeContract(MySqlConnection connection, ClusterConnection clusterConnection, ContractDB.Contract contract, Station station, int ownerID, ItemFlags flag = ItemFlags.Hangar)
+        private void AcceptItemExchangeContract(MySqlConnection connection, Client client, ContractDB.Contract contract, Station station, int ownerID, ItemFlags flag = ItemFlags.Hangar)
         {
+            List<ContractDB.ItemQuantityEntry> offeredItems = this.DB.GetOfferedItems(connection, contract.ID);
             Dictionary<int, int> itemsToCheck = this.DB.GetRequiredItemTypeIDs(connection, contract.ID);
-            List<ContractDB.ItemQuantityEntry> changedItems =
-                this.DB.CheckRequiredItemsAtStation(connection, station, ownerID, flag, itemsToCheck);
+            List<ContractDB.ItemQuantityEntry> changedItems = this.DB.CheckRequiredItemsAtStation(connection, station, ownerID, contract.IssuerID, flag, itemsToCheck);
 
-            foreach (ContractDB.ItemQuantityEntry change in changedItems)
-            {
-                // ignore items that are not in a node
-                if (change.NodeID == 0)
-                    continue;
-                
-                if (change.Quantity == 0)
-                    this.NotifyItemChange(clusterConnection, change.NodeID, change.ItemID, "locationID", this.ItemManager.LocationRecycler.ID);
-                else
-                    this.NotifyItemChange(clusterConnection, change.NodeID, change.ItemID, "quantity", change.Quantity);
-            }
+            // extract the crate
+            this.DB.ExtractCrate(connection, contract.CrateID, station.ID, ownerID);
             
-            // move items attached to the contract to the new owner
+            long stationNode = this.SystemManager.GetNodeStationBelongsTo(station.ID);
+
+            if (stationNode == 0 || this.SystemManager.StationBelongsToUs(station.ID) == true)
+            {
+                foreach (ContractDB.ItemQuantityEntry change in changedItems)
+                {
+                    ItemEntity item = this.ItemManager.LoadItem(change.ItemID);
+
+                    if (change.Quantity == 0)
+                    {
+                        // remove item from the meta inventories
+                        this.ItemManager.MetaInventoryManager.OnItemDestroyed(item);
+                        // temporarily move the item to the recycler, let the current owner know
+                        item.LocationID = this.ItemManager.LocationRecycler.ID;
+                        client.NotifyMultiEvent(Notifications.Client.Inventory.OnItemChange.BuildLocationChange(item, station.ID));
+                        // now set the item to the correct owner and place and notify it's new owner
+                        // TODO: TAKE forCorp INTO ACCOUNT
+                        item.LocationID = station.ID;
+                        item.OwnerID = contract.IssuerID;
+                        this.NotificationManager.NotifyCharacter(contract.IssuerID, Notifications.Client.Inventory.OnItemChange.BuildNewItemChange(item));
+                        // add the item back to meta inventories if required
+                        this.ItemManager.MetaInventoryManager.OnItemLoaded(item);
+                    }
+                    else
+                    {
+                        int oldQuantity = item.Quantity;
+                        item.Quantity = change.Quantity;
+                        client.NotifyMultiEvent(Notifications.Client.Inventory.OnItemChange.BuildQuantityChange(item, oldQuantity));
+                        
+                        item.Persist();
+
+                        // unload the item if required
+                        this.ItemManager.UnloadItem(item);
+                    }
+                }
+
+                // move the offered items
+                foreach (ContractDB.ItemQuantityEntry entry in offeredItems)
+                {
+                    ItemEntity item = this.ItemManager.LoadItem(entry.ItemID);
+
+                    item.LocationID = station.ID;
+                    item.OwnerID = ownerID;
+                    
+                    client.NotifyMultiEvent(Notifications.Client.Inventory.OnItemChange.BuildLocationChange(item, contract.CrateID));
+                    
+                    item.Persist();
+
+                    // unload the item if possible
+                    this.ItemManager.UnloadItem(item);
+                }
+            }
+            else
+            {
+                OnItemChange changes = new OnItemChange();
+            
+                foreach (ContractDB.ItemQuantityEntry change in changedItems)
+                {
+                    if (change.Quantity == 0)
+                    {
+                        changes
+                            .AddChange(change.ItemID, "locationID", contract.CrateID, station.ID)
+                            .AddChange(change.ItemID, "ownerID", contract.IssuerID, ownerID);
+                    }
+                    else
+                    {
+                        // change the item quantity
+                        changes.AddChange(change.ItemID, "quantity", change.OldQuantity, change.Quantity);
+                        // create a new item and notify the new node about it
+                        // TODO: HANDLE BLUEPRINTS TOO! RIGHT NOW NO DATA IS COPIED FOR THEM
+                        ItemEntity item = this.ItemManager.CreateSimpleItem(
+                            this.TypeManager[change.TypeID], contract.IssuerID, station.ID, ItemFlags.Hangar, change.OldQuantity - change.Quantity, false, false
+                        );
+                        // unload the created item
+                        this.ItemManager.UnloadItem(item);
+                        changes.AddChange(item.ID, "location", 0, station.ID);
+                    }
+                }
+
+                // move the offered items
+                foreach (ContractDB.ItemQuantityEntry entry in offeredItems)
+                {
+                    // TODO: TAKE INTO ACCOUNT forCorp
+                    changes
+                        .AddChange(entry.ItemID, "locationID", contract.CrateID, station.ID)
+                        .AddChange(entry.ItemID, "ownerID", contract.IssuerID, station.ID);
+                }
+            }
             
             // the contract was properly accepted, update it's status
             this.DB.UpdateContractStatus(ref connection, contract.ID, ContractStatus.Finished);
             this.DB.UpdateAcceptorID(ref connection, contract.ID, ownerID);
+            this.DB.UpdateAcceptedDate(ref connection, contract.ID);
+            this.DB.UpdateCompletedDate(ref connection, contract.ID);
             // notify the contract as being accepted
             if(contract.ForCorp == false)
                 this.NotificationManager.NotifyCharacter(contract.IssuerID, new OnContractAccepted(contract.ID));
@@ -555,10 +644,11 @@ namespace Node.Services.Contracts
 
                 Station station = this.ItemManager.GetStaticStation(contract.StationID);
                     
+                // TODO: CHECK REWARD/PRICE
                 switch (contract.Type)
                 {
                     case ContractTypes.ItemExchange:
-                        this.AcceptItemExchangeContract(connection, call.Client.ClusterConnection, contract, station, callerCharacterID);
+                        this.AcceptItemExchangeContract(connection, call.Client, contract, station, callerCharacterID);
                         break;
                     case ContractTypes.Auction:
                         throw new CustomError("Auctions cannot be accepted!");

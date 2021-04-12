@@ -530,6 +530,10 @@ namespace Node.Inventory
 
         public void UnloadItem(ItemEntity item)
         {
+            // first ensure there's no meta inventory holding this item hostage
+            if (this.MetaInventoryManager.GetOwnerInventoryAtLocation(item.LocationID, item.OwnerID, out ItemInventoryByOwnerID _) == true)
+                return;
+            
             if (this.mItemList.Remove(item.ID) == false)
                 return;
 

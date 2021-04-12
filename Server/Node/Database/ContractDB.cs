@@ -35,6 +35,7 @@ using Node.Inventory.Items;
 using Node.Inventory.Items.Attributes;
 using Node.Inventory.Items.Types;
 using Node.Services.Contracts;
+using Node.Services.Database;
 using PythonTypes.Types.Collections;
 using PythonTypes.Types.Database;
 using PythonTypes.Types.Exceptions;
@@ -259,8 +260,11 @@ namespace Node.Database
             public int ItemID { get; set; }
             public int TypeID { get; set; }
             public int Quantity { get; set; }
+            public int OldQuantity { get; set; }
             public int NodeID { get; set; }
             public double Volume { get; set; }
+            public bool Singleton { get; init; }
+            public bool Contraband { get; init; }
         }
         
         public Dictionary<int, ItemQuantityEntry> PrepareItemsForContract(MySqlConnection connection, ulong contractID, PyList<PyList> itemList, Station station, int ownerID, int crateID, int shipID)
@@ -299,9 +303,9 @@ namespace Node.Database
 
                     Type damageValue = reader.GetFieldType(2);
 
-                    if (damageValue == typeof(long) && reader.GetInt64(2) > 0)
+                    if (damageValue == typeof(long) && reader.IsDBNull(2) == false && reader.GetInt64(2) > 0)
                         throw new ConCannotTradeDamagedItem(this.TypeManager[typeID].Name);
-                    if (damageValue == typeof(double) && reader.GetDouble(2) > 0)
+                    if (damageValue == typeof(double) && reader.IsDBNull(2) == false && reader.GetDouble(2) > 0)
                         throw new ConCannotTradeDamagedItem(this.TypeManager[typeID].Name);
             
                     int itemQuantity = reader.GetInt32(0);
@@ -402,6 +406,32 @@ namespace Node.Database
                 {
                     {"@contractID", contractID},
                     {"@acceptorID", newAcceptorID}
+                }
+            ).Close();
+        }
+
+        public void UpdateAcceptedDate(ref MySqlConnection connection, int contractID)
+        {
+            Database.PrepareQuery(
+                ref connection,
+                "UPDATE conContracts SET dateAccepted = @currentTime WHERE contractID = @contractID",
+                new Dictionary<string, object>()
+                {
+                    {"@contractID", contractID},
+                    {"@currentTime", DateTime.UtcNow.ToFileTimeUtc()}
+                }
+            ).Close();
+        }
+
+        public void UpdateCompletedDate(ref MySqlConnection connection, int contractID)
+        {
+            Database.PrepareQuery(
+                ref connection,
+                "UPDATE conContracts SET dateCompleted = @currentTime WHERE contractID = @contractID",
+                new Dictionary<string, object>()
+                {
+                    {"@contractID", contractID},
+                    {"@currentTime", DateTime.UtcNow.ToFileTimeUtc()}
                 }
             ).Close();
         }
@@ -736,7 +766,7 @@ namespace Node.Database
         public class Contract
         {
             public int ID { get; init; }
-            public int Price { get; init; }
+            public double? Price { get; init; }
             public int Collateral { get; init; }
             public long ExpireTime { get; init; }
             public int CrateID { get; init; }
@@ -746,12 +776,14 @@ namespace Node.Database
             public int IssuerID { get; init; }
             public int IssuerCorpID { get; init; }
             public bool ForCorp { get; init; }
+            public double? Reward { get; init; }
+            
         }
 
         public Contract GetContract(MySqlConnection connection, int contractID)
         {
             MySqlDataReader reader = Database.PrepareQuery(ref connection,
-                "SELECT price, collateral, status, type, dateExpired, crateID, startStationID, issuerID, issuerCorpID, forCorp FROM conContracts WHERE contractID = @contractID",
+                "SELECT price, collateral, status, type, dateExpired, crateID, startStationID, issuerID, issuerCorpID, forCorp, reward FROM conContracts WHERE contractID = @contractID",
                 new Dictionary<string, object>()
                 {
                     {"@contractID", contractID}
@@ -766,7 +798,7 @@ namespace Node.Database
                 return new Contract()
                 {
                     ID = contractID,
-                    Price = reader.GetInt32(0),
+                    Price = reader.GetDoubleOrNull(0),
                     Collateral = reader.GetInt32(1),
                     Status = (ContractStatus) reader.GetInt32(2),
                     Type = (ContractTypes) reader.GetInt32(3),
@@ -775,7 +807,8 @@ namespace Node.Database
                     StationID = reader.GetInt32(6),
                     IssuerID = reader.GetInt32(7),
                     IssuerCorpID = reader.GetInt32(8),
-                    ForCorp = reader.GetBoolean(9)
+                    ForCorp = reader.GetBoolean(9),
+                    Reward = reader.GetDoubleOrNull(10)
                 };
             }
         }
@@ -856,10 +889,59 @@ namespace Node.Database
             }
         }
 
-        public List<ItemQuantityEntry> CheckRequiredItemsAtStation(MySqlConnection connection, Station station, int ownerID, ItemFlags flag, Dictionary<int, int> requiredItemTypes)
+        public List<ItemQuantityEntry> GetOfferedItems(MySqlConnection connection, int contractID)
         {
             MySqlDataReader reader = Database.PrepareQuery(ref connection,
-                $"SELECT itemID, quantity, typeID, nodeID, IF(dmg.valueFloat IS NULL, dmg.valueInt, dmg.valueFloat) AS damage, categoryID, singleton, contraband FROM invItems LEFT JOIN invTypes USING(typeID) LEFT JOIN invGroups USING(groupID) LEFT JOIN invItemsAttributes dmg ON invItems.itemID = dmg.itemID AND dmg.attributeID = @damage WHERE typeID IN ({string.Join(',', requiredItemTypes.Keys)}) AND locationID = @locationID AND ownerID = @ownerID AND flag = @flag",
+                "SELECT itemID, itemTypeID, conItems.quantity, nodeID FROM conItems LEFT JOIN invItems USING(itemID) WHERE contractID = @contractID AND inCrate = 1",
+                new Dictionary<string, object>()
+                {
+                    {"@contractID", contractID}
+                }
+            );
+
+            using (reader)
+            {
+                List<ItemQuantityEntry> result = new List<ItemQuantityEntry>();
+
+                while (reader.Read() == true)
+                    result.Add(new ItemQuantityEntry()
+                        {
+                            ItemID = reader.GetInt32(0),
+                            TypeID = reader.GetInt32(1),
+                            Quantity = reader.GetInt32(2)
+                        }
+                    );
+
+                return result;
+            }
+        }
+
+        public void ExtractCrate(MySqlConnection connection, int crateID, int newLocationID, int newOwnerID)
+        {
+            // take all the items out
+            Database.PrepareQuery(ref connection,
+                "UPDATE invItems SET locationID = @newLocationID, ownerID = @newOwnerID WHERE locationID = @crateID",
+                new Dictionary<string, object>()
+                {
+                    {"@newLocationID", newLocationID},
+                    {"@newOwnerID", newOwnerID},
+                    {"@crateID", crateID}
+                }
+            ).Close();
+            // remove the crate
+            Database.PrepareQuery(ref connection,
+                "DELETE FROM invItems WHERE itemID = @crateID",
+                new Dictionary<string, object>()
+                {
+                    {"@crateID", crateID}
+                }
+            ).Close();
+        }
+
+        public List<ItemQuantityEntry> CheckRequiredItemsAtStation(MySqlConnection connection, Station station, int ownerID, int newOwnerID, ItemFlags flag, Dictionary<int, int> requiredItemTypes)
+        {
+            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+                $"SELECT invItems.itemID, quantity, typeID, nodeID, IF(dmg.valueFloat IS NULL, dmg.valueInt, dmg.valueFloat) AS damage, categoryID, singleton, contraband FROM invItems LEFT JOIN invTypes USING(typeID) LEFT JOIN invGroups USING(groupID) LEFT JOIN invItemsAttributes dmg ON invItems.itemID = dmg.itemID AND dmg.attributeID = @damage WHERE typeID IN ({string.Join(',', requiredItemTypes.Keys)}) AND locationID = @locationID AND ownerID = @ownerID AND flag = @flag",
                 new Dictionary<string, object>()
                 {
                     {"@locationID", station.ID},
@@ -875,17 +957,17 @@ namespace Node.Database
             {
                 while (reader.Read() == true)
                 {
-                    int typeID = reader.GetInt32(1);
+                    int typeID = reader.GetInt32(2);
 
                     Type damageValue = reader.GetFieldType(4);
 
-                    if (damageValue == typeof(long) && reader.GetInt64(4) > 0)
+                    if (damageValue == typeof(long) && reader.IsDBNull(4) == false && reader.GetInt64(4) > 0)
                         throw new ConCannotTradeDamagedItem(this.TypeManager[typeID].Name);
-                    if (damageValue == typeof(double) && reader.GetDouble(4) > 0)
+                    if (damageValue == typeof(double) && reader.IsDBNull(4) == false && reader.GetDouble(4) > 0)
                         throw new ConCannotTradeDamagedItem(this.TypeManager[typeID].Name);
-                    if (reader.GetBoolean(7) == false && reader.GetInt32(6) == (int) ItemCategories.Ship)
+                    if (reader.GetBoolean(6) == false && reader.GetInt32(6) == (int) ItemCategories.Ship)
                         throw new ConCannotTradeNonSingletonShip(this.TypeManager[typeID].Name, station.Name);
-                    if (reader.GetBoolean(8) == true)
+                    if (reader.GetBoolean(7) == true)
                         throw new ConCannotTradeContraband(this.TypeManager[typeID].Name);
                     
                     itemsAtStation.Add(
@@ -893,8 +975,11 @@ namespace Node.Database
                         {
                             ItemID = reader.GetInt32(0),
                             Quantity = reader.GetInt32(1),
+                            OldQuantity = reader.GetInt32(1),
                             TypeID = typeID,
-                            NodeID = reader.GetInt32(3)
+                            NodeID = reader.GetInt32(3),
+                            Singleton = reader.GetBoolean(6),
+                            Contraband = reader.GetBoolean(7),
                         }
                     );
                 }
@@ -937,17 +1022,14 @@ namespace Node.Database
             // iterate the modified items and update database if required
             foreach (ItemQuantityEntry entry in modifiedItems)
             {
-                // non-zero node ids means that the item is loaded
-                // so it's not the job of the database to perform the changes
-                if (entry.NodeID != 0)
-                    continue;
-                
                 // if the whole item changed it can be moved
                 if (entry.Quantity == 0)
-                    Database.PrepareQuery(ref connection, "DELETE FROM invItems WHERE itemID = @itemID",
+                    Database.PrepareQuery(ref connection, "UPDATE invItems SET locationID = @locationID, ownerID = @newOwnerID WHERE itemID = @itemID",
                         new Dictionary<string, object>()
                         {
-                            {"@itemID", entry.ItemID}
+                            {"@itemID", entry.ItemID},
+                            {"@newOwnerID", newOwnerID},
+                            {"@locationID", station.ID}
                         }
                     ).Close();
                 else
@@ -961,7 +1043,35 @@ namespace Node.Database
                     ).Close();
             }
 
-            return itemsAtStation;
+            return modifiedItems;
+        }
+
+        public List<ItemQuantityEntry> GetCrateItems(MySqlConnection connection, int crateID)
+        {
+            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+                "SELECT itemID, nodeID FROM conItems LEFT JOIN conContracts USING(contractID) LEFT JOIN invItems USING(itemID) WHERE crateID = @createID AND inCrate = 1",
+                new Dictionary<string, object>()
+                {
+                    {"@crateID", crateID}
+                }
+            );
+
+            using (reader)
+            {
+                List<ItemQuantityEntry> result = new List<ItemQuantityEntry>();
+
+                while (reader.Read() == true)
+                {
+                    result.Add(new ItemQuantityEntry()
+                        {
+                            ItemID = reader.GetInt32(0),
+                            NodeID = reader.GetInt32(1)
+                        }
+                    );
+                }
+
+                return result;
+            }
         }
     }
 }

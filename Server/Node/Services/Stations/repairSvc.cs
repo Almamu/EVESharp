@@ -12,7 +12,7 @@ using Node.Inventory.Items.Types;
 using Node.Inventory.Items.Types.Stations;
 using Node.Market;
 using Node.Network;
-using Node.Notifications.Inventory;
+using Node.Notifications.Client.Inventory;
 using Node.Services.Inventory;
 using PythonTypes.Types.Collections;
 using PythonTypes.Types.Database;
@@ -264,17 +264,6 @@ namespace Node.Services.Stations
             
             return null;
         }
-
-        private void NotifyItemChange(ClusterConnection connection, long nodeID, int itemID, string key, PyDataType newValue)
-        {
-            this.NotificationManager.NotifyNode(nodeID, "OnItemUpdate",
-                new PyTuple(2)
-                {
-                    [0] = itemID,
-                    [1] = new PyDictionary() {[key] = newValue}
-                }
-            );
-        }
         
         public PyDataType UnasembleItems(PyDictionary validIDsByStationID, PyList skipChecks, CallInformation call)
         {
@@ -346,6 +335,10 @@ namespace Node.Services.Stations
                             }
                         }
                     }
+                    
+                    // update the singleton flag too
+                    item.Singleton = false;
+                    call.Client.NotifyMultiEvent(OnItemChange.BuildSingletonChange(item, true));
 
                     // load was required, the item is not needed anymore
                     if (loadRequired == true)
@@ -353,11 +346,22 @@ namespace Node.Services.Stations
                         this.ItemManager.UnloadItem(item);
                     }
                 }
+                else
+                {
+                    long nodeID = this.SystemManager.GetNodeStationBelongsTo(entry.LocationID);
+
+                    if (nodeID > 0)
+                    {
+                        Notifications.Nodes.Inventory.OnItemChange change = new Notifications.Nodes.Inventory.OnItemChange();
+
+                        change.AddChange(entry.ItemID, "singleton", true, false);
+                        
+                        this.NotificationManager.NotifyNode(nodeID, change);
+                    }
+                }
                 
                 // finally repackage the item
                 this.RepairDB.RepackageItem(entry.ItemID, entry.LocationID);
-                // notify the node about the change
-                this.NotifyItemChange(call.Client.ClusterConnection, entry.NodeID, entry.ItemID, "singleton", false);
                 // remove any insurance contract for the ship
                 this.InsuranceDB.UnInsureShip(entry.ItemID);
             }

@@ -5,7 +5,6 @@ DROP TABLE IF EXISTS `mktOrders`;
 CREATE TABLE `mktOrders` (
   `orderID` int(10) unsigned NOT NULL auto_increment,
   `typeID` int(10) unsigned NOT NULL default '0',
-  `itemID` int(10) unsigned default NULL,
   `charID` int(10) unsigned NOT NULL default '0',
   `stationID` int(10) unsigned NOT NULL default '0',
   `range` smallint(6) NOT NULL default '0',

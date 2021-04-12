@@ -14,7 +14,7 @@ using Node.Inventory.Items.Types;
 using Node.Inventory.Items.Types.Stations;
 using Node.Market;
 using Node.Network;
-using Node.Notifications.Inventory;
+using Node.Notifications.Client.Inventory;
 using Node.Services.Inventory;
 using PythonTypes.Types.Collections;
 using PythonTypes.Types.Database;

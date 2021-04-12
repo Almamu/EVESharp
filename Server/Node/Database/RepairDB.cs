@@ -5,6 +5,7 @@ using MySql.Data.MySqlClient;
 using Node.Exceptions.marketProxy;
 using Node.Inventory.Items;
 using Node.Inventory.Items.Attributes;
+using Node.Services.Database;
 
 namespace Node.Database
 {
@@ -59,7 +60,7 @@ namespace Node.Database
                 };
             }
         }
-        
+
         public void RepackageItem(int itemID, int stationID)
         {
             // remove any rigs inside the item (if any)
@@ -73,11 +74,12 @@ namespace Node.Database
             
             // move the rest of the items inside the ship to the station the ship is at
             Database.PrepareQuery(
-                "UPDATE invItems SET locationID = @stationID WHERE locationID = @itemID",
+                "UPDATE invItems SET locationID = @stationID, flag = @flag WHERE locationID = @itemID",
                 new Dictionary<string, object>()
                 {
                     {"@itemID", itemID},
-                    {"@stationID", stationID}
+                    {"@stationID", stationID},
+                    {"@flag", (int) ItemFlags.Hangar}
                 }
             );
             

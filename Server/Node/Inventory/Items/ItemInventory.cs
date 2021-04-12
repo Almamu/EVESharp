@@ -45,12 +45,38 @@ namespace Node.Inventory.Items
             }
         }
 
+        protected virtual void UnloadContents()
+        {
+            lock (this)
+            {
+                if (this.mContentsLoaded == false)
+                    return;
+                
+                // unload all the items that are in the inventory
+                foreach((int _, ItemEntity item) in this.mItems)
+                    this.ItemFactory.ItemManager.UnloadItem(item);
+            }
+        }
+
         public bool ContentsLoaded
         {
             get => this.mContentsLoaded;
             set => this.mContentsLoaded = value;
         }
 
+        public new bool Singleton
+        {
+            get => base.Singleton;
+            set
+            {
+                base.Singleton = value;
+    
+                // non-singleton inventories cannot be manipulated, so the items inside can be free'd
+                if (base.Singleton == false)
+                    this.UnloadContents();
+            }
+        }
+        
         public Dictionary<int, ItemEntity> Items
         {
             get
