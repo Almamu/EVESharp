@@ -4,6 +4,7 @@ using Node.Inventory;
 using Node.Inventory.Items.Types;
 using Node.Network;
 using Node.Notifications.Client.Character;
+using Node.StaticData.Standings;
 using PythonTypes.Types.Collections;
 using PythonTypes.Types.Complex;
 using PythonTypes.Types.Exceptions;
@@ -97,7 +98,7 @@ namespace Node.Services.War
         {
             int callerCharacterID = call.Client.EnsureCharacterIsSelected();
             
-            this.DB.CreateStandingTransaction((int) StandingEventType.StandingPlayerSetStanding, callerCharacterID, characterID, standing, reason);
+            this.DB.CreateStandingTransaction((int) EventType.StandingPlayerSetStanding, callerCharacterID, characterID, standing, reason);
             this.DB.SetPlayerStanding(callerCharacterID, characterID, standing);
             
             // send the same notification to both players

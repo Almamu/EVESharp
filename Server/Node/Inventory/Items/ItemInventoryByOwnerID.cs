@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Node.StaticData.Inventory;
 
 namespace Node.Inventory.Items
 {
@@ -12,7 +13,7 @@ namespace Node.Inventory.Items
             this.ItemOwnerID = ownerID;
         }
 
-        protected override void LoadContents(ItemFlags ignoreFlags = ItemFlags.None)
+        protected override void LoadContents(Flags ignoreFlags = Flags.None)
         {
             lock (this)
             {

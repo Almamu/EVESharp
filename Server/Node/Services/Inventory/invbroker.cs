@@ -1,14 +1,17 @@
 using Node.Database;
 using Node.Exceptions;
+using Node.Exceptions.inventory;
 using Node.Exceptions.ship;
 using Node.Inventory;
 using Node.Inventory.Items;
 using Node.Inventory.Items.Types;
 using Node.Network;
 using Node.Notifications.Client.Inventory;
+using Node.StaticData.Inventory;
 using PythonTypes.Types.Collections;
 using PythonTypes.Types.Exceptions;
 using PythonTypes.Types.Primitives;
+using Container = Node.StaticData.Inventory.Container;
 
 namespace Node.Services.Inventory
 {
@@ -56,9 +59,9 @@ namespace Node.Services.Inventory
 
             int solarSystemID = 0;
 
-            if (groupID == (int) ItemGroups.SolarSystem)
+            if (groupID == (int) Groups.SolarSystem)
                 solarSystemID = this.ItemManager.GetStaticSolarSystem(entityID).ID;
-            else if (groupID == (int) ItemGroups.Station)
+            else if (groupID == (int) Groups.Station)
                 solarSystemID = this.ItemManager.GetStaticStation(entityID).SolarSystemID;
             else
                 throw new CustomError("Unknown item's groupID");
@@ -96,7 +99,7 @@ namespace Node.Services.Inventory
             return inventoryItem as ItemInventory;
         }
 
-        private PySubStruct BindInventory(ItemInventory inventoryItem, int characterID, Client client, ItemFlags flag)
+        private PySubStruct BindInventory(ItemInventory inventoryItem, int characterID, Client client, Flags flag)
         {
             ItemInventory inventory = inventoryItem;
             
@@ -116,7 +119,7 @@ namespace Node.Services.Inventory
             return this.BindInventory(
                 this.CheckInventoryBeforeLoading(inventoryItem),
                 callerCharacterID,
-                call.Client, ItemFlags.None
+                call.Client, Flags.None
             );
         }
 
@@ -124,21 +127,21 @@ namespace Node.Services.Inventory
         {
             int callerCharacterID = call.Client.EnsureCharacterIsSelected();
             
-            ItemFlags flag = ItemFlags.None;
+            Flags flag = Flags.None;
             
             switch ((int) containerID)
             {
-                case (int) ItemContainer.Wallet:
-                    flag = ItemFlags.Wallet;
+                case (int) Container.Wallet:
+                    flag = Flags.Wallet;
                     break;
-                case (int) ItemContainer.Hangar:
-                    flag = ItemFlags.Hangar;
+                case (int) Container.Hangar:
+                    flag = Flags.Hangar;
                     break;
-                case (int) ItemContainer.Character:
-                    flag = ItemFlags.Skill;
+                case (int) Container.Character:
+                    flag = Flags.Skill;
                     break;
-                case (int) ItemContainer.Global:
-                    flag = ItemFlags.None;
+                case (int) Container.Global:
+                    flag = Flags.None;
                     break;
                 
                 default:
@@ -166,7 +169,7 @@ namespace Node.Services.Inventory
                 ItemEntity item = this.ItemManager.GetItem(itemID);
                 // store it's location id
                 int oldLocation = item.LocationID;
-                ItemFlags oldFlag = item.Flag;
+                Flags oldFlag = item.Flag;
                 // remove the item off the ItemManager
                 this.ItemManager.DestroyItem(item);
                 // notify the client of the change
@@ -192,7 +195,7 @@ namespace Node.Services.Inventory
             item.Persist();
             
             // if the item is a ship, send a session change
-            if (item.Type.Group.Category.ID == (int) ItemCategories.Ship)
+            if (item.Type.Group.Category.ID == (int) Categories.Ship)
                 call.Client.ShipID = call.Client.ShipID;
 
             // TODO: CHECK IF ITEM BELONGS TO CORP AND NOTIFY CHARACTERS IN THIS NODE?
@@ -210,12 +213,12 @@ namespace Node.Services.Inventory
             // ensure the item is a cargo container
             switch (item.Type.Group.ID)
             {
-                case (int) ItemGroups.CargoContainer:
-                case (int) ItemGroups.SecureCargoContainer:
-                case (int) ItemGroups.AuditLogSecureContainer:
-                case (int) ItemGroups.FreightContainer:
-                case (int) ItemGroups.Tool:
-                case (int) ItemGroups.MobileWarpDisruptor:
+                case (int) Groups.CargoContainer:
+                case (int) Groups.SecureCargoContainer:
+                case (int) Groups.AuditLogSecureContainer:
+                case (int) Groups.FreightContainer:
+                case (int) Groups.Tool:
+                case (int) Groups.MobileWarpDisruptor:
                     break;
                 default:
                     throw new ItemNotContainer(containerID);

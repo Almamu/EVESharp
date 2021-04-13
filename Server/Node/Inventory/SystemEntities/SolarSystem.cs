@@ -24,6 +24,7 @@
 
 using System;
 using Node.Inventory.Items;
+using Node.StaticData.Inventory;
 using PythonTypes.Types.Collections;
 using PythonTypes.Types.Database;
 using PythonTypes.Types.Primitives;
@@ -208,7 +209,7 @@ namespace Node.Inventory.SystemEntities
             set => this.mBelongsToUs = value;
         }
         
-        protected override void LoadContents(ItemFlags ignoreFlags = ItemFlags.None)
+        protected override void LoadContents(Flags ignoreFlags = Flags.None)
         {
             throw new NotImplementedException();
         }

@@ -27,8 +27,8 @@ using System.Collections.Generic;
 using System.Data;
 using Common.Database;
 using MySql.Data.MySqlClient;
-using Node.Data;
 using Node.Inventory.SystemEntities;
+using Node.StaticData;
 
 namespace Node.Database
 {

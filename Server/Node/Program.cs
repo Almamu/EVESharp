@@ -51,6 +51,7 @@ using Node.Services.Stations;
 using Node.Services.Tutorial;
 using Node.Services.War;
 using SimpleInjector;
+using Container = SimpleInjector.Container;
 
 namespace Node
 {

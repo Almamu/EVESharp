@@ -31,6 +31,8 @@ using Node.Inventory.Exceptions;
 using Node.Inventory.Items;
 using Node.Inventory.Items.Types;
 using Node.Inventory.SystemEntities;
+using Node.StaticData.Inventory;
+using Type = Node.StaticData.Inventory.Type;
 
 namespace Node.Inventory
 {
@@ -275,53 +277,25 @@ namespace Node.Inventory
             if (item is null)
                 return null;
 
-            switch (item.Type.Group.Category.ID)
+            item = item.Type.Group.Category.ID switch
             {
                 // catch all for system items
-                case (int) ItemCategories.System:
-                    item = LoadSystem(item);
-                    break;
-                
+                (int) Categories.System => LoadSystem(item),
                 // celestial items are a kind of subcategory
                 // load them in specific ways based on the type of celestial item
-                case (int) ItemCategories.Celestial:
-                    item = LoadCelestial(item);
-                    break;
-
-                case (int) ItemCategories.Blueprint:
-                    item = LoadBlueprint(item);
-                    break;
-
+                (int) Categories.Celestial => LoadCelestial(item),
+                (int) Categories.Blueprint => LoadBlueprint(item),
                 // owner items are a kind of subcategory too
-                case (int) ItemCategories.Owner:
-                    item = LoadOwner(item);
-                    break;
-                    
-                case (int) ItemCategories.Skill:
-                    item = LoadSkill(item);
-                    break;
-                    
-                case (int) ItemCategories.Ship:
-                    item = LoadShip(item);
-                    break;
-                    
-                case (int) ItemCategories.Station:
-                    item = LoadStation(item);
-                    break;
-                
-                case (int) ItemCategories.Accessories:
-                    item = LoadAccessories(item);
-                    break;
-                
-                case (int) ItemCategories.Implant:
-                    item = LoadImplant(item);
-                    break;
-                
-                case (int) ItemCategories.Module:
-                    item = LoadModule(item);
-                    break;
-            }
-            
+                (int) Categories.Owner => LoadOwner(item),
+                (int) Categories.Skill => LoadSkill(item),
+                (int) Categories.Ship => LoadShip(item),
+                (int) Categories.Station => LoadStation(item),
+                (int) Categories.Accessories => LoadAccessories(item),
+                (int) Categories.Implant => LoadImplant(item),
+                (int) Categories.Module => LoadModule(item),
+                _ => item
+            };
+
             // check if there's an inventory loaded that should contain this item
             if (this.mItemList.TryGetValue(item.LocationID, out ItemEntity location) == true && location is ItemInventory inventory)
                 inventory.AddItem(item);
@@ -337,7 +311,7 @@ namespace Node.Inventory
             return item;
         }
 
-        public Dictionary<int, ItemEntity> LoadItemsLocatedAt(ItemEntity location, ItemFlags ignoreFlag = ItemFlags.None)
+        public Dictionary<int, ItemEntity> LoadItemsLocatedAt(ItemEntity location, Flags ignoreFlag = Flags.None)
         {
             return this.ItemDB.LoadItemsLocatedAt(location.ID, ignoreFlag);
         }
@@ -361,19 +335,19 @@ namespace Node.Inventory
         {
             switch (item.Type.Group.ID)
             {
-                case (int) ItemGroups.SolarSystem:
+                case (int) Groups.SolarSystem:
                     return this.LoadSolarSystem(item);
-                case (int) ItemGroups.Station:
+                case (int) Groups.Station:
                     return this.LoadStation(item);
-                case (int) ItemGroups.Constellation:
+                case (int) Groups.Constellation:
                     return this.LoadConstellation(item);
-                case (int) ItemGroups.Region:
+                case (int) Groups.Region:
                     return this.LoadRegion(item);
-                case (int) ItemGroups.CargoContainer:
-                case (int) ItemGroups.SecureCargoContainer:
-                case (int) ItemGroups.AuditLogSecureContainer:
-                case (int) ItemGroups.FreightContainer:
-                case (int) ItemGroups.Tool:
+                case (int) Groups.CargoContainer:
+                case (int) Groups.SecureCargoContainer:
+                case (int) Groups.AuditLogSecureContainer:
+                case (int) Groups.FreightContainer:
+                case (int) Groups.Tool:
                     return this.LoadContainer(item);
                 default:
                     Log.Warning($"Loading celestial {item.ID} from item group {item.Type.Group.ID} as normal item");
@@ -390,11 +364,11 @@ namespace Node.Inventory
         {
             switch (item.Type.Group.ID)
             {
-                case (int) ItemGroups.Character:
+                case (int) Groups.Character:
                     return this.ItemDB.LoadCharacter(item);
-                case (int) ItemGroups.Corporation:
+                case (int) Groups.Corporation:
                     return this.ItemDB.LoadCorporation(item);
-                case (int) ItemGroups.Faction:
+                case (int) Groups.Faction:
                     return this.ItemDB.LoadFaction(item);
                 default:
                     Log.Warning($"Loading owner {item.ID} from item group {item.Type.Group.ID} as normal item");
@@ -406,7 +380,7 @@ namespace Node.Inventory
         {
             switch (item.Type.Group.ID)
             {
-                case (int) ItemGroups.Clone:
+                case (int) Groups.Clone:
                     return this.ItemDB.LoadClone(item);
                 default:
                     Log.Warning($"Loading accessory {item.ID} from item group {item.Type.Group.ID} as normal item");
@@ -455,7 +429,7 @@ namespace Node.Inventory
 
         private ItemEntity LoadContainer(ItemEntity item)
         {
-            return new Container(item);
+            return new Items.Types.Container(item);
         }
 
         private ShipModule LoadModule(ItemEntity item)
@@ -463,13 +437,13 @@ namespace Node.Inventory
             return new ShipModule(item);
         }
 
-        public ItemEntity CreateSimpleItem(ItemType type, int owner, int location, ItemFlags flag, int quantity = 1,
+        public ItemEntity CreateSimpleItem(Type type, int owner, int location, Flags flag, int quantity = 1,
             bool contraband = false, bool singleton = false)
         {
             return this.CreateSimpleItem(null, type.ID, owner, location, flag, quantity, contraband, singleton);
         }
 
-        public ItemEntity CreateSimpleItem(string itemName, int typeID, int ownerID, int locationID, ItemFlags flag,
+        public ItemEntity CreateSimpleItem(string itemName, int typeID, int ownerID, int locationID, Flags flag,
             int quantity = 1, bool contraband = false, bool singleton = false, double x = 0.0, double y = 0.0, double z = 0.0,
             string customInfo = null)
         {
@@ -479,20 +453,20 @@ namespace Node.Inventory
             return this.LoadItem(itemID);
         }
         
-        public ItemEntity CreateSimpleItem(string itemName, ItemType type, ItemEntity owner, ItemEntity location, ItemFlags flag,
+        public ItemEntity CreateSimpleItem(string itemName, Type type, ItemEntity owner, ItemEntity location, Flags flag,
             bool contraband = false, bool singleton = false, int quantity = 1, double x = 0.0, double y = 0.0, double z = 0.0, string customInfo = null)
         {
             return this.CreateSimpleItem(itemName, type.ID, owner.ID, location.ID, flag, quantity, contraband, singleton,
                 x, y, z, customInfo);
         }
 
-        public ItemEntity CreateSimpleItem(ItemType type, ItemEntity owner, ItemEntity location, ItemFlags flags,
+        public ItemEntity CreateSimpleItem(Type type, ItemEntity owner, ItemEntity location, Flags flags,
             int quantity = 1, bool contraband = false, bool singleton = false)
         {
             return this.CreateSimpleItem(null, type, owner, location, flags, contraband, singleton, quantity);
         }
 
-        public Skill CreateSkill(ItemType skillType, Character character, int level = 0, SkillHistoryReason reason = SkillHistoryReason.SkillTrainingComplete)
+        public Skill CreateSkill(Type skillType, Character character, int level = 0, SkillHistoryReason reason = SkillHistoryReason.SkillTrainingComplete)
         {
             int skillID = this.SkillDB.CreateSkill(skillType, character);
 
@@ -514,7 +488,7 @@ namespace Node.Inventory
             return skill;
         }
 
-        public Ship CreateShip(ItemType shipType, ItemEntity location, Character owner)
+        public Ship CreateShip(Type shipType, ItemEntity location, Character owner)
         {
             int shipID = (int) this.ItemDB.CreateShip(shipType, location, owner);
 
@@ -523,9 +497,9 @@ namespace Node.Inventory
             return ship;
         }
 
-        public Clone CreateClone(ItemType cloneType, ItemEntity location, Character owner)
+        public Clone CreateClone(Type cloneType, ItemEntity location, Character owner)
         {
-            return this.CreateSimpleItem(cloneType, owner, location, ItemFlags.Clone, 1, false, true) as Clone;
+            return this.CreateSimpleItem(cloneType, owner, location, Flags.Clone, 1, false, true) as Clone;
         }
 
         public void UnloadItem(ItemEntity item)

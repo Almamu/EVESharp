@@ -33,10 +33,6 @@ namespace Node.Database
 {
     public class BookmarkDB : DatabaseAccessor
     {
-        public BookmarkDB(DatabaseConnection db) : base(db)
-        {
-        }
-
         public Rowset GetBookmarks(int ownerID)
         {
             return Database.PrepareRowsetQuery(
@@ -76,12 +72,16 @@ namespace Node.Database
                 return;
 
             Database.PrepareQuery(
-                "DELETE FROM chrBookmarks WHERE ownerID = @characterID AND bookmarkID IN(" + PyString.Join(',', bookmarkIDs) + ")",
+                $"DELETE FROM chrBookmarks WHERE ownerID = @characterID AND bookmarkID IN({PyString.Join(',', bookmarkIDs)})",
                 new Dictionary<string, object>()
                 {
                     {"@characterID", ownerID}
                 }
             );
+        }
+
+        public BookmarkDB(DatabaseConnection db) : base(db)
+        {
         }
     }
 }

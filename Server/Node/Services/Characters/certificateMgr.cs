@@ -1,12 +1,13 @@
 ﻿using System.Collections.Generic;
 using Common.Services;
-using Node.Data;
 using Node.Database;
 using Node.Exceptions.certificateMgr;
 using Node.Inventory;
 using Node.Inventory.Items.Types;
 using Node.Network;
 using Node.Notifications.Client.Certificates;
+using Node.StaticData;
+using Node.StaticData.Certificates;
 using PythonTypes.Types.Collections;
 using PythonTypes.Types.Complex;
 using PythonTypes.Types.Exceptions;
@@ -19,7 +20,7 @@ namespace Node.Services.Characters
         private CertificatesDB DB { get; }
         private ItemManager ItemManager { get; }
         private CacheStorage CacheStorage { get; }
-        private Dictionary<int, List<CertificateRelationship>> CertificateRelationships { get; }
+        private Dictionary<int, List<Relationship>> CertificateRelationships { get; }
         
         public certificateMgr(CertificatesDB db, ItemManager itemManager, CacheStorage cacheStorage)
         {
@@ -89,9 +90,9 @@ namespace Node.Services.Characters
             if (grantedCertificates.Contains(certificateID) == true)
                 throw new CertificateAlreadyGranted();
 
-            if (this.CertificateRelationships.TryGetValue(certificateID, out List<CertificateRelationship> requirements) == true)
+            if (this.CertificateRelationships.TryGetValue(certificateID, out List<Relationship> requirements) == true)
             {
-                foreach (CertificateRelationship relationship in requirements)
+                foreach (Relationship relationship in requirements)
                 {
                     if (relationship.ParentTypeID != 0 && (skills.TryGetValue(relationship.ParentTypeID, out Skill skill) == false || skill.Level < relationship.ParentLevel))
                         throw new CertificateSkillPrerequisitesNotMet();
@@ -120,11 +121,11 @@ namespace Node.Services.Characters
 
             foreach (PyInteger certificateID in certificateList.GetEnumerable<PyInteger>())
             {
-                if (this.CertificateRelationships.TryGetValue(certificateID, out List<CertificateRelationship> relationships) == true)
+                if (this.CertificateRelationships.TryGetValue(certificateID, out List<Relationship> relationships) == true)
                 {
                     bool requirementsMet = true;
                 
-                    foreach (CertificateRelationship relationship in relationships)
+                    foreach (Relationship relationship in relationships)
                     {
                         if (relationship.ParentTypeID != 0 && (skills.TryGetValue(relationship.ParentTypeID, out Skill skill) == false || skill.Level < relationship.ParentLevel))
                             requirementsMet = false;

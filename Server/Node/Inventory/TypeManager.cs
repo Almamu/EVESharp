@@ -27,13 +27,15 @@ using System.Collections.Generic;
 using Node.Database;
 using Node.Dogma;
 using Node.Inventory.Items;
+using Node.StaticData;
+using Node.StaticData.Inventory;
 
 namespace Node.Inventory
 {
-    public class TypeManager : IReadOnlyDictionary<int, ItemType>
+    public class TypeManager : IReadOnlyDictionary<int, Type>
     {
         private ItemDB ItemDB { get; }
-        private Dictionary<int, ItemType> mTypes = null;
+        private Dictionary<int, Type> mTypes = null;
         public ExpressionManager ExpressionManager { get; }
 
         public void Load()
@@ -46,15 +48,15 @@ namespace Node.Inventory
             return this.mTypes.ContainsKey(typeID);
         }
 
-        public bool TryGetValue(int typeID, out ItemType value)
+        public bool TryGetValue(int typeID, out Type value)
         {
             return this.mTypes.TryGetValue(typeID, out value);
         }
 
-        public ItemType this[int id] => this.mTypes[id];
-        public ItemType this[ItemTypes id] => this[(int) id];
+        public Type this[int id] => this.mTypes[id];
+        public Type this[ItemTypes id] => this[(int) id];
         public IEnumerable<int> Keys  => this.mTypes.Keys;
-        public IEnumerable<ItemType> Values => this.mTypes.Values;
+        public IEnumerable<Type> Values => this.mTypes.Values;
         public int Count => this.mTypes.Count;
 
         public TypeManager(ItemDB itemDB, ExpressionManager expressionManager)
@@ -63,7 +65,7 @@ namespace Node.Inventory
             this.ExpressionManager = expressionManager;
         }
 
-        public IEnumerator<KeyValuePair<int, ItemType>> GetEnumerator()
+        public IEnumerator<KeyValuePair<int, Type>> GetEnumerator()
         {
             return this.mTypes.GetEnumerator();
         }

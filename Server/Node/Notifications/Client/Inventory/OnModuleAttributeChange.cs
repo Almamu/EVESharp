@@ -4,6 +4,7 @@ using Node.Inventory.Items;
 using Node.Inventory.Items.Attributes;
 using PythonTypes.Types.Complex;
 using PythonTypes.Types.Primitives;
+using Attribute = Node.Inventory.Items.Attributes.Attribute;
 
 namespace Node.Notifications.Client.Inventory
 {
@@ -12,9 +13,9 @@ namespace Node.Notifications.Client.Inventory
         private const string NOTIFICATION_NAME = "OnModuleAttributeChange";
         
         public ItemEntity Item { get; }
-        public ItemAttribute Attribute { get; }
+        public Attribute Attribute { get; }
         
-        public OnModuleAttributeChange(ItemEntity item, ItemAttribute attribute) : base(NOTIFICATION_NAME)
+        public OnModuleAttributeChange(ItemEntity item, Attribute attribute) : base(NOTIFICATION_NAME)
         {
             this.Item = item;
             this.Attribute = attribute;

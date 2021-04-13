@@ -8,6 +8,7 @@ using Node.Inventory;
 using Node.Inventory.Items;
 using Node.Inventory.Items.Attributes;
 using Node.Market;
+using Node.StaticData.Inventory;
 using PythonTypes.Types.Collections;
 using PythonTypes.Types.Database;
 using PythonTypes.Types.Primitives;
@@ -23,14 +24,7 @@ namespace Node.Database
     
     public class MarketDB : DatabaseAccessor
     {
-        private ItemManager ItemManager { get; }
         private TypeManager TypeManager { get; }
-        
-        public MarketDB(ItemManager itemManager, TypeManager typeManager, DatabaseConnection db) : base(db)
-        {
-            this.ItemManager = itemManager;
-            this.TypeManager = typeManager;
-        }
 
         public void CreateJournalForCharacter(MarketReference reference, int characterID, int ownerID1,
             int? ownerID2, int? referenceID, double amount, double finalBalance, string reason, int accountKey)
@@ -434,7 +428,7 @@ namespace Node.Database
                 }
             ).Close();
         }
-        
+
         public class ItemQuantityEntry
         {
             public int ItemID { get; set; }
@@ -443,7 +437,7 @@ namespace Node.Database
             public int NodeID { get; set; }
             public double Damage { get; set; }
         }
-        
+
         public Dictionary<int, ItemQuantityEntry> PrepareItemForOrder(MySqlConnection connection, int typeID, int locationID1, int locationID2, int quantity, int ownerID1)
         {
             MySqlDataReader reader = Database.PrepareQuery(ref connection,
@@ -454,7 +448,7 @@ namespace Node.Database
                     {"@locationID2", locationID2},
                     {"@ownerID1", ownerID1},
                     {"@typeID", typeID},
-                    {"@damageAttributeID", (int) AttributeEnum.damage}
+                    {"@damageAttributeID", (int) Attributes.damage}
                 }
             );
             
@@ -691,6 +685,11 @@ namespace Node.Database
 
                 return orders;
             }
+        }
+
+        public MarketDB(TypeManager typeManager, DatabaseConnection db) : base(db)
+        {
+            this.TypeManager = typeManager;
         }
     }
 }

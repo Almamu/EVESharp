@@ -27,7 +27,6 @@ using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using Common.Logging;
 using Common.Services;
-using Node.Data;
 using Node.Database;
 using Node.Exceptions.character;
 using Node.Inventory;
@@ -35,10 +34,13 @@ using Node.Inventory.Items;
 using Node.Inventory.Items.Types;
 using Node.Network;
 using Node.Notifications.Client.Chat;
+using Node.StaticData;
+using Node.StaticData.Inventory;
 using PythonTypes.Types.Collections;
 using PythonTypes.Types.Database;
 using PythonTypes.Types.Exceptions;
 using PythonTypes.Types.Primitives;
+using Type = Node.StaticData.Inventory.Type;
 
 namespace Node.Services.Characters
 {
@@ -257,7 +259,7 @@ namespace Node.Services.Characters
             );
             
             int itemID = this.DB.CreateCharacter(
-                ancestry.Bloodline.ItemType, characterName, owner, call.Client.AccountID, this.mConfiguration.Balance,
+                ancestry.Bloodline.CharacterType, characterName, owner, call.Client.AccountID, this.mConfiguration.Balance,
                 0.0, corporationID, 0, 0, 0, 0, 0,
                 currentTime, currentTime, currentTime, ancestry.ID,
                 careerID, schoolID, careerSpecialityID, genderID,
@@ -321,7 +323,7 @@ namespace Node.Services.Characters
 
             foreach ((int skillTypeID, int level) in skills)
             {
-                ItemType skillType = this.TypeManager[skillTypeID];
+                Type skillType = this.TypeManager[skillTypeID];
                     
                 // create the skill at the required level
                 this.ItemManager.CreateSkill(skillType, character, level);
@@ -332,21 +334,21 @@ namespace Node.Services.Characters
                 character);
             
             // add one unit of Tritanium to the station's hangar for the player
-            ItemType tritaniumType = this.TypeManager[ItemTypes.Tritanium];
+            Type tritaniumType = this.TypeManager[ItemTypes.Tritanium];
 
             ItemEntity tritanium =
                 this.ItemManager.CreateSimpleItem(tritaniumType, character,
-                    station, ItemFlags.Hangar);
+                    station, Flags.Hangar);
             
             // add one unit of Damage Control I to the station's hangar for the player
-            ItemType damageControlType = this.TypeManager[ItemTypes.DamageControlI];
+            Type damageControlType = this.TypeManager[ItemTypes.DamageControlI];
 
             ItemEntity damageControl =
                 this.ItemManager.CreateSimpleItem(damageControlType, character,
-                    station, ItemFlags.Hangar);
+                    station, Flags.Hangar);
             
             // create an alpha clone
-            ItemType cloneType = this.TypeManager[ItemTypes.CloneGradeAlpha];
+            Type cloneType = this.TypeManager[ItemTypes.CloneGradeAlpha];
             
             Clone clone = this.ItemManager.CreateClone(cloneType, station, character);
 

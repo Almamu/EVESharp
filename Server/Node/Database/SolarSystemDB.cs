@@ -7,10 +7,6 @@ namespace Node.Database
 {
     public class SolarSystemDB : DatabaseAccessor
     {
-        public SolarSystemDB(DatabaseConnection db) : base(db)
-        {
-        }
-
         public int GetJumpsBetweenSolarSystems(int fromSolarSystemID, int toSolarSystemID)
         {
             if (fromSolarSystemID == toSolarSystemID)
@@ -34,6 +30,10 @@ namespace Node.Database
 
                 return reader.GetInt32(0);
             }
+        }
+
+        public SolarSystemDB(DatabaseConnection db) : base(db)
+        {
         }
     }
 }

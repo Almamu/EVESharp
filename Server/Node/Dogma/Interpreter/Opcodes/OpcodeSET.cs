@@ -2,6 +2,7 @@
 using Node.Dogma.Exception;
 using Node.Inventory.Items;
 using Node.Inventory.Items.Attributes;
+using Node.StaticData.Inventory;
 
 namespace Node.Dogma.Interpreter.Opcodes
 {
@@ -29,7 +30,7 @@ namespace Node.Dogma.Interpreter.Opcodes
                 if (this.Value is OpcodeDEFINT defint)
                 {
                     ItemEntity item = att.ItemToAffect.GetItem();
-                    AttributeEnum attribute = att.AttributeToAffect.Attribute;
+                    Attributes attribute = att.AttributeToAffect.Attribute;
                     
                     item.Attributes[att.AttributeToAffect.Attribute].Integer = defint.Value;
                     

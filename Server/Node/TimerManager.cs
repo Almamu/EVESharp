@@ -13,10 +13,10 @@ namespace Node
     /// </summary>
     public class TimerManager
     {
-        private Thread mThread = null;
-        private Channel Log = null;
-        private List<Timer> mItemTimers = new List<Timer>();
-        private List<Timer> mCallTimers = new List<Timer>();
+        private readonly Thread mThread = null;
+        private readonly Channel Log = null;
+        private readonly List<Timer> mItemTimers = new List<Timer>();
+        private readonly List<Timer> mCallTimers = new List<Timer>();
         
         public TimerManager(Logger logger)
         {

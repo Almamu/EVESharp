@@ -8,6 +8,8 @@ using Node.Inventory.Items.Types;
 using Node.Inventory.SystemEntities;
 using Node.Market;
 using Node.Network;
+using Node.StaticData;
+using Node.StaticData.Inventory;
 using PythonTypes.Types.Collections;
 using PythonTypes.Types.Database;
 using PythonTypes.Types.Exceptions;
@@ -61,9 +63,9 @@ namespace Node.Services.Characters
 
             int solarSystemID = 0;
 
-            if (groupID == (int) ItemGroups.SolarSystem)
+            if (groupID == (int) Groups.SolarSystem)
                 solarSystemID = this.ItemManager.GetStaticSolarSystem(entityID).ID;
-            else if (groupID == (int) ItemGroups.Station)
+            else if (groupID == (int) Groups.Station)
                 solarSystemID = this.ItemManager.GetStaticStation(entityID).SolarSystemID;
             else
                 throw new CustomError("Unknown item's groupID");
@@ -172,7 +174,7 @@ namespace Node.Services.Characters
             character.EnsureEnoughBalance(cost);
             
             // create an alpha clone
-            ItemType cloneType = this.TypeManager[ItemTypes.CloneGradeAlpha];
+            Type cloneType = this.TypeManager[ItemTypes.CloneGradeAlpha];
             
             // get character's station
             Station station = this.ItemManager.GetStaticStation(stationID);

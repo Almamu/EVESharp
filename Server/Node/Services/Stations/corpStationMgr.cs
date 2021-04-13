@@ -7,6 +7,8 @@ using Node.Inventory.Items;
 using Node.Inventory.Items.Types;
 using Node.Market;
 using Node.Network;
+using Node.StaticData;
+using Node.StaticData.Inventory;
 using PythonTypes.Types.Collections;
 using PythonTypes.Types.Database;
 using PythonTypes.Types.Exceptions;
@@ -206,9 +208,9 @@ namespace Node.Services.Stations
             int stationID = call.Client.EnsureCharacterIsInStation();
             
             Character character = this.ItemManager.GetItem<Character>(callerCharacterID);
-            ItemType newCloneType = this.TypeManager[cloneTypeID];
+            Type newCloneType = this.TypeManager[cloneTypeID];
 
-            if (newCloneType.Group.ID != (int) ItemGroups.Clone)
+            if (newCloneType.Group.ID != (int) Groups.Clone)
                 throw new CustomError("Only clone types allowed!");
             if (character.ActiveClone.Type.BasePrice > newCloneType.BasePrice)
                 throw new MedicalThisCloneIsWorse();

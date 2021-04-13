@@ -8,6 +8,7 @@ using Node.Inventory.Items.Attributes;
 using Node.Inventory.Items.Dogma;
 using Node.Network;
 using Node.Notifications.Client.Inventory;
+using Node.StaticData.Dogma;
 using PythonTypes.Types.Collections;
 using PythonTypes.Types.Exceptions;
 using PythonTypes.Types.Primitives;
@@ -41,7 +42,7 @@ namespace Node.Inventory.Items.Types
                 this.ApplyPassiveEffects();
             
                 // special case, check for the isOnline attribute and put the module online if so
-                if (this.Attributes[AttributeEnum.isOnline] == 1)
+                if (this.Attributes[StaticData.Inventory.Attributes.isOnline] == 1)
                 {
                     this.ApplyEffect("online");
                 }

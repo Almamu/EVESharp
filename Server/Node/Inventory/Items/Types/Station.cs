@@ -1,17 +1,18 @@
 using System;
 using System.Collections.Generic;
-using Node.Data;
-using Node.Inventory.Items.Types.Stations;
+using Node.StaticData;
+using Node.StaticData.Inventory.Station;
 using PythonTypes.Types.Collections;
 using PythonTypes.Types.Database;
 using PythonTypes.Types.Primitives;
+using Type = Node.StaticData.Inventory.Station.Type;
 
 namespace Node.Inventory.Items.Types
 {
     public class Station : ItemInventory
     {
-        private StationType mStationType;
-        private StationOperations mOperations;
+        private Type mStationType;
+        private Operation mOperations;
         private Dictionary<int, Character> mGuests;
         
         private int mSecurity;
@@ -24,7 +25,7 @@ namespace Node.Inventory.Items.Types
         private double mReprocessingStationsTake;
         private int mReprocessingHangarFlag;
         
-        public Station(StationType stationType, StationOperations operations, int security,
+        public Station(Type stationType, Operation operations, int security,
             double dockingCostPerVolume, double maxShipVolumeDockable, int officeRentalCost, int constellationId,
             int regionId, double reprocessingEfficiency, double reprocessingStationsTake, int reprocessingHangarFlag,
             ItemEntity from) : base(from)
@@ -43,8 +44,8 @@ namespace Node.Inventory.Items.Types
             this.mGuests = new Dictionary<int, Character>();
         }
 
-        public StationOperations Operations => this.mOperations;
-        public StationType StationType => this.mStationType;
+        public Operation Operations => this.mOperations;
+        public Type StationType => this.mStationType;
         public Dictionary<int, Character> Guests => this.mGuests;
         public int Security => mSecurity;
         public double DockingCostPerVolume => mDockingCostPerVolume;
@@ -88,7 +89,7 @@ namespace Node.Inventory.Items.Types
             return KeyVal.FromDictionary(data);
         }
 
-        public bool HasService(StationServices service)
+        public bool HasService(StaticData.Inventory.Station.Service service)
         {
             return (this.Operations.ServiceMask & (int) service) == (int) service;
         }

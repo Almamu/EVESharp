@@ -11,11 +11,11 @@ using Node.Inventory;
 using Node.Inventory.Items;
 using Node.Inventory.Items.Attributes;
 using Node.Inventory.Items.Types;
-using Node.Inventory.Items.Types.Stations;
 using Node.Market;
 using Node.Network;
 using Node.Notifications.Client.Inventory;
 using Node.Services.Inventory;
+using Node.StaticData.Inventory;
 using PythonTypes.Types.Collections;
 using PythonTypes.Types.Database;
 using PythonTypes.Types.Exceptions;
@@ -97,7 +97,7 @@ namespace Node.Services.Stations
             Station station = this.ItemManager.GetStaticStation(stationID);
             
             // check if the station has the required services
-            if (station.HasService(StationServices.ReprocessingPlant) == false)
+            if (station.HasService(StaticData.Inventory.Station.Service.ReprocessingPlant) == false)
                 throw new CustomError("This station does not allow for reprocessing plant services");
             // ensure the player is in this station
             if (station.ID != call.Client.StationID)
@@ -276,7 +276,7 @@ namespace Node.Services.Stations
                 
                 // create the new item
                 ItemEntity newItem = this.ItemManager.CreateSimpleItem(this.TypeManager[recoverable.TypeID], character, this.mStation,
-                    ItemFlags.Hangar, quantityForClient);
+                    Flags.Hangar, quantityForClient);
                 // notify the client about the new item
                 client.NotifyMultiEvent(OnItemChange.BuildNewItemChange(newItem));
             }

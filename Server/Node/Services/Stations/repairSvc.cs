@@ -9,11 +9,11 @@ using Node.Inventory;
 using Node.Inventory.Items;
 using Node.Inventory.Items.Attributes;
 using Node.Inventory.Items.Types;
-using Node.Inventory.Items.Types.Stations;
 using Node.Market;
 using Node.Network;
 using Node.Notifications.Client.Inventory;
 using Node.Services.Inventory;
+using Node.StaticData.Inventory;
 using PythonTypes.Types.Collections;
 using PythonTypes.Types.Database;
 using PythonTypes.Types.Exceptions;
@@ -82,7 +82,7 @@ namespace Node.Services.Stations
             Station station = this.ItemManager.GetStaticStation(stationID);
 
             // check if the station has the required services
-            if (station.HasService(StationServices.RepairFacilities) == false)
+            if (station.HasService(StaticData.Inventory.Station.Service.RepairFacilities) == false)
                 throw new CustomError("This station does not allow for reprocessing plant services");
             // ensure the player is in this station
             if (station.ID != call.Client.StationID)
@@ -123,8 +123,8 @@ namespace Node.Services.Stations
                                 module.ID,
                                 module.Type.ID,
                                 module.Type.Group.ID,
-                                module.Attributes[AttributeEnum.damage],
-                                module.Attributes[AttributeEnum.hp],
+                                module.Attributes[Attributes.damage],
+                                module.Attributes[Attributes.hp],
                                 // modules should calculate this value differently, but for now this will suffice
                                 module.Type.BasePrice * BASEPRICE_MULTIPLIER_MODULE
                             }
@@ -138,8 +138,8 @@ namespace Node.Services.Stations
                             item.ID,
                             item.Type.ID,
                             item.Type.Group.ID,
-                            item.Attributes[AttributeEnum.damage],
-                            item.Attributes[AttributeEnum.hp],
+                            item.Attributes[Attributes.damage],
+                            item.Attributes[Attributes.hp],
                             item.Type.BasePrice * BASEPRICE_MULTIPLIER_SHIP
                         }
                     );
@@ -152,8 +152,8 @@ namespace Node.Services.Stations
                             item.ID,
                             item.Type.ID,
                             item.Type.Group.ID,
-                            item.Attributes[AttributeEnum.damage],
-                            item.Attributes[AttributeEnum.hp],
+                            item.Attributes[Attributes.damage],
+                            item.Attributes[Attributes.hp],
                             item.Type.BasePrice * BASEPRICE_MULTIPLIER_MODULE
                         }
                     );
@@ -194,9 +194,9 @@ namespace Node.Services.Stations
 
                 // calculate how much to fix it
                 if (item is Ship)
-                    quantityLeft -= Math.Min(item.Attributes[AttributeEnum.damage] * (item.Type.BasePrice * BASEPRICE_MULTIPLIER_SHIP), quantityLeft);
+                    quantityLeft -= Math.Min(item.Attributes[Attributes.damage] * (item.Type.BasePrice * BASEPRICE_MULTIPLIER_SHIP), quantityLeft);
                 else
-                    quantityLeft -= Math.Min(item.Attributes[AttributeEnum.damage] * (item.Type.BasePrice * BASEPRICE_MULTIPLIER_MODULE), quantityLeft);
+                    quantityLeft -= Math.Min(item.Attributes[Attributes.damage] * (item.Type.BasePrice * BASEPRICE_MULTIPLIER_MODULE), quantityLeft);
 
                 // add the item to the list
                 items.Add(item);
@@ -214,14 +214,14 @@ namespace Node.Services.Stations
                 double repairPrice = 0.0f;
 
                 if (item is Ship)
-                    repairPrice = item.Attributes[AttributeEnum.damage] * (item.Type.BasePrice * BASEPRICE_MULTIPLIER_SHIP);
+                    repairPrice = item.Attributes[Attributes.damage] * (item.Type.BasePrice * BASEPRICE_MULTIPLIER_SHIP);
                 else
-                    repairPrice = item.Attributes[AttributeEnum.damage] * (item.Type.BasePrice * BASEPRICE_MULTIPLIER_MODULE);
+                    repairPrice = item.Attributes[Attributes.damage] * (item.Type.BasePrice * BASEPRICE_MULTIPLIER_MODULE);
 
                 // full item can be repaired!
                 if (repairPrice <= quantityLeft)
                 {
-                    item.Attributes[AttributeEnum.damage].Integer = 0;
+                    item.Attributes[Attributes.damage].Integer = 0;
                 }
                 else
                 {
@@ -241,7 +241,7 @@ namespace Node.Services.Stations
 
                     // only perform changes on the damage if there's units we can pay for repair
                     if (repairUnits > 0)
-                        item.Attributes[AttributeEnum.damage] -= repairUnits;
+                        item.Attributes[Attributes.damage] -= repairUnits;
                 }
 
                 quantityLeft -= repairPrice;
@@ -257,7 +257,7 @@ namespace Node.Services.Stations
             call.Client.NotifyBalanceUpdate(character.Balance);
             
             // notify changes on the damage attribute
-            call.Client.NotifyAttributeChange(AttributeEnum.damage, items.ToArray());
+            call.Client.NotifyAttributeChange(Attributes.damage, items.ToArray());
             
             // save the character
             character.Persist();
@@ -316,17 +316,17 @@ namespace Node.Services.Stations
                             // if the item is in a rig slot, destroy it
                             if (itemInInventory.IsInRigSlot() == true)
                             {
-                                ItemFlags oldFlag = itemInInventory.Flag;
+                                Flags oldFlag = itemInInventory.Flag;
                                 this.ItemManager.DestroyItem(itemInInventory);
                                 // notify the client about the change
                                 call.Client.NotifyMultiEvent(OnItemChange.BuildLocationChange(itemInInventory, oldFlag, entry.ItemID));
                             }
                             else
                             {
-                                ItemFlags oldFlag = itemInInventory.Flag;
+                                Flags oldFlag = itemInInventory.Flag;
                                 // update item's location
                                 itemInInventory.LocationID = entry.LocationID;
-                                itemInInventory.Flag = ItemFlags.Hangar;
+                                itemInInventory.Flag = Flags.Hangar;
                             
                                 // notify the client about the change
                                 call.Client.NotifyMultiEvent(OnItemChange.BuildLocationChange(itemInInventory, oldFlag, entry.ItemID));

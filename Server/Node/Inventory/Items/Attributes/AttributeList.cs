@@ -1,17 +1,18 @@
 using System.Collections;
 using System.Collections.Generic;
+using Node.StaticData.Inventory;
 using PythonTypes.Types.Collections;
-using PythonTypes.Types.Primitives;
 
 namespace Node.Inventory.Items.Attributes
 {
     public class AttributeList : IEnumerable
     {
-        private ItemFactory mItemFactory = null;
+        private readonly ItemFactory mItemFactory = null;
 
-        private readonly Dictionary<int, ItemAttribute> mDefaultAttributes = null;
-        private readonly Dictionary<int, ItemAttribute> mItemAttributes = null;
-        public AttributeList(ItemFactory factory, ItemType type, Dictionary<int, ItemAttribute> attributes)
+        private readonly Dictionary<int, Attribute> mDefaultAttributes = null;
+        private readonly Dictionary<int, Attribute> mItemAttributes = null;
+        
+        public AttributeList(ItemFactory factory, Type type, Dictionary<int, Attribute> attributes)
         {
             this.mItemFactory = factory;
             
@@ -21,13 +22,13 @@ namespace Node.Inventory.Items.Attributes
             this.mItemAttributes = attributes;
         }
 
-        public ItemAttribute this[int index]
+        public Attribute this[int index]
         {
             get
             {
                 // ensure the attribute we're looking for exists
                 if (this.mItemAttributes.ContainsKey(index) == false && this.mDefaultAttributes.ContainsKey(index) == false)
-                    this.mItemAttributes[index] = new ItemAttribute(this.mItemFactory.AttributeManager[index], 0, true);
+                    this.mItemAttributes[index] = new Attribute(this.mItemFactory.AttributeManager[index], 0, true);
                 else if (this.mItemAttributes.ContainsKey(index) == false && this.mDefaultAttributes.ContainsKey(index) == true)
                     this.mItemAttributes[index] = this.mDefaultAttributes[index].Clone();
                 
@@ -43,24 +44,24 @@ namespace Node.Inventory.Items.Attributes
             }
         }
 
-        public ItemAttribute this[long index]
+        public Attribute this[long index]
         {
             get => this[(int) index];
             set => this[(int) index] = value;
         }
 
-        public ItemAttribute this[AttributeEnum index]
+        public Attribute this[StaticData.Inventory.Attributes index]
         {
             get => this[(int) index];
             set => this[(int) index] = value;
         }
 
-        public bool TryGetAttribute(AttributeEnum index, out ItemAttribute attrib)
+        public bool TryGetAttribute(StaticData.Inventory.Attributes index, out Attribute attrib)
         {
             return this.mItemAttributes.TryGetValue((int) index, out attrib) || this.mDefaultAttributes.TryGetValue((int) index, out attrib);
         }
 
-        public bool AttributeExists(ItemAttribute attribute)
+        public bool AttributeExists(Attribute attribute)
         {
             return this.AttributeExists(attribute.Info.ID);
         }
@@ -70,7 +71,7 @@ namespace Node.Inventory.Items.Attributes
             return this.mItemAttributes.ContainsKey(attributeID) || this.mDefaultAttributes.ContainsKey(attributeID);
         }
 
-        public bool AttributeExists(AttributeEnum attributeID)
+        public bool AttributeExists(StaticData.Inventory.Attributes attributeID)
         {
             return this.AttributeExists((int) attributeID);
         }
@@ -87,13 +88,13 @@ namespace Node.Inventory.Items.Attributes
 
         public void MergeFrom(AttributeList list)
         {
-            foreach (ItemAttribute attrib in list)
+            foreach (Attribute attrib in list)
                 this[attrib.Info.ID] = attrib.Clone();
         }
 
         public void MergeInto(AttributeList list)
         {
-            foreach (ItemAttribute attrib in this)
+            foreach (Attribute attrib in this)
                 list[attrib.Info.ID] = attrib.Clone();
         }
 
@@ -101,10 +102,10 @@ namespace Node.Inventory.Items.Attributes
         {
             PyDictionary result = new PyDictionary();
 
-            foreach (KeyValuePair<int, ItemAttribute> attrib in list.mDefaultAttributes)
+            foreach (KeyValuePair<int, Attribute> attrib in list.mDefaultAttributes)
                 result[attrib.Key] = attrib.Value;
             
-            foreach (KeyValuePair<int, ItemAttribute> attrib in list.mItemAttributes)
+            foreach (KeyValuePair<int, Attribute> attrib in list.mItemAttributes)
                 result[attrib.Key] = attrib.Value;
 
             return result;

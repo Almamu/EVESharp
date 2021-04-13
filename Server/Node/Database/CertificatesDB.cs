@@ -2,17 +2,14 @@
 using System.Collections.Generic;
 using Common.Database;
 using MySql.Data.MySqlClient;
-using Node.Data;
+using Node.StaticData;
+using Node.StaticData.Certificates;
 using PythonTypes.Types.Database;
 
 namespace Node.Database
 {
     public class CertificatesDB : DatabaseAccessor
     {
-        public CertificatesDB(DatabaseConnection db) : base(db)
-        {
-        }
-
         public Rowset GetMyCertificates(int characterID)
         {
             return Database.PrepareRowsetQuery(
@@ -24,7 +21,7 @@ namespace Node.Database
             );
         }
 
-        public Dictionary<int, List<CertificateRelationship>> GetCertificateRelationships()
+        public Dictionary<int, List<Relationship>> GetCertificateRelationships()
         {
             MySqlConnection connection = null;
             MySqlDataReader reader = Database.PrepareQuery(ref connection, "SELECT relationshipID, parentID, parentTypeID, parentLevel, childID, childTypeID FROM crtRelationships").ExecuteReader();
@@ -32,14 +29,14 @@ namespace Node.Database
             using (connection)
             using (reader)
             {
-                Dictionary<int, List<CertificateRelationship>> result = new Dictionary<int, List<CertificateRelationship>>();
+                Dictionary<int, List<Relationship>> result = new Dictionary<int, List<Relationship>>();
                 
                 while (reader.Read() == true)
                 {
                     if (result.TryGetValue(reader.GetInt32(4), out var relationships) == false)
-                        relationships = result[reader.GetInt32(4)] = new List<CertificateRelationship>();
+                        relationships = result[reader.GetInt32(4)] = new List<Relationship>();
                     
-                    relationships.Add(new CertificateRelationship()
+                    relationships.Add(new Relationship()
                         {
                             RelationshipID = reader.GetInt32(0),
                             ParentID = reader.GetInt32(1),
@@ -113,6 +110,10 @@ namespace Node.Database
 
                 return certificates;
             }
+        }
+
+        public CertificatesDB(DatabaseConnection db) : base(db)
+        {
         }
     }
 }

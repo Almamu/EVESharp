@@ -1,9 +1,10 @@
 using System.Collections.Generic;
 using Common.Services;
-using Node.Data;
 using Node.Inventory;
 using Node.Inventory.Items.Types;
 using Node.Network;
+using Node.StaticData;
+using Node.StaticData.Inventory.Station;
 using PythonTypes.Types.Collections;
 using PythonTypes.Types.Complex;
 using PythonTypes.Types.Database;
@@ -54,7 +55,7 @@ namespace Node.Services.Navigation
                     [4] = station.OwnerID
                 });
 
-            foreach ((int _, StationOperations operation) in this.StationManager.Operations)
+            foreach ((int _, Operation operation) in this.StationManager.Operations)
                 foreach (int serviceID in operation.Services)
                     operationServices.Rows.Add(new PyList(2)
                     {

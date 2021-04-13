@@ -25,6 +25,7 @@
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using Common.Configuration;
+using Node.StaticData.Inventory;
 
 namespace Node.Inventory.Items
 {
@@ -36,7 +37,7 @@ namespace Node.Inventory.Items
         {
         }
 
-        protected virtual void LoadContents(ItemFlags ignoreFlags = ItemFlags.None)
+        protected virtual void LoadContents(Flags ignoreFlags = Flags.None)
         {
             lock (this)
             {

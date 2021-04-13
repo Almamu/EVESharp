@@ -5,11 +5,7 @@ namespace Node.Database
 {
     public class AgentDB : DatabaseAccessor
     {
-        public AgentDB(DatabaseConnection db) : base(db)
-        {
-        }
-
-        public PyDataType GetAgents()
+	    public PyDataType GetAgents()
         {
             return Database.PrepareCRowsetQuery(
 	            "SELECT agentID, agentTypeID, divisionID, level, agtAgents.stationID, quality," +
@@ -19,6 +15,10 @@ namespace Node.Database
 	            " LEFT JOIN invItems ON invItems.itemID = chrInformation.characterID" +
 	            " LEFT JOIN bloodlineTypes USING (typeID)"
 	        );
+        }
+
+        public AgentDB(DatabaseConnection db) : base(db)
+        {
         }
     }
 }

@@ -96,7 +96,7 @@ namespace Node.Database
             using (reader)
             {
                 if (reader.Read() == false)
-                    throw new ArgumentOutOfRangeException("Unknown characterID or characterID not online");
+                    throw new ArgumentOutOfRangeException(nameof(characterID),"Unknown characterID or characterID not online");
 
                 return reader.GetInt32(0);
             }

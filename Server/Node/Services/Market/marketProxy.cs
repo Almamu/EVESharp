@@ -5,6 +5,7 @@ using Common.Services;
 using MySql.Data.MySqlClient;
 using Node.Database;
 using Node.Exceptions;
+using Node.Exceptions.inventory;
 using Node.Exceptions.jumpCloneSvc;
 using Node.Exceptions.marketProxy;
 using Node.Inventory;
@@ -16,6 +17,7 @@ using Node.Network;
 using Node.Notifications.Client.Market;
 using Node.Notifications.Nodes.Character;
 using Node.Notifications.Nodes.Inventory;
+using Node.StaticData.Inventory;
 using PythonTypes.Types.Collections;
 using PythonTypes.Types.Complex;
 using PythonTypes.Types.Exceptions;
@@ -319,7 +321,7 @@ namespace Node.Services.Market
                     
                     // create the new item that will be used by the player
                     ItemEntity item = this.ItemManager.CreateSimpleItem(
-                        this.TypeManager[typeID], order.CharacterID, stationID, ItemFlags.Hangar, quantityToSell
+                        this.TypeManager[typeID], order.CharacterID, stationID, Flags.Hangar, quantityToSell
                     );
                     
                     // immediately unload it, if it has to be loaded the OnItemUpdate notification will take care of that
@@ -541,7 +543,7 @@ namespace Node.Services.Market
                         
                     // create the new item that will be used by the player
                     ItemEntity item = this.ItemManager.CreateSimpleItem(
-                        this.TypeManager[typeID], character.ID, stationID, ItemFlags.Hangar, quantityToBuy
+                        this.TypeManager[typeID], character.ID, stationID, Flags.Hangar, quantityToBuy
                     );
                     // immediately unload it, if it has to be loaded the OnItemUpdate notification will take care of that
                     this.ItemManager.UnloadItem(item);
@@ -675,7 +677,7 @@ namespace Node.Services.Market
                                             
                     // create the new item that will be used by the player
                     ItemEntity item = this.ItemManager.CreateSimpleItem(
-                        this.TypeManager[order.TypeID], character.ID, order.LocationID, ItemFlags.Hangar, order.UnitsLeft
+                        this.TypeManager[order.TypeID], character.ID, order.LocationID, Flags.Hangar, order.UnitsLeft
                     );
                     // immediately unload it, if it has to be loaded the OnItemUpdate notification will take care of that
                     this.ItemManager.UnloadItem(item);
@@ -835,7 +837,7 @@ namespace Node.Services.Market
                                     
             // create the new item that will be used by the player
             ItemEntity item = this.ItemManager.CreateSimpleItem(
-                this.TypeManager[order.TypeID], order.CharacterID, order.LocationID, ItemFlags.Hangar, order.UnitsLeft
+                this.TypeManager[order.TypeID], order.CharacterID, order.LocationID, Flags.Hangar, order.UnitsLeft
             );
             // immediately unload it, if it has to be loaded the OnItemUpdate notification will take care of that
             this.ItemManager.UnloadItem(item);

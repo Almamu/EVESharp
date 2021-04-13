@@ -24,20 +24,21 @@
 
 using System.Collections.Generic;
 using Node.Database;
+using Node.StaticData.Inventory;
 
 namespace Node.Inventory
 {
     public class GroupManager
     {
         private ItemDB ItemDB { get; }
-        private Dictionary<int, ItemGroup> mGroups = null;
+        private Dictionary<int, Group> mGroups = null;
 
         public void Load()
         {
             this.mGroups = this.ItemDB.LoadItemGroups();
         }
 
-        public ItemGroup this[int id] { get => this.mGroups[id]; }
+        public Group this[int id] { get => this.mGroups[id]; }
 
         public GroupManager(ItemDB itemDB)
         {

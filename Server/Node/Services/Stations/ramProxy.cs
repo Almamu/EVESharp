@@ -5,6 +5,7 @@ using Node.Inventory.Items;
 using Node.Inventory.Items.Attributes;
 using Node.Inventory.Items.Types;
 using Node.Network;
+using Node.StaticData.Inventory;
 using PythonTypes.Types.Collections;
 using PythonTypes.Types.Exceptions;
 using PythonTypes.Types.Primitives;
@@ -39,8 +40,8 @@ namespace Node.Services.Stations
                 // used to calculate the maximum manufacturing job count and the maximum research job count the character can have
                 [1] = new PyDictionary<PyInteger, PyInteger>
                 {
-                    [(int) AttributeEnum.manufactureSlotLimit] = 1 + character.GetSkillLevel(ItemTypes.MassProduction) + character.GetSkillLevel(ItemTypes.AdvancedMassProduction),
-                    [(int) AttributeEnum.maxLaborotorySlots] = 1 + character.GetSkillLevel(ItemTypes.LaboratoryOperation) + character.GetSkillLevel(ItemTypes.AdvancedLaboratoryOperation)
+                    [(int) Attributes.manufactureSlotLimit] = 1 + character.GetSkillLevel(ItemTypes.MassProduction) + character.GetSkillLevel(ItemTypes.AdvancedMassProduction),
+                    [(int) Attributes.maxLaborotorySlots] = 1 + character.GetSkillLevel(ItemTypes.LaboratoryOperation) + character.GetSkillLevel(ItemTypes.AdvancedLaboratoryOperation)
                 }
             };
         }

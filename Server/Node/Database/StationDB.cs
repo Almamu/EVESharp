@@ -1,17 +1,14 @@
 using System.Collections.Generic;
 using Common.Database;
 using MySql.Data.MySqlClient;
-using Node.Data;
+using Node.StaticData;
+using Node.StaticData.Inventory.Station;
 
 namespace Node.Database
 {
     public class StationDB : DatabaseAccessor
     {
-        public StationDB(DatabaseConnection db) : base(db)
-        {
-        }
-
-        public Dictionary<int, StationOperations> LoadOperations()
+        public Dictionary<int, Operation> LoadOperations()
         {
             MySqlConnection connection = null;
             MySqlDataReader reader = Database.Query(ref connection, "SELECT operationID, operationName, description FROM staOperations");
@@ -19,7 +16,7 @@ namespace Node.Database
             using (connection)
             using (reader)
             {
-                Dictionary<int, StationOperations> operations = new Dictionary<int, StationOperations>();
+                Dictionary<int, Operation> operations = new Dictionary<int, Operation>();
                 
                 while (reader.Read() == true)
                 {
@@ -40,7 +37,7 @@ namespace Node.Database
                             services.Add(readerServices.GetInt32(0));
                     }
                     
-                    StationOperations operation = new StationOperations(
+                    Operation operation = new Operation(
                         reader.GetInt32(0),
                         reader.GetString(1),
                         reader.GetString(2),
@@ -54,7 +51,7 @@ namespace Node.Database
             }
         }
 
-        public Dictionary<int, StationType> LoadStationTypes()
+        public Dictionary<int, Type> LoadStationTypes()
         {
             MySqlConnection connection = null;
             MySqlDataReader reader = Database.Query(
@@ -68,11 +65,11 @@ namespace Node.Database
             using (connection)
             using (reader)
             {
-                Dictionary<int, StationType> result = new Dictionary<int, StationType>();
+                Dictionary<int, Type> result = new Dictionary<int, Type>();
                 
                 while (reader.Read() == true)
                 {
-                    StationType stationType = new StationType(
+                    Type stationType = new Type(
                         reader.GetInt32(0),
                         reader.GetInt32OrNull(1),
                         reader.GetDouble(2),
@@ -115,6 +112,10 @@ namespace Node.Database
                     return result;
                 }
             }
+        }
+
+        public StationDB(DatabaseConnection db) : base(db)
+        {
         }
     }
 }

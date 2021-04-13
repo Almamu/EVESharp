@@ -2,6 +2,7 @@
 using Common.Database;
 using Node.Inventory;
 using Node.Inventory.Items;
+using Node.StaticData.Inventory;
 using PythonTypes.Types.Database;
 
 namespace Node.Database
@@ -37,7 +38,7 @@ namespace Node.Database
             if (exact == true)
             {
                 return Database.PrepareRowsetQuery(
-                    $"SELECT itemID AS characterID, itemName AS characterName, typeID FROM eveNames WHERE groupID = {(int) ItemGroups.Character} AND itemName = @namePart",
+                    $"SELECT itemID AS characterID, itemName AS characterName, typeID FROM eveNames WHERE groupID = {(int) Groups.Character} AND itemName = @namePart",
                     new Dictionary<string, object>()
                     {
                         {"@namePart", namePart}
@@ -47,7 +48,7 @@ namespace Node.Database
             else
             {
                 return Database.PrepareRowsetQuery(
-                    $"SELECT itemID AS characterID, itemName AS characterName, typeID FROM eveNames WHERE groupID = {(int) ItemGroups.Character} AND itemName LIKE @namePart",
+                    $"SELECT itemID AS characterID, itemName AS characterName, typeID FROM eveNames WHERE groupID = {(int) Groups.Character} AND itemName LIKE @namePart",
                     new Dictionary<string, object>()
                     {
                         {"@namePart", namePart + "%"}
@@ -61,7 +62,7 @@ namespace Node.Database
             if (exact == true)
             {
                 return Database.PrepareRowsetQuery(
-                    $"SELECT itemID AS characterID, itemName AS characterName, typeID FROM eveNames WHERE itemID >= {ItemManager.USERGENERATED_ID_MIN} AND groupID = {(int) ItemGroups.Character} AND itemName = @namePart",
+                    $"SELECT itemID AS characterID, itemName AS characterName, typeID FROM eveNames WHERE itemID >= {ItemManager.USERGENERATED_ID_MIN} AND groupID = {(int) Groups.Character} AND itemName = @namePart",
                     new Dictionary<string, object>()
                     {
                         {"@namePart", namePart}
@@ -71,7 +72,7 @@ namespace Node.Database
             else
             {
                 return Database.PrepareRowsetQuery(
-                    $"SELECT itemID AS characterID, itemName AS characterName, typeID FROM eveNames WHERE itemID >= {ItemManager.USERGENERATED_ID_MIN} AND groupID = {(int) ItemGroups.Character} AND itemName LIKE @namePart",
+                    $"SELECT itemID AS characterID, itemName AS characterName, typeID FROM eveNames WHERE itemID >= {ItemManager.USERGENERATED_ID_MIN} AND groupID = {(int) Groups.Character} AND itemName LIKE @namePart",
                     new Dictionary<string, object>()
                     {
                         {"@namePart", namePart + "%"}
@@ -85,7 +86,7 @@ namespace Node.Database
             if (exact == true)
             {
                 return Database.PrepareRowsetQuery(
-                    $"SELECT itemID as ownerID, itemName AS ownerName, typeID, groupID FROM eveNames WHERE categoryID = {(int) ItemCategories.Owner} AND itemName = @namePart",
+                    $"SELECT itemID as ownerID, itemName AS ownerName, typeID, groupID FROM eveNames WHERE categoryID = {(int) Categories.Owner} AND itemName = @namePart",
                     new Dictionary<string, object>()
                     {
                         {"@namePart", namePart}
@@ -95,7 +96,7 @@ namespace Node.Database
             else
             {
                 return Database.PrepareRowsetQuery(
-                    $"SELECT itemID as ownerID, itemName AS ownerName, typeID, groupID FROM eveNames WHERE categoryID = {(int) ItemCategories.Owner} AND itemName LIKE @namePart",
+                    $"SELECT itemID as ownerID, itemName AS ownerName, typeID, groupID FROM eveNames WHERE categoryID = {(int) Categories.Owner} AND itemName LIKE @namePart",
                     new Dictionary<string, object>()
                     {
                         {"@namePart", namePart + "%"}

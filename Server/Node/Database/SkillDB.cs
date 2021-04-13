@@ -1,9 +1,10 @@
 using System;
 using System.Collections.Generic;
 using Common.Database;
-using Node.Inventory.Items;
 using Node.Inventory.Items.Types;
+using Node.StaticData.Inventory;
 using PythonTypes.Types.Database;
+using Type = Node.StaticData.Inventory.Type;
 
 namespace Node.Database
 {
@@ -22,20 +23,15 @@ namespace Node.Database
     {
         private ItemDB ItemDB { get; }
 
-        public SkillDB(DatabaseConnection db, ItemDB itemDB) : base(db)
-        {
-            this.ItemDB = itemDB;
-        }
-
-        public int CreateSkill(ItemType skill, Character character)
+        public int CreateSkill(Type skill, Character character)
         {
             return (int) this.ItemDB.CreateItem(
-                skill.Name, skill, character, character, ItemFlags.Skill,
+                skill.Name, skill, character, character, Flags.Skill,
                 false, true, 1, null, null, null, null
             );
         }
 
-        public void CreateSkillHistoryRecord(ItemType skill, Character character, SkillHistoryReason reason, double skillPoints)
+        public void CreateSkillHistoryRecord(Type skill, Character character, SkillHistoryReason reason, double skillPoints)
         {
             Database.PrepareQuery(
                 "INSERT INTO chrSkillHistory(characterID, skillTypeID, eventID, logDateTime, absolutePoints)VALUES(@characterID, @skillTypeID, @eventID, @logDateTime, @skillPoints)",
@@ -49,7 +45,7 @@ namespace Node.Database
                 }
             );
         }
-        
+
         public Rowset GetSkillHistory(int characterID)
         {
             return Database.PrepareRowsetQuery(
@@ -59,6 +55,11 @@ namespace Node.Database
                     {"@characterID", characterID}
                 }
             );
+        }
+
+        public SkillDB(DatabaseConnection db, ItemDB itemDB) : base(db)
+        {
+            this.ItemDB = itemDB;
         }
     }
 }

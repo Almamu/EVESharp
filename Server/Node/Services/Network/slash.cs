@@ -15,8 +15,11 @@ using Node.Network;
 using Node.Notifications.Client.Inventory;
 using Node.Notifications.Client.Skills;
 using Node.Notifications.Nodes.Character;
+using Node.StaticData;
+using Node.StaticData.Inventory;
 using PythonTypes.Types.Collections;
 using PythonTypes.Types.Primitives;
+using Type = Node.StaticData.Inventory.Type;
 
 namespace Node.Services.Network
 {
@@ -173,8 +176,8 @@ namespace Node.Services.Network
             Station location = this.ItemManager.GetStaticStation((int) call.Client.StationID);
             Character character = this.ItemManager.GetItem<Character>(call.Client.EnsureCharacterIsSelected());
             
-            ItemType itemType = this.TypeManager[typeID];
-            ItemEntity item = this.ItemManager.CreateSimpleItem(itemType, character, location, ItemFlags.Hangar, quantity);
+            Type itemType = this.TypeManager[typeID];
+            ItemEntity item = this.ItemManager.CreateSimpleItem(itemType, character, location, Flags.Hangar, quantity);
 
             item.Persist();
             
@@ -200,12 +203,12 @@ namespace Node.Services.Network
             if (skillType == "all")
             {
                 // player wants all the skills!
-                IEnumerable<KeyValuePair<int, ItemType>> skillTypes =
-                    this.TypeManager.Where(x => x.Value.Group.Category.ID == (int) ItemCategories.Skill && x.Value.Published == true);
+                IEnumerable<KeyValuePair<int, Type>> skillTypes =
+                    this.TypeManager.Where(x => x.Value.Group.Category.ID == (int) Categories.Skill && x.Value.Published == true);
 
                 Dictionary<int, Skill> injectedSkills = character.InjectedSkillsByTypeID;
 
-                foreach (KeyValuePair<int, ItemType> pair in skillTypes)
+                foreach (KeyValuePair<int, Type> pair in skillTypes)
                 {
                     // skill already injected, train it to the desired level
                     if (injectedSkills.ContainsKey(pair.Key) == true)

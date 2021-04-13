@@ -2,13 +2,15 @@ using System;
 using System.Collections.Generic;
 using Common.Database;
 using MySql.Data.MySqlClient;
-using Node.Data;
 using Node.Inventory;
 using Node.Inventory.Items;
 using Node.Inventory.Items.Types;
+using Node.StaticData;
+using Node.StaticData.Inventory;
 using PythonTypes.Types.Collections;
 using PythonTypes.Types.Database;
 using PythonTypes.Types.Primitives;
+using Type = Node.StaticData.Inventory.Type;
 
 namespace Node.Database
 {
@@ -16,12 +18,6 @@ namespace Node.Database
     {
         private ItemDB ItemDB { get; }
         private TypeManager TypeManager { get; }
-        
-        public CharacterDB(DatabaseConnection db, ItemDB itemDB, TypeManager typeManager) : base(db)
-        {
-            this.TypeManager = typeManager;
-            this.ItemDB = itemDB;
-        }
 
         public Rowset GetCharacterList(int accountID)
         {
@@ -212,7 +208,8 @@ namespace Node.Database
 
             return result;
         }
-        public int CreateCharacter(ItemType from, string name, ItemEntity owner, int accountID, double balance, double securityRating,
+
+        public int CreateCharacter(Type from, string name, ItemEntity owner, int accountID, double balance, double securityRating,
             int corporationID, int corpRole, int rolesAtAll, int rolesAtBase, int rolesAtHQ, int rolesAtOther,
             long corporationDateTime, long startDateTime, long createDateTime, int ancestryID, int careerID, int schoolID,
             int careerSpecialityID, int gender, int? accessoryID, int? beardID, int costumeID, int? decoID, int eyebrowsID,
@@ -224,7 +221,7 @@ namespace Node.Database
             double? morph4S, double? morph4W, int stationID, int solarSystemID, int constellationID, int regionID)
         {
             // create the item first
-            int itemID = (int) this.ItemDB.CreateItem(name, from.ID, owner.ID, stationID, ItemFlags.Connected, false,
+            int itemID = (int) this.ItemDB.CreateItem(name, from.ID, owner.ID, stationID, Flags.Connected, false,
                 true, 1, 0, 0, 0, "");
 
             // now create the character record in the database
@@ -848,6 +845,12 @@ namespace Node.Database
 
                 return result;
             }
+        }
+
+        public CharacterDB(DatabaseConnection db, ItemDB itemDB, TypeManager typeManager) : base(db)
+        {
+            this.TypeManager = typeManager;
+            this.ItemDB = itemDB;
         }
     }
 }

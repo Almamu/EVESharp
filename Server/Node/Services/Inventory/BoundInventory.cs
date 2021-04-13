@@ -10,6 +10,7 @@ using Node.Inventory.Items.Attributes;
 using Node.Inventory.Items.Types;
 using Node.Network;
 using Node.Notifications.Client.Inventory;
+using Node.StaticData.Inventory;
 using PythonTypes.Types.Collections;
 using PythonTypes.Types.Database;
 using PythonTypes.Types.Exceptions;
@@ -20,7 +21,7 @@ namespace Node.Services.Inventory
     public class BoundInventory : BoundService
     {
         private ItemInventory mInventory;
-        private ItemFlags mFlag;
+        private Flags mFlag;
         private ItemDB ItemDB { get; }
         private NodeContainer NodeContainer { get; }
         private ItemManager ItemManager { get; }
@@ -28,13 +29,13 @@ namespace Node.Services.Inventory
         public BoundInventory(ItemDB itemDB, ItemInventory item, ItemManager itemManager, NodeContainer nodeContainer, BoundServiceManager manager, Client client) : base(manager, client)
         {
             this.mInventory = item;
-            this.mFlag = ItemFlags.None;
+            this.mFlag = Flags.None;
             this.ItemDB = itemDB;
             this.ItemManager = itemManager;
             this.NodeContainer = nodeContainer;
         }
 
-        public BoundInventory(ItemDB itemDB, ItemInventory item, ItemFlags flag, ItemManager itemManager, NodeContainer nodeContainer, BoundServiceManager manager, Client client) : base(manager, client)
+        public BoundInventory(ItemDB itemDB, ItemInventory item, Flags flag, ItemManager itemManager, NodeContainer nodeContainer, BoundServiceManager manager, Client client) : base(manager, client)
         {
             this.mInventory = item;
             this.mFlag = flag;
@@ -45,10 +46,10 @@ namespace Node.Services.Inventory
 
         public PyDataType List(CallInformation call)
         {        
-            CRowset result = new CRowset(ItemEntity.sEntityItemDescriptor);
+            CRowset result = new CRowset(ItemEntity.EntityItemDescriptor);
 
             foreach ((int _, ItemEntity item) in this.mInventory.Items)
-                if (this.mFlag == ItemFlags.None || item.Flag == this.mFlag)
+                if (this.mFlag == Flags.None || item.Flag == this.mFlag)
                     result.Add(item.GetEntityRow());
 
             return result;
@@ -79,31 +80,31 @@ namespace Node.Services.Inventory
             return this.mInventory.GetEntityRow();
         }
 
-        private void PreMoveItemCheck(ItemEntity item, ItemFlags flag, double quantityToMove)
+        private void PreMoveItemCheck(ItemEntity item, Flags flag, double quantityToMove)
         {
             if (this.mInventory.Type.ID == (int) ItemTypes.Capsule)
                 throw new CantTakeInSpaceCapsule();
 
             // perform checks only on cargo
-            if (this.mInventory is Ship ship && flag == ItemFlags.Cargo)
+            if (this.mInventory is Ship ship && flag == Flags.Cargo)
             {
                 // check destination cargo
                 double currentVolume =
-                    ship.Items.Sum(x => (x.Value.Flag != flag) ? 0.0 : x.Value.Quantity * x.Value.Attributes[AttributeEnum.volume]);
+                    ship.Items.Sum(x => (x.Value.Flag != flag) ? 0.0 : x.Value.Quantity * x.Value.Attributes[Attributes.volume]);
 
-                double newVolume = item.Attributes[AttributeEnum.volume] * quantityToMove + currentVolume;
-                double maxVolume = this.mInventory.Attributes[AttributeEnum.capacity];
+                double newVolume = item.Attributes[Attributes.volume] * quantityToMove + currentVolume;
+                double maxVolume = this.mInventory.Attributes[Attributes.capacity];
 
                 if (newVolume > maxVolume)
-                    throw new NotEnoughCargoSpace(currentVolume, this.mInventory.Attributes[AttributeEnum.capacity] - currentVolume);
+                    throw new NotEnoughCargoSpace(currentVolume, this.mInventory.Attributes[Attributes.capacity] - currentVolume);
             }
         }
 
-        private void MoveItemHere(ItemEntity item, ItemFlags newFlag)
+        private void MoveItemHere(ItemEntity item, Flags newFlag)
         {
             // get the old location stored as it'll be used in the notifications
             int oldLocation = item.LocationID;
-            ItemFlags oldFlag = item.Flag;
+            Flags oldFlag = item.Flag;
             
             // rig slots cannot be moded
             if (item.IsInRigSlot() == true)
@@ -114,7 +115,7 @@ namespace Node.Services.Inventory
             {
                 if (item is ShipModule module)
                 {
-                    if (module.Attributes[AttributeEnum.isOnline] == 1)
+                    if (module.Attributes[Attributes.isOnline] == 1)
                         module.StopApplyingEffect("online", Client);
 
                     // disable passive effects too
@@ -123,7 +124,7 @@ namespace Node.Services.Inventory
             }
             
             // extra special situation, is the new flag an autofit one?
-            if (newFlag == ItemFlags.AutoFit)
+            if (newFlag == Flags.AutoFit)
             {
                 // capsules cannot fit anything
                 if (this.mInventory.Type.ID == (int) ItemTypes.Capsule)
@@ -136,125 +137,125 @@ namespace Node.Services.Inventory
                     {
                         if (module.IsHighSlot() == true)
                         {
-                            Dictionary<ItemFlags, ItemEntity> modules = ship.HighSlotModules;
+                            Dictionary<Flags, ItemEntity> modules = ship.HighSlotModules;
 
-                            if (modules.Count >= ship.Attributes[AttributeEnum.hiSlots])
+                            if (modules.Count >= ship.Attributes[Attributes.hiSlots])
                                 throw new NoFreeShipSlots();
 
-                            if (modules.TryGetValue(ItemFlags.HiSlot0, out _) == false)
-                                newFlag = ItemFlags.HiSlot0;
-                            else if (modules.TryGetValue(ItemFlags.HiSlot1, out _) == false)
-                                newFlag = ItemFlags.HiSlot1;
-                            else if (modules.TryGetValue(ItemFlags.HiSlot2, out _) == false)
-                                newFlag = ItemFlags.HiSlot2;
-                            else if (modules.TryGetValue(ItemFlags.HiSlot3, out _) == false)
-                                newFlag = ItemFlags.HiSlot3;
-                            else if (modules.TryGetValue(ItemFlags.HiSlot4, out _) == false)
-                                newFlag = ItemFlags.HiSlot4;
-                            else if (modules.TryGetValue(ItemFlags.HiSlot5, out _) == false)
-                                newFlag = ItemFlags.HiSlot5;
-                            else if (modules.TryGetValue(ItemFlags.HiSlot6, out _) == false)
-                                newFlag = ItemFlags.HiSlot6;
-                            else if (modules.TryGetValue(ItemFlags.HiSlot7, out _) == false)
-                                newFlag = ItemFlags.HiSlot7;
+                            if (modules.TryGetValue(Flags.HiSlot0, out _) == false)
+                                newFlag = Flags.HiSlot0;
+                            else if (modules.TryGetValue(Flags.HiSlot1, out _) == false)
+                                newFlag = Flags.HiSlot1;
+                            else if (modules.TryGetValue(Flags.HiSlot2, out _) == false)
+                                newFlag = Flags.HiSlot2;
+                            else if (modules.TryGetValue(Flags.HiSlot3, out _) == false)
+                                newFlag = Flags.HiSlot3;
+                            else if (modules.TryGetValue(Flags.HiSlot4, out _) == false)
+                                newFlag = Flags.HiSlot4;
+                            else if (modules.TryGetValue(Flags.HiSlot5, out _) == false)
+                                newFlag = Flags.HiSlot5;
+                            else if (modules.TryGetValue(Flags.HiSlot6, out _) == false)
+                                newFlag = Flags.HiSlot6;
+                            else if (modules.TryGetValue(Flags.HiSlot7, out _) == false)
+                                newFlag = Flags.HiSlot7;
                         }
                         else if (module.IsMediumSlot() == true)
                         {
-                            Dictionary<ItemFlags, ItemEntity> modules = ship.MediumSlotModules;
+                            Dictionary<Flags, ItemEntity> modules = ship.MediumSlotModules;
 
-                            if (modules.Count >= ship.Attributes[AttributeEnum.medSlots])
+                            if (modules.Count >= ship.Attributes[Attributes.medSlots])
                                 throw new NoFreeShipSlots();
 
-                            if (modules.TryGetValue(ItemFlags.MedSlot0, out _) == false)
-                                newFlag = ItemFlags.MedSlot0;
-                            else if (modules.TryGetValue(ItemFlags.MedSlot1, out _) == false)
-                                newFlag = ItemFlags.MedSlot1;
-                            else if (modules.TryGetValue(ItemFlags.MedSlot2, out _) == false)
-                                newFlag = ItemFlags.MedSlot2;
-                            else if (modules.TryGetValue(ItemFlags.MedSlot3, out _) == false)
-                                newFlag = ItemFlags.MedSlot3;
-                            else if (modules.TryGetValue(ItemFlags.MedSlot4, out _) == false)
-                                newFlag = ItemFlags.MedSlot4;
-                            else if (modules.TryGetValue(ItemFlags.MedSlot5, out _) == false)
-                                newFlag = ItemFlags.MedSlot5;
-                            else if (modules.TryGetValue(ItemFlags.MedSlot6, out _) == false)
-                                newFlag = ItemFlags.MedSlot6;
-                            else if (modules.TryGetValue(ItemFlags.MedSlot7, out _) == false)
-                                newFlag = ItemFlags.MedSlot7;
+                            if (modules.TryGetValue(Flags.MedSlot0, out _) == false)
+                                newFlag = Flags.MedSlot0;
+                            else if (modules.TryGetValue(Flags.MedSlot1, out _) == false)
+                                newFlag = Flags.MedSlot1;
+                            else if (modules.TryGetValue(Flags.MedSlot2, out _) == false)
+                                newFlag = Flags.MedSlot2;
+                            else if (modules.TryGetValue(Flags.MedSlot3, out _) == false)
+                                newFlag = Flags.MedSlot3;
+                            else if (modules.TryGetValue(Flags.MedSlot4, out _) == false)
+                                newFlag = Flags.MedSlot4;
+                            else if (modules.TryGetValue(Flags.MedSlot5, out _) == false)
+                                newFlag = Flags.MedSlot5;
+                            else if (modules.TryGetValue(Flags.MedSlot6, out _) == false)
+                                newFlag = Flags.MedSlot6;
+                            else if (modules.TryGetValue(Flags.MedSlot7, out _) == false)
+                                newFlag = Flags.MedSlot7;
                         }
                         else if (module.IsLowSlot() == true)
                         {
-                            Dictionary<ItemFlags, ItemEntity> modules = ship.LowSlotModules;
+                            Dictionary<Flags, ItemEntity> modules = ship.LowSlotModules;
 
-                            if (modules.Count >= ship.Attributes[AttributeEnum.lowSlots])
+                            if (modules.Count >= ship.Attributes[Attributes.lowSlots])
                                 throw new NoFreeShipSlots();
 
-                            if (modules.TryGetValue(ItemFlags.LoSlot0, out _) == false)
-                                newFlag = ItemFlags.LoSlot0;
-                            else if (modules.TryGetValue(ItemFlags.LoSlot1, out _) == false)
-                                newFlag = ItemFlags.LoSlot1;
-                            else if (modules.TryGetValue(ItemFlags.LoSlot2, out _) == false)
-                                newFlag = ItemFlags.LoSlot2;
-                            else if (modules.TryGetValue(ItemFlags.LoSlot3, out _) == false)
-                                newFlag = ItemFlags.LoSlot3;
-                            else if (modules.TryGetValue(ItemFlags.LoSlot4, out _) == false)
-                                newFlag = ItemFlags.LoSlot4;
-                            else if (modules.TryGetValue(ItemFlags.LoSlot5, out _) == false)
-                                newFlag = ItemFlags.LoSlot5;
-                            else if (modules.TryGetValue(ItemFlags.LoSlot6, out _) == false)
-                                newFlag = ItemFlags.LoSlot6;
-                            else if (modules.TryGetValue(ItemFlags.LoSlot7, out _) == false)
-                                newFlag = ItemFlags.LoSlot7;
+                            if (modules.TryGetValue(Flags.LoSlot0, out _) == false)
+                                newFlag = Flags.LoSlot0;
+                            else if (modules.TryGetValue(Flags.LoSlot1, out _) == false)
+                                newFlag = Flags.LoSlot1;
+                            else if (modules.TryGetValue(Flags.LoSlot2, out _) == false)
+                                newFlag = Flags.LoSlot2;
+                            else if (modules.TryGetValue(Flags.LoSlot3, out _) == false)
+                                newFlag = Flags.LoSlot3;
+                            else if (modules.TryGetValue(Flags.LoSlot4, out _) == false)
+                                newFlag = Flags.LoSlot4;
+                            else if (modules.TryGetValue(Flags.LoSlot5, out _) == false)
+                                newFlag = Flags.LoSlot5;
+                            else if (modules.TryGetValue(Flags.LoSlot6, out _) == false)
+                                newFlag = Flags.LoSlot6;
+                            else if (modules.TryGetValue(Flags.LoSlot7, out _) == false)
+                                newFlag = Flags.LoSlot7;
                         }
                         else if (module.IsRigSlot() == true)
                         {
-                            Dictionary<ItemFlags, ItemEntity> modules = ship.RigSlots;
+                            Dictionary<Flags, ItemEntity> modules = ship.RigSlots;
 
-                            if (modules.Count >= ship.Attributes[AttributeEnum.rigSlots])
+                            if (modules.Count >= ship.Attributes[Attributes.rigSlots])
                                 throw new NoFreeShipSlots();
 
-                            if (modules.TryGetValue(ItemFlags.RigSlot0, out _) == false)
-                                newFlag = ItemFlags.RigSlot0;
-                            else if (modules.TryGetValue(ItemFlags.RigSlot1, out _) == false)
-                                newFlag = ItemFlags.RigSlot1;
-                            else if (modules.TryGetValue(ItemFlags.RigSlot2, out _) == false)
-                                newFlag = ItemFlags.RigSlot2;
-                            else if (modules.TryGetValue(ItemFlags.RigSlot3, out _) == false)
-                                newFlag = ItemFlags.RigSlot3;
-                            else if (modules.TryGetValue(ItemFlags.RigSlot4, out _) == false)
-                                newFlag = ItemFlags.RigSlot4;
-                            else if (modules.TryGetValue(ItemFlags.RigSlot5, out _) == false)
-                                newFlag = ItemFlags.RigSlot5;
-                            else if (modules.TryGetValue(ItemFlags.RigSlot6, out _) == false)
-                                newFlag = ItemFlags.RigSlot6;
-                            else if (modules.TryGetValue(ItemFlags.RigSlot7, out _) == false)
-                                newFlag = ItemFlags.RigSlot7;
+                            if (modules.TryGetValue(Flags.RigSlot0, out _) == false)
+                                newFlag = Flags.RigSlot0;
+                            else if (modules.TryGetValue(Flags.RigSlot1, out _) == false)
+                                newFlag = Flags.RigSlot1;
+                            else if (modules.TryGetValue(Flags.RigSlot2, out _) == false)
+                                newFlag = Flags.RigSlot2;
+                            else if (modules.TryGetValue(Flags.RigSlot3, out _) == false)
+                                newFlag = Flags.RigSlot3;
+                            else if (modules.TryGetValue(Flags.RigSlot4, out _) == false)
+                                newFlag = Flags.RigSlot4;
+                            else if (modules.TryGetValue(Flags.RigSlot5, out _) == false)
+                                newFlag = Flags.RigSlot5;
+                            else if (modules.TryGetValue(Flags.RigSlot6, out _) == false)
+                                newFlag = Flags.RigSlot6;
+                            else if (modules.TryGetValue(Flags.RigSlot7, out _) == false)
+                                newFlag = Flags.RigSlot7;
                         }
                     }
                     // TODO: HANDLE CHARGES!
                     else
                     {
-                        newFlag = ItemFlags.Cargo;
+                        newFlag = Flags.Cargo;
                     }
                 }
                 else
                 {
-                    newFlag = ItemFlags.Hangar;
+                    newFlag = Flags.Hangar;
                 }
             }
             
             // special situation, if the new location is a module slot ensure the item is a singleton (TODO: HANDLE CHARGES TOO)
-            if (newFlag == ItemFlags.HiSlot0 || newFlag == ItemFlags.HiSlot1 || newFlag == ItemFlags.HiSlot2 ||
-                newFlag == ItemFlags.HiSlot3 || newFlag == ItemFlags.HiSlot4 || newFlag == ItemFlags.HiSlot5 ||
-                newFlag == ItemFlags.HiSlot6 || newFlag == ItemFlags.HiSlot7 || newFlag == ItemFlags.MedSlot0 ||
-                newFlag == ItemFlags.MedSlot1 || newFlag == ItemFlags.MedSlot2 || newFlag == ItemFlags.MedSlot3 ||
-                newFlag == ItemFlags.MedSlot4 || newFlag == ItemFlags.MedSlot5 || newFlag == ItemFlags.MedSlot6 ||
-                newFlag == ItemFlags.MedSlot7 || newFlag == ItemFlags.LoSlot0 || newFlag == ItemFlags.LoSlot1 ||
-                newFlag == ItemFlags.LoSlot2 || newFlag == ItemFlags.LoSlot3 || newFlag == ItemFlags.LoSlot4 ||
-                newFlag == ItemFlags.LoSlot5 || newFlag == ItemFlags.LoSlot6 || newFlag == ItemFlags.LoSlot7 ||
-                newFlag == ItemFlags.RigSlot0 || newFlag == ItemFlags.RigSlot1 || newFlag == ItemFlags.RigSlot2 ||
-                newFlag == ItemFlags.RigSlot3 || newFlag == ItemFlags.RigSlot4 || newFlag == ItemFlags.RigSlot5 ||
-                newFlag == ItemFlags.RigSlot6 || newFlag == ItemFlags.RigSlot7)
+            if (newFlag == Flags.HiSlot0 || newFlag == Flags.HiSlot1 || newFlag == Flags.HiSlot2 ||
+                newFlag == Flags.HiSlot3 || newFlag == Flags.HiSlot4 || newFlag == Flags.HiSlot5 ||
+                newFlag == Flags.HiSlot6 || newFlag == Flags.HiSlot7 || newFlag == Flags.MedSlot0 ||
+                newFlag == Flags.MedSlot1 || newFlag == Flags.MedSlot2 || newFlag == Flags.MedSlot3 ||
+                newFlag == Flags.MedSlot4 || newFlag == Flags.MedSlot5 || newFlag == Flags.MedSlot6 ||
+                newFlag == Flags.MedSlot7 || newFlag == Flags.LoSlot0 || newFlag == Flags.LoSlot1 ||
+                newFlag == Flags.LoSlot2 || newFlag == Flags.LoSlot3 || newFlag == Flags.LoSlot4 ||
+                newFlag == Flags.LoSlot5 || newFlag == Flags.LoSlot6 || newFlag == Flags.LoSlot7 ||
+                newFlag == Flags.RigSlot0 || newFlag == Flags.RigSlot1 || newFlag == Flags.RigSlot2 ||
+                newFlag == Flags.RigSlot3 || newFlag == Flags.RigSlot4 || newFlag == Flags.RigSlot5 ||
+                newFlag == Flags.RigSlot6 || newFlag == Flags.RigSlot7)
             {
                 ShipModule module = null;
 
@@ -298,7 +299,7 @@ namespace Node.Services.Inventory
                     
                     // notify the quantity change and the new item
                     Client.NotifyMultiEvent(OnItemChange.BuildQuantityChange(item, item.Quantity + 1));
-                    Client.NotifyMultiEvent(OnItemChange.BuildLocationChange(newItem, ItemFlags.None, 0));
+                    Client.NotifyMultiEvent(OnItemChange.BuildLocationChange(newItem, Flags.None, 0));
                     
                     item.Persist();
 
@@ -321,7 +322,7 @@ namespace Node.Services.Inventory
                     module?.StopApplyingPassiveEffects(Client);
 
                     int newOldLocation = item.LocationID;
-                    ItemFlags newOldFlag = item.Flag;
+                    Flags newOldFlag = item.Flag;
                     
                     // now undo the whole thing
                     item.LocationID = oldLocation;
@@ -403,19 +404,19 @@ namespace Node.Services.Inventory
                 return null;
             
             // check that there's enough space left
-            this.PreMoveItemCheck(item, (ItemFlags) (int) flag, quantity);
+            this.PreMoveItemCheck(item, (Flags) (int) flag, quantity);
 
             // TODO: COPY THIS LOGIC OVER TO MOVEITEMHERE TO ENSURE THAT THIS ALSO FOLLOWS RULES REGARDING MODULES
             if (quantity == item.Quantity)
             {
                 // the item is being moved completely, the easiest way is to remove from the old inventory
                 // and put it in the new one
-                this.MoveItemHere(item, (ItemFlags) (int) flag);
+                this.MoveItemHere(item, (Flags) (int) flag);
             }
             else
             {
                 // create a new item with the same specs as the original
-                ItemEntity clone = this.ItemManager.CreateSimpleItem(item.Type, item.OwnerID, this.mInventory.ID, (ItemFlags) (int) flag, quantity,
+                ItemEntity clone = this.ItemManager.CreateSimpleItem(item.Type, item.OwnerID, this.mInventory.ID, (Flags) (int) flag, quantity,
                     item.Contraband, item.Singleton);
         
                 // subtract the quantity off the original item
@@ -441,8 +442,8 @@ namespace Node.Services.Inventory
                     ItemEntity item = this.ItemManager.GetItem(itemID);
                     
                     // check and then move the item
-                    this.PreMoveItemCheck(item, (ItemFlags) (int) flag, item.Quantity);
-                    this.MoveItemHere(item, (ItemFlags) (int) flag);
+                    this.PreMoveItemCheck(item, (Flags) (int) flag, item.Quantity);
+                    this.MoveItemHere(item, (Flags) (int) flag);
                 }
             }
             else
@@ -513,7 +514,7 @@ namespace Node.Services.Inventory
             throw new NotImplementedException("Stacking on passworded containers is not supported yet!");
         }
 
-        private void StackAll(ItemFlags locationFlag, CallInformation call)
+        private void StackAll(Flags locationFlag, CallInformation call)
         {
             // TODO: ADD CONSTRAINTS CHECKS FOR THE LOCATIONFLAG
             foreach ((int firstItemID, ItemEntity firstItem) in this.mInventory.Items)
@@ -551,17 +552,17 @@ namespace Node.Services.Inventory
 
         public PyDataType StackAll(PyInteger locationFlag, CallInformation call)
         {
-            if (this.mFlag != ItemFlags.None)
+            if (this.mFlag != Flags.None)
                 return null;
             
-            this.StackAll((ItemFlags) (int) locationFlag, call);
+            this.StackAll((Flags) (int) locationFlag, call);
 
             return null;
         }
         
         public PyDataType StackAll(CallInformation call)
         {
-            if (this.mFlag == ItemFlags.None)
+            if (this.mFlag == Flags.None)
                 return null;
             
             this.StackAll(this.mFlag, call);
@@ -569,7 +570,7 @@ namespace Node.Services.Inventory
             return null;
         }
 
-        public static PySubStruct BindInventory(ItemDB itemDB, ItemInventory item, ItemFlags flag, ItemManager itemManager, NodeContainer nodeContainer, BoundServiceManager boundServiceManager, Client client)
+        public static PySubStruct BindInventory(ItemDB itemDB, ItemInventory item, Flags flag, ItemManager itemManager, NodeContainer nodeContainer, BoundServiceManager boundServiceManager, Client client)
         {
             BoundService instance = new BoundInventory(itemDB, item, flag, itemManager, nodeContainer, boundServiceManager, client);
             // bind the service
@@ -609,7 +610,7 @@ namespace Node.Services.Inventory
                 }
                 
                 int oldLocationID = item.LocationID;
-                ItemFlags oldFlag = item.Flag;
+                Flags oldFlag = item.Flag;
                 
                 // destroy the rig
                 this.ItemManager.DestroyItem(item);

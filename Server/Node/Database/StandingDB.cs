@@ -9,10 +9,6 @@ namespace Node.Database
 {
     public class StandingDB : DatabaseAccessor
     {
-        public StandingDB(DatabaseConnection db) : base(db)
-        {
-        }
-
         public Rowset GetCharStandings(int characterID)
         {
             return Database.PrepareRowsetQuery(
@@ -170,6 +166,10 @@ namespace Node.Database
 
                 return reader.GetDouble(0);
             }
+        }
+
+        public StandingDB(DatabaseConnection db) : base(db)
+        {
         }
     }
 }

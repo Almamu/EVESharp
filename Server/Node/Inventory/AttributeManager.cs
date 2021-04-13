@@ -24,17 +24,18 @@
 
 using System.Collections.Generic;
 using Node.Database;
-using Node.Inventory.Items.Attributes;
+using Node.StaticData.Inventory;
+using AttributeInfo = Node.Inventory.Items.Attributes.Attribute;
 
 namespace Node.Inventory
 {
     public class AttributeManager
     {
         private ItemDB ItemDB { get; }
-        private Dictionary<int, AttributeInfo> mAttributes = null;
-        private Dictionary<int, Dictionary<int, ItemAttribute>> mDefaultAttributes = null;
+        private Dictionary<int, Attribute> mAttributes = null;
+        private Dictionary<int, Dictionary<int, AttributeInfo>> mDefaultAttributes = null;
 
-        public Dictionary<int, Dictionary<int, ItemAttribute>> DefaultAttributes
+        public Dictionary<int, Dictionary<int, AttributeInfo>> DefaultAttributes
         {
             get => this.mDefaultAttributes;
         }
@@ -44,8 +45,8 @@ namespace Node.Inventory
             this.ItemDB = itemDB;
         }
         
-        public AttributeInfo this[int id] => this.mAttributes[id];
-        public AttributeInfo this[AttributeEnum id] => this[(int) id];
+        public Attribute this[int id] => this.mAttributes[id];
+        public Attribute this[Attributes id] => this[(int) id];
 
         public void Load()
         {

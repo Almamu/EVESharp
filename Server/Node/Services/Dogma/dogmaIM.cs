@@ -6,12 +6,14 @@ using Node.Dogma.Interpreter;
 using Node.Dogma.Interpreter.Opcodes;
 using Node.Exceptions;
 using Node.Exceptions.dogma;
+using Node.Exceptions.inventory;
 using Node.Inventory;
 using Node.Inventory.Items;
 using Node.Inventory.Items.Attributes;
 using Node.Inventory.Items.Dogma;
 using Node.Inventory.Items.Types;
 using Node.Network;
+using Node.StaticData.Inventory;
 using PythonTypes.Types.Collections;
 using PythonTypes.Types.Complex;
 using PythonTypes.Types.Database;
@@ -63,9 +65,9 @@ namespace Node.Services.Dogma
 
             int solarSystemID = 0;
 
-            if (groupID == (int) ItemGroups.SolarSystem)
+            if (groupID == (int) Groups.SolarSystem)
                 solarSystemID = this.ItemManager.GetStaticSolarSystem(entityID).ID;
-            else if (groupID == (int) ItemGroups.Station)
+            else if (groupID == (int) Groups.Station)
                 solarSystemID = this.ItemManager.GetStaticStation(entityID).SolarSystemID;
             else
                 throw new CustomError("Unknown item's groupID");
@@ -111,39 +113,39 @@ namespace Node.Services.Dogma
             {
                 switch (item.Flag)
                 {
-                    case ItemFlags.HiSlot0:
-                    case ItemFlags.HiSlot1:
-                    case ItemFlags.HiSlot2:
-                    case ItemFlags.HiSlot3:
-                    case ItemFlags.HiSlot4:
-                    case ItemFlags.HiSlot5:
-                    case ItemFlags.HiSlot6:
-                    case ItemFlags.HiSlot7:
-                    case ItemFlags.MedSlot0:
-                    case ItemFlags.MedSlot1:
-                    case ItemFlags.MedSlot2:
-                    case ItemFlags.MedSlot3:
-                    case ItemFlags.MedSlot4:
-                    case ItemFlags.MedSlot5:
-                    case ItemFlags.MedSlot6:
-                    case ItemFlags.MedSlot7:
-                    case ItemFlags.LoSlot0:
-                    case ItemFlags.LoSlot1:
-                    case ItemFlags.LoSlot2:
-                    case ItemFlags.LoSlot3:
-                    case ItemFlags.LoSlot4:
-                    case ItemFlags.LoSlot5:
-                    case ItemFlags.LoSlot6:
-                    case ItemFlags.LoSlot7:
-                    case ItemFlags.FixedSlot:
-                    case ItemFlags.RigSlot0:
-                    case ItemFlags.RigSlot1:
-                    case ItemFlags.RigSlot2:
-                    case ItemFlags.RigSlot3:
-                    case ItemFlags.RigSlot4:
-                    case ItemFlags.RigSlot5:
-                    case ItemFlags.RigSlot6:
-                    case ItemFlags.RigSlot7:
+                    case Flags.HiSlot0:
+                    case Flags.HiSlot1:
+                    case Flags.HiSlot2:
+                    case Flags.HiSlot3:
+                    case Flags.HiSlot4:
+                    case Flags.HiSlot5:
+                    case Flags.HiSlot6:
+                    case Flags.HiSlot7:
+                    case Flags.MedSlot0:
+                    case Flags.MedSlot1:
+                    case Flags.MedSlot2:
+                    case Flags.MedSlot3:
+                    case Flags.MedSlot4:
+                    case Flags.MedSlot5:
+                    case Flags.MedSlot6:
+                    case Flags.MedSlot7:
+                    case Flags.LoSlot0:
+                    case Flags.LoSlot1:
+                    case Flags.LoSlot2:
+                    case Flags.LoSlot3:
+                    case Flags.LoSlot4:
+                    case Flags.LoSlot5:
+                    case Flags.LoSlot6:
+                    case Flags.LoSlot7:
+                    case Flags.FixedSlot:
+                    case Flags.RigSlot0:
+                    case Flags.RigSlot1:
+                    case Flags.RigSlot2:
+                    case Flags.RigSlot3:
+                    case Flags.RigSlot4:
+                    case Flags.RigSlot5:
+                    case Flags.RigSlot6:
+                    case Flags.RigSlot7:
                         itemInfo.AddRow(
                             item.ID,
                             item.GetEntityRow(),
@@ -177,10 +179,10 @@ namespace Node.Services.Dogma
             {
                 switch (item.Flag)
                 {
-                    case ItemFlags.Booster:
-                    case ItemFlags.Implant:
-                    case ItemFlags.Skill:
-                    case ItemFlags.SkillInTraining:
+                    case Flags.Booster:
+                    case Flags.Implant:
+                    case Flags.Skill:
+                    case Flags.SkillInTraining:
                         itemInfo.AddRow(
                             item.ID,
                             item.GetEntityRow(),
@@ -243,11 +245,11 @@ namespace Node.Services.Dogma
 
             return new PyDictionary
             {
-                [(int) AttributeEnum.willpower] = character.Willpower,
-                [(int) AttributeEnum.charisma] = character.Charisma,
-                [(int) AttributeEnum.intelligence] = character.Intelligence,
-                [(int) AttributeEnum.perception] = character.Perception,
-                [(int) AttributeEnum.memory] = character.Memory
+                [(int) Attributes.willpower] = character.Willpower,
+                [(int) Attributes.charisma] = character.Charisma,
+                [(int) Attributes.intelligence] = character.Intelligence,
+                [(int) Attributes.perception] = character.Perception,
+                [(int) Attributes.memory] = character.Memory
             };
         }
 

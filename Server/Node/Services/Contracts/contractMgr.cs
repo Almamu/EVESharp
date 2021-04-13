@@ -13,10 +13,12 @@ using Node.Network;
 using Node.Notifications.Client.Contracts;
 using Node.Notifications.Nodes.Character;
 using Node.Notifications.Nodes.Inventory;
+using Node.StaticData.Inventory;
 using PythonTypes.Types.Collections;
 using PythonTypes.Types.Database;
 using PythonTypes.Types.Exceptions;
 using PythonTypes.Types.Primitives;
+using Container = Node.Inventory.Items.Types.Container;
 
 namespace Node.Services.Contracts
 {
@@ -117,7 +119,7 @@ namespace Node.Services.Contracts
         {
             // create the container in the system to ensure it's not visible to the player
             Container container = this.ItemManager.CreateSimpleItem(this.TypeManager[ItemTypes.PlasticWrap],
-                this.ItemManager.LocationSystem.ID, station.ID, ItemFlags.None) as Container;
+                this.ItemManager.LocationSystem.ID, station.ID, Flags.None) as Container;
             
             Dictionary<int, ContractDB.ItemQuantityEntry> items =
                 this.DB.PrepareItemsForContract(connection, contractID, itemList, station, ownerID, container.ID, shipID);
@@ -514,7 +516,7 @@ namespace Node.Services.Contracts
             }
         }
 
-        private void AcceptItemExchangeContract(MySqlConnection connection, Client client, ContractDB.Contract contract, Station station, int ownerID, ItemFlags flag = ItemFlags.Hangar)
+        private void AcceptItemExchangeContract(MySqlConnection connection, Client client, ContractDB.Contract contract, Station station, int ownerID, Flags flag = Flags.Hangar)
         {
             List<ContractDB.ItemQuantityEntry> offeredItems = this.DB.GetOfferedItems(connection, contract.ID);
             Dictionary<int, int> itemsToCheck = this.DB.GetRequiredItemTypeIDs(connection, contract.ID);
@@ -594,7 +596,7 @@ namespace Node.Services.Contracts
                         // create a new item and notify the new node about it
                         // TODO: HANDLE BLUEPRINTS TOO! RIGHT NOW NO DATA IS COPIED FOR THEM
                         ItemEntity item = this.ItemManager.CreateSimpleItem(
-                            this.TypeManager[change.TypeID], contract.IssuerID, station.ID, ItemFlags.Hangar, change.OldQuantity - change.Quantity, false, false
+                            this.TypeManager[change.TypeID], contract.IssuerID, station.ID, Flags.Hangar, change.OldQuantity - change.Quantity, false, false
                         );
                         // unload the created item
                         this.ItemManager.UnloadItem(item);

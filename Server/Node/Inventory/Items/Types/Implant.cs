@@ -1,10 +1,5 @@
-using System;
-using System.Collections.Generic;
 using Node.Exceptions.character;
-using Node.Exceptions.Internal;
-using Node.Exceptions.ship;
-using Node.Inventory.Items.Attributes;
-using PythonTypes.Types.Exceptions;
+using Node.StaticData.Inventory;
 
 namespace Node.Inventory.Items.Types
 {
@@ -20,11 +15,11 @@ namespace Node.Inventory.Items.Types
             base.CheckPrerequisites(character);
 
             // check if the implant requires other implant used
-            if (this.Attributes.AttributeExists(AttributeEnum.prereqimplant) == false)
+            if (this.Attributes.AttributeExists(StaticData.Inventory.Attributes.prereqimplant) == false)
                 return;
 
-            int typeID = (int) this.Attributes[AttributeEnum.prereqimplant].Integer;
-            ItemType type = this.ItemFactory.TypeManager[typeID];
+            int typeID = (int) this.Attributes[StaticData.Inventory.Attributes.prereqimplant].Integer;
+            Type type = this.ItemFactory.TypeManager[typeID];
 
             if (character.PluggedInImplantsByTypeID.ContainsKey(typeID) == false)
                 throw new PrereqImplantMissing(type);

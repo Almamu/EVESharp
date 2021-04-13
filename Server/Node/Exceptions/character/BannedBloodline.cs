@@ -1,4 +1,4 @@
-﻿using Node.Data;
+﻿using Node.StaticData;
 using PythonTypes.Types.Collections;
 using PythonTypes.Types.Exceptions;
 using PythonTypes.Types.Primitives;

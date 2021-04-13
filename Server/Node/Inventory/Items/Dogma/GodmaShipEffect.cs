@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using Node.Inventory.Items.Types;
+using Node.StaticData.Dogma;
 using PythonTypes.Types.Collections;
 using PythonTypes.Types.Primitives;
 

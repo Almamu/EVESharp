@@ -1,5 +1,7 @@
 ﻿using System.Collections.Generic;
+using Node.Inventory;
 using Node.Inventory.Items;
+using Node.StaticData.Inventory;
 using PythonTypes.Types.Collections;
 using PythonTypes.Types.Complex;
 using PythonTypes.Types.Primitives;
@@ -62,7 +64,7 @@ namespace Node.Notifications.Client.Inventory
             return new OnItemChange(item).AddChange(ItemChange.Quantity, oldQuantity);
         }
 
-        public static OnItemChange BuildLocationChange(ItemEntity item, ItemFlags oldFlag)
+        public static OnItemChange BuildLocationChange(ItemEntity item, Flags oldFlag)
         {
             return new OnItemChange(item).AddChange(ItemChange.Flag, (int) oldFlag);
         }
@@ -72,7 +74,7 @@ namespace Node.Notifications.Client.Inventory
             return new OnItemChange(item).AddChange(ItemChange.LocationID, oldLocation);
         }
 
-        public static OnItemChange BuildLocationChange(ItemEntity item, ItemFlags oldFlag, int? oldLocation)
+        public static OnItemChange BuildLocationChange(ItemEntity item, Flags oldFlag, int? oldLocation)
         {
             OnItemChange change = new OnItemChange(item);
 
@@ -87,7 +89,7 @@ namespace Node.Notifications.Client.Inventory
         public static OnItemChange BuildNewItemChange(ItemEntity item)
         {
             // new items are notified as being moved from location 0 to the actual location
-            return BuildLocationChange(item, ItemFlags.None, 0);
+            return BuildLocationChange(item, Flags.None, 0);
         }
 
         public static OnItemChange BuildSingletonChange(ItemEntity item, bool oldSingleton)

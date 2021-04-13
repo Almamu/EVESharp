@@ -28,6 +28,7 @@ using Node.Dogma.Interpreter;
 using Node.Inventory.Items;
 using Node.Inventory.Items.Dogma;
 using SimpleInjector;
+using Container = SimpleInjector.Container;
 using Environment = Node.Dogma.Interpreter.Environment;
 
 namespace Node.Inventory
@@ -45,9 +46,9 @@ namespace Node.Inventory
         public ItemDB ItemDB { get; private set; }
         public CharacterDB CharacterDB { get; private set; }
         public InsuranceDB InsuranceDB { get; private set; }
-        private Container DependencyInjection { get; }
+        private SimpleInjector.Container DependencyInjection { get; }
         
-        public ItemFactory(NodeContainer container, Container dependencyInjection)
+        public ItemFactory(NodeContainer container, SimpleInjector.Container dependencyInjection)
         {
             this.DependencyInjection = dependencyInjection;
             this.Container = container;

@@ -29,10 +29,6 @@ namespace Node.Database
         public const int CHATROLE_NOTSPECIFIED = -1;
 
         public const int CHANNEL_ROOKIECHANNELID = 1;
-        
-        public ChatDB(DatabaseConnection db) : base(db)
-        {
-        }
 
         public void GrantAccessToStandardChannels(int characterID)
         {
@@ -348,6 +344,7 @@ namespace Node.Database
                 }
             );
         }
+
         public Row GetExtraInfo(int characterID)
         {
             MySqlConnection connection = null;
@@ -636,6 +633,10 @@ namespace Node.Database
                     {"@admin", permissions == CHATROLE_OPERATOR}
                 }
             );
+        }
+
+        public ChatDB(DatabaseConnection db) : base(db)
+        {
         }
     }
 }

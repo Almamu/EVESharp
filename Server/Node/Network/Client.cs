@@ -36,11 +36,13 @@ using Node.Notifications.Client.Clones;
 using Node.Notifications.Client.Inventory;
 using Node.Notifications.Client.Station;
 using Node.Services;
+using Node.StaticData.Inventory;
 using PythonTypes.Types.Collections;
 using PythonTypes.Types.Complex;
 using PythonTypes.Types.Exceptions;
 using PythonTypes.Types.Network;
 using PythonTypes.Types.Primitives;
+using Attribute = Node.Inventory.Items.Attributes.Attribute;
 
 namespace Node.Network
 {
@@ -429,7 +431,7 @@ namespace Node.Network
         /// </summary>
         /// <param name="attribute">The attribute to notify about</param>
         /// <param name="item">The item to notify about</param>
-        public void NotifyAttributeChange(ItemAttribute attribute, ItemEntity item)
+        public void NotifyAttributeChange(Attribute attribute, ItemEntity item)
         {
             this.NotifyMultiEvent(new OnModuleAttributeChange(item, attribute));
         }
@@ -439,7 +441,7 @@ namespace Node.Network
         /// </summary>
         /// <param name="attribute">The attribute to notify about</param>
         /// <param name="item">The item to notify about</param>
-        public void NotifyAttributeChange(AttributeEnum attribute, ItemEntity item)
+        public void NotifyAttributeChange(Attributes attribute, ItemEntity item)
         {
             this.NotifyMultiEvent(new OnModuleAttributeChange(item, item.Attributes[attribute]));
         }
@@ -449,11 +451,11 @@ namespace Node.Network
         /// </summary>
         /// <param name="attributes">The attributes to notify about</param>
         /// <param name="item">The item to notify about</param>
-        public void NotifyAttributeChange(AttributeEnum[] attributes, ItemEntity item)
+        public void NotifyAttributeChange(Attributes[] attributes, ItemEntity item)
         {
             OnModuleAttributeChanges changes = new OnModuleAttributeChanges();
 
-            foreach (AttributeEnum attribute in attributes)
+            foreach (Attributes attribute in attributes)
                 changes.AddChange(new OnModuleAttributeChange(item, item.Attributes[attribute]));
 
             this.NotifyMultiEvent(changes);
@@ -465,7 +467,7 @@ namespace Node.Network
         /// <param name="attributes">The list of attributes that have changed</param>
         /// <param name="items">The list of items those attributes belong to</param>
         /// <exception cref="ArgumentOutOfRangeException">If the list of attributes and items is not the same size</exception>
-        public void NotifyAttributeChange(ItemAttribute[] attributes, ItemEntity[] items)
+        public void NotifyAttributeChange(Attribute[] attributes, ItemEntity[] items)
         {
             if (attributes.Length != items.Length)
                 throw new ArgumentOutOfRangeException(
@@ -484,17 +486,17 @@ namespace Node.Network
         /// </summary>
         /// <param name="attributes">The list of attributes that have changed</param>
         /// <param name="item">The item these attributes belong to</param>
-        public void NotifyAttributeChange(ItemAttribute[] attributes, ItemEntity item)
+        public void NotifyAttributeChange(Attribute[] attributes, ItemEntity item)
         {
             OnModuleAttributeChanges changes = new OnModuleAttributeChanges();
 
-            foreach (ItemAttribute attribute in attributes)
+            foreach (Attribute attribute in attributes)
                 changes.AddChange(new OnModuleAttributeChange(item, attribute));
 
             this.NotifyMultiEvent(changes);
         }
 
-        public void NotifyAttributeChange(AttributeEnum attribute, ItemEntity[] items)
+        public void NotifyAttributeChange(Attributes attribute, ItemEntity[] items)
         {
             OnModuleAttributeChanges changes = new OnModuleAttributeChanges();
 

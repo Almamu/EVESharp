@@ -6,10 +6,6 @@ namespace Node.Database
 {
     public class ReprocessingDB : DatabaseAccessor
     {
-        public ReprocessingDB(DatabaseConnection db) : base(db)
-        {
-        }
-
         public class Recoverables
         {
             public int TypeID { get; set; }
@@ -44,6 +40,10 @@ namespace Node.Database
 
                 return result;
             }
+        }
+
+        public ReprocessingDB(DatabaseConnection db) : base(db)
+        {
         }
     }
 }

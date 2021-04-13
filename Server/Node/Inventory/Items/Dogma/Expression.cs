@@ -11,7 +11,7 @@ namespace Node.Inventory.Items.Dogma
         public string ExpressionName { get; init; }
         public Expression FirstArgument { get; set; }
         public Expression SecondArgument { get; set; }
-        public AttributeEnum? AttributeID { get; init; }
+        public StaticData.Inventory.Attributes? AttributeID { get; init; }
         public byte[] VMCode { get; private set; }
 
         public void Compile()

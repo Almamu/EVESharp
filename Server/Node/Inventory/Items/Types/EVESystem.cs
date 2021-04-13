@@ -1,4 +1,5 @@
 using System;
+using Node.StaticData.Inventory;
 
 namespace Node.Inventory.Items.Types
 {
@@ -8,7 +9,7 @@ namespace Node.Inventory.Items.Types
         {
         }
 
-        protected override void LoadContents(ItemFlags ignoreFlags = ItemFlags.None)
+        protected override void LoadContents(Flags ignoreFlags = Flags.None)
         {
             throw new NotSupportedException("EVE System Items cannot load any content in them");
         }

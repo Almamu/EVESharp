@@ -22,20 +22,22 @@
     Creator: Almamu
 */
 
-using System;
 using System.Collections.Generic;
 using Common.Database;
 using MySql.Data.MySqlClient;
 using Node.Dogma;
 using Node.Inventory;
+using Node.Inventory.Exceptions;
 using Node.Inventory.Items;
 using Node.Inventory.Items.Attributes;
 using Node.Inventory.Items.Dogma;
 using Node.Inventory.Items.Types;
 using Node.Inventory.SystemEntities;
 using Node.Network;
+using Node.StaticData.Dogma;
+using Node.StaticData.Inventory;
 using PythonTypes.Types.Database;
-using PythonTypes.Types.Primitives;
+using AttributeInfo = Node.StaticData.Inventory.Attribute;
 
 namespace Node.Database
 {
@@ -51,7 +53,7 @@ namespace Node.Database
         private TypeManager TypeManager => this.ItemFactory.TypeManager;
         private StationManager StationManager => this.ItemFactory.StationManager;
 
-        public Dictionary<int, ItemCategory> LoadItemCategories()
+        public Dictionary<int, Category> LoadItemCategories()
         {
             MySqlConnection connection = null;
 
@@ -62,11 +64,11 @@ namespace Node.Database
             using (connection)
             using (reader)
             {
-                Dictionary<int, ItemCategory> itemCategories = new Dictionary<int, ItemCategory>();
+                Dictionary<int, Category> itemCategories = new Dictionary<int, Category>();
 
                 while (reader.Read())
                 {
-                    ItemCategory itemCategory = new ItemCategory(
+                    Category itemCategory = new Category(
                         reader.GetInt32(0),
                         reader.GetString(1),
                         reader.GetString(2),
@@ -154,7 +156,7 @@ namespace Node.Database
             }
         }
 
-        public Dictionary<int, ItemType> LoadItemTypes(ExpressionManager expressionManager)
+        public Dictionary<int, Type> LoadItemTypes(ExpressionManager expressionManager)
         {
             // item effects should be loaded before as they're needed for the types instantiation
             Dictionary<int, Dictionary<int, Effect>> effects = this.LoadItemEffects(expressionManager);
@@ -167,23 +169,23 @@ namespace Node.Database
             using (connection)
             using (reader)
             {
-                Dictionary<int, ItemType> itemTypes = new Dictionary<int, ItemType>();
+                Dictionary<int, Type> itemTypes = new Dictionary<int, Type>();
 
                 while (reader.Read())
                 {
                     int typeID = reader.GetInt32(0);
                     
-                    Dictionary<int, ItemAttribute> defaultAttributes = null;
+                    Dictionary<int, Inventory.Items.Attributes.Attribute> defaultAttributes = null;
 
                     if (this.AttributeManager.DefaultAttributes.ContainsKey(typeID) == true)
                         defaultAttributes = this.AttributeManager.DefaultAttributes[typeID];
                     else
-                        defaultAttributes = new Dictionary<int, ItemAttribute>();
+                        defaultAttributes = new Dictionary<int, Inventory.Items.Attributes.Attribute>();
 
                     if (effects.TryGetValue(typeID, out Dictionary<int, Effect> typeEffects) == false)
                         typeEffects = new Dictionary<int, Effect>();
                     
-                    ItemType type = new ItemType(
+                    Type type = new Type(
                         typeID,
                         this.GroupManager[reader.GetInt32(1)],
                         reader.GetString(2),
@@ -210,7 +212,7 @@ namespace Node.Database
             }
         }
 
-        public Dictionary<int, ItemGroup> LoadItemGroups()
+        public Dictionary<int, Group> LoadItemGroups()
         {
             MySqlConnection connection = null;
 
@@ -221,11 +223,11 @@ namespace Node.Database
             using (connection)
             using (reader)
             {
-                Dictionary<int, ItemGroup> itemGroups = new Dictionary<int, ItemGroup>();
+                Dictionary<int, Group> itemGroups = new Dictionary<int, Group>();
 
                 while (reader.Read() == true)
                 {
-                    ItemGroup group = new ItemGroup(
+                    Group group = new Group(
                         reader.GetInt32(0),
                         this.CategoryManager[reader.GetInt32(1)],
                         reader.GetString(2),
@@ -289,7 +291,7 @@ namespace Node.Database
             }
         }
 
-        public Dictionary<int, Dictionary<int, ItemAttribute>> LoadDefaultAttributes()
+        public Dictionary<int, Dictionary<int, Inventory.Items.Attributes.Attribute>> LoadDefaultAttributes()
         {
             MySqlConnection connection = null;
             
@@ -300,27 +302,27 @@ namespace Node.Database
             using(connection)
             using (reader)
             {
-                Dictionary<int, Dictionary<int, ItemAttribute>> attributes = new Dictionary<int, Dictionary<int, ItemAttribute>>();
+                Dictionary<int, Dictionary<int, Inventory.Items.Attributes.Attribute>> attributes = new Dictionary<int, Dictionary<int, Inventory.Items.Attributes.Attribute>>();
 
                 while (reader.Read() == true)
                 {
                     int typeID = reader.GetInt32(0);
                     
                     if(attributes.ContainsKey(typeID) == false)
-                        attributes[typeID] = new Dictionary<int, ItemAttribute>();
+                        attributes[typeID] = new Dictionary<int, Inventory.Items.Attributes.Attribute>();
                     
-                    ItemAttribute attribute = null;
+                    Inventory.Items.Attributes.Attribute attribute = null;
                     
                     if (reader.IsDBNull(2) == false)
                     {
-                        attribute = new ItemAttribute(
+                        attribute = new Inventory.Items.Attributes.Attribute(
                             this.AttributeManager[reader.GetInt32(1)],
                             reader.GetInt32(2)
                         );
                     }
                     else
                     {
-                        attribute = new ItemAttribute(
+                        attribute = new Inventory.Items.Attributes.Attribute(
                             this.AttributeManager[reader.GetInt32(1)],
                             reader.GetDouble(3)
                         );
@@ -337,7 +339,7 @@ namespace Node.Database
         {
             MySqlConnection connection = null;
             MySqlCommand command = Database.PrepareQuery(ref connection,
-                $"SELECT itemID, eveNames.itemName, invItems.typeID, ownerID, locationID, flag, contraband, singleton, quantity, x, y, z, custominfo FROM invItems LEFT JOIN eveNames USING(itemID) LEFT JOIN invPositions USING (itemID) WHERE itemID < {ItemManager.USERGENERATED_ID_MIN} AND (groupID = {(int) ItemGroups.Station} OR groupID = {(int) ItemGroups.Faction} OR groupID = {(int) ItemGroups.SolarSystem} OR groupID = {(int) ItemGroups.Corporation} OR groupID = {(int) ItemGroups.System})"
+                $"SELECT itemID, eveNames.itemName, invItems.typeID, ownerID, locationID, flag, contraband, singleton, quantity, x, y, z, custominfo FROM invItems LEFT JOIN eveNames USING(itemID) LEFT JOIN invPositions USING (itemID) WHERE itemID < {ItemManager.USERGENERATED_ID_MIN} AND (groupID = {(int) Groups.Station} OR groupID = {(int) Groups.Faction} OR groupID = {(int) Groups.SolarSystem} OR groupID = {(int) Groups.Corporation} OR groupID = {(int) Groups.System})"
             );
             
             using (connection)
@@ -358,14 +360,14 @@ namespace Node.Database
 
         private Item BuildItemFromReader(MySqlDataReader reader)
         {
-            ItemType itemType = this.TypeManager[reader.GetInt32(2)];
+            Type itemType = this.TypeManager[reader.GetInt32(2)];
             Item newItem = new Item(
                 reader.GetStringOrNull(1), // itemName
                 reader.GetInt32(0), // itemID
                 itemType, // typeID
                 reader.GetInt32(3), // ownerID
                 reader.GetInt32(4), // locationID
-                (ItemFlags) reader.GetInt32(5), // flag
+                (Flags) reader.GetInt32(5), // flag
                 reader.GetBoolean(6), // contraband
                 reader.GetBoolean(7), // singleton
                 reader.GetInt32(8), // quantity
@@ -408,7 +410,7 @@ namespace Node.Database
                     return newItem;
 
                 if (reader.IsDBNull(13) == false && reader.GetInt32(13) != 0)
-                    throw new Exception("Trying to load an item that is loaded on another node!");
+                    throw new ItemNotLoadedException(itemID, "Trying to load an item that is loaded on another node!");
                     
                 // Update the database information
                 Database.PrepareQuery(
@@ -727,7 +729,7 @@ namespace Node.Database
             return new Clone(item);
         }
 
-        private void SaveItemName(ulong itemID, ItemType type, string itemName)
+        private void SaveItemName(ulong itemID, Type type, string itemName)
         {
             // save item name if exists
             Database.PrepareQuery(
@@ -767,7 +769,7 @@ namespace Node.Database
             this.SaveItemPosition((ulong) item.ID, item.X, item.Y, item.Z);
         }
 
-        public ulong CreateItem(string itemName, ItemType type, ItemEntity owner, ItemEntity location, ItemFlags flag,
+        public ulong CreateItem(string itemName, Type type, ItemEntity owner, ItemEntity location, Flags flag,
             bool contraband, bool singleton, int quantity, double? x, double? y, double? z, string customInfo)
         {
             ulong newItemID = Database.PrepareQueryLID(
@@ -796,7 +798,7 @@ namespace Node.Database
             return newItemID;
         }
 
-        public ulong CreateItem(string itemName, int typeID, int owner, int? location, ItemFlags flag, bool contraband,
+        public ulong CreateItem(string itemName, int typeID, int owner, int? location, Flags flag, bool contraband,
             bool singleton, int quantity, double? x, double? y, double? z, string customInfo)
         {
             ulong newItemID = Database.PrepareQueryLID(
@@ -822,15 +824,15 @@ namespace Node.Database
             return newItemID;
         }
 
-        public ulong CreateShip(ItemType shipType, ItemEntity location, Character owner)
+        public ulong CreateShip(Type shipType, ItemEntity location, Character owner)
         {
             return this.CreateItem(
-                $"{owner.Name}'s {shipType.Name}", shipType, owner, location, ItemFlags.Hangar,
+                $"{owner.Name}'s {shipType.Name}", shipType, owner, location, Flags.Hangar,
                 false, true, 1, null, null, null, null
             );
         }
 
-        public Dictionary<int, ItemEntity> LoadItemsLocatedAt(int locationID, ItemFlags ignoreFlag)
+        public Dictionary<int, ItemEntity> LoadItemsLocatedAt(int locationID, Flags ignoreFlag)
         {
             MySqlConnection connection = null;
             MySqlDataReader reader = Database.PrepareQuery(ref connection,
@@ -1008,7 +1010,7 @@ namespace Node.Database
             );
         }
 
-        private Dictionary<int, ItemAttribute> LoadAttributesForItem(int itemID)
+        private Dictionary<int, Inventory.Items.Attributes.Attribute> LoadAttributesForItem(int itemID)
         {
             MySqlConnection connection = null;
             MySqlDataReader reader = Database.PrepareQuery(ref connection,
@@ -1022,22 +1024,22 @@ namespace Node.Database
             using (connection)
             using (reader)
             {
-                Dictionary<int, ItemAttribute> result = new Dictionary<int, ItemAttribute>();
+                Dictionary<int, Inventory.Items.Attributes.Attribute> result = new Dictionary<int, Inventory.Items.Attributes.Attribute>();
 
                 while (reader.Read())
                 {
-                    ItemAttribute attribute = null;
+                    Inventory.Items.Attributes.Attribute attribute = null;
 
                     if (reader.IsDBNull(1) == true)
                     {
-                        attribute = new ItemAttribute(
+                        attribute = new Inventory.Items.Attributes.Attribute(
                             this.AttributeManager[reader.GetInt32(0)],
                             reader.GetDouble(2)
                         );
                     }
                     else
                     {
-                        attribute = new ItemAttribute(
+                        attribute = new Inventory.Items.Attributes.Attribute(
                             this.AttributeManager[reader.GetInt32(0)],
                             reader.GetInt64(1)
                         );
@@ -1116,7 +1118,7 @@ namespace Node.Database
             using (connection)
             using (command)
             {
-                foreach (KeyValuePair<int, ItemAttribute> pair in list)
+                foreach (KeyValuePair<int, Inventory.Items.Attributes.Attribute> pair in list)
                 {
                     // only update dirty records
                     if (pair.Value.Dirty == false && pair.Value.New == false)
@@ -1127,12 +1129,12 @@ namespace Node.Database
                     command.Parameters.AddWithValue("@itemID", item.ID);
                     command.Parameters.AddWithValue("@attributeID", pair.Value.Info.ID);
 
-                    if (pair.Value.ValueType == ItemAttribute.ItemAttributeValueType.Integer)
+                    if (pair.Value.ValueType == Inventory.Items.Attributes.Attribute.ItemAttributeValueType.Integer)
                         command.Parameters.AddWithValue("@valueInt", pair.Value.Integer);
                     else
                         command.Parameters.AddWithValue("@valueInt", null);
 
-                    if (pair.Value.ValueType == ItemAttribute.ItemAttributeValueType.Double)
+                    if (pair.Value.ValueType == Inventory.Items.Attributes.Attribute.ItemAttributeValueType.Double)
                         command.Parameters.AddWithValue("@valueFloat", pair.Value.Float);
                     else
                         command.Parameters.AddWithValue("@valueFloat", null);
@@ -1173,7 +1175,7 @@ namespace Node.Database
                 new Dictionary<string, object>()
                 {
                     {"@characterID", ownerID},
-                    {"@hangarFlag", ItemFlags.Hangar},
+                    {"@hangarFlag", Flags.Hangar},
                     {"@minimumBlueprintCount", blueprintsOnly}
                 }
             );
@@ -1191,7 +1193,7 @@ namespace Node.Database
                 {
                     {"@ownerID", ownerID},
                     {"@locationID", locationID},
-                    {"@hangarFlag", ItemFlags.Hangar}
+                    {"@hangarFlag", Flags.Hangar}
                 }
             );
         }
@@ -1204,7 +1206,7 @@ namespace Node.Database
                 {
                     {"@ownerID", ownerID},
                     {"@locationID", locationID},
-                    {"@blueprintCategoryID", ItemCategories.Blueprint}
+                    {"@blueprintCategoryID", Categories.Blueprint}
                 }
             );
         }
@@ -1216,7 +1218,7 @@ namespace Node.Database
                 "SELECT itemID AS jumpCloneID, typeID, locationID FROM invItems WHERE flag = @cloneFlag AND ownerID = @characterID AND itemID != @activeCloneID AND locationID IN(SELECT stationID FROM staStations)",
                 new Dictionary<string, object>()
                 {
-                    {"@cloneFlag", ItemFlags.Clone},
+                    {"@cloneFlag", Flags.Clone},
                     {"@activeCloneID", activeCloneID},
                     {"@characterID", characterID}
                 }
@@ -1229,7 +1231,7 @@ namespace Node.Database
                 "SELECT itemID AS jumpCloneID, typeID, locationID FROM invItems WHERE flag = @cloneFlag AND ownerID = @characterID AND locationID NOT IN(SELECT stationID FROM staStations)",
                 new Dictionary<string, object>()
                 {
-                    {"@cloneFlag", ItemFlags.Clone},
+                    {"@cloneFlag", Flags.Clone},
                     {"@characterID", characterID}
                 }
             );
@@ -1242,8 +1244,8 @@ namespace Node.Database
                 new Dictionary<string, object>()
                 {
                     {"@characterID", characterID},
-                    {"@implantFlag", ItemFlags.Implant},
-                    {"@cloneFlag", ItemFlags.Clone}
+                    {"@implantFlag", Flags.Implant},
+                    {"@cloneFlag", Flags.Clone}
                 }
             );
         }

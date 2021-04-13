@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Common.Database;
 using MySql.Data.MySqlClient;
 using Node.Inventory.Items;
+using Node.StaticData.Inventory;
 using PythonTypes.Types.Collections;
 using PythonTypes.Types.Database;
 using PythonTypes.Types.Primitives;
@@ -11,11 +12,7 @@ namespace Node.Database
 {
     public class MessagesDB : DatabaseAccessor
     {
-        public MessagesDB(DatabaseConnection db) : base(db)
-        {
-        }
-
-        public Rowset GetMailHeaders(int channelID)
+	    public Rowset GetMailHeaders(int channelID)
         {
             return Database.PrepareRowsetQuery(
 	            "SELECT channelID, messageID, senderID, subject, created, `read` FROM eveMail WHERE channelID = @channelID",
@@ -26,7 +23,7 @@ namespace Node.Database
 	        );
         }
 
-        public PyTuple GetMessageDetails(int channelID, int messageID)
+	    public PyTuple GetMessageDetails(int channelID, int messageID)
         {
 	        // TODO: SIMPLIFY TABLE STRUCTURE, ATTACHMENTS ARE NOT SUPPORTED
 	        MySqlConnection connection = null;
@@ -93,7 +90,7 @@ namespace Node.Database
 	        }
         }
 
-        public void MarkMessagesRead(int characterID, int messageID)
+	    public void MarkMessagesRead(int characterID, int messageID)
         {
 	        Database.PrepareQuery(
 		        "UPDATE eveMail SET `read` = 1 WHERE messageID = @messageID",
@@ -104,7 +101,7 @@ namespace Node.Database
 	        );
         }
 
-        public ulong StoreMail(int channelID, int senderID, string subject, string message, out string mailboxType)
+	    public ulong StoreMail(int channelID, int senderID, string subject, string message, out string mailboxType)
         {
 	        ulong messageID = Database.PrepareQueryLID(
 		        "INSERT INTO eveMail (channelID, senderID, subject, body, mimeTypeID, created, `read`)VALUES(@channelID, @senderID, @subject, @body, 2, @created, 0)",
@@ -138,11 +135,11 @@ namespace Node.Database
 		        {
 			        switch (reader.GetInt32(0))
 			        {
-				        case (int) ItemGroups.Character:
+				        case (int) Groups.Character:
 					        mailboxType = "charid";
 					        break;
 				        
-				        case (int) ItemGroups.Corporation:
+				        case (int) Groups.Corporation:
 					        mailboxType = "corpid";
 					        break;
 			        }
@@ -154,6 +151,10 @@ namespace Node.Database
 	        }
 	        
 	        return messageID;
+        }
+
+        public MessagesDB(DatabaseConnection db) : base(db)
+        {
         }
     }
 }

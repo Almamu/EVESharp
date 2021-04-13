@@ -10,10 +10,6 @@ namespace Node.Database
 {
     public class CorporationDB : DatabaseAccessor
     {
-        public CorporationDB(DatabaseConnection db) : base(db)
-        {
-        }
-
         public PyDictionary<PyInteger,PyInteger> ListAllCorpFactions()
         {
             return Database.PrepareIntIntDictionary("SELECT corporationID, factionID from crpNPCCorporations");
@@ -246,7 +242,7 @@ namespace Node.Database
                 return header.DataFromMySqlReader(0, reader, rowsIndex);
             }
         }
-        
+
         public SparseRowsetHeader GetOfficesSparseRowset(int corporationID)
         {
             MySqlConnection connection = null;
@@ -285,7 +281,7 @@ namespace Node.Database
                 return new SparseRowsetHeader(reader.GetInt32(0), headers, fieldTypes);
             }
         }
-        
+
         public Dictionary<PyDataType, int> GetMembers(int corporationID)
         {
             MySqlConnection connection = null;
@@ -311,7 +307,7 @@ namespace Node.Database
                 return result;
             }
         }
-        
+
         public PyList<PyTuple> GetMembers(PyList<PyInteger> characterIDs, int corporationID, SparseRowsetHeader header, Dictionary<PyDataType, int> rowsIndex)
         {
             // TODO: GENERATE PROPER FIELDS FOR THE FOLLOWING FIELDS
@@ -376,7 +372,7 @@ namespace Node.Database
                 return header.DataFromMySqlReader(0, reader, rowsIndex);
             }
         }
-        
+
         public SparseRowsetHeader GetMembersSparseRowset(int corporationID)
         {
             MySqlConnection connection = null;
@@ -668,6 +664,10 @@ namespace Node.Database
 
                 return reader.GetInt32(0);
             }
+        }
+
+        public CorporationDB(DatabaseConnection db) : base(db)
+        {
         }
     }
 }

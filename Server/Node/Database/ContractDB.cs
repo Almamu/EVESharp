@@ -36,21 +36,18 @@ using Node.Inventory.Items.Attributes;
 using Node.Inventory.Items.Types;
 using Node.Services.Contracts;
 using Node.Services.Database;
+using Node.StaticData.Inventory;
 using PythonTypes.Types.Collections;
 using PythonTypes.Types.Database;
 using PythonTypes.Types.Exceptions;
 using PythonTypes.Types.Primitives;
+using Type = System.Type;
 
 namespace Node.Database
 {
     public class ContractDB : DatabaseAccessor
     {
         private TypeManager TypeManager { get; }
-        
-        public ContractDB(TypeManager typeManager, DatabaseConnection db) : base(db)
-        {
-            this.TypeManager = typeManager;
-        }
 
         public int GetOutstandingContractsCountForPlayer(int characterID)
         {
@@ -76,7 +73,7 @@ namespace Node.Database
                 return reader.GetInt32(0);
             }
         }
-        
+
         public PyDataType NumRequiringAttention(int characterID, int corporationID)
         {
             return Database.PrepareKeyValQuery(
@@ -151,7 +148,7 @@ namespace Node.Database
                 {
                     {"@characterID", characterID},
                     {"@stationID", stationID},
-                    {"@flagHangar", ItemFlags.Hangar}
+                    {"@flagHangar", Flags.Hangar}
                 }
             );
         }
@@ -205,7 +202,7 @@ namespace Node.Database
                 }
             );
         }
-        
+
         public Rowset GetContractBids(int contractID, int characterID, int corporationID)
         {
             return Database.PrepareRowsetQuery(
@@ -218,7 +215,7 @@ namespace Node.Database
                 }
             );
         }
-        
+
         public Rowset GetContractItems(int contractID, int characterID, int corporationID)
         {
             return Database.PrepareRowsetQuery(
@@ -257,16 +254,16 @@ namespace Node.Database
 
         public class ItemQuantityEntry
         {
-            public int ItemID { get; set; }
-            public int TypeID { get; set; }
+            public int ItemID { get; init; }
+            public int TypeID { get; init; }
             public int Quantity { get; set; }
-            public int OldQuantity { get; set; }
-            public int NodeID { get; set; }
-            public double Volume { get; set; }
+            public int OldQuantity { get; init; }
+            public int NodeID { get; init; }
+            public double Volume { get; init; }
             public bool Singleton { get; init; }
             public bool Contraband { get; init; }
         }
-        
+
         public Dictionary<int, ItemQuantityEntry> PrepareItemsForContract(MySqlConnection connection, ulong contractID, PyList<PyList> itemList, Station station, int ownerID, int crateID, int shipID)
         {
             Dictionary<int, ItemQuantityEntry> items = new Dictionary<int, ItemQuantityEntry>();
@@ -287,8 +284,8 @@ namespace Node.Database
                         {"@locationID", station.ID},
                         {"@ownerID", ownerID},
                         {"@itemID", itemID},
-                        {"@damage", (int) AttributeEnum.damage},
-                        {"@volume", (int) AttributeEnum.volume}
+                        {"@damage", (int) Attributes.damage},
+                        {"@volume", (int) Attributes.volume}
                     }
                 );
 
@@ -310,7 +307,7 @@ namespace Node.Database
             
                     int itemQuantity = reader.GetInt32(0);
 
-                    if (reader.GetInt32(4) == (int) ItemCategories.Ship && itemQuantity == 1 && reader.GetBoolean(5) == false)
+                    if (reader.GetInt32(4) == (int) Categories.Ship && itemQuantity == 1 && reader.GetBoolean(5) == false)
                         throw new ConCannotTradeNonSingletonShip(this.TypeManager[typeID].Name, station.Name);
 
                     if (reader.GetBoolean(6) == true)
@@ -479,7 +476,7 @@ namespace Node.Database
 
             Database.PrepareQuery(ref connection, query, values).Close();
         }
-        
+
         public List<int> GetContractList(int? startContractID, int limit, int? itemTypeID, PyList<PyInteger> notIssuedByIDs, PyList<PyInteger> issuedByIDs, int? assigneeID, int? locationID, int? itemGroupID, int? itemCategoryID, int priceMax, int priceMin, int? type, string? description, int callerID, int callerCorpID, int? ownerID = null, int? status = null, bool includeExpired = false, bool expiredOnly = false)
         {
             string contractQuery = "SELECT contractID FROM conContracts LEFT JOIN conItems USING(contractID) LEFT JOIN invTypes ON conItems.itemTypeID = invTypes.typeID LEFT JOIN invGroups USING(groupID) LEFT JOIN staStations ON staStations.stationID = conContracts.startStationID WHERE (availability = 1 OR (availability = 0 AND issuerCorpID = @corporationID) OR assigneeID = @characterID)";
@@ -677,7 +674,7 @@ namespace Node.Database
                 $"SELECT contractID, issuerID, issuerCorpID, type, availability, assigneeID, expiretime, numDays, startStationID, start.solarSystemID AS startSolarSystemID, start.regionID AS startRegionID, endStationID, end.solarSystemID AS endSolarSystemID, end.regionID AS endRegionID, price, reward, collateral, title, description, forCorp, status, isAccepted, acceptorID, dateIssued, dateExpired, dateAccepted, dateCompleted, volume, crateID, issuerWalletKey, issuerAllianceID, acceptorWalletKey FROM conContracts LEFT JOIN staStations AS start ON start.stationID = startStationID LEFT JOIN staStations AS end ON end.stationID = endStationID WHERE contractID IN ({String.Join(',', contractList)})"
             );
         }
-        
+
         public PyDataType GetBidsForContractList(List<int> contractList)
         {
             return Database.PrepareIntPackedRowListDictionary(
@@ -938,7 +935,7 @@ namespace Node.Database
             ).Close();
         }
 
-        public List<ItemQuantityEntry> CheckRequiredItemsAtStation(MySqlConnection connection, Station station, int ownerID, int newOwnerID, ItemFlags flag, Dictionary<int, int> requiredItemTypes)
+        public List<ItemQuantityEntry> CheckRequiredItemsAtStation(MySqlConnection connection, Station station, int ownerID, int newOwnerID, Flags flag, Dictionary<int, int> requiredItemTypes)
         {
             MySqlDataReader reader = Database.PrepareQuery(ref connection,
                 $"SELECT invItems.itemID, quantity, typeID, nodeID, IF(dmg.valueFloat IS NULL, dmg.valueInt, dmg.valueFloat) AS damage, categoryID, singleton, contraband FROM invItems LEFT JOIN invTypes USING(typeID) LEFT JOIN invGroups USING(groupID) LEFT JOIN invItemsAttributes dmg ON invItems.itemID = dmg.itemID AND dmg.attributeID = @damage WHERE typeID IN ({string.Join(',', requiredItemTypes.Keys)}) AND locationID = @locationID AND ownerID = @ownerID AND flag = @flag",
@@ -946,7 +943,7 @@ namespace Node.Database
                 {
                     {"@locationID", station.ID},
                     {"@ownerID", ownerID},
-                    {"@damage", (int) AttributeEnum.damage},
+                    {"@damage", (int) Attributes.damage},
                     {"@flag", (int) flag}
                 }
             );
@@ -965,7 +962,7 @@ namespace Node.Database
                         throw new ConCannotTradeDamagedItem(this.TypeManager[typeID].Name);
                     if (damageValue == typeof(double) && reader.IsDBNull(4) == false && reader.GetDouble(4) > 0)
                         throw new ConCannotTradeDamagedItem(this.TypeManager[typeID].Name);
-                    if (reader.GetBoolean(6) == false && reader.GetInt32(6) == (int) ItemCategories.Ship)
+                    if (reader.GetBoolean(6) == false && reader.GetInt32(6) == (int) Categories.Ship)
                         throw new ConCannotTradeNonSingletonShip(this.TypeManager[typeID].Name, station.Name);
                     if (reader.GetBoolean(7) == true)
                         throw new ConCannotTradeContraband(this.TypeManager[typeID].Name);
@@ -1072,6 +1069,11 @@ namespace Node.Database
 
                 return result;
             }
+        }
+
+        public ContractDB(TypeManager typeManager, DatabaseConnection db) : base(db)
+        {
+            this.TypeManager = typeManager;
         }
     }
 }

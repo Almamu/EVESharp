@@ -3,18 +3,16 @@ using System.Collections.Generic;
 using Common.Database;
 using MySql.Data.MySqlClient;
 using Node.Exceptions.marketProxy;
+using Node.Inventory;
 using Node.Inventory.Items;
 using Node.Inventory.Items.Attributes;
 using Node.Services.Database;
+using Node.StaticData.Inventory;
 
 namespace Node.Database
 {
     public class RepairDB : DatabaseAccessor
     {
-        public RepairDB(DatabaseConnection db) : base(db)
-        {
-        }
-        
         public class ItemRepackageEntry
         {
             public int ItemID { get; set; }
@@ -26,18 +24,18 @@ namespace Node.Database
             public bool HasUpgrades { get; set; }
             public int LocationID { get; set; }
         }
-        
+
         public ItemRepackageEntry GetItemToRepackage(int itemID, int ownerID, int locationID)
         {
             MySqlConnection connection = null;
             MySqlDataReader reader = Database.PrepareQuery(ref connection,
-                $"SELECT invItems.singleton, invItems.nodeID, IF(valueInt IS NULL, valueFloat, valueInt) AS damage, insuranceID, invItems.typeID, upgrades.itemID, invItems.locationID AS hasUpgrades FROM invItems LEFT JOIN invItems upgrades ON upgrades.locationID = invItems.itemID AND upgrades.flag >= {(int) ItemFlags.RigSlot0} AND upgrades.flag <= {(int) ItemFlags.RigSlot7} LEFT JOIN chrShipInsurances ON shipID = invItems.itemID LEFT JOIN invItemsAttributes ON invItemsAttributes.itemID = invItems.itemID AND invItemsAttributes.attributeID = @damageAttributeID WHERE invItems.itemID = @itemID AND invItems.locationID = @locationID AND invItems.ownerID = @ownerID",
+                $"SELECT invItems.singleton, invItems.nodeID, IF(valueInt IS NULL, valueFloat, valueInt) AS damage, insuranceID, invItems.typeID, upgrades.itemID, invItems.locationID AS hasUpgrades FROM invItems LEFT JOIN invItems upgrades ON upgrades.locationID = invItems.itemID AND upgrades.flag >= {(int) Flags.RigSlot0} AND upgrades.flag <= {(int) Flags.RigSlot7} LEFT JOIN chrShipInsurances ON shipID = invItems.itemID LEFT JOIN invItemsAttributes ON invItemsAttributes.itemID = invItems.itemID AND invItemsAttributes.attributeID = @damageAttributeID WHERE invItems.itemID = @itemID AND invItems.locationID = @locationID AND invItems.ownerID = @ownerID",
                 new Dictionary<string, object>()
                 {
                     {"@locationID", locationID},
                     {"@ownerID", ownerID},
                     {"@itemID", itemID},
-                    {"@damageAttributeID", (int) AttributeEnum.damage}
+                    {"@damageAttributeID", (int) Attributes.damage}
                 }
             );
             
@@ -65,7 +63,7 @@ namespace Node.Database
         {
             // remove any rigs inside the item (if any)
             Database.PrepareQuery(
-                $"DELETE FROM invItems WHERE locationID = @itemID AND flag >= {(int) ItemFlags.RigSlot0} AND flag <= {(int) ItemFlags.RigSlot7}",
+                $"DELETE FROM invItems WHERE locationID = @itemID AND flag >= {(int) Flags.RigSlot0} AND flag <= {(int) Flags.RigSlot7}",
                 new Dictionary<string, object>()
                 {
                     {"@itemID", itemID}
@@ -79,7 +77,7 @@ namespace Node.Database
                 {
                     {"@itemID", itemID},
                     {"@stationID", stationID},
-                    {"@flag", (int) ItemFlags.Hangar}
+                    {"@flag", (int) Flags.Hangar}
                 }
             );
             
@@ -91,6 +89,10 @@ namespace Node.Database
                     {"@itemID", itemID}
                 }
             );
+        }
+
+        public RepairDB(DatabaseConnection db) : base(db)
+        {
         }
     }
 }

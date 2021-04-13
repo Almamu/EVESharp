@@ -6,9 +6,11 @@ using Node.Exceptions;
 using Node.Exceptions.character;
 using Node.Inventory.Items.Attributes;
 using Node.Network;
+using Node.StaticData.Inventory;
 using PythonTypes.Types.Collections;
 using PythonTypes.Types.Exceptions;
 using PythonTypes.Types.Primitives;
+using Attribute = Node.Inventory.Items.Attributes.Attribute;
 
 namespace Node.Inventory.Items.Types
 {
@@ -371,32 +373,32 @@ namespace Node.Inventory.Items.Types
 
         public long Charisma
         {
-            get => this.Attributes[AttributeEnum.charisma].Integer;
-            set => this.Attributes[AttributeEnum.charisma].Integer = value;
+            get => this.Attributes[StaticData.Inventory.Attributes.charisma].Integer;
+            set => this.Attributes[StaticData.Inventory.Attributes.charisma].Integer = value;
         }
 
         public long Willpower
         {
-            get => this.Attributes[AttributeEnum.willpower].Integer;
-            set => this.Attributes[AttributeEnum.willpower].Integer = value;
+            get => this.Attributes[StaticData.Inventory.Attributes.willpower].Integer;
+            set => this.Attributes[StaticData.Inventory.Attributes.willpower].Integer = value;
         }
 
         public long Intelligence
         {
-            get => this.Attributes[AttributeEnum.intelligence].Integer;
-            set => this.Attributes[AttributeEnum.intelligence].Integer = value;
+            get => this.Attributes[StaticData.Inventory.Attributes.intelligence].Integer;
+            set => this.Attributes[StaticData.Inventory.Attributes.intelligence].Integer = value;
         }
 
         public long Perception
         {
-            get => this.Attributes[AttributeEnum.perception].Integer;
-            set => this.Attributes[AttributeEnum.perception].Integer = value;
+            get => this.Attributes[StaticData.Inventory.Attributes.perception].Integer;
+            set => this.Attributes[StaticData.Inventory.Attributes.perception].Integer = value;
         }
 
         public long Memory
         {
-            get => this.Attributes[AttributeEnum.memory].Integer;
-            set => this.Attributes[AttributeEnum.memory].Integer = value;
+            get => this.Attributes[StaticData.Inventory.Attributes.memory].Integer;
+            set => this.Attributes[StaticData.Inventory.Attributes.memory].Integer = value;
         }
 
         public List<SkillQueueEntry> SkillQueue
@@ -429,30 +431,30 @@ namespace Node.Inventory.Items.Types
         
         public Dictionary<int, Skill> InjectedSkills =>
             this.Items
-                .Where(x => (x.Value.Flag == ItemFlags.SkillInTraining || x.Value.Flag == ItemFlags.Skill) && x.Value is Skill)
+                .Where(x => (x.Value.Flag == Flags.SkillInTraining || x.Value.Flag == Flags.Skill) && x.Value is Skill)
                 .ToDictionary(dict => dict.Key, dict => dict.Value as Skill);
 
         public Dictionary<int, ItemEntity> Modifiers => 
             this.Items
-                .Where(x => (x.Value.Flag == ItemFlags.SkillInTraining || x.Value.Flag == ItemFlags.Skill || x.Value.Flag == ItemFlags.Implant))
+                .Where(x => (x.Value.Flag == Flags.SkillInTraining || x.Value.Flag == Flags.Skill || x.Value.Flag == Flags.Implant))
                 .ToDictionary(dict => dict.Key, dict => dict.Value);
         
         public Dictionary<int, Skill> InjectedSkillsByTypeID =>
             this.Items
-                .Where(x => (x.Value.Flag == ItemFlags.Skill || x.Value.Flag == ItemFlags.SkillInTraining) && x.Value is Skill)
+                .Where(x => (x.Value.Flag == Flags.Skill || x.Value.Flag == Flags.SkillInTraining) && x.Value is Skill)
                 .ToDictionary(dict => dict.Value.Type.ID, dict => dict.Value as Skill);
 
         public Dictionary<int, Implant> PluggedInImplants =>
             this.Items
-                .Where(x => x.Value.Flag == ItemFlags.Implant && x.Value is Implant)
+                .Where(x => x.Value.Flag == Flags.Implant && x.Value is Implant)
                 .ToDictionary(dict => dict.Key, dict => dict.Value as Implant);
 
         public Dictionary<int, Implant> PluggedInImplantsByTypeID =>
             this.Items
-                .Where(x => x.Value.Flag == ItemFlags.Implant && x.Value is Implant)
+                .Where(x => x.Value.Flag == Flags.Implant && x.Value is Implant)
                 .ToDictionary(dict => dict.Key, dict => dict.Value as Implant);
         
-        protected override void LoadContents(ItemFlags ignoreFlags = ItemFlags.None)
+        protected override void LoadContents(Flags ignoreFlags = Flags.None)
         {
             base.LoadContents(ignoreFlags);
             
@@ -460,7 +462,7 @@ namespace Node.Inventory.Items.Types
 
             // put things where they belong
             Dictionary<int, Skill> skillQueue = this.Items
-                .Where(x => x.Value.Flag == ItemFlags.SkillInTraining && x.Value is Skill)
+                .Where(x => x.Value.Flag == Flags.SkillInTraining && x.Value is Skill)
                 .ToDictionary(dict => dict.Key, dict => dict.Value as Skill);
 
             this.mSkillQueue = base.ItemFactory.CharacterDB.LoadSkillQueue(this, skillQueue);
@@ -475,8 +477,8 @@ namespace Node.Inventory.Items.Types
 
         public double GetSkillPointsPerMinute(Skill skill)
         {
-            ItemAttribute primarySpPerMin = this.Attributes[skill.PrimaryAttribute.Integer];
-            ItemAttribute secondarySpPerMin = this.Attributes[skill.SecondaryAttribute.Integer];
+            Attribute primarySpPerMin = this.Attributes[skill.PrimaryAttribute.Integer];
+            Attribute secondarySpPerMin = this.Attributes[skill.SecondaryAttribute.Integer];
 
             long skillLearningLevel = 0;
             
@@ -513,15 +515,15 @@ namespace Node.Inventory.Items.Types
 
         public void EnsureFreeImplantSlot(ItemEntity newImplant)
         {
-            int implantSlot = (int) newImplant.Attributes[AttributeEnum.implantness].Integer;
+            int implantSlot = (int) newImplant.Attributes[StaticData.Inventory.Attributes.implantness].Integer;
 
             foreach ((int _, Implant implant) in this.PluggedInImplants)
             {
                 // the implant does not use any slot, here for sanity checking
-                if (implant.Attributes.AttributeExists(AttributeEnum.implantness) == false)
+                if (implant.Attributes.AttributeExists(StaticData.Inventory.Attributes.implantness) == false)
                     continue;
 
-                if (implant.Attributes[AttributeEnum.implantness].Integer == implantSlot)
+                if (implant.Attributes[StaticData.Inventory.Attributes.implantness].Integer == implantSlot)
                     throw new OnlyOneImplantActive(newImplant);
             }
         }

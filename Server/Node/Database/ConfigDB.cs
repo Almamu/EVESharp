@@ -11,25 +11,13 @@ namespace Node.Database
     public class ConfigDB : DatabaseAccessor
     {
         private NodeContainer NodeContainer { get; }
-        
-        public ConfigDB(NodeContainer nodeContainer, DatabaseConnection db) : base(db)
-        {
-            this.NodeContainer = nodeContainer;
-        }
 
         public PyDataType GetMultiOwnersEx(PyList<PyInteger> ids)
         {
-            string query = "SELECT itemID as ownerID, itemName as ownerName, typeID FROM eveNames WHERE itemID IN (";
-            Dictionary<string, object> parameters = new Dictionary<string,object>();
-
-            foreach (PyInteger id in ids)
-                parameters["@itemID" + parameters.Count.ToString("X")] = (int) id;
-
-            // prepare the correct list of arguments
-            query += String.Join(',', parameters.Keys) + ")";
-            
             MySqlConnection connection = null;
-            MySqlDataReader reader = Database.PrepareQuery(ref connection, query, parameters);
+            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+                $"SELECT itemID as ownerID, itemName as ownerName, typeID FROM eveNames WHERE itemID IN ({PyString.Join(',', ids)})"
+            ).ExecuteReader();
             
             using (connection)
             using (reader)
@@ -39,18 +27,11 @@ namespace Node.Database
         }
 
         public PyDataType GetMultiGraphicsEx(PyList<PyInteger> ids)
-        {
-            string query = "SELECT graphicID, url3D, urlWeb, icon, urlSound, explosionID FROM eveGraphics WHERE graphicID IN (";
-            Dictionary<string, object> parameters = new Dictionary<string,object>();
-
-            foreach (PyInteger id in ids)
-                parameters["@graphicID" + parameters.Count.ToString("X")] = (int) id;
-
-            // prepare the correct list of arguments
-            query += String.Join(',', parameters.Keys) + ")";
-            
+        {   
             MySqlConnection connection = null;
-            MySqlDataReader reader = Database.PrepareQuery(ref connection, query, parameters);
+            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+                $"SELECT graphicID, url3D, urlWeb, icon, urlSound, explosionID FROM eveGraphics WHERE graphicID IN ({PyString.Join(',', ids)})"
+            ).ExecuteReader();
             
             using (connection)
             using (reader)
@@ -58,20 +39,13 @@ namespace Node.Database
                 return TupleSet.FromMySqlDataReader(Database, reader);
             }
         }
-        
+
         public PyDataType GetMultiLocationsEx(PyList<PyInteger> ids)
         {
-            string query = "SELECT itemID as locationID, itemName as locationName, x, y, z FROM invItems LEFT JOIN eveNames USING(itemID) LEFT JOIN invPositions USING (itemID) WHERE itemID IN (";
-            Dictionary<string, object> parameters = new Dictionary<string,object>();
-
-            foreach (PyInteger id in ids)
-                parameters["@itemID" + parameters.Count.ToString("X")] = (int) id;
-
-            // prepare the correct list of arguments
-            query += String.Join(',', parameters.Keys) + ")";
-            
             MySqlConnection connection = null;
-            MySqlDataReader reader = Database.PrepareQuery(ref connection, query, parameters);
+            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+                $"SELECT itemID as locationID, itemName as locationName, x, y, z FROM invItems LEFT JOIN eveNames USING(itemID) LEFT JOIN invPositions USING (itemID) WHERE itemID IN ({PyString.Join(',', ids)})"
+            ).ExecuteReader();
             
             using (connection)
             using (reader)
@@ -79,20 +53,13 @@ namespace Node.Database
                 return TupleSet.FromMySqlDataReader(Database, reader);
             }
         }
-        
+
         public PyDataType GetMultiAllianceShortNamesEx(PyList<PyInteger> ids)
         {
-            string query = "SELECT allianceID, shortName FROM alliance_shortnames WHERE allianceID IN (";
-            Dictionary<string, object> parameters = new Dictionary<string,object>();
-
-            foreach (PyInteger id in ids)
-                parameters["@itemID" + parameters.Count.ToString("X")] = (int) id;
-
-            // prepare the correct list of arguments
-            query += String.Join(',', parameters.Keys) + ")";
-            
             MySqlConnection connection = null;
-            MySqlDataReader reader = Database.PrepareQuery(ref connection, query, parameters);
+            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+                $"SELECT allianceID, shortName FROM alliance_shortnames WHERE allianceID IN ({PyString.Join(',', ids)}"
+            ).ExecuteReader();
             
             using (connection)
             using (reader)
@@ -186,17 +153,10 @@ namespace Node.Database
 
         public PyDataType GetMultiInvTypesEx(PyList<PyInteger> ids)
         {
-            string query = "SELECT typeID, groupID, typeName, description, graphicID, radius, mass, volume, capacity, portionSize, raceID, basePrice, published, marketGroupID, chanceOfDuplicating, dataID FROM invTypes WHERE typeID IN (";
-            Dictionary<string, object> parameters = new Dictionary<string,object>();
-
-            foreach (PyInteger id in ids)
-                parameters["@typeID" + parameters.Count.ToString("X")] = (int) id;
-
-            // prepare the correct list of arguments
-            query += String.Join(',', parameters.Keys) + ")";
-            
             MySqlConnection connection = null;
-            MySqlDataReader reader = Database.PrepareQuery(ref connection, query, parameters);
+            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+                $"SELECT typeID, groupID, typeName, description, graphicID, radius, mass, volume, capacity, portionSize, raceID, basePrice, published, marketGroupID, chanceOfDuplicating, dataID FROM invTypes WHERE typeID IN ({PyString.Join(',', ids)})"
+            ).ExecuteReader();
             
             using (connection)
             using (reader)
@@ -328,6 +288,11 @@ namespace Node.Database
 
                 return result;
             }
+        }
+
+        public ConfigDB(NodeContainer nodeContainer, DatabaseConnection db) : base(db)
+        {
+            this.NodeContainer = nodeContainer;
         }
     }
 }

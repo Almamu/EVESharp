@@ -1,6 +1,6 @@
 using System.Collections.Generic;
-using Node.Data;
 using Node.Database;
+using Node.StaticData;
 
 namespace Node
 {
@@ -14,15 +14,13 @@ namespace Node
         /// The list of constants for EVE Online
         /// </summary>
         public Dictionary<string, Constant> Constants { get; }
-        private GeneralDB GeneralDB { get; }
 
         public NodeContainer(GeneralDB generalDB)
         {
             this.NodeID = 0;
-            this.GeneralDB = generalDB;
-
+            
             // load constants for the EVE System
-            this.Constants = this.GeneralDB.LoadConstants();
+            this.Constants = generalDB.LoadConstants();
         }
     }
 }

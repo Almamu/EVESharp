@@ -30,9 +30,11 @@ using Node.Exceptions.jumpCloneSvc;
 using Node.Exceptions.ship;
 using Node.Inventory.Items.Attributes;
 using Node.Inventory.Items.Types;
+using Node.StaticData.Inventory;
 using PythonTypes.Types.Collections;
 using PythonTypes.Types.Database;
 using PythonTypes.Types.Primitives;
+using Type = Node.StaticData.Inventory.Type;
 
 namespace Node.Inventory.Items
 {
@@ -40,7 +42,7 @@ namespace Node.Inventory.Items
     {
         public ItemFactory ItemFactory { get; }
 
-        public static readonly DBRowDescriptor sEntityItemDescriptor = new DBRowDescriptor()
+        public static readonly DBRowDescriptor EntityItemDescriptor = new DBRowDescriptor()
         {
             Columns =
             {
@@ -60,10 +62,10 @@ namespace Node.Inventory.Items
 
         private int mID;
         private string mName;
-        private ItemType mType;
+        private Type mType;
         private int mOwnerID;
         private int mLocationID;
-        private ItemFlags mFlag;
+        private Flags mFlag;
         private bool mContraband;
         private bool mSingleton;
         private int mQuantity; // TODO: DEPRECATE THIS AND USE QUANTITY ATTRIBUTE
@@ -78,7 +80,7 @@ namespace Node.Inventory.Items
         public int ID => mID;
         public AttributeList Attributes => mAttributes;
 
-        public ItemType Type
+        public Type Type
         {
             get => this.mType;
             set
@@ -118,7 +120,7 @@ namespace Node.Inventory.Items
             }
         }
 
-        public ItemFlags Flag
+        public Flags Flag
         {
             get => mFlag;
             set
@@ -203,8 +205,8 @@ namespace Node.Inventory.Items
         public bool HadName => this.mHadName;
         public bool HadPosition => this.mHadPosition;
         
-        public ItemEntity(string entityName, int entityId, ItemType type, int ownerID,
-            int locationID, ItemFlags entityFlag, bool entityContraband, bool entitySingleton,
+        public ItemEntity(string entityName, int entityId, Type type, int ownerID,
+            int locationID, Flags entityFlag, bool entityContraband, bool entitySingleton,
             int entityQuantity, double? x, double? y, double? z, string entityCustomInfo, AttributeList attributes, ItemFactory itemFactory)
         {
             this.mName = entityName;
@@ -227,8 +229,8 @@ namespace Node.Inventory.Items
             this.mHadPosition = x is not null && y is not null && z is not null;
         }
 
-        public ItemEntity(string entityName, int entityId, ItemType type, ItemEntity entityOwner,
-            ItemEntity entityLocation, ItemFlags entityFlag, bool entityContraband, bool entitySingleton,
+        public ItemEntity(string entityName, int entityId, Type type, ItemEntity entityOwner,
+            ItemEntity entityLocation, Flags entityFlag, bool entityContraband, bool entitySingleton,
             int entityQuantity, double? x, double? y, double? z, string entityCustomInfo, AttributeList attributes, ItemFactory itemFactory) : this(
             entityName, entityId, type, entityOwner.ID, entityLocation.ID, entityFlag, entityContraband,
             entitySingleton, entityQuantity, x, y, z, entityCustomInfo, attributes, itemFactory)
@@ -285,7 +287,7 @@ namespace Node.Inventory.Items
                 {"customInfo", this.CustomInfo}
             };
             
-            return new PyPackedRow(sEntityItemDescriptor, values);
+            return new PyPackedRow(EntityItemDescriptor, values);
         }
         
         public virtual PyDictionary GetEffects()
@@ -294,7 +296,7 @@ namespace Node.Inventory.Items
             return new PyDictionary();
         }
 
-        protected void CheckSkillRequirement(AttributeEnum skillTypeIDRequirement, AttributeEnum skillLevelRequirement, Dictionary<int, Skill> skills)
+        protected void CheckSkillRequirement(StaticData.Inventory.Attributes skillTypeIDRequirement, StaticData.Inventory.Attributes skillLevelRequirement, Dictionary<int, Skill> skills)
         {
             if (this.Attributes.AttributeExists(skillLevelRequirement) == false ||
                 this.Attributes.AttributeExists(skillTypeIDRequirement) == false)
@@ -314,23 +316,23 @@ namespace Node.Inventory.Items
         {
             Dictionary<int, Skill> skills = character.InjectedSkillsByTypeID;
             List<string> missingSkills = new List<string>();
-            AttributeEnum[] attributes = new AttributeEnum[]
+            StaticData.Inventory.Attributes[] attributes = new StaticData.Inventory.Attributes[]
             {
-                AttributeEnum.requiredSkill1,
-                AttributeEnum.requiredSkill2,
-                AttributeEnum.requiredSkill3,
-                AttributeEnum.requiredSkill4,
-                AttributeEnum.requiredSkill5,
-                AttributeEnum.requiredSkill6,
+                StaticData.Inventory.Attributes.requiredSkill1,
+                StaticData.Inventory.Attributes.requiredSkill2,
+                StaticData.Inventory.Attributes.requiredSkill3,
+                StaticData.Inventory.Attributes.requiredSkill4,
+                StaticData.Inventory.Attributes.requiredSkill5,
+                StaticData.Inventory.Attributes.requiredSkill6,
             };
-            AttributeEnum[] levelAttributes = new AttributeEnum[]
+            StaticData.Inventory.Attributes[] levelAttributes = new StaticData.Inventory.Attributes[]
             {
-                AttributeEnum.requiredSkill1Level,
-                AttributeEnum.requiredSkill2Level,
-                AttributeEnum.requiredSkill3Level,
-                AttributeEnum.requiredSkill4Level,
-                AttributeEnum.requiredSkill5Level,
-                AttributeEnum.requiredSkill6Level,
+                StaticData.Inventory.Attributes.requiredSkill1Level,
+                StaticData.Inventory.Attributes.requiredSkill2Level,
+                StaticData.Inventory.Attributes.requiredSkill3Level,
+                StaticData.Inventory.Attributes.requiredSkill4Level,
+                StaticData.Inventory.Attributes.requiredSkill5Level,
+                StaticData.Inventory.Attributes.requiredSkill6Level,
             };
 
             for (int i = 0; i < attributes.Length; i++)
@@ -357,21 +359,21 @@ namespace Node.Inventory.Items
 
         public bool IsInModuleSlot()
         {
-            return this.Flag == ItemFlags.HiSlot0 || this.Flag == ItemFlags.HiSlot1 || this.Flag == ItemFlags.HiSlot2 ||
-                   this.Flag == ItemFlags.HiSlot3 || this.Flag == ItemFlags.HiSlot4 || this.Flag == ItemFlags.HiSlot5 ||
-                   this.Flag == ItemFlags.HiSlot6 || this.Flag == ItemFlags.HiSlot7 || this.Flag == ItemFlags.MedSlot0 ||
-                   this.Flag == ItemFlags.MedSlot1 || this.Flag == ItemFlags.MedSlot2 || this.Flag == ItemFlags.MedSlot3 ||
-                   this.Flag == ItemFlags.MedSlot4 || this.Flag == ItemFlags.MedSlot5 || this.Flag == ItemFlags.MedSlot6 ||
-                   this.Flag == ItemFlags.MedSlot7 || this.Flag == ItemFlags.LoSlot0 || this.Flag == ItemFlags.LoSlot1 ||
-                   this.Flag == ItemFlags.LoSlot2 || this.Flag == ItemFlags.LoSlot3 || this.Flag == ItemFlags.LoSlot4 ||
-                   this.Flag == ItemFlags.LoSlot5 || this.Flag == ItemFlags.LoSlot6 || this.Flag == ItemFlags.LoSlot7;
+            return this.Flag == Flags.HiSlot0 || this.Flag == Flags.HiSlot1 || this.Flag == Flags.HiSlot2 ||
+                   this.Flag == Flags.HiSlot3 || this.Flag == Flags.HiSlot4 || this.Flag == Flags.HiSlot5 ||
+                   this.Flag == Flags.HiSlot6 || this.Flag == Flags.HiSlot7 || this.Flag == Flags.MedSlot0 ||
+                   this.Flag == Flags.MedSlot1 || this.Flag == Flags.MedSlot2 || this.Flag == Flags.MedSlot3 ||
+                   this.Flag == Flags.MedSlot4 || this.Flag == Flags.MedSlot5 || this.Flag == Flags.MedSlot6 ||
+                   this.Flag == Flags.MedSlot7 || this.Flag == Flags.LoSlot0 || this.Flag == Flags.LoSlot1 ||
+                   this.Flag == Flags.LoSlot2 || this.Flag == Flags.LoSlot3 || this.Flag == Flags.LoSlot4 ||
+                   this.Flag == Flags.LoSlot5 || this.Flag == Flags.LoSlot6 || this.Flag == Flags.LoSlot7;
         }
 
         public bool IsInRigSlot()
         {
-            return this.Flag == ItemFlags.RigSlot0 || this.Flag == ItemFlags.RigSlot1 || this.Flag == ItemFlags.RigSlot2 ||
-                   this.Flag == ItemFlags.RigSlot3 || this.Flag == ItemFlags.RigSlot4 || this.Flag == ItemFlags.RigSlot5 ||
-                   this.Flag == ItemFlags.RigSlot6 || this.Flag == ItemFlags.RigSlot7;
+            return this.Flag == Flags.RigSlot0 || this.Flag == Flags.RigSlot1 || this.Flag == Flags.RigSlot2 ||
+                   this.Flag == Flags.RigSlot3 || this.Flag == Flags.RigSlot4 || this.Flag == Flags.RigSlot5 ||
+                   this.Flag == Flags.RigSlot6 || this.Flag == Flags.RigSlot7;
         }
     }
 }

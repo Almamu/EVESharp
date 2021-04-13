@@ -1,6 +1,8 @@
 ﻿using System;
 using System.IO;
+using Node.Inventory;
 using Node.Inventory.Items;
+using Node.StaticData.Inventory;
 using PythonTypes.Types.Collections;
 using PythonTypes.Types.Primitives;
 
@@ -37,7 +39,7 @@ namespace Node.Notifications.Nodes.Inventory
             return new OnItemChange().AddChange(itemID, "quantity", oldQuantity, newQuantity);
         }
 
-        public static OnItemChange BuildLocationChange(int itemID, ItemFlags oldFlag, ItemFlags newFlag)
+        public static OnItemChange BuildLocationChange(int itemID, Flags oldFlag, Flags newFlag)
         {
             return new OnItemChange().AddChange(itemID, "flag", (int) oldFlag, (int) newFlag);
         }
@@ -47,7 +49,7 @@ namespace Node.Notifications.Nodes.Inventory
             return new OnItemChange().AddChange(itemID, "locationID", oldLocation, newLocation);
         }
 
-        public static OnItemChange BuildLocationChange(int itemID, ItemFlags oldFlag, ItemFlags newFlag, int oldLocation, int newLocation)
+        public static OnItemChange BuildLocationChange(int itemID, Flags oldFlag, Flags newFlag, int oldLocation, int newLocation)
         {
             OnItemChange change = new OnItemChange();
 

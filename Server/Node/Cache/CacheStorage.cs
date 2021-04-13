@@ -29,6 +29,7 @@ using Common.Logging;
 using MySql.Data.MySqlClient;
 using Node.Inventory;
 using Node.Inventory.Items;
+using Node.StaticData.Inventory;
 using PythonTypes.Marshal;
 using PythonTypes.Types.Collections;
 using PythonTypes.Types.Complex;
@@ -137,7 +138,7 @@ namespace Node
             "SELECT graphicID, url3D, urlWeb, icon, urlSound, explosionID FROM eveGraphics",
             "SELECT celestialID, description FROM mapCelestialDescriptions",
             "SELECT certificateID, categoryID, classID, grade, iconID, corpID, description, 0 AS dataID FROM crtCertificates",
-            $"SELECT itemID AS locationID, itemName as locationName, x, y, z FROM invItems LEFT JOIN eveNames USING (itemID) LEFT JOIN invPositions USING (itemID) WHERE (groupID = {(int) ItemGroups.Station} OR groupID = {(int) ItemGroups.Constellation} OR groupID = {(int) ItemGroups.SolarSystem} OR groupID = {(int) ItemGroups.Region}) AND itemID < {ItemManager.USERGENERATED_ID_MIN}",
+            $"SELECT itemID AS locationID, itemName as locationName, x, y, z FROM invItems LEFT JOIN eveNames USING (itemID) LEFT JOIN invPositions USING (itemID) WHERE (groupID = {(int) Groups.Station} OR groupID = {(int) Groups.Constellation} OR groupID = {(int) Groups.SolarSystem} OR groupID = {(int) Groups.Region}) AND itemID < {ItemManager.USERGENERATED_ID_MIN}",
             "SELECT factionID, typeID, standingLoss, confiscateMinSec, fineByValue, attackMinSec FROM invContrabandTypes",
             "SELECT relationshipID, parentID, parentTypeID, parentLevel, childID, childTypeID FROM crtRelationships",
             "SELECT unitID,unitName,displayName FROM eveUnits",

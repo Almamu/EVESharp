@@ -4,6 +4,7 @@ using Node.Dogma.Exception;
 using Node.Inventory.Items;
 using Node.Inventory.Items.Attributes;
 using Node.Inventory.Items.Dogma;
+using Node.StaticData.Inventory;
 
 namespace Node.Dogma.Interpreter.Opcodes
 {
@@ -40,7 +41,7 @@ namespace Node.Dogma.Interpreter.Opcodes
         {
             ItemEntity item = this.Change.RightSide.ItemToAffect.GetItem();
             ItemEntity target = this.Interpreter.Environment.Self;
-            AttributeEnum attribute = this.Change.RightSide.AttributeToAffect.Attribute;
+            Attributes attribute = this.Change.RightSide.AttributeToAffect.Attribute;
             
             // add the modifier to the attribute
             item.Attributes[attribute].RemoveModifier(this.Change.LeftSide.Association, target.Attributes[this.Attribute.Attribute]);

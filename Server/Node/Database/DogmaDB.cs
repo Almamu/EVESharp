@@ -7,6 +7,7 @@ using MySql.Data.MySqlClient;
 using Node.Inventory.Items;
 using Node.Inventory.Items.Attributes;
 using Node.Inventory.Items.Dogma;
+using Node.StaticData.Inventory;
 
 namespace Node.Database
 {
@@ -109,7 +110,7 @@ namespace Node.Database
                 ExpressionValue = expressionToLoad.ExpressionValue,
                 FirstArgument = firstArgument,
                 SecondArgument = secondArgument,
-                AttributeID = expressionToLoad.AttributeID is null ? null : (AttributeEnum) expressionToLoad.AttributeID
+                AttributeID = expressionToLoad.AttributeID is null ? null : (Attributes) expressionToLoad.AttributeID
             };
         }
         

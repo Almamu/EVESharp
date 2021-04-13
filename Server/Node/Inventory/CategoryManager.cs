@@ -24,20 +24,21 @@
 
 using System.Collections.Generic;
 using Node.Database;
+using Node.StaticData.Inventory;
 
 namespace Node.Inventory
 {
     public class CategoryManager
     {
         private ItemDB ItemDB { get; }
-        private Dictionary<int, ItemCategory> mCategories = null;
+        private Dictionary<int, Category> mCategories = null;
 
         public void Load()
         {
             this.mCategories = this.ItemDB.LoadItemCategories();
         }
 
-        public ItemCategory this[int id] { get => this.mCategories[id]; }
+        public Category this[int id] { get => this.mCategories[id]; }
 
         public CategoryManager(ItemDB itemDB)
         {

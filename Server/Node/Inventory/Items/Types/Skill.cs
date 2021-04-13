@@ -1,5 +1,6 @@
 using System;
 using Node.Inventory.Items.Attributes;
+using Attribute = Node.Inventory.Items.Attributes.Attribute;
 
 namespace Node.Inventory.Items.Types
 {
@@ -11,39 +12,39 @@ namespace Node.Inventory.Items.Types
 
         public long Level
         {
-            get => this.Attributes[AttributeEnum.skillLevel].Integer;
+            get => this.Attributes[StaticData.Inventory.Attributes.skillLevel].Integer;
             set
             {
-                this.Attributes[AttributeEnum.skillLevel].Integer = value;
+                this.Attributes[StaticData.Inventory.Attributes.skillLevel].Integer = value;
                 this.Points = this.GetSkillPointsForLevel(value);
             }
         }
 
         public double Points
         {
-            get => this.Attributes[AttributeEnum.skillPoints].Float;
-            set => this.Attributes[AttributeEnum.skillPoints].Float = value;
+            get => this.Attributes[StaticData.Inventory.Attributes.skillPoints].Float;
+            set => this.Attributes[StaticData.Inventory.Attributes.skillPoints].Float = value;
         }
 
-        public ItemAttribute TimeConstant
+        public Attribute TimeConstant
         {
-            get => this.Attributes[AttributeEnum.skillTimeConstant];
+            get => this.Attributes[StaticData.Inventory.Attributes.skillTimeConstant];
         }
 
-        public ItemAttribute PrimaryAttribute
+        public Attribute PrimaryAttribute
         {
-            get => this.Attributes[AttributeEnum.primaryAttribute];
+            get => this.Attributes[StaticData.Inventory.Attributes.primaryAttribute];
         }
 
-        public ItemAttribute SecondaryAttribute
+        public Attribute SecondaryAttribute
         {
-            get => this.Attributes[AttributeEnum.secondaryAttribute];
+            get => this.Attributes[StaticData.Inventory.Attributes.secondaryAttribute];
         }
 
         public long ExpiryTime
         {
-            get => this.Attributes[AttributeEnum.expiryTime].Integer;
-            set => this.Attributes[AttributeEnum.expiryTime].Integer = value;
+            get => this.Attributes[StaticData.Inventory.Attributes.expiryTime].Integer;
+            set => this.Attributes[StaticData.Inventory.Attributes.expiryTime].Integer = value;
         }
 
         public double GetSkillPointsForLevel(long level)

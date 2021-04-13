@@ -24,6 +24,7 @@
 
 using System;
 using Node.Inventory.Items;
+using Node.StaticData.Inventory;
 
 namespace Node.Inventory.SystemEntities
 {
@@ -105,7 +106,7 @@ namespace Node.Inventory.SystemEntities
             get => mRadius;
         }
 
-        protected override void LoadContents(ItemFlags ignoreFlags = ItemFlags.None)
+        protected override void LoadContents(Flags ignoreFlags = Flags.None)
         {
             throw new NotImplementedException();
         }

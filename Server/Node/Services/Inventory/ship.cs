@@ -6,9 +6,12 @@ using Node.Inventory.Items;
 using Node.Inventory.Items.Types;
 using Node.Network;
 using Node.Notifications.Client.Inventory;
+using Node.StaticData;
+using Node.StaticData.Inventory;
 using PythonTypes.Types.Collections;
 using PythonTypes.Types.Exceptions;
 using PythonTypes.Types.Primitives;
+using Type = Node.StaticData.Inventory.Type;
 
 namespace Node.Services.Inventory
 {
@@ -51,9 +54,9 @@ namespace Node.Services.Inventory
 
             int solarSystemID = 0;
 
-            if (groupID == (int) ItemGroups.SolarSystem)
+            if (groupID == (int) Groups.SolarSystem)
                 solarSystemID = this.ItemManager.GetStaticSolarSystem(entityID).ID;
-            else if (groupID == (int) ItemGroups.Station)
+            else if (groupID == (int) Groups.Station)
                 solarSystemID = this.ItemManager.GetStaticStation(entityID).SolarSystemID;
             else
                 throw new CustomError("Unknown item's groupID");
@@ -82,7 +85,7 @@ namespace Node.Services.Inventory
             PyInteger locationID = tuple[0] as PyInteger;
             PyInteger group = tuple[1] as PyInteger;
 
-            if (group != (int) ItemGroups.Station && group != (int) ItemGroups.SolarSystem)
+            if (group != (int) Groups.Station && group != (int) Groups.SolarSystem)
                 throw new CustomError("Cannot bind ship service to non-solarsystem and non-station locations");
             if (this.ItemManager.TryGetItem(locationID, out ItemEntity location) == false)
                 throw new CustomError("This bind request does not belong here");
@@ -99,7 +102,7 @@ namespace Node.Services.Inventory
 
             Character character = this.ItemManager.GetItem<Character>(callerCharacterID);
             // get the item type
-            ItemType capsuleType = this.TypeManager[ItemTypes.Capsule];
+            Type capsuleType = this.TypeManager[ItemTypes.Capsule];
             // create a pod for this character
             ItemInventory capsule = this.ItemManager.CreateShip(capsuleType, this.Location, character);
             // update capsule's name
@@ -107,8 +110,8 @@ namespace Node.Services.Inventory
             // change character's location to the pod
             character.LocationID = capsule.ID;
             // notify the client about the item changes
-            call.Client.NotifyMultiEvent(OnItemChange.BuildLocationChange(capsule, ItemFlags.Capsule, capsule.LocationID));
-            call.Client.NotifyMultiEvent(OnItemChange.BuildLocationChange(character, ItemFlags.Pilot, call.Client.ShipID));
+            call.Client.NotifyMultiEvent(OnItemChange.BuildLocationChange(capsule, Flags.Capsule, capsule.LocationID));
+            call.Client.NotifyMultiEvent(OnItemChange.BuildLocationChange(character, Flags.Pilot, call.Client.ShipID));
             // update session
             call.Client.ShipID = capsule.ID;
             
@@ -147,7 +150,7 @@ namespace Node.Services.Inventory
             // finally update the session
             call.Client.ShipID = newShip.ID;
             // notify the client about the change in location
-            call.Client.NotifyMultiEvent(OnItemChange.BuildLocationChange(character, ItemFlags.Pilot, currentShip.ID));
+            call.Client.NotifyMultiEvent(OnItemChange.BuildLocationChange(character, Flags.Pilot, currentShip.ID));
 
             character.Persist();
 

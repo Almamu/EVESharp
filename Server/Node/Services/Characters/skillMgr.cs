@@ -12,9 +12,11 @@ using Node.Inventory.Items.Types;
 using Node.Network;
 using Node.Notifications.Client.Inventory;
 using Node.Notifications.Client.Skills;
+using Node.StaticData.Inventory;
 using PythonTypes.Types.Collections;
 using PythonTypes.Types.Exceptions;
 using PythonTypes.Types.Primitives;
+using Attribute = Node.Inventory.Items.Attributes.Attribute;
 
 namespace Node.Services.Characters
 {
@@ -90,7 +92,7 @@ namespace Node.Services.Characters
                 {
                     // ensure the skill is marked as trained and that they have the correct values stored
                     entry.Skill.Level = entry.TargetLevel;
-                    entry.Skill.Flag = ItemFlags.Skill;
+                    entry.Skill.Flag = Flags.Skill;
                     entry.Skill.ExpiryTime = 0;
 
                     // add the skill to the list of trained skills for the big notification
@@ -98,9 +100,9 @@ namespace Node.Services.Characters
                     toRemove.Add(entry);
                     
                     // update it's location in the client if needed
-                    this.Client.NotifyMultiEvent(OnItemChange.BuildLocationChange(entry.Skill, ItemFlags.SkillInTraining));
+                    this.Client.NotifyMultiEvent(OnItemChange.BuildLocationChange(entry.Skill, Flags.SkillInTraining));
                     // also notify attribute changes
-                    this.Client.NotifyAttributeChange(new AttributeEnum[] { AttributeEnum.skillPoints, AttributeEnum.skillLevel}, entry.Skill);
+                    this.Client.NotifyAttributeChange(new Attributes[] { Attributes.skillPoints, Attributes.skillLevel}, entry.Skill);
                 }
             }
 
@@ -158,14 +160,14 @@ namespace Node.Services.Characters
             Skill skill = this.Character.Items[itemID] as Skill;
             
             // set the skill to the proper flag and set the correct attributes
-            skill.Flag = ItemFlags.Skill;
+            skill.Flag = Flags.Skill;
             skill.Level = skill.Level + 1;
             skill.ExpiryTime = 0;
             
             // make sure the client is aware of the new item's status
-            this.Client.NotifyMultiEvent(OnItemChange.BuildLocationChange(skill, ItemFlags.SkillInTraining));
+            this.Client.NotifyMultiEvent(OnItemChange.BuildLocationChange(skill, Flags.SkillInTraining));
             // also notify attribute changes
-            this.Client.NotifyAttributeChange(new AttributeEnum[] { AttributeEnum.skillPoints, AttributeEnum.skillLevel}, skill);
+            this.Client.NotifyAttributeChange(new Attributes[] { Attributes.skillPoints, Attributes.skillLevel}, skill);
             this.Client.NotifyMultiEvent(new OnSkillTrained(skill));
             this.Client.SendPendingNotifications();
 
@@ -278,11 +280,11 @@ namespace Node.Services.Characters
                     {
                         // store old values for the notification
                         int oldLocationID = skill.LocationID;
-                        ItemFlags oldFlag = skill.Flag;
+                        Flags oldFlag = skill.Flag;
 
                         // now set the new values
                         skill.LocationID = this.Character.ID;
-                        skill.Flag = ItemFlags.Skill;
+                        skill.Flag = Flags.Skill;
                         skill.Level = 0;
                         skill.Singleton = true;
                         
@@ -342,9 +344,9 @@ namespace Node.Services.Characters
                 
                 foreach (Character.SkillQueueEntry entry in this.Character.SkillQueue)
                 {
-                    entry.Skill.Flag = ItemFlags.Skill;
+                    entry.Skill.Flag = Flags.Skill;
                     
-                    call.Client.NotifyMultiEvent(OnItemChange.BuildLocationChange(entry.Skill, ItemFlags.SkillInTraining));
+                    call.Client.NotifyMultiEvent(OnItemChange.BuildLocationChange(entry.Skill, Flags.SkillInTraining));
             
                     // send notification of skill training stopped
                     call.Client.NotifyMultiEvent(new OnSkillTrainingStopped(entry.Skill));
@@ -373,7 +375,7 @@ namespace Node.Services.Characters
                 int level = entry[1] as PyInteger;
                 
                 // search for an item with the given typeID
-                ItemEntity item = this.Character.Items.First(x => x.Value.Type.ID == typeID && (x.Value.Flag == ItemFlags.Skill || x.Value.Flag == ItemFlags.SkillInTraining)).Value;
+                ItemEntity item = this.Character.Items.First(x => x.Value.Type.ID == typeID && (x.Value.Flag == Flags.Skill || x.Value.Flag == Flags.SkillInTraining)).Value;
 
                 // ignore items that are not skills
                 if (item is Skill == false)
@@ -388,9 +390,9 @@ namespace Node.Services.Characters
                 DateTime expiryTime = startDateTime + duration;
                 
                 skill.ExpiryTime = expiryTime.ToFileTimeUtc();
-                skill.Flag = ItemFlags.SkillInTraining;
+                skill.Flag = Flags.SkillInTraining;
 
-                call.Client.NotifyMultiEvent(OnItemChange.BuildLocationChange(skill, ItemFlags.Skill));
+                call.Client.NotifyMultiEvent(OnItemChange.BuildLocationChange(skill, Flags.Skill));
                 
                 startDateTime = expiryTime;
                 
@@ -582,24 +584,24 @@ namespace Node.Services.Characters
 
         public PyDataType GetCharacterAttributeModifiers(PyInteger attributeID, CallInformation call)
         {
-            AttributeEnum attribute;
+            Attributes attribute;
 
             switch ((int) attributeID)
             {
-                case (int) AttributeEnum.willpower:
-                    attribute = AttributeEnum.willpowerBonus;
+                case (int) Attributes.willpower:
+                    attribute = Attributes.willpowerBonus;
                     break;
-                case (int) AttributeEnum.charisma:
-                    attribute = AttributeEnum.charismaBonus;
+                case (int) Attributes.charisma:
+                    attribute = Attributes.charismaBonus;
                     break;
-                case (int) AttributeEnum.memory:
-                    attribute = AttributeEnum.memoryBonus;
+                case (int) Attributes.memory:
+                    attribute = Attributes.memoryBonus;
                     break;
-                case (int) AttributeEnum.intelligence:
-                    attribute = AttributeEnum.intelligenceBonus;
+                case (int) Attributes.intelligence:
+                    attribute = Attributes.intelligenceBonus;
                     break;
-                case (int) AttributeEnum.perception:
-                    attribute = AttributeEnum.perceptionBonus;
+                case (int) Attributes.perception:
+                    attribute = Attributes.perceptionBonus;
                     break;
                 default:
                     return new PyList<PyTuple>();
@@ -676,13 +678,13 @@ namespace Node.Services.Characters
             
             // notify the game of the change on the character
             call.Client.NotifyAttributeChange(
-                new ItemAttribute[]
+                new Attribute[]
                 {
-                    this.Character.Attributes[AttributeEnum.charisma],
-                    this.Character.Attributes[AttributeEnum.perception],
-                    this.Character.Attributes[AttributeEnum.intelligence],
-                    this.Character.Attributes[AttributeEnum.memory],
-                    this.Character.Attributes[AttributeEnum.willpower]
+                    this.Character.Attributes[Attributes.charisma],
+                    this.Character.Attributes[Attributes.perception],
+                    this.Character.Attributes[Attributes.intelligence],
+                    this.Character.Attributes[Attributes.memory],
+                    this.Character.Attributes[Attributes.willpower]
                 },
                 this.Character
             );
@@ -723,14 +725,14 @@ namespace Node.Services.Characters
                 // create the new item with a default location and flag
                 // this way the item location change notification is only needed once
                 item = this.ItemManager.CreateSimpleItem(item.Type, item.OwnerID, 0,
-                    ItemFlags.None, 1, item.Contraband, item.Singleton);
+                    Flags.None, 1, item.Contraband, item.Singleton);
             }
 
             int oldLocationID = item.LocationID;
-            ItemFlags oldFlag = item.Flag;
+            Flags oldFlag = item.Flag;
             
             item.LocationID = this.Character.ID;
-            item.Flag = ItemFlags.Implant;
+            item.Flag = Flags.Implant;
 
             call.Client.NotifyMultiEvent(OnItemChange.BuildLocationChange(item, oldFlag, oldLocationID));
 
