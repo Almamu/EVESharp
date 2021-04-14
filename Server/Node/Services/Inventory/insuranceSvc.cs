@@ -21,25 +21,25 @@ namespace Node.Services.Inventory
         private ItemManager ItemManager { get; }
         private MarketDB MarketDB { get; }
         private SystemManager SystemManager { get; }
-        private account account { get; }
+        private WalletManager WalletManager { get; }
         
-        public insuranceSvc(ItemManager itemManager, InsuranceDB db, MarketDB marketDB, SystemManager systemManager, account account, BoundServiceManager manager) : base(manager, null)
+        public insuranceSvc(ItemManager itemManager, InsuranceDB db, MarketDB marketDB, SystemManager systemManager, WalletManager walletManager, BoundServiceManager manager) : base(manager, null)
         {
             this.DB = db;
             this.ItemManager = itemManager;
             this.MarketDB = marketDB;
             this.SystemManager = systemManager;
-            this.account = account;
+            this.WalletManager = walletManager;
         }
 
-        protected insuranceSvc(ItemManager itemManager, InsuranceDB db, MarketDB marketDB, SystemManager systemManager, account account, BoundServiceManager manager, int stationID, Client client) : base (manager, client)
+        protected insuranceSvc(ItemManager itemManager, InsuranceDB db, MarketDB marketDB, SystemManager systemManager, WalletManager walletManager, BoundServiceManager manager, int stationID, Client client) : base (manager, client)
         {
             this.mStationID = stationID;
             this.DB = db;
             this.ItemManager = itemManager;
             this.MarketDB = marketDB;
             this.SystemManager = systemManager;
-            this.account = account;
+            this.WalletManager = walletManager;
         }
 
         public override PyInteger MachoResolveObject(PyInteger stationID, PyInteger zero, CallInformation call)
@@ -57,7 +57,7 @@ namespace Node.Services.Inventory
             if (this.MachoResolveObject(objectData as PyInteger, 0, call) != this.BoundServiceManager.Container.NodeID)
                 throw new CustomError("Trying to bind an object that does not belong to us!");
             
-            return new insuranceSvc(this.ItemManager, this.DB, this.MarketDB, this.SystemManager, this.account, this.BoundServiceManager, objectData as PyInteger, call.Client);
+            return new insuranceSvc(this.ItemManager, this.DB, this.MarketDB, this.SystemManager, this.WalletManager, this.BoundServiceManager, objectData as PyInteger, call.Client);
         }
 
         public PyList<PyPackedRow> GetContracts(CallInformation call)
@@ -111,17 +111,12 @@ namespace Node.Services.Inventory
             if (this.DB.IsShipInsured(item.ID, out string ownerName) == true)
                 throw new InsureShipFailedSingleContract(ownerName);
 
-            account.WalletLock walletLock = this.account.AcquireLock(character.ID, 1000);
-            try
+            using Wallet wallet = this.WalletManager.AcquireWallet(character.ID, 1000);
             {
-                this.account.EnsureEnoughBalance(walletLock, insuranceCost);
-                this.account.CreateJournalRecord(
-                    walletLock, MarketReference.Insurance, this.ItemManager.SecureCommerceCommision.ID, -item.ID, -insuranceCost, $"Insurance fee for {item.Name}"
+                wallet.EnsureEnoughBalance(insuranceCost);
+                wallet.CreateJournalRecord(
+                    MarketReference.Insurance, this.ItemManager.SecureCommerceCommision.ID, -item.ID, -insuranceCost, $"Insurance fee for {item.Name}"
                 );
-            }
-            finally
-            {
-                this.account.FreeLock(walletLock);
             }
             
             double fraction = insuranceCost * 100 / item.Type.BasePrice;

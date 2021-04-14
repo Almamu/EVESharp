@@ -36,9 +36,9 @@ namespace Node.Services.Stations
         private InsuranceDB InsuranceDB { get; }
         private NotificationManager NotificationManager { get; }
         private NodeContainer Container { get; }
-        private account account { get; }
+        private WalletManager WalletManager { get; }
 
-        public repairSvc(RepairDB repairDb, MarketDB marketDb, InsuranceDB insuranceDb, NodeContainer nodeContainer, NotificationManager notificationManager, ItemFactory itemFactory, SystemManager systemManager, BoundServiceManager manager, account account) : base(manager, null)
+        public repairSvc(RepairDB repairDb, MarketDB marketDb, InsuranceDB insuranceDb, NodeContainer nodeContainer, NotificationManager notificationManager, ItemFactory itemFactory, SystemManager systemManager, BoundServiceManager manager, WalletManager walletManager) : base(manager, null)
         {
             this.ItemFactory = itemFactory;
             this.SystemManager = systemManager;
@@ -47,10 +47,10 @@ namespace Node.Services.Stations
             this.InsuranceDB = insuranceDb;
             this.NotificationManager = notificationManager;
             this.Container = nodeContainer;
-            this.account = account;
+            this.WalletManager = walletManager;
         }
         
-        protected repairSvc(RepairDB repairDb, MarketDB marketDb, InsuranceDB insuranceDb, NodeContainer nodeContainer, NotificationManager notificationManager, ItemInventory inventory, ItemFactory itemFactory, SystemManager systemManager, BoundServiceManager manager, account account, Client client) : base(manager, client)
+        protected repairSvc(RepairDB repairDb, MarketDB marketDb, InsuranceDB insuranceDb, NodeContainer nodeContainer, NotificationManager notificationManager, ItemInventory inventory, ItemFactory itemFactory, SystemManager systemManager, BoundServiceManager manager, WalletManager walletManager, Client client) : base(manager, client)
         {
             this.mInventory = inventory;
             this.ItemFactory = itemFactory;
@@ -60,7 +60,7 @@ namespace Node.Services.Stations
             this.InsuranceDB = insuranceDb;
             this.NotificationManager = notificationManager;
             this.Container = nodeContainer;
-            this.account = account;
+            this.WalletManager = walletManager;
         }
 
         public override PyInteger MachoResolveObject(PyInteger stationID, PyInteger zero, CallInformation call)
@@ -94,7 +94,7 @@ namespace Node.Services.Stations
             
             ItemInventory inventory = this.ItemManager.MetaInventoryManager.RegisterMetaInventoryForOwnerID(station, call.Client.EnsureCharacterIsSelected());
 
-            return new repairSvc(this.RepairDB, this.MarketDB, this.InsuranceDB, this.Container, this.NotificationManager, inventory, this.ItemFactory, this.SystemManager, this.BoundServiceManager, this.account, call.Client);
+            return new repairSvc(this.RepairDB, this.MarketDB, this.InsuranceDB, this.Container, this.NotificationManager, inventory, this.ItemFactory, this.SystemManager, this.BoundServiceManager, this.WalletManager, call.Client);
         }
 
         public PyDataType GetDamageReports(PyList itemIDs, CallInformation call)
@@ -181,10 +181,9 @@ namespace Node.Services.Stations
             Station station = this.ItemManager.GetStaticStation(call.Client.EnsureCharacterIsInStation());
 
             // take the wallet lock and ensure the character has enough balance
-            account.WalletLock walletLock = this.account.AcquireLock(call.Client.EnsureCharacterIsSelected(), 1000);
-            try
+            using Wallet wallet = this.WalletManager.AcquireWallet(call.Client.EnsureCharacterIsSelected(), 1000);
             {
-                this.account.EnsureEnoughBalance(walletLock, iskRepairValue);
+                wallet.EnsureEnoughBalance(iskRepairValue);
                 // build a list of items to be fixed
                 List<ItemEntity> items = new List<ItemEntity>();
 
@@ -253,11 +252,7 @@ namespace Node.Services.Stations
                     item.Persist();
                 }
                 
-                this.account.CreateJournalRecord(walletLock, MarketReference.RepairBill, station.OwnerID, null, -(iskRepairValue - quantityLeft));
-            }
-            finally
-            {
-                this.account.FreeLock(walletLock);
+                wallet.CreateJournalRecord(MarketReference.RepairBill, station.OwnerID, null, -(iskRepairValue - quantityLeft));
             }
 
             return null;

@@ -33,9 +33,9 @@ namespace Node.Services.Contracts
         private TypeManager TypeManager { get; }
         private SystemManager SystemManager { get; }
         private NotificationManager NotificationManager { get; }
-        private account account { get; }
+        private WalletManager WalletManager { get; }
 
-        public contractMgr(ContractDB db, ItemDB itemDB, MarketDB marketDB, CharacterDB characterDB, ItemManager itemManager, TypeManager typeManager, SystemManager systemManager, NotificationManager notificationManager, account account)
+        public contractMgr(ContractDB db, ItemDB itemDB, MarketDB marketDB, CharacterDB characterDB, ItemManager itemManager, TypeManager typeManager, SystemManager systemManager, NotificationManager notificationManager, WalletManager walletManager)
         {
             this.DB = db;
             this.ItemDB = itemDB;
@@ -45,7 +45,7 @@ namespace Node.Services.Contracts
             this.TypeManager = typeManager;
             this.SystemManager = systemManager;
             this.NotificationManager = notificationManager;
-            this.account = account;
+            this.WalletManager = walletManager;
         }
 
         public PyDataType NumRequiringAttention(CallInformation call)
@@ -205,17 +205,12 @@ namespace Node.Services.Contracts
                 // take reward from the character
                 if (reward > 0)
                 {
-                    account.WalletLock walletLock = this.account.AcquireLock(callerCharacterID, 1000);
-                    try
+                    using Wallet wallet = this.WalletManager.AcquireWallet(callerCharacterID, 1000);
                     {
-                        this.account.EnsureEnoughBalance(walletLock, reward);
-                        this.account.CreateJournalRecord(
-                            walletLock, MarketReference.ContractRewardAdded, null, null, -reward, ""
+                        wallet.EnsureEnoughBalance(reward);
+                        wallet.CreateJournalRecord(
+                            MarketReference.ContractRewardAdded, null, null, -reward, ""
                         );
-                    }
-                    finally
-                    {
-                        this.account.FreeLock(walletLock);
                     }
                 }
                 
@@ -472,17 +467,12 @@ namespace Node.Services.Contracts
                     throw new ConBidTooLow(quantity, nextMinimumBid);
 
                 // take the bid's money off the wallet
-                account.WalletLock bidderWalletLock = this.account.AcquireLock(bidderID, 1000);
-                try
+                using Wallet bidderWallet = this.WalletManager.AcquireWallet(bidderID, 1000);
                 {
-                    this.account.EnsureEnoughBalance(bidderWalletLock, quantity);
-                    this.account.CreateJournalRecord(
-                        bidderWalletLock, MarketReference.ContractAuctionBid, null, null, -quantity, ""
+                    bidderWallet.EnsureEnoughBalance(quantity);
+                    bidderWallet.CreateJournalRecord(
+                        MarketReference.ContractAuctionBid, null, null, -quantity
                     );
-                }
-                finally
-                {
-                    this.account.FreeLock(bidderWalletLock);
                 }
             
                 // check who we'd outbid and notify them
@@ -502,18 +492,12 @@ namespace Node.Services.Contracts
                 ulong bidID = this.DB.PlaceBid(connection, contractID, quantity, bidderID, forCorp);
                 
                 // return the money for the player that was the highest bidder
-                account.WalletLock maximumBidderWalletLock = this.account.AcquireLock(maximumBidderID, 1000);
-                try
+                using Wallet maximumBidderWallet = this.WalletManager.AcquireWallet(maximumBidderID, 1000);
                 {
-                    this.account.CreateJournalRecord(
-                        maximumBidderWalletLock, MarketReference.ContractAuctionBidRefund, null, null, maximumBid, ""
+                    maximumBidderWallet.CreateJournalRecord(
+                        MarketReference.ContractAuctionBidRefund, null, null, maximumBid, ""
                     );
                 }
-                finally
-                {
-                    this.account.FreeLock(maximumBidderWalletLock);
-                }
-
                 return bidID;
             }
             finally

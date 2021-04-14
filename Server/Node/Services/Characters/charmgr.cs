@@ -15,14 +15,14 @@ namespace Node.Services.Characters
         private CharacterDB DB { get; }
         private MarketDB MarketDB { get; }
         private ItemManager ItemManager { get; }
-        private account account { get; }
+        private WalletManager WalletManager { get; }
         
-        public charmgr(CharacterDB db, MarketDB marketDB, ItemManager itemManager, account account)
+        public charmgr(CharacterDB db, MarketDB marketDB, ItemManager itemManager, WalletManager WalletManager)
         {
             this.DB = db;
             this.MarketDB = marketDB;
             this.ItemManager = itemManager;
-            this.account = account;
+            this.WalletManager = WalletManager;
         }
         
         public PyDataType GetPublicInfo(PyInteger characterID, CallInformation call)
@@ -45,22 +45,15 @@ namespace Node.Services.Characters
             // get character's object
             Character character = this.ItemManager.GetItem<Character>(call.Client.EnsureCharacterIsSelected());
             
-            // acquire lock for the market balance
-            account.WalletLock walletLock = this.account.AcquireLock(character.ID, 1000);
-
-            try
+            // access the wallet and do the required changes
+            using Wallet wallet = this.WalletManager.AcquireWallet(character.ID, 1000);
             {
                 // ensure the character has enough balance
-                this.account.EnsureEnoughBalance(walletLock, bounty);
+                wallet.EnsureEnoughBalance(bounty);
                 // take the balance from the wallet
-                this.account.CreateJournalRecord(
-                    walletLock, MarketReference.Bounty, null, characterID, -bounty, "Added to bounty price"
+                wallet.CreateJournalRecord(
+                    MarketReference.Bounty, null, characterID, -bounty, "Added to bounty price"
                 );
-            }
-            finally
-            {
-                // ensure the lock is free'd as soon as we're done with it
-                this.account.FreeLock(walletLock);
             }
             
             // create the bounty record and update the information in the database

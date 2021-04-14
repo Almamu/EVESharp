@@ -32,12 +32,12 @@ namespace Node.Services.Network
         private CharacterDB CharacterDB { get; }
         private ItemDB ItemDB { get; }
         private NotificationManager NotificationManager { get; }
-        private account account { get; }
+        private WalletManager WalletManager { get; }
 
         private readonly Dictionary<string, Action<string[], CallInformation>> mCommands =
             new Dictionary<string, Action<string[], CallInformation>>();
         
-        public slash(Logger logger, TypeManager typeManager, ItemManager itemManager, MarketDB marketDB, CharacterDB characterDB, ItemDB itemDB, NotificationManager notificationManager, account account)
+        public slash(Logger logger, TypeManager typeManager, ItemManager itemManager, MarketDB marketDB, CharacterDB characterDB, ItemDB itemDB, NotificationManager notificationManager, WalletManager walletManager)
         {
             this.Log = logger.CreateLogChannel("Slash");
             this.TypeManager = typeManager;
@@ -46,7 +46,7 @@ namespace Node.Services.Network
             this.CharacterDB = characterDB;
             this.ItemDB = itemDB;
             this.NotificationManager = notificationManager;
-            this.account = account;
+            this.WalletManager = walletManager;
 
                 // register commands
             this.mCommands["create"] = CreateCmd;
@@ -127,22 +127,17 @@ namespace Node.Services.Network
                 targetCharacterID = matches[0];
             }
 
-            account.WalletLock walletLock = this.account.AcquireLock(targetCharacterID, 1000);
-            try
+            using Wallet wallet = this.WalletManager.AcquireWallet(targetCharacterID, 1000);
             {
                 if (iskQuantity < 0)
                 {
-                    this.account.EnsureEnoughBalance(walletLock, iskQuantity);
-                    this.account.CreateJournalRecord(walletLock, MarketReference.GMCashTransfer, this.ItemManager.SecureCommerceCommision.ID, null, -iskQuantity);
+                    wallet.EnsureEnoughBalance(iskQuantity);
+                    wallet.CreateJournalRecord(MarketReference.GMCashTransfer, this.ItemManager.SecureCommerceCommision.ID, null, -iskQuantity);
                 }
                 else
                 {
-                    this.account.CreateJournalRecord(walletLock, MarketReference.GMCashTransfer, this.ItemManager.SecureCommerceCommision.ID, targetCharacterID, null, iskQuantity);
+                    wallet.CreateJournalRecord(MarketReference.GMCashTransfer, this.ItemManager.SecureCommerceCommision.ID, targetCharacterID, null, iskQuantity);
                 }
-            }
-            finally
-            {
-                this.account.FreeLock(walletLock);
             }
         }
 

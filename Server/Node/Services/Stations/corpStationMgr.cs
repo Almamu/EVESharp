@@ -28,26 +28,26 @@ namespace Node.Services.Stations
         private ItemManager ItemManager { get; }
         private TypeManager TypeManager { get; }
         private SystemManager SystemManager { get; }
-        private account account { get; }
+        private WalletManager WalletManager { get; }
         
-        public corpStationMgr(ItemDB itemDB, MarketDB marketDB, ItemManager itemManager, TypeManager typeManager, SystemManager systemManager, BoundServiceManager manager, account account) : base(manager, null)
+        public corpStationMgr(ItemDB itemDB, MarketDB marketDB, ItemManager itemManager, TypeManager typeManager, SystemManager systemManager, BoundServiceManager manager, WalletManager walletManager) : base(manager, null)
         {
             this.ItemDB = itemDB;
             this.MarketDB = marketDB;
             this.ItemManager = itemManager;
             this.TypeManager = typeManager;
             this.SystemManager = systemManager;
-            this.account = account;
+            this.WalletManager = walletManager;
         }
         
-        protected corpStationMgr(ItemDB itemDB, MarketDB marketDB, ItemManager itemManager, TypeManager typeManager, SystemManager systemManager, BoundServiceManager manager, account account, Client client) : base(manager, client)
+        protected corpStationMgr(ItemDB itemDB, MarketDB marketDB, ItemManager itemManager, TypeManager typeManager, SystemManager systemManager, BoundServiceManager manager, WalletManager walletManager, Client client) : base(manager, client)
         {
             this.ItemDB = itemDB;
             this.MarketDB = marketDB;
             this.ItemManager = itemManager;
             this.TypeManager = typeManager;
             this.SystemManager = systemManager;
-            this.account = account;
+            this.WalletManager = walletManager;
         }
 
         public override PyInteger MachoResolveObject(PyInteger stationID, PyInteger zero, CallInformation call)
@@ -65,7 +65,7 @@ namespace Node.Services.Stations
             if (this.MachoResolveObject(objectData as PyInteger, 0, call) != this.BoundServiceManager.Container.NodeID)
                 throw new CustomError("Trying to bind an object that does not belong to us!");
 
-            return new corpStationMgr(this.ItemDB, this.MarketDB, this.ItemManager, this.TypeManager, this.SystemManager, this.BoundServiceManager, this.account, call.Client);
+            return new corpStationMgr(this.ItemDB, this.MarketDB, this.ItemManager, this.TypeManager, this.SystemManager, this.BoundServiceManager, this.WalletManager, call.Client);
         }
 
         public PyList GetCorporateStationOffice(CallInformation call)
@@ -156,15 +156,10 @@ namespace Node.Services.Stations
                     throw new MedicalYouAlreadyHaveACloneContractAtThatStation();
             }
 
-            account.WalletLock walletLock = this.account.AcquireLock(character.ID, 1000);
-            try
+            using Wallet wallet = this.WalletManager.AcquireWallet(character.ID, 1000);
             {
-                this.account.EnsureEnoughBalance(walletLock, CLONE_CONTRACT_COST);
-                this.account.CreateJournalRecord(walletLock, MarketReference.CloneTransfer, null, station.ID, -CLONE_CONTRACT_COST, $"Moved clone to {station.Name}");
-            }
-            finally
-            {
-                this.account.FreeLock(walletLock);
+                wallet.EnsureEnoughBalance(CLONE_CONTRACT_COST);
+                wallet.CreateJournalRecord(MarketReference.CloneTransfer, null, station.ID, -CLONE_CONTRACT_COST, $"Moved clone to {station.Name}");
             }
             
             // set clone's station
@@ -220,15 +215,10 @@ namespace Node.Services.Stations
 
             Station station = this.ItemManager.GetStaticStation(stationID);
 
-            account.WalletLock walletLock = this.account.AcquireLock(character.ID, 1000);
-            try
+            using Wallet wallet = this.WalletManager.AcquireWallet(character.ID, 1000);
             {
-                this.account.EnsureEnoughBalance(walletLock, newCloneType.BasePrice);
-                this.account.CreateTransactionRecord(walletLock, TransactionType.Buy, this.ItemManager.LocationSystem.ID, newCloneType.ID, 1, newCloneType.BasePrice, station.ID);
-            }
-            finally
-            {
-                this.account.FreeLock(walletLock);
+                wallet.EnsureEnoughBalance(newCloneType.BasePrice);
+                wallet.CreateTransactionRecord(TransactionType.Buy, this.ItemManager.LocationSystem.ID, newCloneType.ID, 1, newCloneType.BasePrice, station.ID);
             }
             
             // update active clone's information

@@ -29,28 +29,28 @@ namespace Node.Services.Characters
         private TypeManager TypeManager { get; }
         private SystemManager SystemManager { get; }
         private NotificationManager NotificationManager { get; }
-        private account account { get; }
+        private WalletManager WalletManager { get; }
         
         public jumpCloneSvc(ItemDB itemDB, MarketDB marketDB, ItemManager itemManager, TypeManager typeManager,
-            SystemManager systemManager, account account, BoundServiceManager manager) : base(manager, null)
+            SystemManager systemManager, WalletManager walletManager, BoundServiceManager manager) : base(manager, null)
         {
             this.ItemDB = itemDB;
             this.MarketDB = marketDB;
             this.ItemManager = itemManager;
             this.TypeManager = typeManager;
             this.SystemManager = systemManager;
-            this.account = account;
+            this.WalletManager = walletManager;
         }
         
         protected jumpCloneSvc(ItemDB itemDB, MarketDB marketDB, ItemManager itemManager, TypeManager typeManager,
-            SystemManager systemManager, BoundServiceManager manager, account account, Client client) : base(manager, client)
+            SystemManager systemManager, BoundServiceManager manager, WalletManager walletManager, Client client) : base(manager, client)
         {
             this.ItemDB = itemDB;
             this.MarketDB = marketDB;
             this.ItemManager = itemManager;
             this.TypeManager = typeManager;
             this.SystemManager = systemManager;
-            this.account = account;
+            this.WalletManager = walletManager;
         }
 
         /// <summary>
@@ -106,7 +106,7 @@ namespace Node.Services.Characters
             if (this.MachoResolveObject(tupleData, 0, call) != this.BoundServiceManager.Container.NodeID)
                 throw new CustomError("Trying to bind an object that does not belong to us!");
 
-            return new jumpCloneSvc(this.ItemDB, this.MarketDB, this.ItemManager, this.TypeManager, this.SystemManager, this.BoundServiceManager, this.account, call.Client);
+            return new jumpCloneSvc(this.ItemDB, this.MarketDB, this.ItemManager, this.TypeManager, this.SystemManager, this.BoundServiceManager, this.WalletManager, call.Client);
         }
 
         public PyDataType GetCloneState(CallInformation call)
@@ -192,18 +192,12 @@ namespace Node.Services.Characters
             // get character's station
             Station station = this.ItemManager.GetStaticStation(stationID);
 
-            account.WalletLock walletLock = this.account.AcquireLock(character.ID, 1000);
-
-            try
+            using Wallet wallet = this.WalletManager.AcquireWallet(character.ID, 1000);
             {
-                this.account.EnsureEnoughBalance(walletLock, cost);
-                this.account.CreateJournalRecord(
-                    walletLock, MarketReference.JumpCloneInstallationFee, null, station.ID, -cost, $"Installed clone at {station.Name}"
+                wallet.EnsureEnoughBalance(cost);
+                wallet.CreateJournalRecord(
+                    MarketReference.JumpCloneInstallationFee, null, station.ID, -cost, $"Installed clone at {station.Name}"
                 );
-            }
-            finally
-            {
-                this.account.FreeLock(walletLock);
             }
             
             // create an alpha clone

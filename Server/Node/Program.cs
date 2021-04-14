@@ -32,6 +32,7 @@ using Node.Configuration;
 using Node.Database;
 using Node.Dogma;
 using Node.Inventory;
+using Node.Market;
 using Node.Network;
 using Node.Services;
 using Node.Services.Account;
@@ -93,6 +94,7 @@ namespace Node
                 dependencies.Register<NotificationManager>(Lifestyle.Singleton);
                 dependencies.Register<MachoNet>(Lifestyle.Singleton);
                 dependencies.Register<ExpressionManager>(Lifestyle.Singleton);
+                dependencies.Register<WalletManager>(Lifestyle.Singleton);
 
                 // register the database accessors dependencies
                 dependencies.Register<AccountDB>(Lifestyle.Singleton);

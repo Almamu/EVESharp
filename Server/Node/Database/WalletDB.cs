@@ -158,8 +158,6 @@ namespace Node.Database
         public void ReleaseLock(MySqlConnection connection, int ownerID, int walletKey)
         {
             Database.ReleaseLock(connection, $"wallet_{ownerID}_{walletKey}");
-            // close the connection
-            connection.Close();
         }
         
         public WalletDB(DatabaseConnection db) : base(db)
