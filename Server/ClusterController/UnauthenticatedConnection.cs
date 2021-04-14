@@ -52,7 +52,7 @@ namespace ClusterController
         {
             try
             {
-                LowLevelVersionExchange exchange = this.CheckLowLevelVersionExchange(ar);
+                LowLevelVersionExchange exchange = ar;
 
                 // TODO: CHECK NETWORK OF THE NODE TO ENSURE UNAUTHORIZED CONNECTIONS DONT REACH A NODE STATE
                 if (exchange.IsNode)

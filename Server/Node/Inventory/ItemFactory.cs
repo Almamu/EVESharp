@@ -46,9 +46,9 @@ namespace Node.Inventory
         public ItemDB ItemDB { get; private set; }
         public CharacterDB CharacterDB { get; private set; }
         public InsuranceDB InsuranceDB { get; private set; }
-        private SimpleInjector.Container DependencyInjection { get; }
+        private Container DependencyInjection { get; }
         
-        public ItemFactory(NodeContainer container, SimpleInjector.Container dependencyInjection)
+        public ItemFactory(NodeContainer container, Container dependencyInjection)
         {
             this.DependencyInjection = dependencyInjection;
             this.Container = container;

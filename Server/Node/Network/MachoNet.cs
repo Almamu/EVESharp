@@ -100,17 +100,17 @@ namespace Node.Network
         {
             try
             {
-                LowLevelVersionExchange exchange = CheckLowLevelVersionExchange(ar);
+                LowLevelVersionExchange exchange = ar;
 
                 // reply with the node LowLevelVersionExchange
                 LowLevelVersionExchange reply = new LowLevelVersionExchange
                 {
-                    Codename = Common.Constants.Game.CODENAME,
-                    Birthday = Common.Constants.Game.BIRTHDAY,
-                    Build = Common.Constants.Game.BUILD,
-                    MachoVersion = Common.Constants.Game.MACHO_VERSION,
-                    Version = Common.Constants.Game.VERSION,
-                    Region = Common.Constants.Game.REGION,
+                    Codename = Game.CODENAME,
+                    Birthday = Game.BIRTHDAY,
+                    Build = Game.BUILD,
+                    MachoVersion = Game.MACHO_VERSION,
+                    Version = Game.VERSION,
+                    Region = Game.REGION,
                     IsNode = true,
                     NodeIdentifier = "Node"
                 };
@@ -667,34 +667,6 @@ namespace Node.Network
             
             // send any notification that might be pending
             client?.SendPendingNotifications();
-        }
-
-        private static LowLevelVersionExchange CheckLowLevelVersionExchange(PyDataType exchange)
-        {
-            LowLevelVersionExchange data = exchange;
-
-            if (data.Birthday != Common.Constants.Game.BIRTHDAY)
-                throw new Exception("Wrong birthday in LowLevelVersionExchange");
-
-            if (data.Build != Common.Constants.Game.BUILD)
-                throw new Exception("Wrong build in LowLevelVersionExchange");
-
-            if (data.Codename != Common.Constants.Game.CODENAME + "@" + Common.Constants.Game.REGION)
-                throw new Exception("Wrong codename in LowLevelVersionExchange");
-
-            if (data.MachoVersion != Common.Constants.Game.MACHO_VERSION)
-                throw new Exception("Wrong machoVersion in LowLevelVersionExchange");
-
-            if (data.Version != Common.Constants.Game.VERSION)
-                throw new Exception("Wrong version in LowLevelVersionExchange");
-
-            if (data.IsNode == true)
-            {
-                if (data.NodeIdentifier != "Node")
-                    throw new Exception("Wrong node string in LowLevelVersionExchange");
-            }
-            
-            return data;
         }
 
         public void SendProvisionalResponse(CallInformation answerTo, ProvisionalResponse response)

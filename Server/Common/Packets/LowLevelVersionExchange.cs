@@ -1,3 +1,4 @@
+using System;
 using System.IO;
 using PythonTypes.Types.Collections;
 using PythonTypes.Types.Primitives;
@@ -18,9 +19,7 @@ namespace Common.Packets
 
         public static implicit operator LowLevelVersionExchange(PyDataType data)
         {
-            PyTuple exchange = data as PyTuple;
-
-            if (exchange.Count != 6)
+            if (data is not PyTuple exchange || exchange.Count != 6)
                 throw new InvalidDataException("LowLevelVersionExchange must have 6 elements");
 
             LowLevelVersionExchange result = new LowLevelVersionExchange
@@ -41,6 +40,19 @@ namespace Common.Packets
             {
                 result.UserCount = exchange[2] as PyInteger;
             }
+            
+            if (result.Birthday != Constants.Game.BIRTHDAY)
+                throw new Exception("Wrong birthday in LowLevelVersionExchange");
+            if (result.Build != Constants.Game.BUILD)
+                throw new Exception("Wrong build in LowLevelVersionExchange");
+            if (result.Codename != Constants.Game.CODENAME + "@" + Constants.Game.REGION)
+                throw new Exception("Wrong codename in LowLevelVersionExchange");
+            if (result.MachoVersion != Constants.Game.MACHO_VERSION)
+                throw new Exception("Wrong machoVersion in LowLevelVersionExchange");
+            if (Math.Abs(result.Version - Constants.Game.VERSION) > 0.001)
+                throw new Exception("Wrong version in LowLevelVersionExchange");
+            if (result.IsNode == true && result.NodeIdentifier != "Node")
+                throw new Exception("Wrong node string in LowLevelVersionExchange");
 
             return result;
         }

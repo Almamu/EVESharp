@@ -366,13 +366,13 @@ namespace ClusterController
 
             LowLevelVersionExchange data = new LowLevelVersionExchange
             {
-                Codename = Common.Constants.Game.CODENAME,
-                Birthday = Common.Constants.Game.BIRTHDAY,
-                Build = Common.Constants.Game.BUILD,
-                MachoVersion = Common.Constants.Game.MACHO_VERSION,
-                Version = Common.Constants.Game.VERSION,
+                Codename = Game.CODENAME,
+                Birthday = Game.BIRTHDAY,
+                Build = Game.BUILD,
+                MachoVersion = Game.MACHO_VERSION,
+                Version = Game.VERSION,
                 UserCount = this.ConnectionManager.ClientsCount,
-                Region = Common.Constants.Game.REGION
+                Region = Game.REGION
             };
 
 
