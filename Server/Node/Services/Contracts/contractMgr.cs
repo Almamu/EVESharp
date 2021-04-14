@@ -11,8 +11,8 @@ using Node.Inventory.Items.Types;
 using Node.Market;
 using Node.Network;
 using Node.Notifications.Client.Contracts;
-using Node.Notifications.Nodes.Character;
 using Node.Notifications.Nodes.Inventory;
+using Node.Services.Account;
 using Node.StaticData.Inventory;
 using PythonTypes.Types.Collections;
 using PythonTypes.Types.Database;
@@ -33,8 +33,9 @@ namespace Node.Services.Contracts
         private TypeManager TypeManager { get; }
         private SystemManager SystemManager { get; }
         private NotificationManager NotificationManager { get; }
+        private account account { get; }
 
-        public contractMgr(ContractDB db, ItemDB itemDB, MarketDB marketDB, CharacterDB characterDB, ItemManager itemManager, TypeManager typeManager, SystemManager systemManager, NotificationManager notificationManager)
+        public contractMgr(ContractDB db, ItemDB itemDB, MarketDB marketDB, CharacterDB characterDB, ItemManager itemManager, TypeManager typeManager, SystemManager systemManager, NotificationManager notificationManager, account account)
         {
             this.DB = db;
             this.ItemDB = itemDB;
@@ -44,6 +45,7 @@ namespace Node.Services.Contracts
             this.TypeManager = typeManager;
             this.SystemManager = systemManager;
             this.NotificationManager = notificationManager;
+            this.account = account;
         }
 
         public PyDataType NumRequiringAttention(CallInformation call)
@@ -200,22 +202,29 @@ namespace Node.Services.Contracts
             using MySqlConnection connection = this.MarketDB.AcquireMarketLock();
             try
             {
+                // take reward from the character
+                if (reward > 0)
+                {
+                    account.WalletLock walletLock = this.account.AcquireLock(callerCharacterID, 1000);
+                    try
+                    {
+                        this.account.EnsureEnoughBalance(walletLock, reward);
+                        this.account.CreateJournalRecord(
+                            walletLock, MarketReference.ContractRewardAdded, null, null, -reward, ""
+                        );
+                    }
+                    finally
+                    {
+                        this.account.FreeLock(walletLock);
+                    }
+                }
+                
                 // named payload contains itemList, flag, requestItemTypeList and forCorp
                 ulong contractID = this.DB.CreateContract(connection, call.Client.EnsureCharacterIsSelected(),
                     call.Client.CorporationID, call.Client.AllianceID, (ContractTypes) (int) contractType, availability,
                     assigneeID, expireTime, courierContractDuration, startStationID, endStationID, priceOrStartingBid,
                     reward, collateralOrBuyoutPrice, title, description, 1000);
 
-                // take reward from the character
-                if (reward > 0)
-                {
-                    character.Balance -= reward;
-                    character.Persist();
-                    
-                    this.MarketDB.CreateJournalForCharacter(MarketReference.ContractRewardAdded, character.ID, character.ID, null, null, -reward, character.Balance, "", 1000);
-                    call.Client.NotifyBalanceUpdate(character.Balance);
-                }
-                
                 // TODO: take broker's tax, deposit and sales tax
                 
                 switch ((int) contractType)
@@ -447,21 +456,6 @@ namespace Node.Services.Contracts
                     bidderID = call.Client.CorporationID;
                     throw new UserError("Corp bidding is not supported for now!");
                 }
-                
-                // ensure there's enough balance left
-                Character character = this.ItemManager.GetItem<Character>(bidderID);
-                
-                character.EnsureEnoughBalance(quantity);
-                
-                // change the character's balance
-                character.Balance -= quantity;
-                character.Persist();
-                
-                // create the journal entry
-                this.MarketDB.CreateJournalForCharacter(MarketReference.ContractAuctionBid, character.ID, character.ID, null, null, -quantity, character.Balance, "", 1000);
-                
-                // update the player's balance
-                call.Client.NotifyBalanceUpdate(character.Balance);
 
                 ContractDB.Contract contract = this.DB.GetContract(connection, contractID);
 
@@ -476,8 +470,22 @@ namespace Node.Services.Contracts
 
                 if (quantity < nextMinimumBid)
                     throw new ConBidTooLow(quantity, nextMinimumBid);
+
+                // take the bid's money off the wallet
+                account.WalletLock bidderWalletLock = this.account.AcquireLock(bidderID, 1000);
+                try
+                {
+                    this.account.EnsureEnoughBalance(bidderWalletLock, quantity);
+                    this.account.CreateJournalRecord(
+                        bidderWalletLock, MarketReference.ContractAuctionBid, null, null, -quantity, ""
+                    );
+                }
+                finally
+                {
+                    this.account.FreeLock(bidderWalletLock);
+                }
             
-                // check who we'd outbid first and notify them
+                // check who we'd outbid and notify them
                 this.DB.GetOutbids(connection, contractID, quantity, out List<int> characterIDs, out List<int> corporationIDs);
 
                 OnContractOutbid notification = new OnContractOutbid(contractID);
@@ -493,20 +501,18 @@ namespace Node.Services.Contracts
                 // finally place the bid
                 ulong bidID = this.DB.PlaceBid(connection, contractID, quantity, bidderID, forCorp);
                 
-                // now return the money for the player that was the highest bidder
-                double balance = this.CharacterDB.GetCharacterBalance(maximumBidderID) + maximumBid;
-
-                // create the journal entry
-                this.MarketDB.CreateJournalForCharacter(MarketReference.ContractAuctionBidRefund, maximumBidderID, maximumBidderID, null, null, maximumBid, balance, "", 1000);
-                
-                // save the balance of the character
-                this.CharacterDB.SetCharacterBalance(maximumBidderID, balance);
-                    
-                // if the character is loaded in any node inform that node of the change in wallet
-                int characterNode = this.ItemDB.GetItemNode(maximumBidderID);
-                    
-                if (characterNode > 0)
-                    this.NotificationManager.NotifyNode(characterNode, new OnBalanceUpdate(maximumBidderID, 1000, balance));
+                // return the money for the player that was the highest bidder
+                account.WalletLock maximumBidderWalletLock = this.account.AcquireLock(maximumBidderID, 1000);
+                try
+                {
+                    this.account.CreateJournalRecord(
+                        maximumBidderWalletLock, MarketReference.ContractAuctionBidRefund, null, null, maximumBid, ""
+                    );
+                }
+                finally
+                {
+                    this.account.FreeLock(maximumBidderWalletLock);
+                }
 
                 return bidID;
             }

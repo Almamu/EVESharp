@@ -119,6 +119,7 @@ namespace Node
                 dependencies.Register<ReprocessingDB>(Lifestyle.Singleton);
                 dependencies.Register<RAMDB>(Lifestyle.Singleton);
                 dependencies.Register<FactoryDB>(Lifestyle.Singleton);
+                dependencies.Register<WalletDB>(Lifestyle.Singleton);
 
                 // register all the services
                 dependencies.Register<account>(Lifestyle.Singleton);

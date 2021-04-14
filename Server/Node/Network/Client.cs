@@ -266,26 +266,13 @@ namespace Node.Network
 
         public Session Session => this.mSession;
 
-        public string LanguageID
-        {
-            get => this.mSession["languageID"] as PyString;
-        }
+        public string LanguageID => this.mSession["languageID"] as PyString;
 
-        public int AccountID
-        {
-            get => this.mSession["userid"] as PyInteger;
-        }
+        public int AccountID => this.mSession["userid"] as PyInteger;
 
-        public int Role
-        {
-            get => this.mSession["role"] as PyInteger;
-            set => this.mSession["role"] = value;
-        }
+        public int Role => this.mSession["role"] as PyInteger;
 
-        public string Address
-        {
-            get => this.mSession["address"] as PyString;
-        }
+        public string Address => this.mSession["address"] as PyString;
 
         public int? CharacterID
         {
@@ -415,15 +402,6 @@ namespace Node.Network
         public void NotifyBalanceUpdate(double balance)
         {
             this.NotificationManager.NotifyCharacter((int) this.CharacterID, new OnAccountChange(1000, (int) this.CharacterID, balance));
-        }
-
-        /// <summary>
-        /// Sends an OnJumpCloneCacheInvalidated notification to the client to force it to re-fresh
-        /// any clone information stored in cache
-        /// </summary>
-        public void NotifyCloneUpdate()
-        {
-            this.NotificationManager.NotifyCharacter((int) this.CharacterID, new OnJumpCloneCacheInvalidated());
         }
 
         /// <summary>

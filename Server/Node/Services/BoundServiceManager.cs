@@ -18,7 +18,7 @@ namespace Node.Services
     ///
     /// TODO: IT MIGHT BE A GOOD IDEA TO SUPPORT TIMEOUTS FOR THESE OBJECTS
     /// </summary>
-    public class BoundServiceManager
+    public class BoundServiceManager : Common.Services.ServiceManager
     {
         public NodeContainer Container { get; }
         public Logger Logger { get; }
@@ -115,78 +115,22 @@ namespace Node.Services
         /// <exception cref="ServiceDoesNotContainCallException">If the service was found but no matching call was found</exception>
         public PyDataType ServiceCall(int boundID, string call, PyTuple payload, CallInformation callInformation)
         {
-            BoundService serviceInstance = this.mBoundServices[boundID];
-         
-            Log.Trace($"Calling {serviceInstance.GetType().Name}::{call} on bound service {boundID}");
-            
-            if(serviceInstance is null)
-                throw new ServiceDoesNotExistsException($"Bound Service {boundID}");
-
-            // ensure that only public methods that are part of the instance can be called
-            List<MethodInfo> methods = serviceInstance
-                .GetType()
-                .GetMethods(BindingFlags.Public | BindingFlags.Instance)
-                .Where(x => x.Name == call)
-                .ToList();
-            
-            if (methods.Any() == false)
-                throw new ServiceDoesNotContainCallException($"(boundID {boundID}) {serviceInstance.GetType().Name}", call, payload);
-
             // relay the exception throw by the call
             try
             {
-                foreach (MethodInfo method in methods)
-                {
-                    ParameterInfo[] parameters = method.GetParameters();
+                BoundService serviceInstance = this.mBoundServices[boundID];
+         
+                Log.Trace($"Calling {serviceInstance.GetType().Name}::{call} on bound service {boundID}");
+            
+                if(serviceInstance is null)
+                    throw new ServiceDoesNotExistsException($"Bound Service {boundID}");
 
-                    // ignore functions that do not have enough parameters in them
-                    if (parameters.Length < (payload.Count + 1))
-                        continue;
-                    
-                    object[] parameterList = new object[parameters.Length];
+                List<MethodInfo> methods = this.FindMethods(serviceInstance, $"(boundID {boundID}) {serviceInstance.GetType().Name}", call);
 
-                    // set last parameters as these are the only ones that do not change
-                    parameterList[^1] = callInformation;
+                if (FindSuitableMethod(methods, payload, callInformation, out object[] invokeParameters, out MethodInfo method) == false)
+                    throw new ServiceDoesNotContainCallException($"(boundID {boundID}) {serviceInstance.GetType().Name}", call);
 
-                    bool match = true;
-                    
-                    for (int i = 0; i < parameterList.Length - 1; i++)
-                    {
-                        // search for a method that has enough parameters to handle this call
-                        if (i >= payload.Count)
-                        {
-                            if (parameters[i].IsOptional == false)
-                            {
-                                match = false;
-                                break;                                
-                            }
-
-                            parameterList[i] = null;
-                        }
-                        else
-                        {
-                            PyDataType element = payload[i];
-                        
-                            // check parameter types
-                            if (parameters[i].IsOptional == true || element is null)
-                                parameterList[i] = null;
-                            else if (parameters[i].ParameterType == element.GetType() ||
-                                     parameters[i].ParameterType == element.GetType().BaseType)
-                                parameterList[i] = element;
-                            else
-                            {
-                                match = false;
-                                break;
-                            }
-                        }
-                    }
-                
-                    if (match)
-                        // prepare the arguments for the function
-                        return (PyDataType) (method.Invoke(serviceInstance, parameterList));
-                }
-
-                throw new ServiceDoesNotContainCallException($"(boundID {boundID}) {serviceInstance.GetType().Name}", call, payload);
+                return (PyDataType) method.Invoke(serviceInstance, invokeParameters);
             }
             catch (TargetInvocationException e)
             {

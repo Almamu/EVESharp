@@ -26,49 +26,6 @@ namespace Node.Database
     {
         private TypeManager TypeManager { get; }
 
-        public void CreateJournalForCharacter(MarketReference reference, int characterID, int ownerID1,
-            int? ownerID2, int? referenceID, double amount, double finalBalance, string reason, int accountKey)
-        {
-            reason = reason.Substring(0, Math.Min(reason.Length, 43));
-            
-            Database.PrepareQuery(
-                "INSERT INTO market_journal(transactionDate, entryTypeID, charID, ownerID1, ownerID2, referenceID, amount, balance, description, accountKey)VALUES(@transactionDate, @entryTypeID, @charID, @ownerID1, @ownerID2, @referenceID, @amount, @balance, @description, @accountKey)",
-                new Dictionary<string, object>()
-                {
-                    {"@transactionDate", DateTime.UtcNow.ToFileTimeUtc()},
-                    {"@entryTypeID", (int) reference},
-                    {"@charID", characterID},
-                    {"@ownerID1", ownerID1},
-                    {"@ownerID2", ownerID2},
-                    {"@referenceID", referenceID},
-                    {"@amount", amount},
-                    {"@balance", finalBalance},
-                    {"@description", reason},
-                    {"@accountKey", accountKey}
-                }
-            );
-        }
-
-        public void CreateTransactionForCharacter(int characterID, int? clientID, TransactionType sellBuy,
-            int typeID, int quantity, double price, int stationID, bool corpTransaction = false)
-        {
-            Database.PrepareQuery(
-                "INSERT INTO mktTransactions(transactionDateTime, typeID, quantity, price, transactionType, characterID, clientID, stationID, corpTransaction)VALUE(@transactionDateTime, @typeID, @quantity, @price, @transactionType, @characterID, @clientID, @stationID, @corpTransaction)",
-                new Dictionary<string, object>()
-                {
-                    {"@transactionDateTime", DateTime.UtcNow.ToFileTimeUtc()},
-                    {"@typeID", typeID},
-                    {"@quantity", quantity},
-                    {"@price", price},
-                    {"@transactionType", (int) sellBuy},
-                    {"@characterID", characterID},
-                    {"@clientID", clientID},
-                    {"@stationID", stationID},
-                    {"@corpTransaction", corpTransaction}
-                }
-            );
-        }
-
         public Rowset CharGetNewTransactions(int characterID, int? clientID, TransactionType sellBuy, int? typeID, int quantity, int minPrice)
         {
             Dictionary<string, object> parameters = new Dictionary<string, object>()

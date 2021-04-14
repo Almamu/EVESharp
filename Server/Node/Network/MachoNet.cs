@@ -10,9 +10,7 @@ using Node.Inventory;
 using Node.Inventory.Items;
 using Node.Inventory.Items.Types;
 using Node.Inventory.SystemEntities;
-using Node.Notifications.Client.Character;
 using Node.Notifications.Client.Inventory;
-using Node.Notifications.Nodes.Character;
 using Node.Services;
 using PythonTypes;
 using PythonTypes.Types.Collections;
@@ -542,54 +540,6 @@ namespace Node.Network
             }
         }
 
-        private void HandleOnBalanceUpdate(PyTuple data)
-        {
-            if (data.Count != 3)
-            {
-                Log.Error("Received OnBalanceUpdate notification with the wrong format");
-                return;
-            }
-
-            PyDataType first = data[0];
-
-            if (first is PyInteger == false)
-            {
-                Log.Error("Received OnBalanceUpdate notification with the wrong format");
-                return;
-            }
-
-            PyDataType second = data[1];
-            
-            if (second is PyInteger == false)
-            {
-                Log.Error("Received OnBalanceUpdate notification with the wrong format");
-                return;
-            }
-
-            PyDataType third = data[2];
-
-            if (third is PyDecimal == false)
-            {
-                Log.Error("Received OnBalanceUpdate notification with the wrong format");
-                return;
-            }
-
-            PyInteger characterID = first as PyInteger;
-            PyInteger walletKey = second as PyInteger;
-            PyDecimal newBalance = third as PyDecimal;
-            
-            if (this.ItemManager.TryGetItem(characterID, out Character character) == false)
-            {
-                Log.Warning("Received a wallet update for a character that does not belong to us...");
-                return;
-            }
-
-            character.Balance = newBalance;
-            character.Persist();
-            
-            this.NotificationManager.NotifyCharacter(characterID, new OnAccountChange(walletKey, characterID, newBalance));
-        }
-
         private void HandleOnClusterTimer(PyTuple data)
         {
             Log.Info("Received a cluster request to run timed events on services...");
@@ -624,9 +574,6 @@ namespace Node.Network
                     break;
                 case Notifications.Nodes.Inventory.OnItemChange.NOTIFICATION_NAME:
                     this.HandleOnItemUpdate(packet.Payload);
-                    break;
-                case OnBalanceUpdate.NOTIFICATION_NAME:
-                    this.HandleOnBalanceUpdate(packet.Payload[1] as PyTuple);
                     break;
                 case "OnClusterTimer":
                     this.HandleOnClusterTimer(packet.Payload[1] as PyTuple);

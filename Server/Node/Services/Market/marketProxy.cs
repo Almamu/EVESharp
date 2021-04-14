@@ -1,24 +1,19 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Dynamic;
 using Common.Services;
 using MySql.Data.MySqlClient;
 using Node.Database;
-using Node.Exceptions;
 using Node.Exceptions.inventory;
-using Node.Exceptions.jumpCloneSvc;
 using Node.Exceptions.marketProxy;
 using Node.Inventory;
 using Node.Inventory.Items;
 using Node.Inventory.Items.Types;
-using Node.Inventory.SystemEntities;
 using Node.Market;
 using Node.Network;
 using Node.Notifications.Client.Market;
-using Node.Notifications.Nodes.Character;
 using Node.Notifications.Nodes.Inventory;
+using Node.Services.Account;
 using Node.StaticData.Inventory;
-using PythonTypes.Types.Collections;
 using PythonTypes.Types.Complex;
 using PythonTypes.Types.Exceptions;
 using PythonTypes.Types.Primitives;
@@ -43,8 +38,9 @@ namespace Node.Services.Market
         private ClientManager ClientManager { get; }
         private SystemManager SystemManager { get; }
         private NotificationManager NotificationManager { get; }
+        private account account { get; }
         
-        public marketProxy(MarketDB db, CharacterDB characterDB, ItemDB itemDB, SolarSystemDB solarSystemDB, ItemManager itemManager, TypeManager typeManager, CacheStorage cacheStorage, NodeContainer nodeContainer, ClientManager clientManager, SystemManager systemManager, NotificationManager notificationManager)
+        public marketProxy(MarketDB db, CharacterDB characterDB, ItemDB itemDB, SolarSystemDB solarSystemDB, ItemManager itemManager, TypeManager typeManager, CacheStorage cacheStorage, NodeContainer nodeContainer, ClientManager clientManager, SystemManager systemManager, NotificationManager notificationManager, account account)
         {
             this.DB = db;
             this.CharacterDB = characterDB;
@@ -57,6 +53,7 @@ namespace Node.Services.Market
             this.ClientManager = clientManager;
             this.SystemManager = systemManager;
             this.NotificationManager = notificationManager;
+            this.account = account;
         }
 
         public PyDataType CharGetNewTransactions(PyInteger sellBuy, PyInteger typeID, PyDataType clientID,
@@ -245,7 +242,7 @@ namespace Node.Services.Market
                 throw new MktOrderDidNotMatch();
         }
 
-        private void PlaceImmediateSellOrderChar(MySqlConnection connection, Character character, int itemID, int typeID, int stationID, int quantity, double price, Client client)
+        private void PlaceImmediateSellOrderChar(MySqlConnection connection, account.WalletLock walletLock, Character character, int itemID, int typeID, int stationID, int quantity, double price, Client client)
         {
             int solarSystemID = this.ItemManager.GetStaticStation(stationID).SolarSystemID;
             
@@ -273,15 +270,18 @@ namespace Node.Services.Market
 
                     if (escrowLeft > 0.0)
                     {
-                        double balance = this.CharacterDB.GetCharacterBalance(order.CharacterID) + escrowLeft;
-                        this.DB.CreateJournalForCharacter(MarketReference.MarketEscrow, order.CharacterID, order.CharacterID, null, null, escrowLeft, balance, "", 1000);
-                        this.CharacterDB.SetCharacterBalance(order.CharacterID, balance);
-                    
-                        // if the character is loaded in any node inform that node of the change in wallet
-                        int characterNode = this.ItemDB.GetItemNode(order.CharacterID);
-                    
-                        if (characterNode > 0)
-                            this.NotificationManager.NotifyNode(characterNode, new OnBalanceUpdate(order.CharacterID, order.AccountID, balance));
+                        // give back the escrow for the character
+                        account.WalletLock escrowWalletLock = this.account.AcquireLock(order.CharacterID, order.AccountID);
+                        try
+                        {
+                            this.account.CreateJournalRecord(
+                                escrowWalletLock, MarketReference.MarketEscrow, null, null, escrowLeft
+                            );
+                        }
+                        finally
+                        {
+                            this.account.FreeLock(escrowWalletLock);
+                        }
                     }
                     
                     // this order is fully satisfiable, so do that
@@ -302,22 +302,17 @@ namespace Node.Services.Market
 
                 if (quantityToSell > 0)
                 {
-                    // first calculate the raw ISK and the tax on that
+                    
+                    // calculate sales tax
                     double profit, tax;
-                    
-                    this.CalculateSalesTax(character.GetSkillLevel(ItemTypes.Accounting), order.UnitsLeft, order.Price, out tax, out profit);
-
+                            
+                    this.CalculateSalesTax(character.GetSkillLevel(ItemTypes.Accounting), quantity, price, out tax, out profit);
+            
                     // create the required records for the wallet
-                    this.DB.CreateJournalForCharacter(MarketReference.MarketTransaction, character.ID, order.CharacterID, character.ID, null, profit, character.Balance + profit + tax, "", 1000);
-                    this.DB.CreateJournalForCharacter(MarketReference.TransactionTax, character.ID, character.ID, null, null, -tax, character.Balance + profit, "", 1000);
-                    this.DB.CreateTransactionForCharacter(character.ID, order.CharacterID, TransactionType.Sell, typeID, quantityToSell, price, stationID);
-                    this.DB.CreateTransactionForCharacter(order.CharacterID, character.ID, TransactionType.Buy, typeID, quantityToSell, price, stationID);
-
-                    // update balance for this character
-                    character.Balance += profit;
-                    
-                    // send notification for the wallet to be updated
-                    client.NotifyBalanceUpdate(character.Balance);
+                    this.account.CreateJournalRecord(walletLock, MarketReference.MarketTransaction, order.CharacterID, character.ID, null, profit);
+                    this.account.CreateJournalRecord(walletLock, MarketReference.TransactionTax, null, null, -tax);
+                    this.account.CreateTransactionRecord(character.ID, TransactionType.Sell, order.CharacterID, typeID, quantityToSell, price, stationID);
+                    this.account.CreateTransactionRecord(order.CharacterID, TransactionType.Buy, character.ID, typeID, quantityToSell, price, stationID);
                     
                     // create the new item that will be used by the player
                     ItemEntity item = this.ItemManager.CreateSimpleItem(
@@ -408,8 +403,10 @@ namespace Node.Services.Market
             this.CheckSellOrderDistancePermissions(character, stationID);
             
             // TODO: ADD SUPPORT FOR CORPORATIONS!
-            
+
+            // obtain wallet lock too
             // everything is checked already, perform table locking and do all the job here
+            account.WalletLock walletLock = this.account.AcquireLock(character.ID, 1000);
             using MySqlConnection connection = this.DB.AcquireMarketLock();
             try
             {
@@ -429,20 +426,18 @@ namespace Node.Services.Market
                 if (duration == 0)
                 {
                     // finally create the records in the market database
-                    this.PlaceImmediateSellOrderChar(connection, character, itemID, typeID, stationID, quantity, price, call.Client);
+                    this.PlaceImmediateSellOrderChar(connection, walletLock, character, itemID, typeID, stationID, quantity, price, call.Client);
                 }
                 else
                 {
+                    // ensure the player can pay taxes and broker
+                    this.account.EnsureEnoughBalance(walletLock, brokerCost);
+                    // do broker fee first
+                    this.account.CreateJournalRecord(walletLock, MarketReference.Brokerfee, null, null, -brokerCost);
                     // finally place the order
                     this.DB.PlaceSellOrder(connection, typeID, character.ID, stationID, range, price, quantity, 1000, duration, false);
-                    // update balance for this character
-                    character.Balance -= brokerCost;
-                    character.Persist();
-                    // create record in the journal
-                    this.DB.CreateJournalForCharacter(MarketReference.Brokerfee, character.ID, character.ID, null, null, -brokerCost, character.Balance - brokerCost, "", 1000);
-                    // send notification for the wallet to be updated
-                    call.Client.NotifyBalanceUpdate(character.Balance);
                 }
+                
                 // send a OnOwnOrderChange notification
                 call.Client.NotifyMultiEvent(new OnOwnOrderChanged(typeID, "Add"));
             }
@@ -450,6 +445,8 @@ namespace Node.Services.Market
             {
                 // free the lock
                 this.DB.ReleaseMarketLock(connection);
+                // free the wallet lock too
+                this.account.FreeLock(walletLock);
             }
         }
 
@@ -472,7 +469,7 @@ namespace Node.Services.Market
                 throw new MktOrderDidNotMatch();
         }
 
-        private void PlaceImmediateBuyOrderChar(MySqlConnection connection, int typeID, Character character, int stationID, int quantity, double price, int range, CallInformation call)
+        private void PlaceImmediateBuyOrderChar(MySqlConnection connection, account.WalletLock walletLock, int typeID, Character character, int stationID, int quantity, double price, int range, CallInformation call)
         {
             int solarSystemID = this.ItemManager.GetStaticStation(stationID).SolarSystemID;
 
@@ -511,34 +508,21 @@ namespace Node.Services.Market
 
                 if (quantityToBuy > 0)
                 {
-                    double profit, tax;
-                    double balance = this.CharacterDB.GetCharacterBalance(order.CharacterID);
+                    // acquire wallet journal for seller so we can update their balance to add the funds that he got
+                    account.WalletLock sellerWalletLock = this.account.AcquireLock(order.CharacterID, order.AccountID);
+                    try
+                    {
+                        this.account.CreateJournalRecord(sellerWalletLock, MarketReference.MarketTransaction, character.ID, order.CharacterID, null, price * quantityToBuy);
+                    }
+                    finally
+                    {
+                        this.account.FreeLock(sellerWalletLock);
+                    }
+                    
+                    // create the transaction records for both characters
+                    this.account.CreateTransactionRecord(character.ID, TransactionType.Buy, order.CharacterID, typeID, quantityToBuy, price, stationID);
+                    this.account.CreateTransactionRecord(order.CharacterID, TransactionType.Sell, character.ID, typeID, quantityToBuy, price, stationID);
 
-                    this.CalculateSalesTax(this.CharacterDB.GetSkillLevelForCharacter(ItemTypes.Accounting, order.CharacterID), quantityToBuy, price, out tax, out profit);
-
-                    balance += profit;
-
-                    character.Balance -= quantityToBuy * price;
-                    character.Persist();
-                    
-                    this.DB.CreateJournalForCharacter(MarketReference.MarketEscrow, character.ID, character.ID, null, null, -quantityToBuy * price, character.Balance, "", 1000);
-                    this.DB.CreateJournalForCharacter(MarketReference.MarketTransaction, order.CharacterID, character.ID, order.CharacterID, null, price * quantityToBuy, balance + tax, "", 1000);
-                    this.DB.CreateJournalForCharacter(MarketReference.TransactionTax, order.CharacterID, order.CharacterID, null, null, -tax, balance, "", 1000);
-                    this.DB.CreateTransactionForCharacter(character.ID, order.CharacterID, TransactionType.Buy, typeID, quantityToBuy, price, stationID);
-                    this.DB.CreateTransactionForCharacter(order.CharacterID, character.ID, TransactionType.Sell, typeID, quantityToBuy, price, stationID);
-                    
-                    // save the balance of the character
-                    this.CharacterDB.SetCharacterBalance(order.CharacterID, balance);
-                    
-                    // if the character is loaded in any node inform that node of the change in wallet
-                    int characterNode = this.ItemDB.GetItemNode(order.CharacterID);
-                    
-                    if (characterNode > 0)
-                        this.NotificationManager.NotifyNode(characterNode, new OnBalanceUpdate(order.CharacterID, order.AccountID, balance));
-                    
-                    // notify this character of the balance update too
-                    call.Client.NotifyBalanceUpdate(character.Balance);
-                    
                     long stationNode = this.SystemManager.GetNodeStationBelongsTo(stationID);
                         
                     // create the new item that will be used by the player
@@ -568,31 +552,26 @@ namespace Node.Services.Market
         {
             // ensure the character can place the order where he's trying to
             this.CheckBuyOrderDistancePermissions(character, stationID);
-            // make sure the character has enough money
-            character.EnsureEnoughBalance(quantity * price);
-            
+
+            account.WalletLock walletLock = this.account.AcquireLock(character.ID, 1000);
             using MySqlConnection connection = this.DB.AcquireMarketLock();
             try
             {
+                // make sure the character can pay the escrow and the broker
+                this.account.EnsureEnoughBalance(walletLock, quantity * price + brokerCost);
+                // do the escrow after
+                this.account.CreateJournalRecord(walletLock, MarketReference.MarketEscrow, null, null, -quantity * price);
+                
                 if (duration == 0)
                 {
-                    this.PlaceImmediateBuyOrderChar(connection, typeID, character, stationID, quantity, price, range, call);
+                    this.PlaceImmediateBuyOrderChar(connection, walletLock, typeID, character, stationID, quantity, price, range, call);
                 }
                 else
                 {
-                    // make sure the character can pay the escrow
-                    character.EnsureEnoughBalance(quantity * price);
+                    // do broker fee first
+                    this.account.CreateJournalRecord(walletLock, MarketReference.Brokerfee, null, null, -brokerCost);
                     // place the buy order
                     this.DB.PlaceBuyOrder(connection, typeID, character.ID, stationID, range, price, quantity, minVolume, 1000, duration, false);
-                    // update balance for this character
-                    character.Balance -= brokerCost;
-                    // create record in the journal for the brokers fee and the escrow
-                    this.DB.CreateJournalForCharacter(MarketReference.Brokerfee, character.ID, character.ID, null, null, -brokerCost, character.Balance, "", 1000);
-                    character.Balance -= quantity * price;
-                    character.Persist();
-                    this.DB.CreateJournalForCharacter(MarketReference.MarketEscrow, character.ID, character.ID, null, null, -quantity * price, character.Balance, "", 1000);
-                    // finally notify the character of the balance change
-                    call.Client.NotifyBalanceUpdate(character.Balance);
                 }
                 
                 // send a OnOwnOrderChange notification
@@ -601,6 +580,7 @@ namespace Node.Services.Market
             finally
             {
                 this.DB.ReleaseMarketLock(connection);
+                this.account.FreeLock(walletLock);
             }
         }
 
@@ -623,8 +603,6 @@ namespace Node.Services.Market
                 
                 // calculate broker costs for the order
                 this.CalculateBrokerCost(character.GetSkillLevel(ItemTypes.BrokerRelations), quantity, price, out brokerCost);
-                // make sure the character has enough balance for the broker costs
-                character.EnsureEnoughBalance(brokerCost);
             }
             
             // check if the character has the Marketing skill and calculate distances
@@ -665,11 +643,15 @@ namespace Node.Services.Market
                 // check for escrow
                 if (order.Escrow > 0.0 && order.Bid == TransactionType.Buy)
                 {
-                    character.Balance += order.Escrow;
-                    character.Persist();
-                    this.DB.CreateJournalForCharacter(MarketReference.MarketEscrow, order.CharacterID, order.CharacterID, null, null, order.Escrow, character.Balance, "", 1000);
-
-                    call.Client.NotifyBalanceUpdate(character.Balance);
+                    account.WalletLock walletLock = this.account.AcquireLock(character.ID, 1000);
+                    try
+                    {
+                        this.account.CreateJournalRecord(walletLock, MarketReference.MarketEscrow, null, null, order.Escrow);
+                    }
+                    finally
+                    {
+                        this.account.FreeLock(walletLock);
+                    }
                 }
 
                 if (order.Bid == TransactionType.Sell)
@@ -737,35 +719,37 @@ namespace Node.Services.Market
                 double newEscrow = 0.0;
 
                 this.CalculateBrokerCost(character.GetSkillLevel(ItemTypes.BrokerRelations), volRemaining, (newPrice - price), out brokerCost);
-                
-                if (order.Bid == TransactionType.Buy)
+
+                account.WalletLock walletLock = this.account.AcquireLock(order.CharacterID, order.AccountID);
+                try
                 {
-                    // calculate the difference in escrow
-                    newEscrow = volRemaining * newPrice;
-                    double escrowDiff = order.Escrow - newEscrow;
-                    // make sure the character has enough to pay for the difference + broker
-                    character.EnsureEnoughBalance(escrowDiff + brokerCost);
-                    // first add the difference
-                    character.Balance -= escrowDiff;
-                    // create the record for the journal
-                    this.DB.CreateJournalForCharacter(MarketReference.MarketEscrow, order.CharacterID, order.CharacterID, null, null, escrowDiff, character.Balance, "", 1000);    
+                    if (order.Bid == TransactionType.Buy)
+                    {
+                        // calculate the difference in escrow
+                        newEscrow = volRemaining * newPrice;
+                        double escrowDiff = order.Escrow - newEscrow;
+                        
+                        // ensure enough balances
+                        this.account.EnsureEnoughBalance(walletLock, escrowDiff + brokerCost);
+                        // take the difference in escrow
+                        this.account.CreateJournalRecord(walletLock, MarketReference.MarketEscrow, null, null, escrowDiff);
+                    }
+                    else
+                    {
+                        this.account.EnsureEnoughBalance(walletLock, brokerCost);
+                    }
+                    
+                    // pay the broker fee once again
+                    this.account.CreateJournalRecord(walletLock, MarketReference.Brokerfee, null, null, -brokerCost);
                 }
-                else
+                finally
                 {
-                    // sell orders only have to take into account broker cost
-                    character.EnsureEnoughBalance(brokerCost);
+                    this.account.FreeLock(walletLock);
                 }
                 
-                // now subtract the broker cost
-                character.Balance -= brokerCost;
-                // create journal entry for the broker fee
-                this.DB.CreateJournalForCharacter(MarketReference.Brokerfee, character.ID, character.ID, null, null, -brokerCost, character.Balance, "", 1000);
-                // persist the character
-                character.Persist();
                 // everything looks okay, update the price of the order
                 this.DB.UpdatePrice(connection, order.OrderID, newPrice, newEscrow);
-                // notify the balance change
-                call.Client.NotifyBalanceUpdate(character.Balance);
+                
                 // send a OnOwnOrderChange notification
                 call.Client.NotifyMultiEvent(new OnOwnOrderChanged(order.TypeID, "Modified"));
             }
@@ -805,23 +789,20 @@ namespace Node.Services.Market
         {
             // remove order
             this.DB.RemoveOrder(connection, order.OrderID);
-            
-            // return escrow to the character
-            double balance = this.CharacterDB.GetCharacterBalance(order.CharacterID);
 
-            this.DB.CreateJournalForCharacter(MarketReference.MarketEscrow, order.CharacterID, order.CharacterID, null, null, order.Escrow, balance, "", order.AccountID);
-            
-            // save the balance of the character
-            this.CharacterDB.SetCharacterBalance(order.CharacterID, balance + order.Escrow);
-                    
-            // if the character is loaded in any node inform that node of the change in wallet
-            int characterNode = this.ItemDB.GetItemNode(order.CharacterID);
-
-            if (characterNode > 0)
+            // give back the escrow paid by the player
+            account.WalletLock walletLock = this.account.AcquireLock(order.CharacterID, order.AccountID);
+            try
             {
-                this.NotificationManager.NotifyNode(characterNode, new OnBalanceUpdate(order.CharacterID, order.AccountID, balance));
-                this.NotificationManager.NotifyCharacter(order.CharacterID, new OnOwnOrderChanged(order.TypeID, "Expiry", order.AccountID > 1000));
+                this.account.CreateJournalRecord(walletLock, MarketReference.MarketEscrow, null, null, order.Escrow);
             }
+            finally
+            {
+                this.account.FreeLock(walletLock);
+            }
+            
+            // notify the character about the change in the order
+            this.NotificationManager.NotifyCharacter(order.CharacterID, new OnOwnOrderChanged(order.TypeID, "Expiry", order.AccountID > 1000));
         }
 
         /// <summary>

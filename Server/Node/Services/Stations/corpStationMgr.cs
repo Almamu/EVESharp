@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using Node.Database;
 using Node.Exceptions;
@@ -7,12 +8,14 @@ using Node.Inventory.Items;
 using Node.Inventory.Items.Types;
 using Node.Market;
 using Node.Network;
+using Node.Services.Account;
 using Node.StaticData;
 using Node.StaticData.Inventory;
 using PythonTypes.Types.Collections;
 using PythonTypes.Types.Database;
 using PythonTypes.Types.Exceptions;
 using PythonTypes.Types.Primitives;
+using Type = Node.StaticData.Inventory.Type;
 
 namespace Node.Services.Stations
 {
@@ -25,23 +28,26 @@ namespace Node.Services.Stations
         private ItemManager ItemManager { get; }
         private TypeManager TypeManager { get; }
         private SystemManager SystemManager { get; }
+        private account account { get; }
         
-        public corpStationMgr(ItemDB itemDB, MarketDB marketDB, ItemManager itemManager, TypeManager typeManager, SystemManager systemManager, BoundServiceManager manager) : base(manager, null)
+        public corpStationMgr(ItemDB itemDB, MarketDB marketDB, ItemManager itemManager, TypeManager typeManager, SystemManager systemManager, BoundServiceManager manager, account account) : base(manager, null)
         {
             this.ItemDB = itemDB;
             this.MarketDB = marketDB;
             this.ItemManager = itemManager;
             this.TypeManager = typeManager;
             this.SystemManager = systemManager;
+            this.account = account;
         }
         
-        protected corpStationMgr(ItemDB itemDB, MarketDB marketDB, ItemManager itemManager, TypeManager typeManager, SystemManager systemManager, BoundServiceManager manager, Client client) : base(manager, client)
+        protected corpStationMgr(ItemDB itemDB, MarketDB marketDB, ItemManager itemManager, TypeManager typeManager, SystemManager systemManager, BoundServiceManager manager, account account, Client client) : base(manager, client)
         {
             this.ItemDB = itemDB;
             this.MarketDB = marketDB;
             this.ItemManager = itemManager;
             this.TypeManager = typeManager;
             this.SystemManager = systemManager;
+            this.account = account;
         }
 
         public override PyInteger MachoResolveObject(PyInteger stationID, PyInteger zero, CallInformation call)
@@ -59,7 +65,7 @@ namespace Node.Services.Stations
             if (this.MachoResolveObject(objectData as PyInteger, 0, call) != this.BoundServiceManager.Container.NodeID)
                 throw new CustomError("Trying to bind an object that does not belong to us!");
 
-            return new corpStationMgr(this.ItemDB, this.MarketDB, this.ItemManager, this.TypeManager, this.SystemManager, this.BoundServiceManager, call.Client);
+            return new corpStationMgr(this.ItemDB, this.MarketDB, this.ItemManager, this.TypeManager, this.SystemManager, this.BoundServiceManager, this.account, call.Client);
         }
 
         public PyList GetCorporateStationOffice(CallInformation call)
@@ -149,20 +155,17 @@ namespace Node.Services.Stations
                 if (locationID == stationID)
                     throw new MedicalYouAlreadyHaveACloneContractAtThatStation();
             }
-            
-            // check the user has enough money
-            character.EnsureEnoughBalance(CLONE_CONTRACT_COST);
-            
-            // subtract the money off the character
-            character.Balance -= CLONE_CONTRACT_COST;
 
-            this.MarketDB.CreateJournalForCharacter(
-                MarketReference.CloneTransfer, character.ID, character.ID, null, station.ID,
-                -CLONE_CONTRACT_COST, character.Balance, $"Moved clone to {station.Name}", 1000
-            );
-            
-            // send the notification to the user
-            call.Client.NotifyBalanceUpdate(character.Balance);
+            account.WalletLock walletLock = this.account.AcquireLock(character.ID, 1000);
+            try
+            {
+                this.account.EnsureEnoughBalance(walletLock, CLONE_CONTRACT_COST);
+                this.account.CreateJournalRecord(walletLock, MarketReference.CloneTransfer, null, station.ID, -CLONE_CONTRACT_COST, $"Moved clone to {station.Name}");
+            }
+            finally
+            {
+                this.account.FreeLock(walletLock);
+            }
             
             // set clone's station
             character.ActiveClone.LocationID = stationID;
@@ -172,7 +175,7 @@ namespace Node.Services.Stations
             character.Persist();
                 
             // invalidate client's cache
-            call.Client.NotifyCloneUpdate();
+            this.Client.ServiceManager.jumpCloneSvc.OnCloneUpdate(character.ID);
             
             return null;
         }
@@ -216,18 +219,18 @@ namespace Node.Services.Stations
                 throw new MedicalThisCloneIsWorse();
 
             Station station = this.ItemManager.GetStaticStation(stationID);
-            
-            // ensure the character has enough money in the account for the upgrade
-            character.EnsureEnoughBalance(newCloneType.BasePrice);
-            character.Balance -= newCloneType.BasePrice;
-            // notify the client
-            call.Client.NotifyBalanceUpdate(character.Balance);
-            // create the wallet entry
-            this.MarketDB.CreateTransactionForCharacter(
-                callerCharacterID, 1, TransactionType.Buy, newCloneType.ID, 1, newCloneType.BasePrice,
-                station.ID 
-            );
 
+            account.WalletLock walletLock = this.account.AcquireLock(character.ID, 1000);
+            try
+            {
+                this.account.EnsureEnoughBalance(walletLock, newCloneType.BasePrice);
+                this.account.CreateTransactionRecord(walletLock, TransactionType.Buy, this.ItemManager.LocationSystem.ID, newCloneType.ID, 1, newCloneType.BasePrice, station.ID);
+            }
+            finally
+            {
+                this.account.FreeLock(walletLock);
+            }
+            
             // update active clone's information
             character.ActiveClone.Type = newCloneType;
             character.ActiveClone.Name = newCloneType.Name;

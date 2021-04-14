@@ -1,4 +1,5 @@
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -11,77 +12,98 @@ namespace Common.Services
 {
     public class ServiceManager
     {
-        public PyDataType ServiceCall(string service, string call, PyTuple arguments, object extraInformation)
+        protected IService FindService(string service)
         {
             object serviceObject = GetType().GetProperty(service)?.GetValue(this);
-            
-            if(serviceObject == null || serviceObject is IService == false)
-                throw new ServiceDoesNotExistsException(service);
 
-            IService serviceInstance = serviceObject as IService;
-            List<MethodInfo> methods = serviceInstance
+            if (serviceObject is not IService instance)
+                throw new ServiceDoesNotExistsException(service);
+            
+            return instance;
+        }
+        
+        protected List<MethodInfo> FindMethods(IService service, string serviceName, string method)
+        {
+            List<MethodInfo> methods = service
                 .GetType()
                 .GetMethods(BindingFlags.Public | BindingFlags.Instance)
-                .Where(x => x.Name == call)
+                .Where(x => x.Name == method)
                 .ToList();
             
-            if (methods.Any() == false)
-                throw new ServiceDoesNotContainCallException(service, call, arguments);
+            if (methods.Count == 0)
+                throw new ServiceDoesNotContainCallException(serviceName, method);
+            
+            return methods;
+        }
 
+        protected bool FindSuitableMethod(List<MethodInfo> methods, PyTuple arguments, object extraInformation, out object[] parameters, out MethodInfo matchingMethod)
+        {
+            Type extraInformationType = extraInformation.GetType();
+            parameters = new object[arguments.Count + 1];
+            parameters[^1] = extraInformation;
+            matchingMethod = null;
+            
+            foreach (MethodInfo method in methods)
+            {
+                ParameterInfo[] methodParameters = method.GetParameters();
+                
+                // ignore calls that have less parameters available that the ones provided
+                if (methodParameters.Length < parameters.Length/* || methodParameters[^1].GetType() != extraInformationType*/)
+                    continue;
+
+                bool match = true;
+
+                for (int i = 0; i < methodParameters.Length - 1; i++)
+                {
+                    if (i >= arguments.Count)
+                    {
+                        if (methodParameters[i].IsOptional == false)
+                        {
+                            match = false;
+                            break;
+                        }
+
+                        parameters[i] = null;
+                    }
+                    else
+                    {
+                        PyDataType element = arguments[i];
+
+                        if (element is null || methodParameters[i].IsOptional == true)
+                            parameters[i] = null;
+                        else if (methodParameters[i].ParameterType == element.GetType() ||
+                                 methodParameters[i].ParameterType == element.GetType().BaseType)
+                            parameters[i] = element;
+                        else
+                        {
+                            match = false;
+                            break;
+                        }
+                    }
+                }
+
+                if (match == true)
+                {
+                    matchingMethod = method;
+                    return true;
+                }
+            }
+
+            return false;
+        }
+        
+        public PyDataType ServiceCall(string service, string call, PyTuple arguments, object extraInformation)
+        {
             // relay the exception throw by the call
             try
             {
-                foreach (MethodInfo method in methods)
-                {
-                    ParameterInfo[] parameters = method.GetParameters();
-                    
-                    // ignore functions that do not have enough parameters in them
-                    if (parameters.Length < (arguments.Count + 1))
-                        continue;
+                IService serviceInstance = this.FindService(service);
+                List<MethodInfo> methods = this.FindMethods(serviceInstance, service, call);
+            
+                if (FindSuitableMethod(methods, arguments, extraInformation, out object[] invokeParameters, out MethodInfo method) == false)
+                    throw new ServiceDoesNotContainCallException(service, call);
 
-                    object[] parameterList = new object[parameters.Length];
-                    
-                    // set last parameters as these are the only ones that do not change
-                    parameterList[^1] = extraInformation;
-
-                    bool match = true;
-                    
-                    for (int i = 0; i < parameterList.Length - 1; i++)
-                    {
-                        if (i >= arguments.Count)
-                        {
-                            if (parameters[i].IsOptional == false)
-                            {
-                                match = false;
-                                break;                                
-                            }
-
-                            parameterList[i] = null;
-                        }
-                        else
-                        {
-                            PyDataType element = arguments[i];
-                        
-                            // check parameter types
-                            if (element is null || parameters[i].IsOptional == true)
-                                parameterList[i] = null;
-                            else if (parameters[i].ParameterType == element.GetType() ||
-                                     parameters[i].ParameterType == element.GetType().BaseType)
-                                parameterList[i] = element;
-                            else
-                            {
-                                match = false;
-                                break;
-                            }
-                        }
-                    }
-                
-                    if (match)
-                        // prepare the arguments for the function
-                        return (PyDataType) (method.Invoke(serviceInstance, parameterList));
-                }
-
-                throw new ServiceDoesNotContainCallException(service, call, arguments);
+                return (PyDataType) method.Invoke(serviceInstance, invokeParameters);
             }
             catch (TargetInvocationException e)
             {

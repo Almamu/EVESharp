@@ -12,6 +12,7 @@ using Node.Inventory.Items.Types;
 using Node.Market;
 using Node.Network;
 using Node.Notifications.Client.Inventory;
+using Node.Services.Account;
 using Node.Services.Inventory;
 using Node.StaticData.Inventory;
 using PythonTypes.Types.Collections;
@@ -35,8 +36,9 @@ namespace Node.Services.Stations
         private InsuranceDB InsuranceDB { get; }
         private NotificationManager NotificationManager { get; }
         private NodeContainer Container { get; }
+        private account account { get; }
 
-        public repairSvc(RepairDB repairDb, MarketDB marketDb, InsuranceDB insuranceDb, NodeContainer nodeContainer, NotificationManager notificationManager, ItemFactory itemFactory, SystemManager systemManager, BoundServiceManager manager) : base(manager, null)
+        public repairSvc(RepairDB repairDb, MarketDB marketDb, InsuranceDB insuranceDb, NodeContainer nodeContainer, NotificationManager notificationManager, ItemFactory itemFactory, SystemManager systemManager, BoundServiceManager manager, account account) : base(manager, null)
         {
             this.ItemFactory = itemFactory;
             this.SystemManager = systemManager;
@@ -45,9 +47,10 @@ namespace Node.Services.Stations
             this.InsuranceDB = insuranceDb;
             this.NotificationManager = notificationManager;
             this.Container = nodeContainer;
+            this.account = account;
         }
         
-        protected repairSvc(RepairDB repairDb, MarketDB marketDb, InsuranceDB insuranceDb, NodeContainer nodeContainer, NotificationManager notificationManager, ItemInventory inventory, ItemFactory itemFactory, SystemManager systemManager, BoundServiceManager manager, Client client) : base(manager, client)
+        protected repairSvc(RepairDB repairDb, MarketDB marketDb, InsuranceDB insuranceDb, NodeContainer nodeContainer, NotificationManager notificationManager, ItemInventory inventory, ItemFactory itemFactory, SystemManager systemManager, BoundServiceManager manager, account account, Client client) : base(manager, client)
         {
             this.mInventory = inventory;
             this.ItemFactory = itemFactory;
@@ -57,6 +60,7 @@ namespace Node.Services.Stations
             this.InsuranceDB = insuranceDb;
             this.NotificationManager = notificationManager;
             this.Container = nodeContainer;
+            this.account = account;
         }
 
         public override PyInteger MachoResolveObject(PyInteger stationID, PyInteger zero, CallInformation call)
@@ -90,7 +94,7 @@ namespace Node.Services.Stations
             
             ItemInventory inventory = this.ItemManager.MetaInventoryManager.RegisterMetaInventoryForOwnerID(station, call.Client.EnsureCharacterIsSelected());
 
-            return new repairSvc(this.RepairDB, this.MarketDB, this.InsuranceDB, this.Container, this.NotificationManager, inventory, this.ItemFactory, this.SystemManager, this.BoundServiceManager, call.Client);
+            return new repairSvc(this.RepairDB, this.MarketDB, this.InsuranceDB, this.Container, this.NotificationManager, inventory, this.ItemFactory, this.SystemManager, this.BoundServiceManager, this.account, call.Client);
         }
 
         public PyDataType GetDamageReports(PyList itemIDs, CallInformation call)
@@ -174,94 +178,88 @@ namespace Node.Services.Stations
         public PyDataType RepairItems(PyList itemIDs, PyDecimal iskRepairValue, CallInformation call)
         {
             // ensure the player has enough balance to do the fixing
-            Character character = this.ItemManager.GetItem<Character>(call.Client.EnsureCharacterIsSelected());
             Station station = this.ItemManager.GetStaticStation(call.Client.EnsureCharacterIsInStation());
 
-            // quick fast check
-            if (character.Balance < iskRepairValue)
-                throw new NotEnoughMoney(character.Balance, iskRepairValue);
-            
-            // build a list of items to be fixed
-            List<ItemEntity> items = new List<ItemEntity>();
-
-            double quantityLeft = iskRepairValue;
-            
-            foreach (PyInteger itemID in itemIDs.GetEnumerable<PyInteger>())
+            // take the wallet lock and ensure the character has enough balance
+            account.WalletLock walletLock = this.account.AcquireLock(call.Client.EnsureCharacterIsSelected(), 1000);
+            try
             {
-                // ensure the given item is in the list
-                if (this.mInventory.Items.TryGetValue(itemID, out ItemEntity item) == false)
-                    continue;
+                this.account.EnsureEnoughBalance(walletLock, iskRepairValue);
+                // build a list of items to be fixed
+                List<ItemEntity> items = new List<ItemEntity>();
 
-                // calculate how much to fix it
-                if (item is Ship)
-                    quantityLeft -= Math.Min(item.Attributes[Attributes.damage] * (item.Type.BasePrice * BASEPRICE_MULTIPLIER_SHIP), quantityLeft);
-                else
-                    quantityLeft -= Math.Min(item.Attributes[Attributes.damage] * (item.Type.BasePrice * BASEPRICE_MULTIPLIER_MODULE), quantityLeft);
-
-                // add the item to the list
-                items.Add(item);
+                double quantityLeft = iskRepairValue;
                 
-                // if there's not enough money left then break the loop and fix whatever's possible 
-                if (quantityLeft <= 0.0)
-                    break;
-            }
-
-            quantityLeft = iskRepairValue;
-            
-            // go through all the items again and fix them
-            foreach (ItemEntity item in items)
-            {
-                double repairPrice = 0.0f;
-
-                if (item is Ship)
-                    repairPrice = item.Attributes[Attributes.damage] * (item.Type.BasePrice * BASEPRICE_MULTIPLIER_SHIP);
-                else
-                    repairPrice = item.Attributes[Attributes.damage] * (item.Type.BasePrice * BASEPRICE_MULTIPLIER_MODULE);
-
-                // full item can be repaired!
-                if (repairPrice <= quantityLeft)
+                foreach (PyInteger itemID in itemIDs.GetEnumerable<PyInteger>())
                 {
-                    item.Attributes[Attributes.damage].Integer = 0;
-                }
-                else
-                {
-                    int repairUnits = 0;
-                    
-                    // calculate how much can be repaired with the quantity left
+                    // ensure the given item is in the list
+                    if (this.mInventory.Items.TryGetValue(itemID, out ItemEntity item) == false)
+                        continue;
+
+                    // calculate how much to fix it
                     if (item is Ship)
+                        quantityLeft -= Math.Min(item.Attributes[Attributes.damage] * (item.Type.BasePrice * BASEPRICE_MULTIPLIER_SHIP), quantityLeft);
+                    else
+                        quantityLeft -= Math.Min(item.Attributes[Attributes.damage] * (item.Type.BasePrice * BASEPRICE_MULTIPLIER_MODULE), quantityLeft);
+
+                    // add the item to the list
+                    items.Add(item);
+                    
+                    // if there's not enough money left then break the loop and fix whatever's possible 
+                    if (quantityLeft <= 0.0)
+                        break;
+                }
+
+                quantityLeft = iskRepairValue;
+                
+                // go through all the items again and fix them
+                foreach (ItemEntity item in items)
+                {
+                    double repairPrice = 0.0f;
+
+                    if (item is Ship)
+                        repairPrice = item.Attributes[Attributes.damage] * (item.Type.BasePrice * BASEPRICE_MULTIPLIER_SHIP);
+                    else
+                        repairPrice = item.Attributes[Attributes.damage] * (item.Type.BasePrice * BASEPRICE_MULTIPLIER_MODULE);
+
+                    // full item can be repaired!
+                    if (repairPrice <= quantityLeft)
                     {
-                        repairUnits = (int) (quantityLeft / (item.Type.BasePrice * BASEPRICE_MULTIPLIER_SHIP));
-                        repairPrice = repairUnits * (item.Type.BasePrice * BASEPRICE_MULTIPLIER_SHIP);
+                        item.Attributes[Attributes.damage].Integer = 0;
                     }
                     else
                     {
-                        repairUnits = (int) (quantityLeft / (item.Type.BasePrice * BASEPRICE_MULTIPLIER_MODULE));
-                        repairPrice = repairUnits * (item.Type.BasePrice * BASEPRICE_MULTIPLIER_MODULE);
+                        int repairUnits = 0;
+                        
+                        // calculate how much can be repaired with the quantity left
+                        if (item is Ship)
+                        {
+                            repairUnits = (int) (quantityLeft / (item.Type.BasePrice * BASEPRICE_MULTIPLIER_SHIP));
+                            repairPrice = repairUnits * (item.Type.BasePrice * BASEPRICE_MULTIPLIER_SHIP);
+                        }
+                        else
+                        {
+                            repairUnits = (int) (quantityLeft / (item.Type.BasePrice * BASEPRICE_MULTIPLIER_MODULE));
+                            repairPrice = repairUnits * (item.Type.BasePrice * BASEPRICE_MULTIPLIER_MODULE);
+                        }
+
+                        // only perform changes on the damage if there's units we can pay for repair
+                        if (repairUnits > 0)
+                            item.Attributes[Attributes.damage] -= repairUnits;
                     }
 
-                    // only perform changes on the damage if there's units we can pay for repair
-                    if (repairUnits > 0)
-                        item.Attributes[Attributes.damage] -= repairUnits;
+                    quantityLeft -= repairPrice;
+                    // persist item changes
+                    item.Persist();
                 }
-
-                quantityLeft -= repairPrice;
-                // persist item changes
-                item.Persist();
+                
+                this.account.CreateJournalRecord(walletLock, MarketReference.RepairBill, station.OwnerID, null, -(iskRepairValue - quantityLeft));
             }
-            
-            // change balance
-            character.Balance -= (iskRepairValue - quantityLeft);
-            // create entry in journal
-            this.MarketDB.CreateJournalForCharacter(MarketReference.RepairBill, character.ID, character.ID, station.OwnerID, null, (iskRepairValue - quantityLeft), character.Balance, "", 1000);
-            // notify client
-            call.Client.NotifyBalanceUpdate(character.Balance);
-            
-            // notify changes on the damage attribute
-            call.Client.NotifyAttributeChange(Attributes.damage, items.ToArray());
-            
-            // save the character
-            character.Persist();
-            
+            finally
+            {
+                this.account.FreeLock(walletLock);
+            }
+
             return null;
         }
         

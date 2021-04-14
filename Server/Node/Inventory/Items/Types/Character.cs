@@ -32,7 +32,7 @@ namespace Node.Inventory.Items.Types
         }
         
         public Character(ClientManager clientManager, TimerManager timerManager, ItemEntity from, int characterId,
-            int accountId, int? activeCloneID, string title, string description, double bounty, double balance,
+            int accountId, int? activeCloneID, string title, string description,
             double securityRating, string petitionMessage, int logonMinutes, int corporationId, int corpRole,
             int rolesAtAll, int rolesAtBase, int rolesAtHq, int rolesAtOther, long corporationDateTime,
             long startDateTime, long createDateTime, int ancestryId, int careerId, int schoolId, int careerSpecialityId,
@@ -52,8 +52,6 @@ namespace Node.Inventory.Items.Types
             this.mActiveCloneID = activeCloneID;
             this.mTitle = title;
             this.mDescription = description;
-            this.mBounty = bounty;
-            this.mBalance = balance;
             this.mSecurityRating = securityRating;
             this.mPetitionMessage = petitionMessage;
             this.mLogonMinutes = logonMinutes;
@@ -143,26 +141,6 @@ namespace Node.Inventory.Items.Types
             {
                 this.Dirty = true;
                 this.mDescription = value;
-            }
-        }
-
-        public double Bounty
-        {
-            get => this.mBounty;
-            set
-            {
-                this.Dirty = true;
-                this.mBounty = value;
-            }
-        }
-
-        public double Balance
-        {
-            get => this.mBalance;
-            set
-            {
-                this.Dirty = true;
-                this.mBalance = value;
             }
         }
 
@@ -300,8 +278,6 @@ namespace Node.Inventory.Items.Types
         private int? mActiveCloneID;
         private string mTitle;
         private string mDescription;
-        private double mBounty;
-        private double mBalance;
         private double mSecurityRating;
         private string mPetitionMessage;
         private int mLogonMinutes;
@@ -506,13 +482,7 @@ namespace Node.Inventory.Items.Types
 
             return skill.Level;
         }
-
-        public void EnsureEnoughBalance(double needed)
-        {
-            if (needed > 0.0 && this.Balance < needed)
-                throw new NotEnoughMoney(this.Balance, needed);
-        }
-
+        
         public void EnsureFreeImplantSlot(ItemEntity newImplant)
         {
             int implantSlot = (int) newImplant.Attributes[StaticData.Inventory.Attributes.implantness].Integer;

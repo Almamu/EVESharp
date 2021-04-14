@@ -9,7 +9,7 @@ namespace Common.Services.Exceptions
         public string Service { get; }
         public string Call { get; }
 
-        public ServiceDoesNotContainCallException(string svc, string call, PyTuple parameters)
+        public ServiceDoesNotContainCallException(string svc, string call)
             : base($"Cannot find an appropiate function definition for {call} on service {svc}")
         {
             Service = svc;

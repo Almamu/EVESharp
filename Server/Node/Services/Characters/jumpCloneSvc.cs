@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using Node.Database;
 using Node.Exceptions;
 using Node.Exceptions.jumpCloneSvc;
@@ -8,12 +9,15 @@ using Node.Inventory.Items.Types;
 using Node.Inventory.SystemEntities;
 using Node.Market;
 using Node.Network;
+using Node.Notifications.Client.Clones;
+using Node.Services.Account;
 using Node.StaticData;
 using Node.StaticData.Inventory;
 using PythonTypes.Types.Collections;
 using PythonTypes.Types.Database;
 using PythonTypes.Types.Exceptions;
 using PythonTypes.Types.Primitives;
+using Type = Node.StaticData.Inventory.Type;
 
 namespace Node.Services.Characters
 {
@@ -24,25 +28,39 @@ namespace Node.Services.Characters
         private ItemManager ItemManager { get; }
         private TypeManager TypeManager { get; }
         private SystemManager SystemManager { get; }
+        private NotificationManager NotificationManager { get; }
+        private account account { get; }
         
         public jumpCloneSvc(ItemDB itemDB, MarketDB marketDB, ItemManager itemManager, TypeManager typeManager,
-            SystemManager systemManager, BoundServiceManager manager) : base(manager, null)
+            SystemManager systemManager, account account, BoundServiceManager manager) : base(manager, null)
         {
             this.ItemDB = itemDB;
             this.MarketDB = marketDB;
             this.ItemManager = itemManager;
             this.TypeManager = typeManager;
             this.SystemManager = systemManager;
+            this.account = account;
         }
         
         protected jumpCloneSvc(ItemDB itemDB, MarketDB marketDB, ItemManager itemManager, TypeManager typeManager,
-            SystemManager systemManager, BoundServiceManager manager, Client client) : base(manager, client)
+            SystemManager systemManager, BoundServiceManager manager, account account, Client client) : base(manager, client)
         {
             this.ItemDB = itemDB;
             this.MarketDB = marketDB;
             this.ItemManager = itemManager;
             this.TypeManager = typeManager;
             this.SystemManager = systemManager;
+            this.account = account;
+        }
+
+        /// <summary>
+        /// Sends a OnJumpCloneCacheInvalidated notification to the specified character so the clone window
+        /// is reloaded
+        /// </summary>
+        /// <param name="characterID">The character to notify</param>
+        public void OnCloneUpdate(int characterID)
+        {
+            this.NotificationManager.NotifyCharacter(characterID, new OnJumpCloneCacheInvalidated());
         }
 
         public override PyInteger MachoResolveObject(PyTuple objectData, PyInteger zero, CallInformation call)
@@ -88,7 +106,7 @@ namespace Node.Services.Characters
             if (this.MachoResolveObject(tupleData, 0, call) != this.BoundServiceManager.Container.NodeID)
                 throw new CustomError("Trying to bind an object that does not belong to us!");
 
-            return new jumpCloneSvc(this.ItemDB, this.MarketDB, this.ItemManager, this.TypeManager, this.SystemManager, this.BoundServiceManager, call.Client);
+            return new jumpCloneSvc(this.ItemDB, this.MarketDB, this.ItemManager, this.TypeManager, this.SystemManager, this.BoundServiceManager, this.account, call.Client);
         }
 
         public PyDataType GetCloneState(CallInformation call)
@@ -122,7 +140,7 @@ namespace Node.Services.Characters
             this.ItemManager.DestroyItem(clone);
             
             // let the client know that the clones were updated
-            call.Client.NotifyCloneUpdate();
+            this.OnCloneUpdate(callerCharacterID);
             
             return null;
         }
@@ -170,31 +188,32 @@ namespace Node.Services.Characters
             
             // ensure that the character has enough money
             int cost = this.GetPriceForClone(call);
+            
+            // get character's station
+            Station station = this.ItemManager.GetStaticStation(stationID);
 
-            character.EnsureEnoughBalance(cost);
+            account.WalletLock walletLock = this.account.AcquireLock(character.ID, 1000);
+
+            try
+            {
+                this.account.EnsureEnoughBalance(walletLock, cost);
+                this.account.CreateJournalRecord(
+                    walletLock, MarketReference.JumpCloneInstallationFee, null, station.ID, -cost, $"Installed clone at {station.Name}"
+                );
+            }
+            finally
+            {
+                this.account.FreeLock(walletLock);
+            }
             
             // create an alpha clone
             Type cloneType = this.TypeManager[ItemTypes.CloneGradeAlpha];
             
-            // get character's station
-            Station station = this.ItemManager.GetStaticStation(stationID);
-            
             // create a new clone on the itemDB
             Clone clone = this.ItemManager.CreateClone(cloneType, station, character);
 
-            // update the balance
-            character.Balance -= cost;
-            
-            this.MarketDB.CreateJournalForCharacter(
-                MarketReference.JumpCloneInstallationFee, character.ID, character.ID, null, station.ID,
-                -cost, character.Balance, $"Installed clone at {station.Name}", 1000
-            );
-
-            // notify the client about the balance change
-            call.Client.NotifyBalanceUpdate(character.Balance);
-            
             // finally create the jump clone and invalidate caches
-            call.Client.NotifyCloneUpdate();
+            this.OnCloneUpdate(callerCharacterID);
             
             // persist the character information
             character.Persist();

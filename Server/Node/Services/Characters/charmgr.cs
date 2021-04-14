@@ -1,9 +1,11 @@
+using System;
 using Common.Services;
 using Node.Database;
 using Node.Inventory;
 using Node.Inventory.Items.Types;
 using Node.Market;
 using Node.Network;
+using Node.Services.Account;
 using PythonTypes.Types.Primitives;
 
 namespace Node.Services.Characters
@@ -13,12 +15,14 @@ namespace Node.Services.Characters
         private CharacterDB DB { get; }
         private MarketDB MarketDB { get; }
         private ItemManager ItemManager { get; }
+        private account account { get; }
         
-        public charmgr(CharacterDB db, MarketDB marketDB, ItemManager itemManager)
+        public charmgr(CharacterDB db, MarketDB marketDB, ItemManager itemManager, account account)
         {
             this.DB = db;
             this.MarketDB = marketDB;
             this.ItemManager = itemManager;
+            this.account = account;
         }
         
         public PyDataType GetPublicInfo(PyInteger characterID, CallInformation call)
@@ -41,32 +45,26 @@ namespace Node.Services.Characters
             // get character's object
             Character character = this.ItemManager.GetItem<Character>(call.Client.EnsureCharacterIsSelected());
             
-            // ensure there's enough balance
-            character.EnsureEnoughBalance(bounty);
-            
-            // subtract balance to the character
-            character.Balance -= bounty;
-            
-            // create a record in the market transactions
-            this.MarketDB.CreateJournalForCharacter(
-                MarketReference.Bounty, character.ID, character.ID, null, characterID,
-                -bounty, character.Balance, $"Added to bounty prize", 1000
-            );
+            // acquire lock for the market balance
+            account.WalletLock walletLock = this.account.AcquireLock(character.ID, 1000);
+
+            try
+            {
+                // ensure the character has enough balance
+                this.account.EnsureEnoughBalance(walletLock, bounty);
+                // take the balance from the wallet
+                this.account.CreateJournalRecord(
+                    walletLock, MarketReference.Bounty, null, characterID, -bounty, "Added to bounty price"
+                );
+            }
+            finally
+            {
+                // ensure the lock is free'd as soon as we're done with it
+                this.account.FreeLock(walletLock);
+            }
             
             // create the bounty record and update the information in the database
             this.DB.AddToBounty(call.Client.EnsureCharacterIsSelected(), characterID, bounty);
-
-            // update our record if the player is loaded in memory
-            if (this.ItemManager.TryGetItem(characterID, out Character destination) == true)
-            {
-                destination.Bounty += bounty;
-                destination.Persist();
-            }
-            
-            // notify the client about the changes
-            call.Client.NotifyBalanceUpdate(character.Balance);
-
-            character.Persist();
             
             return null;
         }
