@@ -201,8 +201,12 @@ namespace Node.Services.Market
                 throw new MktCantSellItem2(jumps, maximumDistance);
         }
 
-        private void CheckBuyOrderDistancePermissions(Character character, int stationID)
+        private void CheckBuyOrderDistancePermissions(Character character, int stationID, int duration)
         {
+            // immediate orders can be placed regardless of distance
+            if (duration == 0)
+                return;
+            
             Station station = this.ItemManager.GetStaticStation(stationID);
 
             if (character.RegionID != station.RegionID)
@@ -541,7 +545,7 @@ namespace Node.Services.Market
         private void PlaceBuyOrderChar(int typeID, Character character, int stationID, int quantity, double price, int duration, int minVolume, int range, double brokerCost, CallInformation call)
         {
             // ensure the character can place the order where he's trying to
-            this.CheckBuyOrderDistancePermissions(character, stationID);
+            this.CheckBuyOrderDistancePermissions(character, stationID, duration);
 
             using Wallet wallet = this.WalletManager.AcquireWallet(character.ID, 1000);
             using MySqlConnection connection = this.DB.AcquireMarketLock();

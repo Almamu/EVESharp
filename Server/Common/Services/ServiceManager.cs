@@ -38,7 +38,6 @@ namespace Common.Services
 
         protected bool FindSuitableMethod(List<MethodInfo> methods, PyTuple arguments, object extraInformation, out object[] parameters, out MethodInfo matchingMethod)
         {
-            Type extraInformationType = extraInformation.GetType();
             parameters = new object[arguments.Count + 1];
             parameters[^1] = extraInformation;
             matchingMethod = null;
@@ -48,7 +47,7 @@ namespace Common.Services
                 ParameterInfo[] methodParameters = method.GetParameters();
                 
                 // ignore calls that have less parameters available that the ones provided
-                if (methodParameters.Length < parameters.Length/* || methodParameters[^1].GetType() != extraInformationType*/)
+                if (methodParameters.Length < parameters.Length)
                     continue;
 
                 bool match = true;

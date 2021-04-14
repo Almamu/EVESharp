@@ -391,18 +391,6 @@ namespace Node.Network
             get => this.mSession["raceID"] as PyInteger;
             set => this.mSession["raceID"] = value;
         }
-        
-        /// <summary>
-        /// Sends an OnAccountChange notification to the client to let it know that their ISK
-        /// balance has changed
-        ///
-        /// TODO: THIS SHOULD BE EXPANDED TO INCLUDE THE POSSIBILITY TO ALSO NOTIFY ABOUT CORP WALLET CHANGES
-        /// </summary>
-        /// <param name="balance">The new balance</param>
-        public void NotifyBalanceUpdate(double balance)
-        {
-            this.NotificationManager.NotifyCharacter((int) this.CharacterID, new OnAccountChange(1000, (int) this.CharacterID, balance));
-        }
 
         /// <summary>
         /// Notifies the client of a single attribute change on a specific item
