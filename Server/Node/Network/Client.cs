@@ -82,8 +82,8 @@ namespace Node.Network
 
         private void OnCharEnteredStation(int stationID)
         {
-            Station station = this.ItemFactory.ItemManager.GetStaticStation(stationID);
-            station.Guests[(int) this.CharacterID] = this.ItemFactory.ItemManager.GetItem<Character>((int) this.CharacterID);
+            Station station = this.ItemFactory.GetStaticStation(stationID);
+            station.Guests[(int) this.CharacterID] = this.ItemFactory.GetItem<Character>((int) this.CharacterID);
 
             // notify station guests
             this.NotificationManager.NotifyStation(station.ID, new OnCharNowInStation(this));
@@ -91,7 +91,7 @@ namespace Node.Network
 
         private void OnCharLeftStation(int stationID)
         {
-            Station station = this.ItemFactory.ItemManager.GetStaticStation(stationID);
+            Station station = this.ItemFactory.GetStaticStation(stationID);
             station.Guests.Remove((int) this.CharacterID);
 
             // notify station guests
@@ -105,14 +105,14 @@ namespace Node.Network
                 return;
             
             // free meta inventories for this client
-            this.ItemFactory.ItemManager.MetaInventoryManager.FreeOwnerInventories((int) this.CharacterID);
+            this.ItemFactory.MetaInventoryManager.FreeOwnerInventories((int) this.CharacterID);
             
             if (this.StationID is not null && this.SystemManager.StationBelongsToUs((int) this.StationID) == true)
                 this.OnCharLeftStation((int) this.StationID);
 
             // remove timers
-            this.ItemFactory.ItemManager.UnloadItem((int) this.CharacterID);
-            this.ItemFactory.ItemManager.UnloadItem((int) this.ShipID);
+            this.ItemFactory.UnloadItem((int) this.CharacterID);
+            this.ItemFactory.UnloadItem((int) this.ShipID);
             
             // remove character off the list
             this.CharacterManager.RemoveCharacter((int) this.CharacterID);
@@ -123,7 +123,7 @@ namespace Node.Network
             // load the character information if it's not loaded in already
             if (this.SystemManager.SolarSystemBelongsToUs((int) newSolarSystemID) == true)
                 // load the character into this node
-                this.ItemFactory.ItemManager.LoadItem((int) this.CharacterID);
+                this.ItemFactory.LoadItem((int) this.CharacterID);
 
             // check if the old solar system belong to us (and this new one doesnt) and unload things
             if (oldSolarSystemID is null)
@@ -131,7 +131,7 @@ namespace Node.Network
 
             if (this.SystemManager.SolarSystemBelongsToUs((int) oldSolarSystemID) == true && this.SystemManager.SolarSystemBelongsToUs((int) newSolarSystemID) == false)
                 // unload the character from this node
-                this.ItemFactory.ItemManager.UnloadItem((int) this.CharacterID);
+                this.ItemFactory.UnloadItem((int) this.CharacterID);
         }
 
         private void OnStationChanged(int? oldStationID, int? newStationID)

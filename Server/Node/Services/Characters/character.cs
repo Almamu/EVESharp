@@ -59,8 +59,8 @@ namespace Node.Services.Characters
 
         private CharacterDB DB { get; }
         private ChatDB ChatDB { get; }
-        private ItemManager ItemManager { get; }
-        private TypeManager TypeManager { get; }
+        private ItemFactory ItemFactory { get; }
+        private TypeManager TypeManager => this.ItemFactory.TypeManager;
         private CacheStorage CacheStorage { get; }
         private NodeContainer Container { get; }
         private NotificationManager NotificationManager { get; }
@@ -69,14 +69,13 @@ namespace Node.Services.Characters
         private readonly Configuration.Character mConfiguration = null;
         private readonly Channel Log = null;
 
-        public character(CacheStorage cacheStorage, CharacterDB db, ChatDB chatDB, ItemManager itemManager, TypeManager typeManager, Logger logger, Configuration.Character configuration, NodeContainer container, NotificationManager notificationManager)
+        public character(CacheStorage cacheStorage, CharacterDB db, ChatDB chatDB, ItemFactory itemFactory, Logger logger, Configuration.Character configuration, NodeContainer container, NotificationManager notificationManager)
         {
             this.Log = logger.CreateLogChannel("character");
             this.mConfiguration = configuration;
             this.DB = db;
             this.ChatDB = chatDB;
-            this.ItemManager = itemManager;
-            this.TypeManager = typeManager;
+            this.ItemFactory = itemFactory;
             this.CacheStorage = cacheStorage;
             this.Container = container;
             this.NotificationManager = notificationManager;
@@ -240,7 +239,7 @@ namespace Node.Services.Characters
         private Character CreateCharacter(string characterName, Ancestry ancestry, int genderID, PyDictionary appearance, long currentTime, CallInformation call)
         {
             // load the item into memory
-            ItemEntity owner = this.ItemManager.LocationSystem;
+            ItemEntity owner = this.ItemFactory.LocationSystem;
             
             this.GetRandomCareerForRace(ancestry.Bloodline.RaceID, out int careerID, out int schoolID, out int careerSpecialityID, out int corporationID);
             this.GetLocationForCorporation(corporationID, out int stationID, out int solarSystemID, out int constellationID, out int regionID);
@@ -271,7 +270,7 @@ namespace Node.Services.Characters
                 stationID, solarSystemID, constellationID, regionID
             );
 
-            return this.ItemManager.LoadItem(itemID) as Character;
+            return this.ItemFactory.LoadItem(itemID) as Character;
         }
 
         public PyDataType CreateCharacter2(
@@ -308,7 +307,7 @@ namespace Node.Services.Characters
 
             Character character =
                 this.CreateCharacter(characterName, ancestry, genderID, appearance, currentTime, call);
-            Station station = this.ItemManager.GetStaticStation(character.StationID);
+            Station station = this.ItemFactory.GetStaticStation(character.StationID);
 
             // TODO: CREATE DEFAULT STANDINGS FOR THE CHARACTER
             // change character attributes based on the picked ancestry
@@ -326,31 +325,31 @@ namespace Node.Services.Characters
                 Type skillType = this.TypeManager[skillTypeID];
                     
                 // create the skill at the required level
-                this.ItemManager.CreateSkill(skillType, character, level);
+                this.ItemFactory.CreateSkill(skillType, character, level);
             }
             
             // create the ship for the character
-            Ship ship = this.ItemManager.CreateShip(bloodline.ShipType, station,
+            Ship ship = this.ItemFactory.CreateShip(bloodline.ShipType, station,
                 character);
             
             // add one unit of Tritanium to the station's hangar for the player
             Type tritaniumType = this.TypeManager[ItemTypes.Tritanium];
 
             ItemEntity tritanium =
-                this.ItemManager.CreateSimpleItem(tritaniumType, character,
+                this.ItemFactory.CreateSimpleItem(tritaniumType, character,
                     station, Flags.Hangar);
             
             // add one unit of Damage Control I to the station's hangar for the player
             Type damageControlType = this.TypeManager[ItemTypes.DamageControlI];
 
             ItemEntity damageControl =
-                this.ItemManager.CreateSimpleItem(damageControlType, character,
+                this.ItemFactory.CreateSimpleItem(damageControlType, character,
                     station, Flags.Hangar);
             
             // create an alpha clone
             Type cloneType = this.TypeManager[ItemTypes.CloneGradeAlpha];
             
-            Clone clone = this.ItemManager.CreateClone(cloneType, station, character);
+            Clone clone = this.ItemFactory.CreateClone(cloneType, station, character);
 
             character.LocationID = ship.ID;
             character.ActiveClone = clone;
@@ -376,11 +375,11 @@ namespace Node.Services.Characters
             this.ChatDB.JoinEntityMailingList(character.CorporationID, character.ID);
             
             // unload items from list
-            this.ItemManager.UnloadItem(clone);
-            this.ItemManager.UnloadItem(damageControl);
-            this.ItemManager.UnloadItem(tritanium);
-            this.ItemManager.UnloadItem(ship);
-            this.ItemManager.UnloadItem(character);
+            this.ItemFactory.UnloadItem(clone);
+            this.ItemFactory.UnloadItem(damageControl);
+            this.ItemFactory.UnloadItem(tritanium);
+            this.ItemFactory.UnloadItem(ship);
+            this.ItemFactory.UnloadItem(character);
             
             // finally return the new character's ID and wait for the subsequent calls from the EVE client :)
             return character.ID;
@@ -403,12 +402,12 @@ namespace Node.Services.Characters
             CallInformation call)
         {
             // ensure the character belongs to the current account
-            Character character = this.ItemManager.LoadItem<Character>(characterID);
+            Character character = this.ItemFactory.LoadItem<Character>(characterID);
 
             if (character.AccountID != call.Client.AccountID)
             {
                 // unload character
-                this.ItemManager.UnloadItem(character);
+                this.ItemFactory.UnloadItem(character);
                 
                 // throw proper error
                 throw new CustomError("The selected character does not belong to this account, aborting...");                
@@ -453,7 +452,7 @@ namespace Node.Services.Characters
             );
             
             // unload the character
-            this.ItemManager.UnloadItem(characterID);
+            this.ItemFactory.UnloadItem(characterID);
             
             // finally send the session change
             call.Client.SendSessionChange();
@@ -468,14 +467,14 @@ namespace Node.Services.Characters
 
         public PyDataType GetOwnerNoteLabels(CallInformation call)
         {
-            Character character = this.ItemManager.GetItem<Character>(call.Client.EnsureCharacterIsSelected());
+            Character character = this.ItemFactory.GetItem<Character>(call.Client.EnsureCharacterIsSelected());
 
             return this.DB.GetOwnerNoteLabels(character);
         }
 
         public PyDataType GetCloneTypeID(CallInformation call)
         {
-            Character character = this.ItemManager.GetItem<Character>(call.Client.EnsureCharacterIsSelected());
+            Character character = this.ItemFactory.GetItem<Character>(call.Client.EnsureCharacterIsSelected());
 
             if (character.ActiveCloneID is null)
                 throw new CustomError("You do not have any medical clone...");
@@ -485,7 +484,7 @@ namespace Node.Services.Characters
 
         public PyDataType GetHomeStation(CallInformation call)
         {
-            Character character = this.ItemManager.GetItem<Character>(call.Client.EnsureCharacterIsSelected());
+            Character character = this.ItemFactory.GetItem<Character>(call.Client.EnsureCharacterIsSelected());
 
             if (character.ActiveCloneID is null)
                 throw new CustomError("You do not have any medical clone...");
@@ -495,14 +494,14 @@ namespace Node.Services.Characters
 
         public PyDataType GetCharacterDescription(PyInteger characterID, CallInformation call)
         {
-            Character character = this.ItemManager.GetItem<Character>(call.Client.EnsureCharacterIsSelected());
+            Character character = this.ItemFactory.GetItem<Character>(call.Client.EnsureCharacterIsSelected());
             
             return character.Description;
         }
 
         public PyDataType SetCharacterDescription(PyString newBio, CallInformation call)
         {
-            Character character = this.ItemManager.GetItem<Character>(call.Client.EnsureCharacterIsSelected());
+            Character character = this.ItemFactory.GetItem<Character>(call.Client.EnsureCharacterIsSelected());
 
             character.Description = newBio;
             character.Persist();

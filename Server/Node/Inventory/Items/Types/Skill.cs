@@ -6,8 +6,11 @@ namespace Node.Inventory.Items.Types
 {
     public class Skill : ItemEntity
     {
-        public Skill(ItemEntity from) : base(from)
+        private readonly double mSkillPointMultiplier;
+        
+        public Skill(ItemEntity from, double skillPointMultiplier) : base(from)
         {
+            this.mSkillPointMultiplier = skillPointMultiplier;
         }
 
         public long Level
@@ -52,7 +55,7 @@ namespace Node.Inventory.Items.Types
             if (level > 5 || level == 0)
                 return 0;
 
-            return Math.Ceiling (TimeConstant * 250 * Math.Pow(2, 2.5 * (level - 1)));
+            return Math.Ceiling (TimeConstant * this.mSkillPointMultiplier * Math.Pow(2, 2.5 * (level - 1)));
         }
     }
 }

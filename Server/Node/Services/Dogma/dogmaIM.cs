@@ -25,26 +25,19 @@ namespace Node.Services.Dogma
 {
     public class dogmaIM : BoundService
     {
-        private ItemManager ItemManager { get; }
-        private AttributeManager AttributeManager { get; }
-        private SystemManager SystemManager { get; }
-        private ExpressionManager ExpressionManager { get; }
+        private ItemFactory ItemFactory { get; }
+        private AttributeManager AttributeManager => this.ItemFactory.AttributeManager;
+        private SystemManager SystemManager => this.ItemFactory.SystemManager;
+        private ExpressionManager ExpressionManager => this.ItemFactory.ExpressionManager;
         
-        public dogmaIM(ItemManager itemManager, AttributeManager attributeManager, SystemManager systemManager, BoundServiceManager manager, ExpressionManager expressionManager) : base(manager, null)
+        public dogmaIM(ItemFactory itemFactory, BoundServiceManager manager) : base(manager, null)
         {
-            this.ItemManager = itemManager;
-            this.AttributeManager = attributeManager;
-            this.SystemManager = systemManager;
-            this.ExpressionManager = expressionManager;
+            this.ItemFactory = itemFactory;
         }
 
-        protected dogmaIM(ItemManager itemManager, AttributeManager attributeManager, SystemManager systemManager,
-            BoundServiceManager manager, ExpressionManager expressionManager, Client client) : base(manager, client)
+        protected dogmaIM(ItemFactory itemFactory, BoundServiceManager manager, Client client) : base(manager, client)
         {
-            this.ItemManager = itemManager;
-            this.AttributeManager = attributeManager;
-            this.SystemManager = systemManager;
-            this.ExpressionManager = expressionManager;
+            this.ItemFactory = itemFactory;
         }
 
         public override PyInteger MachoResolveObject(PyTuple objectData, PyInteger zero, CallInformation call)
@@ -66,9 +59,9 @@ namespace Node.Services.Dogma
             int solarSystemID = 0;
 
             if (groupID == (int) Groups.SolarSystem)
-                solarSystemID = this.ItemManager.GetStaticSolarSystem(entityID).ID;
+                solarSystemID = this.ItemFactory.GetStaticSolarSystem(entityID).ID;
             else if (groupID == (int) Groups.Station)
-                solarSystemID = this.ItemManager.GetStaticStation(entityID).SolarSystemID;
+                solarSystemID = this.ItemFactory.GetStaticStation(entityID).SolarSystemID;
             else
                 throw new CustomError("Unknown item's groupID");
 
@@ -83,7 +76,7 @@ namespace Node.Services.Dogma
             if (this.MachoResolveObject(objectData as PyTuple, 0, call) != this.BoundServiceManager.Container.NodeID)
                 throw new CustomError("Trying to bind an object that does not belong to us!");
 
-            return new dogmaIM(this.ItemManager, this.AttributeManager, this.SystemManager, this.BoundServiceManager, this.ExpressionManager);
+            return new dogmaIM(this.ItemFactory, this.BoundServiceManager);
         }
 
         public PyDataType ShipGetInfo(CallInformation call)
@@ -95,7 +88,7 @@ namespace Node.Services.Dogma
                 throw new CustomError($"The character is not aboard any ship");
             
             // TODO: RE-EVALUATE WHERE THE SHIP LOADING IS PERFORMED, SHIPGETINFO DOESN'T LOOK LIKE A GOOD PLACE TO DO IT
-            Ship ship = this.ItemManager.LoadItem<Ship>((int) shipID);
+            Ship ship = this.ItemFactory.LoadItem<Ship>((int) shipID);
 
             if (ship is null)
                 throw new CustomError($"Cannot get information for ship {call.Client.ShipID}");
@@ -164,7 +157,7 @@ namespace Node.Services.Dogma
         {
             int callerCharacterID = call.Client.EnsureCharacterIsSelected();
 
-            Character character = this.ItemManager.GetItem<Character>(callerCharacterID);
+            Character character = this.ItemFactory.GetItem<Character>(callerCharacterID);
 
             if (character is null)
                 throw new CustomError($"Cannot get information for character {callerCharacterID}");
@@ -201,7 +194,7 @@ namespace Node.Services.Dogma
         {
             int callerCharacterID = call.Client.EnsureCharacterIsSelected();
 
-            ItemEntity item = this.ItemManager.LoadItem(itemID);
+            ItemEntity item = this.ItemFactory.LoadItem(itemID);
 
             if (item.OwnerID != callerCharacterID && item.OwnerID != call.Client.CorporationID)
                 throw new TheItemIsNotYoursToTake(itemID);
@@ -238,7 +231,7 @@ namespace Node.Services.Dogma
         {
             int callerCharacterID = call.Client.EnsureCharacterIsSelected();
             
-            Character character = this.ItemManager.GetItem<Character>(callerCharacterID);
+            Character character = this.ItemFactory.GetItem<Character>(callerCharacterID);
 
             if (character is null)
                 throw new CustomError($"Cannot get information for character {callerCharacterID}");
@@ -266,7 +259,7 @@ namespace Node.Services.Dogma
             if ((role & roleMask) == 0)
                 throw new CustomError("Not allowed!");
 
-            ItemEntity item = this.ItemManager.GetItem(itemID);
+            ItemEntity item = this.ItemFactory.GetItem(itemID);
 
             if (item.Attributes.AttributeExists(attributeID) == false)
                 throw new CustomError("The given attribute doesn't exists in the item");
@@ -285,14 +278,14 @@ namespace Node.Services.Dogma
 
         public PyDataType Activate(PyInteger itemID, PyString effectName, PyDataType target, PyDataType repeat, CallInformation call)
         {
-            this.ItemManager.GetItem<ShipModule>(itemID).ApplyEffect(effectName, call.Client);
+            this.ItemFactory.GetItem<ShipModule>(itemID).ApplyEffect(effectName, call.Client);
             
             return null;
         }
 
         public PyDataType Deactivate(PyInteger itemID, PyString effectName, CallInformation call)
         {
-            this.ItemManager.GetItem<ShipModule>(itemID).StopApplyingEffect(effectName, call.Client);
+            this.ItemFactory.GetItem<ShipModule>(itemID).StopApplyingEffect(effectName, call.Client);
             
             return null;
         }

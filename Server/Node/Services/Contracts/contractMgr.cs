@@ -29,21 +29,19 @@ namespace Node.Services.Contracts
         private ItemDB ItemDB { get; }
         private MarketDB MarketDB { get; }
         private CharacterDB CharacterDB { get; }
-        private ItemManager ItemManager { get; }
-        private TypeManager TypeManager { get; }
-        private SystemManager SystemManager { get; }
+        private ItemFactory ItemFactory { get; }
+        private TypeManager TypeManager => this.ItemFactory.TypeManager;
+        private SystemManager SystemManager => this.ItemFactory.SystemManager;
         private NotificationManager NotificationManager { get; }
         private WalletManager WalletManager { get; }
 
-        public contractMgr(ContractDB db, ItemDB itemDB, MarketDB marketDB, CharacterDB characterDB, ItemManager itemManager, TypeManager typeManager, SystemManager systemManager, NotificationManager notificationManager, WalletManager walletManager)
+        public contractMgr(ContractDB db, ItemDB itemDB, MarketDB marketDB, CharacterDB characterDB, ItemFactory itemFactory, NotificationManager notificationManager, WalletManager walletManager)
         {
             this.DB = db;
             this.ItemDB = itemDB;
             this.MarketDB = marketDB;
             this.CharacterDB = characterDB;
-            this.ItemManager = itemManager;
-            this.TypeManager = typeManager;
-            this.SystemManager = systemManager;
+            this.ItemFactory = itemFactory;
             this.NotificationManager = notificationManager;
             this.WalletManager = walletManager;
         }
@@ -120,8 +118,8 @@ namespace Node.Services.Contracts
             ClusterConnection clusterConnection, PyList<PyList> itemList, Station station, int ownerID, int shipID)
         {
             // create the container in the system to ensure it's not visible to the player
-            Container container = this.ItemManager.CreateSimpleItem(this.TypeManager[ItemTypes.PlasticWrap],
-                this.ItemManager.LocationSystem.ID, station.ID, Flags.None) as Container;
+            Container container = this.ItemFactory.CreateSimpleItem(this.TypeManager[ItemTypes.PlasticWrap],
+                this.ItemFactory.LocationSystem.ID, station.ID, Flags.None) as Container;
             
             Dictionary<int, ContractDB.ItemQuantityEntry> items =
                 this.DB.PrepareItemsForContract(connection, contractID, itemList, station, ownerID, container.ID, shipID);
@@ -138,7 +136,7 @@ namespace Node.Services.Contracts
             {
                 if (stationNode == 0 || stationBelongsToUs == true)
                 {
-                    ItemEntity entity = this.ItemManager.LoadItem(item.ItemID);
+                    ItemEntity entity = this.ItemFactory.LoadItem(item.ItemID);
 
                     entity.LocationID = container.ID;
                     entity.Persist();
@@ -168,7 +166,7 @@ namespace Node.Services.Contracts
             PyInteger expireTime, PyInteger courierContractDuration, PyInteger startStationID, PyInteger endStationID, PyInteger priceOrStartingBid,
             PyInteger reward, PyInteger collateralOrBuyoutPrice, PyString title, PyString description, CallInformation call)
         {
-            if (assigneeID != null && (ItemManager.IsNPC(assigneeID) == true || ItemManager.IsNPCCorporationID(assigneeID) == true))
+            if (assigneeID != null && (ItemFactory.IsNPC(assigneeID) == true || ItemFactory.IsNPCCorporationID(assigneeID) == true))
                 throw new ConNPCNotAllowed();
             
             // check for limits on contract creation
@@ -182,7 +180,7 @@ namespace Node.Services.Contracts
             if (call.NamedPayload.TryGetValue("forCorp", out PyBool forCorp) == false)
                 forCorp = false;
 
-            Character character = this.ItemManager.GetItem<Character>(callerCharacterID);
+            Character character = this.ItemFactory.GetItem<Character>(callerCharacterID);
             
             if (forCorp == false)
             {
@@ -197,7 +195,7 @@ namespace Node.Services.Contracts
                 throw new CustomError("Not supported yet!");
             }
             
-            Station station = this.ItemManager.GetStaticStation(startStationID);
+            Station station = this.ItemFactory.GetStaticStation(startStationID);
 
             using MySqlConnection connection = this.MarketDB.AcquireMarketLock();
             try
@@ -521,14 +519,14 @@ namespace Node.Services.Contracts
             {
                 foreach (ContractDB.ItemQuantityEntry change in changedItems)
                 {
-                    ItemEntity item = this.ItemManager.LoadItem(change.ItemID);
+                    ItemEntity item = this.ItemFactory.LoadItem(change.ItemID);
 
                     if (change.Quantity == 0)
                     {
                         // remove item from the meta inventories
-                        this.ItemManager.MetaInventoryManager.OnItemDestroyed(item);
+                        this.ItemFactory.MetaInventoryManager.OnItemDestroyed(item);
                         // temporarily move the item to the recycler, let the current owner know
-                        item.LocationID = this.ItemManager.LocationRecycler.ID;
+                        item.LocationID = this.ItemFactory.LocationRecycler.ID;
                         client.NotifyMultiEvent(Notifications.Client.Inventory.OnItemChange.BuildLocationChange(item, station.ID));
                         // now set the item to the correct owner and place and notify it's new owner
                         // TODO: TAKE forCorp INTO ACCOUNT
@@ -536,7 +534,7 @@ namespace Node.Services.Contracts
                         item.OwnerID = contract.IssuerID;
                         this.NotificationManager.NotifyCharacter(contract.IssuerID, Notifications.Client.Inventory.OnItemChange.BuildNewItemChange(item));
                         // add the item back to meta inventories if required
-                        this.ItemManager.MetaInventoryManager.OnItemLoaded(item);
+                        this.ItemFactory.MetaInventoryManager.OnItemLoaded(item);
                     }
                     else
                     {
@@ -547,14 +545,14 @@ namespace Node.Services.Contracts
                         item.Persist();
 
                         // unload the item if required
-                        this.ItemManager.UnloadItem(item);
+                        this.ItemFactory.UnloadItem(item);
                     }
                 }
 
                 // move the offered items
                 foreach (ContractDB.ItemQuantityEntry entry in offeredItems)
                 {
-                    ItemEntity item = this.ItemManager.LoadItem(entry.ItemID);
+                    ItemEntity item = this.ItemFactory.LoadItem(entry.ItemID);
 
                     item.LocationID = station.ID;
                     item.OwnerID = ownerID;
@@ -564,7 +562,7 @@ namespace Node.Services.Contracts
                     item.Persist();
 
                     // unload the item if possible
-                    this.ItemManager.UnloadItem(item);
+                    this.ItemFactory.UnloadItem(item);
                 }
             }
             else
@@ -585,11 +583,11 @@ namespace Node.Services.Contracts
                         changes.AddChange(change.ItemID, "quantity", change.OldQuantity, change.Quantity);
                         // create a new item and notify the new node about it
                         // TODO: HANDLE BLUEPRINTS TOO! RIGHT NOW NO DATA IS COPIED FOR THEM
-                        ItemEntity item = this.ItemManager.CreateSimpleItem(
+                        ItemEntity item = this.ItemFactory.CreateSimpleItem(
                             this.TypeManager[change.TypeID], contract.IssuerID, station.ID, Flags.Hangar, change.OldQuantity - change.Quantity, false, false
                         );
                         // unload the created item
-                        this.ItemManager.UnloadItem(item);
+                        this.ItemFactory.UnloadItem(item);
                         changes.AddChange(item.ID, "location", 0, station.ID);
                     }
                 }
@@ -634,7 +632,7 @@ namespace Node.Services.Contracts
                 if (contract.ExpireTime < DateTime.UtcNow.ToFileTimeUtc())
                     throw new ConContractExpired();
 
-                Station station = this.ItemManager.GetStaticStation(contract.StationID);
+                Station station = this.ItemFactory.GetStaticStation(contract.StationID);
                     
                 // TODO: CHECK REWARD/PRICE
                 switch (contract.Type)

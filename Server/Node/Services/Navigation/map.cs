@@ -14,13 +14,12 @@ namespace Node.Services.Navigation
 {
     public class map : IService
     {
-        private ItemManager ItemManager { get; }
-        private StationManager StationManager { get; }
+        private ItemFactory ItemFactory { get; }
+        private StationManager StationManager => this.ItemFactory.StationManager;
         private CacheStorage CacheStorage { get; }
-        public map(ItemManager itemManager, StationManager stationManager, CacheStorage cacheStorage)
+        public map(ItemFactory itemFactory, CacheStorage cacheStorage)
         {
-            this.ItemManager = itemManager;
-            this.StationManager = stationManager;
+            this.ItemFactory = itemFactory;
             this.CacheStorage = cacheStorage;
         }
 
@@ -45,7 +44,7 @@ namespace Node.Services.Navigation
                 [1] = "serviceName"
             });
             
-            foreach ((int _, Station station) in this.ItemManager.Stations)
+            foreach ((int _, Station station) in this.ItemFactory.Stations)
                 stations.Rows.Add(new PyList(5)
                 {
                     [0] = station.ID,

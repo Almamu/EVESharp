@@ -11,17 +11,17 @@ namespace Node.Services.Stations
 {
     public class station : IService
     {
-        private ItemManager ItemManager { get; }
-        public station(ItemManager itemManager) 
+        private ItemFactory ItemFactory { get; }
+        public station(ItemFactory itemFactory) 
         {
-            this.ItemManager = itemManager;
+            this.ItemFactory = itemFactory;
         }
 
         public PyTuple GetStationItemBits(CallInformation call)
         {
             int stationID = call.Client.EnsureCharacterIsInStation();
 
-            Station station = this.ItemManager.GetStaticStation(stationID);
+            Station station = this.ItemFactory.GetStaticStation(stationID);
 
             return new PyTuple(5)
             {
@@ -37,7 +37,7 @@ namespace Node.Services.Stations
         {
             int stationID = call.Client.EnsureCharacterIsInStation();
 
-            Station station = this.ItemManager.GetStaticStation(stationID);
+            Station station = this.ItemFactory.GetStaticStation(stationID);
             PyList<PyTuple> result = new PyList<PyTuple>();
             
             foreach ((int _, Character character) in station.Guests)

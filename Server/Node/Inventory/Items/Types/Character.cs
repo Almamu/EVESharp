@@ -257,7 +257,7 @@ namespace Node.Inventory.Items.Types
             get
             {
                 if (this.mActiveClone == null)
-                    this.mActiveClone = this.ItemFactory.ItemManager.LoadItem<Clone>((int) this.ActiveCloneID);
+                    this.mActiveClone = this.ItemFactory.LoadItem<Clone>((int) this.ActiveCloneID);
 
                 return this.mActiveClone;
             }
@@ -266,7 +266,7 @@ namespace Node.Inventory.Items.Types
             {
                 // free the current active clone (if loaded)
                 if (this.mActiveClone != null)
-                    this.ItemFactory.ItemManager.UnloadItem(this.mActiveClone);
+                    this.ItemFactory.UnloadItem(this.mActiveClone);
                 
                 this.ActiveCloneID = value.ID;
                 this.mActiveClone = value;
@@ -399,7 +399,7 @@ namespace Node.Inventory.Items.Types
                 if (this.mCorporation != null)
                     return this.mCorporation;
 
-                this.mCorporation = this.ItemFactory.ItemManager.LoadItem(this.CorporationID) as Corporation;
+                this.mCorporation = this.ItemFactory.LoadItem(this.CorporationID) as Corporation;
 
                 return this.mCorporation;
             }

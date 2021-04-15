@@ -18,33 +18,31 @@ namespace Node.Services.Inventory
     {
         private int mStationID = 0;
         private InsuranceDB DB { get; }
-        private ItemManager ItemManager { get; }
+        private ItemFactory ItemFactory { get; }
         private MarketDB MarketDB { get; }
-        private SystemManager SystemManager { get; }
+        private SystemManager SystemManager => this.ItemFactory.SystemManager;
         private WalletManager WalletManager { get; }
         
-        public insuranceSvc(ItemManager itemManager, InsuranceDB db, MarketDB marketDB, SystemManager systemManager, WalletManager walletManager, BoundServiceManager manager) : base(manager, null)
+        public insuranceSvc(ItemFactory itemFactory, InsuranceDB db, MarketDB marketDB, WalletManager walletManager, BoundServiceManager manager) : base(manager, null)
         {
             this.DB = db;
-            this.ItemManager = itemManager;
+            this.ItemFactory = itemFactory;
             this.MarketDB = marketDB;
-            this.SystemManager = systemManager;
             this.WalletManager = walletManager;
         }
 
-        protected insuranceSvc(ItemManager itemManager, InsuranceDB db, MarketDB marketDB, SystemManager systemManager, WalletManager walletManager, BoundServiceManager manager, int stationID, Client client) : base (manager, client)
+        protected insuranceSvc(ItemFactory itemFactory, InsuranceDB db, MarketDB marketDB, WalletManager walletManager, BoundServiceManager manager, int stationID, Client client) : base (manager, client)
         {
             this.mStationID = stationID;
             this.DB = db;
-            this.ItemManager = itemManager;
+            this.ItemFactory = itemFactory;
             this.MarketDB = marketDB;
-            this.SystemManager = systemManager;
             this.WalletManager = walletManager;
         }
 
         public override PyInteger MachoResolveObject(PyInteger stationID, PyInteger zero, CallInformation call)
         {
-            int solarSystemID = this.ItemManager.GetStaticStation(stationID).SolarSystemID;
+            int solarSystemID = this.ItemFactory.GetStaticStation(stationID).SolarSystemID;
 
             if (this.SystemManager.SolarSystemBelongsToUs(solarSystemID) == true)
                 return this.BoundServiceManager.Container.NodeID;
@@ -57,7 +55,7 @@ namespace Node.Services.Inventory
             if (this.MachoResolveObject(objectData as PyInteger, 0, call) != this.BoundServiceManager.Container.NodeID)
                 throw new CustomError("Trying to bind an object that does not belong to us!");
             
-            return new insuranceSvc(this.ItemManager, this.DB, this.MarketDB, this.SystemManager, this.WalletManager, this.BoundServiceManager, objectData as PyInteger, call.Client);
+            return new insuranceSvc(this.ItemFactory, this.DB, this.MarketDB, this.WalletManager, this.BoundServiceManager, objectData as PyInteger, call.Client);
         }
 
         public PyList<PyPackedRow> GetContracts(CallInformation call)
@@ -97,10 +95,10 @@ namespace Node.Services.Inventory
         {
             int callerCharacterID = call.Client.EnsureCharacterIsSelected();
             
-            if (this.ItemManager.TryGetItem(itemID, out Ship item) == false)
+            if (this.ItemFactory.TryGetItem(itemID, out Ship item) == false)
                 throw new CustomError("Ships not loaded for player and hangar!");
 
-            Character character = this.ItemManager.GetItem<Character>(callerCharacterID);
+            Character character = this.ItemFactory.GetItem<Character>(callerCharacterID);
 
             if (isCorpItem == 1 && item.OwnerID != call.Client.CorporationID && item.OwnerID != callerCharacterID)
                 throw new MktNotOwner();
@@ -115,7 +113,7 @@ namespace Node.Services.Inventory
             {
                 wallet.EnsureEnoughBalance(insuranceCost);
                 wallet.CreateJournalRecord(
-                    MarketReference.Insurance, this.ItemManager.SecureCommerceCommision.ID, -item.ID, -insuranceCost, $"Insurance fee for {item.Name}"
+                    MarketReference.Insurance, this.ItemFactory.SecureCommerceCommision.ID, -item.ID, -insuranceCost, $"Insurance fee for {item.Name}"
                 );
             }
             
@@ -133,10 +131,10 @@ namespace Node.Services.Inventory
         {
             int callerCharacterID = call.Client.EnsureCharacterIsSelected();
             
-            if (this.ItemManager.TryGetItem(itemID, out Ship item) == false)
+            if (this.ItemFactory.TryGetItem(itemID, out Ship item) == false)
                 throw new CustomError("Ships not loaded for player and hangar!");
 
-            Character character = this.ItemManager.GetItem<Character>(callerCharacterID);
+            Character character = this.ItemFactory.GetItem<Character>(callerCharacterID);
 
             if (item.OwnerID != call.Client.CorporationID && item.OwnerID != callerCharacterID)
                 throw new MktNotOwner();

@@ -46,8 +46,7 @@ namespace Node.Services.Stations
         };
         
         private ItemFactory ItemFactory { get; }
-        private ItemManager ItemManager => this.ItemFactory.ItemManager;
-        private SystemManager SystemManager { get; }
+        private SystemManager SystemManager => this.ItemFactory.SystemManager;
         private TypeManager TypeManager => this.ItemFactory.TypeManager;
         private ItemInventory mInventory;
         private Station mStation;
@@ -55,15 +54,14 @@ namespace Node.Services.Stations
         private StandingDB StandingDB { get; }
         private ReprocessingDB ReprocessingDB { get; }
 
-        public reprocessingSvc(ReprocessingDB reprocessingDb, StandingDB standingDb, ItemFactory itemFactory, SystemManager systemManager, BoundServiceManager manager) : base(manager, null)
+        public reprocessingSvc(ReprocessingDB reprocessingDb, StandingDB standingDb, ItemFactory itemFactory, BoundServiceManager manager) : base(manager, null)
         {
             this.ReprocessingDB = reprocessingDb;
             this.StandingDB = standingDb;
             this.ItemFactory = itemFactory;
-            this.SystemManager = systemManager;
         }
         
-        protected reprocessingSvc(ReprocessingDB reprocessingDb, StandingDB standingDb, Corporation corporation, Station station, ItemInventory inventory, ItemFactory itemFactory, SystemManager systemManager, BoundServiceManager manager, Client client) : base(manager, client)
+        protected reprocessingSvc(ReprocessingDB reprocessingDb, StandingDB standingDb, Corporation corporation, Station station, ItemInventory inventory, ItemFactory itemFactory, BoundServiceManager manager, Client client) : base(manager, client)
         {
             this.ReprocessingDB = reprocessingDb;
             this.StandingDB = standingDb;
@@ -71,7 +69,6 @@ namespace Node.Services.Stations
             this.mStation = station;
             this.mInventory = inventory;
             this.ItemFactory = itemFactory;
-            this.SystemManager = systemManager;
         }
 
         public override PyInteger MachoResolveObject(PyInteger stationID, PyInteger zero, CallInformation call)
@@ -94,7 +91,7 @@ namespace Node.Services.Stations
             if (this.MachoResolveObject(stationID, 0, call) != this.BoundServiceManager.Container.NodeID)
                 throw new CustomError("Trying to bind an object that does not belong to us!");
 
-            Station station = this.ItemManager.GetStaticStation(stationID);
+            Station station = this.ItemFactory.GetStaticStation(stationID);
             
             // check if the station has the required services
             if (station.HasService(StaticData.Inventory.Station.Service.ReprocessingPlant) == false)
@@ -103,10 +100,10 @@ namespace Node.Services.Stations
             if (station.ID != call.Client.StationID)
                 throw new CanOnlyDoInStations();
             
-            Corporation corporation = this.ItemManager.GetItem<Corporation>(station.OwnerID);
-            ItemInventory inventory = this.ItemManager.MetaInventoryManager.RegisterMetaInventoryForOwnerID(station, call.Client.EnsureCharacterIsSelected());
+            Corporation corporation = this.ItemFactory.GetItem<Corporation>(station.OwnerID);
+            ItemInventory inventory = this.ItemFactory.MetaInventoryManager.RegisterMetaInventoryForOwnerID(station, call.Client.EnsureCharacterIsSelected());
 
-            return new reprocessingSvc(this.ReprocessingDB, this.StandingDB, corporation, station, inventory, this.ItemFactory, this.SystemManager, this.BoundServiceManager, call.Client);
+            return new reprocessingSvc(this.ReprocessingDB, this.StandingDB, corporation, station, inventory, this.ItemFactory, this.BoundServiceManager, call.Client);
         }
 
         private double CalculateCombinedYield(Character character)
@@ -169,7 +166,7 @@ namespace Node.Services.Stations
         public PyDataType GetReprocessingInfo(CallInformation call)
         {
             int stationID = call.Client.EnsureCharacterIsInStation();
-            Character character = this.ItemManager.GetItem<Character>(call.Client.EnsureCharacterIsSelected());
+            Character character = this.ItemFactory.GetItem<Character>(call.Client.EnsureCharacterIsSelected());
 
             double standing = GetStanding(character);
 
@@ -241,7 +238,7 @@ namespace Node.Services.Stations
         
         public PyDataType GetQuotes(PyList itemIDs, CallInformation call)
         {
-            Character character = this.ItemManager.GetItem<Character>(call.Client.EnsureCharacterIsSelected());
+            Character character = this.ItemFactory.GetItem<Character>(call.Client.EnsureCharacterIsSelected());
             
             PyDictionary<PyInteger, PyDataType> result = new PyDictionary<PyInteger, PyDataType>();
 
@@ -275,7 +272,7 @@ namespace Node.Services.Stations
                 int quantityForClient = (int) (efficiency * (1.0 - this.mCorporation.TaxRate) * ratio);
                 
                 // create the new item
-                ItemEntity newItem = this.ItemManager.CreateSimpleItem(this.TypeManager[recoverable.TypeID], character, this.mStation,
+                ItemEntity newItem = this.ItemFactory.CreateSimpleItem(this.TypeManager[recoverable.TypeID], character, this.mStation,
                     Flags.Hangar, quantityForClient);
                 // notify the client about the new item
                 client.NotifyMultiEvent(OnItemChange.BuildNewItemChange(newItem));
@@ -284,7 +281,7 @@ namespace Node.Services.Stations
 
         public PyDataType Reprocess(PyList itemIDs, PyInteger ownerID, PyInteger flag, PyBool unknown, PyList skipChecks, CallInformation call)
         {
-            Character character = this.ItemManager.GetItem<Character>(call.Client.EnsureCharacterIsSelected());
+            Character character = this.ItemFactory.GetItem<Character>(call.Client.EnsureCharacterIsSelected());
             
             // TODO: TAKE INTO ACCOUNT OWNERID AND FLAG, THESE MOST LIKELY WILL BE USED BY CORP STUFF
             foreach (PyInteger itemID in itemIDs.GetEnumerable<PyInteger>())
@@ -296,7 +293,7 @@ namespace Node.Services.Stations
                 this.Reprocess(character, item, call.Client);
                 int oldLocationID = item.LocationID;
                 // finally remove the item from the inventories
-                this.ItemManager.DestroyItem(item);
+                this.ItemFactory.DestroyItem(item);
                 // notify the client about the item being destroyed
                 call.Client.NotifyMultiEvent(OnItemChange.BuildLocationChange(item, oldLocationID));
             }

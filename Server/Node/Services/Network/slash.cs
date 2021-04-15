@@ -25,8 +25,8 @@ namespace Node.Services.Network
 {
     public class slash : IService
     {
-        private TypeManager TypeManager { get; }
-        private ItemManager ItemManager { get; }
+        private TypeManager TypeManager => this.ItemFactory.TypeManager;
+        private ItemFactory ItemFactory { get; }
         private Channel Log { get; }
         private MarketDB MarketDB { get; }
         private CharacterDB CharacterDB { get; }
@@ -37,11 +37,10 @@ namespace Node.Services.Network
         private readonly Dictionary<string, Action<string[], CallInformation>> mCommands =
             new Dictionary<string, Action<string[], CallInformation>>();
         
-        public slash(Logger logger, TypeManager typeManager, ItemManager itemManager, MarketDB marketDB, CharacterDB characterDB, ItemDB itemDB, NotificationManager notificationManager, WalletManager walletManager)
+        public slash(Logger logger, ItemFactory itemFactory, MarketDB marketDB, CharacterDB characterDB, ItemDB itemDB, NotificationManager notificationManager, WalletManager walletManager)
         {
             this.Log = logger.CreateLogChannel("Slash");
-            this.TypeManager = typeManager;
-            this.ItemManager = itemManager;
+            this.ItemFactory = itemFactory;
             this.MarketDB = marketDB;
             this.CharacterDB = characterDB;
             this.ItemDB = itemDB;
@@ -132,11 +131,11 @@ namespace Node.Services.Network
                 if (iskQuantity < 0)
                 {
                     wallet.EnsureEnoughBalance(iskQuantity);
-                    wallet.CreateJournalRecord(MarketReference.GMCashTransfer, this.ItemManager.SecureCommerceCommision.ID, null, -iskQuantity);
+                    wallet.CreateJournalRecord(MarketReference.GMCashTransfer, this.ItemFactory.SecureCommerceCommision.ID, null, -iskQuantity);
                 }
                 else
                 {
-                    wallet.CreateJournalRecord(MarketReference.GMCashTransfer, this.ItemManager.SecureCommerceCommision.ID, targetCharacterID, null, iskQuantity);
+                    wallet.CreateJournalRecord(MarketReference.GMCashTransfer, this.ItemFactory.SecureCommerceCommision.ID, targetCharacterID, null, iskQuantity);
                 }
             }
         }
@@ -159,11 +158,11 @@ namespace Node.Services.Network
                 throw new SlashError("The specified typeID doesn't exist");
             
             // create a new item with the correct locationID
-            Station location = this.ItemManager.GetStaticStation((int) call.Client.StationID);
-            Character character = this.ItemManager.GetItem<Character>(call.Client.EnsureCharacterIsSelected());
+            Station location = this.ItemFactory.GetStaticStation((int) call.Client.StationID);
+            Character character = this.ItemFactory.GetItem<Character>(call.Client.EnsureCharacterIsSelected());
             
             Type itemType = this.TypeManager[typeID];
-            ItemEntity item = this.ItemManager.CreateSimpleItem(itemType, character, location, Flags.Hangar, quantity);
+            ItemEntity item = this.ItemFactory.CreateSimpleItem(itemType, character, location, Flags.Hangar, quantity);
 
             item.Persist();
             
@@ -184,7 +183,7 @@ namespace Node.Services.Network
             if (target != "me")
                 throw new SlashError("giveskill only supports me for now");
 
-            Character character = this.ItemManager.GetItem<Character>(call.Client.EnsureCharacterIsSelected());
+            Character character = this.ItemFactory.GetItem<Character>(call.Client.EnsureCharacterIsSelected());
             
             if (skillType == "all")
             {
@@ -208,7 +207,7 @@ namespace Node.Services.Network
                     else
                     {
                         // skill not injected, create it, inject and done
-                        Skill skill = this.ItemManager.CreateSkill(pair.Value, character, level,
+                        Skill skill = this.ItemFactory.CreateSkill(pair.Value, character, level,
                             SkillHistoryReason.GMGiveSkill);
 
                         call.Client.NotifyMultiEvent(OnItemChange.BuildNewItemChange(skill));
@@ -232,7 +231,7 @@ namespace Node.Services.Network
                 else
                 {
                     // skill not injected, create it, inject and done
-                    Skill skill = this.ItemManager.CreateSkill(this.TypeManager[skillTypeID], character, level,
+                    Skill skill = this.ItemFactory.CreateSkill(this.TypeManager[skillTypeID], character, level,
                         SkillHistoryReason.GMGiveSkill);
 
                     call.Client.NotifyMultiEvent(OnItemChange.BuildNewItemChange(skill));

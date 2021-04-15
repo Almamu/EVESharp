@@ -12,13 +12,13 @@ namespace Node.Services.Characters
     {
         private ChatDB ChatDB { get; }
         private CharacterDB CharacterDB { get; }
-        private ItemManager ItemManager { get; }
+        private ItemFactory ItemFactory { get; }
         
-        public onlineStatus(ChatDB chatDB, CharacterDB characterDB, ItemManager itemManager)
+        public onlineStatus(ChatDB chatDB, CharacterDB characterDB, ItemFactory itemFactory)
         {
             this.ChatDB = chatDB;
             this.CharacterDB = characterDB;
-            this.ItemManager = itemManager;
+            this.ItemFactory = itemFactory;
         }
 
         public PyDataType GetInitialState(CallInformation call)
@@ -32,7 +32,7 @@ namespace Node.Services.Characters
             // TODO: CHECK IF THE OTHER CHARACTER HAS US IN THEIR ADDRESSBOOK?
             try
             {
-                return this.ItemManager.GetItem<Character>(characterID).Online;
+                return this.ItemFactory.GetItem<Character>(characterID).Online;
             }
             catch (Exception)
             {

@@ -15,13 +15,13 @@ namespace Node.Services.Characters
     public class bookmark : IService
     {
         private BookmarkDB DB { get; }
-        private ItemManager ItemManager { get; }
+        private ItemFactory ItemFactory { get; }
         private MachoNet MachoNet { get; }
         
-        public bookmark(BookmarkDB db, ItemManager itemManager, MachoNet machoNet)
+        public bookmark(BookmarkDB db, ItemFactory itemFactory, MachoNet machoNet)
         {
             this.DB = db;
-            this.ItemManager = itemManager;
+            this.ItemFactory = itemFactory;
             this.MachoNet = machoNet;
         }
 
@@ -32,12 +32,12 @@ namespace Node.Services.Characters
 
         public PyDataType BookmarkLocation(PyInteger itemID, PyDataType unk, PyString name, PyString comment, CallInformation call)
         {
-            if (ItemManager.IsStaticData(itemID) == false)
+            if (ItemFactory.IsStaticData(itemID) == false)
             {
                 throw new CustomError("Bookmarks for non-static locations are not supported yet!");
             }
 
-            ItemEntity item = this.ItemManager.GetItem(itemID);
+            ItemEntity item = this.ItemFactory.GetItem(itemID);
 
             if (item.HasPosition == false)
             {

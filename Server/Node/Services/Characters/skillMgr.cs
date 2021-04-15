@@ -26,30 +26,28 @@ namespace Node.Services.Characters
         private const int MINIMUM_ATTRIBUTE_POINTS = 5;
         private const int MAXIMUM_TOTAL_ATTRIBUTE_POINTS = 39;
         private SkillDB DB { get; }
-        private ItemManager ItemManager { get; }
+        private ItemFactory ItemFactory { get; }
         private TimerManager TimerManager { get; }
-        private SystemManager SystemManager { get; }
+        private SystemManager SystemManager => this.ItemFactory.SystemManager;
         private Channel Log { get; }
         private Character Character { get; }
         
-        public skillMgr(SkillDB db, ItemManager itemManager, TimerManager timerManager, SystemManager systemManager,
+        public skillMgr(SkillDB db, ItemFactory itemFactory, TimerManager timerManager,
             BoundServiceManager manager, Logger logger) : base(manager, null)
         {
             this.DB = db;
-            this.ItemManager = itemManager;
+            this.ItemFactory = itemFactory;
             this.TimerManager = timerManager;
-            this.SystemManager = systemManager;
             this.Log = logger.CreateLogChannel("SkillManager");
         }
 
-        protected skillMgr(SkillDB db, ItemManager itemManager, TimerManager timerManager, SystemManager systemManager,
+        protected skillMgr(SkillDB db, ItemFactory itemFactory, TimerManager timerManager,
             BoundServiceManager manager, Logger logger, Client client) : base(manager, client)
         {
             this.DB = db;
-            this.ItemManager = itemManager;
+            this.ItemFactory = itemFactory;
             this.TimerManager = timerManager;
-            this.SystemManager = systemManager;
-            this.Character = this.ItemManager.GetItem<Character>(client.EnsureCharacterIsSelected());
+            this.Character = this.ItemFactory.GetItem<Character>(client.EnsureCharacterIsSelected());
             this.Log = logger.CreateLogChannel("SkillManager");
 
             this.InitializeCharacter();
@@ -225,12 +223,12 @@ namespace Node.Services.Characters
             if (this.MachoResolveObject(objectData as PyTuple, 0, call) != this.BoundServiceManager.Container.NodeID)
                 throw new CustomError("Trying to bind an object that does not belong to us!");
             
-            return new skillMgr(this.DB, this.ItemManager, this.TimerManager, this.SystemManager, this.BoundServiceManager, this.BoundServiceManager.Logger, call.Client);
+            return new skillMgr(this.DB, this.ItemFactory, this.TimerManager, this.BoundServiceManager, this.BoundServiceManager.Logger, call.Client);
         }
 
         public PyDataType GetSkillQueue(CallInformation call)
         {
-            Character character = this.ItemManager.GetItem<Character>(call.Client.EnsureCharacterIsSelected());
+            Character character = this.ItemFactory.GetItem<Character>(call.Client.EnsureCharacterIsSelected());
 
             PyList skillQueueList = new PyList(character.SkillQueue.Count);
 
@@ -254,7 +252,7 @@ namespace Node.Services.Characters
                 try
                 {
                     // get the item by it's ID and change the location of it
-                    Skill skill = this.ItemManager.GetItem<Skill>(item);
+                    Skill skill = this.ItemFactory.GetItem<Skill>(item);
 
                     // check if the character already has this skill injected
                     if (this.Character.InjectedSkillsByTypeID.ContainsKey(skill.Type.ID) == true)
@@ -264,7 +262,7 @@ namespace Node.Services.Characters
                     if (skill.Quantity > 1)
                     {
                         // add one of the skill into the character's brain
-                        Skill newStack = this.ItemManager.CreateSkill(skill.Type, this.Character, 0, SkillHistoryReason.None);
+                        Skill newStack = this.ItemFactory.CreateSkill(skill.Type, this.Character, 0, SkillHistoryReason.None);
 
                         // subtract one from the quantity
                         skill.Quantity -= 1;
@@ -698,7 +696,7 @@ namespace Node.Services.Characters
                 throw new FailedPlugInImplant();
             
             // get the item and plug it into our brain now!
-            ItemEntity item = this.ItemManager.LoadItem(itemID);
+            ItemEntity item = this.ItemFactory.LoadItem(itemID);
             
             // ensure the item is somewhere we can interact with it
             if (item.LocationID != call.Client.ShipID && item.LocationID != call.Client.StationID)
@@ -724,7 +722,7 @@ namespace Node.Services.Characters
                 
                 // create the new item with a default location and flag
                 // this way the item location change notification is only needed once
-                item = this.ItemManager.CreateSimpleItem(item.Type, item.OwnerID, 0,
+                item = this.ItemFactory.CreateSimpleItem(item.Type, item.OwnerID, 0,
                     Flags.None, 1, item.Contraband, item.Singleton);
             }
 
@@ -751,7 +749,7 @@ namespace Node.Services.Characters
                 throw new CustomError("This implant is not in your brain!");
 
             // now destroy the item
-            this.ItemManager.DestroyItem(item);
+            this.ItemFactory.DestroyItem(item);
             
             // notify the change
             call.Client.NotifyMultiEvent(OnItemChange.BuildLocationChange(item, this.Character.ID));

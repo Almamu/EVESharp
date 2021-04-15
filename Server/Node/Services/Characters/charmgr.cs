@@ -14,14 +14,14 @@ namespace Node.Services.Characters
     {
         private CharacterDB DB { get; }
         private MarketDB MarketDB { get; }
-        private ItemManager ItemManager { get; }
+        private ItemFactory ItemFactory { get; }
         private WalletManager WalletManager { get; }
         
-        public charmgr(CharacterDB db, MarketDB marketDB, ItemManager itemManager, WalletManager WalletManager)
+        public charmgr(CharacterDB db, MarketDB marketDB, ItemFactory itemFactory, WalletManager WalletManager)
         {
             this.DB = db;
             this.MarketDB = marketDB;
-            this.ItemManager = itemManager;
+            this.ItemFactory = itemFactory;
             this.WalletManager = WalletManager;
         }
         
@@ -43,7 +43,7 @@ namespace Node.Services.Characters
         public PyDataType AddToBounty(PyInteger characterID, PyInteger bounty, CallInformation call)
         {
             // get character's object
-            Character character = this.ItemManager.GetItem<Character>(call.Client.EnsureCharacterIsSelected());
+            Character character = this.ItemFactory.GetItem<Character>(call.Client.EnsureCharacterIsSelected());
             
             // access the wallet and do the required changes
             using Wallet wallet = this.WalletManager.AcquireWallet(character.ID, 1000);

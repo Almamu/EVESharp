@@ -41,7 +41,7 @@ namespace Node.Inventory.Items
         {
             lock (this)
             {
-                this.mItems = this.ItemFactory.ItemManager.LoadItemsLocatedAt(this, ignoreFlags);
+                this.mItems = this.ItemFactory.LoadItemsLocatedAt(this, ignoreFlags);
                 this.mContentsLoaded = true;
             }
         }
@@ -55,7 +55,7 @@ namespace Node.Inventory.Items
                 
                 // unload all the items that are in the inventory
                 foreach((int _, ItemEntity item) in this.mItems)
-                    this.ItemFactory.ItemManager.UnloadItem(item);
+                    this.ItemFactory.UnloadItem(item);
             }
         }
 
@@ -130,7 +130,7 @@ namespace Node.Inventory.Items
             // first destroy all the items inside this inventory
             // this might trigger the item loading mechanism but it's needed to ensure
             // that all the childs are removed off the database too
-            this.ItemFactory.ItemManager.DestroyItems(this.Items);
+            this.ItemFactory.DestroyItems(this.Items);
 
             // finally call our base destroy method as this will get rid of the item from the database
             // for good

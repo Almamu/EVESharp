@@ -24,7 +24,6 @@ namespace Node.Services.Stations
         private ItemFactory ItemFactory { get; }
         private ItemDB ItemDB => this.ItemFactory.ItemDB;
         private MarketDB MarketDB { get; }
-        private ItemManager ItemManager => this.ItemFactory.ItemManager;
         private TypeManager TypeManager => this.ItemFactory.TypeManager;
         private SystemManager SystemManager => this.ItemFactory.SystemManager;
         private WalletManager WalletManager { get; }
@@ -48,7 +47,7 @@ namespace Node.Services.Stations
 
         public override PyInteger MachoResolveObject(PyInteger stationID, PyInteger zero, CallInformation call)
         {
-            int solarSystemID = this.ItemManager.GetStaticStation(stationID).SolarSystemID;
+            int solarSystemID = this.ItemFactory.GetStaticStation(stationID).SolarSystemID;
 
             if (this.SystemManager.SolarSystemBelongsToUs(solarSystemID) == true)
                 return this.BoundServiceManager.Container.NodeID;
@@ -84,13 +83,13 @@ namespace Node.Services.Stations
         {
             int stationID = client.EnsureCharacterIsInStation();
             
-            Character character = this.ItemManager.GetItem<Character>(client.EnsureCharacterIsSelected());
+            Character character = this.ItemFactory.GetItem<Character>(client.EnsureCharacterIsSelected());
 
             // TODO: CHECK STANDINGS TO ENSURE THIS STATION CAN BE USED
             List<Station> availableStations = new List<Station>
             {
-                this.ItemManager.Stations[stationID],
-                this.ItemManager.Stations[character.Corporation.StationID]
+                this.ItemFactory.Stations[stationID],
+                this.ItemFactory.Stations[character.Corporation.StationID]
             };
             
             return availableStations;
@@ -127,7 +126,7 @@ namespace Node.Services.Stations
             int callerCharacterID = call.Client.EnsureCharacterIsSelected();
             call.Client.EnsureCharacterIsInStation();
             
-            Character character = this.ItemManager.GetItem<Character>(callerCharacterID);
+            Character character = this.ItemFactory.GetItem<Character>(callerCharacterID);
             
             // ensure the station selected is in the list of available stations for this character
             Station station = this.GetPotentialHomeStations(call.Client).Find(x => x.ID == stationID);
@@ -175,7 +174,7 @@ namespace Node.Services.Stations
 
         public PyBool DoesPlayersCorpHaveJunkAtStation(CallInformation call)
         {
-            if (ItemManager.IsNPCCorporationID(call.Client.CorporationID) == true)
+            if (ItemFactory.IsNPCCorporationID(call.Client.CorporationID) == true)
                 return false;
             
             // TODO: PROPERLY IMPLEMENT THIS ONE
@@ -203,7 +202,7 @@ namespace Node.Services.Stations
             int callerCharacterID = call.Client.EnsureCharacterIsSelected();
             int stationID = call.Client.EnsureCharacterIsInStation();
             
-            Character character = this.ItemManager.GetItem<Character>(callerCharacterID);
+            Character character = this.ItemFactory.GetItem<Character>(callerCharacterID);
             Type newCloneType = this.TypeManager[cloneTypeID];
 
             if (newCloneType.Group.ID != (int) Groups.Clone)
@@ -211,12 +210,12 @@ namespace Node.Services.Stations
             if (character.ActiveClone.Type.BasePrice > newCloneType.BasePrice)
                 throw new MedicalThisCloneIsWorse();
 
-            Station station = this.ItemManager.GetStaticStation(stationID);
+            Station station = this.ItemFactory.GetStaticStation(stationID);
 
             using Wallet wallet = this.WalletManager.AcquireWallet(character.ID, 1000);
             {
                 wallet.EnsureEnoughBalance(newCloneType.BasePrice);
-                wallet.CreateTransactionRecord(TransactionType.Buy, this.ItemManager.LocationSystem.ID, newCloneType.ID, 1, newCloneType.BasePrice, station.ID);
+                wallet.CreateTransactionRecord(TransactionType.Buy, this.ItemFactory.LocationSystem.ID, newCloneType.ID, 1, newCloneType.BasePrice, station.ID);
             }
             
             // update active clone's information

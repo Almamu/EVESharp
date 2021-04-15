@@ -27,8 +27,7 @@ namespace Node.Services.Stations
         private const double BASEPRICE_MULTIPLIER_MODULE = 0.0125;
         private const double BASEPRICE_MULTIPLIER_SHIP = 0.000088;
         private ItemFactory ItemFactory { get; }
-        private ItemManager ItemManager => this.ItemFactory.ItemManager;
-        private SystemManager SystemManager { get; }
+        private SystemManager SystemManager => this.ItemFactory.SystemManager;
         private TypeManager TypeManager => this.ItemFactory.TypeManager;
         private ItemInventory mInventory;
         private MarketDB MarketDB { get; }
@@ -38,10 +37,9 @@ namespace Node.Services.Stations
         private NodeContainer Container { get; }
         private WalletManager WalletManager { get; }
 
-        public repairSvc(RepairDB repairDb, MarketDB marketDb, InsuranceDB insuranceDb, NodeContainer nodeContainer, NotificationManager notificationManager, ItemFactory itemFactory, SystemManager systemManager, BoundServiceManager manager, WalletManager walletManager) : base(manager, null)
+        public repairSvc(RepairDB repairDb, MarketDB marketDb, InsuranceDB insuranceDb, NodeContainer nodeContainer, NotificationManager notificationManager, ItemFactory itemFactory, BoundServiceManager manager, WalletManager walletManager) : base(manager, null)
         {
             this.ItemFactory = itemFactory;
-            this.SystemManager = systemManager;
             this.MarketDB = marketDb;
             this.RepairDB = repairDb;
             this.InsuranceDB = insuranceDb;
@@ -50,11 +48,10 @@ namespace Node.Services.Stations
             this.WalletManager = walletManager;
         }
         
-        protected repairSvc(RepairDB repairDb, MarketDB marketDb, InsuranceDB insuranceDb, NodeContainer nodeContainer, NotificationManager notificationManager, ItemInventory inventory, ItemFactory itemFactory, SystemManager systemManager, BoundServiceManager manager, WalletManager walletManager, Client client) : base(manager, client)
+        protected repairSvc(RepairDB repairDb, MarketDB marketDb, InsuranceDB insuranceDb, NodeContainer nodeContainer, NotificationManager notificationManager, ItemInventory inventory, ItemFactory itemFactory, BoundServiceManager manager, WalletManager walletManager, Client client) : base(manager, client)
         {
             this.mInventory = inventory;
             this.ItemFactory = itemFactory;
-            this.SystemManager = systemManager;
             this.MarketDB = marketDb;
             this.RepairDB = repairDb;
             this.InsuranceDB = insuranceDb;
@@ -83,7 +80,7 @@ namespace Node.Services.Stations
             if (this.MachoResolveObject(stationID, 0, call) != this.BoundServiceManager.Container.NodeID)
                 throw new CustomError("Trying to bind an object that does not belong to us!");
 
-            Station station = this.ItemManager.GetStaticStation(stationID);
+            Station station = this.ItemFactory.GetStaticStation(stationID);
 
             // check if the station has the required services
             if (station.HasService(StaticData.Inventory.Station.Service.RepairFacilities) == false)
@@ -92,9 +89,9 @@ namespace Node.Services.Stations
             if (station.ID != call.Client.StationID)
                 throw new CanOnlyDoInStations();
             
-            ItemInventory inventory = this.ItemManager.MetaInventoryManager.RegisterMetaInventoryForOwnerID(station, call.Client.EnsureCharacterIsSelected());
+            ItemInventory inventory = this.ItemFactory.MetaInventoryManager.RegisterMetaInventoryForOwnerID(station, call.Client.EnsureCharacterIsSelected());
 
-            return new repairSvc(this.RepairDB, this.MarketDB, this.InsuranceDB, this.Container, this.NotificationManager, inventory, this.ItemFactory, this.SystemManager, this.BoundServiceManager, this.WalletManager, call.Client);
+            return new repairSvc(this.RepairDB, this.MarketDB, this.InsuranceDB, this.Container, this.NotificationManager, inventory, this.ItemFactory, this.BoundServiceManager, this.WalletManager, call.Client);
         }
 
         public PyDataType GetDamageReports(PyList itemIDs, CallInformation call)
@@ -178,7 +175,7 @@ namespace Node.Services.Stations
         public PyDataType RepairItems(PyList itemIDs, PyDecimal iskRepairValue, CallInformation call)
         {
             // ensure the player has enough balance to do the fixing
-            Station station = this.ItemManager.GetStaticStation(call.Client.EnsureCharacterIsInStation());
+            Station station = this.ItemFactory.GetStaticStation(call.Client.EnsureCharacterIsInStation());
 
             // take the wallet lock and ensure the character has enough balance
             using Wallet wallet = this.WalletManager.AcquireWallet(call.Client.EnsureCharacterIsSelected(), 1000);
@@ -299,7 +296,7 @@ namespace Node.Services.Stations
                 // extra situation, the repair is happening on a item in our node, the client must know immediately
                 if (entry.NodeID == this.Container.NodeID || this.SystemManager.StationBelongsToUs(entry.LocationID) == true)
                 {
-                    ItemEntity item = this.ItemManager.LoadItem(entry.ItemID, out bool loadRequired);
+                    ItemEntity item = this.ItemFactory.LoadItem(entry.ItemID, out bool loadRequired);
 
                     // the item is an inventory, take everything out!
                     if (item is ItemInventory inventory)
@@ -310,7 +307,7 @@ namespace Node.Services.Stations
                             if (itemInInventory.IsInRigSlot() == true)
                             {
                                 Flags oldFlag = itemInInventory.Flag;
-                                this.ItemManager.DestroyItem(itemInInventory);
+                                this.ItemFactory.DestroyItem(itemInInventory);
                                 // notify the client about the change
                                 call.Client.NotifyMultiEvent(OnItemChange.BuildLocationChange(itemInInventory, oldFlag, entry.ItemID));
                             }
@@ -336,7 +333,7 @@ namespace Node.Services.Stations
                     // load was required, the item is not needed anymore
                     if (loadRequired == true)
                     {
-                        this.ItemManager.UnloadItem(item);
+                        this.ItemFactory.UnloadItem(item);
                     }
                 }
                 else

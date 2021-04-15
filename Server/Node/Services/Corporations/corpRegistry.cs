@@ -18,17 +18,17 @@ namespace Node.Services.Corporations
         public int IsMaster => this.mIsMaster;
 
         private CorporationDB DB { get; }
-        private ItemManager ItemManager { get; }
-        public corpRegistry(CorporationDB db, ItemManager itemManager, BoundServiceManager manager) : base(manager, null)
+        private ItemFactory ItemFactory { get; }
+        public corpRegistry(CorporationDB db, ItemFactory itemFactory, BoundServiceManager manager) : base(manager, null)
         {
             this.DB = db;
-            this.ItemManager = itemManager;
+            this.ItemFactory = itemFactory;
         }
 
-        protected corpRegistry(CorporationDB db, ItemManager itemManager, Corporation corp, int isMaster, BoundServiceManager manager, Client client) : base (manager, client)
+        protected corpRegistry(CorporationDB db, ItemFactory itemFactory, Corporation corp, int isMaster, BoundServiceManager manager, Client client) : base (manager, client)
         {
             this.DB = db;
-            this.ItemManager = itemManager;
+            this.ItemFactory = itemFactory;
             this.mCorporation = corp;
             this.mIsMaster = isMaster;
         }
@@ -48,9 +48,9 @@ namespace Node.Services.Corporations
              * objectData[0] => corporationID
              * objectData[1] => isMaster
              */
-            Corporation corp = this.ItemManager.LoadItem(data[0] as PyInteger) as Corporation;
+            Corporation corp = this.ItemFactory.LoadItem(data[0] as PyInteger) as Corporation;
             
-            return new corpRegistry(this.DB, this.ItemManager, corp, data[1] as PyInteger, this.BoundServiceManager, call.Client);
+            return new corpRegistry(this.DB, this.ItemFactory, corp, data[1] as PyInteger, this.BoundServiceManager, call.Client);
         }
 
         public PyDataType GetEveOwners(CallInformation call)
@@ -132,7 +132,7 @@ namespace Node.Services.Corporations
         public PyDataType GetTitles(CallInformation call)
         {
             // check if the corp is NPC and return placeholder data from the crpTitlesTemplate
-            if (ItemManager.IsNPCCorporationID(call.Client.CorporationID) == true)
+            if (ItemFactory.IsNPCCorporationID(call.Client.CorporationID) == true)
             {
                 return this.DB.GetTitlesTemplate();
             }

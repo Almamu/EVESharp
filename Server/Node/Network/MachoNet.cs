@@ -32,7 +32,6 @@ namespace Node.Network
         private ClusterConnection ClusterConnection { get; }
         private NodeContainer Container { get; }
         private SystemManager SystemManager { get; }
-        private ItemManager ItemManager => this.ItemFactory.ItemManager;
         private ItemFactory ItemFactory { get; }
         private ServiceManager ServiceManager { get; set; }
         private ClientManager ClientManager { get; }
@@ -448,7 +447,7 @@ namespace Node.Network
             {
                 PyDictionary<PyString, PyTuple> changes = _changes.GetEnumerable<PyString, PyTuple>();
                 
-                ItemEntity item = this.ItemManager.LoadItem(itemID, out bool loadRequired);
+                ItemEntity item = this.ItemFactory.LoadItem(itemID, out bool loadRequired);
                 
                 // if the item was just loaded there's extra things to take into account
                 // as the item might not even need a notification to the character it belongs to
@@ -457,10 +456,10 @@ namespace Node.Network
                     // trust that the notification got to the correct node
                     // load the item and check the owner, if it's logged in and the locationID is loaded by us
                     // that means the item should be kept here
-                    if (this.ItemManager.TryGetItem(item.LocationID, out ItemEntity location) == false || this.CharacterManager.IsCharacterConnected(item.OwnerID) == false)
+                    if (this.ItemFactory.TryGetItem(item.LocationID, out ItemEntity location) == false || this.CharacterManager.IsCharacterConnected(item.OwnerID) == false)
                     {
                         // this item should not be loaded, so unload and return
-                        this.ItemManager.UnloadItem(item);
+                        this.ItemFactory.UnloadItem(item);
                         return;
                     }
 
@@ -478,7 +477,7 @@ namespace Node.Network
 
                     if (locationBelongsToUs == false)
                     {
-                        this.ItemManager.UnloadItem(item);
+                        this.ItemFactory.UnloadItem(item);
                         return;
                     }
                 }
@@ -528,12 +527,12 @@ namespace Node.Network
                 this.NotificationManager.NotifyCharacter(item.OwnerID, "OnMultiEvent", 
                     new PyTuple(1) {[0] = new PyList(1) {[0] = itemChange}});
 
-                if (item.LocationID == this.ItemManager.LocationRecycler.ID)
+                if (item.LocationID == this.ItemFactory.LocationRecycler.ID)
                     // the item is removed off the database if the new location is the recycler
                     item.Destroy();
-                else if (item.LocationID == this.ItemManager.LocationMarket.ID)
+                else if (item.LocationID == this.ItemFactory.LocationMarket.ID)
                     // items that are moved to the market can be unloaded
-                    this.ItemManager.UnloadItem(item);
+                    this.ItemFactory.UnloadItem(item);
                 else
                     // save the item if the new location is not removal
                     item.Persist();    

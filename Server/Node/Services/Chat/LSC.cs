@@ -27,17 +27,17 @@ namespace Node.Services.Chat
         private ChatDB DB { get; }
         private CharacterDB CharacterDB { get; }
         private Channel Log;
-        private ItemManager ItemManager { get; }
+        private ItemFactory ItemFactory { get; }
         private NodeContainer NodeContainer { get; }
         private NotificationManager NotificationManager { get; }
         private MachoNet MachoNet { get; }
 
-        public LSC(ChatDB db, MessagesDB messagesDB, CharacterDB characterDB, ItemManager itemManager, NodeContainer nodeContainer, Logger logger, NotificationManager notificationManager, MachoNet machoNet)
+        public LSC(ChatDB db, MessagesDB messagesDB, CharacterDB characterDB, ItemFactory itemFactory, NodeContainer nodeContainer, Logger logger, NotificationManager notificationManager, MachoNet machoNet)
         {
             this.DB = db;
             this.MessagesDB = messagesDB;
             this.CharacterDB = characterDB;
-            this.ItemManager = itemManager;
+            this.ItemFactory = itemFactory;
             this.NodeContainer = nodeContainer;
             this.NotificationManager = notificationManager;
             this.MachoNet = machoNet;
@@ -586,10 +586,10 @@ namespace Node.Services.Chat
                 if (characterID == callerCharacterID)
                     throw new ChtCannotInviteSelf();
                 
-                if (ItemManager.IsNPC(characterID) == true)
+                if (ItemFactory.IsNPC(characterID) == true)
                 {
                     throw new ChtNPC(
-                        this.ItemManager.GetItem<Character>(characterID).Name
+                        this.ItemFactory.GetItem<Character>(characterID).Name
                     );
                 }
                 
@@ -601,7 +601,7 @@ namespace Node.Services.Chat
                 if (this.DB.IsCharacterMemberOfChannel(channelID, characterID) == true)
                     throw new ChtAlreadyInChannel(this.CharacterDB.GetCharacterName(characterID));
 
-                Character character = this.ItemManager.GetItem<Character>(callerCharacterID);
+                Character character = this.ItemFactory.GetItem<Character>(callerCharacterID);
 
                 PyTuple args = new PyTuple(4)
                 {

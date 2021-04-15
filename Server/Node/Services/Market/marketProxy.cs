@@ -32,27 +32,25 @@ namespace Node.Services.Market
         private CharacterDB CharacterDB { get; }
         private ItemDB ItemDB { get; }
         private CacheStorage CacheStorage { get; }
-        private ItemManager ItemManager { get; }
-        private TypeManager TypeManager { get; }
+        private ItemFactory ItemFactory { get; }
+        private TypeManager TypeManager => this.ItemFactory.TypeManager;
         private SolarSystemDB SolarSystemDB { get; }
         private NodeContainer NodeContainer { get; }
         private ClientManager ClientManager { get; }
-        private SystemManager SystemManager { get; }
+        private SystemManager SystemManager => this.ItemFactory.SystemManager;
         private NotificationManager NotificationManager { get; }
         private WalletManager WalletManager { get; }
         
-        public marketProxy(MarketDB db, CharacterDB characterDB, ItemDB itemDB, SolarSystemDB solarSystemDB, ItemManager itemManager, TypeManager typeManager, CacheStorage cacheStorage, NodeContainer nodeContainer, ClientManager clientManager, SystemManager systemManager, NotificationManager notificationManager, WalletManager walletManager)
+        public marketProxy(MarketDB db, CharacterDB characterDB, ItemDB itemDB, SolarSystemDB solarSystemDB, ItemFactory itemFactory, CacheStorage cacheStorage, NodeContainer nodeContainer, ClientManager clientManager, NotificationManager notificationManager, WalletManager walletManager)
         {
             this.DB = db;
             this.CharacterDB = characterDB;
             this.ItemDB = itemDB;
             this.SolarSystemDB = solarSystemDB;
             this.CacheStorage = cacheStorage;
-            this.ItemManager = itemManager;
-            this.TypeManager = typeManager;
+            this.ItemFactory = itemFactory;
             this.NodeContainer = nodeContainer;
             this.ClientManager = clientManager;
-            this.SystemManager = systemManager;
             this.NotificationManager = notificationManager;
             this.WalletManager = walletManager;
         }
@@ -187,7 +185,7 @@ namespace Node.Services.Market
 
         private void CheckSellOrderDistancePermissions(Character character, int stationID)
         {
-            Station station = this.ItemManager.GetStaticStation(stationID);
+            Station station = this.ItemFactory.GetStaticStation(stationID);
 
             if (character.RegionID != station.RegionID)
                 throw new MktInvalidRegion();
@@ -208,7 +206,7 @@ namespace Node.Services.Market
             if (duration == 0)
                 return;
             
-            Station station = this.ItemManager.GetStaticStation(stationID);
+            Station station = this.ItemFactory.GetStaticStation(stationID);
 
             if (character.RegionID != station.RegionID)
                 throw new MktInvalidRegion();
@@ -249,7 +247,7 @@ namespace Node.Services.Market
 
         private void PlaceImmediateSellOrderChar(MySqlConnection connection, Wallet wallet, Character character, int itemID, int typeID, int stationID, int quantity, double price, Client client)
         {
-            int solarSystemID = this.ItemManager.GetStaticStation(stationID).SolarSystemID;
+            int solarSystemID = this.ItemFactory.GetStaticStation(stationID).SolarSystemID;
             
             // look for matching buy orders
             MarketOrder[] orders = this.DB.FindMatchingOrders(connection, price, typeID, character.ID, solarSystemID, TransactionType.Buy);
@@ -316,12 +314,12 @@ namespace Node.Services.Market
                     this.WalletManager.CreateTransactionRecord(order.CharacterID, TransactionType.Buy, character.ID, typeID, quantityToSell, price, stationID);
                     
                     // create the new item that will be used by the player
-                    ItemEntity item = this.ItemManager.CreateSimpleItem(
+                    ItemEntity item = this.ItemFactory.CreateSimpleItem(
                         this.TypeManager[typeID], order.CharacterID, stationID, Flags.Hangar, quantityToSell
                     );
                     
                     // immediately unload it, if it has to be loaded the OnItemUpdate notification will take care of that
-                    this.ItemManager.UnloadItem(item);
+                    this.ItemFactory.UnloadItem(item);
                     
                     // check if the station it's at is loaded and notify the node in question
                     // if not take care of the item notification ourselves
@@ -329,11 +327,11 @@ namespace Node.Services.Market
 
                     if (stationNode == 0 || this.SystemManager.StationBelongsToUs(stationID) == true)
                     {
-                        this.NotificationManager.NotifyCharacter(item.OwnerID, Notifications.Client.Inventory.OnItemChange.BuildLocationChange(item, this.ItemManager.LocationMarket.ID));
+                        this.NotificationManager.NotifyCharacter(item.OwnerID, Notifications.Client.Inventory.OnItemChange.BuildLocationChange(item, this.ItemFactory.LocationMarket.ID));
                     }
                     else
                     {
-                        this.NotificationManager.NotifyNode(stationNode, OnItemChange.BuildLocationChange(itemID, this.ItemManager.LocationMarket.ID, stationID));
+                        this.NotificationManager.NotifyNode(stationNode, OnItemChange.BuildLocationChange(itemID, this.ItemFactory.LocationMarket.ID, stationID));
                     }
                 }
 
@@ -363,12 +361,12 @@ namespace Node.Services.Market
                 // load the items here and send proper notifications
                 foreach ((int _, MarketDB.ItemQuantityEntry entry) in items)
                 {
-                    ItemEntity item = this.ItemManager.LoadItem(entry.ItemID);
+                    ItemEntity item = this.ItemFactory.LoadItem(entry.ItemID);
 
                     if (entry.Quantity == 0)
                     {
                         // item has to be destroyed
-                        this.ItemManager.DestroyItem(item);
+                        this.ItemFactory.DestroyItem(item);
                         // notify item destroyal
                         client.NotifyMultiEvent(Notifications.Client.Inventory.OnItemChange.BuildLocationChange(item, stationID));
                     }
@@ -379,7 +377,7 @@ namespace Node.Services.Market
                         // notify the client
                         client.NotifyMultiEvent(Notifications.Client.Inventory.OnItemChange.BuildQuantityChange(item, entry.OriginalQuantity));
                         // unload the item if it's not needed
-                        this.ItemManager.UnloadItem(item);
+                        this.ItemFactory.UnloadItem(item);
                     }
                 }
             }
@@ -391,7 +389,7 @@ namespace Node.Services.Market
                 foreach ((int _, MarketDB.ItemQuantityEntry entry) in items)
                 {
                     if (entry.Quantity == 0)
-                        changes.AddChange(entry.ItemID, "locationID", stationID, this.ItemManager.LocationMarket.ID);
+                        changes.AddChange(entry.ItemID, "locationID", stationID, this.ItemFactory.LocationMarket.ID);
                     else
                         changes.AddChange(entry.ItemID, "quantity", entry.OriginalQuantity, entry.Quantity);
                 }
@@ -471,7 +469,7 @@ namespace Node.Services.Market
 
         private void PlaceImmediateBuyOrderChar(MySqlConnection connection, Wallet wallet, int typeID, Character character, int stationID, int quantity, double price, int range, CallInformation call)
         {
-            int solarSystemID = this.ItemManager.GetStaticStation(stationID).SolarSystemID;
+            int solarSystemID = this.ItemFactory.GetStaticStation(stationID).SolarSystemID;
 
             // look for matching sell orders
             MarketOrder[] orders = this.DB.FindMatchingOrders(connection, price, typeID, character.ID, solarSystemID, TransactionType.Sell);
@@ -521,19 +519,19 @@ namespace Node.Services.Market
                     long stationNode = this.SystemManager.GetNodeStationBelongsTo(stationID);
                         
                     // create the new item that will be used by the player
-                    ItemEntity item = this.ItemManager.CreateSimpleItem(
+                    ItemEntity item = this.ItemFactory.CreateSimpleItem(
                         this.TypeManager[typeID], character.ID, stationID, Flags.Hangar, quantityToBuy
                     );
                     // immediately unload it, if it has to be loaded the OnItemUpdate notification will take care of that
-                    this.ItemManager.UnloadItem(item);
+                    this.ItemFactory.UnloadItem(item);
 
                     if (stationNode == 0 || this.SystemManager.StationBelongsToUs(stationID) == true)
                     {
-                        this.NotificationManager.NotifyCharacter(character.ID, Notifications.Client.Inventory.OnItemChange.BuildLocationChange(item, this.ItemManager.LocationMarket.ID));
+                        this.NotificationManager.NotifyCharacter(character.ID, Notifications.Client.Inventory.OnItemChange.BuildLocationChange(item, this.ItemFactory.LocationMarket.ID));
                     }
                     else
                     {
-                        this.NotificationManager.NotifyNode(stationNode, OnItemChange.BuildLocationChange(item.ID, this.ItemManager.LocationMarket.ID, stationID));
+                        this.NotificationManager.NotifyNode(stationNode, OnItemChange.BuildLocationChange(item.ID, this.ItemFactory.LocationMarket.ID, stationID));
                     }
                 }
 
@@ -583,7 +581,7 @@ namespace Node.Services.Market
             PyDataType located, CallInformation call)
         {
             // get solarSystem for the station
-            Character character = this.ItemManager.GetItem<Character>(call.Client.EnsureCharacterIsSelected());
+            Character character = this.ItemFactory.GetItem<Character>(call.Client.EnsureCharacterIsSelected());
             double brokerCost = 0.0;
             
             // if the order is not immediate check the amount of orders the character has
@@ -619,7 +617,7 @@ namespace Node.Services.Market
         {
             int callerCharacterID = call.Client.EnsureCharacterIsSelected();
 
-            Character character = this.ItemManager.GetItem<Character>(callerCharacterID);
+            Character character = this.ItemFactory.GetItem<Character>(callerCharacterID);
             
             using MySqlConnection connection = this.DB.AcquireMarketLock();
             try
@@ -647,22 +645,22 @@ namespace Node.Services.Market
                 {
                                             
                     // create the new item that will be used by the player
-                    ItemEntity item = this.ItemManager.CreateSimpleItem(
+                    ItemEntity item = this.ItemFactory.CreateSimpleItem(
                         this.TypeManager[order.TypeID], character.ID, order.LocationID, Flags.Hangar, order.UnitsLeft
                     );
                     // immediately unload it, if it has to be loaded the OnItemUpdate notification will take care of that
-                    this.ItemManager.UnloadItem(item);
+                    this.ItemFactory.UnloadItem(item);
 
                     // check what node this item should be loaded at
                     long stationNode = this.SystemManager.GetNodeStationBelongsTo(order.LocationID);
 
                     if (stationNode == 0 || this.SystemManager.StationBelongsToUs(order.LocationID) == true)
                     {
-                        this.NotificationManager.NotifyCharacter(character.ID, Notifications.Client.Inventory.OnItemChange.BuildLocationChange(item, this.ItemManager.LocationMarket.ID));
+                        this.NotificationManager.NotifyCharacter(character.ID, Notifications.Client.Inventory.OnItemChange.BuildLocationChange(item, this.ItemFactory.LocationMarket.ID));
                     }
                     else
                     {
-                        this.NotificationManager.NotifyNode(stationNode, OnItemChange.BuildLocationChange(item.ID, this.ItemManager.LocationMarket.ID, order.LocationID));
+                        this.NotificationManager.NotifyNode(stationNode, OnItemChange.BuildLocationChange(item.ID, this.ItemFactory.LocationMarket.ID, order.LocationID));
                     }
                 }
                 
@@ -683,7 +681,7 @@ namespace Node.Services.Market
         {
             int callerCharacterID = call.Client.EnsureCharacterIsSelected();
 
-            Character character = this.ItemManager.GetItem<Character>(callerCharacterID);
+            Character character = this.ItemFactory.GetItem<Character>(callerCharacterID);
             
             using MySqlConnection connection = this.DB.AcquireMarketLock();
             try
@@ -796,21 +794,21 @@ namespace Node.Services.Market
             // create the item back into the player's hanger
                                     
             // create the new item that will be used by the player
-            ItemEntity item = this.ItemManager.CreateSimpleItem(
+            ItemEntity item = this.ItemFactory.CreateSimpleItem(
                 this.TypeManager[order.TypeID], order.CharacterID, order.LocationID, Flags.Hangar, order.UnitsLeft
             );
             // immediately unload it, if it has to be loaded the OnItemUpdate notification will take care of that
-            this.ItemManager.UnloadItem(item);
+            this.ItemFactory.UnloadItem(item);
 
             long stationNode = this.SystemManager.GetNodeStationBelongsTo(order.LocationID);
 
             if (stationNode == 0 || this.SystemManager.StationBelongsToUs(order.LocationID) == true)
             {
-                this.NotificationManager.NotifyCharacter(order.CharacterID, Notifications.Client.Inventory.OnItemChange.BuildLocationChange(item, this.ItemManager.LocationMarket.ID));
+                this.NotificationManager.NotifyCharacter(order.CharacterID, Notifications.Client.Inventory.OnItemChange.BuildLocationChange(item, this.ItemFactory.LocationMarket.ID));
             }
             else
             {
-                this.NotificationManager.NotifyNode(stationNode, OnItemChange.BuildLocationChange(item.ID, this.ItemManager.LocationMarket.ID, order.LocationID));
+                this.NotificationManager.NotifyNode(stationNode, OnItemChange.BuildLocationChange(item.ID, this.ItemFactory.LocationMarket.ID, order.LocationID));
             }
             
             // finally notify the character about the order change

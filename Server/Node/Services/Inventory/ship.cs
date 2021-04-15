@@ -18,22 +18,18 @@ namespace Node.Services.Inventory
     public class ship : BoundService
     {
         private ItemEntity Location { get; }
-        private ItemManager ItemManager { get; }
-        private TypeManager TypeManager { get; }
-        private SystemManager SystemManager { get; }
-        public ship(ItemManager itemManager, TypeManager typeManager, SystemManager systemManager, BoundServiceManager manager) : base(manager, null)
+        private ItemFactory ItemFactory { get; }
+        private TypeManager TypeManager => this.ItemFactory.TypeManager;
+        private SystemManager SystemManager => this.ItemFactory.SystemManager;
+        public ship(ItemFactory itemFactory, BoundServiceManager manager) : base(manager, null)
         {
-            this.ItemManager = itemManager;
-            this.TypeManager = typeManager;
-            this.SystemManager = systemManager;
+            this.ItemFactory = itemFactory;
         }
 
-        protected ship(ItemEntity location, ItemManager itemManager, TypeManager typeManager, SystemManager systemManager, BoundServiceManager manager, Client client) : base(manager, client)
+        protected ship(ItemEntity location, ItemFactory itemFactory, BoundServiceManager manager, Client client) : base(manager, client)
         {
             this.Location = location;
-            this.ItemManager = itemManager;
-            this.TypeManager = typeManager;
-            this.SystemManager = systemManager;
+            this.ItemFactory = itemFactory;
         }
 
         public override PyInteger MachoResolveObject(PyTuple objectData, PyInteger zero, CallInformation call)
@@ -55,9 +51,9 @@ namespace Node.Services.Inventory
             int solarSystemID = 0;
 
             if (groupID == (int) Groups.SolarSystem)
-                solarSystemID = this.ItemManager.GetStaticSolarSystem(entityID).ID;
+                solarSystemID = this.ItemFactory.GetStaticSolarSystem(entityID).ID;
             else if (groupID == (int) Groups.Station)
-                solarSystemID = this.ItemManager.GetStaticStation(entityID).SolarSystemID;
+                solarSystemID = this.ItemFactory.GetStaticStation(entityID).SolarSystemID;
             else
                 throw new CustomError("Unknown item's groupID");
 
@@ -87,24 +83,24 @@ namespace Node.Services.Inventory
 
             if (group != (int) Groups.Station && group != (int) Groups.SolarSystem)
                 throw new CustomError("Cannot bind ship service to non-solarsystem and non-station locations");
-            if (this.ItemManager.TryGetItem(locationID, out ItemEntity location) == false)
+            if (this.ItemFactory.TryGetItem(locationID, out ItemEntity location) == false)
                 throw new CustomError("This bind request does not belong here");
 
             if (location.Type.Group.ID != group)
                 throw new CustomError("Location and group do not match");
 
-            return new ship(location, this.ItemManager, this.TypeManager, this.SystemManager, this.BoundServiceManager, call.Client);
+            return new ship(location, this.ItemFactory, this.BoundServiceManager, call.Client);
         }
 
         public PyInteger LeaveShip(CallInformation call)
         {
             int callerCharacterID = call.Client.EnsureCharacterIsSelected();
 
-            Character character = this.ItemManager.GetItem<Character>(callerCharacterID);
+            Character character = this.ItemFactory.GetItem<Character>(callerCharacterID);
             // get the item type
             Type capsuleType = this.TypeManager[ItemTypes.Capsule];
             // create a pod for this character
-            ItemInventory capsule = this.ItemManager.CreateShip(capsuleType, this.Location, character);
+            ItemInventory capsule = this.ItemFactory.CreateShip(capsuleType, this.Location, character);
             // update capsule's name
             capsule.Name = character.Name + "'s Capsule";
             // change character's location to the pod
@@ -130,11 +126,11 @@ namespace Node.Services.Inventory
 
             // ensure the item is loaded somewhere in this node
             // this will usually be taken care by the EVE Client
-            if (this.ItemManager.TryGetItem(itemID, out Ship newShip) == false)
+            if (this.ItemFactory.TryGetItem(itemID, out Ship newShip) == false)
                 throw new CustomError("Ships not loaded for player and hangar!");
 
-            Character character = this.ItemManager.GetItem<Character>(callerCharacterID);
-            Ship currentShip = this.ItemManager.GetItem<Ship>((int) call.Client.ShipID);
+            Character character = this.ItemFactory.GetItem<Character>(callerCharacterID);
+            Ship currentShip = this.ItemFactory.GetItem<Ship>((int) call.Client.ShipID);
 
             if (newShip.Singleton == false)
                 throw new CustomError("TooFewSubSystemsToUndock");
@@ -160,7 +156,7 @@ namespace Node.Services.Inventory
             if (currentShip.Type.ID == (int) ItemTypes.Capsule)
             {
                 // destroy the pod from the database
-                this.ItemManager.DestroyItem(currentShip);
+                this.ItemFactory.DestroyItem(currentShip);
                 // notify the player of the item change
                 call.Client.NotifyMultiEvent(OnItemChange.BuildLocationChange(currentShip, this.Location.ID));
             }
@@ -175,10 +171,10 @@ namespace Node.Services.Inventory
             
             // ensure the item is loaded somewhere in this node
             // this will usually be taken care by the EVE Client
-            if (this.ItemManager.TryGetItem(itemID, out Ship ship) == false)
+            if (this.ItemFactory.TryGetItem(itemID, out Ship ship) == false)
                 throw new CustomError("Ships not loaded for player and hangar!");
 
-            Character character = this.ItemManager.GetItem<Character>(callerCharacterID);
+            Character character = this.ItemFactory.GetItem<Character>(callerCharacterID);
 
             if (ship.OwnerID != callerCharacterID)
                 throw new AssembleOwnShipsOnly();
@@ -197,8 +193,8 @@ namespace Node.Services.Inventory
                 call.Client.NotifyMultiEvent(OnItemChange.BuildQuantityChange(ship, ship.Quantity + 1));
   
                 // create the new item in the database
-                Station station = this.ItemManager.GetStaticStation(stationID);
-                ship = this.ItemManager.CreateShip(ship.Type, station, character);
+                Station station = this.ItemFactory.GetStaticStation(stationID);
+                ship = this.ItemFactory.CreateShip(ship.Type, station, character);
                 // notify the new item
                 call.Client.NotifyMultiEvent(OnItemChange.BuildNewItemChange(ship));
             }

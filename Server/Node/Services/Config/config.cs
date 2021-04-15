@@ -13,12 +13,12 @@ namespace Node.Services.Config
     {
         private ConfigDB DB { get; }
         private Channel Log { get; }
-        private ItemManager ItemManager { get; }
+        private ItemFactory ItemFactory { get; }
         
-        public config(ConfigDB db, ItemManager itemManager, Logger log)
+        public config(ConfigDB db, ItemFactory itemFactory, Logger log)
         {
             this.DB = db;
-            this.ItemManager = itemManager;
+            this.ItemFactory = itemFactory;
             this.Log = log.CreateLogChannel("Map");
         }
 
@@ -67,7 +67,7 @@ namespace Node.Services.Config
 
         public PyDataType GetCelestialStatistic(PyInteger celestialID, CallInformation call)
         {
-            if (ItemManager.IsCelestialID(celestialID) == false)
+            if (ItemFactory.IsCelestialID(celestialID) == false)
                 throw new CustomError($"Unexpected celestialID {celestialID}");
             
             // TODO: CHECK FOR STATIC DATA TO FETCH IT OFF MEMORY INSTEAD OF DATABASE?

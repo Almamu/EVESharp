@@ -19,26 +19,24 @@ namespace Node.Services.Inventory
     {
         private int mObjectID;
         
-        private ItemManager ItemManager { get; }
+        private ItemFactory ItemFactory { get; }
         private ItemDB ItemDB { get; }
         private NodeContainer NodeContainer { get; }
-        private SystemManager SystemManager { get; }
+        private SystemManager SystemManager => this.ItemFactory.SystemManager;
 
-        public invbroker(ItemDB itemDB, ItemManager itemManager, NodeContainer nodeContainer, SystemManager systemManager, BoundServiceManager manager) : base(manager, null)
+        public invbroker(ItemDB itemDB, ItemFactory itemFactory, NodeContainer nodeContainer, BoundServiceManager manager) : base(manager, null)
         {
-            this.ItemManager = itemManager;
+            this.ItemFactory = itemFactory;
             this.ItemDB = itemDB;
             this.NodeContainer = nodeContainer;
-            this.SystemManager = systemManager;
         }
 
-        private invbroker(ItemDB itemDB, ItemManager itemManager, NodeContainer nodeContainer, SystemManager systemManager, BoundServiceManager manager, int objectID, Client client) : base(manager, client)
+        private invbroker(ItemDB itemDB, ItemFactory itemFactory, NodeContainer nodeContainer, BoundServiceManager manager, int objectID, Client client) : base(manager, client)
         {
-            this.ItemManager = itemManager;
+            this.ItemFactory = itemFactory;
             this.ItemDB = itemDB;
             this.mObjectID = objectID;
             this.NodeContainer = nodeContainer;
-            this.SystemManager = systemManager;
         }
 
         public override PyInteger MachoResolveObject(PyTuple objectData, PyInteger zero, CallInformation call)
@@ -60,9 +58,9 @@ namespace Node.Services.Inventory
             int solarSystemID = 0;
 
             if (groupID == (int) Groups.SolarSystem)
-                solarSystemID = this.ItemManager.GetStaticSolarSystem(entityID).ID;
+                solarSystemID = this.ItemFactory.GetStaticSolarSystem(entityID).ID;
             else if (groupID == (int) Groups.Station)
-                solarSystemID = this.ItemManager.GetStaticStation(entityID).SolarSystemID;
+                solarSystemID = this.ItemFactory.GetStaticStation(entityID).SolarSystemID;
             else
                 throw new CustomError("Unknown item's groupID");
 
@@ -83,7 +81,7 @@ namespace Node.Services.Inventory
             if (this.MachoResolveObject(tupleData, 0, call) != this.NodeContainer.NodeID)
                 throw new CustomError("Trying to bind an object that does not belong to us!");
             
-            return new invbroker(this.ItemDB, this.ItemManager, this.NodeContainer, this.SystemManager, this.BoundServiceManager, tupleData[0] as PyInteger, call.Client);
+            return new invbroker(this.ItemDB, this.ItemFactory, this.NodeContainer, this.BoundServiceManager, tupleData[0] as PyInteger, call.Client);
         }
 
         private ItemInventory CheckInventoryBeforeLoading(ItemEntity inventoryItem)
@@ -105,16 +103,16 @@ namespace Node.Services.Inventory
             
             // create a meta inventory only if required
             if (inventoryItem is not Ship && inventoryItem is not Character)
-                inventory = this.ItemManager.MetaInventoryManager.RegisterMetaInventoryForOwnerID(inventoryItem, characterID);
+                inventory = this.ItemFactory.MetaInventoryManager.RegisterMetaInventoryForOwnerID(inventoryItem, characterID);
             
             // create an instance of the inventory service and bind it to the item data
-            return BoundInventory.BindInventory(this.ItemDB, inventory, flag, this.ItemManager, this.NodeContainer, this.BoundServiceManager, client);
+            return BoundInventory.BindInventory(this.ItemDB, inventory, flag, this.ItemFactory, this.NodeContainer, this.BoundServiceManager, client);
         }
 
         public PySubStruct GetInventoryFromId(PyInteger itemID, PyInteger one, CallInformation call)
         {
             int callerCharacterID = call.Client.EnsureCharacterIsSelected();
-            ItemEntity inventoryItem = this.ItemManager.LoadItem(itemID);
+            ItemEntity inventoryItem = this.ItemFactory.LoadItem(itemID);
 
             return this.BindInventory(
                 this.CheckInventoryBeforeLoading(inventoryItem),
@@ -149,7 +147,7 @@ namespace Node.Services.Inventory
             }
             
             // get the inventory item first
-            ItemEntity inventoryItem = this.ItemManager.LoadItem(this.mObjectID);
+            ItemEntity inventoryItem = this.ItemFactory.LoadItem(this.mObjectID);
 
             return this.BindInventory(
                 this.CheckInventoryBeforeLoading(inventoryItem),
@@ -166,12 +164,12 @@ namespace Node.Services.Inventory
                 if (itemID == call.Client.ShipID)
                     throw new CantMoveActiveShip();
 
-                ItemEntity item = this.ItemManager.GetItem(itemID);
+                ItemEntity item = this.ItemFactory.GetItem(itemID);
                 // store it's location id
                 int oldLocation = item.LocationID;
                 Flags oldFlag = item.Flag;
                 // remove the item off the ItemManager
-                this.ItemManager.DestroyItem(item);
+                this.ItemFactory.DestroyItem(item);
                 // notify the client of the change
                 call.Client.NotifyMultiEvent(OnItemChange.BuildLocationChange(item, oldFlag, oldLocation));
                 // TODO: CHECK IF THE ITEM HAS ANY META INVENTORY AND/OR BOUND SERVICE
@@ -183,7 +181,7 @@ namespace Node.Services.Inventory
         
         public PyDataType SetLabel(PyInteger itemID, PyString newLabel, CallInformation call)
         {
-            ItemEntity item = this.ItemManager.GetItem(itemID);
+            ItemEntity item = this.ItemFactory.GetItem(itemID);
 
             // ensure the itemID is owned by the client's character
             if (item.OwnerID != call.Client.EnsureCharacterIsSelected())
@@ -205,7 +203,7 @@ namespace Node.Services.Inventory
         public PyDataType AssembleCargoContainer(PyInteger containerID, PyDataType ignored, PyDecimal ignored2,
             CallInformation call)
         {
-            ItemEntity item = this.ItemManager.GetItem(containerID);
+            ItemEntity item = this.ItemFactory.GetItem(containerID);
 
             if (item.OwnerID != call.Client.EnsureCharacterIsSelected())
                 throw new TheItemIsNotYoursToTake(containerID);

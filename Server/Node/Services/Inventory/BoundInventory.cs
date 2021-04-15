@@ -24,23 +24,23 @@ namespace Node.Services.Inventory
         private Flags mFlag;
         private ItemDB ItemDB { get; }
         private NodeContainer NodeContainer { get; }
-        private ItemManager ItemManager { get; }
+        private ItemFactory ItemFactory { get; }
 
-        public BoundInventory(ItemDB itemDB, ItemInventory item, ItemManager itemManager, NodeContainer nodeContainer, BoundServiceManager manager, Client client) : base(manager, client)
+        public BoundInventory(ItemDB itemDB, ItemInventory item, ItemFactory itemFactory, NodeContainer nodeContainer, BoundServiceManager manager, Client client) : base(manager, client)
         {
             this.mInventory = item;
             this.mFlag = Flags.None;
             this.ItemDB = itemDB;
-            this.ItemManager = itemManager;
+            this.ItemFactory = itemFactory;
             this.NodeContainer = nodeContainer;
         }
 
-        public BoundInventory(ItemDB itemDB, ItemInventory item, Flags flag, ItemManager itemManager, NodeContainer nodeContainer, BoundServiceManager manager, Client client) : base(manager, client)
+        public BoundInventory(ItemDB itemDB, ItemInventory item, Flags flag, ItemFactory itemFactory, NodeContainer nodeContainer, BoundServiceManager manager, Client client) : base(manager, client)
         {
             this.mInventory = item;
             this.mFlag = flag;
             this.ItemDB = itemDB;
-            this.ItemManager = itemManager;
+            this.ItemFactory = itemFactory;
             this.NodeContainer = nodeContainer;
         }
 
@@ -263,7 +263,7 @@ namespace Node.Services.Inventory
                     module = shipModule;
 
                 // remove item off the old inventory if required
-                if (this.ItemManager.TryGetItem(item.LocationID, out ItemInventory inventory) == true)
+                if (this.ItemFactory.TryGetItem(item.LocationID, out ItemInventory inventory) == true)
                     inventory.RemoveItem(item);
 
                 if (item.Quantity == 1)
@@ -284,7 +284,7 @@ namespace Node.Services.Inventory
                     // notify the character about the change
                     Client.NotifyMultiEvent(changes);
                     // update meta inventories too
-                    this.ItemManager.MetaInventoryManager.OnItemMoved(item, oldLocation, this.mInventory.ID);
+                    this.ItemFactory.MetaInventoryManager.OnItemMoved(item, oldLocation, this.mInventory.ID);
 
                     // finally persist the item changes
                     item.Persist();
@@ -292,7 +292,7 @@ namespace Node.Services.Inventory
                 else
                 {
                     // item is not a singleton, create a new item, decrease quantity and send notifications
-                    ItemEntity newItem = this.ItemManager.CreateSimpleItem(item.Type, item.OwnerID, this.mInventory.ID, newFlag, 1, false,
+                    ItemEntity newItem = this.ItemFactory.CreateSimpleItem(item.Type, item.OwnerID, this.mInventory.ID, newFlag, 1, false,
                         true);
 
                     item.Quantity -= 1;
@@ -345,7 +345,7 @@ namespace Node.Services.Inventory
             {
             
                 // remove item off the old inventory if required
-                if (this.ItemManager.TryGetItem(item.LocationID, out ItemInventory inventory) == true)
+                if (this.ItemFactory.TryGetItem(item.LocationID, out ItemInventory inventory) == true)
                     inventory.RemoveItem(item);
                 
                 // set the new location for the item
@@ -355,7 +355,7 @@ namespace Node.Services.Inventory
                 // notify the character about the change
                 Client.NotifyMultiEvent(OnItemChange.BuildLocationChange(item, oldFlag, oldLocation));
                 // update meta inventories too
-                this.ItemManager.MetaInventoryManager.OnItemMoved(item, oldLocation, this.mInventory.ID);
+                this.ItemFactory.MetaInventoryManager.OnItemMoved(item, oldLocation, this.mInventory.ID);
 
                 // ensure the new inventory knows
                 this.mInventory.AddItem(item);
@@ -370,7 +370,7 @@ namespace Node.Services.Inventory
             if (itemID == call.Client.ShipID)
                 throw new CantMoveActiveShip();
 
-            ItemEntity item = this.ItemManager.GetItem(itemID);
+            ItemEntity item = this.ItemFactory.GetItem(itemID);
             
             this.PreMoveItemCheck(item, this.mFlag, item.Quantity);
             this.MoveItemHere(item, this.mFlag);
@@ -383,7 +383,7 @@ namespace Node.Services.Inventory
             if (itemID == call.Client.ShipID)
                 throw new CantMoveActiveShip();
 
-            ItemEntity item = this.ItemManager.GetItem(itemID);
+            ItemEntity item = this.ItemFactory.GetItem(itemID);
             
             this.PreMoveItemCheck(item, this.mFlag, item.Quantity);
             this.MoveItemHere(item, this.mFlag);
@@ -397,7 +397,7 @@ namespace Node.Services.Inventory
                 throw new CantMoveActiveShip();
 
             // TODO: ADD CONSTRAINTS CHECKS FOR THE FLAG
-            ItemEntity item = this.ItemManager.GetItem(itemID);
+            ItemEntity item = this.ItemFactory.GetItem(itemID);
 
             // ensure there's enough quantity in the stack to split it
             if (quantity > item.Quantity)
@@ -416,7 +416,7 @@ namespace Node.Services.Inventory
             else
             {
                 // create a new item with the same specs as the original
-                ItemEntity clone = this.ItemManager.CreateSimpleItem(item.Type, item.OwnerID, this.mInventory.ID, (Flags) (int) flag, quantity,
+                ItemEntity clone = this.ItemFactory.CreateSimpleItem(item.Type, item.OwnerID, this.mInventory.ID, (Flags) (int) flag, quantity,
                     item.Contraband, item.Singleton);
         
                 // subtract the quantity off the original item
@@ -439,7 +439,7 @@ namespace Node.Services.Inventory
                 // null quantity means all the items in the list
                 foreach (PyInteger itemID in adds.GetEnumerable<PyInteger>())
                 {
-                    ItemEntity item = this.ItemManager.GetItem(itemID);
+                    ItemEntity item = this.ItemFactory.GetItem(itemID);
                     
                     // check and then move the item
                     this.PreMoveItemCheck(item, (Flags) (int) flag, item.Quantity);
@@ -475,7 +475,7 @@ namespace Node.Services.Inventory
                 if (this.mInventory.Items.TryGetValue(toItemID, out ItemEntity toItem) == false)
                     continue;
 
-                ItemEntity fromItem = this.ItemManager.GetItem(fromItemID);
+                ItemEntity fromItem = this.ItemFactory.GetItem(fromItemID);
 
                 // ignore singleton items
                 if (fromItem.Singleton == true || toItem.Singleton == true)
@@ -488,7 +488,7 @@ namespace Node.Services.Inventory
                 {
                     int oldLocationID = fromItem.LocationID;
                     // remove the item
-                    this.ItemManager.DestroyItem(fromItem);
+                    this.ItemFactory.DestroyItem(fromItem);
                     // notify the client about the item too
                     call.Client.NotifyMultiEvent(OnItemChange.BuildLocationChange(fromItem, oldLocationID));
                 }
@@ -539,7 +539,7 @@ namespace Node.Services.Inventory
                     secondItem.Quantity += firstItem.Quantity;
                     // also create the notification for the user
                     call.Client.NotifyMultiEvent(OnItemChange.BuildQuantityChange(secondItem, oldQuantity));
-                    this.ItemManager.DestroyItem(firstItem);
+                    this.ItemFactory.DestroyItem(firstItem);
                     // notify the client about the item too
                     call.Client.NotifyMultiEvent(OnItemChange.BuildLocationChange(firstItem, firstItem.Flag, secondItem.LocationID));
                     // ensure the second item is saved to database too
@@ -570,9 +570,9 @@ namespace Node.Services.Inventory
             return null;
         }
 
-        public static PySubStruct BindInventory(ItemDB itemDB, ItemInventory item, Flags flag, ItemManager itemManager, NodeContainer nodeContainer, BoundServiceManager boundServiceManager, Client client)
+        public static PySubStruct BindInventory(ItemDB itemDB, ItemInventory item, Flags flag, ItemFactory itemFactory, NodeContainer nodeContainer, BoundServiceManager boundServiceManager, Client client)
         {
-            BoundService instance = new BoundInventory(itemDB, item, flag, itemManager, nodeContainer, boundServiceManager, client);
+            BoundService instance = new BoundInventory(itemDB, item, flag, itemFactory, nodeContainer, boundServiceManager, client);
             // bind the service
             int boundID = boundServiceManager.BoundService(instance);
             // build the bound service string
@@ -613,7 +613,7 @@ namespace Node.Services.Inventory
                 Flags oldFlag = item.Flag;
                 
                 // destroy the rig
-                this.ItemManager.DestroyItem(item);
+                this.ItemFactory.DestroyItem(item);
 
                 // notify the client about the change
                 call.Client.NotifyMultiEvent(OnItemChange.BuildLocationChange(item, oldFlag, oldLocationID));

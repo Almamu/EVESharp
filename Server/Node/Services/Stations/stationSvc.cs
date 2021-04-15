@@ -9,12 +9,12 @@ namespace Node.Services.Stations
 {
     public class stationSvc : IService
     {
-        private ItemManager ItemManager { get; }
+        private ItemFactory ItemFactory { get; }
         private CacheStorage CacheStorage { get; }
         
-        public stationSvc(ItemManager itemManager, CacheStorage cacheStorage)
+        public stationSvc(ItemFactory itemFactory, CacheStorage cacheStorage)
         {
-            this.ItemManager = itemManager;
+            this.ItemFactory = itemFactory;
             this.CacheStorage = cacheStorage;
         }
 
@@ -27,7 +27,7 @@ namespace Node.Services.Stations
             {
                 this.CacheStorage.StoreCall(
                     "stationSvc", $"GetStation_{stationID}", 
-                    this.ItemManager.Stations[stationID].GetStationInfo(), 
+                    this.ItemFactory.Stations[stationID].GetStationInfo(), 
                     DateTime.UtcNow.ToFileTimeUtc()
                 );
             }
@@ -39,7 +39,7 @@ namespace Node.Services.Stations
 
         public PyDataType GetSolarSystem(PyInteger solarSystemID, CallInformation call)
         {
-            return this.ItemManager.SolarSystems[solarSystemID].GetSolarSystemInfo();
+            return this.ItemFactory.SolarSystems[solarSystemID].GetSolarSystemInfo();
         }
     }
 }

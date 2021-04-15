@@ -25,30 +25,28 @@ namespace Node.Services.Characters
     {
         private ItemDB ItemDB { get; }
         private MarketDB MarketDB { get; }
-        private ItemManager ItemManager { get; }
-        private TypeManager TypeManager { get; }
+        private ItemFactory ItemFactory { get; }
+        private TypeManager TypeManager => this.ItemFactory.TypeManager;
         private SystemManager SystemManager { get; }
         private NotificationManager NotificationManager { get; }
         private WalletManager WalletManager { get; }
         
-        public jumpCloneSvc(ItemDB itemDB, MarketDB marketDB, ItemManager itemManager, TypeManager typeManager,
+        public jumpCloneSvc(ItemDB itemDB, MarketDB marketDB, ItemFactory itemFactory,
             SystemManager systemManager, WalletManager walletManager, BoundServiceManager manager) : base(manager, null)
         {
             this.ItemDB = itemDB;
             this.MarketDB = marketDB;
-            this.ItemManager = itemManager;
-            this.TypeManager = typeManager;
+            this.ItemFactory = itemFactory;
             this.SystemManager = systemManager;
             this.WalletManager = walletManager;
         }
         
-        protected jumpCloneSvc(ItemDB itemDB, MarketDB marketDB, ItemManager itemManager, TypeManager typeManager,
+        protected jumpCloneSvc(ItemDB itemDB, MarketDB marketDB, ItemFactory itemFactory,
             SystemManager systemManager, BoundServiceManager manager, WalletManager walletManager, Client client) : base(manager, client)
         {
             this.ItemDB = itemDB;
             this.MarketDB = marketDB;
-            this.ItemManager = itemManager;
-            this.TypeManager = typeManager;
+            this.ItemFactory = itemFactory;
             this.SystemManager = systemManager;
             this.WalletManager = walletManager;
         }
@@ -82,9 +80,9 @@ namespace Node.Services.Characters
             int solarSystemID = 0;
 
             if (groupID == (int) Groups.SolarSystem)
-                solarSystemID = this.ItemManager.GetStaticSolarSystem(entityID).ID;
+                solarSystemID = this.ItemFactory.GetStaticSolarSystem(entityID).ID;
             else if (groupID == (int) Groups.Station)
-                solarSystemID = this.ItemManager.GetStaticStation(entityID).SolarSystemID;
+                solarSystemID = this.ItemFactory.GetStaticStation(entityID).SolarSystemID;
             else
                 throw new CustomError("Unknown item's groupID");
 
@@ -106,14 +104,14 @@ namespace Node.Services.Characters
             if (this.MachoResolveObject(tupleData, 0, call) != this.BoundServiceManager.Container.NodeID)
                 throw new CustomError("Trying to bind an object that does not belong to us!");
 
-            return new jumpCloneSvc(this.ItemDB, this.MarketDB, this.ItemManager, this.TypeManager, this.SystemManager, this.BoundServiceManager, this.WalletManager, call.Client);
+            return new jumpCloneSvc(this.ItemDB, this.MarketDB, this.ItemFactory, this.SystemManager, this.BoundServiceManager, this.WalletManager, call.Client);
         }
 
         public PyDataType GetCloneState(CallInformation call)
         {
             int callerCharacterID = call.Client.EnsureCharacterIsSelected();
             
-            Character character = this.ItemManager.GetItem<Character>(callerCharacterID);
+            Character character = this.ItemFactory.GetItem<Character>(callerCharacterID);
 
             return KeyVal.FromDictionary(new PyDictionary
                 {
@@ -129,7 +127,7 @@ namespace Node.Services.Characters
             // if the clone is not loaded the clone cannot be removed, players can only remove clones from where they're at
             int callerCharacterID = call.Client.EnsureCharacterIsSelected();
             
-            if (this.ItemManager.TryGetItem(jumpCloneID, out ItemEntity clone) == false)
+            if (this.ItemFactory.TryGetItem(jumpCloneID, out ItemEntity clone) == false)
                 throw new JumpCantDestroyNonLocalClone();
             if (clone.LocationID != call.Client.LocationID)
                 throw new JumpCantDestroyNonLocalClone();
@@ -137,7 +135,7 @@ namespace Node.Services.Characters
                 throw new MktNotOwner();
 
             // finally destroy the clone, this also destroys all the implants in it
-            this.ItemManager.DestroyItem(clone);
+            this.ItemFactory.DestroyItem(clone);
             
             // let the client know that the clones were updated
             this.OnCloneUpdate(callerCharacterID);
@@ -170,7 +168,7 @@ namespace Node.Services.Characters
             int callerCharacterID = call.Client.EnsureCharacterIsSelected();
             int stationID = call.Client.EnsureCharacterIsInStation();
             
-            Character character = this.ItemManager.GetItem<Character>(callerCharacterID);
+            Character character = this.ItemFactory.GetItem<Character>(callerCharacterID);
             
             // check the maximum number of clones the character has assigned
             long maximumClonesAvailable = character.GetSkillLevel(ItemTypes.InfomorphPsychology);
@@ -190,7 +188,7 @@ namespace Node.Services.Characters
             int cost = this.GetPriceForClone(call);
             
             // get character's station
-            Station station = this.ItemManager.GetStaticStation(stationID);
+            Station station = this.ItemFactory.GetStaticStation(stationID);
 
             using Wallet wallet = this.WalletManager.AcquireWallet(character.ID, 1000);
             {
@@ -204,7 +202,7 @@ namespace Node.Services.Characters
             Type cloneType = this.TypeManager[ItemTypes.CloneGradeAlpha];
             
             // create a new clone on the itemDB
-            Clone clone = this.ItemManager.CreateClone(cloneType, station, character);
+            Clone clone = this.ItemFactory.CreateClone(cloneType, station, character);
 
             // finally create the jump clone and invalidate caches
             this.OnCloneUpdate(callerCharacterID);

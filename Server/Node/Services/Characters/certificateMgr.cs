@@ -18,14 +18,14 @@ namespace Node.Services.Characters
     public class certificateMgr : IService
     {
         private CertificatesDB DB { get; }
-        private ItemManager ItemManager { get; }
+        private ItemFactory ItemFactory { get; }
         private CacheStorage CacheStorage { get; }
         private Dictionary<int, List<Relationship>> CertificateRelationships { get; }
         
-        public certificateMgr(CertificatesDB db, ItemManager itemManager, CacheStorage cacheStorage)
+        public certificateMgr(CertificatesDB db, ItemFactory itemFactory, CacheStorage cacheStorage)
         {
             this.DB = db;
-            this.ItemManager = itemManager;
+            this.ItemFactory = itemFactory;
             this.CacheStorage = cacheStorage;
 
             // get the full list of requirements
@@ -82,7 +82,7 @@ namespace Node.Services.Characters
         public PyBool GrantCertificate(PyInteger certificateID, CallInformation call)
         {
             int callerCharacterID = call.Client.EnsureCharacterIsSelected();
-            Character character = this.ItemManager.GetItem<Character>(callerCharacterID);
+            Character character = this.ItemFactory.GetItem<Character>(callerCharacterID);
 
             Dictionary<int, Skill> skills = character.InjectedSkillsByTypeID;
             List<int> grantedCertificates = this.DB.GetCertificateListForCharacter(callerCharacterID);
@@ -113,7 +113,7 @@ namespace Node.Services.Characters
         public PyDataType BatchCertificateGrant(PyList certificateList, CallInformation call)
         {
             int callerCharacterID = call.Client.EnsureCharacterIsSelected();
-            Character character = this.ItemManager.GetItem<Character>(callerCharacterID);
+            Character character = this.ItemFactory.GetItem<Character>(callerCharacterID);
 
             PyList<PyInteger> result = new PyList<PyInteger>();
             Dictionary<int, Skill> skills = character.InjectedSkillsByTypeID;

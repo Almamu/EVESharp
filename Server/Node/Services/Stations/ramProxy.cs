@@ -14,18 +14,18 @@ namespace Node.Services.Stations
 {
     public class ramProxy : IService
     {
-        private ItemManager ItemManager { get; }
+        private ItemFactory ItemFactory { get; }
         private RAMDB DB { get; }
         
-        public ramProxy(RAMDB ramDb, ItemManager itemManager)
+        public ramProxy(RAMDB ramDb, ItemFactory itemFactory)
         {
             this.DB = ramDb;
-            this.ItemManager = itemManager;
+            this.ItemFactory = itemFactory;
         }
         
         public PyDataType GetRelevantCharSkills(CallInformation call)
         {
-            Character character = this.ItemManager.GetItem<Character>(call.Client.EnsureCharacterIsSelected());
+            Character character = this.ItemFactory.GetItem<Character>(call.Client.EnsureCharacterIsSelected());
             
             // i guess this call fetches skills that affect maximumManufacturingJobCount and maximumResearchJobCount
             return new PyTuple(2)

@@ -16,14 +16,14 @@ namespace Node.Services.War
     {
         private StandingDB DB { get; }
         private CacheStorage CacheStorage { get; }
-        private ItemManager ItemManager { get; }
+        private ItemFactory ItemFactory { get; }
         private NotificationManager NotificationManager { get; }
         
-        public standing2(CacheStorage cacheStorage, StandingDB db, ItemManager itemManager, NotificationManager notificationManager)
+        public standing2(CacheStorage cacheStorage, StandingDB db, ItemFactory itemFactory, NotificationManager notificationManager)
         {
             this.CacheStorage = cacheStorage;
             this.DB = db;
-            this.ItemManager = itemManager;
+            this.ItemFactory = itemFactory;
             this.NotificationManager = notificationManager;
         }
 
@@ -79,7 +79,7 @@ namespace Node.Services.War
 
         public PyDecimal GetSecurityRating(PyInteger characterID, CallInformation call)
         {
-            if (this.ItemManager.TryGetItem(characterID, out Character character) == true)
+            if (this.ItemFactory.TryGetItem(characterID, out Character character) == true)
             {
                 return character.SecurityRating;
             }

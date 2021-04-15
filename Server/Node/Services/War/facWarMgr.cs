@@ -12,11 +12,11 @@ namespace Node.Services.War
     public class facWarMgr : IService
     {
         private CacheStorage CacheStorage { get; }
-        private ItemManager ItemManager { get; }
-        public facWarMgr(CacheStorage cacheStorage, ItemManager itemManager)
+        private ItemFactory ItemFactory { get; }
+        public facWarMgr(CacheStorage cacheStorage, ItemFactory itemFactory)
         {
             this.CacheStorage = cacheStorage;
-            this.ItemManager = itemManager;
+            this.ItemFactory = itemFactory;
         }
 
         public PyDataType GetWarFactions(CallInformation call)
@@ -69,7 +69,7 @@ namespace Node.Services.War
 
         public PyInteger GetFactionMilitiaCorporation(PyInteger factionID, CallInformation call)
         {
-            return this.ItemManager.GetStaticFaction(factionID).MilitiaCorporationId;
+            return this.ItemFactory.GetStaticFaction(factionID).MilitiaCorporationId;
         }
     }
 }

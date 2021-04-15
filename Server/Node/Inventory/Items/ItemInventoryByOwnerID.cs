@@ -17,7 +17,7 @@ namespace Node.Inventory.Items
         {
             lock (this)
             {
-                this.mItems = this.ItemFactory.ItemManager.LoadItemsLocatedAtByOwner(this, this.ItemOwnerID);
+                this.mItems = this.ItemFactory.LoadItemsLocatedAtByOwner(this, this.ItemOwnerID);
                 
                 this.ContentsLoaded = true;
             }

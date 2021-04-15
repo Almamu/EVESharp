@@ -34,6 +34,7 @@ using Node.Inventory.Items.Dogma;
 using Node.Inventory.Items.Types;
 using Node.Inventory.SystemEntities;
 using Node.Network;
+using Node.StaticData;
 using Node.StaticData.Dogma;
 using Node.StaticData.Inventory;
 using PythonTypes.Types.Database;
@@ -675,7 +676,7 @@ namespace Node.Database
 
         public Skill LoadSkill(ItemEntity item)
         {
-            return new Skill(item);
+            return new Skill(item, this.Container.Constants[Constants.skillPointMultiplier]);
         }
 
         public Ship LoadShip(ItemEntity item)
@@ -849,7 +850,7 @@ namespace Node.Database
 
                 while (reader.Read())
                 {
-                    items[reader.GetInt32(0)] = this.ItemFactory.ItemManager.LoadItem(reader.GetInt32(0));
+                    items[reader.GetInt32(0)] = this.ItemFactory.LoadItem(reader.GetInt32(0));
                 }
 
                 return items;
@@ -875,7 +876,7 @@ namespace Node.Database
 
                 while (reader.Read())
                 {
-                    items[reader.GetInt32(0)] = this.ItemFactory.ItemManager.LoadItem(reader.GetInt32(0));
+                    items[reader.GetInt32(0)] = this.ItemFactory.LoadItem(reader.GetInt32(0));
                 }
 
                 return items;

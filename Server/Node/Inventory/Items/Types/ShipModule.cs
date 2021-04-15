@@ -70,8 +70,8 @@ namespace Node.Inventory.Items.Types
             if (godmaEffect.ShouldStart == true)
                 return;
             
-            Ship ship = this.ItemFactory.ItemManager.GetItem<Ship>(this.LocationID);
-            Character character = this.ItemFactory.ItemManager.GetItem<Character>(this.OwnerID);
+            Ship ship = this.ItemFactory.GetItem<Ship>(this.LocationID);
+            Character character = this.ItemFactory.GetItem<Character>(this.OwnerID);
 
             try
             {
@@ -138,8 +138,8 @@ namespace Node.Inventory.Items.Types
             if (godmaEffect.ShouldStart == false)
                 return;
             
-            Ship ship = this.ItemFactory.ItemManager.GetItem<Ship>(this.LocationID);
-            Character character = this.ItemFactory.ItemManager.GetItem<Character>(this.OwnerID);
+            Ship ship = this.ItemFactory.GetItem<Ship>(this.LocationID);
+            Character character = this.ItemFactory.GetItem<Character>(this.OwnerID);
             
             // create the environment for this run
             Node.Dogma.Interpreter.Environment env = new Node.Dogma.Interpreter.Environment()

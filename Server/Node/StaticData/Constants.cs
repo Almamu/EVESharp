@@ -20,5 +20,8 @@
         public const string marketCommissionPercentage = "marketCommissionPercentage";
         public const string mktMinimumFee = "mktMinimumFee";
         public const string mktModificationDelay = "mktModificationDelay";
+        
+        // skills
+        public const string skillPointMultiplier = "skillPointMultiplier";
     }
 }
