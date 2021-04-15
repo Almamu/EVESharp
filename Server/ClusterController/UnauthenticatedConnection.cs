@@ -12,9 +12,8 @@ namespace ClusterController
         private Channel Log { get; set; }
 
         public UnauthenticatedConnection(EVEClientSocket socket, ConnectionManager connectionManager, Logger logger)
-            : base(socket, connectionManager)
+            : base(socket, connectionManager, logger.CreateLogChannel($"Unauthenticated-{socket.GetRemoteAddress()}"))
         {
-            this.Log = logger.CreateLogChannel($"Unauthenticated-{this.Socket.GetRemoteAddress()}");
             // set the new exception handler
             this.Socket.SetExceptionHandler(ExceptionHandler);
             // send the low level version exchange
@@ -29,24 +28,6 @@ namespace ClusterController
             this.ConnectionManager.RemoveUnauthenticatedConnection(this);
             // close the socket forcefully
             this.Socket.ForcefullyDisconnect();
-        }
-
-        private void SendLowLevelVersionExchange()
-        {
-            Log.Debug("Sending LowLevelVersionExchange...");
-
-            LowLevelVersionExchange data = new LowLevelVersionExchange
-            {
-                Codename = Game.CODENAME,
-                Birthday = Game.BIRTHDAY,
-                Build = Game.BUILD,
-                MachoVersion = Game.MACHO_VERSION,
-                Version = Game.VERSION,
-                UserCount = this.ConnectionManager.ClientsCount,
-                Region = Game.REGION
-            };
-
-            this.Socket.Send(data);
         }
 
         private void ReceiveLowLevelVersionExchangeCallback(PyDataType ar)

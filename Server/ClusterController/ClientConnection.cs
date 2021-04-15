@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using ClusterController.Database;
 using Common.Constants;
 using Common.Database;
@@ -18,7 +19,6 @@ namespace ClusterController
 {
     public class ClientConnection : Connection
     {
-        private Channel Log { get; }
         public Session Session { get; }
         private GeneralDB GeneralDB { get; }
         public long NodeID { get; set; }
@@ -128,13 +128,10 @@ namespace ClusterController
         }
         
         public ClientConnection(EVEClientSocket socket, ConnectionManager connectionManager, GeneralDB generalDB, Logger logger)
-            : base(socket, connectionManager)
+            : base(socket, connectionManager, logger.CreateLogChannel(socket.GetRemoteAddress()))
         {
             // access the GeneralDB
             this.GeneralDB = generalDB;
-            // to easily identify the clients use the address as channel
-            this.Log = logger.CreateLogChannel(this.Socket.GetRemoteAddress());
-            this.Socket.Log = this.Log;
             // set the exception handler
             this.Socket.SetExceptionHandler(ExceptionHandler);
             // send the lowlevelversion exchange
@@ -358,25 +355,6 @@ namespace ClusterController
         {
             Log.Error(exception.Message);
             Log.Trace(exception.StackTrace);
-        }
-
-        private void SendLowLevelVersionExchange()
-        {
-            Log.Debug("Sending LowLevelVersionExchange...");
-
-            LowLevelVersionExchange data = new LowLevelVersionExchange
-            {
-                Codename = Game.CODENAME,
-                Birthday = Game.BIRTHDAY,
-                Build = Game.BUILD,
-                MachoVersion = Game.MACHO_VERSION,
-                Version = Game.VERSION,
-                UserCount = this.ConnectionManager.ClientsCount,
-                Region = Game.REGION
-            };
-
-
-            this.Socket.Send(data);
         }
 
         public void SendLoginNotification(LoginStatus loginStatus, long accountID, long role)

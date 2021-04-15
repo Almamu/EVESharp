@@ -12,15 +12,13 @@ namespace ClusterController
     public class NodeConnection : Connection
     {
         private SystemManager SystemManager { get; }
-        private Channel Log { get; }
         public long NodeID { get; }
         public int SolarSystemLoadedCount { get; set; }
 
         public NodeConnection(EVEClientSocket socket, ConnectionManager connectionManager, SystemManager systemManager, Logger logger, long nodeID)
-            : base(socket, connectionManager)
+            : base(socket, connectionManager, logger.CreateLogChannel($"Node-{socket.GetRemoteAddress()}"))
         {
             // TODO: FREE THE LOG CHANNEL ONCE THE NODE IS MARKED AS DISCONNECTED
-            this.Log = logger.CreateLogChannel($"Node-{this.Socket.GetRemoteAddress()}");
             this.NodeID = nodeID;
             this.SystemManager = systemManager;
             // send node change notification
