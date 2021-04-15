@@ -42,17 +42,17 @@ namespace Common.Packets
             }
             
             if (result.Birthday != Constants.Game.BIRTHDAY)
-                throw new Exception("Wrong birthday in LowLevelVersionExchange");
+                throw new InvalidDataException("Wrong birthday in LowLevelVersionExchange");
             if (result.Build != Constants.Game.BUILD)
-                throw new Exception("Wrong build in LowLevelVersionExchange");
+                throw new InvalidDataException("Wrong build in LowLevelVersionExchange");
             if (result.Codename != Constants.Game.CODENAME + "@" + Constants.Game.REGION)
-                throw new Exception("Wrong codename in LowLevelVersionExchange");
+                throw new InvalidDataException("Wrong codename in LowLevelVersionExchange");
             if (result.MachoVersion != Constants.Game.MACHO_VERSION)
-                throw new Exception("Wrong machoVersion in LowLevelVersionExchange");
+                throw new InvalidDataException("Wrong machoVersion in LowLevelVersionExchange");
             if (Math.Abs(result.Version - Constants.Game.VERSION) > 0.001)
-                throw new Exception("Wrong version in LowLevelVersionExchange");
+                throw new InvalidDataException("Wrong version in LowLevelVersionExchange");
             if (result.IsNode == true && result.NodeIdentifier != "Node")
-                throw new Exception("Wrong node string in LowLevelVersionExchange");
+                throw new InvalidDataException("Wrong node string in LowLevelVersionExchange");
 
             return result;
         }

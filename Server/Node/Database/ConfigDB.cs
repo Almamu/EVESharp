@@ -1,7 +1,7 @@
-using System;
 using System.Collections.Generic;
 using Common.Database;
 using MySql.Data.MySqlClient;
+using Node.StaticData;
 using PythonTypes.Types.Collections;
 using PythonTypes.Types.Database;
 using PythonTypes.Types.Primitives;
@@ -111,7 +111,7 @@ namespace Node.Database
 
         public CRowset GetMapObjects(int itemID)
         {
-            if (itemID == this.NodeContainer.Constants["locationUniverse"])
+            if (itemID == this.NodeContainer.Constants[Constants.locationUniverse])
             {
                 return Database.PrepareCRowsetQuery(
                     $"SELECT groupID, typeID, itemID, itemName, {itemID} as locationID, orbitID, 0 AS connection, x, y, z FROM mapDenormalize WHERE typeID = 3"

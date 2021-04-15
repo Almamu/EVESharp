@@ -21,32 +21,28 @@ namespace Node.Services.Stations
 {
     public class corpStationMgr : BoundService
     {
-        private const double CLONE_CONTRACT_COST = 5600.0;
-        
-        private ItemDB ItemDB { get; }
+        private ItemFactory ItemFactory { get; }
+        private ItemDB ItemDB => this.ItemFactory.ItemDB;
         private MarketDB MarketDB { get; }
-        private ItemManager ItemManager { get; }
-        private TypeManager TypeManager { get; }
-        private SystemManager SystemManager { get; }
+        private ItemManager ItemManager => this.ItemFactory.ItemManager;
+        private TypeManager TypeManager => this.ItemFactory.TypeManager;
+        private SystemManager SystemManager => this.ItemFactory.SystemManager;
         private WalletManager WalletManager { get; }
+        private NodeContainer Container { get; }
         
-        public corpStationMgr(ItemDB itemDB, MarketDB marketDB, ItemManager itemManager, TypeManager typeManager, SystemManager systemManager, BoundServiceManager manager, WalletManager walletManager) : base(manager, null)
+        public corpStationMgr(MarketDB marketDB, ItemFactory itemFactory, NodeContainer container, BoundServiceManager manager, WalletManager walletManager) : base(manager, null)
         {
-            this.ItemDB = itemDB;
             this.MarketDB = marketDB;
-            this.ItemManager = itemManager;
-            this.TypeManager = typeManager;
-            this.SystemManager = systemManager;
+            this.ItemFactory = itemFactory;
+            this.Container = container;
             this.WalletManager = walletManager;
         }
         
-        protected corpStationMgr(ItemDB itemDB, MarketDB marketDB, ItemManager itemManager, TypeManager typeManager, SystemManager systemManager, BoundServiceManager manager, WalletManager walletManager, Client client) : base(manager, client)
+        protected corpStationMgr(MarketDB marketDB, ItemFactory itemFactory, NodeContainer container, BoundServiceManager manager, WalletManager walletManager, Client client) : base(manager, client)
         {
-            this.ItemDB = itemDB;
             this.MarketDB = marketDB;
-            this.ItemManager = itemManager;
-            this.TypeManager = typeManager;
-            this.SystemManager = systemManager;
+            this.ItemFactory = itemFactory;
+            this.Container = container;
             this.WalletManager = walletManager;
         }
 
@@ -65,7 +61,7 @@ namespace Node.Services.Stations
             if (this.MachoResolveObject(objectData as PyInteger, 0, call) != this.BoundServiceManager.Container.NodeID)
                 throw new CustomError("Trying to bind an object that does not belong to us!");
 
-            return new corpStationMgr(this.ItemDB, this.MarketDB, this.ItemManager, this.TypeManager, this.SystemManager, this.BoundServiceManager, this.WalletManager, call.Client);
+            return new corpStationMgr(this.MarketDB, this.ItemFactory, this.Container, this.BoundServiceManager, this.WalletManager, call.Client);
         }
 
         public PyList GetCorporateStationOffice(CallInformation call)
@@ -158,8 +154,10 @@ namespace Node.Services.Stations
 
             using Wallet wallet = this.WalletManager.AcquireWallet(character.ID, 1000);
             {
-                wallet.EnsureEnoughBalance(CLONE_CONTRACT_COST);
-                wallet.CreateJournalRecord(MarketReference.CloneTransfer, null, station.ID, -CLONE_CONTRACT_COST, $"Moved clone to {station.Name}");
+                double contractCost = this.Container.Constants[Constants.costCloneContract];
+                
+                wallet.EnsureEnoughBalance(contractCost);
+                wallet.CreateJournalRecord(MarketReference.CloneTransfer, null, station.ID, -contractCost, $"Moved clone to {station.Name}");
             }
             
             // set clone's station

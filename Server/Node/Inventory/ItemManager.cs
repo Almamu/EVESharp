@@ -31,6 +31,7 @@ using Node.Inventory.Exceptions;
 using Node.Inventory.Items;
 using Node.Inventory.Items.Types;
 using Node.Inventory.SystemEntities;
+using Node.StaticData;
 using Node.StaticData.Inventory;
 using Type = Node.StaticData.Inventory.Type;
 
@@ -85,12 +86,12 @@ namespace Node.Inventory
             Log.Info($"Preloaded {this.mItemList.Count} static items");
             
             // store useful items like recycler and system
-            this.LocationRecycler = this.GetItem<EVESystem>(this.NodeContainer.Constants["locationRecycler"]);
-            this.LocationSystem = this.GetItem<EVESystem>(this.NodeContainer.Constants["locationSystem"]);
-            this.LocationUniverse = this.GetItem<EVESystem>(this.NodeContainer.Constants["locationUniverse"]);
-            this.LocationMarket = this.GetItem<EVESystem>(this.NodeContainer.Constants["locationMarket"]);
-            this.LocationTemp = this.GetItem<EVESystem>(this.NodeContainer.Constants["locationTemp"]);
-            this.SecureCommerceCommision = this.GetItem(this.NodeContainer.Constants["ownerSecureCommerceCommission"]);
+            this.LocationRecycler = this.GetItem<EVESystem>(this.NodeContainer.Constants[Constants.locationRecycler]);
+            this.LocationSystem = this.GetItem<EVESystem>(this.NodeContainer.Constants[Constants.locationSystem]);
+            this.LocationUniverse = this.GetItem<EVESystem>(this.NodeContainer.Constants[Constants.locationUniverse]);
+            this.LocationMarket = this.GetItem<EVESystem>(this.NodeContainer.Constants[Constants.locationMarket]);
+            this.LocationTemp = this.GetItem<EVESystem>(this.NodeContainer.Constants[Constants.locationTemp]);
+            this.SecureCommerceCommision = this.GetItem(this.NodeContainer.Constants[Constants.ownerSecureCommerceCommission]);
         }
 
         /// <summary>

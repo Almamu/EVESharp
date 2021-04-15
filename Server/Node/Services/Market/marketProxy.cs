@@ -13,6 +13,7 @@ using Node.Network;
 using Node.Notifications.Client.Market;
 using Node.Notifications.Nodes.Inventory;
 using Node.Services.Account;
+using Node.StaticData;
 using Node.StaticData.Inventory;
 using PythonTypes.Types.Complex;
 using PythonTypes.Types.Exceptions;
@@ -160,7 +161,7 @@ namespace Node.Services.Market
 
         private void CalculateSalesTax(long accountingLevel, int quantity, double price, out double tax, out double profit)
         {
-            double salesTax = (this.NodeContainer.Constants["mktTransactionTax"] / 100.0) * (1 - accountingLevel * 0.1);
+            double salesTax = (this.NodeContainer.Constants[Constants.mktTransactionTax] / 100.0) * (1 - accountingLevel * 0.1);
             double beforeTax = price * quantity;
 
             tax = beforeTax * salesTax;
@@ -169,7 +170,7 @@ namespace Node.Services.Market
 
         private void CalculateBrokerCost(long brokerLevel, int quantity, double price, out double brokerCost)
         {
-            double brokerPercentage = ((double) this.NodeContainer.Constants["marketCommissionPercentage"] / 100) * (1 - brokerLevel * 0.05);
+            double brokerPercentage = ((double) this.NodeContainer.Constants[Constants.marketCommissionPercentage] / 100) * (1 - brokerLevel * 0.05);
 
             // TODO: GET THE STANDINGS FOR THE CHARACTER
             double factionStanding = 0.0;
@@ -180,8 +181,8 @@ namespace Node.Services.Market
             brokerPercentage = brokerPercentage * Math.Pow(2.0, -2 * weightedStanding);
             brokerCost = price * quantity * brokerPercentage;
 
-            if (brokerCost < this.NodeContainer.Constants["mktMinimumFee"])
-                brokerCost = this.NodeContainer.Constants["mktMinimumFee"];
+            if (brokerCost < this.NodeContainer.Constants[Constants.mktMinimumFee])
+                brokerCost = this.NodeContainer.Constants[Constants.mktMinimumFee];
         }
 
         private void CheckSellOrderDistancePermissions(Character character, int stationID)
@@ -630,8 +631,8 @@ namespace Node.Services.Market
 
                 long currentTime = DateTime.UtcNow.ToFileTimeUtc();
                 // check for timers, no changes in less than 5 minutes
-                if (currentTime < order.Issued + TimeSpan.TicksPerMinute * 5)
-                    throw new MktOrderDelay((order.Issued + TimeSpan.TicksPerMinute * 5) - currentTime);
+                if (currentTime < order.Issued + TimeSpan.TicksPerSecond * this.NodeContainer.Constants[Constants.mktModificationDelay])
+                    throw new MktOrderDelay((order.Issued + TimeSpan.TicksPerSecond * this.NodeContainer.Constants[Constants.mktModificationDelay]) - currentTime);
 
                 // check for escrow
                 if (order.Escrow > 0.0 && order.Bid == TransactionType.Buy)
@@ -694,8 +695,8 @@ namespace Node.Services.Market
 
                 long currentTime = DateTime.UtcNow.ToFileTimeUtc();
                 // check for timers, no changes in less than 5 minutes
-                if (currentTime < order.Issued + TimeSpan.TicksPerMinute * 5)
-                    throw new MktOrderDelay((order.Issued + TimeSpan.TicksPerMinute * 5) - currentTime);
+                if (currentTime < order.Issued + TimeSpan.TicksPerSecond * this.NodeContainer.Constants[Constants.mktModificationDelay])
+                    throw new MktOrderDelay((order.Issued + TimeSpan.TicksPerSecond * this.NodeContainer.Constants[Constants.mktModificationDelay]) - currentTime);
 
                 // ensure the order hasn't been modified since the user saw it on the screen
                 if ((int) order.Bid != bid || order.LocationID != stationID || order.Price != price ||
