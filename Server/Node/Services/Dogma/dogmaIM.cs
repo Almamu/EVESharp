@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Common.Constants;
+using EVE;
 using Node.Dogma;
 using Node.Dogma.Interpreter;
 using Node.Dogma.Interpreter.Opcodes;

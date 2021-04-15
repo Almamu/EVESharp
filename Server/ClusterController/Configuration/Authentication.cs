@@ -1,5 +1,6 @@
 using System;
 using Common.Constants;
+using EVE;
 using IniParser.Model;
 
 namespace ClusterController.Configuration

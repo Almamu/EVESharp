@@ -12,6 +12,10 @@
     </ItemGroup>
 
     <ItemGroup>
+      <Folder Include="Packets" />
+    </ItemGroup>
+
+    <ItemGroup>
       <ProjectReference Include="..\PythonTypes\PythonTypes.csproj" />
     </ItemGroup>
 

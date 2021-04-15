@@ -1,4 +1,4 @@
-﻿namespace Common.Constants
+﻿namespace EVE
 {
     public static class Game
     {

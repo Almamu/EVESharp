@@ -24,8 +24,8 @@
 
 using System;
 using System.IO;
-using Common.Game;
-using Common.Packets;
+using EVE;
+using EVE.Packets;
 using Node.Exceptions;
 using Node.Inventory;
 using Node.Inventory.Items;

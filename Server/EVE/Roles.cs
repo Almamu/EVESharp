@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Common.Constants
+namespace EVE
 {
     [Flags]
     public enum Roles : ulong

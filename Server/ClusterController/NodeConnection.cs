@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using Common.Logging;
 using Common.Network;
-using Common.Packets;
+using EVE.Packets;
 using PythonTypes.Types.Collections;
 using PythonTypes.Types.Network;
 using PythonTypes.Types.Primitives;

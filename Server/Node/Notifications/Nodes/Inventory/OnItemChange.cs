@@ -4,11 +4,12 @@ using Node.Inventory;
 using Node.Inventory.Items;
 using Node.StaticData.Inventory;
 using PythonTypes.Types.Collections;
+using PythonTypes.Types.Complex;
 using PythonTypes.Types.Primitives;
 
 namespace Node.Notifications.Nodes.Inventory
 {
-    public class OnItemChange : NodeNotification
+    public class OnItemChange : PyNodeNotification
     {
         public const string NOTIFICATION_NAME = "OnItemChange";
         

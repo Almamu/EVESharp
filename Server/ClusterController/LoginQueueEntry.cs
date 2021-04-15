@@ -22,7 +22,7 @@
     Creator: Almamu
 */
 
-using Common.Packets;
+using EVE.Packets;
 
 namespace ClusterController
 {

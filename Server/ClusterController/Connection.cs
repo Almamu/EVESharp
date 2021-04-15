@@ -1,6 +1,5 @@
 using System;
 using Common.Network;
-using Common.Packets;
 using PythonTypes.Types.Primitives;
 
 namespace ClusterController

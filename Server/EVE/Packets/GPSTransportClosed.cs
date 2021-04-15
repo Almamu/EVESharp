@@ -3,7 +3,7 @@ using PythonTypes.Types.Collections;
 using PythonTypes.Types.Network;
 using PythonTypes.Types.Primitives;
 
-namespace Common.Packets
+namespace EVE.Packets
 {
     public class GPSTransportClosed : PyException
     {
@@ -12,12 +12,12 @@ namespace Common.Packets
         public GPSTransportClosed(string type) : base(TYPE_NAME, type, null, new PyDictionary())
         {
             this.Clock = DateTime.UtcNow.ToFileTimeUtc();
-            this.Region = Common.Constants.Game.REGION;
+            this.Region = Game.REGION;
             this.Reason = type;
-            this.Version = Common.Constants.Game.VERSION;
-            this.Build = Common.Constants.Game.BUILD;
-            this.Codename = Common.Constants.Game.CODENAME;
-            this.MachoVersion = Common.Constants.Game.MACHO_VERSION;
+            this.Version = Game.VERSION;
+            this.Build = Game.BUILD;
+            this.Codename = Game.CODENAME;
+            this.MachoVersion = Game.MACHO_VERSION;
         }
 
         public static implicit operator PyDataType(GPSTransportClosed exception)

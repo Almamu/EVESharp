@@ -108,7 +108,7 @@ namespace Node.Network
         /// </summary>
         /// <param name="nodeID">The node to notify</param>
         /// <param name="notification">The notification to send</param>
-        public void NotifyNode(long nodeID, NodeNotification notification)
+        public void NotifyNode(long nodeID, PyNodeNotification notification)
         {
             // do not notify if the notification is for a non-existant node (nodeID = 0)
             if (nodeID == 0)

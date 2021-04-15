@@ -1,9 +1,7 @@
-﻿using System.Collections.Generic;
-using System.Threading;
-using PythonTypes.Types.Collections;
+﻿using PythonTypes.Types.Collections;
 using PythonTypes.Types.Primitives;
 
-namespace Common.Game
+namespace EVE
 {
     public class Session
     {
@@ -34,7 +32,7 @@ namespace Common.Game
             {
                 this.IsDirty = true;
             
-                if (this.mSession.ContainsKey(key) == false)
+                if (this.mSession.TryGetValue(key, out PyTuple tmp) == false)
                 {
                     this.mSession[key] = new PyTuple(2)
                     {
@@ -44,8 +42,6 @@ namespace Common.Game
                 }
                 else
                 {
-                    PyTuple tmp = this.mSession[key];
-
                     tmp[0] = tmp[1];
                     tmp[1] = value;
 

@@ -1,9 +1,10 @@
+using Common;
 using System;
 using System.IO;
 using PythonTypes.Types.Collections;
 using PythonTypes.Types.Primitives;
 
-namespace Common.Packets
+namespace EVE.Packets
 {
     public class LowLevelVersionExchange
     {
@@ -41,15 +42,15 @@ namespace Common.Packets
                 result.UserCount = exchange[2] as PyInteger;
             }
             
-            if (result.Birthday != Constants.Game.BIRTHDAY)
+            if (result.Birthday != Game.BIRTHDAY)
                 throw new InvalidDataException("Wrong birthday in LowLevelVersionExchange");
-            if (result.Build != Constants.Game.BUILD)
+            if (result.Build != Game.BUILD)
                 throw new InvalidDataException("Wrong build in LowLevelVersionExchange");
-            if (result.Codename != Constants.Game.CODENAME + "@" + Constants.Game.REGION)
+            if (result.Codename != Game.CODENAME + "@" + Game.REGION)
                 throw new InvalidDataException("Wrong codename in LowLevelVersionExchange");
-            if (result.MachoVersion != Constants.Game.MACHO_VERSION)
+            if (result.MachoVersion != Game.MACHO_VERSION)
                 throw new InvalidDataException("Wrong machoVersion in LowLevelVersionExchange");
-            if (Math.Abs(result.Version - Constants.Game.VERSION) > 0.001)
+            if (Math.Abs(result.Version - Game.VERSION) > 0.001)
                 throw new InvalidDataException("Wrong version in LowLevelVersionExchange");
             if (result.IsNode == true && result.NodeIdentifier != "Node")
                 throw new InvalidDataException("Wrong node string in LowLevelVersionExchange");

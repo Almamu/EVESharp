@@ -5,6 +5,7 @@ using System.Runtime.CompilerServices;
 using Common.Constants;
 using Common.Logging;
 using Common.Services;
+using EVE;
 using Node.Database;
 using Node.Exceptions.slash;
 using Node.Inventory;

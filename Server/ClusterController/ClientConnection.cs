@@ -5,10 +5,10 @@ using System.Linq;
 using ClusterController.Database;
 using Common.Constants;
 using Common.Database;
-using Common.Game;
 using Common.Logging;
 using Common.Network;
-using Common.Packets;
+using EVE;
+using EVE.Packets;
 using MySql.Data.MySqlClient.Authentication;
 using PythonTypes.Types.Collections;
 using PythonTypes.Types.Network;
@@ -261,7 +261,7 @@ namespace ClusterController
                 JIT = this.Session["languageID"] as PyString,
                 UserID = this.Session["userid"] as PyInteger,
                 MaxSessionTime = null,
-                UserType = Common.Constants.AccountType.USER,
+                UserType = AccountType.USER,
                 Role = this.Session["role"] as PyInteger,
                 Address = this.Session["address"] as PyString,
                 InDetention = null,
@@ -399,14 +399,14 @@ namespace ClusterController
                     rsp.user_logonqueueposition = 1;
                     rsp.challenge_responsehash = "55087";
 
-                    rsp.macho_version = Common.Constants.Game.MACHO_VERSION;
-                    rsp.boot_version = Common.Constants.Game.VERSION;
-                    rsp.boot_build = Common.Constants.Game.BUILD;
-                    rsp.boot_codename = Common.Constants.Game.CODENAME;
-                    rsp.boot_region = Common.Constants.Game.REGION;
+                    rsp.macho_version = Game.MACHO_VERSION;
+                    rsp.boot_version = Game.VERSION;
+                    rsp.boot_build = Game.BUILD;
+                    rsp.boot_codename = Game.CODENAME;
+                    rsp.boot_region = Game.REGION;
 
                     // setup session
-                    this.Session["userType"] = Common.Constants.AccountType.USER;
+                    this.Session["userType"] = AccountType.USER;
                     this.Session["userid"] = accountID;
                     this.Session["role"] = role;
                     // move the connection to the authenticated user list

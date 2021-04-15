@@ -28,7 +28,7 @@ using System.Threading;
 using ClusterController.Configuration;
 using ClusterController.Database;
 using Common.Logging;
-using Common.Packets;
+using EVE.Packets;
 
 namespace ClusterController
 {

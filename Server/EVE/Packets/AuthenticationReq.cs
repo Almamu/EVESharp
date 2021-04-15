@@ -2,7 +2,7 @@ using System.IO;
 using PythonTypes.Types.Collections;
 using PythonTypes.Types.Primitives;
 
-namespace Common.Packets
+namespace EVE.Packets
 {
     public class AuthenticationReq
     {
