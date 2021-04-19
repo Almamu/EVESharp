@@ -20,7 +20,6 @@ CREATE TABLE `mktOrders` (
   `escrow` tinyint(3) unsigned NOT NULL default '0',
   PRIMARY KEY  (`orderID`),
   KEY `typeID` (`typeID`),
-  KEY `itemID` (`itemID`),
   KEY `stationID` (`stationID`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 

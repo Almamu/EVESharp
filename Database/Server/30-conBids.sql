@@ -6,6 +6,6 @@ CREATE TABLE `conBids` (
   `contractID` int(10) unsigned NOT NULL,
   `bidderID` int(10) unsigned NOT NULL,
   `amount` double unsigned NOT NULL,
-  `isCorp` tinyine unsigned NOT NULL DEFAULT 0,
+  `isCorp` tinyint unsigned NOT NULL DEFAULT 0,
   PRIMARY KEY (`bidID`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
