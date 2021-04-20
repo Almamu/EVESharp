@@ -21,6 +21,7 @@ namespace PythonTypes.Types.Primitives
         }
 
         public string Token { get; }
+        public int Length => this.Token.Length;
 
         public PyToken(string token)
         {

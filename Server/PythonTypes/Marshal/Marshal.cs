@@ -200,6 +200,9 @@ namespace PythonTypes.Marshal
         /// <param name="token">The value to write</param>
         private static void ProcessToken(BinaryWriter writer, PyToken token)
         {
+            if (token.Length > byte.MaxValue)
+                throw new InvalidDataException($"Token length cannot be greater than {byte.MaxValue}");
+            
             writer.WriteOpcode(Opcode.Token);
             writer.Write((byte) token.Token.Length);
             writer.Write(Encoding.ASCII.GetBytes(token));
