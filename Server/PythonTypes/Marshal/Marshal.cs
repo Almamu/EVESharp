@@ -282,18 +282,15 @@ namespace PythonTypes.Marshal
             if (list.Count == 0)
                 writer.WriteOpcode(Opcode.ListEmpty);
             else if (list.Count == 1)
-            {
                 writer.WriteOpcode(Opcode.ListOne);
-                Process(writer, list[0]);
-            }
             else
             {
                 writer.WriteOpcode(Opcode.List);
                 writer.WriteSizeEx(list.Count);
-
-                foreach (PyDataType entry in list)
-                    Process(writer, entry);
             }
+
+            foreach (PyDataType entry in list)
+                Process(writer, entry);
         }
 
         /// <summary>
