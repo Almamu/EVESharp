@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using NUnit.Framework;
+using PythonTypes.Marshal;
 using PythonTypes.Types.Primitives;
 
 namespace PythonTypes.Unit
@@ -8,7 +9,7 @@ namespace PythonTypes.Unit
     public class IntegerMarshalingTests
     {
         private static byte sIntegerMarshal_ByteValue = 15;
-        private static sbyte sIntegerMarshal_SByteValue2 = -15;
+        private static sbyte sIntegerMarshal_SByteValue = -15;
         private static short sIntegerMarshal_ShortValue = -30000;
         private static ushort sIntegerMarshal_UShortValue = 60000;
         private static int sIntegerMarshal_IntegerValue = Int32.MaxValue;
@@ -36,7 +37,7 @@ namespace PythonTypes.Unit
         [Test]
         public void IntegerMarshal_SByte()
         {
-            byte[] output = Marshal.Marshal.ToByteArray(new PyInteger(sIntegerMarshal_SByteValue2), false);
+            byte[] output = Marshal.Marshal.ToByteArray(new PyInteger(sIntegerMarshal_SByteValue), false);
 
             Assert.AreEqual(sIntegerMarshal_SByteValueBuffer, output);
         }
@@ -87,6 +88,110 @@ namespace PythonTypes.Unit
             byte[] output = Marshal.Marshal.ToByteArray(new PyInteger(sIntegerMarshal_LongValue2), false);
 
             Assert.AreEqual(sIntegerMarshal_LongValue2Buffer, output);
+        }
+
+        [Test]
+        public void IntegerUnmarshal_Byte()
+        {
+            PyDataType result = Unmarshal.ReadFromByteArray(sIntegerMarshal_ByteValueBuffer, false);
+            
+            Assert.IsInstanceOf<PyInteger>(result);
+
+            PyInteger pyInteger = result as PyInteger;
+            
+            Assert.AreEqual(sIntegerMarshal_ByteValue, pyInteger.Value);
+            Assert.AreEqual(true, sIntegerMarshal_ByteValue == pyInteger);
+        }
+
+        [Test]
+        public void IntegerUnmarshal_SByte()
+        {
+            PyDataType result = Unmarshal.ReadFromByteArray(sIntegerMarshal_SByteValueBuffer, false);
+            
+            Assert.IsInstanceOf<PyInteger>(result);
+
+            PyInteger pyInteger = result as PyInteger;
+            
+            Assert.AreEqual(sIntegerMarshal_SByteValue, pyInteger.Value);
+            Assert.AreEqual(true, sIntegerMarshal_SByteValue == pyInteger);
+        }
+
+        [Test]
+        public void IntegerUnmarshal_Short()
+        {
+            PyDataType result = Unmarshal.ReadFromByteArray(sIntegerMarshal_ShortValueBuffer, false);
+            
+            Assert.IsInstanceOf<PyInteger>(result);
+
+            PyInteger pyInteger = result as PyInteger;
+            
+            Assert.AreEqual(sIntegerMarshal_ShortValue, pyInteger.Value);
+            Assert.AreEqual(true, sIntegerMarshal_ShortValue == pyInteger);
+        }
+
+        [Test]
+        public void IntegerUnmarshal_UShort()
+        {
+            PyDataType result = Unmarshal.ReadFromByteArray(sIntegerMarshal_UShortValueBuffer, false);
+            
+            Assert.IsInstanceOf<PyInteger>(result);
+
+            PyInteger pyInteger = result as PyInteger;
+            
+            Assert.AreEqual(sIntegerMarshal_UShortValue, pyInteger.Value);
+            Assert.AreEqual(true, sIntegerMarshal_UShortValue == pyInteger);
+        }
+
+        [Test]
+        public void IntegerUnmarshal_Integer()
+        {
+            PyDataType result = Unmarshal.ReadFromByteArray(sIntegerMarshal_IntegerValueBuffer, false);
+            
+            Assert.IsInstanceOf<PyInteger>(result);
+
+            PyInteger pyInteger = result as PyInteger;
+            
+            Assert.AreEqual(sIntegerMarshal_IntegerValue, pyInteger.Value);
+            Assert.AreEqual(true, sIntegerMarshal_IntegerValue == pyInteger);
+        }
+
+        [Test]
+        public void IntegerUnmarshal_Integer2()
+        {
+            PyDataType result = Unmarshal.ReadFromByteArray(sIntegerMarshal_IntegerValue2Buffer, false);
+            
+            Assert.IsInstanceOf<PyInteger>(result);
+
+            PyInteger pyInteger = result as PyInteger;
+            
+            Assert.AreEqual(sIntegerMarshal_IntegerValue2, pyInteger.Value);
+            Assert.AreEqual(true, sIntegerMarshal_IntegerValue2 == pyInteger);
+        }
+
+        [Test]
+        public void IntegerUnmarshal_Long()
+        {
+            PyDataType result = Unmarshal.ReadFromByteArray(sIntegerMarshal_LongValueBuffer, false);
+            
+            Assert.IsInstanceOf<PyInteger>(result);
+
+            PyInteger pyInteger = result as PyInteger;
+            
+            Assert.AreEqual(sIntegerMarshal_LongValue, pyInteger.Value);
+            Assert.AreEqual(true, sIntegerMarshal_LongValue == pyInteger);
+        }
+
+        [Test]
+        public void IntegerUnmarshal_Long2()
+        {
+            PyDataType result = Unmarshal.ReadFromByteArray(sIntegerMarshal_LongValue2Buffer, false);
+            
+            Assert.IsInstanceOf<PyInteger>(result);
+
+            PyInteger pyInteger = result as PyInteger;
+            
+            Assert.AreEqual(sIntegerMarshal_LongValue2, pyInteger.Value);
+            Assert.AreEqual(true, sIntegerMarshal_LongValue2 == pyInteger);
         }
     }
 }
