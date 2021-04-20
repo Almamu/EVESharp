@@ -55,9 +55,18 @@ namespace PythonTypes.Types.Primitives
         public PyInteger(byte value)
         {
             this.Value = value;
-            this.IntegerType = IntegerTypeEnum.Byte;
+            if (value > sbyte.MaxValue)
+                this.IntegerType = IntegerTypeEnum.Short;
+            else
+               this.IntegerType = IntegerTypeEnum.Byte;
         }
 
+        public PyInteger(sbyte value)
+        {
+            this.Value = value;
+            this.IntegerType = IntegerTypeEnum.Byte;
+        }
+        
         public static bool operator ==(PyInteger obj1, PyInteger obj2)
         {
             if (ReferenceEquals(obj1, obj2)) return true;

@@ -251,11 +251,11 @@ namespace PythonTypes.Marshal
                 case Opcode.IntegerByte:
                     return new PyInteger(mReader.ReadSByte());
                 case Opcode.IntegerOne:
-                    return new PyInteger(1);
+                    return new PyInteger((sbyte) 1);
                 case Opcode.IntegerZero:
-                    return new PyInteger(0);
+                    return new PyInteger((sbyte) 0);
                 case Opcode.IntegerMinusOne:
-                    return new PyInteger(-1);
+                    return new PyInteger((sbyte) -1);
                 default:
                     throw new InvalidDataException($"Trying to parse a {opcode} as Integer");
             }

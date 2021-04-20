@@ -360,7 +360,6 @@ namespace Node.Services.Inventory
             }
             else
             {
-            
                 // remove item off the old inventory if required
                 if (this.ItemFactory.TryGetItem(item.LocationID, out ItemInventory inventory) == true)
                     inventory.RemoveItem(item);
@@ -596,27 +595,23 @@ namespace Node.Services.Inventory
         {
             ItemEntity item = this.mInventory.Items[itemID];
 
-            if(item.IsInRigSlot() == true)
-            {
-                if (item is ShipModule module)
-                {
-                    // disable passive effects
-                    module.StopApplyingPassiveEffects(Client);
-                }
-                
-                int oldLocationID = item.LocationID;
-                Flags oldFlag = item.Flag;
-                
-                // destroy the rig
-                this.ItemFactory.DestroyItem(item);
-
-                // notify the client about the change
-                call.Client.NotifyMultiEvent(OnItemChange.BuildLocationChange(item, oldFlag, oldLocationID));
-            }
-            else
-            {
+            if (item.IsInRigSlot() == false)
                 throw new CannotDestroyFittedItem();
+
+            if (item is ShipModule module)
+            {
+                // disable passive effects
+                module.StopApplyingPassiveEffects(Client);
             }
+            
+            int oldLocationID = item.LocationID;
+            Flags oldFlag = item.Flag;
+            
+            // destroy the rig
+            this.ItemFactory.DestroyItem(item);
+
+            // notify the client about the change
+            call.Client.NotifyMultiEvent(OnItemChange.BuildLocationChange(item, oldFlag, oldLocationID));
             
             return null;
         }
