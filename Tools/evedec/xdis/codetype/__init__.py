@@ -16,7 +16,7 @@
 
 __docformat__ = "restructuredtext"
 
-from collections import namedtuple
+from xdis.namedtuple24 import namedtuple
 from xdis.codetype.base import *
 from xdis.codetype.code13 import *
 from xdis.codetype.code15 import *

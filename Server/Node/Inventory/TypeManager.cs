@@ -54,7 +54,7 @@ namespace Node.Inventory
         }
 
         public Type this[int id] => this.mTypes[id];
-        public Type this[ItemTypes id] => this[(int) id];
+        public Type this[Types id] => this[(int) id];
         public IEnumerable<int> Keys  => this.mTypes.Keys;
         public IEnumerable<Type> Values => this.mTypes.Values;
         public int Count => this.mTypes.Count;

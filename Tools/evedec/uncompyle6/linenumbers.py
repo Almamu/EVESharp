@@ -38,7 +38,7 @@ def line_number_mapping(pyc_filename, src_filename):
     ) = load_module(pyc_filename)
     try:
         code2 = load_file(src_filename)
-    except SyntaxError as e:
+    except SyntaxError, e:
         return str(e)
 
     queue = deque([code1, code2])

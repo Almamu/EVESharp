@@ -201,7 +201,7 @@ namespace Node.Services.Dogma
                 throw new TheItemIsNotYoursToTake(itemID);
             
             return new Row(
-                new PyList(5)
+                new PyList<PyString>(5)
                 {
                     [0] = "itemID",
                     [1] = "invItem",

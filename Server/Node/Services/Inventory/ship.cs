@@ -98,7 +98,7 @@ namespace Node.Services.Inventory
 
             Character character = this.ItemFactory.GetItem<Character>(callerCharacterID);
             // get the item type
-            Type capsuleType = this.TypeManager[ItemTypes.Capsule];
+            Type capsuleType = this.TypeManager[Types.Capsule];
             // create a pod for this character
             ItemInventory capsule = this.ItemFactory.CreateShip(capsuleType, this.Location, character);
             // update capsule's name
@@ -153,7 +153,7 @@ namespace Node.Services.Inventory
             // ensure the character is not removed when the capsule is removed
             currentShip.RemoveItem(character);
 
-            if (currentShip.Type.ID == (int) ItemTypes.Capsule)
+            if (currentShip.Type.ID == (int) Types.Capsule)
             {
                 // destroy the pod from the database
                 this.ItemFactory.DestroyItem(currentShip);

@@ -21,16 +21,18 @@ scanner/ingestion module. From here we call various version-specific
 scanners, e.g. for Python 2.7 or 3.4.
 """
 
-from __future__ import print_function
-
 from array import array
-from collections import namedtuple
 import sys
 
-from uncompyle6 import PYTHON3, IS_PYPY
+from uncompyle6 import PYTHON3, IS_PYPY, PYTHON_VERSION
 from uncompyle6.scanners.tok import Token
 import xdis
 from xdis import Bytecode, canonic_python_version, code2num, instruction_size, extended_arg_val, next_offset
+
+if PYTHON_VERSION < 2.6:
+    from xdis.namedtuple24 import namedtuple
+else:
+    from collections import namedtuple
 
 # The byte code versions we support.
 # Note: these all have to be floats

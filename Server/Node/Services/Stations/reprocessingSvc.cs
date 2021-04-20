@@ -25,24 +25,24 @@ namespace Node.Services.Stations
 {
     public class reprocessingSvc : BoundService
     {
-        private static Dictionary<ItemTypes, ItemTypes> sOreTypeIDtoProcessingSkillTypeID = new Dictionary<ItemTypes, ItemTypes>()
+        private static Dictionary<Types, Types> sOreTypeIDtoProcessingSkillTypeID = new Dictionary<Types, Types>()
         {
-            {ItemTypes.Arkonor, ItemTypes.ArkonorProcessing},
-            {ItemTypes.Bistot, ItemTypes.BistotProcessing},
-            {ItemTypes.Crokite, ItemTypes.CrokiteProcessing},
-            {ItemTypes.DarkOchre, ItemTypes.DarkOchreProcessing},
-            {ItemTypes.Gneiss, ItemTypes.GneissProcessing},
-            {ItemTypes.Hedbergite, ItemTypes.HedbergiteProcessing},
-            {ItemTypes.Hemorphite, ItemTypes.HemorphiteProcessing},
-            {ItemTypes.Jaspet, ItemTypes.JaspetProcessing},
-            {ItemTypes.Kernite, ItemTypes.KerniteProcessing},
-            {ItemTypes.Mercoxit, ItemTypes.MercoxitProcessing},
-            {ItemTypes.Omber, ItemTypes.OmberProcessing},
-            {ItemTypes.Plagioclase, ItemTypes.PlagioclaseProcessing},
-            {ItemTypes.Pyroxeres, ItemTypes.PyroxeresProcessing},
-            {ItemTypes.Scordite, ItemTypes.ScorditeProcessing},
-            {ItemTypes.Spodumain, ItemTypes.SpodumainProcessing},
-            {ItemTypes.Veldspar, ItemTypes.VeldsparProcessing},
+            {Types.Arkonor, Types.ArkonorProcessing},
+            {Types.Bistot, Types.BistotProcessing},
+            {Types.Crokite, Types.CrokiteProcessing},
+            {Types.DarkOchre, Types.DarkOchreProcessing},
+            {Types.Gneiss, Types.GneissProcessing},
+            {Types.Hedbergite, Types.HedbergiteProcessing},
+            {Types.Hemorphite, Types.HemorphiteProcessing},
+            {Types.Jaspet, Types.JaspetProcessing},
+            {Types.Kernite, Types.KerniteProcessing},
+            {Types.Mercoxit, Types.MercoxitProcessing},
+            {Types.Omber, Types.OmberProcessing},
+            {Types.Plagioclase, Types.PlagioclaseProcessing},
+            {Types.Pyroxeres, Types.PyroxeresProcessing},
+            {Types.Scordite, Types.ScorditeProcessing},
+            {Types.Spodumain, Types.SpodumainProcessing},
+            {Types.Veldspar, Types.VeldsparProcessing},
         };
         
         private ItemFactory ItemFactory { get; }
@@ -110,8 +110,8 @@ namespace Node.Services.Stations
         {
             // there's no implants that affect the reprocessing of anything
             double efficiency = (0.375
-                 * (1 + (0.02 * character.GetSkillLevel(ItemTypes.Refining)))
-                 * (1 + (0.04 * character.GetSkillLevel(ItemTypes.RefineryEfficiency)))
+                 * (1 + (0.02 * character.GetSkillLevel(Types.Refining)))
+                 * (1 + (0.04 * character.GetSkillLevel(Types.RefineryEfficiency)))
             );
 
             efficiency += this.mStation.ReprocessingEfficiency;
@@ -124,13 +124,13 @@ namespace Node.Services.Stations
         {
             // there's no implants that affect the reprocessing of anything
             double efficiency = (0.375
-                 * (1 + (0.02 * character.GetSkillLevel(ItemTypes.Refining)))
-                 * (1 + (0.04 * character.GetSkillLevel(ItemTypes.RefineryEfficiency)))
+                 * (1 + (0.02 * character.GetSkillLevel(Types.Refining)))
+                 * (1 + (0.04 * character.GetSkillLevel(Types.RefineryEfficiency)))
             );
             
             // check what mineral it is and calculate it's efficiency (there's skills that modify the outcome) 
-            if (sOreTypeIDtoProcessingSkillTypeID.TryGetValue((ItemTypes) typeID, out ItemTypes skillType) == false)
-                skillType = ItemTypes.ScrapmetalProcessing;
+            if (sOreTypeIDtoProcessingSkillTypeID.TryGetValue((Types) typeID, out Types skillType) == false)
+                skillType = Types.ScrapmetalProcessing;
 
             // 5% increase by the specific metal skill
             efficiency *= (1 + (0.05 * character.GetSkillLevel(skillType)));
@@ -153,11 +153,11 @@ namespace Node.Services.Stations
 
             if (standing < 0.0f)
             {
-                standing += ((10.0 + standing) * 0.04 * character.GetSkillLevel(ItemTypes.Diplomacy));
+                standing += ((10.0 + standing) * 0.04 * character.GetSkillLevel(Types.Diplomacy));
             }
             else
             {
-                standing += ((10.0 - standing) * 0.04 * character.GetSkillLevel(ItemTypes.Connections));
+                standing += ((10.0 - standing) * 0.04 * character.GetSkillLevel(Types.Connections));
             }
 
             return standing;
@@ -192,7 +192,7 @@ namespace Node.Services.Stations
             
             List<ReprocessingDB.Recoverables> recoverablesList = this.ReprocessingDB.GetRecoverables(item.Type.ID);
             Rowset recoverables = new Rowset(
-                new PyList(4)
+                new PyList<PyString>(4)
                 {
                     [0] = "typeID",
                     [1] = "unrecoverable",
@@ -219,7 +219,7 @@ namespace Node.Services.Stations
             }
             
             return new Row(
-                new PyList(4)
+                new PyList<PyString>(4)
                 {
                     [0] = "leftOvers",
                     [1] = "quantityToProcess",

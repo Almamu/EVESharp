@@ -412,7 +412,6 @@ class Python26Parser(Python2Parser):
             # for t in range(first, last):
             #     print(tokens[t])
             # print("=" * 30)
-
             # If the SETUP_LOOP jumps to the tokens[last] then
             # this is a "for" not a "for else".
 

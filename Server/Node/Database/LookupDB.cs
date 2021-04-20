@@ -62,7 +62,7 @@ namespace Node.Database
             if (exact == true)
             {
                 return Database.PrepareRowsetQuery(
-                    $"SELECT itemID AS characterID, itemName AS characterName, typeID FROM eveNames WHERE itemID >= {ItemManager.USERGENERATED_ID_MIN} AND groupID = {(int) Groups.Character} AND itemName = @namePart",
+                    $"SELECT itemID AS characterID, itemName AS characterName, typeID FROM eveNames WHERE itemID >= {ItemFactory.USERGENERATED_ID_MIN} AND groupID = {(int) Groups.Character} AND itemName = @namePart",
                     new Dictionary<string, object>()
                     {
                         {"@namePart", namePart}
@@ -72,7 +72,7 @@ namespace Node.Database
             else
             {
                 return Database.PrepareRowsetQuery(
-                    $"SELECT itemID AS characterID, itemName AS characterName, typeID FROM eveNames WHERE itemID >= {ItemManager.USERGENERATED_ID_MIN} AND groupID = {(int) Groups.Character} AND itemName LIKE @namePart",
+                    $"SELECT itemID AS characterID, itemName AS characterName, typeID FROM eveNames WHERE itemID >= {ItemFactory.USERGENERATED_ID_MIN} AND groupID = {(int) Groups.Character} AND itemName LIKE @namePart",
                     new Dictionary<string, object>()
                     {
                         {"@namePart", namePart + "%"}

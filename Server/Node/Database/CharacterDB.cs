@@ -799,7 +799,7 @@ namespace Node.Database
             );
         }
 
-        public int GetSkillLevelForCharacter(ItemTypes skill, int characterID)
+        public int GetSkillLevelForCharacter(Types skill, int characterID)
         {
             MySqlConnection connection = null;
             MySqlDataReader reader = Database.PrepareQuery(ref connection,

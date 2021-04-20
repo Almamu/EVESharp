@@ -1,11 +1,11 @@
-namespace Node.Inventory.Items
+namespace Node.StaticData.Inventory
 {
     /**
      * Extracted from the eve online official dump
      *
      * Please only add the ones used through the source code and not the full list
      */
-    public enum ItemTypes : int
+    public enum Types : int
     {
 	    System = 0,
         Plagioclase = 18,

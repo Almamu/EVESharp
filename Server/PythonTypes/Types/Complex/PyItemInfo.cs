@@ -9,7 +9,7 @@ namespace PythonTypes.Types.Complex
     /// </summary>
     public class PyItemInfo : IndexRowset
     {
-        public PyItemInfo() : base("itemID", new PyList(5)
+        public PyItemInfo() : base("itemID", new PyList<PyString>(5)
         {
             [0] = "itemID",
             [1] = "invItem",

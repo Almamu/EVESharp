@@ -26,7 +26,10 @@ def maybe_show_asm(showasm, tokens):
     :param tokens:  The asm tokens to show.
     """
     if showasm:
-        stream = showasm if hasattr(showasm, "write") else sys.stdout
+        if hasattr(showasm, 'write'):
+            stream = showasm
+        else:
+            stream = sys.stdout
         for t in tokens:
             stream.write(str(t))
             stream.write("\n")
@@ -72,10 +75,13 @@ def maybe_show_tree_param_default(show_tree, name, default):
     :param default: The function parameter default.
     """
     if show_tree:
-        stream = show_tree if hasattr(show_tree, "write") else sys.stdout
-        stream.write("\n")
-        stream.write("--" + name)
-        stream.write("\n")
+        if hasattr(show_tree, 'write'):
+            stream = show_tree
+        else:
+            stream = sys.stdout
+        stream.write('\n')
+        stream.write('--' + name)
+        stream.write('\n')
         stream.write(str(default))
         stream.write("\n")
         stream.write("--")

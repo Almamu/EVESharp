@@ -57,8 +57,10 @@ from xdis.cross_dis import code_info as _code_info, pretty_flags as _pretty_flag
 
 
 PYPY = 'pypy'
-VARIANT = PYPY if IS_PYPY else None
-
+if IS_PYPY:
+    VARIANT = PYPY
+else:
+    VARIANT = None
 
 class _StdApi:
 

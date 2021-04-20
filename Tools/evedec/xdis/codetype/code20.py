@@ -88,7 +88,7 @@ class Code2(Code15):
         code.freeze()
         try:
             code.check()
-        except AssertionError as e:
+        except AssertionError(e):
             raise TypeError(e)
 
         return types.CodeType(

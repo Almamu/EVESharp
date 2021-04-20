@@ -43,7 +43,7 @@ namespace Node.Database
 			        return new PyTuple(0);
 
 		        Row mimeTypeRow = new Row(
-			        new PyList(3)
+			        new PyList<PyString>(3)
 			        {
 				        [0] = "mimeTypeID",
 				        [1] = "mimeType",
@@ -58,7 +58,7 @@ namespace Node.Database
 		        );
 
 		        Row entryRow = new Row(
-			        new PyList(8)
+			        new PyList<PyString>(8)
 			        {
 				        [0] = "channelID",
 				        [1] = "messageID",

@@ -12,8 +12,7 @@
 #
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <http://www.gnu.org/licenses/>.
-from __future__ import print_function
-import datetime, py_compile, os, subprocess, sys, tempfile
+import datetime, os, subprocess, sys
 
 from uncompyle6 import verify, IS_PYPY, PYTHON_VERSION
 from xdis import iscode, sysinfo2float
@@ -40,11 +39,7 @@ def _get_outstream(outfile):
         os.makedirs(dir)
     except OSError:
         pass
-    if PYTHON_VERSION < 3.0:
-        return open(outfile, mode="wb")
-    else:
-        return open(outfile, mode="w", encoding="utf-8")
-
+    return open(outfile, 'wb')
 
 def decompile(
     bytecode_version,
@@ -82,8 +77,21 @@ def decompile(
 
     assert iscode(co)
 
-    co_pypy_str = "PyPy " if is_pypy else ""
-    run_pypy_str = "PyPy " if IS_PYPY else ""
+    if is_pypy:
+        co_pypy_str = "PyPy "
+    else:
+        co_pypy_str = ""
+
+    if IS_PYPY:
+        run_pypy_str = "PyPy "
+    else:
+        run_pypy_str = ""
+
+    if magic_int:
+        m = str(magic_int)
+    else:
+        m = ""
+
     sys_version_lines = sys.version.split("\n")
     if source_encoding:
         write("# -*- coding: %s -*-" % source_encoding)
@@ -94,22 +102,22 @@ def decompile(
             __version__,
             co_pypy_str,
             bytecode_version,
-            " (%s)" % str(magic_int) if magic_int else "",
-            run_pypy_str,
+           " (%s)" % m, run_pypy_str,
             "\n# ".join(sys_version_lines),
         )
     )
-    if PYTHON_VERSION < 3.0 and bytecode_version >= 3.0:
+    if bytecode_version >= 3.0:
         write(
-            '# Warning: this version of Python has problems handling the Python 3 "byte" type in constants properly.\n'
+            "# Warning: this version of Python has problems handling the Python 3 byte type in constants properly.\n"
         )
-
     if co.co_filename:
         write("# Embedded file name: %s" % co.co_filename,)
     if timestamp:
-        write("# Compiled at: %s" % datetime.datetime.fromtimestamp(timestamp))
+        write("# Compiled at: %s" %
+              datetime.datetime.fromtimestamp(timestamp))
     if source_size:
-        write("# Size of source mod 2**32: %d bytes" % source_size)
+        real_out.write("# Size of source mod 2**32: %d bytes\n" %
+                       source_size)
 
     debug_opts = {"asm": showasm, "ast": showast, "grammar": showgrammar}
 
@@ -142,7 +150,7 @@ def decompile(
             )
             pass
         return deparsed
-    except pysource.SourceWalkerError as e:
+    except pysource.SourceWalkerError, e:
         # deparsing failed
         raise pysource.SourceWalkerError(str(e))
 
@@ -285,20 +293,16 @@ def main(
                     prefix = prefix[: -len(".py")]
 
                 # Unbuffer output if possible
-                buffering = -1 if sys.stdout.isatty() else 0
-                if PYTHON_VERSION >= 3.5:
-                    t = tempfile.NamedTemporaryFile(
-                        mode="w+b", buffering=buffering, suffix=".py", prefix=prefix
-                    )
+                if sys.stdout.isatty():
+                    buffering = -1
                 else:
-                    t = tempfile.NamedTemporaryFile(
-                        mode="w+b", suffix=".py", prefix=prefix
-                    )
-                current_outfile = t.name
-                sys.stdout = os.fdopen(sys.stdout.fileno(), "w", buffering)
-                tee = subprocess.Popen(["tee", current_outfile], stdin=subprocess.PIPE)
-                os.dup2(tee.stdin.fileno(), sys.stdout.fileno())
-                os.dup2(tee.stdin.fileno(), sys.stderr.fileno())
+                    buffering = 0
+                sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', buffering)
+                if PYTHON_VERSION > 2.6:
+                    tee = subprocess.Popen(["tee", current_outfile],
+                                           stdin=subprocess.PIPE)
+                    os.dup2(tee.stdin.fileno(), sys.stdout.fileno())
+                    os.dup2(tee.stdin.fileno(), sys.stderr.fileno())
         else:
             if filename.endswith(".pyc"):
                 current_outfile = os.path.join(out_base, filename[0:-1])
@@ -342,9 +346,9 @@ def main(
                     pass
                 pass
             tot_files += 1
-        except (ValueError, SyntaxError, ParserError, pysource.SourceWalkerError) as e:
+        except (ValueError, SyntaxError, ParserError, pysource.SourceWalkerError):
             sys.stdout.write("\n")
-            sys.stderr.write("\n# file %s\n# %s\n" % (infile, e))
+            sys.stderr.write("# file %s\n" % (infile))
             failed_files += 1
             tot_files += 1
         except KeyboardInterrupt:
@@ -354,7 +358,7 @@ def main(
             sys.stdout.write("\n")
             sys.stderr.write("\nLast file: %s   " % (infile))
             raise
-        except RuntimeError as e:
+        except RuntimeError, e:
             sys.stdout.write("\n%s\n" % str(e))
             if str(e).startswith("Unsupported Python"):
                 sys.stdout.write("\n")
@@ -397,13 +401,16 @@ def main(
                         else:
                             okay_files += 1
                             pass
-                    except verify.VerifyCmpError as e:
+                    except verify.VerifyCmpError, e:
                         print(e)
                         verify_failed_files += 1
                         os.rename(current_outfile, current_outfile + "_unverified")
                         sys.stderr.write("### Error Verifying %s\n" % filename)
                         sys.stderr.write(str(e) + "\n")
                         if not outfile:
+                            sys.stderr.write("### Error Verifiying %s" %
+                                            filename)
+                            sys.stderr.write(e)
                             if raise_on_error:
                                 raise
                             pass
@@ -413,16 +420,15 @@ def main(
                     okay_files += 1
                 pass
             elif do_verify:
-                sys.stderr.write(
-                    "\n### uncompile successful, but no file to compare against\n"
-                )
+                sys.stderr.write("\n### uncompile successful, "
+                                 "but no file to compare against")
                 pass
             else:
                 okay_files += 1
                 if not current_outfile:
                     mess = "\n# okay decompiling"
                     # mem_usage = __memUsage()
-                    print(mess, infile)
+                    print mess, infile
         if current_outfile:
             sys.stdout.write(
                 "%s -- %s\r"

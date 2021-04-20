@@ -340,7 +340,7 @@ namespace Node.Database
         {
             MySqlConnection connection = null;
             MySqlCommand command = Database.PrepareQuery(ref connection,
-                $"SELECT itemID, eveNames.itemName, invItems.typeID, ownerID, locationID, flag, contraband, singleton, quantity, x, y, z, custominfo FROM invItems LEFT JOIN eveNames USING(itemID) LEFT JOIN invPositions USING (itemID) WHERE itemID < {ItemManager.USERGENERATED_ID_MIN} AND (groupID = {(int) Groups.Station} OR groupID = {(int) Groups.Faction} OR groupID = {(int) Groups.SolarSystem} OR groupID = {(int) Groups.Corporation} OR groupID = {(int) Groups.System})"
+                $"SELECT itemID, eveNames.itemName, invItems.typeID, ownerID, locationID, flag, contraband, singleton, quantity, x, y, z, custominfo FROM invItems LEFT JOIN eveNames USING(itemID) LEFT JOIN invPositions USING (itemID) WHERE itemID < {ItemFactory.USERGENERATED_ID_MIN} AND (groupID = {(int) Groups.Station} OR groupID = {(int) Groups.Faction} OR groupID = {(int) Groups.SolarSystem} OR groupID = {(int) Groups.Corporation} OR groupID = {(int) Groups.System})"
             );
             
             using (connection)
@@ -407,7 +407,7 @@ namespace Node.Database
                 Item newItem = this.BuildItemFromReader(reader);
                 
                 // the non-user generated items cannot be owned by any node
-                if (itemID < ItemManager.USERGENERATED_ID_MIN)
+                if (itemID < ItemFactory.USERGENERATED_ID_MIN)
                     return newItem;
 
                 if (reader.IsDBNull(13) == false && reader.GetInt32(13) != 0)
@@ -999,7 +999,7 @@ namespace Node.Database
         public void UnloadItem(int itemID)
         {
             // non-user generated items are not owned by anyone
-            if (itemID < ItemManager.USERGENERATED_ID_MIN)
+            if (itemID < ItemFactory.USERGENERATED_ID_MIN)
                 return;
             
             Database.PrepareQuery("UPDATE invItems SET nodeID = 0 WHERE itemID = @itemID", new Dictionary<string, object>()

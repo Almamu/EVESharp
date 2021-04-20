@@ -67,7 +67,7 @@ namespace Node.Services.Inventory
             return this.ItemDB.ListStationItems(stationID, call.Client.EnsureCharacterIsSelected());
         }
 
-        public PyDataType ListStationBlueprintItems(PyInteger locationID, PyInteger stationID_, PyInteger isCorp, CallInformation call)
+        public PyDataType ListStationBlueprintItems(PyInteger locationID, PyInteger _, PyInteger isCorp, CallInformation call)
         {
             if (isCorp == 1)
                 return this.ItemDB.ListStationBlueprintItems(locationID, call.Client.CorporationID);
@@ -82,7 +82,7 @@ namespace Node.Services.Inventory
 
         private void PreMoveItemCheck(ItemEntity item, Flags flag, double quantityToMove)
         {
-            if (this.mInventory.Type.ID == (int) ItemTypes.Capsule)
+            if (this.mInventory.Type.ID == (int) Types.Capsule)
                 throw new CantTakeInSpaceCapsule();
 
             // perform checks only on cargo
@@ -106,7 +106,7 @@ namespace Node.Services.Inventory
             int oldLocation = item.LocationID;
             Flags oldFlag = item.Flag;
             
-            // rig slots cannot be moded
+            // rig slots cannot be moved
             if (item.IsInRigSlot() == true)
                 throw new CannotRemoveUpgradeManually();
             
@@ -127,7 +127,7 @@ namespace Node.Services.Inventory
             if (newFlag == Flags.AutoFit)
             {
                 // capsules cannot fit anything
-                if (this.mInventory.Type.ID == (int) ItemTypes.Capsule)
+                if (this.mInventory.Type.ID == (int) Types.Capsule)
                     throw new CantFitToCapsule();
                 
                 if (this.mInventory is Ship ship)
@@ -142,21 +142,21 @@ namespace Node.Services.Inventory
                             if (modules.Count >= ship.Attributes[Attributes.hiSlots])
                                 throw new NoFreeShipSlots();
 
-                            if (modules.TryGetValue(Flags.HiSlot0, out _) == false)
+                            if (modules.ContainsKey(Flags.HiSlot0) == false)
                                 newFlag = Flags.HiSlot0;
-                            else if (modules.TryGetValue(Flags.HiSlot1, out _) == false)
+                            else if (modules.ContainsKey(Flags.HiSlot1) == false)
                                 newFlag = Flags.HiSlot1;
-                            else if (modules.TryGetValue(Flags.HiSlot2, out _) == false)
+                            else if (modules.ContainsKey(Flags.HiSlot2) == false)
                                 newFlag = Flags.HiSlot2;
-                            else if (modules.TryGetValue(Flags.HiSlot3, out _) == false)
+                            else if (modules.ContainsKey(Flags.HiSlot3) == false)
                                 newFlag = Flags.HiSlot3;
-                            else if (modules.TryGetValue(Flags.HiSlot4, out _) == false)
+                            else if (modules.ContainsKey(Flags.HiSlot4) == false)
                                 newFlag = Flags.HiSlot4;
-                            else if (modules.TryGetValue(Flags.HiSlot5, out _) == false)
+                            else if (modules.ContainsKey(Flags.HiSlot5) == false)
                                 newFlag = Flags.HiSlot5;
-                            else if (modules.TryGetValue(Flags.HiSlot6, out _) == false)
+                            else if (modules.ContainsKey(Flags.HiSlot6) == false)
                                 newFlag = Flags.HiSlot6;
-                            else if (modules.TryGetValue(Flags.HiSlot7, out _) == false)
+                            else if (modules.ContainsKey(Flags.HiSlot7) == false)
                                 newFlag = Flags.HiSlot7;
                         }
                         else if (module.IsMediumSlot() == true)
@@ -166,21 +166,21 @@ namespace Node.Services.Inventory
                             if (modules.Count >= ship.Attributes[Attributes.medSlots])
                                 throw new NoFreeShipSlots();
 
-                            if (modules.TryGetValue(Flags.MedSlot0, out _) == false)
+                            if (modules.ContainsKey(Flags.MedSlot0) == false)
                                 newFlag = Flags.MedSlot0;
-                            else if (modules.TryGetValue(Flags.MedSlot1, out _) == false)
+                            else if (modules.ContainsKey(Flags.MedSlot1) == false)
                                 newFlag = Flags.MedSlot1;
-                            else if (modules.TryGetValue(Flags.MedSlot2, out _) == false)
+                            else if (modules.ContainsKey(Flags.MedSlot2) == false)
                                 newFlag = Flags.MedSlot2;
-                            else if (modules.TryGetValue(Flags.MedSlot3, out _) == false)
+                            else if (modules.ContainsKey(Flags.MedSlot3) == false)
                                 newFlag = Flags.MedSlot3;
-                            else if (modules.TryGetValue(Flags.MedSlot4, out _) == false)
+                            else if (modules.ContainsKey(Flags.MedSlot4) == false)
                                 newFlag = Flags.MedSlot4;
-                            else if (modules.TryGetValue(Flags.MedSlot5, out _) == false)
+                            else if (modules.ContainsKey(Flags.MedSlot5) == false)
                                 newFlag = Flags.MedSlot5;
-                            else if (modules.TryGetValue(Flags.MedSlot6, out _) == false)
+                            else if (modules.ContainsKey(Flags.MedSlot6) == false)
                                 newFlag = Flags.MedSlot6;
-                            else if (modules.TryGetValue(Flags.MedSlot7, out _) == false)
+                            else if (modules.ContainsKey(Flags.MedSlot7) == false)
                                 newFlag = Flags.MedSlot7;
                         }
                         else if (module.IsLowSlot() == true)
@@ -190,21 +190,21 @@ namespace Node.Services.Inventory
                             if (modules.Count >= ship.Attributes[Attributes.lowSlots])
                                 throw new NoFreeShipSlots();
 
-                            if (modules.TryGetValue(Flags.LoSlot0, out _) == false)
+                            if (modules.ContainsKey(Flags.LoSlot0) == false)
                                 newFlag = Flags.LoSlot0;
-                            else if (modules.TryGetValue(Flags.LoSlot1, out _) == false)
+                            else if (modules.ContainsKey(Flags.LoSlot1) == false)
                                 newFlag = Flags.LoSlot1;
-                            else if (modules.TryGetValue(Flags.LoSlot2, out _) == false)
+                            else if (modules.ContainsKey(Flags.LoSlot2) == false)
                                 newFlag = Flags.LoSlot2;
-                            else if (modules.TryGetValue(Flags.LoSlot3, out _) == false)
+                            else if (modules.ContainsKey(Flags.LoSlot3) == false)
                                 newFlag = Flags.LoSlot3;
-                            else if (modules.TryGetValue(Flags.LoSlot4, out _) == false)
+                            else if (modules.ContainsKey(Flags.LoSlot4) == false)
                                 newFlag = Flags.LoSlot4;
-                            else if (modules.TryGetValue(Flags.LoSlot5, out _) == false)
+                            else if (modules.ContainsKey(Flags.LoSlot5) == false)
                                 newFlag = Flags.LoSlot5;
-                            else if (modules.TryGetValue(Flags.LoSlot6, out _) == false)
+                            else if (modules.ContainsKey(Flags.LoSlot6) == false)
                                 newFlag = Flags.LoSlot6;
-                            else if (modules.TryGetValue(Flags.LoSlot7, out _) == false)
+                            else if (modules.ContainsKey(Flags.LoSlot7) == false)
                                 newFlag = Flags.LoSlot7;
                         }
                         else if (module.IsRigSlot() == true)
@@ -214,21 +214,21 @@ namespace Node.Services.Inventory
                             if (modules.Count >= ship.Attributes[Attributes.rigSlots])
                                 throw new NoFreeShipSlots();
 
-                            if (modules.TryGetValue(Flags.RigSlot0, out _) == false)
+                            if (modules.ContainsKey(Flags.RigSlot0) == false)
                                 newFlag = Flags.RigSlot0;
-                            else if (modules.TryGetValue(Flags.RigSlot1, out _) == false)
+                            else if (modules.ContainsKey(Flags.RigSlot1) == false)
                                 newFlag = Flags.RigSlot1;
-                            else if (modules.TryGetValue(Flags.RigSlot2, out _) == false)
+                            else if (modules.ContainsKey(Flags.RigSlot2) == false)
                                 newFlag = Flags.RigSlot2;
-                            else if (modules.TryGetValue(Flags.RigSlot3, out _) == false)
+                            else if (modules.ContainsKey(Flags.RigSlot3) == false)
                                 newFlag = Flags.RigSlot3;
-                            else if (modules.TryGetValue(Flags.RigSlot4, out _) == false)
+                            else if (modules.ContainsKey(Flags.RigSlot4) == false)
                                 newFlag = Flags.RigSlot4;
-                            else if (modules.TryGetValue(Flags.RigSlot5, out _) == false)
+                            else if (modules.ContainsKey(Flags.RigSlot5) == false)
                                 newFlag = Flags.RigSlot5;
-                            else if (modules.TryGetValue(Flags.RigSlot6, out _) == false)
+                            else if (modules.ContainsKey(Flags.RigSlot6) == false)
                                 newFlag = Flags.RigSlot6;
-                            else if (modules.TryGetValue(Flags.RigSlot7, out _) == false)
+                            else if (modules.ContainsKey(Flags.RigSlot7) == false)
                                 newFlag = Flags.RigSlot7;
                         }
                     }

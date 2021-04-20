@@ -27,7 +27,6 @@ def or_check(self, lhs, n, rule, ast, tokens, first, last):
 
         first_offset = tokens[first].off2int()
         expr_jt = ast[0]
-
         if expr_jt == "expr_jitop":
             jump_true = expr_jt[1]
         else:

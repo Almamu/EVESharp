@@ -27,12 +27,8 @@ from uncompyle6.semantics.helper import (
     find_all_globals,
     find_globals_and_nonlocals,
     find_none,
+    zip_longest
 )
-
-if PYTHON3:
-    from itertools import zip_longest
-else:
-    from itertools import izip_longest as zip_longest
 
 from uncompyle6.show import maybe_show_tree_param_default
 
@@ -104,7 +100,7 @@ def make_function2(self, node, is_lambda, nested=1, code_node=None):
             is_lambda=is_lambda,
             noneInNames=("None" in code.co_names),
         )
-    except (ParserError, ParserError2) as p:
+    except ParserError, p:
         self.write(str(p))
         if not self.tolerate_errors:
             self.ERROR = p

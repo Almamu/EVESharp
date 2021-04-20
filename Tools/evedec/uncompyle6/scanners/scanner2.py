@@ -33,7 +33,7 @@ For example:
 Finally we save token information.
 """
 
-from __future__ import print_function
+from uncompyle6 import PYTHON_VERSION
 
 from copy import copy
 

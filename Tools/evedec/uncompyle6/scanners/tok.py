@@ -21,7 +21,6 @@ from uncompyle6 import PYTHON3
 if PYTHON3:
     intern = sys.intern
 
-
 def off2int(offset, prefer_last=True):
     if isinstance(offset, int):
         return offset
@@ -37,14 +36,18 @@ def off2int(offset, prefer_last=True):
             # This is an instruction with an extended arg.
             # For things that compare against offsets, we generally want the
             # later offset.
-            return offset_2 if prefer_last else offset_1
+            if prefer_last:
+                return offset_2
+            else:
+                return offset_1
+            pass
         else:
             # Probably a "COME_FROM"-type offset, where the second number
             # is just a count, and not really an offset.
             return offset_1
 
+class Token:   # Python 2.4 can't have empty ()
 
-class Token:
     """
     Class representing a byte-code instruction.
 
@@ -122,22 +125,23 @@ class Token:
 
     def format(self, line_prefix="", token_num=None):
         if token_num is not None:
-            prefix = (
-                "\n(%03d)%s L.%4d  " % (token_num, line_prefix, self.linestart)
-                if self.linestart
-                else ("(%03d)%s" % (token_num, " " * (9 + len(line_prefix))))
-            )
+            if self.linestart:
+                prefix = "\n(%03d)%s L.%4d  " % (token_num, line_prefix, self.linestart)
+            else:
+                prefix = "(%03d)%s" % (token_num, " " * (9 + len(line_prefix)))
         else:
-            prefix = (
-                "\n%s L.%4d  " % (line_prefix, self.linestart)
-                if self.linestart
-                else (" " * (9 + len(line_prefix)))
-            )
+            if self.linestart:
+                prefix = "\n%s L.%4d  " % (line_prefix, self.linestart)
+            else:
+                prefix = " " * (9 + len(line_prefix))
         offset_opname = "%8s  %-17s" % (self.offset, self.kind)
 
         if not self.has_arg:
             return "%s%s" % (prefix, offset_opname)
-        argstr = "%6d " % self.attr if isinstance(self.attr, int) else (" " * 7)
+        if isinstance(self.attr, int):
+            argstr = "%6d " % self.attr
+        else:
+            argstr = (" " * 7)
         name = self.kind
 
         if self.has_arg:
@@ -195,6 +199,5 @@ class Token:
 
     def off2int(self, prefer_last=True):
         return off2int(self.offset, prefer_last)
-
 
 NoneToken = Token("LOAD_CONST", offset=-1, attr=None, pattr=None)

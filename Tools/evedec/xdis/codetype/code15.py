@@ -24,7 +24,7 @@ Code15FieldTypes = deepcopy(Code13FieldTypes)
 Code15FieldTypes.update({
     "co_stacksize": int,
     "co_firstlineno": int,
-    "co_lnotab": (str, bytes, dict),
+    "co_lnotab": (str, dict),
 })
 # stacksize, co_firstlineno, co_lnotab are new in 1.5
 

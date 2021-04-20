@@ -1,4 +1,4 @@
-# Copyright (c) 2015-2020 by Rocky Bernstein
+# Copyright (c) 2015-2021 by Rocky Bernstein
 #  This program is free software; you can redistribute it and/or
 #  modify it under the terms of the GNU General Public License
 #  as published by the Free Software Foundation; either version 2
@@ -13,10 +13,12 @@
 #  along with this program; if not, write to the Free Software
 #  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-import marshal, py_compile, sys, tempfile, time
+import marshal, py_compile, sys, tempfile, time, types
 from struct import unpack, pack
+from datetime import datetime
 import os.path as osp
 
+import xdis.marsh
 import xdis.unmarshal
 from xdis.version_info import PYTHON3, PYTHON_VERSION
 from xdis.magics import (
@@ -58,6 +60,8 @@ def check_object_path(path):
     if not is_bytecode_extension(path) and is_python_source(path):
         try:
             import importlib
+            return importlib.util.cache_from_source(path,
+                                                    optimization='')
 
             bytecode_path = importlib.util.cache_from_source(path, optimization="")
             if osp.exists(bytecode_path):
@@ -85,7 +89,6 @@ def check_object_path(path):
         )
     return path
 
-
 def is_pypy(magic_int):
     return magic_int in ((62211 + 7, 3180 + 7) + IS_PYPY3)
 
@@ -99,7 +102,7 @@ def load_file(filename, out=sys.stdout):
     code_object: code_object compiled from this source code
     This function does NOT write any file!
     """
-    fp = open(filename, "rb")
+    fp = open(filename, 'r')
     try:
         source = fp.read()
         try:
@@ -159,15 +162,12 @@ def load_module(filename, code_objects=None, fast_load=False, get_code=True):
             % (filename, osp.getsize(filename))
         )
 
-    with open(filename, "rb") as fp:
-        return load_module_from_file_object(
-            fp,
-            filename=filename,
-            code_objects=code_objects,
-            fast_load=fast_load,
-            get_code=get_code,
-        )
-
+    try:
+        fp = open(filename, 'rb')
+        return load_module_from_file_object(fp, filename=filename, code_objects=code_objects,
+                                            fast_load=fast_load, get_code=get_code)
+    finally:
+        fp.close()
 
 def load_module_from_file_object(
     fp, filename="<unknown>", code_objects=None, fast_load=False, get_code=True
@@ -187,7 +187,7 @@ def load_module_from_file_object(
 
         # For reasons I don't understand, PyPy 3.2 stores a magic
         # of '0'...  The two values below are for Python 2.x and 3.x respectively
-        if magic[0:1] in ["0", b"0"]:
+        if magic[0:1] in ["0", "0"]:
             magic = int2magic(3180 + 7)
 
         try:
@@ -321,24 +321,35 @@ def load_module_from_file_object(
     )
 
 
-def write_bytecode_file(bytecode_path, code, magic_int, filesize=0):
+def write_bytecode_file(bytecode_path, code_obj, magic_int, compilation_ts = None, filesize = 0):
     """Write bytecode file _bytecode_path_, with code for having Python
     magic_int (i.e. bytecode associated with some version of Python)
     """
-    fp = open(bytecode_path, "wb")
-    try:
-        if PYTHON3:
-            fp.write(pack("<Hcc", magic_int, b"\r", b"\n"))
-        else:
-            fp.write(pack("<Hcc", magic_int, "\r", "\n"))
-        fp.write(pack("<I", int(time.time())))
-        if 3000 <= magic_int < 20121:
-            # In Python 3 you need to write out the size mod 2**32 here
-            fp.write(pack("<I", filesize))
-        fp.write(marshal.dumps(code))
-    finally:
-        fp.close()
+    fp = open(bytecode_path, 'wb')
+    version = float(magicint2version[magic_int][:3])
+    if version >= 3.0:
+        fp.write(pack('<Hcc', magic_int, '\r', '\n'))
+        if version >= 3.7:  # pep552 bytes
+            fp.write(pack('<I', 0))  # pep552 bytes
+    else:
+        fp.write(pack('<Hcc', magic_int, '\r', '\n'))
 
+    if compilation_ts:
+        if isinstance(compilation_ts, datetime):
+            fp.write(pack('<I', int(compilation_ts.timestamp())))
+        elif isinstance(compilation_ts, int):
+            fp.write(pack('<I', compilation_ts))
+    else:
+        fp.write(pack('<I', int(datetime.now().timestamp())))
+
+    if version >= 3.3:
+        # In Python 3.3+, these 4 bytes are the size of the source code_obj file (mod 2^32)
+        fp.write(pack('<I', filesize))
+    if isinstance(code_obj, types.CodeType):
+        fp.write(marshal.dumps(code_obj))
+    else:
+        fp.write(xdis.marsh.dumps(code_obj))
+    fp.close()
 
 if __name__ == "__main__":
     co = load_file(__file__)

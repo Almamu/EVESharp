@@ -1,5 +1,5 @@
 """
-Copyright (c) 2015-2017 Rocky Bernstein
+Copyright (c) 2015-2017, 2020 Rocky Bernstein
 Copyright (c) 1998-2002 John Aycock
 
   Permission is hereby granted, free of charge, to any person obtaining
@@ -24,13 +24,14 @@ Copyright (c) 1998-2002 John Aycock
 
 import os, pickle, re, sys
 
-if sys.version[0:3] <= '2.3':
+if sys.version[0:3] <= "2.3":
     from sets import Set as set
 
     def sorted(iterable):
         temp = [x for x in iterable]
         temp.sort()
         return temp
+
 
 def _namelist(instance):
     namelist, namedict, classlist = [], {}, [instance.__class__]
@@ -43,13 +44,16 @@ def _namelist(instance):
                 namedict[name] = 1
     return namelist
 
+
 def rule2str(rule):
-    return ("%s ::= %s" % (rule[0], ' '.join(rule[1]))).rstrip()
+    return ("%s ::= %s" % (rule[0], " ".join(rule[1]))).rstrip()
+
 
 class _State:
-    '''
+    """
     Extracted from GenericParser and made global so that [un]picking works.
-    '''
+    """
+
     def __init__(self, stateno, items):
         self.T, self.complete, self.items = [], [], items
         self.stateno = stateno
@@ -59,12 +63,18 @@ class _State:
 #                  'errorstack': 'full', 'dups': False }
 # DEFAULT_DEBUG = {'rules': False, 'transition': False, 'reduce' : True,
 #                  'errorstack': 'plain', 'dups': False }
-DEFAULT_DEBUG = {'rules': False, 'transition': False, 'reduce': False,
-                 'errorstack': None, 'context': True, 'dups': False}
+DEFAULT_DEBUG = {
+    "rules": False,
+    "transition": False,
+    "reduce": False,
+    "errorstack": None,
+    "context": True,
+    "dups": False,
+}
 
 
 class GenericParser(object):
-    '''
+    """
     An Earley parser, as per J. Earley, "An Efficient Context-Free
     Parsing Algorithm", CACM 13(2), pp. 94-102.  Also J. C. Earley,
     "An Efficient Context-Free Parsing Algorithm", Ph.D. thesis,
@@ -73,10 +83,9 @@ class GenericParser(object):
     and the SPARK Toolkit", Ph.D. thesis, University of Victoria,
     2001, and J. Aycock and R. N. Horspool, "Practical Earley
     Parsing", unpublished paper, 2001.
-    '''
+    """
 
-    def __init__(self, start, debug=DEFAULT_DEBUG,
-                 coverage_path=None):
+    def __init__(self, start, debug=DEFAULT_DEBUG, coverage_path=None):
         """_start_ : grammar start symbol;
            _debug_ : produce optional parsing debug information
            _profile_ : if not None should be a file path to open
@@ -124,9 +133,9 @@ class GenericParser(object):
         # the first token index for the reduction.
         self.check_reduce = {}
 
-    _NULLABLE = '\e_'
-    _START = 'START'
-    _BOF = '|-'
+    _NULLABLE = r"\e_"
+    _START = "START"
+    _BOF = "|-"
 
     #
     #  When pickling, take the time to generate the full state machine;
@@ -161,9 +170,9 @@ class GenericParser(object):
         rv = self.__dict__.copy()
         for s in list(self.states.values()):
             del s.items
-        del rv['rule2func']
-        del rv['nullable']
-        del rv['cores']
+        del rv["rule2func"]
+        del rv["nullable"]
+        del rv["cores"]
         return rv
 
     def __setstate__(self, D):
@@ -171,10 +180,10 @@ class GenericParser(object):
         self.rule2func = {}
         self.rule2name = {}
         self.collectRules()
-        start = D['rules'][self._START][0][1][1]  # Blech.
+        start = D["rules"][self._START][0][1][1]  # Blech.
         self.augment(start)
-        D['rule2func'] = self.rule2func
-        D['makeSet'] = self.makeSet_fast
+        D["rule2func"] = self.rule2func
+        D["makeSet"] = self.makeSet_fast
         self.__dict__ = D
 
     #
@@ -197,19 +206,21 @@ class GenericParser(object):
         fn = func
 
         # remove blanks lines and comment lines, e.g. lines starting with "#"
-        doc = os.linesep.join([s for s in doc.splitlines() if s and not re.match("^\s*#", s)])
+        doc = os.linesep.join(
+            [s for s in doc.splitlines() if s and not re.match(r"^\s*#", s)]
+        )
 
         rules = doc.split()
 
         index = []
         for i in range(len(rules)):
-            if rules[i] == '::=':
-                index.append(i-1)
+            if rules[i] == "::=":
+                index.append(i - 1)
         index.append(len(rules))
 
-        for i in range(len(index)-1):
+        for i in range(len(index) - 1):
             lhs = rules[index[i]]
-            rhs = rules[index[i]+2:index[i+1]]
+            rhs = rules[index[i] + 2 : index[i + 1]]
             rule = (lhs, tuple(rhs))
 
             if _preprocess:
@@ -223,10 +234,10 @@ class GenericParser(object):
                     raise TypeError("Complete recursive rule %s" % rule2str(rule))
 
                 repeat = rule[1][-1][-1]
-                if repeat in ('*', '+', '?'):
+                if repeat in ("*", "+", "?"):
                     nt = rule[1][-1][:-1]
 
-                    if repeat == '?':
+                    if repeat == "?":
                         new_rule_pair = [rule[0], list((nt,))]
                         self.optional_nt.add(rule[0])
                     else:
@@ -234,7 +245,7 @@ class GenericParser(object):
                         new_rule_pair = [rule[0], [rule[0]] + list((nt,))]
                     new_rule = rule2str(new_rule_pair)
                     self.addRule(new_rule, func, _preprocess)
-                    if repeat == '+':
+                    if repeat == "+":
                         second_rule_pair = (lhs, (nt,))
                     else:
                         second_rule_pair = (lhs, tuple())
@@ -244,12 +255,12 @@ class GenericParser(object):
 
             if lhs in self.rules:
                 if rule in self.rules[lhs]:
-                    if 'dups' in self.debug and self.debug['dups']:
+                    if "dups" in self.debug and self.debug["dups"]:
                         self.duplicate_rule(rule)
                     continue
                 self.rules[lhs].append(rule)
             else:
-                self.rules[lhs] = [ rule ]
+                self.rules[lhs] = [rule]
             self.rule2func[rule] = fn
             self.rule2name[rule] = func.__name__[2:]
             self.ruleschanged = True
@@ -269,17 +280,19 @@ class GenericParser(object):
             and _self.rule2name_
         """
         # remove blanks lines and comment lines, e.g. lines starting with "#"
-        doc = os.linesep.join([s for s in doc.splitlines() if s and not re.match("^\s*#", s)])
+        doc = os.linesep.join(
+            [s for s in doc.splitlines() if s and not re.match(r"^\s*#", s)]
+        )
 
         rules = doc.split()
         index = []
         for i in range(len(rules)):
-            if rules[i] == '::=':
-                index.append(i-1)
+            if rules[i] == "::=":
+                index.append(i - 1)
         index.append(len(rules))
-        for i in range(len(index)-1):
+        for i in range(len(index) - 1):
             lhs = rules[index[i]]
-            rhs = rules[index[i]+2:index[i+1]]
+            rhs = rules[index[i] + 2 : index[i + 1]]
             rule = (lhs, tuple(rhs))
 
             if lhs not in self.rules:
@@ -306,13 +319,13 @@ class GenericParser(object):
 
     def collectRules(self):
         for name in _namelist(self):
-            if name[:2] == 'p_':
+            if name[:2] == "p_":
                 func = getattr(self, name)
                 doc = func.__doc__
                 self.addRule(doc, func)
 
     def augment(self, start):
-        rule = '%s ::= %s %s' % (self._START, self._BOF, start)
+        rule = "%s ::= %s %s" % (self._START, self._BOF, start)
         self.addRule(rule, lambda args: args[1], False)
 
     def computeNull(self):
@@ -384,22 +397,22 @@ class GenericParser(object):
             n = len(rhs)
             while i < n:
                 sym = rhs[i]
-                if (sym not in self.rules or
-                    not (sym in self.nullable and self.nullable[sym])):
-                        candidate = 0
-                        i += 1
-                        continue
+                if sym not in self.rules or not (
+                    sym in self.nullable and self.nullable[sym]
+                ):
+                    candidate = 0
+                    i += 1
+                    continue
 
                 newrhs = list(rhs)
-                newrhs[i] = self._NULLABLE+sym
+                newrhs[i] = self._NULLABLE + sym
                 newrule = (lhs, tuple(newrhs))
-                worklist.append((newrule, i+1,
-                                 candidate, oldrule))
+                worklist.append((newrule, i + 1, candidate, oldrule))
                 candidate = 0
                 i = i + 1
             else:
                 if candidate:
-                    lhs = self._NULLABLE+lhs
+                    lhs = self._NULLABLE + lhs
                     rule = (lhs, rhs)
                 if lhs in self.newrules:
                     self.newrules[lhs].append(rule)
@@ -416,8 +429,11 @@ class GenericParser(object):
     def error(self, tokens, index):
         print("Syntax error at or near token %d: `%s'" % (index, tokens[index]))
 
-        if 'context' in self.debug and self.debug['context']:
-            start = index - 2 if index - 2 >= 0 else 0
+        if "context" in self.debug and self.debug["context"]:
+            if index - 2 >= 0:
+                start = index - 2
+            else:
+                start = 0
             tokens = [str(tokens[i]) for i in range(start, index+1)]
             print("Token context:\n\t%s" % ("\n\t".join(tokens)))
         raise SystemExit
@@ -443,15 +459,11 @@ class GenericParser(object):
                 if dot > 0:
                     if full:
                         state_stack.add(
-                            "%s ::= %s . %s" %
-                            (lhs,
-                            ' '.join(rhs[:dot]),
-                            ' '.join(rhs[dot:])))
+                            "%s ::= %s . %s"
+                            % (lhs, " ".join(rhs[:dot]), " ".join(rhs[dot:]))
+                        )
                     else:
-                        state_stack.add(
-                            "%s ::= %s" %
-                            (lhs,
-                            ' '.join(rhs[:dot])))
+                        state_stack.add("%s ::= %s" % (lhs, " ".join(rhs[:dot])))
                     pass
                 pass
             pass
@@ -470,7 +482,7 @@ class GenericParser(object):
         if debug:
             self.debug = debug
 
-        sets = [ [(1, 0), (2, 0)] ]
+        sets = [[(1, 0), (2, 0)]]
         self.links = {}
 
         if self.ruleschanged:
@@ -480,7 +492,7 @@ class GenericParser(object):
             self.makeNewRules()
             self.ruleschanged = False
             self.edges, self.cores = {}, {}
-            self.states = { 0: self.makeState0() }
+            self.states = {0: self.makeState0()}
             self.makeState(0, self._BOF)
 
         for i in range(len(tokens)):
@@ -496,17 +508,18 @@ class GenericParser(object):
         finalitem = (self.finalState(tokens), 0)
         if finalitem not in sets[-2]:
             if len(tokens) > 0:
-                if self.debug.get('errorstack', False):
-                    self.errorstack(tokens, i-1, str(self.debug['errorstack']) == 'full')
-                self.error(tokens, i-1)
+                if self.debug.get("errorstack", False):
+                    self.errorstack(
+                        tokens, i - 1, str(self.debug["errorstack"]) == "full"
+                    )
+                self.error(tokens, i - 1)
             else:
                 self.error(None, None)
 
         if self.profile_info is not None:
             self.dump_profile_info()
 
-        return self.buildTree(self._START, finalitem,
-                    tokens, len(sets)-2)
+        return self.buildTree(self._START, finalitem, tokens, len(sets) - 2)
 
     def isnullable(self, sym):
         #  For symbols in G_e only.
@@ -531,8 +544,8 @@ class GenericParser(object):
         kitems = []
         for rule, pos in self.states[state].items:
             lhs, rhs = rule
-            if rhs[pos:pos+1] == (sym,):
-                kitems.append((rule, self.skip(rule, pos+1)))
+            if rhs[pos : pos + 1] == (sym,):
+                kitems.append((rule, self.skip(rule, pos + 1)))
 
         tcore = tuple(sorted(kitems))
         if tcore in self.cores:
@@ -542,7 +555,7 @@ class GenericParser(object):
         #  \epsilon-nonkernel state together; we'll need it right away.
         #
         k = self.cores[tcore] = len(self.states)
-        K, NK = _State(k, kitems), _State(k+1, [])
+        K, NK = _State(k, kitems), _State(k + 1, [])
         self.states[k] = K
         predicted = {}
 
@@ -617,12 +630,12 @@ class GenericParser(object):
         return rv
 
     def gotoT(self, state, t):
-        if self.debug['rules']:
+        if self.debug["rules"]:
             print("Terminal", t, state)
         return [self.goto(state, t)]
 
     def gotoST(self, state, st):
-        if self.debug['transition']:
+        if self.debug["transition"]:
             print("GotoST", st, state)
         rv = []
         for t in self.states[state].T:
@@ -642,7 +655,7 @@ class GenericParser(object):
             self.links[key].append((predecessor, causal))
 
     def makeSet(self, tokens, sets, i):
-        cur, next = sets[i], sets[i+1]
+        cur, next = sets[i], sets[i + 1]
 
         if tokens is not None:
             token = tokens[i]
@@ -661,24 +674,25 @@ class GenericParser(object):
             add = fn(state, arg)
             for k in add:
                 if k is not None:
-                    self.add(next, (k, parent), i+1, ptr)
+                    self.add(next, (k, parent), i + 1, ptr)
                     nk = self.goto(k, None)
                     if nk is not None:
-                        self.add(next, (nk, i+1))
+                        self.add(next, (nk, i + 1))
 
             if parent == i:
                 continue
 
             for rule in self.states[state].complete:
                 lhs, rhs = rule
-                if self.debug['reduce']:
+                if self.debug["reduce"]:
                     self.debug_reduce(rule, tokens, parent, i)
                 if self.profile_info is not None:
                     self.profile_rule(rule)
                 if lhs in self.check_reduce:
-                    if (self.check_reduce[lhs] == 'AST' and
-                        (tokens or hasattr(self, 'tokens'))):
-                        if hasattr(self, 'tokens'):
+                    if self.check_reduce[lhs] == "AST" and (
+                        tokens or hasattr(self, "tokens")
+                    ):
+                        if hasattr(self, "tokens"):
                             tokens = self.tokens
                         ast = self.reduce_ast(rule, self.tokens, item, i, sets)
                     else:
@@ -687,7 +701,7 @@ class GenericParser(object):
                     if ast:
                         del ast
                     if invalid:
-                        if self.debug['reduce']:
+                        if self.debug["reduce"]:
                             print("Reduce %s invalid by check" % lhs)
                         continue
                     pass
@@ -698,8 +712,7 @@ class GenericParser(object):
                     if k is not None:
                         why = (item, i, rule)
                         pptr = (pitem, parent)
-                        self.add(cur, (k, pparent),
-                                i, pptr, why)
+                        self.add(cur, (k, pparent), i, pptr, why)
                         nk = self.goto(k, None)
                         if nk is not None:
                             self.add(cur, (nk, i))
@@ -711,7 +724,7 @@ class GenericParser(object):
         #  then duplicates and inlines code to boost speed at the
         #  cost of extreme ugliness.
         #
-        cur, next = sets[i], sets[i+1]
+        cur, next = sets[i], sets[i + 1]
         ttype = token is not None and self.typestring(token) or None
 
         for item in cur:
@@ -723,7 +736,7 @@ class GenericParser(object):
                     # self.add(next, (k, parent), i+1, ptr)
                     # INLINED --------v
                     new = (k, parent)
-                    key = (new, i+1)
+                    key = (new, i + 1)
                     if new not in next:
                         self.links[key] = []
                         next.append(new)
@@ -734,7 +747,7 @@ class GenericParser(object):
                     if nk is not None:
                         # self.add(next, (nk, i+1))
                         # INLINED -------------v
-                        new = (nk, i+1)
+                        new = (nk, i + 1)
                         if new not in next:
                             next.append(new)
                         # INLINED ---------------^
@@ -742,11 +755,11 @@ class GenericParser(object):
                 add = self.gotoST(state, token)
                 for k in add:
                     if k is not None:
-                        self.add(next, (k, parent), i+1, ptr)
+                        self.add(next, (k, parent), i + 1, ptr)
                         # nk = self.goto(k, None)
                         nk = self.edges.get((k, None), None)
                         if nk is not None:
-                            self.add(next, (nk, i+1))
+                            self.add(next, (nk, i + 1))
 
             if parent == i:
                 continue
@@ -807,12 +820,12 @@ class GenericParser(object):
         rhs = rule[1]
         attr = [None] * len(rhs)
 
-        for i in range(len(rhs)-1, -1, -1):
+        for i in range(len(rhs) - 1, -1, -1):
             attr[i] = self.deriveEpsilon(rhs[i])
         return self.rule2func[self.new2old[rule]](attr)
 
     def buildTree(self, nt, item, tokens, k):
-        if self.debug['rules']:
+        if self.debug["rules"]:
             print("NT", nt)
         state, parent = item
 
@@ -828,21 +841,20 @@ class GenericParser(object):
         rhs = rule[1]
         attr = [None] * len(rhs)
 
-        for i in range(len(rhs)-1, -1, -1):
+        for i in range(len(rhs) - 1, -1, -1):
             sym = rhs[i]
             if sym not in self.newrules:
                 if sym != self._BOF:
-                    attr[i] = tokens[k-1]
+                    attr[i] = tokens[k - 1]
                     key = (item, k)
                     item, k = self.predecessor(key, None)
             # elif self.isnullable(sym):
-            elif self._NULLABLE == sym[0:len(self._NULLABLE)]:
+            elif self._NULLABLE == sym[0 : len(self._NULLABLE)]:
                 attr[i] = self.deriveEpsilon(sym)
             else:
                 key = (item, k)
                 why = self.causal(key)
-                attr[i] = self.buildTree(sym, why[0],
-                            tokens, why[1])
+                attr[i] = self.buildTree(sym, why[0], tokens, why[1])
                 item, k = self.predecessor(key, why)
         return self.rule2func[self.new2old[rule]](attr)
 
@@ -864,11 +876,11 @@ class GenericParser(object):
         return rules[name2index[self.resolve(list)]]
 
     def resolve(self, list):
-        '''
+        """
         Resolve ambiguity in favor of the shortest RHS.
         Since we walk the tree from the top down, this
         should effectively resolve in favor of a "shift".
-        '''
+        """
         return list[0]
 
     def dump_grammar(self, out=sys.stdout):
@@ -879,52 +891,50 @@ class GenericParser(object):
             out.write("%s\n" % rule2str(rule[0]))
         return
 
-    def check_grammar(self, ok_start_symbols = set(),
-                      out=sys.stderr):
-        '''
+    def check_grammar(self, ok_start_symbols=set(), out=sys.stderr):
+        """
         Check grammar for:
         -  unused left-hand side nonterminals that are neither start symbols
            or listed in ok_start_symbols
         -  unused right-hand side nonterminals, i.e. not tokens
         -  right-recursive rules. These can slow down parsing.
-        '''
+        """
         warnings = 0
-        (lhs, rhs, tokens, right_recursive,
-         dup_rhs) = self.check_sets()
+        (lhs, rhs, tokens, right_recursive, dup_rhs) = self.check_sets()
         if lhs - ok_start_symbols:
             warnings += 1
             out.write("LHS symbols not used on the RHS:\n")
-            out.write("  " + (', '.join(sorted(lhs)) + "\n"))
+            out.write("  " + (", ".join(sorted(lhs)) + "\n"))
         if rhs:
             warnings += 1
             out.write("RHS symbols not used on the LHS:\n")
-            out.write((', '.join(sorted(rhs))) + "\n" )
+            out.write((", ".join(sorted(rhs))) + "\n")
         if right_recursive:
             warnings += 1
             out.write("Right recursive rules:\n")
             for rule in sorted(right_recursive):
-                out.write("  %s ::= %s\n" % (rule[0], ' '.join(rule[1])))
+                out.write("  %s ::= %s\n" % (rule[0], " ".join(rule[1])))
                 pass
             pass
         if dup_rhs:
             warnings += 1
             out.write("Nonterminals with the same RHS\n")
             for rhs in sorted(dup_rhs.keys()):
-                out.write("  RHS: %s\n" % ' '.join(rhs))
-                out.write("  LHS: %s\n" % ', '.join(dup_rhs[rhs]))
+                out.write("  RHS: %s\n" % " ".join(rhs))
+                out.write("  LHS: %s\n" % ", ".join(dup_rhs[rhs]))
                 out.write("  ---\n")
                 pass
             pass
         return warnings
 
     def check_sets(self):
-        '''
+        """
         Check grammar
-        '''
-        lhs_set         = set()
-        rhs_set         = set()
-        rhs_rules_set   = {}
-        token_set       = set()
+        """
+        lhs_set = set()
+        rhs_set = set()
+        rhs_rules_set = {}
+        token_set = set()
         right_recursive = set()
         dup_rhs = {}
         for lhs in self.rules:
@@ -963,9 +973,9 @@ class GenericParser(object):
 
     def reduce_string(self, rule, last_token_pos=-1):
         if last_token_pos >= 0:
-            return "%s ::= %s (%d)" % (rule[0], ' '.join(rule[1]), last_token_pos)
+            return "%s ::= %s (%d)" % (rule[0], " ".join(rule[1]), last_token_pos)
         else:
-            return "%s ::= %s" % (rule[0], ' '.join(rule[1]))
+            return "%s ::= %s" % (rule[0], " ".join(rule[1]))
 
     # Note the unused parameters here are used in subclassed
     # routines that need more information
@@ -982,15 +992,14 @@ class GenericParser(object):
 
     def get_profile_info(self):
         """Show the accumulated results of how many times each rule was used"""
-        return sorted(self.profile_info.items(),
-                      key=lambda kv: kv[1],
-                      reverse=False)
+        return sorted(self.profile_info.items(), key=lambda kv: kv[1], reverse=False)
         return
 
     def dump_profile_info(self):
         if isinstance(self.coverage_path, str):
-            with open(self.coverage_path, 'wb') as fp:
-                pickle.dump(self.profile_info, fp)
+            fp = open(self.coverage_path, 'wb')
+            pickle.dump(self.profile_info, fp)
+            fp.close()
         else:
             for rule, count in self.get_profile_info():
                 self.coverage_path.write("%s -- %d\n" % (rule, count))
@@ -1000,24 +1009,24 @@ class GenericParser(object):
     def reduce_ast(self, rule, tokens, item, k, sets):
         rhs = rule[1]
         ast = [None] * len(rhs)
-        for i in range(len(rhs)-1, -1, -1):
+        for i in range(len(rhs) - 1, -1, -1):
             sym = rhs[i]
             if sym not in self.newrules:
                 if sym != self._BOF:
-                    ast[i] = tokens[k-1]
+                    ast[i] = tokens[k - 1]
                     key = (item, k)
                     item, k = self.predecessor(key, None)
-            elif self._NULLABLE == sym[0:len(self._NULLABLE)]:
+            elif self._NULLABLE == sym[0 : len(self._NULLABLE)]:
                 ast[i] = self.deriveEpsilon(sym)
             else:
                 key = (item, k)
                 why = self.causal(key)
-                ast[i] = self.buildTree(sym, why[0],
-                                        tokens, why[1])
+                ast[i] = self.buildTree(sym, why[0], tokens, why[1])
                 item, k = self.predecessor(key, why)
                 pass
             pass
         return ast
+
 
 #
 #
@@ -1028,20 +1037,20 @@ class GenericParser(object):
 #  XXX - silently overrides any user code in methods.
 #
 
+
 class GenericASTBuilder(GenericParser):
     def __init__(self, AST, start, debug=DEFAULT_DEBUG):
-        if 'SPARK_PARSER_COVERAGE' in os.environ:
-            coverage_path = os.environ['SPARK_PARSER_COVERAGE']
+        if "SPARK_PARSER_COVERAGE" in os.environ:
+            coverage_path = os.environ["SPARK_PARSER_COVERAGE"]
         else:
             coverage_path = None
-        GenericParser.__init__(self, start, debug=debug,
-                               coverage_path=coverage_path)
+        GenericParser.__init__(self, start, debug=debug, coverage_path=coverage_path)
         self.AST = AST
 
     def preprocess(self, rule, func):
-        rebind = lambda lhs, self=self: \
-                lambda args, lhs=lhs, self=self: \
-                self.buildASTNode(args, lhs)
+        rebind = lambda lhs, self=self: lambda args, lhs=lhs, self=self: self.buildASTNode(
+            args, lhs
+        )
         lhs, rhs = rule
         return rule, rebind(lhs)
 
@@ -1059,5 +1068,5 @@ class GenericASTBuilder(GenericParser):
 
     def nonterminal(self, type, args):
         rv = self.AST(type)
-        rv[:len(args)] = args
+        rv[: len(args)] = args
         return rv

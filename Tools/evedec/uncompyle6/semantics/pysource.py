@@ -2487,8 +2487,9 @@ class SourceWalker(GenericASTTraversal, object):
                 ast = python_parser.parse(self.p, tokens, customize, code)
                 self.customize(customize)
                 self.p.insts = p_insts
-
-            except (python_parser.ParserError, AssertionError) as e:
+            except python_parser.ParserError, e:
+                raise ParserError(e, tokens, self.p.debug['reduce'])
+            except AssertionError, e:
                 raise ParserError(e, tokens, self.p.debug['reduce'])
             transform_ast = self.treeTransform.transform(ast, code)
             self.maybe_show_tree(ast)
@@ -2524,7 +2525,7 @@ class SourceWalker(GenericASTTraversal, object):
             self.p.opc = self.scanner.opc
             ast = python_parser.parse(self.p, tokens, customize, code)
             self.p.insts = p_insts
-        except (python_parser.ParserError, AssertionError) as e:
+        except python_parser.ParserError, e:
             raise ParserError(e, tokens, self.p.debug['reduce'])
 
         checker(ast, False, self.ast_errors)
@@ -2692,4 +2693,4 @@ if __name__ == "__main__":
         print(s)
         return
 
-    deparse_test(deparse_test.__code__)
+    deparse_test(deparse_test.func_code)

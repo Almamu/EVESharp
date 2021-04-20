@@ -28,7 +28,7 @@ def process_func(code_q, result_q, decompiled_store_path, compiled_store_path, l
     okay_files = failed_files = 0
     try:
         import sys, os, marshal, errno, Queue
-        import uncompyle2
+        #import uncompyle2
         import uncompyle6
         while 1:
             filename, marshalled_code = code_q.get(True, 5)  # give up after 5 sec
@@ -45,45 +45,56 @@ def process_func(code_q, result_q, decompiled_store_path, compiled_store_path, l
                 filename = os.path.abspath(filename)
                 try:
                     os.makedirs(os.path.dirname(filename))
-                except OSError as e:
+                except OSError, e:
                     # the dir may already exist, in which case ignore error
                     if e.errno != errno.EEXIST:
                         raise
                 try:
                     os.makedirs(os.path.dirname(compiled_filename))
-                except OSError as e:
+                except OSError, e:
                     # the dir may already exist, in which case ignore error
                     if e.errno != errno.EEXIST:
                         raise
 
                 try:
                     os.remove(filename+'_failed')
-                except OSError as e:
+                except OSError, e:
                     if e.errno != errno.ENOENT:
                         raise
                 # create the pyc file
-                with open(compiled_filename, 'wb') as out_file:
-                    out_file.write(marshalled_code)
+                out_file = open(compiled_filename, 'wb')
+                out_file.write(marshalled_code)
+                out_file.close()
+                
                 # finally decompyle the file
+                #try:
+                #    out_file = open(filename, 'w')
+                #    uncompyle2.uncompyle(2.5, code, out_file)
+                #    out_file.close()
+                #except:
+                out_file = open(filename, 'w')
                 try:
-                    with open(filename, 'w') as out_file:
-                        uncompyle2.uncompyle(2.5, code, out_file)
+                    uncompyle6.main.decompile(2.5, code, out_file)
                 except:
-                    with open(filename, 'w') as out_file:
-                        uncompyle6.main.decompile(2.5, code, out_file)
+                    out_file.close()
+                    raise
+                else:
+                    out_file.close()
             except KeyboardInterrupt:
                 raise
             except Exception, e:
-                with lock:
-                    print '### Can\'t decompile %s' % filename
-                    traceback.print_exc()
-                    sys.stdout.flush()
+                lock.acquire()
+                print '### Can\'t decompile %s' % filename
+                traceback.print_exc()
+                sys.stdout.flush()
+                lock.release()
                 os.rename(filename, filename+'_failed')
                 failed_files += 1
             else:
-                with lock:
-                    print '+++ Okay decompiling %s' % filename
-                    sys.stdout.flush()
+                lock.acquire()
+                print '+++ Okay decompiling %s' % filename
+                sys.stdout.flush()
+                lock.release()
                 okay_files += 1
 
     except Queue.Empty:  # timeout reached
@@ -93,7 +104,7 @@ def process_func(code_q, result_q, decompiled_store_path, compiled_store_path, l
 
 
 if __name__ == '__main__':
-    if sys.version[:3] != '2.7':
+    if sys.version[:3] != '2.5':
         print >> sys.stderr, '!!! Wrong Python version : %s.  Python 2.7 required.'
         sys.exit(-1)
 
@@ -241,27 +252,32 @@ if __name__ == '__main__':
             code_queue.put( ("compiled.code/" + code[0].replace('../', '').replace('script:/', ''), UnjumbleString(code[1][0])) )
 
         # decompyle zip files too
-        with zipfile.ZipFile(os.path.join(eve_path, 'lib\evelib.ccp'), 'r') as zf:
-            for filename in zf.namelist():
-                if filename[-4:] == '.pyj':
-                    code_queue.put( ("evelib.ccp/" + filename[:-1], UnjumbleString(zf.read(filename))[8:]) )
-                elif filename[-4:] == '.pyc':
-                    code_queue.put( ("evelib.ccp/" + filename[:-1], zf.read(filename)[8:]) )
+        zf = zipfile.ZipFile(os.path.join(eve_path, 'lib\evelib.ccp'), 'r')
+        for filename in zf.namelist():
+            if filename[-4:] == '.pyj':
+                code_queue.put( ("evelib.ccp/" + filename[:-1], UnjumbleString(zf.read(filename))[8:]) )
+            elif filename[-4:] == '.pyc':
+                code_queue.put( ("evelib.ccp/" + filename[:-1], zf.read(filename)[8:]) )
 
-        with zipfile.ZipFile(os.path.join(eve_path, 'lib\corestdlib.ccp'), 'r') as zf:
-            for filename in zf.namelist():
-                if filename[-4:] == '.pyj':
-                    code_queue.put( ("corestdlib.ccp/" + filename[:-1], UnjumbleString(zf.read(filename))[8:]) )
-                elif filename[-4:] == '.pyc':
-                    code_queue.put( ("corestdlib.ccp/" + filename[:-1], zf.read(filename)[8:]) )
+        zf.close()
+        
+        zf = zipfile.ZipFile(os.path.join(eve_path, 'lib\corestdlib.ccp'), 'r')
+        for filename in zf.namelist():
+            if filename[-4:] == '.pyj':
+                code_queue.put( ("corestdlib.ccp/" + filename[:-1], UnjumbleString(zf.read(filename))[8:]) )
+            elif filename[-4:] == '.pyc':
+                code_queue.put( ("corestdlib.ccp/" + filename[:-1], zf.read(filename)[8:]) )
 
-        with zipfile.ZipFile(os.path.join(eve_path, 'lib\corelib.ccp'), 'r') as zf:
-            for filename in zf.namelist():
-                if filename[-4:] == '.pyj':
-                    code_queue.put( ("corelib.ccp/" + filename[:-1], UnjumbleString(zf.read(filename))[8:]) )
-                elif filename[-4:] == '.pyc':
-                    code_queue.put( ("corelib.ccp/" + filename[:-1], zf.read(filename)[8:]) )
+        zf.close()
+        
+        zf = zipfile.ZipFile(os.path.join(eve_path, 'lib\corelib.ccp'), 'r')
+        for filename in zf.namelist():
+            if filename[-4:] == '.pyj':
+                code_queue.put( ("corelib.ccp/" + filename[:-1], UnjumbleString(zf.read(filename))[8:]) )
+            elif filename[-4:] == '.pyc':
+                code_queue.put( ("corelib.ccp/" + filename[:-1], zf.read(filename)[8:]) )
 
+        zf.close()
         # this process is done except for waiting, so add one more decompile process
         p = Process(target=process_func,
                     args=(code_queue, result_queue, decompiled_store_path, compiled_store_path, print_lock))

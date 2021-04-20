@@ -13,7 +13,7 @@ from xdis.codetype import iscode
 from xdis.bytecode import get_instructions_bytes
 from xdis.op_imports import get_opcode_module
 
-from collections import namedtuple
+from xdis.namedtuple24 import namedtuple
 
 # Information about a single line in a particular piece of code
 #  Note that a code can have several lines with the same value but

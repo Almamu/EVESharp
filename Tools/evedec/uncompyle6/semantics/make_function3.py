@@ -19,9 +19,7 @@ The saga of changes before and after is in other files.
 from xdis import iscode, code_has_star_arg, code_has_star_star_arg, CO_GENERATOR
 from uncompyle6.scanner import Code
 from uncompyle6.parsers.treenode import SyntaxTree
-from uncompyle6 import PYTHON3
 from uncompyle6.semantics.parser_error import ParserError
-from uncompyle6.parser import ParserError as ParserError2
 from uncompyle6.semantics.helper import (
     print_docstring,
     find_all_globals,
@@ -29,10 +27,6 @@ from uncompyle6.semantics.helper import (
     find_none,
 )
 
-if PYTHON3:
-    from itertools import zip_longest
-else:
-    from itertools import izip_longest as zip_longest
 
 from uncompyle6.show import maybe_show_tree_param_default
 
@@ -136,13 +130,12 @@ def make_function3_annotate(
             is_lambda=is_lambda,
             noneInNames=("None" in code.co_names),
         )
-    except (ParserError, ParserError2) as p:
+    except ParserError, p:
         self.write(str(p))
         if not self.tolerate_errors:
             self.ERROR = p
         return
 
-    kw_pairs = args_node.attr[1]
     indent = self.indent
 
     if is_lambda:
@@ -172,7 +165,10 @@ def make_function3_annotate(
             # else:
             #     self.write(': %s' % value)
 
-    suffix = ", " if i > 0 else ""
+    if i > 0:
+        suffix = ', '
+    else:
+        suffix = ''
     for n in node:
         if n == "pos_arg":
             self.write(suffix)
@@ -461,6 +457,13 @@ def make_function3(self, node, is_lambda, nested=1, code_node=None):
         kw_args = 0
         pass
 
+    if 3.0 <= self.version <= 3.2:
+        lambda_index = -2
+    elif 3.03 <= self.version:
+        lambda_index = -3
+    else:
+        lambda_index = None
+
     if lambda_index and is_lambda and iscode(node[lambda_index].attr):
         assert node[lambda_index].kind == "LOAD_LAMBDA"
         code = node[lambda_index].attr
@@ -496,13 +499,11 @@ def make_function3(self, node, is_lambda, nested=1, code_node=None):
             is_lambda=is_lambda,
             noneInNames=("None" in code.co_names),
         )
-    except (ParserError, ParserError2) as p:
+    except (ParserError(p), ParserError2(p)):
         self.write(str(p))
         if not self.tolerate_errors:
             self.ERROR = p
         return
-
-    kw_pairs = 0
 
     i = len(paramnames) - len(defparams)
 

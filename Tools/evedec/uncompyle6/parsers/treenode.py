@@ -9,7 +9,7 @@ if PYTHON3:
 
 class SyntaxTree(spark_AST):
     def __init__(self, *args, **kwargs):
-        super(SyntaxTree, self).__init__(*args, **kwargs)
+        spark_AST.__init__(self, *args, **kwargs)
         self.transformed_by = None
 
     def isNone(self):

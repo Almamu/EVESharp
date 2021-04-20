@@ -22,19 +22,19 @@ namespace PythonTypes.Types.Database
         /// <summary>
         /// Headers of the rowset
         /// </summary>
-        public PyList Header { get; }
+        public PyList<PyString> Header { get; }
         /// <summary>
         /// All the rows of the Rowset
         /// </summary>
         public PyList<PyList> Rows { get; }
 
-        public Rowset(PyList headers)
+        public Rowset(PyList<PyString> headers)
         {
             this.Header = headers;
             this.Rows = new PyList<PyList>();
         }
 
-        public Rowset(PyList headers, PyList<PyList> rows)
+        public Rowset(PyList<PyString> headers, PyList<PyList> rows)
         {
             this.Header = headers;
             this.Rows = rows;

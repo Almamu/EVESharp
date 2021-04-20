@@ -2,14 +2,16 @@
 # Until such time it is fixed, we'll do a better.
 # More could be done here though.
 
-from math import copysign
+try:
+    from math import copysign
+    def is_negative_zero(n):
+        """Returns true if n is -0.0"""
+        return n == 0.0 and copysign(1, n) == -1
+except:
+    def is_negative_zero(n):
+        return False
+
 from uncompyle6 import PYTHON_VERSION
-
-
-def is_negative_zero(n):
-    """Returns true if n is -0.0"""
-    return n == 0.0 and copysign(1, n) == -1
-
 
 def better_repr(v, version):
     """Work around Python's unorthogonal and unhelpful repr() for primitive float

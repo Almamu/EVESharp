@@ -379,4 +379,5 @@ if __name__ == "__main__":
                              for t in remain_tokens])
         remain_tokens = set(remain_tokens) - opcode_set
         print(remain_tokens)
-        # p.dump_grammar()
+        p.check_grammar()
+        p.dump_grammar()

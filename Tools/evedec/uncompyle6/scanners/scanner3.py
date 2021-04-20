@@ -33,7 +33,12 @@ For example:
 Finally we save token information.
 """
 
-from __future__ import print_function
+from uncompyle6 import PYTHON_VERSION
+
+if PYTHON_VERSION < 2.6:
+    from xdis.namedtuple24 import namedtuple
+else:
+    from collections import namedtuple
 
 from xdis import iscode, instruction_size
 from xdis.bytecode import _get_const_info
@@ -222,6 +227,9 @@ class Scanner3(Scanner):
         grammar rules. Specifically, variable arg tokens like MAKE_FUNCTION or BUILD_LIST
         cause specific rules for the specific number of arguments they take.
         """
+
+        if not show_asm:
+            show_asm = self.show_asm
 
         if not show_asm:
             show_asm = self.show_asm

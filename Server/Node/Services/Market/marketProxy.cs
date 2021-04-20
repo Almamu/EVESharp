@@ -191,7 +191,7 @@ namespace Node.Services.Market
                 throw new MktInvalidRegion();
             
             int jumps = this.SolarSystemDB.GetJumpsBetweenSolarSystems(character.SolarSystemID, station.SolarSystemID);
-            long marketingSkillLevel = character.GetSkillLevel(ItemTypes.Marketing);
+            long marketingSkillLevel = character.GetSkillLevel(Types.Marketing);
             long maximumDistance = JumpsPerSkillLevel[marketingSkillLevel];
 
             if (maximumDistance == -1 && character.StationID != stationID)
@@ -212,7 +212,7 @@ namespace Node.Services.Market
                 throw new MktInvalidRegion();
             
             int jumps = this.SolarSystemDB.GetJumpsBetweenSolarSystems(character.SolarSystemID, station.SolarSystemID);
-            long procurementSkillLevel = character.GetSkillLevel(ItemTypes.Procurement);
+            long procurementSkillLevel = character.GetSkillLevel(Types.Procurement);
             long maximumDistance = JumpsPerSkillLevel[procurementSkillLevel];
 
             if (maximumDistance == -1 && character.StationID != stationID)
@@ -305,7 +305,7 @@ namespace Node.Services.Market
                     // calculate sales tax
                     double profit, tax;
                             
-                    this.CalculateSalesTax(character.GetSkillLevel(ItemTypes.Accounting), quantity, price, out tax, out profit);
+                    this.CalculateSalesTax(character.GetSkillLevel(Types.Accounting), quantity, price, out tax, out profit);
             
                     // create the required records for the wallet
                     wallet.CreateJournalRecord(MarketReference.MarketTransaction, order.CharacterID, character.ID, null, profit);
@@ -594,7 +594,7 @@ namespace Node.Services.Market
                     throw new MarketExceededOrderCount(currentOrders, maximumOrders);
                 
                 // calculate broker costs for the order
-                this.CalculateBrokerCost(character.GetSkillLevel(ItemTypes.BrokerRelations), quantity, price, out brokerCost);
+                this.CalculateBrokerCost(character.GetSkillLevel(Types.BrokerRelations), quantity, price, out brokerCost);
             }
             
             // check if the character has the Marketing skill and calculate distances
@@ -705,7 +705,7 @@ namespace Node.Services.Market
                 double brokerCost = 0.0;
                 double newEscrow = 0.0;
 
-                this.CalculateBrokerCost(character.GetSkillLevel(ItemTypes.BrokerRelations), volRemaining, (newPrice - price), out brokerCost);
+                this.CalculateBrokerCost(character.GetSkillLevel(Types.BrokerRelations), volRemaining, (newPrice - price), out brokerCost);
 
                 using Wallet wallet = this.WalletManager.AcquireWallet(order.CharacterID, order.AccountID);
                 {
@@ -750,14 +750,14 @@ namespace Node.Services.Market
 
             int retailLevel = 0, tradeLevel = 0, wholeSaleLevel = 0, tycoonLevel = 0;
 
-            if (injectedSkills.ContainsKey((int) ItemTypes.Retail) == true)
-                retailLevel = (int) injectedSkills[(int) ItemTypes.Retail].Level;
-            if (injectedSkills.ContainsKey((int) ItemTypes.Trade) == true)
-                tradeLevel = (int) injectedSkills[(int) ItemTypes.Trade].Level;
-            if (injectedSkills.ContainsKey((int) ItemTypes.Wholesale) == true)
-                wholeSaleLevel = (int) injectedSkills[(int) ItemTypes.Wholesale].Level;
-            if (injectedSkills.ContainsKey((int) ItemTypes.Tycoon) == true)
-                tycoonLevel = (int) injectedSkills[(int) ItemTypes.Tycoon].Level;
+            if (injectedSkills.ContainsKey((int) Types.Retail) == true)
+                retailLevel = (int) injectedSkills[(int) Types.Retail].Level;
+            if (injectedSkills.ContainsKey((int) Types.Trade) == true)
+                tradeLevel = (int) injectedSkills[(int) Types.Trade].Level;
+            if (injectedSkills.ContainsKey((int) Types.Wholesale) == true)
+                wholeSaleLevel = (int) injectedSkills[(int) Types.Wholesale].Level;
+            if (injectedSkills.ContainsKey((int) Types.Tycoon) == true)
+                tycoonLevel = (int) injectedSkills[(int) Types.Tycoon].Level;
             
             return 5 + tradeLevel * 4 + retailLevel * 8 + wholeSaleLevel * 16 + tycoonLevel * 32;
         }

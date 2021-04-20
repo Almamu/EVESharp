@@ -63,8 +63,6 @@ The node position 0 will be associated with "import".
 
 # FIXME: DRY code with pysource
 
-from __future__ import print_function
-
 import re
 
 from xdis import iscode, sysinfo2float
@@ -94,7 +92,11 @@ from uncompyle6.semantics.consts import (
 from spark_parser import DEFAULT_DEBUG as PARSER_DEFAULT_DEBUG
 from spark_parser.ast import GenericASTTraversalPruningException
 
-from collections import namedtuple
+from uncompyle6 import PYTHON_VERSION
+if PYTHON_VERSION < 2.6:
+    from xdis.namedtuple24 import namedtuple
+else:
+    from collections import namedtuple
 
 NodeInfo = namedtuple("NodeInfo", "node start finish")
 ExtractInfo = namedtuple(
@@ -903,8 +905,11 @@ class FragmentsWalker(pysource.SourceWalker, object):
 
     def n_generator_exp(self, node):
         start = len(self.f.getvalue())
-        self.write("(")
-        code_index = -6 if self.version > 3.2 else -5
+        self.write('(')
+        if self.version > 3.2:
+            code_index = -6
+        else:
+            code_index = -5
         self.comprehension_walk(node, iter_index=3, code_index=code_index)
         self.write(")")
         self.set_pos_info(node, start, len(self.f.getvalue()))
@@ -1060,8 +1065,11 @@ class FragmentsWalker(pysource.SourceWalker, object):
                         subclass = n.attr
                         break
                     pass
-                subclass_info = node if node == "classdefdeco2" else node[0]
-            elif buildclass[1][0] == "load_closure":
+                if node == 'classdefdeco2':
+                    subclass_info = node
+                else:
+                    subclass_info = node[0]
+            elif buildclass[1][0] == 'load_closure':
                 # Python 3 with closures not functions
                 load_closure = buildclass[1]
                 if hasattr(load_closure[-3], "attr"):
@@ -1084,7 +1092,10 @@ class FragmentsWalker(pysource.SourceWalker, object):
                 subclass = buildclass[1][0].attr
                 subclass_info = node[0]
         else:
-            buildclass = node if (node == "classdefdeco2") else node[0]
+            if node == 'classdefdeco2':
+                buildclass = node
+            else:
+                buildclass = node[0]
             build_list = buildclass[1][0]
             if hasattr(buildclass[-3][0], "attr"):
                 subclass = buildclass[-3][0].attr
@@ -1164,7 +1175,7 @@ class FragmentsWalker(pysource.SourceWalker, object):
                 self.p.offset2inst_index = self.scanner.offset2inst_index
                 ast = python_parser.parse(self.p, tokens, customize)
                 self.p.insts = p_insts
-            except (python_parser.ParserError, AssertionError) as e:
+            except (parser.ParserError(e), AssertionError(e)):
                 raise ParserError(e, tokens)
             maybe_show_tree(self, ast)
             return ast
@@ -1202,7 +1213,7 @@ class FragmentsWalker(pysource.SourceWalker, object):
             self.p.offset2inst_index = self.scanner.offset2inst_index
             ast = parser.parse(self.p, tokens, customize, code)
             self.p.insts = p_insts
-        except (parser.ParserError, AssertionError) as e:
+        except (parser.ParserError(e), AssertionError(e)):
             raise ParserError(e, tokens, {})
 
         maybe_show_tree(self, ast)

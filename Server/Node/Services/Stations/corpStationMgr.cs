@@ -98,7 +98,7 @@ namespace Node.Services.Stations
         public PyDataType GetPotentialHomeStations(CallInformation call)
         {
             List<Station> availableStations = this.GetPotentialHomeStations(call.Client);
-            Rowset result = new Rowset(new PyList(3)
+            Rowset result = new Rowset(new PyList<PyString>(3)
                 {
                     [0] = "stationID",
                     [1] = "typeID",

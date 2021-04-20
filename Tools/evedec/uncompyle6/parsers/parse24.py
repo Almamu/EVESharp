@@ -42,6 +42,8 @@ class Python24Parser(Python25Parser):
                        POP_TOP POP_BLOCK COME_FROM
         while1stmt ::= SETUP_LOOP l_stmts_opt JUMP_BACK
                        POP_TOP POP_BLOCK
+        while1stmt ::= SETUP_LOOP l_stmts COME_FROM JUMP_BACK
+                       POP_TOP POP_BLOCK COME_FROM
 
         continue   ::= JUMP_BACK JUMP_ABSOLUTE
 
@@ -50,11 +52,6 @@ class Python24Parser(Python25Parser):
         # l_stmts ends in a "break", "return", or "continue"
         while1stmt ::= SETUP_LOOP l_stmts
                        POP_TOP POP_BLOCK
-
-        # The following has a "COME_FROM" at the end which comes from
-        # a "break" inside "l_stmts".
-        while1stmt ::= SETUP_LOOP l_stmts COME_FROM JUMP_BACK
-                       POP_TOP POP_BLOCK COME_FROM
 
         # Python 2.5+:
         #  call_stmt ::= expr POP_TOP
@@ -109,15 +106,6 @@ class Python24Parser(Python25Parser):
             l = len(tokens)
             if 0 <= l < len(tokens):
                 return not int(tokens[first].pattr) == tokens[last].offset
-        elif lhs == 'try_except':
-            if last == len(tokens):
-                last -= 1
-            if tokens[last] != 'COME_FROM' and tokens[last-1] == 'COME_FROM':
-                last -= 1
-            return (tokens[last] == 'COME_FROM'
-                    and tokens[last-1] == 'END_FINALLY'
-                    and tokens[last-2] == 'POP_TOP'
-                    and tokens[last-3].kind != 'JUMP_FORWARD')
 
         return False
 

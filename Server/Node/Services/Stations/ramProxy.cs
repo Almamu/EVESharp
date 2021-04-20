@@ -33,15 +33,15 @@ namespace Node.Services.Stations
                 // the first part of the dict is not really used by the client, seems to be old code
                 [0] = new PyDictionary<PyInteger, PyInteger>
                 {
-                    [(int) ItemTypes.ScientificNetworking] = character.GetSkillLevel(ItemTypes.ScientificNetworking),
-                    [(int) ItemTypes.SupplyChainManagement] = character.GetSkillLevel(ItemTypes.SupplyChainManagement)
+                    [(int) Types.ScientificNetworking] = character.GetSkillLevel(Types.ScientificNetworking),
+                    [(int) Types.SupplyChainManagement] = character.GetSkillLevel(Types.SupplyChainManagement)
                 },
                 // this part contains the actually useful information
                 // used to calculate the maximum manufacturing job count and the maximum research job count the character can have
                 [1] = new PyDictionary<PyInteger, PyInteger>
                 {
-                    [(int) Attributes.manufactureSlotLimit] = 1 + character.GetSkillLevel(ItemTypes.MassProduction) + character.GetSkillLevel(ItemTypes.AdvancedMassProduction),
-                    [(int) Attributes.maxLaborotorySlots] = 1 + character.GetSkillLevel(ItemTypes.LaboratoryOperation) + character.GetSkillLevel(ItemTypes.AdvancedLaboratoryOperation)
+                    [(int) Attributes.manufactureSlotLimit] = 1 + character.GetSkillLevel(Types.MassProduction) + character.GetSkillLevel(Types.AdvancedMassProduction),
+                    [(int) Attributes.maxLaborotorySlots] = 1 + character.GetSkillLevel(Types.LaboratoryOperation) + character.GetSkillLevel(Types.AdvancedLaboratoryOperation)
                 }
             };
         }

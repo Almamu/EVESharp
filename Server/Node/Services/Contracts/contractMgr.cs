@@ -118,7 +118,7 @@ namespace Node.Services.Contracts
             ClusterConnection clusterConnection, PyList<PyList> itemList, Station station, int ownerID, int shipID)
         {
             // create the container in the system to ensure it's not visible to the player
-            Container container = this.ItemFactory.CreateSimpleItem(this.TypeManager[ItemTypes.PlasticWrap],
+            Container container = this.ItemFactory.CreateSimpleItem(this.TypeManager[Types.PlasticWrap],
                 this.ItemFactory.LocationSystem.ID, station.ID, Flags.None) as Container;
             
             Dictionary<int, ContractDB.ItemQuantityEntry> items =
@@ -185,7 +185,7 @@ namespace Node.Services.Contracts
             if (forCorp == false)
             {
                 // check limits for the character
-                long maximumContracts = 1 + (4 * character.GetSkillLevel(ItemTypes.Contracting));
+                long maximumContracts = 1 + (4 * character.GetSkillLevel(Types.Contracting));
 
                 if (maximumContracts <= this.DB.GetOutstandingContractsCountForPlayer(callerCharacterID))
                     throw new ConTooManyContractsMax(maximumContracts);

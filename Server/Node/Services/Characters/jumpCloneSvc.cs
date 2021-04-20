@@ -171,7 +171,7 @@ namespace Node.Services.Characters
             Character character = this.ItemFactory.GetItem<Character>(callerCharacterID);
             
             // check the maximum number of clones the character has assigned
-            long maximumClonesAvailable = character.GetSkillLevel(ItemTypes.InfomorphPsychology);
+            long maximumClonesAvailable = character.GetSkillLevel(Types.InfomorphPsychology);
             
             // the skill is not trained
             if (maximumClonesAvailable == 0)
@@ -199,7 +199,7 @@ namespace Node.Services.Characters
             }
             
             // create an alpha clone
-            Type cloneType = this.TypeManager[ItemTypes.CloneGradeAlpha];
+            Type cloneType = this.TypeManager[Types.CloneGradeAlpha];
             
             // create a new clone on the itemDB
             Clone clone = this.ItemFactory.CreateClone(cloneType, station, character);

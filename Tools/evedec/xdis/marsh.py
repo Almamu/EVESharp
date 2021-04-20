@@ -1,4 +1,4 @@
-# (C) Copyright 2018-2020 by Rocky Bernstein
+# (C) Copyright 2018-2021 by Rocky Bernstein
 #
 #  This program is free software; you can redistribute it and/or
 #  modify it under the terms of the GNU General Public License
@@ -46,10 +46,11 @@ except ImportError:
         return f
 
 
-@builtinify
 def Ord(c):
-    return c if PYTHON3 else ord(c)
-
+    if PYTHON3:
+        return c
+    else:
+        return ord(c)
 
 TYPE_NULL = "0"
 TYPE_NONE = "N"
@@ -1012,21 +1013,15 @@ _load_dispatch = _FastUnmarshaller.dispatch
 
 version = 1
 
-
-@builtinify
 def dump(x, f, version=version, python_version=None):
     # XXX 'version' is ignored, we always dump in a version-0-compatible format
     m = _Marshaller(f.write, python_version)
     m.dump(x)
 
-
-@builtinify
 def load(f, python_version=None):
     um = _Unmarshaller(f.read, python_version)
     return um.load()
 
-
-@builtinify
 def dumps(x, version=version, python_version=None):
     # XXX 'version' is ignored, we always dump in a version-0-compatible format
     buffer = []
@@ -1038,38 +1033,34 @@ def dumps(x, version=version, python_version=None):
         is_python3 = PYTHON3
 
     if is_python3:
-        if PYTHON_VERSION >= 3.0:
-            # Python 3.x handling  Python 3.x
-            buf = []
-            for b in buffer:
-                if isinstance(b, str) and PYTHON3:
-                    s2b = bytes(ord(b[j]) for j in range(len(b)))
-                    buf.append(s2b)
-                elif isinstance(b, bytearray):
-                    buf.append(str(b))
-                else:
-                    buf.append(b)
-            return b"".join(buf)
-        else:
-            # Python 2.x handling Python 3.x
-            buf = b""
-            for b in buffer:
-                buf += b.decode(errors="ignore")
-                pass
-            return buf
+        buf = []
+        for b in buffer:
+            if isinstance(b, str) and PYTHON3:
+                s2b = bytes(ord(b[j]) for j in range(len(b)))
+                buf.append(s2b)
+            elif isinstance(b, bytearray):
+                buf.append(str(b))
+            else:
+                buf.append(b)
+        return "".join(buf)
     else:
         # Python 2 or 3 handling Python 2.x
         buf = []
         for b in buffer:
-            if isinstance(b, bytes):
-                buf.append(b.decode())
+            if isinstance(b, str) and PYTHON3:
+                try:
+                    s2b = bytes(ord(b[j]) for j in range(len(b)))
+                except ValueError:
+                    s2b = b.encode("utf-8")
+                buf.append(s2b)
+            elif isinstance(b, bytearray):
+                buf.append(str(b))
             else:
                 buf.append(b)
 
         return "".join(buf)
 
 
-@builtinify
 def loads(s, python_version=None):
     um = _FastUnmarshaller(s, python_version)
     return um.load()

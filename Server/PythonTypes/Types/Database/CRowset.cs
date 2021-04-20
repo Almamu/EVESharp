@@ -12,7 +12,7 @@ namespace PythonTypes.Types.Database
     {
         private const string TYPE_NAME = "dbutil.CRowset";
         public DBRowDescriptor Header { get; }
-        private PyList Columns { get; set; }
+        private PyList<PyString> Columns { get; set; }
         private PyList<PyPackedRow> Rows { get; }
 
         public CRowset(DBRowDescriptor descriptor)
@@ -36,7 +36,7 @@ namespace PythonTypes.Types.Database
         /// </summary>
         private void PrepareColumnNames()
         {
-            this.Columns = new PyList(this.Header.Columns.Count);
+            this.Columns = new PyList<PyString>(this.Header.Columns.Count);
 
             int index = 0;
             

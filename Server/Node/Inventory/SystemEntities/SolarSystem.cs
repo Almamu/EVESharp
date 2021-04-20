@@ -230,7 +230,7 @@ namespace Node.Inventory.SystemEntities
             // TODO: CHECK WHERE WE CAN FETCH allianceID, sovereigntyLevel and constellationSovereignty
             // TODO: AS THESE SEEM TO BE DYNAMIC VALUES
             return new Row(
-                new PyList(14)
+                new PyList<PyString>(14)
                 {
                     [0]  = "solarSystemID",
                     [1]  = "solarSystemName",

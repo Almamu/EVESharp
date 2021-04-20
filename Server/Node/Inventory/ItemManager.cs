@@ -39,23 +39,9 @@ namespace Node.Inventory
 {
     public class ItemManager
     {
-        public const int FACTION_ID_MIN = 500000;
-        public const int FACTION_ID_MAX = 1000000;
-        public const int NPC_CORPORATION_ID_MIN = 1000000;
-        public const int NPC_CORPORATION_ID_MAX = 2000000;
-        public const int CELESTIAL_ID_MIN = 40000000;
-        public const int CELESTIAL_ID_MAX = 50000000;
-        public const int SOLARSYSTEM_ID_MIN = 30000000;
-        public const int SOLARSYSTEM_ID_MAX = 40000000;
-        public const int STATION_ID_MIN = 60000000;
-        public const int STATION_ID_MAX = 70000000;
-        public const int NPC_CHARACTER_ID_MIN = 10000;
-        public const int NPC_CHARACTER_ID_MAX = 100000000;
-        public const int USERGENERATED_ID_MIN = 100000000;
-
         private Channel Log { get; }
         private NodeContainer NodeContainer { get; }
-        public ItemManager(Logger logger, ItemDB itemDB, SkillDB skillDB, NodeContainer nodeContainer)
+        public ItemManager(Logger logger, NodeContainer nodeContainer)
         {
             // create a log channel for the rare occurence of the ItemManager wanting to log something
             this.Log = logger.CreateLogChannel("ItemManager");

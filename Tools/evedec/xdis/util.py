@@ -1,6 +1,6 @@
 # Much of this is borrowed from Python's Lib/dis.py
 
-from math import copysign
+import types
 
 
 def code2num(code, i):
@@ -52,12 +52,15 @@ PYPY_COMPILER_FLAG_NAMES = {
 
 # Invert above dictionary so we can look up a bit value
 # from the compile flag name
-COMPILER_FLAG_BIT = dict([v, k] for (k, v) in COMPILER_FLAG_NAMES.items())
+COMPILER_FLAG_BIT = {}
+for (v, k) in COMPILER_FLAG_NAMES.items():
+    COMPILER_FLAG_BIT[k] = v
 
 # Allow us to access by just name, prefixed with CO. e.g
 # CO_OPTIMIZED, CO_NOFREE
-globals().update(dict(["CO_" + k, v] for (k, v) in COMPILER_FLAG_BIT.items()))
 
+for v, k in COMPILER_FLAG_BIT.items():
+    globals().update(dict({'CO_'+v: k}))
 
 def co_flags_is_async(co_flags):
     """
@@ -83,7 +86,8 @@ def code_has_star_star_arg(code):
 
 def is_negative_zero(n):
     """Returns true if n is -0.0"""
-    return n == 0.0 and copysign(1, n) == -1
+    # FIXME for > 2.6
+    return n == 0.0 # and copysign(1, n) == -1
 
 
 def better_repr(v):

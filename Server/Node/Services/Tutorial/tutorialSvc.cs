@@ -14,7 +14,7 @@ namespace Node.Services.Tutorial
 
         public PyDataType GetCharacterTutorialState(CallInformation call)
         {
-            return new Rowset(new PyList(4)
+            return new Rowset(new PyList<PyString>(4)
             {
                 [0] = "characterID",
                 [1] = "tutorialID",

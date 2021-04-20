@@ -105,7 +105,7 @@ namespace Node.Services.Stations
                     continue;
 
                 Rowset quote = new Rowset(
-                    new PyList()
+                    new PyList<PyString>(6)
                     {
                         "itemID", "typeID", "groupID", "damage", "maxHealth", "costToRepairOneUnitOfDamage"
                     }

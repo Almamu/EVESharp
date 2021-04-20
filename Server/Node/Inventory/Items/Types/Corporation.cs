@@ -146,7 +146,7 @@ namespace Node.Inventory.Items.Types
         public Row GetCorporationInfoRow()
         {
             return new Row(
-                new PyList(42)
+                new PyList<PyString>(42)
                 {
                     [0]  = "corporationID",
                     [1]  = "corporationName",

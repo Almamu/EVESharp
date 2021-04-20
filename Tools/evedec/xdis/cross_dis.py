@@ -147,10 +147,15 @@ def instruction_size(op, opc):
     Python before version 3.6 this will be either 1 or 3 bytes.  In
     Python 3.6 or later, it is 2 bytes or a "word"."""
     if op < opc.HAVE_ARGUMENT:
-        return 2 if opc.version >= 3.6 else 1
+        if opc.version >= 3.6:
+            return 2
+        else:
+            return 1
     else:
-        return 2 if opc.version >= 3.6 else 3
-
+        if opc.version >= 3.6:
+            return 2
+        else:
+            return 3
 
 # Compatiblity
 op_size = instruction_size
@@ -282,7 +287,10 @@ def unpack_opargs_bytecode(code, opc):
         offset += 1
         if op_has_argument(op, opc):
             arg = code2num(code, offset) | extended_arg
-            extended_arg = extended_arg_val(opc, arg) if op == opc.EXTENDED_ARG else 0
+            if op == opc.EXTENDED_ARG:
+                extended_arg = (arg << opc.EXTENDED_ARG_SHIFT)
+            else:
+                extended_arg = 0
             offset += 2
         else:
             arg = None

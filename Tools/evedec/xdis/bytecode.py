@@ -22,6 +22,8 @@ allow running on Python 2.
 import sys, types
 from xdis.version_info import PYTHON3
 
+from xdis.namedtuple24 import namedtuple
+
 from xdis.cross_dis import (
     get_code_object,
     format_code_info,
@@ -138,7 +140,10 @@ def get_instructions_bytes(
 
     # FIXME: We really need to distinguish 3.6.0a1 from 3.6.a3.
     # See below FIXME
-    python_36 = True if opc.python_version >= 3.6 else False
+    if opc.python_version >= 3.6:
+        python_36 = True
+    else:
+        python_36 = False
 
     starts_line = None
     # enumerate() is not an option, since we sometimes process
@@ -176,7 +181,10 @@ def get_instructions_bytes(
         if has_arg:
             if python_36:
                 arg = code2num(bytecode, i) | extended_arg
-                extended_arg = (arg << 8) if op == opc.EXTENDED_ARG else 0
+                if op == opc.EXTENDED_ARG:
+                    extended_arg = (arg << 8)
+                else:
+                    extended_arg = 0
                 # FIXME: Python 3.6.0a1 is 2, for 3.6.a3 we have 1
                 i += 1
             else:
@@ -186,7 +194,10 @@ def get_instructions_bytes(
                     + extended_arg
                 )
                 i += 2
-                extended_arg = arg * 65536 if op == opc.EXTENDED_ARG else 0
+                if op == opc.EXTENDED_ARG:
+                    extended_arg = arg*65536
+                else:
+                    extended_arg = 0
 
             #  Set argval to the dereferenced value of the argument when
             #  availabe, and argrepr to the string representation of argval.
@@ -253,7 +264,10 @@ def get_instructions_bytes(
             extended_arg_count != 0,
         )
         # fallthrough)
-        extended_arg_count = extended_arg_count + 1 if op == opc.EXTENDED_ARG else 0
+        if op == opc.EXTENDED_ARG:
+            extended_arg_count = extended_arg_count + 1
+        else:
+            extended_arg_count = 0
 
 
 def next_offset(op, opc, offset):
@@ -304,14 +318,7 @@ class Bytecode(object):
         )
 
     def __repr__(self):
-        return "{}({!r})".format(self.__class__.__name__, self._original_object)
-
-    @classmethod
-    def from_traceback(cls, tb):
-        """ Construct a Bytecode from the given traceback """
-        while tb.tb_next:
-            tb = tb.tb_next
-        return cls(tb.tb_frame.f_code, current_offset=tb.tb_lasti)
+        return "%s(%r)" % (self.__class__.__name__, self._original_object)
 
     def info(self):
         """Return formatted information about the code object."""
@@ -373,7 +380,10 @@ class Bytecode(object):
         # Omit the line number column entirely if we have no line number info
         show_lineno = linestarts is not None
         # TODO?: Adjust width upwards if max(linestarts.values()) >= 1000?
-        lineno_width = 3 if show_lineno else 0
+        if show_lineno:
+            lineno_width = 3
+        else:
+            lineno_width = 0
         instructions = []
         for instr in get_instructions_bytes(
             code,
@@ -445,9 +455,13 @@ def list2bytecode(l, opc, varnames, consts):
         opcode = opc.opmap[opname]
         bc.append(opcode)
         print(opname, operands)
-        gen = (j for j in operands if operands)
+        gen = [j for j in operands if operands]
         for j in gen:
-            k = (consts if opcode in opc.CONST_OPS else varnames).index(j)
+            if opcode in opc.hasconst:
+                thing = consts
+            else:
+                thing = varnames
+            k = list(thing).index(j)
             if k == -1:
                 raise TypeError(
                     "operand %s [%s, %s], not found in names" % (i, opname, operands)
@@ -462,6 +476,8 @@ def list2bytecode(l, opc, varnames, consts):
     else:
         if PYTHON3:
             return bytes(bc)
+        elif PYTHON_VERSION < 2.5:
+            return reduce(lambda a, b: a + chr(b), bc, '')
         else:
             return bytes(bytearray(bc))
 

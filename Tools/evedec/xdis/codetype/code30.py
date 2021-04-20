@@ -81,7 +81,7 @@ class Code3(Code2):
         return
 
     def encode_lineno_tab(self):
-        co_lnotab = b""
+        co_lnotab = ""
 
         prev_line_number = self.co_firstlineno
         prev_offset = 0
@@ -137,7 +137,7 @@ class Code3(Code2):
         code.freeze()
         try:
             code.check()
-        except AssertionError as e:
+        except AssertionError(e):
             raise TypeError(e)
 
         return types.CodeType(

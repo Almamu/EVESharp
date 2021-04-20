@@ -26,21 +26,17 @@ namespace Node.Inventory.Items.Attributes
         {
             get
             {
-                // ensure the attribute we're looking for exists
-                if (this.mItemAttributes.ContainsKey(index) == false && this.mDefaultAttributes.ContainsKey(index) == false)
-                    this.mItemAttributes[index] = new Attribute(this.mItemFactory.AttributeManager[index], 0, true);
-                else if (this.mItemAttributes.ContainsKey(index) == false && this.mDefaultAttributes.ContainsKey(index) == true)
-                    this.mItemAttributes[index] = this.mDefaultAttributes[index].Clone();
+                if (this.mItemAttributes.TryGetValue(index, out Attribute attrib) == true)
+                    return attrib;
+                if (this.mDefaultAttributes.TryGetValue(index, out Attribute defAttrib) == true)
+                    return this.mItemAttributes[index] = defAttrib;
                 
-                return this.mItemAttributes[index];
+                return this.mItemAttributes[index] = new Attribute(this.mItemFactory.AttributeManager[index], 0, true);
             }
 
             set
             {
-                if (this.mItemAttributes.ContainsKey(index) == false)
-                    this.mItemAttributes.Add(index, value);
-                else
-                    this.mItemAttributes[index] = value;
+                this.mItemAttributes[index] = value;
             }
         }
 

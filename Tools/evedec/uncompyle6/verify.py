@@ -18,8 +18,6 @@
 byte-code verification
 """
 
-from __future__ import print_function
-
 import operator, sys
 import xdis.std as dis
 from subprocess import call
@@ -433,8 +431,10 @@ def cmp_code_objects(version, is_pypy, code_obj1, code_obj2, verify, name=""):
         elif member == "co_flags":
             flags1 = code_obj1.co_flags
             flags2 = code_obj2.co_flags
-            if is_pypy:
+            if is_pypy or version == 2.4:
                 # For PYPY for now we don't care about PYPY_SOURCE_IS_UTF8:
+                # Python 2.4 also sets this flag and I am not sure
+                # where or why
                 flags2 &= ~0x0100  # PYPY_SOURCE_IS_UTF8
             # We also don't care about COROUTINE or GENERATOR for now
             flags1 &= ~0x000000A0
@@ -502,8 +502,10 @@ def compare_code_with_srcfile(pyc_filename, src_filename, verify):
         return msg
     try:
         code_obj2 = load_file(src_filename)
-    except SyntaxError as e:
+    except SyntaxError, e:
         # src_filename can be the first of a group sometimes
+        if version == 2.4:
+            print(pyc_filename)
         return str(e).replace(src_filename, pyc_filename)
     cmp_code_objects(version, is_pypy, code_obj1, code_obj2, verify)
     if verify == "verify-run":
@@ -512,7 +514,7 @@ def compare_code_with_srcfile(pyc_filename, src_filename, verify):
             if retcode != 0:
                 return "Child was terminated by signal %d" % retcode
             pass
-        except OSError as e:
+        except OSError, e:
             return "Execution failed: %s" % e
         pass
     return None

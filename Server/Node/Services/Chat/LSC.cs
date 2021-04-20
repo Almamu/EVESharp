@@ -183,9 +183,9 @@ namespace Node.Services.Chat
             else
             {
                 // build empty rowsets for channels that should not reveal anyone unless they talk
-                mods = new Rowset(new PyList(6)
+                mods = new Rowset(new PyList<PyString>(6)
                     {[0] = "accessor", [1] = "mode", [2] = "untilWhen", [3] = "originalMode", [4] = "admin", [5] = "reason"});
-                chars = new Rowset(new PyList(6)
+                chars = new Rowset(new PyList<PyString>(6)
                     {[0] = "charID",[1] = "corpID", [2] = "allianceID", [3] = "warFactionID", [4] = "role", [5] = "extra"});
             }
 

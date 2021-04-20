@@ -26,8 +26,7 @@ from xdis.opcodes.base import (
     compare_op, const_op,
     def_op, format_CALL_FUNCTION_pos_name_encoded, free_op, jabs_op, jrel_op,
     local_op, name_op, nargs_op, store_op,
-    varargs_op
-    )
+    varargs_op )
 
 l = locals()
 

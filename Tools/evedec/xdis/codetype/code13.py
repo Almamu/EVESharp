@@ -19,31 +19,17 @@ from xdis.codetype.base import CodeBase
 from copy import deepcopy
 
 # If there is a list of types, then any will work, but the 1st one is the corect one for types.CodeType
-if PYTHON_VERSION <= 2.7:
-    Code13FieldTypes = {
-        "co_argcount": int,
-        "co_nlocals": int,
-        "co_flags": int,
-        "co_code": (str, bytes, list, tuple),
-        "co_consts": (tuple, list),
-        "co_names": (tuple, list),
-        "co_varnames": (tuple, list),
-        "co_filename": (str, unicode),
-        "co_name": (str, unicode),
-    }
-else:
-    Code13FieldTypes = {
-        "co_argcount": int,
-        "co_nlocals": int,
-        "co_flags": int,
-        "co_code": (str, bytes, list, tuple),
-        "co_consts": (tuple, list),
-        "co_names": (tuple, list),
-        "co_varnames": (tuple, list),
-        "co_filename": (str, bytes),
-        "co_name": (str, bytes),
-    }
-
+Code13FieldTypes = {
+    "co_argcount": int,
+    "co_nlocals": int,
+    "co_flags": int,
+    "co_code": (str, list, tuple),
+    "co_consts": (tuple, list),
+    "co_names": (tuple, list),
+    "co_varnames": (tuple, list),
+    "co_filename": (str, unicode),
+    "co_name": (str, unicode),
+}
 
 class Code13(CodeBase):
     """Class for a Python 1.0 .. 1.4 code object used for Python interpreters other than 1.0 .. 1.4

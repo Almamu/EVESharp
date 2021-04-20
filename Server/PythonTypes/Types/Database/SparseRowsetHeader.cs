@@ -24,7 +24,7 @@ namespace PythonTypes.Types.Database
         /// <summary>
         /// The columns of the result
         /// </summary>
-        public PyList Headers { get; }
+        public PyList<PyString> Headers { get; }
         /// <summary>
         /// The types for each column
         /// </summary>

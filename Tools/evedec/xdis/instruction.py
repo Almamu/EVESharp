@@ -21,7 +21,7 @@ allow running on Python 2.
 
 import re
 
-from collections import namedtuple
+from xdis.namedtuple24 import namedtuple
 
 _Instruction = namedtuple(
     "_Instruction",

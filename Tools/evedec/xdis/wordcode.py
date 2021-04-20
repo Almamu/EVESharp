@@ -35,7 +35,11 @@ def unpack_opargs_wordcode(code, opc):
             op = ord(code[i])
             if op_has_argument(op, opc):
                 arg = ord(code[i + 1]) | extended_arg
-                extended_arg = (arg << 8) if op == opc.EXTENDED_ARG else 0
+                if op == opc.EXTENDED_ARG:
+                    extended_arg = (arg << 8)
+                else:
+                    extended_arg = 0
+                    pass
             else:
                 arg = None
             yield (i, op, arg)
@@ -44,9 +48,14 @@ def unpack_opargs_wordcode(code, opc):
             op = code[i]
             if op_has_argument(op, opc):
                 arg = code[i + 1] | extended_arg
-                extended_arg = (arg << 8) if op == opc.EXTENDED_ARG else 0
+                if op == opc.EXTENDED_ARG:
+                    extended_arg = (arg << 8)
+                else:
+                    extended_arg = 0
+                    pass
             else:
                 arg = None
+                pass
             yield (i, op, arg)
 
 

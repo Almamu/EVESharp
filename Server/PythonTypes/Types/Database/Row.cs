@@ -13,13 +13,13 @@ namespace PythonTypes.Types.Database
         /// <summary>
         /// The columns for this row
         /// </summary>
-        public PyList Header { get; }
+        public PyList<PyString> Header { get; }
         /// <summary>
         /// The values for each column
         /// </summary>
         public PyList Line { get; }
 
-        public Row(PyList header, PyList line)
+        public Row(PyList<PyString> header, PyList line)
         {
             this.Header = header;
             this.Line = line;
@@ -43,7 +43,7 @@ namespace PythonTypes.Types.Database
         /// <param name="header"></param>
         /// <param name="fieldTypes"></param>
         /// <returns></returns>
-        public static Row FromMySqlDataReader(MySqlDataReader reader, PyList header, FieldType[] fieldTypes)
+        public static Row FromMySqlDataReader(MySqlDataReader reader, PyList<PyString> header, FieldType[] fieldTypes)
         {
             PyList row = new PyList(reader.FieldCount);
 
@@ -62,7 +62,7 @@ namespace PythonTypes.Types.Database
         /// <returns></returns>
         public static Row FromMySqlDataReader(IDatabaseConnection connection, MySqlDataReader reader)
         {
-            PyList header = new PyList(reader.FieldCount);
+            PyList<PyString> header = new PyList<PyString>(reader.FieldCount);
             PyList row = new PyList(reader.FieldCount);
 
             for (int i = 0; i < reader.FieldCount; i++)

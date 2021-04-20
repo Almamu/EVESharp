@@ -333,21 +333,21 @@ namespace Node.Services.Characters
                 character);
             
             // add one unit of Tritanium to the station's hangar for the player
-            Type tritaniumType = this.TypeManager[ItemTypes.Tritanium];
+            Type tritaniumType = this.TypeManager[Types.Tritanium];
 
             ItemEntity tritanium =
                 this.ItemFactory.CreateSimpleItem(tritaniumType, character,
                     station, Flags.Hangar);
             
             // add one unit of Damage Control I to the station's hangar for the player
-            Type damageControlType = this.TypeManager[ItemTypes.DamageControlI];
+            Type damageControlType = this.TypeManager[Types.DamageControlI];
 
             ItemEntity damageControl =
                 this.ItemFactory.CreateSimpleItem(damageControlType, character,
                     station, Flags.Hangar);
             
             // create an alpha clone
-            Type cloneType = this.TypeManager[ItemTypes.CloneGradeAlpha];
+            Type cloneType = this.TypeManager[Types.CloneGradeAlpha];
             
             Clone clone = this.ItemFactory.CreateClone(cloneType, station, character);
 

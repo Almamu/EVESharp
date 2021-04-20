@@ -25,7 +25,7 @@ namespace Node.Services.Navigation
 
         public PyTuple GetStationExtraInfo(CallInformation call)
         {
-            Rowset stations = new Rowset(new PyList(5)
+            Rowset stations = new Rowset(new PyList<PyString>(5)
             {
                 [0] = "stationID",
                 [1] = "solarSystemID",
@@ -33,12 +33,12 @@ namespace Node.Services.Navigation
                 [3] = "stationTypeID",
                 [4] = "ownerID"
             });
-            Rowset operationServices = new Rowset(new PyList(2)
+            Rowset operationServices = new Rowset(new PyList<PyString>(2)
             {
                 [0] = "operationID",
                 [1] = "serviceID"
             });
-            Rowset services = new Rowset(new PyList(2)
+            Rowset services = new Rowset(new PyList<PyString>(2)
             {
                 [0] = "serviceID",
                 [1] = "serviceName"
@@ -95,7 +95,7 @@ namespace Node.Services.Navigation
         public PyDataType GetMyExtraMapInfoAgents(CallInformation call)
         {
             return new Rowset(
-                new PyList(2)
+                new PyList<PyString>(2)
                 {
                     [0] = "fromID",
                     [1] = "rank"

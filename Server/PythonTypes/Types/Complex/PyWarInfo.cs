@@ -9,7 +9,7 @@ namespace PythonTypes.Types.Complex
     /// </summary>
     public class PyWarInfo : IndexRowset
     {
-        public PyWarInfo() : base("warID", new PyList(9)
+        public PyWarInfo() : base("warID", new PyList<PyString>(9)
         {
             [0] = "warID",
             [1] = "declaredByID",

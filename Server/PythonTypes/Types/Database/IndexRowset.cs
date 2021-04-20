@@ -22,14 +22,14 @@ namespace PythonTypes.Types.Database
         /// </summary>
         private const string ROW_TYPE_NAME = "util.Row";
         
-        protected PyList Headers { get; }
+        protected PyList<PyString> Headers { get; }
         protected PyDictionary<PyInteger, PyList> Lines { get; }
         /// <summary>
         /// The field used to index the Rowset
         /// </summary>
         public string IDName { get; set; }
 
-        public IndexRowset(string idName, PyList headers)
+        public IndexRowset(string idName, PyList<PyString> headers)
         {
             this.Headers = headers;
             this.Lines = new PyDictionary<PyInteger, PyList>();

@@ -19,8 +19,6 @@
 Common uncompyle6 parser routines.
 """
 
-from __future__ import print_function
-
 import sys
 
 from xdis import iscode, py_str2float
@@ -889,5 +887,4 @@ if __name__ == "__main__":
         ast = python_parser(PYTHON_VERSION, co, showasm=True, is_pypy=IS_PYPY)
         print(ast)
         return
-
-    parse_test(parse_test.__code__)
+    parse_test(parse_test.func_code)
