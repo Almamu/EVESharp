@@ -507,7 +507,7 @@ namespace Node.Inventory
             string customInfo = null)
         {
             int itemID = (int) this.ItemDB.CreateItem(itemName, typeID, ownerID, locationID, flag, contraband, singleton,
-                quantity, 0, 0, 0, null);
+                quantity, x, y, z, customInfo);
 
             return this.LoadItem(itemID);
         }

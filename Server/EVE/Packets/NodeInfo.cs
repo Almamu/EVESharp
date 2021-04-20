@@ -38,8 +38,7 @@ namespace EVE.Packets
                 NodeID = arguments[0] as PyInteger,
                 SolarSystems = arguments[1] as PyList
             };
-
-
+            
             return result;
         }
     }

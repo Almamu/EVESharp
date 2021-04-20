@@ -13,48 +13,27 @@ namespace Node.Inventory.Items.Types
     {
         public Dictionary<Flags, ItemEntity> ActiveModules =>
             this.Items
-                .Where(x =>
-                    x.Value.Flag == Flags.HiSlot0 || x.Value.Flag == Flags.HiSlot1 || x.Value.Flag == Flags.HiSlot2 ||
-                    x.Value.Flag == Flags.HiSlot3 || x.Value.Flag == Flags.HiSlot4 || x.Value.Flag == Flags.HiSlot5 ||
-                    x.Value.Flag == Flags.HiSlot6 || x.Value.Flag == Flags.HiSlot7 ||
-                    x.Value.Flag == Flags.MedSlot0 || x.Value.Flag == Flags.MedSlot1 || x.Value.Flag == Flags.MedSlot2 ||
-                    x.Value.Flag == Flags.MedSlot3 || x.Value.Flag == Flags.MedSlot4 || x.Value.Flag == Flags.MedSlot5 ||
-                    x.Value.Flag == Flags.MedSlot6 || x.Value.Flag == Flags.MedSlot7 ||
-                    x.Value.Flag == Flags.LoSlot0 || x.Value.Flag == Flags.LoSlot1 || x.Value.Flag == Flags.LoSlot2 ||
-                    x.Value.Flag == Flags.LoSlot3 || x.Value.Flag == Flags.LoSlot4 || x.Value.Flag == Flags.LoSlot5 ||
-                    x.Value.Flag == Flags.LoSlot6 || x.Value.Flag == Flags.LoSlot7)
+                .Where(x => x.Value.Flag.IsHighModule() || x.Value.Flag.IsMediumModule() || x.Value.Flag.IsLowModule())
                 .ToDictionary(x => x.Value.Flag, x => x.Value);
         
         public Dictionary<Flags, ItemEntity> RigSlots =>
             this.Items
-                .Where(x =>
-                    x.Value.Flag == Flags.RigSlot0 || x.Value.Flag == Flags.RigSlot1 || x.Value.Flag == Flags.RigSlot2 ||
-                    x.Value.Flag == Flags.RigSlot3 || x.Value.Flag == Flags.RigSlot4 || x.Value.Flag == Flags.RigSlot5 ||
-                    x.Value.Flag == Flags.RigSlot6 || x.Value.Flag == Flags.RigSlot7)
+                .Where(x => x.Value.Flag.IsRigModule())
                 .ToDictionary(x => x.Value.Flag, x => x.Value);
         
         public Dictionary<Flags, ItemEntity> HighSlotModules =>
             this.Items
-                .Where(x =>
-                    x.Value.Flag == Flags.HiSlot0 || x.Value.Flag == Flags.HiSlot1 || x.Value.Flag == Flags.HiSlot2 ||
-                     x.Value.Flag == Flags.HiSlot3 || x.Value.Flag == Flags.HiSlot4 || x.Value.Flag == Flags.HiSlot5 ||
-                     x.Value.Flag == Flags.HiSlot6 || x.Value.Flag == Flags.HiSlot7)
+                .Where(x => x.Value.Flag.IsHighModule())
                 .ToDictionary(x => x.Value.Flag, x => x.Value);
         
         public Dictionary<Flags, ItemEntity> MediumSlotModules => 
             this.Items
-                .Where(x =>
-                    x.Value.Flag == Flags.MedSlot0 || x.Value.Flag == Flags.MedSlot1 || x.Value.Flag == Flags.MedSlot2 ||
-                     x.Value.Flag == Flags.MedSlot3 || x.Value.Flag == Flags.MedSlot4 || x.Value.Flag == Flags.MedSlot5 ||
-                     x.Value.Flag == Flags.MedSlot6 || x.Value.Flag == Flags.MedSlot7)
+                .Where(x => x.Value.Flag.IsMediumModule())
                 .ToDictionary(x => x.Value.Flag, x => x.Value);
         
         public Dictionary<Flags, ItemEntity> LowSlotModules => 
             this.Items
-                .Where(x =>
-                    x.Value.Flag == Flags.LoSlot0 || x.Value.Flag == Flags.LoSlot1 || x.Value.Flag == Flags.LoSlot2 ||
-                     x.Value.Flag == Flags.LoSlot3 || x.Value.Flag == Flags.LoSlot4 || x.Value.Flag == Flags.LoSlot5 ||
-                     x.Value.Flag == Flags.LoSlot6 || x.Value.Flag == Flags.LoSlot7)
+                .Where(x => x.Value.Flag.IsLowModule())
                 .ToDictionary(x => x.Value.Flag, x => x.Value);
         
         public Ship(ItemEntity from) : base(from)
