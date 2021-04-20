@@ -1,5 +1,5 @@
-﻿using PythonTypes.Types.Collections;
-using PythonTypes.Types.Exceptions;
+﻿using EVE.Packets.Exceptions;
+using PythonTypes.Types.Collections;
 
 namespace Node.Exceptions.inventory
 {

@@ -1,15 +1,15 @@
 ﻿using System;
 using System.IO;
+using EVE.Packets.Complex;
 using Node.Inventory;
 using Node.Inventory.Items;
 using Node.StaticData.Inventory;
 using PythonTypes.Types.Collections;
-using PythonTypes.Types.Complex;
 using PythonTypes.Types.Primitives;
 
 namespace Node.Notifications.Nodes.Inventory
 {
-    public class OnItemChange : PyNodeNotification
+    public class OnItemChange : InterNodeNotification
     {
         public const string NOTIFICATION_NAME = "OnItemChange";
         

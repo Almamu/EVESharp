@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using Common.Constants;
 using EVE;
+using EVE.Packets.Complex;
+using EVE.Packets.Exceptions;
 using Node.Dogma;
 using Node.Dogma.Interpreter;
 using Node.Dogma.Interpreter.Opcodes;
@@ -16,9 +18,7 @@ using Node.Inventory.Items.Types;
 using Node.Network;
 using Node.StaticData.Inventory;
 using PythonTypes.Types.Collections;
-using PythonTypes.Types.Complex;
 using PythonTypes.Types.Database;
-using PythonTypes.Types.Exceptions;
 using PythonTypes.Types.Primitives;
 using Environment = Node.Inventory.Items.Dogma.Environment;
 
@@ -96,7 +96,7 @@ namespace Node.Services.Dogma
             if (ship.OwnerID != callerCharacterID)
                 throw new CustomError("The ship you're trying to get info off does not belong to you");
             
-            PyItemInfo itemInfo = new PyItemInfo();
+            ItemInfo itemInfo = new ItemInfo();
             
             // TODO: find all the items inside this ship that are not characters
             itemInfo.AddRow(
@@ -163,7 +163,7 @@ namespace Node.Services.Dogma
             if (character is null)
                 throw new CustomError($"Cannot get information for character {callerCharacterID}");
 
-            PyItemInfo itemInfo = new PyItemInfo();
+            ItemInfo itemInfo = new ItemInfo();
 
             itemInfo.AddRow(
                 character.ID, character.GetEntityRow(), character.GetEffects(), character.Attributes, DateTime.UtcNow.ToFileTime()

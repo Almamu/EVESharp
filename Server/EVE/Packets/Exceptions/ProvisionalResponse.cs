@@ -1,9 +1,8 @@
 using System;
 using PythonTypes.Types.Collections;
-using PythonTypes.Types.Network;
 using PythonTypes.Types.Primitives;
 
-namespace PythonTypes.Types.Exceptions
+namespace EVE.Packets.Exceptions
 {
     /// <summary>
     /// Placeholder exception to tell the client we're sending a ProvisionalResponse to the call

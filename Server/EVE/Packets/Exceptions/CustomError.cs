@@ -1,8 +1,6 @@
 using PythonTypes.Types.Collections;
-using PythonTypes.Types.Network;
-using PythonTypes.Types.Primitives;
 
-namespace PythonTypes.Types.Exceptions
+namespace EVE.Packets.Exceptions
 {
     /// <summary>
     /// Helper class to represent simple error messages for the client

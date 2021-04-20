@@ -1,21 +1,20 @@
 using System;
-using PythonTypes.Compression;
 using PythonTypes.Types.Collections;
 using PythonTypes.Types.Primitives;
 
-namespace PythonTypes.Types.Complex
+namespace EVE.Packets.Complex
 {
     /// <summary>
     /// Helper class to work with PyCachedObject's (objectCaching.CachedObject) to be sent to the EVE Online client
     /// when cache requests are performed
     /// </summary>
-    public class PyCacheMethodCallResult
+    public class CachedMethodCallResult
     {
         private const string TYPE_NAME = "objectCaching.CachedMethodCallResult";
         
         public PyDataType CacheHint { get; private set; }
 
-        public static implicit operator PyDataType(PyCacheMethodCallResult cachedObject)
+        public static implicit operator PyDataType(CachedMethodCallResult cachedObject)
         {
             if (cachedObject.CacheHint is null)
                 throw new Exception("CacheHint data is null");
@@ -30,9 +29,9 @@ namespace PythonTypes.Types.Complex
             return new PyObjectData(TYPE_NAME, args);
         }
 
-        public static PyCacheMethodCallResult FromCacheHint(PyDataType cacheInfo)
+        public static CachedMethodCallResult FromCacheHint(PyDataType cacheInfo)
         {
-            return new PyCacheMethodCallResult
+            return new CachedMethodCallResult
             {
                 CacheHint = cacheInfo
             };

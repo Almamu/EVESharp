@@ -1,10 +1,10 @@
 ﻿using System.Collections.Generic;
-using PythonTypes.Types.Complex;
+using EVE.Packets.Complex;
 using PythonTypes.Types.Primitives;
 
 namespace Node.Notifications.Client.Character
 {
-    public class OnStandingSet : PyNotification
+    public class OnStandingSet : ClientNotification
     {
         private const string NOTIFICATION_NAME = "OnStandingSet";
         

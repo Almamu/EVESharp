@@ -1,14 +1,14 @@
 ﻿using System.Collections.Generic;
+using EVE.Packets.Complex;
 using Node.Inventory;
 using Node.Inventory.Items;
 using Node.StaticData.Inventory;
 using PythonTypes.Types.Collections;
-using PythonTypes.Types.Complex;
 using PythonTypes.Types.Primitives;
 
 namespace Node.Notifications.Client.Inventory
 {
-    public class OnItemChange : PyNotification
+    public class OnItemChange : ClientNotification
     {
         public ItemEntity Item { get; }
         public Dictionary<ItemChange, PyDataType> Changes { get; } = new Dictionary<ItemChange, PyDataType>();

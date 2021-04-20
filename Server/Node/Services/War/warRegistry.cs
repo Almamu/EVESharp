@@ -1,6 +1,6 @@
+using EVE.Packets.Complex;
 using Node.Network;
 using PythonTypes.Types.Collections;
-using PythonTypes.Types.Complex;
 using PythonTypes.Types.Primitives;
 
 namespace Node.Services.War
@@ -36,7 +36,7 @@ namespace Node.Services.War
 
         public PyDataType GetWars(PyInteger ownerID, CallInformation call)
         {
-            return new PyWarInfo();
+            return new WarInfo();
         }
     }
 }

@@ -26,6 +26,8 @@ using System;
 using System.IO;
 using EVE;
 using EVE.Packets;
+using EVE.Packets.Complex;
+using EVE.Packets.Exceptions;
 using Node.Exceptions;
 using Node.Inventory;
 using Node.Inventory.Items;
@@ -38,8 +40,6 @@ using Node.Notifications.Client.Station;
 using Node.Services;
 using Node.StaticData.Inventory;
 using PythonTypes.Types.Collections;
-using PythonTypes.Types.Complex;
-using PythonTypes.Types.Exceptions;
 using PythonTypes.Types.Network;
 using PythonTypes.Types.Primitives;
 using Attribute = Node.Inventory.Items.Attributes.Attribute;
@@ -476,7 +476,7 @@ namespace Node.Network
         /// Adds a MultiEvent notification to the list of pending notifications to be sent
         /// </summary>
         /// <param name="entry">The MultiEvent entry to enqueue</param>
-        public void NotifyMultiEvent(PyNotification entry)
+        public void NotifyMultiEvent(ClientNotification entry)
         {
             lock (this.PendingMultiEvents)
                 this.PendingMultiEvents.Add(entry);

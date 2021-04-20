@@ -1,11 +1,11 @@
 ﻿using System.Collections.Generic;
+using EVE.Packets.Complex;
 using Node.Inventory.Items.Types;
-using PythonTypes.Types.Complex;
 using PythonTypes.Types.Primitives;
 
 namespace Node.Notifications.Client.Skills
 {
-    public class OnSkillTrainingStopped : PyNotification
+    public class OnSkillTrainingStopped : ClientNotification
     {
         private const string NOTIFICATION_NAME = "OnSkillTrainingStopped";
         

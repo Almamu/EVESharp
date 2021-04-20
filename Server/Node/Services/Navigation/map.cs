@@ -1,12 +1,12 @@
 using System.Collections.Generic;
 using Common.Services;
+using EVE.Packets.Complex;
 using Node.Inventory;
 using Node.Inventory.Items.Types;
 using Node.Network;
 using Node.StaticData;
 using Node.StaticData.Inventory.Station;
 using PythonTypes.Types.Collections;
-using PythonTypes.Types.Complex;
 using PythonTypes.Types.Database;
 using PythonTypes.Types.Primitives;
 
@@ -88,7 +88,7 @@ namespace Node.Services.Navigation
 
             PyDataType cacheHint = this.CacheStorage.GetHint("map", "GetSolarSystemPseudoSecurities");
 
-            return PyCacheMethodCallResult.FromCacheHint(cacheHint);
+            return CachedMethodCallResult.FromCacheHint(cacheHint);
         }
 
         // TODO: PROPERLY IMPLEMENT THIS ONE

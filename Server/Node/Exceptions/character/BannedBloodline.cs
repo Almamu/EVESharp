@@ -1,6 +1,6 @@
-﻿using Node.StaticData;
+﻿using EVE.Packets.Exceptions;
+using Node.StaticData;
 using PythonTypes.Types.Collections;
-using PythonTypes.Types.Exceptions;
 using PythonTypes.Types.Primitives;
 
 namespace Node.Exceptions.character

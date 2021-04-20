@@ -39,7 +39,6 @@ using Node.Services.Database;
 using Node.StaticData.Inventory;
 using PythonTypes.Types.Collections;
 using PythonTypes.Types.Database;
-using PythonTypes.Types.Exceptions;
 using PythonTypes.Types.Primitives;
 using Type = System.Type;
 

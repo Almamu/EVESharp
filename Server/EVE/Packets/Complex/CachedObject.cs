@@ -1,16 +1,15 @@
 using System;
-using System.Text;
 using PythonTypes.Compression;
 using PythonTypes.Types.Collections;
 using PythonTypes.Types.Primitives;
 
-namespace PythonTypes.Types.Complex
+namespace EVE.Packets.Complex
 {
     /// <summary>
     /// Helper class to work with PyCachedObject's (objectCaching.CachedObject) to be sent to the EVE Online client
     /// when cache requests are performed
     /// </summary>
-    public class PyCachedObject
+    public class CachedObject
     {
         private const string TYPE_NAME = "objectCaching.CachedObject";
         
@@ -43,7 +42,7 @@ namespace PythonTypes.Types.Complex
         /// </summary>
         public PyDataType ObjectID { get; private set; }
 
-        public static implicit operator PyDataType(PyCachedObject cachedObject)
+        public static implicit operator PyDataType(CachedObject cachedObject)
         {
             if (cachedObject.Cache is null)
                 throw new Exception("Cache data is null");
@@ -72,9 +71,9 @@ namespace PythonTypes.Types.Complex
             return new PyObjectData(TYPE_NAME, args);
         }
 
-        public static implicit operator PyCachedObject(PyDataType cachedObject)
+        public static implicit operator CachedObject(PyDataType cachedObject)
         {
-            PyCachedObject result = new PyCachedObject();
+            CachedObject result = new CachedObject();
             
             if (cachedObject is PyObjectData == false)
                 throw new Exception("Expected PyObjectData");
@@ -133,9 +132,9 @@ namespace PythonTypes.Types.Complex
             return result;
         }
 
-        public static PyCachedObject FromCacheHint(PyCacheHint cacheInfo, byte[] data)
+        public static CachedObject FromCacheHint(CachedHint cacheInfo, byte[] data)
         {
-            return new PyCachedObject
+            return new CachedObject
             {
                 NodeID = cacheInfo.NodeID,
                 ObjectID = cacheInfo.ObjectID,

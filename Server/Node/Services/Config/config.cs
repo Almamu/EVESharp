@@ -1,10 +1,10 @@
 using Common.Logging;
 using Common.Services;
+using EVE.Packets.Exceptions;
 using Node.Database;
 using Node.Inventory;
 using Node.Network;
 using PythonTypes.Types.Collections;
-using PythonTypes.Types.Exceptions;
 using PythonTypes.Types.Primitives;
 
 namespace Node.Services.Config

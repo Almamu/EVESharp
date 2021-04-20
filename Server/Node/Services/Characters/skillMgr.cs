@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Common.Logging;
+using EVE.Packets.Exceptions;
 using Node.Database;
 using Node.Exceptions.character;
 using Node.Exceptions.skillMgr;
@@ -14,7 +15,6 @@ using Node.Notifications.Client.Inventory;
 using Node.Notifications.Client.Skills;
 using Node.StaticData.Inventory;
 using PythonTypes.Types.Collections;
-using PythonTypes.Types.Exceptions;
 using PythonTypes.Types.Primitives;
 using Attribute = Node.Inventory.Items.Attributes.Attribute;
 

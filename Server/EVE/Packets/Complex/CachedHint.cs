@@ -1,13 +1,14 @@
+using PythonTypes;
 using PythonTypes.Types.Collections;
 using PythonTypes.Types.Primitives;
 
-namespace PythonTypes.Types.Complex
+namespace EVE.Packets.Complex
 {
     /// <summary>
     /// Helper class to work with PyCacheHint's (util.CachedObject) to be sent to the EVE Online client
     /// when cache requests are performed
     /// </summary>
-    public class PyCacheHint
+    public class CachedHint
     {
         private const string TYPE_NAME = "util.CachedObject";
 
@@ -28,7 +29,7 @@ namespace PythonTypes.Types.Complex
         /// </summary>
         public int Version { get; private set; }
 
-        public static implicit operator PyDataType(PyCacheHint cacheHint)
+        public static implicit operator PyDataType(CachedHint cacheHint)
         {
             PyTuple timestamp = new PyTuple(2)
             {
@@ -46,12 +47,12 @@ namespace PythonTypes.Types.Complex
             );
         }
 
-        public static implicit operator PyCacheHint(PyDataType from)
+        public static implicit operator CachedHint(PyDataType from)
         {
             PyTuple container = from as PyTuple;
             PyTuple timestamp = container[2] as PyTuple;
 
-            return new PyCacheHint
+            return new CachedHint
             {
                 ObjectID = container[1],
                 NodeID = container[3] as PyInteger,
@@ -68,9 +69,9 @@ namespace PythonTypes.Types.Complex
         /// <param name="timestamp">The timestamp of the creation of the cache hint</param>
         /// <param name="nodeID">The node that created the cache</param>
         /// <returns></returns>
-        public static PyCacheHint FromBuffer(string name, byte[] data, long timestamp, long nodeID)
+        public static CachedHint FromBuffer(string name, byte[] data, long timestamp, long nodeID)
         {
-            return new PyCacheHint
+            return new CachedHint
             {
                 Version = (int) CRC32.Checksum(data),
                 NodeID = nodeID,
@@ -87,9 +88,9 @@ namespace PythonTypes.Types.Complex
         /// <param name="timestamp">The timestamp of the creation of the cache hint</param>
         /// <param name="nodeID">The node that created the cache</param>
         /// <returns></returns>
-        public static PyCacheHint FromBuffer(PyDataType objectID, byte[] data, long timestamp, long nodeID)
+        public static CachedHint FromBuffer(PyDataType objectID, byte[] data, long timestamp, long nodeID)
         {
-            return new PyCacheHint
+            return new CachedHint
             {
                 Version = (int) CRC32.Checksum(data),
                 NodeID = nodeID,
@@ -106,7 +107,7 @@ namespace PythonTypes.Types.Complex
         /// <param name="timestamp">The timestamp of the creation of the cache hint</param>
         /// <param name="nodeID">The node that created the cache hint</param>
         /// <returns></returns>
-        public static PyCacheHint FromPyObject(PyDataType objectID, PyDataType data, long timestamp, long nodeID)
+        public static CachedHint FromPyObject(PyDataType objectID, PyDataType data, long timestamp, long nodeID)
         {
             return FromBuffer(objectID, PythonTypes.Marshal.Marshal.ToByteArray(data), timestamp, nodeID);
         }

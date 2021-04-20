@@ -1,10 +1,10 @@
 ﻿using System.Collections.Generic;
-using PythonTypes.Types.Complex;
+using EVE.Packets.Complex;
 using PythonTypes.Types.Primitives;
 
 namespace Node.Notifications.Client.Certificates
 {
-    public class OnCertificateIssued : PyNotification
+    public class OnCertificateIssued : ClientNotification
     {
         private const string NOTIFICATION_NAME = "OnCertificateIssued";
         

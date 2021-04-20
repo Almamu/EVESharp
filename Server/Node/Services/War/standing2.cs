@@ -1,4 +1,6 @@
 using Common.Services;
+using EVE.Packets.Complex;
+using EVE.Packets.Exceptions;
 using Node.Database;
 using Node.Inventory;
 using Node.Inventory.Items.Types;
@@ -6,8 +8,6 @@ using Node.Network;
 using Node.Notifications.Client.Character;
 using Node.StaticData.Standings;
 using PythonTypes.Types.Collections;
-using PythonTypes.Types.Complex;
-using PythonTypes.Types.Exceptions;
 using PythonTypes.Types.Primitives;
 
 namespace Node.Services.War
@@ -48,7 +48,7 @@ namespace Node.Services.War
                 CacheStorage.CacheObjectType.Rowset
             );
 
-            return PyCacheMethodCallResult.FromCacheHint(
+            return CachedMethodCallResult.FromCacheHint(
                 this.CacheStorage.GetHint("standing2", "GetNPCNPCStandings")
             );
         }

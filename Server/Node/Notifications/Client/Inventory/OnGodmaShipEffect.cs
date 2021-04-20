@@ -1,11 +1,11 @@
 ﻿using System.Collections.Generic;
+using EVE.Packets.Complex;
 using Node.Inventory.Items.Dogma;
-using PythonTypes.Types.Complex;
 using PythonTypes.Types.Primitives;
 
 namespace Node.Notifications.Client.Inventory
 {
-    public class OnGodmaShipEffect : PyNotification
+    public class OnGodmaShipEffect : ClientNotification
     {
         public GodmaShipEffect EffectInfo { get; init; }
 

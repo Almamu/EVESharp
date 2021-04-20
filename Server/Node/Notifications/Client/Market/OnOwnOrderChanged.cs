@@ -1,11 +1,11 @@
 ﻿using System.Collections.Generic;
-using PythonTypes.Types.Complex;
+using EVE.Packets.Complex;
 using PythonTypes.Types.Database;
 using PythonTypes.Types.Primitives;
 
 namespace Node.Notifications.Client.Market
 {
-    public class OnOwnOrderChanged : PyNotification
+    public class OnOwnOrderChanged : ClientNotification
     {
         private static readonly DBRowDescriptor DESCRIPTOR = new DBRowDescriptor()
         {

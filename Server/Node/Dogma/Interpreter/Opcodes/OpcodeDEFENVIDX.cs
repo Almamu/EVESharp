@@ -1,8 +1,8 @@
 ﻿using System;
 using System.IO;
+using EVE.Packets.Exceptions;
 using Node.Dogma.Exception;
 using Node.Inventory.Items;
-using PythonTypes.Types.Exceptions;
 
 namespace Node.Dogma.Interpreter.Opcodes
 {

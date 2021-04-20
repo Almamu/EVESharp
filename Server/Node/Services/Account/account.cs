@@ -1,5 +1,7 @@
 using System;
 using Common.Services;
+using EVE.Packets.Complex;
+using EVE.Packets.Exceptions;
 using MySql.Data.MySqlClient;
 using Node.Database;
 using Node.Exceptions;
@@ -7,8 +9,6 @@ using Node.Inventory;
 using Node.Market;
 using Node.Network;
 using Node.Notifications.Client.Character;
-using PythonTypes.Types.Complex;
-using PythonTypes.Types.Exceptions;
 using PythonTypes.Types.Primitives;
 
 namespace Node.Services.Account
@@ -69,7 +69,7 @@ namespace Node.Services.Account
 
             PyDataType cacheHint = this.CacheStorage.GetHint("account", "GetEntryTypes");
 
-            return PyCacheMethodCallResult.FromCacheHint(cacheHint);
+            return CachedMethodCallResult.FromCacheHint(cacheHint);
         }
 
         public PyDataType GetJournal(PyInteger marketKey, PyInteger fromDate, PyInteger entryTypeID,

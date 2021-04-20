@@ -8,7 +8,6 @@ using Node.Inventory.Items.Attributes;
 using Node.Network;
 using Node.StaticData.Inventory;
 using PythonTypes.Types.Collections;
-using PythonTypes.Types.Exceptions;
 using PythonTypes.Types.Primitives;
 using Attribute = Node.Inventory.Items.Attributes.Attribute;
 

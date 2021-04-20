@@ -2,14 +2,14 @@ using PythonTypes.Types.Collections;
 using PythonTypes.Types.Database;
 using PythonTypes.Types.Primitives;
 
-namespace PythonTypes.Types.Complex
+namespace EVE.Packets.Complex
 {
     /// <summary>
     /// Simple base class to simplify working with Item information
     /// </summary>
-    public class PyWarInfo : IndexRowset
+    public class WarInfo : IndexRowset
     {
-        public PyWarInfo() : base("warID", new PyList<PyString>(9)
+        public WarInfo() : base("warID", new PyList<PyString>(9)
         {
             [0] = "warID",
             [1] = "declaredByID",

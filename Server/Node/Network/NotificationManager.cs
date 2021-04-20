@@ -1,9 +1,9 @@
 ﻿using System.Collections.Generic;
+using EVE.Packets.Complex;
 using Node.Inventory;
 using Node.Notifications;
 using Node.Notifications.Nodes;
 using PythonTypes.Types.Collections;
-using PythonTypes.Types.Complex;
 using PythonTypes.Types.Network;
 using PythonTypes.Types.Primitives;
 
@@ -68,12 +68,12 @@ namespace Node.Network
             this.SendNotification(type, NOTIFICATION_TYPE_CHARACTER, characterID, notification);
         }
 
-        public void NotifyCharacters(PyList<PyInteger> characterIDs, PyNotification notification)
+        public void NotifyCharacters(PyList<PyInteger> characterIDs, ClientNotification notification)
         {
             this.SendNotification(notification.NotificationName, NOTIFICATION_TYPE_CHARACTER, characterIDs, notification.GetElements());
         }
         
-        public void NotifyCharacter(int characterID, PyNotification entry)
+        public void NotifyCharacter(int characterID, ClientNotification entry)
         {
             // do not waste network resources on useless notifications
             if (this.CharacterManager.IsCharacterConnected(characterID) == false)
@@ -88,7 +88,7 @@ namespace Node.Network
             this.SendNotification(type, NOTIFICATION_TYPE_CORPORATON, corporationID, notification);
         }
 
-        public void NotifyCorporation(int corporationID, PyNotification notification)
+        public void NotifyCorporation(int corporationID, ClientNotification notification)
         {
             this.SendNotification(notification.NotificationName, NOTIFICATION_TYPE_CORPORATON, corporationID, notification.GetElements());
         }
@@ -98,7 +98,7 @@ namespace Node.Network
             this.SendNotification(type, NOTIFICATION_TYPE_STATION, stationID, notification);
         }
 
-        public void NotifyStation(int stationID, PyNotification notification)
+        public void NotifyStation(int stationID, ClientNotification notification)
         {
             this.SendNotification(notification.NotificationName, NOTIFICATION_TYPE_STATION, stationID, notification.GetElements());
         }
@@ -108,7 +108,7 @@ namespace Node.Network
         /// </summary>
         /// <param name="nodeID">The node to notify</param>
         /// <param name="notification">The notification to send</param>
-        public void NotifyNode(long nodeID, PyNodeNotification notification)
+        public void NotifyNode(long nodeID, InterNodeNotification notification)
         {
             // do not notify if the notification is for a non-existant node (nodeID = 0)
             if (nodeID == 0)
@@ -128,7 +128,7 @@ namespace Node.Network
             this.ClusterConnection.Send(packet);
         }
 
-        public void SendNotification(string idType, int id, PyNotification data)
+        public void SendNotification(string idType, int id, ClientNotification data)
         {
             this.SendNotification(data.NotificationName, idType, new PyList(1) {[0] = id}, data.GetElements());
         }
@@ -138,7 +138,7 @@ namespace Node.Network
             this.SendNotification(notificationType, idType, new PyList(1) {[0] = id}, data);
         }
 
-        public void SendNotification(string idType, PyList idsOfInterest, PyNotification data)
+        public void SendNotification(string idType, PyList idsOfInterest, ClientNotification data)
         {
             this.SendNotification(data.NotificationName, idType, idsOfInterest, data.GetElements());
         }

@@ -1,4 +1,4 @@
-﻿using PythonTypes.Types.Exceptions;
+﻿using EVE.Packets.Exceptions;
 using PythonTypes.Types.Primitives;
 
 namespace Node.Exceptions.marketProxy

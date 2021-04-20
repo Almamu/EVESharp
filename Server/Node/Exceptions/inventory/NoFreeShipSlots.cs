@@ -1,6 +1,6 @@
-﻿using Node.Inventory.Items.Types;
+﻿using EVE.Packets.Exceptions;
+using Node.Inventory.Items.Types;
 using PythonTypes.Types.Collections;
-using PythonTypes.Types.Exceptions;
 
 namespace Node.Exceptions.inventory
 {

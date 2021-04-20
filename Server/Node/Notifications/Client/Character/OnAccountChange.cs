@@ -1,10 +1,10 @@
 ﻿using System.Collections.Generic;
-using PythonTypes.Types.Complex;
+using EVE.Packets.Complex;
 using PythonTypes.Types.Primitives;
 
 namespace Node.Notifications.Client.Character
 {
-    public class OnAccountChange : PyNotification
+    public class OnAccountChange : ClientNotification
     {
         private const string NOTIFICATION_NAME = "OnAccountChange";
 

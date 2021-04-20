@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using EVE.Packets.Exceptions;
 using Node.Database;
 using Node.Exceptions;
 using Node.Exceptions.repairSvc;
@@ -17,7 +18,6 @@ using Node.Services.Inventory;
 using Node.StaticData.Inventory;
 using PythonTypes.Types.Collections;
 using PythonTypes.Types.Database;
-using PythonTypes.Types.Exceptions;
 using PythonTypes.Types.Primitives;
 
 namespace Node.Services.Stations

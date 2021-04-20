@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using Common.Services;
+using EVE.Packets.Exceptions;
 using MySql.Data.MySqlClient;
 using Node.Database;
 using Node.Exceptions.contractMgr;
@@ -16,7 +17,6 @@ using Node.Services.Account;
 using Node.StaticData.Inventory;
 using PythonTypes.Types.Collections;
 using PythonTypes.Types.Database;
-using PythonTypes.Types.Exceptions;
 using PythonTypes.Types.Primitives;
 using Container = Node.Inventory.Items.Types.Container;
 

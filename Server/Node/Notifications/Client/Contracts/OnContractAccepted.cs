@@ -1,10 +1,10 @@
 ﻿using System.Collections.Generic;
-using PythonTypes.Types.Complex;
+using EVE.Packets.Complex;
 using PythonTypes.Types.Primitives;
 
 namespace Node.Notifications.Client.Contracts
 {
-    public class OnContractAccepted : PyNotification
+    public class OnContractAccepted : ClientNotification
     {
         private const string NOTIFICATION_NAME = "OnContractAccepted";
         

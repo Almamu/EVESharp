@@ -1,4 +1,5 @@
 ﻿using Common.Services;
+using EVE.Packets.Exceptions;
 using Node.Database;
 using Node.Inventory;
 using Node.Inventory.Items;
@@ -7,7 +8,6 @@ using Node.Inventory.Items.Types;
 using Node.Network;
 using Node.StaticData.Inventory;
 using PythonTypes.Types.Collections;
-using PythonTypes.Types.Exceptions;
 using PythonTypes.Types.Primitives;
 
 namespace Node.Services.Stations

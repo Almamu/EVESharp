@@ -1,8 +1,7 @@
 using PythonTypes.Types.Collections;
 using PythonTypes.Types.Network;
-using PythonTypes.Types.Primitives;
 
-namespace PythonTypes.Types.Exceptions
+namespace EVE.Packets.Exceptions
 {
     /// <summary>
     /// Helper class to work with ccp_exceptions.UserError exceptions

@@ -1,4 +1,5 @@
 ﻿using System;
+using EVE.Packets.Exceptions;
 using Node.Exceptions.jumpCloneSvc;
 using Node.Exceptions.ship;
 using Node.Inventory;
@@ -9,7 +10,6 @@ using Node.Notifications.Client.Inventory;
 using Node.StaticData;
 using Node.StaticData.Inventory;
 using PythonTypes.Types.Collections;
-using PythonTypes.Types.Exceptions;
 using PythonTypes.Types.Primitives;
 using Type = Node.StaticData.Inventory.Type;
 

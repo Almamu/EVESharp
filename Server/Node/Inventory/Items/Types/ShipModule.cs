@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Runtime.InteropServices;
+using EVE.Packets.Exceptions;
 using Node.Dogma.Interpreter;
 using Node.Dogma.Interpreter.Opcodes;
 using Node.Exceptions.dogma;
@@ -10,7 +11,6 @@ using Node.Network;
 using Node.Notifications.Client.Inventory;
 using Node.StaticData.Dogma;
 using PythonTypes.Types.Collections;
-using PythonTypes.Types.Exceptions;
 using PythonTypes.Types.Primitives;
 
 namespace Node.Inventory.Items.Types

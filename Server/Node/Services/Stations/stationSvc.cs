@@ -1,8 +1,8 @@
 ﻿using System;
 using Common.Services;
+using EVE.Packets.Complex;
 using Node.Inventory;
 using Node.Network;
-using PythonTypes.Types.Complex;
 using PythonTypes.Types.Primitives;
 
 namespace Node.Services.Stations
@@ -32,7 +32,7 @@ namespace Node.Services.Stations
                 );
             }
 
-            return PyCacheMethodCallResult.FromCacheHint(
+            return CachedMethodCallResult.FromCacheHint(
                 this.CacheStorage.GetHint("stationSvc", $"GetStation_{stationID}")
             );
         }

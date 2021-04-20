@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using EVE.Packets.Exceptions;
 using Node.Database;
 using Node.Exceptions;
 using Node.Exceptions.jumpCloneSvc;
@@ -15,7 +16,6 @@ using Node.StaticData;
 using Node.StaticData.Inventory;
 using PythonTypes.Types.Collections;
 using PythonTypes.Types.Database;
-using PythonTypes.Types.Exceptions;
 using PythonTypes.Types.Primitives;
 using Type = Node.StaticData.Inventory.Type;
 

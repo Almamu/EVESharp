@@ -2,7 +2,6 @@
 using System.IO;
 using Node.Dogma.Exception;
 using Node.Inventory.Items;
-using PythonTypes.Types.Exceptions;
 
 namespace Node.Dogma.Interpreter.Opcodes
 {

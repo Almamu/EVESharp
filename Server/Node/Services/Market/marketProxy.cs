@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using Common.Services;
+using EVE.Packets.Complex;
+using EVE.Packets.Exceptions;
 using MySql.Data.MySqlClient;
 using Node.Database;
 using Node.Exceptions.inventory;
@@ -15,8 +17,6 @@ using Node.Notifications.Nodes.Inventory;
 using Node.Services.Account;
 using Node.StaticData;
 using Node.StaticData.Inventory;
-using PythonTypes.Types.Complex;
-using PythonTypes.Types.Exceptions;
 using PythonTypes.Types.Primitives;
 
 namespace Node.Services.Market
@@ -93,7 +93,7 @@ namespace Node.Services.Market
                 );
             }
 
-            return PyCacheMethodCallResult.FromCacheHint(
+            return CachedMethodCallResult.FromCacheHint(
                 this.CacheStorage.GetHint("marketProxy", "GetMarketGroups")
             );
         }
@@ -136,7 +136,7 @@ namespace Node.Services.Market
 
             PyDataType cacheHint = this.CacheStorage.GetHint("marketProxy", "GetOrders_" + typeID);
 
-            return PyCacheMethodCallResult.FromCacheHint(cacheHint);
+            return CachedMethodCallResult.FromCacheHint(cacheHint);
         }
 
         public PyDataType StartupCheck(CallInformation call)

@@ -1,11 +1,11 @@
 ﻿using System.Collections.Generic;
+using EVE.Packets.Complex;
 using PythonTypes.Types.Collections;
-using PythonTypes.Types.Complex;
 using PythonTypes.Types.Primitives;
 
 namespace Node.Notifications.Client.Station
 {
-    public class OnCharNowInStation : PyNotification
+    public class OnCharNowInStation : ClientNotification
     {
         private const string NOTIFICATION_NAME = "OnCharNowInStation";
         

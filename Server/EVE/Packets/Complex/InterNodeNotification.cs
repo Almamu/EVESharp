@@ -1,23 +1,23 @@
 ﻿using PythonTypes.Types.Collections;
 using PythonTypes.Types.Primitives;
 
-namespace PythonTypes.Types.Complex
+namespace EVE.Packets.Complex
 {
     /// <summary>
     /// Special class that handles node notifications only
     /// </summary>
-    public abstract class PyNodeNotification
+    public abstract class InterNodeNotification
     {
         public string NotificationName { get; init; }
 
-        public PyNodeNotification(string name)
+        public InterNodeNotification(string name)
         {
             this.NotificationName = name;
         }
 
         protected abstract PyDataType GetNotification();
         
-        public static implicit operator PyTuple(PyNodeNotification notif)
+        public static implicit operator PyTuple(InterNodeNotification notif)
         {
             return new PyTuple(2)
             {

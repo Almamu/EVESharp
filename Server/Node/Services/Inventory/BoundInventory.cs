@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using EVE.Packets.Exceptions;
 using Node.Database;
 using Node.Exceptions;
 using Node.Exceptions.inventory;
@@ -13,7 +14,6 @@ using Node.Notifications.Client.Inventory;
 using Node.StaticData.Inventory;
 using PythonTypes.Types.Collections;
 using PythonTypes.Types.Database;
-using PythonTypes.Types.Exceptions;
 using PythonTypes.Types.Primitives;
 
 namespace Node.Services.Inventory

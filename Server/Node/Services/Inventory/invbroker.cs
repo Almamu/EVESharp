@@ -1,3 +1,4 @@
+using EVE.Packets.Exceptions;
 using Node.Database;
 using Node.Exceptions;
 using Node.Exceptions.inventory;
@@ -9,7 +10,6 @@ using Node.Network;
 using Node.Notifications.Client.Inventory;
 using Node.StaticData.Inventory;
 using PythonTypes.Types.Collections;
-using PythonTypes.Types.Exceptions;
 using PythonTypes.Types.Primitives;
 using Container = Node.StaticData.Inventory.Container;
 

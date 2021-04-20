@@ -1,6 +1,6 @@
 ﻿using System.IO;
+using EVE.Packets.Exceptions;
 using Node.Dogma.Exception;
-using PythonTypes.Types.Exceptions;
 
 namespace Node.Dogma.Interpreter.Opcodes
 {

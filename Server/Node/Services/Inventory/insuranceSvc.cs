@@ -1,4 +1,5 @@
 ﻿using System;
+using EVE.Packets.Exceptions;
 using Node.Database;
 using Node.Exceptions.insuranceSvc;
 using Node.Exceptions.jumpCloneSvc;
@@ -9,7 +10,6 @@ using Node.Network;
 using Node.Services.Account;
 using PythonTypes.Types.Collections;
 using PythonTypes.Types.Database;
-using PythonTypes.Types.Exceptions;
 using PythonTypes.Types.Primitives;
 
 namespace Node.Services.Inventory

@@ -1,11 +1,11 @@
 ﻿using System.Collections.Generic;
+using EVE.Packets.Complex;
 using PythonTypes.Types.Collections;
-using PythonTypes.Types.Complex;
 using PythonTypes.Types.Primitives;
 
 namespace Node.Notifications.Client.Inventory
 {
-    public class OnModuleAttributeChanges : PyNotification
+    public class OnModuleAttributeChanges : ClientNotification
     {
         private const string NOTITIFATION_NAME = "OnModuleAttributeChanges";
         

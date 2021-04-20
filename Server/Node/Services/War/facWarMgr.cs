@@ -1,9 +1,9 @@
 using System;
 using Common.Services;
+using EVE.Packets.Complex;
 using Node.Inventory;
 using Node.Network;
 using PythonTypes.Types.Collections;
-using PythonTypes.Types.Complex;
 using PythonTypes.Types.Database;
 using PythonTypes.Types.Primitives;
 
@@ -28,7 +28,7 @@ namespace Node.Services.War
                 CacheStorage.CacheObjectType.IntIntDict
             );
 
-            return PyCacheMethodCallResult.FromCacheHint(
+            return CachedMethodCallResult.FromCacheHint(
                 this.CacheStorage.GetHint("facWarMgr", "GetWarFactions")
             );
         }
@@ -50,7 +50,7 @@ namespace Node.Services.War
                 );                
             }
 
-            return PyCacheMethodCallResult.FromCacheHint(
+            return CachedMethodCallResult.FromCacheHint(
                 this.CacheStorage.GetHint("facWarMgr", "GetFacWarSystems")
             );
         }

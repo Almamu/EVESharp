@@ -26,13 +26,13 @@ using System;
 using System.Collections.Generic;
 using Common.Database;
 using Common.Logging;
+using EVE.Packets.Complex;
 using MySql.Data.MySqlClient;
 using Node.Inventory;
 using Node.Inventory.Items;
 using Node.StaticData.Inventory;
 using PythonTypes.Marshal;
 using PythonTypes.Types.Collections;
-using PythonTypes.Types.Complex;
 using PythonTypes.Types.Database;
 using PythonTypes.Types.Primitives;
 
@@ -393,12 +393,12 @@ namespace Node
         {
             byte[] marshalData = Marshal.ToByteArray(data);
             
-            PyCacheHint hint = PyCacheHint.FromPyObject(name, marshalData, timestamp, this.Container.NodeID);
+            CachedHint hint = CachedHint.FromPyObject(name, marshalData, timestamp, this.Container.NodeID);
 
             // save cache hint
             this.mCacheHints[name] = hint;
             // save cache object
-            this.mCacheData[name] = PyCachedObject.FromCacheHint(hint, marshalData);
+            this.mCacheData[name] = CachedObject.FromCacheHint(hint, marshalData);
         }
 
         /// <summary>
@@ -414,12 +414,12 @@ namespace Node
             
             string index = $"{service}::{method}";
             PyDataType objectID = this.GenerateObjectIDForCall(service, method);
-            PyCacheHint hint = PyCacheHint.FromPyObject(objectID, marshalData, timestamp, this.Container.NodeID);
+            CachedHint hint = CachedHint.FromPyObject(objectID, marshalData, timestamp, this.Container.NodeID);
             
             // save cache hint
             this.mCacheHints[index] = hint;
             // save cache object
-            this.mCacheData[index] = PyCachedObject.FromCacheHint(hint, marshalData);
+            this.mCacheData[index] = CachedObject.FromCacheHint(hint, marshalData);
         }
 
         /// <summary>

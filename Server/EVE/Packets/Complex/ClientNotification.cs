@@ -1,22 +1,20 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Runtime.CompilerServices;
+﻿using System.Collections.Generic;
 using PythonTypes.Types.Collections;
 using PythonTypes.Types.Primitives;
 
-namespace PythonTypes.Types.Complex
+namespace EVE.Packets.Complex
 {
     /// <summary>
     /// This is not a real type in EVE, but should help construct notifications in an easier way 
     /// </summary>
-    public abstract class PyNotification
+    public abstract class ClientNotification
     {
         /// <summary>
         /// The name of this notification
         /// </summary>
         public string NotificationName { get; }
         
-        protected PyNotification(string notificationName)
+        protected ClientNotification(string notificationName)
         {
             this.NotificationName = notificationName;
         }
@@ -27,7 +25,7 @@ namespace PythonTypes.Types.Complex
         /// <returns>The list of items to add after the notification type</returns>
         public abstract List<PyDataType> GetElements();
 
-        public static implicit operator PyTuple(PyNotification notification)
+        public static implicit operator PyTuple(ClientNotification notification)
         {
             List<PyDataType> data = notification.GetElements();
             

@@ -1,13 +1,13 @@
 using System;
 using System.Collections.Generic;
 using Common.Services;
+using EVE.Packets.Exceptions;
 using Node.Database;
 using Node.Inventory;
 using Node.Inventory.Items;
 using Node.Network;
 using PythonTypes.Types.Collections;
 using PythonTypes.Types.Database;
-using PythonTypes.Types.Exceptions;
 using PythonTypes.Types.Primitives;
 
 namespace Node.Services.Characters

@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using Common.Services;
+using EVE.Packets.Complex;
 using Node.Database;
 using Node.Exceptions.certificateMgr;
 using Node.Inventory;
@@ -9,8 +10,6 @@ using Node.Notifications.Client.Certificates;
 using Node.StaticData;
 using Node.StaticData.Certificates;
 using PythonTypes.Types.Collections;
-using PythonTypes.Types.Complex;
-using PythonTypes.Types.Exceptions;
 using PythonTypes.Types.Primitives;
 
 namespace Node.Services.Characters
@@ -41,7 +40,7 @@ namespace Node.Services.Characters
                 CacheStorage.CacheObjectType.Rowset
             );
 
-            return PyCacheMethodCallResult.FromCacheHint(
+            return CachedMethodCallResult.FromCacheHint(
                 this.CacheStorage.GetHint("certificateMgr", "GetAllShipCertificateRecommendations")
             );
         }
@@ -55,7 +54,7 @@ namespace Node.Services.Characters
                 CacheStorage.CacheObjectType.IndexRowset
             );
 
-            return PyCacheMethodCallResult.FromCacheHint(
+            return CachedMethodCallResult.FromCacheHint(
                 this.CacheStorage.GetHint("certificateMgr", "GetCertificateCategories")
             );
         }
@@ -69,7 +68,7 @@ namespace Node.Services.Characters
                 CacheStorage.CacheObjectType.IndexRowset
             );
 
-            return PyCacheMethodCallResult.FromCacheHint(
+            return CachedMethodCallResult.FromCacheHint(
                 this.CacheStorage.GetHint("certificateMgr", "GetCertificateClasses")
             );
         }

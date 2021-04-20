@@ -1,6 +1,6 @@
 using Common.Services;
+using EVE.Packets.Complex;
 using Node.Network;
-using PythonTypes.Types.Complex;
 using PythonTypes.Types.Primitives;
 
 namespace Node.Services.Account
@@ -24,7 +24,7 @@ namespace Node.Services.Account
 
             PyDataType cacheHint = this.CacheStorage.GetHint("billMgr", "GetBillTypes");
 
-            return PyCacheMethodCallResult.FromCacheHint(cacheHint);
+            return CachedMethodCallResult.FromCacheHint(cacheHint);
         }
     }
 }
