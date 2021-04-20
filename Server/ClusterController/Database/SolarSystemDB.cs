@@ -44,9 +44,7 @@ namespace ClusterController.Database
 
         public void ClearSolarSystemNodeID()
         {
-            Database.Query(
-                $"UPDATE invItems SET nodeID = 0"
-            );
+            Database.Query("UPDATE invItems SET nodeID = 0");
         }
         
         public SolarSystemDB(DatabaseConnection db) : base(db)

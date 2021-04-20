@@ -28,6 +28,7 @@ using Common.Database;
 using Common.Logging;
 using MySql.Data.MySqlClient;
 using PythonTypes.Types.Collections;
+using PythonTypes.Types.Database;
 using PythonTypes.Types.Primitives;
 
 namespace ClusterController.Database
@@ -64,11 +65,9 @@ namespace ClusterController.Database
                         code["methodName"] = reader.GetString(7);
                         code["objectID"] = reader.GetString(8);
 
-                        entry["code"] = new PyObjectData("util.KeyVal", code);
+                        entry["code"] = KeyVal.FromDictionary(code);
 
-                        result.Add(
-                            new PyObjectData("util.KeyVal", entry)
-                        );
+                        result.Add(KeyVal.FromDictionary(entry));
                     }
 
                     return result;
