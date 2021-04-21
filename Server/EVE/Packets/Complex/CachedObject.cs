@@ -107,7 +107,7 @@ namespace EVE.Packets.Complex
             result.Timestamp = versionTuple[0] as PyInteger;
             result.Version = versionTuple[0] as PyInteger;
 
-            if (args[1] is not null == false)
+            if (args[1] is not null == true)
                 throw new Exception("Second arg is not none");
 
             if (args[2] is PyInteger == false)
