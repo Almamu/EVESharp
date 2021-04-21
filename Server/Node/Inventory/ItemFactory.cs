@@ -106,6 +106,7 @@ namespace Node.Inventory
             this.ItemDB = this.DependencyInjection.GetInstance<ItemDB>();
             this.CharacterDB = this.DependencyInjection.GetInstance<CharacterDB>();
             this.InsuranceDB = this.DependencyInjection.GetInstance<InsuranceDB>();
+            this.SkillDB = this.DependencyInjection.GetInstance<SkillDB>();
 
             this.SystemManager = this.DependencyInjection.GetInstance<SystemManager>();
             // station manager goes first
