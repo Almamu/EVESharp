@@ -9,8 +9,6 @@ namespace ClusterController
 {
     public class UnauthenticatedConnection : Connection
     {
-        private Channel Log { get; set; }
-
         public UnauthenticatedConnection(EVEClientSocket socket, ConnectionManager connectionManager, Logger logger)
             : base(socket, connectionManager, logger.CreateLogChannel($"Unauthenticated-{socket.GetRemoteAddress()}"))
         {

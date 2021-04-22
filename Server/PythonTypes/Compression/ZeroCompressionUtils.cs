@@ -51,10 +51,6 @@ namespace PythonTypes.Compression
                 }
             }
             
-            // add some extra empty bytes at the end as CCP's implementation seems to use a fixed buffer size
-            // and thus already includes them
-            outputWriter.Write(new byte[] {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0});
-
             // go to the beginning of the stream to properly parse the data
             outputStream.Seek(0, SeekOrigin.Begin);
             

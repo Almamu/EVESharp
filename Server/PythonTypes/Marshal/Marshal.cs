@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -564,25 +565,46 @@ namespace PythonTypes.Marshal
         {
             writer.WriteOpcode(Opcode.PackedRow);
             Process(writer, packedRow.Header);
+            // bit where null flags will be written
+            int booleanBits = 0;
+            int nullBits = 0;
+            int wholeBytes = 0;
 
+            List<DBRowDescriptor.Column> booleanColumns = new List<DBRowDescriptor.Column>();
+            
+            foreach (DBRowDescriptor.Column column in packedRow.Header.Columns)
+            {
+                int bitLength = Utils.GetTypeBits(column.Type);
+
+                if (column.Type == FieldType.Bool)
+                {
+                    booleanColumns.Add(column);
+                    booleanBits++;
+                }
+
+                nullBits++;
+
+                if (bitLength >= 8)
+                    wholeBytes++;
+            }
+            
+            // build byte buffers for the bitfields like booleans and nulls
+            byte[] bitField = new byte[((booleanBits + nullBits) >> 3) + 1];
+            
             // prepare the zero-compression stream
-            MemoryStream wholeByteStream = new MemoryStream();
-            MemoryStream bitPacketStream = new MemoryStream();
+            MemoryStream wholeByteStream = new MemoryStream(wholeBytes + bitField.Length);
             MemoryStream objectStream = new MemoryStream();
 
             BinaryWriter wholeByteWriter = new BinaryWriter(wholeByteStream);
-            BinaryWriter bitPacketWriter = new BinaryWriter(bitPacketStream);
             BinaryWriter objectWriter = new BinaryWriter(objectStream);
 
-            // sort the columns by size
+            // sort the columns by size and obtain some important statistics
             IOrderedEnumerable<DBRowDescriptor.Column> enumerator = packedRow.Header.Columns.OrderByDescending(c => Utils.GetTypeBits(c.Type));
-            byte bitOffset = 0;
-            byte toWrite = 0;
-
+            
             foreach (DBRowDescriptor.Column column in enumerator)
             {
                 PyDataType value = packedRow[column.Name];
-                
+
                 switch (column.Type)
                 {
                     case FieldType.I8:
@@ -618,42 +640,35 @@ namespace PythonTypes.Marshal
                     // bools, bytes and str are handled differently
                     case FieldType.Bool:
                         if (value as PyBool)
-                            // bytes are written from right to left in the buffer
-                            toWrite |= (byte) (1 << bitOffset);
-
-                        bitOffset++;
-
-                        if (bitOffset > 7)
                         {
-                            // byte is full, write the byte to the stream
-                            bitPacketWriter.Write(toWrite);
-                            // reset the byte to keep using it as buffer
-                            toWrite = 0;
-                            // do the same for the next bit offset
-                            bitOffset = 0;
+                            int bit = booleanColumns.IndexOf(column);
+                            
+                            bitField[bit >> 3] |= (byte) (1 << (bit & 0x7));
                         }
 
                         break;
-
+                    
                     case FieldType.Bytes:
                     case FieldType.Str:
                     case FieldType.WStr:
-                        // write the object to the proper memory stream
-                        Process(objectWriter, packedRow[column.Name]);
-                        break;
+                            // write the object to the proper memory stream
+                            Process(objectWriter, packedRow[column.Name]);
+                            continue;
 
                     default:
                         throw new Exception($"Unknown field type {column.Type}");
                 }
+
+                if (value is null)
+                {
+                    int bit = packedRow.Header.Columns.IndexOf(column) + booleanBits;
+                    
+                    bitField[bit >> 3] |= (byte) (1 << (bit & 0x7));
+                }
             }
-
-            // after the column loop is done there might be some leftover compressed bits
-            // that have to be written to the bit stream too
-            if (bitOffset > 0)
-                bitPacketWriter.Write(toWrite);
-
-            // append the bitStream to the to the wholeByteWriter
-            bitPacketStream.WriteTo(wholeByteStream);
+            
+            // write the bit field buffer into the wholeByteWriter
+            wholeByteWriter.Write(bitField);
             // create a reader for the stream
             wholeByteStream.Seek(0, SeekOrigin.Begin);
             // create the reader used to compress the buffer

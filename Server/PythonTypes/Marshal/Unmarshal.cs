@@ -558,15 +558,50 @@ namespace PythonTypes.Marshal
 
             MemoryStream decompressedStream = ZeroCompressionUtils.LoadZeroCompressed(this.mReader);
             BinaryReader decompressedReader = new BinaryReader(decompressedStream);
+            byte[] fullBuffer = decompressedStream.GetBuffer();
+            int wholeBytes = 0;
+            int nullBits = 0;
+            int boolBits = 0;
 
-            // sort columns by the bit size
-            IEnumerable<DBRowDescriptor.Column> enumerator =
-                descriptor.Columns.OrderByDescending(c => Utils.GetTypeBits(c.Type));
+            List<DBRowDescriptor.Column> booleanColumns = new List<DBRowDescriptor.Column>();
+
+            // sort columns by the bit size and calculate other statistics for the PackedRow
+            IEnumerable<DBRowDescriptor.Column> enumerator = descriptor.Columns.OrderByDescending(c =>
+                {
+                    int bitLength = Utils.GetTypeBits(c.Type);
+
+                    if (c.Type == FieldType.Bool)
+                    {
+                        boolBits++;
+                        booleanColumns.Add(c);
+                    }
+
+                    nullBits++;
+                    
+                    if (bitLength >= 8)
+                        wholeBytes += bitLength >> 3;
+
+                    return Utils.GetTypeBits(c.Type);
+                }
+            );
 
             int bitOffset = 8;
             byte buffer = 0;
 
             foreach (DBRowDescriptor.Column column in enumerator)
+            {
+                int bit = (wholeBytes << 3) + descriptor.Columns.IndexOf(column) + boolBits;
+                bool isNull = (fullBuffer[bit >> 3] & (1 << (bit & 0x7))) == (1 << (bit & 0x7));
+
+                if (isNull == true)
+                {
+                    data[column.Name] = null;
+                    // move the required bytes in the stream
+                    decompressedReader.BaseStream.Seek((Utils.GetTypeBits(column.Type) >> 3), SeekOrigin.Current);
+                    
+                    continue;
+                }
+                
                 switch (column.Type)
                 {
                     case FieldType.I8:
@@ -594,14 +629,12 @@ namespace PythonTypes.Marshal
                         data[column.Name] = new PyDecimal(decompressedReader.ReadSingle());
                         break;
                     case FieldType.Bool:
-                        // read a byte from the buffer if needed
-                        if (bitOffset == 8)
                         {
-                            buffer = decompressedReader.ReadByte();
-                            bitOffset = 0;
+                            int boolBit = (wholeBytes << 3) + booleanColumns.IndexOf(column) + boolBits;
+                            bool isTrue = (fullBuffer[bit >> 3] & (1 << (bit & 0x7))) == (1 << (bit & 0x7));
+                            
+                            data[column.Name] = new PyBool(isTrue);
                         }
-
-                        data[column.Name] = new PyBool(((buffer >> bitOffset++) & 0x01) == 0x01);
                         break;
                     case FieldType.Bytes:
                     case FieldType.WStr:
@@ -612,6 +645,8 @@ namespace PythonTypes.Marshal
                     default:
                         throw new InvalidDataException($"Unknown column type {column.Type}");
                 }
+                
+            }
 
             return new PyPackedRow(descriptor, data);
         }
@@ -708,28 +743,11 @@ namespace PythonTypes.Marshal
                 throw new InvalidDataException($"Trying to parse a {opcode} as SubStream");
 
             uint length = this.mReader.ReadSizeEx();
-            PyDataType result = null;
+            byte[] buffer = new byte[length];
 
-            // on compressed streams it's impossible to do boundary-checks, so ensure that is taken into account
-            if (this.mReader.BaseStream is ZInputStream)
-            {
-                byte[] buffer = new byte[length];
+            this.mStream.Read(buffer, 0, buffer.Length);
 
-                this.mStream.Read(buffer, 0, buffer.Length);
-
-                result = ReadFromByteArray(buffer);
-            }
-            else
-            {
-                long start = this.mStream.Position;
-
-                // this substream has it's own savelist etc, the best way is to create a new unmarshaler using the same
-                // stream so the data can be properly read without much issue
-                result = ReadFromStream(this.mStream);
-
-                if ((start + length) != this.mStream.Position)
-                    throw new InvalidDataException($"Read past the boundaries of the PySubStream");
-            }
+            PyDataType result = ReadFromByteArray(buffer);
 
             return new PySubStream(result);
         }

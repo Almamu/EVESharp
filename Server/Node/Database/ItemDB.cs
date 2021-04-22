@@ -375,7 +375,7 @@ namespace Node.Database
                 reader.GetDoubleOrNull(9), // x
                 reader.GetDoubleOrNull(10), // y
                 reader.GetDoubleOrNull(11), // z
-                reader.GetStringOrDefault(12), // customInfo
+                reader.GetStringOrNull(12), // customInfo
                 new AttributeList(
                     this.ItemFactory,
                     itemType,
