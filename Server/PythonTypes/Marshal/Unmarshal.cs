@@ -630,8 +630,8 @@ namespace PythonTypes.Marshal
                         break;
                     case FieldType.Bool:
                         {
-                            int boolBit = (wholeBytes << 3) + booleanColumns.IndexOf(column) + boolBits;
-                            bool isTrue = (fullBuffer[bit >> 3] & (1 << (bit & 0x7))) == (1 << (bit & 0x7));
+                            int boolBit = (wholeBytes << 3) + booleanColumns.IndexOf(column);
+                            bool isTrue = (fullBuffer[boolBit >> 3] & (1 << (boolBit & 0x7))) == (1 << (boolBit & 0x7));
                             
                             data[column.Name] = new PyBool(isTrue);
                         }
