@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Runtime.CompilerServices;
 
 namespace PythonTypes.Compression
 {
@@ -11,47 +12,57 @@ namespace PythonTypes.Compression
         /// <seealso cref="Extensions.WriteSizeEx(BinaryWriter,uint)"/>
         /// </summary>
         /// <param name="reader">The reader to read the compressed data from</param>
+        /// <param name="length">The expected length of the decompressed data</param>
         /// <returns>The decompressed data as a MemoryStream for further usage</returns>
-        public static MemoryStream LoadZeroCompressed(BinaryReader reader)
+        public static MemoryStream LoadZeroCompressed(BinaryReader reader, int length)
         {
-            MemoryStream outputStream = new MemoryStream();
+            MemoryStream outputStream = new MemoryStream(new byte [length]);
             BinaryWriter outputWriter = new BinaryWriter(outputStream);
 
             uint packedLen = reader.ReadSizeEx();
             long max = reader.BaseStream.Position + packedLen;
+            bool nibble = false;
+            byte nibbleByte = 0;
 
             while (reader.BaseStream.Position < max)
             {
-                ZeroCompressionOpcode opcode = reader.ReadByte();
+                int count = 0;
+                
+                nibble = !nibble;
 
-                if (opcode.FirstIsZero)
+                if (nibble == true)
                 {
-                    for (int n = 0; n < (opcode.FirstLength + 1); n++)
+                    nibbleByte = reader.ReadByte();
+                    count = (nibbleByte & 0x0F) - 8;
+                }
+                else
+                {
+                    count = (nibbleByte >> 4) - 8;
+                }
+
+                if (count >= 0)
+                {
+                    if (outputStream.Capacity < outputStream.Position + count + 1)
+                        throw new InvalidDataException("The ZeroCompressed data size does not match the allocated space");
+                    
+                    while (count-- >= 0)
                         outputWriter.Write((byte) 0);
                 }
                 else
                 {
-                    int bytes = (int) (Math.Min(8 - opcode.FirstLength, max - reader.BaseStream.Position));
-                    
-                    for (int n = 0; n < bytes; n++)
-                        outputWriter.Write(reader.ReadByte());
-                }
+                    if (outputStream.Capacity < outputStream.Position - count)
+                        throw new InvalidDataException("The ZeroCompressed data size does not match the allocated space");
 
-                if (opcode.SecondIsZero)
-                {
-                    for (int n = 0; n < (opcode.SecondLength + 1); n++)
-                        outputWriter.Write((byte) 0);
-                }
-                else
-                {
-                    int bytes = (int) (Math.Min(8 - opcode.SecondLength, max - reader.BaseStream.Position));
-                    
-                    for (int n = 0; n < bytes; n++)
+                    while (count++ < 0 && reader.BaseStream.Position < max)
                         outputWriter.Write(reader.ReadByte());
                 }
             }
             
-            // go to the beginning of the stream to properly parse the data
+            // ensure the rest of the bytes are written as 0
+            if (outputStream.Capacity < outputStream.Position)
+                outputStream.Write(new byte [outputStream.Capacity - outputStream.Position]);
+            
+            // and go back to the begining of the stream
             outputStream.Seek(0, SeekOrigin.Begin);
             
             return outputStream;
@@ -69,102 +80,87 @@ namespace PythonTypes.Compression
             MemoryStream newStream = new MemoryStream();
             BinaryWriter newWriter = new BinaryWriter(newStream);
 
-            byte b = reader.ReadByte();
+            bool nibble = false;
+            long nibblePosition = 0;
+            byte nibbleByte = 0;
+            int zerochains = 0;
+            long start, end, count;
 
             while (reader.BaseStream.Position < reader.BaseStream.Length)
             {
-                ZeroCompressionOpcode opcode = (byte) 0;
-                int opcodeStartShift = 1;
-
-                // reserve space for opcode
-                newWriter.Write(opcode);
-
-                // when the first byte found is a zero we actually do compression
-                // count the number of zeros present up to 7 and update the opcode accordingly
-                if (b == 0x00)
+                if (nibble == false)
                 {
-                    opcode.FirstIsZero = true;
-                    int firstLen = -1;
-
-                    while ((b == 0x00) && (firstLen < 7) && (reader.BaseStream.Position < reader.BaseStream.Length))
-                    {
-                        firstLen++;
-                        b = reader.ReadByte();
-                    }
-
-                    // Very stupid, but fixes a big problem with them
-                    if (reader.BaseStream.Position == reader.BaseStream.Length)
-                        opcode.FirstLength = (byte) (firstLen + 1);
-                    else
-                        opcode.FirstLength = (byte) (firstLen);
-                }
-                // when the first byte read is not 0 the only option is to update the opcode and write
-                // to the stream the bytes that are not being compressed
-                else
-                {
-                    opcode.FirstIsZero = false;
-                    opcode.FirstLength = 8;
-
-                    while ((b != 0x00) && (opcode.FirstLength > 0))
-                    {
-                        opcode.FirstLength--;
-                        opcodeStartShift++;
-
-                        newWriter.Write(b);
-                        if (reader.BaseStream.Position < reader.BaseStream.Length)
-                            b = reader.ReadByte();
-                        else
-                            break;
-                    }
+                    nibbleByte = 0;
+                    nibblePosition = newWriter.BaseStream.Position;
+                    // write the new nibble
+                    newWriter.Write(nibbleByte);
                 }
 
-                // special situation, if the input stream is shorter than a double block do not try to compress further
-                // mark the second part as zeros, with zero length and finish the compression
-                if (reader.BaseStream.Position == reader.BaseStream.Length)
-                {
-                    opcode.SecondIsZero = true;
-                    opcode.SecondLength = 0;
-                }
-                else if (b == 0x00)
-                {
-                    opcode.SecondIsZero = true;
-                    int secondLength = -1;
+                // define the boundaries for the read
+                start = reader.BaseStream.Position;
+                end = start + 8;
+                if (end > reader.BaseStream.Length)
+                    end = reader.BaseStream.Length;
 
-                    while ((b == 0x00) && (secondLength < 7) &&
-                           (reader.BaseStream.Position < reader.BaseStream.Length))
+                byte current = reader.PeekByte();
+
+                if (current > 0)
+                {
+                    zerochains = 0;
+
+                    do
                     {
-                        secondLength++;
-                        b = reader.ReadByte();
-                    }
-
-                    opcode.SecondLength = (byte) (secondLength);
+                        newWriter.Write(reader.ReadByte());
+                    } while (reader.BaseStream.Position < end && reader.PeekByte() > 0);
+                    
+                    // calculate the count
+                    count = (start - reader.BaseStream.Position) + 8;
                 }
                 else
                 {
-                    opcode.SecondIsZero = false;
-                    opcode.SecondLength = 8;
+                    zerochains++;
 
-                    while ((b != 0x00) && (opcode.SecondLength > 0))
-                    {
-                        opcode.SecondLength--;
-                        opcodeStartShift++;
-
-                        newWriter.Write(b);
-                        if (reader.BaseStream.Position < reader.BaseStream.Length)
-                            b = reader.ReadByte();
-                        else
-                            break;
-                    }
+                    // ignore all zero bytes
+                    while (reader.BaseStream.Position < end && reader.PeekByte() == 0)
+                        reader.ReadByte();
+                    
+                    // count the ignored bytes
+                    count = (reader.BaseStream.Position - start) + 7;
                 }
 
-                // seek back to where the opcode position was reserved
-                newWriter.Seek(-opcodeStartShift, SeekOrigin.Current);
-                // write the updated opcode
-                newWriter.Write(opcode);
-                // seek back to where the last write ended
-                newWriter.Seek(opcodeStartShift - 1, SeekOrigin.Current);
+                if (nibble == true)
+                {
+                    nibbleByte |= (byte) (count << 4);
+                }
+                else
+                {
+                    nibbleByte = (byte) count;
+                }
+                
+                // write the nibble value and seek back to the end of the writer
+                newWriter.BaseStream.Seek(nibblePosition, SeekOrigin.Begin);
+                newWriter.Write(nibbleByte);
+                newWriter.BaseStream.Seek(0, SeekOrigin.End);
+
+                nibble = !nibble;
             }
 
+            if (nibble == true && zerochains > 0)
+                zerochains++;
+
+            long finalLength = newWriter.BaseStream.Length;
+            
+            while (zerochains > 1)
+            {
+                zerochains -= 2;
+                // update length
+                finalLength--;
+            }
+
+            // go to the begining and remove the extra bytes
+            newWriter.BaseStream.Position = 0;
+            newWriter.BaseStream.SetLength(finalLength);
+            
             // once all the data is compressed write it to the actual output stream
             output.WriteSizeEx((int) (newStream.Length));
 

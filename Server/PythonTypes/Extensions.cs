@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Runtime.CompilerServices;
 using PythonTypes.Types.Collections;
 using PythonTypes.Types.Primitives;
 
@@ -60,6 +61,23 @@ namespace PythonTypes
         public static void WriteSizeEx(this BinaryWriter writer, int len)
         {
             WriteSizeEx(writer, (uint) len);
+        }
+
+        /// <summary>
+        /// Reads the next available byte and does not advance the byte or character position
+        /// </summary>
+        /// <param name="reader"></param>
+        /// <returns></returns>
+        public static byte PeekByte(this BinaryReader reader)
+        {
+            if (reader.BaseStream.CanSeek == false)
+                throw new InvalidOperationException("Byte peeking can only be performed on seekable streams!");
+            
+            long origPos = reader.BaseStream.Position;
+            byte res = reader.ReadByte();
+            reader.BaseStream.Position = origPos;
+            
+            return res;
         }
     }
 }

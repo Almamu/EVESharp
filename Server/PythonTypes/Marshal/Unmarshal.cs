@@ -555,10 +555,6 @@ namespace PythonTypes.Marshal
 
             DBRowDescriptor descriptor = this.Process(false);
             Dictionary<string, PyDataType> data = new Dictionary<string, PyDataType> ();
-
-            MemoryStream decompressedStream = ZeroCompressionUtils.LoadZeroCompressed(this.mReader);
-            BinaryReader decompressedReader = new BinaryReader(decompressedStream);
-            byte[] fullBuffer = decompressedStream.GetBuffer();
             int wholeBytes = 0;
             int nullBits = 0;
             int boolBits = 0;
@@ -585,8 +581,10 @@ namespace PythonTypes.Marshal
                 }
             );
 
-            int bitOffset = 8;
-            byte buffer = 0;
+
+            MemoryStream decompressedStream = ZeroCompressionUtils.LoadZeroCompressed(this.mReader, wholeBytes + ((nullBits + boolBits) >> 3) + 1);
+            BinaryReader decompressedReader = new BinaryReader(decompressedStream);
+            byte[] fullBuffer = decompressedStream.GetBuffer();
 
             foreach (DBRowDescriptor.Column column in enumerator)
             {
