@@ -16,7 +16,7 @@ namespace PythonTypes.Compression
         /// <returns>The decompressed data as a MemoryStream for further usage</returns>
         public static MemoryStream LoadZeroCompressed(BinaryReader reader, int length)
         {
-            MemoryStream outputStream = new MemoryStream(new byte [length]);
+            MemoryStream outputStream = new MemoryStream(new byte [length], 0, length, true, true);
             BinaryWriter outputWriter = new BinaryWriter(outputStream);
 
             uint packedLen = reader.ReadSizeEx();

@@ -560,27 +560,25 @@ namespace PythonTypes.Marshal
             int boolBits = 0;
 
             List<DBRowDescriptor.Column> booleanColumns = new List<DBRowDescriptor.Column>();
+            
+            foreach (DBRowDescriptor.Column column in descriptor.Columns)
+            {
+                int bitLength = Utils.GetTypeBits(column.Type);
+
+                if (column.Type == FieldType.Bool)
+                {
+                    booleanColumns.Add(column);
+                    boolBits++;
+                }
+
+                nullBits++;
+
+                if (bitLength >= 8)
+                    wholeBytes += bitLength >> 3;
+            }
 
             // sort columns by the bit size and calculate other statistics for the PackedRow
-            IEnumerable<DBRowDescriptor.Column> enumerator = descriptor.Columns.OrderByDescending(c =>
-                {
-                    int bitLength = Utils.GetTypeBits(c.Type);
-
-                    if (c.Type == FieldType.Bool)
-                    {
-                        boolBits++;
-                        booleanColumns.Add(c);
-                    }
-
-                    nullBits++;
-                    
-                    if (bitLength >= 8)
-                        wholeBytes += bitLength >> 3;
-
-                    return Utils.GetTypeBits(c.Type);
-                }
-            );
-
+            IOrderedEnumerable<DBRowDescriptor.Column> enumerator = descriptor.Columns.OrderByDescending(c => Utils.GetTypeBits(c.Type));
 
             MemoryStream decompressedStream = ZeroCompressionUtils.LoadZeroCompressed(this.mReader, wholeBytes + ((nullBits + boolBits) >> 3) + 1);
             BinaryReader decompressedReader = new BinaryReader(decompressedStream);
