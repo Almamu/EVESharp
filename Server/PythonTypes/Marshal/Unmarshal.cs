@@ -592,15 +592,6 @@ namespace PythonTypes.Marshal
             {
                 int bit = (wholeBytes << 3) + descriptor.Columns.IndexOf(column) + boolBits;
                 bool isNull = (fullBuffer[bit >> 3] & (1 << (bit & 0x7))) == (1 << (bit & 0x7));
-
-                if (isNull == true)
-                {
-                    data[column.Name] = null;
-                    // move the required bytes in the stream
-                    decompressedReader.BaseStream.Seek((Utils.GetTypeBits(column.Type) >> 3), SeekOrigin.Current);
-                    
-                    continue;
-                }
                 
                 switch (column.Type)
                 {
@@ -645,7 +636,11 @@ namespace PythonTypes.Marshal
                     default:
                         throw new InvalidDataException($"Unknown column type {column.Type}");
                 }
-                
+
+                if (isNull == true)
+                {
+                    data[column.Name] = null;
+                }
             }
 
             return new PyPackedRow(descriptor, data);

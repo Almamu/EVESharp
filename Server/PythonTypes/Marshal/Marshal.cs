@@ -585,7 +585,7 @@ namespace PythonTypes.Marshal
                 nullBits++;
 
                 if (bitLength >= 8)
-                    wholeBytes++;
+                    wholeBytes += bitLength >> 3;
             }
             
             // build byte buffers for the bitfields like booleans and nulls
