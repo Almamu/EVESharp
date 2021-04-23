@@ -1,5 +1,6 @@
 ﻿using System;
 using EVE.Packets.Exceptions;
+using Node.Chat;
 using Node.Database;
 using Node.Exceptions.insuranceSvc;
 using Node.Exceptions.jumpCloneSvc;
@@ -8,6 +9,7 @@ using Node.Inventory.Items.Types;
 using Node.Market;
 using Node.Network;
 using Node.Services.Account;
+using Node.Services.Chat;
 using PythonTypes.Types.Collections;
 using PythonTypes.Types.Database;
 using PythonTypes.Types.Primitives;
@@ -22,22 +24,25 @@ namespace Node.Services.Inventory
         private MarketDB MarketDB { get; }
         private SystemManager SystemManager => this.ItemFactory.SystemManager;
         private WalletManager WalletManager { get; }
+        private MailManager MailManager { get; }
         
-        public insuranceSvc(ItemFactory itemFactory, InsuranceDB db, MarketDB marketDB, WalletManager walletManager, BoundServiceManager manager) : base(manager, null)
+        public insuranceSvc(ItemFactory itemFactory, InsuranceDB db, MarketDB marketDB, WalletManager walletManager, MailManager mailManager, BoundServiceManager manager) : base(manager, null)
         {
             this.DB = db;
             this.ItemFactory = itemFactory;
             this.MarketDB = marketDB;
             this.WalletManager = walletManager;
+            this.MailManager = mailManager;
         }
 
-        protected insuranceSvc(ItemFactory itemFactory, InsuranceDB db, MarketDB marketDB, WalletManager walletManager, BoundServiceManager manager, int stationID, Client client) : base (manager, client)
+        protected insuranceSvc(ItemFactory itemFactory, InsuranceDB db, MarketDB marketDB, WalletManager walletManager, MailManager mailManager, BoundServiceManager manager, int stationID, Client client) : base (manager, client)
         {
             this.mStationID = stationID;
             this.DB = db;
             this.ItemFactory = itemFactory;
             this.MarketDB = marketDB;
             this.WalletManager = walletManager;
+            this.MailManager = mailManager;
         }
 
         public override PyInteger MachoResolveObject(PyInteger stationID, PyInteger zero, CallInformation call)
@@ -55,7 +60,7 @@ namespace Node.Services.Inventory
             if (this.MachoResolveObject(objectData as PyInteger, 0, call) != this.BoundServiceManager.Container.NodeID)
                 throw new CustomError("Trying to bind an object that does not belong to us!");
             
-            return new insuranceSvc(this.ItemFactory, this.DB, this.MarketDB, this.WalletManager, this.BoundServiceManager, objectData as PyInteger, call.Client);
+            return new insuranceSvc(this.ItemFactory, this.DB, this.MarketDB, this.WalletManager, this.MailManager, this.BoundServiceManager, objectData as PyInteger, call.Client);
         }
 
         public PyList<PyPackedRow> GetContracts(CallInformation call)
@@ -106,8 +111,14 @@ namespace Node.Services.Inventory
             if (item.Singleton == false)
                 throw new InsureShipFailed("Only assembled ships can be insured");
 
-            if (this.DB.IsShipInsured(item.ID, out string ownerName) == true)
+            if (this.DB.IsShipInsured(item.ID, out string ownerName, out int numberOfInsurances) == true && (call.NamedPayload.TryGetValue("voidOld", out PyBool voidOld) == false || voidOld == false))
+            {
+                // throw the proper exception based on the number of insurances available
+                if (numberOfInsurances > 1)
+                    throw new InsureShipFailedMultipleContracts();
+                
                 throw new InsureShipFailedSingleContract(ownerName);
+            }
 
             using Wallet wallet = this.WalletManager.AcquireWallet(character.ID, 1000);
             {
@@ -117,13 +128,28 @@ namespace Node.Services.Inventory
                 );
             }
             
+            // insurance was charged to the player, so old insurances can be void now
+            this.DB.UnInsureShip(item.ID);
+
             double fraction = insuranceCost * 100 / item.Type.BasePrice;
 
             // create insurance record
-            this.DB.InsureShip(item.ID, isCorpItem == 0 ? callerCharacterID : call.Client.CorporationID, fraction / 5);
+            DateTime expirationTime = DateTime.UtcNow.AddDays(7 * 12);
+            int referenceID = this.DB.InsureShip(item.ID, isCorpItem == 0 ? callerCharacterID : call.Client.CorporationID, fraction / 5, expirationTime);
 
             // TODO: CHECK IF THE INSURANCE SHOULD BE CHARGED TO THE CORP
             
+            this.MailManager.SendMail(this.ItemFactory.SecureCommerceCommision.ID, callerCharacterID, 
+                "Insurance Contract Issued",
+                "Dear valued customer, <br><br>" +
+                "Congratulations on the insurance on your ship. A very wise choice indeed.<br>" +
+                $"This letter is to confirm that we have issued an insurance contract for your ship, <b>{item.Name}</b> (<b>{item.Type.Name}</b>) at a level of {fraction * 100 / 30}%.<br>" +
+                $"This contract will expire at <b>{expirationTime.ToLongDateString()} {expirationTime.ToShortTimeString()}</b>, after 12 weeks.<br><br>" +
+                "Best,<br>" +
+                "The Secure Commerce Commission<br>" +
+                $"Reference ID: <b>{referenceID}</b>"
+            );
+
             return true;
         }
 

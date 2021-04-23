@@ -3,6 +3,7 @@ using System.IO;
 using Common.Logging;
 using Common.Services;
 using EVE.Packets.Exceptions;
+using Node.Chat;
 using Node.Database;
 using Node.Exceptions;
 using Node.Inventory;
@@ -30,9 +31,10 @@ namespace Node.Services.Chat
         private ItemFactory ItemFactory { get; }
         private NodeContainer NodeContainer { get; }
         private NotificationManager NotificationManager { get; }
+        private MailManager MailManager { get; }
         private MachoNet MachoNet { get; }
 
-        public LSC(ChatDB db, MessagesDB messagesDB, CharacterDB characterDB, ItemFactory itemFactory, NodeContainer nodeContainer, Logger logger, NotificationManager notificationManager, MachoNet machoNet)
+        public LSC(ChatDB db, MessagesDB messagesDB, CharacterDB characterDB, ItemFactory itemFactory, NodeContainer nodeContainer, Logger logger, NotificationManager notificationManager, MachoNet machoNet, MailManager mailManager)
         {
             this.DB = db;
             this.MessagesDB = messagesDB;
@@ -41,6 +43,7 @@ namespace Node.Services.Chat
             this.NodeContainer = nodeContainer;
             this.NotificationManager = notificationManager;
             this.MachoNet = machoNet;
+            this.MailManager = mailManager;
             this.Log = logger.CreateLogChannel("LSC");
         }
 
@@ -645,29 +648,10 @@ namespace Node.Services.Chat
         {
             int callerCharacterID = call.Client.EnsureCharacterIsSelected();
             
-            foreach (PyInteger destinationID in destinationMailboxes.GetEnumerable<PyInteger>())
-            {
-                ulong messageID = this.MessagesDB.StoreMail(destinationID, callerCharacterID, subject, message, out string mailboxType);
-                
-                // send notification to the destination
-                PyTuple notification = new PyTuple(5)
-                {
-                    [0] = destinationMailboxes,
-                    [1] = messageID,
-                    [2] = callerCharacterID,
-                    [3] = subject,
-                    [4] = DateTime.UtcNow.ToFileTimeUtc()
-                };
-                
-                // *multicastID are a special broadcast type that allows to notify different users based on things like charid or corpid
-                // under the same notification, making things easier for us
-                // sadly supporting that is more painful that actually spamming the cluster controller with single corpid or charid type broadcast
-                // but supporting multicastIDs would be perfect
-                
-                // the list of id's on a *multicastID would be a PyTuple with the type and the id in it, instead of just a list of integers
-                // TODO: IMPLEMENT MULTICASTING IN THE CLUSTER
-                this.NotificationManager.SendNotification("OnMessage", mailboxType, destinationID, notification);
-            }
+            // TODO: AS IT IS RIGHT NOW THE USER CAN INJECT HTML IF THE CALL IS DONE MANUALL (THROUGH CUSTOM CODE OR IMPLEMENTING THE FULL GAME PROTOCOL)
+            // TODO: THE HTML IT SUPPORTS IS NOT THAT BIG, BUT BETTER BE SAFE AND DO SOME DETECTIONS HERE TO PREVENT HTML FROM BEING USED!
+            
+            this.MailManager.SendMail(callerCharacterID, destinationMailboxes.GetEnumerable<PyInteger>(), subject, message);
             
             return null;
         }

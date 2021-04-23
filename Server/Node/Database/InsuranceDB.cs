@@ -70,13 +70,14 @@ namespace Node.Database
             );
         }
 
-        public bool IsShipInsured(int shipID, out string ownerName)
+        public bool IsShipInsured(int shipID, out string ownerName, out int numberOfInsurances)
         {
             ownerName = null;
+            numberOfInsurances = 0;
             
             MySqlConnection connection = null;
             MySqlDataReader reader = Database.PrepareQuery(ref connection,
-                "SELECT itemName FROM chrShipInsurances LEFT JOIN eveNames ON itemID = chrShipInsurances.ownerID WHERE shipID = @shipID",
+                "SELECT COUNT(*) AS insuranceCount, itemName FROM chrShipInsurances LEFT JOIN eveNames ON itemID = chrShipInsurances.ownerID WHERE shipID = @shipID",
                 new Dictionary<string, object>()
                 {
                     {"@shipID", shipID}
@@ -89,16 +90,17 @@ namespace Node.Database
                 if (reader.Read() == false)
                     return false;
 
-                ownerName = reader.GetString(0);
+                numberOfInsurances = reader.GetInt32(0);
+                ownerName = reader.GetString(1);
 
                 return true;
             }
         }
 
-        public int InsureShip(int shipID, int characterID, double fraction)
+        public int InsureShip(int shipID, int characterID, double fraction, DateTime expirationDate)
         {
             // calculate the expiration date based on the game's UI, 12 weeks
-            long endDate = DateTime.UtcNow.AddDays(7 * 12).ToFileTimeUtc();
+            long endDate = expirationDate.ToFileTimeUtc();
             
             return (int) Database.PrepareQueryLID(
                 "INSERT INTO chrShipInsurances(ownerID, shipID, fraction, startDate, endDate)VALUES(@characterID, @shipID, @fraction, @startDate, @endDate)",

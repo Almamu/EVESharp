@@ -23,11 +23,11 @@
 */
 
 using System;
-using System.Runtime.CompilerServices;
 using System.Threading;
 using Common.Database;
 using Common.Logging;
 using Common.Logging.Streams;
+using Node.Chat;
 using Node.Configuration;
 using Node.Database;
 using Node.Dogma;
@@ -95,6 +95,7 @@ namespace Node
                 dependencies.Register<MachoNet>(Lifestyle.Singleton);
                 dependencies.Register<ExpressionManager>(Lifestyle.Singleton);
                 dependencies.Register<WalletManager>(Lifestyle.Singleton);
+                dependencies.Register<MailManager>(Lifestyle.Singleton);
 
                 // register the database accessors dependencies
                 dependencies.Register<AccountDB>(Lifestyle.Singleton);
