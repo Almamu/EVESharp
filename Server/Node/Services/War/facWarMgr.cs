@@ -1,8 +1,14 @@
 using System;
 using Common.Services;
+using EVE;
 using EVE.Packets.Complex;
+using Node.Database;
+using Node.Exceptions.facWarMgr;
 using Node.Inventory;
+using Node.Inventory.Items.Types;
 using Node.Network;
+using Node.Notifications.Client.Corporations;
+using Node.StaticData.Inventory;
 using PythonTypes.Types.Collections;
 using PythonTypes.Types.Database;
 using PythonTypes.Types.Primitives;
@@ -11,12 +17,19 @@ namespace Node.Services.War
 {
     public class facWarMgr : IService
     {
+        private ChatDB ChatDB { get; }
+        private CharacterDB CharacterDB { get; }
         private CacheStorage CacheStorage { get; }
         private ItemFactory ItemFactory { get; }
-        public facWarMgr(CacheStorage cacheStorage, ItemFactory itemFactory)
+        private NotificationManager NotificationManager { get; }
+        
+        public facWarMgr(ChatDB chatDB, CharacterDB characterDB, CacheStorage cacheStorage, ItemFactory itemFactory, NotificationManager notificationManager)
         {
+            this.ChatDB = chatDB;
+            this.CharacterDB = characterDB;
             this.CacheStorage = cacheStorage;
             this.ItemFactory = itemFactory;
+            this.NotificationManager = notificationManager;
         }
 
         public PyDataType GetWarFactions(CallInformation call)
@@ -70,6 +83,150 @@ namespace Node.Services.War
         public PyInteger GetFactionMilitiaCorporation(PyInteger factionID, CallInformation call)
         {
             return this.ItemFactory.GetStaticFaction(factionID).MilitiaCorporationId;
+        }
+
+        public PyDataType GetFactionalWarStatus(CallInformation call)
+        {
+            return null;
+        }
+
+        public PyDataType IsEnemyFaction(PyInteger factionID, PyInteger warFactionID, CallInformation call)
+        {
+            return false;
+        }
+
+        public PyDataType JoinFactionAsCharacter(PyInteger factionID, CallInformation call)
+        {
+            int callerCharacterID = call.Client.EnsureCharacterIsSelected();
+            
+            // TODO: CHECK FOR PERMISSIONS, TO JOIN TO SOME FACTIONS THE CHARACTER REQUIRES AN INVITATION
+            
+            // check if the player joined a militia in the last 24 hours
+            long minimumDateTime = DateTime.UtcNow.AddHours(-24).ToFileTimeUtc();
+            long lastTime = this.CharacterDB.GetLastFactionJoinDate(callerCharacterID);
+
+            if (lastTime > minimumDateTime)
+                throw new FactionCharJoinDenied(MLS.UI_CORP_MILITIAJOIN_DENIED_TOOFREQUENT, TimeSpan.FromTicks(minimumDateTime - lastTime).Hours);
+
+            // first join the character to the militia corporation
+            Faction faction = this.ItemFactory.Factions[factionID];
+            Character character = this.ItemFactory.GetItem<Character>(callerCharacterID);
+            
+            // build the notification of corporation change
+            OnCorporationMemberChanged change = new OnCorporationMemberChanged(character.ID, call.Client.CorporationID, faction.MilitiaCorporationId);
+            // add the character to the faction's and corp chat channel
+            this.ChatDB.JoinEntityChannel(factionID, callerCharacterID);
+            this.ChatDB.JoinEntityChannel(faction.MilitiaCorporationId, character.ID);
+            this.ChatDB.JoinEntityMailingList(faction.MilitiaCorporationId, character.ID);
+            // remove character from the old chat channel too
+            this.ChatDB.LeaveChannel(character.CorporationID, character.ID);
+            // this change implies a session change
+            call.Client.CorporationID = faction.MilitiaCorporationId;
+            call.Client.WarFactionID = factionID;
+            // update the character's warfactionid too
+            // set the new faction id and corporation
+            character.WarFactionID = factionID;
+            character.CorporationID = faction.MilitiaCorporationId;
+            character.Corporation = this.ItemFactory.GetItem<Corporation>(faction.MilitiaCorporationId);
+            character.CorporationDateTime = DateTime.UtcNow.ToFileTimeUtc();
+            // create employment record
+            this.CharacterDB.CreateEmploymentRecord(character.ID, faction.MilitiaCorporationId, character.CorporationDateTime);
+            // notify cluster about the corporation changes
+            this.NotificationManager.NotifyCorporation(change.OldCorporationID, change);
+            this.NotificationManager.NotifyCorporation(change.NewCorporationID, change);
+            // save the character
+            character.Persist();
+            
+            return null;
+        }
+
+        public PyDataType GetCharacterRankInfo(PyInteger characterID, CallInformation call)
+        {
+            // TODO: IMPLEMENT THIS
+            
+            return KeyVal.FromDictionary(
+                new PyDictionary()
+                {
+                    ["currentRank"] = 1,
+                    ["highestRank"] = 1,
+                    ["factionID"] = call.Client.WarFactionID
+                }
+            );
+        }
+
+        public PyDataType GetSystemsConqueredThisRun(CallInformation call)
+        {
+            // TODO: IMPLEMENT THIS, IT'S A LIST OF PYDICTIONARY
+            return new PyList(0);
+        }
+
+        private PyDictionary<PyString, PyDataType> GetStats_Stub(CallInformation call)
+        {
+            return new PyDictionary<PyString, PyDataType>()
+            {
+                ["header"] = new PyList(),
+                ["data"] = new PyDictionary()
+            };
+        }
+        
+        public PyDataType GetStats_Militia(CallInformation call)
+        {
+            return GetStats_Stub(call);
+        }
+
+        public PyDataType GetStats_Personal(CallInformation call)
+        {
+            return new PyDictionary();
+        }
+
+        public PyDataType GetStats_Corp(CallInformation call)
+        {
+            return new PyDictionary();
+        }
+
+        public PyDataType GetStats_FactionInfo(CallInformation call)
+        {
+            return new PyDictionary();
+        }
+
+        public PyDataType GetStats_Character(CallInformation call)
+        {
+            return new PyDictionary()
+            {
+                ["killsY"] = 0,
+                ["killsLW"] = 0,
+                ["killsTotal"] = 0,
+                ["vpY"] = 0,
+                ["vpLW"] = 0,
+                ["vpTotal"] = 0
+            };
+        }
+
+        public PyDataType GetStats_TopAndAllKillsAndVPs(CallInformation call)
+        {
+            PyDictionary values = new PyDictionary()
+            {
+                ["killsY"] = 0,
+                ["killsLW"] = 0,
+                ["killsTotal"] = 0,
+                ["vpY"] = 0,
+                ["vpLW"] = 0,
+                ["vpTotal"] = 0
+            };
+            
+            return new PyList(2)
+            {
+                [0] = new PyDictionary()
+                {
+                    [(int) Groups.Corporation] = values,
+                    [(int) Groups.Character] = values,
+                },
+                [1] = new PyDictionary()
+                {
+                    [(int) Groups.Corporation] = values,
+                    [(int) Groups.Character] = values,
+                }
+            };
         }
     }
 }

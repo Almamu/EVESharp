@@ -8,7 +8,7 @@ namespace Node.Exceptions.reprocessingSvc
 {
     public class QuantityLessThanMinimumPortion : UserError
     {
-        public QuantityLessThanMinimumPortion(Type type) : base("QuantityLessThanMinimumPortion", new PyDictionary{["typename"] = type.Name, ["portion"] = type.PortionSize})
+        public QuantityLessThanMinimumPortion(Type type) : base("QuantityLessThanMinimumPortion", new PyDictionary{["typename"] = FormatTypeIDAsName(type.ID), ["portion"] = type.PortionSize})
         {
         }
     }

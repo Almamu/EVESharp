@@ -283,7 +283,7 @@ namespace Node.Services.Stations
                     RepairDB.ItemRepackageEntry entry = this.RepairDB.GetItemToRepackage(itemID, characterID, stationID);
 
                     if (entry.HasContract == true && ignoreContractVoiding == false)
-                        throw new RepairUnassembleVoidsContract(this.ItemFactory.TypeManager[entry.TypeID]);
+                        throw new RepairUnassembleVoidsContract(itemID);
                     if (entry.HasUpgrades == true && ignoreRepackageWithUpgrades == false)
                         throw new ConfirmRepackageSomethingWithUpgrades();
                     if (entry.Damage != 0.0)

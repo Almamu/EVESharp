@@ -6,7 +6,7 @@ namespace Node.Exceptions
 {
     public class ChtCharNotReachable : UserError
     {
-        public ChtCharNotReachable(string charName) : base("ChtCharNotReachable", new PyDictionary {["char"] = charName})
+        public ChtCharNotReachable(int characterID) : base("ChtCharNotReachable", new PyDictionary {["char"] = FormatOwnerID(characterID)})
         {
         }
     }

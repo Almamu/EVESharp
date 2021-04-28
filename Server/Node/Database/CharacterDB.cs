@@ -316,6 +316,14 @@ namespace Node.Database
                 }
             );
             
+            this.CreateEmploymentRecord(itemID, corporationID, createDateTime);
+            
+            // return the character's item id
+            return itemID;
+        }
+
+        public void CreateEmploymentRecord(int itemID, int corporationID, long createDateTime)
+        {
             // create employment record
             Database.PrepareQuery(
                 "INSERT INTO chrEmployment(characterID, corporationID, startDate)VALUES(@characterID, @corporationID, @startDate)",
@@ -326,9 +334,6 @@ namespace Node.Database
                     {"@startDate", createDateTime}
                 }
             );
-            
-            // return the character's item id
-            return itemID;
         }
 
         public bool GetRandomCareerForRace(int raceID, out int careerID, out int schoolID, out int careerSpecialityID, out int corporationID)
@@ -531,7 +536,7 @@ namespace Node.Database
         public void UpdateCharacterInformation(Character character)
         {
             Database.PrepareQuery(
-                "UPDATE chrInformation SET online = @online, activeCloneID = @activeCloneID, freeRespecs = @freeRespecs, nextRespecTime = @nextRespecTime, timeLastJump = @timeLastJump, description = @description WHERE characterID = @characterID",
+                "UPDATE chrInformation SET online = @online, activeCloneID = @activeCloneID, freeRespecs = @freeRespecs, nextRespecTime = @nextRespecTime, timeLastJump = @timeLastJump, description = @description, warFactionID = @warFactionID, corporationID = @corporationID, corporationDateTime = @corporationDateTime WHERE characterID = @characterID",
                 new Dictionary<string, object>()
                 {
                     {"@characterID", character.ID},
@@ -541,6 +546,9 @@ namespace Node.Database
                     {"@nextRespecTime", character.NextReSpecTime},
                     {"@timeLastJump", character.TimeLastJump},
                     {"@description", character.Description},
+                    {"@warFactionID", character.WarFactionID},
+                    {"@corporationID", character.CorporationID},
+                    {"@corporationDateTime", character.CorporationDateTime}
                 }
             );
 
@@ -843,6 +851,27 @@ namespace Node.Database
                 }
 
                 return result;
+            }
+        }
+
+        public long GetLastFactionJoinDate(int characterID)
+        {
+            MySqlConnection connection = null;
+            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+                "SELECT startDate FROM chrEmployment WHERE corporationID IN (SELECT militiaCorporationID FROM chrFactions) AND characterID = @characterID",
+                new Dictionary<string, object>()
+                {
+                    {"@characterID", characterID}
+                }
+            );
+            
+            using (connection)
+            using (reader)
+            {
+                if (reader.Read() == false)
+                    return 0;
+
+                return reader.GetInt64(0);
             }
         }
 

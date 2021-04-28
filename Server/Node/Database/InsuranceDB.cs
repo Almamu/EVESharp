@@ -70,14 +70,14 @@ namespace Node.Database
             );
         }
 
-        public bool IsShipInsured(int shipID, out string ownerName, out int numberOfInsurances)
+        public bool IsShipInsured(int shipID, out int ownerID, out int numberOfInsurances)
         {
-            ownerName = null;
+            ownerID = 0;
             numberOfInsurances = 0;
             
             MySqlConnection connection = null;
             MySqlDataReader reader = Database.PrepareQuery(ref connection,
-                "SELECT COUNT(*) AS insuranceCount, itemName FROM chrShipInsurances LEFT JOIN eveNames ON itemID = chrShipInsurances.ownerID WHERE shipID = @shipID",
+                "SELECT COUNT(*) AS insuranceCount, ownerID FROM chrShipInsurances WHERE shipID = @shipID",
                 new Dictionary<string, object>()
                 {
                     {"@shipID", shipID}
@@ -91,7 +91,7 @@ namespace Node.Database
                     return false;
 
                 numberOfInsurances = reader.GetInt32(0);
-                ownerName = reader.GetString(1);
+                ownerID = reader.GetInt32(1);
 
                 return true;
             }

@@ -6,7 +6,7 @@ namespace Node.Exceptions
 {
     public class ChtAlreadyInChannel : UserError
     {
-        public ChtAlreadyInChannel(string charName) : base("ChtAlreadyInChannel", new PyDictionary {["char"] = charName})
+        public ChtAlreadyInChannel(int characterID) : base("ChtAlreadyInChannel", new PyDictionary {["char"] = FormatOwnerID(characterID)})
         {
         }
     }

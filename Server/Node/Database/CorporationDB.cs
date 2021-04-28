@@ -107,7 +107,7 @@ namespace Node.Database
         public Rowset GetEmploymentRecord(int characterID)
         {
             return Database.PrepareRowsetQuery(
-                "SELECT corporationID, startDate, deleted FROM chrEmployment WHERE characterID=@characterID",
+                "SELECT corporationID, startDate, deleted FROM chrEmployment WHERE characterID=@characterID ORDER BY startDate DESC",
                 new Dictionary<string, object>()
                 {
                     {"@characterID", characterID}

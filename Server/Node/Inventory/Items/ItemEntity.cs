@@ -306,16 +306,16 @@ namespace Node.Inventory.Items
             int skillLevel = (int) this.Attributes[skillLevelRequirement];
 
             if (skills.ContainsKey(skillTypeID) == false)
-                throw new SkillMissingException(this.ItemFactory.TypeManager[skillTypeID].Name);
+                throw new SkillMissingException(this.ItemFactory.TypeManager[skillTypeID]);
 
             if (skills[skillTypeID].Level < skillLevel)
-                throw new SkillMissingException(this.ItemFactory.TypeManager[skillTypeID].Name);
+                throw new SkillMissingException(this.ItemFactory.TypeManager[skillTypeID]);
         }
 
         public virtual void CheckPrerequisites(Character character)
         {
             Dictionary<int, Skill> skills = character.InjectedSkillsByTypeID;
-            List<string> missingSkills = new List<string>();
+            PyList<PyInteger> missingSkills = new PyList<PyInteger>();
             StaticData.Inventory.Attributes[] attributes = new StaticData.Inventory.Attributes[]
             {
                 StaticData.Inventory.Attributes.requiredSkill1,
@@ -343,12 +343,12 @@ namespace Node.Inventory.Items
                 }
                 catch (SkillMissingException e)
                 {
-                    missingSkills.Add(e.SkillName);
+                    missingSkills.Add(e.Skill.ID);
                 }
             }
 
             if (missingSkills.Count > 0)
-                throw new ShipHasSkillPrerequisites(this.Type.Name, String.Join(", ", missingSkills));
+                throw new ShipHasSkillPrerequisites(this.Type, missingSkills);
         }
 
         public void EnsureOwnership(Character character)

@@ -90,16 +90,23 @@ namespace Node.Database
 	        }
         }
 
-	    public void MarkMessagesRead(int characterID, int messageID)
+	    public void MarkMessagesRead(int characterID, PyList<PyInteger> messageIDs)
         {
-	        Database.PrepareQuery(
-		        "UPDATE eveMail SET `read` = 1 WHERE messageID = @messageID",
-		        new Dictionary<string, object>()
-		        {
-			        {"@messageID", messageID}
-		        }
+	        Database.Query(
+		        $"UPDATE eveMail SET `read` = 1 WHERE messageID IN ({PyString.Join(',', messageIDs)})"
 	        );
         }
+
+	    public void DeleteMessages(int characterID, int mailboxID, PyList<PyInteger> messageIDs)
+	    {
+		    Database.PrepareQuery(
+			    $"DELETE FROM eveMail WHERE messageID IN ({PyString.Join(',', messageIDs)} AND channelID = @mailboxID",
+			    new Dictionary<string, object>()
+			    {
+				    {"@mailboxID", mailboxID}
+			    }
+		    );
+	    }
 
 	    public ulong StoreMail(int channelID, int senderID, string subject, string message, out string mailboxType)
         {

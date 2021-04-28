@@ -102,24 +102,28 @@ INSERT INTO `lscGeneralChannels`(`channelID`,`ownerID`,`displayName`,`motd`,`com
  (914, 1, 'Help\\Rookie Help - Minmatar - Vherokior', '', NULL, 0, NULL, 0, 0, 0, 0);
 
 /* Insert solar systems into the lscGeneralChannels table */
-INSERT INTO `lscGeneralChannels`(`channelID`,`ownerID`,`relatedEntityID`,`displayName`,`motd`,`comparisonKey`,`memberless`,`password`,`mailingList`,`cspa`,`temporary`,`estimatedMemberCount`)
+REPLACE INTO `lscGeneralChannels`(`channelID`,`ownerID`,`relatedEntityID`,`displayName`,`motd`,`comparisonKey`,`memberless`,`password`,`mailingList`,`cspa`,`temporary`,`estimatedMemberCount`)
   SELECT NULL AS channelID, 1 AS ownerID, solarSystemID as relatedEntityID, "System Channels\\Local" AS displayName, solarSystemName AS motd, NULL AS comparisonKey, 1 AS memberless, NULL AS password, 0 AS mailingList, 1 AS cspa, 0 AS temporary, 0 AS estimatedMemberCount FROM mapSolarSystems;
 
 /* Insert constellations into the lscGeneralChannels table */
-INSERT INTO `lscGeneralChannels`(`channelID`,`ownerID`,`relatedEntityID`,`displayName`,`motd`,`comparisonKey`,`memberless`,`password`,`mailingList`,`cspa`,`temporary`,`estimatedMemberCount`)
+REPLACE INTO `lscGeneralChannels`(`channelID`,`ownerID`,`relatedEntityID`,`displayName`,`motd`,`comparisonKey`,`memberless`,`password`,`mailingList`,`cspa`,`temporary`,`estimatedMemberCount`)
   SELECT NULL AS channelID, 1 AS ownerID, constellationID as relatedEntityID, "System Channels\\Constellation" AS displayName, constellationName AS motd, NULL AS comparisonKey, 1 AS memberless, NULL AS password, 0 AS mailingList, 1 AS cspa, 0 AS temporary, 0 AS estimatedMemberCount FROM mapConstellations;
 
 /* Insert regions into the lscGeneralChannels table */
-INSERT INTO `lscGeneralChannels`(`channelID`,`ownerID`,`relatedEntityID`,`displayName`,`motd`,`comparisonKey`,`memberless`,`password`,`mailingList`,`cspa`,`temporary`,`estimatedMemberCount`)
+REPLACE INTO `lscGeneralChannels`(`channelID`,`ownerID`,`relatedEntityID`,`displayName`,`motd`,`comparisonKey`,`memberless`,`password`,`mailingList`,`cspa`,`temporary`,`estimatedMemberCount`)
   SELECT NULL AS channelID, 1 AS ownerID, regionID as relatedEntityID, "System Channels\\Region" AS displayName, regionName AS motd, NULL AS comparisonKey, 1 AS memberless, NULL AS password, 0 AS mailingList, 1 AS cspa, 0 AS temporary, 0 AS estimatedMemberCount FROM mapRegions;
 
 /* Insert NPC corporations into the lscGeneralChannels table */
-INSERT INTO `lscGeneralChannels`(`channelID`,`ownerID`,`relatedEntityID`,`displayName`,`motd`,`comparisonKey`,`memberless`,`password`,`mailingList`,`cspa`,`temporary`,`estimatedMemberCount`)
+REPLACE INTO `lscGeneralChannels`(`channelID`,`ownerID`,`relatedEntityID`,`displayName`,`motd`,`comparisonKey`,`memberless`,`password`,`mailingList`,`cspa`,`temporary`,`estimatedMemberCount`)
   SELECT NULL AS channelID, corporationID AS ownerID, corporationID as relatedEntityID, "System Channels\\Corp" AS displayName, corporationName AS motd, NULL AS comparisonKey, 0 AS memberless, NULL AS password, 0 AS mailingList, 1 AS cspa, 0 AS temporary, 0 AS estimatedMemberCount FROM corporation;
 
 /* Insert mailing lists for NPC corporations into the lscGeneralChannels table */
-INSERT INTO `lscGeneralChannels`(`channelID`,`ownerID`,`relatedEntityID`,`displayName`,`motd`,`comparisonKey`,`memberless`,`password`,`mailingList`,`cspa`,`temporary`,`estimatedMemberCount`)
+REPLACE INTO `lscGeneralChannels`(`channelID`,`ownerID`,`relatedEntityID`,`displayName`,`motd`,`comparisonKey`,`memberless`,`password`,`mailingList`,`cspa`,`temporary`,`estimatedMemberCount`)
   SELECT corporationID AS channelID, corporationID AS ownerID, corporationID as relatedEntityID, "System Channels\\Corp" AS displayName, corporationName AS motd, NULL AS comparisonKey, 0 AS memberless, NULL AS password, 1 AS mailingList, 1 AS cspa, 0 AS temporary, 0 AS estimatedMemberCount FROM corporation;
+
+/* Insert factions into the lscGeneralChannels table */
+REPLACE INTO `lscGeneralChannels`(`channelID`,`ownerID`,`relatedEntityID`,`displayName`,`motd`,`comparisonKey`,`memberless`,`password`,`mailingList`,`cspa`,`temporary`,`estimatedMemberCount`)
+  SELECT NULL AS channelID, corporationID AS ownerID, factionID as relatedEntityID, "System Channels\\War Faction" AS displayName, factionName AS motd, NULL AS comparisonKey, 0 AS memberless, NULL AS password, 0 AS mailingList, 1 AS cspa, 0 AS temporary, 0 AS estimatedMemberCount FROM chrFactions;
 
 /*Table structure for table `lscChannelPermissions` */
 

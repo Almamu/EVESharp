@@ -177,11 +177,11 @@ namespace Node.Services.Inventory
             Character character = this.ItemFactory.GetItem<Character>(callerCharacterID);
 
             if (ship.OwnerID != callerCharacterID)
-                throw new AssembleOwnShipsOnly();
+                throw new AssembleOwnShipsOnly(ship.OwnerID);
 
             // do not do anything if item is already assembled
             if (ship.Singleton == true)
-                return new ShipAlreadyAssembled(ship.Type.Name);
+                return new ShipAlreadyAssembled(ship.Type);
 
             // first split the stack
             if (ship.Quantity > 1)

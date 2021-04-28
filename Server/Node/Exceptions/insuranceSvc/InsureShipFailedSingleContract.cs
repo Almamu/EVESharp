@@ -6,8 +6,8 @@ namespace Node.Exceptions.insuranceSvc
 {
     public class InsureShipFailedSingleContract : UserError
     {
-        public InsureShipFailedSingleContract(string ownerName) : base("InsureShipFailedSingleContract",
-            new PyDictionary {["ownerName"] = ownerName})
+        public InsureShipFailedSingleContract(int ownerID) : base("InsureShipFailedSingleContract",
+            new PyDictionary {["ownerName"] = FormatOwnerID(ownerID)})
         {
         }
     }

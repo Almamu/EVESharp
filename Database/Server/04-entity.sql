@@ -50,67 +50,67 @@ CREATE TABLE `invItemsAttributes` (
 /**
  * Insert owner for the EVE System
  */
-INSERT INTO invItems (itemID, singleton, quantity)
+REPLACE INTO invItems (itemID, singleton, quantity)
   VALUES (0, 1, 1);
-INSERT INTO eveNames (itemID, itemName, typeID, groupID, categoryID)
+REPLACE INTO eveNames (itemID, itemName, typeID, groupID, categoryID)
   VALUES (0, '(none)', 0, 0, 0);
 /*
  * Static record of EVE System
  */
-INSERT INTO invItems (itemID, singleton, quantity)
+REPLACE INTO invItems (itemID, singleton, quantity)
   VALUES (1, 1, 1);
-INSERT INTO eveNames (itemID, itemName, typeID, groupID, categoryID)
+REPLACE INTO eveNames (itemID, itemName, typeID, groupID, categoryID)
   VALUES (1, 'EVE System', 0, 0, 0);
 /*
  * Static record for the EVE Market
  */
-INSERT INTO invItems (itemID, singleton, quantity)
+REPLACE INTO invItems (itemID, singleton, quantity)
   VALUES (3, 1, 1);
-INSERT INTO eveNames (itemID, itemName, typeID, groupID, categoryID)
+REPLACE INTO eveNames (itemID, itemName, typeID, groupID, categoryID)
   VALUES (3, 'EVE Market', 0, 0, 0);
 /**
  * Static record for the EVE Temp item
  */
-INSERT INTO invItems (itemID, singleton, quantity)
+REPLACE INTO invItems (itemID, singleton, quantity)
   VALUES (5, 1, 1);
-INSERT INTO eveNames (itemID, itemName, typeID, groupID, categoryID)
+REPLACE INTO eveNames (itemID, itemName, typeID, groupID, categoryID)
   VALUES (5, 'EVE Temp', 0, 0, 0);
 /*
  * Static record for Recycler
  */
-INSERT INTO invItems (itemID, singleton, quantity)
+REPLACE INTO invItems (itemID, singleton, quantity)
   VALUES (6, 1, 1);
-INSERT INTO eveNames (itemID, itemName, typeID, groupID, categoryID)
+REPLACE INTO eveNames (itemID, itemName, typeID, groupID, categoryID)
   VALUES (6, 'EVE Recycler', 0, 0, 0);
 /*
  * Static records for universes
  */
-INSERT INTO invItems (itemID, typeID, singleton, quantity)
+REPLACE INTO invItems (itemID, typeID, singleton, quantity)
   SELECT universeID, 1, 1, 1
     FROM mapUniverse;
-INSERT INTO eveNames (itemID, itemName, typeID, groupID, categoryID)
+REPLACE INTO eveNames (itemID, itemName, typeID, groupID, categoryID)
   SELECT universeID, universeName, 1, 0, 0
     FROM mapUniverse;
-INSERT INTO invPositions (itemID, x, y, z)
+REPLACE INTO invPositions (itemID, x, y, z)
   SELECT universeID, x, y, z
     FROM mapUniverse;
 /*
  * Insert factions
  */
-INSERT INTO invItems (itemID, typeID, ownerID, locationID, singleton, quantity)
+REPLACE INTO invItems (itemID, typeID, ownerID, locationID, singleton, quantity)
   SELECT factionID, 30, corporationID, solarSystemID, 1, 1
     FROM chrFactions;
 /*
  * Insert any map item
  */
-INSERT INTO invItems (itemID, typeID, ownerID, locationID, singleton, quantity)
+REPLACE INTO invItems (itemID, typeID, ownerID, locationID, singleton, quantity)
   SELECT itemID, typeID, IF(staStations.corporationID IS NULL, 1, staStations.corporationID), IF(mapDenormalize.solarSystemID IS NULL, IF(mapDenormalize.constellationID IS NULL, IF(mapDenormalize.regionID IS NULL, 9, mapDenormalize.regionID), mapDenormalize.constellationID), mapDenormalize.solarSystemID), 1, 1
     FROM mapDenormalize
       LEFT JOIN staStations ON staStations.stationID = mapDenormalize.itemID;
 /*
  * Insert missing names
  */
-INSERT INTO eveNames (itemID, itemName, typeID, groupID, categoryID)
+REPLACE INTO eveNames (itemID, itemName, typeID, groupID, categoryID)
   SELECT itemID, itemName, typeID, groupID, categoryID
     FROM mapDenormalize LEFT JOIN invGroups USING (groupID) WHERE itemID IN (
       SELECT mapDenormalize.itemID FROM mapDenormalize LEFT JOIN eveNames ON eveNames.itemID = mapDenormalize.itemID WHERE eveNames.itemName IS NULL
@@ -118,7 +118,7 @@ INSERT INTO eveNames (itemID, itemName, typeID, groupID, categoryID)
 /*
  * Insert missing positions
  */
-INSERT INTO invPositions (itemID, x, y, z)
+REPLACE INTO invPositions (itemID, x, y, z)
   SELECT itemID, x, y, z
     FROM mapDenormalize WHERE itemID IN (
       SELECT mapDenormalize.itemID FROM mapDenormalize LEFT JOIN invPositions ON invPositions.itemID = mapDenormalize.itemID WHERE invPositions.itemID IS NULL
@@ -126,14 +126,14 @@ INSERT INTO invPositions (itemID, x, y, z)
 /*
  * Insert static characters to invItems table
  */
-INSERT INTO invItems (itemID, typeID, ownerID, locationID, singleton, quantity)
+REPLACE INTO invItems (itemID, typeID, ownerID, locationID, singleton, quantity)
  SELECT characterID, typeID, 1, stationID, 1, 1
   FROM chrStatic;
 /*
  * Insert corporations
  */
-INSERT INTO invItems (itemID, typeID, ownerID, locationID, singleton, quantity)
-  SELECT crp.corporationID, 2, npc.factionID, crp.stationID, 1, 1
+REPLACE INTO invItems (itemID, typeID, ownerID, locationID, singleton, quantity)
+  SELECT crp.corporationID, 2, IF(npc.factionID IS NULL, crp.ceoID, npc.factionID), crp.stationID, 1, 1
     FROM crpStatic AS crp
     LEFT JOIN crpNPCCorporations AS npc USING (corporationID);
 /*

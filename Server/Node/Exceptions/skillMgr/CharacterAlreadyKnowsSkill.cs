@@ -10,7 +10,7 @@ namespace Node.Exceptions.skillMgr
     public class CharacterAlreadyKnowsSkill : UserError
     {
         public CharacterAlreadyKnowsSkill(Type skillType) : base("CharacterAlreadyKnowsSkill",
-            new PyDictionary {["skillName"] = skillType.Name})
+            new PyDictionary {["skillName"] = FormatTypeIDAsName(skillType.ID)})
         {
         }
     }

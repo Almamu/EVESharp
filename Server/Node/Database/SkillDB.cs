@@ -26,7 +26,7 @@ namespace Node.Database
         public int CreateSkill(Type skill, Character character)
         {
             return (int) this.ItemDB.CreateItem(
-                skill.Name, skill, character, character, Flags.Skill,
+                null, skill, character, character, Flags.Skill,
                 false, true, 1, null, null, null, null
             );
         }

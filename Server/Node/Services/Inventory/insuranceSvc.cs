@@ -111,13 +111,13 @@ namespace Node.Services.Inventory
             if (item.Singleton == false)
                 throw new InsureShipFailed("Only assembled ships can be insured");
 
-            if (this.DB.IsShipInsured(item.ID, out string ownerName, out int numberOfInsurances) == true && (call.NamedPayload.TryGetValue("voidOld", out PyBool voidOld) == false || voidOld == false))
+            if (this.DB.IsShipInsured(item.ID, out int oldOwnerID, out int numberOfInsurances) == true && (call.NamedPayload.TryGetValue("voidOld", out PyBool voidOld) == false || voidOld == false))
             {
                 // throw the proper exception based on the number of insurances available
                 if (numberOfInsurances > 1)
                     throw new InsureShipFailedMultipleContracts();
                 
-                throw new InsureShipFailedSingleContract(ownerName);
+                throw new InsureShipFailedSingleContract(oldOwnerID);
             }
 
             using Wallet wallet = this.WalletManager.AcquireWallet(character.ID, 1000);

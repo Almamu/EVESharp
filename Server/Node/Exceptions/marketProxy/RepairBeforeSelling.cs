@@ -8,7 +8,7 @@ namespace Node.Exceptions.marketProxy
 {
     public class RepairBeforeSelling : UserError
     {
-        public RepairBeforeSelling(Type type) : base("RepairBeforeSelling", new PyDictionary {["item"] = type.Name, ["otheritem"] = type.Name})
+        public RepairBeforeSelling(Type type) : base("RepairBeforeSelling", new PyDictionary {["item"] = FormatTypeIDAsName(type.ID), ["otheritem"] = FormatTypeIDAsName(type.ID)})
         {
         }
     }

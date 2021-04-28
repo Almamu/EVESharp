@@ -215,7 +215,7 @@ namespace Node.Services.Contracts
                 // named payload contains itemList, flag, requestItemTypeList and forCorp
                 ulong contractID = this.DB.CreateContract(connection, call.Client.EnsureCharacterIsSelected(),
                     call.Client.CorporationID, call.Client.AllianceID, (ContractTypes) (int) contractType, availability,
-                    assigneeID, expireTime, courierContractDuration, startStationID, endStationID, priceOrStartingBid,
+                    assigneeID ?? 0, expireTime, courierContractDuration, startStationID, endStationID, priceOrStartingBid,
                     reward, collateralOrBuyoutPrice, title, description, 1000);
 
                 // TODO: take broker's tax, deposit and sales tax

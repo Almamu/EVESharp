@@ -4,11 +4,11 @@ namespace Node.Exceptions.Internal
 {
     public class SkillMissingException : Exception
     {
-        public string SkillName { get; }
+        public StaticData.Inventory.Type Skill { get; }
         
-        public SkillMissingException(string skillName)
+        public SkillMissingException(StaticData.Inventory.Type skill)
         {
-            this.SkillName = skillName;
+            this.Skill = skill;
         }
     }
 }

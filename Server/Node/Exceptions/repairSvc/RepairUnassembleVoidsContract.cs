@@ -8,7 +8,7 @@ namespace Node.Exceptions.repairSvc
 {
     public class RepairUnassembleVoidsContract : UserError
     {
-        public RepairUnassembleVoidsContract(Type type) : base("RepairUnassembleVoidsContract", new PyDictionary {["item"] = type.Name})
+        public RepairUnassembleVoidsContract(int locationID) : base("RepairUnassembleVoidsContract", new PyDictionary {["item"] = FormatLocationID(locationID)})
         {
         }
     }

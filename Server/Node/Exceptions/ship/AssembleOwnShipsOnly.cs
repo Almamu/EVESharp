@@ -6,7 +6,7 @@ namespace Node.Exceptions.ship
 {
     public class AssembleOwnShipsOnly : UserError
     {
-        public AssembleOwnShipsOnly() : base("AssembleOwnShipsOnly", new PyDictionary {["owner"] = "someone else"})
+        public AssembleOwnShipsOnly(int ownerID) : base("AssembleOwnShipsOnly", new PyDictionary {["owner"] = FormatOwnerID(ownerID)})
         {
         }
     }

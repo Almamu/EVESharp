@@ -3,6 +3,7 @@ using Node.Database;
 using Node.Inventory;
 using Node.Inventory.Items.Types;
 using Node.Network;
+using Node.StaticData.Corporation;
 using PythonTypes.Types.Collections;
 using PythonTypes.Types.Database;
 using PythonTypes.Types.Primitives;
@@ -188,6 +189,22 @@ namespace Node.Services.Corporations
             // this just returns a list of itemIDs (locations) that are locked
             // most likely used by the corp stuff for SOMETHING(tm)
             return new PyList<PyInteger>();
+        }
+
+        public PyBool CanBeKickedOut(PyInteger characterID, CallInformation call)
+        {
+            int callerCharacterID = call.Client.EnsureCharacterIsSelected();
+
+            // can personel manager kick other players? are there other conditions?
+            return characterID == callerCharacterID || CorporationRole.Director.Is(call.Client.CorporationRole);
+        }
+
+        public PyDataType KickOutMember(PyInteger characterID, CallInformation call)
+        {
+            if (this.CanBeKickedOut(characterID, call) == false)
+                return null;
+            
+            return null;
         }
     }
 }

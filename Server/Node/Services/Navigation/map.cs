@@ -14,6 +14,12 @@ namespace Node.Services.Navigation
 {
     public class map : IService
     {
+        private enum HistoryType
+        {
+            PodKill = 3,
+            MostDangerous = 5,
+        };
+        
         private ItemFactory ItemFactory { get; }
         private StationManager StationManager => this.ItemFactory.StationManager;
         private CacheStorage CacheStorage { get; }
@@ -106,6 +112,23 @@ namespace Node.Services.Navigation
         public PyDictionary GetStuckSystems(CallInformation call)
         {
             return new PyDictionary();
+        }
+
+        public PyDataType GetHistory(PyInteger historyType, PyInteger maximumJumpDistance, CallInformation call)
+        {
+            // TODO: IMPLEMENT THIS
+            // this should return list of keyvals with information about the closest systems within the maximumJumpDistance
+            // depending on the first argument the data returned will be different, although the fields have the same name
+            
+            switch (historyType.Value)
+            {
+                case (int) HistoryType.MostDangerous:
+                    break;
+                case (int) HistoryType.PodKill:
+                    break;
+            }
+
+            return new PyList(0);
         }
     }
 }

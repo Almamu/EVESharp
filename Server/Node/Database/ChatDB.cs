@@ -17,6 +17,7 @@ namespace Node.Database
         public const string CHANNEL_TYPE_REGIONID = "regionid";
         public const string CHANNEL_TYPE_CORPID = "corpid";
         public const string CHANNEL_TYPE_CONSTELLATIONID = "constellationid";
+        public const string CHANNEL_TYPE_WARFACTIONID = "warfactionid";
         
         public const int MIN_CHANNEL_ENTITY_ID = 1000;
         public const int MAX_CHANNEL_ENTITY_ID = 2100000000;
@@ -112,7 +113,7 @@ namespace Node.Database
         public void JoinChannel(int channelID, int characterID, int role = CHATROLE_CONVERSATIONALIST)
         {
             Database.PrepareQuery(
-                "INSERT INTO lscChannelPermissions(channelID, accessor, `mode`, untilWhen, originalMode, admin, reason)VALUES(@channelID, @characterID, @role, NULL, @role, @admin, '')",
+                "REPLACE INTO lscChannelPermissions(channelID, accessor, `mode`, untilWhen, originalMode, admin, reason)VALUES(@channelID, @characterID, @role, NULL, @role, @admin, '')",
                 new Dictionary<string, object>()
                 {
                     {"@channelID", channelID},
@@ -551,7 +552,7 @@ namespace Node.Database
             if (channelName == "System Channels\\Wing")
                 return "wingid";
             if (channelName == "System Channels\\War Faction")
-                return "warfactionid";
+                return CHANNEL_TYPE_WARFACTIONID;
             if (channelName == "System Channels\\Global")
                 return CHANNEL_TYPE_GLOBAL;
 

@@ -153,7 +153,7 @@ namespace Node.Database
         }
 
         public ulong CreateContract(MySqlConnection connection, int characterID, int corporationID, int? allianceID, ContractTypes type, int availability,
-            int? assigneeID, int expireTime, int duration, int startStationID, int? endStationID, double price,
+            int assigneeID, int expireTime, int duration, int startStationID, int? endStationID, double price,
             double reward, double collateral, string title, string description, int issuerWalletID)
         {
             return Database.PrepareQueryLID(ref connection,
@@ -177,11 +177,11 @@ namespace Node.Database
                     {"@forCorp", 0},
                     {"@status", (int) ContractStatus.Outstanding},
                     {"@isAccepted", 0},
-                    {"@acceptorID", null},
+                    {"@acceptorID", 0},
                     {"@dateIssued", DateTime.UtcNow.ToFileTimeUtc ()},
                     {"@dateExpired", DateTime.UtcNow.AddMinutes(expireTime).ToFileTimeUtc ()},
-                    {"@dateAccepted", null},
-                    {"@dateCompleted", null},
+                    {"@dateAccepted", 0},
+                    {"@dateCompleted", 0},
                     {"@issuerWalletKey", issuerWalletID},
                     {"@issuerAllianceID", allianceID},
                     {"@acceptorWalletKey", null}
@@ -300,17 +300,17 @@ namespace Node.Database
                     Type damageValue = reader.GetFieldType(2);
 
                     if (damageValue == typeof(long) && reader.IsDBNull(2) == false && reader.GetInt64(2) > 0)
-                        throw new ConCannotTradeDamagedItem(this.TypeManager[typeID].Name);
+                        throw new ConCannotTradeDamagedItem(this.TypeManager[typeID]);
                     if (damageValue == typeof(double) && reader.IsDBNull(2) == false && reader.GetDouble(2) > 0)
-                        throw new ConCannotTradeDamagedItem(this.TypeManager[typeID].Name);
+                        throw new ConCannotTradeDamagedItem(this.TypeManager[typeID]);
             
                     int itemQuantity = reader.GetInt32(0);
 
                     if (reader.GetInt32(4) == (int) Categories.Ship && itemQuantity == 1 && reader.GetBoolean(5) == false)
-                        throw new ConCannotTradeNonSingletonShip(this.TypeManager[typeID].Name, station.Name);
+                        throw new ConCannotTradeNonSingletonShip(this.TypeManager[typeID], station.ID);
 
                     if (reader.GetBoolean(6) == true)
-                        throw new ConCannotTradeContraband(this.TypeManager[typeID].Name);
+                        throw new ConCannotTradeContraband(this.TypeManager[typeID]);
 
                     // quantity MUST match for this operation to succeed
                     if (itemQuantity != quantity)
@@ -958,13 +958,13 @@ namespace Node.Database
                     Type damageValue = reader.GetFieldType(4);
 
                     if (damageValue == typeof(long) && reader.IsDBNull(4) == false && reader.GetInt64(4) > 0)
-                        throw new ConCannotTradeDamagedItem(this.TypeManager[typeID].Name);
+                        throw new ConCannotTradeDamagedItem(this.TypeManager[typeID]);
                     if (damageValue == typeof(double) && reader.IsDBNull(4) == false && reader.GetDouble(4) > 0)
-                        throw new ConCannotTradeDamagedItem(this.TypeManager[typeID].Name);
+                        throw new ConCannotTradeDamagedItem(this.TypeManager[typeID]);
                     if (reader.GetBoolean(6) == false && reader.GetInt32(6) == (int) Categories.Ship)
-                        throw new ConCannotTradeNonSingletonShip(this.TypeManager[typeID].Name, station.Name);
+                        throw new ConCannotTradeNonSingletonShip(this.TypeManager[typeID], station.ID);
                     if (reader.GetBoolean(7) == true)
-                        throw new ConCannotTradeContraband(this.TypeManager[typeID].Name);
+                        throw new ConCannotTradeContraband(this.TypeManager[typeID]);
                     
                     itemsAtStation.Add(
                         new ItemQuantityEntry()
@@ -1012,7 +1012,7 @@ namespace Node.Database
 
                 // if the quantity required is not exhausted there was an error
                 if (quantity > 0)
-                    throw new ConReturnItemsMissingNonSingleton(this.TypeManager[itemTypeID].Name, station.Name);
+                    throw new ConReturnItemsMissingNonSingleton(this.TypeManager[itemTypeID], station.ID);
             }
             
             // iterate the modified items and update database if required

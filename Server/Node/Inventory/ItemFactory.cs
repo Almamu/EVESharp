@@ -77,9 +77,11 @@ namespace Node.Inventory
         private readonly Dictionary<int, ItemEntity> mItemList = new Dictionary<int, ItemEntity>();
         private readonly Dictionary<int, Station> mStations = new Dictionary<int, Station>();
         private readonly Dictionary<int, SolarSystem> mSolarSystems = new Dictionary<int, SolarSystem>();
+        private readonly Dictionary<int, Faction> mFactions = new Dictionary<int, Faction>();
 
         public Dictionary<int, Station> Stations => this.mStations;
         public Dictionary<int, SolarSystem> SolarSystems => this.mSolarSystems;
+        public Dictionary<int, Faction> Factions => this.mFactions;
         public EVESystem LocationSystem { get; private set; }
         public EVESystem LocationRecycler { get; private set; }
         public EVESystem LocationMarket { get; private set; }
@@ -429,13 +431,18 @@ namespace Node.Inventory
                 case (int) Groups.Corporation:
                     return this.ItemDB.LoadCorporation(item);
                 case (int) Groups.Faction:
-                    return this.ItemDB.LoadFaction(item);
+                    return this.LoadFaction(item);
                 default:
                     Log.Warning($"Loading owner {item.ID} from item group {item.Type.Group.ID} as normal item");
                     return item;
             }
         }
 
+        private ItemEntity LoadFaction(ItemEntity item)
+        {
+            return this.mFactions[item.ID] = this.ItemDB.LoadFaction(item);
+        }
+        
         private ItemEntity LoadAccessories(ItemEntity item)
         {
             switch (item.Type.Group.ID)

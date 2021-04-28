@@ -135,7 +135,11 @@ namespace Node
             "SELECT attributeID, attributeName, attributeCategory, description, maxAttributeID, attributeIdx, graphicID, chargeRechargeTimeID, defaultValue, published, displayName, unitID, stackable, highIsGood, categoryID, 0 AS dataID FROM dgmAttributeTypes",
             "SELECT flagID, flagName, flagText, flagType, orderID FROM invFlags",
             "SELECT invTypes.typeName AS blueprintTypeName, invTypes.description, invTypes.graphicID, invTypes.basePrice, blueprintTypeID, parentBlueprintTypeID, productTypeID, productionTime, techLevel, researchProductivityTime, researchMaterialTime, researchCopyTime, researchTechTime, productivityModifier, materialModifier, wasteFactor, chanceOfReverseEngineering, maxProductionLimit FROM invBlueprintTypes, invTypes WHERE invBlueprintTypes.blueprintTypeID = invTypes.typeID",
+            #if DEBUG
+            "SELECT graphicID, url3D, urlWeb, icon, urlSound, description, explosionID FROM eveGraphics", // include description on debug builds so the developers can search by description value
+            #else
             "SELECT graphicID, url3D, urlWeb, icon, urlSound, explosionID FROM eveGraphics",
+            #endif
             "SELECT celestialID, description FROM mapCelestialDescriptions",
             "SELECT certificateID, categoryID, classID, grade, iconID, corpID, description, 0 AS dataID FROM crtCertificates",
             $"SELECT itemID AS locationID, itemName as locationName, x, y, z FROM invItems LEFT JOIN eveNames USING (itemID) LEFT JOIN invPositions USING (itemID) WHERE (groupID = {(int) Groups.Station} OR groupID = {(int) Groups.Constellation} OR groupID = {(int) Groups.SolarSystem} OR groupID = {(int) Groups.Region}) AND itemID < {ItemFactory.USERGENERATED_ID_MIN}",

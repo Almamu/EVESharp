@@ -5,7 +5,7 @@ namespace Node.Exceptions.marketProxy
 {
     public class MktAsksMustSpecifyItems : UserError
     {
-        public MktAsksMustSpecifyItems() : base("MktAsksMustSpecifyItems", null)
+        public MktAsksMustSpecifyItems() : base("MktAsksMustSpecifyItems")
         {
         }
     }

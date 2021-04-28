@@ -9,7 +9,7 @@ namespace Node.Exceptions.character
 {
     public class PrereqImplantMissing : UserError
     {
-        public PrereqImplantMissing(Type requirement) : base("PrereqImplantMissing", new PyDictionary() { ["typeName"] = requirement.Name })
+        public PrereqImplantMissing(Type requirement) : base("PrereqImplantMissing", new PyDictionary() { ["typeName"] = FormatTypeIDAsName(requirement.ID) })
         {
         }
     }

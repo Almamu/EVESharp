@@ -438,6 +438,10 @@ namespace Node.Services.Characters
             call.Client.ShipID = character.LocationID;
             call.Client.RaceID = this.mAncestriesCache[character.AncestryID].Bloodline.RaceID;
 
+            // set the war faction id if present
+            if (character.WarFactionID is not null)
+                call.Client.WarFactionID = character.WarFactionID;
+
             // update the character and set it's only flag to true
             character.Online = 1;
             // the online status must be persisted after update, so force the entity to be updated in the database
@@ -547,6 +551,16 @@ namespace Node.Services.Characters
             this.DB.SetNote(characterID, call.Client.EnsureCharacterIsSelected(), note);
 
             return null;
+        }
+
+        public PyDataType GetFactions(CallInformation call)
+        {
+            PyList result = new PyList();
+            
+            foreach ((int factionID, Faction faction) in this.ItemFactory.Factions)
+                result.Add(faction.GetKeyVal());
+
+            return result;
         }
     }
 }

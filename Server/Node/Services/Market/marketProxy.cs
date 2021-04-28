@@ -416,7 +416,7 @@ namespace Node.Services.Market
                     this.DB.CheckRepackagedItem(connection, itemID, out singleton);
 
                     if (singleton == true)
-                        throw new RepackageBeforeSelling(this.TypeManager[typeID].Name);
+                        throw new RepackageBeforeSelling(this.TypeManager[typeID]);
                 }
 
                 // move the items to update

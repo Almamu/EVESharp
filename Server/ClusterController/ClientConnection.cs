@@ -237,8 +237,13 @@ namespace ClusterController
                 return;
             }
 
-            // set languageid in the session
-            this.Session["languageID"] = request.user_languageid;
+            // TODO: DINAMICALLY FETCH THIS SO WE SUPPORT TRANSLATIONS
+            if (request.user_languageid != "EN" && request.user_languageid != "RU" && request.user_languageid != "DE")
+                // default to english language
+                this.Session["languageID"] = "EN";
+            else
+                // set languageid in the session to the one requested as we have translations for that one
+                this.Session["languageID"] = request.user_languageid;
 
             // add the user to the authentication queue
             this.ConnectionManager.LoginQueue.Enqueue(this, request);

@@ -42,7 +42,7 @@ namespace Node.Inventory.Items.Types
             double? morph1W, double? morph2E, double? morph2N, double? morph2S, double? morph2W, double? morph3E,
             double? morph3N, double? morph3S, double? morph3W, double? morph4E, double? morph4N, double? morph4S,
             double? morph4W, int stationId, int solarSystemId, int constellationId, int regionId, int online,
-            int freeReSpecs, long nextReSpecTime, long timeLastJump, int titleMask) : base(from)
+            int freeReSpecs, long nextReSpecTime, long timeLastJump, int titleMask, int? warFactionID) : base(from)
         {
             this.ClientManager = clientManager;
             this.TimerManager = timerManager;
@@ -114,6 +114,7 @@ namespace Node.Inventory.Items.Types
             this.mNextReSpecTime = nextReSpecTime;
             this.mTimeLastJump = timeLastJump;
             this.mTitleMask = titleMask;
+            this.mWarFactionID = warFactionID;
         }
 
         private ClientManager ClientManager { get; }
@@ -152,16 +153,36 @@ namespace Node.Inventory.Items.Types
                 this.mTitleMask = value;
             }
         }
+
+        public int CorporationID
+        {
+            get => this.mCorporationID;
+            set
+            {
+                this.Dirty = true;
+                this.mCorporationID = value;
+            }
+        }
+        
         public double SecurityRating => mSecurityRating;
         public string PetitionMessage => mPetitionMessage;
         public int LogonMinutes => mLogonMinutes;
-        public int CorporationID => mCorporationID;
         public int CorpRole => mCorpRole;
         public int RolesAtAll => mRolesAtAll;
         public int RolesAtBase => mRolesAtBase;
         public int RolesAtHq => mRolesAtHq;
         public int RolesAtOther => mRolesAtOther;
-        public long CorporationDateTime => mCorporationDateTime;
+
+        public long CorporationDateTime
+        {
+            get => this.mCorporationDateTime;
+            set
+            {
+                this.Dirty = true;
+                this.mCorporationDateTime = value;
+            }
+        }
+        
         public long StartDateTime => mStartDateTime;
         public long CreateDateTime => mCreateDateTime;
         public int AncestryID => mAncestryID;
@@ -271,6 +292,16 @@ namespace Node.Inventory.Items.Types
                 this.mActiveClone = value;
             }
         }
+
+        public int? WarFactionID
+        {
+            get => this.mWarFactionID;
+            set
+            {
+                this.Dirty = true;
+                this.mWarFactionID = value;
+            }
+        }
         
         private int mCharacterID;
         private int mAccountID;
@@ -340,6 +371,7 @@ namespace Node.Inventory.Items.Types
         private long mNextReSpecTime;
         private long mTimeLastJump;
         private int mTitleMask;
+        private int? mWarFactionID;
         
         private List<SkillQueueEntry> mSkillQueue;
         private Corporation mCorporation = null;
@@ -401,6 +433,12 @@ namespace Node.Inventory.Items.Types
                 this.mCorporation = this.ItemFactory.LoadItem(this.CorporationID) as Corporation;
 
                 return this.mCorporation;
+            }
+
+            set
+            {
+                this.Dirty = true;
+                this.mCorporation = value;
             }
         }
         

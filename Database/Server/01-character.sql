@@ -75,6 +75,7 @@ CREATE TABLE `chrInformation` (
 	`nextRespecTime` BIGINT(20) NOT NULL DEFAULT '0',
 	`freeRespecs` INT(11) NOT NULL DEFAULT '2',
 	`lastOnline` BIGINT(20) NOT NULL DEFAULT '0',
+	`warfactionID` INT(11) NULL DEFAULT NULL,
   PRIMARY KEY  (`characterID`),
   KEY `FK_CHARACTER__ACCOUNTS` (`accountID`),
   KEY `FK_CHARACTER__CHRACCESSORIES` (`accessoryID`),
@@ -98,7 +99,7 @@ CREATE TABLE `chrInformation` (
 /*
  * Insert agents information into the chrInformation table
  */
-INSERT INTO chrInformation
+REPLACE INTO chrInformation
  SELECT
   characterID,accountID,NULL AS activeCloneID, 0 AS timeLastJump,title,description,bounty,balance,securityRating,petitionMessage,logonMinutes,
   corporationID, 0 AS titleMask, 0 AS corpRole,0 AS rolesAtAll, 0 AS rolesAtBase, 0 AS rolesAtHQ,0 AS rolesAtOther,
@@ -113,7 +114,7 @@ INSERT INTO chrInformation
   morph3e,morph3n,morph3s,morph3w,
   morph4e,morph4n,morph4s,morph4w,
   stationID,solarSystemID,constellationID,regionID,
-  0 AS online, 0 AS nextRespecTime, 2 AS freeRespecs, 0 AS lastOnline
+  0 AS online, 0 AS nextRespecTime, 2 AS freeRespecs, 0 AS lastOnline, NULL AS warfactionID
  FROM chrStatic;
 
 DROP TABLE IF EXISTS `chrSkillQueue`;

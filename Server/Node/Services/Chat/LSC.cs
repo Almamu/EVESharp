@@ -129,29 +129,6 @@ namespace Node.Services.Chat
             return this.DB.GetChannelMembers(channelID, callerCharacterID);
         }
 
-        private static PyTuple GenerateLSCNotification(string type, PyDataType channel, PyTuple args, Client client)
-        {
-            PyTuple who = new PyTuple(6)
-            {
-                [0] = client.AllianceID,
-                [1] = client.CorporationID,
-                [2] = client.EnsureCharacterIsSelected(),
-                [3] = client.Role,
-                [4] = client.CorporationRole,
-                [5] = client.WarFactionID
-            };
-
-            // this could also be a list having senderID, senderName and senderType in that order
-            return new PyTuple(5)
-            {
-                [0] = channel,
-                [1] = 1,
-                [2] = type,
-                [3] = who,
-                [4] = args
-            };
-        }
-
         private PyTuple GetChannelInformation(string channelType, int channelID, int? entityID, int callerCharacterID, PyDataType channelIDExtended, CallInformation call)
         {
             Row info;
@@ -222,9 +199,9 @@ namespace Node.Services.Chat
                 {
                     this.ParseChannelIdentifier(channel, out channelID, out channelType, out entityID);
                 }
-                catch (InvalidDataException)
+                catch (InvalidDataException ex)
                 {
-                    throw new LSCCannotJoin("The specified channel cannot be found: " + PrettyPrinter.FromDataType(channel));
+                    throw new LSCCannotJoin($"The specified channel cannot be found ({ex.Message}): " + PrettyPrinter.FromDataType(channel));
                 }
 
                 if (channelType == ChatDB.CHANNEL_TYPE_NORMAL)
@@ -576,7 +553,7 @@ namespace Node.Services.Chat
 
             call.OriginalCall.Client.SendException(
                 call.OriginalCall,
-                new ChtCharNotReachable(this.CharacterDB.GetCharacterName(call.ToCharacterID))
+                new ChtCharNotReachable(call.ToCharacterID)
             );
         }
 
@@ -590,19 +567,15 @@ namespace Node.Services.Chat
                     throw new ChtCannotInviteSelf();
                 
                 if (ItemFactory.IsNPC(characterID) == true)
-                {
-                    throw new ChtNPC(
-                        this.ItemFactory.GetItem<Character>(characterID).Name
-                    );
-                }
-                
-                // ensure our character has admin perms first
+                    throw new ChtNPC(characterID);
+
+                    // ensure our character has admin perms first
                 if (this.DB.IsCharacterOperatorOrAdminOfChannel(channelID, callerCharacterID) == false)
                     throw new ChtWrongRole(this.DB.GetChannelName(channelID), "Operator");
 
                 // ensure the character is not there already
                 if (this.DB.IsCharacterMemberOfChannel(channelID, characterID) == true)
-                    throw new ChtAlreadyInChannel(this.CharacterDB.GetCharacterName(characterID));
+                    throw new ChtAlreadyInChannel(characterID);
 
                 Character character = this.ItemFactory.GetItem<Character>(callerCharacterID);
 
@@ -667,12 +640,19 @@ namespace Node.Services.Chat
 
         public PyDataType MarkMessagesRead(PyList messageIDs, CallInformation call)
         {
-            // TODO: CHECK FOR PERMISSIONS ON lscChannelPermissions
-            foreach (PyInteger messageID in messageIDs.GetEnumerable<PyInteger>())
-            {
-                this.MessagesDB.MarkMessagesRead(call.Client.EnsureCharacterIsSelected(), messageID);
-            }
+            int callerCharacterID = call.Client.EnsureCharacterIsSelected();
             
+            this.MessagesDB.MarkMessagesRead(callerCharacterID, messageIDs.GetEnumerable<PyInteger>());
+            
+            return null;
+        }
+
+        public PyDataType DeleteMessages(PyInteger mailboxID, PyList messageIDs, CallInformation call)
+        {
+            int callerCharacterID = call.Client.EnsureCharacterIsSelected();
+            
+            this.MessagesDB.DeleteMessages(callerCharacterID, mailboxID, messageIDs.GetEnumerable<PyInteger>());
+
             return null;
         }
         

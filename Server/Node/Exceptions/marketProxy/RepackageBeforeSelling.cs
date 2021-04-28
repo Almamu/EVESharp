@@ -1,4 +1,5 @@
 ﻿using EVE.Packets.Exceptions;
+using Node.StaticData.Inventory;
 using PythonTypes.Types.Collections;
 using PythonTypes.Types.Primitives;
 
@@ -6,7 +7,7 @@ namespace Node.Exceptions.marketProxy
 {
     public class RepackageBeforeSelling : UserError
     {
-        public RepackageBeforeSelling(string item) : base("RepackageBeforeSelling", new PyDictionary {["item"] = item})
+        public RepackageBeforeSelling(Type type) : base("RepackageBeforeSelling", new PyDictionary {["item"] = FormatTypeIDAsName(type.ID)})
         {
         }
     }

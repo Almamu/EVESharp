@@ -1,4 +1,7 @@
 using System;
+using PythonTypes.Types.Collections;
+using PythonTypes.Types.Database;
+using PythonTypes.Types.Primitives;
 
 namespace Node.Inventory.Items.Types
 {
@@ -44,6 +47,21 @@ namespace Node.Inventory.Items.Types
         public override void Destroy()
         {
             throw new NotImplementedException("Stations cannot be destroyed as they're regarded as static data!");
+        }
+
+        public PyDataType GetKeyVal()
+        {
+            return KeyVal.FromDictionary(
+                new PyDictionary()
+                {
+                    ["factionID"] = this.ID,
+                    ["factionName"] = this.Name,
+                    ["description"] = this.Description,
+                    ["solarSystemID"] = this.SolarSystemId,
+                    ["corporationID"] = this.CorporationId,
+                    ["militiaID"] = this.MilitiaCorporationId
+                }
+            );
         }
     }
 }
