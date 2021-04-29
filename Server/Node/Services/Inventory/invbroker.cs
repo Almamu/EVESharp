@@ -192,9 +192,8 @@ namespace Node.Services.Inventory
             // ensure the item is saved into the database first
             item.Persist();
             
-            // if the item is a ship, send a session change
-            if (item.Type.Group.Category.ID == (int) Categories.Ship)
-                call.Client.ShipID = call.Client.ShipID;
+            // notify the owner of the item
+            call.Client.NotifyMultiEvent(OnCfgDataChanged.BuildItemLabelChange(item));
 
             // TODO: CHECK IF ITEM BELONGS TO CORP AND NOTIFY CHARACTERS IN THIS NODE?
             return null;

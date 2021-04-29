@@ -59,7 +59,7 @@ namespace EVE.Packets.Exceptions
             ISK = 28,
             // list of type ids 
             TYPEIDL = 29,
-        };
+        }
         
         public UserError(string type, PyDictionary extra = null) : base("ccp_exceptions.UserError", type, extra, new PyDictionary())
         {
