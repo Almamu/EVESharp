@@ -26,14 +26,18 @@ using System;
 using System.Collections.Generic;
 using Common.Database;
 using MySql.Data.MySqlClient;
+using Node.Inventory;
 using PythonTypes.Types.Collections;
 using PythonTypes.Types.Database;
 using PythonTypes.Types.Primitives;
+using Type = Node.StaticData.Inventory.Type;
 
 namespace Node.Database
 {
     public class InsuranceDB : DatabaseAccessor
     {
+        private TypeManager TypeManager { get; init; }
+        
         public PyList<PyPackedRow> GetContractsForShipsOnStation(int characterID, int stationID)
         {
             return Database.PreparePackedRowListQuery(
@@ -91,9 +95,11 @@ namespace Node.Database
                     return false;
 
                 numberOfInsurances = reader.GetInt32(0);
-                ownerID = reader.GetInt32(1);
+                
+                if (numberOfInsurances > 0)
+                    ownerID = reader.GetInt32(1);
 
-                return true;
+                return numberOfInsurances > 0;
             }
         }
 
@@ -125,9 +131,70 @@ namespace Node.Database
                 }
             );
         }
-        
-        public InsuranceDB(DatabaseConnection db) : base(db)
+
+        public class ExpiredContract
         {
+            public int InsuranceID { get; init; }
+            public int OwnerID { get; init; }
+            public Type OwnerTypeID { get; init; }
+            public int ShipID { get; init; }
+            public Type ShipType { get; init; }
+            public string ShipName { get; init; }
+            public long StartDate { get; init; }
+        }
+        
+        /// <summary>
+        /// WARNING: SIDE EFFECTS, CHANGES THE NOTIFICATION FLAG OF THE EXPIRED CONTRACTS FOUND
+        /// </summary>
+        /// <returns>All the expired contracts not notified yet to their owners</returns>
+        public IEnumerable<ExpiredContract> GetExpiredContracts()
+        {
+            long currentDate = DateTime.UtcNow.ToFileTimeUtc();
+            
+            MySqlConnection connection = null;
+            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+                "SELECT insuranceID, chrShipInsurances.ownerID, shipID, ship.itemName AS shipName, invItems.typeID AS shipTypeID, eveNames.typeID AS ownerTypeID, startDate FROM chrShipInsurances LEFT JOIN eveNames ON eveNames.itemID = chrShipInsurances.ownerID LEFT JOIN invItems ON invItems.itemID = chrShipInsurances.shipID LEFT JOIN eveNames ship ON eveNames.itemID = shipID WHERE endDate < @currentDate",
+                new Dictionary<string, object>()
+                {
+                    {"@currentDate", currentDate}
+                }
+            );
+            
+            using (connection)
+            using (reader)
+            {
+                List<ExpiredContract> result = new List<ExpiredContract>();
+                
+                while (reader.Read() == true)
+                {
+                    Type shipType = this.TypeManager[reader.GetInt32(4)];
+                    
+                    yield return new ExpiredContract
+                    {
+                        InsuranceID = reader.GetInt32(0),
+                        OwnerID = reader.GetInt32(1),
+                        ShipID = reader.GetInt32(2),
+                        ShipName = reader.GetStringOrDefault(3, shipType.Name),
+                        ShipType = shipType,
+                        OwnerTypeID = this.TypeManager[reader.GetInt32(5)],
+                        StartDate = reader.GetInt64(6)
+                    };
+                }
+            }
+
+            // remove all the insurances from the database
+            Database.PrepareQuery(
+                "DELETE FROM chrShipInsurances WHERE insuranceID < @currentDate",
+                new Dictionary<string, object>()
+                {
+                    {"@currentDate", currentDate}
+                }
+            );
+        }
+        
+        public InsuranceDB(TypeManager typeManager, DatabaseConnection db) : base(db)
+        {
+            this.TypeManager = typeManager;
         }
     }
 }

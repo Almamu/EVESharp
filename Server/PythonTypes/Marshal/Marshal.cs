@@ -607,24 +607,31 @@ namespace PythonTypes.Marshal
 
                 switch (column.Type)
                 {
-                    case FieldType.I8:
                     case FieldType.UI8:
+                        wholeByteWriter.Write((ulong) (value as PyInteger ?? 0));
+                        break;
+                    
+                    case FieldType.I8:
                     case FieldType.CY:
                     case FieldType.FileTime:
                         wholeByteWriter.Write((long) (value as PyInteger ?? 0));
                         break;
 
                     case FieldType.I4:
-                    case FieldType.UI4:
                         wholeByteWriter.Write((int) (value as PyInteger ?? 0));
                         break;
-
+                    case FieldType.UI4:
+                        wholeByteWriter.Write((uint) (value as PyInteger ?? 0));
+                        break;
                     case FieldType.I2:
-                    case FieldType.UI2:
                         wholeByteWriter.Write((short) (value as PyInteger ?? 0));
                         break;
-
+                    case FieldType.UI2:
+                        wholeByteWriter.Write((ushort) (value as PyInteger ?? 0));
+                        break;
                     case FieldType.I1:
+                        wholeByteWriter.Write((sbyte) (value as PyInteger ?? 0));
+                        break;
                     case FieldType.UI1:
                         wholeByteWriter.Write((byte) (value as PyInteger ?? 0));
                         break;
@@ -645,7 +652,6 @@ namespace PythonTypes.Marshal
                             
                             bitField[bit >> 3] |= (byte) (1 << (bit & 0x7));
                         }
-
                         break;
                     
                     case FieldType.Bytes:

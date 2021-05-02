@@ -331,6 +331,26 @@ namespace ClusterController
             }
         }
 
+        public void NotifyByWarFactionID(PyPacket packet, PyAddressBroadcast destination)
+        {
+            lock (this.Clients)
+            {
+                foreach (PyInteger id in destination.IDsOfInterest.GetEnumerable<PyInteger>())
+                {
+                    foreach ((long userID, ClientConnection connection) in this.Clients)
+                    {
+                        if (connection.WarFactionID == id)
+                        {
+                            // use the key instead of AccountID as this should be faster
+                            packet.UserID = userID;
+                            // queue the packet for the user
+                            connection.Socket.Send(packet);
+                        }
+                    }
+                }
+            }
+        }
+
         public void NotifyByNodeID(PyPacket packet, PyAddressBroadcast destination)
         {
             lock (this.Nodes)

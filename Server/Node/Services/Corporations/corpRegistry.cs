@@ -204,6 +204,8 @@ namespace Node.Services.Corporations
             if (this.CanBeKickedOut(characterID, call) == false)
                 return null;
             
+            // 
+            
             return null;
         }
     }

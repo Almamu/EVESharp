@@ -21,7 +21,7 @@ namespace Node.Chat
         {
             this.SendMail(fromID, new PyList<PyInteger>(1) {[0] = destinationID}, subject, message);
         }
-
+        
         public void SendMail(int fromID, PyList<PyInteger> destinationMailboxes, string subject, string message)
         {
             foreach (PyInteger destinationID in destinationMailboxes)

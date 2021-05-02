@@ -202,38 +202,22 @@ namespace Node.Services.Characters
             out PyDecimal headRotation3, out PyDecimal eyeRotation1, out PyDecimal eyeRotation2,
             out PyDecimal eyeRotation3, out PyDecimal camPos1, out PyDecimal camPos2, out PyDecimal camPos3)
         {
-            if (data.TryGetValue("costumeID", out costumeID) == false)
-                throw new Exception("Cannot get costumeID from character appearance");
-            if (data.TryGetValue("eyebrowsID", out eyebrowsID) == false)
-                throw new Exception("Cannot get eyebrowsID from character appearance");
-            if (data.TryGetValue("eyesID", out eyesID) == false)
-                throw new Exception("Cannot get eyesID from character appearance");
-            if (data.TryGetValue("hairID", out hairID) == false)
-                throw new Exception("Cannot get hairID from character appearance");
-            if (data.TryGetValue("skinID", out skinID) == false)
-                throw new Exception("Cannot get skinID from character appearance");
-            if (data.TryGetValue("backgroundID", out backgroundID) == false)
-                throw new Exception("Cannot get backgroundID from character appearance");
-            if (data.TryGetValue("lightID", out lightID) == false)
-                throw new Exception("Cannot get lightID from character appearance");
-            if (data.TryGetValue("headRotation1", out headRotation1) == false)
-                throw new Exception("Cannot get headRotation1 from character appearance");
-            if (data.TryGetValue("headRotation2", out headRotation2) == false)
-                throw new Exception("Cannot get headRotation2 from character appearance");
-            if (data.TryGetValue("headRotation3", out headRotation3) == false)
-                throw new Exception("Cannot get headRotation3 from character appearance");
-            if (data.TryGetValue("eyeRotation1", out eyeRotation1) == false)
-                throw new Exception("Cannot get eyeRotation1 from character appearance");
-            if (data.TryGetValue("eyeRotation2", out eyeRotation2) == false)
-                throw new Exception("Cannot get eyeRotation2 from character appearance");
-            if (data.TryGetValue("eyeRotation3", out eyeRotation3) == false)
-                throw new Exception("Cannot get eyeRotation3 from character appearance");
-            if (data.TryGetValue("camPos1", out camPos1) == false)
-                throw new Exception("Cannot get camPos1 from character appearance");
-            if (data.TryGetValue("camPos2", out camPos2) == false)
-                throw new Exception("Cannot get camPos2 from character appearance");
-            if (data.TryGetValue("camPos3", out camPos3) == false)
-                throw new Exception("Cannot get camPos3 from character appearance");
+            data.SafeGetValue("costumeID", out costumeID);
+            data.SafeGetValue("eyebrowsID", out eyebrowsID);
+            data.SafeGetValue("eyesID", out eyesID);
+            data.SafeGetValue("hairID", out hairID);
+            data.SafeGetValue("skinID", out skinID);
+            data.SafeGetValue("backgroundID", out backgroundID);
+            data.SafeGetValue("lightID", out lightID);
+            data.SafeGetValue("headRotation1", out headRotation1);
+            data.SafeGetValue("headRotation2", out headRotation2);
+            data.SafeGetValue("headRotation3", out headRotation3);
+            data.SafeGetValue("eyeRotation1", out eyeRotation1);
+            data.SafeGetValue("eyeRotation2", out eyeRotation2);
+            data.SafeGetValue("eyeRotation3", out eyeRotation3);
+            data.SafeGetValue("camPos1", out camPos1);
+            data.SafeGetValue("camPos2", out camPos2);
+            data.SafeGetValue("camPos3", out camPos3);
         }
         
         private Character CreateCharacter(string characterName, Ancestry ancestry, int genderID, PyDictionary appearance, long currentTime, CallInformation call)

@@ -8,6 +8,7 @@ namespace Node.StaticData.Inventory
     public enum Types : int
     {
 	    System = 0,
+        Corporation = 2,
         Plagioclase = 18,
         Spodumain = 19,
         Kernite = 20,

@@ -13,6 +13,7 @@ using Node.Inventory.Items;
 using Node.Inventory.Items.Types;
 using Node.Inventory.SystemEntities;
 using Node.Notifications.Client.Inventory;
+using Node.Notifications.Nodes.Corporations;
 using Node.Services;
 using PythonTypes;
 using PythonTypes.Types.Collections;
@@ -545,6 +546,26 @@ namespace Node.Network
             Log.Info("Received a cluster request to run timed events on services...");
             
             this.ServiceManager.marketProxy.PerformTimedEvents();
+            this.ServiceManager.insuranceSvc.PerformTimedEvents();
+        }
+
+        private void HandleOnCorporationMemberChanged(OnCorporationMemberChanged change)
+        {
+            // this notification does not need to send anything to anyone as the clients will already get notified
+            // based on their corporation IDs
+            
+            // the only thing needed is to check for a Character reference and update it's corporationID to the correct one
+            if (this.ItemFactory.TryGetItem(change.MemberID, out Character character) == false)
+                // if the character is not loaded it could mean that the package arrived on to the node while the player was logging out
+                // so this is safe to ignore 
+                return;
+
+            // set the corporation to the new one
+            character.CorporationID = change.NewCorporationID;
+            // persist the character
+            character.Persist();
+            // nothing else needed
+            Log.Debug($"Updated character ({character.ID}) coporation ID from {change.OldCorporationID} to {change.NewCorporationID}");
         }
 
         private void HandleBroadcastNotification(PyPacket packet)
@@ -577,6 +598,9 @@ namespace Node.Network
                     break;
                 case "OnClusterTimer":
                     this.HandleOnClusterTimer(packet.Payload[1] as PyTuple);
+                    break;
+                case Notifications.Nodes.Corporations.OnCorporationMemberChanged.NOTIFICATION_NAME:
+                    this.HandleOnCorporationMemberChanged(packet.Payload);
                     break;
                 default:
                     Log.Fatal("Received ClusterController notification with the wrong format");

@@ -10,6 +10,7 @@ using Node.Market;
 using Node.Network;
 using Node.Services.Account;
 using Node.Services.Chat;
+using Node.StaticData.Inventory;
 using PythonTypes.Types.Collections;
 using PythonTypes.Types.Database;
 using PythonTypes.Types.Primitives;
@@ -25,7 +26,7 @@ namespace Node.Services.Inventory
         private SystemManager SystemManager => this.ItemFactory.SystemManager;
         private WalletManager WalletManager { get; }
         private MailManager MailManager { get; }
-        
+
         public insuranceSvc(ItemFactory itemFactory, InsuranceDB db, MarketDB marketDB, WalletManager walletManager, MailManager mailManager, BoundServiceManager manager) : base(manager, null)
         {
             this.DB = db;
@@ -169,6 +170,25 @@ namespace Node.Services.Inventory
             this.DB.UnInsureShip(itemID);
             
             return null;
+        }
+
+        public void PerformTimedEvents()
+        {
+            foreach (InsuranceDB.ExpiredContract contract in this.DB.GetExpiredContracts())
+            {
+                DateTime insuranceTime = DateTime.FromFileTimeUtc(contract.StartDate);
+                
+                this.MailManager.SendMail(this.ItemFactory.SecureCommerceCommision.ID, contract.OwnerID, 
+                    "Insurance Contract Expired",
+                    "Dear valued customer, <br><br>" +
+                    $"The insurance contract between yourself and SCC for the insurance of the ship <b>{contract.ShipName}</b> (<b>{contract.ShipType.Name}</b>) issued at" +
+                    $" <b>{insuranceTime.ToLongDateString()} {insuranceTime.ToShortTimeString()}</b> has expired." +
+                    "Please purchase a new insurance as quickly as possible to protect your investment.<br><br>" +
+                    "Best,<br>" +
+                    "The Secure Commerce Commission<br>" +
+                    $"Reference ID: <b>{contract.InsuranceID}</b>"
+                );
+            }
         }
     }
 }

@@ -589,23 +589,37 @@ namespace PythonTypes.Marshal
                 int bit = (wholeBytes << 3) + descriptor.Columns.IndexOf(column) + boolBits;
                 bool isNull = (fullBuffer[bit >> 3] & (1 << (bit & 0x7))) == (1 << (bit & 0x7));
                 
+                if (isNull == true)
+                {
+                    data[column.Name] = null;
+                    continue;
+                }
+                
                 switch (column.Type)
                 {
-                    case FieldType.I8:
                     case FieldType.UI8:
+                        data[column.Name] = new PyInteger((long) decompressedReader.ReadUInt64());
+                        break;
+                    case FieldType.I8:
                     case FieldType.CY:
                     case FieldType.FileTime:
                         data[column.Name] = new PyInteger(decompressedReader.ReadInt64());
                         break;
                     case FieldType.I4:
-                    case FieldType.UI4:
                         data[column.Name] = new PyInteger(decompressedReader.ReadInt32());
                         break;
-                    case FieldType.I2:
+                    case FieldType.UI4:
+                        data[column.Name] = new PyInteger(decompressedReader.ReadUInt32());
+                        break;
                     case FieldType.UI2:
+                        data[column.Name] = new PyInteger(decompressedReader.ReadUInt16());
+                        break;
+                    case FieldType.I2:
                         data[column.Name] = new PyInteger(decompressedReader.ReadInt16());
                         break;
                     case FieldType.I1:
+                        data[column.Name] = new PyInteger(decompressedReader.ReadSByte());
+                        break;
                     case FieldType.UI1:
                         data[column.Name] = new PyInteger(decompressedReader.ReadByte());
                         break;
@@ -631,11 +645,6 @@ namespace PythonTypes.Marshal
                     
                     default:
                         throw new InvalidDataException($"Unknown column type {column.Type}");
-                }
-
-                if (isNull == true)
-                {
-                    data[column.Name] = null;
                 }
             }
 

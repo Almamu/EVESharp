@@ -126,6 +126,19 @@ namespace ClusterController
                 return 0;
             }
         }
+
+        public int WarFactionID
+        {
+            get
+            {
+                PyDataType warfactionid = this.Session["warfactionid"];
+
+                if (warfactionid is PyInteger warfactionidInt)
+                    return warfactionidInt;
+
+                return 0;
+            }
+        }
         
         public ClientConnection(EVEClientSocket socket, ConnectionManager connectionManager, GeneralDB generalDB, Logger logger)
             : base(socket, connectionManager, logger.CreateLogChannel(socket.GetRemoteAddress()))

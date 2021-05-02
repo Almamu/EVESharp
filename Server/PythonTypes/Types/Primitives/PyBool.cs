@@ -35,6 +35,20 @@ namespace PythonTypes.Types.Primitives
             return obj.Value == value;
         }
 
+        public static bool operator ==(PyBool obj, PyBool value)
+        {
+            if (ReferenceEquals(obj, value)) return true;
+            if (ReferenceEquals(null, obj)) return false;
+            if (ReferenceEquals(null, value)) return false;
+
+            return obj.Equals(value);
+        }
+
+        public static bool operator !=(PyBool obj, PyBool value)
+        {
+            return !(obj == value);
+        }
+
         public static bool operator !=(PyBool obj, bool value)
         {
             return !(obj == value);

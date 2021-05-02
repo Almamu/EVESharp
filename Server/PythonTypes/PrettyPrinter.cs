@@ -278,7 +278,7 @@ namespace PythonTypes
             foreach (DBRowDescriptor.Column column in packedRow.Header.Columns)
             {
                 this.AppendIndentation();
-                this.mStringBuilder.AppendFormat("[PyPackedRowColumn '{0}']", column.Name);
+                this.mStringBuilder.AppendFormat("[PyPackedRowColumn '{0}' ({1})]", column.Name, column.Type.ToString());
                 this.mStringBuilder.AppendLine();
                 this.Process(packedRow[column.Name]);
             }

@@ -67,9 +67,7 @@ namespace PythonTypes.Types.Collections
 
         public bool TryGetValue<T>(PyDataType key, out T value) where T : PyDataType
         {
-            PyDataType tmp;
-
-            if (this.TryGetValue(key, out tmp) == true)
+            if (this.TryGetValue(key, out PyDataType tmp) == true)
             {
                 value = tmp as T;
                 return true;
@@ -77,6 +75,12 @@ namespace PythonTypes.Types.Collections
 
             value = null;
             return false;
+        }
+
+        public void SafeGetValue<T>(PyDataType key, out T value) where T : PyDataType
+        {
+            if (this.TryGetValue(key, out value) == false)
+                throw new KeyNotFoundException();
         }
 
         public void Add(PyDataType key, PyDataType value)
