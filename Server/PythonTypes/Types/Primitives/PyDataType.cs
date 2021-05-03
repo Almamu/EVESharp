@@ -21,7 +21,7 @@ namespace PythonTypes.Types.Primitives
 
         public override int GetHashCode()
         {
-            throw new System.NotImplementedException();
+            throw new NotImplementedException();
         }
 
         protected PyDataType()

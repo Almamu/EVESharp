@@ -22,7 +22,7 @@ namespace PythonTypes.Types.Primitives
 
         public override int GetHashCode()
         {
-            return HashCode.Combine(base.GetHashCode(), Value);
+            return Value.GetHashCode();
         }
 
         public byte[] Value { get; }

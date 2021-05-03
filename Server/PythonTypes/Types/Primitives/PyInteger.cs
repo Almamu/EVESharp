@@ -19,7 +19,7 @@ namespace PythonTypes.Types.Primitives
 
         public override int GetHashCode()
         {
-            return HashCode.Combine(Value, (int) IntegerType);
+            return Value.GetHashCode();
         }
 
         public enum IntegerTypeEnum

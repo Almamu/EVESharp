@@ -15,6 +15,13 @@ using PythonTypes.Types.Primitives;
 
 namespace Node.Services.War
 {
+    enum FactionWarStatus
+    {
+        CorporationJoining = 0,
+        CorporationActive = 1,
+        CorporationLeaving = 2,
+    };
+    
     public class facWarMgr : IService
     {
         private ChatDB ChatDB { get; }
@@ -87,7 +94,17 @@ namespace Node.Services.War
 
         public PyDataType GetFactionalWarStatus(CallInformation call)
         {
-            return null;
+            if (call.Client.WarFactionID is null)
+                return null;
+            
+            return KeyVal.FromDictionary(
+                new PyDictionary()
+                {
+                    ["factionID"] = call.Client.WarFactionID,
+                    ["startDate"] = DateTime.UtcNow.ToFileTimeUtc(),
+                    ["status"] = (int) FactionWarStatus.CorporationActive
+                }
+            );
         }
 
         public PyDataType IsEnemyFaction(PyInteger factionID, PyInteger warFactionID, CallInformation call)

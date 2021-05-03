@@ -33,6 +33,7 @@ using Node.Exceptions.character;
 using Node.Inventory;
 using Node.Inventory.Items;
 using Node.Inventory.Items.Types;
+using Node.Market;
 using Node.Network;
 using Node.Notifications.Client.Chat;
 using Node.StaticData;
@@ -64,12 +65,13 @@ namespace Node.Services.Characters
         private CacheStorage CacheStorage { get; }
         private NodeContainer Container { get; }
         private NotificationManager NotificationManager { get; }
+        private WalletManager WalletManager { get; init; }
         private readonly Dictionary<int, Bloodline> mBloodlineCache = null;
         private readonly Dictionary<int, Ancestry> mAncestriesCache = null;
         private readonly Configuration.Character mConfiguration = null;
         private readonly Channel Log = null;
 
-        public character(CacheStorage cacheStorage, CharacterDB db, ChatDB chatDB, ItemFactory itemFactory, Logger logger, Configuration.Character configuration, NodeContainer container, NotificationManager notificationManager)
+        public character(CacheStorage cacheStorage, CharacterDB db, ChatDB chatDB, ItemFactory itemFactory, Logger logger, Configuration.Character configuration, NodeContainer container, NotificationManager notificationManager, WalletManager walletManager)
         {
             this.Log = logger.CreateLogChannel("character");
             this.mConfiguration = configuration;
@@ -81,6 +83,7 @@ namespace Node.Services.Characters
             this.NotificationManager = notificationManager;
             this.mBloodlineCache = this.DB.GetBloodlineInformation();
             this.mAncestriesCache = this.DB.GetAncestryInformation(this.mBloodlineCache);
+            this.WalletManager = walletManager;
         }
 
         public PyDataType GetCharactersToSelect(CallInformation call)
@@ -337,6 +340,12 @@ namespace Node.Services.Characters
 
             character.LocationID = ship.ID;
             character.ActiveClone = clone;
+            
+            // get the wallet for the player and give the money specified in the configuration
+            using Wallet wallet = this.WalletManager.AcquireWallet(character.ID, 1000);
+            {
+                wallet.CreateJournalRecord(MarketReference.Inheritance, null, null, this.mConfiguration.Balance);
+            }
             
             // character is 100% created and the base items are too
             // persist objects to database and unload them as they do not really belong to us
