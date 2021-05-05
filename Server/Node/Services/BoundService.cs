@@ -42,11 +42,11 @@ namespace Node.Services
         ///
         /// TODO: FOR NOW JUST RETURN OUR NODE ID AND BE HAPPY ABOUT IT
         /// </summary>
-        /// <param name="stationID"></param>
+        /// <param name="objectID"></param>
         /// <param name="zero"></param>
         /// <param name="call"></param>
         /// <returns>The node where this object is stored</returns>
-        public virtual PyInteger MachoResolveObject(PyInteger stationID, PyInteger zero, CallInformation call)
+        public virtual PyInteger MachoResolveObject(PyInteger objectID, PyInteger zero, CallInformation call)
         {
             throw new NotImplementedException();
         }

@@ -191,6 +191,7 @@ namespace PythonTypes.Types.Primitives
                 PyNone => true,
                 PyBool @bool => @bool == (PyBool) right,
                 PyBuffer @buffer => @buffer == (PyBuffer) right,
+                PyToken @token => @token == (PyToken) right,
                 _ => false
             };
         }

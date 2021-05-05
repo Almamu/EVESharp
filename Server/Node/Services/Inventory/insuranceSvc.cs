@@ -46,9 +46,9 @@ namespace Node.Services.Inventory
             this.MailManager = mailManager;
         }
 
-        public override PyInteger MachoResolveObject(PyInteger stationID, PyInteger zero, CallInformation call)
+        public override PyInteger MachoResolveObject(PyInteger objectID, PyInteger zero, CallInformation call)
         {
-            int solarSystemID = this.ItemFactory.GetStaticStation(stationID).SolarSystemID;
+            int solarSystemID = this.ItemFactory.GetStaticStation(objectID).SolarSystemID;
 
             if (this.SystemManager.SolarSystemBelongsToUs(solarSystemID) == true)
                 return this.BoundServiceManager.Container.NodeID;

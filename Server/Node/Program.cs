@@ -27,6 +27,7 @@ using System.Threading;
 using Common.Database;
 using Common.Logging;
 using Common.Logging.Streams;
+using Node.Agents;
 using Node.Chat;
 using Node.Configuration;
 using Node.Database;
@@ -96,6 +97,7 @@ namespace Node
                 dependencies.Register<ExpressionManager>(Lifestyle.Singleton);
                 dependencies.Register<WalletManager>(Lifestyle.Singleton);
                 dependencies.Register<MailManager>(Lifestyle.Singleton);
+                dependencies.Register<AgentManager>(Lifestyle.Singleton);
 
                 // register the database accessors dependencies
                 dependencies.Register<AccountDB>(Lifestyle.Singleton);
@@ -123,6 +125,7 @@ namespace Node
                 dependencies.Register<RAMDB>(Lifestyle.Singleton);
                 dependencies.Register<FactoryDB>(Lifestyle.Singleton);
                 dependencies.Register<WalletDB>(Lifestyle.Singleton);
+                dependencies.Register<TutorialsDB>(Lifestyle.Singleton);
 
                 // register all the services
                 dependencies.Register<account>(Lifestyle.Singleton);

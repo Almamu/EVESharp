@@ -71,14 +71,14 @@ namespace Node.Services.Stations
             this.ItemFactory = itemFactory;
         }
 
-        public override PyInteger MachoResolveObject(PyInteger stationID, PyInteger zero, CallInformation call)
+        public override PyInteger MachoResolveObject(PyInteger objectID, PyInteger zero, CallInformation call)
         {
             // TODO: CHECK IF THE GIVEN STATION HAS REPROCESSING SERVICES!
             
-            if (this.SystemManager.StationBelongsToUs(stationID) == true)
+            if (this.SystemManager.StationBelongsToUs(objectID) == true)
                 return this.BoundServiceManager.Container.NodeID;
 
-            return this.SystemManager.GetNodeStationBelongsTo(stationID);
+            return this.SystemManager.GetNodeStationBelongsTo(objectID);
         }
 
         protected override BoundService CreateBoundInstance(PyDataType objectData, CallInformation call)

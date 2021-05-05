@@ -128,7 +128,7 @@ REPLACE INTO invPositions (itemID, x, y, z)
  */
 REPLACE INTO invItems (itemID, typeID, ownerID, locationID, singleton, quantity)
  SELECT characterID, typeID, 1, stationID, 1, 1
-  FROM chrStatic;
+  FROM chrInformation WHERE characterID < 100000000;
 /*
  * Insert corporations
  */
