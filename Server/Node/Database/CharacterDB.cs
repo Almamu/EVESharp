@@ -210,7 +210,7 @@ namespace Node.Database
             return result;
         }
 
-        public int CreateCharacter(Type from, string name, ItemEntity owner, int accountID, double balance, double securityRating,
+        public int CreateCharacter(Type from, string name, ItemEntity owner, int accountID, double securityRating,
             int corporationID, int corpRole, int rolesAtAll, int rolesAtBase, int rolesAtHQ, int rolesAtOther,
             long corporationDateTime, long startDateTime, long createDateTime, int ancestryID, int careerID, int schoolID,
             int careerSpecialityID, int gender, int? accessoryID, int? beardID, int costumeID, int? decoID, int eyebrowsID,
@@ -228,7 +228,7 @@ namespace Node.Database
             // now create the character record in the database
             Database.PrepareQuery(
                 "INSERT INTO chrInformation(" + 
-                    "characterID, accountID, title, description, bounty, balance, securityRating, petitionMessage, " +
+                    "characterID, accountID, title, description, bounty, securityRating, petitionMessage, " +
                     "logonMinutes, corporationID, corpRole, rolesAtAll, rolesAtBase, rolesAtHQ, rolesAtOther, " +
                     "corporationDateTime, startDateTime, createDateTime, ancestryID, careerID, schoolID, careerSpecialityID, " +
                     "gender, accessoryID, beardID, costumeID, decoID, eyebrowsID, eyesID, hairID, lipstickID, makeupID, " +
@@ -238,7 +238,7 @@ namespace Node.Database
                     "morph4e, morph4n, morph4s, morph4w, stationID, solarSystemID, constellationID, regionID, online," +
                     "logonDateTime, logoffDateTime" +
                 ")VALUES(" +
-                    "@characterID, @accountID, @title, @description, @bounty, @balance, @securityRating, @petitionMessage, " +
+                    "@characterID, @accountID, @title, @description, @bounty, @securityRating, @petitionMessage, " +
                     "@logonMinutes, @corporationID, @corpRole, @rolesAtAll, @rolesAtBase, @rolesAtHQ, @rolesAtOther, " +
                     "@corporationDateTime, @startDateTime, @createDateTime, @ancestryID, @careerID, @schoolID, @careerSpecialityID, " +
                     "@gender, @accessoryID, @beardID, @costumeID, @decoID, @eyebrowsID, @eyesID, @hairID, @lipstickID, @makeupID, " +
@@ -256,7 +256,6 @@ namespace Node.Database
                     {"@title", ""},
                     {"@description", ""},
                     {"@bounty", 0},
-                    {"@balance", balance},
                     {"@securityRating", securityRating},
                     {"@petitionMessage", ""},
                     {"@logonMinutes", 0},
@@ -551,7 +550,7 @@ namespace Node.Database
         public void UpdateCharacterInformation(Character character)
         {
             Database.PrepareQuery(
-                "UPDATE chrInformation SET online = @online, activeCloneID = @activeCloneID, freeRespecs = @freeRespecs, nextRespecTime = @nextRespecTime, timeLastJump = @timeLastJump, description = @description, warFactionID = @warFactionID, corporationID = @corporationID, corporationDateTime = @corporationDateTime, corpRole = @corpRole WHERE characterID = @characterID",
+                "UPDATE chrInformation SET online = @online, activeCloneID = @activeCloneID, freeRespecs = @freeRespecs, nextRespecTime = @nextRespecTime, timeLastJump = @timeLastJump, description = @description, warFactionID = @warFactionID, corporationID = @corporationID, corporationDateTime = @corporationDateTime, corpRole = @corpRole, corpAccountKey = @corpAccountKey WHERE characterID = @characterID",
                 new Dictionary<string, object>()
                 {
                     {"@characterID", character.ID},
@@ -564,7 +563,8 @@ namespace Node.Database
                     {"@warFactionID", character.WarFactionID},
                     {"@corporationID", character.CorporationID},
                     {"@corporationDateTime", character.CorporationDateTime},
-                    {"@corpRole", character.CorpRole}
+                    {"@corpRole", character.CorpRole},
+                    {"@corpAccountKey", character.CorpAccountKey}
                 }
             );
 

@@ -3,12 +3,13 @@ using System.Collections.Generic;
 using Common.Database;
 using MySql.Data.MySqlClient;
 using Node.Market;
+using PythonTypes.Types.Collections;
 
 namespace Node.Database
 {
     public class WalletDB : DatabaseAccessor
     {
-        public void CreateJournalForCharacter(MarketReference reference, int characterID, int ownerID1,
+        public void CreateJournalForOwner(MarketReference reference, int characterID, int ownerID1,
             int? ownerID2, int? referenceID, double amount, double finalBalance, string reason, int accountKey)
         {
             reason = reason.Substring(0, Math.Min(reason.Length, 43));
@@ -31,11 +32,11 @@ namespace Node.Database
             );
         }
 
-        public void CreateTransactionForCharacter(int characterID, int? clientID, TransactionType sellBuy,
-            int typeID, int quantity, double price, int stationID, bool corpTransaction = false)
+        public void CreateTransactionForOwner(int characterID, int? clientID, TransactionType sellBuy,
+            int typeID, int quantity, double price, int stationID, int accountKey)
         {
             Database.PrepareQuery(
-                "INSERT INTO mktTransactions(transactionDateTime, typeID, quantity, price, transactionType, characterID, clientID, stationID, corpTransaction)VALUE(@transactionDateTime, @typeID, @quantity, @price, @transactionType, @characterID, @clientID, @stationID, @corpTransaction)",
+                "INSERT INTO mktTransactions(transactionDateTime, typeID, quantity, price, transactionType, characterID, clientID, stationID, accountKey)VALUE(@transactionDateTime, @typeID, @quantity, @price, @transactionType, @characterID, @clientID, @stationID, @accountKey)",
                 new Dictionary<string, object>()
                 {
                     {"@transactionDateTime", DateTime.UtcNow.ToFileTimeUtc()},
@@ -46,7 +47,7 @@ namespace Node.Database
                     {"@characterID", characterID},
                     {"@clientID", clientID},
                     {"@stationID", stationID},
-                    {"@corpTransaction", corpTransaction}
+                    {"@accountKey", accountKey}
                 }
             );
         }
@@ -80,21 +81,22 @@ namespace Node.Database
 
             // get the current owner's balance
             // TODO: SUPPORT CORPS AND WALLET KEYS!!
-            balance = this.GetCharacterBalance(ref connection, ownerID);
+            balance = this.GetWalletBalance(ref connection, ownerID, walletKey);
             
             return connection;
         }
 
-        public double GetCharacterBalance(ref MySqlConnection connection, int characterID)
+        public double GetWalletBalance(ref MySqlConnection connection, int ownerID, int walletKey)
         {
             MySqlDataReader reader = Database.PrepareQuery(ref connection,
-                "SELECT balance FROM chrInformation WHERE characterID = @characterID",
+                "SELECT balance FROM mktWallets WHERE `key` = @walletKey AND ownerID = @ownerID",
                 new Dictionary<string, object>()
                 {
-                    {"@characterID", characterID}
+                    {"@walletKey", walletKey},
+                    {"@ownerID", ownerID}
                 }
             );
-            
+
             using (reader)
             {
                 if (reader.Read() == false)
@@ -104,17 +106,18 @@ namespace Node.Database
             }
         }
 
-        public double GetCharacterBalance(int characterID)
+        public double GetWalletBalance(int ownerID, int walletKey)
         {
             MySqlConnection connection = null;
             MySqlDataReader reader = Database.PrepareQuery(ref connection,
-                "SELECT balance FROM chrInformation WHERE characterID = @characterID",
+                "SELECT balance FROM mktWallets WHERE `key` = @walletKey AND ownerID = @ownerID",
                 new Dictionary<string, object>()
                 {
-                    {"@characterID", characterID}
+                    {"@walletKey", walletKey},
+                    {"@ownerID", ownerID}
                 }
             );
-            
+
             using (connection)
             using (reader)
             {
@@ -125,27 +128,50 @@ namespace Node.Database
             }
         }
 
-        public void SetCharacterBalance(int characterID, double balance)
+        public double GetCharacterBalance(ref MySqlConnection connection, int characterID)
         {
-            Database.PrepareQuery("UPDATE chrInformation SET balance = @balance WHERE characterID = @characterID",
+            return this.GetWalletBalance(ref connection, characterID, 1000);
+        }
+
+        public double GetCharacterBalance(int characterID)
+        {
+            return this.GetWalletBalance(characterID, 1000);
+        }
+
+        public void SetWalletBalance(int accountKey, int ownerID, double balance)
+        {
+            Database.PrepareQuery(
+                "UPDATE mktWallets SET balance = @balance WHERE ownerID = @ownerID AND `key` = @accountKey",
                 new Dictionary<string, object>()
                 {
                     {"@balance", balance},
-                    {"@characterID", characterID}
+                    {"@ownerID", ownerID},
+                    {"@accountKey", accountKey}
                 }
             );
         }
 
-        public void SetCharacterBalance(MySqlConnection connection, int characterID, double balance)
+        public void SetWalletBalance(MySqlConnection connection, int accountKey, int ownerID, double balance)
         {
             Database.PrepareQuery(ref connection,
-                "UPDATE chrInformation SET balance = @balance WHERE characterID = @characterID",
+                "UPDATE mktWallets SET balance = @balance WHERE ownerID = @ownerID AND `key` = @accountKey",
                 new Dictionary<string, object>()
                 {
                     {"@balance", balance},
-                    {"@characterID", characterID}
+                    {"@ownerID", ownerID},
+                    {"@accountKey", accountKey}
                 }
             ).Close();
+        }
+        
+        public void SetCharacterBalance(int characterID, double balance)
+        {
+            this.SetWalletBalance(1000, characterID, balance);
+        }
+
+        public void SetCharacterBalance(MySqlConnection connection, int characterID, double balance)
+        {
+            this.SetWalletBalance(connection, 1000, characterID, balance);
         }
 
         /// <summary>
@@ -158,6 +184,36 @@ namespace Node.Database
         public void ReleaseLock(MySqlConnection connection, int ownerID, int walletKey)
         {
             Database.ReleaseLock(connection, $"wallet_{ownerID}_{walletKey}");
+        }
+
+        /// <summary>
+        /// Creates a new wallet for the given <paramref name="ownerID"/> with the given <paramref name="walletKey"/>
+        /// </summary>
+        /// <param name="ownerID"></param>
+        /// <param name="walletKey"></param>
+        /// <param name="startBalance"></param>
+        public void CreateWallet(int ownerID, int walletKey, double startBalance)
+        {
+            Database.PrepareQuery(
+                "INSERT INTO mktWallets(`key`, ownerID, balance)VALUES(@walletKey, @ownerID, @balance)",
+                new Dictionary<string, object>()
+                {
+                    {"@walletKey", walletKey},
+                    {"@ownerID", ownerID},
+                    {"@balance", startBalance}
+                }
+            );
+        }
+
+        public PyList GetWalletDivisionsForOwner(int ownerID, List<int> walletKeys)
+        {
+            return Database.PreparePackedRowListQuery(
+                $"SELECT `key`, balance FROM mktWallets WHERE ownerID = @ownerID AND `key` IN ({string.Join(',', walletKeys)})",
+                new Dictionary<string, object>()
+                {
+                    {"@ownerID", ownerID}
+                }
+            );
         }
         
         public WalletDB(DatabaseConnection db) : base(db)

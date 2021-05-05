@@ -37,6 +37,7 @@ using Node.Market;
 using Node.Network;
 using Node.Notifications.Client.Chat;
 using Node.StaticData;
+using Node.StaticData.Corporation;
 using Node.StaticData.Inventory;
 using PythonTypes.Types.Collections;
 using PythonTypes.Types.Database;
@@ -245,7 +246,7 @@ namespace Node.Services.Characters
             );
             
             int itemID = this.DB.CreateCharacter(
-                ancestry.Bloodline.CharacterType, characterName, owner, call.Client.AccountID, this.mConfiguration.Balance,
+                ancestry.Bloodline.CharacterType, characterName, owner, call.Client.AccountID,
                 0.0, corporationID, 0, 0, 0, 0, 0,
                 currentTime, currentTime, currentTime, ancestry.ID,
                 careerID, schoolID, careerSpecialityID, genderID,
@@ -256,6 +257,9 @@ namespace Node.Services.Characters
                 morph3e, morph3n, morph3s, morph3w, morph4e, morph4n, morph4s, morph4w,
                 stationID, solarSystemID, constellationID, regionID
             );
+            
+            // create the wallet for the player
+            this.WalletManager.CreateWallet(itemID, 1000, this.mConfiguration.Balance);
 
             return this.ItemFactory.LoadItem(itemID) as Character;
         }
@@ -430,6 +434,22 @@ namespace Node.Services.Characters
             call.Client.RolesAtOther = character.RolesAtOther;
             call.Client.ShipID = character.LocationID;
             call.Client.RaceID = this.mAncestriesCache[character.AncestryID].Bloodline.RaceID;
+            
+            // check if the character has any accounting roles and set the correct accountKey based on the data
+            if (CorporationRole.AccountCanQuery1.Is(call.Client.CorporationRole) && character.CorpAccountKey == 1000)
+                call.Client.CorpAccountKey = 1000;
+            if (CorporationRole.AccountCanQuery2.Is(call.Client.CorporationRole) && character.CorpAccountKey == 1001)
+                call.Client.CorpAccountKey = 1001;
+            if (CorporationRole.AccountCanQuery3.Is(call.Client.CorporationRole) && character.CorpAccountKey == 1002)
+                call.Client.CorpAccountKey = 1002;
+            if (CorporationRole.AccountCanQuery4.Is(call.Client.CorporationRole) && character.CorpAccountKey == 1003)
+                call.Client.CorpAccountKey = 1003;
+            if (CorporationRole.AccountCanQuery5.Is(call.Client.CorporationRole) && character.CorpAccountKey == 1004)
+                call.Client.CorpAccountKey = 1004;
+            if (CorporationRole.AccountCanQuery6.Is(call.Client.CorporationRole) && character.CorpAccountKey == 1005)
+                call.Client.CorpAccountKey = 1005;
+            if (CorporationRole.AccountCanQuery7.Is(call.Client.CorporationRole) && character.CorpAccountKey == 1006)
+                call.Client.CorpAccountKey = 1006;
 
             // set the war faction id if present
             if (character.WarFactionID is not null)

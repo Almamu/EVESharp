@@ -75,8 +75,35 @@ namespace Node.Services.Market
                 }
             }
             
-            return this.DB.CharGetNewTransactions(
-                callerCharacterID, null, transactionType, typeID, quantity, minPrice
+            return this.DB.GetNewTransactions(
+                callerCharacterID, null, transactionType, typeID, quantity, minPrice, 1000
+            );
+        }
+
+        public PyDataType CorpGetNewTransactions(PyInteger sellBuy, PyInteger typeID, PyDataType clientID,
+            PyInteger quantity, PyDataType fromDate, PyDataType maxPrice, PyInteger minPrice, PyInteger accountKey, PyInteger who,
+            CallInformation call)
+        {
+            // TODO: SUPPORT THE "who" PARAMETER
+            int corporationID = call.Client.CorporationID;
+            
+            TransactionType transactionType = TransactionType.Either;
+
+            if (sellBuy is PyInteger)
+            {
+                switch ((int) (sellBuy as PyInteger))
+                {
+                    case 0:
+                        transactionType = TransactionType.Sell;
+                        break;
+                    case 1:
+                        transactionType = TransactionType.Buy;
+                        break;
+                }
+            }
+            
+            return this.DB.GetNewTransactions(
+                corporationID, null, transactionType, typeID, quantity, minPrice, accountKey
             );
         }
 
@@ -310,8 +337,8 @@ namespace Node.Services.Market
                     // create the required records for the wallet
                     wallet.CreateJournalRecord(MarketReference.MarketTransaction, order.CharacterID, character.ID, null, profit);
                     wallet.CreateJournalRecord(MarketReference.TransactionTax, null, null, -tax);
-                    this.WalletManager.CreateTransactionRecord(character.ID, TransactionType.Sell, order.CharacterID, typeID, quantityToSell, price, stationID);
-                    this.WalletManager.CreateTransactionRecord(order.CharacterID, TransactionType.Buy, character.ID, typeID, quantityToSell, price, stationID);
+                    this.WalletManager.CreateTransactionRecord(character.ID, TransactionType.Sell, order.CharacterID, typeID, quantityToSell, price, stationID, order.AccountID);
+                    this.WalletManager.CreateTransactionRecord(order.CharacterID, TransactionType.Buy, character.ID, typeID, quantityToSell, price, stationID, order.AccountID);
                     
                     // create the new item that will be used by the player
                     ItemEntity item = this.ItemFactory.CreateSimpleItem(
@@ -513,8 +540,8 @@ namespace Node.Services.Market
                     }
                     
                     // create the transaction records for both characters
-                    this.WalletManager.CreateTransactionRecord(character.ID, TransactionType.Buy, order.CharacterID, typeID, quantityToBuy, price, stationID);
-                    this.WalletManager.CreateTransactionRecord(order.CharacterID, TransactionType.Sell, character.ID, typeID, quantityToBuy, price, stationID);
+                    this.WalletManager.CreateTransactionRecord(character.ID, TransactionType.Buy, order.CharacterID, typeID, quantityToBuy, price, stationID, order.AccountID);
+                    this.WalletManager.CreateTransactionRecord(order.CharacterID, TransactionType.Sell, character.ID, typeID, quantityToBuy, price, stationID, order.AccountID);
 
                     long stationNode = this.SystemManager.GetNodeStationBelongsTo(stationID);
                         

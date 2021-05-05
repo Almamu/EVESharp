@@ -82,7 +82,7 @@ namespace Node.Network
             // build a proper notification for this
             this.SendNotification(entry.NotificationName, NOTIFICATION_TYPE_CHARACTER, characterID, entry.GetElements());
         }
-
+        
         public void NotifyCorporation(int corporationID, string type, PyTuple notification)
         {
             this.SendNotification(type, NOTIFICATION_TYPE_CORPORATON, corporationID, notification);

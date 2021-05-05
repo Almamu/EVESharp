@@ -34,7 +34,7 @@ namespace Node.Inventory.Items.Types
         public Character(ClientManager clientManager, TimerManager timerManager, ItemEntity from, int characterId,
             int accountId, int? activeCloneID, string title, string description,
             double securityRating, string petitionMessage, int logonMinutes, int corporationId, long corpRole,
-            int rolesAtAll, int rolesAtBase, int rolesAtHq, int rolesAtOther, long corporationDateTime,
+            long rolesAtAll, long rolesAtBase, long rolesAtHq, long rolesAtOther, long corporationDateTime,
             long startDateTime, long createDateTime, int ancestryId, int careerId, int schoolId, int careerSpecialityId,
             int gender, int? accessoryId, int? beardId, int costumeId, int? decoId, int eyebrowsId, int eyesId,
             int hairId, int? lipstickId, int? makeupId, int skinId, int backgroundId, int lightId, double headRotation1,
@@ -43,7 +43,7 @@ namespace Node.Inventory.Items.Types
             double? morph1W, double? morph2E, double? morph2N, double? morph2S, double? morph2W, double? morph3E,
             double? morph3N, double? morph3S, double? morph3W, double? morph4E, double? morph4N, double? morph4S,
             double? morph4W, int stationId, int solarSystemId, int constellationId, int regionId, int online,
-            int freeReSpecs, long nextReSpecTime, long timeLastJump, int titleMask, int? warFactionID) : base(from)
+            int freeReSpecs, long nextReSpecTime, long timeLastJump, int titleMask, int? warFactionID, int corpAccountKey) : base(from)
         {
             this.ClientManager = clientManager;
             this.TimerManager = timerManager;
@@ -116,6 +116,7 @@ namespace Node.Inventory.Items.Types
             this.mTimeLastJump = timeLastJump;
             this.mTitleMask = titleMask;
             this.mWarFactionID = warFactionID;
+            this.mCorpAccountKey = corpAccountKey;
         }
 
         private ClientManager ClientManager { get; }
@@ -178,10 +179,10 @@ namespace Node.Inventory.Items.Types
                 this.mCorpRole = value;
             }
         }
-        public int RolesAtAll => mRolesAtAll;
-        public int RolesAtBase => mRolesAtBase;
-        public int RolesAtHq => mRolesAtHq;
-        public int RolesAtOther => mRolesAtOther;
+        public long RolesAtAll => mRolesAtAll;
+        public long RolesAtBase => mRolesAtBase;
+        public long RolesAtHq => mRolesAtHq;
+        public long RolesAtOther => mRolesAtOther;
 
         public long CorporationDateTime
         {
@@ -191,6 +192,12 @@ namespace Node.Inventory.Items.Types
                 this.Dirty = true;
                 this.mCorporationDateTime = value;
             }
+        }
+
+        public int CorpAccountKey
+        {
+            get => this.mCorpAccountKey;
+            set => this.mCorpAccountKey = value;
         }
         
         public long StartDateTime => mStartDateTime;
@@ -323,10 +330,10 @@ namespace Node.Inventory.Items.Types
         private int mLogonMinutes;
         private int mCorporationID;
         private long mCorpRole;
-        private int mRolesAtAll;
-        private int mRolesAtBase;
-        private int mRolesAtHq;
-        private int mRolesAtOther;
+        private long mRolesAtAll;
+        private long mRolesAtBase;
+        private long mRolesAtHq;
+        private long mRolesAtOther;
         private long mCorporationDateTime;
         private long mStartDateTime;
         private long mCreateDateTime;
@@ -382,6 +389,7 @@ namespace Node.Inventory.Items.Types
         private long mTimeLastJump;
         private int mTitleMask;
         private int? mWarFactionID;
+        private int mCorpAccountKey;
         
         private List<SkillQueueEntry> mSkillQueue;
         private Corporation mCorporation = null;

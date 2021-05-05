@@ -13,7 +13,7 @@ CREATE TABLE `mktTransactions` (
   `characterID` int(10) unsigned NOT NULL default '0',
   `clientID` int(10) unsigned default NULL,
   `stationID` int(10) unsigned NOT NULL default '0',
-  `corpTransaction` int(10) unsigned NOT NULL default '0',
+  `accountKey` int(10) unsigned NOT NULL default '1000',
   PRIMARY KEY  (`transactionID`),
   KEY `stationID` (`stationID`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;

@@ -737,7 +737,7 @@ namespace Node.Database
             MySqlConnection connection = null;
             MySqlDataReader reader = Database.PrepareQuery(
                 ref connection,
-                $"SELECT COUNT(*) FROM eveNames WHERE groupID = 2 itemName LIKE @corporationName",
+                $"SELECT COUNT(*) FROM eveNames WHERE groupID = 2 AND itemName LIKE @corporationName",
                 new Dictionary<string, object>()
                 {
                     {"@corporationName", corporationName}

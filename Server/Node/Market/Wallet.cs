@@ -43,7 +43,7 @@ namespace Node.Market
             this.Balance += amount;
             
             // create journal entry
-            this.DB.CreateJournalForCharacter(
+            this.DB.CreateJournalForOwner(
                 reference, this.OwnerID, ownerID1, ownerID2, referenceID, amount,
                 this.Balance, reason, this.WalletKey
             );
@@ -63,7 +63,7 @@ namespace Node.Market
             this.Balance += amount;
             
             // create journal entry
-            this.DB.CreateJournalForCharacter(
+            this.DB.CreateJournalForOwner(
                 reference, this.OwnerID, this.OwnerID, ownerID2, referenceID, amount,
                 this.Balance, reason, this.WalletKey
             );
@@ -83,8 +83,8 @@ namespace Node.Market
             this.Balance += amount;
             // market transactions do not affect the wallet value because these are paid either when placing the sell/buy order
             // or when fullfiling it
-            this.DB.CreateTransactionForCharacter(
-                this.OwnerID, otherID, type, typeID, quantity, amount, stationID
+            this.DB.CreateTransactionForOwner(
+                this.OwnerID, otherID, type, typeID, quantity, amount, stationID, this.WalletKey
             );
         }
         
@@ -93,8 +93,8 @@ namespace Node.Market
             // if the balance changed, update the record in the database
             if (Math.Abs(this.Balance - this.OriginalBalance) > 0.01)
             {
-                // TODO: PROPERLY SUPPORT WALLET KEYS AND OWNERIDS
-                this.DB.SetCharacterBalance(this.Connection, this.OwnerID, this.Balance);
+                this.DB.SetWalletBalance(this.Connection, this.WalletKey, this.OwnerID, this.Balance);
+                // TODO: SEND NOTIFICATION TO CORRECT OWNER
                 // send notification to the client
                 this.NotificationManager.NotifyCharacter(this.OwnerID, 
                     new OnAccountChange(this.WalletKey, this.OwnerID, this.Balance)

@@ -286,6 +286,12 @@ namespace Node.Network
             set => this.mSession["corpid"] = value;
         }
 
+        public int CorpAccountKey
+        {
+            get => this.mSession["corpAccountKey"] as PyInteger;
+            set => this.mSession["corpAccountKey"] = value;
+        }
+
         public int SolarSystemID2
         {
             get => this.mSession["solarsystemid2"] as PyInteger;

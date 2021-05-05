@@ -58,7 +58,7 @@ namespace Node.Database
         {
             MySqlConnection connection = null;
             MySqlDataReader reader = Database.PrepareQuery(ref connection,
-                $"SELECT allianceID, shortName FROM alliance_shortnames WHERE allianceID IN ({PyString.Join(',', ids)}"
+                $"SELECT allianceID, shortName FROM alliance_shortnames WHERE allianceID IN ({PyString.Join(',', ids)})"
             ).ExecuteReader();
             
             using (connection)
@@ -72,7 +72,7 @@ namespace Node.Database
         {
             MySqlConnection connection = null;
             MySqlDataReader reader = Database.PrepareQuery(ref connection,
-                $"SELECT corporationID, tickerName, shape1, shape2, shape3, color1, color2, color3 FROM corporation WHERE corporationID IN ({PyString.Join(',', ids)}"
+                $"SELECT corporationID, tickerName, shape1, shape2, shape3, color1, color2, color3 FROM corporation WHERE corporationID IN ({PyString.Join(',', ids)})"
             ).ExecuteReader();
             
             using (connection)

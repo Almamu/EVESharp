@@ -26,7 +26,7 @@ namespace Node.Database
     {
         private TypeManager TypeManager { get; }
 
-        public Rowset CharGetNewTransactions(int characterID, int? clientID, TransactionType sellBuy, int? typeID, int quantity, int minPrice)
+        public Rowset GetNewTransactions(int characterID, int? clientID, TransactionType sellBuy, int? typeID, int quantity, int minPrice, int? accountKey)
         {
             Dictionary<string, object> parameters = new Dictionary<string, object>()
             {
@@ -56,6 +56,12 @@ namespace Node.Database
             {
                 query += " AND clientID=@clientID";
                 parameters["@clientID"] = (int) clientID;
+            }
+
+            if (accountKey != null)
+            {
+                query += " AND accountKey = @accountKey";
+                parameters["@accountKey"] = (int) accountKey;
             }
             
             return Database.PrepareRowsetQuery(query, parameters);

@@ -299,7 +299,7 @@ namespace Node.Services.Corporations
                         shape1, shape2, shape3, color1, color2, color3, typeface as PyString
                     );
                     // create default titles
-                    
+                    this.DB.CreateDefaultTitlesForCorporation(corporationID);
                     // create the record in the journal
                     wallet.CreateJournalRecord(MarketReference.CorporationRegistrationFee, null, null, corporationStartupCost);
                     
@@ -316,11 +316,22 @@ namespace Node.Services.Corporations
                     call.Client.CorporationRole = long.MaxValue; // this gives all the permissions to the character
                     // update the character to reflect the new ownership
                     character.CorporationID = corporationID;
-                    character.CorpRole = (long) CorporationRole.Director;
+                    character.CorpRole = long.MaxValue;
                     character.CorporationDateTime = DateTime.UtcNow.ToFileTimeUtc();
                     // notify cluster about the corporation changes
                     this.NotificationManager.NotifyCorporation(change.OldCorporationID, change);
                     this.NotificationManager.NotifyCorporation(change.NewCorporationID, change);
+                    // create default wallets
+                    this.WalletManager.CreateWallet(corporationID, 1000, 0.0);
+                    this.WalletManager.CreateWallet(corporationID, 1001, 0.0);
+                    this.WalletManager.CreateWallet(corporationID, 1002, 0.0);
+                    this.WalletManager.CreateWallet(corporationID, 1003, 0.0);
+                    this.WalletManager.CreateWallet(corporationID, 1004, 0.0);
+                    this.WalletManager.CreateWallet(corporationID, 1005, 0.0);
+                    this.WalletManager.CreateWallet(corporationID, 1006, 0.0);
+
+                    // set the default wallet for the character
+                    call.Client.CorpAccountKey = 1000;
 
                     character.Persist();
                     
@@ -455,6 +466,27 @@ namespace Node.Services.Corporations
                 return null;
             
             return this.DB.GetMemberTrackingInfo(call.Client.CorporationID);
+        }
+
+        public PyDataType SetAccountKey(PyInteger accountKey, CallInformation call)
+        {
+            // check if the character has any accounting roles and set the correct accountKey based on the data
+            if (CorporationRole.AccountCanTake1.Is(call.Client.CorporationRole) && accountKey == 1000)
+                call.Client.CorpAccountKey = 1000;
+            if (CorporationRole.AccountCanTake2.Is(call.Client.CorporationRole) && accountKey == 1001)
+                call.Client.CorpAccountKey = 1001;
+            if (CorporationRole.AccountCanTake3.Is(call.Client.CorporationRole) && accountKey == 1002)
+                call.Client.CorpAccountKey = 1002;
+            if (CorporationRole.AccountCanTake4.Is(call.Client.CorporationRole) && accountKey == 1003)
+                call.Client.CorpAccountKey = 1003;
+            if (CorporationRole.AccountCanTake5.Is(call.Client.CorporationRole) && accountKey == 1004)
+                call.Client.CorpAccountKey = 1004;
+            if (CorporationRole.AccountCanTake6.Is(call.Client.CorporationRole) && accountKey == 1005)
+                call.Client.CorpAccountKey = 1005;
+            if (CorporationRole.AccountCanTake7.Is(call.Client.CorporationRole) && accountKey == 1006)
+                call.Client.CorpAccountKey = 1006;
+            
+            return null;
         }
 
         public PyDataType UpdateCorporationAbilities(CallInformation call)
