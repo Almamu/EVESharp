@@ -570,22 +570,6 @@ CREATE TABLE `languages` (
 
 insert  into `languages`(`languageID`,`languageName`,`translatedLanguageName`) values ('DE','German','Deutsch'),('EN','English','English'),('ES','Spanish','Español'),('FR','French','Français'),('IS','Icelandic',''),('IT','Italian','Italiano'),('JA','Japanese',''),('KO','Korean',''),('PT','Portuguese','Português'),('RU','Russian',' ^DC^DA^DA^D:^D8^D9^D'),('ZH','Chinese','-N^');
 
-/*Table structure for table `market_keyMap` */
-
-DROP TABLE IF EXISTS `market_keyMap`;
-
-CREATE TABLE `market_keyMap` (
-  `accountKey` int(10) unsigned NOT NULL default '0',
-  `accountType` varchar(100) NOT NULL default '',
-  `accountName` varchar(100) NOT NULL default '',
-  `description` varchar(100) NOT NULL default '',
-  PRIMARY KEY  (`accountKey`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
-/*Data for the table `market_keyMap` */
-
-insert  into `market_keyMap`(`accountKey`,`accountType`,`accountName`,`description`) values (1000,'A','cash',''),(1100,'A','property',''),(1500,'A','escrow',''),(1800,'A','receivables',''),(2000,'L','payables',''),(2010,'L','gold',''),(2900,'L','equity',''),(3000,'R','sales',''),(4000,'C','purchases','');
-
 /*Table structure for table `market_reftypes` */
 
 DROP TABLE IF EXISTS `market_refTypes`;

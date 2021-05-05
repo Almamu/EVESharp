@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Common.Services;
+using EVE;
 using EVE.Packets.Complex;
 using EVE.Packets.Exceptions;
 using MySql.Data.MySqlClient;
@@ -82,7 +83,7 @@ namespace Node.Services.Account
             return CachedMethodCallResult.FromCacheHint(cacheHint);
         }
 
-        public PyDataType GetJournal(PyInteger marketKey, PyInteger fromDate, PyInteger entryTypeID,
+        public PyDataType GetJournal(PyInteger accountKey, PyInteger fromDate, PyInteger entryTypeID,
             PyBool isCorpWallet, PyInteger transactionID, PyInteger rev, CallInformation call)
         {
             int? transactionIDint = null;
@@ -95,10 +96,14 @@ namespace Node.Services.Account
             if (isCorpWallet == true)
                 entityID = call.Client.CorporationID;
 
-            if (this.WalletManager.IsAccessAllowed(call.Client, marketKey, entityID) == false)
+            if (this.WalletManager.IsAccessAllowed(call.Client, accountKey, entityID) == false)
                 throw new CrpAccessDenied("You are not allowed to access that division's wallet");
+            
+            // journal requires accountant roles for corporation
+            if (entityID == call.Client.CorporationID && (CorporationRole.Accountant.Is(call.Client.CorporationRole) == false || CorporationRole.JuniorAccountant.Is(call.Client.CorporationRole) == false))
+                throw new CrpAccessDenied(MLS.UI_SHARED_WALLETHINT8);
 
-            return this.DB.GetJournal(entityID, entryTypeID, marketKey, fromDate, transactionIDint);
+            return this.DB.GetJournal(entityID, entryTypeID, accountKey, fromDate, transactionIDint);
         }
 
         public PyDataType GetWalletDivisionsInfo(CallInformation call)

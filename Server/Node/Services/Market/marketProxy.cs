@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using Common.Services;
+using EVE;
 using EVE.Packets.Complex;
 using EVE.Packets.Exceptions;
 using MySql.Data.MySqlClient;
 using Node.Database;
+using Node.Exceptions.corpRegistry;
 using Node.Exceptions.inventory;
 using Node.Exceptions.marketProxy;
 using Node.Inventory;
@@ -16,6 +18,7 @@ using Node.Notifications.Client.Market;
 using Node.Notifications.Nodes.Inventory;
 using Node.Services.Account;
 using Node.StaticData;
+using Node.StaticData.Corporation;
 using Node.StaticData.Inventory;
 using PythonTypes.Types.Primitives;
 
@@ -62,9 +65,9 @@ namespace Node.Services.Market
             
             TransactionType transactionType = TransactionType.Either;
 
-            if (sellBuy is PyInteger)
+            if (sellBuy is not null)
             {
-                switch ((int) (sellBuy as PyInteger))
+                switch (sellBuy.Value)
                 {
                     case 0:
                         transactionType = TransactionType.Sell;
@@ -89,9 +92,9 @@ namespace Node.Services.Market
             
             TransactionType transactionType = TransactionType.Either;
 
-            if (sellBuy is PyInteger)
+            if (sellBuy is not null)
             {
-                switch ((int) (sellBuy as PyInteger))
+                switch (sellBuy.Value)
                 {
                     case 0:
                         transactionType = TransactionType.Sell;
@@ -101,6 +104,10 @@ namespace Node.Services.Market
                         break;
                 }
             }
+            
+            // transactions requires accountant roles for corporation
+            if (corporationID == call.Client.CorporationID && (CorporationRole.Accountant.Is(call.Client.CorporationRole) == false || CorporationRole.JuniorAccountant.Is(call.Client.CorporationRole) == false))
+                throw new CrpAccessDenied(MLS.UI_SHARED_WALLETHINT8);
             
             return this.DB.GetNewTransactions(
                 corporationID, null, transactionType, typeID, quantity, minPrice, accountKey
