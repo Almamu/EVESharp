@@ -87,7 +87,7 @@ namespace Node.Database
         public Rowset GetSharesByShareholder(int characterID)
         {
             return Database.PrepareRowsetQuery(
-                "SELECT corporationID, shares FROM crpCharShares WHERE characterID=@characterID",
+                "SELECT corporationID, shares FROM crpShares WHERE ownerID = @characterID",
                 new Dictionary<string, object>()
                 {
                     {"@characterID", characterID}
@@ -95,6 +95,52 @@ namespace Node.Database
             );
         }
 
+        public PyDataType GetShareholders(int corporationID)
+        {
+            return Database.PrepareDictRowListQuery(
+                "SELECT ownerID AS shareholderID, crpShares.corporationID, chrInformation.corporationID AS shareholderCorporationID, shares FROM crpShares LEFT JOIN chrInformation ON characterID = ownerID WHERE crpShares.corporationID = @corporationID",
+                new Dictionary<string, object>()
+                {
+                    {"@corporationID", corporationID}
+                }
+            );
+        }
+
+        public int GetSharesForOwner(int corporationID, int ownerID)
+        {
+            MySqlConnection connection = null;
+            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+                "SELECT shares FROM crpShares WHERE ownerID = @ownerID AND corporationID = @corporationID",
+                new Dictionary<string, object>()
+                {
+                    {"@ownerID", ownerID},
+                    {"@corporationID", corporationID}
+                }
+            );
+            
+            using(connection)
+            using (reader)
+            {
+                if (reader.Read() == false)
+                    return 0;
+
+                return reader.GetInt32(0);
+            }
+        }
+
+        public void UpdateShares(int corporationID, int ownerID, int newSharesCount)
+        {
+            Database.PrepareQuery(
+                "REPLACE INTO crpShares(ownerID, corporationID, shares) VALUES (@ownerID, @corporationID, @shares)",
+                new Dictionary<string, object>()
+                {
+                    {"@ownerID", ownerID},
+                    {"@corporationID", corporationID},
+                    {"@shares", newSharesCount}
+                }
+            );
+        }
+        
         public Rowset GetMedalsReceived(int characterID)
         {
             return Database.PrepareRowsetQuery(

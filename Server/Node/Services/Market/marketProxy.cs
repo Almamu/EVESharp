@@ -610,6 +610,15 @@ namespace Node.Services.Market
             }
         }
 
+
+        public PyDataType PlaceCharOrder(PyInteger stationID, PyInteger typeID, PyDecimal price, PyInteger quantity,
+            PyInteger bid, PyInteger range, PyDataType itemID, PyInteger minVolume, PyInteger duration, PyInteger useCorp,
+            PyDataType located, CallInformation call)
+        {
+            return this.PlaceCharOrder(stationID, typeID, price, quantity, bid, range, itemID, minVolume, duration,
+                useCorp == 1, located, call);
+        }
+
         public PyDataType PlaceCharOrder(PyInteger stationID, PyInteger typeID, PyDecimal price, PyInteger quantity,
             PyInteger bid, PyInteger range, PyDataType itemID, PyInteger minVolume, PyInteger duration, PyBool useCorp,
             PyDataType located, CallInformation call)

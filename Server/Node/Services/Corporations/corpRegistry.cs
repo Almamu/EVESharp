@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Xml.XPath;
+using EVE;
 using EVE.Packets.Exceptions;
 using Node.Database;
 using Node.Exceptions;
@@ -96,7 +97,89 @@ namespace Node.Services.Corporations
 
         public PyDataType GetSharesByShareholder(PyBool corpShares, CallInformation call)
         {
-            return this.DB.GetSharesByShareholder(call.Client.EnsureCharacterIsSelected());
+            int entityID = call.Client.EnsureCharacterIsSelected();
+
+            if (corpShares == true)
+                entityID = call.Client.CorporationID;
+            
+            return this.DB.GetSharesByShareholder(entityID);
+        }
+
+        public PyDataType GetShareholders(PyInteger corporationID, CallInformation call)
+        {
+            return this.DB.GetShareholders(corporationID);
+        }
+
+        public PyDataType MoveCompanyShares(PyInteger corporationID, PyInteger to, PyInteger quantity, CallInformation call)
+        {
+            // check that we're allowed to do that
+            if (CorporationRole.Director.Is(call.Client.CorporationRole) == false)
+                throw new CrpAccessDenied(MLS.UI_CORP_DO_NOT_HAVE_ROLE_DIRECTOR);
+            
+            // TODO: the WALLETKEY SHOULD BE SOMETHING ELSE?
+            using (Wallet corporationWallet = this.WalletManager.AcquireWallet(call.Client.CorporationID, 2000))
+            using (Wallet shareholderWallet = this.WalletManager.AcquireWallet(to, 2000))
+            {
+                // first make sure there's enough shares available
+                int availableShares = this.DB.GetSharesForOwner(call.Client.CorporationID, call.Client.CorporationID);
+
+                if (availableShares < quantity)
+                    throw new NotEnoughShares(quantity, availableShares);
+            
+                // get the shares the destination already has
+                int currentShares = this.DB.GetSharesForOwner(call.Client.CorporationID, to);
+                
+                // make the transaction
+                this.DB.UpdateShares(call.Client.CorporationID, to, quantity + currentShares);
+                this.DB.UpdateShares(call.Client.CorporationID, call.Client.CorporationID, availableShares - quantity);
+                
+                // create the notifications
+                OnShareChange changeForNewHolder = new OnShareChange(to, call.Client.CorporationID,
+                    currentShares == 0 ? null : currentShares, currentShares + quantity);
+                OnShareChange changeForRestCorp = new OnShareChange(call.Client.CorporationID,
+                    call.Client.CorporationID, availableShares, availableShares - quantity);
+                
+                // send both notifications
+                this.NotificationManager.NotifyCorporation(call.Client.CorporationID, changeForNewHolder);
+                this.NotificationManager.NotifyCorporation(call.Client.CorporationID, changeForRestCorp);
+            }
+
+            return null;
+        }
+
+        public PyDataType MovePrivateShares(PyInteger corporationID, PyInteger toShareholderID, PyInteger quantity, CallInformation call)
+        {
+            int callerCharacterID = call.Client.EnsureCharacterIsSelected();
+            
+            // TODO: the WALLETKEY SHOULD BE SOMETHING ELSE?
+            using (Wallet corporationWallet = this.WalletManager.AcquireWallet(callerCharacterID, 2000))
+            using (Wallet shareholderWallet = this.WalletManager.AcquireWallet(toShareholderID, 2000))
+            {
+                // first make sure there's enough shares available
+                int availableShares = this.DB.GetSharesForOwner(corporationID, callerCharacterID);
+
+                if (availableShares < quantity)
+                    throw new NotEnoughShares(quantity, availableShares);
+            
+                // get the shares the destination already has
+                int currentShares = this.DB.GetSharesForOwner(corporationID, toShareholderID);
+                
+                // make the transaction
+                this.DB.UpdateShares(corporationID, toShareholderID, quantity + currentShares);
+                this.DB.UpdateShares(corporationID, callerCharacterID, availableShares - quantity);
+                
+                // create the notifications
+                OnShareChange changeForNewHolder = new OnShareChange(toShareholderID, call.Client.CorporationID,
+                    currentShares == 0 ? null : currentShares, currentShares + quantity);
+                OnShareChange changeForRestCorp = new OnShareChange(call.Client.CorporationID,
+                    call.Client.CorporationID, availableShares, availableShares - quantity);
+                
+                // send both notifications
+                this.NotificationManager.NotifyCorporation(call.Client.CorporationID, changeForNewHolder);
+                this.NotificationManager.NotifyCorporation(call.Client.CorporationID, changeForRestCorp);
+            }
+
+            return null;
         }
 
         public PyDataType GetMember(PyInteger memberID, CallInformation call)

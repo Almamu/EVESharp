@@ -323,6 +323,220 @@ namespace Node.Database
             // return the character's item id
             return itemID;
         }
+        public void UpdateNPCCharacter(int itemID, Type from, ItemEntity owner, double securityRating,
+            int corporationID, int corpRole, int rolesAtAll, int rolesAtBase, int rolesAtHQ, int rolesAtOther,
+            long corporationDateTime, long startDateTime, long createDateTime, int ancestryID, int careerID, int schoolID,
+            int careerSpecialityID, int gender, int? accessoryID, int? beardID, int costumeID, int? decoID, int eyebrowsID,
+            int eyesID, int hairID, int? lipstickID, int? makeupID, int skinID, int backgroundID, int lightID,
+            double headRotation1, double headRotation2, double headRotation3, double eyeRotation1, double eyeRotation2,
+            double eyeRotation3, double camPos1, double camPos2, double camPos3, double? morph1E, double? morph1N,
+            double? morph1S, double? morph1W, double? morph2E, double? morph2N, double? morph2S, double? morph2W,
+            double? morph3E, double? morph3N, double? morph3S, double? morph3W, double? morph4E, double? morph4N,
+            double? morph4S, double? morph4W, int stationID, int solarSystemID, int constellationID, int regionID)
+        {
+            // create the record in the invItems table
+            Database.PrepareQuery(
+                "REPLACE INTO invItems(itemID, typeID, ownerID, locationID, flag, contraband, singleton, quantity, customInfo, nodeID)VALUES(@itemID, @typeID, 0, 0, @flag, 0, 1, 1, NULL, NULL)",
+                new Dictionary<string, object>()
+                {
+                    {"@itemID", itemID},
+                    {"@typeID", from.ID},
+                    {"@flag", (int) Flags.Pilot}
+                }
+            );
+            
+            // now create the character record in the database
+            Database.PrepareQuery(
+                "REPLACE INTO chrInformation(" + 
+                    "characterID, accountID, title, description, bounty, balance, securityRating, petitionMessage, " +
+                    "logonMinutes, corporationID, corpRole, rolesAtAll, rolesAtBase, rolesAtHQ, rolesAtOther, " +
+                    "corporationDateTime, startDateTime, createDateTime, ancestryID, careerID, schoolID, careerSpecialityID, " +
+                    "gender, accessoryID, beardID, costumeID, decoID, eyebrowsID, eyesID, hairID, lipstickID, makeupID, " +
+                    "skinID, backgroundID, lightID, headRotation1, headRotation2, headRotation3, eyeRotation1, " +
+                    "eyeRotation2, eyeRotation3, camPos1, camPos2, camPos3, morph1e, morph1n, morph1s, morph1w, " +
+                    "morph2e, morph2n, morph2s, morph2w, morph3e, morph3n, morph3s, morph3w, " +
+                    "morph4e, morph4n, morph4s, morph4w, stationID, solarSystemID, constellationID, regionID, online" +
+                ")VALUES(" +
+                    "@characterID, NULL, @title, @description, @bounty, 0.0, @securityRating, @petitionMessage, " +
+                    "@logonMinutes, @corporationID, @corpRole, @rolesAtAll, @rolesAtBase, @rolesAtHQ, @rolesAtOther, " +
+                    "@corporationDateTime, @startDateTime, @createDateTime, @ancestryID, @careerID, @schoolID, @careerSpecialityID, " +
+                    "@gender, @accessoryID, @beardID, @costumeID, @decoID, @eyebrowsID, @eyesID, @hairID, @lipstickID, @makeupID, " +
+                    "@skinID, @backgroundID, @lightID, @headRotation1, @headRotation2, @headRotation3, @eyeRotation1, " +
+                    "@eyeRotation2, @eyeRotation3, @camPos1, @camPos2, @camPos3, @morph1e, @morph1n, @morph1s, @morph1w, " +
+                    "@morph2e, @morph2n, @morph2s, @morph2w, @morph3e, @morph3n, @morph3s, @morph3w, " +
+                    "@morph4e, @morph4n, @morph4s, @morph4w, @stationID, @solarSystemID, @constellationID, @regionID, @online" +
+                ")"
+                ,
+                new Dictionary<string, object>()
+                {
+                    {"@characterID", itemID},
+                    {"@title", ""},
+                    {"@description", ""},
+                    {"@bounty", 0},
+                    {"@securityRating", securityRating},
+                    {"@petitionMessage", ""},
+                    {"@logonMinutes", 0},
+                    {"@corporationID", corporationID},
+                    {"@corpRole", corpRole},
+                    {"@rolesAtAll", rolesAtAll},
+                    {"@rolesAtBase", rolesAtBase},
+                    {"@rolesAtHQ", rolesAtHQ},
+                    {"@rolesAtOther", rolesAtOther},
+                    {"@corporationDateTime", corporationDateTime},
+                    {"@startDateTime", startDateTime},
+                    {"@createDateTime", createDateTime},
+                    {"@ancestryID", ancestryID},
+                    {"@careerID", careerID},
+                    {"@schoolID", schoolID},
+                    {"@careerSpecialityID", careerSpecialityID},
+                    {"@gender", gender},
+                    {"@accessoryID", accessoryID},
+                    {"@beardID", beardID},
+                    {"@costumeID", costumeID},
+                    {"@decoID", decoID},
+                    {"@eyebrowsID", eyebrowsID},
+                    {"@eyesID", eyesID},
+                    {"@hairID", hairID},
+                    {"@lipstickID", lipstickID},
+                    {"@makeupID", makeupID},
+                    {"@skinID", skinID},
+                    {"@backgroundID", backgroundID},
+                    {"@lightID", lightID},
+                    {"@headRotation1", headRotation1},
+                    {"@headRotation2", headRotation2},
+                    {"@headRotation3", headRotation3},
+                    {"@eyeRotation1", eyeRotation1},
+                    {"@eyeRotation2", eyeRotation2},
+                    {"@eyeRotation3", eyeRotation3},
+                    {"@camPos1", camPos1},
+                    {"@camPos2", camPos2},
+                    {"@camPos3", camPos3},
+                    {"@morph1e", morph1E},
+                    {"@morph1n", morph1N},
+                    {"@morph1s", morph1S},
+                    {"@morph1w", morph1W},
+                    {"@morph2e", morph2E},
+                    {"@morph2n", morph2N},
+                    {"@morph2s", morph2S},
+                    {"@morph2w", morph2W},
+                    {"@morph3e", morph3E},
+                    {"@morph3n", morph3N},
+                    {"@morph3s", morph3S},
+                    {"@morph3w", morph3W},
+                    {"@morph4e", morph4E},
+                    {"@morph4n", morph4N},
+                    {"@morph4s", morph4S},
+                    {"@morph4w", morph4W},
+                    {"@stationID", stationID},
+                    {"@solarSystemID", solarSystemID},
+                    {"@constellationID", constellationID},
+                    {"@regionID", regionID},
+                    {"@online", false}
+                }
+            );
+        }
+
+        public void GuessCharacterCorporation(int characterID, out int stationID, out int solarSystemID, out int regionID, out int constellationID, out int corporationID)
+        {
+            MySqlConnection connection = null;
+            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+                "SELECT stationID, solarSystemID, regionID, constellationID, agtAgents.corporationID FROM agtAgents LEFT JOIN staStations USING (stationID) WHERE agentID = @characterID AND stationID IS NOT NULL",
+                new Dictionary<string, object>()
+                {
+                    {"@characterID", characterID}
+                }
+            );
+            
+            using (connection)
+            using (reader)
+            {
+                if (reader.Read() == true)
+                {
+                    stationID = reader.GetInt32(0);
+                    solarSystemID = reader.GetInt32(1);
+                    regionID = reader.GetInt32(2);
+                    constellationID = reader.GetInt32(3);
+                    corporationID = reader.GetInt32(4);
+                    
+                    return;
+                }
+            }
+            
+            connection = null;
+            reader = Database.PrepareQuery(ref connection,
+                "SELECT stationID, solarSystemID, regionID, constellationID, crpStatic.corporationID FROM crpStatic LEFT JOIN staStations USING (stationID) WHERE ceoID = @characterID AND stationID IS NOT NULL",
+                new Dictionary<string, object>()
+                {
+                    {"@characterID", characterID}
+                }
+            );
+
+            using (connection)
+            using (reader)
+            {
+                if (reader.Read() == true)
+                {
+                    stationID = reader.GetInt32(0);
+                    solarSystemID = reader.GetInt32(1);
+                    regionID = reader.GetInt32(2);
+                    constellationID = reader.GetInt32(3);
+                    corporationID = reader.GetInt32(4);
+                    
+                    return;
+                }
+            }
+            
+            // last resort, look into tranquility data and cross our fingers
+            connection = null;
+            reader = Database.PrepareQuery(ref connection,
+                "SELECT stationID, solarSystemID, regionID, constellationID, tranquility.agtAgents.corporationID FROM tranquility.agtAgents LEFT JOIN staStations ON stationID = locationID WHERE agentID = @characterID AND locationID IS NOT NULL",
+                new Dictionary<string, object>()
+                {
+                    {"@characterID", characterID}
+                }
+            );
+
+            using (connection)
+            using (reader)
+            {
+                if (reader.Read() == true)
+                {
+                    stationID = reader.GetInt32(0);
+                    solarSystemID = reader.GetInt32(1);
+                    regionID = reader.GetInt32(2);
+                    constellationID = reader.GetInt32(3);
+                    corporationID = reader.GetInt32(4);
+                    
+                    return;
+                }
+            }
+
+            connection = null;
+            reader = Database.PrepareQuery(ref connection,
+                "SELECT locationID, solarSystemID, regionID, constellationID, 0 AS corporationID FROM tranquility.invItems LEFT JOIN staStations ON stationID = locationID WHERE itemID = @characterID AND locationID IS NOT NULL",
+                new Dictionary<string, object>()
+                {
+                    {"@characterID", characterID}
+                }
+            );
+
+            using (connection)
+            using (reader)
+            {
+                if (reader.Read() == true)
+                {
+                    stationID = reader.GetInt32(0);
+                    solarSystemID = reader.GetInt32(1);
+                    regionID = reader.GetInt32(2);
+                    constellationID = reader.GetInt32(3);
+                    corporationID = reader.GetInt32(4);
+                    
+                    return;
+                }
+            }
+
+            throw new Exception("Cannot find location information for the character");
+        }
 
         public void CreateEmploymentRecord(int itemID, int corporationID, long createDateTime)
         {
@@ -889,6 +1103,11 @@ namespace Node.Database
 
                 return reader.GetInt64(0);
             }
+        }
+
+        public PyDataType GetStaticCharacters()
+        {
+            return Database.PreparePackedRowListQuery($"SELECT itemID, raceID, bloodlineID FROM eveNames LEFT JOIN bloodlineTypes USING (typeID) LEFT JOIN chrBloodlines USING (bloodlineID) LEFT JOIN chrInformation ON chrInformation.characterID = eveNames.itemID WHERE itemID < {ItemFactory.USERGENERATED_ID_MIN} AND groupID = 1 AND (characterID IS NULL OR (morph1e IS NULL AND morph1n IS NULL AND morph1s IS NULL AND morph1w IS NULL AND morph2e IS NULL AND morph2n IS NULL AND morph2s IS NULL AND morph2w IS NULL AND morph3e IS NULL AND morph3n IS NULL AND morph3s IS NULL AND morph3w IS NULL AND morph4e IS NULL AND morph4n IS NULL AND morph4s IS NULL AND morph4w IS NULL))");
         }
 
         public CharacterDB(DatabaseConnection db, ItemDB itemDB, TypeManager typeManager) : base(db)

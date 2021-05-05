@@ -258,19 +258,6 @@ CREATE TABLE `courierMissions` (
 
 /*Data for the table `courierMissions` */
 
-/*Table structure for table `crpCharShares` */
-
-DROP TABLE IF EXISTS `crpCharShares`;
-
-CREATE TABLE `crpCharShares` (
-  `characterID` int(10) unsigned NOT NULL default '0',
-  `corporationID` int(10) unsigned NOT NULL default '0',
-  `shares` int(10) unsigned NOT NULL default '0',
-  PRIMARY KEY  (`characterID`,`corporationID`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
-/*Data for the table `crpCharShares` */
-
 /*Table structure for table `droneState` */
 
 DROP TABLE IF EXISTS `droneState`;
