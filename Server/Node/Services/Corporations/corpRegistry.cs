@@ -1,9 +1,22 @@
+using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Text.RegularExpressions;
+using System.Xml.XPath;
+using EVE.Packets.Exceptions;
 using Node.Database;
+using Node.Exceptions;
+using Node.Exceptions.corpRegistry;
+using Node.Exceptions.corpStationMgr;
 using Node.Inventory;
+using Node.Inventory.Items;
 using Node.Inventory.Items.Types;
+using Node.Market;
 using Node.Network;
+using Node.Notifications.Client.Corporations;
+using Node.StaticData;
 using Node.StaticData.Corporation;
+using Node.StaticData.Inventory;
 using PythonTypes.Types.Collections;
 using PythonTypes.Types.Database;
 using PythonTypes.Types.Primitives;
@@ -19,16 +32,32 @@ namespace Node.Services.Corporations
         public int IsMaster => this.mIsMaster;
 
         private CorporationDB DB { get; }
+        private ChatDB ChatDB { get; init; }
+        private CharacterDB CharacterDB { get; init; }
         private ItemFactory ItemFactory { get; }
-        public corpRegistry(CorporationDB db, ItemFactory itemFactory, BoundServiceManager manager) : base(manager, null)
+        private WalletManager WalletManager { get; init; }
+        private NodeContainer Container { get; init; }
+        private NotificationManager NotificationManager { get; init; }
+        
+        public corpRegistry(CorporationDB db, ChatDB chatDB, CharacterDB characterDB, NotificationManager notificationManager, WalletManager walletManager, NodeContainer container, ItemFactory itemFactory, BoundServiceManager manager) : base(manager, null)
         {
             this.DB = db;
+            this.ChatDB = chatDB;
+            this.CharacterDB = characterDB;
+            this.NotificationManager = notificationManager;
+            this.WalletManager = walletManager;
+            this.Container = container;
             this.ItemFactory = itemFactory;
         }
 
-        protected corpRegistry(CorporationDB db, ItemFactory itemFactory, Corporation corp, int isMaster, BoundServiceManager manager, Client client) : base (manager, client)
+        protected corpRegistry(CorporationDB db, ChatDB chatDB, CharacterDB characterDB, NotificationManager notificationManager, WalletManager walletManager, NodeContainer container, ItemFactory itemFactory, Corporation corp, int isMaster, BoundServiceManager manager, Client client) : base (manager, client)
         {
             this.DB = db;
+            this.ChatDB = chatDB;
+            this.CharacterDB = characterDB;
+            this.NotificationManager = notificationManager;
+            this.WalletManager = walletManager;
+            this.Container = container;
             this.ItemFactory = itemFactory;
             this.mCorporation = corp;
             this.mIsMaster = isMaster;
@@ -51,7 +80,7 @@ namespace Node.Services.Corporations
              */
             Corporation corp = this.ItemFactory.LoadItem(data[0] as PyInteger) as Corporation;
             
-            return new corpRegistry(this.DB, this.ItemFactory, corp, data[1] as PyInteger, this.BoundServiceManager, call.Client);
+            return new corpRegistry(this.DB, this.ChatDB, this.CharacterDB, this.NotificationManager, this.WalletManager, this.Container, this.ItemFactory, corp, data[1] as PyInteger, this.BoundServiceManager, call.Client);
         }
 
         public PyDataType GetEveOwners(CallInformation call)
@@ -206,6 +235,230 @@ namespace Node.Services.Corporations
             
             // 
             
+            return null;
+        }
+
+        public PyString GetSuggestedTickerNames(PyString corpName, CallInformation call)
+        {
+            // get all the upercase letters
+            string result = string.Concat(Regex.Matches(corpName.Value, @"\p{Lu}")
+                .Select(match => match.Value));
+
+            return new PyString(result.Substring(0, result.Length < 3 ? result.Length : 3));
+        }
+
+        public PyDataType AddCorporation(PyString corporationName, PyString tickerName, PyString description,
+            PyString url, PyDecimal taxRate, PyInteger shape1, PyInteger shape2, PyInteger shape3, PyInteger color1,
+            PyInteger color2, PyInteger color3, PyDataType typeface, CallInformation call)
+        {
+            // do some basic checks on what the player can do
+            if (CorporationRole.Director.Is(call.Client.CorporationRole) == true)
+                throw new CEOCannotCreateCorporation();
+            if (call.Client.StationID == null)
+                throw new CanOnlyCreateCorpInStation();
+            // validate corporation name
+            if (corporationName.Length < 4)
+                throw new CorpNameInvalidMinLength();
+            if (corporationName.Length > 24)
+                throw new CorpNameInvalidMaxLength();
+            if (tickerName.Length < 2 || tickerName.Length > 4)
+                throw new CorpTickerNameInvalid();
+            // check if name is taken
+            if (this.DB.IsCorporationNameTaken(corporationName) == true)
+                throw new CorpNameInvalidTaken();
+            if (this.DB.IsTickerNameTaken(tickerName) == true)
+                throw new CorpTickerNameInvalidTaken();
+            // TODO: ADD SUPPORT FOR BANNED WORDS
+            if (false)
+                throw new CorpNameInvalidBannedWord();
+            
+            int stationID = call.Client.EnsureCharacterIsInStation();
+            int corporationStartupCost = this.Container.Constants[Constants.corporationStartupCost];
+            int callerCharacterID = call.Client.EnsureCharacterIsSelected();
+            
+            // TODO: PROPERLY IMPLEMENT THIS CHECK, RIGHT NOW THE CHARACTER AND THE CORPREGISTRY INSTANCES DO NOT HAVE TO BE LOADED ON THE SAME NODE
+            Character character = this.ItemFactory.GetItem<Character>(callerCharacterID);
+            // ensure the character has the required skills
+            long corporationManagementLevel = character.GetSkillLevel(Types.CorporationManagement);
+            long ethnicRelationsLevel = character.GetSkillLevel(Types.EthnicRelations);
+            
+            if (corporationManagementLevel < 1)
+                throw new PlayerCantCreateCorporation(corporationStartupCost);
+            try
+            {
+                // acquire the wallet for this character too
+                using (Wallet wallet = this.WalletManager.AcquireWallet(character.ID, 1000))
+                {
+                    // ensure there's enough balance
+                    wallet.EnsureEnoughBalance(corporationStartupCost);
+                    
+                    // create the corporation in the corporation table
+                    int corporationID = this.DB.CreateCorporation(
+                        corporationName, description, tickerName, url, taxRate, callerCharacterID,
+                        stationID, (int) corporationManagementLevel * 10, (int) call.Client.RaceID, (ethnicRelationsLevel > 0) ? 63 : (int) call.Client.RaceID,
+                        shape1, shape2, shape3, color1, color2, color3, typeface as PyString
+                    );
+                    // create default titles
+                    
+                    // create the record in the journal
+                    wallet.CreateJournalRecord(MarketReference.CorporationRegistrationFee, null, null, corporationStartupCost);
+                    
+                    // create the required chat channels
+                    this.ChatDB.CreateChannel(corporationID, corporationID, "System Channels\\Corp", true);
+                    this.ChatDB.CreateChannel(corporationID, corporationID, "System Channels\\Corp", false);
+                    // join the player to the corp channel
+                    this.ChatDB.JoinEntityChannel(corporationID, callerCharacterID, ChatDB.CHATROLE_CREATOR);
+                    this.ChatDB.JoinChannel(corporationID, callerCharacterID, ChatDB.CHATROLE_CREATOR);
+                    // build the notification of corporation change
+                    OnCorporationMemberChanged change = new OnCorporationMemberChanged(character.ID, call.Client.CorporationID, corporationID);
+                    // start the session change for the client
+                    call.Client.CorporationID = corporationID;
+                    call.Client.CorporationRole = long.MaxValue; // this gives all the permissions to the character
+                    // update the character to reflect the new ownership
+                    character.CorporationID = corporationID;
+                    character.CorpRole = (long) CorporationRole.Director;
+                    character.CorporationDateTime = DateTime.UtcNow.ToFileTimeUtc();
+                    // notify cluster about the corporation changes
+                    this.NotificationManager.NotifyCorporation(change.OldCorporationID, change);
+                    this.NotificationManager.NotifyCorporation(change.NewCorporationID, change);
+
+                    character.Persist();
+                    
+                    // load the corporation item
+                    this.ItemFactory.LoadItem<Corporation>(corporationID);
+                }
+                
+                return null;
+            }
+            catch (NotEnoughMoney)
+            {
+                throw new PlayerCantCreateCorporation(corporationStartupCost);
+            }
+        }
+
+        private void ValidateDivisionName(string name, int divisionNumber)
+        {
+            if (name.Length < 3)
+                throw new UserError("CorpDiv" + divisionNumber + "NameInvalidMinLength");
+            if (name.Length > 24)
+                throw new UserError("CorpDiv" + divisionNumber + "NameInvalidMaxLength");
+            // TODO: ADD SUPPORT FOR BANNED WORDS
+            if (false)
+                throw new UserError("CorpDiv" + divisionNumber + "NameInvalidBannedWord");
+        }
+
+        public PyDataType UpdateDivisionNames(PyString division1, PyString division2, PyString division3,
+            PyString division4, PyString division5, PyString division6, PyString division7, PyString wallet1,
+            PyString wallet2, PyString wallet3, PyString wallet4, PyString wallet5, PyString wallet6, PyString wallet7,
+            CallInformation call)
+        {
+            if (CorporationRole.Director.Is(call.Client.CorporationRole) == false || call.Client.CorporationID != this.Corporation.ID)
+                return null;
+
+            // validate division names
+            this.ValidateDivisionName(division1, 1);
+            this.ValidateDivisionName(division2, 2);
+            this.ValidateDivisionName(division3, 3);
+            this.ValidateDivisionName(division4, 4);
+            this.ValidateDivisionName(division5, 5);
+            this.ValidateDivisionName(division6, 6);
+            this.ValidateDivisionName(division7, 7);
+
+            // generate update notification
+            OnCorporationChanged change = new OnCorporationChanged(this.Corporation.ID);
+
+            if (this.Corporation.Division1 != division1)
+                change.AddChange("division1", this.Corporation.Division1, division1);
+            if (this.Corporation.Division2 != division2)
+                change.AddChange("division2", this.Corporation.Division2, division2);
+            if (this.Corporation.Division3 != division3)
+                change.AddChange("division3", this.Corporation.Division3, division3);
+            if (this.Corporation.Division4 != division4)
+                change.AddChange("division4", this.Corporation.Division4, division4);
+            if (this.Corporation.Division5 != division5)
+                change.AddChange("division5", this.Corporation.Division5, division5);
+            if (this.Corporation.Division6 != division6)
+                change.AddChange("division6", this.Corporation.Division6, division6);
+            if (this.Corporation.Division7 != division7)
+                change.AddChange("division7", this.Corporation.Division7, division7);
+
+            if (this.Corporation.WalletDivision1 != wallet1)
+                change.AddChange("walletDivision1", this.Corporation.WalletDivision1, wallet1);
+            if (this.Corporation.WalletDivision2 != wallet2)
+                change.AddChange("walletDivision2", this.Corporation.WalletDivision2, wallet2);
+            if (this.Corporation.WalletDivision3 != wallet3)
+                change.AddChange("walletDivision3", this.Corporation.WalletDivision3, wallet3);
+            if (this.Corporation.WalletDivision4 != wallet4)
+                change.AddChange("walletDivision4", this.Corporation.WalletDivision4, wallet4);
+            if (this.Corporation.WalletDivision5 != wallet5)
+                change.AddChange("walletDivision5", this.Corporation.WalletDivision5, wallet5);
+            if (this.Corporation.WalletDivision6 != wallet6)
+                change.AddChange("walletDivision6", this.Corporation.WalletDivision6, wallet6);
+            if (this.Corporation.WalletDivision7 != wallet7)
+                change.AddChange("walletDivision7", this.Corporation.WalletDivision7, wallet7);
+
+            this.Corporation.Division1 = division1;
+            this.Corporation.Division2 = division2;
+            this.Corporation.Division3 = division3;
+            this.Corporation.Division4 = division4;
+            this.Corporation.Division5 = division5;
+            this.Corporation.Division6 = division6;
+            this.Corporation.Division7 = division7;
+            this.Corporation.WalletDivision1 = wallet1;
+            this.Corporation.WalletDivision2 = wallet2;
+            this.Corporation.WalletDivision3 = wallet3;
+            this.Corporation.WalletDivision4 = wallet4;
+            this.Corporation.WalletDivision5 = wallet5;
+            this.Corporation.WalletDivision6 = wallet6;
+            this.Corporation.WalletDivision7 = wallet7;
+            
+            // update division names
+            this.DB.UpdateDivisions(
+                call.Client.CorporationID,
+                division1, division2, division3, division4, division5, division6, division7,
+                wallet1, wallet2, wallet3, wallet4, wallet5, wallet6, wallet7
+            );
+            
+            // notify all the players in the corp
+            this.NotificationManager.NotifyCorporation(call.Client.CorporationID, change);
+            
+            return null;
+        }
+
+        public PyDataType UpdateCorporation(PyString newDescription, PyString newUrl, PyDecimal newTax, CallInformation call)
+        {
+            if (CorporationRole.Director.Is(call.Client.CorporationRole) == false || call.Client.CorporationID != this.Corporation.ID)
+                return null;
+
+            // update information in the database
+            this.DB.UpdateCorporation(call.Client.CorporationID, newDescription, newUrl, newTax);
+            
+            // generate update notification
+            OnCorporationChanged change = new OnCorporationChanged(call.Client.CorporationID);
+
+            change
+                .AddChange("description", this.Corporation.Description, newDescription)
+                .AddChange("url", this.Corporation.Url, newUrl)
+                .AddChange("taxRate", this.Corporation.TaxRate, newTax);
+
+            this.Corporation.Description = newDescription;
+            this.Corporation.Url = newUrl;
+            this.Corporation.TaxRate = newTax;
+
+            return null;
+        }
+
+        public PyDataType GetMemberTrackingInfo(CallInformation call)
+        {
+            // only directors can call this function
+            if (CorporationRole.Director.Is(call.Client.CorporationRole) == false)
+                return null;
+            
+            return this.DB.GetMemberTrackingInfo(call.Client.CorporationID);
+        }
+
+        public PyDataType UpdateCorporationAbilities(CallInformation call)
+        {
             return null;
         }
     }

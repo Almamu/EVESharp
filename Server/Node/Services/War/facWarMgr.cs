@@ -245,5 +245,10 @@ namespace Node.Services.War
                 }
             };
         }
+
+        public PyDataType GetCorporationWarFactionID(PyInteger corporationID, CallInformation call)
+        {
+            return null;
+        }
     }
 }

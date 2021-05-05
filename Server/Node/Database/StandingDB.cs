@@ -9,7 +9,7 @@ namespace Node.Database
 {
     public class StandingDB : DatabaseAccessor
     {
-        public Rowset GetCharStandings(int characterID)
+        public Rowset GetStandings(int characterID)
         {
             return Database.PrepareRowsetQuery(
                 "SELECT toID, standing FROM chrStandings WHERE characterID = @characterID",
@@ -20,7 +20,7 @@ namespace Node.Database
             );
         }
 
-        public Rowset GetCharPrime(int characterID)
+        public Rowset GetPrime(int characterID)
         {
             return Database.PrepareRowsetQuery(
                 "SELECT itemID as ownerID, itemName as ownerName, typeID FROM chrStandings, eveNames WHERE characterID = @characterID AND eveNames.itemID = chrStandings.toID",
@@ -31,7 +31,7 @@ namespace Node.Database
             );
         }
 
-        public Rowset GetCharNPCStandings(int characterID)
+        public Rowset GetNPCStandings(int characterID)
         {
             return Database.PrepareRowsetQuery(
                 "SELECT fromID, standing FROM chrNPCStandings WHERE characterID = @characterID",

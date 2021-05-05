@@ -173,6 +173,10 @@ namespace ClusterController
 
                 // notify the node of the disconnection of the user
                 this.ConnectionManager.NotifyAllNodes("OnClientDisconnected", new PyTuple(1) { [0] = this.AccountID });
+
+                // update the logoff date-time for the character
+                if (this.CharacterID > 0)
+                    this.GeneralDB.UpdateCharacterLogoffDateTime(this.CharacterID);
             }
             
             // and free the socket resources

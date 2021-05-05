@@ -30,6 +30,8 @@ namespace Node.StaticData.Inventory
         DamageControlI = 2046,
         Diplomacy = 3357,
         Connections = 3359,
+        CorporationManagement = 3363,
+        EthnicRelations = 3368,
         Learning = 3374,
         Refining = 3385,
         MassProduction = 3387,

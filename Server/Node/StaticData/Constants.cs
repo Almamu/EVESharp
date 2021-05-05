@@ -23,5 +23,8 @@
         
         // skills
         public const string skillPointMultiplier = "skillPointMultiplier";
+        
+        // corp related constants
+        public const string corporationStartupCost = "corporationStartupCost";
     }
 }

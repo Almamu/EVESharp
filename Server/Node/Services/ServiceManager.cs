@@ -99,6 +99,7 @@ namespace Node.Services
         public reprocessingSvc reprocessingSvc { get; }
         public ramProxy ramProxy { get; }
         public factory factory { get; }
+        public petitioner petitioner { get; }
 
         public ServiceManager(
             NodeContainer container, CacheStorage storage, Logger logger, TimerManager timerManager,
@@ -145,7 +146,8 @@ namespace Node.Services
             repairSvc repairSvc,
             reprocessingSvc reprocessingSvc,
             ramProxy ramProxy,
-            factory factory)
+            factory factory,
+            petitioner petitioner)
         {
             this.Container = container;
             this.CacheStorage = storage;
@@ -198,6 +200,7 @@ namespace Node.Services
             this.reprocessingSvc = reprocessingSvc;
             this.ramProxy = ramProxy;
             this.factory = factory;
+            this.petitioner = petitioner;
         }
 
         /// <summary>

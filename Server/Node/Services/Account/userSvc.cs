@@ -31,5 +31,10 @@ namespace Node.Services.Account
             // TODO: IMPLEMENT SUPPORT FOR USER REWARDS
             return null;
         }
+
+        public PyDataType ConvertETCToPilotLicence(PyString code, CallInformation call)
+        {
+            return null;
+        }
     }
 }

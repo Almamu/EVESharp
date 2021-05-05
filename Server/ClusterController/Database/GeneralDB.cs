@@ -79,7 +79,19 @@ namespace ClusterController.Database
                 throw;
             }
         }
-
+        
+        public void UpdateCharacterLogoffDateTime(int characterID)
+        {
+            Database.PrepareQuery(
+                "UPDATE chrInformation SET logoffDateTime = @date, online = 0 WHERE characterID = @characterID",
+                new Dictionary<string, object>()
+                {
+                    {"@characterID", characterID},
+                    {"@date", DateTime.UtcNow.ToFileTimeUtc()}
+                }
+            );
+        }
+        
         public GeneralDB(Logger logger, DatabaseConnection db) : base(db)
         {
             this.Log = logger.CreateLogChannel("GeneralDB");

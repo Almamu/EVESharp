@@ -171,6 +171,7 @@ namespace Node
                 dependencies.Register<reprocessingSvc>(Lifestyle.Singleton);
                 dependencies.Register<ramProxy>(Lifestyle.Singleton);
                 dependencies.Register<factory>(Lifestyle.Singleton);
+                dependencies.Register<petitioner>(Lifestyle.Singleton);
                 
                 dependencies.RegisterInstance(General.LoadFromFile("configuration.conf", dependencies));
                 // disable auto-verification on the container as it triggers creation of instances before they're needed

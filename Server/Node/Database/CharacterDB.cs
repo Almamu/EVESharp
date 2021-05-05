@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Data;
 using Common.Database;
 using MySql.Data.MySqlClient;
 using Node.Inventory;
@@ -108,7 +109,7 @@ namespace Node.Database
             MySqlConnection connection = null;
             MySqlDataReader reader = Database.PrepareQuery(
                 ref connection,
-                $"SELECT COUNT(*) FROM chrInformation LEFT JOIN eveNames ON characterID = itemID WHERE itemName LIKE @characterName",
+                $"SELECT COUNT(*) FROM eveNames WHERE groupID = 1 AND itemName LIKE @characterName",
                 new Dictionary<string, object>()
                 {
                     {"@characterName", characterName}
@@ -234,7 +235,8 @@ namespace Node.Database
                     "skinID, backgroundID, lightID, headRotation1, headRotation2, headRotation3, eyeRotation1, " +
                     "eyeRotation2, eyeRotation3, camPos1, camPos2, camPos3, morph1e, morph1n, morph1s, morph1w, " +
                     "morph2e, morph2n, morph2s, morph2w, morph3e, morph3n, morph3s, morph3w, " +
-                    "morph4e, morph4n, morph4s, morph4w, stationID, solarSystemID, constellationID, regionID, online" +
+                    "morph4e, morph4n, morph4s, morph4w, stationID, solarSystemID, constellationID, regionID, online," +
+                    "logonDateTime, logoffDateTime" +
                 ")VALUES(" +
                     "@characterID, @accountID, @title, @description, @bounty, @balance, @securityRating, @petitionMessage, " +
                     "@logonMinutes, @corporationID, @corpRole, @rolesAtAll, @rolesAtBase, @rolesAtHQ, @rolesAtOther, " +
@@ -243,7 +245,8 @@ namespace Node.Database
                     "@skinID, @backgroundID, @lightID, @headRotation1, @headRotation2, @headRotation3, @eyeRotation1, " +
                     "@eyeRotation2, @eyeRotation3, @camPos1, @camPos2, @camPos3, @morph1e, @morph1n, @morph1s, @morph1w, " +
                     "@morph2e, @morph2n, @morph2s, @morph2w, @morph3e, @morph3n, @morph3s, @morph3w, " +
-                    "@morph4e, @morph4n, @morph4s, @morph4w, @stationID, @solarSystemID, @constellationID, @regionID, @online" +
+                    "@morph4e, @morph4n, @morph4s, @morph4w, @stationID, @solarSystemID, @constellationID, @regionID, @online, " +
+                    "@createDateTime, @createDateTime" +
                 ")"
                 ,
                 new Dictionary<string, object>()
@@ -533,10 +536,22 @@ namespace Node.Database
             }
         }
 
+        public void UpdateCharacterLogonDateTime(int characterID)
+        {
+            Database.PrepareQuery(
+                "UPDATE chrInformation SET logonDateTime = @date WHERE characterID = @characterID",
+                new Dictionary<string, object>()
+                {
+                    {"@characterID", characterID},
+                    {"@date", DateTime.UtcNow.ToFileTimeUtc()}
+                }
+            );
+        }
+
         public void UpdateCharacterInformation(Character character)
         {
             Database.PrepareQuery(
-                "UPDATE chrInformation SET online = @online, activeCloneID = @activeCloneID, freeRespecs = @freeRespecs, nextRespecTime = @nextRespecTime, timeLastJump = @timeLastJump, description = @description, warFactionID = @warFactionID, corporationID = @corporationID, corporationDateTime = @corporationDateTime WHERE characterID = @characterID",
+                "UPDATE chrInformation SET online = @online, activeCloneID = @activeCloneID, freeRespecs = @freeRespecs, nextRespecTime = @nextRespecTime, timeLastJump = @timeLastJump, description = @description, warFactionID = @warFactionID, corporationID = @corporationID, corporationDateTime = @corporationDateTime, corpRole = @corpRole WHERE characterID = @characterID",
                 new Dictionary<string, object>()
                 {
                     {"@characterID", character.ID},
@@ -548,7 +563,8 @@ namespace Node.Database
                     {"@description", character.Description},
                     {"@warFactionID", character.WarFactionID},
                     {"@corporationID", character.CorporationID},
-                    {"@corporationDateTime", character.CorporationDateTime}
+                    {"@corporationDateTime", character.CorporationDateTime},
+                    {"@corpRole", character.CorpRole}
                 }
             );
 

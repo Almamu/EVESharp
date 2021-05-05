@@ -16,10 +16,10 @@ namespace Node.Inventory.Items.Types
             string walletDivision5, string walletDivision6, string walletDivision7, double balance,
             bool deleted) : base(@from)
         {
-            this.mDescription = description;
+            this.Description = description;
             this.mTickerName = tickerName;
-            this.mUrl = url;
-            this.mTaxRate = taxRate;
+            this.Url = url;
+            this.TaxRate = taxRate;
             this.mMinimumJoinStanding = minimumJoinStanding;
             this.mCorporationType = corporationType;
             this.mHasPlayerPersonnelManager = hasPlayerPersonnelManager;
@@ -41,28 +41,25 @@ namespace Node.Inventory.Items.Types
             this.mColor2 = color2;
             this.mColor3 = color3;
             this.mTypeface = typeface;
-            this.mDivision1 = division1;
-            this.mDivision2 = division2;
-            this.mDivision3 = division3;
-            this.mDivision4 = division4;
-            this.mDivision5 = division5;
-            this.mDivision6 = division6;
-            this.mDivision7 = division7;
-            this.mWalletDivision1 = walletDivision1;
-            this.mWalletDivision2 = walletDivision2;
-            this.mWalletDivision3 = walletDivision3;
-            this.mWalletDivision4 = walletDivision4;
-            this.mWalletDivision5 = walletDivision5;
-            this.mWalletDivision6 = walletDivision6;
-            this.mWalletDivision7 = walletDivision7;
+            this.Division1 = division1;
+            this.Division2 = division2;
+            this.Division3 = division3;
+            this.Division4 = division4;
+            this.Division5 = division5;
+            this.Division6 = division6;
+            this.Division7 = division7;
+            this.WalletDivision1 = walletDivision1;
+            this.WalletDivision2 = walletDivision2;
+            this.WalletDivision3 = walletDivision3;
+            this.WalletDivision4 = walletDivision4;
+            this.WalletDivision5 = walletDivision5;
+            this.WalletDivision6 = walletDivision6;
+            this.WalletDivision7 = walletDivision7;
             this.mBalance = balance;
             this.mDeleted = deleted;
         }
 
-        string mDescription;
         string mTickerName;
-        string mUrl;
-        double mTaxRate;
         double mMinimumJoinStanding;
         int mCorporationType;
         bool mHasPlayerPersonnelManager;
@@ -84,27 +81,13 @@ namespace Node.Inventory.Items.Types
         int? mColor2;
         int? mColor3;
         string mTypeface;
-        string mDivision1;
-        string mDivision2;
-        string mDivision3;
-        string mDivision4;
-        string mDivision5;
-        string mDivision6;
-        string mDivision7;
-        string mWalletDivision1;
-        string mWalletDivision2;
-        string mWalletDivision3;
-        string mWalletDivision4;
-        string mWalletDivision5;
-        string mWalletDivision6;
-        string mWalletDivision7;
         double mBalance;
         bool mDeleted;
 
-        public string Description => mDescription;
+        public string Description { get; set; }
         public string TickerName => mTickerName;
-        public string Url => mUrl;
-        public double TaxRate => mTaxRate;
+        public string Url { get; set; }
+        public double TaxRate { get; set; }
         public double MinimumJoinStanding => mMinimumJoinStanding;
         public int CorporationType => mCorporationType;
         public bool HasPlayerPersonnelManager => mHasPlayerPersonnelManager;
@@ -126,20 +109,20 @@ namespace Node.Inventory.Items.Types
         public int? Color2 => mColor2;
         public int? Color3 => mColor3;
         public string Typeface => mTypeface;
-        public string Division1 => mDivision1;
-        public string Division2 => mDivision2;
-        public string Division3 => mDivision3;
-        public string Division4 => mDivision4;
-        public string Division5 => mDivision5;
-        public string Division6 => mDivision6;
-        public string Division7 => mDivision7;
-        public string WalletDivision1 => mWalletDivision1;
-        public string WalletDivision2 => mWalletDivision2;
-        public string WalletDivision3 => mWalletDivision3;
-        public string WalletDivision4 => mWalletDivision4;
-        public string WalletDivision5 => mWalletDivision5;
-        public string WalletDivision6 => mWalletDivision6;
-        public string WalletDivision7 => mWalletDivision7;
+        public string Division1 { get; set; }
+        public string Division2 { get; set; }
+        public string Division3 { get; set; }
+        public string Division4 { get; set; }
+        public string Division5 { get; set; }
+        public string Division6 { get; set; }
+        public string Division7 { get; set; }
+        public string WalletDivision1 { get; set; }
+        public string WalletDivision2 { get; set; }
+        public string WalletDivision3 { get; set; }
+        public string WalletDivision4 { get; set; }
+        public string WalletDivision5 { get; set; }
+        public string WalletDivision6 { get; set; }
+        public string WalletDivision7 { get; set; }
         public double Balance => mBalance;
         public bool Deleted => mDeleted;
 

@@ -59,9 +59,21 @@ namespace Node.Services.War
 
             return new PyTuple(3)
             {
-                [0] = this.DB.GetCharStandings(callerCharacterID),
-                [1] = this.DB.GetCharPrime(callerCharacterID),
-                [2] = this.DB.GetCharNPCStandings(callerCharacterID)
+                [0] = this.DB.GetStandings(callerCharacterID),
+                [1] = this.DB.GetPrime(callerCharacterID),
+                [2] = this.DB.GetNPCStandings(callerCharacterID)
+            };
+        }
+
+        public PyTuple GetCorpStandings(CallInformation call)
+        {
+            int corporationID = call.Client.CorporationID;
+
+            return new PyTuple(3)
+            {
+                [0] = this.DB.GetStandings(corporationID),
+                [1] = this.DB.GetPrime(corporationID),
+                [2] = this.DB.GetNPCStandings(corporationID)
             };
         }
 
@@ -91,7 +103,7 @@ namespace Node.Services.War
 
         public PyDataType GetNPCStandingsTo(PyInteger characterID, CallInformation call)
         {
-            return this.DB.GetCharNPCStandings(characterID);
+            return this.DB.GetNPCStandings(characterID);
         }
 
         public PyDataType SetPlayerStanding(PyInteger characterID, PyDecimal standing, PyString reason, CallInformation call)

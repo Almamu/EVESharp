@@ -6,6 +6,7 @@ using Node.Exceptions;
 using Node.Exceptions.character;
 using Node.Inventory.Items.Attributes;
 using Node.Network;
+using Node.StaticData.Corporation;
 using Node.StaticData.Inventory;
 using PythonTypes.Types.Collections;
 using PythonTypes.Types.Primitives;
@@ -32,7 +33,7 @@ namespace Node.Inventory.Items.Types
         
         public Character(ClientManager clientManager, TimerManager timerManager, ItemEntity from, int characterId,
             int accountId, int? activeCloneID, string title, string description,
-            double securityRating, string petitionMessage, int logonMinutes, int corporationId, int corpRole,
+            double securityRating, string petitionMessage, int logonMinutes, int corporationId, long corpRole,
             int rolesAtAll, int rolesAtBase, int rolesAtHq, int rolesAtOther, long corporationDateTime,
             long startDateTime, long createDateTime, int ancestryId, int careerId, int schoolId, int careerSpecialityId,
             int gender, int? accessoryId, int? beardId, int costumeId, int? decoId, int eyebrowsId, int eyesId,
@@ -167,7 +168,16 @@ namespace Node.Inventory.Items.Types
         public double SecurityRating => mSecurityRating;
         public string PetitionMessage => mPetitionMessage;
         public int LogonMinutes => mLogonMinutes;
-        public int CorpRole => mCorpRole;
+
+        public long CorpRole
+        {
+            get => this.mCorpRole;
+            set
+            {
+                this.Dirty = true;
+                this.mCorpRole = value;
+            }
+        }
         public int RolesAtAll => mRolesAtAll;
         public int RolesAtBase => mRolesAtBase;
         public int RolesAtHq => mRolesAtHq;
@@ -312,7 +322,7 @@ namespace Node.Inventory.Items.Types
         private string mPetitionMessage;
         private int mLogonMinutes;
         private int mCorporationID;
-        private int mCorpRole;
+        private long mCorpRole;
         private int mRolesAtAll;
         private int mRolesAtBase;
         private int mRolesAtHq;

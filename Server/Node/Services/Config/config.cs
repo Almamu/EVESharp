@@ -41,6 +41,11 @@ namespace Node.Services.Config
         {
             return this.DB.GetMultiAllianceShortNamesEx(ids.GetEnumerable<PyInteger>());
         }
+
+        public PyDataType GetMultiCorpTickerNamesEx(PyList ids, CallInformation call)
+        {
+            return this.DB.GetMultiCorpTickerNamesEx(ids.GetEnumerable<PyInteger>());
+        }
         
         public PyDataType GetMap(PyInteger solarSystemID, CallInformation call)
         {

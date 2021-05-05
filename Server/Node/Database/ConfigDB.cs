@@ -68,6 +68,20 @@ namespace Node.Database
             }
         }
 
+        public PyDataType GetMultiCorpTickerNamesEx(PyList<PyInteger> ids)
+        {
+            MySqlConnection connection = null;
+            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+                $"SELECT corporationID, tickerName, shape1, shape2, shape3, color1, color2, color3 FROM corporation WHERE corporationID IN ({PyString.Join(',', ids)}"
+            ).ExecuteReader();
+            
+            using (connection)
+            using (reader)
+            {
+                return TupleSet.FromMySqlDataReader(Database, reader);
+            }
+        }
+
         public Rowset GetMap(int solarSystemID)
         {
             Rowset result = Database.PrepareRowsetQuery(

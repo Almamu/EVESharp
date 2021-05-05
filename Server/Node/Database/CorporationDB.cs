@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Common.Database;
 using MySql.Data.MySqlClient;
+using Node.StaticData.Inventory;
 using PythonTypes.Types.Collections;
 using PythonTypes.Types.Database;
 using PythonTypes.Types.Primitives;
@@ -10,6 +11,7 @@ namespace Node.Database
 {
     public class CorporationDB : DatabaseAccessor
     {
+        private ItemDB ItemDB { get; init; }
         public PyDictionary<PyInteger,PyInteger> ListAllCorpFactions()
         {
             return Database.PrepareIntIntDictionary("SELECT corporationID, factionID from crpNPCCorporations");
@@ -318,7 +320,7 @@ namespace Node.Database
             Dictionary<string, object> parameters = new Dictionary<string, object>();
             
             string query = "SELECT" +
-                           " characterID, title, startDateTime, corpRole AS roles, rolesAtHQ, rolesAtBase, rolesAtOther," +
+                           " characterID, title, corporationDateTime AS startDateTime, corpRole AS roles, rolesAtHQ, rolesAtBase, rolesAtOther," +
                            " titleMask, 0 AS grantableRoles, 0 AS grantableRolesAtHQ, 0 AS grantableRolesAtBase," +
                            " 0 AS grantableRolesAtOther, 0 AS divisionID, 0 AS squadronID, 0 AS baseID, " +
                            " 0 AS blockRoles, gender " +
@@ -351,7 +353,7 @@ namespace Node.Database
             MySqlConnection connection = null;
             MySqlDataReader reader = Database.PrepareQuery(ref connection,
                 "SELECT" +
-                " characterID, title, startDateTime, corpRole AS roles, rolesAtHQ, rolesAtBase, rolesAtOther," +
+                " characterID, title, corporationDateTime AS startDateTime, corpRole AS roles, rolesAtHQ, rolesAtBase, rolesAtOther," +
                 " titleMask, 0 AS grantableRoles, 0 AS grantableRolesAtHQ, 0 AS grantableRolesAtBase," + 
                 " 0 AS grantableRolesAtOther, 0 AS divisionID, 0 AS squadronID, 0 AS baseID, " + 
                 " 0 AS blockRoles, gender " +
@@ -444,7 +446,7 @@ namespace Node.Database
 
         public Rowset GetRoles()
         {
-            return Database.PrepareRowsetQuery("SELECT roleID, roleName, shortDescription, description FROM crpRoles");
+            return Database.PrepareRowsetQuery("SELECT roleID, roleName, shortDescription, description, roleIID FROM crpRoles");
         }
 
         public Rowset GetDivisions()
@@ -476,6 +478,19 @@ namespace Node.Database
         {
             return Database.PrepareRowsetQuery(
                 "SELECT characterID, IF(online = 1, -1, IF(lastOnline = 0, NULL, (@currentTicks - lastOnline) / @ticksPerHour)) AS lastOnline FROM chrInformation WHERE corporationID = @corporationID",
+                new Dictionary<string, object>()
+                {
+                    {"@corporationID", corporationID},
+                    {"@ticksPerHour", TimeSpan.TicksPerHour},
+                    {"@currentTicks", DateTime.UtcNow.ToFileTimeUtc ()}
+                }
+            );
+        }
+
+        public Rowset GetMemberTrackingInfo(int corporationID)
+        {
+            return Database.PrepareRowsetQuery(
+                "SELECT characterID, shp.typeID AS shipTypeID, shp.locationID AS locationID, 0 AS baseID, corporationDateTime AS startDateTime, title, corporationID, logonDateTime, logoffDateTime, corpRole AS roles, 0 AS grantableRoles, IF(online = 1, -1, IF(lastOnline = 0, NULL, (@currentTicks - lastOnline) / @ticksPerHour)) AS lastOnline FROM chrInformation LEFT JOIN invItems chr ON chr.itemID = characterID LEFT JOIN invItems shp ON shp.itemID = chr.locationID WHERE corporationID = @corporationID",
                 new Dictionary<string, object>()
                 {
                     {"@corporationID", corporationID},
@@ -666,8 +681,143 @@ namespace Node.Database
             }
         }
 
-        public CorporationDB(DatabaseConnection db) : base(db)
+        public int CreateCorporation(string name, string description, string ticker, string url, double taxRate,
+            int creatorID, int stationID, int memberLimit, int raceID, int allowedMemberRaceIDs, int? shape1, int? shape2, int? shape3,
+            int? color1, int? color2, int? color3, string typeface)
         {
+            // create the item first
+            int corporationID = (int) this.ItemDB.CreateItem(name, (int) Types.Corporation, creatorID, stationID, Flags.None, false,
+                true, 1, 0, 0, 0, "");
+            
+            Database.PrepareQuery(
+                "INSERT INTO corporation("+
+                "corporationID, corporationName, description, tickerName, url, taxRate, creatorID, ceoID, stationID, memberCount, memberLimit, raceID, allowedMemberRaceIDs, shape1, shape2, shape3, color1, color2, color3, typeface" +
+                ")VALUES(" +
+                "@corporationID, @corporationName, @description, @tickerName, @url, @taxRate, @creatorID, @creatorID, @stationID, 1, @memberLimit, @raceID, @allowedMemberRaceIDs, @shape1, @shape2, @shape3, @color1, @color2, @color3, @typeface" +
+                ")",
+                new Dictionary<string, object>()
+                {
+                    {"@corporationID", corporationID},
+                    {"@corporationName", name},
+                    {"@description", description},
+                    {"@tickerName", ticker},
+                    {"@url", url},
+                    {"@taxRate", taxRate},
+                    {"@creatorID", creatorID},
+                    {"@stationID", stationID},
+                    {"@memberLimit", memberLimit},
+                    {"@raceID", raceID},
+                    {"@allowedMemberRaceIDs", allowedMemberRaceIDs},
+                    {"@shape1", shape1},
+                    {"@shape2", shape2},
+                    {"@shape3", shape3},
+                    {"@color1", color1},
+                    {"@color2", color2},
+                    {"@color3", color3},
+                    {"@typeface", typeface}
+                }
+            );
+
+            return corporationID;
+        }
+
+        public void CreateDefaultTitlesForCorporation(int corporationID)
+        {
+            Database.PrepareQuery(
+                "INSERT INTO crpTitles SELECT @corporationID AS corporationID, titleID, titleName, roles, grantableRoles, rolesAtHQ, grantableRolesAtHQ, rolesAtBase, grantableRolesAtBase, rolesAtOther, grantableRolesAtOther FROM crpTitlesTemplate",
+                new Dictionary<string, object>()
+                {
+                    {"@corporationID", corporationID}
+                }
+            );
+        }
+
+        public bool IsCorporationNameTaken(string corporationName)
+        {
+            MySqlConnection connection = null;
+            MySqlDataReader reader = Database.PrepareQuery(
+                ref connection,
+                $"SELECT COUNT(*) FROM eveNames WHERE groupID = 2 itemName LIKE @corporationName",
+                new Dictionary<string, object>()
+                {
+                    {"@corporationName", corporationName}
+                }
+            );
+
+            using (connection)
+            using (reader)
+            {
+                reader.Read();
+
+                return reader.GetInt32(0) > 0;
+            }
+        }
+
+        public bool IsTickerNameTaken(string tickerName)
+        {
+            MySqlConnection connection = null;
+            MySqlDataReader reader = Database.PrepareQuery(
+                ref connection,
+                $"SELECT COUNT(*) FROM corporation WHERE tickerName LIKE @tickerName",
+                new Dictionary<string, object>()
+                {
+                    {"@tickerName", tickerName}
+                }
+            );
+
+            using (connection)
+            using (reader)
+            {
+                reader.Read();
+
+                return reader.GetInt32(0) > 0;
+            }
+        }
+
+        public void UpdateDivisions(int corporationID, string division1, string division2, string division3,
+            string division4, string division5, string division6, string division7, string wallet1, string wallet2,
+            string wallet3, string wallet4, string wallet5, string wallet6, string wallet7)
+        {
+            Database.PrepareQuery(
+                "UPDATE corporation SET division1 = @division1, division2 = @division2, division3 = @division3, division4 = @division4, division5 = @division5, division6 = @division6, division7 = @division7, walletDivision1 = @walletDivision1, walletDivision2 = @walletDivision2, walletDivision3 = @walletDivision3, walletDivision4 = @walletDivision4, walletDivision5 = @walletDivision5, walletDivision6 = @walletDivision6, walletDivision7 = @walletDivision7 WHERE corporationID = @corporationID",
+                new Dictionary<string, object>()
+                {
+                    {"@division1", division1},
+                    {"@division2", division2},
+                    {"@division3", division3},
+                    {"@division4", division4},
+                    {"@division5", division5},
+                    {"@division6", division6},
+                    {"@division7", division7},
+                    {"@walletDivision1", wallet1},
+                    {"@walletDivision2", wallet2},
+                    {"@walletDivision3", wallet3},
+                    {"@walletDivision4", wallet4},
+                    {"@walletDivision5", wallet5},
+                    {"@walletDivision6", wallet6},
+                    {"@walletDivision7", wallet7},
+                    {"@corporationID", corporationID}
+                }
+            );
+        }
+
+        public void UpdateCorporation(int corporationID, string description, string url, double tax)
+        {
+            Database.PrepareQuery(
+                "UPDATE corporation SET description = @description, taxRate = @taxRate, url = @url WHERE corporationID = @corporationID",
+                new Dictionary<string, object>()
+                {
+                    {"@corporationID", corporationID},
+                    {"@description", description},
+                    {"@url", url},
+                    {"@taxRate", tax}
+                }
+            );
+        }
+
+        public CorporationDB(ItemDB itemDB, DatabaseConnection db) : base(db)
+        {
+            this.ItemDB = itemDB;
         }
     }
 }

@@ -439,7 +439,8 @@ namespace Node.Services.Characters
             character.Online = 1;
             // the online status must be persisted after update, so force the entity to be updated in the database
             character.Persist();
-            
+            // update the logon status
+            this.DB.UpdateCharacterLogonDateTime(character.ID);
             // unload the character, let the session change handler handle everything
             // TODO: CHECK IF THE PLAYER IS GOING TO SPAWN IN THIS NODE AND IF IT IS NOT, UNLOAD IT FROM THE ITEM MANAGER
             PyList<PyInteger> onlineFriends = this.DB.GetOnlineFriendList(character);
