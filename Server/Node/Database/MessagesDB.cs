@@ -12,13 +12,13 @@ namespace Node.Database
 {
     public class MessagesDB : DatabaseAccessor
     {
-	    public Rowset GetMailHeaders(int channelID)
+	    public Rowset GetMailHeaders(int characterID)
         {
             return Database.PrepareRowsetQuery(
-	            "SELECT channelID, messageID, senderID, subject, created, `read` FROM eveMail WHERE channelID = @channelID",
+	            "SELECT channelID, messageID, senderID, subject, created, `read` FROM lscChannelPermissions LEFT JOIN eveMail USING(channelID) WHERE accessor = @characterID",
 	            new Dictionary<string, object>()
 	            {
-		            {"@channelID", channelID}
+		            {"@characterID", characterID}
 	            }
 	        );
         }
@@ -99,6 +99,7 @@ namespace Node.Database
 
 	    public void DeleteMessages(int characterID, int mailboxID, PyList<PyInteger> messageIDs)
 	    {
+		    // TODO: CHECK PERMISSIONS
 		    Database.PrepareQuery(
 			    $"DELETE FROM eveMail WHERE messageID IN ({PyString.Join(',', messageIDs)} AND channelID = @mailboxID",
 			    new Dictionary<string, object>()
