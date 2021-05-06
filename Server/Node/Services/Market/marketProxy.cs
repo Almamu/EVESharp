@@ -58,11 +58,9 @@ namespace Node.Services.Market
             this.WalletManager = walletManager;
         }
 
-        public PyDataType CharGetNewTransactions(PyInteger sellBuy, PyInteger typeID, PyDataType clientID,
-            PyInteger quantity, PyDataType fromDate, PyDataType maxPrice, PyInteger minPrice, CallInformation call)
+        private PyDataType GetNewTransactions(int entityID, PyInteger sellBuy, PyInteger typeID, PyDataType clientID,
+            PyInteger quantity, PyDataType fromDate, PyDataType maxPrice, PyInteger minPrice, PyInteger accountKey)
         {
-            int callerCharacterID = call.Client.EnsureCharacterIsSelected();
-            
             TransactionType transactionType = TransactionType.Either;
 
             if (sellBuy is not null)
@@ -78,9 +76,15 @@ namespace Node.Services.Market
                 }
             }
             
-            return this.DB.GetNewTransactions(
-                callerCharacterID, null, transactionType, typeID, quantity, minPrice, 1000
-            );
+            return this.DB.GetNewTransactions(entityID, null, transactionType, typeID, quantity, minPrice, accountKey);
+        }
+
+        public PyDataType CharGetNewTransactions(PyInteger sellBuy, PyInteger typeID, PyDataType clientID,
+            PyInteger quantity, PyDataType fromDate, PyDataType maxPrice, PyInteger minPrice, CallInformation call)
+        {
+            int callerCharacterID = call.Client.EnsureCharacterIsSelected();
+
+            return this.GetNewTransactions(callerCharacterID, sellBuy, typeID, clientID, quantity, fromDate, maxPrice, minPrice, 1000);
         }
 
         public PyDataType CorpGetNewTransactions(PyInteger sellBuy, PyInteger typeID, PyDataType clientID,
@@ -90,28 +94,13 @@ namespace Node.Services.Market
             // TODO: SUPPORT THE "who" PARAMETER
             int corporationID = call.Client.CorporationID;
             
-            TransactionType transactionType = TransactionType.Either;
-
-            if (sellBuy is not null)
-            {
-                switch (sellBuy.Value)
-                {
-                    case 0:
-                        transactionType = TransactionType.Sell;
-                        break;
-                    case 1:
-                        transactionType = TransactionType.Buy;
-                        break;
-                }
-            }
-            
             // transactions requires accountant roles for corporation
-            if (corporationID == call.Client.CorporationID && (CorporationRole.Accountant.Is(call.Client.CorporationRole) == false || CorporationRole.JuniorAccountant.Is(call.Client.CorporationRole) == false))
+            if (corporationID != call.Client.CorporationID ||
+                CorporationRole.Accountant.Is(call.Client.CorporationRole) == false ||
+                CorporationRole.JuniorAccountant.Is(call.Client.CorporationRole) == false)
                 throw new CrpAccessDenied(MLS.UI_SHARED_WALLETHINT8);
-            
-            return this.DB.GetNewTransactions(
-                corporationID, null, transactionType, typeID, quantity, minPrice, accountKey
-            );
+
+            return this.GetNewTransactions(corporationID, sellBuy, typeID, clientID, quantity, fromDate, maxPrice, minPrice, accountKey);
         }
 
         public PyDataType GetMarketGroups(CallInformation call)
