@@ -631,7 +631,7 @@ namespace Node.Services.Corporations
                 // check if there's enough cash left
                 wallet.EnsureEnoughBalance(amount);
                 // make transaction
-                wallet.CreateJournalRecord(MarketReference.CorporationDividendPayment, null, null, amount);
+                wallet.CreateJournalRecord(MarketReference.CorporationDividendPayment, this.ItemFactory.OwnerBank.ID, null, amount);
             }
             
             if (payShareholders == 1)
