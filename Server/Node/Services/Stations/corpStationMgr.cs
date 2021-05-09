@@ -226,5 +226,16 @@ namespace Node.Services.Stations
             
             return null;
         }
+
+        public PyDataType GetQuoteForRentingAnOffice(CallInformation call)
+        {
+            // TODO: PROPERLY IMPLEMENT THIS
+            return 10000;
+        }
+
+        public PyDataType RentOffice(CallInformation call)
+        {
+            return null;
+        }
     }
 }

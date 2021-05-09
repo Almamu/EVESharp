@@ -1,6 +1,7 @@
 ﻿using Common.Services;
 using Node.Database;
 using Node.Network;
+using PythonTypes.Types.Collections;
 using PythonTypes.Types.Primitives;
 
 namespace Node.Services.Corporations
@@ -22,6 +23,11 @@ namespace Node.Services.Corporations
         public PyDataType GetCorporationIDForCharacter(PyInteger characterID, CallInformation call)
         {
             return this.DB.GetCorporationIDForCharacter(characterID);
+        }
+
+        public PyDataType GetAssetInventory(PyInteger corporationID, PyString which, CallInformation call)
+        {
+            return new PyList();
         }
     }
 }

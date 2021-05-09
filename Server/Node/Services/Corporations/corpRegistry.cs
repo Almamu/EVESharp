@@ -25,6 +25,7 @@ using PythonTypes.Types.Primitives;
 
 namespace Node.Services.Corporations
 {
+    // TODO: REWRITE THE USAGE OF THE CHARACTER CLASS HERE TO FETCH THE DATA OFF THE DATABASE TO PREVENT ISSUES ON MULTI-NODE INSTALLATIONS
     public class corpRegistry : BoundService
     {
         private Corporation mCorporation = null;
@@ -374,6 +375,7 @@ namespace Node.Services.Corporations
             
             if (corporationManagementLevel < 1)
                 throw new PlayerCantCreateCorporation(corporationStartupCost);
+            
             try
             {
                 // acquire the wallet for this character too
@@ -651,7 +653,21 @@ namespace Node.Services.Corporations
 
         public PyDataType UpdateCorporationAbilities(CallInformation call)
         {
+            if (this.mCorporation.CeoID != call.Client.CharacterID)
+                throw new CrpAccessDenied("Only the CEO can update the corporation's abilities");
+
+            Character character = this.ItemFactory.GetItem<Character>(call.Client.EnsureCharacterIsSelected());
+            
+            // update the abilities of the corporation
+            long corporationManagementLevel = character.GetSkillLevel(Types.CorporationManagement);
+            long ethnicRelationsLevel = character.GetSkillLevel(Types.EthnicRelations);
+            
             return null;
+        }
+        
+        public PyDataType GetRecruitmentAdsForCorporation(CallInformation call)
+        {
+            return this.DB.GetRecruitmentAds(null, null, null, null, null, null, null, this.mCorporation.ID);
         }
     }
 }

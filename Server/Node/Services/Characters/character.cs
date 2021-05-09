@@ -57,7 +57,7 @@ namespace Node.Services.Characters
             MoreThanOneSpace = -6,
             Taken = -101,
             Banned = -102
-        };
+        }
 
         private CharacterDB DB { get; }
         private ChatDB ChatDB { get; }

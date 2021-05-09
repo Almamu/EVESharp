@@ -636,7 +636,7 @@ namespace Node.Database
         }
 
         public Rowset GetRecruitmentAds(int? regionID, double? skillPoints, int? typeMask, int? raceMask,
-            int? isInAlliance, int? minMembers, int? maxMembers)
+            int? isInAlliance, int? minMembers, int? maxMembers, int? corporationID = null)
         {
             Dictionary<string, object> parameters = new Dictionary<string, object>();
             string query =
@@ -683,6 +683,12 @@ namespace Node.Database
             {
                 query += " AND corporation.memberCount < @maxMembers";
                 parameters["@maxMembers"] = maxMembers;
+            }
+
+            if (corporationID is not null)
+            {
+                query += " AND corporation.corporationID = @corporationID";
+                parameters["@corporationID"] = corporationID;
             }
 
             return Database.PrepareRowsetQuery(query, parameters);
