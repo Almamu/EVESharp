@@ -14,6 +14,7 @@
         
         // owner related constants
         public const string ownerSecureCommerceCommission = "ownerSecureCommerceCommission";
+        public const string ownerBank = "ownerBank";
         
         // market related constants
         public const string mktTransactionTax = "mktTransactionTax";

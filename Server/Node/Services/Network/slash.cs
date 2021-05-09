@@ -132,11 +132,11 @@ namespace Node.Services.Network
                 if (iskQuantity < 0)
                 {
                     wallet.EnsureEnoughBalance(iskQuantity);
-                    wallet.CreateJournalRecord(MarketReference.GMCashTransfer, this.ItemFactory.SecureCommerceCommision.ID, null, -iskQuantity);
+                    wallet.CreateJournalRecord(MarketReference.GMCashTransfer, this.ItemFactory.OwnerSCC.ID, null, -iskQuantity);
                 }
                 else
                 {
-                    wallet.CreateJournalRecord(MarketReference.GMCashTransfer, this.ItemFactory.SecureCommerceCommision.ID, targetCharacterID, null, iskQuantity);
+                    wallet.CreateJournalRecord(MarketReference.GMCashTransfer, this.ItemFactory.OwnerSCC.ID, targetCharacterID, null, iskQuantity);
                 }
             }
         }

@@ -125,7 +125,7 @@ namespace Node.Services.Inventory
             {
                 wallet.EnsureEnoughBalance(insuranceCost);
                 wallet.CreateJournalRecord(
-                    MarketReference.Insurance, this.ItemFactory.SecureCommerceCommision.ID, -item.ID, -insuranceCost, $"Insurance fee for {item.Name}"
+                    MarketReference.Insurance, this.ItemFactory.OwnerSCC.ID, -item.ID, -insuranceCost, $"Insurance fee for {item.Name}"
                 );
             }
             
@@ -140,7 +140,7 @@ namespace Node.Services.Inventory
 
             // TODO: CHECK IF THE INSURANCE SHOULD BE CHARGED TO THE CORP
             
-            this.MailManager.SendMail(this.ItemFactory.SecureCommerceCommision.ID, callerCharacterID, 
+            this.MailManager.SendMail(this.ItemFactory.OwnerSCC.ID, callerCharacterID, 
                 "Insurance Contract Issued",
                 "Dear valued customer, <br><br>" +
                 "Congratulations on the insurance on your ship. A very wise choice indeed.<br>" +
@@ -178,7 +178,7 @@ namespace Node.Services.Inventory
             {
                 DateTime insuranceTime = DateTime.FromFileTimeUtc(contract.StartDate);
                 
-                this.MailManager.SendMail(this.ItemFactory.SecureCommerceCommision.ID, contract.OwnerID, 
+                this.MailManager.SendMail(this.ItemFactory.OwnerSCC.ID, contract.OwnerID, 
                     "Insurance Contract Expired",
                     "Dear valued customer, <br><br>" +
                     $"The insurance contract between yourself and SCC for the insurance of the ship <b>{contract.ShipName}</b> (<b>{contract.ShipType.Name}</b>) issued at" +

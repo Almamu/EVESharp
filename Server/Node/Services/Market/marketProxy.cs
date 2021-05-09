@@ -324,7 +324,6 @@ namespace Node.Services.Market
 
                 if (quantityToSell > 0)
                 {
-                    
                     // calculate sales tax
                     double profit, tax;
                             
@@ -529,10 +528,17 @@ namespace Node.Services.Market
 
                 if (quantityToBuy > 0)
                 {
+                    // calculate sales tax
+                    double tax;
+                            
+                    this.CalculateSalesTax(this.CharacterDB.GetSkillLevelForCharacter(Types.Accounting, order.CharacterID), quantity, price, out tax, out _);
+
                     // acquire wallet journal for seller so we can update their balance to add the funds that he got
                     using Wallet sellerWallet = this.WalletManager.AcquireWallet(order.CharacterID, order.AccountID);
                     {
                         sellerWallet.CreateJournalRecord(MarketReference.MarketTransaction, character.ID, order.CharacterID, null, price * quantityToBuy);
+                        // calculate sales tax for the seller
+                        sellerWallet.CreateJournalRecord(MarketReference.TransactionTax, this.ItemFactory.OwnerSCC.ID, null, -tax);
                     }
                     
                     // create the transaction records for both characters

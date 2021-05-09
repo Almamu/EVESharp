@@ -106,6 +106,29 @@ namespace Node.Database
             );
         }
 
+        public Dictionary<int, int> GetShareholdersList(int corporationID)
+        {
+            MySqlConnection connection = null;
+            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+                "SELECT ownerID, shares FROM crpShares WHERE corporationID = @corporationID",
+                new Dictionary<string, object>()
+                {
+                    {"@corporationID", corporationID}
+                }
+            );
+            
+            using (connection)
+            using (reader)
+            {
+                Dictionary<int, int> shares = new Dictionary<int, int>();
+
+                while (reader.Read() == true)
+                    shares[reader.GetInt32(0)] = reader.GetInt32(1);
+
+                return shares;
+            }
+        }
+
         public int GetSharesForOwner(int corporationID, int ownerID)
         {
             MySqlConnection connection = null;
@@ -118,7 +141,7 @@ namespace Node.Database
                 }
             );
             
-            using(connection)
+            using (connection)
             using (reader)
             {
                 if (reader.Read() == false)
@@ -470,7 +493,7 @@ namespace Node.Database
                     FieldType.I8,
                     FieldType.I8,
                     FieldType.I8,
-                    FieldType.I1,
+                    FieldType.Bool,
                     FieldType.I8,
                     FieldType.I4,
                     FieldType.I4,
@@ -859,6 +882,25 @@ namespace Node.Database
                     {"@taxRate", tax}
                 }
             );
+        }
+
+        public IEnumerable<int> GetMembersForCorp(int corporationID)
+        {
+            MySqlConnection connection = null;
+            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+                "SELECT characterID FROM chrInformation WHERE corporationID = @corporationID",
+                new Dictionary<string, object>()
+                {
+                    {"@corporationID", corporationID}
+                }
+            );
+            
+            using (connection)
+            using (reader)
+            {
+                while (reader.Read() == true)
+                    yield return reader.GetInt32(0);
+            }
         }
 
         public CorporationDB(ItemDB itemDB, DatabaseConnection db) : base(db)

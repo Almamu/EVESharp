@@ -82,12 +82,13 @@ namespace Node.Inventory
         public Dictionary<int, Station> Stations => this.mStations;
         public Dictionary<int, SolarSystem> SolarSystems => this.mSolarSystems;
         public Dictionary<int, Faction> Factions => this.mFactions;
+        public EVESystem OwnerBank { get; private set; }
         public EVESystem LocationSystem { get; private set; }
         public EVESystem LocationRecycler { get; private set; }
         public EVESystem LocationMarket { get; private set; }
         public EVESystem LocationUniverse { get; private set; }
         public EVESystem LocationTemp { get; private set; }
-        public ItemEntity SecureCommerceCommision { get; private set; }
+        public ItemEntity OwnerSCC { get; private set; }
         public ExpressionManager ExpressionManager { get; }
 
         public ItemFactory(Logger logger, NodeContainer nodeContainer, MetaInventoryManager metaInventoryManager, ExpressionManager expressionManager, Container dependencyInjection)
@@ -152,7 +153,8 @@ namespace Node.Inventory
             this.LocationUniverse = this.GetItem<EVESystem>(this.NodeContainer.Constants[Constants.locationUniverse]);
             this.LocationMarket = this.GetItem<EVESystem>(this.NodeContainer.Constants[Constants.locationMarket]);
             this.LocationTemp = this.GetItem<EVESystem>(this.NodeContainer.Constants[Constants.locationTemp]);
-            this.SecureCommerceCommision = this.GetItem(this.NodeContainer.Constants[Constants.ownerSecureCommerceCommission]);
+            this.OwnerBank = this.GetItem<EVESystem>(this.NodeContainer.Constants[Constants.ownerBank]);
+            this.OwnerSCC = this.GetItem(this.NodeContainer.Constants[Constants.ownerSecureCommerceCommission]);
         }
 
         /// <summary>

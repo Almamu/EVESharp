@@ -62,6 +62,13 @@ REPLACE INTO invItems (itemID, singleton, quantity)
 REPLACE INTO eveNames (itemID, itemName, typeID, groupID, categoryID)
   VALUES (1, 'EVE System', 0, 0, 0);
 /*
+ * Static record of EVE Bank
+ */
+REPLACE INTO invItems (itemID, singleton, quantity)
+  VALUES (2, 1, 1);
+REPLACE INTO eveNames (itemID, itemName, typeID, groupID, categoryID)
+  VALUES (2, 'EVE Bank', 0, 0, 0);
+/*
  * Static record for the EVE Market
  */
 REPLACE INTO invItems (itemID, singleton, quantity)

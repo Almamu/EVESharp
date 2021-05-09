@@ -5,6 +5,7 @@ using System.Text.RegularExpressions;
 using System.Xml.XPath;
 using EVE;
 using EVE.Packets.Exceptions;
+using Node.Chat;
 using Node.Database;
 using Node.Exceptions;
 using Node.Exceptions.corpRegistry;
@@ -39,24 +40,27 @@ namespace Node.Services.Corporations
         private WalletManager WalletManager { get; init; }
         private NodeContainer Container { get; init; }
         private NotificationManager NotificationManager { get; init; }
+        private MailManager MailManager { get; init; }
         
-        public corpRegistry(CorporationDB db, ChatDB chatDB, CharacterDB characterDB, NotificationManager notificationManager, WalletManager walletManager, NodeContainer container, ItemFactory itemFactory, BoundServiceManager manager) : base(manager, null)
+        public corpRegistry(CorporationDB db, ChatDB chatDB, CharacterDB characterDB, NotificationManager notificationManager, MailManager mailManager, WalletManager walletManager, NodeContainer container, ItemFactory itemFactory, BoundServiceManager manager) : base(manager, null)
         {
             this.DB = db;
             this.ChatDB = chatDB;
             this.CharacterDB = characterDB;
             this.NotificationManager = notificationManager;
+            this.MailManager = mailManager;
             this.WalletManager = walletManager;
             this.Container = container;
             this.ItemFactory = itemFactory;
         }
 
-        protected corpRegistry(CorporationDB db, ChatDB chatDB, CharacterDB characterDB, NotificationManager notificationManager, WalletManager walletManager, NodeContainer container, ItemFactory itemFactory, Corporation corp, int isMaster, BoundServiceManager manager, Client client) : base (manager, client)
+        protected corpRegistry(CorporationDB db, ChatDB chatDB, CharacterDB characterDB, NotificationManager notificationManager, MailManager mailManager, WalletManager walletManager, NodeContainer container, ItemFactory itemFactory, Corporation corp, int isMaster, BoundServiceManager manager, Client client) : base (manager, client)
         {
             this.DB = db;
             this.ChatDB = chatDB;
             this.CharacterDB = characterDB;
             this.NotificationManager = notificationManager;
+            this.MailManager = mailManager;
             this.WalletManager = walletManager;
             this.Container = container;
             this.ItemFactory = itemFactory;
@@ -81,7 +85,7 @@ namespace Node.Services.Corporations
              */
             Corporation corp = this.ItemFactory.LoadItem(data[0] as PyInteger) as Corporation;
             
-            return new corpRegistry(this.DB, this.ChatDB, this.CharacterDB, this.NotificationManager, this.WalletManager, this.Container, this.ItemFactory, corp, data[1] as PyInteger, this.BoundServiceManager, call.Client);
+            return new corpRegistry(this.DB, this.ChatDB, this.CharacterDB, this.NotificationManager, this.MailManager, this.WalletManager, this.Container, this.ItemFactory, corp, data[1] as PyInteger, this.BoundServiceManager, call.Client);
         }
 
         public PyDataType GetEveOwners(CallInformation call)
@@ -545,7 +549,7 @@ namespace Node.Services.Corporations
         public PyDataType GetMemberTrackingInfo(CallInformation call)
         {
             // only directors can call this function
-            if (CorporationRole.Director.Is(call.Client.CorporationRole) == false)
+            if (this.mCorporation.CeoID != call.Client.CharacterID)
                 return null;
             
             return this.DB.GetMemberTrackingInfo(call.Client.CorporationID);
@@ -568,6 +572,76 @@ namespace Node.Services.Corporations
                 call.Client.CorpAccountKey = 1005;
             if (CorporationRole.AccountCanTake7.Is(call.Client.CorporationRole) && accountKey == 1006)
                 call.Client.CorpAccountKey = 1006;
+            
+            return null;
+        }
+
+        private void PayoutDividendsToShareholders(double totalAmount, Client client)
+        {
+            double pricePerShare = totalAmount / this.mCorporation.Shares;
+            Dictionary<int, int> shares = this.DB.GetShareholdersList(this.mCorporation.ID);
+
+            foreach ((int ownerID, int sharesCount) in shares)
+            {
+                // send evemail to the owner
+                this.MailManager.SendMail(
+                    client.CorporationID,
+                    ownerID, 
+                    $"Dividend from {this.mCorporation.Name}",
+                    $"<a href=\"showinfo:2//{this.mCorporation.ID}\">{this.mCorporation.Name}</a> may have credited your account as part of a total payout of <b>{totalAmount} ISK</b> to their shareholders. The amount awarded is based upon the number of shares you hold, in relation to the total number of shares issued by the company."
+                );
+                
+                // calculate amount to give and acquire it's wallet
+                using (Wallet dest = this.WalletManager.AcquireWallet(ownerID, 1000))
+                {
+                    dest.CreateJournalRecord(MarketReference.CorporationDividendPayment, ownerID, this.mCorporation.ID, pricePerShare * sharesCount);
+                }
+            }
+        }
+
+        private void PayoutDividendsToMembers(double totalAmount, Client client)
+        {
+            double pricePerMember = totalAmount / this.mCorporation.MemberCount;
+            
+            foreach (int characterID in this.DB.GetMembersForCorp(this.mCorporation.ID))
+            {
+                using (Wallet dest = this.WalletManager.AcquireWallet(characterID, 1000))
+                {
+                    dest.CreateJournalRecord(MarketReference.CorporationDividendPayment, characterID, this.mCorporation.ID, pricePerMember);
+                }
+            }
+            
+            // send evemail to corporation mail as this will be received by all the members
+            this.MailManager.SendMail(
+                client.CorporationID,
+                client.CorporationID, 
+                $"Dividend from {this.mCorporation.Name}",
+                $"<a href=\"showinfo:2//{this.mCorporation.ID}\">{this.mCorporation.Name}</a> may have credited your account as part of a total payout of <b>{totalAmount} ISK</b> to their corporation members. The amount awarded is split evenly between all members of the corporation."
+            );
+        }
+
+        public PyDataType PayoutDividend(PyInteger payShareholders, PyInteger amount, CallInformation call)
+        {
+            // check if the player is the CEO
+            if (this.mCorporation.CeoID != call.Client.CharacterID)
+                throw new OnlyCEOCanPayoutDividends();
+            
+            using (Wallet wallet = this.WalletManager.AcquireWallet(call.Client.CorporationID, 1000))
+            {
+                // check if there's enough cash left
+                wallet.EnsureEnoughBalance(amount);
+                // make transaction
+                wallet.CreateJournalRecord(MarketReference.CorporationDividendPayment, null, null, amount);
+            }
+            
+            if (payShareholders == 1)
+            {
+                this.PayoutDividendsToShareholders(amount, call.Client);
+            }
+            else
+            {
+                this.PayoutDividendsToMembers(amount, call.Client);
+            }
             
             return null;
         }

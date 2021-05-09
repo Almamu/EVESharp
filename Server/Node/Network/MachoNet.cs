@@ -276,7 +276,7 @@ namespace Node.Network
             {
                 int errorID = ++this.mErrorCount;
 
-                Log.Fatal($"Detected non-client exception, registered as error {errorID}. Extra information: ");
+                Log.Fatal($"Detected non-client exception on call to {callInformation.Service}::{call}, registered as error {errorID}. Extra information: ");
                 Log.Fatal(ex.Message);
                 Log.Fatal(ex.StackTrace);
                 

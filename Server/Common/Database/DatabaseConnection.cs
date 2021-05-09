@@ -1073,7 +1073,9 @@ namespace Common.Database
                 // this typically happens when a UNION query is used
                 if (this.ColumnCharsets.TryGetValue($"{tableName}.{columnName}", out ColumnCharset charset) == false)
                 {
+                    #if DEBUG
                     Log.Warning("Defaulting column type to wide string because the table name cannot be determined. This usually happens when writing UNION queries.");
+                    #endif
                     return FieldType.WStr;
                 }
 

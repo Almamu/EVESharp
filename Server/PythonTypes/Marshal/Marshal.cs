@@ -646,7 +646,7 @@ namespace PythonTypes.Marshal
 
                     // bools, bytes and str are handled differently
                     case FieldType.Bool:
-                        if (value as PyBool)
+                        if (value is not null && value as PyBool)
                         {
                             int bit = booleanColumns.IndexOf(column);
                             
