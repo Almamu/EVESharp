@@ -569,6 +569,20 @@ namespace Node.Database
             );
         }
 
+        public Rowset GetMemberTrackingInfo(int corporationID, int characterID)
+        {
+            return Database.PrepareRowsetQuery(
+                "SELECT characterID, shp.typeID AS shipTypeID, shp.locationID AS locationID, 0 AS baseID, corporationDateTime AS startDateTime, title, corporationID, logonDateTime, logoffDateTime, corpRole AS roles, 0 AS grantableRoles, IF(online = 1, -1, IF(lastOnline = 0, NULL, (@currentTicks - lastOnline) / @ticksPerHour)) AS lastOnline FROM chrInformation LEFT JOIN invItems chr ON chr.itemID = characterID LEFT JOIN invItems shp ON shp.itemID = chr.locationID WHERE corporationID = @corporationID AND characterID = @characterID",
+                new Dictionary<string, object>()
+                {
+                    {"@characterID", characterID},
+                    {"@corporationID", corporationID},
+                    {"@ticksPerHour", TimeSpan.TicksPerHour},
+                    {"@currentTicks", DateTime.UtcNow.ToFileTimeUtc ()}
+                }
+            );
+        }
+
         public int GetTitleMaskForCharacter(int characterID, int corporationID)
         {
             MySqlConnection connection = null;

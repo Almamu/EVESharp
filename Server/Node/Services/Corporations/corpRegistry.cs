@@ -266,8 +266,11 @@ namespace Node.Services.Corporations
 
         public PyDataType GetMemberTrackingInfo(PyInteger characterID, CallInformation call)
         {
-            // TODO: RETURN FULL TRACKING INFO, ONLY DIRECTORS ARE ALLOWED TO DO SO!
-            return null;
+            // only directors can call this function
+            if (this.mCorporation.CeoID != call.Client.CharacterID)
+                return null;
+            
+            return this.DB.GetMemberTrackingInfo(call.Client.CorporationID, characterID);
         }
 
         public PyDataType GetMemberTrackingInfoSimple(CallInformation call)
