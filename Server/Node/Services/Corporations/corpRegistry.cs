@@ -655,7 +655,7 @@ namespace Node.Services.Corporations
         public PyDataType UpdateCorporationAbilities(CallInformation call)
         {
             if (this.mCorporation.CeoID != call.Client.CharacterID)
-                throw new CrpAccessDenied("Only the CEO can update the corporation's abilities");
+                throw new CrpAccessDenied(MLS.UI_CORP_ACCESSDENIED12);
 
             Character character = this.ItemFactory.GetItem<Character>(call.Client.EnsureCharacterIsSelected());
             

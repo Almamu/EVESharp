@@ -27,6 +27,10 @@ namespace Node.Network
         /// idType to use when notificating owners (corporation, character, alliances...)
         /// </summary>
         private const string NOTIFICATION_TYPE_OWNER = "ownerid";
+        /// <summary>
+        /// idType to use when notificating owners (corporation, character, alliances...) at a specific station
+        /// </summary>
+        private const string NOTIFICATION_TYPE_OWNER_LOCATIONID = "ownerid&locationid";
         
         /// <summary>
         /// The connection this notification manager is using to send notifications through
@@ -74,7 +78,7 @@ namespace Node.Network
 
         public void NotifyCharacters(PyList<PyInteger> characterIDs, ClientNotification notification)
         {
-            this.SendNotification(notification.NotificationName, NOTIFICATION_TYPE_CHARACTER, characterIDs, notification.GetElements());
+            this.SendNotification(NOTIFICATION_TYPE_CHARACTER, characterIDs, notification);
         }
         
         public void NotifyCharacter(int characterID, ClientNotification entry)
@@ -84,14 +88,18 @@ namespace Node.Network
                 return;
             
             // build a proper notification for this
-            this.SendNotification(entry.NotificationName, NOTIFICATION_TYPE_CHARACTER, characterID, entry.GetElements());
+            this.SendNotification(NOTIFICATION_TYPE_CHARACTER, characterID, entry);
         }
 
         public void NotifyOwner(int ownerID, ClientNotification entry)
         {
-            this.SendNotification(entry.NotificationName, NOTIFICATION_TYPE_OWNER, ownerID, entry.GetElements());
+            this.SendNotification(NOTIFICATION_TYPE_OWNER, ownerID, entry);
         }
-        
+
+        public void NotifyOwnerAtLocation(int ownerID, int locationID, ClientNotification entry)
+        {
+            this.SendNotification(NOTIFICATION_TYPE_OWNER_LOCATIONID, new PyTuple(2) {[0] = ownerID, [1] = locationID}, entry);
+        }
         public void NotifyCorporation(int corporationID, string type, PyTuple notification)
         {
             this.SendNotification(type, NOTIFICATION_TYPE_CORPORATON, corporationID, notification);
@@ -99,7 +107,7 @@ namespace Node.Network
 
         public void NotifyCorporation(int corporationID, ClientNotification notification)
         {
-            this.SendNotification(notification.NotificationName, NOTIFICATION_TYPE_CORPORATON, corporationID, notification.GetElements());
+            this.SendNotification(NOTIFICATION_TYPE_CORPORATON, corporationID, notification);
         }
 
         public void NotifyStation(int stationID, string type, PyTuple notification)
@@ -109,7 +117,7 @@ namespace Node.Network
 
         public void NotifyStation(int stationID, ClientNotification notification)
         {
-            this.SendNotification(notification.NotificationName, NOTIFICATION_TYPE_STATION, stationID, notification.GetElements());
+            this.SendNotification(NOTIFICATION_TYPE_STATION, stationID, notification);
         }
 
         /// <summary>
@@ -140,6 +148,11 @@ namespace Node.Network
         public void SendNotification(string idType, int id, ClientNotification data)
         {
             this.SendNotification(data.NotificationName, idType, new PyList(1) {[0] = id}, data.GetElements());
+        }
+
+        public void SendNotification(string idType, PyTuple id, ClientNotification data)
+        {
+            this.SendNotification(data.NotificationName, idType, new PyList(1) { [0] = id}, data.GetElements());
         }
 
         public void SendNotification(string notificationType, string idType, int id, PyTuple data)

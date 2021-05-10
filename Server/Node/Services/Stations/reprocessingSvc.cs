@@ -101,7 +101,7 @@ namespace Node.Services.Stations
                 throw new CanOnlyDoInStations();
             
             Corporation corporation = this.ItemFactory.GetItem<Corporation>(station.OwnerID);
-            ItemInventory inventory = this.ItemFactory.MetaInventoryManager.RegisterMetaInventoryForOwnerID(station, call.Client.EnsureCharacterIsSelected());
+            ItemInventory inventory = this.ItemFactory.MetaInventoryManager.RegisterMetaInventoryForOwnerID(station, call.Client.EnsureCharacterIsSelected(), Flags.Hangar);
 
             return new reprocessingSvc(this.ReprocessingDB, this.StandingDB, corporation, station, inventory, this.ItemFactory, this.BoundServiceManager, call.Client);
         }

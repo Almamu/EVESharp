@@ -6,18 +6,24 @@ namespace Node.Inventory.Items
 {
     public class ItemInventoryByOwnerID : ItemInventory
     {
-        public int ItemOwnerID { get; }
-        
+        private int mOwnerID;
+
+        public override int OwnerID
+        {
+            get => this.mOwnerID;
+            set => this.mOwnerID = value;
+        }
+
         public ItemInventoryByOwnerID(int ownerID, ItemInventory @from) : base(@from)
         {
-            this.ItemOwnerID = ownerID;
+            this.mOwnerID = ownerID;
         }
 
         protected override void LoadContents(Flags ignoreFlags = Flags.None)
         {
             lock (this)
             {
-                this.mItems = this.ItemFactory.LoadItemsLocatedAtByOwner(this, this.ItemOwnerID);
+                this.mItems = this.ItemFactory.LoadItemsLocatedAtByOwner(this, this.OwnerID);
                 
                 this.ContentsLoaded = true;
             }

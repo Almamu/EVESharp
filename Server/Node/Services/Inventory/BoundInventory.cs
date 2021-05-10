@@ -25,23 +25,26 @@ namespace Node.Services.Inventory
         private ItemDB ItemDB { get; }
         private NodeContainer NodeContainer { get; }
         private ItemFactory ItemFactory { get; }
+        private NotificationManager NotificationManager { get; init; }
 
-        public BoundInventory(ItemDB itemDB, ItemInventory item, ItemFactory itemFactory, NodeContainer nodeContainer, BoundServiceManager manager, Client client) : base(manager, client)
+        public BoundInventory(ItemDB itemDB, ItemInventory item, ItemFactory itemFactory, NodeContainer nodeContainer, NotificationManager notificationManager, BoundServiceManager manager, Client client) : base(manager, client)
         {
             this.mInventory = item;
             this.mFlag = Flags.None;
             this.ItemDB = itemDB;
             this.ItemFactory = itemFactory;
             this.NodeContainer = nodeContainer;
+            this.NotificationManager = notificationManager;
         }
 
-        public BoundInventory(ItemDB itemDB, ItemInventory item, Flags flag, ItemFactory itemFactory, NodeContainer nodeContainer, BoundServiceManager manager, Client client) : base(manager, client)
+        public BoundInventory(ItemDB itemDB, ItemInventory item, Flags flag, ItemFactory itemFactory, NodeContainer nodeContainer, NotificationManager notificationManager, BoundServiceManager manager, Client client) : base(manager, client)
         {
             this.mInventory = item;
             this.mFlag = flag;
             this.ItemDB = itemDB;
             this.ItemFactory = itemFactory;
             this.NodeContainer = nodeContainer;
+            this.NotificationManager = notificationManager;
         }
 
         public PyDataType List(CallInformation call)
@@ -84,6 +87,9 @@ namespace Node.Services.Inventory
         {
             if (this.mInventory.Type.ID == (int) Types.Capsule)
                 throw new CantTakeInSpaceCapsule();
+            // if this inventory is a delivery section, items cannot be moved to it
+            if (this.mFlag == Flags.CorpMarket)
+                throw new CustomError("You cannot move items into this hangar");
 
             // perform checks only on cargo
             if (this.mInventory is Ship ship && flag == Flags.Cargo)
@@ -217,6 +223,7 @@ namespace Node.Services.Inventory
             // get the old location stored as it'll be used in the notifications
             int oldLocation = item.LocationID;
             Flags oldFlag = item.Flag;
+            int oldOwnerID = item.OwnerID;
             
             // rig slots cannot be moved
             if (item.IsInRigSlot() == true)
@@ -289,19 +296,26 @@ namespace Node.Services.Inventory
 
                     if (item.Singleton == false)
                         changes.AddChange(ItemChange.Singleton, item.Singleton);
+                    if (item.OwnerID != this.mInventory.OwnerID)
+                        changes.AddChange(ItemChange.OwnerID, item.OwnerID);
 
                     item.LocationID = this.mInventory.ID;
                     item.Flag = newFlag;
                     item.Singleton = true;
+                    // update the owner ID to ensure the item stays visible (for example when moving from corp's deliveries to player's hangar)
+                    item.OwnerID = this.mInventory.OwnerID;
 
                     changes
                         .AddChange(ItemChange.LocationID, oldLocation)
                         .AddChange(ItemChange.Flag, (int) oldFlag);
             
                     // notify the character about the change
-                    Client.NotifyMultiEvent(changes);
+                    this.NotificationManager.NotifyOwnerAtLocation(item.OwnerID, item.LocationID, changes);
+                    // notify the old owner if it changed
+                    if (item.OwnerID != oldOwnerID)
+                        this.NotificationManager.NotifyOwnerAtLocation(oldOwnerID, oldLocation, changes);
                     // update meta inventories too
-                    this.ItemFactory.MetaInventoryManager.OnItemMoved(item, oldLocation, this.mInventory.ID);
+                    this.ItemFactory.MetaInventoryManager.OnItemMoved(item, oldLocation, this.mInventory.ID, oldFlag, newFlag);
 
                     // finally persist the item changes
                     item.Persist();
@@ -309,14 +323,20 @@ namespace Node.Services.Inventory
                 else
                 {
                     // item is not a singleton, create a new item, decrease quantity and send notifications
-                    ItemEntity newItem = this.ItemFactory.CreateSimpleItem(item.Type, item.OwnerID, this.mInventory.ID, newFlag, 1, false,
+                    ItemEntity newItem = this.ItemFactory.CreateSimpleItem(item.Type, this.mInventory.OwnerID, this.mInventory.ID, newFlag, 1, false,
                         true);
 
                     item.Quantity -= 1;
+
+                    OnItemChange quantityChange = OnItemChange.BuildQuantityChange(item, item.Quantity + 1);
+                    // notify the character about the change in quantity
+                    this.NotificationManager.NotifyOwnerAtLocation(item.OwnerID, item.LocationID, quantityChange);
+                    // notify the old owner if it changed
+                    if (item.OwnerID != oldOwnerID)
+                        this.NotificationManager.NotifyOwnerAtLocation(item.OwnerID, oldLocation, quantityChange);
                     
-                    // notify the quantity change and the new item
-                    Client.NotifyMultiEvent(OnItemChange.BuildQuantityChange(item, item.Quantity + 1));
-                    Client.NotifyMultiEvent(OnItemChange.BuildLocationChange(newItem, Flags.None, 0));
+                    // notify the new owner on the new item
+                    this.NotificationManager.NotifyOwnerAtLocation(item.OwnerID, item.LocationID, OnItemChange.BuildLocationChange(newItem, Flags.None, 0));
                     
                     item.Persist();
 
@@ -340,12 +360,21 @@ namespace Node.Services.Inventory
 
                     int newOldLocation = item.LocationID;
                     Flags newOldFlag = item.Flag;
+                    int newOldOwnerID = item.OwnerID;
                     
                     // now undo the whole thing
                     item.LocationID = oldLocation;
                     item.Flag = oldFlag;
+                    item.OwnerID = oldOwnerID;
+
+                    OnItemChange locationChange = OnItemChange.BuildLocationChange(item, newOldFlag, newOldLocation);
                     
-                    Client.NotifyMultiEvent(OnItemChange.BuildLocationChange(item, newOldFlag, newOldLocation));
+                    this.NotificationManager.NotifyOwnerAtLocation(item.OwnerID, item.LocationID, locationChange);
+                    
+                    // notify the owners again
+                    if (item.OwnerID != newOldOwnerID)
+                        this.NotificationManager.NotifyOwnerAtLocation(newOldOwnerID, newOldLocation, locationChange.AddChange (ItemChange.OwnerID, newOldOwnerID));
+                    
                     throw;
                 }
 
@@ -364,14 +393,28 @@ namespace Node.Services.Inventory
                 if (this.ItemFactory.TryGetItem(item.LocationID, out ItemInventory inventory) == true)
                     inventory.RemoveItem(item);
                 
+                OnItemChange changes = new OnItemChange(item);
+
+                if (item.OwnerID != this.mInventory.OwnerID)
+                    changes.AddChange(ItemChange.OwnerID, item.OwnerID);
+
+                changes
+                    .AddChange(ItemChange.LocationID, item.LocationID)
+                    .AddChange(ItemChange.Flag, (int) item.Flag);
+                
                 // set the new location for the item
                 item.LocationID = this.mInventory.ID;
                 item.Flag = newFlag;
-            
-                // notify the character about the change
-                Client.NotifyMultiEvent(OnItemChange.BuildLocationChange(item, oldFlag, oldLocation));
+                item.OwnerID = this.mInventory.OwnerID;
+
+                // notify the old owner
+                if (oldOwnerID != item.OwnerID)
+                    this.NotificationManager.NotifyOwnerAtLocation(oldOwnerID, oldLocation, changes);
+                
+                // notify the new owner
+                this.NotificationManager.NotifyOwnerAtLocation(item.OwnerID, item.LocationID, changes);
                 // update meta inventories too
-                this.ItemFactory.MetaInventoryManager.OnItemMoved(item, oldLocation, this.mInventory.ID);
+                this.ItemFactory.MetaInventoryManager.OnItemMoved(item, oldLocation, this.mInventory.ID, oldFlag, newFlag);
 
                 // ensure the new inventory knows
                 this.mInventory.AddItem(item);
@@ -564,9 +607,9 @@ namespace Node.Services.Inventory
             return null;
         }
 
-        public static PySubStruct BindInventory(ItemDB itemDB, ItemInventory item, Flags flag, ItemFactory itemFactory, NodeContainer nodeContainer, BoundServiceManager boundServiceManager, Client client)
+        public static PySubStruct BindInventory(ItemDB itemDB, ItemInventory item, Flags flag, ItemFactory itemFactory, NodeContainer nodeContainer, NotificationManager notificationManager, BoundServiceManager boundServiceManager, Client client)
         {
-            BoundService instance = new BoundInventory(itemDB, item, flag, itemFactory, nodeContainer, boundServiceManager, client);
+            BoundService instance = new BoundInventory(itemDB, item, flag, itemFactory, nodeContainer, notificationManager, boundServiceManager, client);
             // bind the service
             int boundID = boundServiceManager.BoundService(instance);
             // build the bound service string

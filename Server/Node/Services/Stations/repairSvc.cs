@@ -89,7 +89,7 @@ namespace Node.Services.Stations
             if (station.ID != call.Client.StationID)
                 throw new CanOnlyDoInStations();
             
-            ItemInventory inventory = this.ItemFactory.MetaInventoryManager.RegisterMetaInventoryForOwnerID(station, call.Client.EnsureCharacterIsSelected());
+            ItemInventory inventory = this.ItemFactory.MetaInventoryManager.RegisterMetaInventoryForOwnerID(station, call.Client.EnsureCharacterIsSelected(), Flags.Hangar);
 
             return new repairSvc(this.RepairDB, this.MarketDB, this.InsuranceDB, this.Container, this.NotificationManager, inventory, this.ItemFactory, this.BoundServiceManager, this.WalletManager, call.Client);
         }

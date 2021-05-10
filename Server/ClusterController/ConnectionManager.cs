@@ -24,6 +24,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO.Compression;
 using System.Net.Sockets;
 using ClusterController.Database;
 using Common.Constants;
@@ -305,6 +306,33 @@ namespace ClusterController
                             packet.UserID = userID;
                             // change the ids of interest to hide the character's we've notified
                             destination.IDsOfInterest = new PyList(1) {[0] = id};
+                            // queue the packet for the user
+                            connection.Socket.Send(packet);
+                        }
+                    }
+                }
+            }
+        }
+
+        public void NotifyByOwnerIDAndLocationID(PyPacket packet, PyAddressBroadcast destination)
+        {
+            lock (this.Clients)
+            {
+                foreach (PyTuple ids in destination.IDsOfInterest.GetEnumerable<PyTuple>())
+                {
+                    PyInteger ownerid = ids[0] as PyInteger;
+                    PyInteger locationID = ids[1] as PyInteger;
+                    
+                    foreach ((long userID, ClientConnection connection) in this.Clients)
+                    {
+                        if (
+                            (connection.CharacterID == ownerid || connection.CorporationID == ownerid) &&
+                            (connection.StationID == locationID || connection.SolarSystemID2 == locationID || connection.ConstellationID == locationID ||connection.RegionID == locationID))
+                        {
+                            // use the key instead of AccountID as this should be faster
+                            packet.UserID = userID;
+                            // change the ids of interest to hide the character's we've notified
+                            destination.IDsOfInterest = new PyList(1) {[0] = ownerid};
                             // queue the packet for the user
                             connection.Socket.Send(packet);
                         }

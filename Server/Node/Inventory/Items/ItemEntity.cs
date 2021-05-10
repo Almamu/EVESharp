@@ -100,7 +100,7 @@ namespace Node.Inventory.Items
             }
         }
 
-        public int OwnerID
+        public virtual int OwnerID
         {
             get => mOwnerID;
             set

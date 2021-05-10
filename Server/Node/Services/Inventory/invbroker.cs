@@ -1,6 +1,8 @@
+using EVE;
 using EVE.Packets.Exceptions;
 using Node.Database;
 using Node.Exceptions;
+using Node.Exceptions.corpRegistry;
 using Node.Exceptions.inventory;
 using Node.Exceptions.ship;
 using Node.Inventory;
@@ -8,6 +10,7 @@ using Node.Inventory.Items;
 using Node.Inventory.Items.Types;
 using Node.Network;
 using Node.Notifications.Client.Inventory;
+using Node.StaticData.Corporation;
 using Node.StaticData.Inventory;
 using PythonTypes.Types.Collections;
 using PythonTypes.Types.Primitives;
@@ -23,20 +26,23 @@ namespace Node.Services.Inventory
         private ItemDB ItemDB { get; }
         private NodeContainer NodeContainer { get; }
         private SystemManager SystemManager => this.ItemFactory.SystemManager;
+        private NotificationManager NotificationManager { get; init; }
 
-        public invbroker(ItemDB itemDB, ItemFactory itemFactory, NodeContainer nodeContainer, BoundServiceManager manager) : base(manager, null)
+        public invbroker(ItemDB itemDB, ItemFactory itemFactory, NodeContainer nodeContainer, NotificationManager notificationManager, BoundServiceManager manager) : base(manager, null)
         {
             this.ItemFactory = itemFactory;
             this.ItemDB = itemDB;
             this.NodeContainer = nodeContainer;
+            this.NotificationManager = notificationManager;
         }
 
-        private invbroker(ItemDB itemDB, ItemFactory itemFactory, NodeContainer nodeContainer, BoundServiceManager manager, int objectID, Client client) : base(manager, client)
+        private invbroker(ItemDB itemDB, ItemFactory itemFactory, NodeContainer nodeContainer, NotificationManager notificationManager, BoundServiceManager manager, int objectID, Client client) : base(manager, client)
         {
             this.ItemFactory = itemFactory;
             this.ItemDB = itemDB;
             this.mObjectID = objectID;
             this.NodeContainer = nodeContainer;
+            this.NotificationManager = notificationManager;
         }
 
         public override PyInteger MachoResolveObject(PyTuple objectData, PyInteger zero, CallInformation call)
@@ -81,7 +87,7 @@ namespace Node.Services.Inventory
             if (this.MachoResolveObject(tupleData, 0, call) != this.NodeContainer.NodeID)
                 throw new CustomError("Trying to bind an object that does not belong to us!");
             
-            return new invbroker(this.ItemDB, this.ItemFactory, this.NodeContainer, this.BoundServiceManager, tupleData[0] as PyInteger, call.Client);
+            return new invbroker(this.ItemDB, this.ItemFactory, this.NodeContainer, this.NotificationManager, this.BoundServiceManager, tupleData[0] as PyInteger, call.Client);
         }
 
         private ItemInventory CheckInventoryBeforeLoading(ItemEntity inventoryItem)
@@ -103,10 +109,10 @@ namespace Node.Services.Inventory
             
             // create a meta inventory only if required
             if (inventoryItem is not Ship && inventoryItem is not Character)
-                inventory = this.ItemFactory.MetaInventoryManager.RegisterMetaInventoryForOwnerID(inventoryItem, ownerID);
+                inventory = this.ItemFactory.MetaInventoryManager.RegisterMetaInventoryForOwnerID(inventoryItem, ownerID, flag);
             
             // create an instance of the inventory service and bind it to the item data
-            return BoundInventory.BindInventory(this.ItemDB, inventory, flag, this.ItemFactory, this.NodeContainer, this.BoundServiceManager, client);
+            return BoundInventory.BindInventory(this.ItemDB, inventory, flag, this.ItemFactory, this.NodeContainer, this.NotificationManager, this.BoundServiceManager, client);
         }
 
         public PySubStruct GetInventoryFromId(PyInteger itemID, PyInteger one, CallInformation call)
@@ -144,6 +150,12 @@ namespace Node.Services.Inventory
                 case (int) Container.CorpMarket:
                     flag = Flags.CorpMarket;
                     ownerID = call.Client.CorporationID;
+                    
+                    // check permissions
+                    if (CorporationRole.Accountant.Is(call.Client.CorporationRole) == false &&
+                        CorporationRole.JuniorAccountant.Is(call.Client.CorporationRole) == false &&
+                        CorporationRole.Trader.Is(call.Client.CorporationRole) == false)
+                        throw new CrpAccessDenied(MLS.UI_CORP_ACCESSDENIED14);
                     break;
                 
                 default:

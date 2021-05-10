@@ -59,7 +59,7 @@ namespace Node.Services.Account
                 return this.GetCashBalance(call.Client);
 
             if (this.WalletManager.IsAccessAllowed(call.Client, walletKey, call.Client.CorporationID) == false)
-                throw new CrpAccessDenied("You are not allowed to see the corporation's accounts");
+                throw new CrpAccessDenied(MLS.UI_CORP_ACCESSTOWALLETDIVISIONDENIED);
 
             return this.WalletDB.GetWalletBalance(call.Client.CorporationID, walletKey);
         }
@@ -97,7 +97,7 @@ namespace Node.Services.Account
                 entityID = call.Client.CorporationID;
 
             if (this.WalletManager.IsAccessAllowed(call.Client, accountKey, entityID) == false)
-                throw new CrpAccessDenied("You are not allowed to access that division's wallet");
+                throw new CrpAccessDenied(MLS.UI_CORP_ACCESSTOWALLETDIVISIONDENIED);
             
             // journal requires accountant roles for corporation
             if (entityID == call.Client.CorporationID && (CorporationRole.Accountant.Is(call.Client.CorporationRole) == false || CorporationRole.JuniorAccountant.Is(call.Client.CorporationRole) == false))
@@ -157,7 +157,7 @@ namespace Node.Services.Account
         {
             // ensure the character can take from the account in question
             if (this.WalletManager.IsTakeAllowed(call.Client, accountKey, call.Client.CorporationID) == false)
-                throw new CrpAccessDenied("You are not allowed to access that division's wallet");
+                throw new CrpAccessDenied(MLS.UI_CORP_ACCESSTOWALLETDIVISIONDENIED);
             
             // acquire the origin wallet, subtract quantity
             // TODO: CHECK IF THE WALLETKEY IS INDICATED IN SOME WAY

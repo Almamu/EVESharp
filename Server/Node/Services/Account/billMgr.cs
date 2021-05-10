@@ -1,4 +1,5 @@
 using Common.Services;
+using EVE;
 using EVE.Packets.Complex;
 using Node.Database;
 using Node.Exceptions.corpRegistry;
@@ -37,7 +38,7 @@ namespace Node.Services.Account
             // make sure the player has the accountant role
             if (CorporationRole.Accountant.Is(call.Client.CorporationRole) == false &&
                 CorporationRole.JuniorAccountant.Is(call.Client.CorporationRole) == false)
-                throw new CrpAccessDenied("Only accountants can access the bills");
+                throw new CrpAccessDenied(MLS.UI_CORP_ACCESSDENIED3);
             
             return this.DB.GetCorporationBillsReceivable(call.Client.CorporationID);
         }
@@ -47,7 +48,7 @@ namespace Node.Services.Account
             // make sure the player has the accountant role
             if (CorporationRole.Accountant.Is(call.Client.CorporationRole) == false &&
                 CorporationRole.JuniorAccountant.Is(call.Client.CorporationRole) == false)
-                throw new CrpAccessDenied("Only accountants can access the bills");
+                throw new CrpAccessDenied(MLS.UI_CORP_ACCESSDENIED3);
             
             return this.DB.GetCorporationBillsPayable(call.Client.CorporationID);
         }
