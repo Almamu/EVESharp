@@ -54,13 +54,13 @@ namespace PythonTypes.Types.Database
         }
 
         /// <summary>
-        /// Simple helper method that creates rows to be returned from a SparseRowset-based bound service
+        /// Simple helper method that creates rows to be returned from a SparseRowset-based bound service FetchByKey
         /// </summary>
         /// <param name="pkFieldIndex">The field to use as primary key</param>
         /// <param name="reader">The reader to read data from the database</param>
         /// <param name="rowsIndex">The indexed rows</param>
         /// <returns></returns>
-        public PyList<PyTuple> DataFromMySqlReader(int pkFieldIndex, MySqlDataReader reader, Dictionary<PyDataType, int> rowsIndex)
+        public PyList<PyTuple> FetchByKey(int pkFieldIndex, MySqlDataReader reader, Dictionary<PyDataType, int> rowsIndex)
         {
             PyList<PyTuple> result = new PyList<PyTuple>();
 
@@ -74,6 +74,33 @@ namespace PythonTypes.Types.Database
                         [0] = keyValue,
                         [1] = rowsIndex[keyValue],
                         [2] = Row.FromMySqlDataReader(reader, this.Headers, this.FieldTypes) 
+                    }
+                );
+            }
+            
+            return result;
+        }
+
+        /// <summary>
+        /// Simple helper method that creates rows to be returned from a SparseRowset-based bound service FetchByKey
+        /// </summary>
+        /// <param name="pkFieldIndex">The field to use as primary key</param>
+        /// <param name="reader">The reader to read data from the database</param>
+        /// <param name="rowsIndex">The indexed rows</param>
+        /// <returns></returns>
+        public PyList<PyTuple> Fetch(int pkFieldIndex, MySqlDataReader reader, Dictionary<PyDataType, int> rowsIndex)
+        {
+            PyList<PyTuple> result = new PyList<PyTuple>();
+
+            while (reader.Read() == true)
+            {
+                PyDataType keyValue = IDatabaseConnection.ObjectFromColumn(reader, this.FieldTypes[pkFieldIndex], pkFieldIndex);
+                
+                result.Add(
+                    new PyTuple(2)
+                    {
+                        [0] = keyValue,
+                        [1] = Row.FromMySqlDataReader(reader, this.Headers, this.FieldTypes) 
                     }
                 );
             }

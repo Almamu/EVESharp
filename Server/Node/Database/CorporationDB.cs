@@ -286,7 +286,7 @@ namespace Node.Database
             using (connection)
             using (reader)
             {
-                return header.DataFromMySqlReader(0, reader, rowsIndex);
+                return header.FetchByKey(0, reader, rowsIndex);
             }
         }
 
@@ -294,11 +294,7 @@ namespace Node.Database
         {
             MySqlConnection connection = null;
             MySqlDataReader reader = Database.PrepareQuery(ref connection,
-                "SELECT" +
-                " itemID, stationID, typeID, officeFolderID " +
-                "FROM crpOffices " +
-                "WHERE corporationID=@corporationID " +
-                "LIMIT @startPos,@limit",
+                "SELECT itemID, stationID, typeID, officeFolderID FROM crpOffices WHERE corporationID = @corporationID LIMIT @startPos,@limit",
                 new Dictionary<string, object>()
                 {
                     {"@corporationID", corporationID},
@@ -310,7 +306,7 @@ namespace Node.Database
             using (connection)
             using (reader)
             {
-                return header.DataFromMySqlReader(0, reader, rowsIndex);
+                return header.Fetch(0, reader, rowsIndex);
             }
         }
 
@@ -320,7 +316,7 @@ namespace Node.Database
             MySqlDataReader reader =
                 Database.PrepareQuery(
                     ref connection,
-                    "SELECT COUNT(*) AS recordCount FROM crpOffices WHERE corporationID=@corporationID",
+                    "SELECT COUNT(*) AS recordCount FROM crpOffices WHERE corporationID = @corporationID",
                     new Dictionary<string, object>()
                     {
                         {"@corporationID", corporationID}
@@ -409,7 +405,7 @@ namespace Node.Database
             using (connection)
             using (reader)
             {
-                return header.DataFromMySqlReader(0, reader, rowsIndex);
+                return header.FetchByKey(0, reader, rowsIndex);
             }
         }
 
@@ -440,7 +436,7 @@ namespace Node.Database
             using (connection)
             using (reader)
             {
-                return header.DataFromMySqlReader(0, reader, rowsIndex);
+                return header.FetchByKey(0, reader, rowsIndex);
             }
         }
 
