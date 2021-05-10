@@ -97,13 +97,13 @@ namespace Node.Services.Inventory
             return inventoryItem as ItemInventory;
         }
 
-        private PySubStruct BindInventory(ItemInventory inventoryItem, int characterID, Client client, Flags flag)
+        private PySubStruct BindInventory(ItemInventory inventoryItem, int ownerID, Client client, Flags flag)
         {
             ItemInventory inventory = inventoryItem;
             
             // create a meta inventory only if required
             if (inventoryItem is not Ship && inventoryItem is not Character)
-                inventory = this.ItemFactory.MetaInventoryManager.RegisterMetaInventoryForOwnerID(inventoryItem, characterID);
+                inventory = this.ItemFactory.MetaInventoryManager.RegisterMetaInventoryForOwnerID(inventoryItem, ownerID);
             
             // create an instance of the inventory service and bind it to the item data
             return BoundInventory.BindInventory(this.ItemDB, inventory, flag, this.ItemFactory, this.NodeContainer, this.BoundServiceManager, client);
@@ -123,7 +123,7 @@ namespace Node.Services.Inventory
 
         public PySubStruct GetInventory(PyInteger containerID, PyDataType none, CallInformation call)
         {
-            int callerCharacterID = call.Client.EnsureCharacterIsSelected();
+            int ownerID = call.Client.EnsureCharacterIsSelected();
             
             Flags flag = Flags.None;
             
@@ -141,6 +141,10 @@ namespace Node.Services.Inventory
                 case (int) Container.Global:
                     flag = Flags.None;
                     break;
+                case (int) Container.CorpMarket:
+                    flag = Flags.CorpMarket;
+                    ownerID = call.Client.CorporationID;
+                    break;
                 
                 default:
                     throw new CustomError($"Trying to open container ID ({containerID.Value}) is not supported");
@@ -151,7 +155,7 @@ namespace Node.Services.Inventory
 
             return this.BindInventory(
                 this.CheckInventoryBeforeLoading(inventoryItem),
-                callerCharacterID,
+                ownerID,
                 call.Client, flag
             );
         }
