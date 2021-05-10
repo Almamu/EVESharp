@@ -24,46 +24,6 @@ CREATE TABLE `alliance_shortnames` (
 
 /*Data for the table `alliance_shortnames` */
 
-/*Table structure for table `billsPayable` */
-
-DROP TABLE IF EXISTS `billsPayable`;
-
-CREATE TABLE `billsPayable` (
-  `billID` int(10) unsigned NOT NULL default '0',
-  `billTypeID` int(10) unsigned default NULL,
-  `debtorID` int(10) unsigned default NULL,
-  `creditorID` int(10) unsigned default NULL,
-  `amount` text NOT NULL,
-  `dueDateTime` text NOT NULL,
-  `interest` text NOT NULL,
-  `externalID` int(10) unsigned default NULL,
-  `paid` text NOT NULL,
-  `externalID2` text NOT NULL,
-  PRIMARY KEY  (`billID`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
-/*Data for the table `billsPayable` */
-
-/*Table structure for table `billsReceivable` */
-
-DROP TABLE IF EXISTS `billsReceivable`;
-
-CREATE TABLE `billsReceivable` (
-  `billID` int(10) unsigned NOT NULL default '0',
-  `billTypeID` int(10) unsigned default NULL,
-  `debtorID` int(10) unsigned default NULL,
-  `creditorID` int(10) unsigned default NULL,
-  `amount` text NOT NULL,
-  `dueDateTime` text NOT NULL,
-  `interest` text NOT NULL,
-  `externalID` int(10) unsigned default NULL,
-  `paid` text NOT NULL,
-  `externalID2` text NOT NULL,
-  PRIMARY KEY  (`billID`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
-/*Data for the table `billsReceivable` */
-
 /*Table structure for table `cacheLocations` */
 
 DROP TABLE IF EXISTS `cacheLocations`;

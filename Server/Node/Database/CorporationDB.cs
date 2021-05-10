@@ -640,7 +640,7 @@ namespace Node.Database
         {
             Dictionary<string, object> parameters = new Dictionary<string, object>();
             string query =
-                "SELECT adID, crpRecruitmentAds.corporationID, typeMask, crpRecruitmentAds.description, crpRecruitmentAds.stationID, corporation.allowedMemberRaceIDs AS raceMask, corporation.allianceID FROM crpRecruitmentAds LEFT JOIN corporation ON corporation.corporationID = crpRecruitmentAds.corporationID WHERE 1=1";
+                "SELECT adID, crpRecruitmentAds.corporationID, typeMask, crpRecruitmentAds.description, crpRecruitmentAds.stationID, corporation.allowedMemberRaceIDs AS raceMask, corporation.allianceID FROM crpRecruitmentAds LEFT JOIN corporation USING(corporationID) WHERE 1=1";
 
             if (regionID is not null)
             {
@@ -687,7 +687,7 @@ namespace Node.Database
 
             if (corporationID is not null)
             {
-                query += " AND corporation.corporationID = @corporationID";
+                query += " AND corporationID = @corporationID";
                 parameters["@corporationID"] = corporationID;
             }
 

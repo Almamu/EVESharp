@@ -16,6 +16,7 @@ using Node.Inventory.Items.Types;
 using Node.Market;
 using Node.Network;
 using Node.Notifications.Client.Corporations;
+using Node.Notifications.Client.Wallet;
 using Node.StaticData;
 using Node.StaticData.Corporation;
 using Node.StaticData.Inventory;

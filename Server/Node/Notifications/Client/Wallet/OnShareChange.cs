@@ -3,7 +3,7 @@ using EVE.Packets.Complex;
 using PythonTypes.Types.Collections;
 using PythonTypes.Types.Primitives;
 
-namespace Node.Notifications.Client.Corporations
+namespace Node.Notifications.Client.Wallet
 {
     public class OnShareChange : ClientNotification
     {

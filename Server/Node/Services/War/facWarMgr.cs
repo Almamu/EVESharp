@@ -95,9 +95,14 @@ namespace Node.Services.War
         public PyDataType GetFactionalWarStatus(CallInformation call)
         {
             if (call.Client.WarFactionID is null)
-                return null;
-            
-            return KeyVal.FromDictionary(
+                return KeyVal.FromDictionary(
+                    new PyDictionary
+                    {
+                        ["status"] = null
+                    }
+                );
+
+        return KeyVal.FromDictionary(
                 new PyDictionary()
                 {
                     ["factionID"] = call.Client.WarFactionID,
@@ -154,6 +159,11 @@ namespace Node.Services.War
             // save the character
             character.Persist();
             
+            return null;
+        }
+
+        public PyDataType JoinFactionAsCorporation(PyInteger factionID, CallInformation call)
+        {
             return null;
         }
 

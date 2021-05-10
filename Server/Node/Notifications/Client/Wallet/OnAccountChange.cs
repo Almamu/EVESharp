@@ -2,7 +2,7 @@
 using EVE.Packets.Complex;
 using PythonTypes.Types.Primitives;
 
-namespace Node.Notifications.Client.Character
+namespace Node.Notifications.Client.Wallet
 {
     public class OnAccountChange : ClientNotification
     {

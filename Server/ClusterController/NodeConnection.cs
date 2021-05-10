@@ -118,6 +118,9 @@ namespace ClusterController
                 case "warfactionid":
                     this.ConnectionManager.NotifyByWarFactionID(packet, destination);
                     break;
+                case "ownerid":
+                    this.ConnectionManager.NotifyByOwnerID(packet, destination);
+                    break;
                 // TODO: IMPLEMENT OTHER NOTIFICATION ID TYPES BASED ON THE CLIENT CODE IF THEY'RE ACTUALLY USEFUL
                 default:
                     Log.Error($"Unexpected broadcast with idtype {destination.IDType.Value} and negative userID (autofill by ClusterController)");

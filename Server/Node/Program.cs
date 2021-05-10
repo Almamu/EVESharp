@@ -126,6 +126,7 @@ namespace Node
                 dependencies.Register<FactoryDB>(Lifestyle.Singleton);
                 dependencies.Register<WalletDB>(Lifestyle.Singleton);
                 dependencies.Register<TutorialsDB>(Lifestyle.Singleton);
+                dependencies.Register<BillsDB>(Lifestyle.Singleton);
 
                 // register all the services
                 dependencies.Register<account>(Lifestyle.Singleton);

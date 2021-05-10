@@ -125,8 +125,9 @@ namespace Node.StaticData.Inventory
         SpecializedLargeShipHold = 141,
         SpecializedIndustrialShipHold = 142,
         SpecializedAmmoHold = 143,
+        HangarAll = 1000,
         Clone = 1337,
-        HangarAll = 1000
+        Office = 1338
     }
 
     public static class FlagsExtensions

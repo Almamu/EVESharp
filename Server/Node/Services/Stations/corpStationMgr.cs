@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using EVE.Packets.Exceptions;
 using Node.Database;
 using Node.Exceptions;
@@ -9,8 +10,10 @@ using Node.Inventory.Items;
 using Node.Inventory.Items.Types;
 using Node.Market;
 using Node.Network;
+using Node.Notifications.Client.Corporations;
 using Node.Services.Account;
 using Node.StaticData;
+using Node.StaticData.Corporation;
 using Node.StaticData.Inventory;
 using PythonTypes.Types.Collections;
 using PythonTypes.Types.Database;
@@ -24,22 +27,31 @@ namespace Node.Services.Stations
         private ItemFactory ItemFactory { get; }
         private ItemDB ItemDB => this.ItemFactory.ItemDB;
         private MarketDB MarketDB { get; }
+        private StationDB StationDB { get; init; }
+        private BillsDB BillsDB { get; init; }
         private TypeManager TypeManager => this.ItemFactory.TypeManager;
         private SystemManager SystemManager => this.ItemFactory.SystemManager;
         private WalletManager WalletManager { get; }
         private NodeContainer Container { get; }
+        private NotificationManager NotificationManager { get; init; }
         
-        public corpStationMgr(MarketDB marketDB, ItemFactory itemFactory, NodeContainer container, BoundServiceManager manager, WalletManager walletManager) : base(manager, null)
+        public corpStationMgr(MarketDB marketDB, StationDB stationDb, BillsDB billsDb, NotificationManager notificationManager, ItemFactory itemFactory, NodeContainer container, BoundServiceManager manager, WalletManager walletManager) : base(manager, null)
         {
             this.MarketDB = marketDB;
+            this.StationDB = stationDb;
+            this.BillsDB = billsDb;
+            this.NotificationManager = notificationManager;
             this.ItemFactory = itemFactory;
             this.Container = container;
             this.WalletManager = walletManager;
         }
         
-        protected corpStationMgr(MarketDB marketDB, ItemFactory itemFactory, NodeContainer container, BoundServiceManager manager, WalletManager walletManager, Client client) : base(manager, client)
+        protected corpStationMgr(MarketDB marketDB, StationDB stationDb, BillsDB billsDb, NotificationManager notificationManager, ItemFactory itemFactory, NodeContainer container, BoundServiceManager manager, WalletManager walletManager, Client client) : base(manager, client)
         {
             this.MarketDB = marketDB;
+            this.StationDB = stationDb;
+            this.BillsDB = billsDb;
+            this.NotificationManager = notificationManager;
             this.ItemFactory = itemFactory;
             this.Container = container;
             this.WalletManager = walletManager;
@@ -60,7 +72,7 @@ namespace Node.Services.Stations
             if (this.MachoResolveObject(objectData as PyInteger, 0, call) != this.BoundServiceManager.Container.NodeID)
                 throw new CustomError("Trying to bind an object that does not belong to us!");
 
-            return new corpStationMgr(this.MarketDB, this.ItemFactory, this.Container, this.BoundServiceManager, this.WalletManager, call.Client);
+            return new corpStationMgr(this.MarketDB, this.StationDB, this.BillsDB, this.NotificationManager, this.ItemFactory, this.Container, this.BoundServiceManager, this.WalletManager, call.Client);
         }
 
         public PyList GetCorporateStationOffice(CallInformation call)
@@ -183,18 +195,24 @@ namespace Node.Services.Stations
 
         public PyTuple GetCorporateStationInfo(CallInformation call)
         {
+            int stationID = call.Client.EnsureCharacterIsInStation();
+            
             return new PyTuple(3)
             {
-                [0] = null, // eveowners list
-                [1] = null, // corporations list
-                [2] = null  // offices list
+                [0] = this.StationDB.GetOfficesOwners(stationID), // eveowners list
+                [1] = this.StationDB.GetCorporations(stationID), // corporations list
+                [2] = this.StationDB.GetOfficesList(stationID)  // offices list
             };
         }
 
         public PyInteger GetNumberOfUnrentedOffices(CallInformation call)
         {
-            // TODO: PROPERLY IMPLEMENT THIS, NPC STATIONS HAVE A LIMIT OF 24 OFFICES
-            return 0;
+            int stationID = call.Client.EnsureCharacterIsInStation();
+
+            // if no amount of office slots are indicated in the station type return 24 as a default value
+            int maximumOffices = this.ItemFactory.GetItem<Station>(stationID).StationType.OfficeSlots ?? 24;
+
+            return maximumOffices - this.StationDB.CountRentedOffices(stationID);
         }
 
         public PyDataType SetCloneTypeID(PyInteger cloneTypeID, CallInformation call)
@@ -227,15 +245,51 @@ namespace Node.Services.Stations
             return null;
         }
 
-        public PyDataType GetQuoteForRentingAnOffice(CallInformation call)
+        public PyInteger GetQuoteForRentingAnOffice(CallInformation call)
         {
-            // TODO: PROPERLY IMPLEMENT THIS
-            return 10000;
+            int stationID = call.Client.EnsureCharacterIsInStation();
+            // TODO: DECOUPLE ITEM FACTORY FROM THIS, CEO INFORMATION SHOULD BE FETCHED OFF THE DATABASE
+            // make sure the user is CEO or allowed to rent
+            if (CorporationRole.CanRentOffice.Is(call.Client.CorporationRole) == false && this.ItemFactory.GetItem<Corporation>(call.Client.CorporationID).CeoID != call.Client.CharacterID)
+                throw new RentingOfficeQuotesOnlyGivenToActiveCEOsOrEquivale();
+            
+            return this.ItemFactory.Stations[stationID].OfficeRentalCost;
         }
 
-        public PyDataType RentOffice(CallInformation call)
+        public PyDataType RentOffice(PyInteger cost, CallInformation call)
         {
-            return null;
+            int rentalCost = this.GetQuoteForRentingAnOffice(call);
+            int stationID = call.Client.EnsureCharacterIsInStation();
+            
+            // double check to ensure the amout we're paying is what we require now
+            if (rentalCost != cost)
+                throw new RentingAnOfficeCostsMore(rentalCost);
+            // check that there's enoug offices left
+            if (this.GetNumberOfUnrentedOffices(call) <= 0)
+                throw new NoOfficesAreAvailableForRenting();
+            int ownerCorporationID = this.ItemFactory.Stations[stationID].OwnerID;
+            // perform the transaction
+            using (Wallet corpWallet = this.WalletManager.AcquireWallet(call.Client.CorporationID, call.Client.CorpAccountKey))
+            {
+                corpWallet.EnsureEnoughBalance(rentalCost);
+                corpWallet.CreateJournalRecord(MarketReference.OfficeRentalFee, ownerCorporationID, null, -rentalCost);
+            }
+            // create the office folder
+            ItemEntity item = this.ItemFactory.CreateSimpleItem(
+                this.TypeManager[Types.OfficeFolder], call.Client.CorporationID,
+                stationID, Flags.Office
+            );
+            // create the record in the database
+            this.StationDB.RentOffice(call.Client.CorporationID, stationID, item.ID);
+            // create the bill record for the renewal
+            this.BillsDB.CreateBill(
+                BillTypes.RentalBill, call.Client.CorporationID, ownerCorporationID,
+                rentalCost, DateTime.UtcNow.AddDays(30).ToFileTimeUtc(), 0, (int) Types.OfficeFolder, stationID
+            );
+            // notify all characters in the station about the office change
+            this.NotificationManager.NotifyStation(stationID, new OnOfficeRentalChanged(call.Client.CorporationID, item.ID, item.ID));
+            // return the new officeID
+            return item.ID;
         }
     }
 }

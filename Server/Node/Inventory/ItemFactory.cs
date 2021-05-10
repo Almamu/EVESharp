@@ -481,9 +481,28 @@ namespace Node.Inventory
 
         private ItemEntity LoadStation(ItemEntity item)
         {
-            Station station = this.ItemDB.LoadStation(item);
+            switch (item.Type.Group.ID)
+            {
+                case (int) Groups.StationServices:
+                    return this.LoadStationServices(item);
+                case (int) Groups.Station:
+                    return this.mStations[item.ID] = this.ItemDB.LoadStation(item);
+                default:
+                    Log.Warning($"Loading station item {item.ID} from item group {item.Type.Group.ID} as normal item");
+                    return item;
+            }
+        }
 
-            return this.mStations[station.ID] = station;
+        private ItemEntity LoadStationServices(ItemEntity item)
+        {
+            switch (item.Type.ID)
+            {
+                case (int) Types.OfficeFolder:
+                    return new OfficeFolder(item);
+                default:
+                    Log.Warning($"Loading station service item {item.ID} as normal item");
+                    return item;
+            }
         }
 
         private ItemEntity LoadConstellation(ItemEntity item)

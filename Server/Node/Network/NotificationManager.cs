@@ -23,6 +23,10 @@ namespace Node.Network
         /// idType to use when notificating stations
         /// </summary>
         private const string NOTIFICATION_TYPE_STATION = "stationid";
+        /// <summary>
+        /// idType to use when notificating owners (corporation, character, alliances...)
+        /// </summary>
+        private const string NOTIFICATION_TYPE_OWNER = "ownerid";
         
         /// <summary>
         /// The connection this notification manager is using to send notifications through
@@ -81,6 +85,11 @@ namespace Node.Network
             
             // build a proper notification for this
             this.SendNotification(entry.NotificationName, NOTIFICATION_TYPE_CHARACTER, characterID, entry.GetElements());
+        }
+
+        public void NotifyOwner(int ownerID, ClientNotification entry)
+        {
+            this.SendNotification(entry.NotificationName, NOTIFICATION_TYPE_OWNER, ownerID, entry.GetElements());
         }
         
         public void NotifyCorporation(int corporationID, string type, PyTuple notification)

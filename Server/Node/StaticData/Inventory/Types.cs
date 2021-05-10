@@ -14,6 +14,7 @@ namespace Node.StaticData.Inventory
         Kernite = 20,
         Hedbergite = 21,
         Arkonor = 22,
+        OfficeFolder = 26,
         Tritanium = 34,
         CloneGradeAlpha = 164,
         Capsule = 670,

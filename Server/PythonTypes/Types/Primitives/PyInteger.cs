@@ -85,6 +85,15 @@ namespace PythonTypes.Types.Primitives
         {
             return obj.Value > value;
         }
+        
+        public static bool operator >=(PyInteger obj, long value)
+        {
+            return obj.Value >= value;
+        }
+        public static bool operator <=(PyInteger obj, long value)
+        {
+            return obj.Value <= value;
+        }
 
         public static bool operator <(PyInteger obj, long value)
         {

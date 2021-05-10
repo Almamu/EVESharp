@@ -291,6 +291,28 @@ namespace ClusterController
             }
         }
 
+        public void NotifyByOwnerID(PyPacket packet, PyAddressBroadcast destination)
+        {
+            lock (this.Clients)
+            {
+                foreach (PyInteger id in destination.IDsOfInterest.GetEnumerable<PyInteger>())
+                {
+                    foreach ((long userID, ClientConnection connection) in this.Clients)
+                    {
+                        if (connection.CharacterID == id || connection.CorporationID == id)
+                        {
+                            // use the key instead of AccountID as this should be faster
+                            packet.UserID = userID;
+                            // change the ids of interest to hide the character's we've notified
+                            destination.IDsOfInterest = new PyList(1) {[0] = id};
+                            // queue the packet for the user
+                            connection.Socket.Send(packet);
+                        }
+                    }
+                }
+            }
+        }
+
         public void NotifyByStationID(PyPacket packet, PyAddressBroadcast destination)
         {
             lock (this.Clients)

@@ -4,6 +4,7 @@ using Node.Database;
 using Node.Exceptions;
 using Node.Network;
 using Node.Notifications.Client.Character;
+using Node.Notifications.Client.Wallet;
 
 namespace Node.Market
 {
@@ -94,9 +95,8 @@ namespace Node.Market
             if (Math.Abs(this.Balance - this.OriginalBalance) > 0.01)
             {
                 this.DB.SetWalletBalance(this.Connection, this.WalletKey, this.OwnerID, this.Balance);
-                // TODO: SEND NOTIFICATION TO CORRECT OWNER
                 // send notification to the client
-                this.NotificationManager.NotifyCharacter(this.OwnerID, 
+                this.NotificationManager.NotifyOwner(this.OwnerID, 
                     new OnAccountChange(this.WalletKey, this.OwnerID, this.Balance)
                 );
             }

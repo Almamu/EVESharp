@@ -61,10 +61,20 @@ namespace PythonTypes.Types.Primitives
         {
             return obj.Value > value;
         }
+        
+        public static bool operator >=(PyDecimal obj, double value)
+        {
+            return obj.Value >= value;
+        }
 
         public static bool operator <(PyDecimal obj, double value)
         {
             return obj.Value < value;
+        }
+
+        public static bool operator <=(PyDecimal obj, double value)
+        {
+            return obj.Value <= value;
         }
 
         public static bool operator ==(PyDecimal obj, double value)

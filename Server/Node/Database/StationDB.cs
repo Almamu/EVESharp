@@ -3,6 +3,7 @@ using Common.Database;
 using MySql.Data.MySqlClient;
 using Node.StaticData;
 using Node.StaticData.Inventory.Station;
+using PythonTypes.Types.Primitives;
 
 namespace Node.Database
 {
@@ -114,6 +115,74 @@ namespace Node.Database
             }
         }
 
+        public int CountRentedOffices(int stationID)
+        {
+            MySqlConnection connection = null;
+            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+                "SELECT COUNT(*) FROM crpOffices WHERE stationID = @stationID",
+                new Dictionary<string, object>()
+                {
+                    {"@stationID", stationID}
+                }
+            );
+            
+            using (connection)
+            using (reader)
+            {
+                if (reader.Read() == false)
+                    return 0;
+
+                return reader.GetInt32(0);
+            }
+        }
+
+        public void RentOffice(int corporationID, int stationID, int officeFolderID)
+        {
+            Database.PrepareQuery(
+                "INSERT INTO crpOffices(corporationID, stationID, itemID, typeID, officeFolderID)VALUES(@corporationID, @stationID, @officeFolderID, 0, @officeFolderID)",
+                new Dictionary<string, object>()
+                {
+                    {"@corporationID", corporationID},
+                    {"@stationID", stationID},
+                    {"@officeFolderID", officeFolderID}
+                }
+            );
+        }
+
+        public PyDataType GetOfficesList(int stationID)
+        {
+            return Database.PreparePackedRowListQuery(
+                "SELECT corporationID, itemID, officeFolderID FROM crpOffices WHERE stationID = @stationID",
+                new Dictionary<string, object>()
+                {
+                    {"@stationID", stationID}
+                }
+            );
+        }
+
+        public PyDataType GetOfficesOwners(int stationID)
+        {
+            return Database.PrepareRowsetQuery(
+                "SELECT corporationID AS ownerID, itemName AS ownerName, eveNames.typeID FROM crpOffices LEFT JOIN eveNames ON eveNames.itemID = corporationID WHERE stationID = @stationID",
+                new Dictionary<string, object>()
+                {
+                    {"@stationID", stationID}
+                }
+            );
+        }
+
+        public PyDataType GetCorporations(int stationID)
+        {
+            // TODO: TAKE INTO ACCOUNT CORPORATION'S HEADQUARTERS TOO!
+            return Database.PrepareRowsetQuery(
+                "SELECT corporationID, itemName AS corporationName, corporation.stationID FROM crpOffices LEFT JOIN corporation USING (corporationID) LEFT JOIN eveNames ON eveNames.itemID = corporationID WHERE crpOffices.stationID = @stationID",
+                new Dictionary<string, object>()
+                {
+                    {"@stationID", stationID}
+                }
+            );
+        }
+        
         public StationDB(DatabaseConnection db) : base(db)
         {
         }
