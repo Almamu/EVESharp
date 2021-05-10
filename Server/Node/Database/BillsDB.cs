@@ -40,7 +40,7 @@ namespace Node.Database
         /// <param name="interest"></param>
         /// <param name="externalID"></param>
         /// <param name="externalID2"></param>
-        public void CreateBill(BillTypes type, int debtorID, int creditorID, double amount, long dueDateTime, double interest, int? externalID, int? externalID2 = null)
+        public void CreateBill(BillTypes type, int debtorID, int creditorID, double amount, long dueDateTime, double interest, int? externalID = null, int? externalID2 = null)
         {
             Database.PrepareQuery(
                 "INSERT INTO mktBills(billTypeID, debtorID, creditorID, amount, dueDateTime, interest, externalID, paid, externalID2)VALUES(@billTypeID, @debtorID, @creditorID, @amount, @dueDateTime, @interest, @externalID, 0, @externalID2)",
