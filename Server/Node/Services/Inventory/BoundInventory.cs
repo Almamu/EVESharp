@@ -4,6 +4,7 @@ using System.Linq;
 using EVE.Packets.Exceptions;
 using Node.Database;
 using Node.Exceptions;
+using Node.Exceptions.corpRegistry;
 using Node.Exceptions.inventory;
 using Node.Inventory;
 using Node.Inventory.Items;
@@ -11,6 +12,7 @@ using Node.Inventory.Items.Attributes;
 using Node.Inventory.Items.Types;
 using Node.Network;
 using Node.Notifications.Client.Inventory;
+using Node.StaticData.Corporation;
 using Node.StaticData.Inventory;
 using PythonTypes.Types.Collections;
 using PythonTypes.Types.Database;
@@ -83,13 +85,36 @@ namespace Node.Services.Inventory
             return this.mInventory.GetEntityRow();
         }
 
-        private void PreMoveItemCheck(ItemEntity item, Flags flag, double quantityToMove)
+        private void PreMoveItemCheck(ItemEntity item, Flags flag, double quantityToMove, Client client)
         {
+            // check that where the item comes from we have permissions
+            if (item.OwnerID == client.CorporationID)
+            {
+                if (item.Flag == Flags.Hangar && CorporationRole.HangarCanTake1.Is(client.CorporationRole) == false)
+                    throw new CrpAccessDenied("You are not allowed to access that hangar");
+                if (item.Flag == Flags.CorpSAG2 && CorporationRole.HangarCanTake2.Is(client.CorporationRole) == false)
+                    throw new CrpAccessDenied("You are not allowed to access that hangar");
+                if (item.Flag == Flags.CorpSAG3 && CorporationRole.HangarCanTake3.Is(client.CorporationRole) == false)
+                    throw new CrpAccessDenied("You are not allowed to access that hangar");
+                if (item.Flag == Flags.CorpSAG4 && CorporationRole.HangarCanTake4.Is(client.CorporationRole) == false)
+                    throw new CrpAccessDenied("You are not allowed to access that hangar");
+                if (item.Flag == Flags.CorpSAG5 && CorporationRole.HangarCanTake5.Is(client.CorporationRole) == false)
+                    throw new CrpAccessDenied("You are not allowed to access that hangar");
+                if (item.Flag == Flags.CorpSAG6 && CorporationRole.HangarCanTake6.Is(client.CorporationRole) == false)
+                    throw new CrpAccessDenied("You are not allowed to access that hangar");
+                if (item.Flag == Flags.CorpSAG7 && CorporationRole.HangarCanTake7.Is(client.CorporationRole) == false)
+                    throw new CrpAccessDenied("You are not allowed to access that hangar");
+            }
+            
             if (this.mInventory.Type.ID == (int) Types.Capsule)
                 throw new CantTakeInSpaceCapsule();
             // if this inventory is a delivery section, items cannot be moved to it
             if (this.mFlag == Flags.CorpMarket)
                 throw new CustomError("You cannot move items into this hangar");
+            // check permissions if the owner of the inventory is the corporation
+            if (this.mInventory.OwnerID == client.CorporationID)
+            {
+            }
 
             // perform checks only on cargo
             if (this.mInventory is Ship ship && flag == Flags.Cargo)
@@ -218,7 +243,7 @@ namespace Node.Services.Inventory
             throw new NoFreeShipSlots();
         }
         
-        private void MoveItemHere(ItemEntity item, Flags newFlag, int quantity = 0)
+        private void MoveItemHere(ItemEntity item, Flags newFlag, Client client, int quantity = 0)
         {
             // get the old location stored as it'll be used in the notifications
             int oldLocation = item.LocationID;
@@ -276,6 +301,25 @@ namespace Node.Services.Inventory
                 {
                     newFlag = Flags.Hangar;
                 }
+            }
+
+            // special case, is the item being moved to a corporation office?
+            if (this.mInventory.OwnerID == client.CorporationID)
+            {
+                if (newFlag == Flags.Hangar && CorporationRole.HangarCanQuery1.Is(client.CorporationRole) == false)
+                    throw new CrpAccessDenied("You are not allowed to access that hangar");
+                if (newFlag == Flags.CorpSAG2 && CorporationRole.HangarCanQuery2.Is(client.CorporationRole) == false)
+                    throw new CrpAccessDenied("You are not allowed to access that hangar");
+                if (newFlag == Flags.CorpSAG3 && CorporationRole.HangarCanQuery3.Is(client.CorporationRole) == false)
+                    throw new CrpAccessDenied("You are not allowed to access that hangar");
+                if (newFlag == Flags.CorpSAG4 && CorporationRole.HangarCanQuery4.Is(client.CorporationRole) == false)
+                    throw new CrpAccessDenied("You are not allowed to access that hangar");
+                if (newFlag == Flags.CorpSAG5 && CorporationRole.HangarCanQuery5.Is(client.CorporationRole) == false)
+                    throw new CrpAccessDenied("You are not allowed to access that hangar");
+                if (newFlag == Flags.CorpSAG6 && CorporationRole.HangarCanQuery6.Is(client.CorporationRole) == false)
+                    throw new CrpAccessDenied("You are not allowed to access that hangar");
+                if (newFlag == Flags.CorpSAG7 && CorporationRole.HangarCanQuery7.Is(client.CorporationRole) == false)
+                    throw new CrpAccessDenied("You are not allowed to access that hangar");
             }
             
             // special situation, if the new location is a module slot ensure the item is a singleton (TODO: HANDLE CHARGES TOO)
@@ -390,7 +434,7 @@ namespace Node.Services.Inventory
             else
             {
                 // zero quantity means move the whole stack
-                if (quantity == 0)
+                if (quantity == 0 || item.Quantity == quantity)
                 {
                     // remove item off the old inventory if required
                     if (this.ItemFactory.TryGetItem(item.LocationID, out ItemInventory inventory) == true)
@@ -459,8 +503,8 @@ namespace Node.Services.Inventory
 
             ItemEntity item = this.ItemFactory.GetItem(itemID);
             
-            this.PreMoveItemCheck(item, this.mFlag, item.Quantity);
-            this.MoveItemHere(item, this.mFlag);
+            this.PreMoveItemCheck(item, this.mFlag, item.Quantity, call.Client);
+            this.MoveItemHere(item, this.mFlag, call.Client);
 
             return null;
         }
@@ -472,8 +516,8 @@ namespace Node.Services.Inventory
 
             ItemEntity item = this.ItemFactory.GetItem(itemID);
             
-            this.PreMoveItemCheck(item, this.mFlag, item.Quantity);
-            this.MoveItemHere(item, this.mFlag, quantity);
+            this.PreMoveItemCheck(item, this.mFlag, item.Quantity, call.Client);
+            this.MoveItemHere(item, this.mFlag, call.Client, quantity);
 
             return null;
         }
@@ -491,8 +535,8 @@ namespace Node.Services.Inventory
                 return null;
             
             // check that there's enough space left
-            this.PreMoveItemCheck(item, (Flags) (int) flag, quantity);
-            this.MoveItemHere(item, (Flags) (int) flag, quantity);
+            this.PreMoveItemCheck(item, (Flags) (int) flag, quantity, call.Client);
+            this.MoveItemHere(item, (Flags) (int) flag, call.Client, quantity);
             
             return null;
         }
@@ -507,8 +551,8 @@ namespace Node.Services.Inventory
                     ItemEntity item = this.ItemFactory.GetItem(itemID);
                     
                     // check and then move the item
-                    this.PreMoveItemCheck(item, (Flags) (int) flag, item.Quantity);
-                    this.MoveItemHere(item, (Flags) (int) flag);
+                    this.PreMoveItemCheck(item, (Flags) (int) flag, item.Quantity, call.Client);
+                    this.MoveItemHere(item, (Flags) (int) flag, call.Client);
                 }
             }
             else
