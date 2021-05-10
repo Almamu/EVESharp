@@ -49,6 +49,19 @@ namespace ClusterController
             }
         }
 
+        public int LocationID
+        {
+            get
+            {
+                PyDataType locationid = this.Session["locationid"];
+
+                if (locationid is PyInteger locationidInt)
+                    return locationidInt;
+
+                return 0;
+            }
+        }
+
         public int ConstellationID
         {
             get

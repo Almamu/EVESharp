@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Common.Database;
 using MySql.Data.MySqlClient;
+using Node.Exceptions.corpRegistry;
 using Node.StaticData.Inventory;
 using PythonTypes.Types.Collections;
 using PythonTypes.Types.Database;
@@ -236,7 +237,7 @@ namespace Node.Database
         {
             MySqlConnection connection = null;
             MySqlDataReader reader = Database.PrepareQuery(ref connection,
-                "SELECT itemID FROM crpOffices WHERE corporationID = @corporationID",
+                "SELECT officeID FROM crpOffices WHERE corporationID = @corporationID",
                 new Dictionary<string, object>()
                 {
                     {"@corporationID", corporationID}
@@ -263,7 +264,7 @@ namespace Node.Database
             Dictionary<string, object> parameters = new Dictionary<string, object>();
             
             string query = "SELECT" +
-                           " itemID, stationID, typeID, officeFolderID " +
+                           " officeID, stationID, typeID, officeFolderID " +
                            "FROM chrInformation " +
                            "LEFT JOIN invItems ON invItems.itemID = chrInformation.activeCloneID " +
                            "WHERE corporationID=@corporationID AND itemID IN (";
@@ -290,11 +291,37 @@ namespace Node.Database
             }
         }
 
+        public PyList<PyTuple> GetOffices(PyString columnName, PyList<PyInteger> itemIDs, int corporationID, SparseRowsetHeader header, Dictionary<PyDataType, int> rowsIndex)
+        {
+            if (columnName != "officeID")
+                throw new CrpAccessDenied("INVALID COLUMN");
+            
+            Dictionary<string, object> parameters = new Dictionary<string, object>();
+
+            string query =
+                $"SELECT officeID, stationID, typeID, officeFolderID FROM crpOffices WHERE corporationID = @corporationID AND {columnName} IN ({PyString.Join(',', itemIDs)}) ";
+
+            parameters["@corporationID"] = corporationID;
+            
+            // TODO: GENERATE PROPER FIELDS FOR THE FOLLOWING FIELDS
+            // TODO: titleMask, grantableRoles, grantableRolesAtHQ, grantableRolesAtBase, grantableRolesAtOther
+            // TODO: divisionID, squadronID
+            // TODO: CHECK IF THIS startDateTime IS THE CORP'S MEMBERSHIP OR CHARACTER'S MEMBERSHIP
+            MySqlConnection connection = null;
+            MySqlDataReader reader = Database.PrepareQuery(ref connection, query, parameters);
+            
+            using (connection)
+            using (reader)
+            {
+                return header.FetchByKey(0, reader, rowsIndex);
+            }
+        }
+
         public PyList<PyTuple> GetOffices(int corporationID, int startPos, int limit, SparseRowsetHeader header, Dictionary<PyDataType, int> rowsIndex)
         {
             MySqlConnection connection = null;
             MySqlDataReader reader = Database.PrepareQuery(ref connection,
-                "SELECT itemID, stationID, typeID, officeFolderID FROM crpOffices WHERE corporationID = @corporationID LIMIT @startPos,@limit",
+                "SELECT officeID, stationID, typeID, officeFolderID FROM crpOffices WHERE corporationID = @corporationID LIMIT @startPos,@limit",
                 new Dictionary<string, object>()
                 {
                     {"@corporationID", corporationID},
@@ -328,7 +355,7 @@ namespace Node.Database
             {
                 PyList<PyString> headers = new PyList<PyString>(4)
                 {
-                    [0] = "itemID",
+                    [0] = "officeID",
                     [1] = "stationID",
                     [2] = "typeID",
                     [3] = "officeFolderID"

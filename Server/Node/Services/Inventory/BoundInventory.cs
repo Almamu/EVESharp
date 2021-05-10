@@ -354,10 +354,10 @@ namespace Node.Services.Inventory
                         .AddChange(ItemChange.Flag, (int) oldFlag);
             
                     // notify the character about the change
-                    this.NotificationManager.NotifyOwner(item.OwnerID, changes);
+                    this.NotificationManager.NotifyOwnerAtLocation(item.OwnerID, client.LocationID, changes);
                     // notify the old owner if it changed
                     if (item.OwnerID != oldOwnerID)
-                        this.NotificationManager.NotifyOwner(oldOwnerID, changes);
+                        this.NotificationManager.NotifyOwnerAtLocation(oldOwnerID, client.LocationID, changes);
                     // update meta inventories too
                     this.ItemFactory.MetaInventoryManager.OnItemMoved(item, oldLocation, this.mInventory.ID, oldFlag, newFlag);
 
@@ -374,13 +374,13 @@ namespace Node.Services.Inventory
 
                     OnItemChange quantityChange = OnItemChange.BuildQuantityChange(item, item.Quantity + 1);
                     // notify the character about the change in quantity
-                    this.NotificationManager.NotifyOwner(item.OwnerID, quantityChange);
+                    this.NotificationManager.NotifyOwnerAtLocation(item.OwnerID, client.LocationID, quantityChange);
                     // notify the old owner if it changed
                     if (item.OwnerID != oldOwnerID)
-                        this.NotificationManager.NotifyOwner(item.OwnerID, quantityChange);
+                        this.NotificationManager.NotifyOwnerAtLocation(item.OwnerID, client.LocationID, quantityChange);
                     
                     // notify the new owner on the new item
-                    this.NotificationManager.NotifyOwner(item.OwnerID, OnItemChange.BuildLocationChange(newItem, Flags.None, 0));
+                    this.NotificationManager.NotifyOwnerAtLocation(item.OwnerID, client.LocationID, OnItemChange.BuildLocationChange(newItem, Flags.None, 0));
                     
                     item.Persist();
 
@@ -413,11 +413,11 @@ namespace Node.Services.Inventory
 
                     OnItemChange locationChange = OnItemChange.BuildLocationChange(item, newOldFlag, newOldLocation);
                     
-                    this.NotificationManager.NotifyOwner(item.OwnerID, locationChange);
+                    this.NotificationManager.NotifyOwnerAtLocation(item.OwnerID, client.LocationID, locationChange);
                     
                     // notify the owners again
                     if (item.OwnerID != newOldOwnerID)
-                        this.NotificationManager.NotifyOwner(newOldOwnerID, locationChange.AddChange (ItemChange.OwnerID, newOldOwnerID));
+                        this.NotificationManager.NotifyOwnerAtLocation(newOldOwnerID, client.LocationID, locationChange.AddChange (ItemChange.OwnerID, newOldOwnerID));
                     
                     throw;
                 }
@@ -456,10 +456,10 @@ namespace Node.Services.Inventory
 
                     // notify the old owner
                     if (oldOwnerID != item.OwnerID)
-                        this.NotificationManager.NotifyOwner(oldOwnerID, changes);
+                        this.NotificationManager.NotifyOwnerAtLocation(oldOwnerID, client.LocationID, changes);
                 
                     // notify the new owner
-                    this.NotificationManager.NotifyOwner(item.OwnerID, changes);
+                    this.NotificationManager.NotifyOwnerAtLocation(item.OwnerID, client.LocationID, changes);
                     // update meta inventories too
                     this.ItemFactory.MetaInventoryManager.OnItemMoved(item, oldLocation, this.mInventory.ID, oldFlag, newFlag);
 
@@ -477,13 +477,13 @@ namespace Node.Services.Inventory
 
                     OnItemChange quantityChange = OnItemChange.BuildQuantityChange(item, item.Quantity + quantity);
                     // notify the character about the change in quantity
-                    this.NotificationManager.NotifyOwner(item.OwnerID, quantityChange);
+                    this.NotificationManager.NotifyOwnerAtLocation(item.OwnerID, client.LocationID, quantityChange);
                     // notify the old owner if it changed
                     if (item.OwnerID != oldOwnerID)
-                        this.NotificationManager.NotifyOwner(item.OwnerID, quantityChange);
+                        this.NotificationManager.NotifyOwnerAtLocation(item.OwnerID, client.LocationID, quantityChange);
                     
                     // notify the new owner on the new item
-                    this.NotificationManager.NotifyOwner(item.OwnerID, OnItemChange.BuildLocationChange(newItem, Flags.None, 0));
+                    this.NotificationManager.NotifyOwnerAtLocation(item.OwnerID, client.LocationID, OnItemChange.BuildLocationChange(newItem, Flags.None, 0));
                     
                     item.Persist();
 

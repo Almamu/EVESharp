@@ -251,5 +251,17 @@ namespace Node.Services.Inventory
 
             return null;
         }
+
+        public PyDataType DeliverToCorpHangar(PyInteger stationID, PyList itemIDs, PyDataType quantity, PyInteger ownerID, PyInteger deliverToFlag, CallInformation call)
+        {
+            // TODO: DETERMINE IF THIS FUNCTION HAS TO BE IMPLEMENTED
+            // LIVE CCP SERVER DOES NOT SUPPORT IT, EVEN THO THE MENU OPTION IS SHOWN TO THE USER
+            return null;
+        }
+
+        public PyDataType DeliverToCorpMember(PyInteger memberID, PyInteger stationID, PyList itemIDs, PyDataType quantity, PyInteger ownerID, CallInformation call)
+        {
+            return null;
+        }
     }
 }

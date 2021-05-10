@@ -327,7 +327,7 @@ namespace ClusterController
                     {
                         if (
                             (connection.CharacterID == ownerid || connection.CorporationID == ownerid) &&
-                            (connection.StationID == locationID || connection.SolarSystemID2 == locationID || connection.ConstellationID == locationID ||connection.RegionID == locationID))
+                            connection.LocationID == locationID)
                         {
                             // use the key instead of AccountID as this should be faster
                             packet.UserID = userID;

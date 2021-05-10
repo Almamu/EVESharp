@@ -33,5 +33,10 @@ namespace Node.Services.Corporations
         {
             return this.DB.GetOffices(keyList.GetEnumerable<PyInteger>(), this.Corporation.ID, this.SparseRowset, this.RowsIndex);
         }
+
+        public override PyDataType SelectByUniqueColumnValues(PyString columnName, PyList values, CallInformation call)
+        {
+            return this.DB.GetOffices(columnName, values.GetEnumerable<PyInteger>(), this.Corporation.ID, this.SparseRowset, this.RowsIndex);
+        }
     }
 }

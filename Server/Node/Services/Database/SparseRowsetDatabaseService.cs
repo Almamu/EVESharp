@@ -12,6 +12,7 @@ namespace Node.Services.Database
         
         public abstract PyDataType Fetch(PyInteger startPos, PyInteger fetchSize, CallInformation call);
         public abstract PyDataType FetchByKey(PyList keyList, CallInformation call);
+        public abstract PyDataType SelectByUniqueColumnValues(PyString columnName, PyList values, CallInformation call);
 
         protected SparseRowsetDatabaseService(SparseRowsetHeader rowsetHeader, BoundServiceManager manager, Client client) : base(manager, client)
         {

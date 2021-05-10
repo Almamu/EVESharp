@@ -139,7 +139,7 @@ namespace Node.Database
         public void RentOffice(int corporationID, int stationID, int officeFolderID)
         {
             Database.PrepareQuery(
-                "INSERT INTO crpOffices(corporationID, stationID, itemID, typeID, officeFolderID)VALUES(@corporationID, @stationID, @officeFolderID, 0, @officeFolderID)",
+                "INSERT INTO crpOffices(corporationID, stationID, officeID, typeID, officeFolderID)VALUES(@corporationID, @stationID, @officeFolderID, 0, @officeFolderID)",
                 new Dictionary<string, object>()
                 {
                     {"@corporationID", corporationID},
@@ -152,7 +152,7 @@ namespace Node.Database
         public PyDataType GetOfficesList(int stationID)
         {
             return Database.PreparePackedRowListQuery(
-                "SELECT corporationID, itemID, officeFolderID FROM crpOffices WHERE stationID = @stationID",
+                "SELECT corporationID, officeID AS itemID, officeFolderID FROM crpOffices WHERE stationID = @stationID",
                 new Dictionary<string, object>()
                 {
                     {"@stationID", stationID}

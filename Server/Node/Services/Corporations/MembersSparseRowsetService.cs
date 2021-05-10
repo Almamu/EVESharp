@@ -32,5 +32,10 @@ namespace Node.Services.Corporations
         {
             return this.DB.GetMembers(keyList.GetEnumerable<PyInteger>(), this.Corporation.ID, this.SparseRowset, this.RowsIndex);
         }
+
+        public override PyDataType SelectByUniqueColumnValues(PyString columnName, PyList values, CallInformation call)
+        {
+            throw new System.NotImplementedException();
+        }
     }
 }
