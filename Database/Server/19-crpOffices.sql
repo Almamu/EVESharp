@@ -5,7 +5,7 @@ DROP TABLE IF EXISTS `crpOffices`;
 CREATE TABLE `crpOffices` (
   `corporationID` int(10) unsigned NOT NULL default '0',
   `stationID` int(10) unsigned NOT NULL default '0',
-  `itemID` int(10) unsigned NOT NULL default '0',
+  `officeID` int(10) unsigned NOT NULL default '0',
   `typeID` int(10) unsigned NOT NULL default '0',
   `officeFolderID` int(10) unsigned NOT NULL default '0',
   PRIMARY KEY  (`corporationID`,`officeFolderID`),
