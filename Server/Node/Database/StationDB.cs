@@ -135,7 +135,7 @@ namespace Node.Database
                 return reader.GetInt32(0);
             }
         }
-
+        
         public void RentOffice(int corporationID, int stationID, int officeFolderID)
         {
             Database.PrepareQuery(

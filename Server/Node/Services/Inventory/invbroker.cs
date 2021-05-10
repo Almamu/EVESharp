@@ -117,12 +117,15 @@ namespace Node.Services.Inventory
 
         public PySubStruct GetInventoryFromId(PyInteger itemID, PyInteger one, CallInformation call)
         {
-            int callerCharacterID = call.Client.EnsureCharacterIsSelected();
+            int ownerID = call.Client.EnsureCharacterIsSelected();
             ItemEntity inventoryItem = this.ItemFactory.LoadItem(itemID);
+
+            if (inventoryItem is not Station)
+                ownerID = inventoryItem.OwnerID;
 
             return this.BindInventory(
                 this.CheckInventoryBeforeLoading(inventoryItem),
-                callerCharacterID,
+                ownerID,
                 call.Client, Flags.None
             );
         }

@@ -277,7 +277,7 @@ namespace Node.Services.Stations
             // create the office folder
             ItemEntity item = this.ItemFactory.CreateSimpleItem(
                 this.TypeManager[Types.OfficeFolder], call.Client.CorporationID,
-                stationID, Flags.Office
+                stationID, Flags.Office, 1, false, true
             );
             // create the record in the database
             this.StationDB.RentOffice(call.Client.CorporationID, stationID, item.ID);

@@ -218,7 +218,7 @@ namespace Node.Services.Inventory
             throw new NoFreeShipSlots();
         }
         
-        private void MoveItemHere(ItemEntity item, Flags newFlag)
+        private void MoveItemHere(ItemEntity item, Flags newFlag, int quantity = 0)
         {
             // get the old location stored as it'll be used in the notifications
             int oldLocation = item.LocationID;
@@ -310,10 +310,10 @@ namespace Node.Services.Inventory
                         .AddChange(ItemChange.Flag, (int) oldFlag);
             
                     // notify the character about the change
-                    this.NotificationManager.NotifyOwnerAtLocation(item.OwnerID, item.LocationID, changes);
+                    this.NotificationManager.NotifyOwner(item.OwnerID, changes);
                     // notify the old owner if it changed
                     if (item.OwnerID != oldOwnerID)
-                        this.NotificationManager.NotifyOwnerAtLocation(oldOwnerID, oldLocation, changes);
+                        this.NotificationManager.NotifyOwner(oldOwnerID, changes);
                     // update meta inventories too
                     this.ItemFactory.MetaInventoryManager.OnItemMoved(item, oldLocation, this.mInventory.ID, oldFlag, newFlag);
 
@@ -330,13 +330,13 @@ namespace Node.Services.Inventory
 
                     OnItemChange quantityChange = OnItemChange.BuildQuantityChange(item, item.Quantity + 1);
                     // notify the character about the change in quantity
-                    this.NotificationManager.NotifyOwnerAtLocation(item.OwnerID, item.LocationID, quantityChange);
+                    this.NotificationManager.NotifyOwner(item.OwnerID, quantityChange);
                     // notify the old owner if it changed
                     if (item.OwnerID != oldOwnerID)
-                        this.NotificationManager.NotifyOwnerAtLocation(item.OwnerID, oldLocation, quantityChange);
+                        this.NotificationManager.NotifyOwner(item.OwnerID, quantityChange);
                     
                     // notify the new owner on the new item
-                    this.NotificationManager.NotifyOwnerAtLocation(item.OwnerID, item.LocationID, OnItemChange.BuildLocationChange(newItem, Flags.None, 0));
+                    this.NotificationManager.NotifyOwner(item.OwnerID, OnItemChange.BuildLocationChange(newItem, Flags.None, 0));
                     
                     item.Persist();
 
@@ -369,11 +369,11 @@ namespace Node.Services.Inventory
 
                     OnItemChange locationChange = OnItemChange.BuildLocationChange(item, newOldFlag, newOldLocation);
                     
-                    this.NotificationManager.NotifyOwnerAtLocation(item.OwnerID, item.LocationID, locationChange);
+                    this.NotificationManager.NotifyOwner(item.OwnerID, locationChange);
                     
                     // notify the owners again
                     if (item.OwnerID != newOldOwnerID)
-                        this.NotificationManager.NotifyOwnerAtLocation(newOldOwnerID, newOldLocation, locationChange.AddChange (ItemChange.OwnerID, newOldOwnerID));
+                        this.NotificationManager.NotifyOwner(newOldOwnerID, locationChange.AddChange (ItemChange.OwnerID, newOldOwnerID));
                     
                     throw;
                 }
@@ -389,35 +389,63 @@ namespace Node.Services.Inventory
             }
             else
             {
-                // remove item off the old inventory if required
-                if (this.ItemFactory.TryGetItem(item.LocationID, out ItemInventory inventory) == true)
-                    inventory.RemoveItem(item);
+                // zero quantity means move the whole stack
+                if (quantity == 0)
+                {
+                    // remove item off the old inventory if required
+                    if (this.ItemFactory.TryGetItem(item.LocationID, out ItemInventory inventory) == true)
+                        inventory.RemoveItem(item);
                 
-                OnItemChange changes = new OnItemChange(item);
+                    OnItemChange changes = new OnItemChange(item);
 
-                if (item.OwnerID != this.mInventory.OwnerID)
-                    changes.AddChange(ItemChange.OwnerID, item.OwnerID);
+                    if (item.OwnerID != this.mInventory.OwnerID)
+                        changes.AddChange(ItemChange.OwnerID, item.OwnerID);
 
-                changes
-                    .AddChange(ItemChange.LocationID, item.LocationID)
-                    .AddChange(ItemChange.Flag, (int) item.Flag);
+                    changes
+                        .AddChange(ItemChange.LocationID, item.LocationID)
+                        .AddChange(ItemChange.Flag, (int) item.Flag);
                 
-                // set the new location for the item
-                item.LocationID = this.mInventory.ID;
-                item.Flag = newFlag;
-                item.OwnerID = this.mInventory.OwnerID;
+                    // set the new location for the item
+                    item.LocationID = this.mInventory.ID;
+                    item.Flag = newFlag;
+                    item.OwnerID = this.mInventory.OwnerID;
 
-                // notify the old owner
-                if (oldOwnerID != item.OwnerID)
-                    this.NotificationManager.NotifyOwnerAtLocation(oldOwnerID, oldLocation, changes);
+                    // notify the old owner
+                    if (oldOwnerID != item.OwnerID)
+                        this.NotificationManager.NotifyOwner(oldOwnerID, changes);
                 
-                // notify the new owner
-                this.NotificationManager.NotifyOwnerAtLocation(item.OwnerID, item.LocationID, changes);
-                // update meta inventories too
-                this.ItemFactory.MetaInventoryManager.OnItemMoved(item, oldLocation, this.mInventory.ID, oldFlag, newFlag);
+                    // notify the new owner
+                    this.NotificationManager.NotifyOwner(item.OwnerID, changes);
+                    // update meta inventories too
+                    this.ItemFactory.MetaInventoryManager.OnItemMoved(item, oldLocation, this.mInventory.ID, oldFlag, newFlag);
 
-                // ensure the new inventory knows
-                this.mInventory.AddItem(item);
+                    // ensure the new inventory knows
+                    this.mInventory.AddItem(item);
+                }
+                else
+                {
+                    // a specified quantity means move only that quantity, so the easiest way is to decrement the stack
+                    // and create a new item in the correct place
+                    // item is not a singleton, create a new item, decrease quantity and send notifications
+                    ItemEntity newItem = this.ItemFactory.CreateSimpleItem(item.Type, this.mInventory.OwnerID, this.mInventory.ID, newFlag, quantity, item.Contraband, item.Singleton);
+
+                    item.Quantity -= quantity;
+
+                    OnItemChange quantityChange = OnItemChange.BuildQuantityChange(item, item.Quantity + quantity);
+                    // notify the character about the change in quantity
+                    this.NotificationManager.NotifyOwner(item.OwnerID, quantityChange);
+                    // notify the old owner if it changed
+                    if (item.OwnerID != oldOwnerID)
+                        this.NotificationManager.NotifyOwner(item.OwnerID, quantityChange);
+                    
+                    // notify the new owner on the new item
+                    this.NotificationManager.NotifyOwner(item.OwnerID, OnItemChange.BuildLocationChange(newItem, Flags.None, 0));
+                    
+                    item.Persist();
+
+                    // replace reference so the following code handle things properly
+                    item = newItem;
+                }
 
                 // finally persist the item changes
                 item.Persist();
@@ -445,7 +473,7 @@ namespace Node.Services.Inventory
             ItemEntity item = this.ItemFactory.GetItem(itemID);
             
             this.PreMoveItemCheck(item, this.mFlag, item.Quantity);
-            this.MoveItemHere(item, this.mFlag);
+            this.MoveItemHere(item, this.mFlag, quantity);
 
             return null;
         }
@@ -464,7 +492,7 @@ namespace Node.Services.Inventory
             
             // check that there's enough space left
             this.PreMoveItemCheck(item, (Flags) (int) flag, quantity);
-            this.MoveItemHere(item, (Flags) (int) flag);
+            this.MoveItemHere(item, (Flags) (int) flag, quantity);
             
             return null;
         }
