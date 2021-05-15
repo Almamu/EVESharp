@@ -694,19 +694,18 @@ namespace Node.Services.Characters
         {
             if (this.Character.SkillQueue.Count > 0)
                 throw new FailedPlugInImplant();
+            int characterID = call.Client.EnsureCharacterIsSelected();
             
             // get the item and plug it into our brain now!
             ItemEntity item = this.ItemFactory.LoadItem(itemID);
             
             // ensure the item is somewhere we can interact with it
-            if (item.LocationID != call.Client.ShipID && item.LocationID != call.Client.StationID)
-                throw new CustomError("You do not have direct access to this implant");
+            item.EnsureOwnership(characterID, call.Client.CorporationID, call.Client.CorporationRole, true);
 
             // check if the slot is free or not
             this.Character.EnsureFreeImplantSlot(item);
             
             // check ownership and skills required to plug in the implant
-            item.EnsureOwnership(this.Character);
             item.CheckPrerequisites(this.Character);
             
             // separate the item if there's more than one

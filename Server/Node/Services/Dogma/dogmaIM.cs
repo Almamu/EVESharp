@@ -105,50 +105,17 @@ namespace Node.Services.Dogma
 
             foreach ((int _, ItemEntity item) in ship.Items)
             {
-                switch (item.Flag)
-                {
-                    case Flags.HiSlot0:
-                    case Flags.HiSlot1:
-                    case Flags.HiSlot2:
-                    case Flags.HiSlot3:
-                    case Flags.HiSlot4:
-                    case Flags.HiSlot5:
-                    case Flags.HiSlot6:
-                    case Flags.HiSlot7:
-                    case Flags.MedSlot0:
-                    case Flags.MedSlot1:
-                    case Flags.MedSlot2:
-                    case Flags.MedSlot3:
-                    case Flags.MedSlot4:
-                    case Flags.MedSlot5:
-                    case Flags.MedSlot6:
-                    case Flags.MedSlot7:
-                    case Flags.LoSlot0:
-                    case Flags.LoSlot1:
-                    case Flags.LoSlot2:
-                    case Flags.LoSlot3:
-                    case Flags.LoSlot4:
-                    case Flags.LoSlot5:
-                    case Flags.LoSlot6:
-                    case Flags.LoSlot7:
-                    case Flags.FixedSlot:
-                    case Flags.RigSlot0:
-                    case Flags.RigSlot1:
-                    case Flags.RigSlot2:
-                    case Flags.RigSlot3:
-                    case Flags.RigSlot4:
-                    case Flags.RigSlot5:
-                    case Flags.RigSlot6:
-                    case Flags.RigSlot7:
-                        itemInfo.AddRow(
-                            item.ID,
-                            item.GetEntityRow(),
-                            item.GetEffects (),
-                            item.Attributes,
-                            DateTime.UtcNow.ToFileTime()
-                        );
-                        break;
-                }
+                if (item.IsInModuleSlot() == false && item.IsInRigSlot() == true)
+                    continue;
+        
+                itemInfo.AddRow(
+                    item.ID,
+                    item.GetEntityRow(),
+                    item.GetEffects (),
+                    item.Attributes,
+                    DateTime.UtcNow.ToFileTime()
+                );
+                break;
             }
 
             return itemInfo;

@@ -25,11 +25,13 @@
 using System;
 using System.Collections.Generic;
 using Common.Database;
+using Node.Exceptions.corpRegistry;
 using Node.Exceptions.Internal;
 using Node.Exceptions.jumpCloneSvc;
 using Node.Exceptions.ship;
 using Node.Inventory.Items.Attributes;
 using Node.Inventory.Items.Types;
+using Node.StaticData.Corporation;
 using Node.StaticData.Inventory;
 using PythonTypes.Types.Collections;
 using PythonTypes.Types.Database;
@@ -351,10 +353,50 @@ namespace Node.Inventory.Items
                 throw new ShipHasSkillPrerequisites(this.Type, missingSkills);
         }
 
-        public void EnsureOwnership(Character character)
+        public void EnsureOwnership(int characterID, int corporationID, long corporationRole, bool take = false)
         {
-            if (this.OwnerID != character.ID)
+            if (this.OwnerID == characterID)
+                return;
+
+            if (this.OwnerID != corporationID)
                 throw new MktNotOwner();
+
+            if (take == true)
+            {
+                if (this.Flag == Flags.Hangar && CorporationRole.HangarCanTake1.Is(corporationRole) == true)
+                    return;
+                if (this.Flag == Flags.CorpSAG2 && CorporationRole.HangarCanTake2.Is(corporationRole) == true)
+                    return;
+                if (this.Flag == Flags.CorpSAG3 && CorporationRole.HangarCanTake3.Is(corporationRole) == true)
+                    return;
+                if (this.Flag == Flags.CorpSAG4 && CorporationRole.HangarCanTake4.Is(corporationRole) == true)
+                    return;
+                if (this.Flag == Flags.CorpSAG5 && CorporationRole.HangarCanTake5.Is(corporationRole) == true)
+                    return;
+                if (this.Flag == Flags.CorpSAG6 && CorporationRole.HangarCanTake6.Is(corporationRole) == true)
+                    return;
+                if (this.Flag == Flags.CorpSAG7 && CorporationRole.HangarCanTake7.Is(corporationRole) == true)
+                    return;
+            }
+            else
+            {
+                if (this.Flag == Flags.Hangar && CorporationRole.HangarCanQuery1.Is(corporationRole) == true)
+                    return;
+                if (this.Flag == Flags.CorpSAG2 && CorporationRole.HangarCanQuery2.Is(corporationRole) == true)
+                    return;
+                if (this.Flag == Flags.CorpSAG3 && CorporationRole.HangarCanQuery3.Is(corporationRole) == true)
+                    return;
+                if (this.Flag == Flags.CorpSAG4 && CorporationRole.HangarCanQuery4.Is(corporationRole) == true)
+                    return;
+                if (this.Flag == Flags.CorpSAG5 && CorporationRole.HangarCanQuery5.Is(corporationRole) == true)
+                    return;
+                if (this.Flag == Flags.CorpSAG6 && CorporationRole.HangarCanQuery6.Is(corporationRole) == true)
+                    return;
+                if (this.Flag == Flags.CorpSAG7 && CorporationRole.HangarCanQuery7.Is(corporationRole) == true)
+                    return;
+            }
+
+            throw new MktNotOwner();
         }
 
         public bool IsInModuleSlot()

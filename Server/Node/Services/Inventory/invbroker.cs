@@ -130,7 +130,7 @@ namespace Node.Services.Inventory
             );
         }
 
-        public PySubStruct GetInventory(PyInteger containerID, PyDataType none, CallInformation call)
+        public PySubStruct GetInventory(PyInteger containerID, PyInteger origOwnerID, CallInformation call)
         {
             int ownerID = call.Client.EnsureCharacterIsSelected();
             
@@ -143,6 +143,13 @@ namespace Node.Services.Inventory
                     break;
                 case (int) Container.Hangar:
                     flag = Flags.Hangar;
+
+                    if (origOwnerID is not null)
+                        ownerID = origOwnerID;
+
+                    if (ownerID != call.Client.CharacterID && CorporationRole.SecurityOfficer.Is(call.Client.CorporationRole) == false)
+                        throw new CrpAccessDenied(MLS.UI_CORP_ACCESSDENIED13);
+                    
                     break;
                 case (int) Container.Character:
                     flag = Flags.Skill;
@@ -212,7 +219,7 @@ namespace Node.Services.Inventory
             item.Persist();
             
             // notify the owner of the item
-            call.Client.NotifyMultiEvent(OnCfgDataChanged.BuildItemLabelChange(item));
+            this.NotificationManager.NotifyOwner(item.OwnerID, OnCfgDataChanged.BuildItemLabelChange(item));
 
             // TODO: CHECK IF ITEM BELONGS TO CORP AND NOTIFY CHARACTERS IN THIS NODE?
             return null;

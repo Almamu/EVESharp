@@ -88,33 +88,13 @@ namespace Node.Services.Inventory
         private void PreMoveItemCheck(ItemEntity item, Flags flag, double quantityToMove, Client client)
         {
             // check that where the item comes from we have permissions
-            if (item.OwnerID == client.CorporationID)
-            {
-                if (item.Flag == Flags.Hangar && CorporationRole.HangarCanTake1.Is(client.CorporationRole) == false)
-                    throw new CrpAccessDenied("You are not allowed to access that hangar");
-                if (item.Flag == Flags.CorpSAG2 && CorporationRole.HangarCanTake2.Is(client.CorporationRole) == false)
-                    throw new CrpAccessDenied("You are not allowed to access that hangar");
-                if (item.Flag == Flags.CorpSAG3 && CorporationRole.HangarCanTake3.Is(client.CorporationRole) == false)
-                    throw new CrpAccessDenied("You are not allowed to access that hangar");
-                if (item.Flag == Flags.CorpSAG4 && CorporationRole.HangarCanTake4.Is(client.CorporationRole) == false)
-                    throw new CrpAccessDenied("You are not allowed to access that hangar");
-                if (item.Flag == Flags.CorpSAG5 && CorporationRole.HangarCanTake5.Is(client.CorporationRole) == false)
-                    throw new CrpAccessDenied("You are not allowed to access that hangar");
-                if (item.Flag == Flags.CorpSAG6 && CorporationRole.HangarCanTake6.Is(client.CorporationRole) == false)
-                    throw new CrpAccessDenied("You are not allowed to access that hangar");
-                if (item.Flag == Flags.CorpSAG7 && CorporationRole.HangarCanTake7.Is(client.CorporationRole) == false)
-                    throw new CrpAccessDenied("You are not allowed to access that hangar");
-            }
+            item.EnsureOwnership(client.EnsureCharacterIsSelected(), client.CorporationID, client.CorporationRole, true);
             
             if (this.mInventory.Type.ID == (int) Types.Capsule)
                 throw new CantTakeInSpaceCapsule();
             // if this inventory is a delivery section, items cannot be moved to it
             if (this.mFlag == Flags.CorpMarket)
                 throw new CustomError("You cannot move items into this hangar");
-            // check permissions if the owner of the inventory is the corporation
-            if (this.mInventory.OwnerID == client.CorporationID)
-            {
-            }
 
             // perform checks only on cargo
             if (this.mInventory is Ship ship && flag == Flags.Cargo)

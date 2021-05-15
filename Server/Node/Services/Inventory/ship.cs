@@ -138,7 +138,7 @@ namespace Node.Services.Inventory
             // TODO: CHECKS FOR IN-SPACE BOARDING!
             
             // check skills required to board the given ship
-            newShip.EnsureOwnership(character);
+            newShip.EnsureOwnership(callerCharacterID, call.Client.CorporationID, call.Client.CorporationRole, true);
             newShip.CheckPrerequisites(character);
             
             // move the character into this new ship
