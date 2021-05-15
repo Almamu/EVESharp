@@ -1,9 +1,12 @@
+using System;
 using System.Collections.Generic;
 using Common.Database;
 using MySql.Data.MySqlClient;
 using Node.StaticData;
+using Node.StaticData.Inventory;
 using Node.StaticData.Inventory.Station;
 using PythonTypes.Types.Primitives;
+using Type = Node.StaticData.Inventory.Station.Type;
 
 namespace Node.Database
 {
@@ -136,15 +139,19 @@ namespace Node.Database
             }
         }
         
-        public void RentOffice(int corporationID, int stationID, int officeFolderID)
+        public void RentOffice(int corporationID, int stationID, int officeFolderID, long dueDate, double periodCost)
         {
             Database.PrepareQuery(
-                "INSERT INTO crpOffices(corporationID, stationID, officeID, typeID, officeFolderID)VALUES(@corporationID, @stationID, @officeFolderID, 0, @officeFolderID)",
+                "INSERT INTO crpOffices(corporationID, stationID, officeID, typeID, officeFolderID, startDate, rentPeriodInDays, periodCost)VALUES(@corporationID, @stationID, @officeFolderID, @typeID, @officeFolderID, @startDate, @rentPeriodInDays, @periodCost)",
                 new Dictionary<string, object>()
                 {
                     {"@corporationID", corporationID},
                     {"@stationID", stationID},
-                    {"@officeFolderID", officeFolderID}
+                    {"@officeFolderID", officeFolderID},
+                    {"@typeID", (int) Types.OfficeFolder},
+                    {"@startDate", DateTime.UtcNow.ToFileTimeUtc()},
+                    {"@rentPeriodInDays", (DateTime.FromFileTimeUtc (dueDate) - DateTime.UtcNow).TotalDays},
+                    {"@periodCost", periodCost}
                 }
             );
         }
@@ -181,6 +188,25 @@ namespace Node.Database
                     {"@stationID", stationID}
                 }
             );
+        }
+
+        public bool CorporationHasOfficeRentedAt(int corporationID, int stationID)
+        {
+            MySqlConnection connection = null;
+            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+                "SELECT corporationID FROM crpOffices WHERE stationID = @stationID AND corporationID = @corporationID",
+                new Dictionary<string, object>()
+                {
+                    {"@corporationID", corporationID},
+                    {"@stationID", stationID},
+                }
+            );
+            
+            using (connection)
+            using (reader)
+            {
+                return reader.Read();
+            }
         }
         
         public StationDB(DatabaseConnection db) : base(db)

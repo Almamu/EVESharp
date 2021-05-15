@@ -588,13 +588,7 @@ namespace PythonTypes.Marshal
             {
                 int bit = (wholeBytes << 3) + descriptor.Columns.IndexOf(column) + boolBits;
                 bool isNull = (fullBuffer[bit >> 3] & (1 << (bit & 0x7))) == (1 << (bit & 0x7));
-                
-                if (isNull == true)
-                {
-                    data[column.Name] = null;
-                    continue;
-                }
-                
+
                 switch (column.Type)
                 {
                     case FieldType.UI8:
@@ -645,6 +639,11 @@ namespace PythonTypes.Marshal
                     
                     default:
                         throw new InvalidDataException($"Unknown column type {column.Type}");
+                }
+                
+                if (isNull == true)
+                {
+                    data[column.Name] = null;
                 }
             }
 

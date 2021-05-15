@@ -3,11 +3,15 @@
 DROP TABLE IF EXISTS `crpOffices`;
 
 CREATE TABLE `crpOffices` (
-  `corporationID` int(10) unsigned NOT NULL default '0',
-  `stationID` int(10) unsigned NOT NULL default '0',
-  `officeID` int(10) unsigned NOT NULL default '0',
-  `typeID` int(10) unsigned NOT NULL default '0',
-  `officeFolderID` int(10) unsigned NOT NULL default '0',
+  `corporationID` INT(10) UNSIGNED NOT NULL DEFAULT '0',
+  `stationID` INT(10) UNSIGNED NOT NULL DEFAULT '0',
+  `officeID` INT(10) UNSIGNED NOT NULL DEFAULT '0',
+  `typeID` INT(10) UNSIGNED NOT NULL DEFAULT '0',
+  `officeFolderID` INT(10) UNSIGNED NOT NULL DEFAULT '0',
+  `startDate` BIGINT(20) NOT NULL DEFAULT '0',
+  `rentPeriodInDays` INT(11) NOT NULL DEFAULT '0',
+  `periodCost` DOUBLE(22,0) NOT NULL DEFAULT '0',
+  `balanceDueDate` DOUBLE(22,0) NULL DEFAULT NULL,
   PRIMARY KEY  (`corporationID`,`officeFolderID`),
   KEY `itemID` (`itemID`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;

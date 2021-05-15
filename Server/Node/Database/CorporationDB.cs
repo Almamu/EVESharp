@@ -946,6 +946,17 @@ namespace Node.Database
             }
         }
 
+        public CRowset GetItemsRented(int corporationID)
+        {
+            return Database.PrepareCRowsetQuery(
+                "SELECT crpOffices.typeID, stationID AS rentedFromID, invItems.typeID AS stationTypeID, startDate, rentPeriodInDays, periodCost, balanceDueDate FROM crpOffices LEFT JOIN invItems ON invItems.itemID = crpOffices.stationID WHERE corporationID = @corporationID",
+                new Dictionary<string, object>()
+                {
+                    {"@corporationID", corporationID}
+                }
+            );
+        }
+
         public CorporationDB(ItemDB itemDB, DatabaseConnection db) : base(db)
         {
             this.ItemDB = itemDB;

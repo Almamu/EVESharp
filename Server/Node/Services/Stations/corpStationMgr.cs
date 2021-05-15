@@ -267,6 +267,9 @@ namespace Node.Services.Stations
             // check that there's enoug offices left
             if (this.GetNumberOfUnrentedOffices(call) <= 0)
                 throw new NoOfficesAreAvailableForRenting();
+            // check if there's any office rented by us already
+            if (this.StationDB.CorporationHasOfficeRentedAt(call.Client.CorporationID, stationID) == true)
+                throw new RentingOfficeRequestDenied("Your corporation already has an office here!");
             int ownerCorporationID = this.ItemFactory.Stations[stationID].OwnerID;
             // perform the transaction
             using (Wallet corpWallet = this.WalletManager.AcquireWallet(call.Client.CorporationID, call.Client.CorpAccountKey))
@@ -279,12 +282,13 @@ namespace Node.Services.Stations
                 this.TypeManager[Types.OfficeFolder], call.Client.CorporationID,
                 stationID, Flags.Office, 1, false, true
             );
+            long dueDate = DateTime.UtcNow.AddDays(30).ToFileTimeUtc();
             // create the record in the database
-            this.StationDB.RentOffice(call.Client.CorporationID, stationID, item.ID);
+            this.StationDB.RentOffice(call.Client.CorporationID, stationID, item.ID, dueDate, rentalCost);
             // create the bill record for the renewal
             this.BillsDB.CreateBill(
                 BillTypes.RentalBill, call.Client.CorporationID, ownerCorporationID,
-                rentalCost, DateTime.UtcNow.AddDays(30).ToFileTimeUtc(), 0, (int) Types.OfficeFolder, stationID
+                rentalCost, dueDate, 0, (int) Types.OfficeFolder, stationID
             );
             // notify all characters in the station about the office change
             this.NotificationManager.NotifyStation(stationID, new OnOfficeRentalChanged(call.Client.CorporationID, item.ID, item.ID));

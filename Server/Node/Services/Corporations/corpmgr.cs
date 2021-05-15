@@ -29,5 +29,10 @@ namespace Node.Services.Corporations
         {
             return new PyList();
         }
+
+        public PyDataType GetItemsRented(CallInformation call)
+        {
+            return this.DB.GetItemsRented(call.Client.CorporationID);
+        }
     }
 }
