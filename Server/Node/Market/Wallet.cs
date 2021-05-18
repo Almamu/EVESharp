@@ -74,18 +74,19 @@ namespace Node.Market
         /// Creates a transaction record in the wallet modifying the wallet balance
         /// </summary>
         /// <param name="type">The type of transaction</param>
+        /// <param name="characterID">The character performing the transaction</param>
         /// <param name="otherID">The other character's ID</param>
         /// <param name="typeID">The type of item</param>
         /// <param name="quantity">The amount of items</param>
         /// <param name="amount">The amount of ISK</param>
         /// <param name="stationID">The place where the transaction was recorded</param>
-        public void CreateTransactionRecord(TransactionType type, int otherID, int typeID, int quantity, double amount, int stationID)
+        public void CreateTransactionRecord(TransactionType type, int characterID, int otherID, int typeID, int quantity, double amount, int stationID)
         {
             this.Balance += amount;
             // market transactions do not affect the wallet value because these are paid either when placing the sell/buy order
             // or when fullfiling it
             this.DB.CreateTransactionForOwner(
-                this.OwnerID, otherID, type, typeID, quantity, amount, stationID, this.WalletKey
+                this.OwnerID, characterID, otherID, type, typeID, quantity, amount, stationID, this.WalletKey
             );
         }
         

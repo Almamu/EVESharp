@@ -26,19 +26,17 @@ namespace Node.Database
     {
         private TypeManager TypeManager { get; }
 
-        public Rowset GetNewTransactions(int characterID, int? clientID, TransactionType sellBuy, int? typeID, int quantity, int minPrice, int? accountKey)
+        public Rowset GetNewTransactions(int entityID, int? clientID, TransactionType sellBuy, int? typeID, int quantity, int minPrice, int? accountKey)
         {
             Dictionary<string, object> parameters = new Dictionary<string, object>()
             {
-                {"@characterID", characterID},
+                {"@entityID", entityID},
                 {"@quantity", quantity},
                 {"@price", minPrice}
             };
             
             string query =
-                "SELECT transactionID, transactionDateTime, typeID, quantity, price, transactionType," +
-                "0 AS corpTransaction, clientID, stationID " +
-                "FROM mktTransactions WHERE characterID=@characterID AND quantity >= @quantity AND price >= @price";
+                "SELECT transactionID, transactionDateTime, typeID, quantity, price, transactionType, characterID, IF(entityID = characterID, 0, 1) AS corpTransaction, clientID, stationID, accountKey AS keyID FROM mktTransactions WHERE entityID = @entityID AND quantity >= @quantity AND price >= @price";
 
             if (sellBuy != TransactionType.Either)
             {
@@ -317,7 +315,7 @@ namespace Node.Database
         public MarketOrder[] FindMatchingOrders(MySqlConnection connection, double price, int typeID, int characterID, int solarSystemID, TransactionType type)
         {
             MySqlDataReader reader = Database.PrepareQuery(ref connection,
-                "SELECT orderID, typeID, charID, stationID AS locationID, price, accountID, volRemaining, minVolume, `range`, jumps, escrow, issued FROM mktOrders LEFT JOIN staStations USING(stationID) LEFT JOIN mapPrecalculatedSolarSystemJumps ON solarSystemID = fromSolarSystemID AND toSolarsystemID = @solarSystemID WHERE bid = @transactionType AND price >= @price AND typeID = @typeID AND charID != @characterID AND `range` >= jumps ORDER BY price",
+                "SELECT orderID, typeID, charID, mktOrders.stationID AS locationID, price, mktOrders.accountID, volRemaining, minVolume, `range`, jumps, escrow, issued, chrInformation.corporationID, isCorp FROM mktOrders LEFT JOIN chrInformation ON charID = characterID LEFT JOIN staStations ON staStations.stationID = mktOrders.stationID LEFT JOIN mapPrecalculatedSolarSystemJumps ON staStations.solarSystemID = fromSolarSystemID AND toSolarsystemID = @solarSystemID WHERE bid = @transactionType AND price >= @price AND typeID = @typeID AND charID != @characterID AND `range` >= jumps ORDER BY price",
                 new Dictionary<string, object>()
                 {
                     {"@transactionType", type},
@@ -349,7 +347,9 @@ namespace Node.Database
                             reader.GetInt32(9),
                             reader.IsDBNull(10) == false ? reader.GetDouble(10) : 0,
                             type,
-                            reader.GetInt64(11)
+                            reader.GetInt64(11),
+                            reader.GetInt32(12),
+                            reader.GetBoolean(13)
                         )
                     );
                 }
@@ -543,14 +543,14 @@ namespace Node.Database
             ).Close();
         }
 
-        public void PlaceBuyOrder(MySqlConnection connection, int typeID, int ownerID, int stationID, int range, double price, int volEntered, int minVolume, int accountID, long duration, bool isCorp)
+        public void PlaceBuyOrder(MySqlConnection connection, int typeID, int characterID, int stationID, int range, double price, int volEntered, int minVolume, int accountID, long duration, bool isCorp)
         {
             Database.PrepareQuery(ref connection,
                 "INSERT INTO mktOrders(typeID, charID, stationID, `range`, bid, price, volEntered, volRemaining, issued, minVolume, accountID, duration, isCorp, escrow)VALUES(@typeID, @ownerID, @stationID, @range, @sell, @price, @volEntered, @volRemaining, @issued, @minVolume, @accountID, @duration, @isCorp, @escrow)",
                 new Dictionary<string, object>()
                 {
                     {"@typeID", typeID},
-                    {"@ownerID", ownerID},
+                    {"@ownerID", characterID},
                     {"@stationID", stationID},
                     {"@range", range},
                     {"@sell", TransactionType.Buy},
@@ -582,7 +582,7 @@ namespace Node.Database
         public MarketOrder GetOrderById(MySqlConnection connection, int orderID)
         {
             MySqlDataReader reader = Database.PrepareQuery(ref connection,
-                "SELECT orderID, typeID, charID, stationID AS locationID, price, accountID, volRemaining, minVolume, `range`, escrow, bid, issued FROM mktOrders WHERE orderID = @orderID",
+                "SELECT orderID, typeID, charID, mktOrders.stationID AS locationID, price, mktOrders.accountID, volRemaining, minVolume, `range`, escrow, bid, issued, corporationID, isCorp FROM mktOrders LEFT JOIN chrInformation ON charID = characterID WHERE orderID = @orderID",
                 new Dictionary<string, object>()
                 {
                     {"@orderID", orderID}
@@ -607,7 +607,9 @@ namespace Node.Database
                     0,
                     reader.IsDBNull(9) == false ? reader.GetDouble(9) : 0,
                     reader.GetInt32(10) == ((int) TransactionType.Buy) ? TransactionType.Buy : TransactionType.Sell,
-                    reader.GetInt64(11)
+                    reader.GetInt64(11),
+                    reader.GetInt32(12),
+                    reader.GetBoolean(13)
                 );
             }
         }
@@ -615,7 +617,7 @@ namespace Node.Database
         public List<MarketOrder> GetExpiredOrders(MySqlConnection connection)
         {
             MySqlDataReader reader = Database.PrepareQuery(ref connection,
-                "SELECT orderID, typeID, charID, stationID AS locationID, price, accountID, volRemaining, minVolume, `range`, escrow, bid, issued FROM mktOrders WHERE (issued + (duration * @ticksPerHour)) < @currentTime",
+                "SELECT orderID, typeID, charID, mktOrders.stationID AS locationID, price, mktOrders.accountID, volRemaining, minVolume, `range`, escrow, bid, issued, corporationID, isCorp FROM mktOrders LEFT JOIN chrInformation ON charID = characterID WHERE (issued + (duration * @ticksPerHour)) < @currentTime",
                 new Dictionary<string, object>()
                 {
                     {"@ticksPerHour", TimeSpan.TicksPerDay},
@@ -642,7 +644,9 @@ namespace Node.Database
                         0,
                         reader.IsDBNull(9) == false ? reader.GetDouble(9) : 0,
                         reader.GetInt32(10) == ((int) TransactionType.Buy) ? TransactionType.Buy : TransactionType.Sell,
-                        reader.GetInt64(11)
+                        reader.GetInt64(11),
+                        reader.GetInt32(12),
+                        reader.GetBoolean(13)
                     ));
                 }
 

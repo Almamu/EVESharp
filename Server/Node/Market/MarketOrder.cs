@@ -17,8 +17,10 @@ namespace Node.Market
         public double Escrow { get; }
         public TransactionType Bid { get; }
         public long Issued { get; }
+        public int CorporationID { get; }
+        public bool IsCorp { get; }
 
-        public MarketOrder(int orderID, int typeID, int characterID, int locationID, double price, int accountID, int unitsLeft, int minimumUnits, int range, int jumps, double escrow, TransactionType bid, long issued)
+        public MarketOrder(int orderID, int typeID, int characterID, int locationID, double price, int accountID, int unitsLeft, int minimumUnits, int range, int jumps, double escrow, TransactionType bid, long issued, int corporationID, bool isCorp)
         {
             this.OrderID = orderID;
             this.TypeID = typeID;
@@ -33,6 +35,8 @@ namespace Node.Market
             this.Escrow = escrow;
             this.Bid = bid;
             this.Issued = issued;
+            this.CorporationID = corporationID;
+            this.IsCorp = isCorp;
         }
     }
 }

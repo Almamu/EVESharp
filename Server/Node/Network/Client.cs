@@ -288,7 +288,7 @@ namespace Node.Network
 
         public int CorpAccountKey
         {
-            get => this.mSession["corpAccountKey"] as PyInteger;
+            get => this.mSession["corpAccountKey"] as PyInteger ?? 1000;
             set => this.mSession["corpAccountKey"] = value;
         }
 

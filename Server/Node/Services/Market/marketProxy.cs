@@ -288,6 +288,8 @@ namespace Node.Services.Market
                     continue;
                 if (order.Range != -1 && order.Range < order.Jumps)
                     continue;
+
+                int orderOwnerID = order.IsCorp == true ? order.CorporationID : order.CharacterID;
                 
                 if (order.UnitsLeft <= quantity)
                 {
@@ -298,7 +300,7 @@ namespace Node.Services.Market
                     {
                         // give back the escrow for the character
                         // TODO: THERE IS A POTENTIAL DEADLOCK HERE IF WE BUY FROM OURSELVES
-                        using Wallet escrowWallet = this.WalletManager.AcquireWallet(order.CharacterID, order.AccountID);
+                        using Wallet escrowWallet = this.WalletManager.AcquireWallet(orderOwnerID, order.AccountID);
                         {
                             escrowWallet.CreateJournalRecord(
                                 MarketReference.MarketEscrow, null, null, escrowLeft
@@ -330,16 +332,19 @@ namespace Node.Services.Market
                     this.CalculateSalesTax(character.GetSkillLevel(Types.Accounting), quantity, price, out tax, out profit);
             
                     // create the required records for the wallet
-                    wallet.CreateJournalRecord(MarketReference.MarketTransaction, order.CharacterID, character.ID, null, profit);
-                    wallet.CreateJournalRecord(MarketReference.TransactionTax, null, null, -tax);
-                    this.WalletManager.CreateTransactionRecord(character.ID, TransactionType.Sell, order.CharacterID, typeID, quantityToSell, price, stationID, order.AccountID);
-                    this.WalletManager.CreateTransactionRecord(order.CharacterID, TransactionType.Buy, character.ID, typeID, quantityToSell, price, stationID, order.AccountID);
+                    wallet.CreateJournalRecord(MarketReference.MarketTransaction, orderOwnerID, character.ID, null, profit);
+                    
+                    if (tax > 0)
+                        wallet.CreateJournalRecord(MarketReference.TransactionTax, null, null, -tax);
+                    
+                    wallet.CreateTransactionRecord(TransactionType.Sell, character.ID, orderOwnerID, typeID, quantityToSell, price, stationID);
+                    this.WalletManager.CreateTransactionRecord(orderOwnerID, TransactionType.Buy, order.CharacterID, character.ID, typeID, quantityToSell, price, stationID, order.AccountID);
                     
                     // create the new item that will be used by the player
                     ItemEntity item = this.ItemFactory.CreateSimpleItem(
-                        this.TypeManager[typeID], order.CharacterID, stationID, Flags.Hangar, quantityToSell
+                        this.TypeManager[typeID], orderOwnerID, stationID, order.IsCorp == true ? Flags.CorpMarket : Flags.Hangar, quantityToSell
                     );
-                    
+
                     // immediately unload it, if it has to be loaded the OnItemUpdate notification will take care of that
                     this.ItemFactory.UnloadItem(item);
                     
@@ -418,16 +423,14 @@ namespace Node.Services.Market
             }
         }
 
-        private void PlaceSellOrderChar(int itemID, Character character, int stationID, int quantity, int typeID, int duration, double price, int range, double brokerCost, CallInformation call)
+        private void PlaceSellOrder(int itemID, Character character, int stationID, int quantity, int typeID, int duration, double price, int range, double brokerCost, int ownerID, int accountKey, CallInformation call)
         {
             // check distance for the order
             this.CheckSellOrderDistancePermissions(character, stationID);
-            
-            // TODO: ADD SUPPORT FOR CORPORATIONS!
 
             // obtain wallet lock too
             // everything is checked already, perform table locking and do all the job here
-            using Wallet wallet = this.WalletManager.AcquireWallet(character.ID, 1000);
+            using Wallet wallet = this.WalletManager.AcquireWallet(ownerID, accountKey);
             using MySqlConnection connection = this.DB.AcquireMarketLock();
             try
             {
@@ -447,8 +450,7 @@ namespace Node.Services.Market
                 if (duration == 0)
                 {
                     // finally create the records in the market database
-                    this.PlaceImmediateSellOrderChar(connection, wallet, character, itemID, typeID, stationID, quantity,
-                        price, call.Client);
+                    this.PlaceImmediateSellOrderChar(connection, wallet, character, itemID, typeID, stationID, quantity, price, call.Client);
                 }
                 else
                 {
@@ -457,8 +459,7 @@ namespace Node.Services.Market
                     // do broker fee first
                     wallet.CreateJournalRecord(MarketReference.Brokerfee, null, null, -brokerCost);
                     // finally place the order
-                    this.DB.PlaceSellOrder(connection, typeID, character.ID, stationID, range, price, quantity, 1000,
-                        duration, false);
+                    this.DB.PlaceSellOrder(connection, typeID, character.ID, stationID, range, price, quantity, accountKey, duration, ownerID == character.CorporationID);
                 }
 
                 // send a OnOwnOrderChange notification
@@ -507,6 +508,8 @@ namespace Node.Services.Market
                     continue;
                 if (order.Range != -1 && order.Range < order.Jumps)
                     continue;
+
+                int orderOwnerID = order.IsCorp == true ? order.CorporationID : order.CharacterID;
                 
                 if (order.UnitsLeft <= quantity)
                 {
@@ -534,22 +537,24 @@ namespace Node.Services.Market
                     this.CalculateSalesTax(this.CharacterDB.GetSkillLevelForCharacter(Types.Accounting, order.CharacterID), quantity, price, out tax, out _);
 
                     // acquire wallet journal for seller so we can update their balance to add the funds that he got
-                    using Wallet sellerWallet = this.WalletManager.AcquireWallet(order.CharacterID, order.AccountID);
+                    using Wallet sellerWallet = this.WalletManager.AcquireWallet(orderOwnerID, order.AccountID);
                     {
-                        sellerWallet.CreateJournalRecord(MarketReference.MarketTransaction, character.ID, order.CharacterID, null, price * quantityToBuy);
+                        sellerWallet.CreateJournalRecord(MarketReference.MarketTransaction, orderOwnerID, null, price * quantityToBuy);
                         // calculate sales tax for the seller
-                        sellerWallet.CreateJournalRecord(MarketReference.TransactionTax, this.ItemFactory.OwnerSCC.ID, null, -tax);
+                        if (tax > 0)
+                            sellerWallet.CreateJournalRecord(MarketReference.TransactionTax, this.ItemFactory.OwnerSCC.ID, null, -tax);
+                        
+                        sellerWallet.CreateTransactionRecord(TransactionType.Sell, order.CharacterID, wallet.OwnerID, typeID, quantityToBuy, price, stationID);
                     }
                     
                     // create the transaction records for both characters
-                    this.WalletManager.CreateTransactionRecord(character.ID, TransactionType.Buy, order.CharacterID, typeID, quantityToBuy, price, stationID, order.AccountID);
-                    this.WalletManager.CreateTransactionRecord(order.CharacterID, TransactionType.Sell, character.ID, typeID, quantityToBuy, price, stationID, order.AccountID);
+                    wallet.CreateTransactionRecord(TransactionType.Buy, character.ID, orderOwnerID, typeID, quantityToBuy, price, stationID);
 
                     long stationNode = this.SystemManager.GetNodeStationBelongsTo(stationID);
                         
                     // create the new item that will be used by the player
                     ItemEntity item = this.ItemFactory.CreateSimpleItem(
-                        this.TypeManager[typeID], character.ID, stationID, Flags.Hangar, quantityToBuy
+                        this.TypeManager[typeID], wallet.OwnerID, stationID, wallet.OwnerID == character.CorporationID ? Flags.CorpMarket : Flags.Hangar, quantityToBuy
                     );
                     // immediately unload it, if it has to be loaded the OnItemUpdate notification will take care of that
                     this.ItemFactory.UnloadItem(item);
@@ -570,12 +575,12 @@ namespace Node.Services.Market
             }
         }
 
-        private void PlaceBuyOrderChar(int typeID, Character character, int stationID, int quantity, double price, int duration, int minVolume, int range, double brokerCost, CallInformation call)
+        private void PlaceBuyOrder(int typeID, Character character, int stationID, int quantity, double price, int duration, int minVolume, int range, double brokerCost, int ownerID, int accountKey, CallInformation call)
         {
             // ensure the character can place the order where he's trying to
             this.CheckBuyOrderDistancePermissions(character, stationID, duration);
 
-            using Wallet wallet = this.WalletManager.AcquireWallet(character.ID, 1000);
+            using Wallet wallet = this.WalletManager.AcquireWallet(ownerID, accountKey);
             using MySqlConnection connection = this.DB.AcquireMarketLock();
             try
             {
@@ -593,7 +598,7 @@ namespace Node.Services.Market
                     // do broker fee first
                     wallet.CreateJournalRecord(MarketReference.Brokerfee, null, null, -brokerCost);
                     // place the buy order
-                    this.DB.PlaceBuyOrder(connection, typeID, character.ID, stationID, range, price, quantity, minVolume, 1000, duration, false);
+                    this.DB.PlaceBuyOrder(connection, typeID, character.ID, stationID, range, price, quantity, minVolume, accountKey, duration, ownerID == character.CorporationID);
                 }
                 
                 // send a OnOwnOrderChange notification
@@ -634,18 +639,32 @@ namespace Node.Services.Market
                 // calculate broker costs for the order
                 this.CalculateBrokerCost(character.GetSkillLevel(Types.BrokerRelations), quantity, price, out brokerCost);
             }
+
+            int ownerID = character.ID;
+            int accountKey = 1000;
             
+            // make sure the user has permissions on the wallet of the corporation
+            // for sell orders just look into if the user can query that wallet
+            if (useCorp == true)
+            {
+                if (this.WalletManager.IsTakeAllowed(call.Client, call.Client.CorpAccountKey, call.Client.CorporationID) == false)
+                    throw new CrpAccessDenied(MLS.UI_CORP_ACCESSTOWALLETDIVISIONDENIED);
+
+                ownerID = call.Client.CorporationID;
+                accountKey = call.Client.CorpAccountKey;
+            }
+
             // check if the character has the Marketing skill and calculate distances
             if (bid == (int) TransactionType.Sell)
             {
                 if (itemID is PyInteger == false)
                     throw new CustomError("Unexpected data!");
 
-                this.PlaceSellOrderChar(itemID as PyInteger, character, stationID, quantity, typeID, duration, price, range, brokerCost, call);
+                this.PlaceSellOrder(itemID as PyInteger, character, stationID, quantity, typeID, duration, price, range, brokerCost, ownerID, accountKey, call);
             }
             else if (bid == (int) TransactionType.Buy)
             {
-                this.PlaceBuyOrderChar(typeID, character, stationID, quantity, price, duration, minVolume, range, brokerCost, call);
+                this.PlaceBuyOrder(typeID, character, stationID, quantity, price, duration, minVolume, range, brokerCost, ownerID, accountKey, call);
             }
             
             return null;
@@ -670,10 +689,12 @@ namespace Node.Services.Market
                 if (currentTime < order.Issued + TimeSpan.TicksPerSecond * this.NodeContainer.Constants[Constants.mktModificationDelay])
                     throw new MktOrderDelay((order.Issued + TimeSpan.TicksPerSecond * this.NodeContainer.Constants[Constants.mktModificationDelay]) - currentTime);
 
+                int orderOwnerID = order.IsCorp == true ? order.CorporationID : order.CharacterID;
+                
                 // check for escrow
                 if (order.Escrow > 0.0 && order.Bid == TransactionType.Buy)
                 {
-                    using Wallet wallet = this.WalletManager.AcquireWallet(character.ID, 1000);
+                    using Wallet wallet = this.WalletManager.AcquireWallet(orderOwnerID, order.AccountID);
                     {
                         wallet.CreateJournalRecord(MarketReference.MarketEscrow, null, null, order.Escrow);
                     }
@@ -681,10 +702,9 @@ namespace Node.Services.Market
 
                 if (order.Bid == TransactionType.Sell)
                 {
-                                            
                     // create the new item that will be used by the player
                     ItemEntity item = this.ItemFactory.CreateSimpleItem(
-                        this.TypeManager[order.TypeID], character.ID, order.LocationID, Flags.Hangar, order.UnitsLeft
+                        this.TypeManager[order.TypeID], orderOwnerID, order.LocationID, order.IsCorp == true ? Flags.CorpMarket : Flags.Hangar, order.UnitsLeft
                     );
                     // immediately unload it, if it has to be loaded the OnItemUpdate notification will take care of that
                     this.ItemFactory.UnloadItem(item);
@@ -745,7 +765,9 @@ namespace Node.Services.Market
 
                 this.CalculateBrokerCost(character.GetSkillLevel(Types.BrokerRelations), volRemaining, (newPrice - price), out brokerCost);
 
-                using Wallet wallet = this.WalletManager.AcquireWallet(order.CharacterID, order.AccountID);
+                int orderOwnerID = order.IsCorp == true ? order.CorporationID : order.CharacterID;
+                
+                using Wallet wallet = this.WalletManager.AcquireWallet(orderOwnerID, order.AccountID);
                 {
                     if (order.Bid == TransactionType.Buy)
                     {

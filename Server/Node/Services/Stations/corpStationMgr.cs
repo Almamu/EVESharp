@@ -233,7 +233,7 @@ namespace Node.Services.Stations
             using Wallet wallet = this.WalletManager.AcquireWallet(character.ID, 1000);
             {
                 wallet.EnsureEnoughBalance(newCloneType.BasePrice);
-                wallet.CreateTransactionRecord(TransactionType.Buy, this.ItemFactory.LocationSystem.ID, newCloneType.ID, 1, newCloneType.BasePrice, station.ID);
+                wallet.CreateTransactionRecord(TransactionType.Buy, character.ID, this.ItemFactory.LocationSystem.ID, newCloneType.ID, 1, newCloneType.BasePrice, station.ID);
             }
             
             // update active clone's information

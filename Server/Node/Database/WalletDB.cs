@@ -32,11 +32,11 @@ namespace Node.Database
             );
         }
 
-        public void CreateTransactionForOwner(int characterID, int? clientID, TransactionType sellBuy,
+        public void CreateTransactionForOwner(int entityID, int characterID, int? clientID, TransactionType sellBuy,
             int typeID, int quantity, double price, int stationID, int accountKey)
         {
             Database.PrepareQuery(
-                "INSERT INTO mktTransactions(transactionDateTime, typeID, quantity, price, transactionType, characterID, clientID, stationID, accountKey)VALUE(@transactionDateTime, @typeID, @quantity, @price, @transactionType, @characterID, @clientID, @stationID, @accountKey)",
+                "INSERT INTO mktTransactions(transactionDateTime, typeID, quantity, price, transactionType, characterID, clientID, stationID, accountKey, entityID)VALUE(@transactionDateTime, @typeID, @quantity, @price, @transactionType, @characterID, @clientID, @stationID, @accountKey, @entityID)",
                 new Dictionary<string, object>()
                 {
                     {"@transactionDateTime", DateTime.UtcNow.ToFileTimeUtc()},
@@ -47,7 +47,8 @@ namespace Node.Database
                     {"@characterID", characterID},
                     {"@clientID", clientID},
                     {"@stationID", stationID},
-                    {"@accountKey", accountKey}
+                    {"@accountKey", accountKey},
+                    {"@entityID", entityID}
                 }
             );
         }
@@ -141,7 +142,7 @@ namespace Node.Database
         public void SetWalletBalance(int accountKey, int ownerID, double balance)
         {
             Database.PrepareQuery(
-                "UPDATE mktWallets SET balance = @balance WHERE ownerID = @ownerID AND `key` = @accountKey",
+                "REPLACE INTO mktWallets (`key`, ownerID, balance)VALUE(@accountKey, @ownerID, @balance)",
                 new Dictionary<string, object>()
                 {
                     {"@balance", balance},
@@ -154,7 +155,7 @@ namespace Node.Database
         public void SetWalletBalance(MySqlConnection connection, int accountKey, int ownerID, double balance)
         {
             Database.PrepareQuery(ref connection,
-                "UPDATE mktWallets SET balance = @balance WHERE ownerID = @ownerID AND `key` = @accountKey",
+                "REPLACE INTO mktWallets (`key`, ownerID, balance)VALUE(@accountKey, @ownerID, @balance)",
                 new Dictionary<string, object>()
                 {
                     {"@balance", balance},

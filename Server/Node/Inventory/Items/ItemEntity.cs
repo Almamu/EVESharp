@@ -363,6 +363,8 @@ namespace Node.Inventory.Items
 
             if (take == true)
             {
+                if (this.Flag == Flags.CorpMarket && CorporationRole.Trader.Is(corporationRole) == true)
+                    return;
                 if (this.Flag == Flags.Hangar && CorporationRole.HangarCanTake1.Is(corporationRole) == true)
                     return;
                 if (this.Flag == Flags.CorpSAG2 && CorporationRole.HangarCanTake2.Is(corporationRole) == true)
@@ -380,6 +382,8 @@ namespace Node.Inventory.Items
             }
             else
             {
+                if (this.Flag == Flags.CorpMarket && CorporationRole.Trader.Is(corporationRole) == true)
+                    return;
                 if (this.Flag == Flags.Hangar && CorporationRole.HangarCanQuery1.Is(corporationRole) == true)
                     return;
                 if (this.Flag == Flags.CorpSAG2 && CorporationRole.HangarCanQuery2.Is(corporationRole) == true)

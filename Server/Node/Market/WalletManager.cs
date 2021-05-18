@@ -29,18 +29,19 @@ namespace Node.Market
         /// </summary>
         /// <param name="ownerID">The owner of the wallet</param>
         /// <param name="type">The type of transaction</param>
+        /// <param name="characterID">The character that performed the transaction</param>
         /// <param name="otherID">The other character's ID</param>
         /// <param name="typeID">The type of item</param>
         /// <param name="quantity">The amount of items</param>
         /// <param name="amount">The amount of ISK</param>
         /// <param name="stationID">The place where the transaction was recorded</param>
         /// <param name="accountKey">The account key where the transaction was recorded</param>
-        public void CreateTransactionRecord(int ownerID, TransactionType type, int otherID, int typeID, int quantity, double amount, int stationID, int accountKey)
+        public void CreateTransactionRecord(int ownerID, TransactionType type, int characterID, int otherID, int typeID, int quantity, double amount, int stationID, int accountKey)
         {
             // market transactions do not affect the wallet value because these are paid either when placing the sell/buy order
             // or when fullfiling it
             this.DB.CreateTransactionForOwner(
-                ownerID, otherID, type, typeID, quantity, amount, stationID, accountKey
+                ownerID, characterID, otherID, type, typeID, quantity, amount, stationID, accountKey
             );
         }
 
@@ -78,6 +79,11 @@ namespace Node.Market
                     return true;
                 if (CorporationRole.AccountCanQuery7.Is(client.CorporationRole) && accountKey == 1006)
                     return true;
+                // last chance, accountant role
+                if (CorporationRole.Accountant.Is(client.CorporationRole))
+                    return true;
+                if (CorporationRole.JuniorAccountant.Is(client.CorporationRole))
+                    return true;
             }
 
             return false;
@@ -105,6 +111,8 @@ namespace Node.Market
                 if (CorporationRole.AccountCanTake6.Is(client.CorporationRole) && accountKey == 1005)
                     return true;
                 if (CorporationRole.AccountCanTake7.Is(client.CorporationRole) && accountKey == 1006)
+                    return true;
+                if (CorporationRole.Accountant.Is(client.CorporationRole))
                     return true;
             }
 
