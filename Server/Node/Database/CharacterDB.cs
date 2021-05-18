@@ -56,12 +56,13 @@ namespace Node.Database
                 ref connection,
                 "SELECT " +
                     " itemName AS shortName,bloodlineID,gender,bounty,chrInformation.corporationID,allianceID,title,startDateTime,createDateTime," +
-                    " securityRating,chrInformation.balance,chrInformation.stationID,solarSystemID,constellationID,regionID," +
+                    " securityRating,IF(balance IS NULL, 0, balance) AS balance,chrInformation.stationID,solarSystemID,constellationID,regionID," +
                     " petitionMessage,logonMinutes,tickerName" +
                     " FROM chrInformation " +
                     "	LEFT JOIN eveNames ON characterID = itemID" +
                     "	LEFT JOIN corporation USING (corporationID)" +
                     "	LEFT JOIN bloodlineTypes USING (typeID)" +
+                    "   LEFT JOIN mktWallets ON characterID = ownerID" +
                     " WHERE characterID=@characterID AND accountID = @accountID",
                     new Dictionary<string, object>()
                 {

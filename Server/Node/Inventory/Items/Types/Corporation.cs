@@ -13,8 +13,7 @@ namespace Node.Inventory.Items.Types
             int? shape3, int? color1, int? color2, int? color3, string typeface, string division1, string division2,
             string division3, string division4, string division5, string division6, string division7,
             string walletDivision1, string walletDivision2, string walletDivision3, string walletDivision4,
-            string walletDivision5, string walletDivision6, string walletDivision7, double balance,
-            bool deleted) : base(@from)
+            string walletDivision5, string walletDivision6, string walletDivision7, bool deleted) : base(@from)
         {
             this.Description = description;
             this.mTickerName = tickerName;
@@ -55,7 +54,6 @@ namespace Node.Inventory.Items.Types
             this.WalletDivision5 = walletDivision5;
             this.WalletDivision6 = walletDivision6;
             this.WalletDivision7 = walletDivision7;
-            this.mBalance = balance;
             this.mDeleted = deleted;
         }
 
@@ -81,7 +79,6 @@ namespace Node.Inventory.Items.Types
         int? mColor2;
         int? mColor3;
         string mTypeface;
-        double mBalance;
         bool mDeleted;
 
         public string Description { get; set; }
@@ -123,7 +120,6 @@ namespace Node.Inventory.Items.Types
         public string WalletDivision5 { get; set; }
         public string WalletDivision6 { get; set; }
         public string WalletDivision7 { get; set; }
-        public double Balance => mBalance;
         public bool Deleted => mDeleted;
 
         public Row GetCorporationInfoRow()
