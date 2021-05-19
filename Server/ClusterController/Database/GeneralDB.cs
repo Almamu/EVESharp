@@ -91,6 +91,11 @@ namespace ClusterController.Database
                 }
             );
         }
+
+        public void ResetCharacterOnlineStatus()
+        {
+            Database.Query("UPDATE chrInformation SET online = 0");
+        }
         
         public GeneralDB(Logger logger, DatabaseConnection db) : base(db)
         {

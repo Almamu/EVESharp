@@ -9,16 +9,19 @@ namespace ClusterController
         private Dictionary<int, long> mLoadedSolarSystems = new Dictionary<int, long>();
         private ConnectionManager ConnectionManager { get; set; }
         private SolarSystemDB DB { get; }
+        private GeneralDB GeneralDB { get; init; }
 
-        public SystemManager(SolarSystemDB db)
+        public SystemManager(SolarSystemDB db, GeneralDB generalDB)
         {
             this.DB = db;
+            this.GeneralDB = generalDB;
         }
 
         public void Init(ConnectionManager connectionManager)
         {
             this.ConnectionManager = connectionManager;
             this.DB.ClearSolarSystemNodeID();
+            this.GeneralDB.ResetCharacterOnlineStatus();
         }
         
         public bool IsSolarSystemLoaded(int solarSystemID)

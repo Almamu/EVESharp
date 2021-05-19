@@ -555,7 +555,7 @@ namespace Node.Services.Corporations
         public PyDataType GetMemberTrackingInfo(CallInformation call)
         {
             // only directors can call this function
-            if (this.mCorporation.CeoID != call.Client.CharacterID)
+            if (CorporationRole.Director.Is(call.Client.CorporationRole) == false)
                 return null;
             
             return this.DB.GetMemberTrackingInfo(call.Client.CorporationID);
