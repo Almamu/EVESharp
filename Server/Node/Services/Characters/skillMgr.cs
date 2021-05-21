@@ -20,7 +20,7 @@ using Attribute = Node.Inventory.Items.Attributes.Attribute;
 
 namespace Node.Services.Characters
 {
-    public class skillMgr : BoundService
+    public class skillMgr : ClientBoundService
     {
         private const int MAXIMUM_ATTRIBUTE_POINTS = 15;
         private const int MINIMUM_ATTRIBUTE_POINTS = 5;
@@ -33,7 +33,7 @@ namespace Node.Services.Characters
         private Character Character { get; }
         
         public skillMgr(SkillDB db, ItemFactory itemFactory, TimerManager timerManager,
-            BoundServiceManager manager, Logger logger) : base(manager, null)
+            BoundServiceManager manager, Logger logger) : base(manager)
         {
             this.DB = db;
             this.ItemFactory = itemFactory;
@@ -42,12 +42,12 @@ namespace Node.Services.Characters
         }
 
         protected skillMgr(SkillDB db, ItemFactory itemFactory, TimerManager timerManager,
-            BoundServiceManager manager, Logger logger, Client client) : base(manager, client)
+            BoundServiceManager manager, Logger logger, Client client) : base(manager, client, client.EnsureCharacterIsSelected())
         {
             this.DB = db;
             this.ItemFactory = itemFactory;
             this.TimerManager = timerManager;
-            this.Character = this.ItemFactory.GetItem<Character>(client.EnsureCharacterIsSelected());
+            this.Character = this.ItemFactory.GetItem<Character>(this.ObjectID);
             this.Log = logger.CreateLogChannel("SkillManager");
 
             this.InitializeCharacter();
@@ -138,8 +138,8 @@ namespace Node.Services.Characters
             
             this.TimerManager.DequeueItemTimer(this.Character.ID, this.Character.NextReSpecTime);
         }
-        
-        public override void OnServiceFree()
+
+        protected override void OnClientDisconnected()
         {
             this.FreeSkillQueueTimers();
             this.FreeReSpecTimers();
@@ -197,33 +197,6 @@ namespace Node.Services.Characters
             
             // persist the character changes
             this.Character.Persist();
-        }
-        
-        public override PyInteger MachoResolveObject(PyTuple objectData, PyInteger zero, CallInformation call)
-        {
-            /*
-             * objectData [0] => entityID (station or solar system)
-             * objectData [1] => groupID (station or solar system)
-             */
-
-            // object data in this situation is not useful because the game looks for the SOL node that is processing
-            // this information, but we don't have any SOL nodes in our model, just plain simple nodes
-            // so to ensure the skillMgr operates properly the best way is to check where the character is loaded
-            // and direct it towards that node
-            int solarSystemID = call.Client.SolarSystemID2;
-
-            if (this.SystemManager.SolarSystemBelongsToUs(solarSystemID) == true)
-                return this.BoundServiceManager.Container.NodeID;
-
-            return this.SystemManager.GetNodeSolarSystemBelongsTo(solarSystemID);
-        }
-
-        protected override BoundService CreateBoundInstance(PyDataType objectData, CallInformation call)
-        {
-            if (this.MachoResolveObject(objectData as PyTuple, 0, call) != this.BoundServiceManager.Container.NodeID)
-                throw new CustomError("Trying to bind an object that does not belong to us!");
-            
-            return new skillMgr(this.DB, this.ItemFactory, this.TimerManager, this.BoundServiceManager, this.BoundServiceManager.Logger, call.Client);
         }
 
         public PyDataType GetSkillQueue(CallInformation call)
@@ -754,6 +727,24 @@ namespace Node.Services.Characters
             call.Client.NotifyMultiEvent(OnItemChange.BuildLocationChange(item, this.Character.ID));
             
             return null;
+        }
+        
+        protected override long MachoResolveObject(ServiceBindParams parameters, CallInformation call)
+        {
+            int solarSystemID = call.Client.SolarSystemID2;
+
+            if (this.SystemManager.SolarSystemBelongsToUs(solarSystemID) == true)
+                return this.BoundServiceManager.Container.NodeID;
+
+            return this.SystemManager.GetNodeSolarSystemBelongsTo(solarSystemID);
+        }
+
+        protected override BoundService CreateBoundInstance(ServiceBindParams bindParams, CallInformation call)
+        {
+            if (this.MachoResolveObject(bindParams, call) != this.BoundServiceManager.Container.NodeID)
+                throw new CustomError("Trying to bind an object that does not belong to us!");
+            
+            return new skillMgr (this.DB, this.ItemFactory, this.TimerManager, this.BoundServiceManager, this.BoundServiceManager.Logger, call.Client);
         }
     }
 }

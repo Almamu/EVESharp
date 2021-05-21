@@ -96,6 +96,11 @@ namespace Node.Network
             this.SendNotification(NOTIFICATION_TYPE_OWNER, ownerID, entry);
         }
 
+        public void NotifyOwners(PyList<PyInteger> ownerIDs, ClientNotification notification)
+        {
+            this.SendNotification(NOTIFICATION_TYPE_OWNER, ownerIDs, notification);
+        }
+
         public void NotifyOwnerAtLocation(int ownerID, int locationID, ClientNotification entry)
         {
             this.SendNotification(NOTIFICATION_TYPE_OWNER_LOCATIONID, new PyTuple(2) {[0] = ownerID, [1] = locationID}, entry);

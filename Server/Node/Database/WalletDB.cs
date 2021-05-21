@@ -81,7 +81,6 @@ namespace Node.Database
             Database.GetLock(ref connection, $"wallet_{ownerID}_{walletKey}");
 
             // get the current owner's balance
-            // TODO: SUPPORT CORPS AND WALLET KEYS!!
             balance = this.GetWalletBalance(ref connection, ownerID, walletKey);
             
             return connection;

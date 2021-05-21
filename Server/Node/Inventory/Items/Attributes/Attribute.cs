@@ -60,7 +60,6 @@ namespace Node.Inventory.Items.Attributes
             return Equals((Attribute) obj);
         }
 
-        // TODO: Create a PyNumber class to handle both integer and double values to easily access these and send them to the client?
         public enum ItemAttributeValueType
         {
             Integer = 0,

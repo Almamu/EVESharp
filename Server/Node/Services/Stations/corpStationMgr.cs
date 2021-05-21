@@ -22,7 +22,7 @@ using Type = Node.StaticData.Inventory.Type;
 
 namespace Node.Services.Stations
 {
-    public class corpStationMgr : BoundService
+    public class corpStationMgr : ClientBoundService
     {
         private ItemFactory ItemFactory { get; }
         private ItemDB ItemDB => this.ItemFactory.ItemDB;
@@ -35,7 +35,7 @@ namespace Node.Services.Stations
         private NodeContainer Container { get; }
         private NotificationManager NotificationManager { get; init; }
         
-        public corpStationMgr(MarketDB marketDB, StationDB stationDb, BillsDB billsDb, NotificationManager notificationManager, ItemFactory itemFactory, NodeContainer container, BoundServiceManager manager, WalletManager walletManager) : base(manager, null)
+        public corpStationMgr(MarketDB marketDB, StationDB stationDb, BillsDB billsDb, NotificationManager notificationManager, ItemFactory itemFactory, NodeContainer container, BoundServiceManager manager, WalletManager walletManager) : base(manager)
         {
             this.MarketDB = marketDB;
             this.StationDB = stationDb;
@@ -46,7 +46,8 @@ namespace Node.Services.Stations
             this.WalletManager = walletManager;
         }
         
-        protected corpStationMgr(MarketDB marketDB, StationDB stationDb, BillsDB billsDb, NotificationManager notificationManager, ItemFactory itemFactory, NodeContainer container, BoundServiceManager manager, WalletManager walletManager, Client client) : base(manager, client)
+        // TODO: PROVIDE OBJECTID PROPERLY
+        protected corpStationMgr(MarketDB marketDB, StationDB stationDb, BillsDB billsDb, NotificationManager notificationManager, ItemFactory itemFactory, NodeContainer container, BoundServiceManager manager, WalletManager walletManager, Client client) : base(manager, client, 0)
         {
             this.MarketDB = marketDB;
             this.StationDB = stationDb;
@@ -55,24 +56,6 @@ namespace Node.Services.Stations
             this.ItemFactory = itemFactory;
             this.Container = container;
             this.WalletManager = walletManager;
-        }
-
-        public override PyInteger MachoResolveObject(PyInteger objectID, PyInteger zero, CallInformation call)
-        {
-            int solarSystemID = this.ItemFactory.GetStaticStation(objectID).SolarSystemID;
-
-            if (this.SystemManager.SolarSystemBelongsToUs(solarSystemID) == true)
-                return this.BoundServiceManager.Container.NodeID;
-
-            return this.SystemManager.GetNodeSolarSystemBelongsTo(solarSystemID);
-        }
-
-        protected override BoundService CreateBoundInstance(PyDataType objectData, CallInformation call)
-        {
-            if (this.MachoResolveObject(objectData as PyInteger, 0, call) != this.BoundServiceManager.Container.NodeID)
-                throw new CustomError("Trying to bind an object that does not belong to us!");
-
-            return new corpStationMgr(this.MarketDB, this.StationDB, this.BillsDB, this.NotificationManager, this.ItemFactory, this.Container, this.BoundServiceManager, this.WalletManager, call.Client);
         }
 
         public PyList GetCorporateStationOffice(CallInformation call)
@@ -294,6 +277,24 @@ namespace Node.Services.Stations
             this.NotificationManager.NotifyStation(stationID, new OnOfficeRentalChanged(call.Client.CorporationID, item.ID, item.ID));
             // return the new officeID
             return item.ID;
+        }
+        
+        protected override long MachoResolveObject(ServiceBindParams parameters, CallInformation call)
+        {
+            int solarSystemID = this.ItemFactory.GetStaticStation(parameters.ObjectID).SolarSystemID;
+
+            if (this.SystemManager.SolarSystemBelongsToUs(solarSystemID) == true)
+                return this.BoundServiceManager.Container.NodeID;
+
+            return this.SystemManager.GetNodeSolarSystemBelongsTo(solarSystemID);
+        }
+
+        protected override BoundService CreateBoundInstance(ServiceBindParams bindParams, CallInformation call)
+        {
+            if (this.MachoResolveObject(bindParams, call) != this.BoundServiceManager.Container.NodeID)
+                throw new CustomError("Trying to bind an object that does not belong to us!");
+            
+            return new corpStationMgr(this.MarketDB, this.StationDB, this.BillsDB, this.NotificationManager, this.ItemFactory, this.Container, this.BoundServiceManager, this.WalletManager, call.Client);
         }
     }
 }

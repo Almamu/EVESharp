@@ -302,7 +302,8 @@ namespace Node.Network
                     packet.UserID,
                     client = new Client(
                         this.Container, this.ClusterConnection, this.ServiceManager, this.TimerManager,
-                        this.ItemFactory, this.CharacterManager, this.SystemManager, this.NotificationManager, this
+                        this.ItemFactory, this.CharacterManager, this.SystemManager, this.NotificationManager, 
+                        this.ClientManager, this
                     )
                 );
 
@@ -424,23 +425,14 @@ namespace Node.Network
             PyInteger clientID = first as PyInteger;
             
             // remove the client from the session list and free it's data
-            if (this.ClientManager.Contains(clientID) == false)
+            if (this.ClientManager.TryGetClient(clientID, out Client client) == false)
             {
                 Log.Error($"Received OnClientDisconnected notification for an unknown client {clientID}");
                 return;
             }
 
-            // get the client, search for it's common items and meta inventories and free them
-            Client client = this.ClientManager.Get(clientID);
-
-            // clear bound services for this character
-            this.BoundServiceManager.OnClientDisconnected(client);
-            
-            // ensure the client is removed from other places where it shouldn't be
-            client.OnClientDisconnected();
-
-            // finally remove the client from the manager
-            this.ClientManager.Remove(clientID);
+            // finally remove the client from the manager, this will take care of freeing everything else
+            this.ClientManager.Remove(client);
         }
 
         private void HandleOnItemUpdate(Notifications.Nodes.Inventory.OnItemChange change)
@@ -772,11 +764,9 @@ namespace Node.Network
         private void ClientSendServiceCall(int clientID, string service, string call, PyTuple args, PyDictionary namedPayload,
             Action<RemoteCall, PyDataType> callback, Action<RemoteCall> timeoutCallback, object extraInfo = null, int timeoutSeconds = 0)
         {
-            if (this.ClientManager.Contains(clientID) == false)
+            if (this.ClientManager.TryGetClient(clientID, out Client destination) == false)
                 throw new InvalidDataException("Cannot send a service call to a userID that is not registered");
 
-            Client destination = this.ClientManager.Get(clientID);
-            
             // queue the call in the service manager and get the callID
             int callID = this.ServiceManager.ExpectRemoteServiceResult(callback, destination, extraInfo, timeoutCallback, timeoutSeconds);
             

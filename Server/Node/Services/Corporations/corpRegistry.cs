@@ -27,7 +27,7 @@ using PythonTypes.Types.Primitives;
 namespace Node.Services.Corporations
 {
     // TODO: REWRITE THE USAGE OF THE CHARACTER CLASS HERE TO FETCH THE DATA OFF THE DATABASE TO PREVENT ISSUES ON MULTI-NODE INSTALLATIONS
-    public class corpRegistry : BoundService
+    public class corpRegistry : MultiClientBoundService
     {
         private Corporation mCorporation = null;
         private int mIsMaster = 0;
@@ -43,8 +43,9 @@ namespace Node.Services.Corporations
         private NodeContainer Container { get; init; }
         private NotificationManager NotificationManager { get; init; }
         private MailManager MailManager { get; init; }
+        private ClientManager ClientManager { get; init; }
         
-        public corpRegistry(CorporationDB db, ChatDB chatDB, CharacterDB characterDB, NotificationManager notificationManager, MailManager mailManager, WalletManager walletManager, NodeContainer container, ItemFactory itemFactory, BoundServiceManager manager) : base(manager, null)
+        public corpRegistry(CorporationDB db, ChatDB chatDB, CharacterDB characterDB, NotificationManager notificationManager, MailManager mailManager, WalletManager walletManager, NodeContainer container, ItemFactory itemFactory, ClientManager clientManager, BoundServiceManager manager) : base(manager)
         {
             this.DB = db;
             this.ChatDB = chatDB;
@@ -54,9 +55,10 @@ namespace Node.Services.Corporations
             this.WalletManager = walletManager;
             this.Container = container;
             this.ItemFactory = itemFactory;
+            this.ClientManager = clientManager;
         }
 
-        protected corpRegistry(CorporationDB db, ChatDB chatDB, CharacterDB characterDB, NotificationManager notificationManager, MailManager mailManager, WalletManager walletManager, NodeContainer container, ItemFactory itemFactory, Corporation corp, int isMaster, BoundServiceManager manager, Client client) : base (manager, client)
+        protected corpRegistry(CorporationDB db, ChatDB chatDB, CharacterDB characterDB, NotificationManager notificationManager, MailManager mailManager, WalletManager walletManager, NodeContainer container, ItemFactory itemFactory, ClientManager clientManager, Corporation corp, int isMaster, BoundServiceManager manager) : base (manager, corp.ID)
         {
             this.DB = db;
             this.ChatDB = chatDB;
@@ -68,26 +70,7 @@ namespace Node.Services.Corporations
             this.ItemFactory = itemFactory;
             this.mCorporation = corp;
             this.mIsMaster = isMaster;
-        }
-
-        public override PyInteger MachoResolveObject(PyTuple objectData, PyInteger zero, CallInformation call)
-        {
-            // TODO: CORPORATIONS DO NOT HAVE ANY MANAGEMENT CENTER DEFINED AS OF NOW
-            // TODO: SO THIS MIGHT DESYNC THEM BETWEEN NODES, BUT SHOULD BE ENOUGH FOR NOW
-            return this.BoundServiceManager.Container.NodeID;
-        }
-
-        protected override BoundService CreateBoundInstance(PyDataType objectData, CallInformation call)
-        {
-            PyTuple data = objectData as PyTuple;
-            
-            /*
-             * objectData[0] => corporationID
-             * objectData[1] => isMaster
-             */
-            Corporation corp = this.ItemFactory.LoadItem(data[0] as PyInteger) as Corporation;
-            
-            return new corpRegistry(this.DB, this.ChatDB, this.CharacterDB, this.NotificationManager, this.MailManager, this.WalletManager, this.Container, this.ItemFactory, corp, data[1] as PyInteger, this.BoundServiceManager, call.Client);
+            this.ClientManager = clientManager;
         }
 
         public PyDataType GetEveOwners(CallInformation call)
@@ -369,6 +352,8 @@ namespace Node.Services.Corporations
             int callerCharacterID = call.Client.EnsureCharacterIsSelected();
             
             // TODO: PROPERLY IMPLEMENT THIS CHECK, RIGHT NOW THE CHARACTER AND THE CORPREGISTRY INSTANCES DO NOT HAVE TO BE LOADED ON THE SAME NODE
+            // TODO: SWITCH UP THE CORPORATION CHANGE MECHANISM TO NOT RELY ON THE CHARACTER OBJECT SO THIS CAN BE DONE THROUGH THE DATABASE
+            // TODO: DIRECTLY
             Character character = this.ItemFactory.GetItem<Character>(callerCharacterID);
             // ensure the character has the required skills
             long corporationManagementLevel = character.GetSkillLevel(Types.CorporationManagement);
@@ -407,6 +392,10 @@ namespace Node.Services.Corporations
                     // start the session change for the client
                     call.Client.CorporationID = corporationID;
                     call.Client.CorporationRole = long.MaxValue; // this gives all the permissions to the character
+                    call.Client.RolesAtBase = long.MaxValue;
+                    call.Client.RolesAtOther = long.MaxValue;
+                    call.Client.RolesAtHQ = long.MaxValue;
+                    call.Client.RolesAtAll = long.MaxValue;
                     // update the character to reflect the new ownership
                     character.CorporationID = corporationID;
                     character.CorpRole = long.MaxValue;
@@ -669,6 +658,22 @@ namespace Node.Services.Corporations
         public PyDataType GetRecruitmentAdsForCorporation(CallInformation call)
         {
             return this.DB.GetRecruitmentAds(null, null, null, null, null, null, null, this.mCorporation.ID);
+        }
+        protected override long MachoResolveObject(ServiceBindParams parameters, CallInformation call)
+        {
+            // TODO: CHECK IF ANY NODE HAS THIS CORPORATION LOADED
+            // TODO: IF NOT, LOAD IT HERE AND RETURN OUR ID
+            return this.BoundServiceManager.Container.NodeID;
+        }
+
+        protected override BoundService CreateBoundInstance(ServiceBindParams bindParams, CallInformation call)
+        {
+            if (this.MachoResolveObject(bindParams, call) != this.BoundServiceManager.Container.NodeID)
+                throw new CustomError("Trying to bind an object that does not belong to us!");
+
+            Corporation corp = this.ItemFactory.LoadItem<Corporation>(bindParams.ObjectID);
+            
+            return new corpRegistry (this.DB, this.ChatDB, this.CharacterDB, this.NotificationManager, this.MailManager, this.WalletManager, this.Container, this.ItemFactory, this.ClientManager, corp, bindParams.ExtraValue, this.BoundServiceManager);
         }
     }
 }

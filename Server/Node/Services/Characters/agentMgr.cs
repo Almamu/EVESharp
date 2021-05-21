@@ -8,26 +8,24 @@ using PythonTypes.Types.Primitives;
 
 namespace Node.Services.Characters
 {
-    public class agentMgr : BoundService
+    public class agentMgr : ClientBoundService
     {
         private AgentDB DB { get; init; }
         private AgentManager AgentManager { get; init; }
         private NodeContainer Container { get; init; }
-        private int AgentID { get; init; }
         
-        public agentMgr(AgentDB db, NodeContainer container, AgentManager agentManager, BoundServiceManager manager) : base(manager, null)
+        public agentMgr(AgentDB db, NodeContainer container, AgentManager agentManager, BoundServiceManager manager) : base(manager)
         {
             this.DB = db;
             this.AgentManager = agentManager;
             this.Container = container;
         }
 
-        protected agentMgr(int agentID, AgentDB db, NodeContainer container, AgentManager agentManager, BoundServiceManager manager, Client client) : base(manager, client)
+        protected agentMgr(int agentID, AgentDB db, NodeContainer container, AgentManager agentManager, BoundServiceManager manager, Client client) : base(manager, client, agentID)
         {
             this.DB = db;
             this.AgentManager = agentManager;
             this.Container = container;
-            this.AgentID = agentID;
         }
 
         public PyDataType GetAgents(CallInformation call)
@@ -48,25 +46,20 @@ namespace Node.Services.Characters
         {
             return new PyList();
         }
+        
+        public PyDataType GetInfoServiceDetails(CallInformation call)
+        {
+            return this.DB.GetInfoServiceDetails(this.ObjectID);
+        }
 
-        /// <inheritdoc cref="MachoResolveObject"/>
-        public override PyInteger MachoResolveObject(PyInteger objectID, PyInteger zero, CallInformation call)
+        protected override long MachoResolveObject(ServiceBindParams parameters, CallInformation call)
         {
             return this.Container.NodeID;
         }
 
-        /// <inheritdoc cref="BoundService.CreateBoundInstance"/>
-        protected override BoundService CreateBoundInstance(PyDataType objectData, CallInformation call)
+        protected override BoundService CreateBoundInstance(ServiceBindParams bindParams, CallInformation call)
         {
-            if (objectData is not PyInteger agentID)
-                throw new CustomError("Unexpected!");
-            
-            return new agentMgr(agentID, this.DB, this.Container, this.AgentManager, this.BoundServiceManager, call.Client);
-        }
-
-        public PyDataType GetInfoServiceDetails(CallInformation call)
-        {
-            return this.DB.GetInfoServiceDetails(this.AgentID);
+            return new agentMgr(bindParams.ObjectID, this.DB, this.Container, this.AgentManager, this.BoundServiceManager, call.Client);
         }
     }
 }

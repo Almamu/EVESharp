@@ -25,7 +25,6 @@
 using System;
 using System.Collections.Generic;
 using Common.Logging;
-using Node.Network;
 using Node.Services.Account;
 using Node.Services.CacheSvc;
 using Node.Services.Characters;
@@ -44,7 +43,7 @@ using Node.Services.Tutorial;
 using Node.Services.War;
 using PythonTypes.Types.Primitives;
 
-namespace Node.Services
+namespace Node.Network
 {
     public class ServiceManager : Common.Services.ServiceManager
     {

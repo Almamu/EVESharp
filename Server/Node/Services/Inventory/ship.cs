@@ -15,81 +15,21 @@ using Type = Node.StaticData.Inventory.Type;
 
 namespace Node.Services.Inventory
 {
-    public class ship : BoundService
+    public class ship : ClientBoundService
     {
         private ItemEntity Location { get; }
         private ItemFactory ItemFactory { get; }
         private TypeManager TypeManager => this.ItemFactory.TypeManager;
         private SystemManager SystemManager => this.ItemFactory.SystemManager;
-        public ship(ItemFactory itemFactory, BoundServiceManager manager) : base(manager, null)
+        public ship(ItemFactory itemFactory, BoundServiceManager manager) : base(manager)
         {
             this.ItemFactory = itemFactory;
         }
 
-        protected ship(ItemEntity location, ItemFactory itemFactory, BoundServiceManager manager, Client client) : base(manager, client)
+        protected ship(ItemEntity location, ItemFactory itemFactory, BoundServiceManager manager, Client client) : base(manager, client, location.ID)
         {
             this.Location = location;
             this.ItemFactory = itemFactory;
-        }
-
-        public override PyInteger MachoResolveObject(PyTuple objectData, PyInteger zero, CallInformation call)
-        {
-            /*
-             * objectData [0] => entityID (station or solar system)
-             * objectData [1] => groupID (station or solar system)
-             */
-
-            PyDataType first = objectData[0];
-            PyDataType second = objectData[1];
-
-            if (first is PyInteger == false || second is PyInteger == false)
-                throw new CustomError("Cannot resolve object");
-
-            PyInteger entityID = first as PyInteger;
-            PyInteger groupID = second as PyInteger;
-
-            int solarSystemID = 0;
-
-            if (groupID == (int) Groups.SolarSystem)
-                solarSystemID = this.ItemFactory.GetStaticSolarSystem(entityID).ID;
-            else if (groupID == (int) Groups.Station)
-                solarSystemID = this.ItemFactory.GetStaticStation(entityID).SolarSystemID;
-            else
-                throw new CustomError("Unknown item's groupID");
-
-            if (this.SystemManager.SolarSystemBelongsToUs(solarSystemID) == true)
-                return this.BoundServiceManager.Container.NodeID;
-
-            return this.SystemManager.GetNodeSolarSystemBelongsTo(solarSystemID);
-        }
-
-        protected override BoundService CreateBoundInstance(PyDataType objectData, CallInformation call)
-        {
-            /*
-             * objectData [0] => entityID (station or solar system)
-             * objectData [1] => groupID (station or solar system)
-             */
-
-            if (objectData is PyTuple == false)
-                throw new CustomError("Cannot bind ship service to unknown object");
-
-            PyTuple tuple = objectData as PyTuple;
-            
-            if (this.MachoResolveObject(tuple, 0, call) != this.BoundServiceManager.Container.NodeID)
-                throw new CustomError("Trying to bind an object that does not belong to us!");
-
-            PyInteger locationID = tuple[0] as PyInteger;
-            PyInteger group = tuple[1] as PyInteger;
-
-            if (group != (int) Groups.Station && group != (int) Groups.SolarSystem)
-                throw new CustomError("Cannot bind ship service to non-solarsystem and non-station locations");
-            if (this.ItemFactory.TryGetItem(locationID, out ItemEntity location) == false)
-                throw new CustomError("This bind request does not belong here");
-
-            if (location.Type.Group.ID != group)
-                throw new CustomError("Location and group do not match");
-
-            return new ship(location, this.ItemFactory, this.BoundServiceManager, call.Client);
         }
 
         public PyInteger LeaveShip(CallInformation call)
@@ -217,6 +157,39 @@ namespace Node.Services.Inventory
                 this.AssembleShip(itemID, call);
 
             return null;
+        }
+
+        protected override long MachoResolveObject(ServiceBindParams parameters, CallInformation call)
+        {
+            int solarSystemID = 0;
+
+            if (parameters.ExtraValue == (int) Groups.SolarSystem)
+                solarSystemID = this.ItemFactory.GetStaticSolarSystem(parameters.ObjectID).ID;
+            else if (parameters.ExtraValue == (int) Groups.Station)
+                solarSystemID = this.ItemFactory.GetStaticStation(parameters.ObjectID).SolarSystemID;
+            else
+                throw new CustomError("Unknown item's groupID");
+
+            if (this.SystemManager.SolarSystemBelongsToUs(solarSystemID) == true)
+                return this.BoundServiceManager.Container.NodeID;
+
+            return this.SystemManager.GetNodeSolarSystemBelongsTo(solarSystemID);
+        }
+
+        protected override BoundService CreateBoundInstance(ServiceBindParams bindParams, CallInformation call)
+        {
+            if (this.MachoResolveObject(bindParams, call) != this.BoundServiceManager.Container.NodeID)
+                throw new CustomError("Trying to bind an object that does not belong to us!");
+
+            if (bindParams.ExtraValue != (int) Groups.Station && bindParams.ExtraValue != (int) Groups.SolarSystem)
+                throw new CustomError("Cannot bind ship service to non-solarsystem and non-station locations");
+            if (this.ItemFactory.TryGetItem(bindParams.ObjectID, out ItemEntity location) == false)
+                throw new CustomError("This bind request does not belong here");
+
+            if (location.Type.Group.ID != bindParams.ExtraValue)
+                throw new CustomError("Location and group do not match");
+
+            return new ship(location, this.ItemFactory, this.BoundServiceManager, call.Client);
         }
     }
 }

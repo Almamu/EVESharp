@@ -17,13 +17,14 @@ using Node.Network;
 using Node.Notifications.Client.Inventory;
 using Node.Services.Inventory;
 using Node.StaticData.Inventory;
+using Node.StaticData.Inventory.Station;
 using PythonTypes.Types.Collections;
 using PythonTypes.Types.Database;
 using PythonTypes.Types.Primitives;
 
 namespace Node.Services.Stations
 {
-    public class reprocessingSvc : BoundService
+    public class reprocessingSvc : ClientBoundService
     {
         private static Dictionary<Types, Types> sOreTypeIDtoProcessingSkillTypeID = new Dictionary<Types, Types>()
         {
@@ -54,14 +55,14 @@ namespace Node.Services.Stations
         private StandingDB StandingDB { get; }
         private ReprocessingDB ReprocessingDB { get; }
 
-        public reprocessingSvc(ReprocessingDB reprocessingDb, StandingDB standingDb, ItemFactory itemFactory, BoundServiceManager manager) : base(manager, null)
+        public reprocessingSvc(ReprocessingDB reprocessingDb, StandingDB standingDb, ItemFactory itemFactory, BoundServiceManager manager) : base(manager)
         {
             this.ReprocessingDB = reprocessingDb;
             this.StandingDB = standingDb;
             this.ItemFactory = itemFactory;
         }
         
-        protected reprocessingSvc(ReprocessingDB reprocessingDb, StandingDB standingDb, Corporation corporation, Station station, ItemInventory inventory, ItemFactory itemFactory, BoundServiceManager manager, Client client) : base(manager, client)
+        protected reprocessingSvc(ReprocessingDB reprocessingDb, StandingDB standingDb, Corporation corporation, Station station, ItemInventory inventory, ItemFactory itemFactory, BoundServiceManager manager, Client client) : base(manager, client, inventory.ID)
         {
             this.ReprocessingDB = reprocessingDb;
             this.StandingDB = standingDb;
@@ -69,41 +70,6 @@ namespace Node.Services.Stations
             this.mStation = station;
             this.mInventory = inventory;
             this.ItemFactory = itemFactory;
-        }
-
-        public override PyInteger MachoResolveObject(PyInteger objectID, PyInteger zero, CallInformation call)
-        {
-            // TODO: CHECK IF THE GIVEN STATION HAS REPROCESSING SERVICES!
-            
-            if (this.SystemManager.StationBelongsToUs(objectID) == true)
-                return this.BoundServiceManager.Container.NodeID;
-
-            return this.SystemManager.GetNodeStationBelongsTo(objectID);
-        }
-
-        protected override BoundService CreateBoundInstance(PyDataType objectData, CallInformation call)
-        {
-            if (objectData is PyInteger == false)
-                throw new CustomError("Cannot bind reprocessingSvc service to unknown object");
-
-            PyInteger stationID = objectData as PyInteger;
-            
-            if (this.MachoResolveObject(stationID, 0, call) != this.BoundServiceManager.Container.NodeID)
-                throw new CustomError("Trying to bind an object that does not belong to us!");
-
-            Station station = this.ItemFactory.GetStaticStation(stationID);
-            
-            // check if the station has the required services
-            if (station.HasService(StaticData.Inventory.Station.Service.ReprocessingPlant) == false)
-                throw new CustomError("This station does not allow for reprocessing plant services");
-            // ensure the player is in this station
-            if (station.ID != call.Client.StationID)
-                throw new CanOnlyDoInStations();
-            
-            Corporation corporation = this.ItemFactory.GetItem<Corporation>(station.OwnerID);
-            ItemInventory inventory = this.ItemFactory.MetaInventoryManager.RegisterMetaInventoryForOwnerID(station, call.Client.EnsureCharacterIsSelected(), Flags.Hangar);
-
-            return new reprocessingSvc(this.ReprocessingDB, this.StandingDB, corporation, station, inventory, this.ItemFactory, this.BoundServiceManager, call.Client);
         }
 
         private double CalculateCombinedYield(Character character)
@@ -299,6 +265,32 @@ namespace Node.Services.Stations
             }
             
             return null;
+        }
+
+        protected override long MachoResolveObject(ServiceBindParams parameters, CallInformation call)
+        {
+            if (this.SystemManager.StationBelongsToUs(parameters.ObjectID) == true)
+                return this.BoundServiceManager.Container.NodeID;
+
+            return this.SystemManager.GetNodeStationBelongsTo(parameters.ObjectID);
+        }
+
+        protected override BoundService CreateBoundInstance(ServiceBindParams bindParams, CallInformation call)
+        {
+            if (this.MachoResolveObject(bindParams, call) != this.BoundServiceManager.Container.NodeID)
+                throw new CustomError("Trying to bind an object that does not belong to us!");
+
+            Station station = this.ItemFactory.GetStaticStation(bindParams.ObjectID);
+
+            if (station.HasService(Service.ReprocessingPlant) == false)
+                throw new CustomError("This station does not allow for reprocessing plant services");
+            if (station.ID != call.Client.StationID)
+                throw new CanOnlyDoInStations();
+
+            Corporation corporation = this.ItemFactory.GetItem<Corporation>(station.OwnerID);
+            ItemInventory inventory = this.ItemFactory.MetaInventoryManager.RegisterMetaInventoryForOwnerID(station, call.Client.EnsureCharacterIsSelected(), Flags.Hangar);
+            
+            return new reprocessingSvc(this.ReprocessingDB, this.StandingDB, corporation, station, inventory, this.ItemFactory, this.BoundServiceManager, call.Client);
         }
     }
 }

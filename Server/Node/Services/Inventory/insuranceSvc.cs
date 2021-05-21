@@ -17,7 +17,7 @@ using PythonTypes.Types.Primitives;
 
 namespace Node.Services.Inventory
 {
-    public class insuranceSvc : BoundService
+    public class insuranceSvc : ClientBoundService
     {
         private int mStationID = 0;
         private InsuranceDB DB { get; }
@@ -27,7 +27,7 @@ namespace Node.Services.Inventory
         private WalletManager WalletManager { get; }
         private MailManager MailManager { get; }
 
-        public insuranceSvc(ItemFactory itemFactory, InsuranceDB db, MarketDB marketDB, WalletManager walletManager, MailManager mailManager, BoundServiceManager manager) : base(manager, null)
+        public insuranceSvc(ItemFactory itemFactory, InsuranceDB db, MarketDB marketDB, WalletManager walletManager, MailManager mailManager, BoundServiceManager manager) : base(manager)
         {
             this.DB = db;
             this.ItemFactory = itemFactory;
@@ -36,7 +36,7 @@ namespace Node.Services.Inventory
             this.MailManager = mailManager;
         }
 
-        protected insuranceSvc(ItemFactory itemFactory, InsuranceDB db, MarketDB marketDB, WalletManager walletManager, MailManager mailManager, BoundServiceManager manager, int stationID, Client client) : base (manager, client)
+        protected insuranceSvc(ItemFactory itemFactory, InsuranceDB db, MarketDB marketDB, WalletManager walletManager, MailManager mailManager, BoundServiceManager manager, int stationID, Client client) : base (manager, client, stationID)
         {
             this.mStationID = stationID;
             this.DB = db;
@@ -44,24 +44,6 @@ namespace Node.Services.Inventory
             this.MarketDB = marketDB;
             this.WalletManager = walletManager;
             this.MailManager = mailManager;
-        }
-
-        public override PyInteger MachoResolveObject(PyInteger objectID, PyInteger zero, CallInformation call)
-        {
-            int solarSystemID = this.ItemFactory.GetStaticStation(objectID).SolarSystemID;
-
-            if (this.SystemManager.SolarSystemBelongsToUs(solarSystemID) == true)
-                return this.BoundServiceManager.Container.NodeID;
-
-            return this.SystemManager.GetNodeSolarSystemBelongsTo(solarSystemID);
-        }
-
-        protected override BoundService CreateBoundInstance(PyDataType objectData, CallInformation call)
-        {
-            if (this.MachoResolveObject(objectData as PyInteger, 0, call) != this.BoundServiceManager.Container.NodeID)
-                throw new CustomError("Trying to bind an object that does not belong to us!");
-            
-            return new insuranceSvc(this.ItemFactory, this.DB, this.MarketDB, this.WalletManager, this.MailManager, this.BoundServiceManager, objectData as PyInteger, call.Client);
         }
 
         public PyList<PyPackedRow> GetContracts(CallInformation call)
@@ -189,6 +171,24 @@ namespace Node.Services.Inventory
                     $"Reference ID: <b>{contract.InsuranceID}</b>"
                 );
             }
+        }
+
+        protected override long MachoResolveObject(ServiceBindParams parameters, CallInformation call)
+        {
+            int solarSystemID = this.ItemFactory.GetStaticStation(parameters.ObjectID).SolarSystemID;
+
+            if (this.SystemManager.SolarSystemBelongsToUs(solarSystemID) == true)
+                return this.BoundServiceManager.Container.NodeID;
+
+            return this.SystemManager.GetNodeSolarSystemBelongsTo(solarSystemID);
+        }
+
+        protected override BoundService CreateBoundInstance(ServiceBindParams bindParams, CallInformation call)
+        {
+            if (this.MachoResolveObject(bindParams, call) != this.BoundServiceManager.Container.NodeID)
+                throw new CustomError("Trying to bind an object that does not belong to us!");
+            
+            return new insuranceSvc(this.ItemFactory, this.DB, this.MarketDB, this.WalletManager, this.MailManager, this.BoundServiceManager, bindParams.ObjectID, call.Client);
         }
     }
 }

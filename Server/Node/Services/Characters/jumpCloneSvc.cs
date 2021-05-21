@@ -21,7 +21,7 @@ using Type = Node.StaticData.Inventory.Type;
 
 namespace Node.Services.Characters
 {
-    public class jumpCloneSvc : BoundService
+    public class jumpCloneSvc : ClientBoundService
     {
         private ItemDB ItemDB { get; }
         private MarketDB MarketDB { get; }
@@ -32,7 +32,7 @@ namespace Node.Services.Characters
         private WalletManager WalletManager { get; }
         
         public jumpCloneSvc(ItemDB itemDB, MarketDB marketDB, ItemFactory itemFactory,
-            SystemManager systemManager, WalletManager walletManager, BoundServiceManager manager) : base(manager, null)
+            SystemManager systemManager, WalletManager walletManager, BoundServiceManager manager) : base(manager)
         {
             this.ItemDB = itemDB;
             this.MarketDB = marketDB;
@@ -41,8 +41,8 @@ namespace Node.Services.Characters
             this.WalletManager = walletManager;
         }
         
-        protected jumpCloneSvc(ItemDB itemDB, MarketDB marketDB, ItemFactory itemFactory,
-            SystemManager systemManager, BoundServiceManager manager, WalletManager walletManager, Client client) : base(manager, client)
+        protected jumpCloneSvc(int locationID, ItemDB itemDB, MarketDB marketDB, ItemFactory itemFactory,
+            SystemManager systemManager, BoundServiceManager manager, WalletManager walletManager, Client client) : base(manager, client, locationID)
         {
             this.ItemDB = itemDB;
             this.MarketDB = marketDB;
@@ -59,52 +59,6 @@ namespace Node.Services.Characters
         public void OnCloneUpdate(int characterID)
         {
             this.NotificationManager.NotifyCharacter(characterID, new OnJumpCloneCacheInvalidated());
-        }
-
-        public override PyInteger MachoResolveObject(PyTuple objectData, PyInteger zero, CallInformation call)
-        {
-            /*
-             * objectData [0] => entityID (station or solar system)
-             * objectData [1] => groupID (station or solar system)
-             */
-
-            PyDataType first = objectData[0];
-            PyDataType second = objectData[1];
-
-            if (first is PyInteger == false || second is PyInteger == false)
-                throw new CustomError("Cannot resolve object");
-
-            PyInteger entityID = first as PyInteger;
-            PyInteger groupID = second as PyInteger;
-
-            int solarSystemID = 0;
-
-            if (groupID == (int) Groups.SolarSystem)
-                solarSystemID = this.ItemFactory.GetStaticSolarSystem(entityID).ID;
-            else if (groupID == (int) Groups.Station)
-                solarSystemID = this.ItemFactory.GetStaticStation(entityID).SolarSystemID;
-            else
-                throw new CustomError("Unknown item's groupID");
-
-            if (this.SystemManager.SolarSystemBelongsToUs(solarSystemID) == true)
-                return this.BoundServiceManager.Container.NodeID;
-
-            return this.SystemManager.GetNodeSolarSystemBelongsTo(solarSystemID);
-        }
-
-        protected override BoundService CreateBoundInstance(PyDataType objectData, CallInformation call)
-        {
-            PyTuple tupleData = objectData as PyTuple;
-            
-            /*
-             * objectData [0] => entityID (station or solar system)
-             * objectData [1] => groupID (station or solar system)
-             */
-
-            if (this.MachoResolveObject(tupleData, 0, call) != this.BoundServiceManager.Container.NodeID)
-                throw new CustomError("Trying to bind an object that does not belong to us!");
-
-            return new jumpCloneSvc(this.ItemDB, this.MarketDB, this.ItemFactory, this.SystemManager, this.BoundServiceManager, this.WalletManager, call.Client);
         }
 
         public PyDataType GetCloneState(CallInformation call)
@@ -211,6 +165,34 @@ namespace Node.Services.Characters
             character.Persist();
             
             return null;
+        }
+
+        protected override long MachoResolveObject(ServiceBindParams parameters, CallInformation call)
+        {
+            int solarSystemID = 0;
+
+            if (parameters.ExtraValue == (int) Groups.SolarSystem)
+                solarSystemID = this.ItemFactory.GetStaticSolarSystem(parameters.ObjectID).ID;
+            else if (parameters.ExtraValue == (int) Groups.Station)
+                solarSystemID = this.ItemFactory.GetStaticStation(parameters.ObjectID).SolarSystemID;
+            else
+                throw new CustomError("Unknown item's groupID");
+
+            if (this.SystemManager.SolarSystemBelongsToUs(solarSystemID) == true)
+                return this.BoundServiceManager.Container.NodeID;
+
+            return this.SystemManager.GetNodeSolarSystemBelongsTo(solarSystemID);
+        }
+
+        protected override BoundService CreateBoundInstance(ServiceBindParams bindParams, CallInformation call)
+        {
+            // ensure this node will take care of the instance
+            long nodeID = this.MachoResolveObject(bindParams, call);
+
+            if (nodeID != this.BoundServiceManager.Container.NodeID)
+                throw new CustomError("Trying to bind an object that does not belong to us!");
+
+            return new jumpCloneSvc(bindParams.ObjectID, this.ItemDB, this.MarketDB, this.ItemFactory, this.SystemManager, this.BoundServiceManager, this.WalletManager, call.Client);
         }
     }
 }

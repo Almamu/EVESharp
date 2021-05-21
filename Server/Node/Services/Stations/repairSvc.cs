@@ -16,13 +16,14 @@ using Node.Notifications.Client.Inventory;
 using Node.Services.Account;
 using Node.Services.Inventory;
 using Node.StaticData.Inventory;
+using Node.StaticData.Inventory.Station;
 using PythonTypes.Types.Collections;
 using PythonTypes.Types.Database;
 using PythonTypes.Types.Primitives;
 
 namespace Node.Services.Stations
 {
-    public class repairSvc : BoundService
+    public class repairSvc : ClientBoundService
     {
         private const double BASEPRICE_MULTIPLIER_MODULE = 0.0125;
         private const double BASEPRICE_MULTIPLIER_SHIP = 0.000088;
@@ -37,7 +38,7 @@ namespace Node.Services.Stations
         private NodeContainer Container { get; }
         private WalletManager WalletManager { get; }
 
-        public repairSvc(RepairDB repairDb, MarketDB marketDb, InsuranceDB insuranceDb, NodeContainer nodeContainer, NotificationManager notificationManager, ItemFactory itemFactory, BoundServiceManager manager, WalletManager walletManager) : base(manager, null)
+        public repairSvc(RepairDB repairDb, MarketDB marketDb, InsuranceDB insuranceDb, NodeContainer nodeContainer, NotificationManager notificationManager, ItemFactory itemFactory, BoundServiceManager manager, WalletManager walletManager) : base(manager)
         {
             this.ItemFactory = itemFactory;
             this.MarketDB = marketDb;
@@ -48,7 +49,7 @@ namespace Node.Services.Stations
             this.WalletManager = walletManager;
         }
         
-        protected repairSvc(RepairDB repairDb, MarketDB marketDb, InsuranceDB insuranceDb, NodeContainer nodeContainer, NotificationManager notificationManager, ItemInventory inventory, ItemFactory itemFactory, BoundServiceManager manager, WalletManager walletManager, Client client) : base(manager, client)
+        protected repairSvc(RepairDB repairDb, MarketDB marketDb, InsuranceDB insuranceDb, NodeContainer nodeContainer, NotificationManager notificationManager, ItemInventory inventory, ItemFactory itemFactory, BoundServiceManager manager, WalletManager walletManager, Client client) : base(manager, client, inventory.ID)
         {
             this.mInventory = inventory;
             this.ItemFactory = itemFactory;
@@ -58,40 +59,6 @@ namespace Node.Services.Stations
             this.NotificationManager = notificationManager;
             this.Container = nodeContainer;
             this.WalletManager = walletManager;
-        }
-
-        public override PyInteger MachoResolveObject(PyInteger objectID, PyInteger zero, CallInformation call)
-        {
-            // TODO: CHECK IF THE GIVEN STATION HAS REPAIR SERVICES!
-            
-            if (this.SystemManager.StationBelongsToUs(objectID) == true)
-                return this.BoundServiceManager.Container.NodeID;
-
-            return this.SystemManager.GetNodeStationBelongsTo(objectID);
-        }
-
-        protected override BoundService CreateBoundInstance(PyDataType objectData, CallInformation call)
-        {
-            if (objectData is PyInteger == false)
-                throw new CustomError("Cannot bind repairSvc service to unknown object");
-
-            PyInteger stationID = objectData as PyInteger;
-            
-            if (this.MachoResolveObject(stationID, 0, call) != this.BoundServiceManager.Container.NodeID)
-                throw new CustomError("Trying to bind an object that does not belong to us!");
-
-            Station station = this.ItemFactory.GetStaticStation(stationID);
-
-            // check if the station has the required services
-            if (station.HasService(StaticData.Inventory.Station.Service.RepairFacilities) == false)
-                throw new CustomError("This station does not allow for reprocessing plant services");
-            // ensure the player is in this station
-            if (station.ID != call.Client.StationID)
-                throw new CanOnlyDoInStations();
-            
-            ItemInventory inventory = this.ItemFactory.MetaInventoryManager.RegisterMetaInventoryForOwnerID(station, call.Client.EnsureCharacterIsSelected(), Flags.Hangar);
-
-            return new repairSvc(this.RepairDB, this.MarketDB, this.InsuranceDB, this.Container, this.NotificationManager, inventory, this.ItemFactory, this.BoundServiceManager, this.WalletManager, call.Client);
         }
 
         public PyDataType GetDamageReports(PyList itemIDs, CallInformation call)
@@ -362,6 +329,32 @@ namespace Node.Services.Stations
             }
             
             return null;
+        }
+
+        protected override long MachoResolveObject(ServiceBindParams parameters, CallInformation call)
+        {
+            if (this.SystemManager.StationBelongsToUs(parameters.ObjectID) == true)
+                return this.BoundServiceManager.Container.NodeID;
+
+            return this.SystemManager.GetNodeStationBelongsTo(parameters.ObjectID);
+        }
+
+        protected override BoundService CreateBoundInstance(ServiceBindParams bindParams, CallInformation call)
+        {
+            if (this.MachoResolveObject(bindParams, call) != this.BoundServiceManager.Container.NodeID)
+                throw new CustomError("Trying to bind an object that does not belong to us!");
+
+            Station station = this.ItemFactory.GetStaticStation(bindParams.ObjectID);
+
+            if (station.HasService(Service.RepairFacilities) == false)
+                throw new CustomError("This station does not allow for repair facilities services");
+            // ensure the player is in this station
+            if (station.ID != call.Client.StationID)
+                throw new CanOnlyDoInStations();
+            
+            ItemInventory inventory = this.ItemFactory.MetaInventoryManager.RegisterMetaInventoryForOwnerID(station, call.Client.EnsureCharacterIsSelected(), Flags.Hangar);
+            
+            return new repairSvc(this.RepairDB, this.MarketDB, this.InsuranceDB, this.Container, this.NotificationManager, inventory, this.ItemFactory, this.BoundServiceManager, this.WalletManager, call.Client);
         }
     }
 }

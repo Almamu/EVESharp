@@ -37,5 +37,10 @@ namespace Node.Services.Corporations
         {
             throw new System.NotImplementedException();
         }
+
+        public override void SendOnObjectChanged(int primaryKey)
+        {
+            throw new System.NotImplementedException();
+        }
     }
 }

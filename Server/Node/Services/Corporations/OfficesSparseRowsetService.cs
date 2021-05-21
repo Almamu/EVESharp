@@ -38,5 +38,10 @@ namespace Node.Services.Corporations
         {
             return this.DB.GetOffices(columnName, values.GetEnumerable<PyInteger>(), this.Corporation.ID, this.SparseRowset, this.RowsIndex);
         }
+
+        public override void SendOnObjectChanged(int primaryKey)
+        {
+            throw new System.NotImplementedException();
+        }
     }
 }

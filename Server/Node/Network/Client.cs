@@ -62,11 +62,23 @@ namespace Node.Network
         private CharacterManager CharacterManager { get; }
         private SystemManager SystemManager { get; }
         private NotificationManager NotificationManager { get; }
+        private ClientManager ClientManager { get; }
         private MachoNet MachoNet { get; }
+
+        /// <summary>
+        /// Event handler for when a client gets disconnected
+        /// </summary>
+        public EventHandler<ClientEventArgs> OnClientDisconnectedEvent;
+        
+        /// <summary>
+        /// Event handler for when a client's session is updated
+        /// </summary>
+        public EventHandler<ClientEventArgs> OnSessionUpdateEvent;
 
         public Client(NodeContainer container, ClusterConnection clusterConnection, ServiceManager serviceManager,
             TimerManager timerManager, ItemFactory itemFactory, CharacterManager characterManager,
-            SystemManager systemManager, NotificationManager notificationManager, MachoNet machoNet)
+            SystemManager systemManager, NotificationManager notificationManager, ClientManager clientManager,
+            MachoNet machoNet)
         {
             this.Container = container;
             this.ClusterConnection = clusterConnection;
@@ -77,7 +89,11 @@ namespace Node.Network
             this.SystemManager = systemManager;
             this.NotificationManager = notificationManager;
             this.PendingMultiEvents = new PyList<PyTuple>();
+            this.ClientManager = clientManager;
             this.MachoNet = machoNet;
+            
+            // register our disconnect event handler
+            this.ClientManager.OnClientDisconnectedEvent += this.OnClientDisconnected;
         }
 
         private void OnCharEnteredStation(int stationID)
@@ -98,8 +114,13 @@ namespace Node.Network
             this.NotificationManager.NotifyStation(station.ID, new OnCharNoLongerInStation(this));
         }
 
-        public void OnClientDisconnected()
+        public void OnClientDisconnected(object sender, ClientEventArgs args)
         {
+            // deregister the event from the handler
+            this.ClientManager.OnClientDisconnectedEvent -= this.OnClientDisconnected;
+            // call any event handlers for desconnection of this client
+            this.OnClientDisconnectedEvent?.Invoke(this, args);
+            
             // no character selected means no worries
             if (this.CharacterID is null)
                 return;
@@ -216,6 +237,8 @@ namespace Node.Network
                 this.mSession.LoadChanges(differences);
                 // handle the differencies
                 this.HandleSessionDifferencies(new Session(differences.GetEnumerable<PyString, PyTuple>()));
+                // call any events that listen for our session changes
+                this.OnSessionUpdateEvent?.Invoke(this, new ClientEventArgs { Client = this });
             }
         }
 
@@ -257,6 +280,10 @@ namespace Node.Network
         /// </summary>
         public void SendSessionChange()
         {
+            // do not send the session change if the session hasn't changed
+            if (this.mSession.IsDirty == false)
+                return;
+            
             // build the session change
             PyPacket sessionChangeNotification = this.CreateEmptySessionChange(this.Container);
             

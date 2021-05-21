@@ -1,22 +1,19 @@
+using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
 using System.Runtime.ExceptionServices;
 using Common.Logging;
 using Common.Services.Exceptions;
-using Node.Network;
 using PythonTypes.Types.Collections;
 using PythonTypes.Types.Primitives;
 
-namespace Node.Services
+namespace Node.Network
 {
     /// <summary>
     /// Special service manager that handles Bound objects from the client
     ///
     /// These bound objects are usually stateful services that keep information about the player,
     /// location, items, etc, and is used as a way of managing the resources
-    ///
-    /// TODO: IT MIGHT BE A GOOD IDEA TO SUPPORT TIMEOUTS FOR THESE OBJECTS
     /// </summary>
     public class BoundServiceManager : Common.Services.ServiceManager
     {
@@ -25,6 +22,7 @@ namespace Node.Services
         
         private int mNextBoundID = 1;
         private readonly Dictionary<int, BoundService> mBoundServices;
+        private readonly Dictionary<int, List<BoundService>> mBoundServicesByObjectID;
         private Channel Log { get; }
 
         public BoundServiceManager(NodeContainer container, Logger logger)
@@ -32,6 +30,7 @@ namespace Node.Services
             this.Logger = logger;
             this.Container = container;
             this.mBoundServices = new Dictionary<int, BoundService>();
+            this.mBoundServicesByObjectID = new Dictionary<int, List<BoundService>>();
             this.Log = this.Logger.CreateLogChannel("BoundService");
         }
 
@@ -40,7 +39,7 @@ namespace Node.Services
         /// </summary>
         /// <param name="service">The bound service to register</param>
         /// <returns>The boundID of this service</returns>
-        public int BoundService(BoundService service)
+        public int BindService(BoundService service)
         {
             lock (this.mBoundServices)
             {
@@ -48,9 +47,32 @@ namespace Node.Services
 
                 // add the service to the bound services map
                 this.mBoundServices[boundID] = service;
+                
+                // add the service to the list of bound services by objectID
+                if (this.mBoundServicesByObjectID.TryGetValue(service.ObjectID, out List<BoundService> value) == false)
+                    value = this.mBoundServicesByObjectID[service.ObjectID] = new List<BoundService>();
+                
+                value.Add(service);
 
                 return boundID;
             }
+        }
+
+        /// <summary>
+        /// Removes the bound service and unregisters it from the manager
+        /// </summary>
+        /// <param name="service">The service to unbind</param>
+        public void UnbindService(BoundService service)
+        {
+            // remove the service from the bound list
+            this.mBoundServices.Remove(service.BoundID);
+            // ensure the service is removed from the cache of objectIDs
+            if (this.mBoundServicesByObjectID.TryGetValue(service.ObjectID, out List<BoundService> value) == false)
+                // if for any reason the bound service was not registered by objectID just ignore this
+                return;
+
+            // finally take the service out of the list
+            value.Remove(service);
         }
 
         /// <summary>
@@ -73,36 +95,6 @@ namespace Node.Services
         }
 
         /// <summary>
-        /// Notifies the bound service manager that the client disconnected
-        /// This frees all the bound services this client has requested
-        /// </summary>
-        /// <param name="client">The client that disconnected</param>
-        public void OnClientDisconnected(Client client)
-        {
-            List<int> boundServiceIDsToRemove = new List<int>();
-            
-            // search in all bound services and ensure the ones belonging to this client are free
-            lock (this.mBoundServices)
-            {
-                foreach ((int boundID, BoundService service) in this.mBoundServices)
-                {
-                    // if the bound service belongs to this client
-                    // add it to the removal list
-                    if (service.Client == client)
-                    {
-                        // notify the service that we're freeing it
-                        service.OnServiceFree();
-                        // add it to the free'd list for removal off the list
-                        boundServiceIDsToRemove.Add(boundID);                        
-                    }
-                }
-
-                foreach (int key in boundServiceIDsToRemove)
-                    this.FreeBoundService(key);
-            }
-        }
-        
-        /// <summary>
         /// Takes the given payload and searches in this service manager for the best service match to call the given method
         /// if possible
         /// </summary>
@@ -118,7 +110,8 @@ namespace Node.Services
             // relay the exception throw by the call
             try
             {
-                BoundService serviceInstance = this.mBoundServices[boundID];
+                if (this.mBoundServices.TryGetValue(boundID, out BoundService serviceInstance) == false)
+                    throw new Exception($"Unknown bound service {boundID}::{call}");
          
                 Log.Trace($"Calling {serviceInstance.GetType().Name}::{call} on bound service {boundID}");
             

@@ -20,7 +20,7 @@ using PythonTypes.Types.Primitives;
 
 namespace Node.Services.Inventory
 {
-    public class BoundInventory : BoundService
+    public class BoundInventory : ClientBoundService
     {
         private ItemInventory mInventory;
         private Flags mFlag;
@@ -29,7 +29,7 @@ namespace Node.Services.Inventory
         private ItemFactory ItemFactory { get; }
         private NotificationManager NotificationManager { get; init; }
 
-        public BoundInventory(ItemDB itemDB, ItemInventory item, ItemFactory itemFactory, NodeContainer nodeContainer, NotificationManager notificationManager, BoundServiceManager manager, Client client) : base(manager, client)
+        public BoundInventory(ItemDB itemDB, ItemInventory item, ItemFactory itemFactory, NodeContainer nodeContainer, NotificationManager notificationManager, BoundServiceManager manager, Client client) : base(manager, client, item.ID)
         {
             this.mInventory = item;
             this.mFlag = Flags.None;
@@ -39,7 +39,7 @@ namespace Node.Services.Inventory
             this.NotificationManager = notificationManager;
         }
 
-        public BoundInventory(ItemDB itemDB, ItemInventory item, Flags flag, ItemFactory itemFactory, NodeContainer nodeContainer, NotificationManager notificationManager, BoundServiceManager manager, Client client) : base(manager, client)
+        public BoundInventory(ItemDB itemDB, ItemInventory item, Flags flag, ItemFactory itemFactory, NodeContainer nodeContainer, NotificationManager notificationManager, BoundServiceManager manager, Client client) : base(manager, client, item.ID)
         {
             this.mInventory = item;
             this.mFlag = flag;
@@ -663,7 +663,7 @@ namespace Node.Services.Inventory
         {
             BoundService instance = new BoundInventory(itemDB, item, flag, itemFactory, nodeContainer, notificationManager, boundServiceManager, client);
             // bind the service
-            int boundID = boundServiceManager.BoundService(instance);
+            int boundID = boundServiceManager.BindService(instance);
             // build the bound service string
             string boundServiceStr = boundServiceManager.BuildBoundServiceString(boundID);
 
@@ -709,6 +709,16 @@ namespace Node.Services.Inventory
             call.Client.NotifyMultiEvent(OnItemChange.BuildLocationChange(item, oldFlag, oldLocationID));
             
             return null;
+        }
+
+        protected override long MachoResolveObject(ServiceBindParams parameters, CallInformation call)
+        {
+            throw new NotImplementedException();
+        }
+
+        protected override BoundService CreateBoundInstance(ServiceBindParams bindParams, CallInformation call)
+        {
+            throw new NotImplementedException();
         }
     }
 }

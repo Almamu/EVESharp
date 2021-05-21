@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 
 namespace Node.Network
@@ -7,7 +8,18 @@ namespace Node.Network
     /// </summary>
     public class ClientManager
     {
+        /// <summary>
+        /// List of clients by userID
+        /// </summary>
         private readonly Dictionary<long, Client> mClients = new Dictionary<long, Client>();
+
+        /// <summary>
+        /// List of clients by CharacterID
+        /// </summary>
+        private readonly Dictionary<int, Client> mClientsByCharacterID = new Dictionary<int, Client>();
+
+        public EventHandler<ClientEventArgs> OnClientConnectedEvent;
+        public EventHandler<ClientEventArgs> OnClientDisconnectedEvent;
 
         /// <summary>
         /// Adds a new client to the list
@@ -17,32 +29,23 @@ namespace Node.Network
         public void Add(long userID, Client client)
         {
             this.mClients.Add(userID, client);
-        }
-
-        /// <param name="userID">The id of the user to get</param>
-        /// <returns>The client information</returns>
-        public Client Get(long userID)
-        {
-            return this.mClients[userID];
-        }
-
-        /// <summary>
-        /// Checks if an user is present in the cluster
-        /// </summary>
-        /// <param name="userID">The id of the user</param>
-        /// <returns>If the user is connected or not</returns>
-        public bool Contains(long userID)
-        {
-            return this.mClients.ContainsKey(userID);
+            
+            // ensure the client calls our session update handler
+            client.OnSessionUpdateEvent += this.OnSessionUpdated;
         }
 
         /// <summary>
         /// Removes the given userID from the cluster connection list
         /// </summary>
-        /// <param name="userID"></param>
-        public void Remove(long userID)
+        /// <param name="client"></param>
+        public void Remove(Client client)
         {
-            this.mClients.Remove(userID);
+            this.mClients.Remove(client.AccountID);
+            
+            if (client.CharacterID is not null)
+                this.mClientsByCharacterID.Remove((int) client.CharacterID);
+            
+            this.OnClientDisconnectedEvent?.Invoke(this, new ClientEventArgs { Client = client });
         }
 
         /// <summary>
@@ -54,6 +57,27 @@ namespace Node.Network
         public bool TryGetClient(long userID, out Client client)
         {
             return this.mClients.TryGetValue(userID, out client);
+        }
+
+        /// <summary>
+        /// Tries to get the Client instance under the given characterID
+        /// </summary>
+        /// <param name="characterID">The characterID to find</param>
+        /// <param name="client">The output</param>
+        /// <returns>Whether the client was found or not</returns>
+        public bool TryGetClientByCharacterID(int characterID, out Client client)
+        {
+            return this.mClientsByCharacterID.TryGetValue(characterID, out client);
+        }
+
+        /// <summary>
+        /// Handler for OnSessionUpdate on the Client
+        /// </summary>
+        /// <param name="client">The client that generated the event</param>
+        private void OnSessionUpdated(object sender, ClientEventArgs args)
+        {
+            if (args.Client.CharacterID is not null)
+                this.mClientsByCharacterID[(int) args.Client.CharacterID] = args.Client;
         }
     }
 }

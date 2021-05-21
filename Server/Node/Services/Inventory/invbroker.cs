@@ -18,7 +18,7 @@ using Container = Node.StaticData.Inventory.Container;
 
 namespace Node.Services.Inventory
 {
-    public class invbroker : BoundService
+    public class invbroker : ClientBoundService
     {
         private int mObjectID;
         
@@ -28,7 +28,7 @@ namespace Node.Services.Inventory
         private SystemManager SystemManager => this.ItemFactory.SystemManager;
         private NotificationManager NotificationManager { get; init; }
 
-        public invbroker(ItemDB itemDB, ItemFactory itemFactory, NodeContainer nodeContainer, NotificationManager notificationManager, BoundServiceManager manager) : base(manager, null)
+        public invbroker(ItemDB itemDB, ItemFactory itemFactory, NodeContainer nodeContainer, NotificationManager notificationManager, BoundServiceManager manager) : base(manager)
         {
             this.ItemFactory = itemFactory;
             this.ItemDB = itemDB;
@@ -36,58 +36,13 @@ namespace Node.Services.Inventory
             this.NotificationManager = notificationManager;
         }
 
-        private invbroker(ItemDB itemDB, ItemFactory itemFactory, NodeContainer nodeContainer, NotificationManager notificationManager, BoundServiceManager manager, int objectID, Client client) : base(manager, client)
+        private invbroker(ItemDB itemDB, ItemFactory itemFactory, NodeContainer nodeContainer, NotificationManager notificationManager, BoundServiceManager manager, int objectID, Client client) : base(manager, client, objectID)
         {
             this.ItemFactory = itemFactory;
             this.ItemDB = itemDB;
             this.mObjectID = objectID;
             this.NodeContainer = nodeContainer;
             this.NotificationManager = notificationManager;
-        }
-
-        public override PyInteger MachoResolveObject(PyTuple objectData, PyInteger zero, CallInformation call)
-        {
-            /*
-             * objectData [0] => entityID (station or solar system)
-             * objectData [1] => groupID (station or solar system)
-             */
-
-            PyDataType first = objectData[0];
-            PyDataType second = objectData[1];
-
-            if (first is PyInteger == false || second is PyInteger == false)
-                throw new CustomError("Cannot resolve object");
-
-            PyInteger entityID = first as PyInteger;
-            PyInteger groupID = second as PyInteger;
-
-            int solarSystemID = 0;
-
-            if (groupID == (int) Groups.SolarSystem)
-                solarSystemID = this.ItemFactory.GetStaticSolarSystem(entityID).ID;
-            else if (groupID == (int) Groups.Station)
-                solarSystemID = this.ItemFactory.GetStaticStation(entityID).SolarSystemID;
-            else
-                throw new CustomError("Unknown item's groupID");
-
-            if (this.SystemManager.SolarSystemBelongsToUs(solarSystemID) == true)
-                return this.BoundServiceManager.Container.NodeID;
-
-            return this.SystemManager.GetNodeSolarSystemBelongsTo(solarSystemID);
-        }
-
-        protected override BoundService CreateBoundInstance(PyDataType objectData, CallInformation call)
-        {
-            /*
-             * objectData[0] => itemID (station/solarsystem)
-             * objectData[1] => itemGroup
-             */
-            PyTuple tupleData = objectData as PyTuple;
-            
-            if (this.MachoResolveObject(tupleData, 0, call) != this.NodeContainer.NodeID)
-                throw new CustomError("Trying to bind an object that does not belong to us!");
-            
-            return new invbroker(this.ItemDB, this.ItemFactory, this.NodeContainer, this.NotificationManager, this.BoundServiceManager, tupleData[0] as PyInteger, call.Client);
         }
 
         private ItemInventory CheckInventoryBeforeLoading(ItemEntity inventoryItem)
@@ -269,6 +224,32 @@ namespace Node.Services.Inventory
         public PyDataType DeliverToCorpMember(PyInteger memberID, PyInteger stationID, PyList itemIDs, PyDataType quantity, PyInteger ownerID, CallInformation call)
         {
             return null;
+        }
+        
+        protected override long MachoResolveObject(ServiceBindParams parameters, CallInformation call)
+        {
+            int solarSystemID = 0;
+
+            if (parameters.ExtraValue == (int) Groups.SolarSystem)
+                solarSystemID = this.ItemFactory.GetStaticSolarSystem(parameters.ObjectID).ID;
+            else if (parameters.ExtraValue == (int) Groups.Station)
+                solarSystemID = this.ItemFactory.GetStaticStation(parameters.ObjectID).SolarSystemID;
+            else
+                throw new CustomError("Unknown item's groupID");
+
+            if (this.SystemManager.SolarSystemBelongsToUs(solarSystemID) == true)
+                return this.BoundServiceManager.Container.NodeID;
+
+            return this.SystemManager.GetNodeSolarSystemBelongsTo(solarSystemID);
+        }
+
+        protected override BoundService CreateBoundInstance(ServiceBindParams bindParams, CallInformation call)
+        {
+            
+            if (this.MachoResolveObject(bindParams, call) != this.NodeContainer.NodeID)
+                throw new CustomError("Trying to bind an object that does not belong to us!");
+            
+            return new invbroker(this.ItemDB, this.ItemFactory, this.NodeContainer, this.NotificationManager, this.BoundServiceManager, bindParams.ObjectID, call.Client);
         }
     }
 }
