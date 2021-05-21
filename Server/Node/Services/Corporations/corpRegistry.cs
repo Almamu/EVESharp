@@ -58,7 +58,7 @@ namespace Node.Services.Corporations
             this.ClientManager = clientManager;
         }
 
-        protected corpRegistry(CorporationDB db, ChatDB chatDB, CharacterDB characterDB, NotificationManager notificationManager, MailManager mailManager, WalletManager walletManager, NodeContainer container, ItemFactory itemFactory, ClientManager clientManager, Corporation corp, int isMaster, BoundServiceManager manager) : base (manager, corp.ID)
+        protected corpRegistry(CorporationDB db, ChatDB chatDB, CharacterDB characterDB, NotificationManager notificationManager, MailManager mailManager, WalletManager walletManager, NodeContainer container, ItemFactory itemFactory, ClientManager clientManager, Corporation corp, int isMaster, corpRegistry parent) : base (parent, corp.ID)
         {
             this.DB = db;
             this.ChatDB = chatDB;
@@ -666,14 +666,19 @@ namespace Node.Services.Corporations
             return this.BoundServiceManager.Container.NodeID;
         }
 
-        protected override BoundService CreateBoundInstance(ServiceBindParams bindParams, CallInformation call)
+        protected override MultiClientBoundService CreateBoundInstance(ServiceBindParams bindParams, CallInformation call)
         {
             if (this.MachoResolveObject(bindParams, call) != this.BoundServiceManager.Container.NodeID)
                 throw new CustomError("Trying to bind an object that does not belong to us!");
 
             Corporation corp = this.ItemFactory.LoadItem<Corporation>(bindParams.ObjectID);
             
-            return new corpRegistry (this.DB, this.ChatDB, this.CharacterDB, this.NotificationManager, this.MailManager, this.WalletManager, this.Container, this.ItemFactory, this.ClientManager, corp, bindParams.ExtraValue, this.BoundServiceManager);
+            return new corpRegistry (this.DB, this.ChatDB, this.CharacterDB, this.NotificationManager, this.MailManager, this.WalletManager, this.Container, this.ItemFactory, this.ClientManager, corp, bindParams.ExtraValue, this);
+        }
+
+        protected override void OnClientDisconnected()
+        {
+            // free the sparse rowsets if any
         }
     }
 }

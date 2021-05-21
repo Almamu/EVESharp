@@ -18,9 +18,6 @@ namespace Node.Network
         /// </summary>
         private readonly Dictionary<int, Client> mClientsByCharacterID = new Dictionary<int, Client>();
 
-        public EventHandler<ClientEventArgs> OnClientConnectedEvent;
-        public EventHandler<ClientEventArgs> OnClientDisconnectedEvent;
-
         /// <summary>
         /// Adds a new client to the list
         /// </summary>
@@ -44,8 +41,9 @@ namespace Node.Network
             
             if (client.CharacterID is not null)
                 this.mClientsByCharacterID.Remove((int) client.CharacterID);
-            
-            this.OnClientDisconnectedEvent?.Invoke(this, new ClientEventArgs { Client = client });
+
+            client.OnSessionUpdateEvent -= this.OnSessionUpdated;
+            client.OnClientDisconnected();
         }
 
         /// <summary>

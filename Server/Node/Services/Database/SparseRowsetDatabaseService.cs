@@ -30,7 +30,7 @@ namespace Node.Services.Database
             throw new NotImplementedException();
         }
 
-        protected override BoundService CreateBoundInstance(ServiceBindParams bindParams, CallInformation call)
+        protected override MultiClientBoundService CreateBoundInstance(ServiceBindParams bindParams, CallInformation call)
         {
             throw new NotImplementedException();
         }

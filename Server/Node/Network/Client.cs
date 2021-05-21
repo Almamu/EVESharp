@@ -68,12 +68,12 @@ namespace Node.Network
         /// <summary>
         /// Event handler for when a client gets disconnected
         /// </summary>
-        public EventHandler<ClientEventArgs> OnClientDisconnectedEvent;
+        public event EventHandler<ClientEventArgs> OnClientDisconnectedEvent;
         
         /// <summary>
         /// Event handler for when a client's session is updated
         /// </summary>
-        public EventHandler<ClientEventArgs> OnSessionUpdateEvent;
+        public event EventHandler<ClientEventArgs> OnSessionUpdateEvent;
 
         public Client(NodeContainer container, ClusterConnection clusterConnection, ServiceManager serviceManager,
             TimerManager timerManager, ItemFactory itemFactory, CharacterManager characterManager,
@@ -91,9 +91,6 @@ namespace Node.Network
             this.PendingMultiEvents = new PyList<PyTuple>();
             this.ClientManager = clientManager;
             this.MachoNet = machoNet;
-            
-            // register our disconnect event handler
-            this.ClientManager.OnClientDisconnectedEvent += this.OnClientDisconnected;
         }
 
         private void OnCharEnteredStation(int stationID)
@@ -114,12 +111,10 @@ namespace Node.Network
             this.NotificationManager.NotifyStation(station.ID, new OnCharNoLongerInStation(this));
         }
 
-        public void OnClientDisconnected(object sender, ClientEventArgs args)
+        public void OnClientDisconnected()
         {
-            // deregister the event from the handler
-            this.ClientManager.OnClientDisconnectedEvent -= this.OnClientDisconnected;
             // call any event handlers for desconnection of this client
-            this.OnClientDisconnectedEvent?.Invoke(this, args);
+            this.OnClientDisconnectedEvent?.Invoke(this, new ClientEventArgs {Client = this});
             
             // no character selected means no worries
             if (this.CharacterID is null)

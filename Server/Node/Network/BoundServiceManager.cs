@@ -22,7 +22,6 @@ namespace Node.Network
         
         private int mNextBoundID = 1;
         private readonly Dictionary<int, BoundService> mBoundServices;
-        private readonly Dictionary<int, List<BoundService>> mBoundServicesByObjectID;
         private Channel Log { get; }
 
         public BoundServiceManager(NodeContainer container, Logger logger)
@@ -30,7 +29,6 @@ namespace Node.Network
             this.Logger = logger;
             this.Container = container;
             this.mBoundServices = new Dictionary<int, BoundService>();
-            this.mBoundServicesByObjectID = new Dictionary<int, List<BoundService>>();
             this.Log = this.Logger.CreateLogChannel("BoundService");
         }
 
@@ -47,12 +45,6 @@ namespace Node.Network
 
                 // add the service to the bound services map
                 this.mBoundServices[boundID] = service;
-                
-                // add the service to the list of bound services by objectID
-                if (this.mBoundServicesByObjectID.TryGetValue(service.ObjectID, out List<BoundService> value) == false)
-                    value = this.mBoundServicesByObjectID[service.ObjectID] = new List<BoundService>();
-                
-                value.Add(service);
 
                 return boundID;
             }
@@ -64,15 +56,10 @@ namespace Node.Network
         /// <param name="service">The service to unbind</param>
         public void UnbindService(BoundService service)
         {
+            this.Log.Debug($"Unbinding service {service.BoundID}");
+            
             // remove the service from the bound list
             this.mBoundServices.Remove(service.BoundID);
-            // ensure the service is removed from the cache of objectIDs
-            if (this.mBoundServicesByObjectID.TryGetValue(service.ObjectID, out List<BoundService> value) == false)
-                // if for any reason the bound service was not registered by objectID just ignore this
-                return;
-
-            // finally take the service out of the list
-            value.Remove(service);
         }
 
         /// <summary>

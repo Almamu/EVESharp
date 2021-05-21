@@ -13,6 +13,10 @@ namespace Node.Network
         /// </summary>
         protected List<Client> Clients { get; init; }
         /// <summary>
+        /// The bound service that created this entity
+        /// </summary>
+        protected MultiClientBoundService Parent { get; init; }
+        /// <summary>
         /// List of services registered by objectID
         /// </summary>
         private readonly Dictionary<int, MultiClientBoundService> mRegisteredServices;
@@ -22,9 +26,14 @@ namespace Node.Network
             this.mRegisteredServices = new Dictionary<int, MultiClientBoundService>();
         }
 
+        public MultiClientBoundService(MultiClientBoundService parent, int objectID) : base(parent.BoundServiceManager, objectID)
+        {
+            this.Parent = parent;
+            this.Clients = new List<Client>();
+        }
+
         public MultiClientBoundService(BoundServiceManager manager, int objectID) : base(manager, objectID)
         {
-            this.Clients = new List<Client>();
         }
 
         /// <summary>
@@ -38,12 +47,28 @@ namespace Node.Network
         /// <param name="callInfo">The information on the call</param>
         /// <param name="call">The call object with extra information</param>
         /// <returns></returns>
-        protected override PyDataType MachoBindObject(ServiceBindParams bindParams, PyDataType callInfo,
-            CallInformation call)
+        protected override PyDataType MachoBindObject(ServiceBindParams bindParams, PyDataType callInfo, CallInformation call)
         {
-            // create the bound instance and register it in the bound services
-            BoundService instance = this.CreateBoundInstance(bindParams, call);
+            MultiClientBoundService instance;
+            
+            lock (this.mRegisteredServices)
+            {
+                // check if this object is already registered in our list
+                if (this.mRegisteredServices.TryGetValue(bindParams.ObjectID, out instance) == false)
+                {
+                    // create the bound instance and register it in the bound services
+                    instance = this.CreateBoundInstance(bindParams, call);
+                    // store the new service in the list of services
+                    this.mRegisteredServices[instance.ObjectID] = instance;
+                }
+            }
 
+            // register OnClientDisconnected event for this client and this service
+            call.Client.OnClientDisconnectedEvent += instance.OnClientDisconnectedHandler;
+            
+            // add the client to the list
+            instance.Clients.Add(call.Client);
+            
             // TODO: the expiration time is 1 day, might be better to properly support this?
             // TODO: investigate these a bit more closely in the future
             // TODO: i'm not so sure about the expiration time
@@ -90,6 +115,31 @@ namespace Node.Network
         /// <param name="bindParams">The information required for the instantiation</param>
         /// <returns>The new boudn service</returns>
         /// <exception cref="NotImplementedException">If this has not been implemented by the class</exception>
-        protected abstract BoundService CreateBoundInstance(ServiceBindParams bindParams, CallInformation call);
+        protected abstract MultiClientBoundService CreateBoundInstance(ServiceBindParams bindParams, CallInformation call);
+
+        protected virtual void OnClientDisconnected()
+        {
+            
+        }
+
+        /// <summary>
+        /// Event fired from the client when a disconnection is detected
+        /// </summary>
+        /// <param name="client"></param>
+        protected void OnClientDisconnectedHandler(object sender, ClientEventArgs args)
+        {
+            // first call any freeing code (if any)
+            this.OnClientDisconnected();
+            // remove the client from the list
+            this.Clients.Remove(args.Client);
+
+            if (this.Clients.Count == 0)
+            {
+                // no clients using this service, tell the bound service manager we're dying
+                this.BoundServiceManager.UnbindService(this);
+                // check for the parent service and unregister ourselves from it
+                this.Parent?.mRegisteredServices.Remove(this.ObjectID);
+            }
+        }
     }
 }

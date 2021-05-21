@@ -1,6 +1,8 @@
-﻿namespace Node.Network
+﻿using System;
+
+namespace Node.Network
 {
-    public class ClientEventArgs
+    public class ClientEventArgs : EventArgs
     {
         public Client Client { get; init; }
     }
