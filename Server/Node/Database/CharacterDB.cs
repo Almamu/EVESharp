@@ -212,7 +212,7 @@ namespace Node.Database
         }
 
         public int CreateCharacter(Type from, string name, ItemEntity owner, int accountID, double securityRating,
-            int corporationID, int corpRole, int rolesAtAll, int rolesAtBase, int rolesAtHQ, int rolesAtOther,
+            int corporationID, int corpRole, int rolesAtBase, int rolesAtHQ, int rolesAtOther,
             long corporationDateTime, long startDateTime, long createDateTime, int ancestryID, int careerID, int schoolID,
             int careerSpecialityID, int gender, int? accessoryID, int? beardID, int costumeID, int? decoID, int eyebrowsID,
             int eyesID, int hairID, int? lipstickID, int? makeupID, int skinID, int backgroundID, int lightID,
@@ -230,7 +230,7 @@ namespace Node.Database
             Database.PrepareQuery(
                 "INSERT INTO chrInformation(" + 
                     "characterID, accountID, title, description, bounty, securityRating, petitionMessage, " +
-                    "logonMinutes, corporationID, corpRole, rolesAtAll, rolesAtBase, rolesAtHQ, rolesAtOther, " +
+                    "logonMinutes, corporationID, roles, rolesAtBase, rolesAtHQ, rolesAtOther, " +
                     "corporationDateTime, startDateTime, createDateTime, ancestryID, careerID, schoolID, careerSpecialityID, " +
                     "gender, accessoryID, beardID, costumeID, decoID, eyebrowsID, eyesID, hairID, lipstickID, makeupID, " +
                     "skinID, backgroundID, lightID, headRotation1, headRotation2, headRotation3, eyeRotation1, " +
@@ -240,7 +240,7 @@ namespace Node.Database
                     "logonDateTime, logoffDateTime" +
                 ")VALUES(" +
                     "@characterID, @accountID, @title, @description, @bounty, @securityRating, @petitionMessage, " +
-                    "@logonMinutes, @corporationID, @corpRole, @rolesAtAll, @rolesAtBase, @rolesAtHQ, @rolesAtOther, " +
+                    "@logonMinutes, @corporationID, @corpRole, @rolesAtBase, @rolesAtHQ, @rolesAtOther, " +
                     "@corporationDateTime, @startDateTime, @createDateTime, @ancestryID, @careerID, @schoolID, @careerSpecialityID, " +
                     "@gender, @accessoryID, @beardID, @costumeID, @decoID, @eyebrowsID, @eyesID, @hairID, @lipstickID, @makeupID, " +
                     "@skinID, @backgroundID, @lightID, @headRotation1, @headRotation2, @headRotation3, @eyeRotation1, " +
@@ -262,7 +262,6 @@ namespace Node.Database
                     {"@logonMinutes", 0},
                     {"@corporationID", corporationID},
                     {"@corpRole", corpRole},
-                    {"@rolesAtAll", rolesAtAll},
                     {"@rolesAtBase", rolesAtBase},
                     {"@rolesAtHQ", rolesAtHQ},
                     {"@rolesAtOther", rolesAtOther},
@@ -551,7 +550,7 @@ namespace Node.Database
         public void UpdateCharacterInformation(Character character)
         {
             Database.PrepareQuery(
-                "UPDATE chrInformation SET online = @online, activeCloneID = @activeCloneID, freeRespecs = @freeRespecs, nextRespecTime = @nextRespecTime, timeLastJump = @timeLastJump, description = @description, warFactionID = @warFactionID, corporationID = @corporationID, corporationDateTime = @corporationDateTime, corpRole = @corpRole, corpAccountKey = @corpAccountKey WHERE characterID = @characterID",
+                "UPDATE chrInformation SET online = @online, activeCloneID = @activeCloneID, freeRespecs = @freeRespecs, nextRespecTime = @nextRespecTime, timeLastJump = @timeLastJump, description = @description, warFactionID = @warFactionID, corporationID = @corporationID, corporationDateTime = @corporationDateTime, corpAccountKey = @corpAccountKey, corpStasisTime = @corpStasisTime, blockRoles = @blockRoles WHERE characterID = @characterID",
                 new Dictionary<string, object>()
                 {
                     {"@characterID", character.ID},
@@ -564,8 +563,9 @@ namespace Node.Database
                     {"@warFactionID", character.WarFactionID},
                     {"@corporationID", character.CorporationID},
                     {"@corporationDateTime", character.CorporationDateTime},
-                    {"@corpRole", character.CorpRole},
-                    {"@corpAccountKey", character.CorpAccountKey}
+                    {"@corpAccountKey", character.CorpAccountKey},
+                    {"@corpStasisTime", character.CorpStasisTime},
+                    {"@blockRoles", character.BlockRoles},
                 }
             );
 
@@ -858,6 +858,91 @@ namespace Node.Database
 
                 return reader.GetInt64(0);
             }
+        }
+
+        public long? GetCharacterStasisTimer(int characterID)
+        {
+            MySqlConnection connection = null;
+            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+                "SELECT corpStasisTime FROM chrInformation WHERE characterID = @characterID",
+                new Dictionary<string, object>()
+                {
+                    {"@characterID", characterID}
+                }
+            );
+            
+            using (connection)
+            using (reader)
+            {
+                if (reader.Read() == false || reader.IsDBNull(0) == true)
+                    return null;
+
+                return reader.GetInt64(0);
+            }
+        }
+
+        public void GetCharacterRoles(int characterID, out long roles, out long rolesAtBase, out long rolesAtHQ,
+            out long rolesAtOther, out long grantableRoles, out long grantableRolesAtBase, out long grantableRolesAtHQ,
+            out long grantableRolesAtOther, out bool blockRoles, out int? baseID)
+        {
+            MySqlConnection connection = null;
+            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+                "SELECT roles, rolesAtBase, rolesAtHQ, rolesAtOther, grantableRoles, grantableRolesAtBase, grantableRolesAtHQ, grantableRolesAtOther, blockRoles, baseID FROM chrInformation WHERE characterID = @characterID",
+                new Dictionary<string, object>()
+                {
+                    {"@characterID", characterID}
+                }
+            );
+            
+            using (connection)
+            using (reader)
+            {
+                if (reader.Read() == false)
+                    throw new Exception("Cannot find given character!");
+
+                roles = reader.GetInt64(0);
+                rolesAtBase = reader.GetInt64(1);
+                rolesAtHQ = reader.GetInt64(2);
+                rolesAtOther = reader.GetInt64(3);
+                grantableRoles = reader.GetInt64(4);
+                grantableRolesAtBase = reader.GetInt64(5);
+                grantableRolesAtHQ = reader.GetInt64(6);
+                grantableRolesAtOther = reader.GetInt64(7);
+                blockRoles = reader.GetBoolean(8);
+                baseID = reader.GetInt32OrNull(9);
+            }
+        }
+
+        public void UpdateCharacterRoles(int characterID, long roles, long rolesAtHQ, long rolesAtBase, long rolesAtOther,
+            long grantableRoles, long grantableRolesAtHQ, long grantableRolesAtBase, long grantableRolesAtOther)
+        {
+            Database.PrepareQuery(
+                "UPDATE chrInformation SET roles = @roles, rolesAtBase = @rolesAtBase, rolesAtHQ = @rolesAtHQ, rolesAtOther = @rolesAtOther, grantableRoles = @grantableRoles, grantableRolesAtBase = @grantableRolesAtBase, grantableRolesAtHQ = @grantableRolesAtHQ, grantableRolesAtOther = @grantableRolesAtOther WHERE characterID = @characterID",
+                new Dictionary<string, object>()
+                {
+                    {"@characterID", characterID},
+                    {"@roles", roles},
+                    {"@rolesAtOther", rolesAtOther},
+                    {"@rolesAtBase", rolesAtBase},
+                    {"@rolesAtHQ", rolesAtHQ},
+                    {"@grantableRoles", grantableRoles},
+                    {"@grantableRolesAtBase", grantableRolesAtBase},
+                    {"@grantableRolesAtOther", grantableRolesAtOther},
+                    {"@grantableRolesAtHQ", grantableRolesAtHQ}
+                }
+            );
+        }
+
+        public void UpdateCharacterBlockRole(int characterID, int blockRoles)
+        {
+            Database.PrepareQuery(
+                "UPDATE chrInformation SET blockRoles = @blockRoles WHERE characterID = @characterID",
+                new Dictionary<string, object>()
+                {
+                    {"@characterID", characterID},
+                    {"@blockRoles", blockRoles}
+                }
+            );
         }
 
         public CharacterDB(DatabaseConnection db, ItemDB itemDB, TypeManager typeManager) : base(db)

@@ -106,17 +106,33 @@ namespace Node.Services.War
             return this.DB.GetNPCStandings(characterID);
         }
 
-        public PyDataType SetPlayerStanding(PyInteger characterID, PyDecimal standing, PyString reason, CallInformation call)
+        public PyDataType SetPlayerStanding(PyInteger entityID, PyDecimal standing, PyString reason, CallInformation call)
         {
             int callerCharacterID = call.Client.EnsureCharacterIsSelected();
             
-            this.DB.CreateStandingTransaction((int) EventType.StandingPlayerSetStanding, callerCharacterID, characterID, standing, reason);
-            this.DB.SetPlayerStanding(callerCharacterID, characterID, standing);
+            this.DB.CreateStandingTransaction((int) EventType.StandingPlayerSetStanding, callerCharacterID, entityID, standing, reason);
+            this.DB.SetPlayerStanding(callerCharacterID, entityID, standing);
             
             // send the same notification to both players
-            this.NotificationManager.NotifyCharacters(
-                new PyList<PyInteger>(2) { [0] = callerCharacterID, [1] = characterID },
-                new OnStandingSet(callerCharacterID, characterID, standing)
+            this.NotificationManager.NotifyOwners(
+                new PyList<PyInteger>(2) {[0] = callerCharacterID, [1] = entityID},
+                new OnStandingSet(callerCharacterID, entityID, standing)
+            );
+
+            return null;
+        }
+
+        public PyDataType SetCorpStanding(PyInteger entityID, PyDecimal standing, PyString reason, CallInformation call)
+        {
+            // check for permissions
+            this.DB.CreateStandingTransaction((int) EventType.StandingPlayerCorpSetStanding, call.Client.CorporationID, entityID, standing, reason);
+            this.DB.SetPlayerStanding(call.Client.CorporationID, entityID, standing);
+            
+            // TODO: MAYBE SEND ONSETCORPSTANDING NOTIFICATION?!
+            // send the same notification to both players
+            this.NotificationManager.NotifyOwners(
+                new PyList<PyInteger>(2) {[0] = call.Client.CorporationID, [1] = entityID},
+                new OnStandingSet(call.Client.CorporationID, entityID, standing)
             );
 
             return null;

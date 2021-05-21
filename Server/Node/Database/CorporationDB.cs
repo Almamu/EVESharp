@@ -213,15 +213,14 @@ namespace Node.Database
         public PyDataType GetMember(int characterID, int corporationID)
         {
             // TODO: GENERATE PROPER FIELDS FOR THE FOLLOWING FIELDS
-            // TODO: titleMask, grantableRoles, grantableRolesAtHQ, grantableRolesAtBase, grantableRolesAtOther
             // TODO: divisionID, squadronID
             // TODO: CHECK IF THIS startDateTime IS THE CORP'S MEMBERSHIP OR CHARACTER'S MEMBERSHIP
             return Database.PrepareKeyValQuery(
                 "SELECT" +
-                " characterID, title, startDateTime, corpRole AS roles, rolesAtHQ, rolesAtBase, rolesAtOther," +
-                " titleMask, 0 AS grantableRoles, 0 AS grantableRolesAtHQ, 0 AS grantableRolesAtBase," +
-                " 0 AS grantableRolesAtOther, 0 AS divisionID, 0 AS squadronID, locationID AS baseID, " +
-                " 0 AS blockRoles, gender " +
+                " characterID, title, startDateTime, roles, rolesAtHQ, rolesAtBase, rolesAtOther," +
+                " titleMask, grantableRoles, grantableRolesAtHQ, grantableRolesAtBase," +
+                " grantableRolesAtOther, 0 AS divisionID, 0 AS squadronID, baseID, " +
+                " blockRoles, gender " +
                 "FROM chrInformation " +
                 "LEFT JOIN invItems ON invItems.itemID = chrInformation.activeCloneID " +
                 "WHERE corporationID=@corporationID AND characterID=@characterID",
@@ -278,7 +277,6 @@ namespace Node.Database
             parameters["@corporationID"] = corporationID;
             
             // TODO: GENERATE PROPER FIELDS FOR THE FOLLOWING FIELDS
-            // TODO: titleMask, grantableRoles, grantableRolesAtHQ, grantableRolesAtBase, grantableRolesAtOther
             // TODO: divisionID, squadronID
             // TODO: CHECK IF THIS startDateTime IS THE CORP'S MEMBERSHIP OR CHARACTER'S MEMBERSHIP
             MySqlConnection connection = null;
@@ -304,7 +302,6 @@ namespace Node.Database
             parameters["@corporationID"] = corporationID;
             
             // TODO: GENERATE PROPER FIELDS FOR THE FOLLOWING FIELDS
-            // TODO: titleMask, grantableRoles, grantableRolesAtHQ, grantableRolesAtBase, grantableRolesAtOther
             // TODO: divisionID, squadronID
             // TODO: CHECK IF THIS startDateTime IS THE CORP'S MEMBERSHIP OR CHARACTER'S MEMBERSHIP
             MySqlConnection connection = null;
@@ -405,17 +402,16 @@ namespace Node.Database
         public PyList<PyTuple> GetMembers(PyList<PyInteger> characterIDs, int corporationID, SparseRowsetHeader header, Dictionary<PyDataType, int> rowsIndex)
         {
             // TODO: GENERATE PROPER FIELDS FOR THE FOLLOWING FIELDS
-            // TODO: titleMask, grantableRoles, grantableRolesAtHQ, grantableRolesAtBase, grantableRolesAtOther
             // TODO: divisionID, squadronID
             // TODO: CHECK IF THIS startDateTime IS THE CORP'S MEMBERSHIP OR CHARACTER'S MEMBERSHIP
             
             Dictionary<string, object> parameters = new Dictionary<string, object>();
             
             string query = "SELECT" +
-                           " characterID, title, corporationDateTime AS startDateTime, corpRole AS roles, rolesAtHQ, rolesAtBase, rolesAtOther," +
-                           " titleMask, 0 AS grantableRoles, 0 AS grantableRolesAtHQ, 0 AS grantableRolesAtBase," +
-                           " 0 AS grantableRolesAtOther, 0 AS divisionID, 0 AS squadronID, 0 AS baseID, " +
-                           " 0 AS blockRoles, gender " +
+                           " characterID, title, corporationDateTime AS startDateTime, roles, rolesAtHQ, rolesAtBase, rolesAtOther," +
+                           " titleMask, grantableRoles, grantableRolesAtHQ, grantableRolesAtBase," +
+                           " grantableRolesAtOther, 0 AS divisionID, 0 AS squadronID, baseID, " +
+                           " blockRoles, gender " +
                            "FROM chrInformation " +
                            "WHERE corporationID=@corporationID AND characterID IN (";
 
@@ -439,16 +435,15 @@ namespace Node.Database
         public PyList<PyTuple> GetMembers(int corporationID, int startPos, int limit, SparseRowsetHeader header, Dictionary<PyDataType, int> rowsIndex)
         {
             // TODO: GENERATE PROPER FIELDS FOR THE FOLLOWING FIELDS
-            // TODO: titleMask, grantableRoles, grantableRolesAtHQ, grantableRolesAtBase, grantableRolesAtOther
             // TODO: divisionID, squadronID
             // TODO: CHECK IF THIS startDateTime IS THE CORP'S MEMBERSHIP OR CHARACTER'S MEMBERSHIP
             MySqlConnection connection = null;
             MySqlDataReader reader = Database.PrepareQuery(ref connection,
                 "SELECT" +
-                " characterID, title, corporationDateTime AS startDateTime, corpRole AS roles, rolesAtHQ, rolesAtBase, rolesAtOther," +
-                " titleMask, 0 AS grantableRoles, 0 AS grantableRolesAtHQ, 0 AS grantableRolesAtBase," + 
-                " 0 AS grantableRolesAtOther, 0 AS divisionID, 0 AS squadronID, 0 AS baseID, " + 
-                " 0 AS blockRoles, gender " +
+                " characterID, title, corporationDateTime AS startDateTime, roles, rolesAtHQ, rolesAtBase, rolesAtOther," +
+                " titleMask, grantableRoles, grantableRolesAtHQ, grantableRolesAtBase," + 
+                " grantableRolesAtOther, 0 AS divisionID, 0 AS squadronID, baseID, " + 
+                " blockRoles, gender " +
                 "FROM chrInformation " +
                 "WHERE corporationID=@corporationID " +
                 "LIMIT @startPos,@limit",
@@ -582,7 +577,7 @@ namespace Node.Database
         public Rowset GetMemberTrackingInfo(int corporationID)
         {
             return Database.PrepareRowsetQuery(
-                "SELECT characterID, shp.typeID AS shipTypeID, shp.locationID AS locationID, 0 AS baseID, corporationDateTime AS startDateTime, title, corporationID, logonDateTime, logoffDateTime, corpRole AS roles, 0 AS grantableRoles, IF(online = 1, -1, IF(lastOnline = 0, NULL, (@currentTicks - lastOnline) / @ticksPerHour)) AS lastOnline FROM chrInformation LEFT JOIN invItems chr ON chr.itemID = characterID LEFT JOIN invItems shp ON shp.itemID = chr.locationID WHERE corporationID = @corporationID",
+                "SELECT characterID, shp.typeID AS shipTypeID, shp.locationID AS locationID, baseID, corporationDateTime AS startDateTime, title, corporationID, logonDateTime, logoffDateTime, roles, grantableRoles, IF(online = 1, -1, IF(lastOnline = 0, NULL, (@currentTicks - lastOnline) / @ticksPerHour)) AS lastOnline FROM chrInformation LEFT JOIN invItems chr ON chr.itemID = characterID LEFT JOIN invItems shp ON shp.itemID = chr.locationID WHERE corporationID = @corporationID",
                 new Dictionary<string, object>()
                 {
                     {"@corporationID", corporationID},
@@ -595,7 +590,7 @@ namespace Node.Database
         public Rowset GetMemberTrackingInfo(int corporationID, int characterID)
         {
             return Database.PrepareRowsetQuery(
-                "SELECT characterID, shp.typeID AS shipTypeID, shp.locationID AS locationID, 0 AS baseID, corporationDateTime AS startDateTime, title, corporationID, logonDateTime, logoffDateTime, corpRole AS roles, 0 AS grantableRoles, IF(online = 1, -1, IF(lastOnline = 0, NULL, (@currentTicks - lastOnline) / @ticksPerHour)) AS lastOnline FROM chrInformation LEFT JOIN invItems chr ON chr.itemID = characterID LEFT JOIN invItems shp ON shp.itemID = chr.locationID WHERE corporationID = @corporationID AND characterID = @characterID",
+                "SELECT characterID, shp.typeID AS shipTypeID, shp.locationID AS locationID, baseID, corporationDateTime AS startDateTime, title, corporationID, logonDateTime, logoffDateTime, roles, grantableRoles, IF(online = 1, -1, IF(lastOnline = 0, NULL, (@currentTicks - lastOnline) / @ticksPerHour)) AS lastOnline FROM chrInformation LEFT JOIN invItems chr ON chr.itemID = characterID LEFT JOIN invItems shp ON shp.itemID = chr.locationID WHERE corporationID = @corporationID AND characterID = @characterID",
                 new Dictionary<string, object>()
                 {
                     {"@characterID", characterID},
@@ -753,7 +748,7 @@ namespace Node.Database
         public Rowset GetStations(int corporationID)
         {
             return Database.PrepareRowsetQuery(
-                "SELECT stationID, stationTypeID as typeID FROM staStations WHERE corporationID = @corporationID",
+                "SELECT stationID, stationTypeID as typeID FROM staStations WHERE corporationID = @corporationID UNION SELECT stationID, stationTypeID AS typeID FROM crpOffices LEFT JOIN staStations USING(stationID) WHERE crpOffices.corporationID = @corporationID",
                 new Dictionary<string, object>()
                 {
                     {"@corporationID", corporationID}

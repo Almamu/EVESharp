@@ -247,7 +247,7 @@ namespace Node.Services.Characters
             
             int itemID = this.DB.CreateCharacter(
                 ancestry.Bloodline.CharacterType, characterName, owner, call.Client.AccountID,
-                0.0, corporationID, 0, 0, 0, 0, 0,
+                0.0, corporationID, 0, 0, 0, 0,
                 currentTime, currentTime, currentTime, ancestry.ID,
                 careerID, schoolID, careerSpecialityID, genderID,
                 accessoryID, beardID, costumeID, decoID, eyebrowsID, eyesID, hairID, lipstickID,
@@ -430,8 +430,8 @@ namespace Node.Services.Characters
             call.Client.ConstellationID = character.ConstellationID;
             call.Client.RegionID = character.RegionID;
             call.Client.HQID = 0;
-            call.Client.CorporationRole = character.CorpRole;
-            call.Client.RolesAtAll = character.RolesAtAll;
+            call.Client.CorporationRole = character.Roles;
+            call.Client.RolesAtAll = character.Roles | character.RolesAtBase | character.RolesAtOther | character.RolesAtHq;
             call.Client.RolesAtBase = character.RolesAtBase;
             call.Client.RolesAtHQ = character.RolesAtHq;
             call.Client.RolesAtOther = character.RolesAtOther;

@@ -33,9 +33,9 @@ namespace Node.Inventory.Items.Types
         
         public Character(ClientManager clientManager, TimerManager timerManager, ItemEntity from, int characterId,
             int accountId, int? activeCloneID, string title, string description,
-            double securityRating, string petitionMessage, int logonMinutes, int corporationId, long corpRole,
-            long rolesAtAll, long rolesAtBase, long rolesAtHq, long rolesAtOther, long corporationDateTime,
-            long startDateTime, long createDateTime, int ancestryId, int careerId, int schoolId, int careerSpecialityId,
+            double securityRating, string petitionMessage, int logonMinutes, int corporationId, long roles,
+            long rolesAtBase, long rolesAtHq, long rolesAtOther, long corporationDateTime, long startDateTime,
+            long createDateTime, int ancestryId, int careerId, int schoolId, int careerSpecialityId,
             int gender, int? accessoryId, int? beardId, int costumeId, int? decoId, int eyebrowsId, int eyesId,
             int hairId, int? lipstickId, int? makeupId, int skinId, int backgroundId, int lightId, double headRotation1,
             double headRotation2, double headRotation3, double eyeRotation1, double eyeRotation2, double eyeRotation3,
@@ -43,7 +43,9 @@ namespace Node.Inventory.Items.Types
             double? morph1W, double? morph2E, double? morph2N, double? morph2S, double? morph2W, double? morph3E,
             double? morph3N, double? morph3S, double? morph3W, double? morph4E, double? morph4N, double? morph4S,
             double? morph4W, int stationId, int solarSystemId, int constellationId, int regionId, int online,
-            int freeReSpecs, long nextReSpecTime, long timeLastJump, int titleMask, int? warFactionID, int corpAccountKey) : base(from)
+            int freeReSpecs, long nextReSpecTime, long timeLastJump, int titleMask, int? warFactionID, int corpAccountKey,
+            long? corpStasisTime, bool blockRoles, long grantableRoles, long grantableRolesAtBase, long grantableRolesAtHq,
+            long grantableRolesAtOther, int? baseID) : base(from)
         {
             this.ClientManager = clientManager;
             this.TimerManager = timerManager;
@@ -56,8 +58,7 @@ namespace Node.Inventory.Items.Types
             this.mPetitionMessage = petitionMessage;
             this.mLogonMinutes = logonMinutes;
             this.mCorporationID = corporationId;
-            this.mCorpRole = corpRole;
-            this.mRolesAtAll = rolesAtAll;
+            this.mRoles = roles;
             this.mRolesAtBase = rolesAtBase;
             this.mRolesAtHq = rolesAtHq;
             this.mRolesAtOther = rolesAtOther;
@@ -117,6 +118,13 @@ namespace Node.Inventory.Items.Types
             this.mTitleMask = titleMask;
             this.mWarFactionID = warFactionID;
             this.mCorpAccountKey = corpAccountKey;
+            this.mCorpStasisTime = corpStasisTime;
+            this.mBlockRoles = blockRoles;
+            this.mGrantableRoles = grantableRoles;
+            this.mGrantableRolesAtHQ = grantableRolesAtHq;
+            this.mGrantableRolesAtBase = grantableRolesAtBase;
+            this.mGrantableRolesAtOther = grantableRolesAtOther;
+            this.mBaseID = baseID;
         }
 
         private ClientManager ClientManager { get; }
@@ -170,19 +178,50 @@ namespace Node.Inventory.Items.Types
         public string PetitionMessage => mPetitionMessage;
         public int LogonMinutes => mLogonMinutes;
 
-        public long CorpRole
+        /// <summary>
+        /// WARNING: THIS FIELD IS NOT SAVED
+        /// </summary>
+        public long Roles
         {
-            get => this.mCorpRole;
-            set
-            {
-                this.Dirty = true;
-                this.mCorpRole = value;
-            }
+            get => this.mRoles;
+            set => this.mRoles = value;
         }
-        public long RolesAtAll => mRolesAtAll;
-        public long RolesAtBase => mRolesAtBase;
-        public long RolesAtHq => mRolesAtHq;
-        public long RolesAtOther => mRolesAtOther;
+
+        /// <summary>
+        /// WARNING: THIS FIELD IS NOT SAVED
+        /// </summary>
+        public long RolesAtBase
+        {
+            get => this.mRolesAtBase;
+            set => this.mRolesAtBase = value;
+        }
+
+        /// <summary>
+        /// WARNING: THIS FIELD IS NOT SAVED
+        /// </summary>
+        public long RolesAtHq
+        {
+            get => this.mRolesAtHq;
+            set => this.mRolesAtHq = value;
+        }
+
+        /// <summary>
+        /// WARNING: THIS FIELD IS NOT SAVED
+        /// </summary>
+        public long RolesAtOther
+        {
+            get => this.mRolesAtOther;
+            set => this.mRolesAtOther = value;
+        }
+
+        /// <summary>
+        /// WARNING: THIS FIELD IS NOT SAVED
+        /// </summary>
+        public int? BaseID
+        {
+            get => this.mBaseID;
+            set => this.mBaseID = value;
+        }
 
         public long CorporationDateTime
         {
@@ -319,6 +358,62 @@ namespace Node.Inventory.Items.Types
                 this.mWarFactionID = value;
             }
         }
+
+        public long? CorpStasisTime
+        {
+            get => this.mCorpStasisTime;
+            set
+            {
+                this.Dirty = true;
+                this.mCorpStasisTime = value;
+            }
+        }
+
+        public bool BlockRoles
+        {
+            get => this.mBlockRoles;
+            set
+            {
+                this.Dirty = true;
+                this.mBlockRoles = value;
+            }
+        }
+
+        /// <summary>
+        /// WARNING: THIS FIELD IS NOT SAVED
+        /// </summary>
+        public long GrantableRoles
+        {
+            get => this.mGrantableRoles;
+            set => this.mGrantableRoles = value;
+        }
+
+        /// <summary>
+        /// WARNING: THIS FIELD IS NOT SAVED
+        /// </summary>
+        public long GrantableRolesAtHQ
+        {
+            get => this.mGrantableRolesAtHQ;
+            set => this.mGrantableRolesAtHQ = value;
+        }
+
+        /// <summary>
+        /// WARNING: THIS FIELD IS NOT SAVED
+        /// </summary>
+        public long GrantableRolesAtBase
+        {
+            get => this.mGrantableRolesAtBase;
+            set => this.mGrantableRolesAtBase = value;
+        }
+
+        /// <summary>
+        /// WARNING: THIS FIELD IS NOT SAVED
+        /// </summary>
+        public long GrantableRolesAtOther
+        {
+            get => this.mGrantableRolesAtOther;
+            set => this.mGrantableRolesAtOther = value;
+        }
         
         private int mCharacterID;
         private int mAccountID;
@@ -329,8 +424,7 @@ namespace Node.Inventory.Items.Types
         private string mPetitionMessage;
         private int mLogonMinutes;
         private int mCorporationID;
-        private long mCorpRole;
-        private long mRolesAtAll;
+        private long mRoles;
         private long mRolesAtBase;
         private long mRolesAtHq;
         private long mRolesAtOther;
@@ -390,6 +484,13 @@ namespace Node.Inventory.Items.Types
         private int mTitleMask;
         private int? mWarFactionID;
         private int mCorpAccountKey;
+        private long? mCorpStasisTime;
+        private bool mBlockRoles;
+        private long mGrantableRoles;
+        private long mGrantableRolesAtHQ;
+        private long mGrantableRolesAtBase;
+        private long mGrantableRolesAtOther;
+        private int? mBaseID;
         
         private List<SkillQueueEntry> mSkillQueue;
         private Corporation mCorporation = null;

@@ -560,6 +560,31 @@ namespace Node.Network
             Log.Debug($"Updated character ({character.ID}) coporation ID from {change.OldCorporationID} to {change.NewCorporationID}");
         }
 
+        private void HandleOnCorporationMemberUpdated(OnCorporationMemberUpdated change)
+        {
+            // this notification does not need to send anything to anyone as the clients will already get notified
+            // by the session change
+            
+            // the only thing needed is to check for a Character reference and update it's roles to the correct onews
+            if (this.ItemFactory.TryGetItem(change.CharacterID, out Character character) == false)
+                // if the character is not loaded it could mean that the package arrived on the node wile the player was logging out
+                // so this is safe to ignore
+                return;
+            
+            // update the roles and everything else
+            character.Roles = change.Roles;
+            character.RolesAtBase = change.RolesAtBase;
+            character.RolesAtHq = change.RolesAtHQ;
+            character.RolesAtOther = change.RolesAtOther;
+            character.BlockRoles = change.BlockRoles;
+            character.GrantableRoles = change.GrantableRoles;
+            character.GrantableRolesAtBase = change.GrantableRolesAtBase;
+            character.GrantableRolesAtOther = change.GrantableRolesAtOther;
+            character.GrantableRolesAtHQ = change.GrantableRolesAtHQ;
+            // some debugging is well received
+            Log.Debug($"Updated character ({character.ID}) roles");
+        }
+
         private void HandleBroadcastNotification(PyPacket packet)
         {
             // this packet is an internal one
@@ -593,6 +618,9 @@ namespace Node.Network
                     break;
                 case Notifications.Nodes.Corporations.OnCorporationMemberChanged.NOTIFICATION_NAME:
                     this.HandleOnCorporationMemberChanged(packet.Payload);
+                    break;
+                case Notifications.Nodes.Corporations.OnCorporationMemberUpdated.NOTIFICATION_NAME:
+                    this.HandleOnCorporationMemberUpdated(packet.Payload);
                     break;
                 default:
                     Log.Fatal("Received ClusterController notification with the wrong format");

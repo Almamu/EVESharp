@@ -17,12 +17,14 @@ using Node.Market;
 using Node.Network;
 using Node.Notifications.Client.Corporations;
 using Node.Notifications.Client.Wallet;
+using Node.Notifications.Nodes.Corporations;
 using Node.StaticData;
 using Node.StaticData.Corporation;
 using Node.StaticData.Inventory;
 using PythonTypes.Types.Collections;
 using PythonTypes.Types.Database;
 using PythonTypes.Types.Primitives;
+using OnCorporationMemberChanged = Node.Notifications.Client.Corporations.OnCorporationMemberChanged;
 
 namespace Node.Services.Corporations
 {
@@ -299,6 +301,8 @@ namespace Node.Services.Corporations
         {
             int callerCharacterID = call.Client.EnsureCharacterIsSelected();
 
+            // check for corporation stasis for this character
+            
             // can personel manager kick other players? are there other conditions?
             return characterID == callerCharacterID || CorporationRole.Director.Is(call.Client.CorporationRole);
         }
@@ -398,7 +402,12 @@ namespace Node.Services.Corporations
                     call.Client.RolesAtAll = long.MaxValue;
                     // update the character to reflect the new ownership
                     character.CorporationID = corporationID;
-                    character.CorpRole = long.MaxValue;
+                    character.Roles = long.MaxValue;
+                    character.RolesAtBase = long.MaxValue;
+                    character.RolesAtHq = long.MaxValue;
+                    character.RolesAtOther = long.MaxValue;
+                    // ensure the database reflects these changes
+                    this.CharacterDB.UpdateCharacterRoles(character.ID, long.MaxValue, long.MaxValue, long.MaxValue, long.MaxValue, long.MaxValue, long.MaxValue, long.MaxValue, long.MaxValue);
                     character.CorporationDateTime = DateTime.UtcNow.ToFileTimeUtc();
                     // notify cluster about the corporation changes
                     this.NotificationManager.NotifyCorporation(change.OldCorporationID, change);
@@ -659,6 +668,96 @@ namespace Node.Services.Corporations
         {
             return this.DB.GetRecruitmentAds(null, null, null, null, null, null, null, this.mCorporation.ID);
         }
+
+        public PyDataType UpdateMember(PyInteger characterID, PyString title, PyInteger divisionID,
+            PyInteger squadronID, PyInteger roles, PyInteger grantableRoles, PyInteger rolesAtHQ,
+            PyInteger grantableRolesAtHQ, PyInteger rolesAtBase, PyInteger grantableRolesAtBase, PyInteger rolesAtOther,
+            PyInteger grantableRolesAtOther, PyInteger baseID, PyInteger titleMask, PyInteger blockRoles,
+            CallInformation call)
+        {
+            int callerCharacterID = call.Client.EnsureCharacterIsSelected();
+            Character character = this.ItemFactory.GetItem<Character>(callerCharacterID);
+            
+            // get current roles for that character
+            this.CharacterDB.GetCharacterRoles(characterID, out long currentRoles, out long currentRolesAtBase,
+                out long currentRolesAtHQ, out long currentRolesAtOther, out long currentGrantableRoles,
+                out long currentGrantableRolesAtBase, out long currentGrantableRolesAtHQ,
+                out long currentGrantableRolesAtOther, out bool currentBlockRoles, out int? currentBaseID
+            );
+            
+            // the only modification a member can perform on itself is blocking roles
+            if (characterID == callerCharacterID)
+            {
+                this.CharacterDB.UpdateCharacterBlockRole(characterID, blockRoles);
+                
+                this.NotificationManager.NotifyNode(
+                    this.ItemFactory.ItemDB.GetItemNode(characterID), 
+                    new OnCorporationMemberUpdated(
+                        characterID, roles, currentGrantableRoles, rolesAtHQ, currentGrantableRolesAtHQ,
+                        rolesAtBase, currentGrantableRolesAtBase, rolesAtOther, currentGrantableRolesAtOther, currentBaseID,
+                        blockRoles == 1
+                    )
+                );
+                
+                return null;
+            }
+            
+            // if the character is not a director, it cannot grant grantable roles (duh)
+            if (CorporationRole.Director.Is(call.Client.CorporationRole) == false && (grantableRoles != 0 ||
+                grantableRolesAtBase != 0 || grantableRolesAtOther != 0 || grantableRolesAtHQ != 0))
+                throw new CrpAccessDenied(MLS.UI_CORP_DO_NOT_HAVE_ROLE_DIRECTOR);
+            
+            // get differences with the current specified roles, we want to know what changes
+            long rolesDifference = currentRoles ^ roles;
+            long rolesAtBaseDifference = currentRolesAtBase ^ rolesAtBase;
+            long rolesAtHQDifference = currentRolesAtHQ ^ rolesAtHQ;
+            long rolesAtOtherDifference = currentRolesAtOther ^ rolesAtOther;
+            
+            // ensure the character has permissions to modify those roles
+            if ((rolesDifference & character.GrantableRoles) != rolesDifference ||
+                (rolesAtBaseDifference & character.GrantableRolesAtBase) != rolesAtBaseDifference ||
+                (rolesAtOtherDifference & character.GrantableRolesAtOther) != rolesAtOtherDifference ||
+                (rolesAtHQDifference & character.GrantableRolesAtHQ) != rolesAtHQDifference)
+                throw new CrpAccessDenied(MLS.UI_CORP_INSUFFICIENT_RIGHTS_TO_EDIT_MEMBERS_DETAILS);
+            
+            // if the new role is director then all the roles must be granted
+            if (roles == 1)
+            {
+                roles = long.MaxValue;
+                rolesAtHQ = long.MaxValue;
+                rolesAtBase = long.MaxValue;
+                rolesAtOther = long.MaxValue;
+            }
+            
+            // store the new roles
+            this.CharacterDB.UpdateCharacterRoles(characterID, roles, rolesAtHQ, rolesAtBase, rolesAtOther,
+                grantableRoles, grantableRolesAtHQ, grantableRolesAtBase, grantableRolesAtOther);
+            
+            // notify the node about the changes
+            this.NotificationManager.NotifyNode(
+                this.ItemFactory.ItemDB.GetItemNode(characterID),
+                new OnCorporationMemberUpdated(characterID, roles, grantableRoles, rolesAtHQ, grantableRolesAtHQ,
+                    rolesAtBase, grantableRolesAtBase, rolesAtOther, grantableRolesAtOther, baseID, currentBlockRoles)
+            );
+
+            // check if the character is connected and update it's session
+            // this also allows to notify the node where the character is loaded
+            if (this.ClientManager.TryGetClientByCharacterID(characterID, out Client client) == false)
+                return null;
+
+            // update the roles on the session and send the session change to the player
+            client.CorporationRole = roles;
+            client.RolesAtOther = rolesAtOther;
+            client.RolesAtHQ = rolesAtHQ;
+            client.RolesAtBase = rolesAtBase;
+            client.RolesAtAll = client.CorporationRole | client.RolesAtOther | client.RolesAtHQ | client.RolesAtBase;
+            client.SendSessionChange();
+            
+            // TODO: CHECK THAT NEW BASE ID IS VALID
+            
+            return null;
+        }
+
         protected override long MachoResolveObject(ServiceBindParams parameters, CallInformation call)
         {
             // TODO: CHECK IF ANY NODE HAS THIS CORPORATION LOADED

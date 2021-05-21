@@ -544,14 +544,15 @@ namespace Node.Database
             MySqlConnection connection = null;
             MySqlDataReader reader = Database.PrepareQuery(ref connection,
                 "SELECT characterID, accountID, activeCloneID, title, description, securityRating," +
-                " petitionMessage, logonMinutes, corporationID, corpRole, rolesAtAll, rolesAtBase, rolesAtHQ," +
+                " petitionMessage, logonMinutes, corporationID, roles, rolesAtBase, rolesAtHQ," +
                 " rolesAtOther, corporationDateTime, startDateTime, createDateTime, ancestryID, careerID, schoolID," +
                 " careerSpecialityID, gender, accessoryID, beardID, costumeID, decoID, eyebrowsID, eyesID, hairID," +
                 " lipstickID, makeupID, skinID, backgroundID, lightID, headRotation1, headRotation2, headRotation3," +
                 " eyeRotation1, eyeRotation2, eyeRotation3, camPos1, camPos2, camPos3, morph1e, morph1n, morph1s," +
                 " morph1w, morph2e, morph2n, morph2s, morph2w, morph3e, morph3n, morph3s, morph3w, morph4e, morph4n," +
                 " morph4s, morph4w, stationID, solarSystemID, constellationID, regionID, online, freeRespecs, nextRespecTime," +
-                " timeLastJump, titleMask, warfactionID, corpAccountKey " +
+                " timeLastJump, titleMask, warfactionID, corpAccountKey, corpStasisTime, blockRoles, " +
+                " grantableRoles, grantableRolesAtBase, grantableRolesAtHQ, grantableRolesAtOther, baseID " +
                 "FROM chrInformation WHERE characterID = @itemID",
                 new Dictionary<string, object>()
                 {
@@ -585,24 +586,24 @@ namespace Node.Database
                     reader.GetInt64(13),
                     reader.GetInt64(14),
                     reader.GetInt64(15),
-                    reader.GetInt64(16),
+                    reader.GetInt32(16),
                     reader.GetInt32(17),
                     reader.GetInt32(18),
                     reader.GetInt32(19),
                     reader.GetInt32(20),
-                    reader.GetInt32(21),
+                    reader.GetInt32OrNull(21),
                     reader.GetInt32OrNull(22),
-                    reader.GetInt32OrNull(23),
-                    reader.GetInt32(24),
-                    reader.GetInt32OrNull(25),
+                    reader.GetInt32(23),
+                    reader.GetInt32OrNull(24),
+                    reader.GetInt32(25),
                     reader.GetInt32(26),
                     reader.GetInt32(27),
-                    reader.GetInt32(28),
+                    reader.GetInt32OrNull(28),
                     reader.GetInt32OrNull(29),
-                    reader.GetInt32OrNull(30),
+                    reader.GetInt32(30),
                     reader.GetInt32(31),
                     reader.GetInt32(32),
-                    reader.GetInt32(33),
+                    reader.GetDouble(33),
                     reader.GetDouble(34),
                     reader.GetDouble(35),
                     reader.GetDouble(36),
@@ -611,7 +612,7 @@ namespace Node.Database
                     reader.GetDouble(39),
                     reader.GetDouble(40),
                     reader.GetDouble(41),
-                    reader.GetDouble(42),
+                    reader.GetDoubleOrNull(42),
                     reader.GetDoubleOrNull(43),
                     reader.GetDoubleOrNull(44),
                     reader.GetDoubleOrNull(45),
@@ -627,18 +628,24 @@ namespace Node.Database
                     reader.GetDoubleOrNull(55),
                     reader.GetDoubleOrNull(56),
                     reader.GetDoubleOrNull(57),
-                    reader.GetDoubleOrNull(58),
+                    reader.GetInt32(58),
                     reader.GetInt32(59),
                     reader.GetInt32(60),
                     reader.GetInt32(61),
                     reader.GetInt32(62),
                     reader.GetInt32(63),
-                    reader.GetInt32(64),
+                    reader.GetInt64(64),
                     reader.GetInt64(65),
-                    reader.GetInt64(66),
-                    reader.GetInt32(67),
-                    reader.GetInt32OrNull(68),
-                    reader.GetInt32(69)
+                    reader.GetInt32(66),
+                    reader.GetInt32OrNull(67),
+                    reader.GetInt32(68),
+                    reader.GetInt64OrNull(69),
+                    reader.GetBoolean(70),
+                    reader.GetInt64(71),
+                    reader.GetInt64(72),
+                    reader.GetInt64(73),
+                    reader.GetInt64(74),
+                    reader.GetInt32OrNull(75)
                 );
             }
         }
