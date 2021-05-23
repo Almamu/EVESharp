@@ -46,6 +46,8 @@ namespace Node.Services.Corporations
         private NotificationManager NotificationManager { get; init; }
         private MailManager MailManager { get; init; }
         private ClientManager ClientManager { get; init; }
+        private MembersSparseRowsetService MembersSparseRowset { get; set; }
+        private OfficesSparseRowsetService OfficesSparseRowset { get; set; }
         
         public corpRegistry(CorporationDB db, ChatDB chatDB, CharacterDB characterDB, NotificationManager notificationManager, MailManager mailManager, WalletManager walletManager, NodeContainer container, ItemFactory itemFactory, ClientManager clientManager, BoundServiceManager manager) : base(manager)
         {
@@ -180,42 +182,48 @@ namespace Node.Services.Corporations
 
         public PyDataType GetMembers(CallInformation call)
         {
-            // generate the sparse rowset
-            SparseRowsetHeader rowsetHeader = this.DB.GetMembersSparseRowset(call.Client.CorporationID);
-
-            PyDictionary dict = new PyDictionary
+            if (this.MembersSparseRowset == null)
             {
-                ["realRowCount"] = rowsetHeader.Count
-            };
-            
-            // create a service for handling it's calls
-            MembersSparseRowsetService svc =
-                new MembersSparseRowsetService(this.Corporation, this.DB, rowsetHeader, this.BoundServiceManager, call.Client);
+                // generate the sparse rowset
+                SparseRowsetHeader rowsetHeader = this.DB.GetMembersSparseRowset(call.Client.CorporationID);
 
-            rowsetHeader.BoundObjectIdentifier = svc.MachoBindObject(dict, call.Client);
+                PyDictionary dict = new PyDictionary
+                {
+                    ["realRowCount"] = rowsetHeader.Count
+                };
+            
+                // create a service for handling it's calls
+                this.MembersSparseRowset =
+                    new MembersSparseRowsetService(this.Corporation, this.DB, rowsetHeader, this.BoundServiceManager, call.Client);
+
+                rowsetHeader.BoundObjectIdentifier = this.MembersSparseRowset.MachoBindObject(dict, call.Client);
+            }
             
             // finally return the data
-            return rowsetHeader;
+            return this.MembersSparseRowset.RowsetHeader;
         }
 
         public PyDataType GetOffices(CallInformation call)
         {
-            // generate the sparse rowset
-            SparseRowsetHeader rowsetHeader = this.DB.GetOfficesSparseRowset(call.Client.CorporationID);
-
-            PyDictionary dict = new PyDictionary
+            if (this.OfficesSparseRowset == null)
             {
-                ["realRowCount"] = rowsetHeader.Count
-            };
-            
-            // create a service for handling it's calls
-            OfficesSparseRowsetService svc =
-                new OfficesSparseRowsetService(this.Corporation, this.DB, rowsetHeader, this.BoundServiceManager, call.Client);
+                // generate the sparse rowset
+                SparseRowsetHeader rowsetHeader = this.DB.GetOfficesSparseRowset(call.Client.CorporationID);
 
-            rowsetHeader.BoundObjectIdentifier = svc.MachoBindObject(dict, call.Client);
+                PyDictionary dict = new PyDictionary
+                {
+                    ["realRowCount"] = rowsetHeader.Count
+                };
+            
+                // create a service for handling it's calls
+                this.OfficesSparseRowset =
+                    new OfficesSparseRowsetService(this.Corporation, this.DB, rowsetHeader, this.BoundServiceManager, call.Client);
+
+                rowsetHeader.BoundObjectIdentifier = this.OfficesSparseRowset.MachoBindObject(dict, call.Client);
+            }
             
             // finally return the data
-            return rowsetHeader;
+            return this.OfficesSparseRowset.RowsetHeader;
         }
 
         public PyDataType GetRoleGroups(CallInformation call)
@@ -773,6 +781,11 @@ namespace Node.Services.Corporations
             Corporation corp = this.ItemFactory.LoadItem<Corporation>(bindParams.ObjectID);
             
             return new corpRegistry (this.DB, this.ChatDB, this.CharacterDB, this.NotificationManager, this.MailManager, this.WalletManager, this.Container, this.ItemFactory, this.ClientManager, corp, bindParams.ExtraValue, this);
+        }
+
+        public override bool IsClientAllowedToCall(CallInformation call)
+        {
+            return this.Corporation.ID == call.Client.CorporationID;
         }
 
         protected override void OnClientDisconnected()

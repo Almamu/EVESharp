@@ -25,12 +25,12 @@ namespace Node.Services.Corporations
 
         public override PyDataType Fetch(PyInteger startPos, PyInteger fetchSize, CallInformation call)
         {
-            return this.DB.GetMembers(this.Corporation.ID, startPos, fetchSize, this.SparseRowset, this.RowsIndex);
+            return this.DB.GetMembers(this.Corporation.ID, startPos, fetchSize, this.RowsetHeader, this.RowsIndex);
         }
 
         public override PyDataType FetchByKey(PyList keyList, CallInformation call)
         {
-            return this.DB.GetMembers(keyList.GetEnumerable<PyInteger>(), this.Corporation.ID, this.SparseRowset, this.RowsIndex);
+            return this.DB.GetMembers(keyList.GetEnumerable<PyInteger>(), this.Corporation.ID, this.RowsetHeader, this.RowsIndex);
         }
 
         public override PyDataType SelectByUniqueColumnValues(PyString columnName, PyList values, CallInformation call)
@@ -41,6 +41,11 @@ namespace Node.Services.Corporations
         public override void SendOnObjectChanged(int primaryKey)
         {
             throw new System.NotImplementedException();
+        }
+
+        public override bool IsClientAllowedToCall(CallInformation call)
+        {
+            return call.Client.CorporationID == this.Corporation.ID;
         }
     }
 }

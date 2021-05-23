@@ -8,7 +8,7 @@ namespace Node.Services.Database
 {
     public abstract class SparseRowsetDatabaseService : MultiClientBoundService
     {
-        protected SparseRowsetHeader SparseRowset { get; }
+        public SparseRowsetHeader RowsetHeader { get; init; }
         
         public abstract PyDataType Fetch(PyInteger startPos, PyInteger fetchSize, CallInformation call);
         public abstract PyDataType FetchByKey(PyList keyList, CallInformation call);
@@ -17,7 +17,7 @@ namespace Node.Services.Database
 
         protected SparseRowsetDatabaseService(SparseRowsetHeader rowsetHeader, BoundServiceManager manager, Client client) : base(manager, 0)
         {
-            this.SparseRowset = rowsetHeader;
+            this.RowsetHeader = rowsetHeader;
         }
 
         protected override long MachoResolveObject(ServiceBindParams parameters, CallInformation call)

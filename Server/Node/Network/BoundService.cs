@@ -90,5 +90,12 @@ namespace Node.Network
         /// <param name="call">The call object with extra information</param>
         /// <returns></returns>
         protected abstract PyDataType MachoBindObject(ServiceBindParams bindParams, PyDataType callInfo, CallInformation call);
+
+        /// <summary>
+        /// Checks if the caller has enough permissions to use this bound service
+        /// </summary>
+        /// <param name="call">The call information</param>
+        /// <returns></returns>
+        public abstract bool IsClientAllowedToCall(CallInformation call);
     }
 }

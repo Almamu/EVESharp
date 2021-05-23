@@ -111,5 +111,10 @@ namespace Node.Network
             // then tell the bound service that we are not alive anymore
             this.BoundServiceManager.UnbindService(this);
         }
+
+        public override bool IsClientAllowedToCall(CallInformation call)
+        {
+            return this.Client == call.Client;
+        }
     }
 }

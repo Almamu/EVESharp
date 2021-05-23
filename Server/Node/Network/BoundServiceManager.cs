@@ -99,7 +99,11 @@ namespace Node.Network
             {
                 if (this.mBoundServices.TryGetValue(boundID, out BoundService serviceInstance) == false)
                     throw new Exception($"Unknown bound service {boundID}::{call}");
-         
+                
+                // check for permissions on the bound service
+                if (serviceInstance.IsClientAllowedToCall(callInformation) == false)
+                    throw new Exception($"Attempting unauthorized call to bound service {serviceInstance.GetType().Name}::{call} ({boundID})");
+                
                 Log.Trace($"Calling {serviceInstance.GetType().Name}::{call} on bound service {boundID}");
             
                 if(serviceInstance is null)
