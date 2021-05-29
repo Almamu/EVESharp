@@ -646,10 +646,10 @@ namespace Node.Database
             }
         }
 
-        public Rowset GetRecruitmentAdTypes()
+        public CRowset GetRecruitmentAdTypes()
         {
-            return Database.PrepareRowsetQuery(
-                "SELECT typeMask, typeName, description, groupName, dataID, groupDataID FROM crpRecruitmentAdTypes"
+            return Database.PrepareCRowsetQuery(
+                "SELECT typeMask, typeName, description, groupID, groupName, crpRecruitmentAdTypes.dataID, crpRecruitmentAdGroups.dataID as groupDataID FROM crpRecruitmentAdTypes LEFT JOIN crpRecruitmentAdGroups USING (groupID)"
             );
         }
 

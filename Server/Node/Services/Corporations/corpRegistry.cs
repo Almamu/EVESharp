@@ -766,6 +766,17 @@ namespace Node.Services.Corporations
             return null;
         }
 
+        public PyDataType CanLeaveCurrentCorporation(CallInformation call)
+        {
+            // TODO: IMPLEMENT THIS
+            return new PyTuple(3)
+            {
+                [0] = false, // can leave
+                [1] = "CustomError", // error message
+                [2] = new PyDictionary() {["error"] = "Not supported yet"} // error details (info for the exception)
+            };
+        }
+
         protected override long MachoResolveObject(ServiceBindParams parameters, CallInformation call)
         {
             // TODO: CHECK IF ANY NODE HAS THIS CORPORATION LOADED
