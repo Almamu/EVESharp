@@ -658,16 +658,17 @@ namespace Node.Database
         {
             Dictionary<string, object> parameters = new Dictionary<string, object>();
             string query =
-                "SELECT adID, crpRecruitmentAds.corporationID, typeMask, crpRecruitmentAds.description, crpRecruitmentAds.stationID, corporation.allowedMemberRaceIDs AS raceMask, corporation.allianceID FROM crpRecruitmentAds LEFT JOIN corporation USING(corporationID) WHERE 1=1";
+                "SELECT adID, crpRecruitmentAds.corporationID, crpRecruitmentAds.corporationID AS channelID, typeMask, crpRecruitmentAds.description, crpRecruitmentAds.stationID, raceMask, corporation.allianceID, expiryDateTime, createDateTime, regionID, constellationID, solarSystemID, minimumSkillPoints AS skillPoints FROM crpRecruitmentAds LEFT JOIN corporation ON crpRecruitmentAds.corporationID = corporation.corporationID LEFT JOIN staStations ON crpRecruitmentAds.stationID = staStations.stationID WHERE 1=1";
 
             if (regionID is not null)
             {
-                // query += " AND "
+                query += " AND regionID = @regionID";
+                parameters["@regionID"] = regionID;
             }
 
             if (skillPoints is not null)
             {
-                query += " AND minimumSkillPoints >= @skillPoints";
+                query += " AND minimumSkillPoints <= @skillPoints";
                 parameters["@skillPoints"] = skillPoints;
             }
 
@@ -693,19 +694,19 @@ namespace Node.Database
 
             if (minMembers is not null)
             {
-                query += " AND corporation.memberCount > @minMembers";
+                query += " AND corporation.memberCount >= @minMembers";
                 parameters["@minMembers"] = minMembers;
             }
 
             if (maxMembers is not null)
             {
-                query += " AND corporation.memberCount < @maxMembers";
+                query += " AND corporation.memberCount <= @maxMembers";
                 parameters["@maxMembers"] = maxMembers;
             }
 
             if (corporationID is not null)
             {
-                query += " AND corporationID = @corporationID";
+                query += " AND corporation.corporationID = @corporationID";
                 parameters["@corporationID"] = corporationID;
             }
 
@@ -948,6 +949,24 @@ namespace Node.Database
                 new Dictionary<string, object>()
                 {
                     {"@corporationID", corporationID}
+                }
+            );
+        }
+
+        public ulong CreateRecruitmentAd(int stationID, int days, int corporationID, int typeMask, int raceMask, string description, int skillPoints)
+        {
+            return Database.PrepareQueryLID(
+                "INSERT INTO crpRecruitmentAds(expiryDateTime, createDateTime, corporationID, typeMask, raceMask, description, minimumSkillPoints, stationID)VALUES(@expiryDateTime, @createDateTime, @corporationID, @typeMask, @raceMask, @description, @minimumSkillpoints, @stationID)",
+                new Dictionary<string, object>()
+                {
+                    {"@expiryDateTime", DateTime.UtcNow.AddDays(days).ToFileTimeUtc()},
+                    {"@createDateTime", DateTime.UtcNow.ToFileTimeUtc()},
+                    {"@corporationID", corporationID},
+                    {"@typeMask", typeMask},
+                    {"@raceMask", raceMask},
+                    {"@description", description},
+                    {"@minimumSkillpoints", skillPoints},
+                    {"@stationID", stationID}
                 }
             );
         }

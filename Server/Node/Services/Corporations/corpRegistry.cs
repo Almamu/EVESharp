@@ -49,6 +49,10 @@ namespace Node.Services.Corporations
         private MembersSparseRowsetService MembersSparseRowset { get; set; }
         private OfficesSparseRowsetService OfficesSparseRowset { get; set; }
         
+        // constants
+        private long CorporationAdvertisementFlatFee { get; init; }
+        private long CorporationAdvertisementDailyRate { get; init; }
+        
         public corpRegistry(CorporationDB db, ChatDB chatDB, CharacterDB characterDB, NotificationManager notificationManager, MailManager mailManager, WalletManager walletManager, NodeContainer container, ItemFactory itemFactory, ClientManager clientManager, BoundServiceManager manager) : base(manager)
         {
             this.DB = db;
@@ -75,6 +79,8 @@ namespace Node.Services.Corporations
             this.mCorporation = corp;
             this.mIsMaster = isMaster;
             this.ClientManager = clientManager;
+            this.CorporationAdvertisementFlatFee = this.Container.Constants["corporationAdvertisementFlatFee"].Value;
+            this.CorporationAdvertisementDailyRate = this.Container.Constants["corporationAdvertisementDailyRate"].Value;
         }
 
         public PyDataType GetEveOwners(CallInformation call)
@@ -775,6 +781,44 @@ namespace Node.Services.Corporations
                 [1] = "CustomError", // error message
                 [2] = new PyDictionary() {["error"] = "Not supported yet"} // error details (info for the exception)
             };
+        }
+
+        public PyDataType CreateRecruitmentAd(PyInteger days, PyInteger stationID, PyInteger raceMask, PyInteger typeMask, PyInteger allianceID, PyInteger skillpoints, PyString description, CallInformation call)
+        {
+            Station station = this.ItemFactory.GetStaticStation(stationID);
+            int callerCharacterID = call.Client.EnsureCharacterIsSelected();
+            long price = this.CorporationAdvertisementFlatFee + (this.CorporationAdvertisementDailyRate * days);
+            
+            // get the current wallet and check if there's enough money on it
+            using (Wallet wallet = this.WalletManager.AcquireWallet(call.Client.CorporationID, call.Client.CorpAccountKey))
+            {
+                wallet.EnsureEnoughBalance(price);
+                wallet.CreateJournalRecord(MarketReference.CorporationAdvertisementFee, callerCharacterID, null, null, price);
+            }
+            
+            // now create the ad
+            ulong adID = this.DB.CreateRecruitmentAd(stationID, days, call.Client.CorporationID, typeMask, raceMask, description, skillpoints);
+            // create the notification and notify everyone at that station
+            OnCorporationRecruitmentAdChanged changes = new OnCorporationRecruitmentAdChanged(call.Client.CorporationID, adID);
+            // add the fields for the recruitment ad change
+            changes
+                .AddValue("adID", null, adID)
+                .AddValue("corporationID", null, call.Client.CorporationID)
+                .AddValue("channelID", null, call.Client.CorporationID)
+                .AddValue("typeMask", null, typeMask)
+                .AddValue("description", null, description)
+                .AddValue("stationID", null, stationID)
+                .AddValue("raceMask", null, raceMask)
+                .AddValue("allianceID", null, call.Client.AllianceID)
+                .AddValue("expiryDateTime", null, DateTime.UtcNow.AddDays(days).ToFileTimeUtc())
+                .AddValue("createDateTime", null, DateTime.UtcNow.ToFileTimeUtc())
+                .AddValue("regionID", null, station.RegionID)
+                .AddValue("solarSystemID", null, station.SolarSystemID)
+                .AddValue("constellationID", null, station.ConstellationID);
+
+            this.NotificationManager.NotifyStation(stationID, changes);
+            
+            return null;
         }
 
         protected override long MachoResolveObject(ServiceBindParams parameters, CallInformation call)

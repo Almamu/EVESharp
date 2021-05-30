@@ -6,6 +6,7 @@ CREATE TABLE `crpRecruitmentAds` (
 	`createDateTime` BIGINT(20) NOT NULL DEFAULT '0',
 	`corporationID` INT(11) NOT NULL DEFAULT '0',
 	`typeMask` INT(11) NOT NULL DEFAULT '0',
+	`raceMask` INT NOT NULL,
 	`description` TEXT NOT NULL DEFAULT '0',
 	`minimumSkillPoints` DOUBLE NOT NULL DEFAULT '0',
 	`stationID` INT(11) NOT NULL DEFAULT '0',
