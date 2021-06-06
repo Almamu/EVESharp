@@ -25,6 +25,11 @@ namespace Node.Services.Corporations
             return this.DB.GetCorporationIDForCharacter(characterID);
         }
 
+        public PyDataType GetCorporations(PyInteger corporationID, CallInformation call)
+        {
+            return this.DB.GetCorporationRow(corporationID);
+        }
+        
         public PyDataType GetAssetInventory(PyInteger corporationID, PyString which, CallInformation call)
         {
             return new PyList();

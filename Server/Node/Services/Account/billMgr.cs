@@ -1,3 +1,4 @@
+using System;
 using Common.Services;
 using EVE;
 using EVE.Packets.Complex;
@@ -13,10 +14,12 @@ namespace Node.Services.Account
     {
         private CacheStorage CacheStorage { get; }
         private BillsDB DB { get; init; }
-        public billMgr(CacheStorage cacheStorage, BillsDB db)
+        public billMgr(CacheStorage cacheStorage, BillsDB db, MachoNet machoNet)
         {
             this.CacheStorage = cacheStorage;
             this.DB = db;
+
+            machoNet.OnClusterTimer += this.PerformTimedEvents;
         }
 
         public PyDataType GetBillTypes(CallInformation call)
@@ -51,6 +54,10 @@ namespace Node.Services.Account
                 throw new CrpAccessDenied(MLS.UI_CORP_ACCESSDENIED3);
             
             return this.DB.GetCorporationBillsPayable(call.Client.CorporationID);
+        }
+        public void PerformTimedEvents(object? sender, EventArgs args)
+        {
+            
         }
     }
 }

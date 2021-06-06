@@ -27,13 +27,15 @@ namespace Node.Services.Inventory
         private WalletManager WalletManager { get; }
         private MailManager MailManager { get; }
 
-        public insuranceSvc(ItemFactory itemFactory, InsuranceDB db, MarketDB marketDB, WalletManager walletManager, MailManager mailManager, BoundServiceManager manager) : base(manager)
+        public insuranceSvc(ItemFactory itemFactory, InsuranceDB db, MarketDB marketDB, WalletManager walletManager, MailManager mailManager, BoundServiceManager manager, MachoNet machoNet) : base(manager)
         {
             this.DB = db;
             this.ItemFactory = itemFactory;
             this.MarketDB = marketDB;
             this.WalletManager = walletManager;
             this.MailManager = mailManager;
+
+            machoNet.OnClusterTimer += PerformTimedEvents;
         }
 
         protected insuranceSvc(ItemFactory itemFactory, InsuranceDB db, MarketDB marketDB, WalletManager walletManager, MailManager mailManager, BoundServiceManager manager, int stationID, Client client) : base (manager, client, stationID)
@@ -154,7 +156,7 @@ namespace Node.Services.Inventory
             return null;
         }
 
-        public void PerformTimedEvents()
+        public void PerformTimedEvents(object? sender, EventArgs args)
         {
             foreach (InsuranceDB.ExpiredContract contract in this.DB.GetExpiredContracts())
             {

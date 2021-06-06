@@ -46,6 +46,8 @@ namespace Node.Network
         private Container DependencyInjection { get; }
         private int mErrorCount = 0;
 
+        public event EventHandler OnClusterTimer;
+        
         public MachoNet(ClusterConnection clusterConnection, NodeContainer container, SystemManager systemManager,
             ClientManager clientManager, BoundServiceManager boundServiceManager, ItemFactory itemFactory,
             Logger logger, AccountDB accountDB, General configuration, CharacterManager characterManager,
@@ -536,9 +538,8 @@ namespace Node.Network
         private void HandleOnClusterTimer(PyTuple data)
         {
             Log.Info("Received a cluster request to run timed events on services...");
-            
-            this.ServiceManager.marketProxy.PerformTimedEvents();
-            this.ServiceManager.insuranceSvc.PerformTimedEvents();
+
+            this.OnClusterTimer?.Invoke(this, null);
         }
 
         private void HandleOnCorporationMemberChanged(OnCorporationMemberChanged change)

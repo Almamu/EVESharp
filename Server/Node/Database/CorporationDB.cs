@@ -971,6 +971,17 @@ namespace Node.Database
             );
         }
 
+        public PyDataType GetCorporationRow(int corporationID)
+        {
+            return Database.PrepareRowQuery(
+                "SELECT corporationID, corporationName, description, tickerName, url, taxRate, minimumJoinStanding, corporationType, hasPlayerPersonnelManager, sendCharTerminationMessage, creatorID, ceoID, stationID, raceID, allianceID, shares, memberCount, memberLimit, allowedMemberRaceIDs, graphicID, shape1, shape2, shape3, color1, color2, color3, typeface, division1, division2, division3, division4, division5, division6, division7, walletDivision1, walletDivision2, walletDivision3, walletDivision4, walletDivision5, walletDivision6, walletDivision7, deleted FROM corporation WHERE corporationID = @corporationID",
+                new Dictionary<string, object>()
+                {
+                    {"@corporationID", corporationID}
+                }
+            );
+        }
+
         public CorporationDB(ItemDB itemDB, DatabaseConnection db) : base(db)
         {
             this.ItemDB = itemDB;

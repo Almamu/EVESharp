@@ -44,7 +44,7 @@ namespace Node.Services.Market
         private NotificationManager NotificationManager { get; }
         private WalletManager WalletManager { get; }
         
-        public marketProxy(MarketDB db, CharacterDB characterDB, ItemDB itemDB, SolarSystemDB solarSystemDB, ItemFactory itemFactory, CacheStorage cacheStorage, NodeContainer nodeContainer, ClientManager clientManager, NotificationManager notificationManager, WalletManager walletManager)
+        public marketProxy(MarketDB db, CharacterDB characterDB, ItemDB itemDB, SolarSystemDB solarSystemDB, ItemFactory itemFactory, CacheStorage cacheStorage, NodeContainer nodeContainer, ClientManager clientManager, NotificationManager notificationManager, WalletManager walletManager, MachoNet machoNet)
         {
             this.DB = db;
             this.CharacterDB = characterDB;
@@ -56,6 +56,8 @@ namespace Node.Services.Market
             this.ClientManager = clientManager;
             this.NotificationManager = notificationManager;
             this.WalletManager = walletManager;
+
+            machoNet.OnClusterTimer += this.PerformTimedEvents;
         }
 
         private PyDataType GetNewTransactions(int entityID, PyInteger sellBuy, PyInteger typeID, PyDataType clientID,
@@ -879,7 +881,7 @@ namespace Node.Services.Market
         /// <summary>
         /// Checks orders that are expired, cancels them and returns the items to the hangar if required
         /// </summary>
-        public void PerformTimedEvents()
+        public void PerformTimedEvents(object sender, EventArgs args)
         {
             using MySqlConnection connection = this.DB.AcquireMarketLock();
             try
