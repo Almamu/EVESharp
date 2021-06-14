@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using MySql.Data.MySqlClient;
 using PythonTypes.Types.Collections;
@@ -77,6 +78,31 @@ namespace PythonTypes.Types.Database
             };
 
             return new PyObjectData(TYPE_NAME, arguments);
+        }
+
+        public static implicit operator Rowset(PyDataType from)
+        {
+            if (from is not PyObjectData data || data.Name != TYPE_NAME)
+                throw new Exception($"Expected an object data of name {TYPE_NAME}");
+            if (data.Arguments is not PyDictionary args)
+                throw new Exception("Expected object data with a dictionary");
+            
+            // ensure the dictionary has the required keys
+            if (args.TryGetValue("header", out PyList header) == false)
+                throw new Exception("Rowset header cannot be found");
+            if (args.TryGetValue("RowClass", out PyToken rowClass) == false || rowClass.Token != ROW_TYPE_NAME)
+                throw new Exception("Unknown row header");
+            if (args.TryGetValue("lines", out PyList lines) == false)
+                throw new Exception("Unknown row lines format");
+
+            // return the new rowset with the correct values
+            return new Rowset(header.GetEnumerable<PyString>(), lines.GetEnumerable<PyList>());
+        }
+        
+        public Row this[int index]
+        {
+            get => new Row(this.Header, this.Rows[index]);
+            set => this.Rows.Add(value.Line);
         }
     }
 }
