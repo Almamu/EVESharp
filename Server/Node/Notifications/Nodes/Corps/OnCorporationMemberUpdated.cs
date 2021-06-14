@@ -21,10 +21,11 @@ namespace Node.Notifications.Nodes.Corporations
         public long GrantableRolesAtOther { get; init; }
         public int? BaseID { get; init; }
         public bool BlockRoles { get; init; }
+        public long TitleMask { get; init; }
 
         public OnCorporationMemberUpdated(int characterID, long roles, long grantableRoles, long rolesAtHQ, long grantableRolesAtHQ,
             long rolesAtBase, long grantableRolesAtBase, long rolesAtOther, long grantableRolesAtOther, int? baseID,
-            bool blockRoles) : base(NOTIFICATION_NAME)
+            bool blockRoles, long titleMask) : base(NOTIFICATION_NAME)
         {
             this.CharacterID = characterID;
             this.Roles = roles;
@@ -37,6 +38,7 @@ namespace Node.Notifications.Nodes.Corporations
             this.GrantableRolesAtOther = grantableRolesAtOther;
             this.BaseID = baseID;
             this.BlockRoles = blockRoles;
+            this.TitleMask = titleMask;
         }
 
         protected override PyDataType GetNotification()
@@ -53,7 +55,8 @@ namespace Node.Notifications.Nodes.Corporations
                 ["rolesAtOther"] = this.RolesAtOther,
                 ["grantableRolesAtOther"] = this.GrantableRolesAtOther,
                 ["baseID"] = this.BaseID,
-                ["blockRoles"] = this.BlockRoles
+                ["blockRoles"] = this.BlockRoles,
+                ["titleMask"] = this.TitleMask
             };
         }
         
@@ -78,8 +81,9 @@ namespace Node.Notifications.Nodes.Corporations
             data.TryGetValue("grantableRolesAtOther", out PyInteger grantableRolesAtOther);
             data.TryGetValue("baseID", out PyInteger baseID);
             data.TryGetValue("blockRoles", out PyBool blockRoles);
+            data.TryGetValue("titleMask", out PyInteger titleMask);
 
-            return new OnCorporationMemberUpdated(characterID, roles, grantableRoles, rolesAtHQ, grantableRolesAtHQ, rolesAtBase, grantableRolesAtBase, rolesAtOther, grantableRolesAtOther, baseID, blockRoles);
+            return new OnCorporationMemberUpdated(characterID, roles, grantableRoles, rolesAtHQ, grantableRolesAtHQ, rolesAtBase, grantableRolesAtBase, rolesAtOther, grantableRolesAtOther, baseID, blockRoles, titleMask);
         }
     }
 }

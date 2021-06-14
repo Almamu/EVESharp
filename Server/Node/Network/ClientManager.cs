@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using PythonTypes.Types.Primitives;
 
 namespace Node.Network
 {
@@ -17,6 +18,11 @@ namespace Node.Network
         /// List of clients by CharacterID
         /// </summary>
         private readonly Dictionary<int, Client> mClientsByCharacterID = new Dictionary<int, Client>();
+
+        /// <summary>
+        /// List of clients by CorporationID
+        /// </summary>
+        private readonly Dictionary<int, List<Client>> mClientsByCorporationID = new Dictionary<int, List<Client>>();
 
         /// <summary>
         /// Adds a new client to the list
@@ -69,13 +75,45 @@ namespace Node.Network
         }
 
         /// <summary>
+        /// Tries to get the Clients list under the given corporationID
+        /// </summary>
+        /// <param name="corporationID">The corporationID to find</param>
+        /// <param name="clients">The list of clients</param>
+        /// <returns>Whether there's any or not</returns>
+        public bool TryGetClientsByCorporationID(int corporationID, out List<Client> clients)
+        {
+            return this.mClientsByCorporationID.TryGetValue(corporationID, out clients);
+        }
+        
+        /// <summary>
         /// Handler for OnSessionUpdate on the Client
         /// </summary>
-        /// <param name="client">The client that generated the event</param>
-        private void OnSessionUpdated(object sender, ClientEventArgs args)
+        /// <param name="sender"></param>
+        /// <param name="args"></param>
+        private void OnSessionUpdated(object sender, ClientSessionEventArgs args)
         {
             if (args.Client.CharacterID is not null)
                 this.mClientsByCharacterID[(int) args.Client.CharacterID] = args.Client;
+
+            // update corporation lists
+            int? oldCorporationID = args.Session.GetPrevious("corpid") as PyInteger;
+            int? newCorporationID = args.Session.GetCurrent("corpid") as PyInteger;
+
+            if (newCorporationID is not null)
+            {
+                if (this.mClientsByCorporationID.TryGetValue((int) newCorporationID, out List<Client> clients) == false)
+                    clients = this.mClientsByCorporationID[(int) newCorporationID] = new List<Client>();
+
+                lock (clients)
+                    clients.Add(args.Client);
+            
+                // this lookup won't fail as long as there was a corporationID, so no need to do a tryGetValue
+                if (oldCorporationID is not null)
+                {
+                    clients = this.mClientsByCorporationID[(int) oldCorporationID];
+                    clients.Remove(args.Client);
+                }
+            }
         }
     }
 }

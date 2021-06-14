@@ -60,6 +60,7 @@ namespace Node.Services.Characters
         }
 
         private CharacterDB DB { get; }
+        private CorporationDB CorporationDB { get; init; }
         private ChatDB ChatDB { get; }
         private ItemFactory ItemFactory { get; }
         private TypeManager TypeManager => this.ItemFactory.TypeManager;
@@ -72,12 +73,13 @@ namespace Node.Services.Characters
         private readonly Configuration.Character mConfiguration = null;
         private readonly Channel Log = null;
 
-        public character(CacheStorage cacheStorage, CharacterDB db, ChatDB chatDB, ItemFactory itemFactory, Logger logger, Configuration.Character configuration, NodeContainer container, NotificationManager notificationManager, WalletManager walletManager)
+        public character(CacheStorage cacheStorage, CharacterDB db, ChatDB chatDB, CorporationDB corporationDB, ItemFactory itemFactory, Logger logger, Configuration.Character configuration, NodeContainer container, NotificationManager notificationManager, WalletManager walletManager)
         {
             this.Log = logger.CreateLogChannel("character");
             this.mConfiguration = configuration;
             this.DB = db;
             this.ChatDB = chatDB;
+            this.CorporationDB = corporationDB;
             this.ItemFactory = itemFactory;
             this.CacheStorage = cacheStorage;
             this.Container = container;
@@ -425,16 +427,25 @@ namespace Node.Services.Characters
             {
                 call.Client.StationID = character.StationID;
             }
+            
+            // get title roles and mask them with the current roles to ensure the user has proper roles
+            this.CorporationDB.GetTitleRoles(character.CorporationID, character.TitleMask,
+                out long roles, out long rolesAtHQ, out long rolesAtBase, out long rolesAtOther,
+                out long grantableRoles, out long grantableRolesAtHQ, out long grantableRolesAtBase,
+                out long grantableRolesAtOther
+            );
+            
+            call.Client.CorporationRole = character.Roles | roles;
+            call.Client.RolesAtAll = character.Roles | character.RolesAtBase | character.RolesAtOther | character.RolesAtHq | roles | rolesAtHQ | rolesAtBase | rolesAtOther;
+            call.Client.RolesAtBase = character.RolesAtBase | rolesAtBase;
+            call.Client.RolesAtHQ = character.RolesAtHq | rolesAtHQ;
+            call.Client.RolesAtOther = character.RolesAtOther | rolesAtOther;
 
+            // set the rest of the important locations
             call.Client.SolarSystemID2 = character.SolarSystemID;
             call.Client.ConstellationID = character.ConstellationID;
             call.Client.RegionID = character.RegionID;
             call.Client.HQID = 0;
-            call.Client.CorporationRole = character.Roles;
-            call.Client.RolesAtAll = character.Roles | character.RolesAtBase | character.RolesAtOther | character.RolesAtHq;
-            call.Client.RolesAtBase = character.RolesAtBase;
-            call.Client.RolesAtHQ = character.RolesAtHq;
-            call.Client.RolesAtOther = character.RolesAtOther;
             call.Client.ShipID = character.LocationID;
             call.Client.RaceID = this.mAncestriesCache[character.AncestryID].Bloodline.RaceID;
             

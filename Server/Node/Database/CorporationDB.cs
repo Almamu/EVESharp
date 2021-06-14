@@ -564,7 +564,7 @@ namespace Node.Database
         public Rowset GetMemberTrackingInfoSimple(int corporationID)
         {
             return Database.PrepareRowsetQuery(
-                "SELECT characterID, IF(online = 1, -1, IF(lastOnline = 0, NULL, (@currentTicks - lastOnline) / @ticksPerHour)) AS lastOnline FROM chrInformation WHERE corporationID = @corporationID",
+                "SELECT characterID, title, baseID, IF(online = 1, -1, IF(lastOnline = 0, NULL, (@currentTicks - lastOnline) / @ticksPerHour)) AS lastOnline FROM chrInformation WHERE corporationID = @corporationID",
                 new Dictionary<string, object>()
                 {
                     {"@corporationID", corporationID},
@@ -980,6 +980,81 @@ namespace Node.Database
                     {"@corporationID", corporationID}
                 }
             );
+        }
+
+        public void UpdateTitle(int corporationID, int titleID, string titleName, long roles, long grantableRoles,
+            long rolesAtHQ, long grantableRolesAtHQ, long rolesAtBase, long grantableRolesAtBase, long rolesAtOther,
+            long grantableRolesAtOther)
+        {
+            Database.PrepareQuery(
+                "REPLACE INTO crpTitles(corporationID, titleID, titleName, roles, grantableRoles, rolesAtHQ, grantableRolesAtHQ, rolesAtBase, grantableRolesAtBase, rolesAtOther, grantableRolesAtOther)VALUES(@corporationID, @titleID, @titleName, @roles, @grantableRoles, @rolesAtHQ, @grantableRolesAtHQ, @rolesAtBase, @grantableRolesAtBase, @rolesAtOther, @grantableRolesAtOther)",
+                new Dictionary<string, object>()
+                {
+                    {"@corporationID", corporationID},
+                    {"@titleID", titleID},
+                    {"@titleName", titleName},
+                    {"@roles", roles},
+                    {"@grantableRoles", grantableRoles},
+                    {"@rolesAtHQ", rolesAtHQ},
+                    {"@grantableRolesAtHQ", grantableRolesAtHQ},
+                    {"@rolesAtBase", rolesAtBase},
+                    {"@grantableRolesAtBase", grantableRolesAtBase},
+                    {"@rolesAtOther", rolesAtOther},
+                    {"@grantableRolesAtOther", grantableRolesAtOther}
+                }
+            );
+        }
+
+        /// <summary>
+        /// Gets the effective roles for the given titleMask
+        /// </summary>
+        /// <param name="corporationID">The corporation to fetch the roles from</param>
+        /// <param name="titleMask">The list of titles to get the roles from</param>
+        /// <param name="roles"></param>
+        /// <param name="rolesAtHQ"></param>
+        /// <param name="rolesAtBase"></param>
+        /// <param name="rolesAtOther"></param>
+        /// <param name="grantableRoles"></param>
+        /// <param name="grantableRolesAtHQ"></param>
+        /// <param name="grantableRolesAtBase"></param>
+        /// <param name="grantableRolesAtOther"></param>
+        public void GetTitleRoles(int corporationID, long titleMask, out long roles, out long rolesAtHQ, out long rolesAtBase, out long rolesAtOther, out long grantableRoles, out long grantableRolesAtHQ, out long grantableRolesAtBase, out long grantableRolesAtOther)
+        {
+            MySqlConnection connection = null;
+            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+                "SELECT roles, grantableRoles, rolesAtHQ, grantableRolesAtHQ, rolesAtBase, grantableRolesAtBase, rolesAtOther, grantableRolesAtOther FROM crpTitles WHERE corporationID = @corporationID AND titleID & @titleMask > 0",
+                new Dictionary<string, object>()
+                {
+                    {"@corporationID", corporationID},
+                    {"@titleMask", titleMask}
+                }
+            );
+            
+            using (connection)
+            using (reader)
+            {
+                // set roles to a default, 0 value first
+                roles = 0;
+                rolesAtHQ = 0;
+                rolesAtBase = 0;
+                rolesAtOther = 0;
+                grantableRoles = 0;
+                grantableRolesAtBase = 0;
+                grantableRolesAtOther = 0;
+                grantableRolesAtHQ = 0;
+                
+                while (reader.Read() == true)
+                {
+                    roles |= reader.GetInt64(0);
+                    grantableRoles |= reader.GetInt64(1);
+                    rolesAtHQ |= reader.GetInt64(2);
+                    grantableRolesAtHQ |= reader.GetInt64(3);
+                    rolesAtBase |= reader.GetInt64(4);
+                    grantableRolesAtBase |= reader.GetInt64(5);
+                    rolesAtOther |= reader.GetInt64(6);
+                    grantableRolesAtOther |= reader.GetInt64(7);
+                }
+            }
         }
 
         public CorporationDB(ItemDB itemDB, DatabaseConnection db) : base(db)

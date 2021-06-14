@@ -268,7 +268,7 @@ namespace Node.Services.Corporations
         public PyDataType GetMemberTrackingInfo(PyInteger characterID, CallInformation call)
         {
             // only directors can call this function
-            if (this.mCorporation.CeoID != call.Client.CharacterID)
+            if (CorporationRole.Director.Is(call.Client.CorporationRole) == false)
                 return null;
             
             return this.DB.GetMemberTrackingInfo(call.Client.CorporationID, characterID);
@@ -421,7 +421,10 @@ namespace Node.Services.Corporations
                     character.RolesAtHq = long.MaxValue;
                     character.RolesAtOther = long.MaxValue;
                     // ensure the database reflects these changes
-                    this.CharacterDB.UpdateCharacterRoles(character.ID, long.MaxValue, long.MaxValue, long.MaxValue, long.MaxValue, long.MaxValue, long.MaxValue, long.MaxValue, long.MaxValue);
+                    this.CharacterDB.UpdateCharacterRoles(
+                        character.ID, long.MaxValue, long.MaxValue, long.MaxValue,
+                        long.MaxValue, long.MaxValue, long.MaxValue, long.MaxValue, long.MaxValue, long.MaxValue
+                    );
                     character.CorporationDateTime = DateTime.UtcNow.ToFileTimeUtc();
                     // notify cluster about the corporation changes
                     this.NotificationManager.NotifyCorporation(change.OldCorporationID, change);
@@ -709,7 +712,7 @@ namespace Node.Services.Corporations
                     new OnCorporationMemberUpdated(
                         characterID, roles, currentGrantableRoles, rolesAtHQ, currentGrantableRolesAtHQ,
                         rolesAtBase, currentGrantableRolesAtBase, rolesAtOther, currentGrantableRolesAtOther, currentBaseID,
-                        blockRoles == 1
+                        blockRoles == 1, character.TitleMask
                     )
                 );
                 
@@ -743,15 +746,19 @@ namespace Node.Services.Corporations
                 rolesAtOther = long.MaxValue;
             }
             
-            // store the new roles
-            this.CharacterDB.UpdateCharacterRoles(characterID, roles, rolesAtHQ, rolesAtBase, rolesAtOther,
-                grantableRoles, grantableRolesAtHQ, grantableRolesAtBase, grantableRolesAtOther);
+            // store the new roles and title mask
+            this.CharacterDB.UpdateCharacterRoles(
+                characterID, roles, rolesAtHQ, rolesAtBase, rolesAtOther,
+                grantableRoles, grantableRolesAtHQ, grantableRolesAtBase, grantableRolesAtOther, titleMask ?? 0
+            );
             
+            // let the sparse rowset know that a change was done, this should refresh the character information
+
             // notify the node about the changes
             this.NotificationManager.NotifyNode(
                 this.ItemFactory.ItemDB.GetItemNode(characterID),
                 new OnCorporationMemberUpdated(characterID, roles, grantableRoles, rolesAtHQ, grantableRolesAtHQ,
-                    rolesAtBase, grantableRolesAtBase, rolesAtOther, grantableRolesAtOther, baseID, currentBlockRoles)
+                    rolesAtBase, grantableRolesAtBase, rolesAtOther, grantableRolesAtOther, baseID, currentBlockRoles, titleMask ?? 0)
             );
 
             // check if the character is connected and update it's session
@@ -759,11 +766,18 @@ namespace Node.Services.Corporations
             if (this.ClientManager.TryGetClientByCharacterID(characterID, out Client client) == false)
                 return null;
 
+            // get the title roles and calculate current roles for the session
+            this.DB.GetTitleRoles(character.CorporationID, character.TitleMask,
+                out long titleRoles, out long titleRolesAtHQ, out long titleRolesAtBase, out long titleRolesAtOther,
+                out long titleGrantableRoles, out long titleGrantableRolesAtHQ, out long titleGrantableRolesAtBase,
+                out long titleGrantableRolesAtOther
+            );
+            
             // update the roles on the session and send the session change to the player
-            client.CorporationRole = roles;
-            client.RolesAtOther = rolesAtOther;
-            client.RolesAtHQ = rolesAtHQ;
-            client.RolesAtBase = rolesAtBase;
+            client.CorporationRole = roles | titleRoles;
+            client.RolesAtOther = rolesAtOther | titleRolesAtOther;
+            client.RolesAtHQ = rolesAtHQ | titleRolesAtHQ;
+            client.RolesAtBase = rolesAtBase | titleRolesAtBase;
             client.RolesAtAll = client.CorporationRole | client.RolesAtOther | client.RolesAtHQ | client.RolesAtBase;
             client.SendSessionChange();
             
@@ -819,6 +833,86 @@ namespace Node.Services.Corporations
             this.NotificationManager.NotifyStation(stationID, changes);
             
             return null;
+        }
+
+        public PyDataType UpdateTitles(PyObjectData rowset, CallInformation call)
+        {
+            // ensure the character has the director role
+            if (CorporationRole.Director.Is(call.Client.CorporationRole) == false)
+                throw new CrpAccessDenied(MLS.UI_CORP_DO_NOT_HAVE_ROLE_DIRECTOR);
+            
+            Rowset list = rowset;
+            
+            // update the changed titles first
+            foreach (PyList entry in list.Rows)
+            {
+                // titleID, titleName, roles, grantableRoles, rolesAtHQ, grantableRolesAtHQ, rolesAtBase, grantableRolesAtBase, rolesAtOther, grantableRolesAtOther
+                int titleID = entry[0] as PyInteger;
+                string newName = entry[1] as PyString;
+                long roles = entry[2] as PyInteger;
+                long grantableRoles = entry[3] as PyInteger;
+                long rolesAtHQ = entry[4] as PyInteger;
+                long grantableRolesAtHQ = entry[5] as PyInteger;
+                long rolesAtBase = entry[6] as PyInteger;
+                long grantableRolesAtBase = entry[7] as PyInteger;
+                long rolesAtOther = entry[8] as PyInteger;
+                long grantableRolesAtOther = entry[9] as PyInteger;
+
+                this.DB.UpdateTitle(call.Client.CorporationID, titleID, newName, roles, grantableRoles, rolesAtHQ,
+                    grantableRolesAtHQ, rolesAtBase, grantableRolesAtBase, rolesAtOther, grantableRolesAtOther);
+                
+                // notify everyone about the title change
+                this.NotificationManager.NotifyCorporation(
+                    call.Client.CorporationID,
+                    new OnTitleChanged(call.Client.CorporationID, titleID)
+                        .AddChange("titleName", null, newName)
+                        .AddChange("roles", null, roles)
+                        .AddChange("grantableRoles", null, grantableRoles)
+                        .AddChange("rolesAtHQ", null, rolesAtHQ)
+                        .AddChange("grantableRolesAtHQ", null, grantableRolesAtHQ)
+                        .AddChange("rolesAtBase", null, rolesAtBase)
+                        .AddChange("grantableRolesAtBase", null, grantableRolesAtBase)
+                        .AddChange("rolesAtOther", null, rolesAtOther)
+                        .AddChange("grantableRolesAtOther", null, grantableRolesAtOther)
+                );
+            }
+            
+            // get all the players online for this corporation
+            if (this.ClientManager.TryGetClientsByCorporationID(call.Client.CorporationID, out List<Client> clients) == true)
+            {
+                foreach (Client client in clients)
+                {
+                    // characterID should never be null here
+                    long titleMask = this.DB.GetTitleMaskForCharacter((int) client.CharacterID, client.CorporationID);
+                    
+                    // get the title roles and calculate current roles for the session
+                    this.DB.GetTitleRoles(client.CorporationID, titleMask,
+                        out long titleRoles, out long titleRolesAtHQ, out long titleRolesAtBase, out long titleRolesAtOther,
+                        out long titleGrantableRoles, out long titleGrantableRolesAtHQ, out long titleGrantableRolesAtBase,
+                        out long titleGrantableRolesAtOther
+                    );
+                    this.CharacterDB.GetCharacterRoles((int) client.CharacterID,
+                        out long characterRoles, out long characterRolesAtBase, out long characterRolesAtHQ,  out long characterRolesAtOther,
+                        out long characterGrantableRoles, out long characterGrantableRolesAtBase, out long characterGrantableRolesAtHQ, 
+                        out long characterGrantableRolesAtOther, out _, out _);
+            
+                    // update the roles on the session and send the session change to the player
+                    client.CorporationRole = characterRoles | titleRoles;
+                    client.RolesAtOther = characterRolesAtOther | titleRolesAtOther;
+                    client.RolesAtHQ = characterRolesAtHQ | titleRolesAtHQ;
+                    client.RolesAtBase = characterRolesAtBase | titleRolesAtBase;
+                    client.RolesAtAll = client.CorporationRole | client.RolesAtOther | client.RolesAtHQ | client.RolesAtBase;
+                    client.SendSessionChange();
+                }
+            }
+            
+            return null;
+        }
+
+        public PyDataType CanViewVotes(PyInteger corporationID, CallInformation call)
+        {
+            // TODO: CHECK SHARES ON THE CORPORATION ID AND DETERMINE IF THE PLAYER CAN VIEW THE VOTES OR NOT
+            return false;
         }
 
         protected override long MachoResolveObject(ServiceBindParams parameters, CallInformation call)

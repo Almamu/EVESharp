@@ -914,10 +914,10 @@ namespace Node.Database
         }
 
         public void UpdateCharacterRoles(int characterID, long roles, long rolesAtHQ, long rolesAtBase, long rolesAtOther,
-            long grantableRoles, long grantableRolesAtHQ, long grantableRolesAtBase, long grantableRolesAtOther)
+            long grantableRoles, long grantableRolesAtHQ, long grantableRolesAtBase, long grantableRolesAtOther, long titleMask)
         {
             Database.PrepareQuery(
-                "UPDATE chrInformation SET roles = @roles, rolesAtBase = @rolesAtBase, rolesAtHQ = @rolesAtHQ, rolesAtOther = @rolesAtOther, grantableRoles = @grantableRoles, grantableRolesAtBase = @grantableRolesAtBase, grantableRolesAtHQ = @grantableRolesAtHQ, grantableRolesAtOther = @grantableRolesAtOther WHERE characterID = @characterID",
+                "UPDATE chrInformation SET roles = @roles, rolesAtBase = @rolesAtBase, rolesAtHQ = @rolesAtHQ, rolesAtOther = @rolesAtOther, grantableRoles = @grantableRoles, grantableRolesAtBase = @grantableRolesAtBase, grantableRolesAtHQ = @grantableRolesAtHQ, grantableRolesAtOther = @grantableRolesAtOther, titleMask = @titleMask WHERE characterID = @characterID",
                 new Dictionary<string, object>()
                 {
                     {"@characterID", characterID},
@@ -928,7 +928,8 @@ namespace Node.Database
                     {"@grantableRoles", grantableRoles},
                     {"@grantableRolesAtBase", grantableRolesAtBase},
                     {"@grantableRolesAtOther", grantableRolesAtOther},
-                    {"@grantableRolesAtHQ", grantableRolesAtHQ}
+                    {"@grantableRolesAtHQ", grantableRolesAtHQ},
+                    {"@titleMask", titleMask}
                 }
             );
         }

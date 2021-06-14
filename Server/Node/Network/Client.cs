@@ -73,7 +73,7 @@ namespace Node.Network
         /// <summary>
         /// Event handler for when a client's session is updated
         /// </summary>
-        public event EventHandler<ClientEventArgs> OnSessionUpdateEvent;
+        public event EventHandler<ClientSessionEventArgs> OnSessionUpdateEvent;
 
         public Client(NodeContainer container, ClusterConnection clusterConnection, ServiceManager serviceManager,
             TimerManager timerManager, ItemFactory itemFactory, CharacterManager characterManager,
@@ -231,9 +231,10 @@ namespace Node.Network
                 // normalize the values in the session
                 this.mSession.LoadChanges(differences);
                 // handle the differencies
-                this.HandleSessionDifferencies(new Session(differences.GetEnumerable<PyString, PyTuple>()));
+                Session sessionDiff = new Session(differences.GetEnumerable<PyString, PyTuple>());
+                this.HandleSessionDifferencies(sessionDiff);
                 // call any events that listen for our session changes
-                this.OnSessionUpdateEvent?.Invoke(this, new ClientEventArgs { Client = this });
+                this.OnSessionUpdateEvent?.Invoke(this, new ClientSessionEventArgs { Client = this, Session = sessionDiff});
             }
         }
 
@@ -241,7 +242,7 @@ namespace Node.Network
         /// Creates a session change notification including only the last changes to the session
         /// </summary>
         /// <param name="container">Information about the current node the client is in</param>
-        /// <returns>The packet ready to be sent</returns>
+        /// <returns>The packet ready to be sent or null if no change is detected on the session</returns>
         private PyPacket CreateEmptySessionChange(NodeContainer container)
         {
             // Fill all the packet data, except the dest/source
@@ -283,7 +284,8 @@ namespace Node.Network
             PyPacket sessionChangeNotification = this.CreateEmptySessionChange(this.Container);
             
             // and finally send the client the required data
-            this.ClusterConnection.Send(sessionChangeNotification);
+            if (sessionChangeNotification is not null)
+                this.ClusterConnection.Send(sessionChangeNotification);
         }
 
         public Session Session => this.mSession;
