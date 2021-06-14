@@ -111,19 +111,19 @@ namespace Node.Services.Account
             // build a list of divisions the user can access
             List<int> walletKeys = new List<int>();
 
-            if (CorporationRole.AccountCanQuery1.Is(call.Client.CorporationRole) == true)
+            if (CorporationRole.AccountCanQuery1.Is(call.Client.CorporationRole) == true || CorporationRole.Accountant.Is(call.Client.CorporationRole) == true)
                 walletKeys.Add(1000);
-            if (CorporationRole.AccountCanQuery2.Is(call.Client.CorporationRole) == true)
+            if (CorporationRole.AccountCanQuery2.Is(call.Client.CorporationRole) == true || CorporationRole.Accountant.Is(call.Client.CorporationRole) == true)
                 walletKeys.Add(1001);
-            if (CorporationRole.AccountCanQuery3.Is(call.Client.CorporationRole) == true)
+            if (CorporationRole.AccountCanQuery3.Is(call.Client.CorporationRole) == true || CorporationRole.Accountant.Is(call.Client.CorporationRole) == true)
                 walletKeys.Add(1002);
-            if (CorporationRole.AccountCanQuery4.Is(call.Client.CorporationRole) == true)
+            if (CorporationRole.AccountCanQuery4.Is(call.Client.CorporationRole) == true || CorporationRole.Accountant.Is(call.Client.CorporationRole) == true)
                 walletKeys.Add(1003);
-            if (CorporationRole.AccountCanQuery5.Is(call.Client.CorporationRole) == true)
+            if (CorporationRole.AccountCanQuery5.Is(call.Client.CorporationRole) == true || CorporationRole.Accountant.Is(call.Client.CorporationRole) == true)
                 walletKeys.Add(1004);
-            if (CorporationRole.AccountCanQuery6.Is(call.Client.CorporationRole) == true)
+            if (CorporationRole.AccountCanQuery6.Is(call.Client.CorporationRole) == true || CorporationRole.Accountant.Is(call.Client.CorporationRole) == true)
                 walletKeys.Add(1005);
-            if (CorporationRole.AccountCanQuery7.Is(call.Client.CorporationRole) == true)
+            if (CorporationRole.AccountCanQuery7.Is(call.Client.CorporationRole) == true || CorporationRole.Accountant.Is(call.Client.CorporationRole) == true)
                 walletKeys.Add(1006);
 
             return this.WalletDB.GetWalletDivisionsForOwner(call.Client.CorporationID, walletKeys);

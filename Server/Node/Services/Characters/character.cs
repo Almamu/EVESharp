@@ -429,10 +429,10 @@ namespace Node.Services.Characters
             }
             
             // get title roles and mask them with the current roles to ensure the user has proper roles
-            this.CorporationDB.GetTitleRoles(character.CorporationID, character.TitleMask,
+            this.CorporationDB.GetTitleInformation(character.CorporationID, character.TitleMask,
                 out long roles, out long rolesAtHQ, out long rolesAtBase, out long rolesAtOther,
                 out long grantableRoles, out long grantableRolesAtHQ, out long grantableRolesAtBase,
-                out long grantableRolesAtOther
+                out long grantableRolesAtOther, out _
             );
             
             call.Client.CorporationRole = character.Roles | roles;

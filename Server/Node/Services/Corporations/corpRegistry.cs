@@ -579,6 +579,8 @@ namespace Node.Services.Corporations
         public PyDataType SetAccountKey(PyInteger accountKey, CallInformation call)
         {
             // check if the character has any accounting roles and set the correct accountKey based on the data
+            if (CorporationRole.Accountant.Is(call.Client.CorporationRole) == true)
+                call.Client.CorpAccountKey = accountKey;
             if (CorporationRole.AccountCanTake1.Is(call.Client.CorporationRole) && accountKey == 1000)
                 call.Client.CorpAccountKey = 1000;
             if (CorporationRole.AccountCanTake2.Is(call.Client.CorporationRole) && accountKey == 1001)
@@ -767,10 +769,10 @@ namespace Node.Services.Corporations
                 return null;
 
             // get the title roles and calculate current roles for the session
-            this.DB.GetTitleRoles(character.CorporationID, character.TitleMask,
+            this.DB.GetTitleInformation(character.CorporationID, character.TitleMask,
                 out long titleRoles, out long titleRolesAtHQ, out long titleRolesAtBase, out long titleRolesAtOther,
                 out long titleGrantableRoles, out long titleGrantableRolesAtHQ, out long titleGrantableRolesAtBase,
-                out long titleGrantableRolesAtOther
+                out long titleGrantableRolesAtOther, out _
             );
             
             // update the roles on the session and send the session change to the player
@@ -857,7 +859,15 @@ namespace Node.Services.Corporations
                 long grantableRolesAtBase = entry[7] as PyInteger;
                 long rolesAtOther = entry[8] as PyInteger;
                 long grantableRolesAtOther = entry[9] as PyInteger;
+                
+                // get previous roles first
+                this.DB.GetTitleInformation(call.Client.CorporationID, titleID,
+                    out long titleRoles, out long titleRolesAtHQ, out long titleRolesAtBase, out long titleRolesAtOther,
+                    out long titleGrantableRoles, out long titleGrantableRolesAtHQ, out long titleGrantableRolesAtBase,
+                    out long titleGrantableRolesAtOther, out string titleName
+                );
 
+                // store the new information
                 this.DB.UpdateTitle(call.Client.CorporationID, titleID, newName, roles, grantableRoles, rolesAtHQ,
                     grantableRolesAtHQ, rolesAtBase, grantableRolesAtBase, rolesAtOther, grantableRolesAtOther);
                 
@@ -865,15 +875,15 @@ namespace Node.Services.Corporations
                 this.NotificationManager.NotifyCorporation(
                     call.Client.CorporationID,
                     new OnTitleChanged(call.Client.CorporationID, titleID)
-                        .AddChange("titleName", null, newName)
-                        .AddChange("roles", null, roles)
-                        .AddChange("grantableRoles", null, grantableRoles)
-                        .AddChange("rolesAtHQ", null, rolesAtHQ)
-                        .AddChange("grantableRolesAtHQ", null, grantableRolesAtHQ)
-                        .AddChange("rolesAtBase", null, rolesAtBase)
-                        .AddChange("grantableRolesAtBase", null, grantableRolesAtBase)
-                        .AddChange("rolesAtOther", null, rolesAtOther)
-                        .AddChange("grantableRolesAtOther", null, grantableRolesAtOther)
+                        .AddChange("titleName", titleName, newName)
+                        .AddChange("roles", titleRoles, roles)
+                        .AddChange("grantableRoles", titleGrantableRoles, grantableRoles)
+                        .AddChange("rolesAtHQ", titleRolesAtHQ, rolesAtHQ)
+                        .AddChange("grantableRolesAtHQ", titleGrantableRolesAtHQ, grantableRolesAtHQ)
+                        .AddChange("rolesAtBase", titleRolesAtBase, rolesAtBase)
+                        .AddChange("grantableRolesAtBase", titleGrantableRolesAtBase, grantableRolesAtBase)
+                        .AddChange("rolesAtOther", titleRolesAtOther, rolesAtOther)
+                        .AddChange("grantableRolesAtOther", titleGrantableRolesAtOther, grantableRolesAtOther)
                 );
             }
             
@@ -886,10 +896,10 @@ namespace Node.Services.Corporations
                     long titleMask = this.DB.GetTitleMaskForCharacter((int) client.CharacterID, client.CorporationID);
                     
                     // get the title roles and calculate current roles for the session
-                    this.DB.GetTitleRoles(client.CorporationID, titleMask,
+                    this.DB.GetTitleInformation(client.CorporationID, titleMask,
                         out long titleRoles, out long titleRolesAtHQ, out long titleRolesAtBase, out long titleRolesAtOther,
                         out long titleGrantableRoles, out long titleGrantableRolesAtHQ, out long titleGrantableRolesAtBase,
-                        out long titleGrantableRolesAtOther
+                        out long titleGrantableRolesAtOther, out _
                     );
                     this.CharacterDB.GetCharacterRoles((int) client.CharacterID,
                         out long characterRoles, out long characterRolesAtBase, out long characterRolesAtHQ,  out long characterRolesAtOther,

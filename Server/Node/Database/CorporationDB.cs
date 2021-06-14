@@ -1018,11 +1018,12 @@ namespace Node.Database
         /// <param name="grantableRolesAtHQ"></param>
         /// <param name="grantableRolesAtBase"></param>
         /// <param name="grantableRolesAtOther"></param>
-        public void GetTitleRoles(int corporationID, long titleMask, out long roles, out long rolesAtHQ, out long rolesAtBase, out long rolesAtOther, out long grantableRoles, out long grantableRolesAtHQ, out long grantableRolesAtBase, out long grantableRolesAtOther)
+        /// <param name="titleName"></param>
+        public void GetTitleInformation(int corporationID, long titleMask, out long roles, out long rolesAtHQ, out long rolesAtBase, out long rolesAtOther, out long grantableRoles, out long grantableRolesAtHQ, out long grantableRolesAtBase, out long grantableRolesAtOther, out string titleName)
         {
             MySqlConnection connection = null;
             MySqlDataReader reader = Database.PrepareQuery(ref connection,
-                "SELECT roles, grantableRoles, rolesAtHQ, grantableRolesAtHQ, rolesAtBase, grantableRolesAtBase, rolesAtOther, grantableRolesAtOther FROM crpTitles WHERE corporationID = @corporationID AND titleID & @titleMask > 0",
+                "SELECT roles, grantableRoles, rolesAtHQ, grantableRolesAtHQ, rolesAtBase, grantableRolesAtBase, rolesAtOther, grantableRolesAtOther, titleName FROM crpTitles WHERE corporationID = @corporationID AND titleID & @titleMask > 0",
                 new Dictionary<string, object>()
                 {
                     {"@corporationID", corporationID},
@@ -1042,6 +1043,7 @@ namespace Node.Database
                 grantableRolesAtBase = 0;
                 grantableRolesAtOther = 0;
                 grantableRolesAtHQ = 0;
+                titleName = "";
                 
                 while (reader.Read() == true)
                 {
@@ -1053,6 +1055,7 @@ namespace Node.Database
                     grantableRolesAtBase |= reader.GetInt64(5);
                     rolesAtOther |= reader.GetInt64(6);
                     grantableRolesAtOther |= reader.GetInt64(7);
+                    titleName = reader.GetString(8);
                 }
             }
         }
