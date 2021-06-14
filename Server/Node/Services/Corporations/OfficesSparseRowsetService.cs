@@ -39,7 +39,7 @@ namespace Node.Services.Corporations
             return this.DB.GetOffices(columnName, values.GetEnumerable<PyInteger>(), this.Corporation.ID, this.RowsetHeader, this.RowsIndex);
         }
 
-        public override void SendOnObjectChanged(int primaryKey)
+        public override void SendOnObjectChanged(PyDataType primaryKey, PyDictionary<PyString, PyTuple> changes, PyDictionary notificationParams = null)
         {
             throw new System.NotImplementedException();
         }

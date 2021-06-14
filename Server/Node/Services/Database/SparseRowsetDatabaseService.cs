@@ -13,7 +13,13 @@ namespace Node.Services.Database
         public abstract PyDataType Fetch(PyInteger startPos, PyInteger fetchSize, CallInformation call);
         public abstract PyDataType FetchByKey(PyList keyList, CallInformation call);
         public abstract PyDataType SelectByUniqueColumnValues(PyString columnName, PyList values, CallInformation call);
-        public abstract void SendOnObjectChanged(int primaryKey);
+        
+        /// <summary>
+        /// Notifies consumers of this SparseRowset that something in the list has changed
+        /// </summary>
+        /// <param name="primaryKey">The record that has changed</param>
+        /// <param name="notificationParams">Extra parameters for the notification if needed</param>
+        public abstract void SendOnObjectChanged(PyDataType primaryKey, PyDictionary<PyString, PyTuple> changes, PyDictionary notificationParams = null);
 
         protected SparseRowsetDatabaseService(SparseRowsetHeader rowsetHeader, BoundServiceManager manager, Client client) : base(manager, 0)
         {
@@ -48,6 +54,21 @@ namespace Node.Services.Database
             };
 
             return new PySubStruct(new PySubStream(boundServiceInformation));
+        }
+
+        /// <summary>
+        /// Ensures the client is registered in the list
+        /// </summary>
+        /// <param name="client">Client to register</param>
+        public void BindToClient(Client client)
+        {
+            if (this.Clients.Contains(client) == false)
+            {
+                this.Clients.Add(client);
+
+                // register the on client disconnect event
+                client.OnClientDisconnectedEvent += this.OnClientDisconnectedHandler;    
+            }
         }
     }
 }

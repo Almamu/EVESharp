@@ -24,6 +24,7 @@ namespace Node.Network
         public MultiClientBoundService(BoundServiceManager manager) : base(manager)
         {
             this.mRegisteredServices = new Dictionary<int, MultiClientBoundService>();
+            this.Clients = new List<Client>();
         }
 
         public MultiClientBoundService(MultiClientBoundService parent, int objectID) : base(parent.BoundServiceManager, objectID)
@@ -34,6 +35,7 @@ namespace Node.Network
 
         public MultiClientBoundService(BoundServiceManager manager, int objectID) : base(manager, objectID)
         {
+            this.Clients = new List<Client>();
         }
 
         /// <summary>

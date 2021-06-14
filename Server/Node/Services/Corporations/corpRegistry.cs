@@ -200,10 +200,13 @@ namespace Node.Services.Corporations
             
                 // create a service for handling it's calls
                 this.MembersSparseRowset =
-                    new MembersSparseRowsetService(this.Corporation, this.DB, rowsetHeader, this.BoundServiceManager, call.Client);
+                    new MembersSparseRowsetService(this.Corporation, this.DB, rowsetHeader, this.NotificationManager, this.BoundServiceManager, call.Client);
 
                 rowsetHeader.BoundObjectIdentifier = this.MembersSparseRowset.MachoBindObject(dict, call.Client);
             }
+            
+            // ensure the bound service knows that this client is bound to it
+            this.MembersSparseRowset.BindToClient(call.Client);
             
             // finally return the data
             return this.MembersSparseRowset.RowsetHeader;
@@ -227,6 +230,9 @@ namespace Node.Services.Corporations
 
                 rowsetHeader.BoundObjectIdentifier = this.OfficesSparseRowset.MachoBindObject(dict, call.Client);
             }
+            
+            // ensure the bound service knows that this client is bound to it
+            this.OfficesSparseRowset.BindToClient(call.Client);
             
             // finally return the data
             return this.OfficesSparseRowset.RowsetHeader;
@@ -755,6 +761,29 @@ namespace Node.Services.Corporations
             );
             
             // let the sparse rowset know that a change was done, this should refresh the character information
+            if (this.MembersSparseRowset is not null)
+            {
+                PyDictionary<PyString, PyTuple> changes = new PyDictionary<PyString, PyTuple>()
+                {
+                    ["roles"] = new PyTuple(2) {[0] = null, [1] = roles},
+                    ["rolesAtHQ"] = new PyTuple(2) {[0] = null, [1] = rolesAtHQ},
+                    ["rolesAtBase"] = new PyTuple(2) {[0] = null, [1] = rolesAtBase},
+                    ["rolesAtOther"] = new PyTuple(2) {[0] = null, [1] = rolesAtOther},
+                    ["grantableRoles"] = new PyTuple(2) {[0] = null, [1] = grantableRoles},
+                    ["grantableRolesAtHQ"] = new PyTuple(2) {[0] = null, [1] = grantableRolesAtHQ},
+                    ["grantableRolesAtBase"] = new PyTuple(2) {[0] = null, [1] = grantableRolesAtBase},
+                    ["grantableRolesAtOther"] = new PyTuple(2) {[0] = null, [1] = grantableRolesAtOther},
+                    ["baseID"] = new PyTuple(2) {[0] = null, [1] = baseID}
+                };
+
+                if (titleMask is not null)
+                    changes["titleMask"] = new PyTuple(2) {[0] = null, [1] = titleMask};
+
+                if (blockRoles is not null)
+                    changes["blockRoles"] = new PyTuple(2) {[0] = null, [1] = blockRoles};
+                    
+                this.MembersSparseRowset.SendOnObjectChanged(characterID, changes);
+            }
 
             // notify the node about the changes
             this.NotificationManager.NotifyNode(
