@@ -24,6 +24,7 @@
 
 using System;
 using System.Threading;
+using System.Threading.Tasks;
 using Common.Database;
 using Common.Logging;
 using Common.Logging.Streams;
@@ -59,13 +60,49 @@ namespace Node
 {
     class Program
     {
+        static async Task InitializeItemFactory(Channel logChannel, Container dependencies)
+        {
+            await Task.Run(() =>
+            {
+                logChannel.Info("Initializing item factory");
+                dependencies.GetInstance<ItemFactory>().Init();
+                logChannel.Debug("Item Factory Initialized");
+            });
+        }
+
+        static async Task InitializeCache(Channel logChannel, Container dependencies)
+        {
+            await Task.Run(() =>
+            {
+                logChannel.Info("Initializing cache");
+                CacheStorage cacheStorage = dependencies.GetInstance<CacheStorage>();
+                // prime bulk data
+                cacheStorage.Load(
+                    CacheStorage.LoginCacheTable,
+                    CacheStorage.LoginCacheQueries,
+                    CacheStorage.LoginCacheTypes
+                );
+                // prime character creation cache
+                cacheStorage.Load(
+                    CacheStorage.CreateCharacterCacheTable,
+                    CacheStorage.CreateCharacterCacheQueries,
+                    CacheStorage.CreateCharacterCacheTypes
+                );
+                // prime character appearance cache
+                cacheStorage.Load(
+                    CacheStorage.CharacterAppearanceCacheTable,
+                    CacheStorage.CharacterAppearanceCacheQueries,
+                    CacheStorage.CharacterAppearanceCacheTypes
+                );
+                logChannel.Info("Cache Initialized");
+            });
+        }
+        
         static void Main(string[] argv)
         {
             Channel logChannel = null;
             Logger log = null;
             Thread logFlushing = null;
-            Semaphore cacheSemaphore = new Semaphore(0, 1);
-            Semaphore itemSemaphore = new Semaphore(0, 1);
             
             try
             {
@@ -229,44 +266,11 @@ namespace Node
 
                 // do some parallel initialization, cache priming and static item loading can be performed in parallel
                 // this makes the changes quicker
-                new Thread(() =>
-                {
-                    logChannel.Info("Initializing cache");
-                    CacheStorage cacheStorage = dependencies.GetInstance<CacheStorage>();
-                    // prime bulk data
-                    cacheStorage.Load(
-                        CacheStorage.LoginCacheTable,
-                        CacheStorage.LoginCacheQueries,
-                        CacheStorage.LoginCacheTypes
-                    );
-                    // prime character creation cache
-                    cacheStorage.Load(
-                        CacheStorage.CreateCharacterCacheTable,
-                        CacheStorage.CreateCharacterCacheQueries,
-                        CacheStorage.CreateCharacterCacheTypes
-                    );
-                    // prime character appearance cache
-                    cacheStorage.Load(
-                        CacheStorage.CharacterAppearanceCacheTable,
-                        CacheStorage.CharacterAppearanceCacheQueries,
-                        CacheStorage.CharacterAppearanceCacheTypes
-                    );
-                    logChannel.Info("Cache Initialized");
-                    cacheSemaphore.Release(1);
-                }).Start();
-
-                new Thread(() =>
-                {
-                    logChannel.Info("Initializing item factory");
-                    dependencies.GetInstance<ItemFactory>().Init();
-                    logChannel.Debug("Item Factory Initialized");
-
-                    itemSemaphore.Release(1);
-                }).Start();
+                Task cacheStorage = InitializeCache(logChannel, dependencies);
+                Task itemFactory = InitializeItemFactory(logChannel, dependencies);
                 
-                // wait for both semaphores
-                cacheSemaphore.WaitOne();
-                itemSemaphore.WaitOne();
+                // wait for all the tasks to be done
+                Task.WaitAll(itemFactory, cacheStorage);
                 
                 logChannel.Info("Initializing solar system manager");
                 dependencies.GetInstance<SystemManager>();
