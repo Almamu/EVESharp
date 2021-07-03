@@ -1,11 +1,17 @@
 using System;
+using System.Collections.Generic;
 using Common.Services;
 using EVE;
 using EVE.Packets.Complex;
+using Node.Corporations;
 using Node.Database;
 using Node.Exceptions.corpRegistry;
+using Node.Inventory;
+using Node.Market;
 using Node.Network;
+using Node.Notifications.Client.Wallet;
 using Node.StaticData.Corporation;
+using Node.StaticData.Inventory;
 using PythonTypes.Types.Primitives;
 
 namespace Node.Services.Account
@@ -14,10 +20,17 @@ namespace Node.Services.Account
     {
         private CacheStorage CacheStorage { get; }
         private BillsDB DB { get; init; }
-        public billMgr(CacheStorage cacheStorage, BillsDB db, MachoNet machoNet)
+        private CorporationDB CorporationDB { get; init; }
+        private ItemFactory ItemFactory { get; init; }
+        private NotificationManager NotificationManager { get; init; }
+
+        public billMgr(CacheStorage cacheStorage, BillsDB db, CorporationDB corporationDb, MachoNet machoNet, ItemFactory itemFactory, NotificationManager notificationManager)
         {
             this.CacheStorage = cacheStorage;
             this.DB = db;
+            this.CorporationDB = corporationDb;
+            this.ItemFactory = itemFactory;
+            this.NotificationManager = notificationManager;
 
             machoNet.OnClusterTimer += this.PerformTimedEvents;
         }
@@ -55,9 +68,29 @@ namespace Node.Services.Account
             
             return this.DB.GetCorporationBillsPayable(call.Client.CorporationID);
         }
+
+        public PyDataType PayCorporationBill(PyInteger billID, CallInformation call)
+        {
+            return null;
+        }
+
         public void PerformTimedEvents(object? sender, EventArgs args)
         {
-            
+            List<CorporationOffice> offices = this.CorporationDB.FindOfficesCloseToRenewal();
+
+            foreach (CorporationOffice office in offices)
+            {
+                long dueDate = office.DueDate;
+                int ownerID = this.ItemFactory.Stations[office.StationID].OwnerID;
+                int billID = (int) this.DB.CreateBill(
+                    BillTypes.RentalBill, office.CorporationID, ownerID,
+                    office.PeriodCost, dueDate, 0, (int) Types.OfficeFolder, office.StationID
+                );
+                this.CorporationDB.SetNextBillID(office.CorporationID, office.OfficeID, billID);
+                
+                // notify characters about the new bill
+                this.NotificationManager.NotifyCorporation(office.CorporationID, new OnBillReceived());
+            }
         }
     }
 }

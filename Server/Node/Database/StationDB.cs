@@ -139,10 +139,10 @@ namespace Node.Database
             }
         }
         
-        public void RentOffice(int corporationID, int stationID, int officeFolderID, long dueDate, double periodCost)
+        public void RentOffice(int corporationID, int stationID, int officeFolderID, long dueDate, double periodCost, int nextBillID)
         {
             Database.PrepareQuery(
-                "INSERT INTO crpOffices(corporationID, stationID, officeID, typeID, officeFolderID, startDate, rentPeriodInDays, periodCost)VALUES(@corporationID, @stationID, @officeFolderID, @typeID, @officeFolderID, @startDate, @rentPeriodInDays, @periodCost)",
+                "INSERT INTO crpOffices(corporationID, stationID, officeID, typeID, officeFolderID, startDate, rentPeriodInDays, periodCost, balanceDueDate, nextBillID)VALUES(@corporationID, @stationID, @officeFolderID, @typeID, @officeFolderID, @startDate, @rentPeriodInDays, @periodCost, @dueDate, @nextBillID)",
                 new Dictionary<string, object>()
                 {
                     {"@corporationID", corporationID},
@@ -151,7 +151,9 @@ namespace Node.Database
                     {"@typeID", (int) Types.OfficeFolder},
                     {"@startDate", DateTime.UtcNow.ToFileTimeUtc()},
                     {"@rentPeriodInDays", (DateTime.FromFileTimeUtc (dueDate) - DateTime.UtcNow).TotalDays},
-                    {"@periodCost", periodCost}
+                    {"@periodCost", periodCost},
+                    {"@dueDate", dueDate},
+                    {"@nextBillID", nextBillID}
                 }
             );
         }

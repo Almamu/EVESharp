@@ -11,6 +11,7 @@ using Node.Inventory.Items.Types;
 using Node.Market;
 using Node.Network;
 using Node.Notifications.Client.Corporations;
+using Node.Notifications.Client.Wallet;
 using Node.Services.Account;
 using Node.StaticData;
 using Node.StaticData.Corporation;
@@ -253,6 +254,7 @@ namespace Node.Services.Stations
             // check if there's any office rented by us already
             if (this.StationDB.CorporationHasOfficeRentedAt(call.Client.CorporationID, stationID) == true)
                 throw new RentingOfficeRequestDenied("Your corporation already has an office here!");
+            // RentingOfficeRequestDenied
             int ownerCorporationID = this.ItemFactory.Stations[stationID].OwnerID;
             // perform the transaction
             using (Wallet corpWallet = this.WalletManager.AcquireWallet(call.Client.CorporationID, call.Client.CorpAccountKey))
@@ -266,15 +268,17 @@ namespace Node.Services.Stations
                 stationID, Flags.Office, 1, false, true
             );
             long dueDate = DateTime.UtcNow.AddDays(30).ToFileTimeUtc();
-            // create the record in the database
-            this.StationDB.RentOffice(call.Client.CorporationID, stationID, item.ID, dueDate, rentalCost);
             // create the bill record for the renewal
-            this.BillsDB.CreateBill(
+            int billID = (int) this.BillsDB.CreateBill(
                 BillTypes.RentalBill, call.Client.CorporationID, ownerCorporationID,
                 rentalCost, dueDate, 0, (int) Types.OfficeFolder, stationID
             );
+            // create the record in the database
+            this.StationDB.RentOffice(call.Client.CorporationID, stationID, item.ID, dueDate, rentalCost, billID);
             // notify all characters in the station about the office change
             this.NotificationManager.NotifyStation(stationID, new OnOfficeRentalChanged(call.Client.CorporationID, item.ID, item.ID));
+            // notify all the characters about the bill received
+            this.NotificationManager.NotifyCorporation(call.Client.CorporationID, new OnBillReceived());
             // return the new officeID
             return item.ID;
         }

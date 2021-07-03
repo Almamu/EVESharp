@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Common.Database;
 using MySql.Data.MySqlClient;
+using Node.Corporations;
 using Node.Exceptions.corpRegistry;
 using Node.StaticData.Inventory;
 using PythonTypes.Types.Collections;
@@ -1069,6 +1070,56 @@ namespace Node.Database
                     titleName = reader.GetString(8);
                 }
             }
+        }
+
+        public List<CorporationOffice> FindOfficesCloseToRenewal()
+        {
+            long expirationDate = DateTime.Now.AddDays(30).ToFileTimeUtc();
+
+            MySqlConnection connection = null;
+            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+                "SELECT corporationID, officeID, periodCost, stationID, balanceDueDate FROM crpOffices WHERE nextBillID IS NULL AND balanceDueDate < @expirationDate",
+                new Dictionary<string, object>()
+                {
+                    {"@expirationDate", expirationDate}
+                }
+            );
+            
+            using (connection)
+            using (reader)
+            {
+                List<CorporationOffice> result = new List<CorporationOffice>();
+                
+                while (reader.Read() == true)
+                {
+                    result.Add(
+                        new CorporationOffice
+                        {
+                            CorporationID = reader.GetInt32(0),
+                            OfficeID = reader.GetInt32(1),
+                            PeriodCost = reader.GetInt32(2),
+                            StationID = reader.GetInt32(3),
+                            DueDate = reader.GetInt64(4)
+                        }
+                    );
+                }
+
+                return result;
+            }
+        }
+
+        public void SetNextBillID(int corporationID, int officeID, int newBillID)
+        {
+            Database.PrepareQuery(
+                "UPDATE crpOffices SET nextBillID = @nextBillID, balanceDueDate = balanceDueDate + @interval WHERE officeID = @officeID AND corporationID = @corporationID",
+                new Dictionary<string, object>()
+                {
+                    {"@nextBillID", newBillID},
+                    {"@interval", TimeSpan.FromDays(30).Ticks},
+                    {"@officeID", officeID},
+                    {"@corporationID", corporationID}
+                }
+            );
         }
 
         public CorporationDB(ItemDB itemDB, DatabaseConnection db) : base(db)

@@ -31,7 +31,7 @@ namespace Node.Database
         public CRowset GetCorporationBillsPayable(int corporationID)
         {
             return Database.PrepareCRowsetQuery(
-                "SELECT billID, billTypeID, debtorID, creditorID, amount, dueDateTime, interest, externalID, paid, externalID2 FROM mktBills WHERE debtorID = @corporationID",
+                "SELECT billID, billTypeID, debtorID, creditorID, amount, dueDateTime, interest, externalID, paid, externalID2 FROM mktBills WHERE debtorID = @corporationID AND paid = 0",
                 new Dictionary<string, object>()
                 {
                     {"@corporationID", corporationID}
@@ -50,9 +50,9 @@ namespace Node.Database
         /// <param name="interest">The amount of interests</param>
         /// <param name="externalID">Extra information for the EVE Client</param>
         /// <param name="externalID2">Extra information for the EVE Client</param>
-        public void CreateBill(BillTypes type, int debtorID, int creditorID, double amount, long dueDateTime, double interest, int? externalID = null, int? externalID2 = null)
+        public ulong CreateBill(BillTypes type, int debtorID, int creditorID, double amount, long dueDateTime, double interest, int? externalID = null, int? externalID2 = null)
         {
-            Database.PrepareQuery(
+            return Database.PrepareQueryLID(
                 "INSERT INTO mktBills(billTypeID, debtorID, creditorID, amount, dueDateTime, interest, externalID, paid, externalID2)VALUES(@billTypeID, @debtorID, @creditorID, @amount, @dueDateTime, @interest, @externalID, 0, @externalID2)",
                 new Dictionary<string, object>()
                 {

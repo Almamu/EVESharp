@@ -12,6 +12,7 @@ CREATE TABLE `crpOffices` (
   `rentPeriodInDays` INT(11) NOT NULL DEFAULT '0',
   `periodCost` DOUBLE(22,0) NOT NULL DEFAULT '0',
   `balanceDueDate` DOUBLE(22,0) NULL DEFAULT NULL,
+  `nextBillID` INT(10) UNSIGNED NOT NULL,
   PRIMARY KEY  (`corporationID`,`officeFolderID`),
   KEY `itemID` (`itemID`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
