@@ -564,7 +564,7 @@ namespace Node.Database
         public Rowset GetMemberTrackingInfoSimple(int corporationID)
         {
             return Database.PrepareRowsetQuery(
-                "SELECT characterID, title, baseID, IF(online = 1, -1, IF(lastOnline = 0, NULL, (@currentTicks - lastOnline) / @ticksPerHour)) AS lastOnline FROM chrInformation WHERE corporationID = @corporationID",
+                "SELECT characterID, title, baseID, corporationDateTime AS startDateTime, corporationID, IF(online = 1, -1, IF(lastOnline = 0, NULL, (@currentTicks - lastOnline) / @ticksPerHour)) AS lastOnline FROM chrInformation WHERE corporationID = @corporationID",
                 new Dictionary<string, object>()
                 {
                     {"@corporationID", corporationID},
@@ -967,6 +967,17 @@ namespace Node.Database
                     {"@description", description},
                     {"@minimumSkillpoints", skillPoints},
                     {"@stationID", stationID}
+                }
+            );
+        }
+
+        public void DeleteRecruitmentAd(int advertId, int corporationID)
+        {
+            Database.PrepareQuery("DELETE FROM crpRecruitmentAds WHERE adID = @adID AND corporationID = @corporationID",
+                new Dictionary<string, object>()
+                {
+                    {"@adID", advertId},
+                    {"@corporationID", corporationID}
                 }
             );
         }

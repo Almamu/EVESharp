@@ -8,6 +8,10 @@ namespace Node.Database
 {
     public class AgentDB : DatabaseAccessor
     {
+	    /// <summary>
+	    /// Returns a list of agents ready to be used by the EVE Client
+	    /// </summary>
+	    /// <returns></returns>
 	    public PyDataType GetAgents()
         {
             return Database.PrepareCRowsetQuery(

@@ -128,7 +128,6 @@ namespace Node
                 dependencies.Register<ServiceManager>(Lifestyle.Singleton);
                 dependencies.Register<BoundServiceManager>(Lifestyle.Singleton);
                 dependencies.Register<ClusterConnection>(Lifestyle.Singleton);
-                dependencies.Register<CharacterManager>(Lifestyle.Singleton);
                 dependencies.Register<NotificationManager>(Lifestyle.Singleton);
                 dependencies.Register<MachoNet>(Lifestyle.Singleton);
                 dependencies.Register<ExpressionManager>(Lifestyle.Singleton);

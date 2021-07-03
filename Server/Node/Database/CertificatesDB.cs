@@ -10,6 +10,11 @@ namespace Node.Database
 {
     public class CertificatesDB : DatabaseAccessor
     {
+        /// <summary>
+        /// Get list of certificates granted to the given character, ready for the EVE Client
+        /// </summary>
+        /// <param name="characterID"></param>
+        /// <returns></returns>
         public Rowset GetMyCertificates(int characterID)
         {
             return Database.PrepareRowsetQuery(
@@ -21,6 +26,10 @@ namespace Node.Database
             );
         }
 
+        /// <summary>
+        /// Loads the full list of relationships for the certificates
+        /// </summary>
+        /// <returns></returns>
         public Dictionary<int, List<Relationship>> GetCertificateRelationships()
         {
             MySqlConnection connection = null;
@@ -52,6 +61,11 @@ namespace Node.Database
             }
         }
 
+        /// <summary>
+        /// Creates a new record granting a certificate to the player
+        /// </summary>
+        /// <param name="characterID">The player to grant the certificate to</param>
+        /// <param name="certificateID">The certificate to grant the player</param>
         public void GrantCertificate(int characterID, int certificateID)
         {
             Database.PrepareQuery(
@@ -65,6 +79,12 @@ namespace Node.Database
             );
         }
 
+        /// <summary>
+        /// Updates the visibility flags of the given certificate
+        /// </summary>
+        /// <param name="certificateID">The certificate to update</param>
+        /// <param name="characterID">The character to update the cert for</param>
+        /// <param name="visibilityFlags">The new visibility settings</param>
         public void UpdateVisibilityFlags(int certificateID, int characterID, int visibilityFlags)
         {
             Database.PrepareQuery(
@@ -78,6 +98,11 @@ namespace Node.Database
             );
         }
 
+        /// <summary>
+        /// Obtains a list of all the certificates a character has ready to be sent to the EVE Client
+        /// </summary>
+        /// <param name="characterID"></param>
+        /// <returns></returns>
         public Rowset GetCertificatesByCharacter(int characterID)
         {
             return Database.PrepareRowsetQuery(
@@ -89,6 +114,11 @@ namespace Node.Database
             );
         }
 
+        /// <summary>
+        /// Obtains the list of certificates a charactert has
+        /// </summary>
+        /// <param name="characterID"></param>
+        /// <returns></returns>
         public List<int> GetCertificateListForCharacter(int characterID)
         {
             MySqlConnection connection = null;

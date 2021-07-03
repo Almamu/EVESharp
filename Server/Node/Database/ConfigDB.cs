@@ -12,6 +12,11 @@ namespace Node.Database
     {
         private NodeContainer NodeContainer { get; }
 
+        /// <summary>
+        /// Obtains a list of owners ready for the EVE Client
+        /// </summary>
+        /// <param name="ids"></param>
+        /// <returns></returns>
         public PyDataType GetMultiOwnersEx(PyList<PyInteger> ids)
         {
             MySqlConnection connection = null;
@@ -26,6 +31,11 @@ namespace Node.Database
             }
         }
 
+        /// <summary>
+        /// Obtains a list of graphics ready for the EVE Client
+        /// </summary>
+        /// <param name="ids"></param>
+        /// <returns></returns>
         public PyDataType GetMultiGraphicsEx(PyList<PyInteger> ids)
         {   
             MySqlConnection connection = null;
@@ -40,6 +50,11 @@ namespace Node.Database
             }
         }
 
+        /// <summary>
+        /// Obtains a list of locations ready for the EVE Client
+        /// </summary>
+        /// <param name="ids"></param>
+        /// <returns></returns>
         public PyDataType GetMultiLocationsEx(PyList<PyInteger> ids)
         {
             MySqlConnection connection = null;
@@ -54,6 +69,11 @@ namespace Node.Database
             }
         }
 
+        /// <summary>
+        /// Obtains a list of alliance shortnames ready for the EVE Client
+        /// </summary>
+        /// <param name="ids"></param>
+        /// <returns></returns>
         public PyDataType GetMultiAllianceShortNamesEx(PyList<PyInteger> ids)
         {
             MySqlConnection connection = null;
@@ -68,6 +88,11 @@ namespace Node.Database
             }
         }
 
+        /// <summary>
+        /// Obtains a list of corp tickers ready for the EVE Client
+        /// </summary>
+        /// <param name="ids"></param>
+        /// <returns></returns>
         public PyDataType GetMultiCorpTickerNamesEx(PyList<PyInteger> ids)
         {
             MySqlConnection connection = null;
@@ -82,6 +107,11 @@ namespace Node.Database
             }
         }
 
+        /// <summary>
+        /// Gets map information for the given <paramref name="solarSystemID"/>
+        /// </summary>
+        /// <param name="solarSystemID"></param>
+        /// <returns></returns>
         public Rowset GetMap(int solarSystemID)
         {
             Rowset result = Database.PrepareRowsetQuery(
@@ -123,6 +153,11 @@ namespace Node.Database
             return result;
         }
 
+        /// <summary>
+        /// Get map objects for the given location <paramref name="itemID"/>
+        /// </summary>
+        /// <param name="itemID"></param>
+        /// <returns></returns>
         public CRowset GetMapObjects(int itemID)
         {
             if (itemID == this.NodeContainer.Constants[Constants.locationUniverse])
@@ -143,6 +178,11 @@ namespace Node.Database
             }
         }
 
+        /// <summary>
+        /// Gets the offices on the given solarSystemID
+        /// </summary>
+        /// <param name="solarSystemID"></param>
+        /// <returns></returns>
         public Rowset GetMapOffices(int solarSystemID)
         {
             return Database.PrepareRowsetQuery(
@@ -154,6 +194,11 @@ namespace Node.Database
             );
         }
 
+        /// <summary>
+        /// Gets information about the given <paramref name="celestialID"/>
+        /// </summary>
+        /// <param name="celestialID"></param>
+        /// <returns></returns>
         public CRowset GetCelestialStatistic(int celestialID)
         {
             return Database.PrepareCRowsetQuery(

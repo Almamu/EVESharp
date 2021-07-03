@@ -33,6 +33,11 @@ namespace Node.Database
 {
     public class BookmarkDB : DatabaseAccessor
     {
+        /// <summary>
+        /// Finds all bookmarks for the given ownerID
+        /// </summary>
+        /// <param name="ownerID"></param>
+        /// <returns></returns>
         public Rowset GetBookmarks(int ownerID)
         {
             return Database.PrepareRowsetQuery(
@@ -44,14 +49,27 @@ namespace Node.Database
 	        );
         }
 
-        public ulong CreateBookmark(int characterID, int itemID, int typeID, string memo, string comment, double x, double y,
+        /// <summary>
+        /// Creates a new bookmark
+        /// </summary>
+        /// <param name="ownerID">The owner of the new bookmark</param>
+        /// <param name="itemID">Which item it refers to</param>
+        /// <param name="typeID">The type of item</param>
+        /// <param name="memo">Extra information by the user</param>
+        /// <param name="comment"></param>
+        /// <param name="x"></param>
+        /// <param name="y"></param>
+        /// <param name="z"></param>
+        /// <param name="locationID">Where the itemID is located</param>
+        /// <returns></returns>
+        public ulong CreateBookmark(int ownerID, int itemID, int typeID, string memo, string comment, double x, double y,
             double z, int locationID)
         {
             return Database.PrepareQueryLID(
-                "INSERT INTO chrBookmarks(ownerID, itemID, typeID, memo, comment, created, x, y, z, locationID)VALUES(@characterID, @itemID, @typeID, @memo, @comment, @date, @x, @y, @z, @locationID)",
+                "INSERT INTO chrBookmarks(ownerID, itemID, typeID, memo, comment, created, x, y, z, locationID)VALUES(@ownerID, @itemID, @typeID, @memo, @comment, @date, @x, @y, @z, @locationID)",
                 new Dictionary<string, object>()
                 {
-                    {"@characterID", characterID},
+                    {"@ownerID", ownerID},
                     {"@itemID", itemID},
                     {"@typeID", typeID},
                     {"@memo", memo},
@@ -65,6 +83,11 @@ namespace Node.Database
             );
         }
 
+        /// <summary>
+        /// Removes a list of bookmarks belonging to a given ownerID
+        /// </summary>
+        /// <param name="bookmarkIDs"></param>
+        /// <param name="ownerID"></param>
         public void DeleteBookmark(PyList<PyInteger> bookmarkIDs, int ownerID)
         {
             // do not remove anything if the count is not greater than 0

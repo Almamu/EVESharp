@@ -7,6 +7,11 @@ namespace Node.Database
 {
     public class BillsDB : DatabaseAccessor
     {
+        /// <summary>
+        /// Lists receivable bills for the given corporation
+        /// </summary>
+        /// <param name="corporationID"></param>
+        /// <returns></returns>
         public CRowset GetCorporationBillsReceivable(int corporationID)
         {
             return Database.PrepareCRowsetQuery(
@@ -18,6 +23,11 @@ namespace Node.Database
             );
         }
         
+        /// <summary>
+        /// List payable bills for the given corporation
+        /// </summary>
+        /// <param name="corporationID"></param>
+        /// <returns></returns>
         public CRowset GetCorporationBillsPayable(int corporationID)
         {
             return Database.PrepareCRowsetQuery(
@@ -33,13 +43,13 @@ namespace Node.Database
         /// Creates a bill with the given information
         /// </summary>
         /// <param name="type"></param>
-        /// <param name="debtorID"></param>
-        /// <param name="creditorID"></param>
-        /// <param name="amount"></param>
-        /// <param name="dueDateTime"></param>
-        /// <param name="interest"></param>
-        /// <param name="externalID"></param>
-        /// <param name="externalID2"></param>
+        /// <param name="debtorID">Who has to pay the bill</param>
+        /// <param name="creditorID">Who the bill be paid to</param>
+        /// <param name="amount">The total amount the bill is</param>
+        /// <param name="dueDateTime">The date the bill has to be paid by</param>
+        /// <param name="interest">The amount of interests</param>
+        /// <param name="externalID">Extra information for the EVE Client</param>
+        /// <param name="externalID2">Extra information for the EVE Client</param>
         public void CreateBill(BillTypes type, int debtorID, int creditorID, double amount, long dueDateTime, double interest, int? externalID = null, int? externalID2 = null)
         {
             Database.PrepareQuery(

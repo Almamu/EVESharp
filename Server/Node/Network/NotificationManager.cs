@@ -47,17 +47,11 @@ namespace Node.Network
         /// </summary>
         public ClientManager ClientManager { get; }
         
-        /// <summary>
-        /// The character manager used by this notification manager to decide whether to send a notification or not
-        /// </summary>
-        public CharacterManager CharacterManager { get; }
-        
-        public NotificationManager(ClusterConnection clusterConnection, NodeContainer container, ClientManager clientManager, CharacterManager characterManager)
+        public NotificationManager(ClusterConnection clusterConnection, NodeContainer container, ClientManager clientManager)
         {
             this.ClusterConnection = clusterConnection;
             this.Container = container;
             this.ClientManager = clientManager;
-            this.CharacterManager = characterManager;
         }
 
         public void NotifyCharacters(PyList<PyInteger> characterIDs, string type, PyTuple notification)
@@ -70,7 +64,7 @@ namespace Node.Network
         public void NotifyCharacter(int characterID, string type, PyTuple notification)
         {
             // do not waste network resources on useless notifications
-            if (this.CharacterManager.IsCharacterConnected(characterID) == false)
+            if (this.ClientManager.ContainsCharacterID(characterID) == false)
                 return;
 
             this.SendNotification(type, NOTIFICATION_TYPE_CHARACTER, characterID, notification);
@@ -84,7 +78,7 @@ namespace Node.Network
         public void NotifyCharacter(int characterID, ClientNotification entry)
         {
             // do not waste network resources on useless notifications
-            if (this.CharacterManager.IsCharacterConnected(characterID) == false)
+            if (this.ClientManager.ContainsCharacterID(characterID) == false)
                 return;
             
             // build a proper notification for this

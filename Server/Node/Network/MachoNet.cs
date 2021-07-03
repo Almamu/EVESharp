@@ -39,7 +39,6 @@ namespace Node.Network
         private ClientManager ClientManager { get; }
         private BoundServiceManager BoundServiceManager { get; }
         private AccountDB AccountDB { get; }
-        private CharacterManager CharacterManager { get; }
         private NotificationManager NotificationManager { get; }
         private TimerManager TimerManager { get; }
         private General Configuration { get; }
@@ -50,8 +49,8 @@ namespace Node.Network
         
         public MachoNet(ClusterConnection clusterConnection, NodeContainer container, SystemManager systemManager,
             ClientManager clientManager, BoundServiceManager boundServiceManager, ItemFactory itemFactory,
-            Logger logger, AccountDB accountDB, General configuration, CharacterManager characterManager,
-            NotificationManager notificationManager, TimerManager timerManager, Container dependencyInjection)
+            Logger logger, AccountDB accountDB, General configuration, NotificationManager notificationManager,
+            TimerManager timerManager, Container dependencyInjection)
         {
             this.Log = logger.CreateLogChannel("MachoNet");
 #if DEBUG
@@ -66,7 +65,6 @@ namespace Node.Network
             this.Container = container;
             this.AccountDB = accountDB;
             this.Configuration = configuration;
-            this.CharacterManager = characterManager;
             this.NotificationManager = notificationManager;
             this.TimerManager = timerManager;
             this.DependencyInjection = dependencyInjection;
@@ -304,8 +302,7 @@ namespace Node.Network
                     packet.UserID,
                     client = new Client(
                         this.Container, this.ClusterConnection, this.ServiceManager, this.TimerManager,
-                        this.ItemFactory, this.CharacterManager, this.SystemManager, this.NotificationManager, 
-                        this.ClientManager, this
+                        this.ItemFactory, this.SystemManager, this.NotificationManager, this.ClientManager, this
                     )
                 );
 
@@ -452,7 +449,7 @@ namespace Node.Network
                     // trust that the notification got to the correct node
                     // load the item and check the owner, if it's logged in and the locationID is loaded by us
                     // that means the item should be kept here
-                    if (this.ItemFactory.TryGetItem(item.LocationID, out ItemEntity location) == false || this.CharacterManager.IsCharacterConnected(item.OwnerID) == false)
+                    if (this.ItemFactory.TryGetItem(item.LocationID, out ItemEntity location) == false || this.ClientManager.ContainsCharacterID(item.OwnerID) == false)
                     {
                         // this item should not be loaded, so unload and return
                         this.ItemFactory.UnloadItem(item);

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
 using System.Xml.XPath;
 using EVE;
@@ -700,6 +701,7 @@ namespace Node.Services.Corporations
             PyInteger grantableRolesAtOther, PyInteger baseID, PyInteger titleMask, PyInteger blockRoles,
             CallInformation call)
         {
+            // TODO: HANDLE DIVISION AND SQUADRON CHANGES
             int callerCharacterID = call.Client.EnsureCharacterIsSelected();
             Character character = this.ItemFactory.GetItem<Character>(callerCharacterID);
             
@@ -834,6 +836,7 @@ namespace Node.Services.Corporations
             int callerCharacterID = call.Client.EnsureCharacterIsSelected();
             long price = this.CorporationAdvertisementFlatFee + (this.CorporationAdvertisementDailyRate * days);
             
+            // TODO: ENSURE stationID MATCHES ONE OF OUR OFFICES FOR THE ADVERT TO BE CREATED
             // get the current wallet and check if there's enough money on it
             using (Wallet wallet = this.WalletManager.AcquireWallet(call.Client.CorporationID, call.Client.CorpAccountKey))
             {
@@ -861,7 +864,10 @@ namespace Node.Services.Corporations
                 .AddValue("solarSystemID", null, station.SolarSystemID)
                 .AddValue("constellationID", null, station.ConstellationID);
 
+            // notify characters in the station TODO: CHECK IF WE REALLY NEED THIS
             this.NotificationManager.NotifyStation(stationID, changes);
+            // notify corporation members
+            this.NotificationManager.NotifyCorporation(call.Client.CorporationID, changes);
             
             return null;
         }
@@ -917,9 +923,9 @@ namespace Node.Services.Corporations
             }
             
             // get all the players online for this corporation
-            if (this.ClientManager.TryGetClientsByCorporationID(call.Client.CorporationID, out List<Client> clients) == true)
+            if (this.ClientManager.TryGetClientsByCorporationID(call.Client.CorporationID, out Dictionary<int, Client> clients) == true)
             {
-                foreach (Client client in clients)
+                foreach ((int _, Client client) in clients)
                 {
                     // characterID should never be null here
                     long titleMask = this.DB.GetTitleMaskForCharacter((int) client.CharacterID, client.CorporationID);
@@ -978,7 +984,22 @@ namespace Node.Services.Corporations
 
         protected override void OnClientDisconnected()
         {
-            // free the sparse rowsets if any
+        }
+
+        public PyDataType DeleteRecruitmentAd(PyInteger advertID, CallInformation call)
+        {
+            if (CorporationRole.PersonnelManager.Is(call.Client.CorporationRole) == false)
+                return null;
+            
+            this.DB.DeleteRecruitmentAd(advertID, call.Client.CorporationID);
+            
+            // send notification
+            this.NotificationManager.NotifyCorporation(call.Client.CorporationID,
+                new OnCorporationRecruitmentAdChanged(call.Client.CorporationID, advertID)
+                    .AddValue ("adID", advertID, null)
+            );
+
+            return null;
         }
     }
 }

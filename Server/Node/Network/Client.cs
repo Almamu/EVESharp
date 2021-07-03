@@ -59,7 +59,6 @@ namespace Node.Network
         private ItemFactory ItemFactory { get; }
         private TimerManager TimerManager { get; }
         private PyList<PyTuple> PendingMultiEvents { get; set; }
-        private CharacterManager CharacterManager { get; }
         private SystemManager SystemManager { get; }
         private NotificationManager NotificationManager { get; }
         private ClientManager ClientManager { get; }
@@ -75,17 +74,20 @@ namespace Node.Network
         /// </summary>
         public event EventHandler<ClientSessionEventArgs> OnSessionUpdateEvent;
 
+        /// <summary>
+        /// Event handler for when this client selects a character
+        /// </summary>
+        public event EventHandler<ClientEventArgs> OnCharacterSelectedEvent;
+
         public Client(NodeContainer container, ClusterConnection clusterConnection, ServiceManager serviceManager,
-            TimerManager timerManager, ItemFactory itemFactory, CharacterManager characterManager,
-            SystemManager systemManager, NotificationManager notificationManager, ClientManager clientManager,
-            MachoNet machoNet)
+            TimerManager timerManager, ItemFactory itemFactory, SystemManager systemManager,
+            NotificationManager notificationManager, ClientManager clientManager, MachoNet machoNet)
         {
             this.Container = container;
             this.ClusterConnection = clusterConnection;
             this.ServiceManager = serviceManager;
             this.TimerManager = timerManager;
             this.ItemFactory = itemFactory;
-            this.CharacterManager = characterManager;
             this.SystemManager = systemManager;
             this.NotificationManager = notificationManager;
             this.PendingMultiEvents = new PyList<PyTuple>();
@@ -129,9 +131,6 @@ namespace Node.Network
             // remove timers
             this.ItemFactory.UnloadItem((int) this.CharacterID);
             this.ItemFactory.UnloadItem((int) this.ShipID);
-            
-            // remove character off the list
-            this.CharacterManager.RemoveCharacter((int) this.CharacterID);
         }
 
         private void OnSolarSystemChanged(int? oldSolarSystemID, int? newSolarSystemID)
@@ -170,12 +169,11 @@ namespace Node.Network
 
                 if (session["charid"] is PyInteger == false)
                     return;
-
-                int characterID = (int) this.CharacterID;
                 
-                // ensure the character is in the list
-                this.CharacterManager.AddCharacter(characterID, this);
+                if (session.GetPrevious("charid") is null)
+                    this.OnCharacterSelectedEvent?.Invoke(this, new ClientEventArgs {Client = this});
                 
+                // TODO: MOVE THIS HANDLING CODE SOMEWHERE ELSE
                 if (session.ContainsKey("solarsystemid2") == true)
                 {
                     PyDataType newSolarSystemID2 = session["solarsystemid2"];

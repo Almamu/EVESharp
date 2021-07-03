@@ -31,6 +31,10 @@ namespace Node.Database
 
         public const int CHANNEL_ROOKIECHANNELID = 1;
 
+        /// <summary>
+        /// Grants access to the standard channels to the given player
+        /// </summary>
+        /// <param name="characterID"></param>
         public void GrantAccessToStandardChannels(int characterID)
         {
             Database.PrepareQuery(
@@ -43,11 +47,27 @@ namespace Node.Database
             );
         }
 
+        /// <summary>
+        /// Creates a new chat channel
+        /// </summary>
+        /// <param name="owner">The owner of the channel</param>
+        /// <param name="relatedEntity">The related entity for the channel (if any)</param>
+        /// <param name="name">The name of the channel</param>
+        /// <param name="maillist">If it's a maillist or not</param>
+        /// <returns></returns>
         public long CreateChannel(ItemEntity owner, ItemEntity relatedEntity, string name, bool maillist)
         {
             return this.CreateChannel(owner.ID, relatedEntity?.ID, name, maillist);
         }
 
+        /// <summary>
+        /// Creates a new chat channel
+        /// </summary>
+        /// <param name="owner">The owner of the channel</param>
+        /// <param name="relatedEntity">The related entity for the channel (if any)</param>
+        /// <param name="name">The name of the channel</param>
+        /// <param name="maillist">If it's a maillist or not</param>
+        /// <returns></returns>
         public long CreateChannel(int owner, int? relatedEntity, string name, bool maillist)
         {
             if (relatedEntity == null)
@@ -96,6 +116,12 @@ namespace Node.Database
             }
         }
 
+        /// <summary>
+        /// Joins the given <paramref name="characterID"/> to the maillist channel for the <paramref name="relatedEntityID"/>
+        /// </summary>
+        /// <param name="relatedEntityID"></param>
+        /// <param name="characterID"></param>
+        /// <param name="role">Role for the player</param>
         public void JoinEntityMailingList(int relatedEntityID, int characterID, int role = CHATROLE_CONVERSATIONALIST)
         {
             int channelID = this.GetChannelIDFromRelatedEntity(relatedEntityID, true);
@@ -103,6 +129,12 @@ namespace Node.Database
             this.JoinChannel(channelID, characterID, role);
         }
 
+        /// <summary>
+        /// Joins the given <paramref name="characterID"/> to the chat channel for the <paramref name="relatedEntityID"/>
+        /// </summary>
+        /// <param name="relatedEntityID"></param>
+        /// <param name="characterID"></param>
+        /// <param name="role">Role for the player</param>
         public void JoinEntityChannel(int relatedEntityID, int characterID, int role = CHATROLE_CONVERSATIONALIST)
         {
             int channelID = GetChannelIDFromRelatedEntity(relatedEntityID);
@@ -110,6 +142,12 @@ namespace Node.Database
             this.JoinChannel(channelID, characterID, role);
         }
 
+        /// <summary>
+        /// Joins the given <paramref name="characterID"/> to the chat channel with the given <paramref name="channelID"/>
+        /// </summary>
+        /// <param name="channelID"></param>
+        /// <param name="characterID"></param>
+        /// <param name="role">Role for the player</param>
         public void JoinChannel(int channelID, int characterID, int role = CHATROLE_CONVERSATIONALIST)
         {
             Database.PrepareQuery(
@@ -124,6 +162,10 @@ namespace Node.Database
             );
         }
 
+        /// <summary>
+        /// Destroys the given channel and cleans up the permissions table
+        /// </summary>
+        /// <param name="channelID"></param>
         public void DestroyChannel(int channelID)
         {
             if (channelID < 0)
@@ -156,6 +198,11 @@ namespace Node.Database
             );
         }
 
+        /// <summary>
+        /// Removes the character from the given channel
+        /// </summary>
+        /// <param name="channelID"></param>
+        /// <param name="characterID"></param>
         public void LeaveChannel(int channelID, int characterID)
         {
             Database.PrepareQuery(
@@ -168,6 +215,12 @@ namespace Node.Database
             );
         }
 
+        /// <summary>
+        /// Obtains the list of channels the character is currently allowed into ready for the EVE Client
+        /// </summary>
+        /// <param name="characterID"></param>
+        /// <param name="corporationID"></param>
+        /// <returns></returns>
         public Rowset GetChannelsForCharacter(int characterID, int corporationID)
         {
             Rowset firstQuery = Database.PrepareRowsetQuery(
@@ -226,6 +279,13 @@ namespace Node.Database
             */
         }
 
+        /// <summary>
+        /// Obtains information for the given channel and character ready to be used by the EVE Client
+        /// </summary>
+        /// <param name="channelID"></param>
+        /// <param name="characterID"></param>
+        /// <returns></returns>
+        /// <exception cref="Exception"></exception>
         public Row GetChannelInfo(int channelID, int characterID)
         {
             string query;
@@ -270,6 +330,14 @@ namespace Node.Database
             }
         }
 
+        /// <summary>
+        /// Obtains information for the given channel and character ready to be used by the EVE Client
+        /// </summary>
+        /// <param name="relatedEntityID"></param>
+        /// <param name="characterID"></param>
+        /// <param name="maillist"></param>
+        /// <returns></returns>
+        /// <exception cref="Exception"></exception>
         public Row GetChannelInfoByRelatedEntity(int relatedEntityID, int characterID, bool maillist = false)
         {
             MySqlConnection connection = null;
@@ -298,6 +366,11 @@ namespace Node.Database
             }
         }
 
+        /// <summary>
+        /// Obtains the list of members of the character's address book
+        /// </summary>
+        /// <param name="characterID"></param>
+        /// <returns></returns>
         public CRowset GetAddressBookMembers(int characterID)
         {
             return Database.PrepareCRowsetQuery(
@@ -309,6 +382,12 @@ namespace Node.Database
             );
         }
 
+        /// <summary>
+        /// Obtains the list of channel members ready for the EVE Client
+        /// </summary>
+        /// <param name="channelID"></param>
+        /// <param name="characterID"></param>
+        /// <returns></returns>
         public Rowset GetChannelMembers(int channelID, int characterID)
         {
             // TODO: SEEMS THAT CHANNELS ARE USED FOR ADDRESSBOOK TOO?! WTF CCP?! TAKE THAT INTO ACCOUNT
@@ -335,6 +414,11 @@ namespace Node.Database
             }
         }
 
+        /// <summary>
+        /// Obtains the list of channel mods ready for the EVE Client
+        /// </summary>
+        /// <param name="channelID"></param>
+        /// <returns></returns>
         public Rowset GetChannelMods(int channelID)
         {
             return Database.PrepareRowsetQuery(
@@ -346,6 +430,11 @@ namespace Node.Database
             );
         }
 
+        /// <summary>
+        /// Obtains extra information for the given <paramref name="characterID"/> for the chat system
+        /// </summary>
+        /// <param name="characterID"></param>
+        /// <returns></returns>
         public Row GetExtraInfo(int characterID)
         {
             MySqlConnection connection = null;
@@ -367,6 +456,11 @@ namespace Node.Database
             }
         }
 
+        /// <summary>
+        /// Lists the online characters in the given channel
+        /// </summary>
+        /// <param name="channelID"></param>
+        /// <returns></returns>
         public PyList<PyInteger> GetOnlineCharsOnChannel(int channelID)
         {
             MySqlConnection connection = null;
@@ -390,6 +484,12 @@ namespace Node.Database
             }
         }
 
+        /// <summary>
+        /// Checks whether the <paramref name="characterID"/> is allowed to chat on the given <paramref name="channelID"/>
+        /// </summary>
+        /// <param name="channelID"></param>
+        /// <param name="characterID"></param>
+        /// <returns></returns>
         public bool IsPlayerAllowedToChat(int channelID, int characterID)
         {
             MySqlConnection connection = null;
@@ -412,6 +512,12 @@ namespace Node.Database
             }
         }
 
+        /// <summary>
+        /// Checks whether the <paramref name="characterID"/> is allowed to read the given <paramref name="channelID"/>
+        /// </summary>
+        /// <param name="channelID"></param>
+        /// <param name="characterID"></param>
+        /// <returns></returns>
         public bool IsPlayerAllowedToRead(int channelID, int characterID)
         {
             MySqlConnection connection = null;
@@ -434,6 +540,12 @@ namespace Node.Database
             }
         }
 
+        /// <summary>
+        /// Checks whether the <paramref name="characterID"/> is allowed to chat on the given <paramref name="relatedEntityID"/>
+        /// </summary>
+        /// <param name="relatedEntityID"></param>
+        /// <param name="characterID"></param>
+        /// <returns></returns>
         public bool IsPlayerAllowedToChatOnRelatedEntity(int relatedEntityID, int characterID)
         {
             MySqlConnection connection = null;
@@ -456,6 +568,12 @@ namespace Node.Database
             }
         }
 
+        /// <summary>
+        /// Obtains the channelID based on the <paramref name="relatedEntityID"/>
+        /// </summary>
+        /// <param name="relatedEntityID"></param>
+        /// <param name="isMailingList">Whether we're looking for a normal chat or a mailing list</param>
+        /// <returns></returns>
         public int GetChannelIDFromRelatedEntity(int relatedEntityID, bool isMailingList = false)
         {
             MySqlConnection connection = null;
@@ -478,6 +596,11 @@ namespace Node.Database
             }
         }
 
+        /// <summary>
+        /// Obtains the type of channel
+        /// </summary>
+        /// <param name="channelID"></param>
+        /// <returns></returns>
         public string GetChannelType(int channelID)
         {
             if (channelID < 0)
@@ -502,6 +625,11 @@ namespace Node.Database
             }
         }
 
+        /// <summary>
+        /// Obtains the channel name
+        /// </summary>
+        /// <param name="channelID"></param>
+        /// <returns></returns>
         public string GetChannelName(int channelID)
         {
             string query;
@@ -533,6 +661,11 @@ namespace Node.Database
             }
         }
 
+        /// <summary>
+        /// Converts a standard channel name into a channel type
+        /// </summary>
+        /// <param name="channelName"></param>
+        /// <returns></returns>
         public string ChannelNameToChannelType(string channelName)
         {
             if (channelName == "System Channels\\Corp")
@@ -559,6 +692,12 @@ namespace Node.Database
             return CHANNEL_TYPE_NORMAL;
         }
 
+        /// <summary>
+        /// Checks whether the given <paramref name="characterID"/> is member of the given <paramref name="channelID"/>
+        /// </summary>
+        /// <param name="channelID"></param>
+        /// <param name="characterID"></param>
+        /// <returns></returns>
         public bool IsCharacterMemberOfChannel(int channelID, int characterID)
         {
             MySqlConnection connection = null;
@@ -578,6 +717,12 @@ namespace Node.Database
             }
         }
 
+        /// <summary>
+        /// Checks whether the given <paramref name="characterID"/> is admin of the given <paramref name="channelID"/>
+        /// </summary>
+        /// <param name="channelID"></param>
+        /// <param name="characterID"></param>
+        /// <returns></returns>
         public bool IsCharacterAdminOfChannel(int channelID, int characterID)
         {
             MySqlConnection connection = null;
@@ -600,6 +745,12 @@ namespace Node.Database
             }
         }
 
+        /// <summary>
+        /// Checks whether the given <paramref name="characterID"/> is admin or operator of the given <paramref name="channelID"/>
+        /// </summary>
+        /// <param name="channelID"></param>
+        /// <param name="characterID"></param>
+        /// <returns></returns>
         public bool IsCharacterOperatorOrAdminOfChannel(int channelID, int characterID)
         {
             MySqlConnection connection = null;
@@ -621,7 +772,13 @@ namespace Node.Database
                 return (reader.GetInt32(0) & (CHATROLE_CREATOR | CHATROLE_OPERATOR)) > 0;
             }
         }
-
+        
+        /// <summary>
+        /// Updates the permissions for the given <paramref name="characterID"/> on the <paramref name="channelID"/>
+        /// </summary>
+        /// <param name="channelID"></param>
+        /// <param name="characterID"></param>
+        /// <param name="permissions">The new permissions for that character</param>
         public void UpdatePermissionsForCharacterOnChannel(int channelID, int characterID, sbyte permissions)
         {
             Database.PrepareQuery(

@@ -22,8 +22,13 @@ namespace Node.Network
         /// <summary>
         /// List of clients by CorporationID
         /// </summary>
-        private readonly Dictionary<int, List<Client>> mClientsByCorporationID = new Dictionary<int, List<Client>>();
+        private readonly Dictionary<int, Dictionary<int, Client>> mClientsByCorporationID = new Dictionary<int, Dictionary<int, Client>>();
 
+        /// <summary>
+        /// Event handler for when a client selects a character
+        /// </summary>
+        public event EventHandler<ClientEventArgs> OnCharacterSelectedEvent;
+        
         /// <summary>
         /// Adds a new client to the list
         /// </summary>
@@ -33,8 +38,9 @@ namespace Node.Network
         {
             this.mClients.Add(userID, client);
             
-            // ensure the client calls our session update handler
+            // bind some of the client's events
             client.OnSessionUpdateEvent += this.OnSessionUpdated;
+            client.OnCharacterSelectedEvent += this.OnCharacterSelected;
         }
 
         /// <summary>
@@ -44,11 +50,22 @@ namespace Node.Network
         public void Remove(Client client)
         {
             this.mClients.Remove(client.AccountID);
-            
-            if (client.CharacterID is not null)
-                this.mClientsByCharacterID.Remove((int) client.CharacterID);
 
+            // if a character was selected search for it in the cache lists
+            // and ensure they're removed
+            if (client.CharacterID is not null)
+            {
+                this.mClientsByCharacterID.Remove((int) client.CharacterID);
+                
+                if (this.mClientsByCorporationID.TryGetValue(client.CorporationID, out Dictionary<int, Client> characterList) == true) 
+                    characterList.Remove((int) client.CharacterID);
+            }
+
+
+            // remove the events listener from the client
             client.OnSessionUpdateEvent -= this.OnSessionUpdated;
+            client.OnCharacterSelectedEvent -= this.OnCharacterSelected;
+            
             client.OnClientDisconnected();
         }
 
@@ -75,12 +92,22 @@ namespace Node.Network
         }
 
         /// <summary>
+        /// Checks if the given characterID registered in the client manager
+        /// </summary>
+        /// <param name="characterID"></param>
+        /// <returns>Whether the client was found or not</returns>
+        public bool ContainsCharacterID(int characterID)
+        {
+            return this.mClientsByCharacterID.ContainsKey(characterID);
+        }
+
+        /// <summary>
         /// Tries to get the Clients list under the given corporationID
         /// </summary>
         /// <param name="corporationID">The corporationID to find</param>
         /// <param name="clients">The list of clients</param>
         /// <returns>Whether there's any or not</returns>
-        public bool TryGetClientsByCorporationID(int corporationID, out List<Client> clients)
+        public bool TryGetClientsByCorporationID(int corporationID, out Dictionary<int, Client> clients)
         {
             return this.mClientsByCorporationID.TryGetValue(corporationID, out clients);
         }
@@ -92,28 +119,34 @@ namespace Node.Network
         /// <param name="args"></param>
         private void OnSessionUpdated(object sender, ClientSessionEventArgs args)
         {
-            if (args.Client.CharacterID is not null)
-                this.mClientsByCharacterID[(int) args.Client.CharacterID] = args.Client;
-
+            // TODO: HANDLE THIS WITH THE MACHONET CORPORATION MEMBER CHANGED EVENT INSTEAD
             // update corporation lists
             int? oldCorporationID = args.Session.GetPrevious("corpid") as PyInteger;
             int? newCorporationID = args.Session.GetCurrent("corpid") as PyInteger;
 
             if (newCorporationID is not null)
             {
-                if (this.mClientsByCorporationID.TryGetValue((int) newCorporationID, out List<Client> clients) == false)
-                    clients = this.mClientsByCorporationID[(int) newCorporationID] = new List<Client>();
+                if (this.mClientsByCorporationID.TryGetValue((int) newCorporationID, out Dictionary<int, Client> clients) == false)
+                    clients = this.mClientsByCorporationID[(int) newCorporationID] = new Dictionary<int, Client>();
 
                 lock (clients)
-                    clients.Add(args.Client);
+                    clients.Add((int) args.Client.CharacterID, args.Client);
             
                 // this lookup won't fail as long as there was a corporationID, so no need to do a tryGetValue
                 if (oldCorporationID is not null)
                 {
                     clients = this.mClientsByCorporationID[(int) oldCorporationID];
-                    clients.Remove(args.Client);
+                    clients.Remove((int) args.Client.CharacterID);
                 }
             }
+        }
+
+        private void OnCharacterSelected(object sender, ClientEventArgs args)
+        {
+            this.mClientsByCharacterID.Add((int) args.Client.CharacterID, args.Client);
+
+            // notify services about this
+            this.OnCharacterSelectedEvent?.Invoke(this, args);
         }
     }
 }

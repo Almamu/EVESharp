@@ -20,6 +20,11 @@ namespace Node.Database
         private ItemDB ItemDB { get; }
         private TypeManager TypeManager { get; }
 
+        /// <summary>
+        /// Returns the list of characters the given account has ready to be sent to the EVE Client
+        /// </summary>
+        /// <param name="accountID"></param>
+        /// <returns></returns>
         public Rowset GetCharacterList(int accountID)
         {
             MySqlConnection connection = null;
@@ -49,6 +54,12 @@ namespace Node.Database
             }
         }
 
+        /// <summary>
+        /// Gets information for the character selection ready to be sent to the EVE Client
+        /// </summary>
+        /// <param name="characterID"></param>
+        /// <param name="accountID"></param>
+        /// <returns></returns>
         public Rowset GetCharacterSelectionInfo(int characterID, int accountID)
         {
             MySqlConnection connection = null;
@@ -78,6 +89,11 @@ namespace Node.Database
             }
         }
 
+        /// <summary>
+        /// Obtains public information for a given character
+        /// </summary>
+        /// <param name="characterID"></param>
+        /// <returns></returns>
         public PyDataType GetPublicInfo(int characterID)
         {
             return Database.PrepareKeyValQuery(
@@ -94,6 +110,11 @@ namespace Node.Database
             );
         }
 
+        /// <summary>
+        /// Similar to <seealso cref="GetPublicInfo"/> obtains basic information of a character
+        /// </summary>
+        /// <param name="characterID"></param>
+        /// <returns></returns>
         public Rowset GetPublicInfo3(int characterID)
         {
             return Database.PrepareRowsetQuery(
@@ -105,6 +126,11 @@ namespace Node.Database
             );
         }
 
+        /// <summary>
+        /// Checks if the given character name is taken by anyone already
+        /// </summary>
+        /// <param name="characterName"></param>
+        /// <returns></returns>
         public bool IsCharacterNameTaken(string characterName)
         {
             MySqlConnection connection = null;
@@ -126,6 +152,10 @@ namespace Node.Database
             }
         }
 
+        /// <summary>
+        /// Obtains the information of all the bloodlines
+        /// </summary>
+        /// <returns></returns>
         public Dictionary<int, Bloodline> GetBloodlineInformation()
         {
             Dictionary<int, Bloodline> result = new Dictionary<int, Bloodline>();
@@ -173,6 +203,11 @@ namespace Node.Database
             return result;
         }
 
+        /// <summary>
+        /// Obtains the information of all the ancestries
+        /// </summary>
+        /// <param name="bloodlines">Loaded bloodlines used to store the ancestry information into</param>
+        /// <returns></returns>
         public Dictionary<int, Ancestry> GetAncestryInformation(Dictionary<int, Bloodline> bloodlines)
         {
             Dictionary<int, Ancestry> result = new Dictionary<int, Ancestry>();
@@ -211,6 +246,69 @@ namespace Node.Database
             return result;
         }
 
+        /// <summary>
+        /// Creates a new character record in the database
+        /// </summary>
+        /// <param name="from">The item type the character is</param>
+        /// <param name="name">The character's name</param>
+        /// <param name="owner">The item owner (usually EVESystem)</param>
+        /// <param name="accountID">The account this character belongs to</param>
+        /// <param name="securityRating">The default security rating</param>
+        /// <param name="corporationID">The default corporation</param>
+        /// <param name="corpRole">The role inside the corporation</param>
+        /// <param name="rolesAtBase">Roles at base in the corporation</param>
+        /// <param name="rolesAtHQ">Roles at HQ in the corporation</param>
+        /// <param name="rolesAtOther">Roles at other in the corporation</param>
+        /// <param name="corporationDateTime">The time the character joined the corporation</param>
+        /// <param name="startDateTime">The time the character started</param>
+        /// <param name="createDateTime">The time the character was created</param>
+        /// <param name="ancestryID">The ancestry of the character</param>
+        /// <param name="careerID">The career of the character</param>
+        /// <param name="schoolID">The school of the character</param>
+        /// <param name="careerSpecialityID">The speciality of the character</param>
+        /// <param name="gender">The gender of the character</param>
+        /// <param name="accessoryID"></param>
+        /// <param name="beardID"></param>
+        /// <param name="costumeID"></param>
+        /// <param name="decoID"></param>
+        /// <param name="eyebrowsID"></param>
+        /// <param name="eyesID"></param>
+        /// <param name="hairID"></param>
+        /// <param name="lipstickID"></param>
+        /// <param name="makeupID"></param>
+        /// <param name="skinID"></param>
+        /// <param name="backgroundID"></param>
+        /// <param name="lightID"></param>
+        /// <param name="headRotation1"></param>
+        /// <param name="headRotation2"></param>
+        /// <param name="headRotation3"></param>
+        /// <param name="eyeRotation1"></param>
+        /// <param name="eyeRotation2"></param>
+        /// <param name="eyeRotation3"></param>
+        /// <param name="camPos1"></param>
+        /// <param name="camPos2"></param>
+        /// <param name="camPos3"></param>
+        /// <param name="morph1E"></param>
+        /// <param name="morph1N"></param>
+        /// <param name="morph1S"></param>
+        /// <param name="morph1W"></param>
+        /// <param name="morph2E"></param>
+        /// <param name="morph2N"></param>
+        /// <param name="morph2S"></param>
+        /// <param name="morph2W"></param>
+        /// <param name="morph3E"></param>
+        /// <param name="morph3N"></param>
+        /// <param name="morph3S"></param>
+        /// <param name="morph3W"></param>
+        /// <param name="morph4E"></param>
+        /// <param name="morph4N"></param>
+        /// <param name="morph4S"></param>
+        /// <param name="morph4W"></param>
+        /// <param name="stationID">At what station the character is at right now</param>
+        /// <param name="solarSystemID">At what solar system the character is at right now</param>
+        /// <param name="constellationID">At what constellation the character is at right now</param>
+        /// <param name="regionID">At what region the character is at right now</param>
+        /// <returns></returns>
         public int CreateCharacter(Type from, string name, ItemEntity owner, int accountID, double securityRating,
             int corporationID, int corpRole, int rolesAtBase, int rolesAtHQ, int rolesAtOther,
             long corporationDateTime, long startDateTime, long createDateTime, int ancestryID, int careerID, int schoolID,
@@ -324,6 +422,12 @@ namespace Node.Database
             return itemID;
         }
 
+        /// <summary>
+        /// Creates an employment record for a character
+        /// </summary>
+        /// <param name="itemID">The character</param>
+        /// <param name="corporationID">The corporation</param>
+        /// <param name="createDateTime">When the employment change happened</param>
         public void CreateEmploymentRecord(int itemID, int corporationID, long createDateTime)
         {
             // create employment record
@@ -338,6 +442,15 @@ namespace Node.Database
             );
         }
 
+        /// <summary>
+        /// Gets a random career for the given race
+        /// </summary>
+        /// <param name="raceID">The reace to get the career information for</param>
+        /// <param name="careerID">The choosen career</param>
+        /// <param name="schoolID">The choosen school</param>
+        /// <param name="careerSpecialityID">The choosen speciality</param>
+        /// <param name="corporationID">The choosen corporation</param>
+        /// <returns>Whether the information was found or not</returns>
         public bool GetRandomCareerForRace(int raceID, out int careerID, out int schoolID, out int careerSpecialityID, out int corporationID)
         {
             MySqlConnection connection = null;
@@ -373,6 +486,15 @@ namespace Node.Database
             }
         }
 
+        /// <summary>
+        /// Gets the default location for the given corporation
+        /// </summary>
+        /// <param name="corporationID"></param>
+        /// <param name="stationID">The station where the corporation is</param>
+        /// <param name="solarSystemID">The solar system where the corporation is</param>
+        /// <param name="constellationID">The constellation where the corporation is</param>
+        /// <param name="regionID">The region where the corporation is</param>
+        /// <returns>Whether the information was found or not</returns>
         public bool GetLocationForCorporation(int corporationID, out int stationID, out int solarSystemID,
             out int constellationID, out int regionID)
         {
@@ -410,6 +532,11 @@ namespace Node.Database
             }
         }
 
+        /// <summary>
+        /// Gets the default skills assigned to the given race
+        /// </summary>
+        /// <param name="raceID"></param>
+        /// <returns>Dictionary of skillTypeID related to the skill level</returns>
         public Dictionary<int, int> GetBasicSkillsByRace(int raceID)
         {
             Dictionary<int, int> skills = new Dictionary<int, int>();
@@ -434,6 +561,10 @@ namespace Node.Database
             return skills;
         }
 
+        /// <summary>
+        /// Obtains the keymap list for the wallet, ready for the EVE Client
+        /// </summary>
+        /// <returns></returns>
         public Rowset GetKeyMap()
         {
             MySqlConnection connection = null;
@@ -448,6 +579,12 @@ namespace Node.Database
             }
         }
 
+        /// <summary>
+        /// Loads the current skill queue for the given character
+        /// </summary>
+        /// <param name="character">Character to get the queue for</param>
+        /// <param name="skillsInTraining">The list of skills that are being trained (based on the inventory)</param>
+        /// <returns></returns>
         public List<Character.SkillQueueEntry> LoadSkillQueue(Character character, Dictionary<int, Skill> skillsInTraining)
         {
             MySqlConnection connection = null;
@@ -480,6 +617,11 @@ namespace Node.Database
             }
         }
 
+        /// <summary>
+        /// Obtains the notes created by the given character
+        /// </summary>
+        /// <param name="character"></param>
+        /// <returns></returns>
         public Rowset GetOwnerNoteLabels(Character character)
         {
             return Database.PrepareRowsetQuery(
@@ -491,6 +633,11 @@ namespace Node.Database
             );
         }
 
+        /// <summary>
+        /// Checks if the given <paramref name="characterID"/> is online or not
+        /// </summary>
+        /// <param name="characterID"></param>
+        /// <returns></returns>
         public bool IsOnline(int characterID)
         {
             MySqlConnection connection = null;
@@ -512,6 +659,11 @@ namespace Node.Database
             }
         }
 
+        /// <summary>
+        /// Returns the list of characters that are online in the <paramref name="character"/>'s friend list
+        /// </summary>
+        /// <param name="character"></param>
+        /// <returns></returns>
         public PyList<PyInteger> GetOnlineFriendList(Character character)
         {
             MySqlConnection connection = null;
@@ -535,6 +687,10 @@ namespace Node.Database
             }
         }
 
+        /// <summary>
+        /// Updates the given <paramref name="characterID"/> login date to the current time
+        /// </summary>
+        /// <param name="characterID"></param>
         public void UpdateCharacterLogonDateTime(int characterID)
         {
             Database.PrepareQuery(
@@ -547,6 +703,10 @@ namespace Node.Database
             );
         }
 
+        /// <summary>
+        /// Saves various aspects of a character like online status, activeCloneID, attribute remap status, clone jump, skill queue, description...
+        /// </summary>
+        /// <param name="character"></param>
         public void UpdateCharacterInformation(Character character)
         {
             Database.PrepareQuery(
@@ -604,6 +764,15 @@ namespace Node.Database
             }
         }
 
+        /// <summary>
+        /// Obtains the journal for the <paramref name="characterID"/> ready to be sent to the EVE Client
+        /// </summary>
+        /// <param name="characterID"></param>
+        /// <param name="refTypeID">Filter by the given reference type (if not null)</param>
+        /// <param name="accountKey">The account to get the journal for</param>
+        /// <param name="maxDate">The maximum date to be fetched</param>
+        /// <param name="startTransactionID">The record to start from (if any, used for pagination)</param>
+        /// <returns></returns>
         public Rowset GetJournal(int characterID, int? refTypeID, int accountKey, long maxDate, int? startTransactionID)
         {
             // get the last 30 days of journal
@@ -640,6 +809,13 @@ namespace Node.Database
             return Database.PrepareRowsetQuery(query, parameters);
         }
 
+        /// <summary>
+        /// Gets the history of ship kills and losses related to the given <paramref name="characterID"/>
+        /// </summary>
+        /// <param name="characterID"></param>
+        /// <param name="count">The maximum amount of records to be returned</param>
+        /// <param name="startIndex">The amount of records to ignore from the begining of the result</param>
+        /// <returns></returns>
         public Rowset GetRecentShipKillsAndLosses(int characterID, int count, int? startIndex)
         {
             // TODO: WRITE A GENERATOR FOR THE KILL LOGS, THESE SEEM TO BE KIND OF AN XML FILE WITH ALL THE INFORMATION
@@ -655,6 +831,10 @@ namespace Node.Database
             );
         }
 
+        /// <summary>
+        /// Gets the top 100 bounties on the server ready for the EVE Client
+        /// </summary>
+        /// <returns></returns>
         public Rowset GetTopBounties()
         {
             // return the 100 topmost bounties
@@ -663,6 +843,12 @@ namespace Node.Database
             );
         }
 
+        /// <summary>
+        /// Adds a new bounty to the <paramref name="characterID"/>
+        /// </summary>
+        /// <param name="characterID">The player to place the bounty on</param>
+        /// <param name="ownerID">Who placed the bounty</param>
+        /// <param name="bounty">The amount</param>
         public void AddToBounty(int characterID, int ownerID, double bounty)
         {
             // create bounty record
@@ -687,6 +873,11 @@ namespace Node.Database
             );
         }
 
+        /// <summary>
+        /// Fetches some private information for the given <paramref name="characterID"/>
+        /// </summary>
+        /// <param name="characterID"></param>
+        /// <returns></returns>
         public PyDataType GetPrivateInfo(int characterID)
         {
             return Database.PrepareKeyValQuery(
@@ -704,6 +895,11 @@ namespace Node.Database
             );
         }
 
+        /// <summary>
+        /// Obtains information about the character's appearance ready for the EVE Client
+        /// </summary>
+        /// <param name="characterID"></param>
+        /// <returns></returns>
         public Rowset GetCharacterAppearanceInfo(int characterID)
         {
             return Database.PrepareRowsetQuery(
@@ -722,6 +918,12 @@ namespace Node.Database
             );
         }
 
+        /// <summary>
+        /// Gets the note written by <paramref name="ownerID"/> for the given <paramref name="itemID"/>
+        /// </summary>
+        /// <param name="itemID"></param>
+        /// <param name="ownerID"></param>
+        /// <returns></returns>
         public string GetNote(int itemID, int ownerID)
         {
             MySqlConnection connection = null;
@@ -745,6 +947,12 @@ namespace Node.Database
             }
         }
 
+        /// <summary>
+        /// Updates the note written by <paramref name="ownerID"/> for the given <paramref name="itemID"/>
+        /// </summary>
+        /// <param name="itemID"></param>
+        /// <param name="ownerID"></param>
+        /// <param name="note">The note's text</param>
         public void SetNote(int itemID, int ownerID, string note)
         {
             // remove the note if no text is present
@@ -771,6 +979,11 @@ namespace Node.Database
             }
         }
 
+        /// <summary>
+        /// Obtains the character name of the given <paramref name="characterID"/>
+        /// </summary>
+        /// <param name="characterID"></param>
+        /// <returns></returns>
         public string GetCharacterName(int characterID)
         {
             MySqlConnection connection = null;
@@ -792,6 +1005,12 @@ namespace Node.Database
             }
         }
 
+        /// <summary>
+        /// Obtains the skill level for the given character
+        /// </summary>
+        /// <param name="skill">The skill type</param>
+        /// <param name="characterID">The character to get skill level from</param>
+        /// <returns></returns>
         public int GetSkillLevelForCharacter(Types skill, int characterID)
         {
             MySqlConnection connection = null;
@@ -814,11 +1033,16 @@ namespace Node.Database
             }
         }
 
+        /// <summary>
+        /// Searches for characters with the given name
+        /// </summary>
+        /// <param name="namePart"></param>
+        /// <returns></returns>
         public List<int> FindCharacters(string namePart)
         {
             MySqlConnection connection = null;
             MySqlDataReader reader = Database.PrepareQuery(ref connection,
-                "SELECT itemID FROM chrInformation LEFT JOIN eveNames ON chrInformation.characterID = eveNames.itemID WHERE itemName LIKE @name",
+                "SELECT itemID FROM eveNames WHERE groupID = 1 AND itemName LIKE @name",
                 new Dictionary<string, object>()
                 {
                     {"@name", $"%{namePart}%"}
@@ -839,6 +1063,11 @@ namespace Node.Database
             }
         }
 
+        /// <summary>
+        /// Gets the last date this character joined a faction (if any)
+        /// </summary>
+        /// <param name="characterID"></param>
+        /// <returns></returns>
         public long GetLastFactionJoinDate(int characterID)
         {
             MySqlConnection connection = null;
@@ -860,6 +1089,11 @@ namespace Node.Database
             }
         }
 
+        /// <summary>
+        /// Get's when the character's stasis timer started (if any)
+        /// </summary>
+        /// <param name="characterID"></param>
+        /// <returns></returns>
         public long? GetCharacterStasisTimer(int characterID)
         {
             MySqlConnection connection = null;
@@ -881,6 +1115,21 @@ namespace Node.Database
             }
         }
 
+        /// <summary>
+        /// Obtains the character's role information
+        /// </summary>
+        /// <param name="characterID"></param>
+        /// <param name="roles">The roles the character has</param>
+        /// <param name="rolesAtBase">The roles at base the character has</param>
+        /// <param name="rolesAtHQ">The roles at HQ the character has</param>
+        /// <param name="rolesAtOther">The roles at other the character has</param>
+        /// <param name="grantableRoles">The roles the character can grant</param>
+        /// <param name="grantableRolesAtBase">The roles at base the character can grant</param>
+        /// <param name="grantableRolesAtHQ">The roles at HQ the character can grant</param>
+        /// <param name="grantableRolesAtOther">The roles at other the character can grant</param>
+        /// <param name="blockRoles">If the character has blocked role changing</param>
+        /// <param name="baseID">The baseID for the character</param>
+        /// <exception cref="Exception"></exception>
         public void GetCharacterRoles(int characterID, out long roles, out long rolesAtBase, out long rolesAtHQ,
             out long rolesAtOther, out long grantableRoles, out long grantableRolesAtBase, out long grantableRolesAtHQ,
             out long grantableRolesAtOther, out bool blockRoles, out int? baseID)
@@ -913,6 +1162,19 @@ namespace Node.Database
             }
         }
 
+        /// <summary>
+        /// Updates the character role information
+        /// </summary>
+        /// <param name="characterID"></param>
+        /// <param name="roles">The roles the character has</param>
+        /// <param name="rolesAtBase">The roles at base the character has</param>
+        /// <param name="rolesAtHQ">The roles at HQ the character has</param>
+        /// <param name="rolesAtOther">The roles at other the character has</param>
+        /// <param name="grantableRoles">The roles the character can grant</param>
+        /// <param name="grantableRolesAtBase">The roles at base the character can grant</param>
+        /// <param name="grantableRolesAtHQ">The roles at HQ the character can grant</param>
+        /// <param name="grantableRolesAtOther">The roles at other the character can grant</param>
+        /// <param name="titleMask">The titles this character has</param>
         public void UpdateCharacterRoles(int characterID, long roles, long rolesAtHQ, long rolesAtBase, long rolesAtOther,
             long grantableRoles, long grantableRolesAtHQ, long grantableRolesAtBase, long grantableRolesAtOther, long titleMask)
         {
@@ -934,6 +1196,11 @@ namespace Node.Database
             );
         }
 
+        /// <summary>
+        /// Updates the character's block role status
+        /// </summary>
+        /// <param name="characterID"></param>
+        /// <param name="blockRoles"></param>
         public void UpdateCharacterBlockRole(int characterID, int blockRoles)
         {
             Database.PrepareQuery(
