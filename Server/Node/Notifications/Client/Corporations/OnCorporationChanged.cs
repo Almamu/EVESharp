@@ -10,7 +10,7 @@ namespace Node.Notifications.Client.Corporations
         private const string NOTIFICATION_NAME = "OnCorporationChanged";
         
         public int CorporationID { get; init; }
-        private PyDictionary Changes { get; init; }
+        public PyDictionary Changes { get; init; }
         
         public OnCorporationChanged(int corporationID) : base(NOTIFICATION_NAME)
         {

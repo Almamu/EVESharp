@@ -30,8 +30,8 @@ namespace Node.Inventory.Items.Types
             this.mAllianceID = allianceId;
             this.mShares = shares;
             this.mMemberCount = memberCount;
-            this.mMemberLimit = memberLimit;
-            this.mAllowedMemberRaceIDs = allowedMemberRaceIDs;
+            this.MemberLimit = memberLimit;
+            this.AllowedMemberRaceIDs = allowedMemberRaceIDs;
             this.mGraphicID = graphicId;
             this.mShape1 = shape1;
             this.mShape2 = shape2;
@@ -69,8 +69,6 @@ namespace Node.Inventory.Items.Types
         int mAllianceID;
         long mShares;
         int mMemberCount;
-        int mMemberLimit;
-        int mAllowedMemberRaceIDs;
         int mGraphicID;
         int? mShape1;
         int? mShape2;
@@ -96,8 +94,8 @@ namespace Node.Inventory.Items.Types
         public int AllianceID => mAllianceID;
         public long Shares => mShares;
         public int MemberCount => mMemberCount;
-        public int MemberLimit => mMemberLimit;
-        public int AllowedMemberRaceIDs => mAllowedMemberRaceIDs;
+        public int MemberLimit { get; set; }
+        public int AllowedMemberRaceIDs { get; set; }
         public int GraphicId => mGraphicID;
         public int? Shape1 => mShape1;
         public int? Shape2 => mShape2;

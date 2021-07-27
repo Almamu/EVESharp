@@ -1122,6 +1122,19 @@ namespace Node.Database
             );
         }
 
+        public void UpdateMemberLimits(int corporationID, int newMemberLimit, int newRaceMask)
+        {
+            Database.PrepareQuery(
+                "UPDATE corporation SET memberLimit = @memberLimit, allowedMemberRaceIDs = @allowedMemberRaceIDs WHERE corporationID = @corporationID",
+                new Dictionary<string, object>()
+                {
+                    {"@memberLimit", newMemberLimit},
+                    {"@allowedMemberRaceIDs", newRaceMask},
+                    {"@corporationID", corporationID}
+                }
+            );
+        }
+
         public CorporationDB(ItemDB itemDB, DatabaseConnection db) : base(db)
         {
             this.ItemDB = itemDB;

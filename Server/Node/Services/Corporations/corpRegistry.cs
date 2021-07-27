@@ -427,10 +427,11 @@ namespace Node.Services.Corporations
                     character.RolesAtBase = long.MaxValue;
                     character.RolesAtHq = long.MaxValue;
                     character.RolesAtOther = long.MaxValue;
+                    character.TitleMask = ushort.MaxValue;
                     // ensure the database reflects these changes
                     this.CharacterDB.UpdateCharacterRoles(
                         character.ID, long.MaxValue, long.MaxValue, long.MaxValue,
-                        long.MaxValue, long.MaxValue, long.MaxValue, long.MaxValue, long.MaxValue, long.MaxValue
+                        long.MaxValue, long.MaxValue, long.MaxValue, long.MaxValue, long.MaxValue, ushort.MaxValue
                     );
                     character.CorporationDateTime = DateTime.UtcNow.ToFileTimeUtc();
                     // notify cluster about the corporation changes
@@ -684,9 +685,38 @@ namespace Node.Services.Corporations
             Character character = this.ItemFactory.GetItem<Character>(call.Client.EnsureCharacterIsSelected());
             
             // update the abilities of the corporation
-            long corporationManagementLevel = character.GetSkillLevel(Types.CorporationManagement);
-            long ethnicRelationsLevel = character.GetSkillLevel(Types.EthnicRelations);
-            
+            int corporationManagementLevel = (int) character.GetSkillLevel(Types.CorporationManagement); // +10 members per level 
+            int ethnicRelationsLevel = (int) character.GetSkillLevel(Types.EthnicRelations); // 20% more members of other races based off the character's corporation levels TODO: SUPPORT THIS!
+            int empireControlLevel = (int) character.GetSkillLevel(Types.EmpireControl); // adds +200 members per level
+            int megacorpManagementLevel = (int) character.GetSkillLevel(Types.MegacorpManagement); // adds +50 members per level
+            int sovereigntyLevel = (int) character.GetSkillLevel(Types.Sovereignty); // adds +1000 members per level
+
+            int maximumMembers = (corporationManagementLevel * 10) + (empireControlLevel * 200) +
+                                  (megacorpManagementLevel * 50) + (sovereigntyLevel * 1000);
+
+            OnCorporationChanged change = new OnCorporationChanged(this.mCorporation.ID);
+
+            if (this.mCorporation.MemberLimit != maximumMembers)
+            {
+                change.AddChange("memberLimit", this.mCorporation.MemberLimit, maximumMembers);
+                this.mCorporation.MemberLimit = maximumMembers;    
+            }
+
+            if (ethnicRelationsLevel > 0)
+            {
+                change.AddChange("allowedMemberRaceIDs", this.mCorporation.AllowedMemberRaceIDs, 63);
+                this.mCorporation.AllowedMemberRaceIDs = 63;
+            }
+
+            if (change.Changes.Count > 0)
+            {
+                this.DB.UpdateMemberLimits(this.mCorporation.ID, this.mCorporation.MemberLimit, this.mCorporation.AllowedMemberRaceIDs);
+
+                this.NotificationManager.NotifyCorporation(this.mCorporation.ID, change);
+
+                return true;
+            }
+
             return null;
         }
         
