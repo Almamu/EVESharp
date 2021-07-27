@@ -1,10 +1,12 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using EVE;
 using EVE.Packets.Exceptions;
 using Node.Database;
 using Node.Exceptions;
 using Node.Exceptions.corpStationMgr;
+using Node.Exceptions.Internal;
 using Node.Inventory;
 using Node.Inventory.Items;
 using Node.Inventory.Items.Types;
@@ -232,9 +234,13 @@ namespace Node.Services.Stations
         public PyInteger GetQuoteForRentingAnOffice(CallInformation call)
         {
             int stationID = call.Client.EnsureCharacterIsInStation();
-            // TODO: DECOUPLE ITEM FACTORY FROM THIS, CEO INFORMATION SHOULD BE FETCHED OFF THE DATABASE
-            // make sure the user is CEO or allowed to rent
-            if (CorporationRole.CanRentOffice.Is(call.Client.CorporationRole) == false && this.ItemFactory.GetItem<Corporation>(call.Client.CorporationID).CeoID != call.Client.CharacterID)
+            int characterID = call.Client.EnsureCharacterIsSelected();
+            
+            // ensure the character has the required skill to manage offices
+            this.ItemFactory.GetItem<Character>(characterID).EnsureSkillLevel(Types.PublicRelations);
+            
+            // make sure the user is director or allowed to rent
+            if (CorporationRole.Director.Is(call.Client.CorporationRole) == false && CorporationRole.CanRentOffice.Is(call.Client.CorporationRole) == false)
                 throw new RentingOfficeQuotesOnlyGivenToActiveCEOsOrEquivale();
             
             return this.ItemFactory.Stations[stationID].OfficeRentalCost;
@@ -244,6 +250,7 @@ namespace Node.Services.Stations
         {
             int rentalCost = this.GetQuoteForRentingAnOffice(call);
             int stationID = call.Client.EnsureCharacterIsInStation();
+            int characterID = call.Client.EnsureCharacterIsSelected();
             
             // double check to ensure the amout we're paying is what we require now
             if (rentalCost != cost)
@@ -253,7 +260,11 @@ namespace Node.Services.Stations
                 throw new NoOfficesAreAvailableForRenting();
             // check if there's any office rented by us already
             if (this.StationDB.CorporationHasOfficeRentedAt(call.Client.CorporationID, stationID) == true)
-                throw new RentingOfficeRequestDenied("Your corporation already has an office here!");
+                throw new RentingYouHaveAnOfficeHere();
+            if (CorporationRole.CanRentOffice.Is(call.Client.CorporationRole) == false && CorporationRole.Director.Is(call.Client.CorporationRole) == false)
+                throw new RentingOfficeQuotesOnlyGivenToActiveCEOsOrEquivale();
+            // ensure the character has the required skill to manage offices
+            this.ItemFactory.GetItem<Character>(characterID).EnsureSkillLevel(Types.PublicRelations);
             // RentingOfficeRequestDenied
             int ownerCorporationID = this.ItemFactory.Stations[stationID].OwnerID;
             // perform the transaction

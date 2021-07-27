@@ -4,6 +4,7 @@ using System.Linq;
 using Node.Database;
 using Node.Exceptions;
 using Node.Exceptions.character;
+using Node.Exceptions.Internal;
 using Node.Inventory.Items.Attributes;
 using Node.Network;
 using Node.StaticData.Corporation;
@@ -637,6 +638,18 @@ namespace Node.Inventory.Items.Types
                 return 0;
 
             return skill.Level;
+        }
+
+        /// <summary>
+        /// Checks if the character has the required skill at the specified level and throws an exception if not
+        /// </summary>
+        /// <param name="skillTypeID">The skill to look for</param>
+        /// <param name="level">The minimum level</param>
+        /// <exception cref="SkillMissingException">If the skill requirement is not met</exception>
+        public void EnsureSkillLevel(StaticData.Inventory.Types skillTypeID, int level = 1)
+        {
+            if (this.GetSkillLevel(skillTypeID) < level)
+                throw new SkillRequired(skillTypeID);
         }
         
         public void EnsureFreeImplantSlot(ItemEntity newImplant)
