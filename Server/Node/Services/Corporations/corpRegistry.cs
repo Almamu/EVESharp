@@ -904,10 +904,10 @@ namespace Node.Services.Corporations
                 .AddValue("createDateTime", null, DateTime.UtcNow.ToFileTimeUtc())
                 .AddValue("regionID", null, station.RegionID)
                 .AddValue("solarSystemID", null, station.SolarSystemID)
-                .AddValue("constellationID", null, station.ConstellationID);
+                .AddValue("constellationID", null, station.ConstellationID)
+                .AddValue("skillPoints", null, skillpoints);
 
-            // notify characters in the station TODO: CHECK IF WE REALLY NEED THIS
-            this.NotificationManager.NotifyStation(stationID, changes);
+            // TODO: MAYBE NOTIFY CHARACTERS IN THE STATION?
             // notify corporation members
             this.NotificationManager.NotifyCorporation(call.Client.CorporationID, changes);
             
@@ -1032,14 +1032,38 @@ namespace Node.Services.Corporations
         {
             if (CorporationRole.PersonnelManager.Is(call.Client.CorporationRole) == false)
                 return null;
-            
-            this.DB.DeleteRecruitmentAd(advertID, call.Client.CorporationID);
-            
-            // send notification
-            this.NotificationManager.NotifyCorporation(call.Client.CorporationID,
-                new OnCorporationRecruitmentAdChanged(call.Client.CorporationID, advertID)
-                    .AddValue ("adID", advertID, null)
-            );
+
+            if (this.DB.DeleteRecruitmentAd(advertID, call.Client.CorporationID) == true)
+            {
+                // TODO: MAYBE NOTIFY CHARACTERS IN THE STATION?
+                // send notification
+                this.NotificationManager.NotifyCorporation(call.Client.CorporationID,
+                    new OnCorporationRecruitmentAdChanged(call.Client.CorporationID, advertID)
+                        .AddValue ("adID", advertID, null)
+                );
+            }
+
+            return null;
+        }
+
+        public PyDataType UpdateRecruitmentAd(PyInteger adID, PyInteger typeMask, PyInteger raceMask, PyInteger skillPoints, PyString description, CallInformation call)
+        {
+            if (CorporationRole.PersonnelManager.Is(call.Client.CorporationRole) == false)
+                return null;
+
+            if (this.DB.UpdateRecruitmentAd(adID, call.Client.CorporationID, typeMask, raceMask, description, skillPoints) == true)
+            {
+                OnCorporationRecruitmentAdChanged changes = new OnCorporationRecruitmentAdChanged(call.Client.CorporationID, adID);
+                // add the fields for the recruitment ad change
+                changes
+                    .AddValue("typeMask", typeMask, typeMask)
+                    .AddValue("description", description, description)
+                    .AddValue("raceMask", raceMask, raceMask)
+                    .AddValue("skillPoints", skillPoints, skillPoints);
+
+                // TODO: MAYBE NOTIFY CHARACTERS IN THE STATION?
+                this.NotificationManager.NotifyCorporation(call.Client.CorporationID, changes);
+            }
 
             return null;
         }

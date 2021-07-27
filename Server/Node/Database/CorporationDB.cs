@@ -972,15 +972,31 @@ namespace Node.Database
             );
         }
 
-        public void DeleteRecruitmentAd(int advertId, int corporationID)
+        public bool DeleteRecruitmentAd(int advertId, int corporationID)
         {
-            Database.PrepareQuery("DELETE FROM crpRecruitmentAds WHERE adID = @adID AND corporationID = @corporationID",
+            return Database.PrepareQuery("DELETE FROM crpRecruitmentAds WHERE adID = @adID AND corporationID = @corporationID",
                 new Dictionary<string, object>()
                 {
                     {"@adID", advertId},
                     {"@corporationID", corporationID}
                 }
-            );
+            ) > 0;
+        }
+        
+        public bool UpdateRecruitmentAd(int adID, int corporationID, int typeMask, int raceMask, string description, int skillPoints)
+        {
+            return Database.PrepareQuery(
+                "UPDATE crpRecruitmentAds SET typeMask = @typeMask, raceMask = @raceMask, description = @description, minimumSkillPoints = @minimumSkillpoints WHERE adID = @adID AND corporationID = @corporationID",
+                new Dictionary<string, object>()
+                {
+                    {"@adID", adID},
+                    {"@corporationID", corporationID},
+                    {"@typeMask", typeMask},
+                    {"@raceMask", raceMask},
+                    {"@description", description},
+                    {"@minimumSkillpoints", skillPoints},
+                }
+            ) > 0;
         }
 
         public PyDataType GetCorporationRow(int corporationID)
