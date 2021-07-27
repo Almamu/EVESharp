@@ -659,7 +659,7 @@ namespace Node.Database
         {
             Dictionary<string, object> parameters = new Dictionary<string, object>();
             string query =
-                "SELECT adID, crpRecruitmentAds.corporationID, crpRecruitmentAds.corporationID AS channelID, typeMask, crpRecruitmentAds.description, crpRecruitmentAds.stationID, raceMask, corporation.allianceID, expiryDateTime, createDateTime, regionID, constellationID, solarSystemID, minimumSkillPoints AS skillPoints FROM crpRecruitmentAds LEFT JOIN corporation ON crpRecruitmentAds.corporationID = corporation.corporationID LEFT JOIN staStations ON crpRecruitmentAds.stationID = staStations.stationID WHERE 1=1";
+                "SELECT adID, crpRecruitmentAds.corporationID, 24 AS channelID, typeMask, crpRecruitmentAds.description, crpRecruitmentAds.stationID, raceMask, corporation.allianceID, expiryDateTime, createDateTime, regionID, constellationID, solarSystemID, minimumSkillPoints AS skillPoints FROM crpRecruitmentAds LEFT JOIN corporation ON crpRecruitmentAds.corporationID = corporation.corporationID LEFT JOIN staStations ON crpRecruitmentAds.stationID = staStations.stationID WHERE 1=1";
 
             if (regionID is not null)
             {
@@ -743,6 +743,17 @@ namespace Node.Database
                 new Dictionary<string, object>()
                 {
                     {"@characterID", characterID}
+                }
+            );
+        }
+
+        public PyDataType GetApplicationsToCorporation(int corporationID)
+        {
+            return Database.PrepareDictRowListQuery(
+                "SELECT corporationID, characterID, applicationText, roles, grantableRoles, status, applicationDateTime, deleted, lastCorpUpdaterID FROM chrApplications WHERE corporationID = @corporationID",
+                new Dictionary<string, object>()
+                {
+                    {"@corporationID", corporationID}
                 }
             );
         }

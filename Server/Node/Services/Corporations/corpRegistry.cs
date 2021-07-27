@@ -450,6 +450,10 @@ namespace Node.Services.Corporations
                     this.WalletManager.CreateWallet(corporationID, 1004, 0.0);
                     this.WalletManager.CreateWallet(corporationID, 1005, 0.0);
                     this.WalletManager.CreateWallet(corporationID, 1006, 0.0);
+                    // create the employment record for the character
+                    this.CharacterDB.CreateEmploymentRecord(character.ID, corporationID, DateTime.UtcNow.ToFileTimeUtc());
+                    // create company shares too!
+                    this.DB.UpdateShares(corporationID, corporationID, 1000);
 
                     // set the default wallet for the character
                     call.Client.CorpAccountKey = 1000;
@@ -1066,6 +1070,14 @@ namespace Node.Services.Corporations
             }
 
             return null;
+        }
+
+        public PyDataType GetApplications(CallInformation call)
+        {
+            if (CorporationRole.PersonnelManager.Is(call.Client.CorporationRole) == false)
+                throw new CrpAccessDenied(MLS.UI_CORP_NEED_ROLE_PERS_MAN_TO_MANAGE_APPLICATIONS);
+            
+            return this.DB.GetApplicationsToCorporation(call.Client.CorporationID);
         }
     }
 }
