@@ -15,7 +15,7 @@ namespace Node.Database
 	    public Rowset GetMailHeaders(int characterID)
         {
             return Database.PrepareRowsetQuery(
-	            "SELECT channelID, messageID, senderID, subject, created, `read` FROM lscChannelPermissions LEFT JOIN eveMail USING(channelID) WHERE accessor = @characterID",
+	            "SELECT channelID, messageID, senderID, subject, created, `read` FROM eveMail LEFT JOIN lscChannelPermissions USING(channelID) WHERE accessor = @characterID",
 	            new Dictionary<string, object>()
 	            {
 		            {"@characterID", characterID}
