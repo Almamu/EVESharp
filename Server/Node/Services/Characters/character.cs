@@ -346,10 +346,7 @@ namespace Node.Services.Characters
 
             character.LocationID = ship.ID;
             character.ActiveClone = clone;
-            
-            // create player's wallet
-            this.WalletManager.CreateWallet(character.ID, 1000, 0);
-            
+
             // get the wallet for the player and give the money specified in the configuration
             using Wallet wallet = this.WalletManager.AcquireWallet(character.ID, 1000);
             {

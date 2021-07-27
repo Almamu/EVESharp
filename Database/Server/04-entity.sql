@@ -131,12 +131,6 @@ REPLACE INTO invPositions (itemID, x, y, z)
       SELECT mapDenormalize.itemID FROM mapDenormalize LEFT JOIN invPositions ON invPositions.itemID = mapDenormalize.itemID WHERE invPositions.itemID IS NULL
     );
 /*
- * Insert static characters to invItems table
- */
-REPLACE INTO invItems (itemID, typeID, ownerID, locationID, singleton, quantity)
- SELECT characterID, typeID, 1, stationID, 1, 1
-  FROM chrInformation WHERE characterID < 100000000;
-/*
  * Insert corporations
  */
 REPLACE INTO invItems (itemID, typeID, ownerID, locationID, singleton, quantity)
