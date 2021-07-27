@@ -134,6 +134,7 @@ namespace Node
                 dependencies.Register<WalletManager>(Lifestyle.Singleton);
                 dependencies.Register<MailManager>(Lifestyle.Singleton);
                 dependencies.Register<AgentManager>(Lifestyle.Singleton);
+                dependencies.Register<AncestryManager>(Lifestyle.Singleton);
 
                 // register the database accessors dependencies
                 dependencies.Register<AccountDB>(Lifestyle.Singleton);

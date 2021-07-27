@@ -68,12 +68,13 @@ namespace Node.Services.Characters
         private NodeContainer Container { get; }
         private NotificationManager NotificationManager { get; }
         private WalletManager WalletManager { get; init; }
-        private readonly Dictionary<int, Bloodline> mBloodlineCache = null;
-        private readonly Dictionary<int, Ancestry> mAncestriesCache = null;
+        private AncestryManager AncestryManager { get; init; }
         private readonly Configuration.Character mConfiguration = null;
         private readonly Channel Log = null;
 
-        public character(CacheStorage cacheStorage, CharacterDB db, ChatDB chatDB, CorporationDB corporationDB, ItemFactory itemFactory, Logger logger, Configuration.Character configuration, NodeContainer container, NotificationManager notificationManager, WalletManager walletManager)
+        public character(CacheStorage cacheStorage, CharacterDB db, ChatDB chatDB, CorporationDB corporationDB,
+            ItemFactory itemFactory, Logger logger, Configuration.Character configuration, NodeContainer container,
+            NotificationManager notificationManager, WalletManager walletManager, AncestryManager ancestryManager)
         {
             this.Log = logger.CreateLogChannel("character");
             this.mConfiguration = configuration;
@@ -84,9 +85,8 @@ namespace Node.Services.Characters
             this.CacheStorage = cacheStorage;
             this.Container = container;
             this.NotificationManager = notificationManager;
-            this.mBloodlineCache = this.DB.GetBloodlineInformation();
-            this.mAncestriesCache = this.DB.GetAncestryInformation(this.mBloodlineCache);
             this.WalletManager = walletManager;
+            this.AncestryManager = ancestryManager;
         }
 
         public PyDataType GetCharactersToSelect(CallInformation call)
@@ -287,11 +287,12 @@ namespace Node.Services.Characters
             }
             
             // load bloodline and ancestry info for the requested character
-            Bloodline bloodline = this.mBloodlineCache[bloodlineID];
-            Ancestry ancestry = this.mAncestriesCache[ancestryID];
+            Ancestry ancestry = this.AncestryManager[ancestryID];
+            Bloodline bloodline = this.AncestryManager.Bloodlines[bloodlineID];
+            
             long currentTime = DateTime.UtcNow.ToFileTimeUtc();
-
-            if (ancestry.Bloodline != bloodline)
+            
+            if (ancestry.Bloodline.ID != bloodlineID)
             {
                 Log.Error($"The ancestry {ancestryID} doesn't belong to the given bloodline {bloodlineID}");
 
@@ -444,7 +445,7 @@ namespace Node.Services.Characters
             call.Client.RegionID = character.RegionID;
             call.Client.HQID = 0;
             call.Client.ShipID = character.LocationID;
-            call.Client.RaceID = this.mAncestriesCache[character.AncestryID].Bloodline.RaceID;
+            call.Client.RaceID = this.AncestryManager[character.AncestryID].Bloodline.RaceID;
             
             // check if the character has any accounting roles and set the correct accountKey based on the data
             if (CorporationRole.AccountCanQuery1.Is(call.Client.CorporationRole) && character.CorpAccountKey == 1000)

@@ -49,12 +49,13 @@ namespace Node.Services.Corporations
         private ClientManager ClientManager { get; init; }
         private MembersSparseRowsetService MembersSparseRowset { get; set; }
         private OfficesSparseRowsetService OfficesSparseRowset { get; set; }
+        private AncestryManager AncestryManager { get; set; }
         
         // constants
         private long CorporationAdvertisementFlatFee { get; init; }
         private long CorporationAdvertisementDailyRate { get; init; }
         
-        public corpRegistry(CorporationDB db, ChatDB chatDB, CharacterDB characterDB, NotificationManager notificationManager, MailManager mailManager, WalletManager walletManager, NodeContainer container, ItemFactory itemFactory, ClientManager clientManager, BoundServiceManager manager) : base(manager)
+        public corpRegistry(CorporationDB db, ChatDB chatDB, CharacterDB characterDB, NotificationManager notificationManager, MailManager mailManager, WalletManager walletManager, NodeContainer container, ItemFactory itemFactory, ClientManager clientManager, BoundServiceManager manager, AncestryManager ancestryManager) : base(manager)
         {
             this.DB = db;
             this.ChatDB = chatDB;
@@ -65,9 +66,10 @@ namespace Node.Services.Corporations
             this.Container = container;
             this.ItemFactory = itemFactory;
             this.ClientManager = clientManager;
+            this.AncestryManager = ancestryManager;
         }
 
-        protected corpRegistry(CorporationDB db, ChatDB chatDB, CharacterDB characterDB, NotificationManager notificationManager, MailManager mailManager, WalletManager walletManager, NodeContainer container, ItemFactory itemFactory, ClientManager clientManager, Corporation corp, int isMaster, corpRegistry parent) : base (parent, corp.ID)
+        protected corpRegistry(CorporationDB db, ChatDB chatDB, CharacterDB characterDB, NotificationManager notificationManager, MailManager mailManager, WalletManager walletManager, NodeContainer container, ItemFactory itemFactory, ClientManager clientManager, AncestryManager ancestryManager, Corporation corp, int isMaster, corpRegistry parent) : base (parent, corp.ID)
         {
             this.DB = db;
             this.ChatDB = chatDB;
@@ -82,6 +84,7 @@ namespace Node.Services.Corporations
             this.ClientManager = clientManager;
             this.CorporationAdvertisementFlatFee = this.Container.Constants["corporationAdvertisementFlatFee"].Value;
             this.CorporationAdvertisementDailyRate = this.Container.Constants["corporationAdvertisementDailyRate"].Value;
+            this.AncestryManager = ancestryManager;
         }
 
         public PyDataType GetEveOwners(CallInformation call)
@@ -380,9 +383,11 @@ namespace Node.Services.Corporations
             // TODO: SWITCH UP THE CORPORATION CHANGE MECHANISM TO NOT RELY ON THE CHARACTER OBJECT SO THIS CAN BE DONE THROUGH THE DATABASE
             // TODO: DIRECTLY
             Character character = this.ItemFactory.GetItem<Character>(callerCharacterID);
+            
+            this.CalculateCorporationLimits(character, out int maximumMembers, out int allowedMemberRaceIDs);
+            
             // ensure the character has the required skills
             long corporationManagementLevel = character.GetSkillLevel(Types.CorporationManagement);
-            long ethnicRelationsLevel = character.GetSkillLevel(Types.EthnicRelations);
             
             if (corporationManagementLevel < 1)
                 throw new PlayerCantCreateCorporation(corporationStartupCost);
@@ -398,7 +403,7 @@ namespace Node.Services.Corporations
                     // create the corporation in the corporation table
                     int corporationID = this.DB.CreateCorporation(
                         corporationName, description, tickerName, url, taxRate, callerCharacterID,
-                        stationID, (int) corporationManagementLevel * 10, (int) call.Client.RaceID, (ethnicRelationsLevel > 0) ? 63 : (int) call.Client.RaceID,
+                        stationID, maximumMembers, (int) call.Client.RaceID, allowedMemberRaceIDs,
                         shape1, shape2, shape3, color1, color2, color3, typeface as PyString
                     );
                     // create default titles
@@ -677,6 +682,20 @@ namespace Node.Services.Corporations
             return null;
         }
 
+        private void CalculateCorporationLimits(Character ceo, out int maximumMembers, out int allowedRaceIDs)
+        {
+            int corporationManagementLevel = (int) ceo.GetSkillLevel(Types.CorporationManagement); // +10 members per level 
+            int ethnicRelationsLevel = (int) ceo.GetSkillLevel(Types.EthnicRelations); // 20% more members of other races based off the character's corporation levels TODO: SUPPORT THIS!
+            int empireControlLevel = (int) ceo.GetSkillLevel(Types.EmpireControl); // adds +200 members per level
+            int megacorpManagementLevel = (int) ceo.GetSkillLevel(Types.MegacorpManagement); // adds +50 members per level
+            int sovereigntyLevel = (int) ceo.GetSkillLevel(Types.Sovereignty); // adds +1000 members per level
+
+            maximumMembers = (corporationManagementLevel * 10) + (empireControlLevel * 200) +
+                                 (megacorpManagementLevel * 50) + (sovereigntyLevel * 1000);
+
+            allowedRaceIDs = ethnicRelationsLevel > 0 ? 63 : this.AncestryManager[ceo.AncestryID].Bloodline.RaceID;
+        }
+
         public PyDataType UpdateCorporationAbilities(CallInformation call)
         {
             if (this.mCorporation.CeoID != call.Client.CharacterID)
@@ -684,16 +703,9 @@ namespace Node.Services.Corporations
 
             Character character = this.ItemFactory.GetItem<Character>(call.Client.EnsureCharacterIsSelected());
             
+            this.CalculateCorporationLimits(character, out int maximumMembers, out int allowedMemberRaceIDs);
+            
             // update the abilities of the corporation
-            int corporationManagementLevel = (int) character.GetSkillLevel(Types.CorporationManagement); // +10 members per level 
-            int ethnicRelationsLevel = (int) character.GetSkillLevel(Types.EthnicRelations); // 20% more members of other races based off the character's corporation levels TODO: SUPPORT THIS!
-            int empireControlLevel = (int) character.GetSkillLevel(Types.EmpireControl); // adds +200 members per level
-            int megacorpManagementLevel = (int) character.GetSkillLevel(Types.MegacorpManagement); // adds +50 members per level
-            int sovereigntyLevel = (int) character.GetSkillLevel(Types.Sovereignty); // adds +1000 members per level
-
-            int maximumMembers = (corporationManagementLevel * 10) + (empireControlLevel * 200) +
-                                  (megacorpManagementLevel * 50) + (sovereigntyLevel * 1000);
-
             OnCorporationChanged change = new OnCorporationChanged(this.mCorporation.ID);
 
             if (this.mCorporation.MemberLimit != maximumMembers)
@@ -702,10 +714,10 @@ namespace Node.Services.Corporations
                 this.mCorporation.MemberLimit = maximumMembers;    
             }
 
-            if (ethnicRelationsLevel > 0)
+            if (this.mCorporation.AllowedMemberRaceIDs != allowedMemberRaceIDs)
             {
-                change.AddChange("allowedMemberRaceIDs", this.mCorporation.AllowedMemberRaceIDs, 63);
-                this.mCorporation.AllowedMemberRaceIDs = 63;
+                change.AddChange("allowedMemberRaceIDs", this.mCorporation.AllowedMemberRaceIDs, allowedMemberRaceIDs);
+                this.mCorporation.AllowedMemberRaceIDs = allowedMemberRaceIDs;
             }
 
             if (change.Changes.Count > 0)
@@ -1004,7 +1016,7 @@ namespace Node.Services.Corporations
 
             Corporation corp = this.ItemFactory.LoadItem<Corporation>(bindParams.ObjectID);
             
-            return new corpRegistry (this.DB, this.ChatDB, this.CharacterDB, this.NotificationManager, this.MailManager, this.WalletManager, this.Container, this.ItemFactory, this.ClientManager, corp, bindParams.ExtraValue, this);
+            return new corpRegistry (this.DB, this.ChatDB, this.CharacterDB, this.NotificationManager, this.MailManager, this.WalletManager, this.Container, this.ItemFactory, this.ClientManager, this.AncestryManager, corp, bindParams.ExtraValue, this);
         }
 
         public override bool IsClientAllowedToCall(CallInformation call)

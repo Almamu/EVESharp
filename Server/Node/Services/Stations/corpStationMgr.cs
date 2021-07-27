@@ -234,11 +234,7 @@ namespace Node.Services.Stations
         public PyInteger GetQuoteForRentingAnOffice(CallInformation call)
         {
             int stationID = call.Client.EnsureCharacterIsInStation();
-            int characterID = call.Client.EnsureCharacterIsSelected();
-            
-            // ensure the character has the required skill to manage offices
-            this.ItemFactory.GetItem<Character>(characterID).EnsureSkillLevel(Types.PublicRelations);
-            
+
             // make sure the user is director or allowed to rent
             if (CorporationRole.Director.Is(call.Client.CorporationRole) == false && CorporationRole.CanRentOffice.Is(call.Client.CorporationRole) == false)
                 throw new RentingOfficeQuotesOnlyGivenToActiveCEOsOrEquivale();

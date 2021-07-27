@@ -66,6 +66,7 @@ namespace Node.Inventory
         public TypeManager TypeManager { get; private set; }
         public StationManager StationManager { get; private set; }
         public SystemManager SystemManager { get; private set; }
+        public AncestryManager AncestryManager { get; private set; }
         public ItemDB ItemDB { get; private set; }
         public CharacterDB CharacterDB { get; private set; }
         public InsuranceDB InsuranceDB { get; private set; }
@@ -124,12 +125,15 @@ namespace Node.Inventory
             this.TypeManager = this.DependencyInjection.GetInstance<TypeManager>();
             // finally the item manager
             this.ItemManager = this.DependencyInjection.GetInstance<ItemManager>();
-
+            // the ancestry manager is also needed
+            this.AncestryManager = this.DependencyInjection.GetInstance<AncestryManager>();
+            
             this.AttributeManager.Load();
             this.CategoryManager.Load();
             this.GroupManager.Load();
             this.TypeManager.Load();
             this.StationManager.Load();
+            this.AncestryManager.Load();
 
             this.Load();
         }
