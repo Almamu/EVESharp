@@ -48,7 +48,7 @@ namespace Node.Services.Corporations
         private NotificationManager NotificationManager { get; init; }
         private MailManager MailManager { get; init; }
         private ClientManager ClientManager { get; init; }
-        private MembersSparseRowsetService MembersSparseRowset { get; set; }
+        public MembersSparseRowsetService MembersSparseRowset { get; private set; }
         private OfficesSparseRowsetService OfficesSparseRowset { get; set; }
         private AncestryManager AncestryManager { get; set; }
         
@@ -193,7 +193,7 @@ namespace Node.Services.Corporations
 
         public PyDataType GetMembers(CallInformation call)
         {
-            if (this.MembersSparseRowset == null)
+            if (this.MembersSparseRowset is null)
             {
                 // generate the sparse rowset
                 SparseRowsetHeader rowsetHeader = this.DB.GetMembersSparseRowset(call.Client.CorporationID);
@@ -219,7 +219,7 @@ namespace Node.Services.Corporations
 
         public PyDataType GetOffices(CallInformation call)
         {
-            if (this.OfficesSparseRowset == null)
+            if (this.OfficesSparseRowset is null)
             {
                 // generate the sparse rowset
                 SparseRowsetHeader rowsetHeader = this.DB.GetOfficesSparseRowset(call.Client.CorporationID);
@@ -776,6 +776,16 @@ namespace Node.Services.Corporations
                     )
                 );
                 
+                if (this.MembersSparseRowset is not null)
+                {
+                    PyDictionary<PyString, PyTuple> changes = new PyDictionary<PyString, PyTuple>()
+                    {
+                        ["blockRoles"] = new PyTuple(2) {[0] = null, [1] = blockRoles == 1}
+                    };
+                    
+                    this.MembersSparseRowset.UpdateRow(characterID, changes);
+                }
+                
                 return null;
             }
             
@@ -834,7 +844,7 @@ namespace Node.Services.Corporations
                 if (blockRoles is not null)
                     changes["blockRoles"] = new PyTuple(2) {[0] = null, [1] = blockRoles};
                     
-                this.MembersSparseRowset.SendOnObjectChanged(characterID, changes);
+                this.MembersSparseRowset.UpdateRow(characterID, changes);
             }
 
             // notify the node about the changes
@@ -1086,6 +1096,7 @@ namespace Node.Services.Corporations
 
         public PyDataType InsertApplication(PyInteger corporationID, PyString text, CallInformation call)
         {
+            // TODO: CHECK IF THE CHARACTER IS A CEO AND DENY THE APPLICATION CREATION
             int characterID = call.Client.EnsureCharacterIsSelected();
             
             // create the application in the database
@@ -1184,11 +1195,18 @@ namespace Node.Services.Corporations
                     );
                     
                     // TODO: WORKOUT A BETTER WAY OF NOTIFYING THIS TO THE NODE, IT MIGHT BE BETTER TO INSPECT THE SESSION CHANGE INSTEAD OF DOING IT LIKE THIS
+                    long characterNodeID = this.ItemFactory.ItemDB.GetItemNode(characterID);
+                    long newCorporationNodeID = this.ItemFactory.ItemDB.GetItemNode(corporationID);
+                    long oldCorporationNodeID = this.ItemFactory.ItemDB.GetItemNode(oldCorporationID);
+
                     // get the node where the character is loaded
-                    this.NotificationManager.NotifyNode(this.ItemFactory.ItemDB.GetItemNode(characterID), nodeNotification);
                     // the node where the corporation is loaded also needs to get notified so the members rowset can be updated
-                    this.NotificationManager.NotifyNode(this.ItemFactory.ItemDB.GetItemNode(corporationID), nodeNotification);
-                    this.NotificationManager.NotifyNode(this.ItemFactory.ItemDB.GetItemNode(oldCorporationID), nodeNotification);
+                    if (characterNodeID > 0)
+                        this.NotificationManager.NotifyNode(characterNodeID, nodeNotification);
+                    if (newCorporationNodeID != characterNodeID)
+                        this.NotificationManager.NotifyNode(newCorporationNodeID, nodeNotification);
+                    if (oldCorporationNodeID != newCorporationNodeID && oldCorporationNodeID != characterNodeID)
+                        this.NotificationManager.NotifyNode(oldCorporationNodeID, nodeNotification);
                 }
                 
                 // this one is a bit harder as this character might not be in the same node as this service

@@ -288,6 +288,7 @@ namespace Node.Services.Stations
             this.NotificationManager.NotifyCorporation(call.Client.CorporationID, new OnBillReceived());
             // return the new officeID
             return item.ID;
+            // TODO: NOTIFY THE CORPREGISTRY SERVICE TO UPDATE THIS LIST OF OFFICES
         }
         
         protected override long MachoResolveObject(ServiceBindParams parameters, CallInformation call)

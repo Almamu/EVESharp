@@ -39,6 +39,24 @@ namespace Node.Network
         }
 
         /// <summary>
+        /// Finds a bound service based on it's object ID
+        /// </summary>
+        /// <param name="objectID"></param>
+        /// <param name="service"></param>
+        /// <returns></returns>
+        public bool FindInstanceForObjectID<T>(int objectID, out T service) where T : MultiClientBoundService
+        {
+            service = null;
+            
+            if (this.mRegisteredServices.TryGetValue(objectID, out MultiClientBoundService tmp) == false)
+                return false;
+
+            service = tmp as T;
+            
+            return true;
+        }
+
+        /// <summary>
         /// Binds a new object of this type with the given objectData to provide a stateful
         /// interface to itself
         /// 

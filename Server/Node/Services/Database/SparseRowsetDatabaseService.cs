@@ -19,7 +19,25 @@ namespace Node.Services.Database
         /// </summary>
         /// <param name="primaryKey">The record that has changed</param>
         /// <param name="notificationParams">Extra parameters for the notification if needed</param>
-        public abstract void SendOnObjectChanged(PyDataType primaryKey, PyDictionary<PyString, PyTuple> changes, PyDictionary notificationParams = null);
+        protected abstract void SendOnObjectChanged(PyDataType primaryKey, PyDictionary<PyString, PyTuple> changes, PyDictionary notificationParams = null);
+
+        /// <summary>
+        /// Adds a new row to this SparseRowset and notifies bound clients
+        /// </summary>
+        /// <param name="primaryKey"></param>
+        /// <param name="changes"></param>
+        public abstract void AddRow(PyDataType primaryKey, PyDictionary<PyString, PyTuple> changes);
+        /// <summary>
+        /// Notifies bound clients about changes in the data of this SparseRowset
+        /// </summary>
+        /// <param name="primaryKey"></param>
+        /// <param name="changes"></param>
+        public abstract void UpdateRow(PyDataType primaryKey, PyDictionary<PyString, PyTuple> changes);
+        /// <summary>
+        /// Removes a row from this SparseRowset and notifies bound clients
+        /// </summary>
+        /// <param name="primaryKey"></param>
+        public abstract void RemoveRow(PyDataType primaryKey);
 
         protected SparseRowsetDatabaseService(SparseRowsetHeader rowsetHeader, BoundServiceManager manager, Client client) : base(manager, 0)
         {

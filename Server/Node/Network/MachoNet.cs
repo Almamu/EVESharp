@@ -16,6 +16,7 @@ using Node.Notifications.Client.Inventory;
 using Node.Notifications.Nodes.Corporations;
 using Node.Notifications.Nodes.Corps;
 using Node.Services;
+using Node.Services.Corporations;
 using PythonTypes;
 using PythonTypes.Types.Collections;
 using PythonTypes.Types.Network;
@@ -545,7 +546,34 @@ namespace Node.Network
             // this notification does not need to send anything to anyone as the clients will already get notified
             // based on their corporation IDs
             
-            // TODO: check if the corpRegistry for that corporation is loaded here and update the members sparse rowset
+            if (this.ServiceManager.corpRegistry.FindInstanceForObjectID(change.OldCorporationID, out corpRegistry oldService) == true && oldService.MembersSparseRowset is not null)
+                oldService.MembersSparseRowset.RemoveRow(change.MemberID);
+
+            if (this.ServiceManager.corpRegistry.FindInstanceForObjectID(change.NewCorporationID, out corpRegistry newService) == true && newService.MembersSparseRowset is not null)
+            {
+                PyDictionary<PyString, PyTuple> changes = new PyDictionary<PyString, PyTuple>()
+                {
+                    ["characterID"] = new PyTuple(2) {[0] = null, [1] = change.MemberID},
+                    ["title"] = new PyTuple(2) {[0] = null, [1] = ""},
+                    ["startDateTime"] = new PyTuple(2) {[0] = null, [1] = DateTime.UtcNow.ToFileTimeUtc ()},
+                    ["roles"] = new PyTuple(2) {[0] = null, [1] = 0},
+                    ["rolesAtHQ"] = new PyTuple(2) {[0] = null, [1] = 0},
+                    ["rolesAtBase"] = new PyTuple(2) {[0] = null, [1] = 0},
+                    ["rolesAtOther"] = new PyTuple(2) {[0] = null, [1] = 0},
+                    ["titleMask"] = new PyTuple(2) {[0] = null, [1] = 0},
+                    ["grantableRoles"] = new PyTuple(2) {[0] = null, [1] = 0},
+                    ["grantableRolesAtHQ"] = new PyTuple(2) {[0] = null, [1] = 0},
+                    ["grantableRolesAtBase"] = new PyTuple(2) {[0] = null, [1] = 0},
+                    ["grantableRolesAtOther"] = new PyTuple(2) {[0] = null, [1] = 0},
+                    ["divisionID"] = new PyTuple(2) {[0] = null, [1] = 0},
+                    ["squadronID"] = new PyTuple(2) {[0] = null, [1] = 0},
+                    ["baseID"] = new PyTuple(2) {[0] = null, [1] = 0},
+                    ["blockRoles"] = new PyTuple(2) {[0] = null, [1] = 0},
+                    ["gender"] = new PyTuple(2) {[0] = null, [1] = 0}
+                };
+                
+                newService.MembersSparseRowset.AddRow(change.MemberID, changes);
+            }
             
             // the only thing needed is to check for a Character reference and update it's corporationID to the correct one
             if (this.ItemFactory.TryGetItem(change.MemberID, out Character character) == false)

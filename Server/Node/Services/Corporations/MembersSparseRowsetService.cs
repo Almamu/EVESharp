@@ -44,7 +44,7 @@ namespace Node.Services.Corporations
             throw new System.NotImplementedException();
         }
 
-        public override void SendOnObjectChanged(PyDataType primaryKey, PyDictionary<PyString, PyTuple> changes, PyDictionary notificationParams = null)
+        protected override void SendOnObjectChanged(PyDataType primaryKey, PyDictionary<PyString, PyTuple> changes, PyDictionary notificationParams = null)
         {
             // TODO: UGLY CASTING THAT SHOULD BE POSSIBLE TO DO DIFFERENTLY
             // TODO: NOT TO MENTION THE LINQ USAGE, MAYBE THERE'S A BETTER WAY OF DOING IT
@@ -53,6 +53,50 @@ namespace Node.Services.Corporations
             this.NotificationManager.NotifyCharacters (characterIDs.GetEnumerable<PyInteger>(),
                 new OnObjectPublicAttributesUpdated(primaryKey, this, changes, notificationParams)
             );
+        }
+
+        public override void AddRow(PyDataType primaryKey, PyDictionary<PyString, PyTuple> changes)
+        {
+            // fetch the new ids list
+            this.RowsIndex = this.DB.GetMembers(this.Corporation.ID);
+            
+            // notify the clients
+            this.SendOnObjectChanged(primaryKey, changes);
+        }
+
+        public override void UpdateRow(PyDataType primaryKey, PyDictionary<PyString, PyTuple> changes)
+        {
+            this.SendOnObjectChanged(primaryKey, changes);
+        }
+        
+        public override void RemoveRow(PyDataType primaryKey)
+        {
+            // fetch the new ids list
+            this.RowsIndex = this.DB.GetMembers(this.Corporation.ID);
+            
+            PyDictionary<PyString, PyTuple> changes = new PyDictionary<PyString, PyTuple>()
+            {
+                ["characterID"] = new PyTuple(2) {[0] = primaryKey, [1] = null},
+                ["title"] = new PyTuple(2) {[0] = 0, [1] = null},
+                ["startDateTime"] = new PyTuple(2) {[0] = 0, [1] = null},
+                ["roles"] = new PyTuple(2) {[0] = 0, [1] = null},
+                ["rolesAtHQ"] = new PyTuple(2) {[0] = 0, [1] = null},
+                ["rolesAtBase"] = new PyTuple(2) {[0] = 0, [1] = null},
+                ["rolesAtOther"] = new PyTuple(2) {[0] = 0, [1] = null},
+                ["titleMask"] = new PyTuple(2) {[0] = 0, [1] = null},
+                ["grantableRoles"] = new PyTuple(2) {[0] = 0, [1] = null},
+                ["grantableRolesAtHQ"] = new PyTuple(2) {[0] = 0, [1] = null},
+                ["grantableRolesAtBase"] = new PyTuple(2) {[0] = 0, [1] = null},
+                ["grantableRolesAtOther"] = new PyTuple(2) {[0] = 0, [1] = null},
+                ["divisionID"] = new PyTuple(2) {[0] = 0, [1] = null},
+                ["squadronID"] = new PyTuple(2) {[0] = 0, [1] = null},
+                ["baseID"] = new PyTuple(2) {[0] = 0, [1] = null},
+                ["blockRoles"] = new PyTuple(2) {[0] = 0, [1] = null},
+                ["gender"] = new PyTuple(2) {[0] = 0, [1] = null}
+            };
+            
+            // notify the clients
+            this.SendOnObjectChanged(primaryKey, changes);
         }
 
         public override bool IsClientAllowedToCall(CallInformation call)
