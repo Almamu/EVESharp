@@ -272,6 +272,34 @@ namespace Node.Database
             }
         }
 
+        public PyDataType GetOfficesLocation(int corporationID)
+        {
+            return Database.PrepareRowsetQuery(
+                "SELECT stationID AS locationID FROM crpOffices WHERE corporationID = @corporationID",
+                new Dictionary<string, object>()
+                {
+                    {"@corporationID", corporationID}
+                }
+            );
+        }
+
+        public Rowset GetAssetsInOfficesAtStation(int corporationID, int stationID)
+        {
+            return Database.PrepareRowsetQuery(
+                "SELECT itemID, typeID, locationID, ownerID, flag, contraband, singleton, quantity, groupID, categoryID " +
+                "FROM invItems " +
+                "LEFT JOIN invTypes USING(typeID) " +
+                "LEFT JOIN invGroups USING(groupID) " +
+                "WHERE ownerID = @ownerID AND locationID = (SELECT officeID FROM crpOffices WHERE corporationID = @ownerID AND stationID = @stationID) AND flag != @deliveriesFlag",
+                new Dictionary<string, object>()
+                {
+                    {"@ownerID", corporationID},
+                    {"@deliveriesFlag", Flags.CorpMarket},
+                    {"@stationID", stationID}
+                }
+            );            
+        }
+        
         public PyList<PyTuple> GetOffices(PyList<PyInteger> itemIDs, int corporationID, SparseRowsetHeader header, Dictionary<PyDataType, int> rowsIndex)
         {
             Dictionary<string, object> parameters = new Dictionary<string, object>();
