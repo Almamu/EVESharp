@@ -545,7 +545,7 @@ namespace Node.Network
             // this notification does not need to send anything to anyone as the clients will already get notified
             // based on their corporation IDs
             
-            // check if the corpRegistry for that corporation is loaded here
+            // TODO: check if the corpRegistry for that corporation is loaded here and update the members sparse rowset
             
             // the only thing needed is to check for a Character reference and update it's corporationID to the correct one
             if (this.ItemFactory.TryGetItem(change.MemberID, out Character character) == false)
