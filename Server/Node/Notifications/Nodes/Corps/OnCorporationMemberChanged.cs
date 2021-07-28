@@ -1,10 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
 using EVE.Packets.Complex;
 using PythonTypes.Types.Collections;
 using PythonTypes.Types.Primitives;
 
-namespace Node.Notifications.Nodes.Corporations
+namespace Node.Notifications.Nodes.Corps
 {
     public class OnCorporationMemberChanged : InterNodeNotification
     {
@@ -30,7 +29,7 @@ namespace Node.Notifications.Nodes.Corporations
                 [2] = this.NewCorporationID
             };
         }
-
+        
         public static implicit operator OnCorporationMemberChanged(PyTuple notification)
         {
             if (notification.Count != 2)

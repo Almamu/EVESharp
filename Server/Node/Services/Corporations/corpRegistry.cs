@@ -19,6 +19,7 @@ using Node.Network;
 using Node.Notifications.Client.Corporations;
 using Node.Notifications.Client.Wallet;
 using Node.Notifications.Nodes.Corporations;
+using Node.Services.Characters;
 using Node.StaticData;
 using Node.StaticData.Corporation;
 using Node.StaticData.Inventory;
@@ -411,6 +412,9 @@ namespace Node.Services.Corporations
                     // create the record in the journal
                     wallet.CreateJournalRecord(MarketReference.CorporationRegistrationFee, null, null, corporationStartupCost);
                     
+                    // leave the old corporation channels first
+                    this.ChatDB.LeaveChannel(call.Client.CorporationID, character.ID);
+                    this.ChatDB.LeaveEntityChannel(call.Client.CorporationID, character.ID);
                     // create the required chat channels
                     this.ChatDB.CreateChannel(corporationID, corporationID, "System Channels\\Corp", true);
                     this.ChatDB.CreateChannel(corporationID, corporationID, "System Channels\\Corp", false);
@@ -1035,7 +1039,7 @@ namespace Node.Services.Corporations
         public PyDataType DeleteRecruitmentAd(PyInteger advertID, CallInformation call)
         {
             if (CorporationRole.PersonnelManager.Is(call.Client.CorporationRole) == false)
-                return null;
+                throw new CrpAccessDenied(MLS.UI_CORP_NEED_ROLE_PERS_MAN_TO_MANAGE_ADS);
 
             if (this.DB.DeleteRecruitmentAd(advertID, call.Client.CorporationID) == true)
             {
@@ -1053,7 +1057,7 @@ namespace Node.Services.Corporations
         public PyDataType UpdateRecruitmentAd(PyInteger adID, PyInteger typeMask, PyInteger raceMask, PyInteger skillPoints, PyString description, CallInformation call)
         {
             if (CorporationRole.PersonnelManager.Is(call.Client.CorporationRole) == false)
-                return null;
+                throw new CrpAccessDenied(MLS.UI_CORP_NEED_ROLE_PERS_MAN_TO_MANAGE_ADS);
 
             if (this.DB.UpdateRecruitmentAd(adID, call.Client.CorporationID, typeMask, raceMask, description, skillPoints) == true)
             {
@@ -1078,6 +1082,149 @@ namespace Node.Services.Corporations
                 throw new CrpAccessDenied(MLS.UI_CORP_NEED_ROLE_PERS_MAN_TO_MANAGE_APPLICATIONS);
             
             return this.DB.GetApplicationsToCorporation(call.Client.CorporationID);
+        }
+
+        public PyDataType InsertApplication(PyInteger corporationID, PyString text, CallInformation call)
+        {
+            int characterID = call.Client.EnsureCharacterIsSelected();
+            
+            // create the application in the database
+            this.DB.CreateApplication(characterID, corporationID, text);
+            OnCorporationApplicationChanged change = new OnCorporationApplicationChanged(corporationID, characterID);
+
+            change
+                .AddValue("corporationID", null, corporationID)
+                .AddValue("characterID", null, characterID)
+                .AddValue("applicationDateTime", null, DateTime.UtcNow.ToFileTimeUtc())
+                .AddValue("applicationText", null, text)
+                .AddValue("status", null, 0);
+            
+            // TODO: IMPLEMENT NOTIFICATIONS BASED ON CORPORATIONID AND ROLE
+            this.NotificationManager.NotifyCorporation(corporationID, change);
+            call.Client.NotifyMultiEvent(change);
+            
+            return null;
+        }
+
+        public PyDataType DeleteApplication(PyInteger corporationID, PyInteger characterID, CallInformation call)
+        {
+            int currentCharacterID = call.Client.EnsureCharacterIsSelected();
+
+            if (characterID != currentCharacterID)
+                throw new CrpAccessDenied("This application does not belong to you");
+            
+            this.DB.DeleteApplication(characterID, corporationID);
+            OnCorporationApplicationChanged change = new OnCorporationApplicationChanged(corporationID, characterID);
+
+            // this notification doesn't seem to update the window if it's focused by the corporation personnel
+            change
+                .AddValue("corporationID", corporationID, null)
+                .AddValue("characterID", characterID, null);
+
+            // notify about the application change
+            this.NotificationManager.NotifyCorporation(corporationID, change);
+            call.Client.NotifyMultiEvent(change);
+
+            return null;
+        }
+
+        public PyDataType UpdateApplicationOffer(PyInteger characterID, PyString text, PyInteger newStatus, PyInteger applicationDateTime, CallInformation call)
+        {
+            if (CorporationRole.PersonnelManager.Is(call.Client.CorporationRole) == false)
+                throw new CrpAccessDenied(MLS.UI_CORP_NEED_ROLE_PERS_MAN_TO_MANAGE_APPLICATIONS);
+            
+            // TODO: CHECK THAT THE APPLICATION EXISTS TO PREVENT A CHARACTER FROM BEING FORCE TO JOIN A CORPORATION!!
+
+            string characterName = this.CharacterDB.GetCharacterName(characterID);
+
+            int corporationID = call.Client.CorporationID;
+            
+            // accept application
+            if (newStatus == 6)
+            {
+                // ensure things are updated on the database first
+                int oldCorporationID = this.CharacterDB.GetCharacterCorporationID(characterID);
+                // remove the character from old channels
+                this.ChatDB.LeaveChannel(oldCorporationID, characterID);
+                this.ChatDB.LeaveEntityChannel(oldCorporationID, characterID);
+                // join the character to the new channels
+                this.ChatDB.JoinEntityChannel(corporationID, characterID, ChatDB.CHATROLE_CONVERSATIONALIST);
+                this.ChatDB.JoinChannel(corporationID, characterID, ChatDB.CHATROLE_CONVERSATIONALIST);
+                // build the notification of corporation change
+                OnCorporationMemberChanged change = new OnCorporationMemberChanged(characterID, oldCorporationID, corporationID);
+                // ensure the database reflects these changes
+                this.CharacterDB.UpdateCharacterRoles(
+                    characterID, 0, 0, 0,
+                    0, 0, 0, 0, 0, 0
+                );
+                this.CharacterDB.UpdateCorporationID(characterID, corporationID);
+                // notify cluster about the corporation changes
+                this.NotificationManager.NotifyCorporation(change.OldCorporationID, change);
+                this.NotificationManager.NotifyCorporation(change.NewCorporationID, change);
+                // create the employment record for the character
+                this.CharacterDB.CreateEmploymentRecord(characterID, corporationID, DateTime.UtcNow.ToFileTimeUtc());
+
+                // check if the character is connected and update it's session
+                if (this.ClientManager.TryGetClientByCharacterID(characterID, out Client client) == true)
+                {
+                    // update character's session
+                    client.CorporationID = corporationID;
+                    client.RolesAtAll = 0;
+                    client.CorporationRole = 0;
+                    client.RolesAtBase = 0;
+                    client.RolesAtOther = 0;
+                    client.RolesAtHQ = 0;
+                    // finally send the session change
+                    client.SendSessionChange();
+                    
+                    // player is conected, notify the node that owns it to make the changes required
+                    Notifications.Nodes.Corps.OnCorporationMemberChanged nodeNotification =
+                        new Notifications.Nodes.Corps.OnCorporationMemberChanged(
+                            characterID, oldCorporationID, corporationID
+                    );
+                    
+                    // TODO: WORKOUT A BETTER WAY OF NOTIFYING THIS TO THE NODE, IT MIGHT BE BETTER TO INSPECT THE SESSION CHANGE INSTEAD OF DOING IT LIKE THIS
+                    // get the node where the character is loaded
+                    this.NotificationManager.NotifyNode(this.ItemFactory.ItemDB.GetItemNode(characterID), nodeNotification);
+                    // the node where the corporation is loaded also needs to get notified so the members rowset can be updated
+                    this.NotificationManager.NotifyNode(this.ItemFactory.ItemDB.GetItemNode(corporationID), nodeNotification);
+                    this.NotificationManager.NotifyNode(this.ItemFactory.ItemDB.GetItemNode(oldCorporationID), nodeNotification);
+                }
+                
+                // this one is a bit harder as this character might not be in the same node as this service
+                // take care of the proper 
+                this.MailManager.SendMail(
+                    call.Client.CorporationID,
+                    characterID,
+                    $"Welcome to {this.mCorporation.Name}",
+                    $"Dear {characterName}. Your application to join <b>{this.mCorporation.Name}</b> has been accepted."
+                );
+            }
+            // reject application
+            else if (newStatus == 4)
+            {
+                this.MailManager.SendMail(
+                    call.Client.CorporationID,
+                    characterID,
+                    $"Rejected application to join {this.mCorporation.Name}",
+                    $"Dear {characterName}. Your application to join <b>{this.mCorporation.Name}</b> has been REJECTED."
+                );
+            }
+            
+            this.DB.DeleteApplication(characterID, corporationID);
+            OnCorporationApplicationChanged applicationChange = new OnCorporationApplicationChanged(corporationID, characterID);
+
+            // this notification doesn't seem to update the window if it's focused by the corporation personnel
+            applicationChange
+                .AddValue("corporationID", corporationID, null)
+                .AddValue("characterID", characterID, null);
+
+            // notify about the application change
+            this.NotificationManager.NotifyCorporation(corporationID, applicationChange);
+            call.Client.NotifyMultiEvent(applicationChange);
+
+            
+            return null;
         }
     }
 }

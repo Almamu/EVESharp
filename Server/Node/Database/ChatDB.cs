@@ -216,6 +216,18 @@ namespace Node.Database
         }
 
         /// <summary>
+        /// Removes the character from the given entity-related channel
+        /// </summary>
+        /// <param name="relatedEntityID"></param>
+        /// <param name="characterID"></param>
+        public void LeaveEntityChannel(int relatedEntityID, int characterID)
+        {
+            int channelID = GetChannelIDFromRelatedEntity(relatedEntityID);
+
+            this.LeaveChannel(channelID, characterID);
+        }
+
+        /// <summary>
         /// Obtains the list of channels the character is currently allowed into ready for the EVE Client
         /// </summary>
         /// <param name="characterID"></param>

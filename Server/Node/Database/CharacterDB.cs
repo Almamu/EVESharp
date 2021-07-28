@@ -6,6 +6,7 @@ using MySql.Data.MySqlClient;
 using Node.Inventory;
 using Node.Inventory.Items;
 using Node.Inventory.Items.Types;
+using Node.Services.Database;
 using Node.StaticData;
 using Node.StaticData.Inventory;
 using PythonTypes.Types.Collections;
@@ -1209,6 +1210,50 @@ namespace Node.Database
                 {
                     {"@characterID", characterID},
                     {"@blockRoles", blockRoles}
+                }
+            );
+        }
+
+        /// <summary>
+        /// Retrieves the corporationID of a given character
+        /// </summary>
+        /// <param name="characterID"></param>
+        /// <returns></returns>
+        public int GetCharacterCorporationID(int characterID)
+        {
+            MySqlConnection connection = null;
+            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+                "SELECT corporationID FROM chrInformation WHERE characterID = @characterID",
+                new Dictionary<string, object>()
+                {
+                    {"@characterID", characterID}
+                }
+            );
+            
+            using (connection)
+            using (reader)
+            {
+                if (reader.Read() == false)
+                    return 0;
+
+                return reader.GetInt32(0);
+            }
+        }
+
+        /// <summary>
+        /// Updates character's corporationID and the corporation join date time for that character
+        /// </summary>
+        /// <param name="characterID"></param>
+        /// <param name="corporationID"></param>
+        public void UpdateCorporationID(int characterID, int corporationID)
+        {
+            Database.PrepareQuery(
+                "UPDATE chrInformation SET corporationID = @corporationID, corporationDateTime = @corporationDateTime WHERE characterID = @characterID",
+                new Dictionary<string, object>()
+                {
+                    {"@corporationID", corporationID},
+                    {"@corporationDateTime", DateTime.UtcNow.ToFileTimeUtc()},
+                    {"@characterID", characterID}
                 }
             );
         }

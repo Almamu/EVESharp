@@ -52,25 +52,6 @@ CREATE TABLE `cacheOwners` (
 
 /*Data for the table `cacheOwners` */
 
-/*Table structure for table `chrApplications` */
-
-DROP TABLE IF EXISTS `chrApplications`;
-
-CREATE TABLE `chrApplications` (
-  `corporationID` int(10) unsigned NOT NULL,
-  `characterID` int(10) unsigned NOT NULL,
-  `applicationText` text NOT NULL,
-  `roles` bigint(20) unsigned NOT NULL,
-  `grantableRoles` bigint(20) unsigned NOT NULL,
-  `status` int(10) unsigned NOT NULL,
-  `applicationDateTime` bigint(20) unsigned NOT NULL,
-  `deleted` tinyint(3) unsigned NOT NULL,
-  `lastCorpUpdaterID` int(10) unsigned NOT NULL,
-  PRIMARY KEY  (`corporationID`,`characterID`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
-/*Data for the table `chrApplications` */
-
 /*Table structure for table `chrCorporationRoles` */
 
 DROP TABLE IF EXISTS `chrCorporationRoles`;

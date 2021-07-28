@@ -739,7 +739,7 @@ namespace Node.Database
         public Rowset GetCharacterApplications(int characterID)
         {
             return Database.PrepareRowsetQuery(
-                "SELECT corporationID, characterID, applicationText, roles, grantableRoles, status, applicationDateTime, deleted, lastCorpUpdaterID FROM chrApplications WHERE characterID = @characterID",
+                "SELECT corporationID, characterID, applicationText, 0 AS status, applicationDateTime FROM chrApplications WHERE characterID = @characterID",
                 new Dictionary<string, object>()
                 {
                     {"@characterID", characterID}
@@ -750,7 +750,7 @@ namespace Node.Database
         public PyDataType GetApplicationsToCorporation(int corporationID)
         {
             return Database.PrepareDictRowListQuery(
-                "SELECT corporationID, characterID, applicationText, roles, grantableRoles, status, applicationDateTime, deleted, lastCorpUpdaterID FROM chrApplications WHERE corporationID = @corporationID",
+                "SELECT corporationID, characterID, applicationText, 0 AS status, applicationDateTime FROM chrApplications WHERE corporationID = @corporationID",
                 new Dictionary<string, object>()
                 {
                     {"@corporationID", corporationID}
@@ -1157,6 +1157,32 @@ namespace Node.Database
                 {
                     {"@memberLimit", newMemberLimit},
                     {"@allowedMemberRaceIDs", newRaceMask},
+                    {"@corporationID", corporationID}
+                }
+            );
+        }
+
+        public void CreateApplication(int characterID, int corporationID, string message)
+        {
+            Database.PrepareQuery(
+                "INSERT INTO chrApplications(characterID, corporationID, applicationText, applicationDateTime)VALUES(@characterID, @corporationID, @message, @datetime)",
+                new Dictionary<string, object>()
+                {
+                    {"@characterID", characterID},
+                    {"@corporationID", corporationID},
+                    {"@message", message},
+                    {"@datetime", DateTime.UtcNow.ToFileTimeUtc()}
+                }
+            );
+        }
+
+        public void DeleteApplication(int characterID, int corporationID)
+        {
+            Database.PrepareQuery(
+                "DELETE FROM chrApplications WHERE characterID = @characterID AND corporationID = @corporationID",
+                new Dictionary<string, object>()
+                {
+                    {"@characterID", characterID},
                     {"@corporationID", corporationID}
                 }
             );

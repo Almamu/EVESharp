@@ -14,6 +14,7 @@ using Node.Inventory.Items.Types;
 using Node.Inventory.SystemEntities;
 using Node.Notifications.Client.Inventory;
 using Node.Notifications.Nodes.Corporations;
+using Node.Notifications.Nodes.Corps;
 using Node.Services;
 using PythonTypes;
 using PythonTypes.Types.Collections;
@@ -544,6 +545,8 @@ namespace Node.Network
             // this notification does not need to send anything to anyone as the clients will already get notified
             // based on their corporation IDs
             
+            // check if the corpRegistry for that corporation is loaded here
+            
             // the only thing needed is to check for a Character reference and update it's corporationID to the correct one
             if (this.ItemFactory.TryGetItem(change.MemberID, out Character character) == false)
                 // if the character is not loaded it could mean that the package arrived on to the node while the player was logging out
@@ -552,6 +555,16 @@ namespace Node.Network
 
             // set the corporation to the new one
             character.CorporationID = change.NewCorporationID;
+            // this change usually means that the character is now in a new corporation, so everything corp-related is back to 0
+            character.Roles = 0;
+            character.RolesAtBase = 0;
+            character.RolesAtHq = 0;
+            character.RolesAtOther = 0;
+            character.TitleMask = 0;
+            character.GrantableRoles = 0;
+            character.GrantableRolesAtBase = 0;
+            character.GrantableRolesAtOther = 0;
+            character.GrantableRolesAtHQ = 0;
             // persist the character
             character.Persist();
             // nothing else needed
@@ -614,7 +627,7 @@ namespace Node.Network
                 case "OnClusterTimer":
                     this.HandleOnClusterTimer(packet.Payload[1] as PyTuple);
                     break;
-                case Notifications.Nodes.Corporations.OnCorporationMemberChanged.NOTIFICATION_NAME:
+                case OnCorporationMemberChanged.NOTIFICATION_NAME:
                     this.HandleOnCorporationMemberChanged(packet.Payload);
                     break;
                 case Notifications.Nodes.Corporations.OnCorporationMemberUpdated.NOTIFICATION_NAME:
