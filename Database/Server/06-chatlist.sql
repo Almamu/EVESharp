@@ -130,7 +130,7 @@ REPLACE INTO `lscGeneralChannels`(`channelID`,`ownerID`,`relatedEntityID`,`displ
 DROP TABLE IF EXISTS `lscChannelPermissions`;
 
 CREATE TABLE `lscChannelPermissions` (
-  `channelID` INT(10) UNSIGNED NOT NULL DEFAULT '0',
+  `channelID` INT(10) NOT NULL DEFAULT '0',
   `accessor` INT(10) UNSIGNED NOT NULL,
   `mode` INT(10) UNSIGNED NOT NULL DEFAULT '0',
   `untilWhen` BIGINT(20) UNSIGNED NULL DEFAULT NULL,
