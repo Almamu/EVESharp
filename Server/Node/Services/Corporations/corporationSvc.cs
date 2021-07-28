@@ -1,6 +1,15 @@
+using System;
 using Common.Services;
+using EVE;
 using Node.Database;
+using Node.Exceptions.corporationSvc;
+using Node.Exceptions.corpRegistry;
+using Node.Inventory;
+using Node.Market;
 using Node.Network;
+using Node.Notifications.Client.Corporations;
+using Node.StaticData;
+using Node.StaticData.Corporation;
 using PythonTypes.Types.Collections;
 using PythonTypes.Types.Database;
 using PythonTypes.Types.Primitives;
@@ -10,10 +19,18 @@ namespace Node.Services.Corporations
     public class corporationSvc : IService
     {
         private CorporationDB DB { get; }
-        
-        public corporationSvc(CorporationDB db)
+        private NodeContainer Container { get; }
+        private WalletManager WalletManager { get; }
+        private ItemFactory ItemFactory { get; }
+        private NotificationManager NotificationManager { get; }
+
+        public corporationSvc(CorporationDB db, NodeContainer container, WalletManager walletManager, ItemFactory itemFactory, NotificationManager notificationManager)
         {
             this.DB = db;
+            this.Container = container;
+            this.WalletManager = walletManager;
+            this.ItemFactory = itemFactory;
+            this.NotificationManager = notificationManager;
         }
 
         public PyTuple GetFactionInfo(CallInformation call)
@@ -38,10 +55,15 @@ namespace Node.Services.Corporations
 
         public PyTuple GetMedalsReceived(PyInteger characterID, CallInformation call)
         {
+            // TODO: CACHE THIS ANSWER TOO
+            int callerCharacterID = call.Client.EnsureCharacterIsSelected();
+
+            bool publicOnly = callerCharacterID != characterID;
+            
             return new PyTuple(2)
             {
-                [0] = this.DB.GetMedalsReceived(characterID),
-                [1] = new PyList() // medal data, rowset medalID, part, layer, graphic, color
+                [0] = this.DB.GetMedalsReceived(characterID, publicOnly),
+                [1] = this.DB.GetMedalsReceivedDetails(characterID, publicOnly)
             };
         }
 
@@ -70,10 +92,13 @@ namespace Node.Services.Corporations
 
         public PyTuple GetAllCorpMedals(PyInteger corporationID, CallInformation call)
         {
+            // TODO: IMPLEMENT CACHING FOR THIS ANSWER (THE CLIENT SEEMS TO EXPECT IT, ALTHOUGH IT DOESN'T ENFORCE IT)
+            // TODO: THAT WILL REQUIRE TO SEND NOTIFICATIONS ON DATA CHANGES LIKE NEW MEDALS OR MEDALS BEING ISSUED
+            // TODO: OnCorporationMedalAdded, OnMedalIssued, OnMedalStatusChanged
             return new PyTuple(2)
             {
-                [0] = this.DB.GetMedalsList(corporationID),
-                [1] = this.DB.GetMedalsDetails(corporationID)
+                [0] = this.DB.GetMedalsListForCorporation(corporationID),
+                [1] = this.DB.GetMedalsDetailsForCorporation(corporationID)
             };
         }
 
@@ -95,6 +120,142 @@ namespace Node.Services.Corporations
             descriptor.Columns.Add(new DBRowDescriptor.Column("agtSellPrice", FieldType.CY));
             
             return new CRowset(descriptor);
+        }
+
+        private void ValidateMedal(PyString title, PyString description, PyList parts)
+        {
+            if (title.Length < 3) throw new MedalNameInvalid();
+            if (title.Length > 100) throw new MedalNameTooLong();
+            if (description.Length > 1000) throw new MedalDescriptionTooLong();
+            if (false) throw new MedalDescriptionInvalid(); // TODO: CHECK FOR BANNED WORDS!
+            
+            // TODO: VALIDATE PART NAMES TO ENSURE THEY'RE VALID
+        }
+        
+        public PyDataType CreateMedal(PyString title, PyString description, PyList parts, PyBool pay, CallInformation call)
+        {
+            int characterID = call.Client.EnsureCharacterIsSelected();
+            
+            if (CorporationRole.PersonnelManager.Is(call.Client.CorporationRole) == false && CorporationRole.Director.Is(call.Client.CorporationRole) == false)
+                throw new CrpAccessDenied(MLS.UI_CORP_NEED_ROLE_PERS_MAN_OR_DIRECT);
+            
+            this.ValidateMedal(title, description, parts);
+
+            if (pay == false)
+                throw new ConfirmCreatingMedal(this.Container.Constants[Constants.medalCost]);
+            
+            using (Wallet wallet = this.WalletManager.AcquireWallet(call.Client.CorporationID, call.Client.CorpAccountKey))
+            {
+                wallet.EnsureEnoughBalance(this.Container.Constants[Constants.medalCost]);
+                wallet.CreateJournalRecord(MarketReference.MedalCreation, this.Container.Constants[Constants.medalTaxCorporation], null, -this.Container.Constants[Constants.medalCost]);
+            }
+
+            this.DB.CreateMedal(call.Client.CorporationID, characterID, title, description, parts.GetEnumerable<PyList>());
+            
+            return null;
+        }
+
+        public PyDataType CreateMedal(PyString title, PyString description, PyList parts, CallInformation call)
+        {
+            if (CorporationRole.PersonnelManager.Is(call.Client.CorporationRole) == false && CorporationRole.Director.Is(call.Client.CorporationRole) == false)
+                throw new CrpAccessDenied(MLS.UI_CORP_NEED_ROLE_PERS_MAN_OR_DIRECT);
+
+            this.ValidateMedal(title, description, parts);
+            
+            throw new ConfirmCreatingMedal(this.Container.Constants[Constants.medalCost]);
+        }
+
+        public PyDataType GetRecipientsOfMedal(PyInteger medalID, CallInformation call)
+        {
+            // TODO: CHECK IF THERE'S ANY KIND OF PERMISSION CHECK NEEDED (LIKE CORPORATION ID?)
+            // TODO: CACHE THIS ANSWER TOO
+            return this.DB.GetRecipientsOfMedal(medalID);
+        }
+
+        public PyDataType GetMedalStatuses(CallInformation call)
+        {
+            return new Rowset(
+                new PyList<PyString>() {"statusID", "statusName"},
+                new PyList<PyList>()
+                {
+                    new PyList() {1, "Remove"},
+                    new PyList() {2, "Private"},
+                    new PyList() {3, "Public"}
+                }
+            );
+        }
+
+        public PyDataType GiveMedalToCharacters(PyInteger medalID, PyList characterIDs, PyString reason, CallInformation call)
+        {
+            int callerCharacterID = call.Client.EnsureCharacterIsSelected();
+            
+            if (CorporationRole.PersonnelManager.Is(call.Client.CorporationRole) == false && CorporationRole.Director.Is(call.Client.CorporationRole) == false)
+                throw new CrpAccessDenied(MLS.UI_CORP_NEED_ROLE_PERS_MAN_OR_DIRECT);
+            
+            throw new ConfirmCreatingMedal(this.Container.Constants[Constants.medalCost]);
+        }
+
+        public PyDataType GiveMedalToCharacters(PyInteger medalID, PyList characterIDs, PyString reason, PyBool pay, CallInformation call)
+        {
+            int callerCharacterID = call.Client.EnsureCharacterIsSelected();
+            
+            if (CorporationRole.PersonnelManager.Is(call.Client.CorporationRole) == false && CorporationRole.Director.Is(call.Client.CorporationRole) == false)
+                throw new CrpAccessDenied(MLS.UI_CORP_NEED_ROLE_PERS_MAN_OR_DIRECT);
+
+            if (pay == false)
+                throw new ConfirmGivingMedal(this.Container.Constants[Constants.medalCost]);
+            
+            using (Wallet wallet = this.WalletManager.AcquireWallet(call.Client.CorporationID, call.Client.CorpAccountKey))
+            {
+                wallet.EnsureEnoughBalance(this.Container.Constants[Constants.medalCost]);
+                wallet.CreateJournalRecord(MarketReference.MedalIssuing, this.Container.Constants[Constants.medalTaxCorporation], null, -this.Container.Constants[Constants.medalCost]);
+            }
+            
+            // create the records for all the characters that have that medal
+            foreach (PyInteger characterID in characterIDs.GetEnumerable<PyInteger>())
+                this.DB.GrantMedal(medalID, characterID, callerCharacterID, reason, 2);
+
+            // notify all the characters
+            this.NotificationManager.NotifyCharacters(characterIDs.GetEnumerable<PyInteger>(), new OnMedalIssued());
+            
+            // increase recipients for medals
+            this.DB.IncreaseRecepientsForMedal(medalID, characterIDs.Count);
+            
+            // no return data required
+            return null;
+        }
+
+        public PyDataType SetMedalStatus(PyDictionary newStatuses, CallInformation call)
+        {
+            int characterID = call.Client.EnsureCharacterIsSelected();
+            
+            PyDictionary<PyInteger, PyInteger> newStatus = newStatuses.GetEnumerable<PyInteger, PyInteger>();
+
+            foreach ((PyInteger medalID, PyInteger status) in newStatus)
+            {
+                // MEDAL DELETION
+                if (status == 1)
+                {
+                    this.DB.RemoveMedalFromCharacter(medalID, characterID);
+                }
+                else
+                {
+                    // set whatever status was requested by the user
+                    this.DB.UpdateMedalForCharacter(medalID, characterID, status);
+                }
+            }
+            
+            return null;
+        }
+
+        public PyDataType GetMedalDetails(PyInteger medalID, CallInformation call)
+        {
+            return KeyVal.FromDictionary(
+                new PyDictionary()
+                {
+                    ["info"] = new PyList() {this.DB.GetMedalDetails(medalID)}
+                }
+            );
         }
     }
 }

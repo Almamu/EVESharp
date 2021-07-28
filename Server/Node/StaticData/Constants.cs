@@ -27,5 +27,7 @@
         
         // corp related constants
         public const string corporationStartupCost = "corporationStartupCost";
+        public const string medalTaxCorporation = "medalTaxCorporation";
+        public const string medalCost = "medalCost";
     }
 }

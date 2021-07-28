@@ -166,13 +166,26 @@ namespace Node.Database
             );
         }
         
-        public Rowset GetMedalsReceived(int characterID)
+        public Rowset GetMedalsReceived(int characterID, bool publicOnly = false)
         {
             return Database.PrepareRowsetQuery(
-                "SELECT medalID, title, description, ownerID, issuerID, date, reason, status FROM chrMedals WHERE characterID=@characterID",
+                "SELECT medalID, title, description, ownerID, issuerID, chrMedals.date, reason, status FROM chrMedals LEFT JOIN crpMedals USING (medalID) WHERE ownerID = @characterID AND status >= @status",
                 new Dictionary<string, object>()
                 {
-                    {"@characterID", characterID}
+                    {"@characterID", characterID},
+                    {"@status", (publicOnly == true) ? 3 : 2}
+                }
+            );
+        }
+        
+        public CRowset GetMedalsReceivedDetails(int characterID, bool publicOnly = false)
+        {
+            return Database.PrepareCRowsetQuery(
+                "SELECT medalID, part, graphic, color FROM crpMedalParts LEFT JOIN chrMedals USING(medalID) WHERE ownerID = @characterID AND status >= @status",
+                new Dictionary<string, object>()
+                {
+                    {"@characterID", characterID},
+                    {"@status", (publicOnly == true) ? 3 : 2}
                 }
             );
         }
@@ -714,7 +727,7 @@ namespace Node.Database
             return Database.PrepareRowsetQuery(query, parameters);
         }
 
-        public Rowset GetMedalsList(int corporationID)
+        public Rowset GetMedalsListForCorporation(int corporationID)
         {
             return Database.PrepareRowsetQuery(
                 "SELECT medalID, title, description, date, creatorID, noRecepients FROM crpMedals WHERE corporationID = @corporationID",
@@ -725,10 +738,10 @@ namespace Node.Database
             );
         }
 
-        public Rowset GetMedalsDetails(int corporationID)
+        public CRowset GetMedalsDetailsForCorporation(int corporationID)
         {
-            return Database.PrepareRowsetQuery(
-                "SELECT crpMedals.medalID, part, graphic, color FROM crpMedalParts LEFT JOIN crpMedals ON crpMedals.medalID = crpMedalParts.medalID WHERE corporationID = @corporationID",
+            return Database.PrepareCRowsetQuery(
+                "SELECT crpMedals.medalID, part, graphic, color FROM crpMedalParts LEFT JOIN crpMedals USING(medalID) WHERE corporationID = @corporationID",
                 new Dictionary<string, object>()
                 {
                     {"@corporationID", corporationID}
@@ -1188,6 +1201,119 @@ namespace Node.Database
             );
         }
 
+        public void CreateMedal(int corporationID, int creatorID, string title, string description, PyList<PyList> parts)
+        {
+            ulong medalID = Database.PrepareQueryLID(
+                "INSERT INTO crpMedals(corporationID, title, description, date, creatorID, noRecepients)VALUES(@corporationID, @title, @description, @date, @creatorID, @noRecepients)",
+                new Dictionary<string, object>()
+                {
+                    {"@corporationID", corporationID},
+                    {"@title", title},
+                    {"@description", description},
+                    {"@date", DateTime.UtcNow.ToFileTimeUtc()},
+                    {"@creatorID", creatorID},
+                    {"@noRecepients", 0}
+                }
+            );
+
+            int index = 0;
+
+            MySqlConnection connection = null;
+            MySqlCommand command = Database.PrepareQuery(
+                ref connection,
+                "INSERT INTO crpMedalParts(medalID, `index`, part, graphic, color)VALUE(@medalID, @index, @part, @graphic, @color)"
+            );
+            
+            using (connection)
+            using (command)
+            {
+                foreach (PyList entry in parts)
+                {
+                    
+                    command.Parameters.Clear();
+
+                    command.Parameters.AddWithValue("@medalID", medalID);
+                    command.Parameters.AddWithValue("@index", index++);
+                    command.Parameters.AddWithValue("@part", entry[0] as PyInteger);
+                    command.Parameters.AddWithValue("@graphic", entry[1] as PyString);
+                    command.Parameters.AddWithValue("@color", entry[2] as PyInteger);
+
+                    command.ExecuteNonQuery();
+                }
+            }
+        }
+
+        public void GrantMedal(int medalID, int ownerID, int issuerID, string reason, int status = 0)
+        {
+            Database.PrepareQuery(
+                "INSERT INTO chrMedals(medalID, ownerID, issuerID, date, reason, status)VALUE(@medalID, @ownerID, @issuerID, @date, @reason, @status)",
+                new Dictionary<string, object>()
+                {
+                    {"@medalID", medalID},
+                    {"@ownerID", ownerID},
+                    {"@issuerID", issuerID},
+                    {"@date", DateTime.UtcNow.ToFileTimeUtc()},
+                    {"@reason", reason},
+                    {"@status", status}
+                }
+            );
+        }
+
+        public PyDataType GetRecipientsOfMedal(int medalID)
+        {
+            return Database.PreparePackedRowListQuery(
+                "SELECT ownerID AS recepientID, issuerID, date, reason, status FROM chrMedals WHERE medalID = @medalID",
+                new Dictionary<string, object>()
+                {
+                    {"@medalID", medalID}
+                }
+            );
+        }
+
+        public void RemoveMedalFromCharacter(int medalID, int characterID)
+        {
+            Database.PrepareQuery("DELETE FROM chrMedals WHERE ownerID = @characterID AND medalID = @medalID",
+                new Dictionary<string, object>()
+                {
+                    {"@characterID", characterID},
+                    {"@medalID", medalID}
+                }
+            );
+        }
+
+        public void UpdateMedalForCharacter(int medalID, int characterID, int newStatus)
+        {
+            Database.PrepareQuery("UPDATE chrMedals SET status = @status WHERE ownerID = @characterID AND medalID = @medalID",
+                new Dictionary<string, object>()
+                {
+                    {"@characterID", characterID},
+                    {"@medalID", medalID},
+                    {"@status", newStatus}
+                }
+            );
+        }
+
+        public PyDataType GetMedalDetails(int medalID)
+        {
+            return Database.PrepareKeyValQuery(
+                "SELECT title, description, noRecepients AS numberOfRecipients, corporationID AS ownerID FROM crpMedals WHERE medalID = @medalID",
+                new Dictionary<string, object>()
+                {
+                    {"@medalID", medalID}
+                }
+            );
+        }
+
+        public void IncreaseRecepientsForMedal(int medalID, int amount)
+        {
+            Database.PrepareQuery("UPDATE crpMedals SET noRecepients = noRecepients + @amount WHERE medalID = @medalID",
+                new Dictionary<string, object>()
+                {
+                    {"@medalID", medalID},
+                    {"@amount", amount}
+                }
+            );
+        }
         public CorporationDB(ItemDB itemDB, DatabaseConnection db) : base(db)
         {
             this.ItemDB = itemDB;
