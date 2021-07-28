@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Numerics;
 using System.Text;
 using Org.BouncyCastle.Utilities.Zlib;
 using PythonTypes.Compression;
@@ -208,19 +209,14 @@ namespace PythonTypes.Marshal
             // emergency fallback, for longer integers read it as a PyBuffer
             if (length > 8)
                 return new PyBuffer(mReader.ReadBytes((int) length));
-                    
-            switch (length)
-            {
-                case 1: return new PyInteger(mReader.ReadByte());
-                case 2: return new PyInteger(mReader.ReadInt16());
-                case 3: return new PyInteger(mReader.ReadByte() | (mReader.ReadInt16() << 8));
-                case 4: return new PyInteger(mReader.ReadInt32());
-                case 5: return new PyInteger(mReader.ReadByte() | (mReader.ReadInt32() << 8));
-                case 6: return new PyInteger(mReader.ReadInt16() | (mReader.ReadInt32() << 16));
-                case 7: return new PyInteger(mReader.ReadInt16() | (mReader.ReadInt32() << 16) | ((long) mReader.ReadByte() << 32));
-                case 8: return new PyInteger(mReader.ReadInt64());
-                default: throw new InvalidDataException($"IntegerVar of odd size ({length})");
-            }
+
+            BigInteger value = new BigInteger(mReader.ReadBytes((int) length));
+
+            if (length < 2) return new PyInteger((byte) value);
+            if (length < 3) return new PyInteger((short) value);
+            if (length < 5) return new PyInteger((int) value);
+            
+            return new PyInteger((long) value);
         }
 
         /// <summary>
