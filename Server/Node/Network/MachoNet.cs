@@ -615,7 +615,6 @@ namespace Node.Network
             character.RolesAtBase = change.RolesAtBase;
             character.RolesAtHq = change.RolesAtHQ;
             character.RolesAtOther = change.RolesAtOther;
-            character.BlockRoles = change.BlockRoles;
             character.GrantableRoles = change.GrantableRoles;
             character.GrantableRolesAtBase = change.GrantableRolesAtBase;
             character.GrantableRolesAtOther = change.GrantableRolesAtOther;

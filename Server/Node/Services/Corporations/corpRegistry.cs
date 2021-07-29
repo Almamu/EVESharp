@@ -56,7 +56,7 @@ namespace Node.Services.Corporations
         private long CorporationAdvertisementFlatFee { get; init; }
         private long CorporationAdvertisementDailyRate { get; init; }
         
-        public corpRegistry(CorporationDB db, ChatDB chatDB, CharacterDB characterDB, NotificationManager notificationManager, MailManager mailManager, WalletManager walletManager, NodeContainer container, ItemFactory itemFactory, ClientManager clientManager, BoundServiceManager manager, AncestryManager ancestryManager) : base(manager)
+        public corpRegistry(CorporationDB db, ChatDB chatDB, CharacterDB characterDB, NotificationManager notificationManager, MailManager mailManager, WalletManager walletManager, NodeContainer container, ItemFactory itemFactory, ClientManager clientManager, BoundServiceManager manager, AncestryManager ancestryManager, MachoNet machoNet) : base(manager)
         {
             this.DB = db;
             this.ChatDB = chatDB;
@@ -68,6 +68,8 @@ namespace Node.Services.Corporations
             this.ItemFactory = itemFactory;
             this.ClientManager = clientManager;
             this.AncestryManager = ancestryManager;
+            
+            machoNet.OnClusterTimer += this.PerformTimedEvents;
         }
 
         protected corpRegistry(CorporationDB db, ChatDB chatDB, CharacterDB characterDB, NotificationManager notificationManager, MailManager mailManager, WalletManager walletManager, NodeContainer container, ItemFactory itemFactory, ClientManager clientManager, AncestryManager ancestryManager, Corporation corp, int isMaster, corpRegistry parent) : base (parent, corp.ID)
@@ -86,6 +88,14 @@ namespace Node.Services.Corporations
             this.CorporationAdvertisementFlatFee = this.Container.Constants["corporationAdvertisementFlatFee"].Value;
             this.CorporationAdvertisementDailyRate = this.Container.Constants["corporationAdvertisementDailyRate"].Value;
             this.AncestryManager = ancestryManager;
+        }
+
+        /// <summary>
+        /// Checks orders that are expired, cancels them and returns the items to the hangar if required
+        /// </summary>
+        private void PerformTimedEvents(object sender, EventArgs args)
+        {
+            this.DB.RemoveExpiredCorporationAds();
         }
 
         public PyDataType GetEveOwners(CallInformation call)
@@ -766,13 +776,42 @@ namespace Node.Services.Corporations
             if (characterID == callerCharacterID)
             {
                 this.CharacterDB.UpdateCharacterBlockRole(characterID, blockRoles);
-                
+                // store the new roles and title mask
+                this.CharacterDB.UpdateCharacterRoles(
+                    characterID, 0, 0, 0, 0,
+                    0, 0, 0, 0, 0
+                );
+
+                long? currentStasisTimer = this.CharacterDB.GetCharacterStasisTimer(characterID);
+
+                if (currentStasisTimer > 0 && blockRoles == 1)
+                {
+                    long currentTime = DateTime.UtcNow.ToFileTimeUtc();
+                    long stasisTimerEnd = (long) currentStasisTimer + TimeSpan.FromHours(24).Ticks;
+
+                    if (stasisTimerEnd > currentTime)
+                    {
+                        int hoursTimerStarted = (int) ((currentTime - currentStasisTimer) / TimeSpan.TicksPerHour);
+                        int hoursLeft = (int) ((stasisTimerEnd - currentTime) / TimeSpan.TicksPerHour);
+
+                        throw new CrpCantQuitNotCompletedStasisPeriod(characterID, hoursTimerStarted, hoursLeft);
+                    }
+                }
+
+                call.Client.CorporationRole = 0;
+                call.Client.RolesAtAll = 0;
+                call.Client.RolesAtBase = 0;
+                call.Client.RolesAtOther = 0;
+                call.Client.RolesAtHQ = 0;
+
+                character.TitleMask = 0;
+
                 this.NotificationManager.NotifyNode(
                     this.ItemFactory.ItemDB.GetItemNode(characterID), 
                     new OnCorporationMemberUpdated(
-                        characterID, roles, currentGrantableRoles, rolesAtHQ, currentGrantableRolesAtHQ,
-                        rolesAtBase, currentGrantableRolesAtBase, rolesAtOther, currentGrantableRolesAtOther, currentBaseID,
-                        blockRoles == 1, character.TitleMask
+                        characterID, 0, 0, 0, 0,
+                        0, 0, 0, 0, currentBaseID,
+                        blockRoles == 1, 0
                     )
                 );
                 
@@ -780,14 +819,31 @@ namespace Node.Services.Corporations
                 {
                     PyDictionary<PyString, PyTuple> changes = new PyDictionary<PyString, PyTuple>()
                     {
-                        ["blockRoles"] = new PyTuple(2) {[0] = null, [1] = blockRoles == 1}
+                        ["roles"] = new PyTuple(2) {[0] = null, [1] = roles},
+                        ["rolesAtHQ"] = new PyTuple(2) {[0] = null, [1] = rolesAtHQ},
+                        ["rolesAtBase"] = new PyTuple(2) {[0] = null, [1] = rolesAtBase},
+                        ["rolesAtOther"] = new PyTuple(2) {[0] = null, [1] = rolesAtOther},
+                        ["grantableRoles"] = new PyTuple(2) {[0] = null, [1] = grantableRoles},
+                        ["grantableRolesAtHQ"] = new PyTuple(2) {[0] = null, [1] = grantableRolesAtHQ},
+                        ["grantableRolesAtBase"] = new PyTuple(2) {[0] = null, [1] = grantableRolesAtBase},
+                        ["grantableRolesAtOther"] = new PyTuple(2) {[0] = null, [1] = grantableRolesAtOther},
+                        ["baseID"] = new PyTuple(2) {[0] = null, [1] = baseID},
+                        ["blockRoles"] = new PyTuple(2) {[0] = blockRoles == 0, [1] = blockRoles == 1},
+                        ["titleMask"] = new PyTuple(2) {[0] = null, [1] = titleMask}
                     };
                     
                     this.MembersSparseRowset.UpdateRow(characterID, changes);
                 }
                 
+                // update the stasis timer
+                if (currentStasisTimer == null)
+                    this.CharacterDB.SetCharacterStasisTimer(characterID, blockRoles == 1 ? DateTime.UtcNow.ToFileTimeUtc() : null);
+
                 return null;
             }
+
+            if (currentBlockRoles == true)
+                throw new CrpRolesDenied(characterID);
             
             // if the character is not a director, it cannot grant grantable roles (duh)
             if (CorporationRole.Director.Is(call.Client.CorporationRole) == false && (grantableRoles != 0 ||
@@ -881,13 +937,64 @@ namespace Node.Services.Corporations
 
         public PyDataType CanLeaveCurrentCorporation(CallInformation call)
         {
-            // TODO: IMPLEMENT THIS
-            return new PyTuple(3)
+            int characterID = call.Client.EnsureCharacterIsSelected();
+            long? stasisTimer = this.CharacterDB.GetCharacterStasisTimer(characterID);
+
+            try
             {
-                [0] = false, // can leave
-                [1] = "CustomError", // error message
-                [2] = new PyDictionary() {["error"] = "Not supported yet"} // error details (info for the exception)
-            };
+                if (call.Client.CorporationID <= ItemFactory.NPC_CORPORATION_ID_MAX)
+                {
+                    if (call.Client.WarFactionID is null)
+                    {
+                        throw new CrpCantQuitDefaultCorporation();
+                    }
+                }
+
+                long currentTime = DateTime.UtcNow.ToFileTimeUtc();
+
+                if (stasisTimer is null &&
+                    (call.Client.CorporationRole > 0 ||
+                     call.Client.RolesAtAll > 0 ||
+                     call.Client.RolesAtBase > 0 ||
+                     call.Client.RolesAtOther > 0 ||
+                     call.Client.RolesAtHQ > 0)
+                    )
+                {
+                    throw new CrpCantQuitNotInStasis(
+                        characterID,
+                        call.Client.CorporationRole | call.Client.RolesAtAll | call.Client.RolesAtBase | call.Client.RolesAtOther | call.Client.RolesAtHQ
+                    );
+                }
+                
+                if (stasisTimer is not null)
+                {
+                    long stasisTimerEnd = (long) stasisTimer + TimeSpan.FromHours(24).Ticks;
+                    
+                    if (stasisTimerEnd > DateTime.UtcNow.ToFileTimeUtc())
+                    {
+                        int hoursTimerStarted = (int) ((currentTime - stasisTimer) / TimeSpan.TicksPerHour);
+                        int hoursLeft = (int) (((long) stasisTimerEnd - currentTime) / TimeSpan.TicksPerHour);
+                        
+                        throw new CrpCantQuitNotCompletedStasisPeriodIsBlocked(characterID, hoursTimerStarted, hoursLeft);
+                    }
+                }
+
+                return new PyTuple(3)
+                {
+                    [0] = true,
+                    [1] = null,
+                    [2] = null
+                };
+            }
+            catch (UserError e)
+            {
+                return new PyTuple(3)
+                {
+                    [0] = false, // can leave
+                    [1] = e.Reason, // error message
+                    [2] = e.Dictionary
+                };
+            }
         }
 
         public PyDataType CreateRecruitmentAd(PyInteger days, PyInteger stationID, PyInteger raceMask, PyInteger typeMask, PyInteger allianceID, PyInteger skillpoints, PyString description, CallInformation call)

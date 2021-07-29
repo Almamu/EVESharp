@@ -551,7 +551,7 @@ namespace Node.Database
                 " eyeRotation1, eyeRotation2, eyeRotation3, camPos1, camPos2, camPos3, morph1e, morph1n, morph1s," +
                 " morph1w, morph2e, morph2n, morph2s, morph2w, morph3e, morph3n, morph3s, morph3w, morph4e, morph4n," +
                 " morph4s, morph4w, stationID, solarSystemID, constellationID, regionID, online, freeRespecs, nextRespecTime," +
-                " timeLastJump, titleMask, warfactionID, corpAccountKey, corpStasisTime, blockRoles, " +
+                " timeLastJump, titleMask, warfactionID, corpAccountKey, " +
                 " grantableRoles, grantableRolesAtBase, grantableRolesAtHQ, grantableRolesAtOther, baseID " +
                 "FROM chrInformation WHERE characterID = @itemID",
                 new Dictionary<string, object>()
@@ -639,13 +639,11 @@ namespace Node.Database
                     reader.GetInt32(66),
                     reader.GetInt32OrNull(67),
                     reader.GetInt32(68),
-                    reader.GetInt64OrNull(69),
-                    reader.GetBoolean(70),
+                    reader.GetInt64(69),
+                    reader.GetInt64(70),
                     reader.GetInt64(71),
                     reader.GetInt64(72),
-                    reader.GetInt64(73),
-                    reader.GetInt64(74),
-                    reader.GetInt32OrNull(75)
+                    reader.GetInt32OrNull(73)
                 );
             }
         }

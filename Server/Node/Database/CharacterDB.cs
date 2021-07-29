@@ -711,7 +711,7 @@ namespace Node.Database
         public void UpdateCharacterInformation(Character character)
         {
             Database.PrepareQuery(
-                "UPDATE chrInformation SET online = @online, activeCloneID = @activeCloneID, freeRespecs = @freeRespecs, nextRespecTime = @nextRespecTime, timeLastJump = @timeLastJump, description = @description, warFactionID = @warFactionID, corporationID = @corporationID, corporationDateTime = @corporationDateTime, corpAccountKey = @corpAccountKey, corpStasisTime = @corpStasisTime, blockRoles = @blockRoles WHERE characterID = @characterID",
+                "UPDATE chrInformation SET online = @online, activeCloneID = @activeCloneID, freeRespecs = @freeRespecs, nextRespecTime = @nextRespecTime, timeLastJump = @timeLastJump, description = @description, warFactionID = @warFactionID, corporationID = @corporationID, corporationDateTime = @corporationDateTime, corpAccountKey = @corpAccountKey WHERE characterID = @characterID",
                 new Dictionary<string, object>()
                 {
                     {"@characterID", character.ID},
@@ -725,8 +725,6 @@ namespace Node.Database
                     {"@corporationID", character.CorporationID},
                     {"@corporationDateTime", character.CorporationDateTime},
                     {"@corpAccountKey", character.CorpAccountKey},
-                    {"@corpStasisTime", character.CorpStasisTime},
-                    {"@blockRoles", character.BlockRoles},
                 }
             );
 
@@ -1114,6 +1112,23 @@ namespace Node.Database
 
                 return reader.GetInt64(0);
             }
+        }
+
+        /// <summary>
+        /// Sets when the character's stasis timer started (if any)
+        /// </summary>
+        /// <param name="characterID"></param>
+        /// <returns></returns>
+        public void SetCharacterStasisTimer(int characterID, long? start)
+        {
+            Database.PrepareQuery(
+                "UPDATE chrInformation SET corpStasisTime = @timerStart WHERE characterID = @characterID",
+                new Dictionary<string, object>()
+                {
+                    {"@characterID", characterID},
+                    {"@timerStart", start}
+                }
+            );
         }
 
         /// <summary>

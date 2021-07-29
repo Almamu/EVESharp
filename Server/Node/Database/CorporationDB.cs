@@ -1342,6 +1342,18 @@ namespace Node.Database
                 }
             );
         }
+
+        public void RemoveExpiredCorporationAds()
+        {
+            Database.PrepareQuery(
+                "DELETE FROM crpRecruitmentAds WHERE expiryDateTime < @currentTime",
+                new Dictionary<string, object>()
+                {
+                    {"@currentTime", DateTime.UtcNow.ToFileTimeUtc ()}
+                }
+            );
+        }
+        
         public CorporationDB(ItemDB itemDB, DatabaseConnection db) : base(db)
         {
             this.ItemDB = itemDB;

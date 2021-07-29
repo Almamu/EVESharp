@@ -45,8 +45,8 @@ namespace Node.Inventory.Items.Types
             double? morph3N, double? morph3S, double? morph3W, double? morph4E, double? morph4N, double? morph4S,
             double? morph4W, int stationId, int solarSystemId, int constellationId, int regionId, int online,
             int freeReSpecs, long nextReSpecTime, long timeLastJump, int titleMask, int? warFactionID, int corpAccountKey,
-            long? corpStasisTime, bool blockRoles, long grantableRoles, long grantableRolesAtBase, long grantableRolesAtHq,
-            long grantableRolesAtOther, int? baseID) : base(from)
+            long grantableRoles, long grantableRolesAtBase, long grantableRolesAtHq, long grantableRolesAtOther,
+            int? baseID) : base(from)
         {
             this.ClientManager = clientManager;
             this.TimerManager = timerManager;
@@ -119,8 +119,6 @@ namespace Node.Inventory.Items.Types
             this.mTitleMask = titleMask;
             this.mWarFactionID = warFactionID;
             this.mCorpAccountKey = corpAccountKey;
-            this.mCorpStasisTime = corpStasisTime;
-            this.mBlockRoles = blockRoles;
             this.mGrantableRoles = grantableRoles;
             this.mGrantableRolesAtHQ = grantableRolesAtHq;
             this.mGrantableRolesAtBase = grantableRolesAtBase;
@@ -360,26 +358,6 @@ namespace Node.Inventory.Items.Types
             }
         }
 
-        public long? CorpStasisTime
-        {
-            get => this.mCorpStasisTime;
-            set
-            {
-                this.Dirty = true;
-                this.mCorpStasisTime = value;
-            }
-        }
-
-        public bool BlockRoles
-        {
-            get => this.mBlockRoles;
-            set
-            {
-                this.Dirty = true;
-                this.mBlockRoles = value;
-            }
-        }
-
         /// <summary>
         /// WARNING: THIS FIELD IS NOT SAVED
         /// </summary>
@@ -485,8 +463,6 @@ namespace Node.Inventory.Items.Types
         private int mTitleMask;
         private int? mWarFactionID;
         private int mCorpAccountKey;
-        private long? mCorpStasisTime;
-        private bool mBlockRoles;
         private long mGrantableRoles;
         private long mGrantableRolesAtHQ;
         private long mGrantableRolesAtBase;
