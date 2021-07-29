@@ -356,7 +356,7 @@ namespace Node.Database
             }
         }
 
-        public PyList<PyTuple> GetOffices(int corporationID, int startPos, int limit, SparseRowsetHeader header, Dictionary<PyDataType, int> rowsIndex)
+        public PyList<PyTuple> GetOffices(int corporationID, int startPos, int limit, SparseRowsetHeader header)
         {
             MySqlConnection connection = null;
             MySqlDataReader reader = Database.PrepareQuery(ref connection,
@@ -372,7 +372,7 @@ namespace Node.Database
             using (connection)
             using (reader)
             {
-                return header.Fetch(0, reader, rowsIndex);
+                return header.Fetch(0, reader);
             }
         }
 
@@ -501,6 +501,36 @@ namespace Node.Database
             using (reader)
             {
                 return header.FetchByKey(0, reader, rowsIndex);
+            }
+        }
+
+        public PyList<PyTuple> GetMembers(int corporationID, int startPos, int limit, SparseRowsetHeader header)
+        {
+            // TODO: GENERATE PROPER FIELDS FOR THE FOLLOWING FIELDS
+            // TODO: divisionID, squadronID
+            // TODO: CHECK IF THIS startDateTime IS THE CORP'S MEMBERSHIP OR CHARACTER'S MEMBERSHIP
+            MySqlConnection connection = null;
+            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+                "SELECT" +
+                " characterID, title, corporationDateTime AS startDateTime, roles, rolesAtHQ, rolesAtBase, rolesAtOther," +
+                " titleMask, grantableRoles, grantableRolesAtHQ, grantableRolesAtBase," + 
+                " grantableRolesAtOther, 0 AS divisionID, 0 AS squadronID, baseID, " + 
+                " blockRoles, gender " +
+                "FROM chrInformation " +
+                "WHERE corporationID=@corporationID " +
+                "LIMIT @startPos,@limit",
+                new Dictionary<string, object>()
+                {
+                    {"@corporationID", corporationID},
+                    {"@startPos", startPos},
+                    {"@limit", limit}
+                }
+            );
+            
+            using (connection)
+            using (reader)
+            {
+                return header.Fetch(0, reader);
             }
         }
 

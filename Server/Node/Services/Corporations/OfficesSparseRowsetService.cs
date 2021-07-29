@@ -26,7 +26,7 @@ namespace Node.Services.Corporations
 
         public override PyDataType Fetch(PyInteger startPos, PyInteger fetchSize, CallInformation call)
         {
-            return this.DB.GetOffices(this.Corporation.ID, startPos, fetchSize, this.RowsetHeader, this.RowsIndex);
+            return this.DB.GetOffices(this.Corporation.ID, startPos, fetchSize, this.RowsetHeader);
         }
 
         public override PyDataType FetchByKey(PyList keyList, CallInformation call)

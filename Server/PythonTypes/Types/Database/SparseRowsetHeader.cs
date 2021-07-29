@@ -86,9 +86,8 @@ namespace PythonTypes.Types.Database
         /// </summary>
         /// <param name="pkFieldIndex">The field to use as primary key</param>
         /// <param name="reader">The reader to read data from the database</param>
-        /// <param name="rowsIndex">The indexed rows</param>
         /// <returns></returns>
-        public PyList<PyTuple> Fetch(int pkFieldIndex, MySqlDataReader reader, Dictionary<PyDataType, int> rowsIndex)
+        public PyList<PyTuple> Fetch(int pkFieldIndex, MySqlDataReader reader)
         {
             PyList<PyTuple> result = new PyList<PyTuple>();
 
