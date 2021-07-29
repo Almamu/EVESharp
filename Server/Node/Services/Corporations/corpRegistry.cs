@@ -758,6 +758,50 @@ namespace Node.Services.Corporations
             return this.DB.GetRecruitmentAds(null, null, null, null, null, null, null, this.mCorporation.ID);
         }
 
+        public PyDataType UpdateMembers(PyDataType rowset, CallInformation call)
+        {
+            // parse the rowset to have proper access to the data
+            Rowset parsed = rowset;
+            // position of each header
+            int characterID = 0;
+            int title = 1;
+            int divisionID = 2;
+            int squadronID = 3;
+            int roles = 4;
+            int grantableRoles = 5;
+            int rolesAtHQ = 6;
+            int grantableRolesAtHQ = 7;
+            int rolesAtBase = 8;
+            int grantableRolesAtBase = 9;
+            int rolesAtOther = 10;
+            int grantableRolesAtOther = 11;
+            int baseID = 12;
+            int titleMask  = 13;
+
+            foreach (PyList entry in parsed.Rows)
+            {
+                this.UpdateMember(
+                    entry [characterID] as PyInteger,
+                    entry [title] as PyString,
+                    entry [divisionID] as PyInteger,
+                    entry [squadronID] as PyInteger,
+                    entry [roles] as PyInteger,
+                    entry [grantableRoles] as PyInteger,
+                    entry [rolesAtHQ] as PyInteger,
+                    entry [grantableRolesAtHQ] as PyInteger,
+                    entry [rolesAtBase] as PyInteger,
+                    entry [grantableRolesAtBase] as PyInteger,
+                    entry [rolesAtOther] as PyInteger,
+                    entry [grantableRolesAtOther] as PyInteger,
+                    entry [baseID] as PyInteger,
+                    entry [titleMask] as PyInteger,
+                    0, call
+                );
+            }
+            
+            return null;
+        }
+
         public PyDataType UpdateMember(PyInteger characterID, PyString title, PyInteger divisionID,
             PyInteger squadronID, PyInteger roles, PyInteger grantableRoles, PyInteger rolesAtHQ,
             PyInteger grantableRolesAtHQ, PyInteger rolesAtBase, PyInteger grantableRolesAtBase, PyInteger rolesAtOther,
@@ -772,7 +816,8 @@ namespace Node.Services.Corporations
             this.CharacterDB.GetCharacterRoles(characterID, out long currentRoles, out long currentRolesAtBase,
                 out long currentRolesAtHQ, out long currentRolesAtOther, out long currentGrantableRoles,
                 out long currentGrantableRolesAtBase, out long currentGrantableRolesAtHQ,
-                out long currentGrantableRolesAtOther, out bool currentBlockRoles, out int? currentBaseID
+                out long currentGrantableRolesAtOther, out bool currentBlockRoles, out int? currentBaseID, 
+                out int currentTitleMask
             );
             
             // the only modification a member can perform on itself is blocking roles
@@ -832,17 +877,17 @@ namespace Node.Services.Corporations
                 {
                     PyDictionary<PyString, PyTuple> changes = new PyDictionary<PyString, PyTuple>()
                     {
-                        ["roles"] = new PyTuple(2) {[0] = null, [1] = roles},
-                        ["rolesAtHQ"] = new PyTuple(2) {[0] = null, [1] = rolesAtHQ},
-                        ["rolesAtBase"] = new PyTuple(2) {[0] = null, [1] = rolesAtBase},
-                        ["rolesAtOther"] = new PyTuple(2) {[0] = null, [1] = rolesAtOther},
-                        ["grantableRoles"] = new PyTuple(2) {[0] = null, [1] = grantableRoles},
-                        ["grantableRolesAtHQ"] = new PyTuple(2) {[0] = null, [1] = grantableRolesAtHQ},
-                        ["grantableRolesAtBase"] = new PyTuple(2) {[0] = null, [1] = grantableRolesAtBase},
-                        ["grantableRolesAtOther"] = new PyTuple(2) {[0] = null, [1] = grantableRolesAtOther},
-                        ["baseID"] = new PyTuple(2) {[0] = null, [1] = baseID},
+                        ["roles"] = new PyTuple(2) {[0] = currentRoles, [1] = roles},
+                        ["rolesAtHQ"] = new PyTuple(2) {[0] = currentRolesAtHQ, [1] = rolesAtHQ},
+                        ["rolesAtBase"] = new PyTuple(2) {[0] = currentRolesAtBase, [1] = rolesAtBase},
+                        ["rolesAtOther"] = new PyTuple(2) {[0] = currentRolesAtOther, [1] = rolesAtOther},
+                        ["grantableRoles"] = new PyTuple(2) {[0] = currentGrantableRoles, [1] = grantableRoles},
+                        ["grantableRolesAtHQ"] = new PyTuple(2) {[0] = currentGrantableRolesAtHQ, [1] = grantableRolesAtHQ},
+                        ["grantableRolesAtBase"] = new PyTuple(2) {[0] = currentRolesAtBase, [1] = grantableRolesAtBase},
+                        ["grantableRolesAtOther"] = new PyTuple(2) {[0] = currentRolesAtOther, [1] = grantableRolesAtOther},
+                        ["baseID"] = new PyTuple(2) {[0] = currentBaseID, [1] = baseID},
                         ["blockRoles"] = new PyTuple(2) {[0] = blockRoles == 0, [1] = blockRoles == 1},
-                        ["titleMask"] = new PyTuple(2) {[0] = null, [1] = titleMask}
+                        ["titleMask"] = new PyTuple(2) {[0] = currentTitleMask, [1] = titleMask}
                     };
                     
                     this.MembersSparseRowset.UpdateRow(characterID, changes);
@@ -896,19 +941,19 @@ namespace Node.Services.Corporations
             {
                 PyDictionary<PyString, PyTuple> changes = new PyDictionary<PyString, PyTuple>()
                 {
-                    ["roles"] = new PyTuple(2) {[0] = null, [1] = roles},
-                    ["rolesAtHQ"] = new PyTuple(2) {[0] = null, [1] = rolesAtHQ},
-                    ["rolesAtBase"] = new PyTuple(2) {[0] = null, [1] = rolesAtBase},
-                    ["rolesAtOther"] = new PyTuple(2) {[0] = null, [1] = rolesAtOther},
-                    ["grantableRoles"] = new PyTuple(2) {[0] = null, [1] = grantableRoles},
-                    ["grantableRolesAtHQ"] = new PyTuple(2) {[0] = null, [1] = grantableRolesAtHQ},
-                    ["grantableRolesAtBase"] = new PyTuple(2) {[0] = null, [1] = grantableRolesAtBase},
-                    ["grantableRolesAtOther"] = new PyTuple(2) {[0] = null, [1] = grantableRolesAtOther},
-                    ["baseID"] = new PyTuple(2) {[0] = null, [1] = baseID}
+                    ["roles"] = new PyTuple(2) {[0] = currentRoles, [1] = roles},
+                    ["rolesAtHQ"] = new PyTuple(2) {[0] = currentRolesAtHQ, [1] = rolesAtHQ},
+                    ["rolesAtBase"] = new PyTuple(2) {[0] = currentRolesAtBase, [1] = rolesAtBase},
+                    ["rolesAtOther"] = new PyTuple(2) {[0] = currentRolesAtOther, [1] = rolesAtOther},
+                    ["grantableRoles"] = new PyTuple(2) {[0] = currentGrantableRoles, [1] = grantableRoles},
+                    ["grantableRolesAtHQ"] = new PyTuple(2) {[0] = currentGrantableRolesAtHQ, [1] = grantableRolesAtHQ},
+                    ["grantableRolesAtBase"] = new PyTuple(2) {[0] = currentRolesAtBase, [1] = grantableRolesAtBase},
+                    ["grantableRolesAtOther"] = new PyTuple(2) {[0] = currentRolesAtOther, [1] = grantableRolesAtOther},
+                    ["baseID"] = new PyTuple(2) {[0] = currentBaseID, [1] = baseID},
                 };
 
                 if (titleMask is not null)
-                    changes["titleMask"] = new PyTuple(2) {[0] = null, [1] = titleMask};
+                    changes["titleMask"] = new PyTuple(2) {[0] = currentTitleMask, [1] = titleMask};
 
                 if (blockRoles is not null)
                     changes["blockRoles"] = new PyTuple(2) {[0] = null, [1] = blockRoles};
@@ -1119,7 +1164,7 @@ namespace Node.Services.Corporations
                     this.CharacterDB.GetCharacterRoles((int) client.CharacterID,
                         out long characterRoles, out long characterRolesAtBase, out long characterRolesAtHQ,  out long characterRolesAtOther,
                         out long characterGrantableRoles, out long characterGrantableRolesAtBase, out long characterGrantableRolesAtHQ, 
-                        out long characterGrantableRolesAtOther, out _, out _);
+                        out long characterGrantableRolesAtOther, out _, out _, out _);
             
                     // update the roles on the session and send the session change to the player
                     client.CorporationRole = characterRoles | titleRoles;

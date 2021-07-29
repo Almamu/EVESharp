@@ -1148,11 +1148,11 @@ namespace Node.Database
         /// <exception cref="Exception"></exception>
         public void GetCharacterRoles(int characterID, out long roles, out long rolesAtBase, out long rolesAtHQ,
             out long rolesAtOther, out long grantableRoles, out long grantableRolesAtBase, out long grantableRolesAtHQ,
-            out long grantableRolesAtOther, out bool blockRoles, out int? baseID)
+            out long grantableRolesAtOther, out bool blockRoles, out int? baseID, out int titleMask)
         {
             MySqlConnection connection = null;
             MySqlDataReader reader = Database.PrepareQuery(ref connection,
-                "SELECT roles, rolesAtBase, rolesAtHQ, rolesAtOther, grantableRoles, grantableRolesAtBase, grantableRolesAtHQ, grantableRolesAtOther, blockRoles, baseID FROM chrInformation WHERE characterID = @characterID",
+                "SELECT roles, rolesAtBase, rolesAtHQ, rolesAtOther, grantableRoles, grantableRolesAtBase, grantableRolesAtHQ, grantableRolesAtOther, blockRoles, baseID, titleMask FROM chrInformation WHERE characterID = @characterID",
                 new Dictionary<string, object>()
                 {
                     {"@characterID", characterID}
@@ -1175,6 +1175,7 @@ namespace Node.Database
                 grantableRolesAtOther = reader.GetInt64(7);
                 blockRoles = reader.GetBoolean(8);
                 baseID = reader.GetInt32OrNull(9);
+                titleMask = reader.GetInt32(10);
             }
         }
 
