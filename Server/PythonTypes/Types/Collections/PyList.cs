@@ -1,6 +1,8 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using MySql.Data.MySqlClient;
+using PythonTypes.Types.Database;
 using PythonTypes.Types.Primitives;
 
 namespace PythonTypes.Types.Collections
@@ -52,6 +54,17 @@ namespace PythonTypes.Types.Collections
         public static implicit operator object[](PyList<T> original)
         {
             throw new NotSupportedException("This exception means that most likely what you're trying to achieve is not being done automatically by the compiler, please check the method you're passing this object to to ensure you get the real IEnumerable and not a different overload");
+        }
+        
+        public static PyList<T> FromMySqlDataReader(IDatabaseConnection connection, MySqlDataReader reader)
+        {
+            PyList<T> result = new PyList<T>();
+            FieldType type = connection.GetFieldType(reader, 0);
+            
+            while(reader.Read() == true)
+                result.Add(IDatabaseConnection.ObjectFromColumn(reader, type, 0));
+
+            return result;
         }
     }
     

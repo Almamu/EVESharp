@@ -1383,6 +1383,17 @@ namespace Node.Database
                 }
             );
         }
+
+        public PyDataType GetMemberIDsWithMoreThanAvgShares(int corporationID)
+        {
+            return Database.PrepareList(
+                "SELECT ownerID FROM crpshares LEFT JOIN chrinformation ON ownerID = characterID WHERE shares > (SELECT AVG(shares) FROM crpshares LEFT JOIN chrinformation ON ownerID = characterID WHERE crpShares.corporationID = @corporationID AND chrInformation.corporationID = @corporationID) AND crpShares.corporationID = @corporationID AND chrInformation.corporationID = @corporationID",
+                new Dictionary<string, object>()
+                {
+                    {"@corporationID", corporationID}
+                }
+            );
+        }
         
         public CorporationDB(ItemDB itemDB, DatabaseConnection db) : base(db)
         {

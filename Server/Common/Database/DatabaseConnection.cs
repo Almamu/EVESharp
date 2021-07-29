@@ -994,6 +994,40 @@ namespace Common.Database
         }
 
         /// <summary>
+        /// Runs one prepared query with the given values as parameters and returns a PyDictionary representing the result.
+        /// this only holds ONE row
+        /// </summary>
+        /// <param name="query">The prepared query</param>
+        /// <param name="values">The key-value pair of values to use when running the query</param>
+        /// <returns>The PyDataType object representing the result</returns>
+        public PyList<PyInteger> PrepareList(string query, Dictionary<string, object> values)
+        {
+            try
+            {
+                MySqlConnection connection = null;
+                // create the correct command
+                MySqlCommand command = this.PrepareQuery(ref connection, query);
+
+                // add values
+                this.AddNamedParameters(values, command);
+
+                MySqlDataReader reader = command.ExecuteReader();
+                
+                using (connection)
+                using (reader)
+                {
+                    // run the prepared statement
+                    return PyList<PyInteger>.FromMySqlDataReader(this, reader);
+                }
+            }
+            catch (Exception e)
+            {
+                Log.Error($"MySQL error: {e.Message}");
+                throw;
+            }
+        }
+
+        /// <summary>
         /// Runs one prepared query with the given value as parameters, ignoring the result data
         /// </summary>
         /// <param name="query">The prepared query</param>

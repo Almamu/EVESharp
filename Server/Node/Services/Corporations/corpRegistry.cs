@@ -1407,5 +1407,10 @@ namespace Node.Services.Corporations
 
             return null;
         }
+
+        public PyDataType GetMemberIDsWithMoreThanAvgShares(CallInformation call)
+        {
+            return this.DB.GetMemberIDsWithMoreThanAvgShares(call.Client.CorporationID);
+        }
     }
 }
