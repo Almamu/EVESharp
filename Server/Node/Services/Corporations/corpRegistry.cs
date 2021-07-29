@@ -385,6 +385,8 @@ namespace Node.Services.Corporations
             // TODO: ADD SUPPORT FOR BANNED WORDS
             if (false)
                 throw new CorpNameInvalidBannedWord();
+            // TODO: CHECK FOR POS AS ITS NOT POSSIBLE TO CREATE CORPORATIONS THERE
+            
             
             int stationID = call.Client.EnsureCharacterIsInStation();
             int corporationStartupCost = this.Container.Constants[Constants.corporationStartupCost];
@@ -645,6 +647,7 @@ namespace Node.Services.Corporations
                     $"<a href=\"showinfo:2//{this.mCorporation.ID}\">{this.mCorporation.Name}</a> may have credited your account as part of a total payout of <b>{totalAmount} ISK</b> to their shareholders. The amount awarded is based upon the number of shares you hold, in relation to the total number of shares issued by the company."
                 );
                 
+                // TODO: INCLUDE WETHER THE SHAREHOLDER IS A CORPORATION OR NOT, MAYBE CREATE A CUSTOM OBJECT FOR THIS
                 // calculate amount to give and acquire it's wallet
                 using (Wallet dest = this.WalletManager.AcquireWallet(ownerID, 1000))
                 {
@@ -680,7 +683,7 @@ namespace Node.Services.Corporations
             if (this.mCorporation.CeoID != call.Client.CharacterID)
                 throw new OnlyCEOCanPayoutDividends();
             
-            using (Wallet wallet = this.WalletManager.AcquireWallet(call.Client.CorporationID, 1000))
+            using (Wallet wallet = this.WalletManager.AcquireWallet(call.Client.CorporationID, call.Client.CorpAccountKey, true))
             {
                 // check if there's enough cash left
                 wallet.EnsureEnoughBalance(amount);
@@ -798,7 +801,17 @@ namespace Node.Services.Corporations
                     }
                 }
 
-                call.Client.CorporationRole = 0;
+                // TODO: WEIRD HACK TO ENSURE THAT THE CORPORATION WINDOW UPDATES WITH THE CHANGE
+                // TODO: THERE MIGHT BE SOMETHING ELSE WE CAN DO, BUT THIS WORKS FOR NOW
+                if (call.Client.CorporationRole == 0)
+                {
+                    call.Client.CorporationRole = ~long.MaxValue;
+                }
+                else
+                {
+                    call.Client.CorporationRole = 0;
+                }
+                
                 call.Client.RolesAtAll = 0;
                 call.Client.RolesAtBase = 0;
                 call.Client.RolesAtOther = 0;
@@ -1005,7 +1018,7 @@ namespace Node.Services.Corporations
             
             // TODO: ENSURE stationID MATCHES ONE OF OUR OFFICES FOR THE ADVERT TO BE CREATED
             // get the current wallet and check if there's enough money on it
-            using (Wallet wallet = this.WalletManager.AcquireWallet(call.Client.CorporationID, call.Client.CorpAccountKey))
+            using (Wallet wallet = this.WalletManager.AcquireWallet(call.Client.CorporationID, call.Client.CorpAccountKey, true))
             {
                 wallet.EnsureEnoughBalance(price);
                 wallet.CreateJournalRecord(MarketReference.CorporationAdvertisementFee, callerCharacterID, null, null, price);
@@ -1217,9 +1230,8 @@ namespace Node.Services.Corporations
                 .AddValue("applicationText", null, text)
                 .AddValue("status", null, 0);
             
-            // TODO: IMPLEMENT NOTIFICATIONS BASED ON CORPORATIONID AND ROLE
-            this.NotificationManager.NotifyCorporation(corporationID, change);
-            call.Client.NotifyMultiEvent(change);
+            this.NotificationManager.NotifyCorporationByRole(corporationID, CorporationRole.PersonnelManager, change);
+            this.NotificationManager.NotifyCharacter(characterID, change);
             
             return null;
         }
@@ -1240,8 +1252,8 @@ namespace Node.Services.Corporations
                 .AddValue("characterID", characterID, null);
 
             // notify about the application change
-            this.NotificationManager.NotifyCorporation(corporationID, change);
-            call.Client.NotifyMultiEvent(change);
+            this.NotificationManager.NotifyCorporationByRole(corporationID, CorporationRole.PersonnelManager, change);
+            this.NotificationManager.NotifyCharacter(characterID, change);
 
             return null;
         }
@@ -1345,10 +1357,9 @@ namespace Node.Services.Corporations
                 .AddValue("characterID", characterID, null);
 
             // notify about the application change
-            this.NotificationManager.NotifyCorporation(corporationID, applicationChange);
-            call.Client.NotifyMultiEvent(applicationChange);
+            this.NotificationManager.NotifyCorporationByRole(corporationID, CorporationRole.PersonnelManager, applicationChange);
+            this.NotificationManager.NotifyCharacter(characterID, applicationChange);
 
-            
             return null;
         }
     }

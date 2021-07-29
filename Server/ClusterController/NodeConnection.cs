@@ -124,6 +124,9 @@ namespace ClusterController
                 case "ownerid&locationid":
                     this.ConnectionManager.NotifyByOwnerIDAndLocationID(packet, destination);
                     break;
+                case "corpid&corprole":
+                    this.ConnectionManager.NotifyByCorporationIDAndRole(packet, destination);
+                    break;
                 // TODO: IMPLEMENT OTHER NOTIFICATION ID TYPES BASED ON THE CLIENT CODE IF THEY'RE ACTUALLY USEFUL
                 default:
                     Log.Error($"Unexpected broadcast with idtype {destination.IDType.Value} and negative userID (autofill by ClusterController)");

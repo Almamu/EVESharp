@@ -145,7 +145,7 @@ namespace Node.Services.Account
             }
             
             // acquire the destination wallet, add quantity
-            using (Wallet destinationWallet = this.WalletManager.AcquireWallet(destinationID, accountKey))
+            using (Wallet destinationWallet = this.WalletManager.AcquireWallet(destinationID, accountKey, true))
             {
                 destinationWallet.CreateJournalRecord(MarketReference.CorporationPayment, (int) call.Client.CharacterID, destinationID, -1, quantity, reason);
             }
@@ -161,12 +161,13 @@ namespace Node.Services.Account
             
             // acquire the origin wallet, subtract quantity
             // TODO: CHECK IF THE WALLETKEY IS INDICATED IN SOME WAY
-            using (Wallet originWallet = this.WalletManager.AcquireWallet(call.Client.CorporationID, accountKey))
+            using (Wallet originWallet = this.WalletManager.AcquireWallet(call.Client.CorporationID, accountKey, true))
             {
                 originWallet.EnsureEnoughBalance(quantity);
                 originWallet.CreateJournalRecord(MarketReference.CorporationPayment, destinationID, call.Client.CharacterID, -quantity);
             }
             
+            // TODO: CHECK IF THE DESTINATION IS A CORPORATION OR NOT
             // acquire the destination wallet, add quantity
             using (Wallet destinationWallet = this.WalletManager.AcquireWallet(destinationID, 1000))
             {

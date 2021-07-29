@@ -302,7 +302,7 @@ namespace Node.Services.Market
                     {
                         // give back the escrow for the character
                         // TODO: THERE IS A POTENTIAL DEADLOCK HERE IF WE BUY FROM OURSELVES
-                        using Wallet escrowWallet = this.WalletManager.AcquireWallet(orderOwnerID, order.AccountID);
+                        using Wallet escrowWallet = this.WalletManager.AcquireWallet(orderOwnerID, order.AccountID, order.IsCorp);
                         {
                             escrowWallet.CreateJournalRecord(
                                 MarketReference.MarketEscrow, null, null, escrowLeft
@@ -376,9 +376,9 @@ namespace Node.Services.Market
             
             // depending on where the character that is placing the order, the way to detect the items should be different
             if (stationID == client.StationID)
-                items = this.DB.PrepareItemForOrder(connection, typeID, stationID, client.ShipID ?? -1, quantity, (int) client.CharacterID);
+                items = this.DB.PrepareItemForOrder(connection, typeID, stationID, client.ShipID ?? -1, quantity, (int) client.CharacterID, client.CorporationID, client.CorporationRole);
             else
-                items = this.DB.PrepareItemForOrder(connection, typeID, stationID, -1, quantity, (int) client.CharacterID);
+                items = this.DB.PrepareItemForOrder(connection, typeID, stationID, -1, quantity, (int) client.CharacterID, client.CorporationID, client.CorporationRole);
 
             if (items is null)
                 throw new NotEnoughQuantity(this.TypeManager[typeID]);
@@ -397,7 +397,7 @@ namespace Node.Services.Market
                         // item has to be destroyed
                         this.ItemFactory.DestroyItem(item);
                         // notify item destroyal
-                        client.NotifyMultiEvent(Notifications.Client.Inventory.OnItemChange.BuildLocationChange(item, stationID));
+                        client.NotifyMultiEvent(Notifications.Client.Inventory.OnItemChange.BuildLocationChange(item, entry.LocationID));
                     }
                     else
                     {
@@ -418,7 +418,7 @@ namespace Node.Services.Market
                 foreach ((int _, MarketDB.ItemQuantityEntry entry) in items)
                 {
                     if (entry.Quantity == 0)
-                        changes.AddChange(entry.ItemID, "locationID", stationID, this.ItemFactory.LocationMarket.ID);
+                        changes.AddChange(entry.ItemID, "locationID", entry.LocationID, this.ItemFactory.LocationMarket.ID);
                     else
                         changes.AddChange(entry.ItemID, "quantity", entry.OriginalQuantity, entry.Quantity);
                 }
@@ -432,7 +432,7 @@ namespace Node.Services.Market
 
             // obtain wallet lock too
             // everything is checked already, perform table locking and do all the job here
-            using Wallet wallet = this.WalletManager.AcquireWallet(ownerID, accountKey);
+            using Wallet wallet = this.WalletManager.AcquireWallet(ownerID, accountKey, ownerID == call.Client.CorporationID);
             using MySqlConnection connection = this.DB.AcquireMarketLock();
             try
             {
@@ -539,7 +539,7 @@ namespace Node.Services.Market
                     this.CalculateSalesTax(this.CharacterDB.GetSkillLevelForCharacter(Types.Accounting, order.CharacterID), quantity, price, out tax, out _);
 
                     // acquire wallet journal for seller so we can update their balance to add the funds that he got
-                    using Wallet sellerWallet = this.WalletManager.AcquireWallet(orderOwnerID, order.AccountID);
+                    using Wallet sellerWallet = this.WalletManager.AcquireWallet(orderOwnerID, order.AccountID, order.IsCorp);
                     {
                         sellerWallet.CreateJournalRecord(MarketReference.MarketTransaction, orderOwnerID, null, price * quantityToBuy);
                         // calculate sales tax for the seller
@@ -582,7 +582,7 @@ namespace Node.Services.Market
             // ensure the character can place the order where he's trying to
             this.CheckBuyOrderDistancePermissions(character, stationID, duration);
 
-            using Wallet wallet = this.WalletManager.AcquireWallet(ownerID, accountKey);
+            using Wallet wallet = this.WalletManager.AcquireWallet(ownerID, accountKey, ownerID == call.Client.CorporationID);
             using MySqlConnection connection = this.DB.AcquireMarketLock();
             try
             {
@@ -696,7 +696,7 @@ namespace Node.Services.Market
                 // check for escrow
                 if (order.Escrow > 0.0 && order.Bid == TransactionType.Buy)
                 {
-                    using Wallet wallet = this.WalletManager.AcquireWallet(orderOwnerID, order.AccountID);
+                    using Wallet wallet = this.WalletManager.AcquireWallet(orderOwnerID, order.AccountID, order.IsCorp);
                     {
                         wallet.CreateJournalRecord(MarketReference.MarketEscrow, null, null, order.Escrow);
                     }
@@ -769,7 +769,7 @@ namespace Node.Services.Market
 
                 int orderOwnerID = order.IsCorp == true ? order.CorporationID : order.CharacterID;
                 
-                using Wallet wallet = this.WalletManager.AcquireWallet(orderOwnerID, order.AccountID);
+                using Wallet wallet = this.WalletManager.AcquireWallet(orderOwnerID, order.AccountID, order.IsCorp);
                 {
                     if (order.Bid == TransactionType.Buy)
                     {
@@ -835,7 +835,7 @@ namespace Node.Services.Market
             this.DB.RemoveOrder(connection, order.OrderID);
 
             // give back the escrow paid by the player
-            using Wallet wallet = this.WalletManager.AcquireWallet(order.CharacterID, order.AccountID);
+            using Wallet wallet = this.WalletManager.AcquireWallet(order.IsCorp == true ? order.CorporationID : order.CharacterID, order.AccountID, order.IsCorp);
             {
                 wallet.CreateJournalRecord(MarketReference.MarketEscrow, null, null, order.Escrow);
             }
@@ -857,7 +857,7 @@ namespace Node.Services.Market
                                     
             // create the new item that will be used by the player
             ItemEntity item = this.ItemFactory.CreateSimpleItem(
-                this.TypeManager[order.TypeID], order.CharacterID, order.LocationID, Flags.Hangar, order.UnitsLeft
+                this.TypeManager[order.TypeID], order.CharacterID, order.LocationID, order.IsCorp == true ? Flags.CorpMarket : Flags.Hangar, order.UnitsLeft
             );
             // immediately unload it, if it has to be loaded the OnItemUpdate notification will take care of that
             this.ItemFactory.UnloadItem(item);

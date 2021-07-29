@@ -144,7 +144,7 @@ namespace Node.Services.Corporations
             if (pay == false)
                 throw new ConfirmCreatingMedal(this.Container.Constants[Constants.medalCost]);
             
-            using (Wallet wallet = this.WalletManager.AcquireWallet(call.Client.CorporationID, call.Client.CorpAccountKey))
+            using (Wallet wallet = this.WalletManager.AcquireWallet(call.Client.CorporationID, call.Client.CorpAccountKey, true))
             {
                 wallet.EnsureEnoughBalance(this.Container.Constants[Constants.medalCost]);
                 wallet.CreateJournalRecord(MarketReference.MedalCreation, this.Container.Constants[Constants.medalTaxCorporation], null, -this.Container.Constants[Constants.medalCost]);
@@ -205,7 +205,7 @@ namespace Node.Services.Corporations
             if (pay == false)
                 throw new ConfirmGivingMedal(this.Container.Constants[Constants.medalCost]);
             
-            using (Wallet wallet = this.WalletManager.AcquireWallet(call.Client.CorporationID, call.Client.CorpAccountKey))
+            using (Wallet wallet = this.WalletManager.AcquireWallet(call.Client.CorporationID, call.Client.CorpAccountKey, true))
             {
                 wallet.EnsureEnoughBalance(this.Container.Constants[Constants.medalCost]);
                 wallet.CreateJournalRecord(MarketReference.MedalIssuing, this.Container.Constants[Constants.medalTaxCorporation], null, -this.Container.Constants[Constants.medalCost]);

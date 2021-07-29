@@ -8,6 +8,7 @@ using Node.Inventory;
 using Node.Inventory.Items;
 using Node.Inventory.Items.Attributes;
 using Node.Market;
+using Node.StaticData.Corporation;
 using Node.StaticData.Inventory;
 using PythonTypes.Types.Collections;
 using PythonTypes.Types.Database;
@@ -399,21 +400,50 @@ namespace Node.Database
             public int OriginalQuantity { get; set; }
             public int NodeID { get; set; }
             public double Damage { get; set; }
+            public int LocationID { get; set; }
         }
 
-        public Dictionary<int, ItemQuantityEntry> PrepareItemForOrder(MySqlConnection connection, int typeID, int locationID1, int locationID2, int quantity, int ownerID1)
+        public Dictionary<int, ItemQuantityEntry> PrepareItemForOrder(MySqlConnection connection, int typeID, int stationID, int locationID2, int quantity, int ownerID1, int corporationID, long corporationRoles)
         {
-            MySqlDataReader reader = Database.PrepareQuery(ref connection,
-                "SELECT invItems.itemID, quantity, singleton, nodeID, IF(valueInt IS NULL, valueFloat, valueInt) AS damage FROM invItems LEFT JOIN invItemsAttributes ON invItemsAttributes.itemID = invItems.itemID AND invItemsAttributes.attributeID = @damageAttributeID WHERE typeID = @typeID AND (locationID = @locationID1 OR locationID = @locationID2) AND ownerID = @ownerID1",
-                new Dictionary<string, object>()
-                {
-                    {"@locationID1", locationID1},
-                    {"@locationID2", locationID2},
-                    {"@ownerID1", ownerID1},
-                    {"@typeID", typeID},
-                    {"@damageAttributeID", (int) Attributes.damage}
-                }
-            );
+            MySqlDataReader reader = null;
+
+            if (CorporationRole.HangarCanTake1.Is(corporationRoles) == true ||
+                CorporationRole.HangarCanTake2.Is(corporationRoles) == true ||
+                CorporationRole.HangarCanTake3.Is(corporationRoles) == true ||
+                CorporationRole.HangarCanTake4.Is(corporationRoles) == true ||
+                CorporationRole.HangarCanTake5.Is(corporationRoles) == true ||
+                CorporationRole.HangarCanTake6.Is(corporationRoles) == true ||
+                CorporationRole.HangarCanTake7.Is(corporationRoles) == true)
+            {
+                reader = Database.PrepareQuery(ref connection,
+                    "SELECT invItems.itemID, quantity, singleton, nodeID, IF(valueInt IS NULL, valueFloat, valueInt) AS damage, flag, ownerID, locationID FROM invItems LEFT JOIN invItemsAttributes ON invItemsAttributes.itemID = invItems.itemID AND invItemsAttributes.attributeID = @damageAttributeID WHERE typeID = @typeID AND (locationID = @locationID1 OR locationID = @locationID2 OR locationID = (SELECT officeID FROM crpOffices WHERE corporationID = @corporationID AND stationID = @locationID1)) AND (ownerID = @ownerID1 OR ownerID = @ownerID2)",
+                    new Dictionary<string, object>()
+                    {
+                        {"@locationID1", stationID},
+                        {"@locationID2", locationID2},
+                        {"@ownerID1", ownerID1},
+                        {"@ownerID2", corporationID},
+                        {"@typeID", typeID},
+                        {"@corporationID", corporationID},
+                        {"@damageAttributeID", (int) Attributes.damage}
+                    }
+                );
+            }
+            else
+            {
+                reader = Database.PrepareQuery(ref connection,
+                    "SELECT invItems.itemID, quantity, singleton, nodeID, IF(valueInt IS NULL, valueFloat, valueInt) AS damage, flag, ownerID, locationID FROM invItems LEFT JOIN invItemsAttributes ON invItemsAttributes.itemID = invItems.itemID AND invItemsAttributes.attributeID = @damageAttributeID WHERE typeID = @typeID AND (locationID = @locationID1 OR locationID = @locationID2) AND (ownerID = @ownerID1 OR ownerID = @ownerID2)",
+                    new Dictionary<string, object>()
+                    {
+                        {"@locationID1", stationID},
+                        {"@locationID2", locationID2},
+                        {"@ownerID1", ownerID1},
+                        {"@ownerID2", corporationID},
+                        {"@typeID", typeID},
+                        {"@damageAttributeID", (int) Attributes.damage}
+                    }
+                );
+            }
             
             Dictionary<int, ItemQuantityEntry> itemIDToQuantityLeft = new Dictionary<int, ItemQuantityEntry>();
             int quantityLeft = quantity;
@@ -424,10 +454,23 @@ namespace Node.Database
                 {
                     int itemID = reader.GetInt32(0);
                     int itemQuantity = reader.GetInt32(1);
+                    int flag = reader.GetInt32(5);
+                    int ownerID = reader.GetInt32(6);
+                    int locationID = reader.GetInt32(7);
 
-                    // singletons cannot be sold
-                    if (reader.GetBoolean(2) == true)
+                    // check that the item is accessible to the character
+                    // also ignore singletons too
+                    if (
+                        (CorporationRole.HangarCanTake1.Is(corporationRoles) == false && flag == (int) Flags.Hangar && ownerID == corporationID) || 
+                        (CorporationRole.HangarCanTake2.Is(corporationRoles) == false && flag == (int) Flags.CorpSAG2 && ownerID == corporationID) || 
+                        (CorporationRole.HangarCanTake3.Is(corporationRoles) == false && flag == (int) Flags.CorpSAG3 && ownerID == corporationID) || 
+                        (CorporationRole.HangarCanTake4.Is(corporationRoles) == false && flag == (int) Flags.CorpSAG4 && ownerID == corporationID) || 
+                        (CorporationRole.HangarCanTake5.Is(corporationRoles) == false && flag == (int) Flags.CorpSAG5 && ownerID == corporationID) || 
+                        (CorporationRole.HangarCanTake6.Is(corporationRoles) == false && flag == (int) Flags.CorpSAG6 && ownerID == corporationID) || 
+                        (CorporationRole.HangarCanTake7.Is(corporationRoles) == false && flag == (int) Flags.CorpSAG7 && ownerID == corporationID) ||
+                        reader.GetBoolean(2) == true)
                         continue;
+                    // TODO: CHECK HOW LIVE HANDLES TAKING THINGS FROM OFFICES
 
                     ItemQuantityEntry entry = new ItemQuantityEntry()
                     {
@@ -435,7 +478,8 @@ namespace Node.Database
                         OriginalQuantity = itemQuantity,
                         Quantity = itemQuantity - Math.Min(itemQuantity, quantityLeft),
                         NodeID = reader.GetInt32(3),
-                        Damage = reader.GetDoubleOrDefault(4)
+                        Damage = reader.GetDoubleOrDefault(4),
+                        LocationID = locationID
                     };
 
                     itemIDToQuantityLeft[itemID] = entry;

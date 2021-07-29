@@ -401,6 +401,28 @@ namespace ClusterController
             }
         }
 
+        public void NotifyByCorporationIDAndRole(PyPacket packet, PyAddressBroadcast destination)
+        {
+            lock (this.Clients)
+            {
+                foreach (PyTuple idData in destination.IDsOfInterest.GetEnumerable<PyTuple>())
+                {
+                    PyInteger corporationID = idData[0] as PyInteger;
+                    PyInteger role = idData[1] as PyInteger;
+                    
+                    foreach ((long userID, ClientConnection connection) in this.Clients)
+                    {
+                        if (connection.CorporationID == corporationID && (connection.CorporationRole & role) != 0)
+                        {
+                            // use the key instead of AccountID as this should be faster
+                            packet.UserID = userID;
+                            // queue the packet for the user
+                            connection.Socket.Send(packet);
+                        }
+                    }
+                }
+            }
+        }
         public void NotifyByNodeID(PyPacket packet, PyAddressBroadcast destination)
         {
             lock (this.Nodes)

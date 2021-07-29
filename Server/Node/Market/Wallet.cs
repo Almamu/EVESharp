@@ -1,10 +1,12 @@
 ﻿using System;
+using System.Diagnostics;
 using MySql.Data.MySqlClient;
 using Node.Database;
 using Node.Exceptions;
 using Node.Network;
 using Node.Notifications.Client.Character;
 using Node.Notifications.Client.Wallet;
+using Node.StaticData.Corporation;
 
 namespace Node.Market
 {
@@ -17,6 +19,7 @@ namespace Node.Market
         public double OriginalBalance { get; init; }
         public WalletDB DB { get; init; }
         public NotificationManager NotificationManager { get; init; }
+        public bool ForCorporation { get; init; }
         
         /// <summary>
         /// Checks that the wallet has enough balance to perform whatever operations
@@ -96,10 +99,35 @@ namespace Node.Market
             if (Math.Abs(this.Balance - this.OriginalBalance) > 0.01)
             {
                 this.DB.SetWalletBalance(this.Connection, this.WalletKey, this.OwnerID, this.Balance);
-                // send notification to the client
-                this.NotificationManager.NotifyOwner(this.OwnerID, 
-                    new OnAccountChange(this.WalletKey, this.OwnerID, this.Balance)
-                );
+
+                if (this.ForCorporation == false)
+                {
+                    // send notification to the client
+                    this.NotificationManager.NotifyOwner(this.OwnerID, 
+                        new OnAccountChange(this.WalletKey, this.OwnerID, this.Balance)
+                    );
+                }
+                else
+                {
+                    long corpRoles = (long) CorporationRole.Accountant | (long) CorporationRole.JuniorAccountant;
+
+                    corpRoles |= (long) (this.WalletKey switch
+                    {
+                        1000 => CorporationRole.AccountCanQuery1,
+                        1001 => CorporationRole.AccountCanQuery2,
+                        1002 => CorporationRole.AccountCanQuery3,
+                        1003 => CorporationRole.AccountCanQuery4,
+                        1004 => CorporationRole.AccountCanQuery5,
+                        1005 => CorporationRole.AccountCanQuery6,
+                        1006 => CorporationRole.AccountCanQuery7,
+                        _ => CorporationRole.JuniorAccountant
+                    });
+                    
+                    this.NotificationManager.NotifyCorporationByRole(
+                        this.OwnerID, corpRoles,
+                        new OnAccountChange(this.WalletKey, this.OwnerID, this.Balance)
+                    );
+                }
             }
 
             this.DB.ReleaseLock(this.Connection, this.OwnerID, this.WalletKey);

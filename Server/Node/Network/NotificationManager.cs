@@ -3,6 +3,7 @@ using EVE.Packets.Complex;
 using Node.Inventory;
 using Node.Notifications;
 using Node.Notifications.Nodes;
+using Node.StaticData.Corporation;
 using PythonTypes.Types.Collections;
 using PythonTypes.Types.Network;
 using PythonTypes.Types.Primitives;
@@ -31,6 +32,10 @@ namespace Node.Network
         /// idType to use when notificating owners (corporation, character, alliances...) at a specific station
         /// </summary>
         private const string NOTIFICATION_TYPE_OWNER_LOCATIONID = "ownerid&locationid";
+        /// <summary>
+        /// idType to use when notificating corporation members based on role
+        /// </summary>
+        private const string NOTIFICATION_TYPE_CORPORATION_ROLE = "corpid&corprole";
         
         /// <summary>
         /// The connection this notification manager is using to send notifications through
@@ -117,6 +122,16 @@ namespace Node.Network
         public void NotifyStation(int stationID, ClientNotification notification)
         {
             this.SendNotification(NOTIFICATION_TYPE_STATION, stationID, notification);
+        }
+
+        public void NotifyCorporationByRole(int corporationID, long roleMask, ClientNotification notification)
+        {
+            this.SendNotification(NOTIFICATION_TYPE_CORPORATION_ROLE, new PyTuple(2) {[0] = corporationID, [1] = roleMask}, notification);
+        }
+        
+        public void NotifyCorporationByRole(int corporationID, CorporationRole role, ClientNotification notification)
+        {
+            this.NotifyCorporationByRole(corporationID, (long) role, notification);
         }
 
         /// <summary>

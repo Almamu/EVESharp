@@ -88,6 +88,19 @@ namespace ClusterController
             }
         }
 
+        public long CorporationRole
+        {
+            get
+            {
+                PyDataType corprole = this.Session["corprole"];
+
+                if (corprole is PyInteger corproleLong)
+                    return corproleLong;
+
+                return 0;
+            }
+        }
+
         public int RegionID
         {
             get

@@ -9,7 +9,7 @@ namespace Node.Market
         private WalletDB DB { get; init; }
         private NotificationManager NotificationManager { get; init; }
         
-        public Wallet AcquireWallet(int ownerID, int walletKey)
+        public Wallet AcquireWallet(int ownerID, int walletKey, bool isCorporation = false)
         {
             // TODO: CHECK PERMISSIONS
             return new Wallet()
@@ -20,7 +20,8 @@ namespace Node.Market
                 Balance = balance,
                 OriginalBalance = balance,
                 DB = this.DB,
-                NotificationManager = this.NotificationManager
+                NotificationManager = this.NotificationManager,
+                ForCorporation = isCorporation
             };
         }
 

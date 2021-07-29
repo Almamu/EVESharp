@@ -264,7 +264,7 @@ namespace Node.Services.Stations
             // RentingOfficeRequestDenied
             int ownerCorporationID = this.ItemFactory.Stations[stationID].OwnerID;
             // perform the transaction
-            using (Wallet corpWallet = this.WalletManager.AcquireWallet(call.Client.CorporationID, call.Client.CorpAccountKey))
+            using (Wallet corpWallet = this.WalletManager.AcquireWallet(call.Client.CorporationID, call.Client.CorpAccountKey, true))
             {
                 corpWallet.EnsureEnoughBalance(rentalCost);
                 corpWallet.CreateJournalRecord(MarketReference.OfficeRentalFee, ownerCorporationID, null, -rentalCost);
