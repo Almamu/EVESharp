@@ -29,5 +29,6 @@
         public const string corporationStartupCost = "corporationStartupCost";
         public const string medalTaxCorporation = "medalTaxCorporation";
         public const string medalCost = "medalCost";
+        public const string warDeclarationCost = "warDeclarationCost";
     }
 }

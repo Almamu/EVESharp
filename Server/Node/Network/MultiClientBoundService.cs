@@ -154,7 +154,8 @@ namespace Node.Network
         /// <summary>
         /// Event fired from the client when a disconnection is detected
         /// </summary>
-        /// <param name="client"></param>
+        /// <param name="sender"></param>
+        /// <param name="args"></param>
         protected void OnClientDisconnectedHandler(object sender, ClientEventArgs args)
         {
             // first call any freeing code (if any)

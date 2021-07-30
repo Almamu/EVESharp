@@ -31,9 +31,7 @@ CREATE TABLE `crpVoteOptions` (
 DROP TABLE IF EXISTS `chrVotes`;
 
 CREATE TABLE `chrVotes` (
-	`voteID` INT UNSIGNED NOT NULL AUTO_INCREMENT,
-	`optionID` INT NULL,
-	`characterID` INT NULL,
-	INDEX `optionID` (`optionID`),
-	PRIMARY KEY (`voteID`)
+	`optionID` INT(11) NOT NULL,
+	`characterID` INT(11) NOT NULL,
+	PRIMARY KEY (`optionID`, `characterID`) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;

@@ -1412,9 +1412,10 @@ namespace Node.Services.Corporations
             return this.DB.GetMemberIDsWithMoreThanAvgShares(call.Client.CorporationID);
         }
 
-        public PyDataType CanViewVotes(PyInteger corporationID, CallInformation call)
+        public PyBool CanViewVotes(PyInteger corporationID, CallInformation call)
         {
-            return this.DB.GetSharesForOwner(corporationID, call.Client.EnsureCharacterIsSelected()) > 0;
+            return (call.Client.CorporationID == corporationID && CorporationRole.Director.Is(call.Client.CorporationRole) == true) ||
+                   this.DB.GetSharesForOwner(corporationID, call.Client.EnsureCharacterIsSelected()) > 0;
         }
 
         public PyDataType InsertVoteCase(PyString text, PyString description, PyInteger corporationID, PyInteger type, PyDataType rowsetOptions, PyInteger startDateTime, PyInteger endDateTime, CallInformation call)
@@ -1433,19 +1434,21 @@ namespace Node.Services.Corporations
             Rowset options = rowsetOptions;
 
             int voteCaseID = (int) this.DB.InsertVoteCase(corporationID, characterID, type, startDateTime, endDateTime, text, description);
-            
+            OnCorporationVoteCaseChanged change = new OnCorporationVoteCaseChanged(corporationID, voteCaseID)
+                .AddValue("corporationID", null, corporationID)
+                .AddValue("characterID", null, characterID)
+                .AddValue("type", null, type)
+                .AddValue("startDateTime", null, startDateTime)
+                .AddValue("endDateTime", null, endDateTime)
+                .AddValue("text", null, text)
+                .AddValue("description", null, description);
+                
             // notify the new vote being created to all shareholders
             this.NotificationManager.NotifyCharacters(
                 this.DB.GetShareholderList(corporationID),
-                new OnCorporationVoteCaseChanged(corporationID, voteCaseID)
-                    .AddValue ("corporationID", null, corporationID)
-                    .AddValue ("characterID", null, characterID)
-                    .AddValue ("type", null, type)
-                    .AddValue ("startDateTime", null, startDateTime)
-                    .AddValue ("endDateTime", null, endDateTime)
-                    .AddValue ("text", null, text)
-                    .AddValue ("description", null, description)
+                change
             );
+            this.NotificationManager.NotifyCorporationByRole(corporationID, CorporationRole.Director, change);
 
             int optionText = 0;
             int parameter = 1;
@@ -1468,7 +1471,7 @@ namespace Node.Services.Corporations
 
         public PyDataType GetVoteCasesByCorporation(PyInteger corporationID, PyInteger status, CallInformation call)
         {
-            if (this.DB.GetSharesForOwner(corporationID, call.Client.EnsureCharacterIsSelected()) == 0)
+            if (this.CanViewVotes(corporationID, call) == false)
                 throw new CrpAccessDenied(MLS.UI_SHARED_WALLETHINT12);
             
             if (status == 2)
@@ -1479,7 +1482,7 @@ namespace Node.Services.Corporations
 
         public PyDataType GetVoteCasesByCorporation(PyInteger corporationID, PyInteger status, PyInteger maxLen, CallInformation call)
         {
-            if (this.DB.GetSharesForOwner(corporationID, call.Client.EnsureCharacterIsSelected()) == 0)
+            if (this.CanViewVotes(corporationID, call) == false)
                 throw new CrpAccessDenied(MLS.UI_SHARED_WALLETHINT12);
             
             if (status == 2)
@@ -1490,7 +1493,7 @@ namespace Node.Services.Corporations
 
         public PyDataType GetVoteCaseOptions(PyInteger corporationID, PyInteger voteCaseID, CallInformation call)
         {
-            if (this.DB.GetSharesForOwner(corporationID, call.Client.EnsureCharacterIsSelected()) == 0)
+            if (this.CanViewVotes(corporationID, call) == false)
                 throw new CrpAccessDenied(MLS.UI_SHARED_WALLETHINT12);
             
             return this.DB.GetVoteCaseOptions(corporationID, voteCaseID);
@@ -1498,7 +1501,7 @@ namespace Node.Services.Corporations
 
         public PyDataType GetVotes(PyInteger corporationID, PyInteger voteCaseID, CallInformation call)
         {
-            if (this.DB.GetSharesForOwner(corporationID, call.Client.EnsureCharacterIsSelected()) == 0)
+            if (this.CanViewVotes(corporationID, call) == false)
                 throw new CrpAccessDenied(MLS.UI_SHARED_WALLETHINT12);
             
             return this.DB.GetVotes(corporationID, voteCaseID, call.Client.EnsureCharacterIsSelected());
@@ -1508,18 +1511,20 @@ namespace Node.Services.Corporations
         {
             int characterID = call.Client.EnsureCharacterIsSelected();
             
-            if (this.DB.GetSharesForOwner(corporationID, characterID) == 0)
+            if (this.CanViewVotes(corporationID, call) == false)
                 throw new CrpAccessDenied(MLS.UI_SHARED_WALLETHINT12);
             
             this.DB.InsertVote(voteCaseID, optionID, characterID);
-            
+
+            OnCorporationVoteChanged change = new OnCorporationVoteChanged(corporationID, voteCaseID, characterID)
+                .AddValue("characterID", null, characterID)
+                .AddValue("optionID", null, optionID);
             // notify the new vote to the original character
             this.NotificationManager.NotifyCharacters(
                 this.DB.GetShareholderList(corporationID),
-                new OnCorporationVoteChanged(corporationID, voteCaseID, characterID)
-                    .AddValue ("characterID", null, characterID)
-                    .AddValue ("optionID", null, optionID)
+                change
             );
+            this.NotificationManager.NotifyCorporationByRole(corporationID, CorporationRole.Director, change);
             
             return null;
         }

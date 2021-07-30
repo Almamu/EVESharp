@@ -1491,7 +1491,7 @@ namespace Node.Database
         public void InsertVote(int voteCaseID, int optionID, int characterID)
         {
             Database.PrepareQuery(
-                "INSERT INTO chrVotes(optionID, characterID)VALUE(@optionID, @characterID)",
+                "INSERT IGNORE INTO chrVotes(optionID, characterID)VALUE(@optionID, @characterID)",
                 new Dictionary<string, object>()
                 {
                     {"@optionID", optionID},

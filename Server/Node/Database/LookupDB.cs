@@ -129,6 +129,54 @@ namespace Node.Database
             }
         }
         
+        public Rowset LookupCorporationsOrAlliances(string namePart, bool exact)
+        {
+            if (exact == true)
+            {
+                return Database.PrepareRowsetQuery(
+                    $"SELECT itemID as ownerID, itemName AS ownerName, typeID, groupID FROM eveNames WHERE (groupID = {(int) Groups.Corporation} OR groupID = {(int) Groups.Alliance}) AND itemName = @namePart",
+                    new Dictionary<string, object>()
+                    {
+                        {"@namePart", namePart}
+                    }
+                );                
+            }
+            else
+            {
+                return Database.PrepareRowsetQuery(
+                    $"SELECT itemID as ownerID, itemName AS ownerName, typeID, groupID FROM eveNames WHERE (groupID = {(int) Groups.Corporation} OR groupID = {(int) Groups.Alliance}) AND itemName LIKE @namePart",
+                    new Dictionary<string, object>()
+                    {
+                        {"@namePart", namePart + "%"}
+                    }
+                );
+            }
+        }
+        
+        public Rowset LookupWarableCorporationsOrAlliances(string namePart, bool exact)
+        {
+            if (exact == true)
+            {
+                return Database.PrepareRowsetQuery(
+                    $"SELECT itemID as ownerID, itemName AS ownerName, typeID, groupID FROM eveNames WHERE itemID >= {ItemFactory.NPC_CORPORATION_ID_MIN} AND (groupID = {(int) Groups.Corporation} OR groupID = {(int) Groups.Alliance}) AND itemName = @namePart",
+                    new Dictionary<string, object>()
+                    {
+                        {"@namePart", namePart}
+                    }
+                );                
+            }
+            else
+            {
+                return Database.PrepareRowsetQuery(
+                    $"SELECT itemID as ownerID, itemName AS ownerName, typeID, groupID FROM eveNames WHERE itemID >= {ItemFactory.NPC_CORPORATION_ID_MIN} AND (groupID = {(int) Groups.Corporation} OR groupID = {(int) Groups.Alliance}) AND itemName LIKE @namePart",
+                    new Dictionary<string, object>()
+                    {
+                        {"@namePart", namePart + "%"}
+                    }
+                );
+            }
+        }
+        
         public Rowset LookupCorporationTickers(string namePart, bool exact)
         {
             if (exact == true)

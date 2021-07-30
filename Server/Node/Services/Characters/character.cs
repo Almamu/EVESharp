@@ -395,6 +395,11 @@ namespace Node.Services.Characters
         {
             return this.SelectCharacterID(characterID, loadDungeon == true ? 1 : 0, secondChoiceID, call);
         }
+
+        public PyDataType SelectCharacterID(PyInteger characterID, CallInformation call)
+        {
+            return this.SelectCharacterID(characterID, 0, 0, call);
+        }
         
         // TODO: THIS PyNone SHOULD REALLY BE AN INTEGER, ALTHOUGH THIS FUNCTIONALITY IS NOT USED
         // TODO: IT REVEALS AN IMPORTANT ISSUE, WE CAN'T HAVE A WILDCARD PARAMETER PyDataType

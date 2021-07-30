@@ -171,20 +171,32 @@ namespace Node.Services.Network
             call.Client.NotifyMultiEvent(OnItemChange.BuildNewItemChange(item));
         }
 
+        private static int ParseIntegerThatMightBeDecimal(string value)
+        {
+            int index = value.IndexOf('.');
+                
+            if (index != -1)
+                value = value.Substring(0, index);
+
+            return int.Parse(value);
+        }
+        
         private void GiveSkillCmd(string[] argv, CallInformation call)
         {
             // TODO: NOT NODE-SAFE, MUST REIMPLEMENT TAKING THAT INTO ACCOUNT!
             if (argv.Length != 4)
                 throw new SlashError("GiveSkill must have 4 arguments");
 
+            int characterID = call.Client.EnsureCharacterIsSelected();
+            
             string target = argv[1].Trim(new [] { '"', ' '});
             string skillType = argv[2];
-            int level = int.Parse(argv[3]);
+            int level = ParseIntegerThatMightBeDecimal(argv[3]);
 
-            if (target != "me")
+            if (target != "me" && target != characterID.ToString())
                 throw new SlashError("giveskill only supports me for now");
 
-            Character character = this.ItemFactory.GetItem<Character>(call.Client.EnsureCharacterIsSelected());
+            Character character = this.ItemFactory.GetItem<Character>(characterID);
             
             if (skillType == "all")
             {
@@ -218,8 +230,9 @@ namespace Node.Services.Network
             }
             else
             {
-                int skillTypeID = int.Parse(skillType);
                 Dictionary<int, Skill> injectedSkills = character.InjectedSkillsByTypeID;
+                
+                int skillTypeID = ParseIntegerThatMightBeDecimal(skillType);
 
                 if (injectedSkills.ContainsKey(skillTypeID) == true)
                 {
@@ -227,6 +240,8 @@ namespace Node.Services.Network
 
                     skill.Level = level;
                     skill.Persist();
+                    call.Client.NotifyMultiEvent(new OnSkillStartTraining(skill));
+                    call.Client.NotifyAttributeChange(new Attributes[] { Attributes.skillPoints, Attributes.skillLevel}, skill);
                     call.Client.NotifyMultiEvent(new OnSkillTrained(skill));
                 }
                 else
