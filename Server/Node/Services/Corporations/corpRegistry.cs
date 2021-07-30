@@ -109,6 +109,11 @@ namespace Node.Services.Corporations
             return this.Corporation.GetCorporationInfoRow();
         }
 
+        public PyDataType GetSharesByShareholder(PyInteger corpShares, CallInformation call)
+        {
+            return this.GetSharesByShareholder(corpShares == 1, call);
+        }
+        
         public PyDataType GetSharesByShareholder(PyBool corpShares, CallInformation call)
         {
             int entityID = call.Client.EnsureCharacterIsSelected();
@@ -1179,12 +1184,6 @@ namespace Node.Services.Corporations
             return null;
         }
 
-        public PyDataType CanViewVotes(PyInteger corporationID, CallInformation call)
-        {
-            // TODO: CHECK SHARES ON THE CORPORATION ID AND DETERMINE IF THE PLAYER CAN VIEW THE VOTES OR NOT
-            return false;
-        }
-
         protected override long MachoResolveObject(ServiceBindParams parameters, CallInformation call)
         {
             // TODO: CHECK IF ANY NODE HAS THIS CORPORATION LOADED
@@ -1411,6 +1410,118 @@ namespace Node.Services.Corporations
         public PyDataType GetMemberIDsWithMoreThanAvgShares(CallInformation call)
         {
             return this.DB.GetMemberIDsWithMoreThanAvgShares(call.Client.CorporationID);
+        }
+
+        public PyDataType CanViewVotes(PyInteger corporationID, CallInformation call)
+        {
+            return this.DB.GetSharesForOwner(corporationID, call.Client.EnsureCharacterIsSelected()) > 0;
+        }
+
+        public PyDataType InsertVoteCase(PyString text, PyString description, PyInteger corporationID, PyInteger type, PyDataType rowsetOptions, PyInteger startDateTime, PyInteger endDateTime, CallInformation call)
+        {
+            if (CorporationRole.Director.Is(call.Client.CorporationRole) == false)
+                throw new CrpOnlyDirectorsCanProposeVotes();
+
+            // check if the character is trying to run for CEO and ensure only if he belongs to the same corporation that can be done
+            if (type == (int) CorporationVotes.CEO && call.Client.CorporationID != corporationID)
+                throw new CantRunForCEOAtTheMoment();
+            // TODO: CHECK CORPORATION MANAGEMENT SKILL
+            
+            int characterID = call.Client.EnsureCharacterIsSelected();
+            
+            // parse rowset options
+            Rowset options = rowsetOptions;
+
+            int voteCaseID = (int) this.DB.InsertVoteCase(corporationID, characterID, type, startDateTime, endDateTime, text, description);
+            
+            // notify the new vote being created to all shareholders
+            this.NotificationManager.NotifyCharacters(
+                this.DB.GetShareholderList(corporationID),
+                new OnCorporationVoteCaseChanged(corporationID, voteCaseID)
+                    .AddValue ("corporationID", null, corporationID)
+                    .AddValue ("characterID", null, characterID)
+                    .AddValue ("type", null, type)
+                    .AddValue ("startDateTime", null, startDateTime)
+                    .AddValue ("endDateTime", null, endDateTime)
+                    .AddValue ("text", null, text)
+                    .AddValue ("description", null, description)
+            );
+
+            int optionText = 0;
+            int parameter = 1;
+            int parameter1 = 2;
+            int parameter2 = 3;
+            
+            foreach (PyList entry in options.Rows)
+            {
+                this.DB.InsertVoteOption(
+                    voteCaseID,
+                    entry [optionText] as PyString,
+                    entry [parameter] as PyInteger,
+                    entry [parameter1] as PyInteger,
+                    entry [parameter2] as PyInteger
+                );
+            }
+            
+            return null;
+        }
+
+        public PyDataType GetVoteCasesByCorporation(PyInteger corporationID, PyInteger status, CallInformation call)
+        {
+            if (this.DB.GetSharesForOwner(corporationID, call.Client.EnsureCharacterIsSelected()) == 0)
+                throw new CrpAccessDenied(MLS.UI_SHARED_WALLETHINT12);
+            
+            if (status == 2)
+                return this.DB.GetOpenVoteCasesByCorporation(corporationID);
+            else
+                return this.DB.GetClosedVoteCasesByCorporation(corporationID);
+        }
+
+        public PyDataType GetVoteCasesByCorporation(PyInteger corporationID, PyInteger status, PyInteger maxLen, CallInformation call)
+        {
+            if (this.DB.GetSharesForOwner(corporationID, call.Client.EnsureCharacterIsSelected()) == 0)
+                throw new CrpAccessDenied(MLS.UI_SHARED_WALLETHINT12);
+            
+            if (status == 2)
+                return this.DB.GetOpenVoteCasesByCorporation(corporationID);
+            else
+                return this.DB.GetClosedVoteCasesByCorporation(corporationID);
+        }
+
+        public PyDataType GetVoteCaseOptions(PyInteger corporationID, PyInteger voteCaseID, CallInformation call)
+        {
+            if (this.DB.GetSharesForOwner(corporationID, call.Client.EnsureCharacterIsSelected()) == 0)
+                throw new CrpAccessDenied(MLS.UI_SHARED_WALLETHINT12);
+            
+            return this.DB.GetVoteCaseOptions(corporationID, voteCaseID);
+        }
+
+        public PyDataType GetVotes(PyInteger corporationID, PyInteger voteCaseID, CallInformation call)
+        {
+            if (this.DB.GetSharesForOwner(corporationID, call.Client.EnsureCharacterIsSelected()) == 0)
+                throw new CrpAccessDenied(MLS.UI_SHARED_WALLETHINT12);
+            
+            return this.DB.GetVotes(corporationID, voteCaseID, call.Client.EnsureCharacterIsSelected());
+        }
+
+        public PyDataType InsertVote(PyInteger corporationID, PyInteger voteCaseID, PyInteger optionID, CallInformation call)
+        {
+            int characterID = call.Client.EnsureCharacterIsSelected();
+            
+            if (this.DB.GetSharesForOwner(corporationID, characterID) == 0)
+                throw new CrpAccessDenied(MLS.UI_SHARED_WALLETHINT12);
+            
+            this.DB.InsertVote(voteCaseID, optionID, characterID);
+            
+            // notify the new vote to the original character
+            this.NotificationManager.NotifyCharacters(
+                this.DB.GetShareholderList(corporationID),
+                new OnCorporationVoteChanged(corporationID, voteCaseID, characterID)
+                    .AddValue ("characterID", null, characterID)
+                    .AddValue ("optionID", null, optionID)
+            );
+            
+            return null;
         }
     }
 }

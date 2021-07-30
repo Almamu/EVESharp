@@ -1394,6 +1394,111 @@ namespace Node.Database
                 }
             );
         }
+
+        public ulong InsertVoteCase(int corporationID, int characterID, int type, long startDateTime, long endDateTime, string text, string description)
+        {
+            return Database.PrepareQueryLID(
+                "INSERT INTO crpVotes(voteType, corporationID, characterID, startDateTime, endDateTime, voteCaseText, description)VALUE(@type, @corporationID, @characterID, @startDateTime, @endDateTime, @text, @description)",
+                new Dictionary<string, object>()
+                {
+                    {"@type", type},
+                    {"@corporationID", corporationID},
+                    {"@characterID", characterID},
+                    {"@startDateTime", startDateTime},
+                    {"@endDateTime", endDateTime},
+                    {"@text", text},
+                    {"@description", description}
+                }
+            );
+        }
+
+        public void InsertVoteOption(int voteCaseID, string text, int parameter, int? parameter1, int? parameter2)
+        {
+            Database.PrepareQuery(
+                "INSERT INTO crpVoteOptions(voteCaseID, optionText, parameter, parameter1, parameter2)VALUE(@voteCaseID, @text, @parameter, @parameter1, @parameter2)",
+                new Dictionary<string, object>()
+                {
+                    {"@voteCaseID", voteCaseID},
+                    {"@text", text},
+                    {"@parameter", parameter},
+                    {"@parameter1", parameter1},
+                    {"@parameter2", parameter2}
+                }
+            );
+        }
+
+        public PyList<PyInteger> GetShareholderList(int corporationID)
+        {
+            return Database.PrepareList(
+                "SELECT ownerID FROM crpShares LEFT JOIN chrInformation ON ownerID = characterID WHERE crpShares.corporationID = @corporationID",
+                new Dictionary<string, object>()
+                {
+                    {"@corporationID", corporationID}
+                }
+            );
+        }
+
+        public PyDataType GetOpenVoteCasesByCorporation(int corporationID)
+        {
+            return Database.PrepareIndexRowsetQuery(0,
+                "SELECT voteCaseID, voteType, corporationID, characterID, startDateTime, endDateTime, voteCaseText, description FROM crpVotes WHERE corporationID = @corporationID AND endDateTime > @currentTime",
+                new Dictionary<string, object>()
+                {
+                    {"@corporationID", corporationID},
+                    {"@currentTime", DateTime.UtcNow.ToFileTimeUtc()}
+                }
+            );
+        }
+
+        public PyDataType GetClosedVoteCasesByCorporation(int corporationID)
+        {
+            return Database.PrepareIndexRowsetQuery(0,
+                "SELECT voteCaseID, voteType, corporationID, characterID, startDateTime, endDateTime, voteCaseText, description FROM crpVotes WHERE corporationID = @corporationID AND endDateTime < @currentTime",
+                new Dictionary<string, object>()
+                {
+                    {"@corporationID", corporationID},
+                    {"@currentTime", DateTime.UtcNow.ToFileTimeUtc()}
+                }
+            );
+        }
+
+        public PyDataType GetVoteCaseOptions(int corporationID, int voteCaseID)
+        {
+            return Database.PrepareIndexRowsetQuery(0,
+                "SELECT optionID, optionText, parameter, parameter1, parameter2, IF(crpVotes.endDateTime < @currentTime, (SELECT COUNT(*) FROM chrVotes WHERE optionID = crpVoteOptions.optionID), 0) AS votesFor FROM crpVoteOptions LEFT JOIN crpVotes USING(voteCaseID) WHERE voteCaseID = @voteCaseID AND corporationID = @corporationID",
+                new Dictionary<string, object>()
+                {
+                    {"@voteCaseID", voteCaseID},
+                    {"@corporationID", corporationID},
+                    {"@currentTime", DateTime.UtcNow.ToFileTimeUtc()}
+                }
+            );
+        }
+
+        public PyDataType GetVotes(int corporationID, int voteCaseID, int characterID)
+        {
+            return Database.PrepareIndexRowsetQuery(0,
+                "SELECT chrVotes.characterID, optionID FROM chrVotes LEFT JOIN crpVoteOptions USING(optionID) LEFT JOIN crpVotes USING(voteCaseID) WHERE voteCaseID = @voteCaseID AND corporationID = @corporationID AND chrVotes.characterID = @characterID",
+                new Dictionary<string, object>()
+                {
+                    {"@voteCaseID", voteCaseID},
+                    {"@corporationID", corporationID},
+                    {"@characterID", characterID}
+                }
+            );
+        }
+
+        public void InsertVote(int voteCaseID, int optionID, int characterID)
+        {
+            Database.PrepareQuery(
+                "INSERT INTO chrVotes(optionID, characterID)VALUE(@optionID, @characterID)",
+                new Dictionary<string, object>()
+                {
+                    {"@optionID", optionID},
+                    {"@characterID", characterID}
+                }
+            );
+        }
         
         public CorporationDB(ItemDB itemDB, DatabaseConnection db) : base(db)
         {
