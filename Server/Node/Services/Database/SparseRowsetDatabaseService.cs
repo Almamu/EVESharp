@@ -39,7 +39,7 @@ namespace Node.Services.Database
         /// <param name="primaryKey"></param>
         public abstract void RemoveRow(PyDataType primaryKey);
 
-        protected SparseRowsetDatabaseService(SparseRowsetHeader rowsetHeader, BoundServiceManager manager, Client client) : base(manager, 0)
+        protected SparseRowsetDatabaseService(SparseRowsetHeader rowsetHeader, BoundServiceManager manager, Client client, bool keepAlive = false) : base(manager, 0, keepAlive)
         {
             this.RowsetHeader = rowsetHeader;
         }

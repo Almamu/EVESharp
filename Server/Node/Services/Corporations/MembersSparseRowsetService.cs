@@ -19,7 +19,7 @@ namespace Node.Services.Corporations
         private CorporationDB DB { get; }
         private NotificationManager NotificationManager { get; init; }
 
-        public MembersSparseRowsetService(Corporation corporation, CorporationDB db, SparseRowsetHeader rowsetHeader, NotificationManager notificationManager, BoundServiceManager manager, Client client) : base(rowsetHeader, manager, client)
+        public MembersSparseRowsetService(Corporation corporation, CorporationDB db, SparseRowsetHeader rowsetHeader, NotificationManager notificationManager, BoundServiceManager manager, Client client) : base(rowsetHeader, manager, client, true)
         {
             this.DB = db;
             this.Corporation = corporation;

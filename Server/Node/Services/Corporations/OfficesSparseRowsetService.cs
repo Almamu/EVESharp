@@ -15,7 +15,7 @@ namespace Node.Services.Corporations
         private Corporation Corporation { get; }
         private CorporationDB DB { get; }
         
-        public OfficesSparseRowsetService(Corporation corporation, CorporationDB db, SparseRowsetHeader rowsetHeader, BoundServiceManager manager, Client client) : base(rowsetHeader, manager, client)
+        public OfficesSparseRowsetService(Corporation corporation, CorporationDB db, SparseRowsetHeader rowsetHeader, BoundServiceManager manager, Client client) : base(rowsetHeader, manager, client, true)
         {
             this.DB = db;
             this.Corporation = corporation;

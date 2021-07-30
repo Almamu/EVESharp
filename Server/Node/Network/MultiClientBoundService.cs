@@ -16,26 +16,35 @@ namespace Node.Network
         /// The bound service that created this entity
         /// </summary>
         protected MultiClientBoundService Parent { get; init; }
+
+        /// <summary>
+        /// Indicates whether the service has to be kept alive or not
+        /// </summary>
+        protected bool KeepAlive { get; init; } = false;
+        
         /// <summary>
         /// List of services registered by objectID
         /// </summary>
         private readonly Dictionary<int, MultiClientBoundService> mRegisteredServices;
         
-        public MultiClientBoundService(BoundServiceManager manager) : base(manager)
+        public MultiClientBoundService(BoundServiceManager manager, bool keepAlive = false) : base(manager)
         {
             this.mRegisteredServices = new Dictionary<int, MultiClientBoundService>();
             this.Clients = new List<Client>();
+            this.KeepAlive = keepAlive;
         }
 
-        public MultiClientBoundService(MultiClientBoundService parent, int objectID) : base(parent.BoundServiceManager, objectID)
+        public MultiClientBoundService(MultiClientBoundService parent, int objectID, bool keepAlive = false) : base(parent.BoundServiceManager, objectID)
         {
             this.Parent = parent;
             this.Clients = new List<Client>();
+            this.KeepAlive = keepAlive;
         }
 
-        public MultiClientBoundService(BoundServiceManager manager, int objectID) : base(manager, objectID)
+        public MultiClientBoundService(BoundServiceManager manager, int objectID, bool keepAlive = false) : base(manager, objectID)
         {
             this.Clients = new List<Client>();
+            this.KeepAlive = keepAlive;
         }
 
         /// <summary>
@@ -153,7 +162,7 @@ namespace Node.Network
             // remove the client from the list
             this.Clients.Remove(args.Client);
 
-            if (this.Clients.Count == 0)
+            if (this.Clients.Count == 0 && this.KeepAlive == false)
             {
                 // no clients using this service, tell the bound service manager we're dying
                 this.BoundServiceManager.UnbindService(this);
