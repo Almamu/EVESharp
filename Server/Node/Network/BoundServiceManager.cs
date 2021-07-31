@@ -59,7 +59,8 @@ namespace Node.Network
             this.Log.Debug($"Unbinding service {service.BoundID}");
             
             // remove the service from the bound list
-            this.mBoundServices.Remove(service.BoundID);
+            lock (this.mBoundServices)
+                this.mBoundServices.Remove(service.BoundID);
         }
 
         /// <summary>
@@ -69,6 +70,8 @@ namespace Node.Network
         public void FreeBoundService(int boundID)
         {
             Log.Debug($"Freeing bound service {boundID}");
+            
+            // TODO: TAKE INTO ACCOUNT THE KEEPALIVE OR DELEGATE THIS TO THE BOUND SERVICE ITSELF
             
             lock (this.mBoundServices)
                 this.mBoundServices.Remove(boundID);

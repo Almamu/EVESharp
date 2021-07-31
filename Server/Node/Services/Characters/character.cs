@@ -443,12 +443,13 @@ namespace Node.Services.Characters
             call.Client.RolesAtBase = character.RolesAtBase | rolesAtBase;
             call.Client.RolesAtHQ = character.RolesAtHq | rolesAtHQ;
             call.Client.RolesAtOther = character.RolesAtOther | rolesAtOther;
+            call.Client.AllianceID = this.CorporationDB.GetAllianceIDForCorporation(character.CorporationID);
 
             // set the rest of the important locations
             call.Client.SolarSystemID2 = character.SolarSystemID;
             call.Client.ConstellationID = character.ConstellationID;
             call.Client.RegionID = character.RegionID;
-            call.Client.HQID = 0;
+            call.Client.HQID = 0; // TODO: ADD SUPPORT FOR HQID
             call.Client.ShipID = character.LocationID;
             call.Client.RaceID = this.AncestryManager[character.AncestryID].Bloodline.RaceID;
             

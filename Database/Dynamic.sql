@@ -11,19 +11,6 @@ MySQL - 5.0.67-community-nt : Database - eve_evemu_dynamic
 
 /*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
 
-
-/*Table structure for table `alliance_shortnames` */
-
-DROP TABLE IF EXISTS `alliance_shortnames`;
-
-CREATE TABLE `alliance_shortnames` (
-  `allianceID` int(10) unsigned NOT NULL default '0',
-  `shortName` text NOT NULL,
-  PRIMARY KEY  (`allianceID`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
-/*Data for the table `alliance_shortnames` */
-
 /*Table structure for table `cacheLocations` */
 
 DROP TABLE IF EXISTS `cacheLocations`;

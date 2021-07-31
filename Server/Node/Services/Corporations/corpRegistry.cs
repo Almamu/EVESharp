@@ -40,6 +40,7 @@ namespace Node.Services.Corporations
         public int IsMaster => this.mIsMaster;
 
         private CorporationDB DB { get; }
+        private AlliancesDB AlliancesDB { get; init; }
         private ChatDB ChatDB { get; init; }
         private CharacterDB CharacterDB { get; init; }
         private ItemFactory ItemFactory { get; }
@@ -56,9 +57,10 @@ namespace Node.Services.Corporations
         private long CorporationAdvertisementFlatFee { get; init; }
         private long CorporationAdvertisementDailyRate { get; init; }
         
-        public corpRegistry(CorporationDB db, ChatDB chatDB, CharacterDB characterDB, NotificationManager notificationManager, MailManager mailManager, WalletManager walletManager, NodeContainer container, ItemFactory itemFactory, ClientManager clientManager, BoundServiceManager manager, AncestryManager ancestryManager, MachoNet machoNet) : base(manager)
+        public corpRegistry(CorporationDB db, AlliancesDB alliancesDB, ChatDB chatDB, CharacterDB characterDB, NotificationManager notificationManager, MailManager mailManager, WalletManager walletManager, NodeContainer container, ItemFactory itemFactory, ClientManager clientManager, BoundServiceManager manager, AncestryManager ancestryManager, MachoNet machoNet) : base(manager)
         {
             this.DB = db;
+            this.AlliancesDB = alliancesDB;
             this.ChatDB = chatDB;
             this.CharacterDB = characterDB;
             this.NotificationManager = notificationManager;
@@ -72,9 +74,10 @@ namespace Node.Services.Corporations
             machoNet.OnClusterTimer += this.PerformTimedEvents;
         }
 
-        protected corpRegistry(CorporationDB db, ChatDB chatDB, CharacterDB characterDB, NotificationManager notificationManager, MailManager mailManager, WalletManager walletManager, NodeContainer container, ItemFactory itemFactory, ClientManager clientManager, AncestryManager ancestryManager, Corporation corp, int isMaster, corpRegistry parent) : base (parent, corp.ID)
+        protected corpRegistry(CorporationDB db, AlliancesDB alliancesDB, ChatDB chatDB, CharacterDB characterDB, NotificationManager notificationManager, MailManager mailManager, WalletManager walletManager, NodeContainer container, ItemFactory itemFactory, ClientManager clientManager, AncestryManager ancestryManager, Corporation corp, int isMaster, corpRegistry parent) : base (parent, corp.ID)
         {
             this.DB = db;
+            this.AlliancesDB = alliancesDB;
             this.ChatDB = chatDB;
             this.CharacterDB = characterDB;
             this.NotificationManager = notificationManager;
@@ -366,15 +369,72 @@ namespace Node.Services.Corporations
             return new PyString(result.Substring(0, result.Length < 3 ? result.Length : 3));
         }
 
-        public PyDataType AddCorporation(PyString corporationName, PyString tickerName, PyString description,
-            PyString url, PyDecimal taxRate, PyInteger shape1, PyInteger shape2, PyInteger shape3, PyInteger color1,
-            PyInteger color2, PyInteger color3, PyDataType typeface, CallInformation call)
+        private void ValidateAllianceName(PyString allianceName, PyString shortName)
         {
-            // do some basic checks on what the player can do
-            if (CorporationRole.Director.Is(call.Client.CorporationRole) == true)
-                throw new CEOCannotCreateCorporation();
-            if (call.Client.StationID == null)
-                throw new CanOnlyCreateCorpInStation();
+            // validate corporation name
+            if (allianceName.Length < 4)
+                throw new AllianceNameInvalidMinLength();
+            if (allianceName.Length > 24)
+                throw new AllianceNameInvalidMaxLength();
+            if (shortName.Length < 3 || shortName.Length > 5)
+                throw new AllianceShortNameInvalid();
+            // check if name is taken
+            if (this.DB.IsAllianceNameTaken(allianceName) == true)
+                throw new AllianceNameInvalidTaken();
+            if (this.DB.IsShortNameTaken(shortName) == true)
+                throw new AllianceShortNameInvalidTaken();
+            // TODO: ADD SUPPORT FOR BANNED WORDS
+            if (false)
+                throw new AllianceNameInvalidBannedWord();
+        }
+        
+        public PyDataType CreateAlliance(PyString name, PyString shortName, PyString description, PyString url, CallInformation call)
+        {
+            int callerCharacterID = call.Client.EnsureCharacterIsSelected();
+
+            if (this.Corporation.CeoID != callerCharacterID)
+                throw new OnlyActiveCEOCanCreateAlliance();
+            
+            // TODO: CHECK FOR ACTIVE WARS AND THROW A CUSTOMERROR WITH THIS TEXT: UI_CORP_HINT7
+
+            if (call.Client.AllianceID != null)
+                throw new AllianceCreateFailCorpInAlliance();
+
+            this.ValidateAllianceName(name, shortName);
+
+            int allianceID =
+                (int) this.AlliancesDB.CreateAlliance(name, shortName, url, description, call.Client.CorporationID, callerCharacterID);
+
+            this.Corporation.AllianceID = allianceID;
+            this.Corporation.StartDate = DateTime.UtcNow.ToFileTimeUtc();
+            this.Corporation.Persist();
+
+            // create the new chat channel
+            this.ChatDB.CreateChannel(allianceID, allianceID, "System Channels\\Alliance", true);
+            this.ChatDB.CreateChannel(allianceID, allianceID, "System Channels\\Alliance", false);
+            
+            // this will update the allianceID for all the charaters out there!
+            if (this.ClientManager.TryGetClientsByCorporationID(this.Corporation.ID, out Dictionary<int, Client> clients) == true)
+            {
+                foreach ((int _, Client client) in clients)
+                {
+                    int characterID = (int) client.CharacterID;
+                    
+                    // join the player to the corp channel
+                    this.ChatDB.JoinEntityChannel(allianceID, characterID, characterID == callerCharacterID ? ChatDB.CHATROLE_CREATOR : ChatDB.CHATROLE_CONVERSATIONALIST);
+                    this.ChatDB.JoinChannel(allianceID, characterID, characterID == callerCharacterID ? ChatDB.CHATROLE_CREATOR : ChatDB.CHATROLE_CONVERSATIONALIST);
+                    
+                    // update session and send session change
+                    client.AllianceID = allianceID;
+                    client.SendSessionChange();
+                }
+            }
+
+            return null;
+        }
+
+        private void ValidateCorporationName(PyString corporationName, PyString tickerName)
+        {
             // validate corporation name
             if (corporationName.Length < 4)
                 throw new CorpNameInvalidMinLength();
@@ -390,8 +450,19 @@ namespace Node.Services.Corporations
             // TODO: ADD SUPPORT FOR BANNED WORDS
             if (false)
                 throw new CorpNameInvalidBannedWord();
+        }
+        
+        public PyDataType AddCorporation(PyString corporationName, PyString tickerName, PyString description,
+            PyString url, PyDecimal taxRate, PyInteger shape1, PyInteger shape2, PyInteger shape3, PyInteger color1,
+            PyInteger color2, PyInteger color3, PyDataType typeface, CallInformation call)
+        {
+            // do some basic checks on what the player can do
+            if (CorporationRole.Director.Is(call.Client.CorporationRole) == true)
+                throw new CEOCannotCreateCorporation();
+            if (call.Client.StationID == null)
+                throw new CanOnlyCreateCorpInStation();
             // TODO: CHECK FOR POS AS ITS NOT POSSIBLE TO CREATE CORPORATIONS THERE
-            
+            this.ValidateCorporationName(corporationName, tickerName);
             
             int stationID = call.Client.EnsureCharacterIsInStation();
             int corporationStartupCost = this.Container.Constants[Constants.corporationStartupCost];
@@ -1198,7 +1269,7 @@ namespace Node.Services.Corporations
 
             Corporation corp = this.ItemFactory.LoadItem<Corporation>(bindParams.ObjectID);
             
-            return new corpRegistry (this.DB, this.ChatDB, this.CharacterDB, this.NotificationManager, this.MailManager, this.WalletManager, this.Container, this.ItemFactory, this.ClientManager, this.AncestryManager, corp, bindParams.ExtraValue, this);
+            return new corpRegistry (this.DB, this.AlliancesDB, this.ChatDB, this.CharacterDB, this.NotificationManager, this.MailManager, this.WalletManager, this.Container, this.ItemFactory, this.ClientManager, this.AncestryManager, corp, bindParams.ExtraValue, this);
         }
 
         public override bool IsClientAllowedToCall(CallInformation call)
@@ -1423,6 +1494,12 @@ namespace Node.Services.Corporations
             if (CorporationRole.Director.Is(call.Client.CorporationRole) == false)
                 throw new CrpOnlyDirectorsCanProposeVotes();
 
+            // TODO: current CEO seems to loose control if the vote is for a new CEO, this might complicate things a little on the permissions side of things
+            /*                'MAIL_TEMPLATE_CEO_ROLES_REVOKED_BODY': (2424454,
+                                                         u'%(candidateName)s is running for CEO in %(corporationName)s. Your roles as CEO have been revoked for the duration of the voting period.'),
+                'MAIL_TEMPLATE_CEO_ROLES_REVOKED_SUBJECT': (2424457,
+                                                            u'CEO roles revoked'),*/
+            
             // check if the character is trying to run for CEO and ensure only if he belongs to the same corporation that can be done
             if (type == (int) CorporationVotes.CEO && call.Client.CorporationID != corporationID)
                 throw new CantRunForCEOAtTheMoment();

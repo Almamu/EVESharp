@@ -26,6 +26,7 @@ using System;
 using System.Collections.Generic;
 using Common.Logging;
 using Node.Services.Account;
+using Node.Services.Alliances;
 using Node.Services.CacheSvc;
 using Node.Services.Characters;
 using Node.Services.Chat;
@@ -99,6 +100,7 @@ namespace Node.Network
         public ramProxy ramProxy { get; }
         public factory factory { get; }
         public petitioner petitioner { get; }
+        public allianceRegistry allianceRegistry { get; }
 
         public ServiceManager(
             NodeContainer container, CacheStorage storage, Logger logger, TimerManager timerManager,
@@ -146,7 +148,8 @@ namespace Node.Network
             reprocessingSvc reprocessingSvc,
             ramProxy ramProxy,
             factory factory,
-            petitioner petitioner)
+            petitioner petitioner,
+            allianceRegistry allianceRegistry)
         {
             this.Container = container;
             this.CacheStorage = storage;
@@ -200,6 +203,7 @@ namespace Node.Network
             this.ramProxy = ramProxy;
             this.factory = factory;
             this.petitioner = petitioner;
+            this.allianceRegistry = allianceRegistry;
         }
 
         /// <summary>

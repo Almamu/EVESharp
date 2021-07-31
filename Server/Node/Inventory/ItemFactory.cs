@@ -69,6 +69,7 @@ namespace Node.Inventory
         public AncestryManager AncestryManager { get; private set; }
         public ItemDB ItemDB { get; private set; }
         public CharacterDB CharacterDB { get; private set; }
+        public CorporationDB CorporationDB { get; private set; }
         public InsuranceDB InsuranceDB { get; private set; }
         public SkillDB SkillDB { get; private set; }
         public Channel Log { get; init; }
@@ -111,6 +112,7 @@ namespace Node.Inventory
             this.CharacterDB = this.DependencyInjection.GetInstance<CharacterDB>();
             this.InsuranceDB = this.DependencyInjection.GetInstance<InsuranceDB>();
             this.SkillDB = this.DependencyInjection.GetInstance<SkillDB>();
+            this.CorporationDB = this.DependencyInjection.GetInstance<CorporationDB>();
 
             this.SystemManager = this.DependencyInjection.GetInstance<SystemManager>();
             // station manager goes first

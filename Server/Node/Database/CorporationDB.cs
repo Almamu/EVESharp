@@ -1,9 +1,11 @@
 using System;
 using System.Collections.Generic;
+using System.Data;
 using Common.Database;
 using MySql.Data.MySqlClient;
 using Node.Corporations;
 using Node.Exceptions.corpRegistry;
+using Node.Inventory.Items.Types;
 using Node.StaticData.Inventory;
 using PythonTypes.Types.Collections;
 using PythonTypes.Types.Database;
@@ -928,7 +930,7 @@ namespace Node.Database
             MySqlConnection connection = null;
             MySqlDataReader reader = Database.PrepareQuery(
                 ref connection,
-                $"SELECT COUNT(*) FROM eveNames WHERE groupID = 2 AND itemName LIKE @corporationName",
+                $"SELECT COUNT(*) FROM eveNames WHERE groupID = {(int) Groups.Corporation} AND itemName LIKE @corporationName",
                 new Dictionary<string, object>()
                 {
                     {"@corporationName", corporationName}
@@ -953,6 +955,48 @@ namespace Node.Database
                 new Dictionary<string, object>()
                 {
                     {"@tickerName", tickerName}
+                }
+            );
+
+            using (connection)
+            using (reader)
+            {
+                reader.Read();
+
+                return reader.GetInt32(0) > 0;
+            }
+        }
+
+        public bool IsAllianceNameTaken(string corporationName)
+        {
+            MySqlConnection connection = null;
+            MySqlDataReader reader = Database.PrepareQuery(
+                ref connection,
+                $"SELECT COUNT(*) FROM eveNames WHERE groupID = {(int) Groups.Alliance} AND itemName LIKE @corporationName",
+                new Dictionary<string, object>()
+                {
+                    {"@corporationName", corporationName}
+                }
+            );
+
+            using (connection)
+            using (reader)
+            {
+                reader.Read();
+
+                return reader.GetInt32(0) > 0;
+            }
+        }
+
+        public bool IsShortNameTaken(string shortName)
+        {
+            MySqlConnection connection = null;
+            MySqlDataReader reader = Database.PrepareQuery(
+                ref connection,
+                $"SELECT COUNT(*) FROM crpAlliances WHERE shortName LIKE @shortName",
+                new Dictionary<string, object>()
+                {
+                    {"@shortName", shortName}
                 }
             );
 
@@ -1499,7 +1543,41 @@ namespace Node.Database
                 }
             );
         }
-        
+
+        public void UpdateCorporationInformation(Corporation corporation)
+        {
+            Database.PrepareQuery(
+                "UPDATE corporation SET allianceID = @allianceID, startDate = @startDate WHERE corporationID = @corporationID",
+                new Dictionary<string, object>()
+                {
+                    {"@corporationID", corporation.ID},
+                    {"@allianceID", corporation.AllianceID},
+                    {"@startDate", corporation.StartDate}
+                }
+            );
+        }
+
+        public int? GetAllianceIDForCorporation(int corporationID)
+        {
+            MySqlConnection connection = null;
+            MySqlDataReader reader = Database.PrepareQuery(
+                ref connection,
+                "SELECT allianceID FROM corporation WHERE corporationID = @corporationID",
+                new Dictionary<string, object>()
+                {
+                    {"@corporationID", corporationID}
+                }
+            );
+            
+            using(connection)
+            using (reader)
+            {
+                if (reader.Read() == false)
+                    return 0;
+
+                return reader.GetInt32OrNull(0);
+            }
+        }
         public CorporationDB(ItemDB itemDB, DatabaseConnection db) : base(db)
         {
             this.ItemDB = itemDB;

@@ -18,6 +18,7 @@ namespace Node.Database
         public const string CHANNEL_TYPE_CORPID = "corpid";
         public const string CHANNEL_TYPE_CONSTELLATIONID = "constellationid";
         public const string CHANNEL_TYPE_WARFACTIONID = "warfactionid";
+        public const string CHANNEL_TYPE_ALLIANCEID = "allianceid";
         
         public const int MIN_CHANNEL_ENTITY_ID = 1000;
         public const int MAX_CHANNEL_ENTITY_ID = 2100000000;
@@ -689,7 +690,7 @@ namespace Node.Database
             if (channelName == "System Channels\\Local")
                 return CHANNEL_TYPE_SOLARSYSTEMID2;
             if (channelName == "System Channels\\Alliance")
-                return "allianceid";
+                return CHANNEL_TYPE_ALLIANCEID;
             if (channelName == "System Channels\\Gang")
                 return "gangid";
             if (channelName == "System Channels\\Squad")

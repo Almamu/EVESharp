@@ -38,6 +38,7 @@ using Node.Market;
 using Node.Network;
 using Node.Services;
 using Node.Services.Account;
+using Node.Services.Alliances;
 using Node.Services.CacheSvc;
 using Node.Services.Characters;
 using Node.Services.Chat;
@@ -164,6 +165,7 @@ namespace Node
                 dependencies.Register<WalletDB>(Lifestyle.Singleton);
                 dependencies.Register<TutorialsDB>(Lifestyle.Singleton);
                 dependencies.Register<BillsDB>(Lifestyle.Singleton);
+                dependencies.Register<AlliancesDB>(Lifestyle.Singleton);
 
                 // register all the services
                 dependencies.Register<account>(Lifestyle.Singleton);
@@ -210,6 +212,7 @@ namespace Node
                 dependencies.Register<ramProxy>(Lifestyle.Singleton);
                 dependencies.Register<factory>(Lifestyle.Singleton);
                 dependencies.Register<petitioner>(Lifestyle.Singleton);
+                dependencies.Register<allianceRegistry>(Lifestyle.Singleton);
                 
                 dependencies.RegisterInstance(General.LoadFromFile("configuration.conf", dependencies));
                 // disable auto-verification on the container as it triggers creation of instances before they're needed

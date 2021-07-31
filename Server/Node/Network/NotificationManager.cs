@@ -36,6 +36,10 @@ namespace Node.Network
         /// idType to use when notificating corporation members based on role
         /// </summary>
         private const string NOTIFICATION_TYPE_CORPORATION_ROLE = "corpid&corprole";
+        /// <summary>
+        /// idType to use when notificating corporation members based on role
+        /// </summary>
+        private const string NOTIFICATION_TYPE_ALLIANCE = "allianceid";
         
         /// <summary>
         /// The connection this notification manager is using to send notifications through
@@ -122,6 +126,11 @@ namespace Node.Network
         public void NotifyStation(int stationID, ClientNotification notification)
         {
             this.SendNotification(NOTIFICATION_TYPE_STATION, stationID, notification);
+        }
+        
+        public void NotifyAlliance(int allianceID, ClientNotification notification)
+        {
+            this.SendNotification(NOTIFICATION_TYPE_ALLIANCE, allianceID, notification);
         }
 
         public void NotifyCorporationByRole(int corporationID, long roleMask, ClientNotification notification)

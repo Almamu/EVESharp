@@ -381,6 +381,7 @@ namespace Node.Services.Chat
             if (this.DB.IsCharacterMemberOfChannel(channelID, callerCharacterID) == false)
                 return null;
             
+            // TODO: ENSURE THIS CHECK IS CORRECT, FOR SOME REASON IT DOES NOT SIT RIGHT WITH ME (Almamu)
             if (channelType != ChatDB.CHANNEL_TYPE_CORPID && channelType != ChatDB.CHANNEL_TYPE_SOLARSYSTEMID2 && announce == 1)
             {
                 // notify everyone in the channel only when it should

@@ -115,7 +115,7 @@ namespace Node
             "SELECT typeID, activityID, requiredTypeID, quantity, damagePerJob, recycle FROM typeActivityMaterials WHERE damagePerJob != 1.0 OR recycle = 1",
             "SELECT a.assemblyLineTypeID, b.activityID, a.groupID, a.timeMultiplier, a.materialMultiplier FROM ramAssemblyLineTypeDetailPerGroup AS a LEFT JOIN ramAssemblyLineTypes AS b ON a.assemblyLineTypeID = b.assemblyLineTypeID",
             "SELECT assemblyLineTypeID, assemblyLineTypeName, assemblyLineTypeName AS typeName, description, activityID, baseTimeMultiplier, baseMaterialMultiplier, volume FROM ramAssemblyLineTypes",
-            "SELECT allianceID, shortName FROM alliance_shortnames",
+            "SELECT allianceID, shortName FROM crpAlliances",
             "SELECT completedStatusID, completedStatusName, completedStatusText FROM ramCompletedStatuses",
             "SELECT categoryID, categoryName, description, graphicID, published, 0 AS dataID FROM invCategories",
             "SELECT reactionTypeID, input, typeID, quantity FROM invTypeReactions",

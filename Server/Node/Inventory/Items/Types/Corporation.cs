@@ -8,12 +8,12 @@ namespace Node.Inventory.Items.Types
     {
         public Corporation(ItemEntity @from, string description, string tickerName, string url, double taxRate,
             double minimumJoinStanding, int corporationType, bool hasPlayerPersonnelManager,
-            bool sendCharTerminationMessage, int creatorID, int ceoID, int stationID, int raceID, int allianceId, long shares,
+            bool sendCharTerminationMessage, int creatorID, int ceoID, int stationID, int raceID, int? allianceID, long shares,
             int memberCount, int memberLimit, int allowedMemberRaceIDs, int graphicId, int? shape1, int? shape2,
             int? shape3, int? color1, int? color2, int? color3, string typeface, string division1, string division2,
             string division3, string division4, string division5, string division6, string division7,
             string walletDivision1, string walletDivision2, string walletDivision3, string walletDivision4,
-            string walletDivision5, string walletDivision6, string walletDivision7, bool deleted) : base(@from)
+            string walletDivision5, string walletDivision6, string walletDivision7, bool deleted, long? startDate) : base(@from)
         {
             this.Description = description;
             this.mTickerName = tickerName;
@@ -27,7 +27,7 @@ namespace Node.Inventory.Items.Types
             this.mCeoID = ceoID;
             this.mStationID = stationID;
             this.mRaceID = raceID;
-            this.mAllianceID = allianceId;
+            this.mAllianceID = allianceID;
             this.mShares = shares;
             this.mMemberCount = memberCount;
             this.MemberLimit = memberLimit;
@@ -55,6 +55,7 @@ namespace Node.Inventory.Items.Types
             this.WalletDivision6 = walletDivision6;
             this.WalletDivision7 = walletDivision7;
             this.mDeleted = deleted;
+            this.mStartDate = startDate;
         }
 
         string mTickerName;
@@ -66,7 +67,7 @@ namespace Node.Inventory.Items.Types
         int mCeoID;
         int mStationID;
         int mRaceID;
-        int mAllianceID;
+        int? mAllianceID;
         long mShares;
         int mMemberCount;
         int mGraphicID;
@@ -78,6 +79,7 @@ namespace Node.Inventory.Items.Types
         int? mColor3;
         string mTypeface;
         bool mDeleted;
+        long? mStartDate;
 
         public string Description { get; set; }
         public string TickerName => mTickerName;
@@ -91,7 +93,16 @@ namespace Node.Inventory.Items.Types
         public int CeoID => this.mCeoID;
         public int StationID => mStationID;
         public int RaceID => mRaceID;
-        public int AllianceID => mAllianceID;
+
+        public int? AllianceID
+        {
+            get => this.mAllianceID;
+            set
+            {
+                this.Dirty = true;
+                this.mAllianceID = value;
+            }
+        }
         public long Shares => mShares;
         public int MemberCount => mMemberCount;
         public int MemberLimit { get; set; }
@@ -119,6 +130,16 @@ namespace Node.Inventory.Items.Types
         public string WalletDivision6 { get; set; }
         public string WalletDivision7 { get; set; }
         public bool Deleted => mDeleted;
+
+        public long? StartDate
+        {
+            get => this.mStartDate;
+            set
+            {
+                this.Dirty = true;
+                this.mStartDate = value;
+            }
+        }
 
         public Row GetCorporationInfoRow()
         {
@@ -214,6 +235,14 @@ namespace Node.Inventory.Items.Types
                     [41] = this.Deleted
                 }
             );
+        }
+        
+        protected override void SaveToDB()
+        {
+            base.SaveToDB();
+
+            // update the relevant character information
+            this.ItemFactory.CorporationDB.UpdateCorporationInformation(this);
         }
     }
 }
