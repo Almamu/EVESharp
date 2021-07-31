@@ -2,6 +2,7 @@
 using EVE.Packets.Exceptions;
 using Node.Database;
 using Node.Exceptions.corpRegistry;
+using Node.Inventory;
 using Node.Inventory.Items.Types;
 using Node.Network;
 using Node.Notifications.Client.Alliances;
@@ -14,18 +15,24 @@ namespace Node.Services.Alliances
     public class allianceRegistry : MultiClientBoundService
     {
         private AlliancesDB DB { get; init; }
+        private BillsDB BillsDB { get; init; }
         private NotificationManager NotificationManager { get; init; }
-        
-        public allianceRegistry(AlliancesDB db, NotificationManager notificationManager, BoundServiceManager manager) : base(manager)
+        private ItemFactory ItemFactory { get; init; }
+        private Alliance Alliance { get; init; }
+
+        public allianceRegistry(AlliancesDB db, ItemFactory itemFactory, NotificationManager notificationManager, BoundServiceManager manager) : base(manager)
         {
             this.DB = db;
             this.NotificationManager = notificationManager;
+            this.ItemFactory = itemFactory;
         }
 
-        private allianceRegistry(AlliancesDB db, NotificationManager notificationManager, MultiClientBoundService parent, int objectID) : base(parent, objectID)
+        private allianceRegistry(Alliance alliance, AlliancesDB db, ItemFactory itemFactory, NotificationManager notificationManager, MultiClientBoundService parent) : base(parent, alliance.ID)
         {
             this.DB = db;
             this.NotificationManager = notificationManager;
+            this.ItemFactory = itemFactory;
+            this.Alliance = alliance;
         }
 
         protected override long MachoResolveObject(ServiceBindParams parameters, CallInformation call)
@@ -45,7 +52,9 @@ namespace Node.Services.Alliances
             if (this.MachoResolveObject(bindParams, call) != this.BoundServiceManager.Container.NodeID)
                 throw new CustomError("Trying to bind an object that does not belong to us!");
 
-            return new allianceRegistry(this.DB, this.NotificationManager, this, bindParams.ObjectID);
+            Alliance alliance = this.ItemFactory.LoadItem<Alliance>(bindParams.ObjectID);
+            
+            return new allianceRegistry(alliance, this.DB, this.ItemFactory, this.NotificationManager, this);
         }
 
         public PyDataType GetAlliance(CallInformation call)
@@ -68,9 +77,14 @@ namespace Node.Services.Alliances
             OnAllianceChanged change = new OnAllianceChanged(this.ObjectID);
 
             change
-                .AddChange("description", null, description)
-                .AddChange("url", null, url);
-
+                .AddChange("description", this.Alliance.Description, description)
+                .AddChange("url", this.Alliance.Url, url)
+                .AddChange("executorCorpID", this.Alliance.ExecutorCorpID, this.Alliance.ExecutorCorpID)
+                .AddChange("creatorCorpID", this.Alliance.CreatorCorpID, this.Alliance.CreatorCorpID)
+                .AddChange("creatorCharID", this.Alliance.CreatorCharID, this.Alliance.CreatorCharID)
+                .AddChange("dictatorial", this.Alliance.Dictatorial, this.Alliance.Dictatorial)
+                .AddChange("deleted", false, false);
+            
             this.NotificationManager.NotifyAlliance(this.ObjectID, change);
 
             return null;
@@ -125,6 +139,27 @@ namespace Node.Services.Alliances
 
             this.NotificationManager.NotifyAlliance(this.ObjectID, change);
             
+            return null;
+        }
+
+        public PyDataType GetApplications(CallInformation call)
+        {
+            return this.DB.GetApplicationsToAlliance(this.ObjectID);
+        }
+
+        public PyDataType GetBills(CallInformation call)
+        {
+            return this.BillsDB.GetBillsPayable(this.ObjectID);
+        }
+
+        public PyDataType DeleteRelationship(PyInteger toID, CallInformation call)
+        {
+            this.DB.RemoveRelationship(this.ObjectID, toID);
+
+            OnAllianceRelationshipChanged change =
+                new OnAllianceRelationshipChanged(this.ObjectID, toID)
+                    .AddChange("toID", toID, null);
+
             return null;
         }
     }

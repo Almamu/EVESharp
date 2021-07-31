@@ -530,6 +530,8 @@ namespace Node.Services.Corporations
                         character.ID, long.MaxValue, long.MaxValue, long.MaxValue,
                         long.MaxValue, long.MaxValue, long.MaxValue, long.MaxValue, long.MaxValue, ushort.MaxValue
                     );
+                    this.CharacterDB.UpdateCharacterBlockRole(character.ID, 0);
+                    this.CharacterDB.SetCharacterStasisTimer(character.ID, null);
                     character.CorporationDateTime = DateTime.UtcNow.ToFileTimeUtc();
                     // notify cluster about the corporation changes
                     this.NotificationManager.NotifyCorporation(change.OldCorporationID, change);
@@ -662,16 +664,18 @@ namespace Node.Services.Corporations
             this.DB.UpdateCorporation(call.Client.CorporationID, newDescription, newUrl, newTax);
             
             // generate update notification
-            OnCorporationChanged change = new OnCorporationChanged(call.Client.CorporationID);
-
-            change
-                .AddChange("description", this.Corporation.Description, newDescription)
-                .AddChange("url", this.Corporation.Url, newUrl)
-                .AddChange("taxRate", this.Corporation.TaxRate, newTax);
+            OnCorporationChanged change =
+                new OnCorporationChanged(call.Client.CorporationID)
+                    .AddChange("description", this.Corporation.Description, newDescription)
+                    .AddChange("url", this.Corporation.Url, newUrl)
+                    .AddChange("taxRate", this.Corporation.TaxRate, newTax)
+                    .AddChange("ceoID", this.Corporation.CeoID, this.Corporation.CeoID);
 
             this.Corporation.Description = newDescription;
             this.Corporation.Url = newUrl;
             this.Corporation.TaxRate = newTax;
+
+            this.NotificationManager.NotifyCorporation(this.Corporation.ID, change);
 
             return null;
         }
@@ -897,55 +901,69 @@ namespace Node.Services.Corporations
             );
             
             // the only modification a member can perform on itself is blocking roles
-            if (characterID == callerCharacterID)
+            if (characterID == callerCharacterID && blockRoles != currentBlockRoles)
             {
                 this.CharacterDB.UpdateCharacterBlockRole(characterID, blockRoles);
-                // store the new roles and title mask
-                this.CharacterDB.UpdateCharacterRoles(
-                    characterID, 0, 0, 0, 0,
-                    0, 0, 0, 0, 0
-                );
 
                 long? currentStasisTimer = this.CharacterDB.GetCharacterStasisTimer(characterID);
-
-                if (currentStasisTimer > 0 && blockRoles == 1)
-                {
-                    long currentTime = DateTime.UtcNow.ToFileTimeUtc();
-                    long stasisTimerEnd = (long) currentStasisTimer + TimeSpan.FromHours(24).Ticks;
-
-                    if (stasisTimerEnd > currentTime)
-                    {
-                        int hoursTimerStarted = (int) ((currentTime - currentStasisTimer) / TimeSpan.TicksPerHour);
-                        int hoursLeft = (int) ((stasisTimerEnd - currentTime) / TimeSpan.TicksPerHour);
-
-                        throw new CrpCantQuitNotCompletedStasisPeriod(characterID, hoursTimerStarted, hoursLeft);
-                    }
-                }
-
-                // TODO: WEIRD HACK TO ENSURE THAT THE CORPORATION WINDOW UPDATES WITH THE CHANGE
-                // TODO: THERE MIGHT BE SOMETHING ELSE WE CAN DO, BUT THIS WORKS FOR NOW
-                if (call.Client.CorporationRole == 0)
-                {
-                    call.Client.CorporationRole = ~long.MaxValue;
-                }
-                else
-                {
-                    call.Client.CorporationRole = 0;
-                }
                 
-                call.Client.RolesAtAll = 0;
-                call.Client.RolesAtBase = 0;
-                call.Client.RolesAtOther = 0;
-                call.Client.RolesAtHQ = 0;
+                if (blockRoles == 1)
+                {
+                    if (currentStasisTimer > 0)
+                    {
+                        long currentTime = DateTime.UtcNow.ToFileTimeUtc();
+                        long stasisTimerEnd = (long) currentStasisTimer + TimeSpan.FromHours(24).Ticks;
 
-                character.TitleMask = 0;
+                        if (stasisTimerEnd > currentTime)
+                        {
+                            int hoursTimerStarted = (int) ((currentTime - currentStasisTimer) / TimeSpan.TicksPerHour);
+                            int hoursLeft = (int) ((stasisTimerEnd - currentTime) / TimeSpan.TicksPerHour);
+
+                            throw new CrpCantQuitNotCompletedStasisPeriod(characterID, hoursTimerStarted, hoursLeft);
+                        }
+                    }
+                    
+                    // store the new roles and title mask
+                    this.CharacterDB.UpdateCharacterRoles(
+                        characterID, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0
+                    );
+
+                    roles = 0;
+                    rolesAtHQ = 0;
+                    rolesAtBase = 0;
+                    rolesAtOther = 0;
+                    grantableRoles = 0;
+                    grantableRolesAtHQ = 0;
+                    grantableRolesAtBase = 0;
+                    grantableRolesAtOther = 0;
+                    titleMask = 0;
+
+                    // TODO: WEIRD HACK TO ENSURE THAT THE CORPORATION WINDOW UPDATES WITH THE CHANGE
+                    // TODO: THERE MIGHT BE SOMETHING ELSE WE CAN DO, BUT THIS WORKS FOR NOW
+                    if (call.Client.CorporationRole == 0)
+                    {
+                        call.Client.CorporationRole = ~long.MaxValue;
+                    }
+                    else
+                    {
+                        call.Client.CorporationRole = 0;
+                    }
+
+                    call.Client.RolesAtAll = 0;
+                    call.Client.RolesAtBase = 0;
+                    call.Client.RolesAtOther = 0;
+                    call.Client.RolesAtHQ = 0;
+
+                    character.TitleMask = 0;
+                }
 
                 this.NotificationManager.NotifyNode(
                     this.ItemFactory.ItemDB.GetItemNode(characterID), 
                     new OnCorporationMemberUpdated(
-                        characterID, 0, 0, 0, 0,
-                        0, 0, 0, 0, currentBaseID,
-                        blockRoles == 1, 0
+                        characterID, currentRoles, grantableRoles, rolesAtHQ, grantableRolesAtHQ,
+                        rolesAtBase, grantableRolesAtBase, rolesAtOther, grantableRolesAtOther, currentBaseID,
+                        blockRoles == 1, titleMask
                     )
                 );
                 
@@ -1364,7 +1382,8 @@ namespace Node.Services.Corporations
             // this notification doesn't seem to update the window if it's focused by the corporation personnel
             change
                 .AddValue("corporationID", corporationID, null)
-                .AddValue("characterID", characterID, null);
+                .AddValue("characterID", characterID, null)
+                .AddValue("status", 0, null);
 
             // notify about the application change
             this.NotificationManager.NotifyCorporationByRole(corporationID, CorporationRole.PersonnelManager, change);
@@ -1469,7 +1488,8 @@ namespace Node.Services.Corporations
             // this notification doesn't seem to update the window if it's focused by the corporation personnel
             applicationChange
                 .AddValue("corporationID", corporationID, null)
-                .AddValue("characterID", characterID, null);
+                .AddValue("characterID", characterID, null)
+                .AddValue("status", 0, null);
 
             // notify about the application change
             this.NotificationManager.NotifyCorporationByRole(corporationID, CorporationRole.PersonnelManager, applicationChange);
@@ -1604,6 +1624,11 @@ namespace Node.Services.Corporations
             this.NotificationManager.NotifyCorporationByRole(corporationID, CorporationRole.Director, change);
             
             return null;
+        }
+
+        public PyDataType GetAllianceApplications(CallInformation call)
+        {
+            return this.DB.GetAllianceApplications(this.ObjectID);
         }
     }
 }

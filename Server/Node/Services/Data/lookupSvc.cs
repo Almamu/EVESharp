@@ -75,6 +75,30 @@ namespace Node.Services.Data
             return this.DB.LookupCorporations(criteria, exact);
         }
 
+        public PyDataType LookupAlliances(PyString criteria, PyDataType exactMatch, CallInformation call)
+        {
+            bool exact = false;
+
+            if (exactMatch is PyBool exactBool)
+                exact = exactBool;
+            else if (exactMatch is PyInteger exactInteger)
+                exact = exactInteger != 0;
+            
+            return this.DB.LookupAlliances(criteria, exact);
+        }
+        
+        public PyDataType LookupAllianceShortNames(PyString criteria, PyDataType exactMatch, CallInformation call)
+        {
+            bool exact = false;
+
+            if (exactMatch is PyBool exactBool)
+                exact = exactBool;
+            else if (exactMatch is PyInteger exactInteger)
+                exact = exactInteger != 0;
+            
+            return this.DB.LookupAllianceShortNames(criteria, exact);
+        }
+
         public PyDataType LookupCorporationsOrAlliances(PyString criteria, PyDataType exactMatch, CallInformation call)
         {
             bool exact = false;

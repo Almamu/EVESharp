@@ -56,7 +56,7 @@ namespace Node.Services.Account
                 CorporationRole.JuniorAccountant.Is(call.Client.CorporationRole) == false)
                 throw new CrpAccessDenied(MLS.UI_CORP_ACCESSDENIED3);
             
-            return this.DB.GetCorporationBillsReceivable(call.Client.CorporationID);
+            return this.DB.GetBillsReceivable(call.Client.CorporationID);
         }
 
         public PyDataType GetCorporationBills(CallInformation call)
@@ -66,7 +66,7 @@ namespace Node.Services.Account
                 CorporationRole.JuniorAccountant.Is(call.Client.CorporationRole) == false)
                 throw new CrpAccessDenied(MLS.UI_CORP_ACCESSDENIED3);
             
-            return this.DB.GetCorporationBillsPayable(call.Client.CorporationID);
+            return this.DB.GetBillsPayable(call.Client.CorporationID);
         }
 
         public PyDataType PayCorporationBill(PyInteger billID, CallInformation call)

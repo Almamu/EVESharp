@@ -59,17 +59,6 @@ namespace Node.Database
             );
         }
 
-        public IndexRowset GetRelationships(int allianceID)
-        {
-            return Database.PrepareIndexRowsetQuery(
-                0, "SELECT toID, relationship FROM allRelationships WHERE fromID = @allianceID",
-                new Dictionary<string, object>()
-                {
-                    {"@allianceID", allianceID}
-                }
-            );
-        }
-
         public PyDataType GetMembers(int allianceID, bool extraInfo = false)
         {
             if (extraInfo == false)
@@ -93,7 +82,18 @@ namespace Node.Database
                 );
             }
         }
-
+        
+        public IndexRowset GetRelationships(int allianceID)
+        {
+            return Database.PrepareIndexRowsetQuery(
+                0, "SELECT toID, relationship FROM allRelationships WHERE fromID = @allianceID",
+                new Dictionary<string, object>()
+                {
+                    {"@allianceID", allianceID}
+                }
+            );
+        }
+        
         public void UpdateRelationship(int allianceID, int toID, int relationship)
         {
             Database.PrepareQuery(
@@ -107,6 +107,19 @@ namespace Node.Database
             );
         }
 
+        public void RemoveRelationship(int fromID, int toID)
+        {
+            Database.PrepareQuery(
+                "DELETE FROM allRelationships WHERE fromID = @fromID AND toID = @toID",
+                new Dictionary<string, object>()
+                {
+                    {"@fromID", fromID},
+                    {"@toID", toID}
+                }
+            );
+        }
+
+
         public void UpdateSupportedExecutor(int corporationID, int chosenExecutorID)
         {
             Database.PrepareQuery(
@@ -115,6 +128,17 @@ namespace Node.Database
                 {
                     {"@chosenExecutorID", chosenExecutorID},
                     {"@corporationID", corporationID}
+                }
+            );
+        }
+
+        public PyDataType GetApplicationsToAlliance(int allianceID)
+        {
+            return Database.PrepareIndexRowsetQuery(
+                0, "SELECT allianceID, corporationID, applicationText, applicationDateTime, state FROM crpApplications WHERE allianceID = @allianceID",
+                new Dictionary<string, object>()
+                {
+                    {"@allianceID", allianceID}
                 }
             );
         }

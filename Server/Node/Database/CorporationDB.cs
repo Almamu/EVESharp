@@ -761,9 +761,9 @@ namespace Node.Database
             if (isInAlliance is not null)
             {
                 if (isInAlliance == 0)
-                    query += " AND corporation.allianceID = 0";
+                    query += " AND corporation.allianceID IS NULL";
                 else
-                    query += " AND corporation.allianceID > 0";
+                    query += " AND corporation.allianceID IS NOT NULL";
             }
 
             if (minMembers is not null)
@@ -1578,6 +1578,18 @@ namespace Node.Database
                 return reader.GetInt32OrNull(0);
             }
         }
+
+        public PyDataType GetAllianceApplications(int corporationID)
+        {
+            return Database.PrepareIndexRowsetQuery(
+                0, "SELECT allianceID, corporationID, applicationText, applicationDateTime, state FROM crpApplications WHERE corporationID = @corporationID",
+                new Dictionary<string, object>()
+                {
+                    {"@corporationID", corporationID}
+                }
+            );
+        }
+        
         public CorporationDB(ItemDB itemDB, DatabaseConnection db) : base(db)
         {
             this.ItemDB = itemDB;

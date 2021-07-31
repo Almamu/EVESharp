@@ -8,33 +8,33 @@ namespace Node.Database
     public class BillsDB : DatabaseAccessor
     {
         /// <summary>
-        /// Lists receivable bills for the given corporation
+        /// Lists receivable bills for the given creditor
         /// </summary>
-        /// <param name="corporationID"></param>
+        /// <param name="creditorID"></param>
         /// <returns></returns>
-        public CRowset GetCorporationBillsReceivable(int corporationID)
+        public CRowset GetBillsReceivable(int creditorID)
         {
             return Database.PrepareCRowsetQuery(
-                "SELECT billID, billTypeID, debtorID, creditorID, amount, dueDateTime, interest, externalID, paid, externalID2 FROM mktBills WHERE creditorID = @corporationID",
+                "SELECT billID, billTypeID, debtorID, creditorID, amount, dueDateTime, interest, externalID, paid, externalID2 FROM mktBills WHERE creditorID = @creditorID",
                 new Dictionary<string, object>()
                 {
-                    {"@corporationID", corporationID}
+                    {"@creditorID", creditorID}
                 }
             );
         }
         
         /// <summary>
-        /// List payable bills for the given corporation
+        /// List payable bills for the given debotr
         /// </summary>
-        /// <param name="corporationID"></param>
+        /// <param name="debtorID"></param>
         /// <returns></returns>
-        public CRowset GetCorporationBillsPayable(int corporationID)
+        public CRowset GetBillsPayable(int debtorID)
         {
             return Database.PrepareCRowsetQuery(
-                "SELECT billID, billTypeID, debtorID, creditorID, amount, dueDateTime, interest, externalID, paid, externalID2 FROM mktBills WHERE debtorID = @corporationID AND paid = 0",
+                "SELECT billID, billTypeID, debtorID, creditorID, amount, dueDateTime, interest, externalID, paid, externalID2 FROM mktBills WHERE debtorID = @debtorID AND paid = 0",
                 new Dictionary<string, object>()
                 {
-                    {"@corporationID", corporationID}
+                    {"@debtorID", debtorID}
                 }
             );
         }

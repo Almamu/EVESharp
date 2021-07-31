@@ -440,6 +440,8 @@ namespace Node.Inventory
                     return this.ItemDB.LoadCorporation(item);
                 case (int) Groups.Faction:
                     return this.LoadFaction(item);
+                case (int) Groups.Alliance:
+                    return this.ItemDB.LoadAlliance(item);
                 default:
                     Log.Warning($"Loading owner {item.ID} from item group {item.Type.Group.ID} as normal item");
                     return item;
@@ -450,7 +452,7 @@ namespace Node.Inventory
         {
             return this.mFactions[item.ID] = this.ItemDB.LoadFaction(item);
         }
-        
+
         private ItemEntity LoadAccessories(ItemEntity item)
         {
             switch (item.Type.Group.ID)

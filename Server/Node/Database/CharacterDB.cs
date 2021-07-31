@@ -69,7 +69,7 @@ namespace Node.Database
                 "SELECT " +
                     " itemName AS shortName,bloodlineID,gender,bounty,chrInformation.corporationID,allianceID,title,startDateTime,createDateTime," +
                     " securityRating,IF(balance IS NULL, 0, balance) AS balance,chrInformation.stationID,solarSystemID,constellationID,regionID," +
-                    " petitionMessage,logonMinutes,tickerName" +
+                    " petitionMessage,logonMinutes,tickerName, corporation.startDate AS allianceMemberStartDate" +
                     " FROM chrInformation " +
                     "	LEFT JOIN eveNames ON characterID = itemID" +
                     "	LEFT JOIN corporation USING (corporationID)" +

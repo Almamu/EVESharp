@@ -681,6 +681,36 @@ namespace Node.Database
             }
         }
 
+        public Alliance LoadAlliance(ItemEntity item)
+        {
+            MySqlConnection connection = null;
+            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+                "SELECT shortName, description, url, executorCorpID, creatorCorpID, creatorCharID, dictatorial FROM crpAlliances WHERE allianceID = @itemID",
+                new Dictionary<string, object>()
+                {
+                    {"@itemID", item.ID}
+                }
+            );
+            
+            using (connection)
+            using (reader)
+            {
+                if (reader.Read() == false)
+                    return null;
+
+                return new Alliance(
+                    item,
+                    reader.GetString(0),
+                    reader.GetString(1),
+                    reader.GetString(2),
+                    reader.GetInt32(3),
+                    reader.GetInt32(4),
+                    reader.GetInt32(5),
+                    reader.GetInt16(6)
+                );
+            }
+        }
+
         public Skill LoadSkill(ItemEntity item)
         {
             return new Skill(item, this.Container.Constants[Constants.skillPointMultiplier]);

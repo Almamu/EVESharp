@@ -129,6 +129,54 @@ namespace Node.Database
             }
         }
         
+        public Rowset LookupAlliances(string namePart, bool exact)
+        {
+            if (exact == true)
+            {
+                return Database.PrepareRowsetQuery(
+                    $"SELECT itemID AS allianceID, itemName AS allianceName, typeID FROM eveNames WHERE itemID >= {ItemFactory.NPC_CORPORATION_ID_MIN} AND groupID = {(int) Groups.Alliance} AND itemName = @namePart",
+                    new Dictionary<string, object>()
+                    {
+                        {"@namePart", namePart}
+                    }
+                );                
+            }
+            else
+            {
+                return Database.PrepareRowsetQuery(
+                    $"SELECT itemID AS allianceID, itemName AS allianceName, typeID FROM eveNames WHERE itemID >= {ItemFactory.NPC_CORPORATION_ID_MIN} AND groupID = {(int) Groups.Alliance} AND itemName LIKE @namePart",
+                    new Dictionary<string, object>()
+                    {
+                        {"@namePart", namePart + "%"}
+                    }
+                );
+            }
+        }
+        
+        public Rowset LookupAllianceShortNames(string namePart, bool exact)
+        {
+            if (exact == true)
+            {
+                return Database.PrepareRowsetQuery(
+                    $"SELECT allianceID, itemName AS allianceName, {(int) Types.Alliance} AS typeID LEFT JOIN eveNames ON allianceID = itemID FROM crpAlliances WHERE shortName = @namePart",
+                    new Dictionary<string, object>()
+                    {
+                        {"@namePart", namePart}
+                    }
+                );                
+            }
+            else
+            {
+                return Database.PrepareRowsetQuery(
+                    $"SELECT allianceID, itemName AS allianceName, {(int) Types.Alliance} AS typeID LEFT JOIN eveNames ON allianceID = itemID FROM crpAlliances WHERE shortName LIKE @namePart",
+                    new Dictionary<string, object>()
+                    {
+                        {"@namePart", namePart + "%"}
+                    }
+                );
+            }
+        }
+        
         public Rowset LookupCorporationsOrAlliances(string namePart, bool exact)
         {
             if (exact == true)
