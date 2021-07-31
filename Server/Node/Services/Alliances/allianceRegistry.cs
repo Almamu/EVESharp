@@ -8,6 +8,8 @@ using Node.Network;
 using Node.Notifications.Client.Alliances;
 using Node.Services.Corporations;
 using Node.StaticData.Corporation;
+using PythonTypes.Types.Collections;
+using PythonTypes.Types.Database;
 using PythonTypes.Types.Primitives;
 
 namespace Node.Services.Alliances
@@ -161,6 +163,11 @@ namespace Node.Services.Alliances
                     .AddChange("toID", toID, null);
 
             return null;
+        }
+
+        public PyDataType GetRankedAlliances(CallInformation call)
+        {
+            return this.DB.GetAlliances();
         }
     }
 }

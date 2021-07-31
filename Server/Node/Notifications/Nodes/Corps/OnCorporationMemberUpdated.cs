@@ -20,12 +20,12 @@ namespace Node.Notifications.Nodes.Corporations
         public long RolesAtOther { get; init; }
         public long GrantableRolesAtOther { get; init; }
         public int? BaseID { get; init; }
-        public bool BlockRoles { get; init; }
+        public int? BlockRoles { get; init; }
         public long TitleMask { get; init; }
 
         public OnCorporationMemberUpdated(int characterID, long roles, long grantableRoles, long rolesAtHQ, long grantableRolesAtHQ,
             long rolesAtBase, long grantableRolesAtBase, long rolesAtOther, long grantableRolesAtOther, int? baseID,
-            bool blockRoles, long titleMask) : base(NOTIFICATION_NAME)
+            int? blockRoles, long titleMask) : base(NOTIFICATION_NAME)
         {
             this.CharacterID = characterID;
             this.Roles = roles;
@@ -80,7 +80,7 @@ namespace Node.Notifications.Nodes.Corporations
             data.TryGetValue("rolesAtOther", out PyInteger rolesAtOther);
             data.TryGetValue("grantableRolesAtOther", out PyInteger grantableRolesAtOther);
             data.TryGetValue("baseID", out PyInteger baseID);
-            data.TryGetValue("blockRoles", out PyBool blockRoles);
+            data.TryGetValue("blockRoles", out PyInteger blockRoles);
             data.TryGetValue("titleMask", out PyInteger titleMask);
 
             return new OnCorporationMemberUpdated(characterID, roles, grantableRoles, rolesAtHQ, grantableRolesAtHQ, rolesAtBase, grantableRolesAtBase, rolesAtOther, grantableRolesAtOther, baseID, blockRoles, titleMask);

@@ -19,7 +19,7 @@ namespace Node.Database
                 true, 1, 0, 0, 0, "");
 
             Database.PrepareQuery(
-                "INSERT INTO crpAlliances(allianceID, shortName, description, url, executorCorpID, creatorCorpID, creatorCharID, dictatorial)VALUES(@allianceID, @shortName, @description, @url, @creatorID, @creatorID, @creatorCharacterID, @dictatorial)",
+                "INSERT INTO crpAlliances(allianceID, shortName, description, url, executorCorpID, creatorCorpID, creatorCharID, dictatorial, startDate)VALUES(@allianceID, @shortName, @description, @url, @creatorID, @creatorID, @creatorCharacterID, @dictatorial, @startDate)",
                 new Dictionary<string, object>()
                 {
                     {"@allianceID", allianceID},
@@ -28,7 +28,8 @@ namespace Node.Database
                     {"@url", url},
                     {"@creatorID", creatorID},
                     {"@creatorCharacterID", creatorCharacterID},
-                    {"@dictatorial", false}
+                    {"@dictatorial", false},
+                    {"@startDate", DateTime.UtcNow.ToFileTimeUtc()}
                 }
             );
 
@@ -45,6 +46,13 @@ namespace Node.Database
                     {"@url", url},
                     {"@allianceID", allianceID}
                 }
+            );
+        }
+
+        public Rowset GetAlliances()
+        {
+            return Database.PrepareRowsetQuery(
+                "SELECT allianceID, itemName AS allianceName, shortName, 0 AS memberCount, executorCorpID, creatorCorpID, creatorCharID, dictatorial, startDate, deleted FROM crpAlliances LEFT JOIN eveNames ON itemID = allianceID"
             );
         }
         

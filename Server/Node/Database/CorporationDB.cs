@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Data;
 using Common.Database;
 using MySql.Data.MySqlClient;
+using Node.Alliances;
 using Node.Corporations;
 using Node.Exceptions.corpRegistry;
 using Node.Inventory.Items.Types;
@@ -565,12 +566,12 @@ namespace Node.Database
                     [8] = "grantableRoles",
                     [9] = "grantableRolesAtHQ",
                     [10] = "grantableRolesAtBase",
-                    [11] = "gender",
-                    [12] = "grantableRolesAtOther",
-                    [13] = "divisionID",
-                    [14] = "squadronID",
-                    [15] = "baseID",
-                    [16] = "blockRoles",
+                    [11] = "grantableRolesAtOther",
+                    [12] = "divisionID",
+                    [13] = "squadronID",
+                    [14] = "baseID",
+                    [15] = "blockRoles",
+                    [16] = "gender",
                 };
                 FieldType[] fieldTypes = new FieldType[17]
                 {
@@ -581,16 +582,16 @@ namespace Node.Database
                     FieldType.I8,
                     FieldType.I8,
                     FieldType.I8,
+                    FieldType.I4,
                     FieldType.I8,
                     FieldType.I8,
                     FieldType.I8,
                     FieldType.I8,
+                    FieldType.I4,
+                    FieldType.I4,
+                    FieldType.I4,
+                    FieldType.I4,
                     FieldType.Bool,
-                    FieldType.I8,
-                    FieldType.I4,
-                    FieldType.I4,
-                    FieldType.I4,
-                    FieldType.I8
                 };
                 
                 if (reader.Read() == false)
@@ -675,15 +676,14 @@ namespace Node.Database
             );
         }
 
-        public int GetTitleMaskForCharacter(int characterID, int corporationID)
+        public int GetTitleMaskForCharacter(int characterID)
         {
             MySqlConnection connection = null;
             MySqlDataReader reader = Database.PrepareQuery(ref connection,
-                "SELECT titleMask FROM chrInformation WHERE characterID = @characterID AND corporationID = @corporationID",
+                "SELECT titleMask FROM chrInformation WHERE characterID = @characterID",
                 new Dictionary<string, object>()
                 {
-                    {"@characterID", characterID},
-                    {"@corporationID", corporationID}
+                    {"@characterID", characterID}
                 }
             );
             
@@ -694,6 +694,35 @@ namespace Node.Database
                     return 0;
 
                 return reader.GetInt32(0);
+            }
+        }
+
+        public void GetCorporationInformationForCharacter(int characterID, out string title, out int titleMask, out int corporationID, out int? allianceID)
+        {
+            MySqlConnection connection = null;
+            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+                "SELECT title, titleMask, corporationID, allianceID FROM chrInformation LEFT JOIN corporation USING(corporationID) WHERE characterID = @characterID",
+                new Dictionary<string, object>()
+                {
+                    {"@characterID", characterID}
+                }
+            );
+
+            title = "";
+            titleMask = 0;
+            corporationID = 0;
+            allianceID = 0;
+            
+            using (connection)
+            using (reader)
+            {
+                if (reader.Read() == false)
+                    return;
+
+                title = reader.GetString(0);
+                titleMask = reader.GetInt32(1);
+                corporationID = reader.GetInt32(2);
+                allianceID = reader.GetInt32OrNull(3);
             }
         }
 
@@ -1586,6 +1615,42 @@ namespace Node.Database
                 new Dictionary<string, object>()
                 {
                     {"@corporationID", corporationID}
+                }
+            );
+        }
+
+        public int? GetCurrentAllianceApplication(int corporationID)
+        {
+            MySqlConnection connection = null;
+            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+                "SELECT allianceID FROM crpApplications WHERE corporationID = @corporationID",
+                new Dictionary<string, object>()
+                {
+                    {"@corporationID", corporationID}
+                }
+            );
+            
+            using (connection)
+            using (reader)
+            {
+                if (reader.Read() == false)
+                    return null;
+
+                return reader.GetInt32(0);
+            }
+        }
+
+        public void InsertAllianceApplication(int allianceID, int corporationID, string text)
+        {
+            Database.PrepareQuery(
+                "REPLACE INTO crpApplications(allianceID, corporationID, applicationText, applicationDateTime, state)VALUES(@allianceID, @corporationID, @applicationText, @applicationDateTime, @state)",
+                new Dictionary<string, object>()
+                {
+                    {"@allianceID", allianceID},
+                    {"@corporationID", corporationID},
+                    {"@applicationText", text},
+                    {"@applicationDateTime", DateTime.UtcNow.ToFileTimeUtc()},
+                    {"@state", (int) AllianceApplicationStatus.New}
                 }
             );
         }

@@ -6,6 +6,7 @@ using System.Text.RegularExpressions;
 using System.Xml.XPath;
 using EVE;
 using EVE.Packets.Exceptions;
+using Node.Alliances;
 using Node.Chat;
 using Node.Database;
 using Node.Exceptions;
@@ -16,6 +17,7 @@ using Node.Inventory.Items;
 using Node.Inventory.Items.Types;
 using Node.Market;
 using Node.Network;
+using Node.Notifications.Client.Alliances;
 using Node.Notifications.Client.Corporations;
 using Node.Notifications.Client.Wallet;
 using Node.Notifications.Nodes.Corporations;
@@ -310,7 +312,9 @@ namespace Node.Services.Corporations
 
         public PyDataType GetInfoWindowDataForChar(PyInteger characterID, CallInformation call)
         {
-            int titleMask = this.DB.GetTitleMaskForCharacter(characterID, call.Client.CorporationID);
+            this.DB.GetCorporationInformationForCharacter(characterID, out string title, out int titleMask,
+                out int corporationID, out int? allianceID);
+            
             Dictionary<int, string> titles = this.DB.GetTitlesNames(call.Client.CorporationID);
             PyDictionary dictForKeyVal = new PyDictionary();
 
@@ -319,11 +323,9 @@ namespace Node.Services.Corporations
             foreach ((int _, string name) in titles)
                 dictForKeyVal["title" + (++number)] = name;
             
-            // we're supposed to be from the same corp, so add the extra information manually
-            // TODO: TEST WITH USERS FROM OTHER CORPS
-            dictForKeyVal["corpID"] = call.Client.CorporationID;
-            dictForKeyVal["allianceID"] = call.Client.AllianceID;
-            dictForKeyVal["title"] = "TITLE HERE";
+            dictForKeyVal["corpID"] = corporationID;
+            dictForKeyVal["allianceID"] = allianceID;
+            dictForKeyVal["title"] = title;
 
             return KeyVal.FromDictionary(dictForKeyVal);
         }
@@ -896,14 +898,14 @@ namespace Node.Services.Corporations
             this.CharacterDB.GetCharacterRoles(characterID, out long currentRoles, out long currentRolesAtBase,
                 out long currentRolesAtHQ, out long currentRolesAtOther, out long currentGrantableRoles,
                 out long currentGrantableRolesAtBase, out long currentGrantableRolesAtHQ,
-                out long currentGrantableRolesAtOther, out bool currentBlockRoles, out int? currentBaseID, 
+                out long currentGrantableRolesAtOther, out int? currentBlockRoles, out int? currentBaseID, 
                 out int currentTitleMask
             );
             
             // the only modification a member can perform on itself is blocking roles
             if (characterID == callerCharacterID && blockRoles != currentBlockRoles)
             {
-                this.CharacterDB.UpdateCharacterBlockRole(characterID, blockRoles);
+                this.CharacterDB.UpdateCharacterBlockRole(characterID, blockRoles == 1 ? 1 : null);
 
                 long? currentStasisTimer = this.CharacterDB.GetCharacterStasisTimer(characterID);
                 
@@ -963,7 +965,7 @@ namespace Node.Services.Corporations
                     new OnCorporationMemberUpdated(
                         characterID, currentRoles, grantableRoles, rolesAtHQ, grantableRolesAtHQ,
                         rolesAtBase, grantableRolesAtBase, rolesAtOther, grantableRolesAtOther, currentBaseID,
-                        blockRoles == 1, titleMask
+                        blockRoles == 1 ? 1 : null, titleMask
                     )
                 );
                 
@@ -980,7 +982,7 @@ namespace Node.Services.Corporations
                         ["grantableRolesAtBase"] = new PyTuple(2) {[0] = currentRolesAtBase, [1] = grantableRolesAtBase},
                         ["grantableRolesAtOther"] = new PyTuple(2) {[0] = currentRolesAtOther, [1] = grantableRolesAtOther},
                         ["baseID"] = new PyTuple(2) {[0] = currentBaseID, [1] = baseID},
-                        ["blockRoles"] = new PyTuple(2) {[0] = blockRoles == 0, [1] = blockRoles == 1},
+                        ["blockRoles"] = new PyTuple(2) {[0] = blockRoles == 0 ? null : 1, [1] = blockRoles == 1 ? 1 : null},
                         ["titleMask"] = new PyTuple(2) {[0] = currentTitleMask, [1] = titleMask}
                     };
                     
@@ -994,7 +996,7 @@ namespace Node.Services.Corporations
                 return null;
             }
 
-            if (currentBlockRoles == true)
+            if (currentBlockRoles == 1)
                 throw new CrpRolesDenied(characterID);
             
             // if the character is not a director, it cannot grant grantable roles (duh)
@@ -1247,7 +1249,7 @@ namespace Node.Services.Corporations
                 foreach ((int _, Client client) in clients)
                 {
                     // characterID should never be null here
-                    long titleMask = this.DB.GetTitleMaskForCharacter((int) client.CharacterID, client.CorporationID);
+                    long titleMask = this.DB.GetTitleMaskForCharacter((int) client.CharacterID);
                     
                     // get the title roles and calculate current roles for the session
                     this.DB.GetTitleInformation(client.CorporationID, titleMask,
@@ -1629,6 +1631,43 @@ namespace Node.Services.Corporations
         public PyDataType GetAllianceApplications(CallInformation call)
         {
             return this.DB.GetAllianceApplications(this.ObjectID);
+        }
+
+        public PyDataType ApplyToJoinAlliance(PyInteger allianceID, PyString applicationText, CallInformation call)
+        {
+            // TODO: CHECK PERMISSIONS, ONLY DIRECTOR CAN DO THAT?
+            // get the current alliance and notify members of that alliance that the application is no more
+            int? currentApplicationAllianceID = this.DB.GetCurrentAllianceApplication(this.ObjectID);
+
+            if (currentApplicationAllianceID is not null)
+            {
+                OnAllianceApplicationChanged change =
+                    new OnAllianceApplicationChanged((int) currentApplicationAllianceID, call.Client.CorporationID)
+                        .AddChange("allianceID", currentApplicationAllianceID, null)
+                        .AddChange("corporationID", call.Client.CorporationID, null)
+                        .AddChange("applicationText", "", null)
+                        .AddChange("applicationDateTime", DateTime.UtcNow.ToFileTimeUtc(), null)
+                        .AddChange("state", 0, null);
+
+                this.NotificationManager.NotifyAlliance((int) currentApplicationAllianceID, change);
+            }
+            
+            // insert the application
+            this.DB.InsertAllianceApplication(allianceID, this.ObjectID, applicationText);
+            
+            // notify the new application
+            OnAllianceApplicationChanged newChange =
+                new OnAllianceApplicationChanged(allianceID, this.ObjectID)
+                    .AddChange("allianceID", null, allianceID)
+                    .AddChange("corporationID", null, this.ObjectID)
+                    .AddChange("applicationText", null, applicationText)
+                    .AddChange("applicationDateTime", null, DateTime.UtcNow.ToFileTimeUtc())
+                    .AddChange("state", null, (int) AllianceApplicationStatus.New);
+
+            // TODO: WRITE A CUSTOM NOTIFICATION FOR ALLIANCE AND ROLE BASED
+            this.NotificationManager.NotifyAlliance(allianceID, newChange);
+            
+            return null;
         }
     }
 }

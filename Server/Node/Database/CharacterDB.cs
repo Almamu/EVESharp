@@ -1148,7 +1148,7 @@ namespace Node.Database
         /// <exception cref="Exception"></exception>
         public void GetCharacterRoles(int characterID, out long roles, out long rolesAtBase, out long rolesAtHQ,
             out long rolesAtOther, out long grantableRoles, out long grantableRolesAtBase, out long grantableRolesAtHQ,
-            out long grantableRolesAtOther, out bool blockRoles, out int? baseID, out int titleMask)
+            out long grantableRolesAtOther, out int? blockRoles, out int? baseID, out int titleMask)
         {
             MySqlConnection connection = null;
             MySqlDataReader reader = Database.PrepareQuery(ref connection,
@@ -1173,7 +1173,7 @@ namespace Node.Database
                 grantableRolesAtBase = reader.GetInt64(5);
                 grantableRolesAtHQ = reader.GetInt64(6);
                 grantableRolesAtOther = reader.GetInt64(7);
-                blockRoles = reader.GetBoolean(8);
+                blockRoles = reader.GetInt32OrNull(8);
                 baseID = reader.GetInt32OrNull(9);
                 titleMask = reader.GetInt32(10);
             }
@@ -1218,7 +1218,7 @@ namespace Node.Database
         /// </summary>
         /// <param name="characterID"></param>
         /// <param name="blockRoles"></param>
-        public void UpdateCharacterBlockRole(int characterID, int blockRoles)
+        public void UpdateCharacterBlockRole(int characterID, int? blockRoles)
         {
             Database.PrepareQuery(
                 "UPDATE chrInformation SET blockRoles = @blockRoles WHERE characterID = @characterID",
