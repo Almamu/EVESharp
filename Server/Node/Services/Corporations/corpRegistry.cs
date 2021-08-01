@@ -424,6 +424,8 @@ namespace Node.Services.Corporations
                 // now create the alliance
                 int allianceID =
                     (int) this.AlliancesDB.CreateAlliance(name, shortName, url, description, call.Client.CorporationID, callerCharacterID);
+                
+                // TODO: REMOVE ANY PENDING APPLICATIONS THE CORPORATION HAS
 
                 this.Corporation.AllianceID = allianceID;
                 this.Corporation.ExecutorCorpID = this.Corporation.ID;

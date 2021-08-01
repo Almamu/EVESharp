@@ -125,7 +125,7 @@ namespace Node.Services.Market
 
         public PyDataType GetCharOrders(CallInformation call)
         {
-            return this.DB.GetCharOrders(call.Client.EnsureCharacterIsSelected());
+            return this.DB.GetOrdersForOwner(call.Client.EnsureCharacterIsSelected());
         }
 
         public PyDataType GetStationAsks(CallInformation call)
@@ -446,11 +446,10 @@ namespace Node.Services.Market
                         throw new RepackageBeforeSelling(this.TypeManager[typeID]);
                 }
 
-                // move the items to update
-                this.PlaceSellOrderCharUpdateItems(connection, call.Client, stationID, typeID, quantity);
-
                 if (duration == 0)
                 {
+                    // move the items to update
+                    this.PlaceSellOrderCharUpdateItems(connection, call.Client, stationID, typeID, quantity);
                     // finally create the records in the market database
                     this.PlaceImmediateSellOrderChar(connection, wallet, character, itemID, typeID, stationID, quantity, price, call.Client);
                 }
@@ -460,8 +459,10 @@ namespace Node.Services.Market
                     wallet.EnsureEnoughBalance(brokerCost);
                     // do broker fee first
                     wallet.CreateJournalRecord(MarketReference.Brokerfee, null, null, -brokerCost);
+                    // move the items to update
+                    this.PlaceSellOrderCharUpdateItems(connection, call.Client, stationID, typeID, quantity);
                     // finally place the order
-                    this.DB.PlaceSellOrder(connection, typeID, character.ID, stationID, range, price, quantity, accountKey, duration, ownerID == character.CorporationID);
+                    this.DB.PlaceSellOrder(connection, typeID, character.ID, call.Client.CorporationID, stationID, range, price, quantity, accountKey, duration, ownerID == character.CorporationID);
                 }
 
                 // send a OnOwnOrderChange notification
@@ -600,7 +601,7 @@ namespace Node.Services.Market
                     // do broker fee first
                     wallet.CreateJournalRecord(MarketReference.Brokerfee, null, null, -brokerCost);
                     // place the buy order
-                    this.DB.PlaceBuyOrder(connection, typeID, character.ID, stationID, range, price, quantity, minVolume, accountKey, duration, ownerID == character.CorporationID);
+                    this.DB.PlaceBuyOrder(connection, typeID, character.ID, call.Client.CorporationID, stationID, range, price, quantity, minVolume, accountKey, duration, ownerID == character.CorporationID);
                 }
                 
                 // send a OnOwnOrderChange notification
@@ -651,6 +652,8 @@ namespace Node.Services.Market
             {
                 if (this.WalletManager.IsTakeAllowed(call.Client, call.Client.CorpAccountKey, call.Client.CorporationID) == false)
                     throw new CrpAccessDenied(MLS.UI_CORP_ACCESSTOWALLETDIVISIONDENIED);
+                if (CorporationRole.Trader.Is(call.Client.CorporationRole) == false)
+                    throw new CrpAccessDenied(MLS.UI_SHARED_WALLETHINT11);
 
                 ownerID = call.Client.CorporationID;
                 accountKey = call.Client.CorpAccountKey;
@@ -726,8 +729,15 @@ namespace Node.Services.Market
                 
                 // finally remove the order
                 this.DB.RemoveOrder(connection, order.OrderID);
-                // send a OnOwnOrderChange notification
-                call.Client.NotifyMultiEvent(new OnOwnOrderChanged(order.TypeID, "Removed"));
+
+                OnOwnOrderChanged notification = new OnOwnOrderChanged(order.TypeID, "Removed");
+                
+                if (order.IsCorp == true)
+                    // send a notification to the owner
+                    this.NotificationManager.NotifyCorporationByRole(call.Client.CorporationID, CorporationRole.Trader, notification);
+                else
+                    // send a OnOwnOrderChange notification
+                    call.Client.NotifyMultiEvent(notification);
             }
             finally
             {
@@ -793,9 +803,15 @@ namespace Node.Services.Market
                 
                 // everything looks okay, update the price of the order
                 this.DB.UpdatePrice(connection, order.OrderID, newPrice, newEscrow);
+
+                OnOwnOrderChanged notification = new OnOwnOrderChanged(order.TypeID, "Modified");
                 
-                // send a OnOwnOrderChange notification
-                call.Client.NotifyMultiEvent(new OnOwnOrderChanged(order.TypeID, "Modified"));
+                if (order.IsCorp == true)
+                    // send a notification to the owner
+                    this.NotificationManager.NotifyCorporationByRole(call.Client.CorporationID, CorporationRole.Trader, notification);
+                else
+                    // send a OnOwnOrderChange notification
+                    call.Client.NotifyMultiEvent(notification);
             }
             finally
             {
@@ -907,6 +923,14 @@ namespace Node.Services.Market
             {
                 this.DB.ReleaseMarketLock(connection);
             }
+        }
+
+        public PyDataType GetCorporationOrders(CallInformation call)
+        {
+            if (CorporationRole.Accountant.Is(call.Client.CorporationRole) == false)
+                throw new CrpAccessDenied(MLS.UI_SHARED_WALLETHINT11);
+            
+            return this.DB.GetOrdersForOwner(call.Client.CorporationID, true);
         }
         
         // Marketing skill affects range of remote sell order placing

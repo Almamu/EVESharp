@@ -6,6 +6,7 @@ CREATE TABLE `mktOrders` (
   `orderID` int(10) unsigned NOT NULL auto_increment,
   `typeID` int(10) unsigned NOT NULL default '0',
   `charID` int(10) unsigned NOT NULL default '0',
+  `corpID` INT(10) UNSIGNED NOT NULL DEFAULT '0',
   `stationID` int(10) unsigned NOT NULL default '0',
   `range` smallint(6) NOT NULL default '0',
   `bid` tinyint(3) unsigned NOT NULL default '0',

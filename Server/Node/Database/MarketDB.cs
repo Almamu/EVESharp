@@ -66,15 +66,30 @@ namespace Node.Database
             return Database.PrepareRowsetQuery(query, parameters);
         }
 
-        public Rowset GetCharOrders(int characterID)
+        public Rowset GetOrdersForOwner(int ownerID, bool isCorp = false)
         {
-            return Database.PrepareRowsetQuery(
-                "SELECT orderID, typeID, charID, regionID, stationID, `range`, bid, price, volEntered, volRemaining, issued, minVolume, accountID, duration, isCorp, solarSystemID, escrow FROM mktOrders LEFT JOIN staStations USING (stationID) WHERE charID = @characterID",
-                new Dictionary<string, object>()
-                {
-                    {"@characterID", characterID}
-                }
-            );
+            if (isCorp == false)
+            {
+                return Database.PrepareRowsetQuery(
+                    "SELECT orderID, typeID, charID, regionID, stationID, `range`, bid, price, volEntered, volRemaining, issued, minVolume, accountID AS keyID, duration, isCorp, solarSystemID, escrow FROM mktOrders LEFT JOIN staStations USING (stationID) WHERE charID = @ownerID AND isCorp = @isCorp",
+                    new Dictionary<string, object>()
+                    {
+                        {"@ownerID", ownerID},
+                        {"@isCorp", isCorp}
+                    }
+                );
+            }
+            else
+            {
+                return Database.PrepareRowsetQuery(
+                    "SELECT orderID, typeID, charID, regionID, stationID, `range`, bid, price, volEntered, volRemaining, issued, minVolume, accountID AS keyID, duration, isCorp, solarSystemID, escrow FROM mktOrders LEFT JOIN staStations USING (stationID) WHERE corpID = @ownerID AND isCorp = @isCorp",
+                    new Dictionary<string, object>()
+                    {
+                        {"@ownerID", ownerID},
+                        {"@isCorp", isCorp}
+                    }
+                );
+            }
         }
 
         public PyDictionary GetStationAsks(int stationID)
@@ -563,14 +578,15 @@ namespace Node.Database
             }
         }
 
-        public void PlaceSellOrder(MySqlConnection connection, int typeID, int ownerID, int stationID, int range, double price, int volEntered, int accountID, long duration, bool isCorp)
+        public void PlaceSellOrder(MySqlConnection connection, int typeID, int characterID, int corporationID, int stationID, int range, double price, int volEntered, int accountID, long duration, bool isCorp)
         {
             Database.PrepareQuery(ref connection,
-                "INSERT INTO mktOrders(typeID, charID, stationID, `range`, bid, price, volEntered, volRemaining, issued, minVolume, accountID, duration, isCorp, escrow)VALUES(@typeID, @ownerID, @stationID, @range, @sell, @price, @volEntered, @volRemaining, @issued, @minVolume, @accountID, @duration, @isCorp, @escrow)",
+                "INSERT INTO mktOrders(typeID, charID, corpID, stationID, `range`, bid, price, volEntered, volRemaining, issued, minVolume, accountID, duration, isCorp, escrow)VALUES(@typeID, @characterID, @corporationID, @stationID, @range, @sell, @price, @volEntered, @volRemaining, @issued, @minVolume, @accountID, @duration, @isCorp, @escrow)",
                 new Dictionary<string, object>()
                 {
                     {"@typeID", typeID},
-                    {"@ownerID", ownerID},
+                    {"@characterID", characterID},
+                    {"@corporationID", corporationID},
                     {"@stationID", stationID},
                     {"@range", range},
                     {"@sell", TransactionType.Sell},
@@ -587,14 +603,15 @@ namespace Node.Database
             ).Close();
         }
 
-        public void PlaceBuyOrder(MySqlConnection connection, int typeID, int characterID, int stationID, int range, double price, int volEntered, int minVolume, int accountID, long duration, bool isCorp)
+        public void PlaceBuyOrder(MySqlConnection connection, int typeID, int characterID, int corporationID, int stationID, int range, double price, int volEntered, int minVolume, int accountID, long duration, bool isCorp)
         {
             Database.PrepareQuery(ref connection,
-                "INSERT INTO mktOrders(typeID, charID, stationID, `range`, bid, price, volEntered, volRemaining, issued, minVolume, accountID, duration, isCorp, escrow)VALUES(@typeID, @ownerID, @stationID, @range, @sell, @price, @volEntered, @volRemaining, @issued, @minVolume, @accountID, @duration, @isCorp, @escrow)",
+                "INSERT INTO mktOrders(typeID, charID, corpID, stationID, `range`, bid, price, volEntered, volRemaining, issued, minVolume, accountID, duration, isCorp, escrow)VALUES(@typeID, @characterID, @corporationID, @stationID, @range, @sell, @price, @volEntered, @volRemaining, @issued, @minVolume, @accountID, @duration, @isCorp, @escrow)",
                 new Dictionary<string, object>()
                 {
                     {"@typeID", typeID},
-                    {"@ownerID", characterID},
+                    {"@characterID", characterID},
+                    {"@corporationID", corporationID},
                     {"@stationID", stationID},
                     {"@range", range},
                     {"@sell", TransactionType.Buy},
