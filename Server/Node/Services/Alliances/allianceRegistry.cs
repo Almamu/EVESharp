@@ -1,6 +1,8 @@
-﻿using EVE;
+﻿using System;
+using EVE;
 using EVE.Packets.Exceptions;
 using Node.Database;
+using Node.Exceptions.allianceRegistry;
 using Node.Exceptions.corpRegistry;
 using Node.Inventory;
 using Node.Inventory.Items.Types;
@@ -18,20 +20,23 @@ namespace Node.Services.Alliances
     {
         private AlliancesDB DB { get; init; }
         private BillsDB BillsDB { get; init; }
+        private CorporationDB CorporationDB { get; init; }
         private NotificationManager NotificationManager { get; init; }
         private ItemFactory ItemFactory { get; init; }
         private Alliance Alliance { get; init; }
 
-        public allianceRegistry(AlliancesDB db, ItemFactory itemFactory, NotificationManager notificationManager, BoundServiceManager manager) : base(manager)
+        public allianceRegistry(CorporationDB corporationDB, AlliancesDB db, ItemFactory itemFactory, NotificationManager notificationManager, BoundServiceManager manager) : base(manager)
         {
             this.DB = db;
+            this.CorporationDB = corporationDB;
             this.NotificationManager = notificationManager;
             this.ItemFactory = itemFactory;
         }
 
-        private allianceRegistry(Alliance alliance, AlliancesDB db, ItemFactory itemFactory, NotificationManager notificationManager, MultiClientBoundService parent) : base(parent, alliance.ID)
+        private allianceRegistry(Alliance alliance, CorporationDB corporationDB, AlliancesDB db, ItemFactory itemFactory, NotificationManager notificationManager, MultiClientBoundService parent) : base(parent, alliance.ID)
         {
             this.DB = db;
+            this.CorporationDB = corporationDB;
             this.NotificationManager = notificationManager;
             this.ItemFactory = itemFactory;
             this.Alliance = alliance;
@@ -56,7 +61,7 @@ namespace Node.Services.Alliances
 
             Alliance alliance = this.ItemFactory.LoadItem<Alliance>(bindParams.ObjectID);
             
-            return new allianceRegistry(alliance, this.DB, this.ItemFactory, this.NotificationManager, this);
+            return new allianceRegistry(alliance, this.CorporationDB, this.DB, this.ItemFactory, this.NotificationManager, this);
         }
 
         public PyDataType GetAlliance(CallInformation call)
@@ -71,10 +76,14 @@ namespace Node.Services.Alliances
 
         public PyDataType UpdateAlliance(PyString description, PyString url, CallInformation call)
         {
+            if (this.Alliance.ExecutorCorpID != call.Client.CorporationID)
+                throw new CrpAccessDenied(MLS.UI_CORP_UPDATE_ALLIANCE_NOT_EXECUTOR);
             if (CorporationRole.Director.Is(call.Client.CorporationRole) == false)
-                throw new CrpAccessDenied("");
-            
-            this.DB.UpdateAlliance(this.ObjectID, description, url);
+                throw new CrpAccessDenied(MLS.UI_CORP_UPDATE_ALLIANCE_NOT_DIRECTOR);
+
+            this.Alliance.Description = description;
+            this.Alliance.Url = url;
+            this.Alliance.Persist();
 
             OnAllianceChanged change = new OnAllianceChanged(this.ObjectID);
 
@@ -109,6 +118,11 @@ namespace Node.Services.Alliances
 
         public PyDataType SetRelationship(PyInteger relationship, PyInteger toID, CallInformation call)
         {
+            if (this.Alliance.ExecutorCorpID != call.Client.CorporationID)
+                throw new CrpAccessDenied(MLS.UI_CORP_SET_RELATIONSHIP_EXECUTOR_ONLY);
+            if (CorporationRole.Director.Is(call.Client.CorporationRole) == false)
+                throw new CrpAccessDenied(MLS.UI_CORP_SET_RELATIONSHIP_DIRECTOR_ONLY);
+            
             this.DB.UpdateRelationship(this.ObjectID, toID, relationship);
                 
             OnAllianceRelationshipChanged change =
@@ -121,26 +135,44 @@ namespace Node.Services.Alliances
             return null;
         }
 
-        // UI_CORP_DELETE_MEMBER_EXECUTOR_ONLY
-        // UI_CORP_DELETE_RELATIONSHIP_EXECUTOR_ONLY
-        
         public PyDataType DeclareExecutorSupport(PyInteger executorID, CallInformation call)
         {
-            // TODO: FIND A GOOD STRING FOR THE ERROR
-            // TODO: ENSURE THE CORPORATION IS MORE THAN A WEEK OLD IN THE ALLIANCE
-            // TODO: CanNotDeclareExecutorInFirstWeek
             if (CorporationRole.Director.Is(call.Client.CorporationRole) == false)
                 throw new CrpAccessDenied(MLS.UI_CORP_DECLARE_EXEC_SUPPORT_DIRECTOR_ONLY);
             
+            // get corporation's join date
+            long minimumJoinDate = DateTime.UtcNow.AddDays(-7).ToFileTimeUtc();
+            long corporationJoinDate = this.CorporationDB.GetAllianceJoinDate(call.Client.CorporationID);
+
+            if (corporationJoinDate > minimumJoinDate)
+                throw new CanNotDeclareExecutorInFirstWeek();
+            
+            // update corporation's supported executor
             this.DB.UpdateSupportedExecutor(call.Client.CorporationID, executorID);
 
-            //corporationID, allianceID
+            // calculate the new executor (if any)
+            this.DB.CalculateNewExecutorCorp(this.ObjectID, out int? executorCorpID);
+            
             OnAllianceMemberChanged change =
                 new OnAllianceMemberChanged(this.ObjectID, call.Client.CorporationID)
                     .AddChange("chosenExecutorID", 0, executorID);
 
             this.NotificationManager.NotifyAlliance(this.ObjectID, change);
             
+            // notify the alliance about the executor change
+            if (this.Alliance.ExecutorCorpID != executorCorpID)
+            {
+                OnAllianceChanged allianceChange =
+                    new OnAllianceChanged(this.ObjectID)
+                        .AddChange("executorCorpID", this.Alliance.ExecutorCorpID, executorCorpID);
+                
+                this.NotificationManager.NotifyAlliance(this.ObjectID, allianceChange);
+            }
+            
+            // update the executor and store it
+            this.Alliance.ExecutorCorpID = executorCorpID;
+            this.Alliance.Persist();
+
             return null;
         }
 
@@ -156,6 +188,11 @@ namespace Node.Services.Alliances
 
         public PyDataType DeleteRelationship(PyInteger toID, CallInformation call)
         {
+            if (this.Alliance.ExecutorCorpID != call.Client.CorporationID)
+                throw new CrpAccessDenied(MLS.UI_CORP_DELETE_RELATIONSHIP_EXECUTOR_ONLY);
+            if (CorporationRole.Director.Is(call.Client.CorporationRole) == false)
+                throw new CrpAccessDenied(MLS.UI_CORP_DELETE_RELATIONSHIP_DIRECTOR_ONLY);
+            
             this.DB.RemoveRelationship(this.ObjectID, toID);
 
             OnAllianceRelationshipChanged change =

@@ -401,37 +401,59 @@ namespace Node.Services.Corporations
 
             if (call.Client.AllianceID != null)
                 throw new AllianceCreateFailCorpInAlliance();
-
+            
             this.ValidateAllianceName(name, shortName);
 
-            int allianceID =
-                (int) this.AlliancesDB.CreateAlliance(name, shortName, url, description, call.Client.CorporationID, callerCharacterID);
+            // TODO: PROPERLY IMPLEMENT THIS CHECK, RIGHT NOW THE CHARACTER AND THE CORPREGISTRY INSTANCES DO NOT HAVE TO BE LOADED ON THE SAME NODE
+            // TODO: SWITCH UP THE CORPORATION CHANGE MECHANISM TO NOT RELY ON THE CHARACTER OBJECT SO THIS CAN BE DONE THROUGH THE DATABASE
+            // TODO: DIRECTLY
+            Character character = this.ItemFactory.GetItem<Character>(callerCharacterID);
 
-            this.Corporation.AllianceID = allianceID;
-            this.Corporation.StartDate = DateTime.UtcNow.ToFileTimeUtc();
-            this.Corporation.Persist();
-
-            // create the new chat channel
-            this.ChatDB.CreateChannel(allianceID, allianceID, "System Channels\\Alliance", true);
-            this.ChatDB.CreateChannel(allianceID, allianceID, "System Channels\\Alliance", false);
+            // ensure empire control is trained and at least level 5
+            character.EnsureSkillLevel(Types.EmpireControl, 5);
             
-            // this will update the allianceID for all the charaters out there!
-            if (this.ClientManager.TryGetClientsByCorporationID(this.Corporation.ID, out Dictionary<int, Client> clients) == true)
+            // the alliance costs 1b ISK to establish, and that's taken from the corporation's wallet
+            using (Wallet wallet = this.WalletManager.AcquireWallet(this.Corporation.ID, call.Client.CorpAccountKey, true))
             {
-                foreach ((int _, Client client) in clients)
-                {
-                    int characterID = (int) client.CharacterID;
-                    
-                    // join the player to the corp channel
-                    this.ChatDB.JoinEntityChannel(allianceID, characterID, characterID == callerCharacterID ? ChatDB.CHATROLE_CREATOR : ChatDB.CHATROLE_CONVERSATIONALIST);
-                    this.ChatDB.JoinChannel(allianceID, characterID, characterID == callerCharacterID ? ChatDB.CHATROLE_CREATOR : ChatDB.CHATROLE_CONVERSATIONALIST);
-                    
-                    // update session and send session change
-                    client.AllianceID = allianceID;
-                    client.SendSessionChange();
-                }
-            }
+                // ensure there's enough balance
+                wallet.EnsureEnoughBalance(this.Container.Constants[Constants.allianceCreationCost]);
+                
+                // create the journal record for the alliance creation
+                wallet.CreateJournalRecord(MarketReference.AllianceRegistrationFee, null, null, -this.Container.Constants[Constants.allianceCreationCost]);
+                
+                // now create the alliance
+                int allianceID =
+                    (int) this.AlliancesDB.CreateAlliance(name, shortName, url, description, call.Client.CorporationID, callerCharacterID);
 
+                this.Corporation.AllianceID = allianceID;
+                this.Corporation.ExecutorCorpID = this.Corporation.ID;
+                this.Corporation.StartDate = DateTime.UtcNow.ToFileTimeUtc();
+                this.Corporation.Persist();
+
+                // create the new chat channel
+                this.ChatDB.CreateChannel(allianceID, allianceID, "System Channels\\Alliance", true);
+                this.ChatDB.CreateChannel(allianceID, allianceID, "System Channels\\Alliance", false);
+            
+                // this will update the allianceID for all the characters out there!
+                if (this.ClientManager.TryGetClientsByCorporationID(this.Corporation.ID, out Dictionary<int, Client> clients) == true)
+                {
+                    foreach ((int _, Client client) in clients)
+                    {
+                        int characterID = (int) client.CharacterID;
+                    
+                        // join the player to the corp channel
+                        this.ChatDB.JoinEntityChannel(allianceID, characterID, characterID == callerCharacterID ? ChatDB.CHATROLE_CREATOR : ChatDB.CHATROLE_CONVERSATIONALIST);
+                        this.ChatDB.JoinChannel(allianceID, characterID, characterID == callerCharacterID ? ChatDB.CHATROLE_CREATOR : ChatDB.CHATROLE_CONVERSATIONALIST);
+                    
+                        // update session and send session change
+                        client.AllianceID = allianceID;
+                        client.SendSessionChange();
+                    }
+                }
+    
+                // TODO: CREATE BILLS REQUIRED FOR ALLIANCES, CHECK HOW THEY ARE INVOICED
+            }
+            
             return null;
         }
 
@@ -1666,6 +1688,8 @@ namespace Node.Services.Corporations
 
             // TODO: WRITE A CUSTOM NOTIFICATION FOR ALLIANCE AND ROLE BASED
             this.NotificationManager.NotifyAlliance(allianceID, newChange);
+            // notify the player creating the application
+            this.NotificationManager.NotifyCorporationByRole(call.Client.CorporationID, CorporationRole.Director, newChange);
             
             return null;
         }

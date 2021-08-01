@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using Common.Database;
+using MySql.Data.MySqlClient;
 using Node.Inventory;
+using Node.Inventory.Items.Types;
 using Node.StaticData.Inventory;
 using PythonTypes.Types.Database;
 using PythonTypes.Types.Primitives;
@@ -36,15 +38,16 @@ namespace Node.Database
             return allianceID;
         }
 
-        public void UpdateAlliance(int allianceID, string description, string url)
+        public void UpdateAlliance(Alliance alliance)
         {
             Database.PrepareQuery(
-                "UPDATE crpAlliances SET description = @description, url = @url WHERE allianceID = @allianceID",
+                "UPDATE crpAlliances SET description = @description, url = @url, executorCorpID = @executorCorpID WHERE allianceID = @allianceID",
                 new Dictionary<string, object>()
                 {
-                    {"@description", description},
-                    {"@url", url},
-                    {"@allianceID", allianceID}
+                    {"@description", alliance.Description},
+                    {"@url", alliance.Url},
+                    {"@allianceID", alliance.ID},
+                    {"@executorCorpID", alliance.ExecutorCorpID}
                 }
             );
         }
@@ -138,6 +141,38 @@ namespace Node.Database
                     {"@corporationID", corporationID}
                 }
             );
+        }
+
+        public void CalculateNewExecutorCorp(int allianceID, out int? executorCorpID)
+        {
+            MySqlConnection connection = null;
+            MySqlDataReader reader = Database.PrepareQuery(
+                ref connection,
+                "SELECT chosenExecutorID, COUNT(*) AS votes, (SELECT COUNT(*) FROM corporation WHERE allianceID = @allianceID) AS total FROM corporation WHERE allianceID = @allianceID GROUP BY chosenExecutorID ORDER BY votes DESC LIMIT 1",
+                new Dictionary<string, object>()
+                {
+                    {"@allianceID", allianceID}
+                }
+            );
+
+            executorCorpID = null;
+            
+            using (connection)
+            using (reader)
+            {
+                // there has to be at least ONE record available here
+                reader.Read();
+                
+                int corporationID = reader.GetInt32(0);
+                int entryVotes = reader.GetInt32(1);
+                int totalVotes = reader.GetInt32(2);
+                
+                // calculate percentage
+                int percentage = entryVotes * 100 / totalVotes;
+
+                if (percentage > 50)
+                    executorCorpID = corporationID;
+            }
         }
 
         public PyDataType GetApplicationsToAlliance(int allianceID)

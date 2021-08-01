@@ -78,7 +78,7 @@ CREATE TABLE `chrInformation` (
 	`logoffDateTime` BIGINT(20) NOT NULL DEFAULT '0',
 	`corpAccountKey` INT(10) NOT NULL DEFAULT '1000',
 	`corpStasisTime` BIGINT(20) NULL DEFAULT NULL,
-	`blockRoles` TINYINT(4) NOT NULL DEFAULT '0',
+	`blockRoles` TINYINT(4) NULL DEFAULT NULL,
 	`grantableRoles` BIGINT(20) NOT NULL DEFAULT '0',
 	`grantableRolesAtHQ` BIGINT(20) NOT NULL DEFAULT '0',
 	`grantableRolesAtBase` BIGINT(20) NOT NULL DEFAULT '0',

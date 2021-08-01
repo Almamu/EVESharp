@@ -30,5 +30,9 @@
         public const string medalTaxCorporation = "medalTaxCorporation";
         public const string medalCost = "medalCost";
         public const string warDeclarationCost = "warDeclarationCost";
+        
+        // alliance related constants
+        public const string allianceCreationCost = "allianceCreationCost";
+        public const string allianceMembershipCost = "allianceMembershipCost";
     }
 }

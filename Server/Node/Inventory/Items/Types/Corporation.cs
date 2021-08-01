@@ -13,7 +13,8 @@ namespace Node.Inventory.Items.Types
             int? shape3, int? color1, int? color2, int? color3, string typeface, string division1, string division2,
             string division3, string division4, string division5, string division6, string division7,
             string walletDivision1, string walletDivision2, string walletDivision3, string walletDivision4,
-            string walletDivision5, string walletDivision6, string walletDivision7, bool deleted, long? startDate) : base(@from)
+            string walletDivision5, string walletDivision6, string walletDivision7, bool deleted, long? startDate,
+            int? executorCorpID) : base(@from)
         {
             this.Description = description;
             this.mTickerName = tickerName;
@@ -56,6 +57,7 @@ namespace Node.Inventory.Items.Types
             this.WalletDivision7 = walletDivision7;
             this.mDeleted = deleted;
             this.mStartDate = startDate;
+            this.mExecutorCorpID = executorCorpID;
         }
 
         string mTickerName;
@@ -80,6 +82,7 @@ namespace Node.Inventory.Items.Types
         string mTypeface;
         bool mDeleted;
         long? mStartDate;
+        int? mExecutorCorpID;
 
         public string Description { get; set; }
         public string TickerName => mTickerName;
@@ -141,6 +144,16 @@ namespace Node.Inventory.Items.Types
             }
         }
 
+        public int? ExecutorCorpID
+        {
+            get => this.mExecutorCorpID;
+            set
+            {
+                this.Dirty = true;
+                this.mExecutorCorpID = value;
+            }
+        }
+        
         public Row GetCorporationInfoRow()
         {
             return new Row(

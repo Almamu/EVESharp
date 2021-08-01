@@ -480,7 +480,7 @@ namespace Node.Database
                 " allowedMemberRaceIDs, graphicID, shape1, shape2, shape3, color1, color2, color3, typeface," +
                 " division1, division2, division3, division4, division5, division6, division7, walletDivision1," +
                 " walletDivision2, walletDivision3, walletDivision4, walletDivision5, walletDivision6," + 
-                " walletDivision7, deleted, startDate" +
+                " walletDivision7, deleted, startDate, chosenExecutorID " +
                 " FROM corporation WHERE corporationID = @itemID",
                 new Dictionary<string, object>()
                 {
@@ -535,7 +535,8 @@ namespace Node.Database
                     reader.GetStringOrNull(37),
                     reader.GetStringOrNull(38),
                     reader.GetBoolean(39),
-                    reader.GetInt64OrNull(40)
+                    reader.GetInt64OrNull(40),
+                    reader.GetInt32OrNull(41)
                 );
             }
         }
@@ -703,7 +704,7 @@ namespace Node.Database
                     reader.GetString(0),
                     reader.GetString(1),
                     reader.GetString(2),
-                    reader.GetInt32(3),
+                    reader.GetInt32OrNull(3),
                     reader.GetInt32(4),
                     reader.GetInt32(5),
                     reader.GetInt16(6)

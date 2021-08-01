@@ -9,6 +9,7 @@ CREATE TABLE `crpAlliances` (
 	`creatorCorpID` INT(11) NOT NULL,
 	`creatorCharID` INT(11) NOT NULL,
 	`dictatorial` TINYINT(4) NOT NULL DEFAULT '0',
-	`dictatorial` TINYINT(4) NOT NULL DEFAULT '0',
+	`startDate` BIGINT(20) NOT NULL,
+	`deleted` TINYINT(4) NOT NULL DEFAULT '0',
 	PRIMARY KEY (`allianceID`) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;

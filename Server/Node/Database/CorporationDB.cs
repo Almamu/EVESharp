@@ -1576,12 +1576,13 @@ namespace Node.Database
         public void UpdateCorporationInformation(Corporation corporation)
         {
             Database.PrepareQuery(
-                "UPDATE corporation SET allianceID = @allianceID, startDate = @startDate WHERE corporationID = @corporationID",
+                "UPDATE corporation SET allianceID = @allianceID, startDate = @startDate, chosenExecutorID = @chosenExecutorID WHERE corporationID = @corporationID",
                 new Dictionary<string, object>()
                 {
                     {"@corporationID", corporation.ID},
                     {"@allianceID", corporation.AllianceID},
-                    {"@startDate", corporation.StartDate}
+                    {"@startDate", corporation.StartDate},
+                    {"@chosenExecutorID", corporation.ExecutorCorpID}
                 }
             );
         }
@@ -1653,6 +1654,28 @@ namespace Node.Database
                     {"@state", (int) AllianceApplicationStatus.New}
                 }
             );
+        }
+
+        public long GetAllianceJoinDate(int corporationID)
+        {
+            MySqlConnection connection = null;
+            MySqlDataReader reader = Database.PrepareQuery(
+                ref connection,
+                "SELECT startDate FROM corporation WHERE corporationID = @corporationID",
+                new Dictionary<string, object>()
+                {
+                    {"@corporationID", corporationID}
+                }
+            );
+            
+            using(connection)
+            using (reader)
+            {
+                if (reader.Read() == false)
+                    return 0;
+
+                return reader.GetInt64(0);
+            }
         }
         
         public CorporationDB(ItemDB itemDB, DatabaseConnection db) : base(db)
