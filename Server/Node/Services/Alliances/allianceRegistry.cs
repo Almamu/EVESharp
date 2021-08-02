@@ -25,17 +25,19 @@ namespace Node.Services.Alliances
         private ItemFactory ItemFactory { get; init; }
         private Alliance Alliance { get; init; }
 
-        public allianceRegistry(CorporationDB corporationDB, AlliancesDB db, ItemFactory itemFactory, NotificationManager notificationManager, BoundServiceManager manager) : base(manager)
+        public allianceRegistry(BillsDB billsDB, CorporationDB corporationDB, AlliancesDB db, ItemFactory itemFactory, NotificationManager notificationManager, BoundServiceManager manager) : base(manager)
         {
             this.DB = db;
+            this.BillsDB = billsDB;
             this.CorporationDB = corporationDB;
             this.NotificationManager = notificationManager;
             this.ItemFactory = itemFactory;
         }
 
-        private allianceRegistry(Alliance alliance, CorporationDB corporationDB, AlliancesDB db, ItemFactory itemFactory, NotificationManager notificationManager, MultiClientBoundService parent) : base(parent, alliance.ID)
+        private allianceRegistry(Alliance alliance, BillsDB billsDB, CorporationDB corporationDB, AlliancesDB db, ItemFactory itemFactory, NotificationManager notificationManager, MultiClientBoundService parent) : base(parent, alliance.ID)
         {
             this.DB = db;
+            this.BillsDB = billsDB;
             this.CorporationDB = corporationDB;
             this.NotificationManager = notificationManager;
             this.ItemFactory = itemFactory;
@@ -61,7 +63,7 @@ namespace Node.Services.Alliances
 
             Alliance alliance = this.ItemFactory.LoadItem<Alliance>(bindParams.ObjectID);
             
-            return new allianceRegistry(alliance, this.CorporationDB, this.DB, this.ItemFactory, this.NotificationManager, this);
+            return new allianceRegistry(alliance, this.BillsDB, this.CorporationDB, this.DB, this.ItemFactory, this.NotificationManager, this);
         }
 
         public PyDataType GetAlliance(CallInformation call)
