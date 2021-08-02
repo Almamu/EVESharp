@@ -32,23 +32,25 @@ namespace Node.Services.Characters
         private WalletManager WalletManager { get; }
         
         public jumpCloneSvc(ItemDB itemDB, MarketDB marketDB, ItemFactory itemFactory,
-            SystemManager systemManager, WalletManager walletManager, BoundServiceManager manager) : base(manager)
+            SystemManager systemManager, WalletManager walletManager, NotificationManager notificationManager, BoundServiceManager manager) : base(manager)
         {
             this.ItemDB = itemDB;
             this.MarketDB = marketDB;
             this.ItemFactory = itemFactory;
             this.SystemManager = systemManager;
             this.WalletManager = walletManager;
+            this.NotificationManager = notificationManager;
         }
         
         protected jumpCloneSvc(int locationID, ItemDB itemDB, MarketDB marketDB, ItemFactory itemFactory,
-            SystemManager systemManager, BoundServiceManager manager, WalletManager walletManager, Client client) : base(manager, client, locationID)
+            SystemManager systemManager, BoundServiceManager manager, WalletManager walletManager, NotificationManager notificationManager, Client client) : base(manager, client, locationID)
         {
             this.ItemDB = itemDB;
             this.MarketDB = marketDB;
             this.ItemFactory = itemFactory;
             this.SystemManager = systemManager;
             this.WalletManager = walletManager;
+            this.NotificationManager = notificationManager;
         }
 
         /// <summary>
@@ -192,7 +194,7 @@ namespace Node.Services.Characters
             if (nodeID != this.BoundServiceManager.Container.NodeID)
                 throw new CustomError("Trying to bind an object that does not belong to us!");
 
-            return new jumpCloneSvc(bindParams.ObjectID, this.ItemDB, this.MarketDB, this.ItemFactory, this.SystemManager, this.BoundServiceManager, this.WalletManager, call.Client);
+            return new jumpCloneSvc(bindParams.ObjectID, this.ItemDB, this.MarketDB, this.ItemFactory, this.SystemManager, this.BoundServiceManager, this.WalletManager, this.NotificationManager, call.Client);
         }
     }
 }
