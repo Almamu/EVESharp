@@ -178,10 +178,23 @@ namespace Node.Database
         public PyDataType GetApplicationsToAlliance(int allianceID)
         {
             return Database.PrepareIndexRowsetQuery(
-                0, "SELECT allianceID, corporationID, applicationText, applicationDateTime, state FROM crpApplications WHERE allianceID = @allianceID",
+                1, "SELECT allianceID, corporationID, applicationText, applicationDateTime, state FROM crpApplications WHERE allianceID = @allianceID",
                 new Dictionary<string, object>()
                 {
                     {"@allianceID", allianceID}
+                }
+            );
+        }
+
+        public void UpdateApplicationStatus(int allianceID, int corporationID, int newStatus)
+        {
+            Database.PrepareQuery(
+                "UPDATE crpApplications SET state = @newStatus WHERE allianceID = @allianceID AND corporationID = @corporationID",
+                new Dictionary<string, object>()
+                {
+                    {"@corporationID", corporationID},
+                    {"@allianceID", allianceID},
+                    {"@newStatus", newStatus}
                 }
             );
         }

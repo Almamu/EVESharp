@@ -1,6 +1,7 @@
 ﻿using System;
 using EVE;
 using EVE.Packets.Exceptions;
+using Node.Alliances;
 using Node.Database;
 using Node.Exceptions.allianceRegistry;
 using Node.Exceptions.corpRegistry;
@@ -207,6 +208,36 @@ namespace Node.Services.Alliances
         public PyDataType GetRankedAlliances(CallInformation call)
         {
             return this.DB.GetAlliances();
+        }
+
+        public PyDataType UpdateApplication(PyInteger corporationID, PyString message, PyInteger newStatus, CallInformation call)
+        {
+            if (this.Alliance.ExecutorCorpID != call.Client.CorporationID)
+                throw new CrpAccessDenied(MLS.UI_CORP_DELETE_RELATIONSHIP_EXECUTOR_ONLY);
+            if (CorporationRole.Director.Is(call.Client.CorporationRole) == false)
+                throw new CrpAccessDenied(MLS.UI_CORP_DELETE_RELATIONSHIP_DIRECTOR_ONLY);
+
+            switch ((int) newStatus)
+            {
+                case (int) AllianceApplicationStatus.Accepted:
+                case (int) AllianceApplicationStatus.Rejected:
+                    this.DB.UpdateApplicationStatus(this.ObjectID, corporationID, newStatus);
+                    break;
+                
+                default:
+                    throw new CustomError("Unknown status for alliance application");
+            }
+            
+            OnAllianceApplicationChanged change =
+                new OnAllianceApplicationChanged(this.ObjectID, corporationID)
+                    .AddChange("allianceID", this.ObjectID, this.ObjectID)
+                    .AddChange("corporationID", corporationID, corporationID)
+                    .AddChange("state", (int) AllianceApplicationStatus.New, newStatus);
+
+            this.NotificationManager.NotifyAlliance(this.ObjectID, change);
+            this.NotificationManager.NotifyCorporationByRole(corporationID, CorporationRole.Director, change);
+
+            return null;
         }
     }
 }

@@ -403,6 +403,8 @@ namespace Node.Services.Corporations
                 throw new AllianceCreateFailCorpInAlliance();
             
             this.ValidateAllianceName(name, shortName);
+            // delete any existant application to alliances
+            this.DeleteAllianceApplicationIfExists();
 
             // TODO: PROPERLY IMPLEMENT THIS CHECK, RIGHT NOW THE CHARACTER AND THE CORPREGISTRY INSTANCES DO NOT HAVE TO BE LOADED ON THE SAME NODE
             // TODO: SWITCH UP THE CORPORATION CHANGE MECHANISM TO NOT RELY ON THE CHARACTER OBJECT SO THIS CAN BE DONE THROUGH THE DATABASE
@@ -1660,22 +1662,8 @@ namespace Node.Services.Corporations
         public PyDataType ApplyToJoinAlliance(PyInteger allianceID, PyString applicationText, CallInformation call)
         {
             // TODO: CHECK PERMISSIONS, ONLY DIRECTOR CAN DO THAT?
-            // get the current alliance and notify members of that alliance that the application is no more
-            int? currentApplicationAllianceID = this.DB.GetCurrentAllianceApplication(this.ObjectID);
-
-            if (currentApplicationAllianceID is not null)
-            {
-                OnAllianceApplicationChanged change =
-                    new OnAllianceApplicationChanged((int) currentApplicationAllianceID, call.Client.CorporationID)
-                        .AddChange("allianceID", currentApplicationAllianceID, null)
-                        .AddChange("corporationID", call.Client.CorporationID, null)
-                        .AddChange("applicationText", "", null)
-                        .AddChange("applicationDateTime", DateTime.UtcNow.ToFileTimeUtc(), null)
-                        .AddChange("state", 0, null);
-
-                this.NotificationManager.NotifyAlliance((int) currentApplicationAllianceID, change);
-            }
-            
+            // delete any existant application
+            this.DeleteAllianceApplicationIfExists();
             // insert the application
             this.DB.InsertAllianceApplication(allianceID, this.ObjectID, applicationText);
             
@@ -1694,6 +1682,25 @@ namespace Node.Services.Corporations
             this.NotificationManager.NotifyCorporationByRole(call.Client.CorporationID, CorporationRole.Director, newChange);
             
             return null;
+        }
+
+        private void DeleteAllianceApplicationIfExists()
+        {
+            // get the current alliance and notify members of that alliance that the application is no more
+            int? currentApplicationAllianceID = this.DB.GetCurrentAllianceApplication(this.ObjectID);
+
+            if (currentApplicationAllianceID is not null)
+            {
+                OnAllianceApplicationChanged change =
+                    new OnAllianceApplicationChanged((int) currentApplicationAllianceID, this.ObjectID)
+                        .AddChange("allianceID", currentApplicationAllianceID, null)
+                        .AddChange("corporationID", this.ObjectID, null)
+                        .AddChange("applicationText", "", null)
+                        .AddChange("applicationDateTime", DateTime.UtcNow.ToFileTimeUtc(), null)
+                        .AddChange("state", 0, null);
+
+                this.NotificationManager.NotifyAlliance((int) currentApplicationAllianceID, change);
+            }
         }
     }
 }
