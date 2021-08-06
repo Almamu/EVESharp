@@ -7,6 +7,7 @@ CREATE TABLE `crpApplications` (
   `allianceID` int(10) unsigned NOT NULL,
   `applicationText` text NOT NULL,
   `applicationDateTime` bigint(20) unsigned NOT NULL,
+  `applicationUpdateTime` bigint(20) unsigned NOT NULL,
   `state` int(10) unsigned NOT NULL,
   PRIMARY KEY  (`corporationID`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;

@@ -1575,14 +1575,21 @@ namespace Node.Database
 
         public void UpdateCorporationInformation(Corporation corporation)
         {
+            this.UpdateCorporationInformation(
+                corporation.ID, corporation.AllianceID, corporation.StartDate, corporation.ExecutorCorpID
+            );
+        }
+
+        public void UpdateCorporationInformation(int corporationID, int? allianceID, long? startDate, int? executorCorpID)
+        {
             Database.PrepareQuery(
                 "UPDATE corporation SET allianceID = @allianceID, startDate = @startDate, chosenExecutorID = @chosenExecutorID WHERE corporationID = @corporationID",
                 new Dictionary<string, object>()
                 {
-                    {"@corporationID", corporation.ID},
-                    {"@allianceID", corporation.AllianceID},
-                    {"@startDate", corporation.StartDate},
-                    {"@chosenExecutorID", corporation.ExecutorCorpID}
+                    {"@corporationID", corporationID},
+                    {"@allianceID", allianceID},
+                    {"@startDate", startDate},
+                    {"@chosenExecutorID", executorCorpID}
                 }
             );
         }
@@ -1644,7 +1651,7 @@ namespace Node.Database
         public void InsertAllianceApplication(int allianceID, int corporationID, string text)
         {
             Database.PrepareQuery(
-                "REPLACE INTO crpApplications(allianceID, corporationID, applicationText, applicationDateTime, state)VALUES(@allianceID, @corporationID, @applicationText, @applicationDateTime, @state)",
+                "REPLACE INTO crpApplications(allianceID, corporationID, applicationText, applicationDateTime, applicationUpdateTime, state)VALUES(@allianceID, @corporationID, @applicationText, @applicationDateTime, @applicationDateTime, @state)",
                 new Dictionary<string, object>()
                 {
                     {"@allianceID", allianceID},

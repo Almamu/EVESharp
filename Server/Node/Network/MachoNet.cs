@@ -623,6 +623,27 @@ namespace Node.Network
             Log.Debug($"Updated character ({character.ID}) roles");
         }
 
+        private void HandleOnCorporationChanged(OnCorporationChanged change)
+        {
+            // this notification does not need to send anything to anyone as the clients will already get notified
+            // by the session change
+            
+            // the only thing needed is to check for a Corporation reference and update it's alliance information to the new values
+            if (this.ItemFactory.TryGetItem(change.CorporationID, out Corporation corporation) == false)
+                // if the corporation is not loaded it could mean that the package arrived on the node wile the last player was logging out
+                // so this is safe to ignore
+                return;
+            
+            // update basic information
+            corporation.AllianceID = change.AllianceID;
+            corporation.ExecutorCorpID = change.ExecutorCorpID;
+            corporation.StartDate = change.AllianceID is null ? null : DateTime.UtcNow.ToFileTimeUtc();
+            corporation.Persist();
+            
+            // some debugging is well received
+            Log.Debug($"Updated corporation afilliation ({corporation.ID}) to ({corporation.AllianceID})");
+        }
+
         private void HandleBroadcastNotification(PyPacket packet)
         {
             // this packet is an internal one
@@ -657,8 +678,11 @@ namespace Node.Network
                 case OnCorporationMemberChanged.NOTIFICATION_NAME:
                     this.HandleOnCorporationMemberChanged(packet.Payload);
                     break;
-                case Notifications.Nodes.Corporations.OnCorporationMemberUpdated.NOTIFICATION_NAME:
+                case OnCorporationMemberUpdated.NOTIFICATION_NAME:
                     this.HandleOnCorporationMemberUpdated(packet.Payload);
+                    break;
+                case OnCorporationChanged.NOTIFICATION_NAME:
+                    this.HandleOnCorporationChanged(packet.Payload);
                     break;
                 default:
                     Log.Fatal("Received ClusterController notification with the wrong format");

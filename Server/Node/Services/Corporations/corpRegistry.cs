@@ -438,17 +438,18 @@ namespace Node.Services.Corporations
                 this.ChatDB.CreateChannel(allianceID, allianceID, "System Channels\\Alliance", true);
                 this.ChatDB.CreateChannel(allianceID, allianceID, "System Channels\\Alliance", false);
             
-                // this will update the allianceID for all the characters out there!
-                if (this.ClientManager.TryGetClientsByCorporationID(this.Corporation.ID, out Dictionary<int, Client> clients) == true)
+                // join everyone to the correct channel
+                // GetMembersForCorp
+                this.ClientManager.TryGetClientsByCorporationID(this.ObjectID, out Dictionary<int, Client> clients);
+
+                foreach (int characterID in this.DB.GetMembersForCorp(this.ObjectID))
                 {
-                    foreach ((int _, Client client) in clients)
+                    // join the player to the corp channel
+                    this.ChatDB.JoinEntityChannel(allianceID, characterID, characterID == callerCharacterID ? ChatDB.CHATROLE_CREATOR : ChatDB.CHATROLE_CONVERSATIONALIST);
+                    this.ChatDB.JoinChannel(allianceID, characterID, characterID == callerCharacterID ? ChatDB.CHATROLE_CREATOR : ChatDB.CHATROLE_CONVERSATIONALIST);
+
+                    if (clients is not null && clients.TryGetValue(characterID, out Client client) == true)
                     {
-                        int characterID = (int) client.CharacterID;
-                    
-                        // join the player to the corp channel
-                        this.ChatDB.JoinEntityChannel(allianceID, characterID, characterID == callerCharacterID ? ChatDB.CHATROLE_CREATOR : ChatDB.CHATROLE_CONVERSATIONALIST);
-                        this.ChatDB.JoinChannel(allianceID, characterID, characterID == callerCharacterID ? ChatDB.CHATROLE_CREATOR : ChatDB.CHATROLE_CONVERSATIONALIST);
-                    
                         // update session and send session change
                         client.AllianceID = allianceID;
                         client.SendSessionChange();

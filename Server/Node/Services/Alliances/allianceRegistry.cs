@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using EVE;
 using EVE.Packets.Exceptions;
 using Node.Alliances;
@@ -9,6 +10,7 @@ using Node.Inventory;
 using Node.Inventory.Items.Types;
 using Node.Network;
 using Node.Notifications.Client.Alliances;
+using Node.Notifications.Nodes.Corps;
 using Node.Services.Corporations;
 using Node.StaticData.Corporation;
 using PythonTypes.Types.Collections;
@@ -22,19 +24,25 @@ namespace Node.Services.Alliances
         private AlliancesDB DB { get; init; }
         private BillsDB BillsDB { get; init; }
         private CorporationDB CorporationDB { get; init; }
+        private ChatDB ChatDB { get; init; }
         private NotificationManager NotificationManager { get; init; }
         private ItemFactory ItemFactory { get; init; }
         private Alliance Alliance { get; init; }
+        private ClientManager ClientManager { get; init; }
 
-        public allianceRegistry(BillsDB billsDB, CorporationDB corporationDB, AlliancesDB db, ItemFactory itemFactory, NotificationManager notificationManager, BoundServiceManager manager) : base(manager)
+        public allianceRegistry(BillsDB billsDB, CorporationDB corporationDB, AlliancesDB db, ChatDB chatDB, ItemFactory itemFactory, NotificationManager notificationManager, BoundServiceManager manager, ClientManager clientManager, MachoNet machoNet) : base(manager)
         {
             this.DB = db;
             this.BillsDB = billsDB;
             this.CorporationDB = corporationDB;
+            this.ChatDB = chatDB;
             this.NotificationManager = notificationManager;
             this.ItemFactory = itemFactory;
+            this.ClientManager = clientManager;
+            
+            machoNet.OnClusterTimer += PerformTimedEvents;
         }
-
+        
         private allianceRegistry(Alliance alliance, BillsDB billsDB, CorporationDB corporationDB, AlliancesDB db, ItemFactory itemFactory, NotificationManager notificationManager, MultiClientBoundService parent) : base(parent, alliance.ID)
         {
             this.DB = db;
@@ -44,6 +52,50 @@ namespace Node.Services.Alliances
             this.ItemFactory = itemFactory;
             this.Alliance = alliance;
         }
+
+        private void PerformTimedEvents(object? sender, EventArgs e)
+        {
+            long minimumTime = DateTime.UtcNow.AddHours(-24).ToFileTimeUtc();
+            
+            // check alliances that were accepted more than 24 hours ago
+            foreach (ApplicationEntry entry in this.DB.GetAcceptedAlliances(minimumTime))
+            {
+                // first update the corporation to join it to the alliance in the database
+                this.CorporationDB.UpdateCorporationInformation(entry.CorporationID, entry.AllianceID, DateTime.UtcNow.ToFileTimeUtc(), entry.ExecutorCorpID);
+                // now check if any node has it loaded and notify it about the changes
+                long nodeID = this.ItemFactory.ItemDB.GetItemNode(entry.CorporationID);
+
+                if (nodeID > 0)
+                {
+                    OnCorporationChanged change =
+                        new OnCorporationChanged(entry.CorporationID, entry.AllianceID, entry.ExecutorCorpID);
+
+                    // notify the node that owns the reference to this corporation
+                    this.NotificationManager.NotifyNode(nodeID, change);
+                }
+            
+                // join everyone to the correct channel
+                this.ClientManager.TryGetClientsByCorporationID(entry.CorporationID, out Dictionary<int, Client> clients);
+
+                foreach (int characterID in this.CorporationDB.GetMembersForCorp(entry.CorporationID))
+                {
+                    // join the player to the corp channel
+                    this.ChatDB.JoinEntityChannel(entry.AllianceID, characterID, ChatDB.CHATROLE_CONVERSATIONALIST);
+                    this.ChatDB.JoinChannel(entry.AllianceID, characterID, ChatDB.CHATROLE_CONVERSATIONALIST);
+
+                    if (clients is not null && clients.TryGetValue(characterID, out Client client) == true)
+                    {
+                        // update session and send session change
+                        client.AllianceID = entry.AllianceID;
+                        client.SendSessionChange();
+                    }
+                }
+            }
+
+            // finally remove all the applications
+            this.DB.DeleteAcceptedApplications(minimumTime);
+        }
+
 
         protected override long MachoResolveObject(ServiceBindParams parameters, CallInformation call)
         {

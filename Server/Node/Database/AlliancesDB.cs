@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using Common.Database;
 using MySql.Data.MySqlClient;
+using Node.Alliances;
 using Node.Inventory;
 using Node.Inventory.Items.Types;
 using Node.StaticData.Inventory;
@@ -189,16 +190,54 @@ namespace Node.Database
         public void UpdateApplicationStatus(int allianceID, int corporationID, int newStatus)
         {
             Database.PrepareQuery(
-                "UPDATE crpApplications SET state = @newStatus WHERE allianceID = @allianceID AND corporationID = @corporationID",
+                "UPDATE crpApplications SET state = @newStatus, applicationUpdateTime = @currentTime WHERE allianceID = @allianceID AND corporationID = @corporationID",
                 new Dictionary<string, object>()
                 {
                     {"@corporationID", corporationID},
                     {"@allianceID", allianceID},
-                    {"@newStatus", newStatus}
+                    {"@newStatus", newStatus},
+                    {"@currentTime", DateTime.UtcNow.ToFileTimeUtc()}
                 }
             );
         }
-        
+
+        public IEnumerable<ApplicationEntry> GetAcceptedAlliances(long minimumTime)
+        {
+            MySqlConnection connection = null;
+            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+                $"SELECT corporationID, allianceID, executorCorpID FROM crpApplications LEFT JOIN crpAlliances USING(allianceID) WHERE state = {(int) AllianceApplicationStatus.Accepted} AND applicationUpdateTime < @limit",
+                new Dictionary<string, object>()
+                {
+                    {"@limit", minimumTime}
+                }
+            );
+            
+            using (connection)
+            using (reader)
+            {
+                while (reader.Read() == true)
+                {
+                    yield return new ApplicationEntry
+                    {
+                        CorporationID = reader.GetInt32(0),
+                        AllianceID = reader.GetInt32(1),
+                        ExecutorCorpID = reader.GetInt32OrNull(2)
+                    };                    
+                }
+            }
+        }
+
+        public void DeleteAcceptedApplications(long minimumTime)
+        {
+            Database.PrepareQuery(
+                $"DELETE FROM crpApplications WHERE state = {(int) AllianceApplicationStatus.Accepted} AND applicationUpdateTime < @limit",
+                new Dictionary<string, object>()
+                {
+                    {"@limit", minimumTime}
+                }
+            );
+        }
+
         public AlliancesDB(ItemFactory itemFactory, ItemDB itemDB, DatabaseConnection db) : base(db)
         {
             this.ItemDB = itemDB;
