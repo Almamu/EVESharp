@@ -74,5 +74,5 @@ INSERT INTO corporation
   allowedMemberRaceIDs, graphicID, shape1, shape2, shape3, color1, color2, color3, typeface, division1, division2, division3, 
   division4, division5, division6, division7, 'Master Wallet' AS walletDivision1, '2nd Wallet Division' AS walletDivision2, 
   '3rd Wallet Division' AS walletDivision3, '4th Wallet Division' AS walletDivision4, '5th Wallet Division' AS walletDivision5, 
-  '6th Wallet Division' AS walletDivision6, '7th Wallet Division' AS walletDivision7, deleted
+  '6th Wallet Division' AS walletDivision6, '7th Wallet Division' AS walletDivision7, deleted, NULL AS startDate, NULL AS chosenExecutorID
  FROM crpStatic;
