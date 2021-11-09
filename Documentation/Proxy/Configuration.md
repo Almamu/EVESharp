@@ -1,5 +1,5 @@
-# Configuration options for ClusterController
-The configuration file for ClusterController has to be named "configuration.conf" and must always be stored in the same directory as the ClusterController.
+# Configuration options for Proxy
+The configuration file for Proxy has to be named "configuration.conf" and must always be stored in the same directory as the Proxy.
 
 This file follows the commonly-used ini format which separates the configuration in named sections and keys. [For more information on the .ini format click here](https://en.wikipedia.org/wiki/INI_file)
 
@@ -40,7 +40,7 @@ Configuration for the file log output. If this section is not present there will
 ```
 [logfile]
 directory=logs
-logfile=ClusterController.log
+logfile=Proxy.log
 ```
 
 ### directory
@@ -128,10 +128,10 @@ ROLEMASK_VIEW
 Multiple roles can be specified separating them by commas.
 
 ## listening
-Configuration for how the ClusterController listens for new node and/or client connections.
+Configuration for how the Proxy listens for new node and/or client connections.
 
 ### port
-Sets the port the ClusterController will listen on for new clients and nodes connections. By default this will be setup to port 26000 (the default port). This is specially useful for using [EVEmu Live Packet Editor](https://github.com/Almamu/EVEmu-live-packet-editor) to debug client <-> server communications.
+Sets the port the Proxy will listen on for new clients and nodes connections. By default this will be setup to port 26000 (the default port). This is specially useful for using [EVEmu Live Packet Editor](https://github.com/Almamu/EVEmu-live-packet-editor) to debug client <-> server communications.
 
 ```
 [listening]

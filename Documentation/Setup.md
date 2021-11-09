@@ -29,21 +29,21 @@ source Server.sql;
 With this the database should be ready.
 
 ## Server setup
-Once the database is properly setup, you need to compile the project. Due to how EVESharp is designed there are two projects that we care about: **ClusterController** and **Node**. Open the file EVESharp.sln under the "Server" folder with your preferred C# development IDE and build the whole solution. This will generate the binaries with the server's code. 
+Once the database is properly setup, you need to compile the project. Due to how EVESharp is designed there are two projects that we care about: **Proxy** and **Node**. Open the file EVESharp.sln under the "Server" folder with your preferred C# development IDE and build the whole solution. This will generate the binaries with the server's code. 
 
 If everything went right there should be a new folder under each solution's project named "bin" and inside that a folder called Debug or Release based on the build configuration selected. Inside those folders you'll find the server's files.
 
-Due to the way EVESharp is architected, the server is separated in two pieces. On one side there is the **ClusterController** which contains the Proxy code. This executable takes care of receiving client data, parsing it and sending to the proper node server to be processed.
+Due to the way EVESharp is architected, the server is separated in two pieces. On one side there is the **Proxy** which contains the Proxy code. This executable takes care of receiving client data, parsing it and sending to the proper node server to be processed.
 On the other side, there is the **Node** which contains the actual server logic. This executable takes care of processing the client's requests and sending back information. 
 
 The ideal server architecture is:
- - **ClusterController** is accessible on port 26000 through the network for clients to connect, this will be the public-facing service.
- - One or more **Node**, not accessible through the public network, ideally these would be on separate machines, but can be run alongside **ClusterController** if the load is low enough, it will comunicate with the clients through **ClusterController** 
+ - **Proxy** is accessible on port 26000 through the network for clients to connect, this will be the public-facing service.
+ - One or more **Node**, not accessible through the public network, ideally these would be on separate machines, but can be run alongside **Proxy** if the load is low enough, it will comunicate with the clients through **Proxy** 
 
-### Configuring the **ClusterController**
-[For information on all the configuration options of ClusterController click here](ClusterController/Configuration.md)
+### Configuring the **Proxy**
+[For information on all the configuration options of Proxy click here](Proxy/Configuration.md)
 
-The minimal configuration file for the ClusterController must have information of the database where the game's data is stored and where to store the logs of the server (this last part is not a must, but will be a good way of debugging and reporting issues to the project). The options should be self-explanatory enough, but there is documentation on all of them [here](ClusterController/Configuration.md). This file has to be named ```configuration.conf``` and be alongside the ClusterController executable.
+The minimal configuration file for the Proxy must have information of the database where the game's data is stored and where to store the logs of the server (this last part is not a must, but will be a good way of debugging and reporting issues to the project). The options should be self-explanatory enough, but there is documentation on all of them [here](Proxy/Configuration.md). This file has to be named ```configuration.conf``` and be alongside the Proxy executable.
 ```
 [database]
 username=evesharp
@@ -53,10 +53,10 @@ name=evedb
 
 [logfile]
 directory=logs
-logfile=ClusterController.log
+logfile=Proxy.log
 ```
 
-**If you want to enable automatic account registration check the [configuration options](ClusterController/Configuration.md).**
+**If you want to enable automatic account registration check the [configuration options](Proxy/Configuration.md).**
 
 ### Configuring the **Node**
 [For information on all the configuration options of Node click here](Node/Configuration.md)
@@ -79,11 +79,11 @@ loginMessage=Welcome to EVESharp Debug Build
 
 [logfile]
 directory=logs
-logfile=ClusterController.log
+logfile=Proxy.log
 ```
 
 ## Running the server
-Once both the ClusterController and at least a Node is setup, the executables can be run. Before running any **Node** the **ClusterController** has to be up and listening for connections, It's output should look something like this:
+Once both the Proxy and at least a Node is setup, the executables can be run. Before running any **Node** the **Proxy** has to be up and listening for connections, It's output should look something like this:
 ```
 18/2/20 11:20 I main: Initializing EVESharp Cluster Controler and Proxy
 18/2/20 11:20 F main: Initializing EVESharp Cluster Controler and Proxy
@@ -150,6 +150,6 @@ Save the file. Now the client is completely setup and you should be able to conn
 
 ![Apocrypha Login](Images/evescreen.png)
 
-If you have the [auto account option](ClusterController/Configuration.md) enabled in your ClusterController, you now will be able to create an account with a simple login try on the client.
+If you have the [auto account option](Proxy/Configuration.md) enabled in your Proxy, you now will be able to create an account with a simple login try on the client.
 
 From here on the game should progress as normal as long as the features you're using are supported. As It stands right now, only the station view works.

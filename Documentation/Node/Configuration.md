@@ -4,7 +4,7 @@ The configuration file for Node has to be named "configuration.conf" and must al
 This file follows the commonly-used ini format which separates the configuration in named sections and keys. [For more information on the .ini format click here](https://en.wikipedia.org/wiki/INI_file)
 
 ## proxy
-Configuration of the proxy server to connect the node to. This should point to the ClusterController running.
+Configuration of the proxy server to connect the node to. This should point to the Proxy running.
 
 ```
 [proxy]
@@ -13,7 +13,7 @@ port=26000
 ```
 
 ### hostname
-The host where the ClusterController is running
+The host where the Proxy is running
 ### port
 The port to connect to, 26000 by default
 

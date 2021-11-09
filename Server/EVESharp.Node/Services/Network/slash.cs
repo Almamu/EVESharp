@@ -29,22 +29,18 @@ namespace EVESharp.Node.Services.Network
         private TypeManager TypeManager => this.ItemFactory.TypeManager;
         private ItemFactory ItemFactory { get; }
         private Channel Log { get; }
-        private MarketDB MarketDB { get; }
         private CharacterDB CharacterDB { get; }
-        private ItemDB ItemDB { get; }
         private NotificationManager NotificationManager { get; }
         private WalletManager WalletManager { get; }
 
         private readonly Dictionary<string, Action<string[], CallInformation>> mCommands =
             new Dictionary<string, Action<string[], CallInformation>>();
         
-        public slash(Logger logger, ItemFactory itemFactory, MarketDB marketDB, CharacterDB characterDB, ItemDB itemDB, NotificationManager notificationManager, WalletManager walletManager)
+        public slash(Logger logger, ItemFactory itemFactory, CharacterDB characterDB, NotificationManager notificationManager, WalletManager walletManager)
         {
             this.Log = logger.CreateLogChannel("Slash");
             this.ItemFactory = itemFactory;
-            this.MarketDB = marketDB;
             this.CharacterDB = characterDB;
-            this.ItemDB = itemDB;
             this.NotificationManager = notificationManager;
             this.WalletManager = walletManager;
 
