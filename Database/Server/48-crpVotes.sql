@@ -9,6 +9,7 @@ CREATE TABLE `crpVotes` (
 	`endDateTime` BIGINT NULL,
 	`voteCaseText` VARCHAR(255) NOT NULL DEFAULT '',
 	`description` TEXT NOT NULL DEFAULT '',
+	`status` INT(11) NOT NULL DEFAULT '0',
 	INDEX `voteType` (`voteType`),
 	INDEX `corporationID` (`corporationID`),
 	PRIMARY KEY (`voteCaseID`),
