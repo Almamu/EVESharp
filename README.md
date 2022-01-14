@@ -12,7 +12,7 @@
 </p>
 
 # Introduction
-EVESharp (or EVE#) is an EVE Online Server Emulator based on [EVEmu](https://github.com/evemuproject/evemu_apocrypha/) and written in C# for .NET Framework 5.0
+EVESharp (or EVE#) is an EVE Online Server Emulator written in C# for .NET Framework 5.0. This project started off as a rewrite of [EVEmu](https://github.com/evemuproject/evemu_apocrypha/).
 
 The aim is to provide a cluster-based server compatible with EVE Online Aprocrypha 6.14.101786.
 
@@ -20,4 +20,4 @@ The aim is to provide a cluster-based server compatible with EVE Online Aprocryp
 
 **The EVESharp team isn't responsible for the usage given to this software, it is provided AS IS without any kind of warranty, for more information please read [the license](LICENSE)**
 
-For more information on how to use this project, setup, etc please look at our documentation [here](Documentation/README.md)
+For more information on how to use this project, setup, etc please look at our wiki [here](https://github.com/Almamu/EVESharp/wiki)
