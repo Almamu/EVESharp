@@ -1,4 +1,4 @@
-<h3 align="center"><img src="assets/EVESharp.png" height="200px"></h3>
+<h3 align="center"><img src="https://raw.githubusercontent.com/wiki/Almamu/EVESharp/assets/EVESharp.png" height="200px"></h3>
 
 <p align="center">
 	<a href="https://github.com/Almamu/EVESharp/blob/master/LICENSE"><img src="https://img.shields.io/github/license/Almamu/EVESharp" /></a>
