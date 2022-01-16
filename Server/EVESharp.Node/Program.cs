@@ -162,7 +162,6 @@ namespace EVESharp.Node
                 dependencies.Register<FactoryDB>(Lifestyle.Singleton);
                 dependencies.Register<TutorialsDB>(Lifestyle.Singleton);
                 dependencies.Register<BillsDB>(Lifestyle.Singleton);
-                dependencies.Register<AlliancesDB>(Lifestyle.Singleton);
 
                 // register all the services
                 dependencies.Register<account>(Lifestyle.Singleton);

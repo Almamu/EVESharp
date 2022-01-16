@@ -364,6 +364,7 @@ namespace EVESharp.Node.Database
         {
             Type itemType = this.TypeManager[reader.GetInt32(2)];
             Item newItem = new Item(
+                this.Database,
                 reader.GetStringOrNull(1), // itemName
                 reader.GetInt32(0), // itemID
                 itemType, // typeID

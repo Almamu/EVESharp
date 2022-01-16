@@ -327,7 +327,7 @@ namespace EVESharp.Common.Database
                 using (reader)
                 {
                     // run the prepared statement
-                    return IndexRowset.FromMySqlDataReader (this, reader, indexField);
+                    return PythonTypes.Types.Database.IndexRowset.FromMySqlDataReader (this, reader, indexField);
                 }
             }
             catch (Exception e)
@@ -357,7 +357,7 @@ namespace EVESharp.Common.Database
                 using (reader)
                 {
                     // run the prepared statement
-                    return IndexRowset.FromMySqlDataReader (this, reader, indexField);
+                    return PythonTypes.Types.Database.IndexRowset.FromMySqlDataReader (this, reader, indexField);
                 }
             }
             catch (Exception e)
@@ -877,7 +877,7 @@ namespace EVESharp.Common.Database
                         return null;
                     
                     // run the prepared statement
-                    return Row.FromMySqlDataReader(this, reader);
+                    return PythonTypes.Types.Database.Row.FromMySqlDataReader(this, reader);
                 }
             }
             catch (Exception e)
@@ -914,7 +914,7 @@ namespace EVESharp.Common.Database
                         return null;
                     
                     // run the prepared statement
-                    return Row.FromMySqlDataReader(this, reader);
+                    return PythonTypes.Types.Database.Row.FromMySqlDataReader(this, reader);
                 }
             }
             catch (Exception e)
@@ -923,6 +923,7 @@ namespace EVESharp.Common.Database
                 throw;
             }
         }
+        
         /// <summary>
         /// Runs one prepared query with the given values as parameters and returns a PyDictionary representing the result.
         /// this only holds ONE row
@@ -1448,6 +1449,133 @@ namespace EVESharp.Common.Database
                 throw;
             }
         }
+
+        /// <summary>
+        /// Calls the given procedure and returns it's data as a normal CRowset
+        /// </summary>
+        /// <param name="indexField">The column of the index</param>
+        /// <param name="procedureName">The procedure name</param>
+        /// <returns>The CRowset object representing the result</returns>
+        public IndexRowset IndexRowset(int indexField, string procedureName)
+        {
+            try
+            {
+                // initialize a command and a connection for this procedure call
+                MySqlConnection connection = null;
+                MySqlCommand command = this.PrepareProcedureCall(ref connection, procedureName);
+
+                using (connection)
+                using (command)
+                {
+                    using (MySqlDataReader reader = command.ExecuteReader())
+                    {
+                        return PythonTypes.Types.Database.IndexRowset.FromMySqlDataReader(this, reader, indexField);
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                Log.Error($"MySQL error: {e.Message}");
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Calls the given procedure and returns it's data as a normal CRowset
+        /// </summary>
+        /// <param name="indexField">The column of the index</param>
+        /// <param name="procedureName">The procedure name</param>
+        /// <param name="values">The values to add to the call</param>
+        /// <returns>The IndexRowset object representing the result</returns>
+        public IndexRowset IndexRowset(int indexField, string procedureName, Dictionary<string, object> values)
+        {
+            try
+            {
+                // initialize a command and a connection for this procedure call
+                MySqlConnection connection = null;
+                MySqlCommand command = this.PrepareProcedureCall(ref connection, procedureName);
+
+                this.AddNamedParameters(values, command);
+
+                using (connection)
+                using (command)
+                {
+                    using (MySqlDataReader reader = command.ExecuteReader())
+                    {
+                        return PythonTypes.Types.Database.IndexRowset.FromMySqlDataReader(this, reader, indexField);
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                Log.Error($"MySQL error: {e.Message}");
+                throw;
+            }
+        }
+        
+        /// <summary>
+        /// Calls a procedure and returns a Row representing the result.
+        /// </summary>
+        /// <param name="procedureName">The procedure to call</param>
+        /// <returns>The PyDataType object representing the result</returns>
+        public Row Row(string procedureName)
+        {
+            try
+            {
+                // initialize a command and a connection for this procedure call
+                MySqlConnection connection = null;
+                MySqlCommand command = this.PrepareProcedureCall(ref connection, procedureName);
+
+                using (connection)
+                using (command)
+                using (MySqlDataReader reader = command.ExecuteReader())
+                {
+                    if (reader.Read() == false)
+                        return null;
+
+                    return PythonTypes.Types.Database.Row.FromMySqlDataReader(this, reader);
+                }
+            }
+            catch (Exception e)
+            {
+                Log.Error($"MySQL error: {e.Message}");
+                throw;
+            }
+        }
+        
+        /// <summary>
+        /// Calls a procedure and returns a Row representing the result.
+        /// </summary>
+        /// <param name="procedureName">The procedure to call</param>
+        /// <param name="values">The key-value pair of values to use when running the query</param>
+        /// <returns>The PyDataType object representing the result</returns>
+        public Row Row(string procedureName, Dictionary<string, object> values)
+        {
+            try
+            {
+                // initialize a command and a connection for this procedure call
+                MySqlConnection connection = null;
+                MySqlCommand command = this.PrepareProcedureCall(ref connection, procedureName);
+
+                this.AddNamedParameters(values, command);
+
+                using (connection)
+                using (command)
+                using (MySqlDataReader reader = command.ExecuteReader())
+                {
+                    if (reader.Read() == false)
+                        return null;
+
+                    return PythonTypes.Types.Database.Row.FromMySqlDataReader(this, reader);
+                }
+            }
+            catch (Exception e)
+            {
+                Log.Error($"MySQL error: {e.Message}");
+                throw;
+            }
+        }
+
 
         /// <summary>
         /// Calls the given procedure and returns it's data as a normal CRowset

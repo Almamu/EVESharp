@@ -4,6 +4,8 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
 using System.Xml.XPath;
+using EVESharp.Common.Database;
+using EVESharp.Database;
 using EVESharp.EVE;
 using EVESharp.EVE.Packets.Exceptions;
 using EVESharp.Node.Alliances;
@@ -29,6 +31,7 @@ using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Database;
 using EVESharp.PythonTypes.Types.Primitives;
 using OnCorporationMemberChanged = EVESharp.Node.Notifications.Client.Corporations.OnCorporationMemberChanged;
+using Type = System.Type;
 
 namespace EVESharp.Node.Services.Corporations
 {
@@ -42,9 +45,9 @@ namespace EVESharp.Node.Services.Corporations
         public int IsMaster => this.mIsMaster;
 
         private CorporationDB DB { get; }
-        private AlliancesDB AlliancesDB { get; init; }
         private ChatDB ChatDB { get; init; }
         private CharacterDB CharacterDB { get; init; }
+        private DatabaseConnection Database { get; init; }
         private ItemFactory ItemFactory { get; }
         private WalletManager WalletManager { get; init; }
         private NodeContainer Container { get; init; }
@@ -59,10 +62,10 @@ namespace EVESharp.Node.Services.Corporations
         private long CorporationAdvertisementFlatFee { get; init; }
         private long CorporationAdvertisementDailyRate { get; init; }
         
-        public corpRegistry(CorporationDB db, AlliancesDB alliancesDB, ChatDB chatDB, CharacterDB characterDB, NotificationManager notificationManager, MailManager mailManager, WalletManager walletManager, NodeContainer container, ItemFactory itemFactory, ClientManager clientManager, BoundServiceManager manager, AncestryManager ancestryManager, MachoNet machoNet) : base(manager)
+        public corpRegistry(CorporationDB db, DatabaseConnection databaseConnection, ChatDB chatDB, CharacterDB characterDB, NotificationManager notificationManager, MailManager mailManager, WalletManager walletManager, NodeContainer container, ItemFactory itemFactory, ClientManager clientManager, BoundServiceManager manager, AncestryManager ancestryManager, MachoNet machoNet) : base(manager)
         {
             this.DB = db;
-            this.AlliancesDB = alliancesDB;
+            this.Database = databaseConnection;
             this.ChatDB = chatDB;
             this.CharacterDB = characterDB;
             this.NotificationManager = notificationManager;
@@ -76,10 +79,10 @@ namespace EVESharp.Node.Services.Corporations
             machoNet.OnClusterTimer += this.PerformTimedEvents;
         }
 
-        protected corpRegistry(CorporationDB db, AlliancesDB alliancesDB, ChatDB chatDB, CharacterDB characterDB, NotificationManager notificationManager, MailManager mailManager, WalletManager walletManager, NodeContainer container, ItemFactory itemFactory, ClientManager clientManager, AncestryManager ancestryManager, Corporation corp, int isMaster, corpRegistry parent) : base (parent, corp.ID)
+        protected corpRegistry(CorporationDB db, DatabaseConnection databaseConnection, ChatDB chatDB, CharacterDB characterDB, NotificationManager notificationManager, MailManager mailManager, WalletManager walletManager, NodeContainer container, ItemFactory itemFactory, ClientManager clientManager, AncestryManager ancestryManager, Corporation corp, int isMaster, corpRegistry parent) : base (parent, corp.ID)
         {
             this.DB = db;
-            this.AlliancesDB = alliancesDB;
+            this.Database = databaseConnection;
             this.ChatDB = chatDB;
             this.CharacterDB = characterDB;
             this.NotificationManager = notificationManager;
@@ -424,8 +427,29 @@ namespace EVESharp.Node.Services.Corporations
                 wallet.CreateJournalRecord(MarketReference.AllianceRegistrationFee, null, null, -this.Container.Constants[Constants.allianceCreationCost]);
                 
                 // now create the alliance
-                int allianceID =
-                    (int) this.AlliancesDB.CreateAlliance(name, shortName, url, description, call.Client.CorporationID, callerCharacterID);
+                ItemEntity allianceItem = this.ItemFactory.CreateSimpleItem(name, (int) Types.Alliance, call.Client.CorporationID,
+                    this.ItemFactory.LocationSystem.ID, Flags.None, 1, false, true, 0, 0, 0, "");
+
+                int allianceID = allianceItem.ID;
+
+                // unload the item as alliances shouldn't really be loaded anywhere
+                this.ItemFactory.UnloadItem(allianceItem);
+                
+                // now record the alliance into the database
+                Database.Procedure(
+                    AlliancesDB.CREATE,
+                    new Dictionary<string, object>()
+                    {
+                        {"_allianceID", allianceID},
+                        {"_shortName", shortName},
+                        {"_description", description},
+                        {"_url", url},
+                        {"_creatorID", call.Client.CorporationID},
+                        {"_creatorCharacterID", callerCharacterID},
+                        {"_dictatorial", false},
+                        {"_startDate", DateTime.UtcNow.ToFileTimeUtc()}
+                    }
+                );
                 
                 // TODO: REMOVE ANY PENDING APPLICATIONS THE CORPORATION HAS
 
@@ -1301,7 +1325,7 @@ namespace EVESharp.Node.Services.Corporations
 
             Corporation corp = this.ItemFactory.LoadItem<Corporation>(bindParams.ObjectID);
             
-            return new corpRegistry (this.DB, this.AlliancesDB, this.ChatDB, this.CharacterDB, this.NotificationManager, this.MailManager, this.WalletManager, this.Container, this.ItemFactory, this.ClientManager, this.AncestryManager, corp, bindParams.ExtraValue, this);
+            return new corpRegistry (this.DB, this.Database, this.ChatDB, this.CharacterDB, this.NotificationManager, this.MailManager, this.WalletManager, this.Container, this.ItemFactory, this.ClientManager, this.AncestryManager, corp, bindParams.ExtraValue, this);
         }
 
         public override bool IsClientAllowedToCall(CallInformation call)

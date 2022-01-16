@@ -82,6 +82,7 @@ namespace EVESharp.Node.Inventory.Items
         public int ID => mID;
         public AttributeList Attributes => mAttributes;
 
+        public DatabaseConnection Database { get; init; }
         public StaticData.Inventory.Type Type
         {
             get => this.mType;
@@ -207,10 +208,12 @@ namespace EVESharp.Node.Inventory.Items
         public bool HadName => this.mHadName;
         public bool HadPosition => this.mHadPosition;
         
-        public ItemEntity(string entityName, int entityId, StaticData.Inventory.Type type, int ownerID,
-            int locationID, Flags entityFlag, bool entityContraband, bool entitySingleton,
-            int entityQuantity, double? x, double? y, double? z, string entityCustomInfo, AttributeList attributes, ItemFactory itemFactory)
+        public ItemEntity(DatabaseConnection databaseConnection, string entityName, int entityId,
+            StaticData.Inventory.Type type, int ownerID, int locationID, Flags entityFlag, bool entityContraband,
+            bool entitySingleton, int entityQuantity, double? x, double? y, double? z, string entityCustomInfo,
+            AttributeList attributes, ItemFactory itemFactory)
         {
+            this.Database = databaseConnection;
             this.mName = entityName;
             this.mID = entityId;
             this.mType = type;
@@ -231,17 +234,19 @@ namespace EVESharp.Node.Inventory.Items
             this.mHadPosition = x is not null && y is not null && z is not null;
         }
 
-        public ItemEntity(string entityName, int entityId, StaticData.Inventory.Type type, ItemEntity entityOwner,
-            ItemEntity entityLocation, Flags entityFlag, bool entityContraband, bool entitySingleton,
-            int entityQuantity, double? x, double? y, double? z, string entityCustomInfo, AttributeList attributes, ItemFactory itemFactory) : this(
-            entityName, entityId, type, entityOwner.ID, entityLocation.ID, entityFlag, entityContraband,
-            entitySingleton, entityQuantity, x, y, z, entityCustomInfo, attributes, itemFactory)
+        public ItemEntity(DatabaseConnection databaseConnection, string entityName, int entityId,
+            StaticData.Inventory.Type type, ItemEntity entityOwner, ItemEntity entityLocation, Flags entityFlag,
+            bool entityContraband, bool entitySingleton, int entityQuantity, double? x, double? y, double? z,
+            string entityCustomInfo, AttributeList attributes, ItemFactory itemFactory) : this(
+            databaseConnection, entityName, entityId, type, entityOwner.ID, entityLocation.ID,
+            entityFlag, entityContraband, entitySingleton, entityQuantity, x, y, z, entityCustomInfo,
+            attributes, itemFactory)
         {
         }
 
-        public ItemEntity(ItemEntity from) : this(from.HasName ? from.Name : null, from.ID, from.Type, from.OwnerID, from.LocationID, from.Flag,
-            from.Contraband, from.Singleton, from.Quantity, from.X, from.Y, from.Z, from.CustomInfo, from.Attributes,
-            from.ItemFactory)
+        public ItemEntity(ItemEntity from) : this(from.Database, from.HasName ? from.Name : null,
+            from.ID, from.Type, from.OwnerID, from.LocationID, from.Flag, from.Contraband, from.Singleton,
+            from.Quantity, from.X, from.Y, from.Z, from.CustomInfo, from.Attributes, from.ItemFactory)
         {
         }
 

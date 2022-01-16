@@ -31,7 +31,7 @@ namespace EVESharp.Node.Inventory.Items
 {
     public abstract class ItemInventory : ItemEntity
     {
-        public ItemInventory(ItemEntity from) : base(from.HasName ? from.Name : null, from.ID, from.Type, from.OwnerID, from.LocationID,
+        public ItemInventory(ItemEntity from) : base(from.Database, from.HasName ? from.Name : null, from.ID, from.Type, from.OwnerID, from.LocationID,
             from.Flag, from.Contraband, from.Singleton, from.Quantity, from.X, from.Y, from.Z, from.CustomInfo,
             from.Attributes, from.ItemFactory)
         {

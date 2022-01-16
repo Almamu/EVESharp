@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using EVESharp.Common.Database;
+using EVESharp.Database;
 using EVESharp.EVE;
 using EVESharp.EVE.Packets.Exceptions;
 using EVESharp.Node.Alliances;
@@ -17,12 +18,12 @@ using EVESharp.Node.Services.Corporations;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Database;
 using EVESharp.PythonTypes.Types.Primitives;
+using MySql.Data.MySqlClient;
 
 namespace EVESharp.Node.Services.Alliances
 {
     public class allianceRegistry : MultiClientBoundService
     {
-        private AlliancesDB DB { get; init; }
         private DatabaseConnection Database { get; init; }
         private CorporationDB CorporationDB { get; init; }
         private ChatDB ChatDB { get; init; }
@@ -31,9 +32,8 @@ namespace EVESharp.Node.Services.Alliances
         private Alliance Alliance { get; init; }
         private ClientManager ClientManager { get; init; }
 
-        public allianceRegistry(DatabaseConnection databaseConnection, CorporationDB corporationDB, AlliancesDB db, ChatDB chatDB, ItemFactory itemFactory, NotificationManager notificationManager, BoundServiceManager manager, ClientManager clientManager, MachoNet machoNet) : base(manager)
+        public allianceRegistry(DatabaseConnection databaseConnection, CorporationDB corporationDB, ChatDB chatDB, ItemFactory itemFactory, NotificationManager notificationManager, BoundServiceManager manager, ClientManager clientManager, MachoNet machoNet) : base(manager)
         {
-            this.DB = db;
             this.Database = databaseConnection;
             this.CorporationDB = corporationDB;
             this.ChatDB = chatDB;
@@ -44,9 +44,8 @@ namespace EVESharp.Node.Services.Alliances
             machoNet.OnClusterTimer += PerformTimedEvents;
         }
         
-        private allianceRegistry(Alliance alliance, DatabaseConnection databaseConnection, CorporationDB corporationDB, AlliancesDB db, ItemFactory itemFactory, NotificationManager notificationManager, MultiClientBoundService parent) : base(parent, alliance.ID)
+        private allianceRegistry(Alliance alliance, DatabaseConnection databaseConnection, CorporationDB corporationDB, ItemFactory itemFactory, NotificationManager notificationManager, MultiClientBoundService parent) : base(parent, alliance.ID)
         {
-            this.DB = db;
             this.Database = databaseConnection;
             this.CorporationDB = corporationDB;
             this.NotificationManager = notificationManager;
@@ -54,12 +53,39 @@ namespace EVESharp.Node.Services.Alliances
             this.Alliance = alliance;
         }
 
+        private IEnumerable<ApplicationEntry> GetAcceptedAlliances(long minimumTime)
+        {
+            // TODO: THIS ONE MIGHT HAVE A BETTER PLACE SOMEWHERE, BUT FOR NOW IT'LL LIVE HERE
+            MySqlConnection connection = null;
+            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+                $"SELECT corporationID, allianceID, executorCorpID FROM crpApplications LEFT JOIN crpAlliances USING(allianceID) WHERE `state` = {(int) AllianceApplicationStatus.Accepted} AND applicationUpdateTime < @limit",
+                new Dictionary<string, object>()
+                {
+                    {"@limit", minimumTime}
+                }
+            );
+            
+            using (connection)
+            using (reader)
+            {
+                while (reader.Read() == true)
+                {
+                    yield return new ApplicationEntry
+                    {
+                        CorporationID = reader.GetInt32(0),
+                        AllianceID = reader.GetInt32(1),
+                        ExecutorCorpID = reader.GetInt32OrNull(2)
+                    };                    
+                }
+            }
+        }
+
         private void PerformTimedEvents(object? sender, EventArgs e)
         {
             long minimumTime = DateTime.UtcNow.AddHours(-24).ToFileTimeUtc();
             
             // check alliances that were accepted more than 24 hours ago
-            foreach (ApplicationEntry entry in this.DB.GetAcceptedAlliances(minimumTime))
+            foreach (ApplicationEntry entry in this.GetAcceptedAlliances(minimumTime))
             {
                 // first update the corporation to join it to the alliance in the database
                 this.CorporationDB.UpdateCorporationInformation(entry.CorporationID, entry.AllianceID, DateTime.UtcNow.ToFileTimeUtc(), entry.ExecutorCorpID);
@@ -94,7 +120,13 @@ namespace EVESharp.Node.Services.Alliances
             }
 
             // finally remove all the applications
-            this.DB.DeleteAcceptedApplications(minimumTime);
+            Database.Procedure(
+                AlliancesDB.HOUSEKEEP_APPLICATIONS,
+                new Dictionary<string, object>()
+                {
+                    {"_limit", minimumTime}
+                }
+            );
         }
 
 
@@ -117,17 +149,23 @@ namespace EVESharp.Node.Services.Alliances
 
             Alliance alliance = this.ItemFactory.LoadItem<Alliance>(bindParams.ObjectID);
             
-            return new allianceRegistry(alliance, this.Database, this.CorporationDB, this.DB, this.ItemFactory, this.NotificationManager, this);
+            return new allianceRegistry(alliance, this.Database, this.CorporationDB, this.ItemFactory, this.NotificationManager, this);
         }
 
         public PyDataType GetAlliance(CallInformation call)
         {
-            return this.DB.GetAlliance(this.ObjectID);
+            return this.GetAlliance(this.ObjectID, call);
         }
 
         public PyDataType GetAlliance(PyInteger allianceID, CallInformation call)
         {
-            return this.DB.GetAlliance(allianceID);
+            return Database.Row(
+                AlliancesDB.GET,
+                new Dictionary<string, object>()
+                {
+                    {"_allianceID", allianceID}
+                }
+            );
         }
 
         public PyDataType UpdateAlliance(PyString description, PyString url, CallInformation call)
@@ -159,17 +197,35 @@ namespace EVESharp.Node.Services.Alliances
 
         public PyDataType GetRelationships(CallInformation call)
         {
-            return this.DB.GetRelationships(this.ObjectID);
+            return Database.IndexRowset(
+                0, AlliancesDB.GET_RELATIONSHIPS,
+                new Dictionary<string, object>()
+                {
+                    {"_allianceID", this.ObjectID}
+                }
+            );
         }
 
         public PyDataType GetAllianceMembers(PyInteger allianceID, CallInformation call)
         {
-            return this.DB.GetMembers(allianceID);
+            return Database.Rowset(
+                AlliancesDB.GET_MEMBERS_PUBLIC,
+                new Dictionary<string, object>()
+                {
+                    {"_allianceID", allianceID}
+                }
+            );
         }
 
         public PyDataType GetMembers(CallInformation call)
         {
-            return this.DB.GetMembers(this.ObjectID, true);
+            return Database.IndexRowset(
+                0, AlliancesDB.GET_MEMBERS_PRIVATE,
+                new Dictionary<string, object>()
+                {
+                    {"_allianceID", this.ObjectID}
+                }
+            );
         }
 
         public PyDataType SetRelationship(PyInteger relationship, PyInteger toID, CallInformation call)
@@ -179,7 +235,15 @@ namespace EVESharp.Node.Services.Alliances
             if (CorporationRole.Director.Is(call.Client.CorporationRole) == false)
                 throw new CrpAccessDenied(MLS.UI_CORP_SET_RELATIONSHIP_DIRECTOR_ONLY);
             
-            this.DB.UpdateRelationship(this.ObjectID, toID, relationship);
+            Database.Procedure(
+                AlliancesDB.UPDATE_RELATIONSHIP,
+                new Dictionary<string, object>()
+                {
+                    {"_fromID", this.ObjectID},
+                    {"_toID", toID},
+                    {"_relationship", relationship}
+                }
+            );
                 
             OnAllianceRelationshipChanged change =
                 new OnAllianceRelationshipChanged(this.ObjectID, toID)
@@ -202,12 +266,17 @@ namespace EVESharp.Node.Services.Alliances
 
             if (corporationJoinDate > minimumJoinDate)
                 throw new CanNotDeclareExecutorInFirstWeek();
-            
-            // update corporation's supported executor
-            this.DB.UpdateSupportedExecutor(call.Client.CorporationID, executorID);
 
-            // calculate the new executor (if any)
-            this.DB.CalculateNewExecutorCorp(this.ObjectID, out int? executorCorpID);
+            // update corporation's supported executor and get the new alliance's executor id back (if any)
+            int? executorCorpID = Database.Scalar<int?>(
+                AlliancesDB.UPDATE_SUPPORTED_EXECUTOR,
+                new Dictionary<string, object>()
+                {
+                    {"_corporationID", call.Client.CorporationID},
+                    {"_chosenExecutorID", executorID},
+                    {"_allianceID", this.ObjectID}
+                }
+            );
             
             OnAllianceMemberChanged change =
                 new OnAllianceMemberChanged(this.ObjectID, call.Client.CorporationID)
@@ -234,7 +303,13 @@ namespace EVESharp.Node.Services.Alliances
 
         public PyDataType GetApplications(CallInformation call)
         {
-            return this.DB.GetApplicationsToAlliance(this.ObjectID);
+            return Database.IndexRowset(
+                1, AlliancesDB.LIST_APPLICATIONS,
+                new Dictionary<string, object>()
+                {
+                    {"_allianceID", this.ObjectID}
+                }
+            );
         }
 
         public PyDataType GetBills(CallInformation call)
@@ -255,7 +330,14 @@ namespace EVESharp.Node.Services.Alliances
             if (CorporationRole.Director.Is(call.Client.CorporationRole) == false)
                 throw new CrpAccessDenied(MLS.UI_CORP_DELETE_RELATIONSHIP_DIRECTOR_ONLY);
             
-            this.DB.RemoveRelationship(this.ObjectID, toID);
+            Database.Procedure(
+                AlliancesDB.REMOVE_RELATIONSHIP,
+                new Dictionary<string, object>()
+                {
+                    {"_fromID", this.ObjectID},
+                    {"_toID", toID}
+                }
+            );
 
             OnAllianceRelationshipChanged change =
                 new OnAllianceRelationshipChanged(this.ObjectID, toID)
@@ -266,7 +348,9 @@ namespace EVESharp.Node.Services.Alliances
 
         public PyDataType GetRankedAlliances(CallInformation call)
         {
-            return this.DB.GetAlliances();
+            return Database.Rowset(
+                AlliancesDB.LIST
+            );
         }
 
         public PyDataType UpdateApplication(PyInteger corporationID, PyString message, PyInteger newStatus, CallInformation call)
@@ -280,7 +364,16 @@ namespace EVESharp.Node.Services.Alliances
             {
                 case (int) AllianceApplicationStatus.Accepted:
                 case (int) AllianceApplicationStatus.Rejected:
-                    this.DB.UpdateApplicationStatus(this.ObjectID, corporationID, newStatus);
+                    Database.Procedure(
+                        "CrpAlliancesUpdateApplication",
+                        new Dictionary<string, object>()
+                        {
+                            {"_corporationID", corporationID},
+                            {"_allianceID", this.ObjectID},
+                            {"_newStatus", newStatus},
+                            {"_currentTime", DateTime.UtcNow.ToFileTimeUtc()}
+                        }
+                    );
                     break;
                 
                 default:

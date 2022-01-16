@@ -1,4 +1,7 @@
-﻿using EVESharp.Node.Exceptions.corpRegistry;
+﻿using System.Collections.Generic;
+using EVESharp.Database;
+using EVESharp.Node.Database;
+using EVESharp.Node.Exceptions.corpRegistry;
 
 namespace EVESharp.Node.Inventory.Items.Types
 {
@@ -62,8 +65,17 @@ namespace EVESharp.Node.Inventory.Items.Types
         {
             base.SaveToDB();
 
-            // update the relevant character information
-            this.ItemFactory.AlliancesDB.UpdateAlliance(this);
+            // update the alliance information
+            Database.Procedure(
+                AlliancesDB.UPDATE,
+                new Dictionary<string, object>()
+                {
+                    {"_description", this.Description},
+                    {"_url", this.Url},
+                    {"_allianceID", this.ID},
+                    {"_executorCorpID", this.ExecutorCorpID}
+                }
+            );
         }
     }
 }
