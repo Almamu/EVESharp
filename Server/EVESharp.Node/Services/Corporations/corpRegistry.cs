@@ -513,7 +513,7 @@ namespace EVESharp.Node.Services.Corporations
             try
             {
                 // acquire the wallet for this character too
-                using (Wallet wallet = this.WalletManager.AcquireWallet(character.ID, 1000))
+                using (Wallet wallet = this.WalletManager.AcquireWallet(character.ID, WalletKeys.MAIN_WALLET))
                 {
                     // ensure there's enough balance
                     wallet.EnsureEnoughBalance(corporationStartupCost);
@@ -566,20 +566,20 @@ namespace EVESharp.Node.Services.Corporations
                     this.NotificationManager.NotifyCorporation(change.OldCorporationID, change);
                     this.NotificationManager.NotifyCorporation(change.NewCorporationID, change);
                     // create default wallets
-                    this.WalletManager.CreateWallet(corporationID, 1000, 0.0);
-                    this.WalletManager.CreateWallet(corporationID, 1001, 0.0);
-                    this.WalletManager.CreateWallet(corporationID, 1002, 0.0);
-                    this.WalletManager.CreateWallet(corporationID, 1003, 0.0);
-                    this.WalletManager.CreateWallet(corporationID, 1004, 0.0);
-                    this.WalletManager.CreateWallet(corporationID, 1005, 0.0);
-                    this.WalletManager.CreateWallet(corporationID, 1006, 0.0);
+                    this.WalletManager.CreateWallet(corporationID, WalletKeys.MAIN_WALLET, 0.0);
+                    this.WalletManager.CreateWallet(corporationID, WalletKeys.SECOND_WALLET, 0.0);
+                    this.WalletManager.CreateWallet(corporationID, WalletKeys.THIRD_WALLET, 0.0);
+                    this.WalletManager.CreateWallet(corporationID, WalletKeys.FOURTH_WALLET, 0.0);
+                    this.WalletManager.CreateWallet(corporationID, WalletKeys.FIFTH_WALLET, 0.0);
+                    this.WalletManager.CreateWallet(corporationID, WalletKeys.SIXTH_WALLET, 0.0);
+                    this.WalletManager.CreateWallet(corporationID, WalletKeys.SEVENTH_WALLET, 0.0);
                     // create the employment record for the character
                     this.CharacterDB.CreateEmploymentRecord(character.ID, corporationID, DateTime.UtcNow.ToFileTimeUtc());
                     // create company shares too!
                     this.DB.UpdateShares(corporationID, corporationID, 1000);
 
                     // set the default wallet for the character
-                    call.Client.CorpAccountKey = 1000;
+                    call.Client.CorpAccountKey = WalletKeys.MAIN_WALLET;
 
                     character.Persist();
                     
@@ -720,23 +720,8 @@ namespace EVESharp.Node.Services.Corporations
 
         public PyDataType SetAccountKey(PyInteger accountKey, CallInformation call)
         {
-            // check if the character has any accounting roles and set the correct accountKey based on the data
-            if (CorporationRole.Accountant.Is(call.Client.CorporationRole) == true)
+            if (this.WalletManager.IsTakeAllowed(call.Client, accountKey, call.Client.CorporationID) == true)
                 call.Client.CorpAccountKey = accountKey;
-            if (CorporationRole.AccountCanTake1.Is(call.Client.CorporationRole) && accountKey == 1000)
-                call.Client.CorpAccountKey = 1000;
-            if (CorporationRole.AccountCanTake2.Is(call.Client.CorporationRole) && accountKey == 1001)
-                call.Client.CorpAccountKey = 1001;
-            if (CorporationRole.AccountCanTake3.Is(call.Client.CorporationRole) && accountKey == 1002)
-                call.Client.CorpAccountKey = 1002;
-            if (CorporationRole.AccountCanTake4.Is(call.Client.CorporationRole) && accountKey == 1003)
-                call.Client.CorpAccountKey = 1003;
-            if (CorporationRole.AccountCanTake5.Is(call.Client.CorporationRole) && accountKey == 1004)
-                call.Client.CorpAccountKey = 1004;
-            if (CorporationRole.AccountCanTake6.Is(call.Client.CorporationRole) && accountKey == 1005)
-                call.Client.CorpAccountKey = 1005;
-            if (CorporationRole.AccountCanTake7.Is(call.Client.CorporationRole) && accountKey == 1006)
-                call.Client.CorpAccountKey = 1006;
             
             return null;
         }
@@ -758,7 +743,7 @@ namespace EVESharp.Node.Services.Corporations
                 
                 // TODO: INCLUDE WETHER THE SHAREHOLDER IS A CORPORATION OR NOT, MAYBE CREATE A CUSTOM OBJECT FOR THIS
                 // calculate amount to give and acquire it's wallet
-                using (Wallet dest = this.WalletManager.AcquireWallet(ownerID, 1000))
+                using (Wallet dest = this.WalletManager.AcquireWallet(ownerID, WalletKeys.MAIN_WALLET))
                 {
                     dest.CreateJournalRecord(MarketReference.CorporationDividendPayment, ownerID, this.mCorporation.ID, pricePerShare * sharesCount);
                 }
@@ -771,7 +756,7 @@ namespace EVESharp.Node.Services.Corporations
             
             foreach (int characterID in this.DB.GetMembersForCorp(this.mCorporation.ID))
             {
-                using (Wallet dest = this.WalletManager.AcquireWallet(characterID, 1000))
+                using (Wallet dest = this.WalletManager.AcquireWallet(characterID, WalletKeys.MAIN_WALLET))
                 {
                     dest.CreateJournalRecord(MarketReference.CorporationDividendPayment, characterID, this.mCorporation.ID, pricePerMember);
                 }

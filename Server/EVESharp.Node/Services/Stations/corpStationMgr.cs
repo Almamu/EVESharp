@@ -149,7 +149,7 @@ namespace EVESharp.Node.Services.Stations
                     throw new MedicalYouAlreadyHaveACloneContractAtThatStation();
             }
 
-            using Wallet wallet = this.WalletManager.AcquireWallet(character.ID, 1000);
+            using Wallet wallet = this.WalletManager.AcquireWallet(character.ID, WalletKeys.MAIN_WALLET);
             {
                 double contractCost = this.Container.Constants[Constants.costCloneContract];
                 
@@ -216,7 +216,7 @@ namespace EVESharp.Node.Services.Stations
 
             Station station = this.ItemFactory.GetStaticStation(stationID);
 
-            using Wallet wallet = this.WalletManager.AcquireWallet(character.ID, 1000);
+            using Wallet wallet = this.WalletManager.AcquireWallet(character.ID, WalletKeys.MAIN_WALLET);
             {
                 wallet.EnsureEnoughBalance(newCloneType.BasePrice);
                 wallet.CreateTransactionRecord(TransactionType.Buy, character.ID, this.ItemFactory.LocationSystem.ID, newCloneType.ID, 1, newCloneType.BasePrice, station.ID);

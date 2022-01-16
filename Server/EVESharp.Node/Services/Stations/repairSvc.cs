@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using EVESharp.EVE;
 using EVESharp.EVE.Packets.Exceptions;
 using EVESharp.Node.Database;
 using EVESharp.Node.Exceptions;
@@ -150,7 +151,7 @@ namespace EVESharp.Node.Services.Stations
             Station station = this.ItemFactory.GetStaticStation(call.Client.EnsureCharacterIsInStation());
 
             // take the wallet lock and ensure the character has enough balance
-            using Wallet wallet = this.WalletManager.AcquireWallet(call.Client.EnsureCharacterIsSelected(), 1000);
+            using Wallet wallet = this.WalletManager.AcquireWallet(call.Client.EnsureCharacterIsSelected(), WalletKeys.MAIN_WALLET);
             {
                 wallet.EnsureEnoughBalance(iskRepairValue);
                 // build a list of items to be fixed

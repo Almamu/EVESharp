@@ -1,6 +1,6 @@
-DROP TABLE IF EXISTS `market_journal`;
+DROP TABLE IF EXISTS `mktJournal`;
 
-CREATE TABLE `market_journal` (
+CREATE TABLE `mktJournal` (
 	`transactionID` INT(10) UNSIGNED NOT NULL AUTO_INCREMENT,
 	`transactionDate` BIGINT(20) NULL DEFAULT NULL,
 	`entryTypeID` INT(10) UNSIGNED NOT NULL DEFAULT '0',

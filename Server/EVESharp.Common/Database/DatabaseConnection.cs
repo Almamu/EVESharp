@@ -264,7 +264,7 @@ namespace EVESharp.Common.Database
                 using (reader)
                 {
                     // run the prepared statement
-                    return CRowset.FromMySqlDataReader(this, reader);
+                    return PythonTypes.Types.Database.CRowset.FromMySqlDataReader(this, reader);
                 }
             }
             catch (Exception e)
@@ -293,7 +293,7 @@ namespace EVESharp.Common.Database
                 using (reader)
                 {
                     // run the prepared statement
-                    return CRowset.FromMySqlDataReader(this, reader);
+                    return PythonTypes.Types.Database.CRowset.FromMySqlDataReader(this, reader);
                 }
             }
             catch (Exception e)
@@ -1199,6 +1199,271 @@ namespace EVESharp.Common.Database
             if (type == typeof(bool)) return FieldType.Bool;
 
             throw new InvalidDataException($"Unknown field type {type}");
+        }
+
+        /// <summary>
+        /// Prepares things to perform a procedure call on the given connection
+        /// </summary>
+        /// <param name="connection">The connection to use (the function will create a new one if null)</param>
+        /// <param name="procedureName">The procedure to call</param>
+        /// <returns>A command ready to perform the call</returns>
+        protected MySqlCommand PrepareProcedureCall(ref MySqlConnection connection, string procedureName)
+        {
+            try
+            {
+                // open a new connection if one is not available already
+                if (connection is null)
+                {
+                    connection = new MySqlConnection(this.mConnectionString);
+                    connection.Open();
+                }
+
+                // setup the command in the correct mode to perform the stored procedure call
+                MySqlCommand command = new MySqlCommand(procedureName, connection);
+
+                command.CommandType = CommandType.StoredProcedure;
+
+                return command;
+            }
+            catch (Exception e)
+            {
+                Log.Error($"MySQL error: {e.Message}");
+                throw;
+            }
+        }
+
+        protected MySqlCommand PrepareProcedureCall(ref MySqlConnection connection, string procedureName, Dictionary<string, object> values)
+        {
+            try
+            {
+                MySqlCommand command = this.PrepareProcedureCall(ref connection, procedureName);
+
+                this.AddNamedParameters(values, command);
+
+                return command;
+            }
+            catch (Exception e)
+            {
+                Log.Error($"MySQL error: {e.Message}");
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Calls the given procedure
+        /// </summary>
+        /// <param name="procedureName">The procedure name</param>
+        public void Procedure(ref MySqlConnection connection, string procedureName, Dictionary<string, object> values)
+        {
+            try
+            {
+                MySqlCommand command = this.PrepareProcedureCall(ref connection, procedureName);
+
+                using (command)
+                {
+                    this.AddNamedParameters(values, command);
+
+                    command.ExecuteNonQuery();    
+                }
+            }
+            catch (Exception e)
+            {
+                Log.Error($"MySQL error: {e.Message}");
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Calls the given procedure
+        /// </summary>
+        /// <param name="procedureName">The procedure name</param>
+        public void Procedure(string procedureName, Dictionary<string, object> values)
+        {
+            try
+            {
+                MySqlConnection connection = null;
+                MySqlCommand command = this.PrepareProcedureCall(ref connection, procedureName);
+
+                this.AddNamedParameters(values, command);
+
+                using (connection)
+                using (command)
+                {
+                    command.ExecuteNonQuery();                    
+                }
+            }
+            catch (Exception e)
+            {
+                Log.Error($"MySQL error: {e.Message}");
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Calls the given procedure and returns it's data as a normal CRowset
+        /// </summary>
+        /// <param name="procedureName">The procedure name</param>
+        /// <returns>The CRowset object representing the result</returns>
+        public CRowset CRowset(string procedureName)
+        {
+            try
+            {
+                // initialize a command and a connection for this procedure call
+                MySqlConnection connection = null;
+                MySqlCommand command = this.PrepareProcedureCall(ref connection, procedureName);
+
+                using (connection)
+                using (command)
+                {
+                    using (MySqlDataReader reader = command.ExecuteReader())
+                    {
+                        return PythonTypes.Types.Database.CRowset.FromMySqlDataReader(this, reader);
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                Log.Error($"MySQL error: {e.Message}");
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Calls the given procedure and returns it's data as a normal CRowset
+        /// </summary>
+        /// <param name="procedureName">The procedure name</param>
+        /// <returns>The PackedRowList object representing the result</returns>
+        public PyList<PyPackedRow> PackedRowList(string procedureName)
+        {
+            try
+            {
+                // initialize a command and a connection for this procedure call
+                MySqlConnection connection = null;
+                MySqlCommand command = this.PrepareProcedureCall(ref connection, procedureName);
+
+                using (connection)
+                using (command)
+                using (MySqlDataReader reader = command.ExecuteReader())
+                {
+                    // run the prepared statement
+                    return PyPackedRowList.FromMySqlDataReader(this, reader);
+                }
+            }
+            catch (Exception e)
+            {
+                Log.Error($"MySQL error: {e.Message}");
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Calls the given procedure and returns it's data as a normal CRowset
+        /// </summary>
+        /// <param name="procedureName">The procedure name</param>
+        /// <returns>The PackedRowList object representing the result</returns>
+        public PyList<PyPackedRow> PackedRowList(string procedureName, Dictionary<string, object> values)
+        {
+            try
+            {
+                // initialize a command and a connection for this procedure call
+                MySqlConnection connection = null;
+                MySqlCommand command = this.PrepareProcedureCall(ref connection, procedureName);
+
+                this.AddNamedParameters(values, command);
+
+                using (connection)
+                using (command)
+                using (MySqlDataReader reader = command.ExecuteReader())
+                {
+                    // run the prepared statement
+                    return PyPackedRowList.FromMySqlDataReader(this, reader);
+                }
+            }
+            catch (Exception e)
+            {
+                Log.Error($"MySQL error: {e.Message}");
+                throw;
+            }
+        }
+
+        public PyDictionary<PyString, PyDataType> Dictionary(string procedureName, Dictionary<string, object> values)
+        {
+            try
+            {
+                MySqlConnection connection = null;
+                MySqlCommand command = this.PrepareProcedureCall(ref connection, procedureName, values);
+                
+                using (connection)
+                using (command)
+                using (MySqlDataReader reader = command.ExecuteReader())
+                {
+                    if (reader.Read() == false)
+                        return null;
+
+                    return PyDictionary<PyString, PyDataType>.FromMySqlDataReader(this, reader);
+
+                }
+            }
+            catch (Exception e)
+            {
+                Log.Error($"MySQL error: {e.Message}");
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Calls the given function and returns it's value casting it to the given type. If the result returns more than
+        /// one column or row, only the topmost, leftmost value is returned
+        /// </summary>
+        /// <param name="connection">The MySqlConnection to use</param>
+        /// <param name="functionName">The MySQL function to call</param>
+        /// <param name="values">The values to supply the MySQL function</param>
+        /// <typeparam name="T">The type to cast the return value to</typeparam>
+        /// <returns>The functions result</returns>
+        public T Scalar<T>(ref MySqlConnection connection, string functionName, Dictionary<string, object> values)
+        {
+            try
+            {
+                MySqlCommand command = this.PrepareProcedureCall(ref connection, functionName, values);
+                
+                using (command)
+                {
+                    return (T) command.ExecuteScalar();
+                }
+            }
+            catch (Exception e)
+            {
+                Log.Error($"MySQL error: {e.Message}");
+                throw;
+            }
+        }
+        
+        /// <summary>
+        /// Calls the given function and returns it's value casting it to the given type. If the result returns more than
+        /// one column or row, only the topmost, leftmost value is returned
+        /// </summary>
+        /// <param name="functionName">The MySQL function to call</param>
+        /// <param name="values">The values to supply the MySQL function</param>
+        /// <typeparam name="T">The type to cast the return value to</typeparam>
+        /// <returns>The functions result</returns>
+        public T Scalar<T>(string functionName, Dictionary<string, object> values)
+        {
+            try
+            {
+                MySqlConnection connection = null;
+                MySqlCommand command = this.PrepareProcedureCall(ref connection, functionName, values);
+                
+                using (connection)
+                using (command)
+                {
+                    return (T) command.ExecuteScalar();
+                }
+            }
+            catch (Exception e)
+            {
+                Log.Error($"MySQL error: {e.Message}");
+                throw;
+            }
         }
     }
 }

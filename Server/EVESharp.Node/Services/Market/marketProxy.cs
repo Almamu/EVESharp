@@ -86,7 +86,7 @@ namespace EVESharp.Node.Services.Market
         {
             int callerCharacterID = call.Client.EnsureCharacterIsSelected();
 
-            return this.GetNewTransactions(callerCharacterID, sellBuy, typeID, clientID, quantity, fromDate, maxPrice, minPrice, 1000);
+            return this.GetNewTransactions(callerCharacterID, sellBuy, typeID, clientID, quantity, fromDate, maxPrice, minPrice, WalletKeys.MAIN_WALLET);
         }
 
         public PyDataType CorpGetNewTransactions(PyInteger sellBuy, PyInteger typeID, PyDataType clientID,
@@ -644,7 +644,7 @@ namespace EVESharp.Node.Services.Market
             }
 
             int ownerID = character.ID;
-            int accountKey = 1000;
+            int accountKey = WalletKeys.MAIN_WALLET;
             
             // make sure the user has permissions on the wallet of the corporation
             // for sell orders just look into if the user can query that wallet
@@ -857,7 +857,7 @@ namespace EVESharp.Node.Services.Market
             }
             
             // notify the character about the change in the order
-            this.NotificationManager.NotifyCharacter(order.CharacterID, new OnOwnOrderChanged(order.TypeID, "Expiry", order.AccountID > 1000));
+            this.NotificationManager.NotifyCharacter(order.CharacterID, new OnOwnOrderChanged(order.TypeID, "Expiry", order.AccountID > WalletKeys.MAIN_WALLET));
         }
 
         /// <summary>

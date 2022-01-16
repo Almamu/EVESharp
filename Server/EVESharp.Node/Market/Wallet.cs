@@ -1,5 +1,9 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
+using EVESharp.Common.Database;
+using EVESharp.Database;
+using EVESharp.EVE;
 using EVESharp.Node.Database;
 using EVESharp.Node.Exceptions;
 using EVESharp.Node.Network;
@@ -14,12 +18,13 @@ namespace EVESharp.Node.Market
     {
         public int OwnerID { get; init; }
         public int WalletKey { get; init; }
-        public MySqlConnection Connection { get; init; }
+        public MySqlConnection Connection;
         public double Balance { get; set; }
         public double OriginalBalance { get; init; }
-        public WalletDB DB { get; init; }
+        public DatabaseConnection Database { get; init; }
         public NotificationManager NotificationManager { get; init; }
         public bool ForCorporation { get; init; }
+        public WalletManager WalletManager { get; init; }
         
         /// <summary>
         /// Checks that the wallet has enough balance to perform whatever operations
@@ -47,7 +52,7 @@ namespace EVESharp.Node.Market
             this.Balance += amount;
             
             // create journal entry
-            this.DB.CreateJournalForOwner(
+            this.WalletManager.CreateJournalForOwner(
                 reference, this.OwnerID, ownerID1, ownerID2, referenceID, amount,
                 this.Balance, reason, this.WalletKey
             );
@@ -67,7 +72,7 @@ namespace EVESharp.Node.Market
             this.Balance += amount;
             
             // create journal entry
-            this.DB.CreateJournalForOwner(
+            this.WalletManager.CreateJournalForOwner(
                 reference, this.OwnerID, this.OwnerID, ownerID2, referenceID, amount,
                 this.Balance, reason, this.WalletKey
             );
@@ -88,9 +93,7 @@ namespace EVESharp.Node.Market
             this.Balance += amount;
             // market transactions do not affect the wallet value because these are paid either when placing the sell/buy order
             // or when fullfiling it
-            this.DB.CreateTransactionForOwner(
-                this.OwnerID, characterID, otherID, type, typeID, quantity, amount, stationID, this.WalletKey
-            );
+            this.WalletManager.CreateTransactionRecord(this.OwnerID, type, characterID, otherID, typeID, quantity, amount, stationID, this.WalletKey);
         }
         
         public void Dispose()
@@ -98,7 +101,16 @@ namespace EVESharp.Node.Market
             // if the balance changed, update the record in the database
             if (Math.Abs(this.Balance - this.OriginalBalance) > 0.01)
             {
-                this.DB.SetWalletBalance(this.Connection, this.WalletKey, this.OwnerID, this.Balance);
+                Database.Procedure(
+                    ref this.Connection,
+                    WalletDB.SET_WALLET_BALANCE,
+                    new Dictionary<string, object>()
+                    {
+                        {"_balance", this.Balance},
+                        {"_ownerID", this.OwnerID},
+                        {"_walletKey", this.WalletKey}
+                    }
+                );
 
                 if (this.ForCorporation == false)
                 {
@@ -113,13 +125,13 @@ namespace EVESharp.Node.Market
 
                     corpRoles |= (long) (this.WalletKey switch
                     {
-                        1000 => CorporationRole.AccountCanQuery1,
-                        1001 => CorporationRole.AccountCanQuery2,
-                        1002 => CorporationRole.AccountCanQuery3,
-                        1003 => CorporationRole.AccountCanQuery4,
-                        1004 => CorporationRole.AccountCanQuery5,
-                        1005 => CorporationRole.AccountCanQuery6,
-                        1006 => CorporationRole.AccountCanQuery7,
+                        WalletKeys.MAIN_WALLET => CorporationRole.AccountCanQuery1,
+                        WalletKeys.SECOND_WALLET => CorporationRole.AccountCanQuery2,
+                        WalletKeys.THIRD_WALLET => CorporationRole.AccountCanQuery3,
+                        WalletKeys.FOURTH_WALLET => CorporationRole.AccountCanQuery4,
+                        WalletKeys.FIFTH_WALLET => CorporationRole.AccountCanQuery5,
+                        WalletKeys.SIXTH_WALLET => CorporationRole.AccountCanQuery6,
+                        WalletKeys.SEVENTH_WALLET => CorporationRole.AccountCanQuery7,
                         _ => CorporationRole.JuniorAccountant
                     });
                     
@@ -130,7 +142,7 @@ namespace EVESharp.Node.Market
                 }
             }
 
-            this.DB.ReleaseLock(this.Connection, this.OwnerID, this.WalletKey);
+            this.WalletManager.ReleaseLock(this.Connection, this.OwnerID, this.WalletKey);
             this.Connection?.Dispose();
         }
     }

@@ -788,7 +788,7 @@ namespace EVESharp.Node.Database
             string query =
                 "SELECT transactionID, transactionDate, referenceID, entryTypeID," +
                 " ownerID1, ownerID2, accountKey, amount, balance, description " +
-                "FROM market_journal " +
+                "FROM mktJournal " +
                 "WHERE charID = @characterID AND accountKey=@accountKey AND transactionDate >= @minDate AND transactionDate <= @maxDate";
 
             if (refTypeID is not null)

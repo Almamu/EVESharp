@@ -139,7 +139,6 @@ namespace EVESharp.Node
 
                 // register the database accessors dependencies
                 dependencies.Register<AccountDB>(Lifestyle.Singleton);
-                dependencies.Register<AgentDB>(Lifestyle.Singleton);
                 dependencies.Register<BookmarkDB>(Lifestyle.Singleton);
                 dependencies.Register<CertificatesDB>(Lifestyle.Singleton);
                 dependencies.Register<CharacterDB>(Lifestyle.Singleton);
@@ -162,7 +161,6 @@ namespace EVESharp.Node
                 dependencies.Register<ReprocessingDB>(Lifestyle.Singleton);
                 dependencies.Register<RAMDB>(Lifestyle.Singleton);
                 dependencies.Register<FactoryDB>(Lifestyle.Singleton);
-                dependencies.Register<WalletDB>(Lifestyle.Singleton);
                 dependencies.Register<TutorialsDB>(Lifestyle.Singleton);
                 dependencies.Register<BillsDB>(Lifestyle.Singleton);
                 dependencies.Register<AlliancesDB>(Lifestyle.Singleton);

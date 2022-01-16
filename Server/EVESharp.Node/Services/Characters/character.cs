@@ -27,6 +27,7 @@ using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using EVESharp.Common.Logging;
 using EVESharp.Common.Services;
+using EVESharp.EVE;
 using EVESharp.EVE.Packets.Exceptions;
 using EVESharp.Node.Database;
 using EVESharp.Node.Exceptions.character;
@@ -261,7 +262,7 @@ namespace EVESharp.Node.Services.Characters
             );
             
             // create the wallet for the player
-            this.WalletManager.CreateWallet(itemID, 1000, this.mConfiguration.Balance);
+            this.WalletManager.CreateWallet(itemID, WalletKeys.MAIN_WALLET, this.mConfiguration.Balance);
 
             return this.ItemFactory.LoadItem(itemID) as Character;
         }
@@ -349,7 +350,7 @@ namespace EVESharp.Node.Services.Characters
             character.ActiveClone = clone;
 
             // get the wallet for the player and give the money specified in the configuration
-            using Wallet wallet = this.WalletManager.AcquireWallet(character.ID, 1000);
+            using Wallet wallet = this.WalletManager.AcquireWallet(character.ID, WalletKeys.MAIN_WALLET);
             {
                 wallet.CreateJournalRecord(MarketReference.Inheritance, null, null, this.mConfiguration.Balance);
             }
@@ -454,20 +455,8 @@ namespace EVESharp.Node.Services.Characters
             call.Client.RaceID = this.AncestryManager[character.AncestryID].Bloodline.RaceID;
             
             // check if the character has any accounting roles and set the correct accountKey based on the data
-            if (CorporationRole.AccountCanQuery1.Is(call.Client.CorporationRole) && character.CorpAccountKey == 1000)
-                call.Client.CorpAccountKey = 1000;
-            if (CorporationRole.AccountCanQuery2.Is(call.Client.CorporationRole) && character.CorpAccountKey == 1001)
-                call.Client.CorpAccountKey = 1001;
-            if (CorporationRole.AccountCanQuery3.Is(call.Client.CorporationRole) && character.CorpAccountKey == 1002)
-                call.Client.CorpAccountKey = 1002;
-            if (CorporationRole.AccountCanQuery4.Is(call.Client.CorporationRole) && character.CorpAccountKey == 1003)
-                call.Client.CorpAccountKey = 1003;
-            if (CorporationRole.AccountCanQuery5.Is(call.Client.CorporationRole) && character.CorpAccountKey == 1004)
-                call.Client.CorpAccountKey = 1004;
-            if (CorporationRole.AccountCanQuery6.Is(call.Client.CorporationRole) && character.CorpAccountKey == 1005)
-                call.Client.CorpAccountKey = 1005;
-            if (CorporationRole.AccountCanQuery7.Is(call.Client.CorporationRole) && character.CorpAccountKey == 1006)
-                call.Client.CorpAccountKey = 1006;
+            if (this.WalletManager.IsAccessAllowed(call.Client, character.CorpAccountKey, call.Client.CorporationID) == true)
+                call.Client.CorpAccountKey = character.CorpAccountKey;
 
             // set the war faction id if present
             if (character.WarFactionID is not null)

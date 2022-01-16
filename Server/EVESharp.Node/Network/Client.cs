@@ -310,7 +310,7 @@ namespace EVESharp.Node.Network
 
         public int CorpAccountKey
         {
-            get => this.mSession["corpAccountKey"] as PyInteger ?? 1000;
+            get => this.mSession["corpAccountKey"] as PyInteger ?? WalletKeys.MAIN_WALLET;
             set => this.mSession["corpAccountKey"] = value;
         }
 

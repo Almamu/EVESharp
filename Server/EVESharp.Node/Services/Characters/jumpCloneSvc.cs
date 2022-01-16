@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using EVESharp.EVE;
 using EVESharp.EVE.Packets.Exceptions;
 using EVESharp.Node.Database;
 using EVESharp.Node.Exceptions.jumpCloneSvc;
@@ -146,7 +147,7 @@ namespace EVESharp.Node.Services.Characters
             // get character's station
             Station station = this.ItemFactory.GetStaticStation(stationID);
 
-            using Wallet wallet = this.WalletManager.AcquireWallet(character.ID, 1000);
+            using Wallet wallet = this.WalletManager.AcquireWallet(character.ID, WalletKeys.MAIN_WALLET);
             {
                 wallet.EnsureEnoughBalance(cost);
                 wallet.CreateJournalRecord(

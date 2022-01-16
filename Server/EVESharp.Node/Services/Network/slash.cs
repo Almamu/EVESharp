@@ -123,7 +123,7 @@ namespace EVESharp.Node.Services.Network
                 targetCharacterID = matches[0];
             }
 
-            using Wallet wallet = this.WalletManager.AcquireWallet(targetCharacterID, 1000);
+            using Wallet wallet = this.WalletManager.AcquireWallet(targetCharacterID, WalletKeys.MAIN_WALLET);
             {
                 if (iskQuantity < 0)
                 {

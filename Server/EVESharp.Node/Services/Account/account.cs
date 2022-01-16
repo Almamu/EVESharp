@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
+using EVESharp.Common.Database;
 using EVESharp.Common.Services;
+using EVESharp.Database;
 using EVESharp.EVE;
 using EVESharp.EVE.Packets.Complex;
 using EVESharp.EVE.Packets.Exceptions;
@@ -22,16 +24,16 @@ namespace EVESharp.Node.Services.Account
     public class account : IService
     {
         private CharacterDB DB { get; }
-        private WalletDB WalletDB { get; }
         private WalletManager WalletManager { get; init; }
         private ItemManager ItemManager { get; }
         private CacheStorage CacheStorage { get; }
         private NotificationManager NotificationManager { get; }
+        private DatabaseConnection Database { get; init; }
         
-        public account(CharacterDB db, WalletDB walletDB, WalletManager walletManager, ItemManager itemManager, CacheStorage cacheStorage, NotificationManager notificationManager)
+        public account(DatabaseConnection databaseConnection, CharacterDB db, WalletManager walletManager, ItemManager itemManager, CacheStorage cacheStorage, NotificationManager notificationManager)
         {
+            this.Database = databaseConnection;
             this.DB = db;
-            this.WalletDB = walletDB;
             this.WalletManager = walletManager;
             this.ItemManager = itemManager;
             this.CacheStorage = cacheStorage;
@@ -40,7 +42,7 @@ namespace EVESharp.Node.Services.Account
 
         private PyDataType GetCashBalance(Client client)
         {
-            return this.WalletDB.GetCharacterBalance(client.EnsureCharacterIsSelected());
+            return this.WalletManager.GetWalletBalance(client.EnsureCharacterIsSelected());
         }
 
         public PyDataType GetCashBalance(PyBool isCorpWallet, CallInformation call)
@@ -61,7 +63,7 @@ namespace EVESharp.Node.Services.Account
             if (this.WalletManager.IsAccessAllowed(call.Client, walletKey, call.Client.CorporationID) == false)
                 throw new CrpAccessDenied(MLS.UI_CORP_ACCESSTOWALLETDIVISIONDENIED);
 
-            return this.WalletDB.GetWalletBalance(call.Client.CorporationID, walletKey);
+            return this.WalletManager.GetWalletBalance(call.Client.CorporationID, walletKey);
         }
 
         public PyDataType GetKeyMap(CallInformation call)
@@ -111,34 +113,41 @@ namespace EVESharp.Node.Services.Account
             // build a list of divisions the user can access
             List<int> walletKeys = new List<int>();
 
-            if (CorporationRole.AccountCanQuery1.Is(call.Client.CorporationRole) == true || CorporationRole.Accountant.Is(call.Client.CorporationRole) == true)
-                walletKeys.Add(1000);
-            if (CorporationRole.AccountCanQuery2.Is(call.Client.CorporationRole) == true || CorporationRole.Accountant.Is(call.Client.CorporationRole) == true)
-                walletKeys.Add(1001);
-            if (CorporationRole.AccountCanQuery3.Is(call.Client.CorporationRole) == true || CorporationRole.Accountant.Is(call.Client.CorporationRole) == true)
-                walletKeys.Add(1002);
-            if (CorporationRole.AccountCanQuery4.Is(call.Client.CorporationRole) == true || CorporationRole.Accountant.Is(call.Client.CorporationRole) == true)
-                walletKeys.Add(1003);
-            if (CorporationRole.AccountCanQuery5.Is(call.Client.CorporationRole) == true || CorporationRole.Accountant.Is(call.Client.CorporationRole) == true)
-                walletKeys.Add(1004);
-            if (CorporationRole.AccountCanQuery6.Is(call.Client.CorporationRole) == true || CorporationRole.Accountant.Is(call.Client.CorporationRole) == true)
-                walletKeys.Add(1005);
-            if (CorporationRole.AccountCanQuery7.Is(call.Client.CorporationRole) == true || CorporationRole.Accountant.Is(call.Client.CorporationRole) == true)
-                walletKeys.Add(1006);
-
-            return this.WalletDB.GetWalletDivisionsForOwner(call.Client.CorporationID, walletKeys);
+            if (this.WalletManager.IsAccessAllowed(call.Client, WalletKeys.MAIN_WALLET, call.Client.CorporationID) == true)
+                walletKeys.Add(WalletKeys.MAIN_WALLET);
+            if (this.WalletManager.IsAccessAllowed(call.Client, WalletKeys.SECOND_WALLET, call.Client.CorporationID) == true)
+                walletKeys.Add(WalletKeys.SECOND_WALLET);
+            if (this.WalletManager.IsAccessAllowed(call.Client, WalletKeys.THIRD_WALLET, call.Client.CorporationID) == true)
+                walletKeys.Add(WalletKeys.THIRD_WALLET);
+            if (this.WalletManager.IsAccessAllowed(call.Client, WalletKeys.FOURTH_WALLET, call.Client.CorporationID) == true)
+                walletKeys.Add(WalletKeys.FOURTH_WALLET);
+            if (this.WalletManager.IsAccessAllowed(call.Client, WalletKeys.FIFTH_WALLET, call.Client.CorporationID) == true)
+                walletKeys.Add(WalletKeys.FIFTH_WALLET);
+            if (this.WalletManager.IsAccessAllowed(call.Client, WalletKeys.SIXTH_WALLET, call.Client.CorporationID) == true)
+                walletKeys.Add(WalletKeys.SIXTH_WALLET);
+            if (this.WalletManager.IsAccessAllowed(call.Client, WalletKeys.SEVENTH_WALLET, call.Client.CorporationID) == true)
+                walletKeys.Add(WalletKeys.SEVENTH_WALLET);
+            
+            return Database.PackedRowList(
+                WalletDB.GET_WALLETS,
+                new Dictionary<string, object>()
+                {
+                    {"_ownerID", call.Client.CorporationID},
+                    {"_walletKeyKeys", string.Join(',', walletKeys)}
+                }
+            );
         }
 
         public PyDataType GiveCash(PyInteger destinationID, PyDecimal quantity, PyString reason, CallInformation call)
         {
-            int accountKey = 1000;
+            int accountKey = WalletKeys.MAIN_WALLET;
 
             if (call.NamedPayload.TryGetValue("toAccountKey", out PyInteger namedAccountKey) == true)
                 accountKey = namedAccountKey;
             
             // acquire the origin wallet, subtract quantity
             // TODO: CHECK IF THE WALLETKEY IS INDICATED IN SOME WAY
-            using (Wallet originWallet = this.WalletManager.AcquireWallet(call.Client.EnsureCharacterIsSelected(), 1000))
+            using (Wallet originWallet = this.WalletManager.AcquireWallet(call.Client.EnsureCharacterIsSelected(), WalletKeys.MAIN_WALLET))
             {
                 originWallet.EnsureEnoughBalance(quantity);
                 originWallet.CreateJournalRecord(MarketReference.CorporationPayment, destinationID, null, -quantity, reason);
@@ -169,7 +178,7 @@ namespace EVESharp.Node.Services.Account
             
             // TODO: CHECK IF THE DESTINATION IS A CORPORATION OR NOT
             // acquire the destination wallet, add quantity
-            using (Wallet destinationWallet = this.WalletManager.AcquireWallet(destinationID, 1000))
+            using (Wallet destinationWallet = this.WalletManager.AcquireWallet(destinationID, WalletKeys.MAIN_WALLET))
             {
                 destinationWallet.CreateJournalRecord(MarketReference.CorporationPayment, call.Client.CorporationID, destinationID, -1, quantity);
             }

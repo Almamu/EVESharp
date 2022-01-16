@@ -1,4 +1,5 @@
 ﻿using System;
+using EVESharp.EVE;
 using EVESharp.EVE.Packets.Exceptions;
 using EVESharp.Node.Chat;
 using EVESharp.Node.Database;
@@ -105,7 +106,7 @@ namespace EVESharp.Node.Services.Inventory
                 throw new InsureShipFailedSingleContract(oldOwnerID);
             }
 
-            using Wallet wallet = this.WalletManager.AcquireWallet(character.ID, 1000);
+            using Wallet wallet = this.WalletManager.AcquireWallet(character.ID, WalletKeys.MAIN_WALLET);
             {
                 wallet.EnsureEnoughBalance(insuranceCost);
                 wallet.CreateJournalRecord(

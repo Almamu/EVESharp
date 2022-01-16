@@ -1,5 +1,6 @@
 using System;
 using EVESharp.Common.Services;
+using EVESharp.EVE;
 using EVESharp.Node.Database;
 using EVESharp.Node.Inventory;
 using EVESharp.Node.Inventory.Items.Types;
@@ -46,7 +47,7 @@ namespace EVESharp.Node.Services.Characters
             Character character = this.ItemFactory.GetItem<Character>(call.Client.EnsureCharacterIsSelected());
             
             // access the wallet and do the required changes
-            using Wallet wallet = this.WalletManager.AcquireWallet(character.ID, 1000);
+            using Wallet wallet = this.WalletManager.AcquireWallet(character.ID, WalletKeys.MAIN_WALLET);
             {
                 // ensure the character has enough balance
                 wallet.EnsureEnoughBalance(bounty);

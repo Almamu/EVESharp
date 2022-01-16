@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using EVESharp.EVE;
 using EVESharp.EVE.Packets.Complex;
 using EVESharp.PythonTypes.Types.Primitives;
 
@@ -21,13 +22,13 @@ namespace EVESharp.Node.Notifications.Client.Wallet
 
             this.Wallet = this.AccountKey switch
             {
-                1000 => "cash",
-                1001 => "cash2",
-                1002 => "cash3",
-                1003 => "cash4",
-                1004 => "cash5",
-                1005 => "cash6",
-                1006 => "cash7",
+                WalletKeys.MAIN_WALLET => "cash",
+                WalletKeys.SECOND_WALLET => "cash2",
+                WalletKeys.THIRD_WALLET => "cash3",
+                WalletKeys.FOURTH_WALLET => "cash4",
+                WalletKeys.FIFTH_WALLET => "cash5",
+                WalletKeys.SIXTH_WALLET => "cash6",
+                WalletKeys.SEVENTH_WALLET => "cash7",
                 _ => ""
             };
         }

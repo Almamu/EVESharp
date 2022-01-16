@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using EVESharp.Common.Services;
+using EVESharp.EVE;
 using EVESharp.EVE.Packets.Exceptions;
 using EVESharp.Node.Database;
 using EVESharp.Node.Exceptions.contractMgr;
@@ -203,7 +204,7 @@ namespace EVESharp.Node.Services.Contracts
                 // take reward from the character
                 if (reward > 0)
                 {
-                    using Wallet wallet = this.WalletManager.AcquireWallet(callerCharacterID, 1000);
+                    using Wallet wallet = this.WalletManager.AcquireWallet(callerCharacterID, WalletKeys.MAIN_WALLET);
                     {
                         wallet.EnsureEnoughBalance(reward);
                         wallet.CreateJournalRecord(
@@ -216,7 +217,7 @@ namespace EVESharp.Node.Services.Contracts
                 ulong contractID = this.DB.CreateContract(connection, call.Client.EnsureCharacterIsSelected(),
                     call.Client.CorporationID, call.Client.AllianceID, (ContractTypes) (int) contractType, availability,
                     assigneeID ?? 0, expireTime, courierContractDuration, startStationID, endStationID, priceOrStartingBid,
-                    reward, collateralOrBuyoutPrice, title, description, 1000);
+                    reward, collateralOrBuyoutPrice, title, description, WalletKeys.MAIN_WALLET);
 
                 // TODO: take broker's tax, deposit and sales tax
                 
@@ -465,7 +466,7 @@ namespace EVESharp.Node.Services.Contracts
                     throw new ConBidTooLow(quantity, nextMinimumBid);
 
                 // take the bid's money off the wallet
-                using Wallet bidderWallet = this.WalletManager.AcquireWallet(bidderID, 1000);
+                using Wallet bidderWallet = this.WalletManager.AcquireWallet(bidderID, WalletKeys.MAIN_WALLET);
                 {
                     bidderWallet.EnsureEnoughBalance(quantity);
                     bidderWallet.CreateJournalRecord(
@@ -490,7 +491,7 @@ namespace EVESharp.Node.Services.Contracts
                 ulong bidID = this.DB.PlaceBid(connection, contractID, quantity, bidderID, forCorp);
                 
                 // return the money for the player that was the highest bidder
-                using Wallet maximumBidderWallet = this.WalletManager.AcquireWallet(maximumBidderID, 1000);
+                using Wallet maximumBidderWallet = this.WalletManager.AcquireWallet(maximumBidderID, WalletKeys.MAIN_WALLET);
                 {
                     maximumBidderWallet.CreateJournalRecord(
                         MarketReference.ContractAuctionBidRefund, null, null, maximumBid, ""
