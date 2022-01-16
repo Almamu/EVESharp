@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
+using EVESharp.Common.Database;
 using EVESharp.Common.Services;
+using EVESharp.Database;
 using EVESharp.EVE.Packets.Exceptions;
 using EVESharp.Node.Database;
 using EVESharp.Node.Inventory;
@@ -14,20 +16,26 @@ namespace EVESharp.Node.Services.Characters
 {
     public class bookmark : IService
     {
-        private BookmarkDB DB { get; }
+        private DatabaseConnection Database { get; init; }
         private ItemFactory ItemFactory { get; }
         private MachoNet MachoNet { get; }
         
-        public bookmark(BookmarkDB db, ItemFactory itemFactory, MachoNet machoNet)
+        public bookmark(DatabaseConnection connection, ItemFactory itemFactory, MachoNet machoNet)
         {
-            this.DB = db;
+            this.Database = connection;
             this.ItemFactory = itemFactory;
             this.MachoNet = machoNet;
         }
 
         public PyDataType GetBookmarks(CallInformation call)
         {
-            return this.DB.GetBookmarks(call.Client.EnsureCharacterIsSelected());
+            return Database.Rowset(
+                BookmarkDB.GET,
+                new Dictionary<string, object>()
+                {
+                    {"_ownerID", call.Client.EnsureCharacterIsSelected()}
+                }
+            );
         }
 
         public PyDataType BookmarkLocation(PyInteger itemID, PyDataType unk, PyString name, PyString comment, CallInformation call)
@@ -44,8 +52,22 @@ namespace EVESharp.Node.Services.Characters
                 throw new CustomError("Cannot bookmark a non-location item");
             }
 
-            ulong bookmarkID = this.DB.CreateBookmark(call.Client.EnsureCharacterIsSelected(), item.ID, item.Type.ID,
-                name, comment, (double) item.X, (double) item.Y, (double) item.Z, item.LocationID);
+            ulong bookmarkID = Database.Scalar<ulong>(
+                BookmarkDB.CREATE,
+                new Dictionary<string, object>()
+                {
+                    {"_ownerID", call.Client.EnsureCharacterIsSelected()},
+                    {"_itemID", itemID},
+                    {"_typeID", item.Type.ID},
+                    {"_memo", name},
+                    {"_comment", comment},
+                    {"_date", DateTime.UtcNow.ToFileTimeUtc ()},
+                    {"_x", (double) item.X},
+                    {"_y", (double) item.Y},
+                    {"_z", (double) item.Z},
+                    {"_locationID", item.LocationID}
+                }
+            );
 
             PyDataType bookmark = KeyVal.FromDictionary(new PyDictionary
                 {
@@ -80,7 +102,18 @@ namespace EVESharp.Node.Services.Characters
 
         public PyDataType DeleteBookmarks(PyList bookmarkIDs, CallInformation call)
         {
-            this.DB.DeleteBookmark(bookmarkIDs.GetEnumerable<PyInteger>(), call.Client.EnsureCharacterIsSelected());
+            // if no ids are specified, there's nothing to do
+            if (bookmarkIDs.Count == 0)
+                return null;
+
+            Database.Procedure(
+                BookmarkDB.DELETE,
+                new Dictionary<string, object>()
+                {
+                    {"_ownerID", call.Client.EnsureCharacterIsSelected()},
+                    {"_bookmarkIDs", PyString.Join(',', bookmarkIDs.GetEnumerable<PyInteger>()).Value}
+                }
+            );
 
             return null;
         }

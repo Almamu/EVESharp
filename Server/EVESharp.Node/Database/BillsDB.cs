@@ -7,38 +7,8 @@ namespace EVESharp.Node.Database
 {
     public class BillsDB : DatabaseAccessor
     {
-        /// <summary>
-        /// Lists receivable bills for the given creditor
-        /// </summary>
-        /// <param name="creditorID"></param>
-        /// <returns></returns>
-        public CRowset GetBillsReceivable(int creditorID)
-        {
-            return Database.PrepareCRowsetQuery(
-                "SELECT billID, billTypeID, debtorID, creditorID, amount, dueDateTime, interest, externalID, paid, externalID2 FROM mktBills WHERE creditorID = @creditorID",
-                new Dictionary<string, object>()
-                {
-                    {"@creditorID", creditorID}
-                }
-            );
-        }
-        
-        /// <summary>
-        /// List payable bills for the given debotr
-        /// </summary>
-        /// <param name="debtorID"></param>
-        /// <returns></returns>
-        public CRowset GetBillsPayable(int debtorID)
-        {
-            return Database.PrepareCRowsetQuery(
-                "SELECT billID, billTypeID, debtorID, creditorID, amount, dueDateTime, interest, externalID, paid, externalID2 FROM mktBills WHERE debtorID = @debtorID AND paid = 0",
-                new Dictionary<string, object>()
-                {
-                    {"@debtorID", debtorID}
-                }
-            );
-        }
-
+        public const string GET_RECEIVABLE = "MktBillsGetReceivable";
+        public const string GET_PAYABLE = "MktBillsGetPayable";
         /// <summary>
         /// Creates a bill with the given information
         /// </summary>

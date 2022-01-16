@@ -488,7 +488,7 @@ namespace EVESharp.Common.Database
                 using (reader)
                 {
                     // run the prepared statement
-                    return Rowset.FromMySqlDataReader(this, reader);
+                    return PythonTypes.Types.Database.Rowset.FromMySqlDataReader(this, reader);
                 }
             }
             catch (Exception e)
@@ -517,7 +517,7 @@ namespace EVESharp.Common.Database
                 using (reader)
                 {
                     // run the prepared statement
-                    return Rowset.FromMySqlDataReader(this, reader);
+                    return PythonTypes.Types.Database.Rowset.FromMySqlDataReader(this, reader);
                 }
             }
             catch (Exception e)
@@ -1300,6 +1300,34 @@ namespace EVESharp.Common.Database
         }
 
         /// <summary>
+        /// Calls the given procedure
+        /// </summary>
+        /// <param name="procedureName">The procedure name</param>
+        public ulong ProcedureLID(string procedureName, Dictionary<string, object> values)
+        {
+            try
+            {
+                MySqlConnection connection = null;
+                MySqlCommand command = this.PrepareProcedureCall(ref connection, procedureName);
+
+                this.AddNamedParameters(values, command);
+
+                using (connection)
+                using (command)
+                {
+                    command.ExecuteNonQuery();
+
+                    return (ulong) command.LastInsertedId;
+                }
+            }
+            catch (Exception e)
+            {
+                Log.Error($"MySQL error: {e.Message}");
+                throw;
+            }
+        }
+
+        /// <summary>
         /// Calls the given procedure and returns it's data as a normal CRowset
         /// </summary>
         /// <param name="procedureName">The procedure name</param>
@@ -1318,6 +1346,99 @@ namespace EVESharp.Common.Database
                     using (MySqlDataReader reader = command.ExecuteReader())
                     {
                         return PythonTypes.Types.Database.CRowset.FromMySqlDataReader(this, reader);
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                Log.Error($"MySQL error: {e.Message}");
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Calls the given procedure and returns it's data as a normal CRowset
+        /// </summary>
+        /// <param name="procedureName">The procedure name</param>
+        /// <param name="values">The values to add to the call</param>
+        /// <returns>The CRowset object representing the result</returns>
+        public CRowset CRowset(string procedureName, Dictionary<string, object> values)
+        {
+            try
+            {
+                // initialize a command and a connection for this procedure call
+                MySqlConnection connection = null;
+                MySqlCommand command = this.PrepareProcedureCall(ref connection, procedureName);
+
+                this.AddNamedParameters(values, command);
+
+                using (connection)
+                using (command)
+                {
+                    using (MySqlDataReader reader = command.ExecuteReader())
+                    {
+                        return PythonTypes.Types.Database.CRowset.FromMySqlDataReader(this, reader);
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                Log.Error($"MySQL error: {e.Message}");
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Calls the given procedure and returns it's data as a normal CRowset
+        /// </summary>
+        /// <param name="procedureName">The procedure name</param>
+        /// <returns>The CRowset object representing the result</returns>
+        public Rowset Rowset(string procedureName)
+        {
+            try
+            {
+                // initialize a command and a connection for this procedure call
+                MySqlConnection connection = null;
+                MySqlCommand command = this.PrepareProcedureCall(ref connection, procedureName);
+
+                using (connection)
+                using (command)
+                {
+                    using (MySqlDataReader reader = command.ExecuteReader())
+                    {
+                        return PythonTypes.Types.Database.Rowset.FromMySqlDataReader(this, reader);
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                Log.Error($"MySQL error: {e.Message}");
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Calls the given procedure and returns it's data as a normal CRowset
+        /// </summary>
+        /// <param name="procedureName">The procedure name</param>
+        /// <param name="values">The values to add to the call</param>
+        /// <returns>The CRowset object representing the result</returns>
+        public Rowset Rowset(string procedureName, Dictionary<string, object> values)
+        {
+            try
+            {
+                // initialize a command and a connection for this procedure call
+                MySqlConnection connection = null;
+                MySqlCommand command = this.PrepareProcedureCall(ref connection, procedureName);
+
+                this.AddNamedParameters(values, command);
+
+                using (connection)
+                using (command)
+                {
+                    using (MySqlDataReader reader = command.ExecuteReader())
+                    {
+                        return PythonTypes.Types.Database.Rowset.FromMySqlDataReader(this, reader);
                     }
                 }
             }

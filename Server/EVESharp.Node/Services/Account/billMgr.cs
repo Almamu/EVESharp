@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using EVESharp.Common.Database;
 using EVESharp.Common.Services;
 using EVESharp.EVE;
 using EVESharp.EVE.Packets.Complex;
@@ -23,10 +24,12 @@ namespace EVESharp.Node.Services.Account
         private CorporationDB CorporationDB { get; init; }
         private ItemFactory ItemFactory { get; init; }
         private NotificationManager NotificationManager { get; init; }
+        private DatabaseConnection Database { get; init; }
 
-        public billMgr(CacheStorage cacheStorage, BillsDB db, CorporationDB corporationDb, MachoNet machoNet, ItemFactory itemFactory, NotificationManager notificationManager)
+        public billMgr(CacheStorage cacheStorage, DatabaseConnection databaseConnection, BillsDB db, CorporationDB corporationDb, MachoNet machoNet, ItemFactory itemFactory, NotificationManager notificationManager)
         {
             this.CacheStorage = cacheStorage;
+            this.Database = databaseConnection;
             this.DB = db;
             this.CorporationDB = corporationDb;
             this.ItemFactory = itemFactory;
@@ -56,7 +59,13 @@ namespace EVESharp.Node.Services.Account
                 CorporationRole.JuniorAccountant.Is(call.Client.CorporationRole) == false)
                 throw new CrpAccessDenied(MLS.UI_CORP_ACCESSDENIED3);
             
-            return this.DB.GetBillsReceivable(call.Client.CorporationID);
+            return Database.CRowset(
+                BillsDB.GET_RECEIVABLE,
+                new Dictionary<string, object>()
+                {
+                    {"_creditorID", call.Client.CorporationID}
+                }
+            );
         }
 
         public PyDataType GetCorporationBills(CallInformation call)
@@ -66,7 +75,13 @@ namespace EVESharp.Node.Services.Account
                 CorporationRole.JuniorAccountant.Is(call.Client.CorporationRole) == false)
                 throw new CrpAccessDenied(MLS.UI_CORP_ACCESSDENIED3);
             
-            return this.DB.GetBillsPayable(call.Client.CorporationID);
+            return Database.CRowset(
+                BillsDB.GET_PAYABLE,
+                new Dictionary<string, object>()
+                {
+                    {"_debtorID", call.Client.CorporationID}
+                }
+            );
         }
 
         public PyDataType PayCorporationBill(PyInteger billID, CallInformation call)

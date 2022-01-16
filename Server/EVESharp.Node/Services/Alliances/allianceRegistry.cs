@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using EVESharp.Common.Database;
 using EVESharp.EVE;
 using EVESharp.EVE.Packets.Exceptions;
 using EVESharp.Node.Alliances;
@@ -22,7 +23,7 @@ namespace EVESharp.Node.Services.Alliances
     public class allianceRegistry : MultiClientBoundService
     {
         private AlliancesDB DB { get; init; }
-        private BillsDB BillsDB { get; init; }
+        private DatabaseConnection Database { get; init; }
         private CorporationDB CorporationDB { get; init; }
         private ChatDB ChatDB { get; init; }
         private NotificationManager NotificationManager { get; init; }
@@ -30,10 +31,10 @@ namespace EVESharp.Node.Services.Alliances
         private Alliance Alliance { get; init; }
         private ClientManager ClientManager { get; init; }
 
-        public allianceRegistry(BillsDB billsDB, CorporationDB corporationDB, AlliancesDB db, ChatDB chatDB, ItemFactory itemFactory, NotificationManager notificationManager, BoundServiceManager manager, ClientManager clientManager, MachoNet machoNet) : base(manager)
+        public allianceRegistry(DatabaseConnection databaseConnection, CorporationDB corporationDB, AlliancesDB db, ChatDB chatDB, ItemFactory itemFactory, NotificationManager notificationManager, BoundServiceManager manager, ClientManager clientManager, MachoNet machoNet) : base(manager)
         {
             this.DB = db;
-            this.BillsDB = billsDB;
+            this.Database = databaseConnection;
             this.CorporationDB = corporationDB;
             this.ChatDB = chatDB;
             this.NotificationManager = notificationManager;
@@ -43,10 +44,10 @@ namespace EVESharp.Node.Services.Alliances
             machoNet.OnClusterTimer += PerformTimedEvents;
         }
         
-        private allianceRegistry(Alliance alliance, BillsDB billsDB, CorporationDB corporationDB, AlliancesDB db, ItemFactory itemFactory, NotificationManager notificationManager, MultiClientBoundService parent) : base(parent, alliance.ID)
+        private allianceRegistry(Alliance alliance, DatabaseConnection databaseConnection, CorporationDB corporationDB, AlliancesDB db, ItemFactory itemFactory, NotificationManager notificationManager, MultiClientBoundService parent) : base(parent, alliance.ID)
         {
             this.DB = db;
-            this.BillsDB = billsDB;
+            this.Database = databaseConnection;
             this.CorporationDB = corporationDB;
             this.NotificationManager = notificationManager;
             this.ItemFactory = itemFactory;
@@ -116,7 +117,7 @@ namespace EVESharp.Node.Services.Alliances
 
             Alliance alliance = this.ItemFactory.LoadItem<Alliance>(bindParams.ObjectID);
             
-            return new allianceRegistry(alliance, this.BillsDB, this.CorporationDB, this.DB, this.ItemFactory, this.NotificationManager, this);
+            return new allianceRegistry(alliance, this.Database, this.CorporationDB, this.DB, this.ItemFactory, this.NotificationManager, this);
         }
 
         public PyDataType GetAlliance(CallInformation call)
@@ -238,7 +239,13 @@ namespace EVESharp.Node.Services.Alliances
 
         public PyDataType GetBills(CallInformation call)
         {
-            return this.BillsDB.GetBillsPayable(this.ObjectID);
+            return Database.CRowset(
+                BillsDB.GET_PAYABLE,
+                new Dictionary<string, object>()
+                {
+                    {"_debtorID", this.ObjectID}
+                }
+            );
         }
 
         public PyDataType DeleteRelationship(PyInteger toID, CallInformation call)
