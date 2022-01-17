@@ -1,4 +1,5 @@
 using System;
+using EVESharp.Common.Database;
 using EVESharp.Common.Services;
 using EVESharp.EVE;
 using EVESharp.Node.Database;
@@ -18,14 +19,16 @@ namespace EVESharp.Node.Services.Corporations
 {
     public class corporationSvc : IService
     {
+        private DatabaseConnection Database { get; init; }
         private CorporationDB DB { get; }
         private NodeContainer Container { get; }
         private WalletManager WalletManager { get; }
         private ItemFactory ItemFactory { get; }
         private NotificationManager NotificationManager { get; }
 
-        public corporationSvc(CorporationDB db, NodeContainer container, WalletManager walletManager, ItemFactory itemFactory, NotificationManager notificationManager)
+        public corporationSvc(DatabaseConnection databaseConnection, CorporationDB db, NodeContainer container, WalletManager walletManager, ItemFactory itemFactory, NotificationManager notificationManager)
         {
+            this.Database = databaseConnection;
             this.DB = db;
             this.Container = container;
             this.WalletManager = walletManager;
@@ -37,20 +40,20 @@ namespace EVESharp.Node.Services.Corporations
         {
             return new PyTuple(8)
             {
-                [0] = this.DB.ListAllCorpFactions(),
-                [1] = this.DB.ListAllFactionRegions(),
-                [2] = this.DB.ListAllFactionConstellations(),
-                [3] = this.DB.ListAllFactionSolarSystems(),
-                [4] = this.DB.ListAllFactionRaces(),
-                [5] = this.DB.ListAllFactionStationCount(),
-                [6] = this.DB.ListAllFactionSolarSystemCount(),
-                [7] = this.DB.ListAllNPCCorporationInfo()
+                [0] = Database.IntIntDictionary(CorporationDB.LIST_FACTION_CORPORATIONS),
+                [1] = Database.IntIntListDictionary(CorporationDB.LIST_FACTION_REGIONS),
+                [2] = Database.IntIntListDictionary(CorporationDB.LIST_FACTION_CONSTELLATIONS),
+                [3] = Database.IntIntListDictionary(CorporationDB.LIST_FACTION_SOLARSYSTEMS),
+                [4] = Database.IntIntListDictionary(CorporationDB.LIST_FACTION_RACES),
+                [5] = Database.IntIntDictionary(CorporationDB.LIST_FACTION_STATION_COUNT),
+                [6] = Database.IntIntDictionary(CorporationDB.LIST_FACTION_STATION_COUNT),
+                [7] = Database.IntRowDictionary(0, CorporationDB.LIST_NPC_INFO)
             };
         }
 
         public PyDataType GetNPCDivisions(CallInformation call)
         {
-            return this.DB.GetNPCDivisions();
+            return Database.Rowset(CorporationDB.LIST_NPC_DIVISIONS);
         }
 
         public PyTuple GetMedalsReceived(PyInteger characterID, CallInformation call)

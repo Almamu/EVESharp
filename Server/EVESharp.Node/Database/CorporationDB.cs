@@ -16,60 +16,21 @@ namespace EVESharp.Node.Database
 {
     public class CorporationDB : DatabaseAccessor
     {
+        public const string GET_ALLIANCE_APPLICATIONS = "CrpGetAllianceApplications";
+        public const string LIST_FACTION_CORPORATIONS = "CrpListFactionCorporations";
+        public const string LIST_FACTION_STATION_COUNT = "CrpListFactionStationCount";
+        public const string LIST_FACTION_REGIONS = "CrpListFactionRegions";
+        public const string LIST_FACTION_CONSTELLATIONS = "CrpListFactionConstellations";
+        public const string LIST_FACTION_SOLARSYSTEMS = "CrpListFactionSolarSystems";
+        public const string LIST_FACTION_RACES = "CrpListFactionRaces";
+        public const string LIST_NPC_INFO = "CrpListNPCInfo";
+        public const string LIST_NPC_DIVISIONS = "CrpListNPCDivisions";
+        public const string GET_ROLE_GROUPS = "CrpGetRoleGroups";
+        public const string GET_ROLES = "CrpGetRoles";
+        public const string GET_TITLES_TEMPLATE = "CrpGetTitlesTemplate";
+        public const string GET_TITLES = "CrpGetTitles";
+        
         private ItemDB ItemDB { get; init; }
-        public PyDictionary<PyInteger,PyInteger> ListAllCorpFactions()
-        {
-            return Database.PrepareIntIntDictionary("SELECT corporationID, factionID from crpNPCCorporations");
-        }
-
-        public PyDictionary<PyInteger,PyInteger> ListAllFactionStationCount()
-        {
-            return Database.PrepareIntIntDictionary("SELECT factionID, COUNT(stationID) FROM crpNPCCorporations LEFT JOIN staStations USING (corporationID) GROUP BY factionID");
-        }
-
-        public PyDictionary<PyInteger,PyInteger> ListAllFactionSolarSystemCount()
-        {
-            return Database.PrepareIntIntDictionary("SELECT factionID, COUNT(solarSystemID) FROM crpNPCCorporations GROUP BY factionID");
-        }
-
-        public PyDictionary<PyInteger,PyList<PyInteger>> ListAllFactionRegions()
-        {
-            return Database.PrepareIntIntListDictionary("SELECT factionID, regionID FROM mapRegions WHERE factionID IS NOT NULL ORDER BY factionID");
-        }
-
-        public PyDictionary<PyInteger,PyList<PyInteger>> ListAllFactionConstellations()
-        {
-            return Database.PrepareIntIntListDictionary("SELECT factionID, constellationID FROM mapConstellations WHERE factionID IS NOT NULL ORDER BY factionID");
-        }
-
-        public PyDictionary<PyInteger,PyList<PyInteger>> ListAllFactionSolarSystems()
-        {
-            return Database.PrepareIntIntListDictionary("SELECT factionID, solarSystemID FROM mapSolarSystems WHERE factionID IS NOT NULL ORDER BY factionID");
-        }
-
-        public PyDictionary<PyInteger,PyList<PyInteger>> ListAllFactionRaces()
-        {
-            return Database.PrepareIntIntListDictionary("SELECT factionID, raceID FROM factionRaces WHERE factionID IS NOT NULL ORDER BY factionID");
-        }
-
-        public PyDictionary ListAllNPCCorporationInfo()
-        {
-            return Database.PrepareIntRowDictionary(
-                "SELECT " +
-                "   corporationID," +
-                "   corporationName, mainActivityID, secondaryActivityID," +
-                "   size, extent, solarSystemID, investorID1, investorShares1," +
-                "   investorID2, investorShares2, investorID3, investorShares3," +
-                "   investorID4, investorShares4," +
-                "   friendID, enemyID, publicShares, initialPrice," +
-                "   minSecurity, scattered, fringe, corridor, hub, border," +
-                "   factionID, sizeFactor, stationCount, stationSystemCount," +
-                "   stationID, ceoID, eveNames.itemName AS ceoName" +
-                " FROM crpNPCCorporations" +
-                " JOIN corporation USING (corporationID)" +
-                "   LEFT JOIN eveNames ON ceoID = eveNames.itemID", 0
-            );
-        }
 
         public Rowset GetEveOwners(int corporationID)
         {
@@ -79,13 +40,6 @@ namespace EVESharp.Node.Database
                 {
                     {"@corporationID", corporationID}
                 }
-            );
-        }
-
-        public Rowset GetNPCDivisions()
-        {
-            return Database.PrepareRowsetQuery(
-                "SELECT divisionID, divisionName, description, leaderType from crpNPCDivisions"
             );
         }
 
@@ -600,42 +554,7 @@ namespace EVESharp.Node.Database
                 return new SparseRowsetHeader(reader.GetInt32(0), headers, fieldTypes);
             }
         }
-
-        public Rowset GetRoleGroups()
-        {
-            return Database.PrepareRowsetQuery("SELECT roleGroupID, roleMask, roleGroupName, isDivisional, appliesTo, appliesToGrantable FROM crpRoleGroups");
-        }
-
-        public Rowset GetRoles()
-        {
-            return Database.PrepareRowsetQuery("SELECT roleID, roleName, shortDescription, description, roleIID FROM crpRoles");
-        }
-
-        public Rowset GetDivisions()
-        {
-            // TODO: THESE MIGHT BE CUSTOMIZABLE (most likely)
-            // TODO: BUT FOR NOW THESE SHOULD BE ENOUGH
-            return Database.PrepareRowsetQuery("SELECT divisionID, divisionName, description, leaderType FROM crpNPCDivisions");
-        }
-
-        public PyDataType GetTitlesTemplate()
-        {
-            return Database.PrepareDictRowListQuery(
-                "SELECT titleID, titleName, roles, grantableRoles, rolesAtHQ, grantableRolesAtHQ, rolesAtBase, grantableRolesAtBase, rolesAtOther, grantableRolesAtOther FROM crpTitlesTemplate"
-            );
-        }
-
-        public PyDataType GetTitles(int corporationID)
-        {
-            return Database.PrepareDictRowListQuery(
-                "SELECT titleID, titleName, roles, grantableRoles, rolesAtHQ, grantableRolesAtHQ, rolesAtBase, grantableRolesAtBase, rolesAtOther, grantableRolesAtOther FROM crpTitles WHERE corporationID = @corporationID",
-                new Dictionary<string, object>()
-                {
-                    {"@corporationID", corporationID}
-                }
-            );
-        }
-
+        
         public Rowset GetMemberTrackingInfoSimple(int corporationID)
         {
             return Database.PrepareRowsetQuery(
@@ -1638,17 +1557,6 @@ namespace EVESharp.Node.Database
 
                 return reader.GetInt32OrNull(0);
             }
-        }
-
-        public PyDataType GetAllianceApplications(int corporationID)
-        {
-            return Database.PrepareIndexRowsetQuery(
-                0, "SELECT allianceID, corporationID, applicationText, applicationDateTime, state FROM crpApplications WHERE corporationID = @corporationID",
-                new Dictionary<string, object>()
-                {
-                    {"@corporationID", corporationID}
-                }
-            );
         }
 
         public int? GetCurrentAllianceApplication(int corporationID)

@@ -546,7 +546,7 @@ namespace EVESharp.Common.Database
                 using (reader)
                 {
                     // run the prepared statement
-                    return IntIntDictionary.FromMySqlDataReader(reader);
+                    return PythonTypes.Types.Database.IntIntDictionary.FromMySqlDataReader(reader);
                 }
             }
             catch (Exception e)
@@ -578,7 +578,7 @@ namespace EVESharp.Common.Database
                 using (reader)
                 {
                     // run the prepared statement
-                    return IntIntListDictionary.FromMySqlDataReader(reader);
+                    return PythonTypes.Types.Database.IntIntListDictionary.FromMySqlDataReader(reader);
                 }
             }
             catch (Exception e)
@@ -609,7 +609,7 @@ namespace EVESharp.Common.Database
                 using (reader)
                 {
                     // run the prepared statement
-                    return IntRowDictionary.FromMySqlDataReader(this, reader, keyColumnIndex);
+                    return PythonTypes.Types.Database.IntRowDictionary.FromMySqlDataReader(this, reader, keyColumnIndex);
                 }
             }
             catch (Exception e)
@@ -644,7 +644,7 @@ namespace EVESharp.Common.Database
                 using (reader)
                 {
                     // run the prepared statement
-                    return IntRowDictionary.FromMySqlDataReader(this, reader, keyColumnIndex);
+                    return PythonTypes.Types.Database.IntRowDictionary.FromMySqlDataReader(this, reader, keyColumnIndex);
                 }
             }
             catch (Exception e)
@@ -1258,12 +1258,10 @@ namespace EVESharp.Common.Database
         {
             try
             {
-                MySqlCommand command = this.PrepareProcedureCall(ref connection, procedureName);
+                MySqlCommand command = this.PrepareProcedureCall(ref connection, procedureName, values);
 
                 using (command)
                 {
-                    this.AddNamedParameters(values, command);
-
                     command.ExecuteNonQuery();    
                 }
             }
@@ -1283,9 +1281,7 @@ namespace EVESharp.Common.Database
             try
             {
                 MySqlConnection connection = null;
-                MySqlCommand command = this.PrepareProcedureCall(ref connection, procedureName);
-
-                this.AddNamedParameters(values, command);
+                MySqlCommand command = this.PrepareProcedureCall(ref connection, procedureName, values);
 
                 using (connection)
                 using (command)
@@ -1309,9 +1305,7 @@ namespace EVESharp.Common.Database
             try
             {
                 MySqlConnection connection = null;
-                MySqlCommand command = this.PrepareProcedureCall(ref connection, procedureName);
-
-                this.AddNamedParameters(values, command);
+                MySqlCommand command = this.PrepareProcedureCall(ref connection, procedureName, values);
 
                 using (connection)
                 using (command)
@@ -1369,9 +1363,7 @@ namespace EVESharp.Common.Database
             {
                 // initialize a command and a connection for this procedure call
                 MySqlConnection connection = null;
-                MySqlCommand command = this.PrepareProcedureCall(ref connection, procedureName);
-
-                this.AddNamedParameters(values, command);
+                MySqlCommand command = this.PrepareProcedureCall(ref connection, procedureName, values);
 
                 using (connection)
                 using (command)
@@ -1430,9 +1422,7 @@ namespace EVESharp.Common.Database
             {
                 // initialize a command and a connection for this procedure call
                 MySqlConnection connection = null;
-                MySqlCommand command = this.PrepareProcedureCall(ref connection, procedureName);
-
-                this.AddNamedParameters(values, command);
+                MySqlCommand command = this.PrepareProcedureCall(ref connection, procedureName, values);
 
                 using (connection)
                 using (command)
@@ -1493,9 +1483,7 @@ namespace EVESharp.Common.Database
             {
                 // initialize a command and a connection for this procedure call
                 MySqlConnection connection = null;
-                MySqlCommand command = this.PrepareProcedureCall(ref connection, procedureName);
-
-                this.AddNamedParameters(values, command);
+                MySqlCommand command = this.PrepareProcedureCall(ref connection, procedureName, values);
 
                 using (connection)
                 using (command)
@@ -1555,9 +1543,7 @@ namespace EVESharp.Common.Database
             {
                 // initialize a command and a connection for this procedure call
                 MySqlConnection connection = null;
-                MySqlCommand command = this.PrepareProcedureCall(ref connection, procedureName);
-
-                this.AddNamedParameters(values, command);
+                MySqlCommand command = this.PrepareProcedureCall(ref connection, procedureName, values);
 
                 using (connection)
                 using (command)
@@ -1616,9 +1602,7 @@ namespace EVESharp.Common.Database
             {
                 // initialize a command and a connection for this procedure call
                 MySqlConnection connection = null;
-                MySqlCommand command = this.PrepareProcedureCall(ref connection, procedureName);
-
-                this.AddNamedParameters(values, command);
+                MySqlCommand command = this.PrepareProcedureCall(ref connection, procedureName, values);
 
                 using (connection)
                 using (command)
@@ -1626,6 +1610,185 @@ namespace EVESharp.Common.Database
                 {
                     // run the prepared statement
                     return PyPackedRowList.FromMySqlDataReader(this, reader);
+                }
+            }
+            catch (Exception e)
+            {
+                Log.Error($"MySQL error: {e.Message}");
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Runs one procedure and returns an IntIntDictionary representing the result
+        /// </summary>
+        /// <param name="procedureName">The procedure to call</param>
+        /// <returns>The IntIntDictionary object representing the result</returns>
+        public PyDictionary<PyInteger,PyInteger> IntIntDictionary(string procedureName)
+        {
+            try
+            {
+                // initialize a command and a connection for this procedure call
+                MySqlConnection connection = null;
+                MySqlCommand command = this.PrepareProcedureCall(ref connection, procedureName);
+                
+                using (connection)
+                using (command)
+                using (MySqlDataReader reader = command.ExecuteReader())
+                {
+                    // run the prepared statement
+                    return PythonTypes.Types.Database.IntIntDictionary.FromMySqlDataReader(reader);
+                }
+            }
+            catch (Exception e)
+            {
+                Log.Error($"MySQL error: {e.Message}");
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Runs one procedure with the given values as parameters and returns a IntIntListDictionary representing
+        /// the result
+        ///
+        /// IMPORTANT: The first column must be ordered (direction doesn't matter) for this to properly work
+        /// </summary>
+        /// <param name="procedureName">The procedure to run</param>
+        /// <returns>The IntIntListDictionary object representing the result</returns>
+        public PyDictionary<PyInteger,PyList<PyInteger>> IntIntListDictionary(string procedureName)
+        {
+            try
+            {
+                // initialize a command and a connection for this procedure call
+                MySqlConnection connection = null;
+                MySqlCommand command = this.PrepareProcedureCall(ref connection, procedureName);
+                
+                using (connection)
+                using (command)
+                using (MySqlDataReader reader = command.ExecuteReader())
+                {
+                    // run the prepared statement
+                    return PythonTypes.Types.Database.IntIntListDictionary.FromMySqlDataReader(reader);
+                }
+            }
+            catch (Exception e)
+            {
+                Log.Error($"MySQL error: {e.Message}");
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Runs one procedure with the given values as parameters and returns a IntRowDictionary representing
+        /// the result
+        /// </summary>
+        /// <param name="keyColumnIndex">The column to use as index for the IntRowDictionary</param>
+        /// <param name="procedureName">The procedure to run</param>
+        /// <returns>The IntRowDictionary object representing the result</returns>
+        public PyDictionary IntRowDictionary(int keyColumnIndex, string procedureName)
+        {
+            try
+            {
+                // initialize a command and a connection for this procedure call
+                MySqlConnection connection = null;
+                MySqlCommand command = this.PrepareProcedureCall(ref connection, procedureName);
+                
+                using (connection)
+                using (command)
+                using (MySqlDataReader reader = command.ExecuteReader())
+                {
+                    // run the prepared statement
+                    return PythonTypes.Types.Database.IntRowDictionary.FromMySqlDataReader(this, reader, keyColumnIndex);
+                }
+            }
+            catch (Exception e)
+            {
+                Log.Error($"MySQL error: {e.Message}");
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Runs one procedure with the given values as parameters and returns a IntRowDictionary representing
+        /// the result
+        /// </summary>
+        /// <param name="keyColumnIndex">The column to use as index for the IntRowDictionary</param>
+        /// <param name="procedureName">The procedure to run</param>
+        /// <param name="values">The key-value pair of values to use when running the query</param>
+        /// <returns>The IntRowDictionary object representing the result</returns>
+        public PyDictionary IntRowDictionary(int keyColumnIndex, string procedureName, Dictionary<string, object> values)
+        {
+            try
+            {
+                // initialize a command and a connection for this procedure call
+                MySqlConnection connection = null;
+                MySqlCommand command = this.PrepareProcedureCall(ref connection, procedureName, values);
+                
+                using (connection)
+                using (command)
+                using (MySqlDataReader reader = command.ExecuteReader())
+                {
+                    // run the prepared statement
+                    return PythonTypes.Types.Database.IntRowDictionary.FromMySqlDataReader(this, reader, keyColumnIndex);
+                }
+            }
+            catch (Exception e)
+            {
+                Log.Error($"MySQL error: {e.Message}");
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Runs one procedure with the given values as parameters and returns a DictRowList representing
+        /// the result
+        /// </summary>
+        /// <param name="procedureName">The procedure to call</param>
+        /// <returns>The DictRowList object representing the result</returns>
+        public PyDataType DictRowList(string procedureName)
+        {
+            try
+            {
+                // initialize a command and a connection for this procedure call
+                MySqlConnection connection = null;
+                MySqlCommand command = this.PrepareProcedureCall(ref connection, procedureName);
+                
+                using (connection)
+                using (command)
+                using (MySqlDataReader reader = command.ExecuteReader())
+                {
+                    // run the prepared statement
+                    return DictRowlist.FromMySqlDataReader(this, reader);
+                }
+            }
+            catch (Exception e)
+            {
+                Log.Error($"MySQL error: {e.Message}");
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Runs one procedure with the given values as parameters and returns a DictRowList representing
+        /// the result
+        /// </summary>
+        /// <param name="procedureName">The procedure to call</param>
+        /// <param name="values">The key-value pair of values to use when running the query</param>
+        /// <returns>The RowList object representing the result</returns>
+        public PyDataType DictRowList(string procedureName, Dictionary<string, object> values)
+        {
+            try
+            {
+                // initialize a command and a connection for this procedure call
+                MySqlConnection connection = null;
+                MySqlCommand command = this.PrepareProcedureCall(ref connection, procedureName, values);
+                
+                using (connection)
+                using (command)
+                using (MySqlDataReader reader = command.ExecuteReader())
+                {
+                    // run the prepared statement
+                    return DictRowlist.FromMySqlDataReader(this, reader);
                 }
             }
             catch (Exception e)

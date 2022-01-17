@@ -268,17 +268,19 @@ namespace EVESharp.Node.Services.Corporations
 
         public PyDataType GetRoleGroups(CallInformation call)
         {
-            return this.DB.GetRoleGroups();
+            return Database.Rowset(CorporationDB.GET_ROLE_GROUPS);
         }
 
         public PyDataType GetRoles(CallInformation call)
         {
-            return this.DB.GetRoles();
+            return Database.Rowset(CorporationDB.GET_ROLES);
         }
 
         public PyDataType GetDivisions(CallInformation call)
         {
-            return this.DB.GetDivisions();
+            // TODO: THESE MIGHT BE CUSTOMIZABLE (most likely)
+            // TODO: BUT FOR NOW THESE SHOULD BE ENOUGH
+            return Database.Rowset(CorporationDB.LIST_NPC_DIVISIONS);
         }
 
         public PyDataType GetTitles(CallInformation call)
@@ -286,11 +288,17 @@ namespace EVESharp.Node.Services.Corporations
             // check if the corp is NPC and return placeholder data from the crpTitlesTemplate
             if (ItemFactory.IsNPCCorporationID(call.Client.CorporationID) == true)
             {
-                return this.DB.GetTitlesTemplate();
+                return Database.DictRowList(CorporationDB.GET_TITLES_TEMPLATE);
             }
             else
             {
-                return this.DB.GetTitles(call.Client.CorporationID);                
+                return Database.DictRowList(
+                    CorporationDB.GET_TITLES,
+                    new Dictionary<string, object>()
+                    {
+                        {"_corporationID", call.Client.CorporationID}
+                    }
+                );            
             }
         }
 
@@ -1681,7 +1689,13 @@ namespace EVESharp.Node.Services.Corporations
 
         public PyDataType GetAllianceApplications(CallInformation call)
         {
-            return this.DB.GetAllianceApplications(this.ObjectID);
+            return Database.IndexRowset(
+                0, CorporationDB.GET_ALLIANCE_APPLICATIONS,
+                new Dictionary<string, object>()
+                {
+                    {"_corporationID", this.ObjectID}
+                }
+            );
         }
 
         public PyDataType ApplyToJoinAlliance(PyInteger allianceID, PyString applicationText, CallInformation call)
