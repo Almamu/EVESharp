@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using EVESharp.Common.Database;
 using EVESharp.Common.Services;
 using EVESharp.EVE;
@@ -77,7 +78,7 @@ namespace EVESharp.Node.Services.Corporations
 
         public PyDataType GetRecruitmentAdTypes(CallInformation call)
         {
-            return this.DB.GetRecruitmentAdTypes();
+            return Database.CRowset(CorporationDB.GET_RECRUITMENT_AD_TYPES);
         }
 
         public PyDataType GetRecruitmentAdsByCriteria(PyInteger regionID, PyInteger skillPoints, PyInteger typeMask,
@@ -95,13 +96,18 @@ namespace EVESharp.Node.Services.Corporations
 
         public PyTuple GetAllCorpMedals(PyInteger corporationID, CallInformation call)
         {
+            Dictionary<string, object> values = new Dictionary<string, object>()
+            {
+                {"_corporationID", corporationID}
+            };
+            
             // TODO: IMPLEMENT CACHING FOR THIS ANSWER (THE CLIENT SEEMS TO EXPECT IT, ALTHOUGH IT DOESN'T ENFORCE IT)
             // TODO: THAT WILL REQUIRE TO SEND NOTIFICATIONS ON DATA CHANGES LIKE NEW MEDALS OR MEDALS BEING ISSUED
             // TODO: OnCorporationMedalAdded, OnMedalIssued, OnMedalStatusChanged
             return new PyTuple(2)
             {
-                [0] = this.DB.GetMedalsListForCorporation(corporationID),
-                [1] = this.DB.GetMedalsDetailsForCorporation(corporationID)
+                [0] = Database.Rowset(CorporationDB.LIST_MEDALS, values),
+                [1] = Database.CRowset(CorporationDB.LIST_MEDALS_DETAILS, values)
             };
         }
 

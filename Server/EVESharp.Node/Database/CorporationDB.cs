@@ -25,10 +25,15 @@ namespace EVESharp.Node.Database
         public const string LIST_FACTION_RACES = "CrpListFactionRaces";
         public const string LIST_NPC_INFO = "CrpListNPCInfo";
         public const string LIST_NPC_DIVISIONS = "CrpListNPCDivisions";
+        public const string LIST_MEDALS = "CrpListMedals";
+        public const string LIST_MEDALS_DETAILS = "CrpListMedalDetails";
+        public const string LIST_APPLICATIONS = "CrpListApplications";
+        public const string LIST_SHAREHOLDERS = "CrpListShareholders";
         public const string GET_ROLE_GROUPS = "CrpGetRoleGroups";
         public const string GET_ROLES = "CrpGetRoles";
         public const string GET_TITLES_TEMPLATE = "CrpGetTitlesTemplate";
         public const string GET_TITLES = "CrpGetTitles";
+        public const string GET_RECRUITMENT_AD_TYPES = "CrpGetRecruitmentAdTypes";
         
         private ItemDB ItemDB { get; init; }
 
@@ -667,14 +672,6 @@ namespace EVESharp.Node.Database
                 return result;
             }
         }
-
-        public CRowset GetRecruitmentAdTypes()
-        {
-            return Database.PrepareCRowsetQuery(
-                "SELECT typeMask, typeName, description, groupID, groupName, crpRecruitmentAdTypes.dataID, crpRecruitmentAdGroups.dataID as groupDataID FROM crpRecruitmentAdTypes LEFT JOIN crpRecruitmentAdGroups USING (groupID)"
-            );
-        }
-
         public Rowset GetRecruitmentAds(int? regionID, double? skillPoints, int? typeMask, int? raceMask,
             int? isInAlliance, int? minMembers, int? maxMembers, int? corporationID = null)
         {
@@ -735,28 +732,6 @@ namespace EVESharp.Node.Database
             return Database.PrepareRowsetQuery(query, parameters);
         }
 
-        public Rowset GetMedalsListForCorporation(int corporationID)
-        {
-            return Database.PrepareRowsetQuery(
-                "SELECT medalID, title, description, date, creatorID, noRecepients FROM crpMedals WHERE corporationID = @corporationID",
-                new Dictionary<string, object>()
-                {
-                    {"@corporationID", corporationID}
-                }
-            );
-        }
-
-        public CRowset GetMedalsDetailsForCorporation(int corporationID)
-        {
-            return Database.PrepareCRowsetQuery(
-                "SELECT crpMedals.medalID, part, graphic, color FROM crpMedalParts LEFT JOIN crpMedals USING(medalID) WHERE corporationID = @corporationID",
-                new Dictionary<string, object>()
-                {
-                    {"@corporationID", corporationID}
-                }
-            );
-        }
-
         public Rowset GetCharacterApplications(int characterID)
         {
             return Database.PrepareRowsetQuery(
@@ -764,17 +739,6 @@ namespace EVESharp.Node.Database
                 new Dictionary<string, object>()
                 {
                     {"@characterID", characterID}
-                }
-            );
-        }
-
-        public PyDataType GetApplicationsToCorporation(int corporationID)
-        {
-            return Database.PrepareDictRowListQuery(
-                "SELECT corporationID, characterID, applicationText, 0 AS status, applicationDateTime FROM chrApplications WHERE corporationID = @corporationID",
-                new Dictionary<string, object>()
-                {
-                    {"@corporationID", corporationID}
                 }
             );
         }
@@ -1415,17 +1379,6 @@ namespace EVESharp.Node.Database
                     {"@parameter", parameter},
                     {"@parameter1", parameter1},
                     {"@parameter2", parameter2}
-                }
-            );
-        }
-
-        public PyList<PyInteger> GetShareholderList(int corporationID)
-        {
-            return Database.PrepareList(
-                "SELECT ownerID FROM crpShares LEFT JOIN chrInformation ON ownerID = characterID WHERE crpShares.corporationID = @corporationID",
-                new Dictionary<string, object>()
-                {
-                    {"@corporationID", corporationID}
                 }
             );
         }

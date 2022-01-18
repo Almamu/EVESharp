@@ -7,6 +7,7 @@ using System.Xml.XPath;
 using EVESharp.Common.Database;
 using EVESharp.Database;
 using EVESharp.EVE;
+using EVESharp.EVE.Packets.Complex;
 using EVESharp.EVE.Packets.Exceptions;
 using EVESharp.Node.Alliances;
 using EVESharp.Node.Chat;
@@ -1390,7 +1391,14 @@ namespace EVESharp.Node.Services.Corporations
             if (CorporationRole.PersonnelManager.Is(call.Client.CorporationRole) == false)
                 throw new CrpAccessDenied(MLS.UI_CORP_NEED_ROLE_PERS_MAN_TO_MANAGE_APPLICATIONS);
             
-            return this.DB.GetApplicationsToCorporation(call.Client.CorporationID);
+            
+            return Database.DictRowList(
+                CorporationDB.LIST_APPLICATIONS,
+                new Dictionary<string, object>()
+                {
+                    {"_corporationID", call.Client.CorporationID}
+                }
+            );
         }
 
         public PyDataType InsertApplication(PyInteger corporationID, PyString text, CallInformation call)
@@ -1587,10 +1595,7 @@ namespace EVESharp.Node.Services.Corporations
                 .AddValue("description", null, description);
                 
             // notify the new vote being created to all shareholders
-            this.NotificationManager.NotifyCharacters(
-                this.DB.GetShareholderList(corporationID),
-                change
-            );
+            this.NotifyShareholders(corporationID, change);
             this.NotificationManager.NotifyCorporationByRole(corporationID, CorporationRole.Director, change);
 
             int optionText = 0;
@@ -1678,10 +1683,7 @@ namespace EVESharp.Node.Services.Corporations
                 .AddValue("characterID", null, characterID)
                 .AddValue("optionID", null, optionID);
             // notify the new vote to the original character
-            this.NotificationManager.NotifyCharacters(
-                this.DB.GetShareholderList(corporationID),
-                change
-            );
+            this.NotifyShareholders(corporationID, change);
             this.NotificationManager.NotifyCorporationByRole(corporationID, CorporationRole.Director, change);
             
             return null;
@@ -1740,6 +1742,24 @@ namespace EVESharp.Node.Services.Corporations
 
                 this.NotificationManager.NotifyAlliance((int) currentApplicationAllianceID, change);
             }
+        }
+
+        /// <summary>
+        /// Sends a notification to the given corporation's shareholders
+        /// </summary>
+        /// <param name="corporationID"></param>
+        /// <param name="change"></param>
+        private void NotifyShareholders(int corporationID, ClientNotification change)
+        {
+            PyList<PyInteger> shareholders = Database.List<PyInteger>(
+                CorporationDB.LIST_SHAREHOLDERS,
+                new Dictionary<string, object>()
+                {
+                    {"_corporationID", corporationID}
+                }
+            );
+            
+            this.NotificationManager.NotifyCharacters(shareholders, change);
         }
     }
 }

@@ -1824,6 +1824,64 @@ namespace EVESharp.Common.Database
         }
 
         /// <summary>
+        /// Runs one procedure with the given values as parameters and returns a PyList representing the result.
+        /// this only holds ONE row
+        /// </summary>
+        /// <param name="procedureName">The procedure to call</param>
+        /// <param name="values">The key-value pair of values to use when running the query</param>
+        /// <returns>The PyDataType object representing the result</returns>
+        public PyList<T> List<T>(string procedureName, Dictionary<string, object> values) where T : PyDataType
+        {
+            try
+            {
+                MySqlConnection connection = null;
+                MySqlCommand command = this.PrepareProcedureCall(ref connection, procedureName, values);
+                
+                using (connection)
+                using (command)
+                using (MySqlDataReader reader = command.ExecuteReader())
+                {
+                    // run the prepared statement
+                    return PyList<T>.FromMySqlDataReader(this, reader);
+                }
+            }
+            catch (Exception e)
+            {
+                Log.Error($"MySQL error: {e.Message}");
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Runs one procedure with the given values as parameters and returns a PyList representing the result.
+        /// this only holds ONE row
+        /// </summary>
+        /// <param name="procedureName">The procedure to call</param>
+        /// <param name="values">The key-value pair of values to use when running the query</param>
+        /// <returns>The PyDataType object representing the result</returns>
+        public PyList<PyDataType> List(string procedureName, Dictionary<string, object> values)
+        {
+            try
+            {
+                MySqlConnection connection = null;
+                MySqlCommand command = this.PrepareProcedureCall(ref connection, procedureName, values);
+                
+                using (connection)
+                using (command)
+                using (MySqlDataReader reader = command.ExecuteReader())
+                {
+                    // run the prepared statement
+                    return PyList<PyDataType>.FromMySqlDataReader(this, reader);
+                }
+            }
+            catch (Exception e)
+            {
+                Log.Error($"MySQL error: {e.Message}");
+                throw;
+            }
+        }
+
+        /// <summary>
         /// Calls the given function and returns it's value casting it to the given type. If the result returns more than
         /// one column or row, only the topmost, leftmost value is returned
         /// </summary>
