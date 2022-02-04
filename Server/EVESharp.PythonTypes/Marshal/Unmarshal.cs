@@ -110,16 +110,16 @@ namespace EVESharp.PythonTypes.Marshal
             // perform decode
             switch (opcode)
             {
-                case Opcode.IntegerVar: return ProcessIntegerVar(opcode);
-                case Opcode.None: return ProcessNone(opcode);
-                case Opcode.Buffer: return ProcessBuffer(opcode);
-                case Opcode.Token: return ProcessToken(opcode);
-                case Opcode.SubStruct: return ProcessSubStruct(opcode);
-                case Opcode.SubStream: return ProcessSubStream(opcode);
-                case Opcode.ChecksumedStream: return ProcessChecksumedStream(opcode);
-                case Opcode.Dictionary: return ProcessDictionary(opcode);
-                case Opcode.PackedRow: return ProcessPackedRow(opcode);
-                case Opcode.ObjectData: return ProcessObjectData(opcode);
+                case Opcode.IntegerVar: return ProcessIntegerVar();
+                case Opcode.None: return ProcessNone();
+                case Opcode.Buffer: return ProcessBuffer();
+                case Opcode.Token: return ProcessToken();
+                case Opcode.SubStruct: return ProcessSubStruct();
+                case Opcode.SubStream: return ProcessSubStream();
+                case Opcode.ChecksumedStream: return ProcessChecksumedStream();
+                case Opcode.Dictionary: return ProcessDictionary();
+                case Opcode.PackedRow: return ProcessPackedRow();
+                case Opcode.ObjectData: return ProcessObjectData();
                 
                 case Opcode.IntegerLongLong:
                 case Opcode.IntegerSignedShort:
@@ -199,11 +199,8 @@ namespace EVESharp.PythonTypes.Marshal
             return data;
         }
 
-        protected virtual PyDataType ProcessIntegerVar(Opcode opcode)
+        protected virtual PyDataType ProcessIntegerVar()
         {
-            if (opcode != Opcode.IntegerVar)
-                throw new InvalidDataException($"Trying to parse a {opcode} as integer var");
-            
             // read the size
             uint length = mReader.ReadSizeEx();
             // emergency fallback, for longer integers read it as a PyBuffer
@@ -263,14 +260,10 @@ namespace EVESharp.PythonTypes.Marshal
         /// Opcodes supported:
         /// <seealso cref="Opcode.None"/>
         /// </summary>
-        /// <param name="opcode">Type of object to parse</param>
         /// <returns>The decoded python type</returns>
         /// <exception cref="InvalidDataException">If any error was found in the data</exception>
-        protected virtual PyDataType ProcessNone(Opcode opcode)
+        protected virtual PyDataType ProcessNone()
         {
-            if (opcode != Opcode.None)
-                throw new InvalidDataException($"Trying to parse a {opcode} as None");
-
             return null;
         }
 
@@ -280,14 +273,10 @@ namespace EVESharp.PythonTypes.Marshal
         /// Opcodes supported:
         /// <seealso cref="Opcode.Buffer"/>
         /// </summary>
-        /// <param name="opcode">Type of object to parse</param>
         /// <returns>The decoded python type</returns>
         /// <exception cref="InvalidDataException">If any error was found in the data</exception>
-        protected virtual PyDataType ProcessBuffer(Opcode opcode)
+        protected virtual PyDataType ProcessBuffer()
         {
-            if (opcode != Opcode.Buffer)
-                throw new InvalidDataException($"Trying to parse a {opcode} as Buffer");
-
             uint length = this.mReader.ReadSizeEx();
 
             return new PyBuffer(this.mReader.ReadBytes((int) length));
@@ -345,14 +334,10 @@ namespace EVESharp.PythonTypes.Marshal
         /// Opcodes supported:
         /// <seealso cref="Opcode.Token"/>
         /// </summary>
-        /// <param name="opcode">Type of object to parse</param>
         /// <returns>The decoded python type</returns>
         /// <exception cref="InvalidDataException">If any error was found in the data</exception>
-        protected virtual PyDataType ProcessToken(Opcode opcode)
+        protected virtual PyDataType ProcessToken()
         {
-            if (opcode != Opcode.Token)
-                throw new InvalidDataException($"Trying to parse a {opcode} as Token");
-
             return new PyToken(
                 Encoding.ASCII.GetString(
                     this.mReader.ReadBytes(this.mReader.ReadByte())
@@ -513,14 +498,10 @@ namespace EVESharp.PythonTypes.Marshal
         /// Opcodes supported:
         /// <seealso cref="Opcode.Dictionary"/>
         /// </summary>
-        /// <param name="opcode">Type of object to parse</param>
         /// <returns>The decoded python type</returns>
         /// <exception cref="InvalidDataException">If any error was found in the data</exception>
-        protected virtual PyDataType ProcessDictionary(Opcode opcode)
+        protected virtual PyDataType ProcessDictionary()
         {
-            if (opcode != Opcode.Dictionary)
-                throw new InvalidDataException($"Trying to parse a {opcode} as Dictionary");
-
             PyDictionary dictionary = new PyDictionary();
             uint size = this.mReader.ReadSizeEx();
 
@@ -541,14 +522,10 @@ namespace EVESharp.PythonTypes.Marshal
         /// Opcodes supported:
         /// <seealso cref="Opcode.PackedRow"/>
         /// </summary>
-        /// <param name="opcode">Type of object to parse</param>
         /// <returns>The decoded python type</returns>
         /// <exception cref="InvalidDataException">If any error was found in the data</exception>
-        protected virtual PyDataType ProcessPackedRow(Opcode opcode)
+        protected virtual PyDataType ProcessPackedRow()
         {
-            if (opcode != Opcode.PackedRow)
-                throw new InvalidDataException($"Trying to parse a {opcode} as PackedRow");
-
             DBRowDescriptor descriptor = this.Process(false);
             Dictionary<string, PyDataType> data = new Dictionary<string, PyDataType> ();
             int wholeBytes = 0;
@@ -652,14 +629,10 @@ namespace EVESharp.PythonTypes.Marshal
         /// Opcodes supported:
         /// <seealso cref="Opcode.ObjectData"/>
         /// </summary>
-        /// <param name="opcode">Type of object to parse</param>
         /// <returns>The decoded python type</returns>
         /// <exception cref="InvalidDataException">If any error was found in the data</exception>
-        protected virtual PyDataType ProcessObjectData(Opcode opcode)
+        protected virtual PyDataType ProcessObjectData()
         {
-            if (opcode != Opcode.ObjectData)
-                throw new InvalidDataException($"Trying to parse a {opcode} as ObjectData");
-
             return new PyObjectData(
                 this.Process(false) as PyString, this.Process(false)
             );
@@ -677,9 +650,6 @@ namespace EVESharp.PythonTypes.Marshal
         /// <exception cref="InvalidDataException">If any error was found in the data</exception>
         protected virtual PyDataType ProcessObject(Opcode opcode)
         {
-            if (opcode != Opcode.ObjectType1 && opcode != Opcode.ObjectType2)
-                throw new InvalidDataException($"Trying to parse a {opcode} as ObjectEx");
-
             PyTuple header = this.Process(false) as PyTuple;
             PyList list = new PyList();
             PyDictionary dict = new PyDictionary();
@@ -710,14 +680,10 @@ namespace EVESharp.PythonTypes.Marshal
         /// Opcodes supported:
         /// <seealso cref="Opcode.SubStruct"/>
         /// </summary>
-        /// <param name="opcode">Type of object to parse</param>
         /// <returns>The decoded python type</returns>
         /// <exception cref="InvalidDataException">If any error was found in the data</exception>
-        protected virtual PyDataType ProcessSubStruct(Opcode opcode)
+        protected virtual PyDataType ProcessSubStruct()
         {
-            if (opcode != Opcode.SubStruct)
-                throw new InvalidDataException($"Trying to parse a {opcode} as SubStruct");
-
             return new PySubStruct(
                 this.Process(false)
             );
@@ -729,14 +695,10 @@ namespace EVESharp.PythonTypes.Marshal
         /// Opcodes supported:
         /// <seealso cref="Opcode.SubStream"/>
         /// </summary>
-        /// <param name="opcode">Type of object to parse</param>
         /// <returns>The decoded python type</returns>
         /// <exception cref="InvalidDataException">If any error was found in the data</exception>
-        protected virtual PyDataType ProcessSubStream(Opcode opcode)
+        protected virtual PyDataType ProcessSubStream()
         {
-            if (opcode != Opcode.SubStream)
-                throw new InvalidDataException($"Trying to parse a {opcode} as SubStream");
-
             uint length = this.mReader.ReadSizeEx();
             byte[] buffer = new byte[length];
 
@@ -753,14 +715,10 @@ namespace EVESharp.PythonTypes.Marshal
         /// Opcodes supported:
         /// <seealso cref="Opcode.ChecksumedStream"/>
         /// </summary>
-        /// <param name="opcode">Type of object to parse</param>
         /// <returns>The decoded python type</returns>
         /// <exception cref="InvalidDataException">If any error was found in the data</exception>
-        protected virtual PyDataType ProcessChecksumedStream(Opcode opcode)
+        protected virtual PyDataType ProcessChecksumedStream()
         {
-            if (opcode != Opcode.ChecksumedStream)
-                throw new InvalidDataException($"Trying to parse a {opcode} as ChecksumedStream");
-
             uint checksum = this.mReader.ReadUInt32();
 
             return new PyChecksumedStream(
