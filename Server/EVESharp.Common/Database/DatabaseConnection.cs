@@ -45,6 +45,7 @@ namespace EVESharp.Common.Database
             MySqlConnectionStringBuilder stringBuilder = new MySqlConnectionStringBuilder
             {
                 Server = configuration.Hostname,
+                Port = configuration.Port,
                 Database = configuration.Name,
                 UserID = configuration.Username,
                 Password = configuration.Password,
@@ -64,6 +65,7 @@ namespace EVESharp.Common.Database
             MySqlConnectionStringBuilder stringBuilder = new MySqlConnectionStringBuilder
             {
                 Server = configuration.Hostname,
+                Port = configuration.Port,
                 Database = "information_schema",
                 UserID = configuration.Username,
                 Password = configuration.Password,
