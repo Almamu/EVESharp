@@ -1,6 +1,6 @@
 DROP TABLE IF EXISTS `crpRoleGroups`;
 
-CREATE TABLE IF NOT EXISTS `crprolegroups` (
+CREATE TABLE IF NOT EXISTS `crpRoleGroups` (
   `roleGroupID` int(11) NOT NULL,
   `roleMask` bigint(20) DEFAULT NULL,
   `roleGroupName` varchar(255) NOT NULL,
@@ -10,7 +10,7 @@ CREATE TABLE IF NOT EXISTS `crprolegroups` (
   PRIMARY KEY (`roleGroupID`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-INSERT INTO `crprolegroups` (`roleGroupID`, `roleMask`, `roleGroupName`, `appliesTo`, `appliesToGrantable`, `isDivisional`) VALUES
+INSERT INTO `crpRoleGroups` (`roleGroupID`, `roleMask`, `roleGroupName`, `appliesTo`, `appliesToGrantable`, `isDivisional`) VALUES
 (1, 1130405705493254529, 'General', 'roles', 'grantableRoles', 0),
 (2, 21955048183434752, 'Station Service', 'roles', 'grantableRoles', 0),
 (3, 2198889037824, 'Accounting (Divisional)', 'roles', 'grantableRoles', 1),
