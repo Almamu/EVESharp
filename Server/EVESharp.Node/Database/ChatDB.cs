@@ -325,7 +325,7 @@ namespace EVESharp.Node.Database
             }
             
             MySqlConnection connection = null;
-            MySqlDataReader reader = Database.PrepareQuery(ref connection, query, 
+            MySqlDataReader reader = Database.Select(ref connection, query, 
                 new Dictionary<string, object>()
                 {
                     {"@characterID", characterID},
@@ -354,7 +354,7 @@ namespace EVESharp.Node.Database
         public Row GetChannelInfoByRelatedEntity(int relatedEntityID, int characterID, bool maillist = false)
         {
             MySqlConnection connection = null;
-            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+            MySqlDataReader reader = Database.Select(ref connection,
                 "SELECT" +
                 " channelID, ownerID, displayName, motd, comparisonKey, memberless, !ISNULL(password) AS password," +
                 " mailingList, cspa, temporary, !ISNULL(lscChannelPermissions.accessor) AS subscribed, 0 AS languageRestriction " +
@@ -451,7 +451,7 @@ namespace EVESharp.Node.Database
         public Row GetExtraInfo(int characterID)
         {
             MySqlConnection connection = null;
-            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+            MySqlDataReader reader = Database.Select(ref connection,
                 "SELECT itemID AS ownerID, itemName AS ownerName, typeID FROM eveNames WHERE itemID = @characterID",
                 new Dictionary<string, object>()
                 {
@@ -477,7 +477,7 @@ namespace EVESharp.Node.Database
         public PyList<PyInteger> GetOnlineCharsOnChannel(int channelID)
         {
             MySqlConnection connection = null;
-            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+            MySqlDataReader reader = Database.Select(ref connection,
                 "SELECT accessor FROM lscChannelPermissions LEFT JOIN chrInformation ON accessor = characterID WHERE channelID = @channelID AND online = 1 AND `mode` > 0",
                 new Dictionary<string, object>()
                 {
@@ -506,7 +506,7 @@ namespace EVESharp.Node.Database
         public bool IsPlayerAllowedToChat(int channelID, int characterID)
         {
             MySqlConnection connection = null;
-            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+            MySqlDataReader reader = Database.Select(ref connection,
                 "SELECT `mode` FROM lscChannelPermissions WHERE channelID = @channelID AND accessor = @characterID",
                 new Dictionary<string, object>()
                 {
@@ -534,7 +534,7 @@ namespace EVESharp.Node.Database
         public bool IsPlayerAllowedToRead(int channelID, int characterID)
         {
             MySqlConnection connection = null;
-            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+            MySqlDataReader reader = Database.Select(ref connection,
                 "SELECT `mode` FROM lscChannelPermissions WHERE channelID = @channelID AND accessor = @characterID",
                 new Dictionary<string, object>()
                 {
@@ -562,7 +562,7 @@ namespace EVESharp.Node.Database
         public bool IsPlayerAllowedToChatOnRelatedEntity(int relatedEntityID, int characterID)
         {
             MySqlConnection connection = null;
-            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+            MySqlDataReader reader = Database.Select(ref connection,
                 "SELECT `mode` FROM lscChannelPermissions, lscGeneralChannels WHERE lscGeneralChannels.channelID = lscChannelPermissions.channelID AND lscGeneralChannels.relatedEntityID = @relatedEntityID AND accessor = @characterID",
                 new Dictionary<string, object>()
                 {
@@ -590,7 +590,7 @@ namespace EVESharp.Node.Database
         public int GetChannelIDFromRelatedEntity(int relatedEntityID, bool isMailingList = false)
         {
             MySqlConnection connection = null;
-            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+            MySqlDataReader reader = Database.Select(ref connection,
                 "SELECT channelID FROM lscGeneralChannels WHERE relatedEntityID = @itemID AND mailingList = @mailingList",
                 new Dictionary<string, object>()
                 {
@@ -620,7 +620,7 @@ namespace EVESharp.Node.Database
                 return CHANNEL_TYPE_NORMAL;
             
             MySqlConnection connection = null;
-            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+            MySqlDataReader reader = Database.Select(ref connection,
                 "SELECT displayName FROM lscGeneralChannels WHERE channelID = @channelID",
                 new Dictionary<string, object>()
                 {
@@ -657,7 +657,7 @@ namespace EVESharp.Node.Database
             }
             
             MySqlConnection connection = null;
-            MySqlDataReader reader = Database.PrepareQuery(ref connection, query,
+            MySqlDataReader reader = Database.Select(ref connection, query,
                 new Dictionary<string, object>()
                 {
                     {"@channelID", channelID}
@@ -714,7 +714,7 @@ namespace EVESharp.Node.Database
         public bool IsCharacterMemberOfChannel(int channelID, int characterID)
         {
             MySqlConnection connection = null;
-            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+            MySqlDataReader reader = Database.Select(ref connection,
                 "SELECT 0 AS extra FROM lscChannelPermissions WHERE channelID = @channelID AND accessor = @characterID",
                 new Dictionary<string, object>()
                 {
@@ -739,7 +739,7 @@ namespace EVESharp.Node.Database
         public bool IsCharacterAdminOfChannel(int channelID, int characterID)
         {
             MySqlConnection connection = null;
-            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+            MySqlDataReader reader = Database.Select(ref connection,
                 "SELECT `mode` FROM lscChannelPermissions WHERE channelID = @channelID AND accessor = @characterID",
                 new Dictionary<string, object>()
                 {
@@ -767,7 +767,7 @@ namespace EVESharp.Node.Database
         public bool IsCharacterOperatorOrAdminOfChannel(int channelID, int characterID)
         {
             MySqlConnection connection = null;
-            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+            MySqlDataReader reader = Database.Select(ref connection,
                 "SELECT `mode` FROM lscChannelPermissions WHERE channelID = @channelID AND accessor = @characterID",
                 new Dictionary<string, object>()
                 {

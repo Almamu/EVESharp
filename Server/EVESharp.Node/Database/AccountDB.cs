@@ -36,7 +36,7 @@ namespace EVESharp.Node.Database
         public bool LoginPlayer(string username, string password, ref long accountid, ref bool banned, ref long role)
         {
             MySqlConnection connection = null;
-            MySqlDataReader reader = Database.PrepareQuery(
+            MySqlDataReader reader = Database.Select(
                 ref connection,
                 "SELECT accountID, password, banned, role FROM account WHERE accountName = @username",
                 new Dictionary<string, object>()
@@ -84,7 +84,7 @@ namespace EVESharp.Node.Database
         public int GetAccountIDFromCharacterID(int characterID)
         {
             MySqlConnection connection = null;
-            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+            MySqlDataReader reader = Database.Select(ref connection,
                 "SELECT accountID FROM chrInformation WHERE characterID = @characterID AND online = 1",
                 new Dictionary<string, object>()
                 {

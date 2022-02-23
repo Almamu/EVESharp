@@ -38,6 +38,6 @@ CREATE TABLE `crpRecruitmentAdGroups` (
 	PRIMARY KEY (`groupID`) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-INSERT INTO `crprecruitmentadgroups` (`groupID`, `groupName`, `dataID`) VALUES (1, 'Operations', 2398847);
-INSERT INTO `crprecruitmentadgroups` (`groupID`, `groupName`, `dataID`) VALUES (2, 'Location', 2398850);
-INSERT INTO `crprecruitmentadgroups` (`groupID`, `groupName`, `dataID`) VALUES (3, 'Time Zone', 2398890);
+INSERT INTO `crpRecruitmentAdGroups` (`groupID`, `groupName`, `dataID`) VALUES (1, 'Operations', 2398847);
+INSERT INTO `crpRecruitmentAdGroups` (`groupID`, `groupName`, `dataID`) VALUES (2, 'Location', 2398850);
+INSERT INTO `crpRecruitmentAdGroups` (`groupID`, `groupName`, `dataID`) VALUES (3, 'Time Zone', 2398890);

@@ -13,7 +13,7 @@ namespace EVESharp.Node.Database
                 return 0;
             
             MySqlConnection connection = null;
-            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+            MySqlDataReader reader = Database.Select(ref connection,
                 "SELECT jumps FROM mapPrecalculatedSolarSystemJumps WHERE fromSolarSystemID = @fromSolarSystemID AND toSolarSystemID = @toSolarSystemID",
                 new Dictionary<string, object>()
                 {

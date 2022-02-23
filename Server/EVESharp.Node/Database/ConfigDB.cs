@@ -20,9 +20,9 @@ namespace EVESharp.Node.Database
         public PyDataType GetMultiOwnersEx(PyList<PyInteger> ids)
         {
             MySqlConnection connection = null;
-            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+            MySqlDataReader reader = Database.Select(ref connection,
                 $"SELECT itemID as ownerID, itemName as ownerName, typeID FROM eveNames WHERE itemID IN ({PyString.Join(',', ids)})"
-            ).ExecuteReader();
+            );
             
             using (connection)
             using (reader)
@@ -39,9 +39,9 @@ namespace EVESharp.Node.Database
         public PyDataType GetMultiGraphicsEx(PyList<PyInteger> ids)
         {   
             MySqlConnection connection = null;
-            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+            MySqlDataReader reader = Database.Select(ref connection,
                 $"SELECT graphicID, url3D, urlWeb, icon, urlSound, explosionID FROM eveGraphics WHERE graphicID IN ({PyString.Join(',', ids)})"
-            ).ExecuteReader();
+            );
             
             using (connection)
             using (reader)
@@ -58,9 +58,9 @@ namespace EVESharp.Node.Database
         public PyDataType GetMultiLocationsEx(PyList<PyInteger> ids)
         {
             MySqlConnection connection = null;
-            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+            MySqlDataReader reader = Database.Select(ref connection,
                 $"SELECT itemID as locationID, itemName as locationName, x, y, z FROM invItems LEFT JOIN eveNames USING(itemID) LEFT JOIN invPositions USING (itemID) WHERE itemID IN ({PyString.Join(',', ids)})"
-            ).ExecuteReader();
+            );
             
             using (connection)
             using (reader)
@@ -77,9 +77,9 @@ namespace EVESharp.Node.Database
         public PyDataType GetMultiAllianceShortNamesEx(PyList<PyInteger> ids)
         {
             MySqlConnection connection = null;
-            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+            MySqlDataReader reader = Database.Select(ref connection,
                 $"SELECT allianceID, shortName FROM crpAlliances WHERE allianceID IN ({PyString.Join(',', ids)})"
-            ).ExecuteReader();
+            );
             
             using (connection)
             using (reader)
@@ -96,9 +96,9 @@ namespace EVESharp.Node.Database
         public PyDataType GetMultiCorpTickerNamesEx(PyList<PyInteger> ids)
         {
             MySqlConnection connection = null;
-            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+            MySqlDataReader reader = Database.Select(ref connection,
                 $"SELECT corporationID, tickerName, shape1, shape2, shape3, color1, color2, color3 FROM corporation WHERE corporationID IN ({PyString.Join(',', ids)})"
-            ).ExecuteReader();
+            );
             
             using (connection)
             using (reader)
@@ -213,9 +213,9 @@ namespace EVESharp.Node.Database
         public PyDataType GetMultiInvTypesEx(PyList<PyInteger> ids)
         {
             MySqlConnection connection = null;
-            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+            MySqlDataReader reader = Database.Select(ref connection,
                 $"SELECT typeID, groupID, typeName, description, graphicID, radius, mass, volume, capacity, portionSize, raceID, basePrice, published, marketGroupID, chanceOfDuplicating, dataID FROM invTypes WHERE typeID IN ({PyString.Join(',', ids)})"
-            ).ExecuteReader();
+            );
             
             using (connection)
             using (reader)
@@ -238,7 +238,7 @@ namespace EVESharp.Node.Database
         public PyList<PyTuple> GetMapRegionConnection(int universeID)
         {
             MySqlConnection connection = null;
-            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+            MySqlDataReader reader = Database.Select(ref connection,
                 "SELECT origin.regionID AS fromRegionID, origin.constellationID AS fromConstellationID, origin.solarSystemID AS fromSolarSystemID, stargateID, celestialID, destination.solarSystemID AS toSolarSystemID, destination.constellationID AS toConstellationID, destination.regionID AS toRegionID FROM mapJumps LEFT JOIN mapDenormalize origin ON origin.itemID = mapJumps.stargateID LEFT JOIN mapDenormalize destination ON destination.itemID = mapJumps.celestialID",
                 new Dictionary<string, object>()
                 {
@@ -276,7 +276,7 @@ namespace EVESharp.Node.Database
         public PyList<PyTuple> GetMapConstellationConnection(int regionID)
         {
             MySqlConnection connection = null;
-            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+            MySqlDataReader reader = Database.Select(ref connection,
                 "SELECT fromRegionID, fromConstellationID, toConstellationID, toRegionID FROM mapConstellationJumps WHERE fromRegionID = @locationID",
                 new Dictionary<string, object>()
                 {
@@ -314,7 +314,7 @@ namespace EVESharp.Node.Database
         public PyList<PyTuple> GetMapSolarSystemConnection(int constellationID)
         {
             MySqlConnection connection = null;
-            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+            MySqlDataReader reader = Database.Select(ref connection,
                 "SELECT fromRegionID, fromConstellationID, fromSolarSystemID, toSolarSystemID, toConstellationID, toRegionID FROM mapSolarSystemJumps WHERE fromConstellationID = @locationID",
                 new Dictionary<string, object>()
                 {

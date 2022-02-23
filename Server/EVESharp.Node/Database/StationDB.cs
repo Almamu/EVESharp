@@ -15,7 +15,7 @@ namespace EVESharp.Node.Database
         public Dictionary<int, Operation> LoadOperations()
         {
             MySqlConnection connection = null;
-            MySqlDataReader reader = Database.Query(ref connection, "SELECT operationID, operationName, description FROM staOperations");
+            MySqlDataReader reader = Database.Select(ref connection, "SELECT operationID, operationName, description FROM staOperations");
             
             using (connection)
             using (reader)
@@ -26,7 +26,7 @@ namespace EVESharp.Node.Database
                 {
                     List<int> services = new List<int>();
                     MySqlConnection connectionServices = null;
-                    MySqlDataReader readerServices = Database.PrepareQuery(ref connectionServices,
+                    MySqlDataReader readerServices = Database.Select(ref connectionServices,
                         "SELECT serviceID FROM staOperationServices WHERE operationID = @operationID",
                         new Dictionary<string, object>()
                         {
@@ -58,7 +58,7 @@ namespace EVESharp.Node.Database
         public Dictionary<int, StaticData.Inventory.Station.Type> LoadStationTypes()
         {
             MySqlConnection connection = null;
-            MySqlDataReader reader = Database.Query(
+            MySqlDataReader reader = Database.Select(
                 ref connection,
                 "SELECT stationTypeID, hangarGraphicID, dockEntryX," + 
                 " dockEntryY, dockEntryZ, dockOrientationX, dockOrientationY," +
@@ -98,30 +98,25 @@ namespace EVESharp.Node.Database
         public Dictionary<int, string> LoadServices()
         {
             MySqlConnection connection = null;
-            MySqlCommand command =
-                Database.PrepareQuery(ref connection, "SELECT serviceID, serviceName FROM staServices");
+            MySqlDataReader reader =
+                Database.Select(ref connection, "SELECT serviceID, serviceName FROM staServices");
             
             using (connection)
-            using (command)
+            using (reader)
             {
-                MySqlDataReader reader = command.ExecuteReader();
+                Dictionary<int, string> result = new Dictionary<int, string>();
 
-                using (reader)
-                {
-                    Dictionary<int, string> result = new Dictionary<int, string>();
+                while (reader.Read() == true)
+                    result[reader.GetInt32(0)] = reader.GetString(1);
 
-                    while (reader.Read() == true)
-                        result[reader.GetInt32(0)] = reader.GetString(1);
-
-                    return result;
-                }
+                return result;
             }
         }
 
         public int CountRentedOffices(int stationID)
         {
             MySqlConnection connection = null;
-            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+            MySqlDataReader reader = Database.Select(ref connection,
                 "SELECT COUNT(*) FROM crpOffices WHERE stationID = @stationID",
                 new Dictionary<string, object>()
                 {
@@ -195,7 +190,7 @@ namespace EVESharp.Node.Database
         public bool CorporationHasOfficeRentedAt(int corporationID, int stationID)
         {
             MySqlConnection connection = null;
-            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+            MySqlDataReader reader = Database.Select(ref connection,
                 "SELECT corporationID FROM crpOffices WHERE stationID = @stationID AND corporationID = @corporationID",
                 new Dictionary<string, object>()
                 {

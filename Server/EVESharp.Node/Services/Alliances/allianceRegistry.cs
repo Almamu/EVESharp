@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data;
 using EVESharp.Common.Database;
 using EVESharp.Database;
 using EVESharp.EVE;
@@ -57,7 +58,8 @@ namespace EVESharp.Node.Services.Alliances
         {
             // TODO: THIS ONE MIGHT HAVE A BETTER PLACE SOMEWHERE, BUT FOR NOW IT'LL LIVE HERE
             MySqlConnection connection = null;
-            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+            MySqlDataReader reader = Database.Select(
+                ref connection,
                 $"SELECT corporationID, allianceID, executorCorpID FROM crpApplications LEFT JOIN crpAlliances USING(allianceID) WHERE `state` = {(int) AllianceApplicationStatus.Accepted} AND applicationUpdateTime < @limit",
                 new Dictionary<string, object>()
                 {

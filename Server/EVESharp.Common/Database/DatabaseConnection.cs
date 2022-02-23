@@ -97,6 +97,7 @@ namespace EVESharp.Common.Database
                                 value = ColumnCharset.Wide;
                                 break;
                             case "utf8":
+                            case "utf8mb3":
                                 value = ColumnCharset.Wide;
                                 break;
                             case "ascii":
@@ -118,10 +119,7 @@ namespace EVESharp.Common.Database
             try
             {
                 MySqlConnection connection = null;
-                MySqlCommand command = this.PrepareQuery(ref connection, query);
-                
-                // add values
-                this.AddNamedParameters(values, command);
+                MySqlCommand command = this.PrepareQuery(ref connection, query, values);
 
                 using (connection)
                 using (command)
@@ -162,15 +160,103 @@ namespace EVESharp.Common.Database
         {
             try
             {
-                MySqlConnection connection = new MySqlConnection(this.mConnectionString);
-                connection.Open();
+                MySqlConnection connection = null;
+                MySqlCommand command = this.PrepareQuery(ref connection, query);
 
                 using (connection)
+                using (command)
                 {
-                    MySqlCommand command = new MySqlCommand(query, connection);
-
                     command.ExecuteNonQuery();
                 }
+            }
+            catch (Exception e)
+            {
+                Log.Error($"MySQL error: {e.Message}");
+                throw;
+            }
+        }
+
+        public void Query(string query, Dictionary<string, object> values)
+        {
+            try
+            {
+                MySqlConnection connection = null;
+                MySqlCommand command = this.PrepareQuery(ref connection, query, values);
+
+                using (connection)
+                using (command)
+                {
+                    command.ExecuteNonQuery();
+                }
+            }
+            catch (Exception e)
+            {
+                Log.Error($"MySQL error: {e.Message}");
+                throw;
+            }
+        }
+
+        public void Query(ref MySqlConnection connection, string query)
+        {
+            try
+            {
+                // only open a connection if it's really needed
+                if (connection == null)
+                {
+                    connection = new MySqlConnection(this.mConnectionString);
+                    connection.Open();                    
+                }
+
+                MySqlCommand command = new MySqlCommand(query, connection);
+
+                using (command)
+                    command.ExecuteNonQuery();
+            }
+            catch (Exception e)
+            {
+                Log.Error($"MySQL error: {e.Message}");
+                throw;
+            }
+        }
+
+        public void Query(ref MySqlConnection connection, string query, Dictionary<string, object> values)
+        {
+            try
+            {
+                MySqlCommand command = this.PrepareQuery(ref connection, query, values);
+
+                using (command)
+                    command.ExecuteNonQuery();
+            }
+            catch (Exception e)
+            {
+                Log.Error($"MySQL error: {e.Message}");
+                throw;
+            }
+        }
+
+        public MySqlDataReader Select(ref MySqlConnection connection, string query)
+        {
+            try
+            {
+                MySqlCommand command = this.PrepareQuery(ref connection, query);
+                
+                return command.ExecuteReader();
+            }
+            catch (Exception e)
+            {
+                Log.Error($"MySQL error: {e.Message}");
+                throw;
+            }
+        }
+
+        public MySqlDataReader Select(ref MySqlConnection connection, string query, Dictionary<string, object> values)
+        {
+            try
+            {
+                MySqlCommand command = this.PrepareQuery(ref connection, query, values);
+                
+                return command.ExecuteReader();
             }
             catch (Exception e)
             {
@@ -203,7 +289,6 @@ namespace EVESharp.Common.Database
                 }
                 
                 MySqlCommand command = new MySqlCommand(query, connection);
-                command.Prepare();
 
                 return command;
             }
@@ -221,18 +306,55 @@ namespace EVESharp.Common.Database
         /// <param name="query">The prepared query</param>
         /// <param name="values">The key-value pair of values to use when running the query</param>
         /// <returns>The reader with the results of the query</returns>
-        public MySqlDataReader PrepareQuery(ref MySqlConnection connection, string query, Dictionary<string, object> values)
+        public MySqlCommand PrepareQuery(ref MySqlConnection connection, string query, Dictionary<string, object> values)
         {
             try
             {
-                // create the correct command
-                MySqlCommand command = this.PrepareQuery(ref connection, query);
+                // only open a connection if it's really needed
+                if (connection == null)
+                {
+                    connection = new MySqlConnection(this.mConnectionString);
+                    connection.Open();                    
+                }
+                
+                MySqlCommand command = new MySqlCommand(query, connection);
                 
                 // add values
                 this.AddNamedParameters(values, command);
+                // prepare the command
+                command.Prepare();
                 
                 // run the prepared statement
-                return command.ExecuteReader();
+                return command;
+            }
+            catch (Exception e)
+            {
+                Log.Error($"MySQL error: {e.Message}");
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Runs one prepared query with the given value as parameters, ignoring the result data
+        /// </summary>
+        /// <param name="query">The prepared query</param>
+        /// <param name="values">The key-value pair of values to use when running the query</param>
+        /// <returns>The number of rows affected</returns>
+        public int PrepareQuery(string query, Dictionary<string, object> values)
+        {
+            try
+            {
+                MySqlConnection connection = null;
+                
+                // create the correct command
+                MySqlCommand command = this.PrepareQuery(ref connection, query, values);
+
+                using (connection)
+                using (command)
+                {
+                    // run the command
+                    return command.ExecuteNonQuery();
+                }
             }
             catch (Exception e)
             {
@@ -252,14 +374,8 @@ namespace EVESharp.Common.Database
             try
             {
                 MySqlConnection connection = null;
-                // create the correct command
-                MySqlCommand command = this.PrepareQuery(ref connection, query);
-                
-                // add values
-                this.AddNamedParameters(values, command);
+                MySqlDataReader reader = this.Select(ref connection, query, values);
 
-                MySqlDataReader reader = command.ExecuteReader();
-                
                 using (connection)
                 using (reader)
                 {
@@ -284,11 +400,8 @@ namespace EVESharp.Common.Database
             try
             {
                 MySqlConnection connection = null;
-                // create the correct command
-                MySqlCommand command = this.PrepareQuery(ref connection, query);
+                MySqlDataReader reader = this.Select(ref connection, query);
 
-                MySqlDataReader reader = command.ExecuteReader();
-                
                 using (connection)
                 using (reader)
                 {
@@ -315,14 +428,8 @@ namespace EVESharp.Common.Database
             try
             {
                 MySqlConnection connection = null;
-                // create the correct command
-                MySqlCommand command = this.PrepareQuery(ref connection, query);
-                
-                // add values
-                this.AddNamedParameters(values, command);
+                MySqlDataReader reader = this.Select(ref connection, query, values);
 
-                MySqlDataReader reader = command.ExecuteReader();
-                
                 using (connection)
                 using (reader)
                 {
@@ -348,11 +455,8 @@ namespace EVESharp.Common.Database
             try
             {
                 MySqlConnection connection = null;
-                // create the correct command
-                MySqlCommand command = this.PrepareQuery(ref connection, query);
+                MySqlDataReader reader = this.Select(ref connection, query);
 
-                MySqlDataReader reader = command.ExecuteReader();
-                
                 using (connection)
                 using (reader)
                 {
@@ -378,14 +482,8 @@ namespace EVESharp.Common.Database
             try
             {
                 MySqlConnection connection = null;
-                // create the correct command
-                MySqlCommand command = this.PrepareQuery(ref connection, query);
-                
-                // add values
-                this.AddNamedParameters(values, command);
+                MySqlDataReader reader = this.Select(ref connection, query, values);
 
-                MySqlDataReader reader = command.ExecuteReader();
-                
                 using (connection)
                 using (reader)
                 {
@@ -414,14 +512,8 @@ namespace EVESharp.Common.Database
             try
             {
                 MySqlConnection connection = null;
-                // create the correct command
-                MySqlCommand command = this.PrepareQuery(ref connection, query);
-                
-                // add values
-                this.AddNamedParameters(values, command);
+                MySqlDataReader reader = this.Select(ref connection, query);
 
-                MySqlDataReader reader = command.ExecuteReader();
-                
                 using (connection)
                 using (reader)
                 {
@@ -446,11 +538,8 @@ namespace EVESharp.Common.Database
             try
             {
                 MySqlConnection connection = null;
-                // create the correct command
-                MySqlCommand command = this.PrepareQuery(ref connection, query);
+                MySqlDataReader reader = this.Select(ref connection, query);
 
-                MySqlDataReader reader = command.ExecuteReader();
-                
                 using (connection)
                 using (reader)
                 {
@@ -476,14 +565,8 @@ namespace EVESharp.Common.Database
             try
             {
                 MySqlConnection connection = null;
-                // create the correct command
-                MySqlCommand command = this.PrepareQuery(ref connection, query);
-                
-                // add values
-                this.AddNamedParameters(values, command);
+                MySqlDataReader reader = this.Select(ref connection, query, values);
 
-                MySqlDataReader reader = command.ExecuteReader();
-                
                 using (connection)
                 using (reader)
                 {
@@ -508,11 +591,8 @@ namespace EVESharp.Common.Database
             try
             {
                 MySqlConnection connection = null;
-                // create the correct command
-                MySqlCommand command = this.PrepareQuery(ref connection, query);
+                MySqlDataReader reader = this.Select(ref connection, query);
 
-                MySqlDataReader reader = command.ExecuteReader();
-                
                 using (connection)
                 using (reader)
                 {
@@ -537,11 +617,8 @@ namespace EVESharp.Common.Database
             try
             {
                 MySqlConnection connection = null;
-                // create the correct command
-                MySqlCommand command = this.PrepareQuery(ref connection, query);
+                MySqlDataReader reader = this.Select(ref connection, query);
 
-                MySqlDataReader reader = command.ExecuteReader();
-                
                 using (connection)
                 using (reader)
                 {
@@ -569,11 +646,8 @@ namespace EVESharp.Common.Database
             try
             {
                 MySqlConnection connection = null;
-                // create the correct command
-                MySqlCommand command = this.PrepareQuery(ref connection, query);
+                MySqlDataReader reader = this.Select(ref connection, query);
 
-                MySqlDataReader reader = command.ExecuteReader();
-                
                 using (connection)
                 using (reader)
                 {
@@ -600,11 +674,8 @@ namespace EVESharp.Common.Database
             try
             {
                 MySqlConnection connection = null;
-                // create the correct command
-                MySqlCommand command = this.PrepareQuery(ref connection, query);
+                MySqlDataReader reader = this.Select(ref connection, query);
 
-                MySqlDataReader reader = command.ExecuteReader();
-                
                 using (connection)
                 using (reader)
                 {
@@ -632,14 +703,8 @@ namespace EVESharp.Common.Database
             try
             {
                 MySqlConnection connection = null;
-                // create the correct command
-                MySqlCommand command = this.PrepareQuery(ref connection, query);
-                
-                // add values
-                this.AddNamedParameters(values, command);
+                MySqlDataReader reader = this.Select(ref connection, query, values);
 
-                MySqlDataReader reader = command.ExecuteReader();
-                
                 using (connection)
                 using (reader)
                 {
@@ -666,11 +731,8 @@ namespace EVESharp.Common.Database
             try
             {
                 MySqlConnection connection = null;
-                // create the correct command
-                MySqlCommand command = this.PrepareQuery(ref connection, query);
+                MySqlDataReader reader = this.Select(ref connection, query);
 
-                MySqlDataReader reader = command.ExecuteReader();
-                
                 using (connection)
                 using (reader)
                 {
@@ -698,14 +760,8 @@ namespace EVESharp.Common.Database
             try
             {
                 MySqlConnection connection = null;
-                // create the correct command
-                MySqlCommand command = this.PrepareQuery(ref connection, query);
-                
-                // add values
-                this.AddNamedParameters(values, command);
+                MySqlDataReader reader = this.Select(ref connection, query, values);
 
-                MySqlDataReader reader = command.ExecuteReader();
-                
                 using (connection)
                 using (reader)
                 {
@@ -731,11 +787,8 @@ namespace EVESharp.Common.Database
             try
             {
                 MySqlConnection connection = null;
-                // create the correct command
-                MySqlCommand command = this.PrepareQuery(ref connection, query);
+                MySqlDataReader reader = this.Select(ref connection, query);
 
-                MySqlDataReader reader = command.ExecuteReader();
-                
                 using (connection)
                 using (reader)
                 {
@@ -762,14 +815,8 @@ namespace EVESharp.Common.Database
             try
             {
                 MySqlConnection connection = null;
-                // create the correct command
-                MySqlCommand command = this.PrepareQuery(ref connection, query);
-                
-                // add values
-                this.AddNamedParameters(values, command);
+                MySqlDataReader reader = this.Select(ref connection, query, values);
 
-                MySqlDataReader reader = command.ExecuteReader();
-                
                 using (connection)
                 using (reader)
                 {
@@ -795,11 +842,8 @@ namespace EVESharp.Common.Database
             try
             {
                 MySqlConnection connection = null;
-                // create the correct command
-                MySqlCommand command = this.PrepareQuery(ref connection, query);
+                MySqlDataReader reader = this.Select(ref connection, query);
 
-                MySqlDataReader reader = command.ExecuteReader();
-                
                 using (connection)
                 using (reader)
                 {
@@ -829,14 +873,8 @@ namespace EVESharp.Common.Database
             try
             {
                 MySqlConnection connection = null;
-                // create the correct command
-                MySqlCommand command = this.PrepareQuery(ref connection, query);
+                MySqlDataReader reader = this.Select(ref connection, query, values);
 
-                // add values
-                this.AddNamedParameters(values, command);
-
-                MySqlDataReader reader = command.ExecuteReader();
-                
                 using (connection)
                 using (reader)
                 {
@@ -865,11 +903,8 @@ namespace EVESharp.Common.Database
             try
             {
                 MySqlConnection connection = null;
-                // create the correct command
-                MySqlCommand command = this.PrepareQuery(ref connection, query);
+                MySqlDataReader reader = this.Select(ref connection, query);
 
-                MySqlDataReader reader = command.ExecuteReader();
-                
                 using (connection)
                 using (reader)
                 {
@@ -899,14 +934,8 @@ namespace EVESharp.Common.Database
             try
             {
                 MySqlConnection connection = null;
-                // create the correct command
-                MySqlCommand command = this.PrepareQuery(ref connection, query);
+                MySqlDataReader reader = this.Select(ref connection, query, values);
 
-                // add values
-                this.AddNamedParameters(values, command);
-
-                MySqlDataReader reader = command.ExecuteReader();
-                
                 using (connection)
                 using (reader)
                 {
@@ -935,11 +964,8 @@ namespace EVESharp.Common.Database
             try
             {
                 MySqlConnection connection = null;
-                // create the correct command
-                MySqlCommand command = this.PrepareQuery(ref connection, query);
+                MySqlDataReader reader = this.Select(ref connection, query);
 
-                MySqlDataReader reader = command.ExecuteReader();
-                
                 using (connection)
                 using (reader)
                 {
@@ -969,14 +995,8 @@ namespace EVESharp.Common.Database
             try
             {
                 MySqlConnection connection = null;
-                // create the correct command
-                MySqlCommand command = this.PrepareQuery(ref connection, query);
+                MySqlDataReader reader = this.Select(ref connection, query, values);
 
-                // add values
-                this.AddNamedParameters(values, command);
-
-                MySqlDataReader reader = command.ExecuteReader();
-                
                 using (connection)
                 using (reader)
                 {
@@ -1006,49 +1026,13 @@ namespace EVESharp.Common.Database
             try
             {
                 MySqlConnection connection = null;
-                // create the correct command
-                MySqlCommand command = this.PrepareQuery(ref connection, query);
+                MySqlDataReader reader = this.Select(ref connection, query, values);
 
-                // add values
-                this.AddNamedParameters(values, command);
-
-                MySqlDataReader reader = command.ExecuteReader();
-                
                 using (connection)
                 using (reader)
                 {
                     // run the prepared statement
                     return PyList<PyInteger>.FromMySqlDataReader(this, reader);
-                }
-            }
-            catch (Exception e)
-            {
-                Log.Error($"MySQL error: {e.Message}");
-                throw;
-            }
-        }
-
-        /// <summary>
-        /// Runs one prepared query with the given value as parameters, ignoring the result data
-        /// </summary>
-        /// <param name="query">The prepared query</param>
-        /// <param name="values">The key-value pair of values to use when running the query</param>
-        /// <returns>The number of rows affected</returns>
-        public int PrepareQuery(string query, Dictionary<string, object> values)
-        {
-            try
-            {
-                MySqlConnection connection = null;
-                
-                // create the correct command
-                MySqlCommand command = this.PrepareQuery(ref connection, query);
-
-                using (connection)
-                {
-                    // add values
-                    this.AddNamedParameters(values, command);
-                    // run the command
-                    return command.ExecuteNonQuery();
                 }
             }
             catch (Exception e)
@@ -1070,9 +1054,12 @@ namespace EVESharp.Common.Database
 
                 MySqlCommand command = new MySqlCommand("SELECT GET_LOCK (@lockName, 0xFFFFFFFF);", connection);
 
-                command.Parameters.AddWithValue("@lockName", lockName);
+                using (command)
+                {
+                    command.Parameters.AddWithValue("@lockName", lockName);
 
-                command.ExecuteNonQuery();
+                    command.ExecuteNonQuery();                    
+                }
             }
             catch (Exception e)
             {
@@ -1090,31 +1077,12 @@ namespace EVESharp.Common.Database
 
                 MySqlCommand command = new MySqlCommand($"SELECT RELEASE_LOCK (@lockName);", connection);
 
-                command.Parameters.AddWithValue("@lockName", lockName);
-                
-                command.ExecuteNonQuery();
-            }
-            catch (Exception e)
-            {
-                Log.Error($"MySQL error: {e.Message}");
-                throw;
-            }
-        }
-
-        public MySqlDataReader Query(ref MySqlConnection connection, string query)
-        {
-            try
-            {
-                // only open a connection if it's really needed
-                if (connection == null)
+                using (command)
                 {
-                    connection = new MySqlConnection(this.mConnectionString);
-                    connection.Open();                    
+                    command.Parameters.AddWithValue("@lockName", lockName);
+                
+                    command.ExecuteNonQuery();    
                 }
-
-                MySqlCommand command = new MySqlCommand(query, connection);
-
-                return command.ExecuteReader();
             }
             catch (Exception e)
             {
@@ -1221,7 +1189,7 @@ namespace EVESharp.Common.Database
 
                 // setup the command in the correct mode to perform the stored procedure call
                 MySqlCommand command = new MySqlCommand(procedureName, connection);
-
+                
                 command.CommandType = CommandType.StoredProcedure;
 
                 return command;

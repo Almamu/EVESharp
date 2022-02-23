@@ -33,7 +33,7 @@ namespace EVESharp.Node.Database
         public Dictionary<int, List<Relationship>> GetCertificateRelationships()
         {
             MySqlConnection connection = null;
-            MySqlDataReader reader = Database.PrepareQuery(ref connection, "SELECT relationshipID, parentID, parentTypeID, parentLevel, childID, childTypeID FROM crtRelationships").ExecuteReader();
+            MySqlDataReader reader = Database.Select(ref connection, "SELECT relationshipID, parentID, parentTypeID, parentLevel, childID, childTypeID FROM crtRelationships");
             
             using (connection)
             using (reader)
@@ -122,7 +122,7 @@ namespace EVESharp.Node.Database
         public List<int> GetCertificateListForCharacter(int characterID)
         {
             MySqlConnection connection = null;
-            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+            MySqlDataReader reader = Database.Select(ref connection,
                 "SELECT certificateID FROM chrCertificates WHERE characterID = @characterID",
                 new Dictionary<string, object>()
                 {

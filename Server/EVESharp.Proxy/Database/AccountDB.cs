@@ -33,7 +33,7 @@ namespace EVESharp.Proxy.Database
         public bool AccountExists(string username)
         {
             MySqlConnection connection = null;
-            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+            MySqlDataReader reader = Database.Select(ref connection,
                 "SELECT COUNT(accountID) FROM account WHERE accountName = @username",
                 new Dictionary<string, object>()
                 {
@@ -58,7 +58,7 @@ namespace EVESharp.Proxy.Database
         public bool LoginPlayer(string username, string password, ref long accountid, ref bool banned, ref long role)
         {
             MySqlConnection connection = null;
-            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+            MySqlDataReader reader = Database.Select(ref connection,
                 "SELECT accountID, password, banned, role FROM account WHERE accountName LIKE @username AND password LIKE SHA1(@password)",
                 new Dictionary<string, object>()
                 {

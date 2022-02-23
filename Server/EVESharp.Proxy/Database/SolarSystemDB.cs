@@ -12,7 +12,7 @@ namespace EVESharp.Proxy.Database
         public int GetSolarSystemNodeID(int solarSystemID)
         {
             MySqlConnection connection = null;
-            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+            MySqlDataReader reader = Database.Select(ref connection,
                 "SELECT nodeID FROM invItems WHERE itemID = @itemID",
                 new Dictionary<string, object>()
                 {
