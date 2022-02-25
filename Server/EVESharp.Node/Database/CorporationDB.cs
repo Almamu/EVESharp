@@ -1506,7 +1506,7 @@ namespace EVESharp.Node.Database
             using (reader)
             {
                 if (reader.Read() == false)
-                    return 0;
+                    return null;
 
                 return reader.GetInt32OrNull(0);
             }
