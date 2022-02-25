@@ -813,7 +813,7 @@ namespace EVESharp.Node.Network
             this.Socket.Send(packet);
         }
         
-        private void AbortConnection()
+        public void AbortConnection()
         {
             this.Socket.GracefulDisconnect();
 

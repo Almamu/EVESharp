@@ -54,10 +54,14 @@ namespace EVESharp.Node.Network
         /// <param name="clientTransport"></param>
         public void ResolveClientTransport(MachoClientTransport clientTransport)
         {
+            int userID = clientTransport.Session["userid"] as PyInteger;
             // first remove the transport from the unauthenticated list
             this.UnauthenticatedTransports.Remove(clientTransport);
+            // if the client is already in, force-close the connection
+            if (this.ClientTransports.TryGetValue(userID, out MachoClientTransport original) == true)
+                original.AbortConnection();
             // add it to the clients list
-            this.ClientTransports.Add(clientTransport.Session["userid"] as PyInteger, clientTransport);
+            this.ClientTransports.Add(userID, clientTransport);
         }
 
         public void ResolveNodeTransport(MachoClientTransport nodeTransport)
