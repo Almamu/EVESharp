@@ -3,6 +3,9 @@ using System.IO;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Json;
+using System.Text.Json;
+using System.Text.Json.Nodes;
+using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using EVESharp.Common.Constants;
@@ -91,7 +94,19 @@ namespace EVESharp.Node.Network
             try
             {
                 HttpClient client = new HttpClient();
-                HttpResponseMessage response = await client.PostAsJsonAsync(this.Configuration.Cluster.OrchestatorURL, 26000);
+                HttpResponseMessage response = await client.PostAsJsonAsync($"{this.Configuration.Cluster.OrchestatorURL}/Nodes/register", this.MachoServerTransport.Port);
+
+                // make sure we have a proper answer
+                response.EnsureSuccessStatusCode();
+                // read the json and extract the required information
+                Stream inputStream = await response.Content.ReadAsStreamAsync();
+
+                JsonObject result = JsonSerializer.Deserialize<JsonObject>(inputStream);
+
+                this.Container.Address = result["address"].ToString();
+                this.Container.NodeID = (long) result["nodeId"];
+                
+                Log.Info($"Orchestrator assigned node id {this.Container.NodeID} with address {this.Container.Address}");
             }
             catch (Exception e)
             {
