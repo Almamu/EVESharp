@@ -85,7 +85,7 @@ namespace EVESharp.Node.Services.Characters
             );
             
             // send a request to the client to update the bookmarks
-            this.MachoNet.SendServiceCall(call.Client, "addressbook", "OnBookmarkAdd",
+            call.Client.Transport.SendServiceCall("addressbook", "OnBookmarkAdd",
                 new PyTuple(1) {[0] = bookmark}, new PyDictionary(), null);
             
             return new PyTuple (7)

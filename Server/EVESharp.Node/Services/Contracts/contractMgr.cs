@@ -116,7 +116,7 @@ namespace EVESharp.Node.Services.Contracts
         }
 
         private void PrepareItemsForCourierOrAuctionContract(MySqlConnection connection, ulong contractID,
-            ClusterConnection clusterConnection, PyList<PyList> itemList, Station station, int ownerID, int shipID)
+            PyList<PyList> itemList, Station station, int ownerID, int shipID)
         {
             // create the container in the system to ensure it's not visible to the player
             Node.Inventory.Items.Types.Container container = this.ItemFactory.CreateSimpleItem(this.TypeManager[Types.PlasticWrap],
@@ -229,7 +229,6 @@ namespace EVESharp.Node.Services.Contracts
                         this.PrepareItemsForCourierOrAuctionContract(
                             connection,
                             contractID,
-                            call.Client.ClusterConnection,
                             (call.NamedPayload["itemList"] as PyList).GetEnumerable<PyList>(),
                             station,
                             callerCharacterID,

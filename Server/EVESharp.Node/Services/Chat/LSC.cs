@@ -530,7 +530,7 @@ namespace EVESharp.Node.Services.Chat
             }
             
             // return an empty response to the original calling client, this should get mechanism going for the JoinChannel notification
-            this.MachoNet.SendCallResult(call.OriginalCall, null);
+            callInfo.Client.Transport.SendCallResult(call.OriginalCall, null);
             
             // character has accepted, notify all users of the channel
             string channelType = this.DB.GetChannelType(call.ChannelID);
@@ -598,8 +598,7 @@ namespace EVESharp.Node.Services.Chat
                 };
                 
                 // no timeout for this call
-                this.MachoNet.SendServiceCall(
-                    characterID,
+                call.Client.Transport.SendServiceCall(
                     "LSC", "ChatInvite", args, new PyDictionary(),
                     InviteAnswerCallback, InviteTimeoutCallback,
                     info, ProvisionalResponse.DEFAULT_TIMEOUT - 5

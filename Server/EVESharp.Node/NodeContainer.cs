@@ -7,9 +7,13 @@ namespace EVESharp.Node
     public class NodeContainer
     {
         /// <summary>
-        /// The ID of the running node
+        /// The ID assigned to the running node
         /// </summary>
         public long NodeID { get; set; }
+        /// <summary>
+        /// The address assigned to the running node
+        /// </summary>
+        public string Address { get; set; }
         /// <summary>
         /// The list of constants for EVE Online
         /// </summary>

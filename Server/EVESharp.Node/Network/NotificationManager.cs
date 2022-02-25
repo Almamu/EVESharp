@@ -44,7 +44,7 @@ namespace EVESharp.Node.Network
         /// <summary>
         /// The connection this notification manager is using to send notifications through
         /// </summary>
-        public ClusterConnection ClusterConnection { get; }
+        public MachoServerTransport MachoServerTransport { get; }
         
         /// <summary>
         /// The node this notification manager belongs to
@@ -56,9 +56,8 @@ namespace EVESharp.Node.Network
         /// </summary>
         public ClientManager ClientManager { get; }
         
-        public NotificationManager(ClusterConnection clusterConnection, NodeContainer container, ClientManager clientManager)
+        public NotificationManager(NodeContainer container, ClientManager clientManager)
         {
-            this.ClusterConnection = clusterConnection;
             this.Container = container;
             this.ClientManager = clientManager;
         }
@@ -165,7 +164,8 @@ namespace EVESharp.Node.Network
                 UserID = -1
             };
 
-            this.ClusterConnection.Send(packet);
+            // TODO: SEND NOTIFICATION
+            // this.MachoServerTransport.Send(packet);
         }
 
         public void SendNotification(string idType, int id, ClientNotification data)
@@ -223,8 +223,9 @@ namespace EVESharp.Node.Network
                 UserID = -1,
                 Payload = dataContainer
             };
-            
-            this.ClusterConnection.Send(packet);
+
+            // TODO: SEND NOTIFICATION
+            // this.MachoServerTransport.Send(packet);
         }
     }
 }

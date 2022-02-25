@@ -51,10 +51,10 @@ namespace EVESharp.Node.Network
     /// </summary>
     public class Client
     {
-        private readonly Session mSession = new Session();
+        public Session Session { get; init; }
         
         private NodeContainer Container { get; }
-        public ClusterConnection ClusterConnection { get; }
+        public MachoClientTransport Transport { get; }
         public ServiceManager ServiceManager { get; }
         private ItemFactory ItemFactory { get; }
         private TimerManager TimerManager { get; }
@@ -79,12 +79,13 @@ namespace EVESharp.Node.Network
         /// </summary>
         public event EventHandler<ClientEventArgs> OnCharacterSelectedEvent;
 
-        public Client(NodeContainer container, ClusterConnection clusterConnection, ServiceManager serviceManager,
+        public Client(NodeContainer container, MachoClientTransport transport, ServiceManager serviceManager,
             TimerManager timerManager, ItemFactory itemFactory, SystemManager systemManager,
             NotificationManager notificationManager, ClientManager clientManager, MachoNet machoNet)
         {
+            this.Session = transport.Session;
             this.Container = container;
-            this.ClusterConnection = clusterConnection;
+            this.Transport = transport;
             this.ServiceManager = serviceManager;
             this.TimerManager = timerManager;
             this.ItemFactory = itemFactory;
@@ -160,7 +161,7 @@ namespace EVESharp.Node.Network
 
         private void HandleSessionDifferencies(Session session)
         {
-            lock (this.mSession)
+            lock (this.Session)
             {
                 // now check for specific situations to properly increase/decrease counters
                 // on various areas
@@ -217,7 +218,7 @@ namespace EVESharp.Node.Network
         /// <param name="packet">The packet that contains the session change notification</param>
         public void UpdateSession(PyPacket packet)
         {
-            lock (this.mSession)
+            lock (this.Session)
             {
                 if (packet.Payload.TryGetValue(0, out PyTuple sessionData) == false)
                     throw new InvalidDataException("SessionChangeNotification expected a payload of size 1");
@@ -225,9 +226,9 @@ namespace EVESharp.Node.Network
                     throw new InvalidDataException("SessionChangeNotification expected a differences collection");
                 
                 // load the new session data
-                this.mSession.LoadChanges(differences);
+                this.Session.LoadChanges(differences);
                 // normalize the values in the session
-                this.mSession.LoadChanges(differences);
+                this.Session.LoadChanges(differences);
                 // handle the differencies
                 Session sessionDiff = new Session(differences.GetEnumerable<PyString, PyTuple>());
                 this.HandleSessionDifferencies(sessionDiff);
@@ -275,7 +276,7 @@ namespace EVESharp.Node.Network
         public void SendSessionChange()
         {
             // do not send the session change if the session hasn't changed
-            if (this.mSession.IsDirty == false)
+            if (this.Session.IsDirty == false)
                 return;
             
             // build the session change
@@ -283,141 +284,139 @@ namespace EVESharp.Node.Network
             
             // and finally send the client the required data
             if (sessionChangeNotification is not null)
-                this.ClusterConnection.Send(sessionChangeNotification);
+                this.Transport.Socket.Send(sessionChangeNotification);
         }
 
-        public Session Session => this.mSession;
+        public string LanguageID => this.Session["languageID"] as PyString;
 
-        public string LanguageID => this.mSession["languageID"] as PyString;
+        public int AccountID => this.Session["userid"] as PyInteger;
 
-        public int AccountID => this.mSession["userid"] as PyInteger;
+        public int Role => this.Session["role"] as PyInteger;
 
-        public int Role => this.mSession["role"] as PyInteger;
-
-        public string Address => this.mSession["address"] as PyString;
+        public string Address => this.Session["address"] as PyString;
 
         public int? CharacterID
         {
-            get => this.mSession["charid"] as PyInteger;
-            set => this.mSession["charid"] = value;
+            get => this.Session["charid"] as PyInteger;
+            set => this.Session["charid"] = value;
         }
 
         public int CorporationID
         {
-            get => this.mSession["corpid"] as PyInteger;
-            set => this.mSession["corpid"] = value;
+            get => this.Session["corpid"] as PyInteger;
+            set => this.Session["corpid"] = value;
         }
 
         public int CorpAccountKey
         {
-            get => this.mSession["corpAccountKey"] as PyInteger ?? WalletKeys.MAIN_WALLET;
-            set => this.mSession["corpAccountKey"] = value;
+            get => this.Session["corpAccountKey"] as PyInteger ?? WalletKeys.MAIN_WALLET;
+            set => this.Session["corpAccountKey"] = value;
         }
 
         public int SolarSystemID2
         {
-            get => this.mSession["solarsystemid2"] as PyInteger;
-            set => this.mSession["solarsystemid2"] = value;
+            get => this.Session["solarsystemid2"] as PyInteger;
+            set => this.Session["solarsystemid2"] = value;
         }
 
         public int ConstellationID
         {
-            get => this.mSession["constellationid"] as PyInteger;
-            set => this.mSession["constellationid"] = value;
+            get => this.Session["constellationid"] as PyInteger;
+            set => this.Session["constellationid"] = value;
         }
 
         public int RegionID
         {
-            get => this.mSession["regionid"] as PyInteger;
-            set => this.mSession["regionid"] = value;
+            get => this.Session["regionid"] as PyInteger;
+            set => this.Session["regionid"] = value;
         }
 
         public int HQID
         {
-            get => this.mSession["hqID"] as PyInteger;
-            set => this.mSession["hqID"] = value;
+            get => this.Session["hqID"] as PyInteger;
+            set => this.Session["hqID"] = value;
         }
 
         public long CorporationRole
         {
-            get => this.mSession["corprole"] as PyInteger;
-            set => this.mSession["corprole"] = value;
+            get => this.Session["corprole"] as PyInteger;
+            set => this.Session["corprole"] = value;
         }
 
         public long RolesAtAll
         {
-            get => this.mSession["rolesAtAll"] as PyInteger;
-            set => this.mSession["rolesAtAll"] = value;
+            get => this.Session["rolesAtAll"] as PyInteger;
+            set => this.Session["rolesAtAll"] = value;
         }
 
         public long RolesAtBase
         {
-            get => this.mSession["rolesAtBase"] as PyInteger;
-            set => this.mSession["rolesAtBase"] = value;
+            get => this.Session["rolesAtBase"] as PyInteger;
+            set => this.Session["rolesAtBase"] = value;
         }
 
         public long RolesAtHQ
         {
-            get => this.mSession["rolesAtHQ"] as PyInteger;
-            set => this.mSession["rolesAtHQ"] = value;
+            get => this.Session["rolesAtHQ"] as PyInteger;
+            set => this.Session["rolesAtHQ"] = value;
         }
 
         public long RolesAtOther
         {
-            get => this.mSession["rolesAtOther"] as PyInteger;
-            set => this.mSession["rolesAtOther"] = value;
+            get => this.Session["rolesAtOther"] as PyInteger;
+            set => this.Session["rolesAtOther"] = value;
         }
 
         public int? ShipID
         {
-            get => this.mSession["shipid"] as PyInteger;
-            set => this.mSession["shipid"] = value;
+            get => this.Session["shipid"] as PyInteger;
+            set => this.Session["shipid"] = value;
         }
 
         public int? StationID
         {
-            get => this.mSession["stationid"] as PyInteger;
+            get => this.Session["stationid"] as PyInteger;
             set
             {
-                this.mSession["solarsystemid"] = null;
-                this.mSession["stationid"] = value;
-                this.mSession["locationid"] = value;
+                this.Session["solarsystemid"] = null;
+                this.Session["stationid"] = value;
+                this.Session["locationid"] = value;
             }
         }
 
         public int? SolarSystemID
         {
-            get => this.mSession["solarsystemid"] as PyInteger;
+            get => this.Session["solarsystemid"] as PyInteger;
             set
             {
-                this.mSession["stationid"] = null;
-                this.mSession["solarsystemid"] = value;
-                this.mSession["locationid"] = value;
+                this.Session["stationid"] = null;
+                this.Session["solarsystemid"] = value;
+                this.Session["locationid"] = value;
             }
         }
 
         public int LocationID
         {
-            get => this.mSession["locationid"] as PyInteger;
-            set => this.mSession["locationid"] = value;
+            get => this.Session["locationid"] as PyInteger;
+            set => this.Session["locationid"] = value;
         }
 
         public int? AllianceID
         {
-            get => this.mSession["allianceid"] as PyInteger;
-            set => this.mSession["allianceid"] = value;
+            get => this.Session["allianceid"] as PyInteger;
+            set => this.Session["allianceid"] = value;
         }
 
         public int? WarFactionID
         {
-            get => this.mSession["warfactionid"] as PyInteger;
-            set => this.mSession["warfactionid"] = value;
+            get => this.Session["warfactionid"] as PyInteger;
+            set => this.Session["warfactionid"] = value;
         }
 
         public int? RaceID
         {
-            get => this.mSession["raceID"] as PyInteger;
-            set => this.mSession["raceID"] = value;
+            get => this.Session["raceID"] as PyInteger;
+            set => this.Session["raceID"] = value;
         }
 
         /// <summary>
@@ -542,7 +541,7 @@ namespace EVESharp.Node.Network
         /// <param name="content">The contents of the exception</param>
         public void SendException(CallInformation call, PyDataType content)
         {
-            this.MachoNet.SendException(call, content);
+            this.Transport.SendException(call, content);
         }
 
         /// <summary>

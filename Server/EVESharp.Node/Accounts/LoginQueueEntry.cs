@@ -23,12 +23,13 @@
 */
 
 using EVESharp.EVE.Packets;
+using EVESharp.Node.Network;
 
-namespace EVESharp.Proxy
+namespace EVESharp.Node.Accounts
 {
     public class LoginQueueEntry
     {
         public AuthenticationReq Request { get; set; }
-        public ClientConnection Connection { get; set; }
+        public MachoClientTransport Connection { get; set; }
     }
 }

@@ -28,6 +28,7 @@ using System.Threading.Tasks;
 using EVESharp.Common.Database;
 using EVESharp.Common.Logging;
 using EVESharp.Common.Logging.Streams;
+using EVESharp.Node.Accounts;
 using EVESharp.Node.Agents;
 using EVESharp.Node.Chat;
 using EVESharp.Node.Configuration;
@@ -128,7 +129,7 @@ namespace EVESharp.Node
                 dependencies.Register<SystemManager>(Lifestyle.Singleton);
                 dependencies.Register<ServiceManager>(Lifestyle.Singleton);
                 dependencies.Register<BoundServiceManager>(Lifestyle.Singleton);
-                dependencies.Register<ClusterConnection>(Lifestyle.Singleton);
+                // dependencies.Register<MachoServerTransport>(Lifestyle.Singleton);
                 dependencies.Register<NotificationManager>(Lifestyle.Singleton);
                 dependencies.Register<MachoNet>(Lifestyle.Singleton);
                 dependencies.Register<ExpressionManager>(Lifestyle.Singleton);
@@ -209,6 +210,7 @@ namespace EVESharp.Node
                 dependencies.Register<factory>(Lifestyle.Singleton);
                 dependencies.Register<petitioner>(Lifestyle.Singleton);
                 dependencies.Register<allianceRegistry>(Lifestyle.Singleton);
+                dependencies.Register<LoginQueue>(Lifestyle.Singleton);
                 
                 dependencies.RegisterInstance(General.LoadFromFile("configuration.conf", dependencies));
                 // disable auto-verification on the container as it triggers creation of instances before they're needed
@@ -275,7 +277,7 @@ namespace EVESharp.Node
                 dependencies.GetInstance<SystemManager>();
                 logChannel.Debug("Done");
 
-                dependencies.GetInstance<MachoNet>().ConnectToProxy();
+                dependencies.GetInstance<MachoNet>().Initialize();
                 
                 logChannel.Trace("Node startup done");
 

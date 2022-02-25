@@ -27,10 +27,11 @@ using System.Collections.Generic;
 using System.Threading;
 using EVESharp.Common.Logging;
 using EVESharp.EVE.Packets;
-using EVESharp.Proxy.Configuration;
-using EVESharp.Proxy.Database;
+using EVESharp.Node.Configuration;
+using EVESharp.Node.Database;
+using EVESharp.Node.Network;
 
-namespace EVESharp.Proxy
+namespace EVESharp.Node.Accounts
 {
     public class LoginQueue
     {
@@ -39,7 +40,7 @@ namespace EVESharp.Proxy
         private Authentication Configuration { get; }
         private Channel Log { get; set; }
 
-        public void Enqueue(ClientConnection connection, AuthenticationReq request)
+        public void Enqueue(MachoClientTransport connection, AuthenticationReq request)
         {
             // Just to be thread safe
             lock (this.Queue)

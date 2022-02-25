@@ -22,7 +22,7 @@
     Creator: Almamu
 */
 
-namespace EVESharp.Proxy
+namespace EVESharp.Node.Accounts
 {
     public enum LoginStatus
     {

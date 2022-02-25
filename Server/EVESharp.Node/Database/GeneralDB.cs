@@ -29,6 +29,9 @@ using EVESharp.Common.Database;
 using EVESharp.Node.StaticData;
 using MySql.Data.MySqlClient;
 using EVESharp.Node.Inventory.SystemEntities;
+using EVESharp.PythonTypes.Types.Collections;
+using EVESharp.PythonTypes.Types.Database;
+using EVESharp.PythonTypes.Types.Primitives;
 
 namespace EVESharp.Node.Database
 {
@@ -72,6 +75,65 @@ namespace EVESharp.Node.Database
 
                 return result;
             }
+        }
+
+        public PyList<PyObjectData> FetchLiveUpdates()
+        {
+            try
+            {
+                MySqlConnection connection = null;
+                MySqlDataReader reader = Database.Select(ref connection,
+                    "SELECT updateID, updateName, description, machoVersionMin, machoVersionMax, buildNumberMin, buildNumberMax, methodName, objectID, codeType, code, OCTET_LENGTH(code) as codeLength FROM eveLiveUpdates"
+                );
+
+                using (connection)
+                using (reader)
+                {
+                    PyList<PyObjectData> result = new PyList<PyObjectData>();
+
+                    while (reader.Read())
+                    {
+                        PyDictionary entry = new PyDictionary();
+                        PyDictionary code = new PyDictionary();
+
+                        // read the blob for the liveupdate
+                        byte[] buffer = new byte[reader.GetUInt32(11)];
+                        reader.GetBytes(10, 0, buffer, 0, buffer.Length);
+
+                        code["code"] = buffer;
+                        code["codeType"] = reader.GetString(9);
+                        code["methodName"] = reader.GetString(7);
+                        code["objectID"] = reader.GetString(8);
+
+                        entry["code"] = KeyVal.FromDictionary(code);
+
+                        result.Add(KeyVal.FromDictionary(entry));
+                    }
+
+                    return result;
+                }
+            }
+            catch (Exception)
+            {
+                throw new Exception("Cannot prepare live-updates information for client");
+            }
+        }
+        
+        public void UpdateCharacterLogoffDateTime(int characterID)
+        {
+            Database.PrepareQuery(
+                "UPDATE chrInformation SET logoffDateTime = @date, online = 0 WHERE characterID = @characterID",
+                new Dictionary<string, object>()
+                {
+                    {"@characterID", characterID},
+                    {"@date", DateTime.UtcNow.ToFileTimeUtc()}
+                }
+            );
+        }
+
+        public void ResetCharacterOnlineStatus()
+        {
+            Database.Query("UPDATE chrInformation SET online = 0");
         }
 
         public GeneralDB(DatabaseConnection db) : base(db)

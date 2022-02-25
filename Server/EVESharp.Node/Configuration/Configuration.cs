@@ -8,12 +8,13 @@ namespace EVESharp.Node.Configuration
     public class General
     {
         public EVESharp.Common.Configuration.Database Database { get; private set; } = new EVESharp.Common.Configuration.Database();
-        public Proxy Proxy { get; private set; } = new Proxy();
+        public Listening Listening { get; private set; } = new Listening();
         public Authentication Authentication { get; private set; } = new Authentication();
         public LogLite LogLite { get; private set; } = new LogLite();
         public FileLog FileLog { get; private set; } = new FileLog();
         public Logging Logging { get; } = new Logging();
         public Character Character { get; } = new Character();
+        public Cluster Cluster { get; } = new Cluster();
 
         public static General LoadFromFile(string filename, Container container)
         {
@@ -22,7 +23,8 @@ namespace EVESharp.Node.Configuration
             General config = new General();
 
             config.Database.Load(data["database"]);
-            config.Proxy.Load(data["proxy"]);
+            config.Listening.Load(data["machonet"]);
+            config.Cluster.Load(data["cluster"]);
 
             if (data.Sections.ContainsSection("authentication") == true)
                 config.Authentication.Load(data["authentication"]);
@@ -37,7 +39,7 @@ namespace EVESharp.Node.Configuration
 
             // register all the configuration options as dependencies available
             container.RegisterInstance(config.Database);
-            container.RegisterInstance(config.Proxy);
+            container.RegisterInstance(config.Listening);
             container.RegisterInstance(config.Authentication);
             container.RegisterInstance(config.LogLite);
             container.RegisterInstance(config.FileLog);

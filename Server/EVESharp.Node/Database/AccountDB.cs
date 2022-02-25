@@ -33,12 +33,11 @@ namespace EVESharp.Node.Database
 {
     public class AccountDB : DatabaseAccessor
     {
-        public bool LoginPlayer(string username, string password, ref long accountid, ref bool banned, ref long role)
+        public bool AccountExists(string username)
         {
             MySqlConnection connection = null;
-            MySqlDataReader reader = Database.Select(
-                ref connection,
-                "SELECT accountID, password, banned, role FROM account WHERE accountName = @username",
+            MySqlDataReader reader = Database.Select(ref connection,
+                "SELECT COUNT(accountID) FROM account WHERE accountName = @username",
                 new Dictionary<string, object>()
                 {
                     {"@username", username}
@@ -48,37 +47,59 @@ namespace EVESharp.Node.Database
             using (connection)
             using (reader)
             {
-                if (reader.FieldCount == 0)
-                    return false;
-
+                //If any errors getting account count from database return account exists.
+                if (reader.FieldCount != 1)
+                    return true;
+                
                 if (reader.Read() == false)
-                    return false;
-
-                accountid = reader.GetInt64(0);
-                banned = reader.GetBoolean(2);
-                role = reader.GetInt64(3);
-
-                SHA1 sha1 = SHA1.Create();
-                sha1.Initialize();
-                byte[] hash = sha1.ComputeHash(Encoding.ASCII.GetBytes(password));
-                byte[] outb = new byte[hash.Length];
-
-                reader.GetBytes(1, 0, outb, 0, outb.Length);
-                reader.Close();
-
-                bool equals = true;
-
-                for (int i = 0; i < outb.Length; i++)
-                {
-                    if (outb[i] != hash[i])
-                    {
-                        equals = false;
-                        break;
-                    }
-                }
-
-                return equals;
+                    return true;
+                
+                return (reader.GetInt64(0) > 0);
             }
+        }
+
+        public bool LoginPlayer(string username, string password, ref long accountid, ref bool banned, ref long role)
+        {
+            MySqlConnection connection = null;
+            MySqlDataReader reader = Database.Select(ref connection,
+                "SELECT accountID, password, banned, role FROM account WHERE accountName LIKE @username AND password LIKE SHA1(@password)",
+                new Dictionary<string, object>()
+                {
+                    {"@username", username},
+                    {"@password", password}
+                }
+            );
+
+            using (connection)
+            {
+                using (reader)
+                {
+                    if (reader.FieldCount == 0)
+                        return false;
+
+                    if (reader.Read() == false)
+                        return false;
+
+                    accountid = reader.GetInt64(0);
+                    banned = reader.GetBoolean(2);
+                    role = (long) reader.GetUInt64(3);
+
+                    return true;
+                }
+            }
+        }
+
+        public void CreateAccount(string name, string password, ulong role)
+        {
+            Database.PrepareQuery(
+                "INSERT INTO account(accountID, accountName, password, role, online, banned)VALUES(NULL, @accountName, SHA1(@password), @role, 0, 0)",
+                new Dictionary<string, object>()
+                {
+                    {"@accountName", name},
+                    {"@password", password},
+                    {"@role", role}
+                }
+            );
         }
 
         public int GetAccountIDFromCharacterID(int characterID)
