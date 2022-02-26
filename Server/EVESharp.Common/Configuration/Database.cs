@@ -8,6 +8,7 @@ namespace EVESharp.Common.Configuration
         public string Password { get; private set; }
         public string Hostname { get; private set; }
         public string Name { get; private set; }
+        public uint Port { get; private set; }
 
         public void Load(KeyDataCollection section)
         {
@@ -15,6 +16,7 @@ namespace EVESharp.Common.Configuration
             this.Password = section["password"];
             this.Hostname = section["hostname"];
             this.Name = section["name"];
+            this.Port = uint.Parse(section["port"] ?? "3306");
         }
     }
 }
