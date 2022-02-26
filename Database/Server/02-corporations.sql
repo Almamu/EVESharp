@@ -12,6 +12,11 @@ REPLACE INTO `crpStatic` (`corporationID`, `corporationName`, `description`, `ti
 REPLACE INTO `crpStatic` (`corporationID`, `corporationName`, `description`, `tickerName`, `url`, `taxRate`, `minimumJoinStanding`, `corporationType`, `hasPlayerPersonnelManager`, `sendCharTerminationMessage`, `creatorID`, `ceoID`, `stationID`, `raceID`, `allianceID`, `shares`, `memberCount`, `memberLimit`, `allowedMemberRaceIDs`, `graphicID`, `shape1`, `shape2`, `shape3`, `color1`, `color2`, `color3`, `typeface`, `division1`, `division2`, `division3`, `division4`, `division5`, `division6`, `division7`, `deleted`) VALUES (1000182, 'Tribal Liberation Force', 'The Minmatar heart sings for freedom and the Minmatar soul strives for open skies, but the Minmatar heart has been withering away in captivity. It is now up to you, capsuleer. You hold the power to free our people. You are the heroes of your generation. Join us in the struggle for freedom. Death to Amarr; long live the Minmatar Nation.', 'TLIB', '', 0.1, 0, 1, 0, 0, 0, 0, 0, 4, 0, 0, 0, 100000, 15, 3372, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '1st division', '2nd division', '3rd division', '4th division', '5th division', '6th division', '7th division', 0);
 
 /**
+ * Set all static corportaions to not have an allianceID
+ */
+UPDATE `crpStatic` SET allianceID = NULL;
+
+/**
  * Base tables for corporations
  */
 DROP TABLE IF EXISTS `corporation`;

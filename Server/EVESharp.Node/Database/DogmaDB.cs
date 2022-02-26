@@ -28,7 +28,7 @@ namespace EVESharp.Node.Database
         public Dictionary<int, Expression> LoadDogmaExpressions()
         {
             MySqlConnection connection = null;
-            MySqlDataReader reader = Database.Query(
+            MySqlDataReader reader = Database.Select(
                 ref connection,
                 "SELECT expressionID, operandID, arg1, arg2, expressionValue, expressionName, expressionAttributeID FROM dgmExpressions ORDER BY arg1, arg2, expressionID"
             );

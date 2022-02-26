@@ -73,7 +73,7 @@ namespace EVESharp.Node.Database
         public Dictionary<int, int> GetShareholdersList(int corporationID)
         {
             MySqlConnection connection = null;
-            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+            MySqlDataReader reader = Database.Select(ref connection,
                 "SELECT ownerID, shares FROM crpShares WHERE corporationID = @corporationID",
                 new Dictionary<string, object>()
                 {
@@ -96,7 +96,7 @@ namespace EVESharp.Node.Database
         public int GetSharesForOwner(int corporationID, int ownerID)
         {
             MySqlConnection connection = null;
-            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+            MySqlDataReader reader = Database.Select(ref connection,
                 "SELECT shares FROM crpShares WHERE ownerID = @ownerID AND corporationID = @corporationID",
                 new Dictionary<string, object>()
                 {
@@ -166,7 +166,7 @@ namespace EVESharp.Node.Database
         public double GetLPForCharacterCorp(int corporationID, int characterID)
         {
             MySqlConnection connection = null;
-            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+            MySqlDataReader reader = Database.Select(ref connection,
                 "SELECT balance FROM chrLPbalance WHERE characterID=@characterID AND corporationID=@corporationID",
                 new Dictionary<string, object>()
                 {
@@ -211,7 +211,7 @@ namespace EVESharp.Node.Database
         public Dictionary<PyDataType, int> GetOffices(int corporationID)
         {
             MySqlConnection connection = null;
-            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+            MySqlDataReader reader = Database.Select(ref connection,
                 "SELECT officeID FROM crpOffices WHERE corporationID = @corporationID",
                 new Dictionary<string, object>()
                 {
@@ -284,7 +284,7 @@ namespace EVESharp.Node.Database
             // TODO: divisionID, squadronID
             // TODO: CHECK IF THIS startDateTime IS THE CORP'S MEMBERSHIP OR CHARACTER'S MEMBERSHIP
             MySqlConnection connection = null;
-            MySqlDataReader reader = Database.PrepareQuery(ref connection, query, parameters);
+            MySqlDataReader reader = Database.Select(ref connection, query, parameters);
             
             using (connection)
             using (reader)
@@ -309,7 +309,7 @@ namespace EVESharp.Node.Database
             // TODO: divisionID, squadronID
             // TODO: CHECK IF THIS startDateTime IS THE CORP'S MEMBERSHIP OR CHARACTER'S MEMBERSHIP
             MySqlConnection connection = null;
-            MySqlDataReader reader = Database.PrepareQuery(ref connection, query, parameters);
+            MySqlDataReader reader = Database.Select(ref connection, query, parameters);
             
             using (connection)
             using (reader)
@@ -321,7 +321,7 @@ namespace EVESharp.Node.Database
         public PyList<PyTuple> GetOffices(int corporationID, int startPos, int limit, SparseRowsetHeader header)
         {
             MySqlConnection connection = null;
-            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+            MySqlDataReader reader = Database.Select(ref connection,
                 "SELECT officeID, stationID, typeID, officeFolderID FROM crpOffices WHERE corporationID = @corporationID LIMIT @startPos,@limit",
                 new Dictionary<string, object>()
                 {
@@ -342,7 +342,7 @@ namespace EVESharp.Node.Database
         {
             MySqlConnection connection = null;
             MySqlDataReader reader =
-                Database.PrepareQuery(
+                Database.Select(
                     ref connection,
                     "SELECT COUNT(*) AS recordCount FROM crpOffices WHERE corporationID = @corporationID",
                     new Dictionary<string, object>()
@@ -380,7 +380,7 @@ namespace EVESharp.Node.Database
         public Dictionary<PyDataType, int> GetMembers(int corporationID)
         {
             MySqlConnection connection = null;
-            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+            MySqlDataReader reader = Database.Select(ref connection,
                 "SELECT characterID FROM chrInformation WHERE corporationID = @corporationID",
                 new Dictionary<string, object>()
                 {
@@ -427,7 +427,7 @@ namespace EVESharp.Node.Database
 
             parameters["@corporationID"] = corporationID;
             MySqlConnection connection = null;
-            MySqlDataReader reader = Database.PrepareQuery(ref connection, query, parameters);
+            MySqlDataReader reader = Database.Select(ref connection, query, parameters);
             
             using (connection)
             using (reader)
@@ -442,7 +442,7 @@ namespace EVESharp.Node.Database
             // TODO: divisionID, squadronID
             // TODO: CHECK IF THIS startDateTime IS THE CORP'S MEMBERSHIP OR CHARACTER'S MEMBERSHIP
             MySqlConnection connection = null;
-            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+            MySqlDataReader reader = Database.Select(ref connection,
                 "SELECT" +
                 " characterID, title, corporationDateTime AS startDateTime, roles, rolesAtHQ, rolesAtBase, rolesAtOther," +
                 " titleMask, grantableRoles, grantableRolesAtHQ, grantableRolesAtBase," + 
@@ -472,7 +472,7 @@ namespace EVESharp.Node.Database
             // TODO: divisionID, squadronID
             // TODO: CHECK IF THIS startDateTime IS THE CORP'S MEMBERSHIP OR CHARACTER'S MEMBERSHIP
             MySqlConnection connection = null;
-            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+            MySqlDataReader reader = Database.Select(ref connection,
                 "SELECT" +
                 " characterID, title, corporationDateTime AS startDateTime, roles, rolesAtHQ, rolesAtBase, rolesAtOther," +
                 " titleMask, grantableRoles, grantableRolesAtHQ, grantableRolesAtBase," + 
@@ -500,7 +500,7 @@ namespace EVESharp.Node.Database
         {
             MySqlConnection connection = null;
             MySqlDataReader reader =
-                Database.PrepareQuery(
+                Database.Select(
                     ref connection,
                     "SELECT COUNT(*) AS recordCount FROM chrInformation WHERE corporationID=@corporationID",
                     new Dictionary<string, object>()
@@ -603,7 +603,7 @@ namespace EVESharp.Node.Database
         public int GetTitleMaskForCharacter(int characterID)
         {
             MySqlConnection connection = null;
-            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+            MySqlDataReader reader = Database.Select(ref connection,
                 "SELECT titleMask FROM chrInformation WHERE characterID = @characterID",
                 new Dictionary<string, object>()
                 {
@@ -624,7 +624,7 @@ namespace EVESharp.Node.Database
         public void GetCorporationInformationForCharacter(int characterID, out string title, out int titleMask, out int corporationID, out int? allianceID)
         {
             MySqlConnection connection = null;
-            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+            MySqlDataReader reader = Database.Select(ref connection,
                 "SELECT title, titleMask, corporationID, allianceID FROM chrInformation LEFT JOIN corporation USING(corporationID) WHERE characterID = @characterID",
                 new Dictionary<string, object>()
                 {
@@ -653,7 +653,7 @@ namespace EVESharp.Node.Database
         public Dictionary<int, string> GetTitlesNames(int corporationID)
         {
             MySqlConnection connection = null;
-            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+            MySqlDataReader reader = Database.Select(ref connection,
                 "SELECT titleID, titleName FROM crpTitles WHERE corporationID = @corporationID",
                 new Dictionary<string, object>()
                 {
@@ -768,7 +768,7 @@ namespace EVESharp.Node.Database
         public int GetCorporationIDForCharacter(int characterID)
         {
             MySqlConnection connection = null;
-            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+            MySqlDataReader reader = Database.Select(ref connection,
                 "SELECT corporationID FROM chrInformation WHERE characterID = @characterID",
                 new Dictionary<string, object>()
                 {
@@ -840,7 +840,7 @@ namespace EVESharp.Node.Database
         public bool IsCorporationNameTaken(string corporationName)
         {
             MySqlConnection connection = null;
-            MySqlDataReader reader = Database.PrepareQuery(
+            MySqlDataReader reader = Database.Select(
                 ref connection,
                 $"SELECT COUNT(*) FROM eveNames WHERE groupID = {(int) Groups.Corporation} AND itemName LIKE @corporationName",
                 new Dictionary<string, object>()
@@ -861,7 +861,7 @@ namespace EVESharp.Node.Database
         public bool IsTickerNameTaken(string tickerName)
         {
             MySqlConnection connection = null;
-            MySqlDataReader reader = Database.PrepareQuery(
+            MySqlDataReader reader = Database.Select(
                 ref connection,
                 $"SELECT COUNT(*) FROM corporation WHERE tickerName LIKE @tickerName",
                 new Dictionary<string, object>()
@@ -882,7 +882,7 @@ namespace EVESharp.Node.Database
         public bool IsAllianceNameTaken(string corporationName)
         {
             MySqlConnection connection = null;
-            MySqlDataReader reader = Database.PrepareQuery(
+            MySqlDataReader reader = Database.Select(
                 ref connection,
                 $"SELECT COUNT(*) FROM eveNames WHERE groupID = {(int) Groups.Alliance} AND itemName LIKE @corporationName",
                 new Dictionary<string, object>()
@@ -903,7 +903,7 @@ namespace EVESharp.Node.Database
         public bool IsShortNameTaken(string shortName)
         {
             MySqlConnection connection = null;
-            MySqlDataReader reader = Database.PrepareQuery(
+            MySqlDataReader reader = Database.Select(
                 ref connection,
                 $"SELECT COUNT(*) FROM crpAlliances WHERE shortName LIKE @shortName",
                 new Dictionary<string, object>()
@@ -965,7 +965,7 @@ namespace EVESharp.Node.Database
         public IEnumerable<int> GetMembersForCorp(int corporationID)
         {
             MySqlConnection connection = null;
-            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+            MySqlDataReader reader = Database.Select(ref connection,
                 "SELECT characterID FROM chrInformation WHERE corporationID = @corporationID",
                 new Dictionary<string, object>()
                 {
@@ -1088,7 +1088,7 @@ namespace EVESharp.Node.Database
         public void GetTitleInformation(int corporationID, long titleMask, out long roles, out long rolesAtHQ, out long rolesAtBase, out long rolesAtOther, out long grantableRoles, out long grantableRolesAtHQ, out long grantableRolesAtBase, out long grantableRolesAtOther, out string titleName)
         {
             MySqlConnection connection = null;
-            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+            MySqlDataReader reader = Database.Select(ref connection,
                 "SELECT roles, grantableRoles, rolesAtHQ, grantableRolesAtHQ, rolesAtBase, grantableRolesAtBase, rolesAtOther, grantableRolesAtOther, titleName FROM crpTitles WHERE corporationID = @corporationID AND titleID & @titleMask > 0",
                 new Dictionary<string, object>()
                 {
@@ -1131,7 +1131,7 @@ namespace EVESharp.Node.Database
             long expirationDate = DateTime.Now.AddDays(30).ToFileTimeUtc();
 
             MySqlConnection connection = null;
-            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+            MySqlDataReader reader = Database.Select(ref connection,
                 "SELECT corporationID, officeID, periodCost, stationID, balanceDueDate FROM crpOffices WHERE nextBillID IS NULL AND balanceDueDate < @expirationDate",
                 new Dictionary<string, object>()
                 {
@@ -1493,7 +1493,7 @@ namespace EVESharp.Node.Database
         public int? GetAllianceIDForCorporation(int corporationID)
         {
             MySqlConnection connection = null;
-            MySqlDataReader reader = Database.PrepareQuery(
+            MySqlDataReader reader = Database.Select(
                 ref connection,
                 "SELECT allianceID FROM corporation WHERE corporationID = @corporationID",
                 new Dictionary<string, object>()
@@ -1506,7 +1506,7 @@ namespace EVESharp.Node.Database
             using (reader)
             {
                 if (reader.Read() == false)
-                    return 0;
+                    return null;
 
                 return reader.GetInt32OrNull(0);
             }
@@ -1515,7 +1515,7 @@ namespace EVESharp.Node.Database
         public int? GetCurrentAllianceApplication(int corporationID)
         {
             MySqlConnection connection = null;
-            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+            MySqlDataReader reader = Database.Select(ref connection,
                 "SELECT allianceID FROM crpApplications WHERE corporationID = @corporationID",
                 new Dictionary<string, object>()
                 {
@@ -1551,7 +1551,7 @@ namespace EVESharp.Node.Database
         public long GetAllianceJoinDate(int corporationID)
         {
             MySqlConnection connection = null;
-            MySqlDataReader reader = Database.PrepareQuery(
+            MySqlDataReader reader = Database.Select(
                 ref connection,
                 "SELECT startDate FROM corporation WHERE corporationID = @corporationID",
                 new Dictionary<string, object>()

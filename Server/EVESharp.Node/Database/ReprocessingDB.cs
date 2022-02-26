@@ -15,7 +15,7 @@ namespace EVESharp.Node.Database
         public List<Recoverables> GetRecoverables(int typeID)
         {
             MySqlConnection connection = null;
-            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+            MySqlDataReader reader = Database.Select(ref connection,
                 "SELECT requiredTypeID, MIN(quantity) FROM typeActivityMaterials LEFT JOIN invBlueprintTypes ON typeID = blueprintTypeID WHERE damagePerJob = 1 AND ((activityID = 6 AND typeID = @typeID) OR (activityID = 1 AND productTypeID = @typeID)) GROUP BY requiredTypeID",
                 new Dictionary<string, object>()
                 {

@@ -2,16 +2,16 @@
 
     <PropertyGroup>
         <OutputType>Exe</OutputType>
-        <TargetFramework>net5.0</TargetFramework>
+        <TargetFramework>net6.0</TargetFramework>
         <Company />
         <Product>eveNode</Product>
-        <LangVersion>9</LangVersion>
+        <LangVersion>10</LangVersion>
         <Nullable>disable</Nullable>
     </PropertyGroup>
 
     <ItemGroup>
       <PackageReference Include="ini-parser-netstandard" Version="2.5.2" />
-      <PackageReference Include="MySql.Data" Version="8.0.19" />
+      <PackageReference Include="MySql.Data" Version="8.0.28" />
       <PackageReference Include="SimpleInjector" Version="5.3.0-beta2" />
     </ItemGroup>
 

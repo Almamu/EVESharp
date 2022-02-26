@@ -191,7 +191,7 @@ namespace EVESharp.Node.Database
             MySqlConnection connection = null;
             MySqlDataReader reader = null;
             
-            reader = Database.Query(ref connection, "SELECT marketGroupID, parentGroupID FROM invMarketGroups");
+            reader = Database.Select(ref connection, "SELECT marketGroupID, parentGroupID FROM invMarketGroups");
             
             using (connection)
             using (reader)
@@ -211,7 +211,7 @@ namespace EVESharp.Node.Database
 
             connection = null;
             
-            reader = Database.Query(ref connection, "SELECT marketGroupID, typeID FROM invTypes WHERE marketGroupID IS NOT NULL ORDER BY marketGroupID");
+            reader = Database.Select(ref connection, "SELECT marketGroupID, typeID FROM invTypes WHERE marketGroupID IS NOT NULL ORDER BY marketGroupID");
 
             using (connection)
             using (reader)
@@ -295,7 +295,7 @@ namespace EVESharp.Node.Database
         public int CountCharsOrders(int characterID)
         {
             MySqlConnection connection = null;
-            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+            MySqlDataReader reader = Database.Select(ref connection,
                 "SELECT COUNT(*) FROM mktOrders WHERE charID = @characterID",
                 new Dictionary<string, object>()
                 {
@@ -330,7 +330,7 @@ namespace EVESharp.Node.Database
 
         public MarketOrder[] FindMatchingOrders(MySqlConnection connection, double price, int typeID, int characterID, int solarSystemID, TransactionType type)
         {
-            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+            MySqlDataReader reader = Database.Select(ref connection,
                 "SELECT orderID, typeID, charID, mktOrders.stationID AS locationID, price, mktOrders.accountID, volRemaining, minVolume, `range`, jumps, escrow, issued, chrInformation.corporationID, isCorp FROM mktOrders LEFT JOIN chrInformation ON charID = characterID LEFT JOIN staStations ON staStations.stationID = mktOrders.stationID LEFT JOIN mapPrecalculatedSolarSystemJumps ON staStations.solarSystemID = fromSolarSystemID AND toSolarsystemID = @solarSystemID WHERE bid = @transactionType AND price >= @price AND typeID = @typeID AND charID != @characterID AND `range` >= jumps ORDER BY price",
                 new Dictionary<string, object>()
                 {
@@ -376,36 +376,36 @@ namespace EVESharp.Node.Database
 
         public void UpdateOrderRemainingQuantity(MySqlConnection connection, int orderID, int newQuantityRemaining, double escrowCost)
         {
-            Database.PrepareQuery(ref connection, "UPDATE mktOrders SET volRemaining = @quantity, escrow = escrow - @escrowCost WHERE orderID = @orderID",
+            Database.Query(ref connection, "UPDATE mktOrders SET volRemaining = @quantity, escrow = escrow - @escrowCost WHERE orderID = @orderID",
                 new Dictionary<string, object>()
                 {
                     {"@orderID", orderID},
                     {"@quantity", newQuantityRemaining},
                     {"@escrowCost", escrowCost}
                 }
-            ).Close();
+            );
         }
 
         public void UpdatePrice(MySqlConnection connection, int orderID, double newPrice, double newEscrow)
         {
-            Database.PrepareQuery(ref connection, "UPDATE mktOrders SET price = @price, escrow = @escrowCost WHERE orderID = @orderID",
+            Database.Query(ref connection, "UPDATE mktOrders SET price = @price, escrow = @escrowCost WHERE orderID = @orderID",
                 new Dictionary<string, object>()
                 {
                     {"@orderID", orderID},
                     {"@price", newPrice},
                     {"@escrowCost", newEscrow}
                 }
-            ).Close();
+            );
         }
 
         public void RemoveOrder(MySqlConnection connection, int orderID)
         {
-            Database.PrepareQuery(ref connection, "DELETE FROM mktOrders WHERE orderID = @orderID",
+            Database.Query(ref connection, "DELETE FROM mktOrders WHERE orderID = @orderID",
                 new Dictionary<string, object>()
                 {
                     {"@orderID", orderID}
                 }
-            ).Close();
+            );
         }
 
         public class ItemQuantityEntry
@@ -430,7 +430,7 @@ namespace EVESharp.Node.Database
                 CorporationRole.HangarCanTake6.Is(corporationRoles) == true ||
                 CorporationRole.HangarCanTake7.Is(corporationRoles) == true)
             {
-                reader = Database.PrepareQuery(ref connection,
+                reader = Database.Select(ref connection,
                     "SELECT invItems.itemID, quantity, singleton, nodeID, IF(valueInt IS NULL, valueFloat, valueInt) AS damage, flag, ownerID, locationID FROM invItems LEFT JOIN invItemsAttributes ON invItemsAttributes.itemID = invItems.itemID AND invItemsAttributes.attributeID = @damageAttributeID WHERE typeID = @typeID AND (locationID = @locationID1 OR locationID = @locationID2 OR locationID = (SELECT officeID FROM crpOffices WHERE corporationID = @corporationID AND stationID = @locationID1)) AND (ownerID = @ownerID1 OR ownerID = @ownerID2)",
                     new Dictionary<string, object>()
                     {
@@ -446,7 +446,7 @@ namespace EVESharp.Node.Database
             }
             else
             {
-                reader = Database.PrepareQuery(ref connection,
+                reader = Database.Select(ref connection,
                     "SELECT invItems.itemID, quantity, singleton, nodeID, IF(valueInt IS NULL, valueFloat, valueInt) AS damage, flag, ownerID, locationID FROM invItems LEFT JOIN invItemsAttributes ON invItemsAttributes.itemID = invItems.itemID AND invItemsAttributes.attributeID = @damageAttributeID WHERE typeID = @typeID AND (locationID = @locationID1 OR locationID = @locationID2) AND (ownerID = @ownerID1 OR ownerID = @ownerID2)",
                     new Dictionary<string, object>()
                     {
@@ -530,24 +530,24 @@ namespace EVESharp.Node.Database
                 // the item is just gone, remove it
                 if (entry.Quantity == 0)
                 {
-                    Database.PrepareQuery(ref connection, "DELETE FROM invItems WHERE itemID = @itemID",
+                    Database.Query(ref connection, "DELETE FROM invItems WHERE itemID = @itemID",
                         new Dictionary<string, object>()
                         {
                             {"@itemID", itemID}
                         }
-                    ).Close();
+                    );
                 }
                 else
                 {
                     // reduce the item quantity available
-                    Database.PrepareQuery(ref connection,
+                    Database.Query(ref connection,
                         "UPDATE invItems SET quantity = @quantity WHERE itemID = @itemID",
                         new Dictionary<string, object>()
                         {
                             {"@itemID", itemID},
                             {"@quantity", entry.Quantity}
                         }
-                    ).Close();
+                    );
                 }
             }
 
@@ -557,7 +557,7 @@ namespace EVESharp.Node.Database
 
         public void CheckRepackagedItem(MySqlConnection connection, int itemID, out bool singleton)
         {
-            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+            MySqlDataReader reader = Database.Select(ref connection,
                 "SELECT singleton FROM invItems WHERE itemID = @itemID",
                 new Dictionary<string, object>()
                 {
@@ -580,7 +580,7 @@ namespace EVESharp.Node.Database
 
         public void PlaceSellOrder(MySqlConnection connection, int typeID, int characterID, int corporationID, int stationID, int range, double price, int volEntered, int accountID, long duration, bool isCorp)
         {
-            Database.PrepareQuery(ref connection,
+            Database.Query(ref connection,
                 "INSERT INTO mktOrders(typeID, charID, corpID, stationID, `range`, bid, price, volEntered, volRemaining, issued, minVolume, accountID, duration, isCorp, escrow)VALUES(@typeID, @characterID, @corporationID, @stationID, @range, @sell, @price, @volEntered, @volRemaining, @issued, @minVolume, @accountID, @duration, @isCorp, @escrow)",
                 new Dictionary<string, object>()
                 {
@@ -600,12 +600,12 @@ namespace EVESharp.Node.Database
                     {"@isCorp", isCorp},
                     {"@escrow", 0}
                 }
-            ).Close();
+            );
         }
 
         public void PlaceBuyOrder(MySqlConnection connection, int typeID, int characterID, int corporationID, int stationID, int range, double price, int volEntered, int minVolume, int accountID, long duration, bool isCorp)
         {
-            Database.PrepareQuery(ref connection,
+            Database.Query(ref connection,
                 "INSERT INTO mktOrders(typeID, charID, corpID, stationID, `range`, bid, price, volEntered, volRemaining, issued, minVolume, accountID, duration, isCorp, escrow)VALUES(@typeID, @characterID, @corporationID, @stationID, @range, @sell, @price, @volEntered, @volRemaining, @issued, @minVolume, @accountID, @duration, @isCorp, @escrow)",
                 new Dictionary<string, object>()
                 {
@@ -625,7 +625,7 @@ namespace EVESharp.Node.Database
                     {"@isCorp", isCorp},
                     {"@escrow", price * volEntered}
                 }
-            ).Close();
+            );
         }
 
         /// <summary>
@@ -642,7 +642,7 @@ namespace EVESharp.Node.Database
 
         public MarketOrder GetOrderById(MySqlConnection connection, int orderID)
         {
-            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+            MySqlDataReader reader = Database.Select(ref connection,
                 "SELECT orderID, typeID, charID, mktOrders.stationID AS locationID, price, mktOrders.accountID, volRemaining, minVolume, `range`, escrow, bid, issued, corporationID, isCorp FROM mktOrders LEFT JOIN chrInformation ON charID = characterID WHERE orderID = @orderID",
                 new Dictionary<string, object>()
                 {
@@ -677,7 +677,7 @@ namespace EVESharp.Node.Database
 
         public List<MarketOrder> GetExpiredOrders(MySqlConnection connection)
         {
-            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+            MySqlDataReader reader = Database.Select(ref connection,
                 "SELECT orderID, typeID, charID, mktOrders.stationID AS locationID, price, mktOrders.accountID, volRemaining, minVolume, `range`, escrow, bid, issued, corporationID, isCorp FROM mktOrders LEFT JOIN chrInformation ON charID = characterID WHERE (issued + (duration * @ticksPerHour)) < @currentTime",
                 new Dictionary<string, object>()
                 {

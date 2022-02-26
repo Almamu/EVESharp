@@ -95,7 +95,7 @@ namespace EVESharp.Node.Database
         public double? GetSecurityRating(int characterID)
         {
             MySqlConnection connection = null;
-            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+            MySqlDataReader reader = Database.Select(ref connection,
                 "SELECT securityRating FROM chrInformation WHERE characterID = @characterID",
                 new Dictionary<string, object>()
                 {
@@ -149,7 +149,7 @@ namespace EVESharp.Node.Database
         public double GetStanding(int from, int to)
         {
             MySqlConnection connection = null;
-            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+            MySqlDataReader reader = Database.Select(ref connection,
                 "SELECT standing FROM chrStandings WHERE characterID = @fromID AND toID = @toID",
                 new Dictionary<string, object>()
                 {

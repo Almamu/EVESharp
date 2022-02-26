@@ -51,7 +51,7 @@ namespace EVESharp.Node.Database
         public int GetOutstandingContractsCountForPlayer(int characterID)
         {
             MySqlConnection connection = null;
-            MySqlDataReader reader = Database.PrepareQuery(
+            MySqlDataReader reader = Database.Select(
                 ref connection,
                 "SELECT COUNT(*) AS contractCount FROM conContracts WHERE issuerID = @characterID and forCorp = @forCorp AND status = @outstandingStatus AND dateExpired > @currentTime",
                 new Dictionary<string, object>()
@@ -231,7 +231,7 @@ namespace EVESharp.Node.Database
         public ContractStatus GetContractStatus(int contractID, int characterID, int corporationID)
         {
             MySqlConnection connection = null;
-            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+            MySqlDataReader reader = Database.Select(ref connection,
                 "SELECT status FROM conContracts WHERE ((availability = 1 AND (issuerID = @characterID OR issuerCorpID = @corporationID OR assigneeID = @characterID OR assigneeID = @corporationID OR acceptorID = @characterID OR acceptorID = @corporationID)) OR availability = 0) AND contractID = @contractID",
                 new Dictionary<string, object>()
                 {
@@ -276,7 +276,7 @@ namespace EVESharp.Node.Database
                 if (itemID == shipID)
                     throw new ConCannotTradeCurrentShip();
                 
-                MySqlDataReader reader = Database.PrepareQuery(ref connection,
+                MySqlDataReader reader = Database.Select(ref connection,
                     "SELECT quantity, nodeID, IF(dmg.valueFloat IS NULL, dmg.valueInt, dmg.valueFloat) AS damage, invItems.typeID, categoryID, singleton, contraband, IF(vol.attributeID IS NULL, IF(vold.valueFloat IS NULL, vold.valueInt, vold.valueFloat), IF(vol.valueFloat IS NULL, vol.valueInt, vol.valueFloat)) AS volume FROM invItems LEFT JOIN invTypes USING(typeID) LEFT JOIN invGroups USING(groupID) LEFT JOIN invItemsAttributes dmg ON invItems.itemID = dmg.itemID AND dmg.attributeID = @damage LEFT JOIN invItemsAttributes vol ON vol.itemID = invItems.itemID AND vol.attributeID = @volume LEFT JOIN dgmTypeAttributes vold ON vold.typeID = invItems.typeID AND vold.attributeID = @volume WHERE invItems.itemID = @itemID AND locationID = @locationID AND ownerID = @ownerID",
                     new Dictionary<string, object>()
                     {
@@ -336,7 +336,7 @@ namespace EVESharp.Node.Database
             foreach ((int itemID, ItemQuantityEntry item) in items)
             {
                 // create the records in the contract table
-                Database.PrepareQuery(
+                Database.Query(
                     ref connection,
                     "INSERT INTO conItems(contractID, itemTypeID, quantity, inCrate, itemID)VALUES(@contractID, @itemTypeID, @quantity, @inCrate, @itemID)",
                     new Dictionary<string, object>()
@@ -347,20 +347,20 @@ namespace EVESharp.Node.Database
                         {"@inCrate", 1},
                         {"@itemID", itemID}
                     }
-                ).Close();
+                );
                 
                 // do not update the item in the database if the item belongs to any node
                 if (item.NodeID != 0)
                     continue;
                 
-                Database.PrepareQuery(ref connection,
+                Database.Query(ref connection,
                     "UPDATE invItems SET locationID = @crateID WHERE itemID = @itemID",
                     new Dictionary<string, object>()
                     {
                         {"@itemID", itemID},
                         {"@crateID", crateID}
                     }
-                ).Close();
+                );
             }
 
             return items;
@@ -368,7 +368,7 @@ namespace EVESharp.Node.Database
 
         public void UpdateContractCrateAndVolume(ref MySqlConnection connection, ulong contractID, int crateID, double volume)
         {
-            Database.PrepareQuery(
+            Database.Query(
                 ref connection,
                 "UPDATE conContracts SET crateID = @crateID, volume = @volume WHERE contractID = @contractID",
                 new Dictionary<string, object>()
@@ -377,12 +377,12 @@ namespace EVESharp.Node.Database
                     {"@volume", volume},
                     {"@contractID", contractID}
                 }
-            ).Close();
+            );
         }
 
         public void UpdateContractStatus(ref MySqlConnection connection, int contractID, ContractStatus newStatus)
         {
-            Database.PrepareQuery(
+            Database.Query(
                 ref connection,
                 "UPDATE conContracts SET status = @status WHERE contractID = @contractID",
                 new Dictionary<string, object>()
@@ -390,12 +390,12 @@ namespace EVESharp.Node.Database
                     {"@contractID", contractID},
                     {"@status", (int) newStatus}
                 }
-            ).Close();
+            );
         }
 
         public void UpdateAcceptorID(ref MySqlConnection connection, int contractID, int newAcceptorID)
         {
-            Database.PrepareQuery(
+            Database.Query(
                 ref connection,
                 "UPDATE conContracts SET acceptorID = @acceptorID WHERE contractID = @contractID",
                 new Dictionary<string, object>()
@@ -403,12 +403,12 @@ namespace EVESharp.Node.Database
                     {"@contractID", contractID},
                     {"@acceptorID", newAcceptorID}
                 }
-            ).Close();
+            );
         }
 
         public void UpdateAcceptedDate(ref MySqlConnection connection, int contractID)
         {
-            Database.PrepareQuery(
+            Database.Query(
                 ref connection,
                 "UPDATE conContracts SET dateAccepted = @currentTime WHERE contractID = @contractID",
                 new Dictionary<string, object>()
@@ -416,12 +416,12 @@ namespace EVESharp.Node.Database
                     {"@contractID", contractID},
                     {"@currentTime", DateTime.UtcNow.ToFileTimeUtc()}
                 }
-            ).Close();
+            );
         }
 
         public void UpdateCompletedDate(ref MySqlConnection connection, int contractID)
         {
-            Database.PrepareQuery(
+            Database.Query(
                 ref connection,
                 "UPDATE conContracts SET dateCompleted = @currentTime WHERE contractID = @contractID",
                 new Dictionary<string, object>()
@@ -429,7 +429,7 @@ namespace EVESharp.Node.Database
                     {"@contractID", contractID},
                     {"@currentTime", DateTime.UtcNow.ToFileTimeUtc()}
                 }
-            ).Close();
+            );
         }
 
         public PyList<PyPackedRow> GetItemsInContainer(int characterID, int containerID)
@@ -473,7 +473,7 @@ namespace EVESharp.Node.Database
             // remove the last ','
             query.TrimEnd(',');
 
-            Database.PrepareQuery(ref connection, query, values).Close();
+            Database.Query(ref connection, query, values);
         }
 
         public List<int> GetContractList(int? startContractID, int limit, int? itemTypeID, PyList<PyInteger> notIssuedByIDs, PyList<PyInteger> issuedByIDs, int? assigneeID, int? locationID, int? itemGroupID, int? itemCategoryID, int priceMax, int priceMin, int? type, string? description, int callerID, int callerCorpID, int? ownerID = null, int? status = null, bool includeExpired = false, bool expiredOnly = false)
@@ -592,7 +592,7 @@ namespace EVESharp.Node.Database
                 contractQuery += $" LIMIT {limit}";
 
             MySqlConnection connection = null;
-            MySqlDataReader reader = Database.PrepareQuery(ref connection, contractQuery, values);
+            MySqlDataReader reader = Database.Select(ref connection, contractQuery, values);
             
             using (connection)
             using (reader)
@@ -613,7 +613,7 @@ namespace EVESharp.Node.Database
         public List<int> GetContractListByOwnerBids(int ownerID)
         {
             MySqlConnection connection = null;
-            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+            MySqlDataReader reader = Database.Select(ref connection,
                 "SELECT contractID FROM conBids WHERE bidderID = @ownerID",
                 new Dictionary<string, object>()
                 {
@@ -641,7 +641,7 @@ namespace EVESharp.Node.Database
         public List<int> GetContractListByAcceptor(int acceptorID)
         {
             MySqlConnection connection = null;
-            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+            MySqlDataReader reader = Database.Select(ref connection,
                 "SELECT contractID FROM conContracts WHERE acceptorID = @acceptorID AND status = @status",
                 new Dictionary<string, object>()
                 {
@@ -706,7 +706,7 @@ namespace EVESharp.Node.Database
 
         public void GetOutbids(MySqlConnection connection, int contractID, int amount, out List<int> characterIDs, out List<int> corporationIDs)
         {
-            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+            MySqlDataReader reader = Database.Select(ref connection,
                 "SELECT bidderID, forCorp FROM conBids WHERE contractID = @contractID GROUP BY bidderID",
                 new Dictionary<string, object>()
                 {
@@ -736,7 +736,7 @@ namespace EVESharp.Node.Database
 
         public void GetMaximumBid(MySqlConnection connection, int contractID, out int bidderID, out int amount)
         {
-            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+            MySqlDataReader reader = Database.Select(ref connection,
                 "SELECT amount, bidderID FROM conBids WHERE contractID = @contractID ORDER BY amount DESC LIMIT 1",
                 new Dictionary<string, object>()
                 {
@@ -778,7 +778,7 @@ namespace EVESharp.Node.Database
 
         public Contract GetContract(MySqlConnection connection, int contractID)
         {
-            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+            MySqlDataReader reader = Database.Select(ref connection,
                 "SELECT price, collateral, status, type, dateExpired, crateID, startStationID, issuerID, issuerCorpID, forCorp, reward FROM conContracts WHERE contractID = @contractID",
                 new Dictionary<string, object>()
                 {
@@ -812,7 +812,7 @@ namespace EVESharp.Node.Database
         public List<int> FetchLoginCharacterContractBids(int bidderID)
         {
             MySqlConnection connection = null;
-            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+            MySqlDataReader reader = Database.Select(ref connection,
                 "SELECT contractID, MAX(amount), (SELECT MAX(amount) FROM conBids b WHERE b.contractID = contractID) AS maximum FROM conBids LEFT JOIN conContracts USING(contractID) WHERE bidderID = @bidderID AND status = @outstandingStatus AND dateExpired < @currentTime GROUP BY contractID",
                 new Dictionary<string, object>()
                 {
@@ -840,7 +840,7 @@ namespace EVESharp.Node.Database
         public List<int> FetchLoginCharacterContractAssigned(int assigneeID)
         {
             MySqlConnection connection = null;
-            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+            MySqlDataReader reader = Database.Select(ref connection,
                 "SELECT contractID FROM conContracts WHERE assigneeID = @assigneeID AND status = @outstandingStatus AND dateExpired < @currentTime",
                 new Dictionary<string, object>()
                 {
@@ -866,7 +866,7 @@ namespace EVESharp.Node.Database
 
         public Dictionary<int, int> GetRequiredItemTypeIDs(MySqlConnection connection, int contractID)
         {
-            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+            MySqlDataReader reader = Database.Select(ref connection,
                 "SELECT itemTypeID, SUM(quantity) AS quantity FROM conItems WHERE contractID = @contractID AND inCrate = 0 GROUP BY itemTypeID",
                 new Dictionary<string, object>()
                 {
@@ -887,7 +887,7 @@ namespace EVESharp.Node.Database
 
         public List<ItemQuantityEntry> GetOfferedItems(MySqlConnection connection, int contractID)
         {
-            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+            MySqlDataReader reader = Database.Select(ref connection,
                 "SELECT itemID, itemTypeID, conItems.quantity, nodeID FROM conItems LEFT JOIN invItems USING(itemID) WHERE contractID = @contractID AND inCrate = 1",
                 new Dictionary<string, object>()
                 {
@@ -915,7 +915,7 @@ namespace EVESharp.Node.Database
         public void ExtractCrate(MySqlConnection connection, int crateID, int newLocationID, int newOwnerID)
         {
             // take all the items out
-            Database.PrepareQuery(ref connection,
+            Database.Query(ref connection,
                 "UPDATE invItems SET locationID = @newLocationID, ownerID = @newOwnerID WHERE locationID = @crateID",
                 new Dictionary<string, object>()
                 {
@@ -923,20 +923,20 @@ namespace EVESharp.Node.Database
                     {"@newOwnerID", newOwnerID},
                     {"@crateID", crateID}
                 }
-            ).Close();
+            );
             // remove the crate
-            Database.PrepareQuery(ref connection,
+            Database.Query(ref connection,
                 "DELETE FROM invItems WHERE itemID = @crateID",
                 new Dictionary<string, object>()
                 {
                     {"@crateID", crateID}
                 }
-            ).Close();
+            );
         }
 
         public List<ItemQuantityEntry> CheckRequiredItemsAtStation(MySqlConnection connection, Station station, int ownerID, int newOwnerID, Flags flag, Dictionary<int, int> requiredItemTypes)
         {
-            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+            MySqlDataReader reader = Database.Select(ref connection,
                 $"SELECT invItems.itemID, quantity, typeID, nodeID, IF(dmg.valueFloat IS NULL, dmg.valueInt, dmg.valueFloat) AS damage, categoryID, singleton, contraband FROM invItems LEFT JOIN invTypes USING(typeID) LEFT JOIN invGroups USING(groupID) LEFT JOIN invItemsAttributes dmg ON invItems.itemID = dmg.itemID AND dmg.attributeID = @damage WHERE typeID IN ({string.Join(',', requiredItemTypes.Keys)}) AND locationID = @locationID AND ownerID = @ownerID AND flag = @flag",
                 new Dictionary<string, object>()
                 {
@@ -1020,23 +1020,23 @@ namespace EVESharp.Node.Database
             {
                 // if the whole item changed it can be moved
                 if (entry.Quantity == 0)
-                    Database.PrepareQuery(ref connection, "UPDATE invItems SET locationID = @locationID, ownerID = @newOwnerID WHERE itemID = @itemID",
+                    Database.Query(ref connection, "UPDATE invItems SET locationID = @locationID, ownerID = @newOwnerID WHERE itemID = @itemID",
                         new Dictionary<string, object>()
                         {
                             {"@itemID", entry.ItemID},
                             {"@newOwnerID", newOwnerID},
                             {"@locationID", station.ID}
                         }
-                    ).Close();
+                    );
                 else
-                    Database.PrepareQuery(ref connection,
+                    Database.Query(ref connection,
                         "UPDATE invItems SET quantity = @quantity WHERE itemID = @itemID",
                         new Dictionary<string, object>()
                         {
                             {"@itemID", entry.ItemID},
                             {"@quantity", entry.Quantity}
                         }
-                    ).Close();
+                    );
             }
 
             return modifiedItems;
@@ -1044,7 +1044,7 @@ namespace EVESharp.Node.Database
 
         public List<ItemQuantityEntry> GetCrateItems(MySqlConnection connection, int crateID)
         {
-            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+            MySqlDataReader reader = Database.Select(ref connection,
                 "SELECT itemID, nodeID FROM conItems LEFT JOIN conContracts USING(contractID) LEFT JOIN invItems USING(itemID) WHERE crateID = @createID AND inCrate = 1",
                 new Dictionary<string, object>()
                 {

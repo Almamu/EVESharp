@@ -96,7 +96,7 @@ namespace EVESharp.Node.Database
                 " LEFT JOIN invBlueprintTypes AS blueprintType ON installedItem.typeID = blueprintType.blueprintTypeID" +
                 " LEFT JOIN ramAssemblyLineStations AS station ON assemblyLine.containerID = station.stationID" +
                 " WHERE job.ownerID = @ownerID"+
-                $" AND job.completedStatusID {(completed == true ? "!=" : '=')} 0"+
+                $" AND job.completedStatusID {(completed == true ? "!=" : "=")} 0"+
                 " AND job.installTime >= @fromDate" +
                 " AND job.endProductionTime <= @toDate" +
                 " GROUP BY job.jobID",

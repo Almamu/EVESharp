@@ -37,7 +37,7 @@ namespace EVESharp.Node.Database
         public long GetNodeWhereSolarSystemIsLoaded(int solarSystemID)
         {
             MySqlConnection connection = null;
-            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+            MySqlDataReader reader = Database.Select(ref connection,
                 "SELECT nodeID FROM invItems WHERE itemID = @solarSystemID",
                 new Dictionary<string, object>()
                 {
@@ -58,7 +58,7 @@ namespace EVESharp.Node.Database
         public Dictionary<string, Constant> LoadConstants()
         {
             MySqlConnection connection = null;
-            MySqlDataReader reader = Database.Query(
+            MySqlDataReader reader = Database.Select(
                 ref connection, "SELECT constantID, constantValue FROM eveConstants"
             );
 

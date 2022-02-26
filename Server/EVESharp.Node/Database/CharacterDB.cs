@@ -29,7 +29,7 @@ namespace EVESharp.Node.Database
         public Rowset GetCharacterList(int accountID)
         {
             MySqlConnection connection = null;
-            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+            MySqlDataReader reader = Database.Select(ref connection,
                 "SELECT" +
                 " characterID, itemName AS characterName, 0 as deletePrepareDateTime," +
                 " gender, accessoryID, beardID, costumeID, decoID, eyebrowsID, eyesID, hairID," +
@@ -64,7 +64,7 @@ namespace EVESharp.Node.Database
         public Rowset GetCharacterSelectionInfo(int characterID, int accountID)
         {
             MySqlConnection connection = null;
-            MySqlDataReader reader = Database.PrepareQuery(
+            MySqlDataReader reader = Database.Select(
                 ref connection,
                 "SELECT " +
                     " itemName AS shortName,bloodlineID,gender,bounty,chrInformation.corporationID,allianceID,title,startDateTime,createDateTime," +
@@ -135,7 +135,7 @@ namespace EVESharp.Node.Database
         public bool IsCharacterNameTaken(string characterName)
         {
             MySqlConnection connection = null;
-            MySqlDataReader reader = Database.PrepareQuery(
+            MySqlDataReader reader = Database.Select(
                 ref connection,
                 $"SELECT COUNT(*) FROM eveNames WHERE groupID = 1 AND itemName LIKE @characterName",
                 new Dictionary<string, object>()
@@ -161,7 +161,7 @@ namespace EVESharp.Node.Database
         {
             Dictionary<int, Bloodline> result = new Dictionary<int, Bloodline>();
             MySqlConnection connection = null;
-            MySqlDataReader reader = Database.Query(
+            MySqlDataReader reader = Database.Select(
                 ref connection,
                 "SELECT " +
                 " bloodlineTypes.bloodlineID, typeID, bloodlineName, raceID, description, maleDescription, " +
@@ -213,7 +213,7 @@ namespace EVESharp.Node.Database
         {
             Dictionary<int, Ancestry> result = new Dictionary<int, Ancestry>();
             MySqlConnection connection = null;
-            MySqlDataReader reader = Database.Query(
+            MySqlDataReader reader = Database.Select(
                 ref connection,
                 "SELECT " +
                 " ancestryID, ancestryName, bloodlineID, description, perception, willpower, charisma," +
@@ -455,7 +455,7 @@ namespace EVESharp.Node.Database
         public bool GetRandomCareerForRace(int raceID, out int careerID, out int schoolID, out int careerSpecialityID, out int corporationID)
         {
             MySqlConnection connection = null;
-            MySqlDataReader reader = Database.PrepareQuery(
+            MySqlDataReader reader = Database.Select(
                 ref connection,
                 "SELECT careerID, corporationID, schoolID FROM chrSchools WHERE raceID = @raceID ORDER BY RAND();",
                 new Dictionary<string, object>()
@@ -500,7 +500,7 @@ namespace EVESharp.Node.Database
             out int constellationID, out int regionID)
         {
             MySqlConnection connection = null;
-            MySqlDataReader reader = Database.PrepareQuery(
+            MySqlDataReader reader = Database.Select(
                 ref connection,
                 "SELECT staStations.stationID, solarSystemID, constellationID, regionID" +
                 " FROM staStations, corporation" +
@@ -543,7 +543,7 @@ namespace EVESharp.Node.Database
             Dictionary<int, int> skills = new Dictionary<int, int>();
             
             MySqlConnection connection = null;
-            MySqlDataReader reader = Database.PrepareQuery(
+            MySqlDataReader reader = Database.Select(
                 ref connection,
                 "SELECT skillTypeID, levels FROM chrRaceSkills WHERE raceID = @raceID",
                 new Dictionary<string, object> ()
@@ -569,7 +569,7 @@ namespace EVESharp.Node.Database
         public Rowset GetKeyMap()
         {
             MySqlConnection connection = null;
-            MySqlDataReader reader = Database.Query(ref connection,
+            MySqlDataReader reader = Database.Select(ref connection,
                 "SELECT accountKey as keyID, accountType as keyType, accountName as keyName, description FROM market_keyMap"
             );
             
@@ -589,7 +589,7 @@ namespace EVESharp.Node.Database
         public List<Character.SkillQueueEntry> LoadSkillQueue(Character character, Dictionary<int, Skill> skillsInTraining)
         {
             MySqlConnection connection = null;
-            MySqlDataReader reader = Database.PrepareQuery(
+            MySqlDataReader reader = Database.Select(
                 ref connection,
                 "SELECT skillItemID, level FROM chrSkillQueue WHERE characterID = @characterID ORDER BY orderIndex",
                 new Dictionary<string, object>()
@@ -642,7 +642,7 @@ namespace EVESharp.Node.Database
         public bool IsOnline(int characterID)
         {
             MySqlConnection connection = null;
-            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+            MySqlDataReader reader = Database.Select(ref connection,
                 "SELECT online FROM chrInformation WHERE characterID = @characterID",
                 new Dictionary<string, object>()
                 {
@@ -668,7 +668,7 @@ namespace EVESharp.Node.Database
         public PyList<PyInteger> GetOnlineFriendList(Character character)
         {
             MySqlConnection connection = null;
-            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+            MySqlDataReader reader = Database.Select(ref connection,
                 "SELECT accessor AS characterID FROM lscChannelPermissions, chrInformation WHERE lscChannelPermissions.channelID = @characterID AND chrInformation.characterID = lscChannelPermissions.accessor and chrInformation.online = 1",
                 new Dictionary<string, object>()
                 {
@@ -747,6 +747,7 @@ namespace EVESharp.Node.Database
                 );
 
                 using (connection)
+                using (create)
                 {
                     int index = 0;
                 
@@ -926,7 +927,7 @@ namespace EVESharp.Node.Database
         public string GetNote(int itemID, int ownerID)
         {
             MySqlConnection connection = null;
-            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+            MySqlDataReader reader = Database.Select(ref connection,
                 "SELECT note FROM chrNotes WHERE itemID = @itemID AND ownerID = @ownerID",
                 new Dictionary<string, object>()
                 {
@@ -986,7 +987,7 @@ namespace EVESharp.Node.Database
         public string GetCharacterName(int characterID)
         {
             MySqlConnection connection = null;
-            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+            MySqlDataReader reader = Database.Select(ref connection,
                 "SELECT itemName FROM eveNames WHERE itemID = @characterID",
                 new Dictionary<string, object>()
                 {
@@ -1013,7 +1014,7 @@ namespace EVESharp.Node.Database
         public int GetSkillLevelForCharacter(Types skill, int characterID)
         {
             MySqlConnection connection = null;
-            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+            MySqlDataReader reader = Database.Select(ref connection,
                 "SELECT valueInt FROM invItemsAttributes LEFT JOIN invItems USING(itemID) WHERE typeID = @skillTypeID AND ownerID = @characterID",
                 new Dictionary<string, object>()
                 {
@@ -1040,7 +1041,7 @@ namespace EVESharp.Node.Database
         public List<int> FindCharacters(string namePart)
         {
             MySqlConnection connection = null;
-            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+            MySqlDataReader reader = Database.Select(ref connection,
                 "SELECT itemID FROM eveNames WHERE groupID = 1 AND itemName LIKE @name",
                 new Dictionary<string, object>()
                 {
@@ -1070,7 +1071,7 @@ namespace EVESharp.Node.Database
         public long GetLastFactionJoinDate(int characterID)
         {
             MySqlConnection connection = null;
-            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+            MySqlDataReader reader = Database.Select(ref connection,
                 "SELECT startDate FROM chrEmployment WHERE corporationID IN (SELECT militiaCorporationID FROM chrFactions) AND characterID = @characterID",
                 new Dictionary<string, object>()
                 {
@@ -1096,7 +1097,7 @@ namespace EVESharp.Node.Database
         public long? GetCharacterStasisTimer(int characterID)
         {
             MySqlConnection connection = null;
-            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+            MySqlDataReader reader = Database.Select(ref connection,
                 "SELECT corpStasisTime FROM chrInformation WHERE characterID = @characterID",
                 new Dictionary<string, object>()
                 {
@@ -1151,7 +1152,7 @@ namespace EVESharp.Node.Database
             out long grantableRolesAtOther, out int? blockRoles, out int? baseID, out int titleMask)
         {
             MySqlConnection connection = null;
-            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+            MySqlDataReader reader = Database.Select(ref connection,
                 "SELECT roles, rolesAtBase, rolesAtHQ, rolesAtOther, grantableRoles, grantableRolesAtBase, grantableRolesAtHQ, grantableRolesAtOther, blockRoles, baseID, titleMask FROM chrInformation WHERE characterID = @characterID",
                 new Dictionary<string, object>()
                 {
@@ -1238,7 +1239,7 @@ namespace EVESharp.Node.Database
         public int GetCharacterCorporationID(int characterID)
         {
             MySqlConnection connection = null;
-            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+            MySqlDataReader reader = Database.Select(ref connection,
                 "SELECT corporationID FROM chrInformation WHERE characterID = @characterID",
                 new Dictionary<string, object>()
                 {

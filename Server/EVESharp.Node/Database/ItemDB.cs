@@ -59,7 +59,7 @@ namespace EVESharp.Node.Database
         {
             MySqlConnection connection = null;
 
-            MySqlDataReader reader = Database.Query(ref connection,
+            MySqlDataReader reader = Database.Select(ref connection,
                 "SELECT categoryID, categoryName, description, graphicID, published FROM invCategories"
             );
 
@@ -88,7 +88,7 @@ namespace EVESharp.Node.Database
         private Dictionary<int, Dictionary<int, Effect>> LoadItemEffects(ExpressionManager expressionManager)
         {
             MySqlConnection connection = null;
-            MySqlDataReader reader = Database.Query(ref connection,
+            MySqlDataReader reader = Database.Select(ref connection,
                 "SELECT effectID, effectName, effectCategory, preExpression, postExpression, description, guid, graphicID, isOffensive, isAssistance, durationAttributeID, trackingSpeedAttributeID, dischargeAttributeID, rangeAttributeID, falloffAttributeID, disallowAutoRepeat, published, displayName, isWarpSafe, rangeChance, electronicChance, propulsionChance, distribution, sfxName, npcUsageChanceAttributeID, npcActivationChanceAttributeID, fittingUsageChanceAttributeID FROM dgmEffects"
             );
             
@@ -134,7 +134,7 @@ namespace EVESharp.Node.Database
                 
                 // disable assignation warning as the connection is not null anymore
                 #pragma warning disable CS0728
-                reader = Database.Query(ref connection, "SELECT typeID, effectID FROM dgmTypeEffects");
+                reader = Database.Select(ref connection, "SELECT typeID, effectID FROM dgmTypeEffects");
                 #pragma warning restore CS0728
 
                 using (reader)
@@ -164,7 +164,7 @@ namespace EVESharp.Node.Database
             Dictionary<int, Dictionary<int, Effect>> effects = this.LoadItemEffects(expressionManager);
             
             MySqlConnection connection = null;
-            MySqlDataReader reader = Database.Query(ref connection,
+            MySqlDataReader reader = Database.Select(ref connection,
                 "SELECT typeID, groupID, typeName, description, graphicID, radius, mass, volume, capacity, portionSize, raceID, basePrice, published, marketGroupID, chanceOfDuplicating FROM invTypes"
             );
 
@@ -218,7 +218,7 @@ namespace EVESharp.Node.Database
         {
             MySqlConnection connection = null;
 
-            MySqlDataReader reader = Database.Query(ref connection,
+            MySqlDataReader reader = Database.Select(ref connection,
                 "SELECT groupID, categoryID, groupName, description, graphicID, useBasePrice, allowManufacture, allowRecycler, anchored, anchorable, fittableNonSingleton, published FROM invGroups"
             );
 
@@ -257,7 +257,7 @@ namespace EVESharp.Node.Database
 
             // sort the attributes by maxAttributeID so the simple attributes are loaded first
             // and then the complex ones that are related to other attributes
-            MySqlDataReader reader = Database.Query(ref connection,
+            MySqlDataReader reader = Database.Select(ref connection,
                 "SELECT attributeID, attributeName, attributeCategory, description, maxAttributeID, attributeIdx, graphicID, chargeRechargeTimeID, defaultValue, published, displayName, unitID, stackable, highIsGood, categoryID FROM dgmAttributeTypes ORDER BY maxAttributeID ASC"
             );
 
@@ -297,7 +297,7 @@ namespace EVESharp.Node.Database
         {
             MySqlConnection connection = null;
             
-            MySqlDataReader reader = Database.Query(ref connection, 
+            MySqlDataReader reader = Database.Select(ref connection, 
                 "SELECT typeID, attributeID, valueInt, valueFloat FROM dgmTypeAttributes"
             );
             
@@ -340,21 +340,17 @@ namespace EVESharp.Node.Database
         public List<ItemEntity> LoadStaticItems()
         {
             MySqlConnection connection = null;
-            MySqlCommand command = Database.PrepareQuery(ref connection,
+            MySqlDataReader reader = Database.Select(ref connection,
                 $"SELECT itemID, eveNames.itemName, invItems.typeID, ownerID, locationID, flag, contraband, singleton, quantity, x, y, z, custominfo FROM invItems LEFT JOIN eveNames USING(itemID) LEFT JOIN invPositions USING (itemID) WHERE itemID < {ItemFactory.USERGENERATED_ID_MIN} AND (groupID = {(int) Groups.Station} OR groupID = {(int) Groups.Faction} OR groupID = {(int) Groups.SolarSystem} OR groupID = {(int) Groups.Corporation} OR groupID = {(int) Groups.System})"
             );
             
             using (connection)
-            using (command)
+            using (reader)
             {
-                MySqlDataReader reader = command.ExecuteReader();
                 List<ItemEntity> itemList = new List<ItemEntity>();
                 
-                using (reader)
-                {
-                    while (reader.Read () == true)
-                        itemList.Add(this.BuildItemFromReader(reader));
-                }
+                while (reader.Read () == true)
+                    itemList.Add(this.BuildItemFromReader(reader));
 
                 return itemList;
             }
@@ -392,7 +388,7 @@ namespace EVESharp.Node.Database
         public Item LoadItem(int itemID)
         {
             MySqlConnection connection = null;
-            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+            MySqlDataReader reader = Database.Select(ref connection,
                 "SELECT itemID, eveNames.itemName, invItems.typeID, ownerID, locationID, flag, contraband, singleton, quantity, x, y, z, customInfo, nodeID FROM invItems LEFT JOIN eveNames USING (itemID) LEFT JOIN invPositions USING (itemID) WHERE itemID = @itemID",
                 new Dictionary<string, object>()
                 {
@@ -432,7 +428,7 @@ namespace EVESharp.Node.Database
         public List<int> GetInventoryItems(int inventoryID)
         {
             MySqlConnection connection = null;
-            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+            MySqlDataReader reader = Database.Select(ref connection,
                 "SELECT itemID FROM invItems WHERE locationID = @inventoryID",
                 new Dictionary<string, object>()
                 {
@@ -454,7 +450,7 @@ namespace EVESharp.Node.Database
         public Blueprint LoadBlueprint(ItemEntity item)
         {
             MySqlConnection connection = null;
-            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+            MySqlDataReader reader = Database.Select(ref connection,
                 "SELECT copy, materialLevel, productivityLevel, licensedProductionRunsRemaining FROM invBlueprints WHERE itemID = @itemID",
                 new Dictionary<string, object>()
                 {
@@ -475,7 +471,7 @@ namespace EVESharp.Node.Database
         public Corporation LoadCorporation(ItemEntity item)
         {
             MySqlConnection connection = null;
-            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+            MySqlDataReader reader = Database.Select(ref connection,
                 "SELECT description, tickerName, url, taxRate," +
                 " minimumJoinStanding, corporationType, hasPlayerPersonnelManager, sendCharTerminationMessage," +
                 " creatorID, ceoID, stationID, raceID, allianceID, shares, memberCount, memberLimit," +
@@ -489,8 +485,8 @@ namespace EVESharp.Node.Database
                     {"@itemID", item.ID}
                 }
             );
-            
-            using(connection)
+
+            using (connection)
             using (reader)
             {
                 if (reader.Read() == false)
@@ -546,7 +542,7 @@ namespace EVESharp.Node.Database
         public Character LoadCharacter(ItemEntity item)
         {
             MySqlConnection connection = null;
-            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+            MySqlDataReader reader = Database.Select(ref connection,
                 "SELECT characterID, accountID, activeCloneID, title, description, securityRating," +
                 " petitionMessage, logonMinutes, corporationID, roles, rolesAtBase, rolesAtHQ," +
                 " rolesAtOther, corporationDateTime, startDateTime, createDateTime, ancestryID, careerID, schoolID," +
@@ -655,7 +651,7 @@ namespace EVESharp.Node.Database
         public Faction LoadFaction(ItemEntity item)
         {
             MySqlConnection connection = null;
-            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+            MySqlDataReader reader = Database.Select(ref connection,
                 "SELECT description, raceIDs, solarSystemID, corporationID, sizeFactor, stationCount," +
                 " stationSystemCount, militiaCorporationID" +
                 " FROM chrFactions",
@@ -687,7 +683,7 @@ namespace EVESharp.Node.Database
         public Alliance LoadAlliance(ItemEntity item)
         {
             MySqlConnection connection = null;
-            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+            MySqlDataReader reader = Database.Select(ref connection,
                 "SELECT shortName, description, url, executorCorpID, creatorCorpID, creatorCharID, dictatorial FROM crpAlliances WHERE allianceID = @itemID",
                 new Dictionary<string, object>()
                 {
@@ -732,7 +728,7 @@ namespace EVESharp.Node.Database
         public Station LoadStation(ItemEntity item)
         {
             MySqlConnection connection = null;
-            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+            MySqlDataReader reader = Database.Select(ref connection,
                 "SELECT operationID, security, dockingCostPerVolume, maxShipVolumeDockable, officeRentalCost, constellationID, regionID, reprocessingEfficiency, reprocessingStationsTake, reprocessingHangarFlag FROM staStations WHERE stationID = @stationID",
                 new Dictionary<string, object>
                 {
@@ -874,7 +870,7 @@ namespace EVESharp.Node.Database
         public Dictionary<int, ItemEntity> LoadItemsLocatedAt(int locationID, Flags ignoreFlag)
         {
             MySqlConnection connection = null;
-            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+            MySqlDataReader reader = Database.Select(ref connection,
                 "SELECT itemID FROM invItems WHERE locationID = @locationID AND flag != @flag",
                 new Dictionary<string, object>()
                 {
@@ -900,7 +896,7 @@ namespace EVESharp.Node.Database
         public Dictionary<int, ItemEntity> LoadItemsLocatedAtByOwner(int locationID, int ownerID)
         {
             MySqlConnection connection = null;
-            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+            MySqlDataReader reader = Database.Select(ref connection,
                 "SELECT itemID FROM invItems WHERE locationID = @locationID AND ownerID = @ownerID",
                 new Dictionary<string, object>()
                 {
@@ -926,7 +922,7 @@ namespace EVESharp.Node.Database
         public SolarSystem LoadSolarSystem(ItemEntity item)
         {   
             MySqlConnection connection = null;
-            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+            MySqlDataReader reader = Database.Select(ref connection,
                 "SELECT regionID, constellationID, x, y, z, xMin, yMin, zMin, xMax, yMax, zMax, luminosity, border, fringe, corridor, hub, international, regional, constellation, security, factionID, radius, sunTypeID, securityClass FROM mapSolarSystems WHERE solarSystemID = @solarSystemID",
                 new Dictionary<string, object>()
                 {
@@ -972,7 +968,7 @@ namespace EVESharp.Node.Database
         public Constellation LoadConstellation(ItemEntity item)
         {   
             MySqlConnection connection = null;
-            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+            MySqlDataReader reader = Database.Select(ref connection,
                 "SELECT regionID, x, y, z, xMin, yMin, zMin, xMax, yMax, zMax, factionID, radius FROM mapConstellations WHERE constellationID = @constellationID",
                 new Dictionary<string, object>()
                 {
@@ -1006,7 +1002,7 @@ namespace EVESharp.Node.Database
         public Region LoadRegion(ItemEntity item)
         {   
             MySqlConnection connection = null;
-            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+            MySqlDataReader reader = Database.Select(ref connection,
                 "SELECT x, y, z, xMin, yMin, zMin, xMax, yMax, zMax, factionID, radius FROM mapRegions WHERE regionID = @regionID",
                 new Dictionary<string, object>()
                 {
@@ -1052,7 +1048,7 @@ namespace EVESharp.Node.Database
         private Dictionary<int, Inventory.Items.Attributes.Attribute> LoadAttributesForItem(int itemID)
         {
             MySqlConnection connection = null;
-            MySqlDataReader reader = Database.PrepareQuery(ref connection,
+            MySqlDataReader reader = Database.Select(ref connection,
                 "SELECT attributeID, valueInt, valueFloat FROM invItemsAttributes WHERE itemID = @itemID",
                 new Dictionary<string, object>()
                 {
@@ -1349,7 +1345,7 @@ namespace EVESharp.Node.Database
         public int GetItemNode(int itemID)
         {
             MySqlConnection connection = null;
-            MySqlDataReader reader = Database.PrepareQuery(ref connection, 
+            MySqlDataReader reader = Database.Select(ref connection, 
                 "SELECT nodeID FROM invItems WHERE itemID = @itemID",
                 new Dictionary<string, object>()
                 {

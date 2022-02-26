@@ -42,7 +42,7 @@ namespace EVESharp.Proxy.Database
             try
             {
                 MySqlConnection connection = null;
-                MySqlDataReader reader = Database.Query(ref connection,
+                MySqlDataReader reader = Database.Select(ref connection,
                     "SELECT updateID, updateName, description, machoVersionMin, machoVersionMax, buildNumberMin, buildNumberMax, methodName, objectID, codeType, code, OCTET_LENGTH(code) as codeLength FROM eveLiveUpdates"
                 );
 

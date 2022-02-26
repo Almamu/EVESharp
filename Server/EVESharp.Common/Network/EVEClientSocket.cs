@@ -276,7 +276,14 @@ namespace EVESharp.Common.Network
             // there shouldn't be anything left
             // keep the semaphore active so no one can send any more data
             // finally disconnect the socket
-            this.ForcefullyDisconnect();
+            try
+            {
+                this.ForcefullyDisconnect();
+            }
+            catch (Exception ex)
+            {
+                this.DefaultExceptionHandler(ex);
+            }
         }
 
         protected override void DefaultExceptionHandler(Exception ex)

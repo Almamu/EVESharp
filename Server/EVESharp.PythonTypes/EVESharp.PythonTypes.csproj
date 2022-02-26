@@ -1,15 +1,15 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>net5.0</TargetFramework>
+        <TargetFramework>net6.0</TargetFramework>
         <Company>Almamu</Company>
         <Product>eveMarshal</Product>
-        <LangVersion>9</LangVersion>
+        <LangVersion>10</LangVersion>
         <Nullable>disable</Nullable>
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="MySql.Data" Version="8.0.19" />
+      <PackageReference Include="MySql.Data" Version="8.0.28" />
     </ItemGroup>
 
 </Project>

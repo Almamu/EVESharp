@@ -472,7 +472,7 @@ namespace EVESharp.Node
         private PyDataType QueryCacheObject(string query, CacheObjectType type)
         {
             MySqlConnection connection = null;
-            MySqlDataReader reader = Database.Query(ref connection, query);
+            MySqlDataReader reader = Database.Select(ref connection, query);
 
             using(connection)
             using (reader)

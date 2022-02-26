@@ -27,7 +27,7 @@ namespace EVESharp.Node.Database
         {
 	        // TODO: SIMPLIFY TABLE STRUCTURE, ATTACHMENTS ARE NOT SUPPORTED
 	        MySqlConnection connection = null;
-	        MySqlDataReader reader = Database.PrepareQuery(ref connection,
+	        MySqlDataReader reader = Database.Select(ref connection,
 		        "SELECT channelID, messageID, senderID, subject, body, mimeTypeID, mimeType, `binary`, created FROM eveMail LEFT JOIN eveMailMimeType USING(mimeTypeID) WHERE messageID = @messageID AND channelID = @channelID",
 		        new Dictionary<string, object>()
 		        {
@@ -127,7 +127,7 @@ namespace EVESharp.Node.Database
 	        
 	        // check mailbox type
 	        MySqlConnection connection = null;
-	        MySqlDataReader reader = Database.PrepareQuery(ref connection,
+	        MySqlDataReader reader = Database.Select(ref connection,
 		        "SELECT groupID FROM invItems LEFT JOIN invTypes USING(typeID) WHERE itemID = @itemID",
 		        new Dictionary<string, object>()
 		        {
