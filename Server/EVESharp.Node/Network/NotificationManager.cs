@@ -198,13 +198,13 @@ namespace EVESharp.Node.Network
 
             dataContainer = new PyTuple(2)
             {
-                [0] = 0,
+                [0] = 0, // gpcs.ServiceCall::NotifyDown
                 [1] = dataContainer
             };
 
             dataContainer = new PyTuple(2)
             {
-                [0] = 0,
+                [0] = 0, // gpcs.ObjectCall::NotifyDown
                 [1] = new PySubStream(dataContainer)
             };
 
