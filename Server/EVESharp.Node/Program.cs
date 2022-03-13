@@ -57,6 +57,7 @@ using EVESharp.Node.Services.War;
 using EVESharp.Node.Services;
 using SimpleInjector;
 using Container = SimpleInjector.Container;
+using MachoNet = EVESharp.Node.Network.MachoNet;
 
 namespace EVESharp.Node
 {

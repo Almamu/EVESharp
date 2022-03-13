@@ -192,7 +192,7 @@ namespace EVESharp.Node.Network
         {
             PyTuple dataContainer = new PyTuple(2)
             {
-                [0] = 1,
+                [0] = 1, // gpcs.ObjectCall::ObjectCall
                 [1] = data
             };
 

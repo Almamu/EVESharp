@@ -80,7 +80,7 @@ namespace EVESharp.Node.Network
             this.TimerManager = timerManager;
             this.LoginQueue = loginQueue;
             this.GeneralDB = generalDB;
-            this.MachoServerTransport = new MachoServerTransport(this.Configuration.Listening.Port, this, logger);
+            this.MachoServerTransport = new MachoServerTransport(this.Configuration.MachoNet.Port, this, logger);
             this.DependencyInjection = dependencyInjection;
         }
 
@@ -89,32 +89,66 @@ namespace EVESharp.Node.Network
             Log.Info("Initializing service manager");
 
             this.ServiceManager = this.DependencyInjection.GetInstance<ServiceManager>();
-            
+
+            switch (this.Configuration.MachoNet.Mode)
+            {
+                case MachoNetMode.Proxy:
+                    this.RunInProxyMode();
+                    break;
+                case MachoNetMode.Server:
+                    this.RunInServerMode();
+                    break;
+                case MachoNetMode.Single:
+                    this.RunInSingleNodeMode();
+                    break;
+            }
+        }
+
+        private async void RegisterNode()
+        {
             // register ourselves with the orchestrator and get our node id AND address
+            HttpClient client = new HttpClient();
+            HttpResponseMessage response = await client.PostAsJsonAsync($"{this.Configuration.Cluster.OrchestatorURL}/Nodes/register", this.MachoServerTransport.Port);
+
+            // make sure we have a proper answer
+            response.EnsureSuccessStatusCode();
+            // read the json and extract the required information
+            Stream inputStream = await response.Content.ReadAsStreamAsync();
+
+            JsonObject result = JsonSerializer.Deserialize<JsonObject>(inputStream);
+
+            this.Container.Address = result["address"].ToString();
+            this.Container.NodeID = (long) result["nodeId"];
+            
+            Log.Info($"Orchestrator assigned node id {this.Container.NodeID} with address {this.Container.Address}");
+        }
+
+        private void RunInProxyMode()
+        {
             try
             {
-                HttpClient client = new HttpClient();
-                HttpResponseMessage response = await client.PostAsJsonAsync($"{this.Configuration.Cluster.OrchestatorURL}/Nodes/register", this.MachoServerTransport.Port);
-
-                // make sure we have a proper answer
-                response.EnsureSuccessStatusCode();
-                // read the json and extract the required information
-                Stream inputStream = await response.Content.ReadAsStreamAsync();
-
-                JsonObject result = JsonSerializer.Deserialize<JsonObject>(inputStream);
-
-                this.Container.Address = result["address"].ToString();
-                this.Container.NodeID = (long) result["nodeId"];
-                
-                Log.Info($"Orchestrator assigned node id {this.Container.NodeID} with address {this.Container.Address}");
+                this.RegisterNode();
+                this.StartListening();
             }
             catch (Exception e)
             {
                 Log.Error($"Error contacting orchestrator: {e.Message}");
                 this.RunInSingleNodeMode();
             }
+        }
 
-            this.MachoServerTransport.Listen();
+        private void RunInServerMode()
+        {
+            try
+            {
+                this.RegisterNode();
+                this.StartListening();
+            }
+            catch (Exception e)
+            {
+                Log.Error($"Error contacting orchestrator: {e.Message}");
+                this.RunInSingleNodeMode();
+            }
         }
 
         private void RunInSingleNodeMode()
@@ -125,6 +159,13 @@ namespace EVESharp.Node.Network
             Log.Info("Starting up in single-node mode");
             Log.Warning("Starting up in single-node mode");
             Log.Trace("Starting up in single-node mode");
+            
+            this.StartListening();
+        }
+
+        private void StartListening()
+        {
+            this.MachoServerTransport.Listen();
         }
 
         private void HandleOnSolarSystemLoaded(PyTuple data)

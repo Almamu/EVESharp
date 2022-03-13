@@ -8,7 +8,7 @@ namespace EVESharp.Node.Configuration
     public class General
     {
         public EVESharp.Common.Configuration.Database Database { get; private set; } = new EVESharp.Common.Configuration.Database();
-        public Listening Listening { get; private set; } = new Listening();
+        public MachoNet MachoNet { get; private set; } = new MachoNet();
         public Authentication Authentication { get; private set; } = new Authentication();
         public LogLite LogLite { get; private set; } = new LogLite();
         public FileLog FileLog { get; private set; } = new FileLog();
@@ -23,7 +23,7 @@ namespace EVESharp.Node.Configuration
             General config = new General();
 
             config.Database.Load(data["database"]);
-            config.Listening.Load(data["machonet"]);
+            config.MachoNet.Load(data["machonet"]);
             config.Cluster.Load(data["cluster"]);
 
             if (data.Sections.ContainsSection("authentication") == true)
@@ -39,7 +39,7 @@ namespace EVESharp.Node.Configuration
 
             // register all the configuration options as dependencies available
             container.RegisterInstance(config.Database);
-            container.RegisterInstance(config.Listening);
+            container.RegisterInstance(config.MachoNet);
             container.RegisterInstance(config.Authentication);
             container.RegisterInstance(config.LogLite);
             container.RegisterInstance(config.FileLog);
