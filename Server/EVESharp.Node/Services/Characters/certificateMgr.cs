@@ -1,31 +1,35 @@
 ﻿using System.Collections.Generic;
-using EVESharp.Common.Services;
 using EVESharp.EVE.Packets.Complex;
+using EVESharp.EVE.Services;
 using EVESharp.Node.Database;
+using EVESharp.Node.Dogma;
 using EVESharp.Node.Exceptions.certificateMgr;
 using EVESharp.Node.Inventory;
 using EVESharp.Node.Inventory.Items.Types;
 using EVESharp.Node.Network;
 using EVESharp.Node.Notifications.Client.Certificates;
+using EVESharp.Node.Sessions;
 using EVESharp.Node.StaticData.Certificates;
-using EVESharp.Node.StaticData;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Primitives;
 
 namespace EVESharp.Node.Services.Characters
 {
-    public class certificateMgr : IService
+    public class certificateMgr : Service
     {
+        public override AccessLevel AccessLevel => AccessLevel.None;
         private CertificatesDB DB { get; }
         private ItemFactory ItemFactory { get; }
         private CacheStorage CacheStorage { get; }
         private Dictionary<int, List<Relationship>> CertificateRelationships { get; }
+        private Node.Dogma.Dogma Dogma { get; }
         
-        public certificateMgr(CertificatesDB db, ItemFactory itemFactory, CacheStorage cacheStorage)
+        public certificateMgr(CertificatesDB db, ItemFactory itemFactory, CacheStorage cacheStorage, Node.Dogma.Dogma dogma)
         {
             this.DB = db;
             this.ItemFactory = itemFactory;
             this.CacheStorage = cacheStorage;
+            this.Dogma = dogma;
 
             // get the full list of requirements
             this.CertificateRelationships = this.DB.GetCertificateRelationships();
@@ -75,12 +79,12 @@ namespace EVESharp.Node.Services.Characters
 
         public PyDataType GetMyCertificates(CallInformation call)
         {
-            return this.DB.GetMyCertificates(call.Client.EnsureCharacterIsSelected());
+            return this.DB.GetMyCertificates(call.Session.EnsureCharacterIsSelected());
         }
 
         public PyBool GrantCertificate(PyInteger certificateID, CallInformation call)
         {
-            int callerCharacterID = call.Client.EnsureCharacterIsSelected();
+            int callerCharacterID = call.Session.EnsureCharacterIsSelected();
             Character character = this.ItemFactory.GetItem<Character>(callerCharacterID);
 
             Dictionary<int, Skill> skills = character.InjectedSkillsByTypeID;
@@ -104,14 +108,14 @@ namespace EVESharp.Node.Services.Characters
             this.DB.GrantCertificate(callerCharacterID, certificateID);
             
             // notify the character about the granting of the certificate
-            call.Client.NotifyMultiEvent(new OnCertificateIssued(certificateID));
+            this.Dogma.QueueMultiEvent(callerCharacterID, new OnCertificateIssued(certificateID));
             
             return null;
         }
 
         public PyDataType BatchCertificateGrant(PyList certificateList, CallInformation call)
         {
-            int callerCharacterID = call.Client.EnsureCharacterIsSelected();
+            int callerCharacterID = call.Session.EnsureCharacterIsSelected();
             Character character = this.ItemFactory.GetItem<Character>(callerCharacterID);
 
             PyList<PyInteger> result = new PyList<PyInteger>();
@@ -145,21 +149,21 @@ namespace EVESharp.Node.Services.Characters
             }
             
             // notify the client about the granting of certificates
-            call.Client.NotifyMultiEvent(new OnCertificateIssued());
+            this.Dogma.QueueMultiEvent(callerCharacterID, new OnCertificateIssued());
 
             return result;
         }
 
         public PyDataType UpdateCertificateFlags(PyInteger certificateID, PyInteger visibilityFlags, CallInformation call)
         {
-            this.DB.UpdateVisibilityFlags(certificateID, call.Client.EnsureCharacterIsSelected(), visibilityFlags);
+            this.DB.UpdateVisibilityFlags(certificateID, call.Session.EnsureCharacterIsSelected(), visibilityFlags);
             
             return null;
         }
 
         public PyDataType BatchCertificateUpdate(PyDictionary updates, CallInformation call)
         {
-            call.Client.EnsureCharacterIsSelected();
+            call.Session.EnsureCharacterIsSelected();
             
             foreach ((PyInteger key, PyInteger value) in updates.GetEnumerable<PyInteger,PyInteger>())
                 this.UpdateCertificateFlags(key, value, call);

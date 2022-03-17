@@ -1,12 +1,13 @@
-using EVESharp.Common.Services;
+using EVESharp.EVE.Services;
 using EVESharp.Node.Network;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Primitives;
 
 namespace EVESharp.Node.Services.Account
 {
-    public class userSvc : IService
+    public class userSvc : Service
     {
+        public override AccessLevel AccessLevel => AccessLevel.None;
         public userSvc()
         {
         }

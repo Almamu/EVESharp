@@ -1,10 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
-using EVESharp.Common.Services;
+using System.Diagnostics;
 using EVESharp.EVE;
 using EVESharp.EVE.Packets.Complex;
 using EVESharp.EVE.Packets.Exceptions;
+using EVESharp.EVE.Services;
+using EVESharp.EVE.Sessions;
 using EVESharp.Node.Database;
+using EVESharp.Node.Dogma;
 using EVESharp.Node.Exceptions.corpRegistry;
 using EVESharp.Node.Exceptions.inventory;
 using EVESharp.Node.Exceptions.marketProxy;
@@ -15,17 +18,19 @@ using EVESharp.Node.Market;
 using EVESharp.Node.Network;
 using EVESharp.Node.Notifications.Client.Market;
 using EVESharp.Node.Notifications.Nodes.Inventory;
+using EVESharp.Node.Sessions;
 using EVESharp.Node.StaticData;
 using EVESharp.Node.StaticData.Corporation;
 using EVESharp.Node.StaticData.Inventory;
 using MySql.Data.MySqlClient;
-using EVESharp.Node.Services.Account;
 using EVESharp.PythonTypes.Types.Primitives;
 
 namespace EVESharp.Node.Services.Market
 {
-    public class marketProxy : IService
+    public class marketProxy : Service
     {
+        public override AccessLevel AccessLevel => AccessLevel.None;
+        
         private static readonly int[] JumpsPerSkillLevel = new int[]
         {
             -1, 0, 5, 10, 20, 50
@@ -39,12 +44,12 @@ namespace EVESharp.Node.Services.Market
         private TypeManager TypeManager => this.ItemFactory.TypeManager;
         private SolarSystemDB SolarSystemDB { get; }
         private NodeContainer NodeContainer { get; }
-        private ClientManager ClientManager { get; }
         private SystemManager SystemManager => this.ItemFactory.SystemManager;
         private NotificationManager NotificationManager { get; }
         private WalletManager WalletManager { get; }
+        private Node.Dogma.Dogma Dogma { get; }
         
-        public marketProxy(MarketDB db, CharacterDB characterDB, ItemDB itemDB, SolarSystemDB solarSystemDB, ItemFactory itemFactory, CacheStorage cacheStorage, NodeContainer nodeContainer, ClientManager clientManager, NotificationManager notificationManager, WalletManager walletManager, MachoNet machoNet)
+        public marketProxy(MarketDB db, CharacterDB characterDB, ItemDB itemDB, SolarSystemDB solarSystemDB, ItemFactory itemFactory, CacheStorage cacheStorage, NodeContainer nodeContainer, NotificationManager notificationManager, WalletManager walletManager, Node.Dogma.Dogma dogma, MachoNet machoNet)
         {
             this.DB = db;
             this.CharacterDB = characterDB;
@@ -53,9 +58,9 @@ namespace EVESharp.Node.Services.Market
             this.CacheStorage = cacheStorage;
             this.ItemFactory = itemFactory;
             this.NodeContainer = nodeContainer;
-            this.ClientManager = clientManager;
             this.NotificationManager = notificationManager;
             this.WalletManager = walletManager;
+            this.Dogma = dogma;
 
             machoNet.OnClusterTimer += this.PerformTimedEvents;
         }
@@ -84,7 +89,7 @@ namespace EVESharp.Node.Services.Market
         public PyDataType CharGetNewTransactions(PyInteger sellBuy, PyInteger typeID, PyDataType clientID,
             PyInteger quantity, PyDataType fromDate, PyDataType maxPrice, PyInteger minPrice, CallInformation call)
         {
-            int callerCharacterID = call.Client.EnsureCharacterIsSelected();
+            int callerCharacterID = call.Session.EnsureCharacterIsSelected();
 
             return this.GetNewTransactions(callerCharacterID, sellBuy, typeID, clientID, quantity, fromDate, maxPrice, minPrice, WalletKeys.MAIN_WALLET);
         }
@@ -94,12 +99,12 @@ namespace EVESharp.Node.Services.Market
             CallInformation call)
         {
             // TODO: SUPPORT THE "who" PARAMETER
-            int corporationID = call.Client.CorporationID;
+            int corporationID = call.Session.CorporationID;
             
             // transactions requires accountant roles for corporation
-            if (corporationID != call.Client.CorporationID ||
-                CorporationRole.Accountant.Is(call.Client.CorporationRole) == false ||
-                CorporationRole.JuniorAccountant.Is(call.Client.CorporationRole) == false)
+            if (corporationID != call.Session.CorporationID ||
+                CorporationRole.Accountant.Is(call.Session.CorporationRole) == false ||
+                CorporationRole.JuniorAccountant.Is(call.Session.CorporationRole) == false)
                 throw new CrpAccessDenied(MLS.UI_SHARED_WALLETHINT8);
 
             return this.GetNewTransactions(corporationID, sellBuy, typeID, clientID, quantity, fromDate, maxPrice, minPrice, accountKey);
@@ -125,37 +130,37 @@ namespace EVESharp.Node.Services.Market
 
         public PyDataType GetCharOrders(CallInformation call)
         {
-            return this.DB.GetOrdersForOwner(call.Client.EnsureCharacterIsSelected());
+            return this.DB.GetOrdersForOwner(call.Session.EnsureCharacterIsSelected());
         }
 
         public PyDataType GetStationAsks(CallInformation call)
         {
-            return this.DB.GetStationAsks(call.Client.EnsureCharacterIsInStation());
+            return this.DB.GetStationAsks(call.Session.EnsureCharacterIsInStation());
         }
 
         public PyDataType GetSystemAsks(CallInformation call)
         {
-            call.Client.EnsureCharacterIsSelected();
+            call.Session.EnsureCharacterIsSelected();
 
-            return this.DB.GetSystemAsks(call.Client.SolarSystemID2);
+            return this.DB.GetSystemAsks(call.Session.SolarSystemID2);
         }
 
         public PyDataType GetRegionBest(CallInformation call)
         {
-            call.Client.EnsureCharacterIsSelected();
+            call.Session.EnsureCharacterIsSelected();
 
-            return this.DB.GetRegionBest(call.Client.RegionID);
+            return this.DB.GetRegionBest(call.Session.RegionID);
         }
         
         public PyDataType GetOrders(PyInteger typeID, CallInformation call)
         {
-            call.Client.EnsureCharacterIsSelected();
+            call.Session.EnsureCharacterIsSelected();
          
             // dirty little hack, but should do the trick
             this.CacheStorage.StoreCall(
                 "marketProxy",
                 "GetOrders_" + typeID,
-                this.DB.GetOrders(call.Client.RegionID, call.Client.SolarSystemID2, typeID),
+                this.DB.GetOrders(call.Session.RegionID, call.Session.SolarSystemID2, typeID),
                 DateTime.UtcNow.ToFileTimeUtc()
             );
 
@@ -174,12 +179,12 @@ namespace EVESharp.Node.Services.Market
 
         public PyDataType GetOldPriceHistory(PyInteger typeID, CallInformation call)
         {
-            return this.DB.GetOldPriceHistory(call.Client.RegionID, typeID);
+            return this.DB.GetOldPriceHistory(call.Session.RegionID, typeID);
         }
 
         public PyDataType GetNewPriceHistory(PyInteger typeID, CallInformation call)
         {
-            return this.DB.GetNewPriceHistory(call.Client.RegionID, typeID);
+            return this.DB.GetNewPriceHistory(call.Session.RegionID, typeID);
         }
 
         private void CalculateSalesTax(long accountingLevel, int quantity, double price, out double tax, out double profit)
@@ -270,7 +275,7 @@ namespace EVESharp.Node.Services.Market
                 throw new MktOrderDidNotMatch();
         }
 
-        private void PlaceImmediateSellOrderChar(MySqlConnection connection, Wallet wallet, Character character, int itemID, int typeID, int stationID, int quantity, double price, Client client)
+        private void PlaceImmediateSellOrderChar(MySqlConnection connection, Wallet wallet, Character character, int itemID, int typeID, int stationID, int quantity, double price, Session session)
         {
             int solarSystemID = this.ItemFactory.GetStaticStation(stationID).SolarSystemID;
             
@@ -370,15 +375,16 @@ namespace EVESharp.Node.Services.Market
             }
         }
 
-        private void PlaceSellOrderCharUpdateItems(MySqlConnection connection, Client client, int stationID, int typeID, int quantity)
+        private void PlaceSellOrderCharUpdateItems(MySqlConnection connection, Session session, int stationID, int typeID, int quantity)
         {
             Dictionary<int, MarketDB.ItemQuantityEntry> items = null;
+            int callerCharacterID = session.EnsureCharacterIsSelected();
             
             // depending on where the character that is placing the order, the way to detect the items should be different
-            if (stationID == client.StationID)
-                items = this.DB.PrepareItemForOrder(connection, typeID, stationID, client.ShipID ?? -1, quantity, (int) client.CharacterID, client.CorporationID, client.CorporationRole);
+            if (stationID == session.StationID)
+                items = this.DB.PrepareItemForOrder(connection, typeID, stationID, session.ShipID ?? -1, quantity, (int) session.CharacterID, session.CorporationID, session.CorporationRole);
             else
-                items = this.DB.PrepareItemForOrder(connection, typeID, stationID, -1, quantity, (int) client.CharacterID, client.CorporationID, client.CorporationRole);
+                items = this.DB.PrepareItemForOrder(connection, typeID, stationID, -1, quantity, (int) session.CharacterID, session.CorporationID, session.CorporationRole);
 
             if (items is null)
                 throw new NotEnoughQuantity(this.TypeManager[typeID]);
@@ -397,14 +403,14 @@ namespace EVESharp.Node.Services.Market
                         // item has to be destroyed
                         this.ItemFactory.DestroyItem(item);
                         // notify item destroyal
-                        client.NotifyMultiEvent(Notifications.Client.Inventory.OnItemChange.BuildLocationChange(item, entry.LocationID));
+                        this.Dogma.QueueMultiEvent(callerCharacterID, Notifications.Client.Inventory.OnItemChange.BuildLocationChange(item, entry.LocationID));
                     }
                     else
                     {
                         // just a quantity change
                         item.Quantity = entry.Quantity;
                         // notify the client
-                        client.NotifyMultiEvent(Notifications.Client.Inventory.OnItemChange.BuildQuantityChange(item, entry.OriginalQuantity));
+                        this.Dogma.QueueMultiEvent(callerCharacterID, Notifications.Client.Inventory.OnItemChange.BuildQuantityChange(item, entry.OriginalQuantity));
                         // unload the item if it's not needed
                         this.ItemFactory.UnloadItem(item);
                     }
@@ -427,12 +433,13 @@ namespace EVESharp.Node.Services.Market
 
         private void PlaceSellOrder(int itemID, Character character, int stationID, int quantity, int typeID, int duration, double price, int range, double brokerCost, int ownerID, int accountKey, CallInformation call)
         {
+            int callerCharacterID = call.Session.EnsureCharacterIsSelected();
             // check distance for the order
             this.CheckSellOrderDistancePermissions(character, stationID);
 
             // obtain wallet lock too
             // everything is checked already, perform table locking and do all the job here
-            using Wallet wallet = this.WalletManager.AcquireWallet(ownerID, accountKey, ownerID == call.Client.CorporationID);
+            using Wallet wallet = this.WalletManager.AcquireWallet(ownerID, accountKey, ownerID == call.Session.CorporationID);
             using MySqlConnection connection = this.DB.AcquireMarketLock();
             try
             {
@@ -449,9 +456,9 @@ namespace EVESharp.Node.Services.Market
                 if (duration == 0)
                 {
                     // move the items to update
-                    this.PlaceSellOrderCharUpdateItems(connection, call.Client, stationID, typeID, quantity);
+                    this.PlaceSellOrderCharUpdateItems(connection, call.Session, stationID, typeID, quantity);
                     // finally create the records in the market database
-                    this.PlaceImmediateSellOrderChar(connection, wallet, character, itemID, typeID, stationID, quantity, price, call.Client);
+                    this.PlaceImmediateSellOrderChar(connection, wallet, character, itemID, typeID, stationID, quantity, price, call.Session);
                 }
                 else
                 {
@@ -460,13 +467,13 @@ namespace EVESharp.Node.Services.Market
                     // do broker fee first
                     wallet.CreateJournalRecord(MarketReference.Brokerfee, null, null, -brokerCost);
                     // move the items to update
-                    this.PlaceSellOrderCharUpdateItems(connection, call.Client, stationID, typeID, quantity);
+                    this.PlaceSellOrderCharUpdateItems(connection, call.Session, stationID, typeID, quantity);
                     // finally place the order
-                    this.DB.PlaceSellOrder(connection, typeID, character.ID, call.Client.CorporationID, stationID, range, price, quantity, accountKey, duration, ownerID == character.CorporationID);
+                    this.DB.PlaceSellOrder(connection, typeID, character.ID, call.Session.CorporationID, stationID, range, price, quantity, accountKey, duration, ownerID == character.CorporationID);
                 }
 
                 // send a OnOwnOrderChange notification
-                call.Client.NotifyMultiEvent(new OnOwnOrderChanged(typeID, "Add"));
+                this.Dogma.QueueMultiEvent(callerCharacterID, new OnOwnOrderChanged(typeID, "Add"));
             }
             finally
             {
@@ -583,7 +590,7 @@ namespace EVESharp.Node.Services.Market
             // ensure the character can place the order where he's trying to
             this.CheckBuyOrderDistancePermissions(character, stationID, duration);
 
-            using Wallet wallet = this.WalletManager.AcquireWallet(ownerID, accountKey, ownerID == call.Client.CorporationID);
+            using Wallet wallet = this.WalletManager.AcquireWallet(ownerID, accountKey, ownerID == call.Session.CorporationID);
             using MySqlConnection connection = this.DB.AcquireMarketLock();
             try
             {
@@ -601,11 +608,11 @@ namespace EVESharp.Node.Services.Market
                     // do broker fee first
                     wallet.CreateJournalRecord(MarketReference.Brokerfee, null, null, -brokerCost);
                     // place the buy order
-                    this.DB.PlaceBuyOrder(connection, typeID, character.ID, call.Client.CorporationID, stationID, range, price, quantity, minVolume, accountKey, duration, ownerID == character.CorporationID);
+                    this.DB.PlaceBuyOrder(connection, typeID, character.ID, call.Session.CorporationID, stationID, range, price, quantity, minVolume, accountKey, duration, ownerID == character.CorporationID);
                 }
                 
                 // send a OnOwnOrderChange notification
-                call.Client.NotifyMultiEvent(new OnOwnOrderChanged(typeID, "Add"));
+                this.Dogma.QueueMultiEvent(character.ID, new OnOwnOrderChanged(typeID, "Add"));
             }
             finally
             {
@@ -627,7 +634,7 @@ namespace EVESharp.Node.Services.Market
             PyDataType located, CallInformation call)
         {
             // get solarSystem for the station
-            Character character = this.ItemFactory.GetItem<Character>(call.Client.EnsureCharacterIsSelected());
+            Character character = this.ItemFactory.GetItem<Character>(call.Session.EnsureCharacterIsSelected());
             double brokerCost = 0.0;
             
             // if the order is not immediate check the amount of orders the character has
@@ -650,13 +657,13 @@ namespace EVESharp.Node.Services.Market
             // for sell orders just look into if the user can query that wallet
             if (useCorp == true)
             {
-                if (this.WalletManager.IsTakeAllowed(call.Client, call.Client.CorpAccountKey, call.Client.CorporationID) == false)
+                if (this.WalletManager.IsTakeAllowed(call.Session, call.Session.CorpAccountKey, call.Session.CorporationID) == false)
                     throw new CrpAccessDenied(MLS.UI_CORP_ACCESSTOWALLETDIVISIONDENIED);
-                if (CorporationRole.Trader.Is(call.Client.CorporationRole) == false)
+                if (CorporationRole.Trader.Is(call.Session.CorporationRole) == false)
                     throw new CrpAccessDenied(MLS.UI_SHARED_WALLETHINT11);
 
-                ownerID = call.Client.CorporationID;
-                accountKey = call.Client.CorpAccountKey;
+                ownerID = call.Session.CorporationID;
+                accountKey = call.Session.CorpAccountKey;
             }
 
             // check if the character has the Marketing skill and calculate distances
@@ -677,7 +684,7 @@ namespace EVESharp.Node.Services.Market
 
         public PyDataType CancelCharOrder(PyInteger orderID, PyInteger regionID, CallInformation call)
         {
-            int callerCharacterID = call.Client.EnsureCharacterIsSelected();
+            int callerCharacterID = call.Session.EnsureCharacterIsSelected();
 
             Character character = this.ItemFactory.GetItem<Character>(callerCharacterID);
             
@@ -734,10 +741,10 @@ namespace EVESharp.Node.Services.Market
                 
                 if (order.IsCorp == true)
                     // send a notification to the owner
-                    this.NotificationManager.NotifyCorporationByRole(call.Client.CorporationID, CorporationRole.Trader, notification);
+                    this.NotificationManager.NotifyCorporationByRole(call.Session.CorporationID, CorporationRole.Trader, notification);
                 else
                     // send a OnOwnOrderChange notification
-                    call.Client.NotifyMultiEvent(notification);
+                    this.Dogma.QueueMultiEvent(callerCharacterID, notification);
             }
             finally
             {
@@ -749,7 +756,7 @@ namespace EVESharp.Node.Services.Market
 
         public PyDataType ModifyCharOrder(PyInteger orderID, PyDecimal newPrice, PyInteger bid, PyInteger stationID, PyInteger solarSystemID, PyDecimal price, PyInteger volRemaining, PyInteger issued, CallInformation call)
         {
-            int callerCharacterID = call.Client.EnsureCharacterIsSelected();
+            int callerCharacterID = call.Session.EnsureCharacterIsSelected();
 
             Character character = this.ItemFactory.GetItem<Character>(callerCharacterID);
             
@@ -808,10 +815,10 @@ namespace EVESharp.Node.Services.Market
                 
                 if (order.IsCorp == true)
                     // send a notification to the owner
-                    this.NotificationManager.NotifyCorporationByRole(call.Client.CorporationID, CorporationRole.Trader, notification);
+                    this.NotificationManager.NotifyCorporationByRole(call.Session.CorporationID, CorporationRole.Trader, notification);
                 else
                     // send a OnOwnOrderChange notification
-                    call.Client.NotifyMultiEvent(notification);
+                    this.Dogma.QueueMultiEvent(callerCharacterID, notification);
             }
             finally
             {
@@ -927,10 +934,10 @@ namespace EVESharp.Node.Services.Market
 
         public PyDataType GetCorporationOrders(CallInformation call)
         {
-            if (CorporationRole.Accountant.Is(call.Client.CorporationRole) == false)
+            if (CorporationRole.Accountant.Is(call.Session.CorporationRole) == false)
                 throw new CrpAccessDenied(MLS.UI_SHARED_WALLETHINT11);
             
-            return this.DB.GetOrdersForOwner(call.Client.CorporationID, true);
+            return this.DB.GetOrdersForOwner(call.Session.CorporationID, true);
         }
         
         // Marketing skill affects range of remote sell order placing

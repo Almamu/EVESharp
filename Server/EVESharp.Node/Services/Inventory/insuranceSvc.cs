@@ -1,6 +1,8 @@
 ﻿using System;
 using EVESharp.EVE;
 using EVESharp.EVE.Packets.Exceptions;
+using EVESharp.EVE.Services;
+using EVESharp.EVE.Sessions;
 using EVESharp.Node.Chat;
 using EVESharp.Node.Database;
 using EVESharp.Node.Exceptions.insuranceSvc;
@@ -11,6 +13,7 @@ using EVESharp.Node.Market;
 using EVESharp.Node.Network;
 using EVESharp.Node.Services.Account;
 using EVESharp.Node.Services.Chat;
+using EVESharp.Node.Sessions;
 using EVESharp.Node.StaticData.Inventory;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Database;
@@ -20,6 +23,8 @@ namespace EVESharp.Node.Services.Inventory
 {
     public class insuranceSvc : ClientBoundService
     {
+        public override AccessLevel AccessLevel => AccessLevel.None;
+        
         private int mStationID = 0;
         private InsuranceDB DB { get; }
         private ItemFactory ItemFactory { get; }
@@ -39,7 +44,7 @@ namespace EVESharp.Node.Services.Inventory
             machoNet.OnClusterTimer += PerformTimedEvents;
         }
 
-        protected insuranceSvc(ItemFactory itemFactory, InsuranceDB db, MarketDB marketDB, WalletManager walletManager, MailManager mailManager, BoundServiceManager manager, int stationID, Client client) : base (manager, client, stationID)
+        protected insuranceSvc(ItemFactory itemFactory, InsuranceDB db, MarketDB marketDB, WalletManager walletManager, MailManager mailManager, BoundServiceManager manager, int stationID, Session session) : base (manager, session, stationID)
         {
             this.mStationID = stationID;
             this.DB = db;
@@ -53,45 +58,45 @@ namespace EVESharp.Node.Services.Inventory
         {
             if (this.mStationID == 0)
             {
-                int? shipID = call.Client.ShipID;
+                int? shipID = call.Session.ShipID;
                 
                 if (shipID is null)
                     throw new CustomError($"The character is not onboard any ship");
 
                 return new PyList<PyPackedRow>(1)
                 {
-                    [0] = this.DB.GetContractForShip(call.Client.EnsureCharacterIsSelected(), (int) shipID)
+                    [0] = this.DB.GetContractForShip(call.Session.EnsureCharacterIsSelected(), (int) shipID)
                 };
             }
             else
             {
-                return this.DB.GetContractsForShipsOnStation(call.Client.EnsureCharacterIsSelected(), this.mStationID);
+                return this.DB.GetContractsForShipsOnStation(call.Session.EnsureCharacterIsSelected(), this.mStationID);
             }
         }
 
         public PyPackedRow GetContractForShip(PyInteger itemID, CallInformation call)
         {
-            return this.DB.GetContractForShip(call.Client.EnsureCharacterIsSelected(), itemID);
+            return this.DB.GetContractForShip(call.Session.EnsureCharacterIsSelected(), itemID);
         }
 
         public PyList<PyPackedRow> GetContracts(PyInteger includeCorp, CallInformation call)
         {
             if (includeCorp == 0)
-                return this.DB.GetContractsForShipsOnStation(call.Client.EnsureCharacterIsSelected(), this.mStationID);
+                return this.DB.GetContractsForShipsOnStation(call.Session.EnsureCharacterIsSelected(), this.mStationID);
             else
-                return this.DB.GetContractsForShipsOnStationIncludingCorp(call.Client.EnsureCharacterIsSelected(), call.Client.CorporationID, this.mStationID);
+                return this.DB.GetContractsForShipsOnStationIncludingCorp(call.Session.EnsureCharacterIsSelected(), call.Session.CorporationID, this.mStationID);
         }
 
         public PyBool InsureShip(PyInteger itemID, PyDecimal insuranceCost, PyInteger isCorpItem, CallInformation call)
         {
-            int callerCharacterID = call.Client.EnsureCharacterIsSelected();
+            int callerCharacterID = call.Session.EnsureCharacterIsSelected();
             
             if (this.ItemFactory.TryGetItem(itemID, out Ship item) == false)
                 throw new CustomError("Ships not loaded for player and hangar!");
 
             Character character = this.ItemFactory.GetItem<Character>(callerCharacterID);
 
-            if (isCorpItem == 1 && item.OwnerID != call.Client.CorporationID && item.OwnerID != callerCharacterID)
+            if (isCorpItem == 1 && item.OwnerID != call.Session.CorporationID && item.OwnerID != callerCharacterID)
                 throw new MktNotOwner();
 
             if (item.Singleton == false)
@@ -121,7 +126,7 @@ namespace EVESharp.Node.Services.Inventory
 
             // create insurance record
             DateTime expirationTime = DateTime.UtcNow.AddDays(7 * 12);
-            int referenceID = this.DB.InsureShip(item.ID, isCorpItem == 0 ? callerCharacterID : call.Client.CorporationID, fraction / 5, expirationTime);
+            int referenceID = this.DB.InsureShip(item.ID, isCorpItem == 0 ? callerCharacterID : call.Session.CorporationID, fraction / 5, expirationTime);
 
             // TODO: CHECK IF THE INSURANCE SHOULD BE CHARGED TO THE CORP
             
@@ -141,14 +146,14 @@ namespace EVESharp.Node.Services.Inventory
 
         public PyDataType UnInsureShip(PyInteger itemID, CallInformation call)
         {
-            int callerCharacterID = call.Client.EnsureCharacterIsSelected();
+            int callerCharacterID = call.Session.EnsureCharacterIsSelected();
             
             if (this.ItemFactory.TryGetItem(itemID, out Ship item) == false)
                 throw new CustomError("Ships not loaded for player and hangar!");
 
             Character character = this.ItemFactory.GetItem<Character>(callerCharacterID);
 
-            if (item.OwnerID != call.Client.CorporationID && item.OwnerID != callerCharacterID)
+            if (item.OwnerID != call.Session.CorporationID && item.OwnerID != callerCharacterID)
                 throw new MktNotOwner();
 
             // remove insurance record off the database
@@ -191,7 +196,7 @@ namespace EVESharp.Node.Services.Inventory
             if (this.MachoResolveObject(bindParams, call) != this.BoundServiceManager.Container.NodeID)
                 throw new CustomError("Trying to bind an object that does not belong to us!");
             
-            return new insuranceSvc(this.ItemFactory, this.DB, this.MarketDB, this.WalletManager, this.MailManager, this.BoundServiceManager, bindParams.ObjectID, call.Client);
+            return new insuranceSvc(this.ItemFactory, this.DB, this.MarketDB, this.WalletManager, this.MailManager, this.BoundServiceManager, bindParams.ObjectID, call.Session);
         }
     }
 }

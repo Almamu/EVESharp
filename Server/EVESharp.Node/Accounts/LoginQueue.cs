@@ -40,7 +40,7 @@ namespace EVESharp.Node.Accounts
         private Authentication Configuration { get; }
         private Channel Log { get; set; }
 
-        public void Enqueue(MachoClientTransport connection, AuthenticationReq request)
+        public void Enqueue(MachoUnauthenticatedTransport connection, AuthenticationReq request)
         {
             // Just to be thread safe
             lock (this.Queue)
@@ -60,9 +60,9 @@ namespace EVESharp.Node.Accounts
             Log.Debug("Processing login for " + entry.Request.user_name);
             LoginStatus status = LoginStatus.Waiting;
 
-            long accountID = 0;
+            int accountID = 0;
             bool banned = false;
-            long role = 0;
+            ulong role = 0;
 
             // First check if the account exists
             if (this.AccountDB.AccountExists(entry.Request.user_name) == false)

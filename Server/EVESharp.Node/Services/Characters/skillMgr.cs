@@ -3,7 +3,10 @@ using System.Collections.Generic;
 using System.Linq;
 using EVESharp.Common.Logging;
 using EVESharp.EVE.Packets.Exceptions;
+using EVESharp.EVE.Services;
+using EVESharp.EVE.Sessions;
 using EVESharp.Node.Database;
+using EVESharp.Node.Dogma;
 using EVESharp.Node.Exceptions.character;
 using EVESharp.Node.Exceptions.skillMgr;
 using EVESharp.Node.Inventory;
@@ -14,6 +17,7 @@ using EVESharp.Node.Notifications.Client.Inventory;
 using EVESharp.Node.Notifications.Client.Skills;
 using EVESharp.Node.StaticData.Inventory;
 using EVESharp.Node.Inventory.Items.Attributes;
+using EVESharp.Node.Sessions;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Primitives;
 using Attribute = EVESharp.Node.Inventory.Items.Attributes.Attribute;
@@ -22,6 +26,8 @@ namespace EVESharp.Node.Services.Characters
 {
     public class skillMgr : ClientBoundService
     {
+        public override AccessLevel AccessLevel => AccessLevel.None;
+        
         private const int MAXIMUM_ATTRIBUTE_POINTS = 15;
         private const int MINIMUM_ATTRIBUTE_POINTS = 5;
         private const int MAXIMUM_TOTAL_ATTRIBUTE_POINTS = 39;
@@ -31,22 +37,25 @@ namespace EVESharp.Node.Services.Characters
         private SystemManager SystemManager => this.ItemFactory.SystemManager;
         private Channel Log { get; }
         private Character Character { get; }
+        private Node.Dogma.Dogma Dogma { get; }
         
-        public skillMgr(SkillDB db, ItemFactory itemFactory, TimerManager timerManager,
+        public skillMgr(SkillDB db, ItemFactory itemFactory, TimerManager timerManager, Node.Dogma.Dogma dogma,
             BoundServiceManager manager, Logger logger) : base(manager)
         {
             this.DB = db;
             this.ItemFactory = itemFactory;
             this.TimerManager = timerManager;
+            this.Dogma = dogma;
             this.Log = logger.CreateLogChannel("SkillManager");
         }
 
-        protected skillMgr(SkillDB db, ItemFactory itemFactory, TimerManager timerManager,
-            BoundServiceManager manager, Logger logger, Client client) : base(manager, client, client.EnsureCharacterIsSelected())
+        protected skillMgr(SkillDB db, ItemFactory itemFactory, TimerManager timerManager, Node.Dogma.Dogma dogma,
+            BoundServiceManager manager, Logger logger, Session session) : base(manager, session, session.EnsureCharacterIsSelected())
         {
             this.DB = db;
             this.ItemFactory = itemFactory;
             this.TimerManager = timerManager;
+            this.Dogma = dogma;
             this.Character = this.ItemFactory.GetItem<Character>(this.ObjectID);
             this.Log = logger.CreateLogChannel("SkillManager");
 
@@ -64,7 +73,7 @@ namespace EVESharp.Node.Services.Characters
                 return;
 
             // send notification of skill training started
-            this.Client.NotifyMultiEvent(new OnSkillStartTraining(entry.Skill));
+            this.Dogma.QueueMultiEvent(this.Session.EnsureCharacterIsSelected(), new OnSkillStartTraining(entry.Skill));
             
             this.TimerManager.EnqueueItemTimer(entry.Skill.ExpiryTime, OnSkillTrainingCompleted, entry.Skill.ID);
         }
@@ -98,9 +107,9 @@ namespace EVESharp.Node.Services.Characters
                     toRemove.Add(entry);
                     
                     // update it's location in the client if needed
-                    this.Client.NotifyMultiEvent(OnItemChange.BuildLocationChange(entry.Skill, Flags.SkillInTraining));
+                    this.Dogma.QueueMultiEvent(this.Character.ID, OnItemChange.BuildLocationChange(entry.Skill, Flags.SkillInTraining));
                     // also notify attribute changes
-                    this.Client.NotifyAttributeChange(new Attributes[] { Attributes.skillPoints, Attributes.skillLevel}, entry.Skill);
+                    this.Dogma.NotifyAttributeChange(this.Character.ID, new Attributes[] { Attributes.skillPoints, Attributes.skillLevel}, entry.Skill);
                 }
             }
 
@@ -109,7 +118,7 @@ namespace EVESharp.Node.Services.Characters
 
             // send notification of multiple skills being finished training (if any)
             if (skillTypeIDs.Count > 0)
-                this.Client.NotifyMultiEvent(new OnGodmaMultipleSkillsTrained(skillTypeIDs));
+                this.Dogma.QueueMultiEvent(this.Session.EnsureCharacterIsSelected(), new OnGodmaMultipleSkillsTrained(skillTypeIDs));
             
             // persists the skill queue
             this.Character.Persist();
@@ -163,11 +172,10 @@ namespace EVESharp.Node.Services.Characters
             skill.ExpiryTime = 0;
             
             // make sure the client is aware of the new item's status
-            this.Client.NotifyMultiEvent(OnItemChange.BuildLocationChange(skill, Flags.SkillInTraining));
+            this.Dogma.QueueMultiEvent(this.Character.ID, OnItemChange.BuildLocationChange(skill, Flags.SkillInTraining));
             // also notify attribute changes
-            this.Client.NotifyAttributeChange(new Attributes[] { Attributes.skillPoints, Attributes.skillLevel}, skill);
-            this.Client.NotifyMultiEvent(new OnSkillTrained(skill));
-            this.Client.SendPendingNotifications();
+            this.Dogma.NotifyAttributeChange(this.Character.ID, new Attributes[] { Attributes.skillPoints, Attributes.skillLevel}, skill);
+            this.Dogma.QueueMultiEvent(this.Character.ID, new OnSkillTrained(skill));
 
             skill.Persist();
             
@@ -190,7 +198,6 @@ namespace EVESharp.Node.Services.Characters
             
             // setup the process for training next skill in the queue
             this.SetupTimerForNextSkillInQueue();
-            this.Client.SendPendingNotifications();
 
             // create history entry
             this.DB.CreateSkillHistoryRecord(skill.Type, this.Character, SkillHistoryReason.SkillTrainingStarted, skill.Points);
@@ -201,7 +208,7 @@ namespace EVESharp.Node.Services.Characters
 
         public PyDataType GetSkillQueue(CallInformation call)
         {
-            Character character = this.ItemFactory.GetItem<Character>(call.Client.EnsureCharacterIsSelected());
+            Character character = this.ItemFactory.GetItem<Character>(call.Session.EnsureCharacterIsSelected());
 
             PyList skillQueueList = new PyList(character.SkillQueue.Count);
 
@@ -215,7 +222,7 @@ namespace EVESharp.Node.Services.Characters
 
         public PyDataType GetSkillHistory(CallInformation call)
         {
-            return this.DB.GetSkillHistory(call.Client.EnsureCharacterIsSelected());
+            return this.DB.GetSkillHistory(call.Session.EnsureCharacterIsSelected());
         }
 
         public PyDataType InjectSkillIntoBrain(PyList itemIDs, CallInformation call)
@@ -244,8 +251,8 @@ namespace EVESharp.Node.Services.Characters
                         skill.Persist();
 
                         // finally notify the client
-                        call.Client.NotifyMultiEvent(OnItemChange.BuildQuantityChange(skill, skill.Quantity + 1));
-                        call.Client.NotifyMultiEvent(OnItemChange.BuildNewItemChange(newStack));
+                        this.Dogma.QueueMultiEvent(call.Session.EnsureCharacterIsSelected(), OnItemChange.BuildQuantityChange(skill, skill.Quantity + 1));
+                        this.Dogma.QueueMultiEvent(call.Session.EnsureCharacterIsSelected(), OnItemChange.BuildNewItemChange(newStack));
                     }
                     else
                     {
@@ -266,8 +273,8 @@ namespace EVESharp.Node.Services.Characters
                         skill.Persist();
 
                         // notify the character of the change in the item
-                        call.Client.NotifyMultiEvent(OnItemChange.BuildLocationChange(skill, oldFlag, oldLocationID));
-                        call.Client.NotifyMultiEvent(OnItemChange.BuildSingletonChange(skill, false));
+                        this.Dogma.QueueMultiEvent(call.Session.EnsureCharacterIsSelected(), OnItemChange.BuildLocationChange(skill, oldFlag, oldLocationID));
+                        this.Dogma.QueueMultiEvent(call.Session.EnsureCharacterIsSelected(), OnItemChange.BuildSingletonChange(skill, false));
                     }
                 }
                 catch (CharacterAlreadyKnowsSkill)
@@ -282,7 +289,7 @@ namespace EVESharp.Node.Services.Characters
             }
             
             // send the skill injected notification to refresh windows if needed
-            call.Client.NotifyMultiEvent(new OnSkillInjected());
+            this.Dogma.QueueMultiEvent(call.Session.EnsureCharacterIsSelected(), new OnSkillInjected());
 
             return null;
         }
@@ -317,10 +324,10 @@ namespace EVESharp.Node.Services.Characters
                 {
                     entry.Skill.Flag = Flags.Skill;
                     
-                    call.Client.NotifyMultiEvent(OnItemChange.BuildLocationChange(entry.Skill, Flags.SkillInTraining));
+                    this.Dogma.QueueMultiEvent(call.Session.EnsureCharacterIsSelected(), OnItemChange.BuildLocationChange(entry.Skill, Flags.SkillInTraining));
             
                     // send notification of skill training stopped
-                    call.Client.NotifyMultiEvent(new OnSkillTrainingStopped(entry.Skill));
+                    this.Dogma.QueueMultiEvent(call.Session.EnsureCharacterIsSelected(), new OnSkillTrainingStopped(entry.Skill));
 
                     // create history entry
                     this.DB.CreateSkillHistoryRecord(entry.Skill.Type, this.Character, SkillHistoryReason.SkillTrainingCancelled,
@@ -363,7 +370,7 @@ namespace EVESharp.Node.Services.Characters
                 skill.ExpiryTime = expiryTime.ToFileTimeUtc();
                 skill.Flag = Flags.SkillInTraining;
 
-                call.Client.NotifyMultiEvent(OnItemChange.BuildLocationChange(skill, Flags.Skill));
+                this.Dogma.QueueMultiEvent(call.Session.EnsureCharacterIsSelected(), OnItemChange.BuildLocationChange(skill, Flags.Skill));
                 
                 startDateTime = expiryTime;
                 
@@ -373,7 +380,7 @@ namespace EVESharp.Node.Services.Characters
                 if (first == true)
                 {
                     // skill was trained, send the success message
-                    call.Client.NotifyMultiEvent(new OnSkillStartTraining (skill));
+                    this.Dogma.QueueMultiEvent(call.Session.EnsureCharacterIsSelected(), new OnSkillStartTraining(skill));
                 
                     // create history entry
                     this.DB.CreateSkillHistoryRecord(skill.Type, this.Character, SkillHistoryReason.SkillTrainingStarted, skill.Points);
@@ -476,7 +483,7 @@ namespace EVESharp.Node.Services.Characters
                 entry.Skill.Persist();
                 
                 // notify the skill is not in training anymore
-                call.Client.NotifyMultiEvent(new OnSkillTrainingStopped(entry.Skill));
+                this.Dogma.QueueMultiEvent(call.Session.EnsureCharacterIsSelected(), new OnSkillTrainingStopped(entry.Skill));
                 
                 // create history entry
                 this.DB.CreateSkillHistoryRecord(entry.Skill.Type, this.Character, SkillHistoryReason.SkillTrainingCancelled, entry.Skill.Points);
@@ -648,7 +655,8 @@ namespace EVESharp.Node.Services.Characters
             this.Character.Persist();
             
             // notify the game of the change on the character
-            call.Client.NotifyAttributeChange(
+            this.Dogma.NotifyAttributeChange(
+                this.Character.ID,
                 new Node.Inventory.Items.Attributes.Attribute[]
                 {
                     this.Character.Attributes[Attributes.charisma],
@@ -667,13 +675,13 @@ namespace EVESharp.Node.Services.Characters
         {
             if (this.Character.SkillQueue.Count > 0)
                 throw new FailedPlugInImplant();
-            int characterID = call.Client.EnsureCharacterIsSelected();
+            int characterID = call.Session.EnsureCharacterIsSelected();
             
             // get the item and plug it into our brain now!
             ItemEntity item = this.ItemFactory.LoadItem(itemID);
             
             // ensure the item is somewhere we can interact with it
-            item.EnsureOwnership(characterID, call.Client.CorporationID, call.Client.CorporationRole, true);
+            item.EnsureOwnership(characterID, call.Session.CorporationID, call.Session.CorporationRole, true);
 
             // check if the slot is free or not
             this.Character.EnsureFreeImplantSlot(item);
@@ -687,7 +695,7 @@ namespace EVESharp.Node.Services.Characters
                 item.Quantity--;
                 
                 // notify the client of the stack change
-                call.Client.NotifyMultiEvent(OnItemChange.BuildQuantityChange(item, item.Quantity + 1));
+                this.Dogma.QueueMultiEvent(call.Session.EnsureCharacterIsSelected(), OnItemChange.BuildQuantityChange(item, item.Quantity + 1));
                 
                 // save the item to the database
                 item.Persist();
@@ -704,7 +712,7 @@ namespace EVESharp.Node.Services.Characters
             item.LocationID = this.Character.ID;
             item.Flag = Flags.Implant;
 
-            call.Client.NotifyMultiEvent(OnItemChange.BuildLocationChange(item, oldFlag, oldLocationID));
+            this.Dogma.QueueMultiEvent(call.Session.EnsureCharacterIsSelected(), OnItemChange.BuildLocationChange(item, oldFlag, oldLocationID));
 
             // add the item to the inventory it belongs
             this.Character.AddItem(item);
@@ -724,14 +732,14 @@ namespace EVESharp.Node.Services.Characters
             this.ItemFactory.DestroyItem(item);
             
             // notify the change
-            call.Client.NotifyMultiEvent(OnItemChange.BuildLocationChange(item, this.Character.ID));
+            this.Dogma.QueueMultiEvent(call.Session.EnsureCharacterIsSelected(), OnItemChange.BuildLocationChange(item, this.Character.ID));
             
             return null;
         }
         
         protected override long MachoResolveObject(ServiceBindParams parameters, CallInformation call)
         {
-            int solarSystemID = call.Client.SolarSystemID2;
+            int solarSystemID = call.Session.SolarSystemID2;
 
             if (this.SystemManager.SolarSystemBelongsToUs(solarSystemID) == true)
                 return this.BoundServiceManager.Container.NodeID;
@@ -744,7 +752,7 @@ namespace EVESharp.Node.Services.Characters
             if (this.MachoResolveObject(bindParams, call) != this.BoundServiceManager.Container.NodeID)
                 throw new CustomError("Trying to bind an object that does not belong to us!");
             
-            return new skillMgr (this.DB, this.ItemFactory, this.TimerManager, this.BoundServiceManager, this.BoundServiceManager.Logger, call.Client);
+            return new skillMgr (this.DB, this.ItemFactory, this.TimerManager, this.Dogma, this.BoundServiceManager, this.BoundServiceManager.Logger, call.Session);
         }
     }
 }

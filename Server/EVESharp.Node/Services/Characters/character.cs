@@ -26,9 +26,10 @@ using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using EVESharp.Common.Logging;
-using EVESharp.Common.Services;
 using EVESharp.EVE;
 using EVESharp.EVE.Packets.Exceptions;
+using EVESharp.EVE.Services;
+using EVESharp.EVE.Sessions;
 using EVESharp.Node.Database;
 using EVESharp.Node.Exceptions.character;
 using EVESharp.Node.Inventory;
@@ -37,18 +38,19 @@ using EVESharp.Node.Inventory.Items.Types;
 using EVESharp.Node.Market;
 using EVESharp.Node.Network;
 using EVESharp.Node.Notifications.Client.Chat;
+using EVESharp.Node.Sessions;
 using EVESharp.Node.StaticData;
-using EVESharp.Node.StaticData.Corporation;
 using EVESharp.Node.StaticData.Inventory;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Database;
 using EVESharp.PythonTypes.Types.Primitives;
-using Type = EVESharp.Node.StaticData.Inventory.Type;
+using SessionManager = EVESharp.Node.Sessions.SessionManager;
 
 namespace EVESharp.Node.Services.Characters
 {
-    public class character : IService
+    public class character : Service
     {
+        public override AccessLevel AccessLevel => AccessLevel.None;
         enum NameValidationResults
         {
             Valid = 1,
@@ -70,12 +72,14 @@ namespace EVESharp.Node.Services.Characters
         private NotificationManager NotificationManager { get; }
         private WalletManager WalletManager { get; init; }
         private AncestryManager AncestryManager { get; init; }
+        private SessionManager SessionManager { get; }
         private readonly Configuration.Character mConfiguration = null;
         private readonly Channel Log = null;
 
         public character(CacheStorage cacheStorage, CharacterDB db, ChatDB chatDB, CorporationDB corporationDB,
             ItemFactory itemFactory, Logger logger, Configuration.Character configuration, NodeContainer container,
-            NotificationManager notificationManager, WalletManager walletManager, AncestryManager ancestryManager)
+            NotificationManager notificationManager, WalletManager walletManager, AncestryManager ancestryManager,
+            SessionManager sessionManager)
         {
             this.Log = logger.CreateLogChannel("character");
             this.mConfiguration = configuration;
@@ -88,11 +92,12 @@ namespace EVESharp.Node.Services.Characters
             this.NotificationManager = notificationManager;
             this.WalletManager = walletManager;
             this.AncestryManager = ancestryManager;
+            this.SessionManager = sessionManager;
         }
 
         public PyDataType GetCharactersToSelect(CallInformation call)
         {
-            return this.DB.GetCharacterList(call.Client.AccountID);
+            return this.DB.GetCharacterList(call.Session.UserID);
         }
 
         public PyDataType LogStartOfCharacterCreation(CallInformation call)
@@ -249,7 +254,7 @@ namespace EVESharp.Node.Services.Characters
             );
             
             int itemID = this.DB.CreateCharacter(
-                ancestry.Bloodline.CharacterType, characterName, owner, call.Client.AccountID,
+                ancestry.Bloodline.CharacterType, characterName, owner, call.Session.UserID,
                 0.0, corporationID, 0, 0, 0, 0,
                 currentTime, currentTime, currentTime, ancestry.ID,
                 careerID, schoolID, careerSpecialityID, genderID,
@@ -388,7 +393,7 @@ namespace EVESharp.Node.Services.Characters
 
         public PyDataType GetCharacterToSelect(PyInteger characterID, CallInformation call)
         {
-            return this.DB.GetCharacterSelectionInfo(characterID, call.Client.AccountID);
+            return this.DB.GetCharacterSelectionInfo(characterID, call.Session.UserID);
         }
 
         public PyDataType SelectCharacterID(PyInteger characterID, PyBool loadDungeon, PyDataType secondChoiceID,
@@ -410,7 +415,7 @@ namespace EVESharp.Node.Services.Characters
             // ensure the character belongs to the current account
             Character character = this.ItemFactory.LoadItem<Character>(characterID);
 
-            if (character.AccountID != call.Client.AccountID)
+            if (character.AccountID != call.Session.UserID)
             {
                 // unload character
                 this.ItemFactory.UnloadItem(character);
@@ -419,17 +424,19 @@ namespace EVESharp.Node.Services.Characters
                 throw new CustomError("The selected character does not belong to this account, aborting...");                
             }
 
+            Session updates = new Session();
+
             // update the session data for this client
-            call.Client.CharacterID = character.ID;
-            call.Client.CorporationID = character.CorporationID;
+            updates.CharacterID = character.ID;
+            updates.CorporationID = character.CorporationID;
 
             if (character.StationID == 0)
             {
-                call.Client.SolarSystemID = character.SolarSystemID;
+                updates.SolarSystemID = character.SolarSystemID;
             }
             else
             {
-                call.Client.StationID = character.StationID;
+                updates.StationID = character.StationID;
             }
             
             // get title roles and mask them with the current roles to ensure the user has proper roles
@@ -439,28 +446,28 @@ namespace EVESharp.Node.Services.Characters
                 out long grantableRolesAtOther, out _
             );
             
-            call.Client.CorporationRole = character.Roles | roles;
-            call.Client.RolesAtAll = character.Roles | character.RolesAtBase | character.RolesAtOther | character.RolesAtHq | roles | rolesAtHQ | rolesAtBase | rolesAtOther;
-            call.Client.RolesAtBase = character.RolesAtBase | rolesAtBase;
-            call.Client.RolesAtHQ = character.RolesAtHq | rolesAtHQ;
-            call.Client.RolesAtOther = character.RolesAtOther | rolesAtOther;
-            call.Client.AllianceID = this.CorporationDB.GetAllianceIDForCorporation(character.CorporationID);
+            updates.CorporationRole = character.Roles | roles;
+            updates.RolesAtAll = character.Roles | character.RolesAtBase | character.RolesAtOther | character.RolesAtHq | roles | rolesAtHQ | rolesAtBase | rolesAtOther;
+            updates.RolesAtBase = character.RolesAtBase | rolesAtBase;
+            updates.RolesAtHQ = character.RolesAtHq | rolesAtHQ;
+            updates.RolesAtOther = character.RolesAtOther | rolesAtOther;
+            updates.AllianceID = this.CorporationDB.GetAllianceIDForCorporation(character.CorporationID);
 
             // set the rest of the important locations
-            call.Client.SolarSystemID2 = character.SolarSystemID;
-            call.Client.ConstellationID = character.ConstellationID;
-            call.Client.RegionID = character.RegionID;
-            call.Client.HQID = 0; // TODO: ADD SUPPORT FOR HQID
-            call.Client.ShipID = character.LocationID;
-            call.Client.RaceID = this.AncestryManager[character.AncestryID].Bloodline.RaceID;
+            updates.SolarSystemID2 = character.SolarSystemID;
+            updates.ConstellationID = character.ConstellationID;
+            updates.RegionID = character.RegionID;
+            updates.HQID = 0; // TODO: ADD SUPPORT FOR HQID
+            updates.ShipID = character.LocationID;
+            updates.RaceID = this.AncestryManager[character.AncestryID].Bloodline.RaceID;
             
             // check if the character has any accounting roles and set the correct accountKey based on the data
-            if (this.WalletManager.IsAccessAllowed(call.Client, character.CorpAccountKey, call.Client.CorporationID) == true)
-                call.Client.CorpAccountKey = character.CorpAccountKey;
+            if (this.WalletManager.IsAccessAllowed(updates, character.CorpAccountKey, updates.CorporationID) == true)
+                updates.CorpAccountKey = character.CorpAccountKey;
 
             // set the war faction id if present
             if (character.WarFactionID is not null)
-                call.Client.WarFactionID = character.WarFactionID;
+                updates.WarFactionID = character.WarFactionID;
 
             // update the character and set it's only flag to true
             character.Online = 1;
@@ -479,27 +486,27 @@ namespace EVESharp.Node.Services.Characters
             // unload the character
             this.ItemFactory.UnloadItem(characterID);
             
-            // finally send the session change
-            call.Client.SendSessionChange();
+            // send the session change
+            this.SessionManager.PerformSessionUpdate(Session.USERID, call.Session.UserID, updates);
             
             return null;
         }
 
         public PyDataType Ping(CallInformation call)
         {
-            return call.Client.AccountID;
+            return call.Session.UserID;
         }
 
         public PyDataType GetOwnerNoteLabels(CallInformation call)
         {
-            Character character = this.ItemFactory.GetItem<Character>(call.Client.EnsureCharacterIsSelected());
+            Character character = this.ItemFactory.GetItem<Character>(call.Session.EnsureCharacterIsSelected());
 
             return this.DB.GetOwnerNoteLabels(character);
         }
 
         public PyDataType GetCloneTypeID(CallInformation call)
         {
-            Character character = this.ItemFactory.GetItem<Character>(call.Client.EnsureCharacterIsSelected());
+            Character character = this.ItemFactory.GetItem<Character>(call.Session.EnsureCharacterIsSelected());
 
             if (character.ActiveCloneID is null)
                 throw new CustomError("You do not have any medical clone...");
@@ -509,7 +516,7 @@ namespace EVESharp.Node.Services.Characters
 
         public PyDataType GetHomeStation(CallInformation call)
         {
-            Character character = this.ItemFactory.GetItem<Character>(call.Client.EnsureCharacterIsSelected());
+            Character character = this.ItemFactory.GetItem<Character>(call.Session.EnsureCharacterIsSelected());
 
             if (character.ActiveCloneID is null)
                 throw new CustomError("You do not have any medical clone...");
@@ -519,14 +526,14 @@ namespace EVESharp.Node.Services.Characters
 
         public PyDataType GetCharacterDescription(PyInteger characterID, CallInformation call)
         {
-            Character character = this.ItemFactory.GetItem<Character>(call.Client.EnsureCharacterIsSelected());
+            Character character = this.ItemFactory.GetItem<Character>(call.Session.EnsureCharacterIsSelected());
             
             return character.Description;
         }
 
         public PyDataType SetCharacterDescription(PyString newBio, CallInformation call)
         {
-            Character character = this.ItemFactory.GetItem<Character>(call.Client.EnsureCharacterIsSelected());
+            Character character = this.ItemFactory.GetItem<Character>(call.Session.EnsureCharacterIsSelected());
 
             character.Description = newBio;
             character.Persist();
@@ -540,7 +547,7 @@ namespace EVESharp.Node.Services.Characters
             if (count > 100)
                 count = 100;
             
-            return this.DB.GetRecentShipKillsAndLosses(call.Client.EnsureCharacterIsSelected(), count, startIndex);
+            return this.DB.GetRecentShipKillsAndLosses(call.Session.EnsureCharacterIsSelected(), count, startIndex);
         }
 
         public PyDataType GetCharacterAppearanceList(PyList ids, CallInformation call)
@@ -564,12 +571,12 @@ namespace EVESharp.Node.Services.Characters
 
         public PyDataType GetNote(PyInteger characterID, CallInformation call)
         {
-            return this.DB.GetNote(characterID, call.Client.EnsureCharacterIsSelected());
+            return this.DB.GetNote(characterID, call.Session.EnsureCharacterIsSelected());
         }
 
         public PyDataType SetNote(PyInteger characterID, PyString note, CallInformation call)
         {
-            this.DB.SetNote(characterID, call.Client.EnsureCharacterIsSelected(), note);
+            this.DB.SetNote(characterID, call.Session.EnsureCharacterIsSelected(), note);
 
             return null;
         }

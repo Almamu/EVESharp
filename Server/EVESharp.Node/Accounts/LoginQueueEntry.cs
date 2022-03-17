@@ -30,6 +30,6 @@ namespace EVESharp.Node.Accounts
     public class LoginQueueEntry
     {
         public AuthenticationReq Request { get; set; }
-        public MachoClientTransport Connection { get; set; }
+        public MachoUnauthenticatedTransport Connection { get; set; }
     }
 }

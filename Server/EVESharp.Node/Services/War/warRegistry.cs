@@ -1,4 +1,6 @@
 using EVESharp.EVE.Packets.Complex;
+using EVESharp.EVE.Services;
+using EVESharp.EVE.Sessions;
 using EVESharp.Node.Network;
 using EVESharp.Node.StaticData;
 using EVESharp.PythonTypes.Types.Collections;
@@ -8,6 +10,7 @@ namespace EVESharp.Node.Services.War
 {
     public class warRegistry : ClientBoundService
     {
+        public override AccessLevel AccessLevel => AccessLevel.None;
         private NodeContainer Container { get; init; }
         private int mObjectID;
 
@@ -16,7 +19,7 @@ namespace EVESharp.Node.Services.War
             this.Container = container;
         }
 
-        private warRegistry(NodeContainer container, BoundServiceManager manager, int objectID, Client client) : base(manager, client, objectID)
+        private warRegistry(NodeContainer container, BoundServiceManager manager, int objectID, Session session) : base(manager, session, objectID)
         {
             this.Container = container;
             this.mObjectID = objectID;
@@ -40,7 +43,7 @@ namespace EVESharp.Node.Services.War
 
         protected override BoundService CreateBoundInstance(ServiceBindParams bindParams, CallInformation call)
         {
-            return new warRegistry(this.Container, this.BoundServiceManager, bindParams.ObjectID, call.Client);
+            return new warRegistry(this.Container, this.BoundServiceManager, bindParams.ObjectID, call.Session);
         }
     }
 }

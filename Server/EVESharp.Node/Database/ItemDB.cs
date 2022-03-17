@@ -46,7 +46,6 @@ namespace EVESharp.Node.Database
     public class ItemDB : DatabaseAccessor
     {
         private ItemFactory ItemFactory { get; }
-        private ClientManager ClientManager { get; }
         private TimerManager TimerManager { get; }
         private NodeContainer Container { get; }
         private AttributeManager AttributeManager => this.ItemFactory.AttributeManager;
@@ -567,7 +566,6 @@ namespace EVESharp.Node.Database
                     return null;
                 
                 return new Character(
-                    this.ClientManager,
                     this.TimerManager,
                     item,
                     reader.GetInt32(0),
@@ -1363,10 +1361,9 @@ namespace EVESharp.Node.Database
             }
         }
         
-        public ItemDB(DatabaseConnection db, ItemFactory factory, ClientManager clientManager, TimerManager timerManager, NodeContainer container) : base(db)
+        public ItemDB(DatabaseConnection db, ItemFactory factory, TimerManager timerManager, NodeContainer container) : base(db)
         {
             this.ItemFactory = factory;
-            this.ClientManager = clientManager;
             this.TimerManager = timerManager;
             this.Container = container;
         }

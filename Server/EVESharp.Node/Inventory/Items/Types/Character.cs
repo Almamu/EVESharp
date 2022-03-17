@@ -32,7 +32,7 @@ namespace EVESharp.Node.Inventory.Items.Types
             }
         }
         
-        public Character(ClientManager clientManager, TimerManager timerManager, ItemEntity from, int characterId,
+        public Character(TimerManager timerManager, ItemEntity from, int characterId,
             int accountId, int? activeCloneID, string title, string description,
             double securityRating, string petitionMessage, int logonMinutes, int corporationId, long roles,
             long rolesAtBase, long rolesAtHq, long rolesAtOther, long corporationDateTime, long startDateTime,
@@ -48,7 +48,6 @@ namespace EVESharp.Node.Inventory.Items.Types
             long grantableRoles, long grantableRolesAtBase, long grantableRolesAtHq, long grantableRolesAtOther,
             int? baseID) : base(from)
         {
-            this.ClientManager = clientManager;
             this.TimerManager = timerManager;
             this.mCharacterID = characterId;
             this.mAccountID = accountId;
@@ -126,7 +125,6 @@ namespace EVESharp.Node.Inventory.Items.Types
             this.mBaseID = baseID;
         }
 
-        private ClientManager ClientManager { get; }
         private TimerManager TimerManager { get; }
         public int CharacterID => mCharacterID;
         public int AccountID => mAccountID;

@@ -1,6 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using EVESharp.EVE;
+using EVESharp.EVE.Sessions;
 using EVESharp.Node.Services;
+using EVESharp.Node.Sessions;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Primitives;
 
@@ -11,7 +14,7 @@ namespace EVESharp.Node.Network
         /// <summary>
         /// List of clients that have access to this bound service
         /// </summary>
-        protected List<Client> Clients { get; init; }
+        protected Dictionary<int, Session> Sessions { get; }
         /// <summary>
         /// The bound service that created this entity
         /// </summary>
@@ -30,20 +33,20 @@ namespace EVESharp.Node.Network
         public MultiClientBoundService(BoundServiceManager manager, bool keepAlive = false) : base(manager)
         {
             this.mRegisteredServices = new Dictionary<int, MultiClientBoundService>();
-            this.Clients = new List<Client>();
+            this.Sessions = new Dictionary<int, Session>();
             this.KeepAlive = keepAlive;
         }
 
         public MultiClientBoundService(MultiClientBoundService parent, int objectID, bool keepAlive = false) : base(parent.BoundServiceManager, objectID)
         {
             this.Parent = parent;
-            this.Clients = new List<Client>();
+            this.Sessions = new Dictionary<int, Session>();
             this.KeepAlive = keepAlive;
         }
 
         public MultiClientBoundService(BoundServiceManager manager, int objectID, bool keepAlive = false) : base(manager, objectID)
         {
-            this.Clients = new List<Client>();
+            this.Sessions = new Dictionary<int, Session>();
             this.KeepAlive = keepAlive;
         }
 
@@ -92,11 +95,8 @@ namespace EVESharp.Node.Network
                 }
             }
 
-            // register OnClientDisconnected event for this client and this service
-            call.Client.OnClientDisconnectedEvent += instance.OnClientDisconnectedHandler;
-            
             // add the client to the list
-            instance.Clients.Add(call.Client);
+            instance.Sessions.Add(call.Session.EnsureCharacterIsSelected(), call.Session);
             
             // TODO: the expiration time is 1 day, might be better to properly support this?
             // TODO: investigate these a bit more closely in the future
@@ -123,16 +123,15 @@ namespace EVESharp.Node.Network
 
                 CallInformation callInformation = new CallInformation
                 {
-                    Client = call.Client,
+                    Session = call.Session,
+                    Payload = arguments,
                     NamedPayload = namedArguments,
                     CallID = call.CallID,
-                    From = call.From,
-                    PacketType = call.PacketType,
-                    Service = null,
-                    To = call.To
+                    Source = call.Source,
+                    Destination = call.Destination
                 };
                 
-                result[1] = this.BoundServiceManager.ServiceCall(instance.BoundID, func, arguments, callInformation);
+                result[1] = this.BoundServiceManager.ServiceCall(instance.BoundID, func, callInformation);
             }
 
             return result;
@@ -146,26 +145,25 @@ namespace EVESharp.Node.Network
         /// <exception cref="NotImplementedException">If this has not been implemented by the class</exception>
         protected abstract MultiClientBoundService CreateBoundInstance(ServiceBindParams bindParams, CallInformation call);
 
-        protected virtual void OnClientDisconnected()
+        protected virtual void OnClientDisconnected(Session session)
         {
             
         }
 
         /// <summary>
-        /// Event fired from the client when a disconnection is detected
+        /// Handles when a client frees this object (like when it's disconnected)
         /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="args"></param>
-        protected void OnClientDisconnectedHandler(object sender, ClientEventArgs args)
+        /// <param name="session">Session of the user that free'd us</param>
+        public override void ClientHasReleasedThisObject(Session session)
         {
-            // first call any freeing code (if any)
-            this.OnClientDisconnected();
+            // call any freeing code (if any)
+            this.OnClientDisconnected(session);
             // remove the client from the list
-            this.Clients.Remove(args.Client);
+            this.Sessions.Remove(session.UserID);
 
-            if (this.Clients.Count == 0 && this.KeepAlive == false)
+            if (this.Sessions.Count == 0 && this.KeepAlive == false)
             {
-                // no clients using this service, tell the bound service manager we're dying
+                // tell the bound service manager we're dying
                 this.BoundServiceManager.UnbindService(this);
                 // check for the parent service and unregister ourselves from it
                 this.Parent?.mRegisteredServices.Remove(this.ObjectID);

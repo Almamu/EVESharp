@@ -1,4 +1,5 @@
 ﻿using EVESharp.EVE;
+using EVESharp.EVE.Sessions;
 
 namespace EVESharp.Node.Network
 {

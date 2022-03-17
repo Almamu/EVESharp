@@ -1,10 +1,11 @@
 using System;
 using System.Collections.Generic;
-using System.Runtime.CompilerServices;
-using EVESharp.Common.Services;
 using EVESharp.EVE;
 using EVESharp.EVE.Packets.Exceptions;
+using EVESharp.EVE.Services;
+using EVESharp.EVE.Sessions;
 using EVESharp.Node.Database;
+using EVESharp.Node.Dogma;
 using EVESharp.Node.Exceptions.contractMgr;
 using EVESharp.Node.Inventory;
 using EVESharp.Node.Inventory.Items;
@@ -13,18 +14,19 @@ using EVESharp.Node.Market;
 using EVESharp.Node.Network;
 using EVESharp.Node.Notifications.Client.Contracts;
 using EVESharp.Node.Notifications.Nodes.Inventory;
+using EVESharp.Node.Sessions;
 using EVESharp.Node.StaticData.Inventory;
 using MySql.Data.MySqlClient;
-using EVESharp.Node.Services.Account;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Database;
 using EVESharp.PythonTypes.Types.Primitives;
-using Container = EVESharp.Node.Inventory.Items.Types.Container;
 
 namespace EVESharp.Node.Services.Contracts
 {
-    public class contractMgr : IService
+    public class contractMgr : Service
     {
+        public override AccessLevel AccessLevel => AccessLevel.Station;
+
         // TODO: THE TYPEID FOR THE BOX IS 24445
         private ContractDB DB { get; }
         private ItemDB ItemDB { get; }
@@ -35,8 +37,9 @@ namespace EVESharp.Node.Services.Contracts
         private SystemManager SystemManager => this.ItemFactory.SystemManager;
         private NotificationManager NotificationManager { get; }
         private WalletManager WalletManager { get; }
+        private Node.Dogma.Dogma Dogma { get; }
 
-        public contractMgr(ContractDB db, ItemDB itemDB, MarketDB marketDB, CharacterDB characterDB, ItemFactory itemFactory, NotificationManager notificationManager, WalletManager walletManager)
+        public contractMgr(ContractDB db, ItemDB itemDB, MarketDB marketDB, CharacterDB characterDB, ItemFactory itemFactory, NotificationManager notificationManager, WalletManager walletManager, Node.Dogma.Dogma dogma)
         {
             this.DB = db;
             this.ItemDB = itemDB;
@@ -45,35 +48,36 @@ namespace EVESharp.Node.Services.Contracts
             this.ItemFactory = itemFactory;
             this.NotificationManager = notificationManager;
             this.WalletManager = walletManager;
+            this.Dogma = dogma;
         }
 
         public PyDataType NumRequiringAttention(CallInformation call)
         {
             // check for contracts that we've been outbid at and send notifications
             // TODO: HANDLE CORPORATION CONTRACTS TOO!
-            int callerCharacterID = call.Client.EnsureCharacterIsSelected();
+            int callerCharacterID = call.Session.EnsureCharacterIsSelected();
             
             List<int> outbidContracts = this.DB.FetchLoginCharacterContractBids(callerCharacterID);
             List<int> assignedContracts = this.DB.FetchLoginCharacterContractAssigned(callerCharacterID);
-            
+
             foreach (int contractID in outbidContracts)
-                call.Client.NotifyMultiEvent(new OnContractOutbid(contractID));
+                this.Dogma.QueueMultiEvent(callerCharacterID, new OnContractOutbid(contractID));
             foreach (int contractID in assignedContracts)
-                call.Client.NotifyMultiEvent(new OnContractAssigned(contractID));
+                this.Dogma.QueueMultiEvent(callerCharacterID, new OnContractAssigned(contractID));
             
-            return this.DB.NumRequiringAttention(call.Client.EnsureCharacterIsSelected(), call.Client.CorporationID);
+            return this.DB.NumRequiringAttention(callerCharacterID, call.Session.CorporationID);
         }
 
         public PyDataType NumOutstandingContracts(CallInformation call)
         {
-            return this.DB.NumOutstandingContracts(call.Client.EnsureCharacterIsSelected(), call.Client.CorporationID);
+            return this.DB.NumOutstandingContracts(call.Session.EnsureCharacterIsSelected(), call.Session.CorporationID);
         }
 
         public PyDataType CollectMyPageInfo(PyDataType ignoreList, CallInformation call)
         {
             // TODO: TAKE INTO ACCOUNT THE IGNORE LIST
             
-            return this.DB.CollectMyPageInfo(call.Client.EnsureCharacterIsSelected(), call.Client.CorporationID);
+            return this.DB.CollectMyPageInfo(call.Session.EnsureCharacterIsSelected(), call.Session.CorporationID);
         }
 
         public PyDataType GetContractListForOwner(PyInteger ownerID, PyInteger contractStatus, PyInteger contractType, PyBool issuedToUs, CallInformation call)
@@ -93,7 +97,7 @@ namespace EVESharp.Node.Services.Contracts
             List<int> contractList = this.DB.GetContractList(
                 startContractID, resultsPerPage, null, null, issuedByIDs, issuedToUs == true ? ownerID : null,
                 null, null,null, 0, 0, contractType, null,
-                call.Client.EnsureCharacterIsSelected(), call.Client.CorporationID, ownerID,
+                call.Session.EnsureCharacterIsSelected(), call.Session.CorporationID, ownerID,
                 contractStatus, true
             );
 
@@ -112,7 +116,7 @@ namespace EVESharp.Node.Services.Contracts
             if (forCorp == 1)
                 throw new CustomError("This call doesn't support forCorp parameter yet!");
 
-            return this.DB.GetItemsInStationForPlayer(call.Client.EnsureCharacterIsSelected(), stationID);
+            return this.DB.GetItemsInStationForPlayer(call.Session.EnsureCharacterIsSelected(), stationID);
         }
 
         private void PrepareItemsForCourierOrAuctionContract(MySqlConnection connection, ulong contractID,
@@ -171,7 +175,7 @@ namespace EVESharp.Node.Services.Contracts
                 throw new ConNPCNotAllowed();
             
             // check for limits on contract creation
-            int callerCharacterID = call.Client.EnsureCharacterIsSelected();
+            int callerCharacterID = call.Session.EnsureCharacterIsSelected();
             
             if (expireTime < 1440 || (courierContractDuration < 1 && contractType == (int) ContractTypes.Courier))
                 throw new ConDurationZero();
@@ -214,8 +218,8 @@ namespace EVESharp.Node.Services.Contracts
                 }
                 
                 // named payload contains itemList, flag, requestItemTypeList and forCorp
-                ulong contractID = this.DB.CreateContract(connection, call.Client.EnsureCharacterIsSelected(),
-                    call.Client.CorporationID, call.Client.AllianceID, (ContractTypes) (int) contractType, availability,
+                ulong contractID = this.DB.CreateContract(connection, call.Session.EnsureCharacterIsSelected(),
+                    call.Session.CorporationID, call.Session.AllianceID, (ContractTypes) (int) contractType, availability,
                     assigneeID ?? 0, expireTime, courierContractDuration, startStationID, endStationID, priceOrStartingBid,
                     reward, collateralOrBuyoutPrice, title, description, WalletKeys.MAIN_WALLET);
 
@@ -232,7 +236,7 @@ namespace EVESharp.Node.Services.Contracts
                             (call.NamedPayload["itemList"] as PyList).GetEnumerable<PyList>(),
                             station,
                             callerCharacterID,
-                            (int) call.Client.ShipID
+                            (int) call.Session.ShipID
                         );
                         break;
                     case (int) ContractTypes.Loan:
@@ -297,7 +301,7 @@ namespace EVESharp.Node.Services.Contracts
             List<int> contractList = this.DB.GetContractList(
                 startContractID, resultsPerPage, itemTypeID, notIssuedByIDs, issuedByIDs, assigneeID,
                 locationID, itemGroupID, itemCategoryID, priceMax ?? 0, priceMin ?? 0, type, description,
-                call.Client.EnsureCharacterIsSelected(), call.Client.CorporationID
+                call.Session.EnsureCharacterIsSelected(), call.Session.CorporationID
             );
 
             return KeyVal.FromDictionary(new PyDictionary()
@@ -311,15 +315,15 @@ namespace EVESharp.Node.Services.Contracts
 
         public PyDataType GetContract(PyInteger contractID, CallInformation call)
         {
-            int callerCharacterID = call.Client.EnsureCharacterIsSelected();
+            int callerCharacterID = call.Session.EnsureCharacterIsSelected();
             
             // TODO: Check for regionID ConWrongRegion
             
             return KeyVal.FromDictionary(new PyDictionary()
                 {
-                    ["contract"] = this.DB.GetContractInformation(contractID, callerCharacterID, call.Client.CorporationID),
-                    ["bids"] = this.DB.GetContractBids(contractID, callerCharacterID, call.Client.CorporationID),
-                    ["items"] = this.DB.GetContractItems(contractID, callerCharacterID, call.Client.CorporationID)
+                    ["contract"] = this.DB.GetContractInformation(contractID, callerCharacterID, call.Session.CorporationID),
+                    ["bids"] = this.DB.GetContractBids(contractID, callerCharacterID, call.Session.CorporationID),
+                    ["items"] = this.DB.GetContractItems(contractID, callerCharacterID, call.Session.CorporationID)
                 }
             );
         }
@@ -351,7 +355,7 @@ namespace EVESharp.Node.Services.Contracts
         public PyDataType GetItemsInContainer(PyInteger locationID, PyInteger containerID, PyInteger forCorp,
             PyInteger flag, CallInformation call)
         {
-            return this.DB.GetItemsInContainer(call.Client.EnsureCharacterIsSelected(), containerID);
+            return this.DB.GetItemsInContainer(call.Session.EnsureCharacterIsSelected(), containerID);
         }
 
         public PyDataType GetMyExpiredContractList(PyBool isCorp, CallInformation call)
@@ -359,13 +363,13 @@ namespace EVESharp.Node.Services.Contracts
             int ownerID = 0;
 
             if (isCorp == true)
-                ownerID = call.Client.CorporationID;
+                ownerID = call.Session.CorporationID;
             else
-                ownerID = call.Client.EnsureCharacterIsSelected();
+                ownerID = call.Session.EnsureCharacterIsSelected();
 
             List<int> contractList = this.DB.GetContractList(
                 null, 0, null, null, null, null, null, null, null, 0, 0,
-                null, null, call.Client.EnsureCharacterIsSelected(), call.Client.CorporationID, ownerID, null, true, true
+                null, null, call.Session.EnsureCharacterIsSelected(), call.Session.CorporationID, ownerID, null, true, true
             );
             
             return KeyVal.FromDictionary(new PyDictionary()
@@ -387,9 +391,9 @@ namespace EVESharp.Node.Services.Contracts
             int ownerID = 0;
 
             if (isCorp == true)
-                ownerID = call.Client.CorporationID;
+                ownerID = call.Session.CorporationID;
             else
-                ownerID = call.Client.EnsureCharacterIsSelected();
+                ownerID = call.Session.EnsureCharacterIsSelected();
 
             List<int> contractList = this.DB.GetContractListByOwnerBids(ownerID);
 
@@ -407,9 +411,9 @@ namespace EVESharp.Node.Services.Contracts
             int ownerID = 0;
 
             if (isCorp == true)
-                ownerID = call.Client.CorporationID;
+                ownerID = call.Session.CorporationID;
             else
-                ownerID = call.Client.EnsureCharacterIsSelected();
+                ownerID = call.Session.EnsureCharacterIsSelected();
 
             List<int> contractList = null;
 
@@ -422,7 +426,7 @@ namespace EVESharp.Node.Services.Contracts
                 contractList = this.DB.GetContractList(
                     null, 0, null, null, new PyList<PyInteger>(1){[0] = ownerID},
                     null, null, null, null, 0, 0, null,
-                    null, call.Client.EnsureCharacterIsSelected(), call.Client.CorporationID,
+                    null, call.Session.EnsureCharacterIsSelected(), call.Session.CorporationID,
                     ownerID, (int) ContractStatus.InProgress, true, true
                 );
             }
@@ -442,11 +446,11 @@ namespace EVESharp.Node.Services.Contracts
             try
             {
                 // TODO: SUPPORT PROPER CORP WALLET
-                int bidderID = call.Client.EnsureCharacterIsSelected();
+                int bidderID = call.Session.EnsureCharacterIsSelected();
 
                 if (forCorp == true)
                 {
-                    bidderID = call.Client.CorporationID;
+                    bidderID = call.Session.CorporationID;
                     throw new UserError("Corp bidding is not supported for now!");
                 }
 
@@ -504,7 +508,7 @@ namespace EVESharp.Node.Services.Contracts
             }
         }
 
-        private void AcceptItemExchangeContract(MySqlConnection connection, Client client, ContractDB.Contract contract, Station station, int ownerID, Flags flag = Flags.Hangar)
+        private void AcceptItemExchangeContract(MySqlConnection connection, Session session, ContractDB.Contract contract, Station station, int ownerID, Flags flag = Flags.Hangar)
         {
             List<ContractDB.ItemQuantityEntry> offeredItems = this.DB.GetOfferedItems(connection, contract.ID);
             Dictionary<int, int> itemsToCheck = this.DB.GetRequiredItemTypeIDs(connection, contract.ID);
@@ -527,7 +531,7 @@ namespace EVESharp.Node.Services.Contracts
                         this.ItemFactory.MetaInventoryManager.OnItemDestroyed(item);
                         // temporarily move the item to the recycler, let the current owner know
                         item.LocationID = this.ItemFactory.LocationRecycler.ID;
-                        client.NotifyMultiEvent(Notifications.Client.Inventory.OnItemChange.BuildLocationChange(item, station.ID));
+                        this.Dogma.QueueMultiEvent(session.EnsureCharacterIsSelected(), Notifications.Client.Inventory.OnItemChange.BuildLocationChange(item, station.ID));
                         // now set the item to the correct owner and place and notify it's new owner
                         // TODO: TAKE forCorp INTO ACCOUNT
                         item.LocationID = station.ID;
@@ -540,7 +544,7 @@ namespace EVESharp.Node.Services.Contracts
                     {
                         int oldQuantity = item.Quantity;
                         item.Quantity = change.Quantity;
-                        client.NotifyMultiEvent(Notifications.Client.Inventory.OnItemChange.BuildQuantityChange(item, oldQuantity));
+                        this.Dogma.QueueMultiEvent(session.EnsureCharacterIsSelected(), Notifications.Client.Inventory.OnItemChange.BuildQuantityChange(item, oldQuantity));
                         
                         item.Persist();
 
@@ -557,7 +561,7 @@ namespace EVESharp.Node.Services.Contracts
                     item.LocationID = station.ID;
                     item.OwnerID = ownerID;
                     
-                    client.NotifyMultiEvent(Notifications.Client.Inventory.OnItemChange.BuildLocationChange(item, contract.CrateID));
+                    this.Dogma.QueueMultiEvent(session.EnsureCharacterIsSelected(), Notifications.Client.Inventory.OnItemChange.BuildLocationChange(item, contract.CrateID));
                     
                     item.Persist();
 
@@ -622,7 +626,7 @@ namespace EVESharp.Node.Services.Contracts
             using MySqlConnection connection = this.MarketDB.AcquireMarketLock();
             try
             {
-                int callerCharacterID = call.Client.EnsureCharacterIsSelected();
+                int callerCharacterID = call.Session.EnsureCharacterIsSelected();
 
                 // TODO: SUPPORT forCorp
                 ContractDB.Contract contract = this.DB.GetContract(connection, contractID);
@@ -638,7 +642,7 @@ namespace EVESharp.Node.Services.Contracts
                 switch (contract.Type)
                 {
                     case ContractTypes.ItemExchange:
-                        this.AcceptItemExchangeContract(connection, call.Client, contract, station, callerCharacterID);
+                        this.AcceptItemExchangeContract(connection, call.Session, contract, station, callerCharacterID);
                         break;
                     case ContractTypes.Auction:
                         throw new CustomError("Auctions cannot be accepted!");

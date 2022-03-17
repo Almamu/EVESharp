@@ -1,14 +1,14 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
-using System.Xml.XPath;
 using EVESharp.Common.Database;
 using EVESharp.Database;
 using EVESharp.EVE;
 using EVESharp.EVE.Packets.Complex;
 using EVESharp.EVE.Packets.Exceptions;
+using EVESharp.EVE.Services;
+using EVESharp.EVE.Sessions;
 using EVESharp.Node.Alliances;
 using EVESharp.Node.Chat;
 using EVESharp.Node.Database;
@@ -25,20 +25,19 @@ using EVESharp.Node.Notifications.Nodes.Corporations;
 using EVESharp.Node.StaticData;
 using EVESharp.Node.StaticData.Corporation;
 using EVESharp.Node.StaticData.Inventory;
-using EVESharp.Node.Exceptions.corpStationMgr;
 using EVESharp.Node.Inventory.Items;
-using EVESharp.Node.Services.Characters;
+using EVESharp.Node.Sessions;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Database;
 using EVESharp.PythonTypes.Types.Primitives;
-using OnCorporationMemberChanged = EVESharp.Node.Notifications.Client.Corporations.OnCorporationMemberChanged;
-using Type = System.Type;
+using SessionManager = EVESharp.Node.Sessions.SessionManager;
 
 namespace EVESharp.Node.Services.Corporations
 {
     // TODO: REWRITE THE USAGE OF THE CHARACTER CLASS HERE TO FETCH THE DATA OFF THE DATABASE TO PREVENT ISSUES ON MULTI-NODE INSTALLATIONS
     public class corpRegistry : MultiClientBoundService
     {
+        public override AccessLevel AccessLevel => AccessLevel.None;
         private Corporation mCorporation = null;
         private int mIsMaster = 0;
 
@@ -54,16 +53,16 @@ namespace EVESharp.Node.Services.Corporations
         private NodeContainer Container { get; init; }
         private NotificationManager NotificationManager { get; init; }
         private MailManager MailManager { get; init; }
-        private ClientManager ClientManager { get; init; }
         public MembersSparseRowsetService MembersSparseRowset { get; private set; }
         private OfficesSparseRowsetService OfficesSparseRowset { get; set; }
         private AncestryManager AncestryManager { get; set; }
+        private SessionManager SessionManager { get; }
         
         // constants
         private long CorporationAdvertisementFlatFee { get; init; }
         private long CorporationAdvertisementDailyRate { get; init; }
         
-        public corpRegistry(CorporationDB db, DatabaseConnection databaseConnection, ChatDB chatDB, CharacterDB characterDB, NotificationManager notificationManager, MailManager mailManager, WalletManager walletManager, NodeContainer container, ItemFactory itemFactory, ClientManager clientManager, BoundServiceManager manager, AncestryManager ancestryManager, MachoNet machoNet) : base(manager)
+        public corpRegistry(CorporationDB db, DatabaseConnection databaseConnection, ChatDB chatDB, CharacterDB characterDB, NotificationManager notificationManager, MailManager mailManager, WalletManager walletManager, NodeContainer container, ItemFactory itemFactory, BoundServiceManager manager, AncestryManager ancestryManager, MachoNet machoNet, SessionManager sessionManager) : base(manager)
         {
             this.DB = db;
             this.Database = databaseConnection;
@@ -74,13 +73,13 @@ namespace EVESharp.Node.Services.Corporations
             this.WalletManager = walletManager;
             this.Container = container;
             this.ItemFactory = itemFactory;
-            this.ClientManager = clientManager;
             this.AncestryManager = ancestryManager;
+            this.SessionManager = sessionManager;
             
             machoNet.OnClusterTimer += this.PerformTimedEvents;
         }
 
-        protected corpRegistry(CorporationDB db, DatabaseConnection databaseConnection, ChatDB chatDB, CharacterDB characterDB, NotificationManager notificationManager, MailManager mailManager, WalletManager walletManager, NodeContainer container, ItemFactory itemFactory, ClientManager clientManager, AncestryManager ancestryManager, Corporation corp, int isMaster, corpRegistry parent) : base (parent, corp.ID)
+        protected corpRegistry(CorporationDB db, DatabaseConnection databaseConnection, ChatDB chatDB, CharacterDB characterDB, NotificationManager notificationManager, MailManager mailManager, WalletManager walletManager, NodeContainer container, ItemFactory itemFactory, AncestryManager ancestryManager, SessionManager sessionManager, Corporation corp, int isMaster, corpRegistry parent) : base (parent, corp.ID)
         {
             this.DB = db;
             this.Database = databaseConnection;
@@ -91,9 +90,9 @@ namespace EVESharp.Node.Services.Corporations
             this.WalletManager = walletManager;
             this.Container = container;
             this.ItemFactory = itemFactory;
+            this.SessionManager = sessionManager;
             this.mCorporation = corp;
             this.mIsMaster = isMaster;
-            this.ClientManager = clientManager;
             this.CorporationAdvertisementFlatFee = this.Container.Constants["corporationAdvertisementFlatFee"].Value;
             this.CorporationAdvertisementDailyRate = this.Container.Constants["corporationAdvertisementDailyRate"].Value;
             this.AncestryManager = ancestryManager;
@@ -125,10 +124,10 @@ namespace EVESharp.Node.Services.Corporations
         
         public PyDataType GetSharesByShareholder(PyBool corpShares, CallInformation call)
         {
-            int entityID = call.Client.EnsureCharacterIsSelected();
+            int entityID = call.Session.EnsureCharacterIsSelected();
 
             if (corpShares == true)
-                entityID = call.Client.CorporationID;
+                entityID = call.Session.CorporationID;
             
             return this.DB.GetSharesByShareholder(entityID);
         }
@@ -141,35 +140,35 @@ namespace EVESharp.Node.Services.Corporations
         public PyDataType MoveCompanyShares(PyInteger corporationID, PyInteger to, PyInteger quantity, CallInformation call)
         {
             // check that we're allowed to do that
-            if (CorporationRole.Director.Is(call.Client.CorporationRole) == false)
+            if (CorporationRole.Director.Is(call.Session.CorporationRole) == false)
                 throw new CrpAccessDenied(MLS.UI_CORP_DO_NOT_HAVE_ROLE_DIRECTOR);
             
             // TODO: the WALLETKEY SHOULD BE SOMETHING ELSE?
-            using (Wallet corporationWallet = this.WalletManager.AcquireWallet(call.Client.CorporationID, 2000))
+            using (Wallet corporationWallet = this.WalletManager.AcquireWallet(call.Session.CorporationID, 2000))
             using (Wallet shareholderWallet = this.WalletManager.AcquireWallet(to, 2000))
             {
                 // first make sure there's enough shares available
-                int availableShares = this.DB.GetSharesForOwner(call.Client.CorporationID, call.Client.CorporationID);
+                int availableShares = this.DB.GetSharesForOwner(call.Session.CorporationID, call.Session.CorporationID);
 
                 if (availableShares < quantity)
                     throw new NotEnoughShares(quantity, availableShares);
             
                 // get the shares the destination already has
-                int currentShares = this.DB.GetSharesForOwner(call.Client.CorporationID, to);
+                int currentShares = this.DB.GetSharesForOwner(call.Session.CorporationID, to);
                 
                 // make the transaction
-                this.DB.UpdateShares(call.Client.CorporationID, to, quantity + currentShares);
-                this.DB.UpdateShares(call.Client.CorporationID, call.Client.CorporationID, availableShares - quantity);
+                this.DB.UpdateShares(call.Session.CorporationID, to, quantity + currentShares);
+                this.DB.UpdateShares(call.Session.CorporationID, call.Session.CorporationID, availableShares - quantity);
                 
                 // create the notifications
-                OnShareChange changeForNewHolder = new OnShareChange(to, call.Client.CorporationID,
+                OnShareChange changeForNewHolder = new OnShareChange(to, call.Session.CorporationID,
                     currentShares == 0 ? null : currentShares, currentShares + quantity);
-                OnShareChange changeForRestCorp = new OnShareChange(call.Client.CorporationID,
-                    call.Client.CorporationID, availableShares, availableShares - quantity);
+                OnShareChange changeForRestCorp = new OnShareChange(call.Session.CorporationID,
+                    call.Session.CorporationID, availableShares, availableShares - quantity);
                 
                 // send both notifications
-                this.NotificationManager.NotifyCorporation(call.Client.CorporationID, changeForNewHolder);
-                this.NotificationManager.NotifyCorporation(call.Client.CorporationID, changeForRestCorp);
+                this.NotificationManager.NotifyCorporation(call.Session.CorporationID, changeForNewHolder);
+                this.NotificationManager.NotifyCorporation(call.Session.CorporationID, changeForRestCorp);
             }
 
             return null;
@@ -177,7 +176,7 @@ namespace EVESharp.Node.Services.Corporations
 
         public PyDataType MovePrivateShares(PyInteger corporationID, PyInteger toShareholderID, PyInteger quantity, CallInformation call)
         {
-            int callerCharacterID = call.Client.EnsureCharacterIsSelected();
+            int callerCharacterID = call.Session.EnsureCharacterIsSelected();
             
             // TODO: the WALLETKEY SHOULD BE SOMETHING ELSE?
             using (Wallet corporationWallet = this.WalletManager.AcquireWallet(callerCharacterID, 2000))
@@ -197,14 +196,14 @@ namespace EVESharp.Node.Services.Corporations
                 this.DB.UpdateShares(corporationID, callerCharacterID, availableShares - quantity);
                 
                 // create the notifications
-                OnShareChange changeForNewHolder = new OnShareChange(toShareholderID, call.Client.CorporationID,
+                OnShareChange changeForNewHolder = new OnShareChange(toShareholderID, call.Session.CorporationID,
                     currentShares == 0 ? null : currentShares, currentShares + quantity);
-                OnShareChange changeForRestCorp = new OnShareChange(call.Client.CorporationID,
-                    call.Client.CorporationID, availableShares, availableShares - quantity);
+                OnShareChange changeForRestCorp = new OnShareChange(call.Session.CorporationID,
+                    call.Session.CorporationID, availableShares, availableShares - quantity);
                 
                 // send both notifications
-                this.NotificationManager.NotifyCorporation(call.Client.CorporationID, changeForNewHolder);
-                this.NotificationManager.NotifyCorporation(call.Client.CorporationID, changeForRestCorp);
+                this.NotificationManager.NotifyCorporation(call.Session.CorporationID, changeForNewHolder);
+                this.NotificationManager.NotifyCorporation(call.Session.CorporationID, changeForRestCorp);
             }
 
             return null;
@@ -212,7 +211,7 @@ namespace EVESharp.Node.Services.Corporations
 
         public PyDataType GetMember(PyInteger memberID, CallInformation call)
         {
-            return this.DB.GetMember(memberID, call.Client.CorporationID);
+            return this.DB.GetMember(memberID, call.Session.CorporationID);
         }
 
         public PyDataType GetMembers(CallInformation call)
@@ -220,7 +219,7 @@ namespace EVESharp.Node.Services.Corporations
             if (this.MembersSparseRowset is null)
             {
                 // generate the sparse rowset
-                SparseRowsetHeader rowsetHeader = this.DB.GetMembersSparseRowset(call.Client.CorporationID);
+                SparseRowsetHeader rowsetHeader = this.DB.GetMembersSparseRowset(call.Session.CorporationID);
 
                 PyDictionary dict = new PyDictionary
                 {
@@ -229,13 +228,13 @@ namespace EVESharp.Node.Services.Corporations
             
                 // create a service for handling it's calls
                 this.MembersSparseRowset =
-                    new MembersSparseRowsetService(this.Corporation, this.DB, rowsetHeader, this.NotificationManager, this.BoundServiceManager, call.Client);
+                    new MembersSparseRowsetService(this.Corporation, this.DB, rowsetHeader, this.NotificationManager, this.BoundServiceManager, call.Session);
 
-                rowsetHeader.BoundObjectIdentifier = this.MembersSparseRowset.MachoBindObject(dict, call.Client);
+                rowsetHeader.BoundObjectIdentifier = this.MembersSparseRowset.MachoBindObject(dict, call.Session);
             }
             
             // ensure the bound service knows that this client is bound to it
-            this.MembersSparseRowset.BindToClient(call.Client);
+            this.MembersSparseRowset.BindToSession(call.Session);
             
             // finally return the data
             return this.MembersSparseRowset.RowsetHeader;
@@ -246,7 +245,7 @@ namespace EVESharp.Node.Services.Corporations
             if (this.OfficesSparseRowset is null)
             {
                 // generate the sparse rowset
-                SparseRowsetHeader rowsetHeader = this.DB.GetOfficesSparseRowset(call.Client.CorporationID);
+                SparseRowsetHeader rowsetHeader = this.DB.GetOfficesSparseRowset(call.Session.CorporationID);
 
                 PyDictionary dict = new PyDictionary
                 {
@@ -255,13 +254,13 @@ namespace EVESharp.Node.Services.Corporations
             
                 // create a service for handling it's calls
                 this.OfficesSparseRowset =
-                    new OfficesSparseRowsetService(this.Corporation, this.DB, rowsetHeader, this.BoundServiceManager, call.Client);
+                    new OfficesSparseRowsetService(this.Corporation, this.DB, rowsetHeader, this.BoundServiceManager, call.Session);
 
-                rowsetHeader.BoundObjectIdentifier = this.OfficesSparseRowset.MachoBindObject(dict, call.Client);
+                rowsetHeader.BoundObjectIdentifier = this.OfficesSparseRowset.MachoBindObject(dict, call.Session);
             }
             
             // ensure the bound service knows that this client is bound to it
-            this.OfficesSparseRowset.BindToClient(call.Client);
+            this.OfficesSparseRowset.BindToSession(call.Session);
             
             // finally return the data
             return this.OfficesSparseRowset.RowsetHeader;
@@ -287,7 +286,7 @@ namespace EVESharp.Node.Services.Corporations
         public PyDataType GetTitles(CallInformation call)
         {
             // check if the corp is NPC and return placeholder data from the crpTitlesTemplate
-            if (ItemFactory.IsNPCCorporationID(call.Client.CorporationID) == true)
+            if (ItemFactory.IsNPCCorporationID(call.Session.CorporationID) == true)
             {
                 return Database.DictRowList(CorporationDB.GET_TITLES_TEMPLATE);
             }
@@ -297,7 +296,7 @@ namespace EVESharp.Node.Services.Corporations
                     CorporationDB.GET_TITLES,
                     new Dictionary<string, object>()
                     {
-                        {"_corporationID", call.Client.CorporationID}
+                        {"_corporationID", call.Session.CorporationID}
                     }
                 );            
             }
@@ -305,21 +304,21 @@ namespace EVESharp.Node.Services.Corporations
 
         public PyDataType GetStations(CallInformation call)
         {
-            return this.DB.GetStations(call.Client.CorporationID);
+            return this.DB.GetStations(call.Session.CorporationID);
         }
 
         public PyDataType GetMemberTrackingInfo(PyInteger characterID, CallInformation call)
         {
             // only directors can call this function
-            if (CorporationRole.Director.Is(call.Client.CorporationRole) == false)
+            if (CorporationRole.Director.Is(call.Session.CorporationRole) == false)
                 return null;
             
-            return this.DB.GetMemberTrackingInfo(call.Client.CorporationID, characterID);
+            return this.DB.GetMemberTrackingInfo(call.Session.CorporationID, characterID);
         }
 
         public PyDataType GetMemberTrackingInfoSimple(CallInformation call)
         {
-            return this.DB.GetMemberTrackingInfoSimple(call.Client.CorporationID);
+            return this.DB.GetMemberTrackingInfoSimple(call.Session.CorporationID);
         }
 
         public PyDataType GetInfoWindowDataForChar(PyInteger characterID, CallInformation call)
@@ -327,7 +326,7 @@ namespace EVESharp.Node.Services.Corporations
             this.DB.GetCorporationInformationForCharacter(characterID, out string title, out int titleMask,
                 out int corporationID, out int? allianceID);
             
-            Dictionary<int, string> titles = this.DB.GetTitlesNames(call.Client.CorporationID);
+            Dictionary<int, string> titles = this.DB.GetTitlesNames(call.Session.CorporationID);
             PyDictionary dictForKeyVal = new PyDictionary();
 
             int number = 0;
@@ -344,7 +343,7 @@ namespace EVESharp.Node.Services.Corporations
 
         public PyDataType GetMyApplications(CallInformation call)
         {
-            return this.DB.GetCharacterApplications(call.Client.EnsureCharacterIsSelected());
+            return this.DB.GetCharacterApplications(call.Session.EnsureCharacterIsSelected());
         }
 
         public PyDataType GetLockedItemLocations(CallInformation call)
@@ -356,12 +355,12 @@ namespace EVESharp.Node.Services.Corporations
 
         public PyBool CanBeKickedOut(PyInteger characterID, CallInformation call)
         {
-            int callerCharacterID = call.Client.EnsureCharacterIsSelected();
+            int callerCharacterID = call.Session.EnsureCharacterIsSelected();
 
             // check for corporation stasis for this character
             
             // can personel manager kick other players? are there other conditions?
-            return characterID == callerCharacterID || CorporationRole.Director.Is(call.Client.CorporationRole);
+            return characterID == callerCharacterID || CorporationRole.Director.Is(call.Session.CorporationRole);
         }
 
         public PyDataType KickOutMember(PyInteger characterID, CallInformation call)
@@ -404,14 +403,14 @@ namespace EVESharp.Node.Services.Corporations
         
         public PyDataType CreateAlliance(PyString name, PyString shortName, PyString description, PyString url, CallInformation call)
         {
-            int callerCharacterID = call.Client.EnsureCharacterIsSelected();
+            int callerCharacterID = call.Session.EnsureCharacterIsSelected();
 
             if (this.Corporation.CeoID != callerCharacterID)
                 throw new OnlyActiveCEOCanCreateAlliance();
             
             // TODO: CHECK FOR ACTIVE WARS AND THROW A CUSTOMERROR WITH THIS TEXT: UI_CORP_HINT7
 
-            if (call.Client.AllianceID != null)
+            if (call.Session.AllianceID != null)
                 throw new AllianceCreateFailCorpInAlliance();
             
             this.ValidateAllianceName(name, shortName);
@@ -427,7 +426,7 @@ namespace EVESharp.Node.Services.Corporations
             character.EnsureSkillLevel(Types.EmpireControl, 5);
             
             // the alliance costs 1b ISK to establish, and that's taken from the corporation's wallet
-            using (Wallet wallet = this.WalletManager.AcquireWallet(this.Corporation.ID, call.Client.CorpAccountKey, true))
+            using (Wallet wallet = this.WalletManager.AcquireWallet(this.Corporation.ID, call.Session.CorpAccountKey, true))
             {
                 // ensure there's enough balance
                 wallet.EnsureEnoughBalance(this.Container.Constants[Constants.allianceCreationCost]);
@@ -436,7 +435,7 @@ namespace EVESharp.Node.Services.Corporations
                 wallet.CreateJournalRecord(MarketReference.AllianceRegistrationFee, null, null, -this.Container.Constants[Constants.allianceCreationCost]);
                 
                 // now create the alliance
-                ItemEntity allianceItem = this.ItemFactory.CreateSimpleItem(name, (int) Types.Alliance, call.Client.CorporationID,
+                ItemEntity allianceItem = this.ItemFactory.CreateSimpleItem(name, (int) Types.Alliance, call.Session.CorporationID,
                     this.ItemFactory.LocationSystem.ID, Flags.None, 1, false, true, 0, 0, 0, "");
 
                 int allianceID = allianceItem.ID;
@@ -453,7 +452,7 @@ namespace EVESharp.Node.Services.Corporations
                         {"_shortName", shortName},
                         {"_description", description},
                         {"_url", url},
-                        {"_creatorID", call.Client.CorporationID},
+                        {"_creatorID", call.Session.CorporationID},
                         {"_creatorCharacterID", callerCharacterID},
                         {"_dictatorial", false},
                         {"_startDate", DateTime.UtcNow.ToFileTimeUtc()}
@@ -470,24 +469,16 @@ namespace EVESharp.Node.Services.Corporations
                 // create the new chat channel
                 this.ChatDB.CreateChannel(allianceID, allianceID, "System Channels\\Alliance", true);
                 this.ChatDB.CreateChannel(allianceID, allianceID, "System Channels\\Alliance", false);
-            
-                // join everyone to the correct channel
-                // GetMembersForCorp
-                this.ClientManager.TryGetClientsByCorporationID(this.ObjectID, out Dictionary<int, Client> clients);
 
                 foreach (int characterID in this.DB.GetMembersForCorp(this.ObjectID))
                 {
                     // join the player to the corp channel
                     this.ChatDB.JoinEntityChannel(allianceID, characterID, characterID == callerCharacterID ? ChatDB.CHATROLE_CREATOR : ChatDB.CHATROLE_CONVERSATIONALIST);
                     this.ChatDB.JoinChannel(allianceID, characterID, characterID == callerCharacterID ? ChatDB.CHATROLE_CREATOR : ChatDB.CHATROLE_CONVERSATIONALIST);
-
-                    if (clients is not null && clients.TryGetValue(characterID, out Client client) == true)
-                    {
-                        // update session and send session change
-                        client.AllianceID = allianceID;
-                        client.SendSessionChange();
-                    }
                 }
+                
+                // perform a session change for all the corp members available
+                this.SessionManager.PerformSessionUpdate(Session.CORP_ID, this.ObjectID, new Session() {[Session.ALLIANCE_ID] = allianceID});
     
                 // TODO: CREATE BILLS REQUIRED FOR ALLIANCES, CHECK HOW THEY ARE INVOICED
             }
@@ -519,16 +510,16 @@ namespace EVESharp.Node.Services.Corporations
             PyInteger color2, PyInteger color3, PyDataType typeface, CallInformation call)
         {
             // do some basic checks on what the player can do
-            if (CorporationRole.Director.Is(call.Client.CorporationRole) == true)
+            if (CorporationRole.Director.Is(call.Session.CorporationRole) == true)
                 throw new CEOCannotCreateCorporation();
-            if (call.Client.StationID == null)
+            if (call.Session.StationID == null)
                 throw new CanOnlyCreateCorpInStation();
             // TODO: CHECK FOR POS AS ITS NOT POSSIBLE TO CREATE CORPORATIONS THERE
             this.ValidateCorporationName(corporationName, tickerName);
             
-            int stationID = call.Client.EnsureCharacterIsInStation();
+            int stationID = call.Session.EnsureCharacterIsInStation();
             int corporationStartupCost = this.Container.Constants[Constants.corporationStartupCost];
-            int callerCharacterID = call.Client.EnsureCharacterIsSelected();
+            int callerCharacterID = call.Session.EnsureCharacterIsSelected();
             
             // TODO: PROPERLY IMPLEMENT THIS CHECK, RIGHT NOW THE CHARACTER AND THE CORPREGISTRY INSTANCES DO NOT HAVE TO BE LOADED ON THE SAME NODE
             // TODO: SWITCH UP THE CORPORATION CHANGE MECHANISM TO NOT RELY ON THE CHARACTER OBJECT SO THIS CAN BE DONE THROUGH THE DATABASE
@@ -554,7 +545,7 @@ namespace EVESharp.Node.Services.Corporations
                     // create the corporation in the corporation table
                     int corporationID = this.DB.CreateCorporation(
                         corporationName, description, tickerName, url, taxRate, callerCharacterID,
-                        stationID, maximumMembers, (int) call.Client.RaceID, allowedMemberRaceIDs,
+                        stationID, maximumMembers, (int) call.Session.RaceID, allowedMemberRaceIDs,
                         shape1, shape2, shape3, color1, color2, color3, typeface as PyString
                     );
                     // create default titles
@@ -563,8 +554,8 @@ namespace EVESharp.Node.Services.Corporations
                     wallet.CreateJournalRecord(MarketReference.CorporationRegistrationFee, null, null, corporationStartupCost);
                     
                     // leave the old corporation channels first
-                    this.ChatDB.LeaveChannel(call.Client.CorporationID, character.ID);
-                    this.ChatDB.LeaveEntityChannel(call.Client.CorporationID, character.ID);
+                    this.ChatDB.LeaveChannel(call.Session.CorporationID, character.ID);
+                    this.ChatDB.LeaveEntityChannel(call.Session.CorporationID, character.ID);
                     // create the required chat channels
                     this.ChatDB.CreateChannel(corporationID, corporationID, "System Channels\\Corp", true);
                     this.ChatDB.CreateChannel(corporationID, corporationID, "System Channels\\Corp", false);
@@ -572,14 +563,16 @@ namespace EVESharp.Node.Services.Corporations
                     this.ChatDB.JoinEntityChannel(corporationID, callerCharacterID, ChatDB.CHATROLE_CREATOR);
                     this.ChatDB.JoinChannel(corporationID, callerCharacterID, ChatDB.CHATROLE_CREATOR);
                     // build the notification of corporation change
-                    Notifications.Client.Corporations.OnCorporationMemberChanged change = new Notifications.Client.Corporations.OnCorporationMemberChanged(character.ID, call.Client.CorporationID, corporationID);
+                    Notifications.Client.Corporations.OnCorporationMemberChanged change = new Notifications.Client.Corporations.OnCorporationMemberChanged(character.ID, call.Session.CorporationID, corporationID);
                     // start the session change for the client
-                    call.Client.CorporationID = corporationID;
-                    call.Client.CorporationRole = long.MaxValue; // this gives all the permissions to the character
-                    call.Client.RolesAtBase = long.MaxValue;
-                    call.Client.RolesAtOther = long.MaxValue;
-                    call.Client.RolesAtHQ = long.MaxValue;
-                    call.Client.RolesAtAll = long.MaxValue;
+                    Session update = new Session();
+                    
+                    update.CorporationID = corporationID;
+                    update.CorporationRole = long.MaxValue; // this gives all the permissions to the character
+                    update.RolesAtBase = long.MaxValue;
+                    update.RolesAtOther = long.MaxValue;
+                    update.RolesAtHQ = long.MaxValue;
+                    update.RolesAtAll = long.MaxValue;
                     // update the character to reflect the new ownership
                     character.CorporationID = corporationID;
                     character.Roles = long.MaxValue;
@@ -612,7 +605,10 @@ namespace EVESharp.Node.Services.Corporations
                     this.DB.UpdateShares(corporationID, corporationID, 1000);
 
                     // set the default wallet for the character
-                    call.Client.CorpAccountKey = WalletKeys.MAIN_WALLET;
+                    update.CorpAccountKey = WalletKeys.MAIN_WALLET;
+                    
+                    // send the corporation update
+                    this.SessionManager.PerformSessionUpdate(Session.CHAR_ID, callerCharacterID, update);
 
                     character.Persist();
                     
@@ -644,7 +640,7 @@ namespace EVESharp.Node.Services.Corporations
             PyString wallet2, PyString wallet3, PyString wallet4, PyString wallet5, PyString wallet6, PyString wallet7,
             CallInformation call)
         {
-            if (CorporationRole.Director.Is(call.Client.CorporationRole) == false || call.Client.CorporationID != this.Corporation.ID)
+            if (CorporationRole.Director.Is(call.Session.CorporationRole) == false || call.Session.CorporationID != this.Corporation.ID)
                 return null;
 
             // validate division names
@@ -706,28 +702,28 @@ namespace EVESharp.Node.Services.Corporations
             
             // update division names
             this.DB.UpdateDivisions(
-                call.Client.CorporationID,
+                call.Session.CorporationID,
                 division1, division2, division3, division4, division5, division6, division7,
                 wallet1, wallet2, wallet3, wallet4, wallet5, wallet6, wallet7
             );
             
             // notify all the players in the corp
-            this.NotificationManager.NotifyCorporation(call.Client.CorporationID, change);
+            this.NotificationManager.NotifyCorporation(call.Session.CorporationID, change);
             
             return null;
         }
 
         public PyDataType UpdateCorporation(PyString newDescription, PyString newUrl, PyDecimal newTax, CallInformation call)
         {
-            if (CorporationRole.Director.Is(call.Client.CorporationRole) == false || call.Client.CorporationID != this.Corporation.ID)
+            if (CorporationRole.Director.Is(call.Session.CorporationRole) == false || call.Session.CorporationID != this.Corporation.ID)
                 return null;
 
             // update information in the database
-            this.DB.UpdateCorporation(call.Client.CorporationID, newDescription, newUrl, newTax);
+            this.DB.UpdateCorporation(call.Session.CorporationID, newDescription, newUrl, newTax);
             
             // generate update notification
             OnCorporationChanged change =
-                new OnCorporationChanged(call.Client.CorporationID)
+                new OnCorporationChanged(call.Session.CorporationID)
                     .AddChange("description", this.Corporation.Description, newDescription)
                     .AddChange("url", this.Corporation.Url, newUrl)
                     .AddChange("taxRate", this.Corporation.TaxRate, newTax)
@@ -745,21 +741,23 @@ namespace EVESharp.Node.Services.Corporations
         public PyDataType GetMemberTrackingInfo(CallInformation call)
         {
             // only directors can call this function
-            if (CorporationRole.Director.Is(call.Client.CorporationRole) == false)
+            if (CorporationRole.Director.Is(call.Session.CorporationRole) == false)
                 return null;
             
-            return this.DB.GetMemberTrackingInfo(call.Client.CorporationID);
+            return this.DB.GetMemberTrackingInfo(call.Session.CorporationID);
         }
 
         public PyDataType SetAccountKey(PyInteger accountKey, CallInformation call)
         {
-            if (this.WalletManager.IsTakeAllowed(call.Client, accountKey, call.Client.CorporationID) == true)
-                call.Client.CorpAccountKey = accountKey;
+            if (this.WalletManager.IsTakeAllowed(call.Session, accountKey, call.Session.CorporationID) == true)
+            {
+                this.SessionManager.PerformSessionUpdate(Session.CHAR_ID, call.Session.EnsureCharacterIsSelected(), new Session() {[Session.CORP_ACCOUNT_KEY] = accountKey});
+            }
             
             return null;
         }
 
-        private void PayoutDividendsToShareholders(double totalAmount, Client client)
+        private void PayoutDividendsToShareholders(double totalAmount, Session session)
         {
             double pricePerShare = totalAmount / this.mCorporation.Shares;
             Dictionary<int, int> shares = this.DB.GetShareholdersList(this.mCorporation.ID);
@@ -768,7 +766,7 @@ namespace EVESharp.Node.Services.Corporations
             {
                 // send evemail to the owner
                 this.MailManager.SendMail(
-                    client.CorporationID,
+                    session.CorporationID,
                     ownerID, 
                     $"Dividend from {this.mCorporation.Name}",
                     $"<a href=\"showinfo:2//{this.mCorporation.ID}\">{this.mCorporation.Name}</a> may have credited your account as part of a total payout of <b>{totalAmount} ISK</b> to their shareholders. The amount awarded is based upon the number of shares you hold, in relation to the total number of shares issued by the company."
@@ -783,7 +781,7 @@ namespace EVESharp.Node.Services.Corporations
             }
         }
 
-        private void PayoutDividendsToMembers(double totalAmount, Client client)
+        private void PayoutDividendsToMembers(double totalAmount, Session session)
         {
             double pricePerMember = totalAmount / this.mCorporation.MemberCount;
             
@@ -797,8 +795,8 @@ namespace EVESharp.Node.Services.Corporations
             
             // send evemail to corporation mail as this will be received by all the members
             this.MailManager.SendMail(
-                client.CorporationID,
-                client.CorporationID, 
+                session.CorporationID,
+                session.CorporationID, 
                 $"Dividend from {this.mCorporation.Name}",
                 $"<a href=\"showinfo:2//{this.mCorporation.ID}\">{this.mCorporation.Name}</a> may have credited your account as part of a total payout of <b>{totalAmount} ISK</b> to their corporation members. The amount awarded is split evenly between all members of the corporation."
             );
@@ -807,10 +805,10 @@ namespace EVESharp.Node.Services.Corporations
         public PyDataType PayoutDividend(PyInteger payShareholders, PyInteger amount, CallInformation call)
         {
             // check if the player is the CEO
-            if (this.mCorporation.CeoID != call.Client.CharacterID)
+            if (this.mCorporation.CeoID != call.Session.CharacterID)
                 throw new OnlyCEOCanPayoutDividends();
             
-            using (Wallet wallet = this.WalletManager.AcquireWallet(call.Client.CorporationID, call.Client.CorpAccountKey, true))
+            using (Wallet wallet = this.WalletManager.AcquireWallet(call.Session.CorporationID, call.Session.CorpAccountKey, true))
             {
                 // check if there's enough cash left
                 wallet.EnsureEnoughBalance(amount);
@@ -820,11 +818,11 @@ namespace EVESharp.Node.Services.Corporations
             
             if (payShareholders == 1)
             {
-                this.PayoutDividendsToShareholders(amount, call.Client);
+                this.PayoutDividendsToShareholders(amount, call.Session);
             }
             else
             {
-                this.PayoutDividendsToMembers(amount, call.Client);
+                this.PayoutDividendsToMembers(amount, call.Session);
             }
             
             return null;
@@ -846,10 +844,10 @@ namespace EVESharp.Node.Services.Corporations
 
         public PyDataType UpdateCorporationAbilities(CallInformation call)
         {
-            if (this.mCorporation.CeoID != call.Client.CharacterID)
+            if (this.mCorporation.CeoID != call.Session.CharacterID)
                 throw new CrpAccessDenied(MLS.UI_CORP_ACCESSDENIED12);
 
-            Character character = this.ItemFactory.GetItem<Character>(call.Client.EnsureCharacterIsSelected());
+            Character character = this.ItemFactory.GetItem<Character>(call.Session.EnsureCharacterIsSelected());
             
             this.CalculateCorporationLimits(character, out int maximumMembers, out int allowedMemberRaceIDs);
             
@@ -936,8 +934,9 @@ namespace EVESharp.Node.Services.Corporations
             CallInformation call)
         {
             // TODO: HANDLE DIVISION AND SQUADRON CHANGES
-            int callerCharacterID = call.Client.EnsureCharacterIsSelected();
+            int callerCharacterID = call.Session.EnsureCharacterIsSelected();
             Character character = this.ItemFactory.GetItem<Character>(callerCharacterID);
+            Session update = new Session();
             
             // get current roles for that character
             this.CharacterDB.GetCharacterRoles(characterID, out long currentRoles, out long currentRolesAtBase,
@@ -988,19 +987,19 @@ namespace EVESharp.Node.Services.Corporations
 
                     // TODO: WEIRD HACK TO ENSURE THAT THE CORPORATION WINDOW UPDATES WITH THE CHANGE
                     // TODO: THERE MIGHT BE SOMETHING ELSE WE CAN DO, BUT THIS WORKS FOR NOW
-                    if (call.Client.CorporationRole == 0)
+                    if (call.Session.CorporationRole == 0)
                     {
-                        call.Client.CorporationRole = ~long.MaxValue;
+                        update.CorporationRole = ~long.MaxValue;
                     }
                     else
                     {
-                        call.Client.CorporationRole = 0;
+                        update.CorporationRole = 0;
                     }
 
-                    call.Client.RolesAtAll = 0;
-                    call.Client.RolesAtBase = 0;
-                    call.Client.RolesAtOther = 0;
-                    call.Client.RolesAtHQ = 0;
+                    update.RolesAtAll = 0;
+                    update.RolesAtBase = 0;
+                    update.RolesAtOther = 0;
+                    update.RolesAtHQ = 0;
 
                     character.TitleMask = 0;
                 }
@@ -1038,6 +1037,8 @@ namespace EVESharp.Node.Services.Corporations
                 if (currentStasisTimer == null)
                     this.CharacterDB.SetCharacterStasisTimer(characterID, blockRoles == 1 ? DateTime.UtcNow.ToFileTimeUtc() : null);
 
+                // send the session change
+                this.SessionManager.PerformSessionUpdate(Session.CHAR_ID, characterID, update);
                 return null;
             }
 
@@ -1045,7 +1046,7 @@ namespace EVESharp.Node.Services.Corporations
                 throw new CrpRolesDenied(characterID);
             
             // if the character is not a director, it cannot grant grantable roles (duh)
-            if (CorporationRole.Director.Is(call.Client.CorporationRole) == false && (grantableRoles != 0 ||
+            if (CorporationRole.Director.Is(call.Session.CorporationRole) == false && (grantableRoles != 0 ||
                 grantableRolesAtBase != 0 || grantableRolesAtOther != 0 || grantableRolesAtHQ != 0))
                 throw new CrpAccessDenied(MLS.UI_CORP_DO_NOT_HAVE_ROLE_DIRECTOR);
             
@@ -1111,7 +1112,7 @@ namespace EVESharp.Node.Services.Corporations
 
             // check if the character is connected and update it's session
             // this also allows to notify the node where the character is loaded
-            if (this.ClientManager.TryGetClientByCharacterID(characterID, out Client client) == false)
+            if (this.Sessions.ContainsKey(characterID) == false)
                 return null;
 
             // get the title roles and calculate current roles for the session
@@ -1122,12 +1123,13 @@ namespace EVESharp.Node.Services.Corporations
             );
             
             // update the roles on the session and send the session change to the player
-            client.CorporationRole = roles | titleRoles;
-            client.RolesAtOther = rolesAtOther | titleRolesAtOther;
-            client.RolesAtHQ = rolesAtHQ | titleRolesAtHQ;
-            client.RolesAtBase = rolesAtBase | titleRolesAtBase;
-            client.RolesAtAll = client.CorporationRole | client.RolesAtOther | client.RolesAtHQ | client.RolesAtBase;
-            client.SendSessionChange();
+            update.CorporationRole = roles | titleRoles;
+            update.RolesAtOther = rolesAtOther | titleRolesAtOther;
+            update.RolesAtHQ = rolesAtHQ | titleRolesAtHQ;
+            update.RolesAtBase = rolesAtBase | titleRolesAtBase;
+            update.RolesAtAll = update.CorporationRole | update.RolesAtOther | update.RolesAtHQ | update.RolesAtBase;
+            // notify the session change
+            this.SessionManager.PerformSessionUpdate(Session.CHAR_ID, characterID, update);
             
             // TODO: CHECK THAT NEW BASE ID IS VALID
             
@@ -1136,14 +1138,14 @@ namespace EVESharp.Node.Services.Corporations
 
         public PyDataType CanLeaveCurrentCorporation(CallInformation call)
         {
-            int characterID = call.Client.EnsureCharacterIsSelected();
+            int characterID = call.Session.EnsureCharacterIsSelected();
             long? stasisTimer = this.CharacterDB.GetCharacterStasisTimer(characterID);
 
             try
             {
-                if (call.Client.CorporationID <= ItemFactory.NPC_CORPORATION_ID_MAX)
+                if (call.Session.CorporationID <= ItemFactory.NPC_CORPORATION_ID_MAX)
                 {
-                    if (call.Client.WarFactionID is null)
+                    if (call.Session.WarFactionID is null)
                     {
                         throw new CrpCantQuitDefaultCorporation();
                     }
@@ -1152,16 +1154,16 @@ namespace EVESharp.Node.Services.Corporations
                 long currentTime = DateTime.UtcNow.ToFileTimeUtc();
 
                 if (stasisTimer is null &&
-                    (call.Client.CorporationRole > 0 ||
-                     call.Client.RolesAtAll > 0 ||
-                     call.Client.RolesAtBase > 0 ||
-                     call.Client.RolesAtOther > 0 ||
-                     call.Client.RolesAtHQ > 0)
+                    (call.Session.CorporationRole > 0 ||
+                     call.Session.RolesAtAll > 0 ||
+                     call.Session.RolesAtBase > 0 ||
+                     call.Session.RolesAtOther > 0 ||
+                     call.Session.RolesAtHQ > 0)
                     )
                 {
                     throw new CrpCantQuitNotInStasis(
                         characterID,
-                        call.Client.CorporationRole | call.Client.RolesAtAll | call.Client.RolesAtBase | call.Client.RolesAtOther | call.Client.RolesAtHQ
+                        call.Session.CorporationRole | call.Session.RolesAtAll | call.Session.RolesAtBase | call.Session.RolesAtOther | call.Session.RolesAtHQ
                     );
                 }
                 
@@ -1199,31 +1201,31 @@ namespace EVESharp.Node.Services.Corporations
         public PyDataType CreateRecruitmentAd(PyInteger days, PyInteger stationID, PyInteger raceMask, PyInteger typeMask, PyInteger allianceID, PyInteger skillpoints, PyString description, CallInformation call)
         {
             Station station = this.ItemFactory.GetStaticStation(stationID);
-            int callerCharacterID = call.Client.EnsureCharacterIsSelected();
+            int callerCharacterID = call.Session.EnsureCharacterIsSelected();
             long price = this.CorporationAdvertisementFlatFee + (this.CorporationAdvertisementDailyRate * days);
             
             // TODO: ENSURE stationID MATCHES ONE OF OUR OFFICES FOR THE ADVERT TO BE CREATED
             // get the current wallet and check if there's enough money on it
-            using (Wallet wallet = this.WalletManager.AcquireWallet(call.Client.CorporationID, call.Client.CorpAccountKey, true))
+            using (Wallet wallet = this.WalletManager.AcquireWallet(call.Session.CorporationID, call.Session.CorpAccountKey, true))
             {
                 wallet.EnsureEnoughBalance(price);
                 wallet.CreateJournalRecord(MarketReference.CorporationAdvertisementFee, callerCharacterID, null, null, price);
             }
             
             // now create the ad
-            ulong adID = this.DB.CreateRecruitmentAd(stationID, days, call.Client.CorporationID, typeMask, raceMask, description, skillpoints);
+            ulong adID = this.DB.CreateRecruitmentAd(stationID, days, call.Session.CorporationID, typeMask, raceMask, description, skillpoints);
             // create the notification and notify everyone at that station
-            OnCorporationRecruitmentAdChanged changes = new OnCorporationRecruitmentAdChanged(call.Client.CorporationID, adID);
+            OnCorporationRecruitmentAdChanged changes = new OnCorporationRecruitmentAdChanged(call.Session.CorporationID, adID);
             // add the fields for the recruitment ad change
             changes
                 .AddValue("adID", null, adID)
-                .AddValue("corporationID", null, call.Client.CorporationID)
-                .AddValue("channelID", null, call.Client.CorporationID)
+                .AddValue("corporationID", null, call.Session.CorporationID)
+                .AddValue("channelID", null, call.Session.CorporationID)
                 .AddValue("typeMask", null, typeMask)
                 .AddValue("description", null, description)
                 .AddValue("stationID", null, stationID)
                 .AddValue("raceMask", null, raceMask)
-                .AddValue("allianceID", null, call.Client.AllianceID)
+                .AddValue("allianceID", null, call.Session.AllianceID)
                 .AddValue("expiryDateTime", null, DateTime.UtcNow.AddDays(days).ToFileTimeUtc())
                 .AddValue("createDateTime", null, DateTime.UtcNow.ToFileTimeUtc())
                 .AddValue("regionID", null, station.RegionID)
@@ -1233,7 +1235,7 @@ namespace EVESharp.Node.Services.Corporations
 
             // TODO: MAYBE NOTIFY CHARACTERS IN THE STATION?
             // notify corporation members
-            this.NotificationManager.NotifyCorporation(call.Client.CorporationID, changes);
+            this.NotificationManager.NotifyCorporation(call.Session.CorporationID, changes);
             
             return null;
         }
@@ -1241,7 +1243,7 @@ namespace EVESharp.Node.Services.Corporations
         public PyDataType UpdateTitles(PyObjectData rowset, CallInformation call)
         {
             // ensure the character has the director role
-            if (CorporationRole.Director.Is(call.Client.CorporationRole) == false)
+            if (CorporationRole.Director.Is(call.Session.CorporationRole) == false)
                 throw new CrpAccessDenied(MLS.UI_CORP_DO_NOT_HAVE_ROLE_DIRECTOR);
             
             Rowset list = rowset;
@@ -1262,20 +1264,20 @@ namespace EVESharp.Node.Services.Corporations
                 long grantableRolesAtOther = entry[9] as PyInteger;
                 
                 // get previous roles first
-                this.DB.GetTitleInformation(call.Client.CorporationID, titleID,
+                this.DB.GetTitleInformation(call.Session.CorporationID, titleID,
                     out long titleRoles, out long titleRolesAtHQ, out long titleRolesAtBase, out long titleRolesAtOther,
                     out long titleGrantableRoles, out long titleGrantableRolesAtHQ, out long titleGrantableRolesAtBase,
                     out long titleGrantableRolesAtOther, out string titleName
                 );
 
                 // store the new information
-                this.DB.UpdateTitle(call.Client.CorporationID, titleID, newName, roles, grantableRoles, rolesAtHQ,
+                this.DB.UpdateTitle(call.Session.CorporationID, titleID, newName, roles, grantableRoles, rolesAtHQ,
                     grantableRolesAtHQ, rolesAtBase, grantableRolesAtBase, rolesAtOther, grantableRolesAtOther);
                 
                 // notify everyone about the title change
                 this.NotificationManager.NotifyCorporation(
-                    call.Client.CorporationID,
-                    new OnTitleChanged(call.Client.CorporationID, titleID)
+                    call.Session.CorporationID,
+                    new OnTitleChanged(call.Session.CorporationID, titleID)
                         .AddChange("titleName", titleName, newName)
                         .AddChange("roles", titleRoles, roles)
                         .AddChange("grantableRoles", titleGrantableRoles, grantableRoles)
@@ -1288,33 +1290,33 @@ namespace EVESharp.Node.Services.Corporations
                 );
             }
             
-            // get all the players online for this corporation
-            if (this.ClientManager.TryGetClientsByCorporationID(call.Client.CorporationID, out Dictionary<int, Client> clients) == true)
+            foreach ((int _, Session session) in this.Sessions)
             {
-                foreach ((int _, Client client) in clients)
-                {
-                    // characterID should never be null here
-                    long titleMask = this.DB.GetTitleMaskForCharacter((int) client.CharacterID);
-                    
-                    // get the title roles and calculate current roles for the session
-                    this.DB.GetTitleInformation(client.CorporationID, titleMask,
-                        out long titleRoles, out long titleRolesAtHQ, out long titleRolesAtBase, out long titleRolesAtOther,
-                        out long titleGrantableRoles, out long titleGrantableRolesAtHQ, out long titleGrantableRolesAtBase,
-                        out long titleGrantableRolesAtOther, out _
-                    );
-                    this.CharacterDB.GetCharacterRoles((int) client.CharacterID,
-                        out long characterRoles, out long characterRolesAtBase, out long characterRolesAtHQ,  out long characterRolesAtOther,
-                        out long characterGrantableRoles, out long characterGrantableRolesAtBase, out long characterGrantableRolesAtHQ, 
-                        out long characterGrantableRolesAtOther, out _, out _, out _);
-            
-                    // update the roles on the session and send the session change to the player
-                    client.CorporationRole = characterRoles | titleRoles;
-                    client.RolesAtOther = characterRolesAtOther | titleRolesAtOther;
-                    client.RolesAtHQ = characterRolesAtHQ | titleRolesAtHQ;
-                    client.RolesAtBase = characterRolesAtBase | titleRolesAtBase;
-                    client.RolesAtAll = client.CorporationRole | client.RolesAtOther | client.RolesAtHQ | client.RolesAtBase;
-                    client.SendSessionChange();
-                }
+                int characterID = session.EnsureCharacterIsSelected();
+                // characterID should never be null here
+                long titleMask = this.DB.GetTitleMaskForCharacter(characterID);
+                
+                // get the title roles and calculate current roles for the session
+                this.DB.GetTitleInformation(session.CorporationID, titleMask,
+                    out long titleRoles, out long titleRolesAtHQ, out long titleRolesAtBase, out long titleRolesAtOther,
+                    out long titleGrantableRoles, out long titleGrantableRolesAtHQ, out long titleGrantableRolesAtBase,
+                    out long titleGrantableRolesAtOther, out _
+                );
+                this.CharacterDB.GetCharacterRoles(characterID,
+                    out long characterRoles, out long characterRolesAtBase, out long characterRolesAtHQ,  out long characterRolesAtOther,
+                    out long characterGrantableRoles, out long characterGrantableRolesAtBase, out long characterGrantableRolesAtHQ, 
+                    out long characterGrantableRolesAtOther, out _, out _, out _);
+        
+                // update the roles on the session and send the session change to the player
+                Session updates = new Session();
+                
+                updates.CorporationRole = characterRoles | titleRoles;
+                updates.RolesAtOther = characterRolesAtOther | titleRolesAtOther;
+                updates.RolesAtHQ = characterRolesAtHQ | titleRolesAtHQ;
+                updates.RolesAtBase = characterRolesAtBase | titleRolesAtBase;
+                updates.RolesAtAll = updates.CorporationRole | updates.RolesAtOther | updates.RolesAtHQ | updates.RolesAtBase;
+                // let the session manager know about this change so it can update the client
+                this.SessionManager.PerformSessionUpdate(Session.CHAR_ID, characterID, updates);
             }
             
             return null;
@@ -1334,29 +1336,25 @@ namespace EVESharp.Node.Services.Corporations
 
             Corporation corp = this.ItemFactory.LoadItem<Corporation>(bindParams.ObjectID);
             
-            return new corpRegistry (this.DB, this.Database, this.ChatDB, this.CharacterDB, this.NotificationManager, this.MailManager, this.WalletManager, this.Container, this.ItemFactory, this.ClientManager, this.AncestryManager, corp, bindParams.ExtraValue, this);
+            return new corpRegistry (this.DB, this.Database, this.ChatDB, this.CharacterDB, this.NotificationManager, this.MailManager, this.WalletManager, this.Container, this.ItemFactory, this.AncestryManager, this.SessionManager, corp, bindParams.ExtraValue, this);
         }
 
-        public override bool IsClientAllowedToCall(CallInformation call)
+        public override bool IsClientAllowedToCall(ServiceCall call)
         {
-            return this.Corporation.ID == call.Client.CorporationID;
-        }
-
-        protected override void OnClientDisconnected()
-        {
+            return this.Corporation.ID == call.Session.CorporationID;
         }
 
         public PyDataType DeleteRecruitmentAd(PyInteger advertID, CallInformation call)
         {
-            if (CorporationRole.PersonnelManager.Is(call.Client.CorporationRole) == false)
+            if (CorporationRole.PersonnelManager.Is(call.Session.CorporationRole) == false)
                 throw new CrpAccessDenied(MLS.UI_CORP_NEED_ROLE_PERS_MAN_TO_MANAGE_ADS);
 
-            if (this.DB.DeleteRecruitmentAd(advertID, call.Client.CorporationID) == true)
+            if (this.DB.DeleteRecruitmentAd(advertID, call.Session.CorporationID) == true)
             {
                 // TODO: MAYBE NOTIFY CHARACTERS IN THE STATION?
                 // send notification
-                this.NotificationManager.NotifyCorporation(call.Client.CorporationID,
-                    new OnCorporationRecruitmentAdChanged(call.Client.CorporationID, advertID)
+                this.NotificationManager.NotifyCorporation(call.Session.CorporationID,
+                    new OnCorporationRecruitmentAdChanged(call.Session.CorporationID, advertID)
                         .AddValue ("adID", advertID, null)
                 );
             }
@@ -1366,12 +1364,12 @@ namespace EVESharp.Node.Services.Corporations
 
         public PyDataType UpdateRecruitmentAd(PyInteger adID, PyInteger typeMask, PyInteger raceMask, PyInteger skillPoints, PyString description, CallInformation call)
         {
-            if (CorporationRole.PersonnelManager.Is(call.Client.CorporationRole) == false)
+            if (CorporationRole.PersonnelManager.Is(call.Session.CorporationRole) == false)
                 throw new CrpAccessDenied(MLS.UI_CORP_NEED_ROLE_PERS_MAN_TO_MANAGE_ADS);
 
-            if (this.DB.UpdateRecruitmentAd(adID, call.Client.CorporationID, typeMask, raceMask, description, skillPoints) == true)
+            if (this.DB.UpdateRecruitmentAd(adID, call.Session.CorporationID, typeMask, raceMask, description, skillPoints) == true)
             {
-                OnCorporationRecruitmentAdChanged changes = new OnCorporationRecruitmentAdChanged(call.Client.CorporationID, adID);
+                OnCorporationRecruitmentAdChanged changes = new OnCorporationRecruitmentAdChanged(call.Session.CorporationID, adID);
                 // add the fields for the recruitment ad change
                 changes
                     .AddValue("typeMask", typeMask, typeMask)
@@ -1380,7 +1378,7 @@ namespace EVESharp.Node.Services.Corporations
                     .AddValue("skillPoints", skillPoints, skillPoints);
 
                 // TODO: MAYBE NOTIFY CHARACTERS IN THE STATION?
-                this.NotificationManager.NotifyCorporation(call.Client.CorporationID, changes);
+                this.NotificationManager.NotifyCorporation(call.Session.CorporationID, changes);
             }
 
             return null;
@@ -1388,7 +1386,7 @@ namespace EVESharp.Node.Services.Corporations
 
         public PyDataType GetApplications(CallInformation call)
         {
-            if (CorporationRole.PersonnelManager.Is(call.Client.CorporationRole) == false)
+            if (CorporationRole.PersonnelManager.Is(call.Session.CorporationRole) == false)
                 throw new CrpAccessDenied(MLS.UI_CORP_NEED_ROLE_PERS_MAN_TO_MANAGE_APPLICATIONS);
             
             
@@ -1396,7 +1394,7 @@ namespace EVESharp.Node.Services.Corporations
                 CorporationDB.LIST_APPLICATIONS,
                 new Dictionary<string, object>()
                 {
-                    {"_corporationID", call.Client.CorporationID}
+                    {"_corporationID", call.Session.CorporationID}
                 }
             );
         }
@@ -1404,7 +1402,7 @@ namespace EVESharp.Node.Services.Corporations
         public PyDataType InsertApplication(PyInteger corporationID, PyString text, CallInformation call)
         {
             // TODO: CHECK IF THE CHARACTER IS A CEO AND DENY THE APPLICATION CREATION
-            int characterID = call.Client.EnsureCharacterIsSelected();
+            int characterID = call.Session.EnsureCharacterIsSelected();
             
             // create the application in the database
             this.DB.CreateApplication(characterID, corporationID, text);
@@ -1425,7 +1423,7 @@ namespace EVESharp.Node.Services.Corporations
 
         public PyDataType DeleteApplication(PyInteger corporationID, PyInteger characterID, CallInformation call)
         {
-            int currentCharacterID = call.Client.EnsureCharacterIsSelected();
+            int currentCharacterID = call.Session.EnsureCharacterIsSelected();
 
             if (characterID != currentCharacterID)
                 throw new CrpAccessDenied("This application does not belong to you");
@@ -1448,14 +1446,14 @@ namespace EVESharp.Node.Services.Corporations
 
         public PyDataType UpdateApplicationOffer(PyInteger characterID, PyString text, PyInteger newStatus, PyInteger applicationDateTime, CallInformation call)
         {
-            if (CorporationRole.PersonnelManager.Is(call.Client.CorporationRole) == false)
+            if (CorporationRole.PersonnelManager.Is(call.Session.CorporationRole) == false)
                 throw new CrpAccessDenied(MLS.UI_CORP_NEED_ROLE_PERS_MAN_TO_MANAGE_APPLICATIONS);
             
             // TODO: CHECK THAT THE APPLICATION EXISTS TO PREVENT A CHARACTER FROM BEING FORCE TO JOIN A CORPORATION!!
 
             string characterName = this.CharacterDB.GetCharacterName(characterID);
 
-            int corporationID = call.Client.CorporationID;
+            int corporationID = call.Session.CorporationID;
             
             // accept application
             if (newStatus == 6)
@@ -1483,17 +1481,20 @@ namespace EVESharp.Node.Services.Corporations
                 this.CharacterDB.CreateEmploymentRecord(characterID, corporationID, DateTime.UtcNow.ToFileTimeUtc());
 
                 // check if the character is connected and update it's session
-                if (this.ClientManager.TryGetClientByCharacterID(characterID, out Client client) == true)
+                int characterNodeID = this.ItemFactory.ItemDB.GetItemNode(characterID);
+                
+                if (characterNodeID > 0)
                 {
+                    Session update = new Session();
                     // update character's session
-                    client.CorporationID = corporationID;
-                    client.RolesAtAll = 0;
-                    client.CorporationRole = 0;
-                    client.RolesAtBase = 0;
-                    client.RolesAtOther = 0;
-                    client.RolesAtHQ = 0;
+                    update.CorporationID = corporationID;
+                    update.RolesAtAll = 0;
+                    update.CorporationRole = 0;
+                    update.RolesAtBase = 0;
+                    update.RolesAtOther = 0;
+                    update.RolesAtHQ = 0;
                     // finally send the session change
-                    client.SendSessionChange();
+                    this.SessionManager.PerformSessionUpdate(Session.CHAR_ID, characterID, update);
                     
                     // player is conected, notify the node that owns it to make the changes required
                     Notifications.Nodes.Corps.OnCorporationMemberChanged nodeNotification =
@@ -1502,7 +1503,6 @@ namespace EVESharp.Node.Services.Corporations
                     );
                     
                     // TODO: WORKOUT A BETTER WAY OF NOTIFYING THIS TO THE NODE, IT MIGHT BE BETTER TO INSPECT THE SESSION CHANGE INSTEAD OF DOING IT LIKE THIS
-                    long characterNodeID = this.ItemFactory.ItemDB.GetItemNode(characterID);
                     long newCorporationNodeID = this.ItemFactory.ItemDB.GetItemNode(corporationID);
                     long oldCorporationNodeID = this.ItemFactory.ItemDB.GetItemNode(oldCorporationID);
 
@@ -1519,7 +1519,7 @@ namespace EVESharp.Node.Services.Corporations
                 // this one is a bit harder as this character might not be in the same node as this service
                 // take care of the proper 
                 this.MailManager.SendMail(
-                    call.Client.CorporationID,
+                    call.Session.CorporationID,
                     characterID,
                     $"Welcome to {this.mCorporation.Name}",
                     $"Dear {characterName}. Your application to join <b>{this.mCorporation.Name}</b> has been accepted."
@@ -1529,7 +1529,7 @@ namespace EVESharp.Node.Services.Corporations
             else if (newStatus == 4)
             {
                 this.MailManager.SendMail(
-                    call.Client.CorporationID,
+                    call.Session.CorporationID,
                     characterID,
                     $"Rejected application to join {this.mCorporation.Name}",
                     $"Dear {characterName}. Your application to join <b>{this.mCorporation.Name}</b> has been REJECTED."
@@ -1554,18 +1554,18 @@ namespace EVESharp.Node.Services.Corporations
 
         public PyDataType GetMemberIDsWithMoreThanAvgShares(CallInformation call)
         {
-            return this.DB.GetMemberIDsWithMoreThanAvgShares(call.Client.CorporationID);
+            return this.DB.GetMemberIDsWithMoreThanAvgShares(call.Session.CorporationID);
         }
 
         public PyBool CanViewVotes(PyInteger corporationID, CallInformation call)
         {
-            return (call.Client.CorporationID == corporationID && CorporationRole.Director.Is(call.Client.CorporationRole) == true) ||
-                   this.DB.GetSharesForOwner(corporationID, call.Client.EnsureCharacterIsSelected()) > 0;
+            return (call.Session.CorporationID == corporationID && CorporationRole.Director.Is(call.Session.CorporationRole) == true) ||
+                   this.DB.GetSharesForOwner(corporationID, call.Session.EnsureCharacterIsSelected()) > 0;
         }
 
         public PyDataType InsertVoteCase(PyString text, PyString description, PyInteger corporationID, PyInteger type, PyDataType rowsetOptions, PyInteger startDateTime, PyInteger endDateTime, CallInformation call)
         {
-            if (CorporationRole.Director.Is(call.Client.CorporationRole) == false)
+            if (CorporationRole.Director.Is(call.Session.CorporationRole) == false)
                 throw new CrpOnlyDirectorsCanProposeVotes();
 
             // TODO: current CEO seems to loose control if the vote is for a new CEO, this might complicate things a little on the permissions side of things
@@ -1575,11 +1575,11 @@ namespace EVESharp.Node.Services.Corporations
                                                             u'CEO roles revoked'),*/
             
             // check if the character is trying to run for CEO and ensure only if he belongs to the same corporation that can be done
-            if (type == (int) CorporationVotes.CEO && call.Client.CorporationID != corporationID)
+            if (type == (int) CorporationVotes.CEO && call.Session.CorporationID != corporationID)
                 throw new CantRunForCEOAtTheMoment();
             // TODO: CHECK CORPORATION MANAGEMENT SKILL
             
-            int characterID = call.Client.EnsureCharacterIsSelected();
+            int characterID = call.Session.EnsureCharacterIsSelected();
             
             // parse rowset options
             Rowset options = rowsetOptions;
@@ -1667,12 +1667,12 @@ namespace EVESharp.Node.Services.Corporations
             if (this.CanViewVotes(corporationID, call) == false)
                 throw new CrpAccessDenied(MLS.UI_SHARED_WALLETHINT12);
             
-            return this.DB.GetVotes(corporationID, voteCaseID, call.Client.EnsureCharacterIsSelected());
+            return this.DB.GetVotes(corporationID, voteCaseID, call.Session.EnsureCharacterIsSelected());
         }
 
         public PyDataType InsertVote(PyInteger corporationID, PyInteger voteCaseID, PyInteger optionID, CallInformation call)
         {
-            int characterID = call.Client.EnsureCharacterIsSelected();
+            int characterID = call.Session.EnsureCharacterIsSelected();
             
             if (this.CanViewVotes(corporationID, call) == false)
                 throw new CrpAccessDenied(MLS.UI_SHARED_WALLETHINT12);
@@ -1720,7 +1720,7 @@ namespace EVESharp.Node.Services.Corporations
             // TODO: WRITE A CUSTOM NOTIFICATION FOR ALLIANCE AND ROLE BASED
             this.NotificationManager.NotifyAlliance(allianceID, newChange);
             // notify the player creating the application
-            this.NotificationManager.NotifyCorporationByRole(call.Client.CorporationID, CorporationRole.Director, newChange);
+            this.NotificationManager.NotifyCorporationByRole(call.Session.CorporationID, CorporationRole.Director, newChange);
             
             return null;
         }

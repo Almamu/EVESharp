@@ -1,21 +1,22 @@
 using System;
 using System.Collections.Generic;
 using EVESharp.Common.Database;
-using EVESharp.Common.Services;
 using EVESharp.Database;
 using EVESharp.EVE.Packets.Exceptions;
-using EVESharp.Node.Database;
+using EVESharp.EVE.Services;
 using EVESharp.Node.Inventory;
 using EVESharp.Node.Inventory.Items;
 using EVESharp.Node.Network;
+using EVESharp.Node.Sessions;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Database;
 using EVESharp.PythonTypes.Types.Primitives;
 
 namespace EVESharp.Node.Services.Characters
 {
-    public class bookmark : IService
+    public class bookmark : Service
     {
+        public override AccessLevel AccessLevel => AccessLevel.None;
         private DatabaseConnection Database { get; init; }
         private ItemFactory ItemFactory { get; }
         private MachoNet MachoNet { get; }
@@ -33,7 +34,7 @@ namespace EVESharp.Node.Services.Characters
                 BookmarkDB.GET,
                 new Dictionary<string, object>()
                 {
-                    {"_ownerID", call.Client.EnsureCharacterIsSelected()}
+                    {"_ownerID", call.Session.EnsureCharacterIsSelected()}
                 }
             );
         }
@@ -56,7 +57,7 @@ namespace EVESharp.Node.Services.Characters
                 BookmarkDB.CREATE,
                 new Dictionary<string, object>()
                 {
-                    {"_ownerID", call.Client.EnsureCharacterIsSelected()},
+                    {"_ownerID", call.Session.EnsureCharacterIsSelected()},
                     {"_itemID", itemID},
                     {"_typeID", item.Type.ID},
                     {"_memo", name},
@@ -85,8 +86,11 @@ namespace EVESharp.Node.Services.Characters
             );
             
             // send a request to the client to update the bookmarks
+            // TODO: SUPPORT REMOTE SERVICE CALLS AGAIN
+            /*
             call.Client.Transport.SendServiceCall("addressbook", "OnBookmarkAdd",
                 new PyTuple(1) {[0] = bookmark}, new PyDictionary(), null);
+            */
             
             return new PyTuple (7)
             {
@@ -110,7 +114,7 @@ namespace EVESharp.Node.Services.Characters
                 BookmarkDB.DELETE,
                 new Dictionary<string, object>()
                 {
-                    {"_ownerID", call.Client.EnsureCharacterIsSelected()},
+                    {"_ownerID", call.Session.EnsureCharacterIsSelected()},
                     {"_bookmarkIDs", PyString.Join(',', bookmarkIDs.GetEnumerable<PyInteger>()).Value}
                 }
             );

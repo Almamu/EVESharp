@@ -1,12 +1,14 @@
-﻿using EVESharp.Common.Services;
+﻿using EVESharp.EVE.Services;
 using EVESharp.Node.Database;
 using EVESharp.Node.Network;
+using EVESharp.Node.Sessions;
 using EVESharp.PythonTypes.Types.Primitives;
 
 namespace EVESharp.Node.Services.Corporations
 {
-    public class LPSvc : IService
+    public class LPSvc : Service
     {
+        public override AccessLevel AccessLevel => AccessLevel.None;
         private CorporationDB DB { get; }
         
         public LPSvc(CorporationDB db)
@@ -16,7 +18,7 @@ namespace EVESharp.Node.Services.Corporations
         
         public PyDecimal GetLPForCharacterCorp (PyInteger corporationID, CallInformation call)
         {
-            return this.DB.GetLPForCharacterCorp(corporationID, call.Client.EnsureCharacterIsSelected());
+            return this.DB.GetLPForCharacterCorp(corporationID, call.Session.EnsureCharacterIsSelected());
         }
     }
 }

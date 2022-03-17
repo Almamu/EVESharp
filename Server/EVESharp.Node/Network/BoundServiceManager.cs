@@ -1,9 +1,7 @@
-using System;
 using System.Collections.Generic;
-using System.Reflection;
-using System.Runtime.ExceptionServices;
 using EVESharp.Common.Logging;
-using EVESharp.Common.Services.Exceptions;
+using EVESharp.EVE.Services;
+using EVESharp.EVE.Services.Exceptions;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Primitives;
 
@@ -15,7 +13,7 @@ namespace EVESharp.Node.Network
     /// These bound objects are usually stateful services that keep information about the player,
     /// location, items, etc, and is used as a way of managing the resources
     /// </summary>
-    public class BoundServiceManager : EVESharp.Common.Services.ServiceManager
+    public class BoundServiceManager : IServiceManager<int>
     {
         public NodeContainer Container { get; }
         public Logger Logger { get; }
@@ -85,51 +83,29 @@ namespace EVESharp.Node.Network
         }
 
         /// <summary>
-        /// Takes the given payload and searches in this service manager for the best service match to call the given method
-        /// if possible
+        /// Searches for the given bound service ID and handles the requested call
         /// </summary>
-        /// <param name="boundID">The boundID to call at</param>
-        /// <param name="call">The method to call</param>
-        /// <param name="payload">Parameters for the method</param>
-        /// <param name="callInformation">Any extra information for the method call</param>
-        /// <returns>The result of the call</returns>
-        /// <exception cref="ServiceDoesNotExistsException">If the boundID doesn't match any registered bound service</exception>
-        /// <exception cref="ServiceDoesNotContainCallException">If the service was found but no matching call was found</exception>
-        public PyDataType ServiceCall(int boundID, string call, PyTuple payload, CallInformation callInformation)
+        /// <param name="boundID">The bound service ID</param>
+        /// <param name="method">The method to call</param>
+        /// <param name="call">Information about the call to perform</param>
+        /// <returns>The return from the service call</returns>
+        /// <exception cref="MissingServiceException{int}"></exception>
+        /// <exception cref="UnauthorizedCallException{int}"></exception>
+        public PyDataType ServiceCall(int boundID, string method, ServiceCall call)
         {
-            // relay the exception throw by the call
-            try
-            {
-                if (this.mBoundServices.TryGetValue(boundID, out BoundService serviceInstance) == false)
-                    throw new Exception($"Unknown bound service {boundID}::{call}");
-                
-                // check for permissions on the bound service
-                if (serviceInstance.IsClientAllowedToCall(callInformation) == false)
-                    throw new Exception($"Attempting unauthorized call to bound service {serviceInstance.GetType().Name}::{call} ({boundID})");
-                
-                Log.Trace($"Calling {serviceInstance.GetType().Name}::{call} on bound service {boundID}");
+            if (this.mBoundServices.TryGetValue(boundID, out BoundService service) == false)
+                throw new MissingServiceException<int>(boundID, method);
+            if (service.IsClientAllowedToCall(call) == false)
+                throw new UnauthorizedCallException<int>(boundID, method, call.Session.Role);
             
-                if(serviceInstance is null)
-                    throw new ServiceDoesNotExistsException($"Bound Service {boundID}");
+            Log.Trace($"Calling {service.Name}::{method} on bound service {boundID}");
 
-                List<MethodInfo> methods = this.FindMethods(serviceInstance, $"(boundID {boundID}) {serviceInstance.GetType().Name}", call);
+            return service.ExecuteCall(method, call);
+        }
 
-                if (FindSuitableMethod(methods, payload, callInformation, out object[] invokeParameters, out MethodInfo method) == false)
-                    throw new ServiceDoesNotContainCallException($"(boundID {boundID}) {serviceInstance.GetType().Name}", call);
-
-                return (PyDataType) method.Invoke(serviceInstance, invokeParameters);
-            }
-            catch (TargetInvocationException e)
-            {
-                // throw the InnerException if possible
-                // ExceptionDispatchInfo is used to preserve the stacktrace of the inner exception
-                // getting rid of cryptic stack traces that do not really tell much about the error
-                if (e.InnerException is not null)
-                    ExceptionDispatchInfo.Throw(e.InnerException);
-
-                // if no internal exception was found re-throw the original exception
-                throw;
-            }
+        public void ClientHasReleasedTheseObjects(PyTuple objectInformation)
+        {
+            
         }
     }
 }

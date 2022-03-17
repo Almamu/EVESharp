@@ -1,8 +1,7 @@
-using System;
 using System.Collections.Generic;
 using EVESharp.Common.Database;
-using EVESharp.Common.Services;
 using EVESharp.EVE;
+using EVESharp.EVE.Services;
 using EVESharp.Node.Database;
 using EVESharp.Node.Exceptions.corporationSvc;
 using EVESharp.Node.Exceptions.corpRegistry;
@@ -10,6 +9,7 @@ using EVESharp.Node.Inventory;
 using EVESharp.Node.Market;
 using EVESharp.Node.Network;
 using EVESharp.Node.Notifications.Client.Corporations;
+using EVESharp.Node.Sessions;
 using EVESharp.Node.StaticData;
 using EVESharp.Node.StaticData.Corporation;
 using EVESharp.PythonTypes.Types.Collections;
@@ -18,8 +18,9 @@ using EVESharp.PythonTypes.Types.Primitives;
 
 namespace EVESharp.Node.Services.Corporations
 {
-    public class corporationSvc : IService
+    public class corporationSvc : Service
     {
+        public override AccessLevel AccessLevel => AccessLevel.None;
         private DatabaseConnection Database { get; init; }
         private CorporationDB DB { get; }
         private NodeContainer Container { get; }
@@ -60,7 +61,7 @@ namespace EVESharp.Node.Services.Corporations
         public PyTuple GetMedalsReceived(PyInteger characterID, CallInformation call)
         {
             // TODO: CACHE THIS ANSWER TOO
-            int callerCharacterID = call.Client.EnsureCharacterIsSelected();
+            int callerCharacterID = call.Session.EnsureCharacterIsSelected();
 
             bool publicOnly = callerCharacterID != characterID;
             
@@ -143,9 +144,9 @@ namespace EVESharp.Node.Services.Corporations
         
         public PyDataType CreateMedal(PyString title, PyString description, PyList parts, PyBool pay, CallInformation call)
         {
-            int characterID = call.Client.EnsureCharacterIsSelected();
+            int characterID = call.Session.EnsureCharacterIsSelected();
             
-            if (CorporationRole.PersonnelManager.Is(call.Client.CorporationRole) == false && CorporationRole.Director.Is(call.Client.CorporationRole) == false)
+            if (CorporationRole.PersonnelManager.Is(call.Session.CorporationRole) == false && CorporationRole.Director.Is(call.Session.CorporationRole) == false)
                 throw new CrpAccessDenied(MLS.UI_CORP_NEED_ROLE_PERS_MAN_OR_DIRECT);
             
             this.ValidateMedal(title, description, parts);
@@ -153,20 +154,20 @@ namespace EVESharp.Node.Services.Corporations
             if (pay == false)
                 throw new ConfirmCreatingMedal(this.Container.Constants[Constants.medalCost]);
             
-            using (Wallet wallet = this.WalletManager.AcquireWallet(call.Client.CorporationID, call.Client.CorpAccountKey, true))
+            using (Wallet wallet = this.WalletManager.AcquireWallet(call.Session.CorporationID, call.Session.CorpAccountKey, true))
             {
                 wallet.EnsureEnoughBalance(this.Container.Constants[Constants.medalCost]);
                 wallet.CreateJournalRecord(MarketReference.MedalCreation, this.Container.Constants[Constants.medalTaxCorporation], null, -this.Container.Constants[Constants.medalCost]);
             }
 
-            this.DB.CreateMedal(call.Client.CorporationID, characterID, title, description, parts.GetEnumerable<PyList>());
+            this.DB.CreateMedal(call.Session.CorporationID, characterID, title, description, parts.GetEnumerable<PyList>());
             
             return null;
         }
 
         public PyDataType CreateMedal(PyString title, PyString description, PyList parts, CallInformation call)
         {
-            if (CorporationRole.PersonnelManager.Is(call.Client.CorporationRole) == false && CorporationRole.Director.Is(call.Client.CorporationRole) == false)
+            if (CorporationRole.PersonnelManager.Is(call.Session.CorporationRole) == false && CorporationRole.Director.Is(call.Session.CorporationRole) == false)
                 throw new CrpAccessDenied(MLS.UI_CORP_NEED_ROLE_PERS_MAN_OR_DIRECT);
 
             this.ValidateMedal(title, description, parts);
@@ -196,9 +197,9 @@ namespace EVESharp.Node.Services.Corporations
 
         public PyDataType GiveMedalToCharacters(PyInteger medalID, PyList characterIDs, PyString reason, CallInformation call)
         {
-            int callerCharacterID = call.Client.EnsureCharacterIsSelected();
+            int callerCharacterID = call.Session.EnsureCharacterIsSelected();
             
-            if (CorporationRole.PersonnelManager.Is(call.Client.CorporationRole) == false && CorporationRole.Director.Is(call.Client.CorporationRole) == false)
+            if (CorporationRole.PersonnelManager.Is(call.Session.CorporationRole) == false && CorporationRole.Director.Is(call.Session.CorporationRole) == false)
                 throw new CrpAccessDenied(MLS.UI_CORP_NEED_ROLE_PERS_MAN_OR_DIRECT);
             
             throw new ConfirmCreatingMedal(this.Container.Constants[Constants.medalCost]);
@@ -206,15 +207,15 @@ namespace EVESharp.Node.Services.Corporations
 
         public PyDataType GiveMedalToCharacters(PyInteger medalID, PyList characterIDs, PyString reason, PyBool pay, CallInformation call)
         {
-            int callerCharacterID = call.Client.EnsureCharacterIsSelected();
+            int callerCharacterID = call.Session.EnsureCharacterIsSelected();
             
-            if (CorporationRole.PersonnelManager.Is(call.Client.CorporationRole) == false && CorporationRole.Director.Is(call.Client.CorporationRole) == false)
+            if (CorporationRole.PersonnelManager.Is(call.Session.CorporationRole) == false && CorporationRole.Director.Is(call.Session.CorporationRole) == false)
                 throw new CrpAccessDenied(MLS.UI_CORP_NEED_ROLE_PERS_MAN_OR_DIRECT);
 
             if (pay == false)
                 throw new ConfirmGivingMedal(this.Container.Constants[Constants.medalCost]);
             
-            using (Wallet wallet = this.WalletManager.AcquireWallet(call.Client.CorporationID, call.Client.CorpAccountKey, true))
+            using (Wallet wallet = this.WalletManager.AcquireWallet(call.Session.CorporationID, call.Session.CorpAccountKey, true))
             {
                 wallet.EnsureEnoughBalance(this.Container.Constants[Constants.medalCost]);
                 wallet.CreateJournalRecord(MarketReference.MedalIssuing, this.Container.Constants[Constants.medalTaxCorporation], null, -this.Container.Constants[Constants.medalCost]);
@@ -236,7 +237,7 @@ namespace EVESharp.Node.Services.Corporations
 
         public PyDataType SetMedalStatus(PyDictionary newStatuses, CallInformation call)
         {
-            int characterID = call.Client.EnsureCharacterIsSelected();
+            int characterID = call.Session.EnsureCharacterIsSelected();
             
             PyDictionary<PyInteger, PyInteger> newStatus = newStatuses.GetEnumerable<PyInteger, PyInteger>();
 

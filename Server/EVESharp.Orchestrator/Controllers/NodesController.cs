@@ -26,7 +26,7 @@ public class NodesController : ControllerBase
         
         using (MySqlConnection connection = this.DB.Get())
         {
-            MySqlCommand cmd = new MySqlCommand("SELECT id, ip, port, lastHeartBeat FROM cluster;", connection);
+            MySqlCommand cmd = new MySqlCommand("SELECT id, ip, port, role, lastHeartBeat FROM cluster;", connection);
 
             using (MySqlDataReader reader = cmd.ExecuteReader())
             {
@@ -37,7 +37,8 @@ public class NodesController : ControllerBase
                         NodeID = reader.GetInt32(0),
                         IP = reader.GetString(1),
                         Port = reader.GetInt16(2),
-                        LastHeartBeat = reader.GetInt64(3),
+                        Role = reader.GetString(3),
+                        LastHeartBeat = reader.GetInt64(4),
                     };
 
                     result.Add(node);
@@ -53,7 +54,7 @@ public class NodesController : ControllerBase
     {
         using (MySqlConnection connection = this.DB.Get())
         {
-            MySqlCommand cmd = new MySqlCommand("SELECT id, ip, port, lastHeartBeat FROM cluster WHERE address = @address;", connection);
+            MySqlCommand cmd = new MySqlCommand("SELECT id, ip, port, role, lastHeartBeat FROM cluster WHERE address = @address;", connection);
 
             cmd.Parameters.AddWithValue("@address", address);
             cmd.Prepare();
@@ -68,15 +69,19 @@ public class NodesController : ControllerBase
                     NodeID = reader.GetInt32(0),
                     IP = reader.GetString(1),
                     Port = reader.GetInt16(2),
-                    LastHeartBeat = reader.GetInt64(3)
+                    Role = reader.GetString (3),
+                    LastHeartBeat = reader.GetInt64(4)
                 };
             }
         }
     }
 
     [HttpPost("register")]
-    public object RegisterNewNode([FromBody]short port)
+    public object RegisterNewNode([FromForm]short port, [FromForm]string role)
     {
+        if (role != "proxy" && role != "server")
+            return this.BadRequest ($"Unknown node role... {role}");
+        
         long currentTime = DateTime.UtcNow.ToFileTimeUtc();
         string ip = Request.HttpContext.Connection.RemoteIpAddress?.ToString()!;
         Guid address = Guid.NewGuid();
@@ -85,11 +90,12 @@ public class NodesController : ControllerBase
 
         using (MySqlConnection connection = this.DB.Get())
         {
-            MySqlCommand cmd = new MySqlCommand("INSERT INTO cluster(id, ip, address, port, lastHeartBeat)VALUES(NULL, @ip, @address, @port, @lastHeartBeat);", connection);
+            MySqlCommand cmd = new MySqlCommand("INSERT INTO cluster(id, ip, address, port, role, lastHeartBeat)VALUES(NULL, @ip, @address, @port, @role, @lastHeartBeat);", connection);
 
             cmd.Parameters.AddWithValue("@ip", ip);
             cmd.Parameters.AddWithValue("@address", address.ToString());
             cmd.Parameters.AddWithValue("@port", port);
+            cmd.Parameters.AddWithValue("@role", role);
             cmd.Parameters.AddWithValue("@lastHeartBeat", currentTime);
 
             cmd.ExecuteNonQuery();

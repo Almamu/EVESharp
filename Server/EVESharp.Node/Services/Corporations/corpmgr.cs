@@ -1,16 +1,18 @@
 ﻿using System;
-using EVESharp.Common.Services;
 using EVESharp.EVE.Packets.Complex;
+using EVESharp.EVE.Services;
 using EVESharp.Node.Database;
 using EVESharp.Node.Exceptions.corpRegistry;
 using EVESharp.Node.Network;
+using EVESharp.Node.Sessions;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Primitives;
 
 namespace EVESharp.Node.Services.Corporations
 {
-    public class corpmgr : IService
+    public class corpmgr : Service
     {
+        public override AccessLevel AccessLevel => AccessLevel.None;
         private CorporationDB DB { get; }
         private CacheStorage CacheStorage { get; }
         
@@ -38,12 +40,12 @@ namespace EVESharp.Node.Services.Corporations
         public PyDataType GetAssetInventory(PyInteger corporationID, PyString which, CallInformation call)
         {
             // TODO: CHECK PROPER PERMISSIONS TOO!
-            if (call.Client.CorporationID != corporationID)
+            if (call.Session.CorporationID != corporationID)
                 throw new CrpAccessDenied("You must belong to this corporation");
 
             if (which == "offices")
             {
-                call.Client.EnsureCharacterIsSelected();
+                call.Session.EnsureCharacterIsSelected();
          
                 // dirty little hack, but should do the trick
                 this.CacheStorage.StoreCall(
@@ -64,12 +66,12 @@ namespace EVESharp.Node.Services.Corporations
         public PyDataType GetAssetInventoryForLocation(PyInteger corporationID, PyInteger location, PyString which, CallInformation call)
         {
             // TODO: CHECK PROPER PERMISSIONS TOO!
-            if (call.Client.CorporationID != corporationID)
+            if (call.Session.CorporationID != corporationID)
                 throw new CrpAccessDenied("You must belong to this corporation");
 
             if (which == "offices")
             {
-                call.Client.EnsureCharacterIsSelected();
+                call.Session.EnsureCharacterIsSelected();
          
                 // dirty little hack, but should do the trick
                 this.CacheStorage.StoreCall(
@@ -89,7 +91,7 @@ namespace EVESharp.Node.Services.Corporations
 
         public PyDataType GetItemsRented(CallInformation call)
         {
-            return this.DB.GetItemsRented(call.Client.CorporationID);
+            return this.DB.GetItemsRented(call.Session.CorporationID);
         }
     }
 }

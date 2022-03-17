@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using EVESharp.EVE;
 using EVESharp.EVE.Packets.Exceptions;
+using EVESharp.EVE.Services;
+using EVESharp.EVE.Sessions;
 using EVESharp.Node.Database;
 using EVESharp.Node.Exceptions.corpStationMgr;
 using EVESharp.Node.Inventory;
@@ -18,6 +20,7 @@ using EVESharp.Node.StaticData.Inventory;
 using EVESharp.Node.Exceptions;
 using EVESharp.Node.Exceptions.Internal;
 using EVESharp.Node.Services.Account;
+using EVESharp.Node.Sessions;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Database;
 using EVESharp.PythonTypes.Types.Primitives;
@@ -27,6 +30,7 @@ namespace EVESharp.Node.Services.Stations
 {
     public class corpStationMgr : ClientBoundService
     {
+        public override AccessLevel AccessLevel => AccessLevel.None;
         private ItemFactory ItemFactory { get; }
         private ItemDB ItemDB => this.ItemFactory.ItemDB;
         private MarketDB MarketDB { get; }
@@ -50,7 +54,7 @@ namespace EVESharp.Node.Services.Stations
         }
         
         // TODO: PROVIDE OBJECTID PROPERLY
-        protected corpStationMgr(MarketDB marketDB, StationDB stationDb, BillsDB billsDb, NotificationManager notificationManager, ItemFactory itemFactory, NodeContainer container, BoundServiceManager manager, WalletManager walletManager, Client client) : base(manager, client, 0)
+        protected corpStationMgr(MarketDB marketDB, StationDB stationDb, BillsDB billsDb, NotificationManager notificationManager, ItemFactory itemFactory, NodeContainer container, BoundServiceManager manager, WalletManager walletManager, Session session) : base(manager, session, 0)
         {
             this.MarketDB = marketDB;
             this.StationDB = stationDb;
@@ -69,19 +73,19 @@ namespace EVESharp.Node.Services.Stations
 
         public PyDataType DoStandingCheckForStationService(PyInteger stationServiceID, CallInformation call)
         {
-            call.Client.EnsureCharacterIsSelected();
-            call.Client.EnsureCharacterIsInStation();
+            call.Session.EnsureCharacterIsSelected();
+            call.Session.EnsureCharacterIsInStation();
             
             // TODO: CHECK ACTUAL STANDING VALUE
             
             return null;
         }
 
-        private List<Station> GetPotentialHomeStations(Client client)
+        private List<Station> GetPotentialHomeStations(Session session)
         {
-            int stationID = client.EnsureCharacterIsInStation();
+            int stationID = session.EnsureCharacterIsInStation();
             
-            Character character = this.ItemFactory.GetItem<Character>(client.EnsureCharacterIsSelected());
+            Character character = this.ItemFactory.GetItem<Character>(session.EnsureCharacterIsSelected());
 
             // TODO: CHECK STANDINGS TO ENSURE THIS STATION CAN BE USED
             List<Station> availableStations = new List<Station>
@@ -95,7 +99,7 @@ namespace EVESharp.Node.Services.Stations
         
         public PyDataType GetPotentialHomeStations(CallInformation call)
         {
-            List<Station> availableStations = this.GetPotentialHomeStations(call.Client);
+            List<Station> availableStations = this.GetPotentialHomeStations(call.Session);
             Rowset result = new Rowset(new PyList<PyString>(3)
                 {
                     [0] = "stationID",
@@ -121,13 +125,13 @@ namespace EVESharp.Node.Services.Stations
 
         public PyDataType SetHomeStation(PyInteger stationID, CallInformation call)
         {
-            int callerCharacterID = call.Client.EnsureCharacterIsSelected();
-            call.Client.EnsureCharacterIsInStation();
+            int callerCharacterID = call.Session.EnsureCharacterIsSelected();
+            call.Session.EnsureCharacterIsInStation();
             
             Character character = this.ItemFactory.GetItem<Character>(callerCharacterID);
             
             // ensure the station selected is in the list of available stations for this character
-            Station station = this.GetPotentialHomeStations(call.Client).Find(x => x.ID == stationID);
+            Station station = this.GetPotentialHomeStations(call.Session).Find(x => x.ID == stationID);
 
             if (station is null)
                 throw new CustomError("The selected station is not in your allowed list...");
@@ -165,14 +169,15 @@ namespace EVESharp.Node.Services.Stations
             character.Persist();
                 
             // invalidate client's cache
-            this.Client.ServiceManager.jumpCloneSvc.OnCloneUpdate(character.ID);
+            // TODO: REIMPLEMENT THIS CALL
+            // this.Client.ServiceManager.jumpCloneSvc.OnCloneUpdate(character.ID);
             
             return null;
         }
 
         public PyBool DoesPlayersCorpHaveJunkAtStation(CallInformation call)
         {
-            if (ItemFactory.IsNPCCorporationID(call.Client.CorporationID) == true)
+            if (ItemFactory.IsNPCCorporationID(call.Session.CorporationID) == true)
                 return false;
             
             // TODO: PROPERLY IMPLEMENT THIS ONE
@@ -181,7 +186,7 @@ namespace EVESharp.Node.Services.Stations
 
         public PyTuple GetCorporateStationInfo(CallInformation call)
         {
-            int stationID = call.Client.EnsureCharacterIsInStation();
+            int stationID = call.Session.EnsureCharacterIsInStation();
             
             return new PyTuple(3)
             {
@@ -193,7 +198,7 @@ namespace EVESharp.Node.Services.Stations
 
         public PyInteger GetNumberOfUnrentedOffices(CallInformation call)
         {
-            int stationID = call.Client.EnsureCharacterIsInStation();
+            int stationID = call.Session.EnsureCharacterIsInStation();
 
             // if no amount of office slots are indicated in the station type return 24 as a default value
             int maximumOffices = this.ItemFactory.GetItem<Station>(stationID).StationType.OfficeSlots ?? 24;
@@ -203,8 +208,8 @@ namespace EVESharp.Node.Services.Stations
 
         public PyDataType SetCloneTypeID(PyInteger cloneTypeID, CallInformation call)
         {
-            int callerCharacterID = call.Client.EnsureCharacterIsSelected();
-            int stationID = call.Client.EnsureCharacterIsInStation();
+            int callerCharacterID = call.Session.EnsureCharacterIsSelected();
+            int stationID = call.Session.EnsureCharacterIsInStation();
             
             Character character = this.ItemFactory.GetItem<Character>(callerCharacterID);
             StaticData.Inventory.Type newCloneType = this.TypeManager[cloneTypeID];
@@ -233,10 +238,10 @@ namespace EVESharp.Node.Services.Stations
 
         public PyInteger GetQuoteForRentingAnOffice(CallInformation call)
         {
-            int stationID = call.Client.EnsureCharacterIsInStation();
+            int stationID = call.Session.EnsureCharacterIsInStation();
 
             // make sure the user is director or allowed to rent
-            if (CorporationRole.Director.Is(call.Client.CorporationRole) == false && CorporationRole.CanRentOffice.Is(call.Client.CorporationRole) == false)
+            if (CorporationRole.Director.Is(call.Session.CorporationRole) == false && CorporationRole.CanRentOffice.Is(call.Session.CorporationRole) == false)
                 throw new RentingOfficeQuotesOnlyGivenToActiveCEOsOrEquivale();
             
             return this.ItemFactory.Stations[stationID].OfficeRentalCost;
@@ -245,8 +250,8 @@ namespace EVESharp.Node.Services.Stations
         public PyDataType RentOffice(PyInteger cost, CallInformation call)
         {
             int rentalCost = this.GetQuoteForRentingAnOffice(call);
-            int stationID = call.Client.EnsureCharacterIsInStation();
-            int characterID = call.Client.EnsureCharacterIsSelected();
+            int stationID = call.Session.EnsureCharacterIsInStation();
+            int characterID = call.Session.EnsureCharacterIsSelected();
             
             // double check to ensure the amout we're paying is what we require now
             if (rentalCost != cost)
@@ -255,37 +260,37 @@ namespace EVESharp.Node.Services.Stations
             if (this.GetNumberOfUnrentedOffices(call) <= 0)
                 throw new NoOfficesAreAvailableForRenting();
             // check if there's any office rented by us already
-            if (this.StationDB.CorporationHasOfficeRentedAt(call.Client.CorporationID, stationID) == true)
+            if (this.StationDB.CorporationHasOfficeRentedAt(call.Session.CorporationID, stationID) == true)
                 throw new RentingYouHaveAnOfficeHere();
-            if (CorporationRole.CanRentOffice.Is(call.Client.CorporationRole) == false && CorporationRole.Director.Is(call.Client.CorporationRole) == false)
+            if (CorporationRole.CanRentOffice.Is(call.Session.CorporationRole) == false && CorporationRole.Director.Is(call.Session.CorporationRole) == false)
                 throw new RentingOfficeQuotesOnlyGivenToActiveCEOsOrEquivale();
             // ensure the character has the required skill to manage offices
             this.ItemFactory.GetItem<Character>(characterID).EnsureSkillLevel(Types.PublicRelations);
             // RentingOfficeRequestDenied
             int ownerCorporationID = this.ItemFactory.Stations[stationID].OwnerID;
             // perform the transaction
-            using (Wallet corpWallet = this.WalletManager.AcquireWallet(call.Client.CorporationID, call.Client.CorpAccountKey, true))
+            using (Wallet corpWallet = this.WalletManager.AcquireWallet(call.Session.CorporationID, call.Session.CorpAccountKey, true))
             {
                 corpWallet.EnsureEnoughBalance(rentalCost);
                 corpWallet.CreateJournalRecord(MarketReference.OfficeRentalFee, ownerCorporationID, null, -rentalCost);
             }
             // create the office folder
             ItemEntity item = this.ItemFactory.CreateSimpleItem(
-                this.TypeManager[Types.OfficeFolder], call.Client.CorporationID,
+                this.TypeManager[Types.OfficeFolder], call.Session.CorporationID,
                 stationID, Flags.Office, 1, false, true
             );
             long dueDate = DateTime.UtcNow.AddDays(30).ToFileTimeUtc();
             // create the bill record for the renewal
             int billID = (int) this.BillsDB.CreateBill(
-                BillTypes.RentalBill, call.Client.CorporationID, ownerCorporationID,
+                BillTypes.RentalBill, call.Session.CorporationID, ownerCorporationID,
                 rentalCost, dueDate, 0, (int) Types.OfficeFolder, stationID
             );
             // create the record in the database
-            this.StationDB.RentOffice(call.Client.CorporationID, stationID, item.ID, dueDate, rentalCost, billID);
+            this.StationDB.RentOffice(call.Session.CorporationID, stationID, item.ID, dueDate, rentalCost, billID);
             // notify all characters in the station about the office change
-            this.NotificationManager.NotifyStation(stationID, new OnOfficeRentalChanged(call.Client.CorporationID, item.ID, item.ID));
+            this.NotificationManager.NotifyStation(stationID, new OnOfficeRentalChanged(call.Session.CorporationID, item.ID, item.ID));
             // notify all the characters about the bill received
-            this.NotificationManager.NotifyCorporation(call.Client.CorporationID, new OnBillReceived());
+            this.NotificationManager.NotifyCorporation(call.Session.CorporationID, new OnBillReceived());
             // return the new officeID
             return item.ID;
             // TODO: NOTIFY THE CORPREGISTRY SERVICE TO UPDATE THIS LIST OF OFFICES
@@ -312,7 +317,7 @@ namespace EVESharp.Node.Services.Stations
             if (this.MachoResolveObject(bindParams, call) != this.BoundServiceManager.Container.NodeID)
                 throw new CustomError("Trying to bind an object that does not belong to us!");
             
-            return new corpStationMgr(this.MarketDB, this.StationDB, this.BillsDB, this.NotificationManager, this.ItemFactory, this.Container, this.BoundServiceManager, this.WalletManager, call.Client);
+            return new corpStationMgr(this.MarketDB, this.StationDB, this.BillsDB, this.NotificationManager, this.ItemFactory, this.Container, this.BoundServiceManager, this.WalletManager, call.Session);
         }
     }
 }

@@ -4,6 +4,9 @@ using EVESharp.Common.Constants;
 using EVESharp.EVE;
 using EVESharp.EVE.Packets.Complex;
 using EVESharp.EVE.Packets.Exceptions;
+using EVESharp.EVE.Services;
+using EVESharp.EVE.Sessions;
+using EVESharp.Node.Configuration;
 using EVESharp.Node.Exceptions.inventory;
 using EVESharp.Node.Inventory;
 using EVESharp.Node.Inventory.Items;
@@ -17,33 +20,41 @@ using EVESharp.Node.Exceptions;
 using EVESharp.Node.Exceptions.dogma;
 using EVESharp.Node.Inventory.Items.Attributes;
 using EVESharp.Node.Inventory.Items.Dogma;
+using EVESharp.Node.Notifications.Client.Station;
+using EVESharp.Node.Sessions;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Database;
 using EVESharp.PythonTypes.Types.Primitives;
+using Character = EVESharp.Node.Inventory.Items.Types.Character;
 using Environment = EVESharp.Node.Inventory.Items.Dogma.Environment;
 
 namespace EVESharp.Node.Services.Dogma
 {
     public class dogmaIM : ClientBoundService
     {
+        public override AccessLevel AccessLevel => AccessLevel.None;
+        
         private ItemFactory ItemFactory { get; }
         private AttributeManager AttributeManager => this.ItemFactory.AttributeManager;
         private SystemManager SystemManager => this.ItemFactory.SystemManager;
+        private NotificationManager NotificationManager { get; }
         
-        public dogmaIM(ItemFactory itemFactory, BoundServiceManager manager) : base(manager)
+        public dogmaIM(ItemFactory itemFactory, NotificationManager notificationManager, BoundServiceManager manager) : base(manager)
         {
             this.ItemFactory = itemFactory;
+            this.NotificationManager = notificationManager;
         }
 
-        protected dogmaIM(int locationID, ItemFactory itemFactory, BoundServiceManager manager, Client client) : base(manager, client, locationID)
+        protected dogmaIM(int locationID, ItemFactory itemFactory, NotificationManager notificationManager, BoundServiceManager manager, Session session) : base(manager, session, locationID)
         {
             this.ItemFactory = itemFactory;
+            this.NotificationManager = notificationManager;
         }
 
         public PyDataType ShipGetInfo(CallInformation call)
         {
-            int callerCharacterID = call.Client.EnsureCharacterIsSelected();
-            int? shipID = call.Client.ShipID;
+            int callerCharacterID = call.Session.EnsureCharacterIsSelected();
+            int? shipID = call.Session.ShipID;
             
             if (shipID is null)
                 throw new CustomError($"The character is not aboard any ship");
@@ -52,10 +63,10 @@ namespace EVESharp.Node.Services.Dogma
             Ship ship = this.ItemFactory.LoadItem<Ship>((int) shipID);
 
             if (ship is null)
-                throw new CustomError($"Cannot get information for ship {call.Client.ShipID}");
+                throw new CustomError($"Cannot get information for ship {call.Session.ShipID}");
             
             // ensure the player can use this ship
-            ship.EnsureOwnership(callerCharacterID, call.Client.CorporationID, call.Client.CorporationRole, true);
+            ship.EnsureOwnership(callerCharacterID, call.Session.CorporationID, call.Session.CorporationRole, true);
 
             ItemInfo itemInfo = new ItemInfo();
             
@@ -84,7 +95,7 @@ namespace EVESharp.Node.Services.Dogma
 
         public PyDataType CharGetInfo(CallInformation call)
         {
-            int callerCharacterID = call.Client.EnsureCharacterIsSelected();
+            int callerCharacterID = call.Session.EnsureCharacterIsSelected();
 
             Character character = this.ItemFactory.GetItem<Character>(callerCharacterID);
 
@@ -121,11 +132,11 @@ namespace EVESharp.Node.Services.Dogma
 
         public PyDataType ItemGetInfo(PyInteger itemID, CallInformation call)
         {
-            int callerCharacterID = call.Client.EnsureCharacterIsSelected();
+            int callerCharacterID = call.Session.EnsureCharacterIsSelected();
 
             ItemEntity item = this.ItemFactory.LoadItem(itemID);
 
-            if (item.OwnerID != callerCharacterID && item.OwnerID != call.Client.CorporationID)
+            if (item.OwnerID != callerCharacterID && item.OwnerID != call.Session.CorporationID)
                 throw new TheItemIsNotYoursToTake(itemID);
             
             return new Row(
@@ -158,7 +169,7 @@ namespace EVESharp.Node.Services.Dogma
 
         public PyDataType GetCharacterBaseAttributes(CallInformation call)
         {
-            int callerCharacterID = call.Client.EnsureCharacterIsSelected();
+            int callerCharacterID = call.Session.EnsureCharacterIsSelected();
             
             Character character = this.ItemFactory.GetItem<Character>(callerCharacterID);
 
@@ -182,8 +193,8 @@ namespace EVESharp.Node.Services.Dogma
 
         public PyList<PyString> LogAttribute(PyInteger itemID, PyInteger attributeID, PyString reason, CallInformation call)
         {
-            int role = call.Client.Role;
-            int roleMask = (int) (Roles.ROLE_GDH | Roles.ROLE_QA | Roles.ROLE_PROGRAMMER | Roles.ROLE_GMH);
+            ulong role = call.Session.Role;
+            ulong roleMask = (ulong) (Roles.ROLE_GDH | Roles.ROLE_QA | Roles.ROLE_PROGRAMMER | Roles.ROLE_GMH);
 
             if ((role & roleMask) == 0)
                 throw new CustomError("Not allowed!");
@@ -207,14 +218,14 @@ namespace EVESharp.Node.Services.Dogma
 
         public PyDataType Activate(PyInteger itemID, PyString effectName, PyDataType target, PyDataType repeat, CallInformation call)
         {
-            this.ItemFactory.GetItem<ShipModule>(itemID).ApplyEffect(effectName, call.Client);
+            this.ItemFactory.GetItem<ShipModule>(itemID).ApplyEffect(effectName, call.Session);
             
             return null;
         }
 
         public PyDataType Deactivate(PyInteger itemID, PyString effectName, CallInformation call)
         {
-            this.ItemFactory.GetItem<ShipModule>(itemID).StopApplyingEffect(effectName, call.Client);
+            this.ItemFactory.GetItem<ShipModule>(itemID).StopApplyingEffect(effectName, call.Session);
             
             return null;
         }
@@ -233,15 +244,67 @@ namespace EVESharp.Node.Services.Dogma
             if (this.SystemManager.SolarSystemBelongsToUs(solarSystemID) == true)
                 return this.BoundServiceManager.Container.NodeID;
 
-            return this.SystemManager.GetNodeSolarSystemBelongsTo(solarSystemID);
+            long nodeID = this.SystemManager.GetNodeSolarSystemBelongsTo(solarSystemID);
+
+            if (nodeID == 0)
+            {
+                // the solar system is not loaded anywhere, load it somewhere...
+                // TODO: PROPERLY DETERMINE WHERE TO LOAD SOLAR SYSTEMS, DO IT RANDOMNLY FOR NOW
+                if (call.MachoNet.Configuration.MachoNet.Mode == MachoNetMode.Single)
+                {
+                    // single mode means load everything on us!
+                    this.SystemManager.LoadSolarSystem(solarSystemID);
+
+                    return this.BoundServiceManager.Container.NodeID;
+                }
+                else if (call.MachoNet.Configuration.MachoNet.Mode == MachoNetMode.Proxy)
+                {
+                    // TODO: IMPLEMENT THIS
+                }
+                else
+                {
+                    throw new Exception("Unexpected call on MachoResolveObject on normal node");
+                }
+            }
+
+            return nodeID;
         }
 
         protected override BoundService CreateBoundInstance(ServiceBindParams bindParams, CallInformation call)
         {
+            int characterID = call.Session.EnsureCharacterIsSelected();
+            
             if (this.MachoResolveObject(bindParams, call) != this.BoundServiceManager.Container.NodeID)
                 throw new CustomError("Trying to bind an object that does not belong to us!");
+            
+            // make sure the character is loaded
+            Character character = this.ItemFactory.LoadItem<Character>(characterID);
+            
+            // depending on the type of binding we're doing it means the player might be entering a station
+            if (bindParams.ExtraValue == (int) Groups.Station && call.Session.StationID == bindParams.ObjectID)
+            {
+                this.ItemFactory.GetStaticStation(bindParams.ObjectID).Guests[characterID] = character;
+                
+                // notify all station guests
+                this.NotificationManager.NotifyStation(bindParams.ObjectID, new OnCharNowInStation(call.Session));
+            }
 
-            return new dogmaIM(bindParams.ObjectID, this.ItemFactory, this.BoundServiceManager, call.Client);
+            return new dogmaIM(bindParams.ObjectID, this.ItemFactory, this.NotificationManager, this.BoundServiceManager, call.Session);
+        }
+
+        protected override void OnClientDisconnected()
+        {
+            int characterID = this.Session.EnsureCharacterIsSelected();
+            
+            // notify station about the player disconnecting from the object
+            if (this.Session.StationID == this.ObjectID)
+            {
+                // remove the character from the list
+                this.ItemFactory.GetStaticStation(this.ObjectID).Guests.Remove(characterID);
+                
+                // notify all station guests
+                this.NotificationManager.NotifyStation(this.ObjectID, new OnCharNoLongerInStation(this.Session));
+            }
         }
     }
 }

@@ -23,16 +23,17 @@
 */
 
 using EVESharp.Common.Logging;
-using EVESharp.Common.Services;
 using EVESharp.EVE.Packets.Exceptions;
+using EVESharp.EVE.Services;
 using EVESharp.Node.Network;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Primitives;
 
 namespace EVESharp.Node.Services.CacheSvc
 {
-    public class objectCaching : IService
+    public class objectCaching : Service
     {
+        public override AccessLevel AccessLevel => AccessLevel.None;
         private Channel Log { get; }
         private CacheStorage CacheStorage { get; }
 

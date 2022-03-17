@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Runtime.InteropServices;
 using EVESharp.EVE.Packets.Exceptions;
+using EVESharp.EVE.Sessions;
 using EVESharp.Node.Dogma.Interpreter;
 using EVESharp.Node.Dogma.Interpreter.Opcodes;
 using EVESharp.Node.Exceptions.dogma;
@@ -10,6 +11,7 @@ using EVESharp.Node.Network;
 using EVESharp.Node.Notifications.Client.Inventory;
 using EVESharp.Node.StaticData.Dogma;
 using EVESharp.Node.Inventory.Items.Attributes;
+using EVESharp.Node.Sessions;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Primitives;
 
@@ -54,7 +56,7 @@ namespace EVESharp.Node.Inventory.Items.Types
             return this.Effects;
         }
 
-        public void ApplyEffect(string effectName, Client forClient = null)
+        public void ApplyEffect(string effectName, Session session = null)
         {
             // check if the module has the given effect in it's list
             if (this.Type.EffectsByName.TryGetValue(effectName, out Effect effect) == false)
@@ -62,10 +64,10 @@ namespace EVESharp.Node.Inventory.Items.Types
             if (this.Effects.TryGetEffect(effect.EffectID, out GodmaShipEffect godmaEffect) == false)
                 throw new CustomError("Cannot apply the given effect, our type has it but we dont");
             
-            this.ApplyEffect(effect, godmaEffect, forClient);
+            this.ApplyEffect(effect, godmaEffect, session);
         }
 
-        private void ApplyEffect(Effect effect, GodmaShipEffect godmaEffect, Client forClient = null)
+        private void ApplyEffect(Effect effect, GodmaShipEffect godmaEffect, Session session = null)
         {
             if (godmaEffect.ShouldStart == true)
                 return;
@@ -82,7 +84,7 @@ namespace EVESharp.Node.Inventory.Items.Types
                     Self = this,
                     Ship = ship,
                     Target = null,
-                    Client = forClient
+                    Session = session
                 };
                 
                 Opcode opcode = new Interpreter(env).Run(effect.PreExpression.VMCode);
@@ -97,7 +99,8 @@ namespace EVESharp.Node.Inventory.Items.Types
             catch (Exception)
             {
                 // notify the client about it
-                forClient?.NotifyMultiEvent(new OnGodmaShipEffect(godmaEffect));
+                // TODO: THIS MIGHT NEED MORE NOTIFICATIONS
+                this.ItemFactory.Dogma.QueueMultiEvent(session.EnsureCharacterIsSelected(), new OnGodmaShipEffect(godmaEffect));
                 throw;
             }
 
@@ -115,13 +118,14 @@ namespace EVESharp.Node.Inventory.Items.Types
             godmaEffect.Duration = duration;
             
             // notify the client about it
-            forClient?.NotifyMultiEvent(new OnGodmaShipEffect(godmaEffect));
-            
+            // TODO: THIS MIGHT NEED MORE NOTIFICATIONS
+            this.ItemFactory.Dogma.QueueMultiEvent(session.EnsureCharacterIsSelected(), new OnGodmaShipEffect(godmaEffect));
+
             if (effect.EffectID == (int) EffectsEnum.Online)
-                this.ApplyOnlineEffects(forClient);
+                this.ApplyOnlineEffects(session);
         }
 
-        public void StopApplyingEffect(string effectName, Client forClient = null)
+        public void StopApplyingEffect(string effectName, Session session = null)
         {
             // check if the module has the given effect in it's list
             if (this.Type.EffectsByName.TryGetValue(effectName, out Effect effect) == false)
@@ -129,10 +133,10 @@ namespace EVESharp.Node.Inventory.Items.Types
             if (this.Effects.TryGetEffect(effect.EffectID, out GodmaShipEffect godmaEffect) == false)
                 throw new CustomError("Cannot apply the given effect, our type has it but we dont");
 
-            this.StopApplyingEffect(effect, godmaEffect, forClient);
+            this.StopApplyingEffect(effect, godmaEffect, session);
         }
 
-        private void StopApplyingEffect(Effect effect, GodmaShipEffect godmaEffect, Client forClient = null)
+        private void StopApplyingEffect(Effect effect, GodmaShipEffect godmaEffect, Session session = null)
         {
             // ensure the effect is being applied before doing anything
             if (godmaEffect.ShouldStart == false)
@@ -148,7 +152,7 @@ namespace EVESharp.Node.Inventory.Items.Types
                 Self = this,
                 Ship = ship,
                 Target = null,
-                Client = forClient
+                Session = session
             };
 
             Opcode opcode = new Interpreter(env).Run(effect.PostExpression.VMCode);
@@ -169,45 +173,46 @@ namespace EVESharp.Node.Inventory.Items.Types
             godmaEffect.Duration = 0;
             
             // notify the client about it
-            forClient?.NotifyMultiEvent(new OnGodmaShipEffect(godmaEffect));
+            // TODO: THIS MIGHT NEED MORE NOTIFICATIONS
+            this.ItemFactory.Dogma.QueueMultiEvent(session.EnsureCharacterIsSelected(), new OnGodmaShipEffect(godmaEffect));
 
             // online effect, this requires some special processing as all the passive effects should also be applied
             if (effect.EffectID == (int) EffectsEnum.Online)
-                this.StopApplyingOnlineEffects(forClient);
+                this.StopApplyingOnlineEffects(session);
         }
 
-        private void ApplyEffectsByCategory(EffectCategory category, Client forClient = null)
+        private void ApplyEffectsByCategory(EffectCategory category, Session session = null)
         {
             foreach ((int _, GodmaShipEffect effect) in this.Effects)
                 if (effect.Effect.EffectCategory == category && effect.ShouldStart == false)
-                    this.ApplyEffect(effect.Effect, effect, forClient);
+                    this.ApplyEffect(effect.Effect, effect, session);
         }
 
-        private void StopApplyingEffectsByCategory(EffectCategory category, Client forClient = null)
+        private void StopApplyingEffectsByCategory(EffectCategory category, Session session = null)
         {
             foreach ((int _, GodmaShipEffect effect) in this.Effects)
                 if (effect.Effect.EffectCategory == category && effect.ShouldStart == true)
-                    this.StopApplyingEffect(effect.Effect, effect, forClient);
+                    this.StopApplyingEffect(effect.Effect, effect, session);
         }
         
-        private void ApplyOnlineEffects(Client forClient = null)
+        private void ApplyOnlineEffects(Session session = null)
         {
-            this.ApplyEffectsByCategory(EffectCategory.Online, forClient);
+            this.ApplyEffectsByCategory(EffectCategory.Online, session);
         }
 
-        private void StopApplyingOnlineEffects(Client forClient = null)
+        private void StopApplyingOnlineEffects(Session session = null)
         {
-            this.StopApplyingEffectsByCategory(EffectCategory.Online, forClient);
+            this.StopApplyingEffectsByCategory(EffectCategory.Online, session);
         }
 
-        public void ApplyPassiveEffects(Client forClient = null)
+        public void ApplyPassiveEffects(Session session = null)
         {
-            this.ApplyEffectsByCategory(EffectCategory.Passive, forClient);
+            this.ApplyEffectsByCategory(EffectCategory.Passive, session);
         }
 
-        public void StopApplyingPassiveEffects(Client forClient = null)
+        public void StopApplyingPassiveEffects(Session session = null)
         {
-            this.StopApplyingEffectsByCategory(EffectCategory.Passive, forClient);
+            this.StopApplyingEffectsByCategory(EffectCategory.Passive, session);
         }
 
         public bool IsHighSlot()

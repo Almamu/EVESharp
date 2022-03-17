@@ -1,17 +1,20 @@
 using System;
-using EVESharp.Common.Services;
 using EVESharp.EVE;
 using EVESharp.EVE.Packets.Complex;
+using EVESharp.EVE.Services;
+using EVESharp.EVE.Sessions;
 using EVESharp.Node.Database;
 using EVESharp.Node.Exceptions.facWarMgr;
 using EVESharp.Node.Inventory;
 using EVESharp.Node.Inventory.Items.Types;
 using EVESharp.Node.Network;
 using EVESharp.Node.Notifications.Client.Corporations;
+using EVESharp.Node.Sessions;
 using EVESharp.Node.StaticData.Inventory;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Database;
 using EVESharp.PythonTypes.Types.Primitives;
+using SessionManager = EVESharp.Node.Sessions.SessionManager;
 
 namespace EVESharp.Node.Services.War
 {
@@ -22,21 +25,24 @@ namespace EVESharp.Node.Services.War
         CorporationLeaving = 2,
     };
     
-    public class facWarMgr : IService
+    public class facWarMgr : Service
     {
+        public override AccessLevel AccessLevel => AccessLevel.None;
         private ChatDB ChatDB { get; }
         private CharacterDB CharacterDB { get; }
         private CacheStorage CacheStorage { get; }
         private ItemFactory ItemFactory { get; }
         private NotificationManager NotificationManager { get; }
+        private SessionManager SessionManager { get; }
         
-        public facWarMgr(ChatDB chatDB, CharacterDB characterDB, CacheStorage cacheStorage, ItemFactory itemFactory, NotificationManager notificationManager)
+        public facWarMgr(ChatDB chatDB, CharacterDB characterDB, CacheStorage cacheStorage, ItemFactory itemFactory, NotificationManager notificationManager, SessionManager sessionManager)
         {
             this.ChatDB = chatDB;
             this.CharacterDB = characterDB;
             this.CacheStorage = cacheStorage;
             this.ItemFactory = itemFactory;
             this.NotificationManager = notificationManager;
+            this.SessionManager = sessionManager;
         }
 
         public PyDataType GetWarFactions(CallInformation call)
@@ -94,7 +100,7 @@ namespace EVESharp.Node.Services.War
 
         public PyDataType GetFactionalWarStatus(CallInformation call)
         {
-            if (call.Client.WarFactionID is null)
+            if (call.Session.WarFactionID is null)
                 return KeyVal.FromDictionary(
                     new PyDictionary
                     {
@@ -105,7 +111,7 @@ namespace EVESharp.Node.Services.War
             return KeyVal.FromDictionary(
                 new PyDictionary()
                 {
-                    ["factionID"] = call.Client.WarFactionID,
+                    ["factionID"] = call.Session.WarFactionID,
                     ["startDate"] = DateTime.UtcNow.ToFileTimeUtc(),
                     ["status"] = (int) FactionWarStatus.CorporationActive
                 }
@@ -119,7 +125,7 @@ namespace EVESharp.Node.Services.War
 
         public PyDataType JoinFactionAsCharacter(PyInteger factionID, CallInformation call)
         {
-            int callerCharacterID = call.Client.EnsureCharacterIsSelected();
+            int callerCharacterID = call.Session.EnsureCharacterIsSelected();
             
             // TODO: CHECK FOR PERMISSIONS, TO JOIN TO SOME FACTIONS THE CHARACTER REQUIRES AN INVITATION
             
@@ -135,7 +141,7 @@ namespace EVESharp.Node.Services.War
             Character character = this.ItemFactory.GetItem<Character>(callerCharacterID);
             
             // build the notification of corporation change
-            OnCorporationMemberChanged change = new OnCorporationMemberChanged(character.ID, call.Client.CorporationID, faction.MilitiaCorporationId);
+            OnCorporationMemberChanged change = new OnCorporationMemberChanged(character.ID, call.Session.CorporationID, faction.MilitiaCorporationId);
             // add the character to the faction's and corp chat channel
             this.ChatDB.JoinEntityChannel(factionID, callerCharacterID);
             this.ChatDB.JoinEntityChannel(faction.MilitiaCorporationId, character.ID);
@@ -143,9 +149,12 @@ namespace EVESharp.Node.Services.War
             // remove character from the old chat channel too
             this.ChatDB.LeaveChannel(character.CorporationID, character.ID);
             // this change implies a session change
-            call.Client.CorporationID = faction.MilitiaCorporationId;
-            call.Client.WarFactionID = factionID;
-            // update the character's warfactionid too
+            Session update = new Session();
+
+            update.CorporationID = faction.MilitiaCorporationId;
+            update.WarFactionID = factionID;
+
+            this.SessionManager.PerformSessionUpdate(Session.CHAR_ID, character.ID, update);
             // set the new faction id and corporation
             character.WarFactionID = factionID;
             character.CorporationID = faction.MilitiaCorporationId;
@@ -176,7 +185,7 @@ namespace EVESharp.Node.Services.War
                 {
                     ["currentRank"] = 1,
                     ["highestRank"] = 1,
-                    ["factionID"] = call.Client.WarFactionID
+                    ["factionID"] = call.Session.WarFactionID
                 }
             );
         }

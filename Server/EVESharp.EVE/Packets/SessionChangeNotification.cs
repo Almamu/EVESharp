@@ -7,16 +7,14 @@ namespace EVESharp.EVE.Packets
     public class SessionChangeNotification
     {
         private int mClueless = 0;
-        public PyDictionary Changes { get; init; }
+        public PyDictionary<PyString,PyTuple> Changes { get; init; }
 
         /// <summary>
         /// List of nodes interested in the session change
         ///
-        /// This is used by LIVE to know what nodes need to know about the client
-        /// All in all, EVESharp takes a different approach where all nodes know
-        /// about all the clients so this is mainly useless for us
+        /// This list usually contains a list of nodeIDs where the player has a bound object
         /// </summary>
-        public PyList NodesOfInterest { get; init; } = new PyList();
+        public PyList<PyInteger> NodesOfInterest { get; init; } = new PyList<PyInteger>();
 
         public static implicit operator PyTuple(SessionChangeNotification notification)
         {
@@ -48,14 +46,12 @@ namespace EVESharp.EVE.Packets
             if (sessionData[1] is PyDictionary == false)
                 throw new InvalidDataException("Session data doesn't contain a dictionary with the actual data");
 
-            SessionChangeNotification scn = new SessionChangeNotification
+            return new SessionChangeNotification
             {
-                NodesOfInterest = origin[1] as PyList,
+                NodesOfInterest = (origin[1] as PyList).GetEnumerable<PyInteger>(),
                 mClueless = sessionData[0] as PyInteger,
-                Changes = sessionData[1] as PyDictionary
+                Changes = (sessionData[1] as PyDictionary).GetEnumerable<PyString,PyTuple>()
             };
-
-            return scn;
         }
     }
 }

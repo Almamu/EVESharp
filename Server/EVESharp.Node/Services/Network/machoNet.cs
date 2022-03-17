@@ -23,16 +23,20 @@
 */
 
 using System;
-using EVESharp.Common.Services;
+using System.Reflection;
+using EVESharp.EVE.Services;
 using EVESharp.Node.Network;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Primitives;
+using ServiceManager = EVESharp.Node.Network.ServiceManager;
 
 namespace EVESharp.Node.Services.Network
 {
-    public class machoNet : IService
+    public class machoNet : Service
     {
+        public override AccessLevel AccessLevel => AccessLevel.None;
         private CacheStorage CacheStorage { get; }
+        
         public machoNet(CacheStorage cacheStorage)
         {
             this.CacheStorage = cacheStorage;
@@ -42,100 +46,29 @@ namespace EVESharp.Node.Services.Network
         {
             if (this.CacheStorage.Exists("machoNet.serviceInfo") == false)
             {
-                // this cached object indicates where the packets should be directed to when the client
-                // wants to communicate with a service (as in PyAddress types or integers)
-                PyDictionary dict = new PyDictionary
+                PyDictionary dict = new PyDictionary();
+                
+                // indicate the required access levels for the service to be callable
+                foreach (PropertyInfo property in call.MachoNet.ServiceManager.GetType().GetProperties(BindingFlags.Public))
                 {
-                    ["trademgr"] = "station",
-                    ["tutorialSvc"] = "station",
-                    ["bookmark"] = "station",
-                    ["slash"] = "station",
-                    ["wormholeMgr"] = "station",
-                    ["account"] = "station",
-                    ["gangSvc"] = "station",
-                    ["contractMgr"] = "station",
+                    object value = property.GetValue(call.MachoNet.ServiceManager);
                     
-                    ["LSC"] = "location",
-                    ["station"] = "location",
-                    ["config"] = "locationPreferred",
-                    
-                    ["scanMgr"] = "solarsystem",
-                    ["keeper"] = "solarsystem",
-                    
-                    ["stationSvc"] = null,
-                    ["zsystem"] = null,
-                    ["invbroker"] = null,
-                    ["droneMgr"] = null,
-                    ["userSvc"] = null,
-                    ["map"] = null,
-                    ["beyonce"] = null,
-                    ["standing2"] = null,
-                    ["ram"] = null,
-                    ["DB"] = null,
-                    ["posMgr"] = null,
-                    ["voucher"] = null,
-                    ["entity"] = null,
-                    ["damageTracker"] = null,
-                    ["agentMgr"] = null,
-                    ["dogmaIM"] = null,
-                    ["machoNet"] = null,
-                    ["dungeonExplorationMgr"] = null,
-                    ["watchdog"] = null,
-                    ["ship"] = null,
-                    ["DB2"] = null,
-                    ["market"] = null,
-                    ["dungeon"] = null,
-                    ["npcSvc"] = null,
-                    ["sessionMgr"] = null,
-                    ["allianceRegistry"] = null,
-                    ["cache"] = null,
-                    ["character"] = null,
-                    ["factory"] = null,
-                    ["facWarMgr"] = null,
-                    ["corpStationMgr"] = null,
-                    ["authentication"] = null,
-                    ["effectCompiler"] = null,
-                    ["charmgr"] = null,
-                    ["BSD"] = null,
-                    ["reprocessingSvc"] = null,
-                    ["billingMgr"] = null,
-                    ["billMgr"] = null,
-                    ["lookupSvc"] = null,
-                    ["emailreader"] = null,
-                    ["lootSvc"] = null,
-                    ["http"] = null,
-                    ["repairSvc"] = null,
-                    ["gagger"] = null,
-                    ["dataconfig"] = null,
-                    ["lien"] = null,
-                    ["i2"] = null,
-                    ["pathfinder"] = null,
-                    ["alert"] = null,
-                    ["director"] = null,
-                    ["dogma"] = null,
-                    ["aggressionMgr"] = null,
-                    ["corporationSvc"] = null,
-                    ["certificateMgr"] = null,
-                    ["clones"] = null,
-                    ["jumpCloneSvc"] = null,
-                    ["insuranceSvc"] = null,
-                    ["corpmgr"] = null,
-                    ["warRegistry"] = null,
-                    ["corpRegistry"] = null,
-                    ["objectCaching"] = null,
-                    ["counter"] = null,
-                    ["petitioner"] = null,
-                    ["LPSvc"] = null,
-                    ["clientStatsMgr"] = null,
-                    ["jumpbeaconsvc"] = null,
-                    ["debug"] = null,
-                    ["languageSvc"] = null,
-                    ["skillMgr"] = null,
-                    ["voiceMgr"] = null,
-                    ["onlineStatus"] = null,
-                    ["gangSvcObjectHandler"] = null
-                };
+                    // ignore things that are not services
+                    if (value is not Service)
+                        continue;
 
+                    Service service = value as Service;
+
+                    dict[service.Name] = service.AccessLevel switch
+                    {
+                        AccessLevel.Location => "location",
+                        AccessLevel.LocationPreferred => "locationPreferred",
+                        AccessLevel.Station => "station",
+                        AccessLevel.SolarSystem => "solarsystem",
+                        _ => null,
+                    };
+                }
+                
                 this.CacheStorage.Store("machoNet.serviceInfo", dict, DateTime.UtcNow.ToFileTimeUtc());
             }
 

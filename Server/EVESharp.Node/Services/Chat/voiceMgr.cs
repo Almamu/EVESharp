@@ -1,11 +1,12 @@
-using EVESharp.Common.Services;
+using EVESharp.EVE.Services;
 using EVESharp.Node.Network;
 using EVESharp.PythonTypes.Types.Primitives;
 
 namespace EVESharp.Node.Services.Chat
 {
-    public class voiceMgr : IService
+    public class voiceMgr : Service
     {
+        public override AccessLevel AccessLevel => AccessLevel.Location;
         public voiceMgr()
         {
         }

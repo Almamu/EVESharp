@@ -13,16 +13,20 @@ namespace EVESharp.Node.Network
         /// <summary>
         /// The registered and validated client transports
         /// </summary>
-        public Dictionary<long, MachoClientTransport> ClientTransports { get; } = new Dictionary<long, MachoClientTransport>();
+        public Dictionary<int, MachoClientTransport> ClientTransports { get; } = new Dictionary<int, MachoClientTransport>();
         /// <summary>
         /// The registered and validated node transports
         /// </summary>
-        public Dictionary<int, MachoClientTransport> NodeTransports { get; } = new Dictionary<int, MachoClientTransport>();
+        public Dictionary<int, MachoNodeTransport> NodeTransports { get; } = new Dictionary<int, MachoNodeTransport>();
+        /// <summary>
+        /// The registered and validated proxy transports
+        /// </summary>
+        public Dictionary<int, MachoProxyTransport> ProxyTransports { get; } = new Dictionary<int, MachoProxyTransport>();
         /// <summary>
         /// The unvalidated transports
         /// </summary>
-        private List<MachoClientTransport> UnauthenticatedTransports { get; } = new List<MachoClientTransport>();
-        public MachoNet MachoNet { get; init; }
+        public List<MachoTransport> UnauthenticatedTransports { get; } = new List<MachoTransport>();
+        public MachoNet MachoNet { get; }
         
         public MachoServerTransport(int port, MachoNet machoNet, Logger logger) : base(port, logger.CreateLogChannel("MachoServerTransport"))
         {
@@ -42,7 +46,7 @@ namespace EVESharp.Node.Network
             EVEClientSocket clientSocket = serverSocket.EndAccept(ar);
             
             // got a new transport, register it
-            this.UnauthenticatedTransports.Add(new MachoClientTransport(this, clientSocket, Log.Logger));
+            this.UnauthenticatedTransports.Add(new MachoUnauthenticatedTransport(this, clientSocket, Log.Logger));
             
             // begin accepting again
             this.BeginAccept(AcceptCallback);
@@ -52,35 +56,63 @@ namespace EVESharp.Node.Network
         /// Registers the given transport as a client's transport
         /// </summary>
         /// <param name="clientTransport"></param>
-        public void ResolveClientTransport(MachoClientTransport clientTransport)
-        {
-            int userID = clientTransport.Session["userid"] as PyInteger;
-            // first remove the transport from the unauthenticated list
-            this.UnauthenticatedTransports.Remove(clientTransport);
-            // if the client is already in, force-close the connection
-            if (this.ClientTransports.TryGetValue(userID, out MachoClientTransport original) == true)
-                original.AbortConnection();
-            // add it to the clients list
-            this.ClientTransports.Add(userID, clientTransport);
-        }
-
-        public void ResolveNodeTransport(MachoClientTransport nodeTransport)
+        public void ResolveClientTransport(MachoUnauthenticatedTransport transport)
         {
             // first remove the transport from the unauthenticated list
-            this.UnauthenticatedTransports.Remove(nodeTransport);
-            // add it to the nodes list
-            this.NodeTransports.Add(nodeTransport.Session["nodeid"] as PyInteger, nodeTransport);
-        }
-
-        public void OnTransportTerminated(MachoClientTransport transport)
-        {
-            // check what kind of transport it is and remove it from the lists
             this.UnauthenticatedTransports.Remove(transport);
+            
+            // create the new client transport and store it somewhere
+            MachoClientTransport newTransport = new MachoClientTransport(transport);
+            
+            if (this.ClientTransports.TryGetValue(newTransport.Session.UserID, out MachoClientTransport original) == true)
+                original.AbortConnection();
 
-            if (transport.Client is not null)
-                this.ClientTransports.Remove(transport.Client.AccountID);
-            else
-                this.NodeTransports.Remove(0);
+            this.ClientTransports.Add(newTransport.Session.UserID, newTransport);
+        }
+
+        public void ResolveNodeTransport(MachoUnauthenticatedTransport transport)
+        {
+            // first remove the transport from the unauthenticated list
+            this.UnauthenticatedTransports.Remove(transport);
+            
+            // create the new client transport and store it somewhere
+            MachoNodeTransport newTransport = new MachoNodeTransport(transport);
+            
+            if (this.NodeTransports.TryGetValue(newTransport.Session.NodeID, out MachoNodeTransport original) == true)
+                original.AbortConnection();
+
+            this.NodeTransports.Add(newTransport.Session.NodeID, newTransport);
+        }
+
+        public void ResolveProxyTransport(MachoUnauthenticatedTransport transport)
+        {
+            // first remove the transport from the unauthenticated list
+            this.UnauthenticatedTransports.Remove(transport);
+            
+            // create the new client transport and store it somewhere
+            MachoProxyTransport newTransport = new MachoProxyTransport(transport);
+            
+            if (this.ProxyTransports.TryGetValue(newTransport.Session.NodeID, out MachoProxyTransport original) == true)
+                original.AbortConnection();
+
+            this.ProxyTransports.Add(newTransport.Session.NodeID, newTransport);
+        }
+        
+        public void OnTransportTerminated(MachoTransport transport)
+        {
+            switch (transport)
+            {
+                case MachoUnauthenticatedTransport:
+                    this.UnauthenticatedTransports.Remove(transport);
+                    break;
+                case MachoClientTransport:
+                    this.ClientTransports.Remove(transport.Session.UserID);
+                    break;
+                case MachoNodeTransport:
+                case MachoProxyTransport:
+                    this.NodeTransports.Remove(transport.Session.NodeID);
+                    break;
+            }
         }
     }
 }

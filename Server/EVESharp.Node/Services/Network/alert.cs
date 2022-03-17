@@ -24,15 +24,16 @@
 
 using System;
 using EVESharp.Common.Logging;
-using EVESharp.Common.Services;
+using EVESharp.EVE.Services;
 using EVESharp.Node.Network;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Primitives;
 
 namespace EVESharp.Node.Services.Network
 {
-    public class alert : IService
+    public class alert : Service
     {
+        public override AccessLevel AccessLevel => AccessLevel.None;
         private Channel Log { get; }
 
         public alert(Logger logger)

@@ -1,5 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using EVESharp.EVE.Services;
+using EVESharp.EVE.Sessions;
 using EVESharp.Node.Database;
 using EVESharp.Node.Inventory.Items.Types;
 using EVESharp.Node.Network;
@@ -14,12 +16,14 @@ namespace EVESharp.Node.Services.Corporations
 {
     public class MembersSparseRowsetService : SparseRowsetDatabaseService
     {
+        public override AccessLevel AccessLevel => AccessLevel.None;
+        
         private Dictionary<PyDataType, int> RowsIndex = new Dictionary<PyDataType, int>();
         private Corporation Corporation { get; }
         private CorporationDB DB { get; }
         private NotificationManager NotificationManager { get; init; }
 
-        public MembersSparseRowsetService(Corporation corporation, CorporationDB db, SparseRowsetHeader rowsetHeader, NotificationManager notificationManager, BoundServiceManager manager, Client client) : base(rowsetHeader, manager, client, true)
+        public MembersSparseRowsetService(Corporation corporation, CorporationDB db, SparseRowsetHeader rowsetHeader, NotificationManager notificationManager, BoundServiceManager manager, Session session) : base(rowsetHeader, manager, session, true)
         {
             this.DB = db;
             this.Corporation = corporation;
@@ -48,7 +52,7 @@ namespace EVESharp.Node.Services.Corporations
         {
             // TODO: UGLY CASTING THAT SHOULD BE POSSIBLE TO DO DIFFERENTLY
             // TODO: NOT TO MENTION THE LINQ USAGE, MAYBE THERE'S A BETTER WAY OF DOING IT
-            PyList<PyDataType> characterIDs = new PyList<PyDataType>(this.Clients.Select(x => (PyDataType) new PyInteger((int) x.CharacterID)).ToList());
+            PyList<PyDataType> characterIDs = new PyList<PyDataType>(this.Sessions.Select(x => (PyDataType) x.Value.CharacterID).ToList());
             
             this.NotificationManager.NotifyCharacters (characterIDs.GetEnumerable<PyInteger>(),
                 new OnObjectPublicAttributesUpdated(primaryKey, this, changes, notificationParams)
@@ -99,9 +103,9 @@ namespace EVESharp.Node.Services.Corporations
             this.SendOnObjectChanged(primaryKey, changes);
         }
 
-        public override bool IsClientAllowedToCall(CallInformation call)
+        public override bool IsClientAllowedToCall(ServiceCall call)
         {
-            return call.Client.CorporationID == this.Corporation.ID;
+            return call.Session.CorporationID == this.Corporation.ID;
         }
     }
 }

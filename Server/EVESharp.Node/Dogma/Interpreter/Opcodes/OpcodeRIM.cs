@@ -5,6 +5,7 @@ using EVESharp.Node.Inventory.Items;
 using EVESharp.Node.StaticData.Inventory;
 using EVESharp.Node.Inventory.Items.Attributes;
 using EVESharp.Node.Inventory.Items.Dogma;
+using EVESharp.Node.Sessions;
 
 namespace EVESharp.Node.Dogma.Interpreter.Opcodes
 {
@@ -47,7 +48,11 @@ namespace EVESharp.Node.Dogma.Interpreter.Opcodes
             item.Attributes[attribute].RemoveModifier(this.Change.LeftSide.Association, target.Attributes[this.Attribute.Attribute]);
             
             // notify the character
-            this.Interpreter.Environment.Client?.NotifyAttributeChange(attribute, item);
+            this.Interpreter.Environment.Self.ItemFactory.Dogma.NotifyAttributeChange(
+                this.Interpreter.Environment.Session.EnsureCharacterIsSelected(),
+                attribute,
+                item
+            );
         }
     }
 }

@@ -16,7 +16,7 @@ namespace EVESharp.EVE.Packets
         public string boot_codename = "";
         public string boot_region = "";
         public int cluster_usercount = 0;
-        public int proxy_nodeid = 0;
+        public long proxy_nodeid = 0;
         public int user_logonqueueposition = 0;
 
         public static implicit operator PyDataType(AuthenticationRsp rsp)

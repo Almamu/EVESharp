@@ -1,5 +1,8 @@
 ﻿using System;
 using EVESharp.EVE.Packets.Exceptions;
+using EVESharp.EVE.Services;
+using EVESharp.EVE.Sessions;
+using EVESharp.Node.Dogma;
 using EVESharp.Node.Exceptions.ship;
 using EVESharp.Node.Inventory;
 using EVESharp.Node.Inventory.Items;
@@ -8,33 +11,42 @@ using EVESharp.Node.Network;
 using EVESharp.Node.Notifications.Client.Inventory;
 using EVESharp.Node.StaticData.Inventory;
 using EVESharp.Node.Exceptions.jumpCloneSvc;
+using EVESharp.Node.Sessions;
 using EVESharp.Node.StaticData;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Primitives;
+using SessionManager = EVESharp.Node.Sessions.SessionManager;
 using Type = EVESharp.Node.StaticData.Inventory.Type;
 
 namespace EVESharp.Node.Services.Inventory
 {
     public class ship : ClientBoundService
     {
+        public override AccessLevel AccessLevel => AccessLevel.None;
         private ItemEntity Location { get; }
         private ItemFactory ItemFactory { get; }
         private TypeManager TypeManager => this.ItemFactory.TypeManager;
         private SystemManager SystemManager => this.ItemFactory.SystemManager;
-        public ship(ItemFactory itemFactory, BoundServiceManager manager) : base(manager)
+        private SessionManager SessionManager { get; }
+        private Node.Dogma.Dogma Dogma { get; }
+        public ship(ItemFactory itemFactory, BoundServiceManager manager, SessionManager sessionManager, Node.Dogma.Dogma dogma) : base(manager)
         {
             this.ItemFactory = itemFactory;
+            this.SessionManager = sessionManager;
+            this.Dogma = dogma;
         }
 
-        protected ship(ItemEntity location, ItemFactory itemFactory, BoundServiceManager manager, Client client) : base(manager, client, location.ID)
+        protected ship(ItemEntity location, ItemFactory itemFactory, BoundServiceManager manager, SessionManager sessionManager, Node.Dogma.Dogma dogma, Session session) : base(manager, session, location.ID)
         {
             this.Location = location;
             this.ItemFactory = itemFactory;
+            this.SessionManager = sessionManager;
+            this.Dogma = dogma;
         }
 
         public PyInteger LeaveShip(CallInformation call)
         {
-            int callerCharacterID = call.Client.EnsureCharacterIsSelected();
+            int callerCharacterID = call.Session.EnsureCharacterIsSelected();
 
             Character character = this.ItemFactory.GetItem<Character>(callerCharacterID);
             // get the item type
@@ -46,10 +58,10 @@ namespace EVESharp.Node.Services.Inventory
             // change character's location to the pod
             character.LocationID = capsule.ID;
             // notify the client about the item changes
-            call.Client.NotifyMultiEvent(OnItemChange.BuildLocationChange(capsule, Flags.Capsule, capsule.LocationID));
-            call.Client.NotifyMultiEvent(OnItemChange.BuildLocationChange(character, Flags.Pilot, call.Client.ShipID));
+            this.Dogma.QueueMultiEvent(callerCharacterID, OnItemChange.BuildLocationChange(capsule, Flags.Capsule, capsule.LocationID));
+            this.Dogma.QueueMultiEvent(callerCharacterID, OnItemChange.BuildLocationChange(character, Flags.Pilot, call.Session.ShipID));
             // update session
-            call.Client.ShipID = capsule.ID;
+            call.Session.ShipID = capsule.ID;
             
             // persist changes!
             capsule.Persist();
@@ -62,7 +74,7 @@ namespace EVESharp.Node.Services.Inventory
 
         public PyDataType Board(PyInteger itemID, CallInformation call)
         {
-            int callerCharacterID = call.Client.EnsureCharacterIsSelected();
+            int callerCharacterID = call.Session.EnsureCharacterIsSelected();
 
             // ensure the item is loaded somewhere in this node
             // this will usually be taken care by the EVE Client
@@ -70,7 +82,7 @@ namespace EVESharp.Node.Services.Inventory
                 throw new CustomError("Ships not loaded for player and hangar!");
 
             Character character = this.ItemFactory.GetItem<Character>(callerCharacterID);
-            Ship currentShip = this.ItemFactory.GetItem<Ship>((int) call.Client.ShipID);
+            Ship currentShip = this.ItemFactory.GetItem<Ship>((int) call.Session.ShipID);
 
             if (newShip.Singleton == false)
                 throw new CustomError("TooFewSubSystemsToUndock");
@@ -78,15 +90,15 @@ namespace EVESharp.Node.Services.Inventory
             // TODO: CHECKS FOR IN-SPACE BOARDING!
             
             // check skills required to board the given ship
-            newShip.EnsureOwnership(callerCharacterID, call.Client.CorporationID, call.Client.CorporationRole, true);
+            newShip.EnsureOwnership(callerCharacterID, call.Session.CorporationID, call.Session.CorporationRole, true);
             newShip.CheckPrerequisites(character);
             
             // move the character into this new ship
             character.LocationID = newShip.ID;
             // finally update the session
-            call.Client.ShipID = newShip.ID;
+            this.SessionManager.PerformSessionUpdate(Session.CHAR_ID, callerCharacterID, new Session(){[Session.SHIP_ID] = newShip.ID});
             // notify the client about the change in location
-            call.Client.NotifyMultiEvent(OnItemChange.BuildLocationChange(character, Flags.Pilot, currentShip.ID));
+            this.Dogma.QueueMultiEvent(callerCharacterID, OnItemChange.BuildLocationChange(character, Flags.Pilot, currentShip.ID));
 
             character.Persist();
 
@@ -98,7 +110,7 @@ namespace EVESharp.Node.Services.Inventory
                 // destroy the pod from the database
                 this.ItemFactory.DestroyItem(currentShip);
                 // notify the player of the item change
-                call.Client.NotifyMultiEvent(OnItemChange.BuildLocationChange(currentShip, this.Location.ID));
+                this.Dogma.QueueMultiEvent(callerCharacterID, OnItemChange.BuildLocationChange(currentShip, this.Location.ID));
             }
             
             return null;
@@ -106,8 +118,8 @@ namespace EVESharp.Node.Services.Inventory
 
         public PyDataType AssembleShip(PyInteger itemID, CallInformation call)
         {
-            int callerCharacterID = call.Client.EnsureCharacterIsSelected();
-            int stationID = call.Client.EnsureCharacterIsInStation();
+            int callerCharacterID = call.Session.EnsureCharacterIsSelected();
+            int stationID = call.Session.EnsureCharacterIsInStation();
             
             // ensure the item is loaded somewhere in this node
             // this will usually be taken care by the EVE Client
@@ -130,19 +142,19 @@ namespace EVESharp.Node.Services.Inventory
                 ship.Quantity -= 1;
                 ship.Persist();
                 // notify the quantity change
-                call.Client.NotifyMultiEvent(OnItemChange.BuildQuantityChange(ship, ship.Quantity + 1));
+                this.Dogma.QueueMultiEvent(callerCharacterID, OnItemChange.BuildQuantityChange(ship, ship.Quantity + 1));
   
                 // create the new item in the database
                 Station station = this.ItemFactory.GetStaticStation(stationID);
                 ship = this.ItemFactory.CreateShip(ship.Type, station, character);
                 // notify the new item
-                call.Client.NotifyMultiEvent(OnItemChange.BuildNewItemChange(ship));
+                this.Dogma.QueueMultiEvent(callerCharacterID, OnItemChange.BuildNewItemChange(ship));
             }
             else
             {
                 // stack of one, simple as changing the singleton flag
                 ship.Singleton = true;
-                call.Client.NotifyMultiEvent(OnItemChange.BuildSingletonChange(ship, false));                
+                this.Dogma.QueueMultiEvent(callerCharacterID, OnItemChange.BuildSingletonChange(ship, false));                
             }
 
             // save the ship
@@ -189,7 +201,7 @@ namespace EVESharp.Node.Services.Inventory
             if (location.Type.Group.ID != bindParams.ExtraValue)
                 throw new CustomError("Location and group do not match");
 
-            return new ship(location, this.ItemFactory, this.BoundServiceManager, call.Client);
+            return new ship(location, this.ItemFactory, this.BoundServiceManager, this.SessionManager, this.Dogma, call.Session);
         }
     }
 }

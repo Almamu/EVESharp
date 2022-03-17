@@ -7,6 +7,7 @@ using EVESharp.EVE;
 using EVESharp.EVE.Packets;
 using EVESharp.EVE.Packets.Exceptions;
 using EVESharp.Node.Accounts;
+using EVESharp.Node.Sessions;
 using EVESharp.PythonTypes;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Network;
@@ -14,51 +15,35 @@ using EVESharp.PythonTypes.Types.Primitives;
 
 namespace EVESharp.Node.Network
 {
-    public class MachoClientTransport
+    public class MachoClientTransport : MachoTransport
     {
-        /// <summary>
-        /// The session associated with this transport
-        /// </summary>
-        public Session Session { get; }
-        /// <summary>
-        /// The server transport that created it
-        /// </summary>
-        private MachoServerTransport Server { get; init; }
-        /// <summary>
-        /// The underlying socket to send/receive data
-        /// </summary>
-        public EVEClientSocket Socket { get; init; }
-
 #if DEBUG
         private Channel CallLog { get; init; }
         private Channel ResultLog { get; init; }
 #endif
+        private SessionManager SessionManager => this.Server.MachoNet.SessionManager;
         
-        private Channel Log { get; init; }
-        /// <summary>
-        /// The client related to this transport (if any)
-        /// </summary>
-        public Client Client { get; private set; }
-        
-        public MachoClientTransport(MachoServerTransport transport, EVEClientSocket socket, Logger logger)
+        public MachoClientTransport(MachoTransport source) : base(source)
         {
-            this.Session = new Session();
-            this.Server = transport;
-            this.Socket = socket;
-            this.Log = logger.CreateLogChannel(socket.GetRemoteAddress());
 #if DEBUG
-            this.CallLog = logger.CreateLogChannel("CallDebug", true);
-            this.ResultLog = logger.CreateLogChannel("ResultDebug", true);
+            this.CallLog = this.Log.Logger.CreateLogChannel("CallDebug", true);
+            this.ResultLog = this.Log.Logger.CreateLogChannel("ResultDebug", true);
 #endif
-            // send low level version exchange to start authorization chain
-            this.SendLowLevelVersionExchange();
-            // setup receive callbacks and exception handler
-            this.Socket.SetReceiveCallback(ReceiveFirstMessageCallback);
+            // finally assign the correct packet handler
+            this.Socket.SetReceiveCallback(ReceiveNormalPacket);
             this.Socket.SetExceptionHandler(HandleException);
-            // setup basic session data
-            this.Session["address"] = this.Socket.GetRemoteAddress();
+            this.Socket.SetOnConnectionLostHandler(HandleConnectionLost);
         }
 
+        private void HandleConnectionLost()
+        {
+            Log.Fatal($"Client {this.Session.UserID} lost connection to the server");
+            
+            // clean up ourselves
+            this.Server.OnTransportTerminated(this);
+            // remove the session
+            this.SessionManager.FreeSession(this.Session);
+        }
         private void HandleException(Exception ex)
         {
             Log.Error("Exception detected: ");
@@ -70,157 +55,7 @@ namespace EVESharp.Node.Network
             } while ((ex = ex.InnerException) != null);
         }
 
-        private void ReceiveFirstMessageCallback(PyDataType ar)
-        {
-            try
-            {
-                // depending on the type of data we're receiving, this has to be treated differently
-                if (ar is PyObjectData)
-                {
-                    this.HandleIdentificationReq(ar);
-                }
-                else
-                {
-                    this.HandleLowLevelVersionExchange(ar);
-                }
-            }
-            catch (Exception e)
-            {
-                Log.Error($"Exception caught on IdentificationReq/LowLevelVersionExchange: {e.Message}");
-                throw;
-            }
-        }
-
-        private void HandleIdentificationReq(IdentificationReq req)
-        {
-            Log.Error("Cannot handle identification req yet!");
-        }
-
-        private void HandleLowLevelVersionExchange(LowLevelVersionExchange ex)
-        {
-            Log.Debug("Handling low level version exchange");
-            
-            // assign the new packet handler to wait for commands again
-            this.Socket.SetReceiveCallback(ReceiveCommandCallback);
-        }
-
-        private void ReceiveLowLevelVersionExchangeCallback(PyDataType ar)
-        {
-            try
-            {
-                this.HandleLowLevelVersionExchange(ar);
-            }
-            catch (Exception e)
-            {
-                Log.Error($"Exception caught on LowLevelVersionExchange: {e.Message}");
-                throw;
-            }
-        }
-
-        private void ReceiveCommandCallback(PyDataType packet)
-        {
-            ClientCommand command = packet;
-
-            if (command.Command == "QC")
-            {
-                Log.Debug("Received QueueCheck command");
-                // send player position on the queue
-                this.Socket.Send(new PyInteger(this.Server.MachoNet.LoginQueue.Count()));
-                // send low level version exchange required
-                this.SendLowLevelVersionExchange();
-                // wait for a new low level version exchange again
-                this.Socket.SetReceiveCallback(ReceiveLowLevelVersionExchangeCallback);
-            }
-            else if (command.Command == "VK")
-            {
-                Log.Debug("Received VipKey command");
-                // next is the placebo challenge
-                this.Socket.SetReceiveCallback(ReceiveCryptoRequestCallback);
-            }
-            else
-            {
-                throw new Exception("Received unknown data!");
-            }
-        }
-
-        private void ReceiveCryptoRequestCallback(PyDataType packet)
-        {
-            PlaceboRequest request = packet;
-
-            if (request.Command != "placebo")
-                throw new InvalidDataException($"Unknown command {request.Command}, expected 'placebo'");
-
-            if (request.Arguments.Length > 0)
-                Log.Warning("Received PlaceboRequest with extra arguments, this is not supported");
-
-            Log.Debug("Received correct Crypto request");
-            // answer the client with a correct crypto challenge
-            this.Socket.Send(new PyString("OK CC"));
-            // next is the first login attempt
-            this.Socket.SetReceiveCallback(ReceiveAuthenticationRequestCallback);
-        }
-
-        private void ReceiveAuthenticationRequestCallback(PyDataType packet)
-        {
-            AuthenticationReq request = packet;
-
-            if (request.user_password is null)
-            {
-                Log.Trace("Rejected by server; requesting plain password");
-                // request the user a plain password
-                this.Socket.Send(new PyInteger(1)); // 1 => plain, 2 => hashed
-                return;
-            }
-
-            // TODO: DINAMICALLY FETCH THIS SO WE SUPPORT TRANSLATIONS
-            if (request.user_languageid != "EN" && request.user_languageid != "RU" && request.user_languageid != "DE")
-                // default to english language
-                this.Session["languageID"] = "EN";
-            else
-                // set languageid in the session to the one requested as we have translations for that one
-                this.Session["languageID"] = request.user_languageid;
-
-            // add the user to the authentication queue
-            this.Server.MachoNet.LoginQueue.Enqueue(this, request);
-        }
-
-        private void ReceiveLoginResultResponse(PyDataType packet)
-        {
-            PyTuple data = packet as PyTuple;
-
-            if (data.Count != 3)
-                throw new Exception($"Expected tuple to have 3 items but got {data.Count}");
-
-            // Handshake sent when we are mostly in
-            HandshakeAck ack = new HandshakeAck
-            {
-                LiveUpdates = this.Server.MachoNet.GeneralDB.FetchLiveUpdates(),
-                JIT = this.Session["languageID"] as PyString,
-                UserID = this.Session["userid"] as PyInteger,
-                MaxSessionTime = null,
-                UserType = AccountType.USER,
-                Role = this.Session["role"] as PyInteger,
-                Address = this.Session["address"] as PyString,
-                InDetention = null,
-                ClientHashes = new PyList(),
-                UserClientID = this.Session["userid"] as PyInteger
-            };
-            
-            // send the response first
-            this.Socket.Send(ack);
-            // send the session change
-            this.SendSessionChange();
-            // set the client class
-            this.Client = new Client(
-                this.Server.MachoNet.Container, this, this.Server.MachoNet.ServiceManager, this.Server.MachoNet.TimerManager,
-                this.Server.MachoNet.ItemFactory, this.Server.MachoNet.SystemManager, this.Server.MachoNet.NotificationManager, this.Server.MachoNet.ClientManager, this.Server.MachoNet
-            );
-            
-            // finally assign the correct packet handler
-            this.Socket.SetReceiveCallback(ReceivePacketResponse);
-        }
-
-        private void ReceivePacketResponse(PyDataType packet)
+        private void ReceiveNormalPacket(PyDataType packet)
         {
             if (packet is PyObject)
                 throw new Exception("Got exception from client");
@@ -231,11 +66,11 @@ namespace EVESharp.Node.Network
             // this prevents more special cases for the whole packet flow
             if (pyPacket.Type == PyPacket.PacketType.NOTIFICATION)
             {
-                pyPacket.UserID = this.Session["userid"] as PyInteger;
+                pyPacket.UserID = this.Session.UserID;
                 pyPacket.Source = new PyAddressClient(pyPacket.UserID);
             }
             
-            if (pyPacket.UserID != this.Session["userid"] as PyInteger)
+            if (pyPacket.UserID != this.Session.UserID)
                 throw new Exception("Received a packet coming from a client trying to spoof It's userID");
 
             if (pyPacket.Type == PyPacket.PacketType.PING_REQ)
@@ -268,25 +103,17 @@ namespace EVESharp.Node.Network
                 // search for the node in the list
                 if (pyPacket.Source is PyAddressClient == false)
                     throw new Exception("Received a packet coming from a client trying to spoof the address");
-
-                long destNodeID = dest.NodeID;
                 
-                // change destination node if the node it looks for is us (node 0)
+                // handle the package locally if the destination node is us
                 if (dest.NodeID == this.Server.MachoNet.Container.NodeID)
                 {
                     this.HandleNormalPacket(pyPacket);
                 }
                 else
                 {
-                    // TODO: RELAY THE PACKET TO THE PROPER NODE
-                    /*
-                     pyPacket.Destination = new PyAddressNode(this.NodeID, dest.CallID, dest.Service);
-                     destNodeID = this.NodeID;
-                    */
+                    // let macho net handle the destination of the packet
+                    this.Server.MachoNet.QueuePacket(pyPacket);
                 }
-
-                // send the packet to the correct node
-                // this.ConnectionManager.NotifyNode(destNodeID, pyPacket);
             }
             else if (pyPacket.Destination is PyAddressAny)
             {
@@ -304,46 +131,64 @@ namespace EVESharp.Node.Network
 
         private void HandleNormalPacket(PyPacket packet)
         {
-            switch (packet.Type)
+            try
             {
-                case PyPacket.PacketType.CALL_REQ:
-                    this.HandleCallReq(packet);
-                    break;
-                case PyPacket.PacketType.SESSIONCHANGENOTIFICATION:
-                    this.HandleSessionChangeNotification(packet);
-                    break;
-                case PyPacket.PacketType.PING_REQ:
-                    this.HandlePingReq(packet);
-                    break;
-                case PyPacket.PacketType.CALL_RSP:
-                    this.HandleCallRes(packet);
-                    break;
-                case PyPacket.PacketType.NOTIFICATION:
-                    this.HandleNotification(packet);
-                    break;
+                switch (packet.Type)
+                {
+                    case PyPacket.PacketType.CALL_REQ:
+                        this.HandleCallReq(packet);
+                        break;
+                    case PyPacket.PacketType.SESSIONCHANGENOTIFICATION:
+                        this.HandleSessionChangeNotification(packet);
+                        break;
+                    case PyPacket.PacketType.PING_REQ:
+                        this.HandlePingReq(packet);
+                        break;
+                    case PyPacket.PacketType.CALL_RSP:
+                        this.HandleCallRes(packet);
+                        break;
+                    case PyPacket.PacketType.NOTIFICATION:
+                        this.HandleNotification(packet);
+                        break;
+                    default:
+                        throw new CustomError("Packet type not allowed");
+                }
             }
-            
-            // send any notification that might be pending
-            this.Client?.SendPendingNotifications();
+            catch (PyException ex)
+            {
+                this.SendException(packet.Source, packet.Destination, packet.Type, ex);
+            }
+            catch (Exception ex)
+            {
+                int errorID = ++this.Server.MachoNet.ErrorCount;
+
+                Log.Fatal($"Detected non-client exception on packet, registered as error {errorID}. Extra information: ");
+                Log.Fatal(ex.Message);
+                Log.Fatal(ex.StackTrace);
+                
+                // send client a proper notification about the error based on the roles
+                if ((this.Session.Role & (int) Roles.ROLE_PROGRAMMER) == (int) Roles.ROLE_PROGRAMMER)
+                {
+                    this.SendException(packet.Source, packet.Destination, packet.Type, new CustomError($"An internal server error occurred.<br><b>Reference</b>: {errorID}<br><b>Message</b>: {ex.Message}<br><b>Stack trace</b>:<br>{ex.StackTrace.Replace("\n", "<br>")}"));
+                }
+                else
+                {
+                    this.SendException(packet.Source, packet.Destination, packet.Type, new CustomError($"An internal server error occurred. <b>Reference</b>: {errorID}"));
+                }
+            }
         }
 
         private void HandleSessionChangeNotification(PyPacket packet)
         {
-            /*
+            // get the session changes and update ourselves
+            SessionChangeNotification scn = packet.Payload;
+            
             Log.Debug($"Updating session for client {packet.UserID}");
-
-            // ensure the client is registered in the node and store his session
-            if (client == null)
-                this.ClientManager.Add(
-                    packet.UserID,
-                    client = new Client(
-                        this.Container, this.MachoServerTransport, this.ServiceManager, this.TimerManager,
-                        this.ItemFactory, this.SystemManager, this.NotificationManager, this.ClientManager, this
-                    )
-                );
-
-            client.UpdateSession(packet);
-            */
+            
+            // load the delta into the current session
+            this.Session.ApplyDelta(scn.Changes);
+            
+            // this also requires sending the data to the client AND nodes of interest
             // TODO: UPDATE THE SESSION THAT COMES FROM THE NODE
         }
 
@@ -524,16 +369,16 @@ namespace EVESharp.Node.Network
                     return;
                 }
             }
-            
+
             callInformation = new CallInformation
             {
-                Client = this.Client,
                 CallID = source.CallID,
+                Payload = args,
                 NamedPayload = sub,
-                PacketType = packet.Type,
-                Service = destinationService,
-                From = packet.Source,
-                To = packet.Destination
+                Source = packet.Source,
+                Destination = packet.Destination,
+                MachoNet = this.Server.MachoNet,
+                Session = this.Session
             };
 
             try
@@ -577,7 +422,7 @@ namespace EVESharp.Node.Network
 #endif
 
                     callResult = this.Server.MachoNet.BoundServiceManager.ServiceCall(
-                        boundID, call, args, callInformation
+                        boundID, call, callInformation
                     );
 
 #if DEBUG
@@ -597,7 +442,7 @@ namespace EVESharp.Node.Network
 #endif
 
                     callResult = this.Server.MachoNet.ServiceManager.ServiceCall(
-                        destinationService, call, args, callInformation
+                        destinationService, call, callInformation
                     );
 
 #if DEBUG
@@ -610,7 +455,7 @@ namespace EVESharp.Node.Network
             }
             catch (PyException e)
             {
-                this.SendException(callInformation, e);
+                this.SendException(callInformation, packet.Type, e);
             }
             catch (ProvisionalResponse provisional)
             {
@@ -620,18 +465,18 @@ namespace EVESharp.Node.Network
             {
                 int errorID = ++this.Server.MachoNet.ErrorCount;
 
-                Log.Fatal($"Detected non-client exception on call to {callInformation.Service}::{call}, registered as error {errorID}. Extra information: ");
+                Log.Fatal($"Detected non-client exception on call to {destinationService}::{call}, registered as error {errorID}. Extra information: ");
                 Log.Fatal(ex.Message);
                 Log.Fatal(ex.StackTrace);
                 
                 // send client a proper notification about the error based on the roles
-                if ((callInformation.Client.Role & (int) Roles.ROLE_PROGRAMMER) == (int) Roles.ROLE_PROGRAMMER)
+                if ((callInformation.Session.Role & (int) Roles.ROLE_PROGRAMMER) == (int) Roles.ROLE_PROGRAMMER)
                 {
-                    this.SendException(callInformation, new CustomError($"An internal server error occurred.<br><b>Reference</b>: {errorID}<br><b>Message</b>: {ex.Message}<br><b>Stack trace</b>:<br>{ex.StackTrace.Replace("\n", "<br>")}"));
+                    this.SendException(callInformation, packet.Type, new CustomError($"An internal server error occurred.<br><b>Reference</b>: {errorID}<br><b>Message</b>: {ex.Message}<br><b>Stack trace</b>:<br>{ex.StackTrace.Replace("\n", "<br>")}"));
                 }
                 else
                 {
-                    this.SendException(callInformation, new CustomError($"An internal server error occurred. <b>Reference</b>: {errorID}"));
+                    this.SendException(callInformation, packet.Type, new CustomError($"An internal server error occurred. <b>Reference</b>: {errorID}"));
                 }
             }
         }
@@ -641,11 +486,11 @@ namespace EVESharp.Node.Network
             PyPacket result = new PyPacket(PyPacket.PacketType.CALL_RSP);
             
             // ensure destination has clientID in it
-            PyAddressClient source = answerTo.From as PyAddressClient;
+            PyAddressClient source = answerTo.Source as PyAddressClient;
 
-            source.ClientID = answerTo.Client.AccountID;
+            source.ClientID = answerTo.Session.UserID;
             // switch source and dest
-            result.Source = answerTo.To;
+            result.Source = answerTo.Destination;
             result.Destination = source;
 
             result.UserID = source.ClientID;
@@ -667,14 +512,14 @@ namespace EVESharp.Node.Network
         public void SendCallResult(CallInformation answerTo, PyDataType content)
         {
             // ensure destination has clientID in it
-            PyAddressClient originalSource = answerTo.From as PyAddressClient;
-            originalSource.ClientID = answerTo.Client.AccountID;
+            PyAddressClient originalSource = answerTo.Source as PyAddressClient;
+            originalSource.ClientID = answerTo.Session.UserID;
 
             this.Socket.Send(
                 new PyPacket(PyPacket.PacketType.CALL_RSP)
                 {
                     // switch source and dest
-                    Source = answerTo.To,
+                    Source = answerTo.Destination,
                     Destination = originalSource,
                     UserID = originalSource.ClientID,
                     Payload = new PyTuple(1) {[0] = new PySubStream(content)}
@@ -682,23 +527,23 @@ namespace EVESharp.Node.Network
             );
         }
         
-        public void SendException(CallInformation answerTo, PyDataType content)
+        public void SendException(CallInformation answerTo, PyPacket.PacketType packetType, PyDataType content)
         {
             // build a new packet with the correct information
             PyPacket result = new PyPacket(PyPacket.PacketType.ERRORRESPONSE);
-            
-            // ensure destination has clientID in it
-            PyAddressClient source = answerTo.From as PyAddressClient;
 
-            source.ClientID = answerTo.Client.AccountID;
+            // ensure destination has clientID in it
+            PyAddressClient source = answerTo.Source as PyAddressClient;
+
+            source.ClientID = answerTo.Session.UserID;
             // switch source and dest
-            result.Source = answerTo.To;
+            result.Source = answerTo.Destination;
             result.Destination = source;
 
             result.UserID = source.ClientID;
             result.Payload = new PyTuple(3)
             {
-                [0] = (int) answerTo.PacketType,
+                [0] = (int) packetType,
                 [1] = (int) MachoErrorType.WrappedException,
                 [2] = new PyTuple (1) { [0] = new PySubStream(content) }, 
             };
@@ -706,89 +551,39 @@ namespace EVESharp.Node.Network
             this.Socket.Send(result);
         }
 
-        protected void SendLowLevelVersionExchange()
+        public void SendException(PyAddress source, PyAddress destination, PyPacket.PacketType packetType, PyDataType content)
         {
-            Log.Debug("Sending LowLevelVersionExchange...");
+            PyAddressClient clientAddress = source as PyAddressClient;
 
-            LowLevelVersionExchange data = new LowLevelVersionExchange
+            // ensure the client id is valid
+            clientAddress.ClientID = this.Session.UserID;
+
+            PyPacket result = new PyPacket(PyPacket.PacketType.ERRORRESPONSE)
             {
-                Codename = Game.CODENAME,
-                Birthday = Game.BIRTHDAY,
-                Build = Game.BUILD,
-                MachoVersion = Game.MACHO_VERSION,
-                Version = Game.VERSION,
-                UserCount = this.Server.ClientTransports.Count,
-                Region = Game.REGION
+                Source = destination,
+                Destination = clientAddress,
+                UserID = clientAddress.ClientID,
+                Payload = new PyTuple(3)
+                {
+                    [0] = (int) packetType,
+                    [1] = (int) MachoErrorType.WrappedException,
+                    [2] = new PyTuple(1) {[0] = new PySubStream(content)}
+                }
             };
 
-            this.Socket.Send(data);
+            this.Socket.Send(result);
         }
 
-        public void SendLoginNotification(LoginStatus loginStatus, long accountID, long role)
-        {
-            if (loginStatus == LoginStatus.Success)
-            {
-                // We should check for a exact number of nodes here when we have the needed infraestructure
-                if (true)
-                {
-                    AuthenticationRsp rsp = new AuthenticationRsp();
-
-                    // String "None" marshaled
-                    byte[] func_marshaled_code = new byte[] {0x74, 0x04, 0x00, 0x00, 0x00, 0x4E, 0x6F, 0x6E, 0x65};
-
-                    rsp.serverChallenge = "";
-                    rsp.func_marshaled_code = func_marshaled_code;
-                    rsp.verification = false;
-                    rsp.cluster_usercount = this.Server.ClientTransports.Count;
-                    rsp.proxy_nodeid = 0; // ProxyNodeID is 0
-                    rsp.user_logonqueueposition = 1;
-                    rsp.challenge_responsehash = "55087";
-
-                    rsp.macho_version = Game.MACHO_VERSION;
-                    rsp.boot_version = Game.VERSION;
-                    rsp.boot_build = Game.BUILD;
-                    rsp.boot_codename = Game.CODENAME;
-                    rsp.boot_region = Game.REGION;
-
-                    // setup session
-                    this.Session["userType"] = AccountType.USER;
-                    this.Session["userid"] = accountID;
-                    this.Session["role"] = role;
-                    // move the connection to the authenticated user list
-                    this.Server.ResolveClientTransport(this);
-                    // send the login response
-                    this.Socket.Send(rsp);
-                    // set second to last packet handler
-                    this.Socket.SetReceiveCallback(ReceiveLoginResultResponse);
-                }
-                else
-                {
-                    // TODO: IMPLEMENT CLUSTER STARTUP
-                    // Pretty funny, "AutClusterStarting" maybe they mean "AuthClusterStarting"
-                    this.Socket.Send(new GPSTransportClosed("AutClusterStarting"));
-
-                    Log.Trace("Rejected by server; cluster is starting");
-
-                    this.AbortConnection();
-                }
-            }
-            else if (loginStatus == LoginStatus.Failed)
-            {
-                this.Socket.Send(new GPSTransportClosed("LoginAuthFailed"));
-                this.AbortConnection();
-            }
-        }
-        
         public void SendServiceCall(string service, string call, PyTuple args, PyDictionary namedPayload,
             Action<RemoteCall, PyDataType> callback, Action<RemoteCall> timeoutCallback = null, object extraInfo = null, int timeoutSeconds = 0)
         {
             // queue the call in the service manager and get the callID
-            int callID = this.Server.MachoNet.ServiceManager.ExpectRemoteServiceResult(callback, this.Client, extraInfo, timeoutCallback, timeoutSeconds);
+            int callID = this.Server.MachoNet.ServiceManager.ExpectRemoteServiceResult(callback, this.Session, extraInfo, timeoutCallback, timeoutSeconds);
             
             // prepare the request packet
             PyPacket packet = new PyPacket(PyPacket.PacketType.CALL_REQ);
 
-            packet.UserID = this.Session["userid"] as PyInteger;
+            packet.UserID = this.Session.UserID;
             packet.Destination = new PyAddressClient(packet.UserID, null, service);
             packet.Source = new PyAddressNode(this.Server.MachoNet.Container.NodeID, callID);
             packet.OutOfBounds = new PyDictionary();
@@ -812,82 +607,5 @@ namespace EVESharp.Node.Network
             // everything is ready, send the packet to the client
             this.Socket.Send(packet);
         }
-        
-        public void AbortConnection()
-        {
-            this.Socket.GracefulDisconnect();
-
-            // remove the transport from the list
-            this.Server.OnTransportTerminated(this);
-        }
-
-        // TODO: MOVE THIS CODE TO THE SESSION HANDLER INSTEAD
-
-        public void SendSessionChange()
-        {
-            PyPacket packet = CreateEmptySessionChange();
-
-            if (packet is null)
-                return;
-
-            PyDataType client = SetSessionChangeDestination(packet);
-
-            this.Socket.Send(client);
-            // TODO: IS THIS REALLY NEEDED?
-            // this.ConnectionManager.NotifyAllNodes(packet);
-        }
-
-        public PyPacket CreateEmptySessionChange()
-        {
-            // Fill all the packet data, except the dest/source
-            SessionChangeNotification scn = new SessionChangeNotification
-            {
-                Changes = Session.GenerateSessionChange()
-            };
-
-            if (scn.Changes.Length == 0)
-                // Nothing to do
-                return null;
-
-            PyPacket packet = new PyPacket(PyPacket.PacketType.SESSIONCHANGENOTIFICATION)
-            {
-                UserID = this.Session["userid"] as PyInteger,
-                Payload = scn,
-                OutOfBounds = new PyDictionary
-                {
-                    ["channel"] = "sessionchange"
-                }
-            };
-
-            return packet;
-        }
-
-        public PyDataType SetSessionChangeDestination(PyPacket packet)
-        {
-            packet.Source = new PyAddressNode(this.Server.MachoNet.Container.NodeID, 0);
-            packet.Destination = new PyAddressClient(this.Session["userid"] as PyInteger, 0);
-
-            return packet;
-        }
-
-        public PyDataType SetSessionChangeDestination(PyPacket packet, int node)
-        {
-            packet.Source = new PyAddressNode(1, 0);
-            packet.Destination = new PyAddressNode(node, 0);
-
-            return packet;
-        }
-        
-        
-        public void UpdateSession(PyPacket packet)
-        {
-            if (packet.Payload.TryGetValue(0, out PyTuple sessionData) == false)
-                throw new InvalidDataException("SessionChangeNotification expected a payload of size 1");
-            if (sessionData.TryGetValue(1, out PyDictionary differences) == false)
-                throw new InvalidDataException("SessionChangeNotification expected a differences collection");
-
-            this.Session.LoadChanges(differences);
-        }
-
     }    
 }

@@ -1,8 +1,12 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using EVESharp.EVE;
 using EVESharp.EVE.Packets.Exceptions;
+using EVESharp.EVE.Services;
+using EVESharp.EVE.Sessions;
 using EVESharp.Node.Database;
+using EVESharp.Node.Dogma;
 using EVESharp.Node.Exceptions.corpRegistry;
 using EVESharp.Node.Exceptions.inventory;
 using EVESharp.Node.Inventory;
@@ -14,6 +18,7 @@ using EVESharp.Node.StaticData.Corporation;
 using EVESharp.Node.StaticData.Inventory;
 using EVESharp.Node.Exceptions;
 using EVESharp.Node.Inventory.Items.Attributes;
+using EVESharp.Node.Sessions;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Database;
 using EVESharp.PythonTypes.Types.Primitives;
@@ -22,14 +27,17 @@ namespace EVESharp.Node.Services.Inventory
 {
     public class BoundInventory : ClientBoundService
     {
+        public override AccessLevel AccessLevel => AccessLevel.None;
+        
         private ItemInventory mInventory;
         private Flags mFlag;
         private ItemDB ItemDB { get; }
         private NodeContainer NodeContainer { get; }
         private ItemFactory ItemFactory { get; }
         private NotificationManager NotificationManager { get; init; }
+        private Node.Dogma.Dogma Dogma { get; }
 
-        public BoundInventory(ItemDB itemDB, ItemInventory item, ItemFactory itemFactory, NodeContainer nodeContainer, NotificationManager notificationManager, BoundServiceManager manager, Client client) : base(manager, client, item.ID)
+        public BoundInventory(ItemDB itemDB, ItemInventory item, ItemFactory itemFactory, NodeContainer nodeContainer, NotificationManager notificationManager, Node.Dogma.Dogma dogma, BoundServiceManager manager, Session session) : base(manager, session, item.ID)
         {
             this.mInventory = item;
             this.mFlag = Flags.None;
@@ -37,9 +45,10 @@ namespace EVESharp.Node.Services.Inventory
             this.ItemFactory = itemFactory;
             this.NodeContainer = nodeContainer;
             this.NotificationManager = notificationManager;
+            this.Dogma = dogma;
         }
 
-        public BoundInventory(ItemDB itemDB, ItemInventory item, Flags flag, ItemFactory itemFactory, NodeContainer nodeContainer, NotificationManager notificationManager, BoundServiceManager manager, Client client) : base(manager, client, item.ID)
+        public BoundInventory(ItemDB itemDB, ItemInventory item, Flags flag, ItemFactory itemFactory, NodeContainer nodeContainer, NotificationManager notificationManager, Node.Dogma.Dogma dogma, BoundServiceManager manager, Session session) : base(manager, session, item.ID)
         {
             this.mInventory = item;
             this.mFlag = flag;
@@ -47,6 +56,7 @@ namespace EVESharp.Node.Services.Inventory
             this.ItemFactory = itemFactory;
             this.NodeContainer = nodeContainer;
             this.NotificationManager = notificationManager;
+            this.Dogma = dogma;
         }
 
         public PyDataType List(CallInformation call)
@@ -62,22 +72,22 @@ namespace EVESharp.Node.Services.Inventory
 
         public PyDataType ListStations(PyInteger blueprintsOnly, PyInteger forCorp, CallInformation call)
         {
-            int callerCharacterID = call.Client.EnsureCharacterIsSelected();
+            int callerCharacterID = call.Session.EnsureCharacterIsSelected();
             
-            return this.ItemDB.ListStations(forCorp == 1 ? call.Client.CorporationID : callerCharacterID, blueprintsOnly);
+            return this.ItemDB.ListStations(forCorp == 1 ? call.Session.CorporationID : callerCharacterID, blueprintsOnly);
         }
 
         public PyDataType ListStationItems(PyInteger stationID, CallInformation call)
         {
-            return this.ItemDB.ListStationItems(stationID, call.Client.EnsureCharacterIsSelected());
+            return this.ItemDB.ListStationItems(stationID, call.Session.EnsureCharacterIsSelected());
         }
 
         public PyDataType ListStationBlueprintItems(PyInteger locationID, PyInteger _, PyInteger isCorp, CallInformation call)
         {
             if (isCorp == 1)
-                return this.ItemDB.ListStationBlueprintItems(locationID, call.Client.CorporationID);
+                return this.ItemDB.ListStationBlueprintItems(locationID, call.Session.CorporationID);
 
-            return this.ItemDB.ListStationBlueprintItems(locationID, call.Client.EnsureCharacterIsSelected());
+            return this.ItemDB.ListStationBlueprintItems(locationID, call.Session.EnsureCharacterIsSelected());
         }
         
         public PyDataType GetItem(CallInformation call)
@@ -85,10 +95,10 @@ namespace EVESharp.Node.Services.Inventory
             return this.mInventory.GetEntityRow();
         }
 
-        private void PreMoveItemCheck(ItemEntity item, Flags flag, double quantityToMove, Client client)
+        private void PreMoveItemCheck(ItemEntity item, Flags flag, double quantityToMove, Session session)
         {
             // check that where the item comes from we have permissions
-            item.EnsureOwnership(client.EnsureCharacterIsSelected(), client.CorporationID, client.CorporationRole, true);
+            item.EnsureOwnership(session.EnsureCharacterIsSelected(), session.CorporationID, session.CorporationRole, true);
             
             if (this.mInventory.Type.ID == (int) Types.Capsule)
                 throw new CantTakeInSpaceCapsule();
@@ -223,7 +233,7 @@ namespace EVESharp.Node.Services.Inventory
             throw new NoFreeShipSlots();
         }
         
-        private void MoveItemHere(ItemEntity item, Flags newFlag, Client client, int quantity = 0)
+        private void MoveItemHere(ItemEntity item, Flags newFlag, Session session, int quantity = 0)
         {
             // get the old location stored as it'll be used in the notifications
             int oldLocation = item.LocationID;
@@ -240,10 +250,10 @@ namespace EVESharp.Node.Services.Inventory
                 if (item is ShipModule module)
                 {
                     if (module.Attributes[Attributes.isOnline] == 1)
-                        module.StopApplyingEffect("online", Client);
+                        module.StopApplyingEffect("online", session);
 
                     // disable passive effects too
-                    module.StopApplyingPassiveEffects(Client);
+                    module.StopApplyingPassiveEffects(session);
                 }
             }
             
@@ -284,21 +294,21 @@ namespace EVESharp.Node.Services.Inventory
             }
 
             // special case, is the item being moved to a corporation office?
-            if (this.mInventory.OwnerID == client.CorporationID)
+            if (this.mInventory.OwnerID == session.CorporationID)
             {
-                if (newFlag == Flags.Hangar && CorporationRole.HangarCanQuery1.Is(client.CorporationRole) == false)
+                if (newFlag == Flags.Hangar && CorporationRole.HangarCanQuery1.Is(session.CorporationRole) == false)
                     throw new CrpAccessDenied("You are not allowed to access that hangar");
-                if (newFlag == Flags.CorpSAG2 && CorporationRole.HangarCanQuery2.Is(client.CorporationRole) == false)
+                if (newFlag == Flags.CorpSAG2 && CorporationRole.HangarCanQuery2.Is(session.CorporationRole) == false)
                     throw new CrpAccessDenied("You are not allowed to access that hangar");
-                if (newFlag == Flags.CorpSAG3 && CorporationRole.HangarCanQuery3.Is(client.CorporationRole) == false)
+                if (newFlag == Flags.CorpSAG3 && CorporationRole.HangarCanQuery3.Is(session.CorporationRole) == false)
                     throw new CrpAccessDenied("You are not allowed to access that hangar");
-                if (newFlag == Flags.CorpSAG4 && CorporationRole.HangarCanQuery4.Is(client.CorporationRole) == false)
+                if (newFlag == Flags.CorpSAG4 && CorporationRole.HangarCanQuery4.Is(session.CorporationRole) == false)
                     throw new CrpAccessDenied("You are not allowed to access that hangar");
-                if (newFlag == Flags.CorpSAG5 && CorporationRole.HangarCanQuery5.Is(client.CorporationRole) == false)
+                if (newFlag == Flags.CorpSAG5 && CorporationRole.HangarCanQuery5.Is(session.CorporationRole) == false)
                     throw new CrpAccessDenied("You are not allowed to access that hangar");
-                if (newFlag == Flags.CorpSAG6 && CorporationRole.HangarCanQuery6.Is(client.CorporationRole) == false)
+                if (newFlag == Flags.CorpSAG6 && CorporationRole.HangarCanQuery6.Is(session.CorporationRole) == false)
                     throw new CrpAccessDenied("You are not allowed to access that hangar");
-                if (newFlag == Flags.CorpSAG7 && CorporationRole.HangarCanQuery7.Is(client.CorporationRole) == false)
+                if (newFlag == Flags.CorpSAG7 && CorporationRole.HangarCanQuery7.Is(session.CorporationRole) == false)
                     throw new CrpAccessDenied("You are not allowed to access that hangar");
             }
             
@@ -334,10 +344,10 @@ namespace EVESharp.Node.Services.Inventory
                         .AddChange(ItemChange.Flag, (int) oldFlag);
             
                     // notify the character about the change
-                    this.NotificationManager.NotifyOwnerAtLocation(item.OwnerID, client.LocationID, changes);
+                    this.NotificationManager.NotifyOwnerAtLocation(item.OwnerID, session.LocationID, changes);
                     // notify the old owner if it changed
                     if (item.OwnerID != oldOwnerID)
-                        this.NotificationManager.NotifyOwnerAtLocation(oldOwnerID, client.LocationID, changes);
+                        this.NotificationManager.NotifyOwnerAtLocation(oldOwnerID, session.LocationID, changes);
                     // update meta inventories too
                     this.ItemFactory.MetaInventoryManager.OnItemMoved(item, oldLocation, this.mInventory.ID, oldFlag, newFlag);
 
@@ -354,13 +364,13 @@ namespace EVESharp.Node.Services.Inventory
 
                     OnItemChange quantityChange = OnItemChange.BuildQuantityChange(item, item.Quantity + 1);
                     // notify the character about the change in quantity
-                    this.NotificationManager.NotifyOwnerAtLocation(item.OwnerID, client.LocationID, quantityChange);
+                    this.NotificationManager.NotifyOwnerAtLocation(item.OwnerID, session.LocationID, quantityChange);
                     // notify the old owner if it changed
                     if (item.OwnerID != oldOwnerID)
-                        this.NotificationManager.NotifyOwnerAtLocation(item.OwnerID, client.LocationID, quantityChange);
+                        this.NotificationManager.NotifyOwnerAtLocation(item.OwnerID, session.LocationID, quantityChange);
                     
                     // notify the new owner on the new item
-                    this.NotificationManager.NotifyOwnerAtLocation(item.OwnerID, client.LocationID, OnItemChange.BuildLocationChange(newItem, Flags.None, 0));
+                    this.NotificationManager.NotifyOwnerAtLocation(item.OwnerID, session.LocationID, OnItemChange.BuildLocationChange(newItem, Flags.None, 0));
                     
                     item.Persist();
 
@@ -374,13 +384,13 @@ namespace EVESharp.Node.Services.Inventory
                 try
                 {
                     // apply all the passive effects (this also blocks the item fitting if the initialization fails)
-                    module?.ApplyPassiveEffects(Client);
+                    module?.ApplyPassiveEffects(session);
                     // extra check, ensure that the character has the required skills
                 }
                 catch (UserError)
                 {
                     // ensure that the passive effects that got applied already are removed from the item
-                    module?.StopApplyingPassiveEffects(Client);
+                    module?.StopApplyingPassiveEffects(session);
 
                     int newOldLocation = item.LocationID;
                     Flags newOldFlag = item.Flag;
@@ -393,11 +403,11 @@ namespace EVESharp.Node.Services.Inventory
 
                     OnItemChange locationChange = OnItemChange.BuildLocationChange(item, newOldFlag, newOldLocation);
                     
-                    this.NotificationManager.NotifyOwnerAtLocation(item.OwnerID, client.LocationID, locationChange);
+                    this.NotificationManager.NotifyOwnerAtLocation(item.OwnerID, session.LocationID, locationChange);
                     
                     // notify the owners again
                     if (item.OwnerID != newOldOwnerID)
-                        this.NotificationManager.NotifyOwnerAtLocation(newOldOwnerID, client.LocationID, locationChange.AddChange (ItemChange.OwnerID, newOldOwnerID));
+                        this.NotificationManager.NotifyOwnerAtLocation(newOldOwnerID, session.LocationID, locationChange.AddChange (ItemChange.OwnerID, newOldOwnerID));
                     
                     throw;
                 }
@@ -409,7 +419,7 @@ namespace EVESharp.Node.Services.Inventory
                 
                 // put the module online after fitting it as long as it's a normal module
                 if (module?.IsRigSlot() == false)
-                    module?.ApplyEffect("online", Client);
+                    module?.ApplyEffect("online", session);
             }
             else
             {
@@ -436,10 +446,10 @@ namespace EVESharp.Node.Services.Inventory
 
                     // notify the old owner
                     if (oldOwnerID != item.OwnerID)
-                        this.NotificationManager.NotifyOwnerAtLocation(oldOwnerID, client.LocationID, changes);
+                        this.NotificationManager.NotifyOwnerAtLocation(oldOwnerID, session.LocationID, changes);
                 
                     // notify the new owner
-                    this.NotificationManager.NotifyOwnerAtLocation(item.OwnerID, client.LocationID, changes);
+                    this.NotificationManager.NotifyOwnerAtLocation(item.OwnerID, session.LocationID, changes);
                     // update meta inventories too
                     this.ItemFactory.MetaInventoryManager.OnItemMoved(item, oldLocation, this.mInventory.ID, oldFlag, newFlag);
 
@@ -457,13 +467,13 @@ namespace EVESharp.Node.Services.Inventory
 
                     OnItemChange quantityChange = OnItemChange.BuildQuantityChange(item, item.Quantity + quantity);
                     // notify the character about the change in quantity
-                    this.NotificationManager.NotifyOwnerAtLocation(item.OwnerID, client.LocationID, quantityChange);
+                    this.NotificationManager.NotifyOwnerAtLocation(item.OwnerID, session.LocationID, quantityChange);
                     // notify the old owner if it changed
                     if (item.OwnerID != oldOwnerID)
-                        this.NotificationManager.NotifyOwnerAtLocation(item.OwnerID, client.LocationID, quantityChange);
+                        this.NotificationManager.NotifyOwnerAtLocation(item.OwnerID, session.LocationID, quantityChange);
                     
                     // notify the new owner on the new item
-                    this.NotificationManager.NotifyOwnerAtLocation(item.OwnerID, client.LocationID, OnItemChange.BuildLocationChange(newItem, Flags.None, 0));
+                    this.NotificationManager.NotifyOwnerAtLocation(item.OwnerID, session.LocationID, OnItemChange.BuildLocationChange(newItem, Flags.None, 0));
                     
                     item.Persist();
 
@@ -478,33 +488,33 @@ namespace EVESharp.Node.Services.Inventory
 
         public PyDataType Add(PyInteger itemID, CallInformation call)
         {
-            if (itemID == call.Client.ShipID)
+            if (itemID == call.Session.ShipID)
                 throw new CantMoveActiveShip();
 
             ItemEntity item = this.ItemFactory.GetItem(itemID);
             
-            this.PreMoveItemCheck(item, this.mFlag, item.Quantity, call.Client);
-            this.MoveItemHere(item, this.mFlag, call.Client);
+            this.PreMoveItemCheck(item, this.mFlag, item.Quantity, call.Session);
+            this.MoveItemHere(item, this.mFlag, call.Session);
 
             return null;
         }
 
         public PyDataType Add(PyInteger itemID, PyInteger quantity, CallInformation call)
         {
-            if (itemID == call.Client.ShipID)
+            if (itemID == call.Session.ShipID)
                 throw new CantMoveActiveShip();
 
             ItemEntity item = this.ItemFactory.GetItem(itemID);
             
-            this.PreMoveItemCheck(item, this.mFlag, item.Quantity, call.Client);
-            this.MoveItemHere(item, this.mFlag, call.Client, quantity);
+            this.PreMoveItemCheck(item, this.mFlag, item.Quantity, call.Session);
+            this.MoveItemHere(item, this.mFlag, call.Session, quantity);
 
             return null;
         }
 
         public PyDataType Add(PyInteger itemID, PyInteger quantity, PyInteger flag, CallInformation call)
         {
-            if (itemID == call.Client.ShipID)
+            if (itemID == call.Session.ShipID)
                 throw new CantMoveActiveShip();
 
             // TODO: ADD CONSTRAINTS CHECKS FOR THE FLAG
@@ -515,8 +525,8 @@ namespace EVESharp.Node.Services.Inventory
                 return null;
             
             // check that there's enough space left
-            this.PreMoveItemCheck(item, (Flags) (int) flag, quantity, call.Client);
-            this.MoveItemHere(item, (Flags) (int) flag, call.Client, quantity);
+            this.PreMoveItemCheck(item, (Flags) (int) flag, quantity, call.Session);
+            this.MoveItemHere(item, (Flags) (int) flag, call.Session, quantity);
             
             return null;
         }
@@ -531,8 +541,8 @@ namespace EVESharp.Node.Services.Inventory
                     ItemEntity item = this.ItemFactory.GetItem(itemID);
                     
                     // check and then move the item
-                    this.PreMoveItemCheck(item, (Flags) (int) flag, item.Quantity, call.Client);
-                    this.MoveItemHere(item, (Flags) (int) flag, call.Client);
+                    this.PreMoveItemCheck(item, (Flags) (int) flag, item.Quantity, call.Session);
+                    this.MoveItemHere(item, (Flags) (int) flag, call.Session);
                 }
             }
             else
@@ -552,6 +562,8 @@ namespace EVESharp.Node.Services.Inventory
 
         public PyDataType MultiMerge(PyList merges, CallInformation call)
         {
+            int callerCharacterID = call.Session.EnsureCharacterIsSelected();
+            
             foreach (PyTuple merge in merges.GetEnumerable<PyTuple>())
             {
                 if (merge[0] is PyInteger == false || merge[1] is PyInteger == false || merge[2] is PyInteger == false)
@@ -579,19 +591,19 @@ namespace EVESharp.Node.Services.Inventory
                     // remove the item
                     this.ItemFactory.DestroyItem(fromItem);
                     // notify the client about the item too
-                    call.Client.NotifyMultiEvent(OnItemChange.BuildLocationChange(fromItem, oldLocationID));
+                    this.Dogma.QueueMultiEvent(callerCharacterID, OnItemChange.BuildLocationChange(fromItem, oldLocationID));
                 }
                 else
                 {
                     // change the item's quantity
                     fromItem.Quantity -= quantity;
                     // notify the client about the change
-                    call.Client.NotifyMultiEvent(OnItemChange.BuildQuantityChange(fromItem, fromItem.Quantity + quantity));
+                    this.Dogma.QueueMultiEvent(callerCharacterID, OnItemChange.BuildQuantityChange(fromItem, fromItem.Quantity + quantity));
                     fromItem.Persist();
                 }
 
                 toItem.Quantity += quantity;
-                call.Client.NotifyMultiEvent(OnItemChange.BuildQuantityChange(toItem, toItem.Quantity - quantity));
+                this.Dogma.QueueMultiEvent(callerCharacterID, OnItemChange.BuildQuantityChange(toItem, toItem.Quantity - quantity));
                 toItem.Persist();
             }
             
@@ -605,6 +617,8 @@ namespace EVESharp.Node.Services.Inventory
 
         private void StackAll(Flags locationFlag, CallInformation call)
         {
+            int callerCharacterID = call.Session.EnsureCharacterIsSelected();
+            
             // TODO: ADD CONSTRAINTS CHECKS FOR THE LOCATIONFLAG
             foreach ((int firstItemID, ItemEntity firstItem) in this.mInventory.Items)
             {
@@ -627,10 +641,10 @@ namespace EVESharp.Node.Services.Inventory
                     // add the quantity of the first item to the second
                     secondItem.Quantity += firstItem.Quantity;
                     // also create the notification for the user
-                    call.Client.NotifyMultiEvent(OnItemChange.BuildQuantityChange(secondItem, oldQuantity));
+                    this.Dogma.QueueMultiEvent(callerCharacterID, OnItemChange.BuildQuantityChange(secondItem, oldQuantity));
                     this.ItemFactory.DestroyItem(firstItem);
                     // notify the client about the item too
-                    call.Client.NotifyMultiEvent(OnItemChange.BuildLocationChange(firstItem, firstItem.Flag, secondItem.LocationID));
+                    this.Dogma.QueueMultiEvent(callerCharacterID, OnItemChange.BuildLocationChange(firstItem, firstItem.Flag, secondItem.LocationID));
                     // ensure the second item is saved to database too
                     secondItem.Persist();
                     // finally break this loop as the merge was already done
@@ -659,9 +673,9 @@ namespace EVESharp.Node.Services.Inventory
             return null;
         }
 
-        public static PySubStruct BindInventory(ItemDB itemDB, ItemInventory item, Flags flag, ItemFactory itemFactory, NodeContainer nodeContainer, NotificationManager notificationManager, BoundServiceManager boundServiceManager, Client client)
+        public static PySubStruct BindInventory(ItemDB itemDB, ItemInventory item, Flags flag, ItemFactory itemFactory, NodeContainer nodeContainer, NotificationManager notificationManager, Node.Dogma.Dogma dogma, BoundServiceManager boundServiceManager, Session session)
         {
-            BoundService instance = new BoundInventory(itemDB, item, flag, itemFactory, nodeContainer, notificationManager, boundServiceManager, client);
+            BoundService instance = new BoundInventory(itemDB, item, flag, itemFactory, nodeContainer, notificationManager, dogma, boundServiceManager, session);
             // bind the service
             int boundID = boundServiceManager.BindService(instance);
             // build the bound service string
@@ -696,7 +710,7 @@ namespace EVESharp.Node.Services.Inventory
             if (item is ShipModule module)
             {
                 // disable passive effects
-                module.StopApplyingPassiveEffects(Client);
+                module.StopApplyingPassiveEffects(call.Session);
             }
             
             int oldLocationID = item.LocationID;
@@ -706,7 +720,7 @@ namespace EVESharp.Node.Services.Inventory
             this.ItemFactory.DestroyItem(item);
 
             // notify the client about the change
-            call.Client.NotifyMultiEvent(OnItemChange.BuildLocationChange(item, oldFlag, oldLocationID));
+            this.Dogma.QueueMultiEvent(call.Session.EnsureCharacterIsSelected(), OnItemChange.BuildLocationChange(item, oldFlag, oldLocationID));
             
             return null;
         }

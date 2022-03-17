@@ -1,6 +1,6 @@
 using EVESharp.Common.Logging;
-using EVESharp.Common.Services;
 using EVESharp.EVE.Packets.Exceptions;
+using EVESharp.EVE.Services;
 using EVESharp.Node.Database;
 using EVESharp.Node.Inventory;
 using EVESharp.Node.Network;
@@ -9,8 +9,9 @@ using EVESharp.PythonTypes.Types.Primitives;
 
 namespace EVESharp.Node.Services.Config
 {
-    public class config : IService
+    public class config : Service
     {
+        public override AccessLevel AccessLevel => AccessLevel.LocationPreferred;
         private ConfigDB DB { get; }
         private Channel Log { get; }
         private ItemFactory ItemFactory { get; }

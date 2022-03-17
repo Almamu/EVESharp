@@ -78,7 +78,7 @@ namespace EVESharp.PythonTypes.Types.Network
         /// <summary>
         /// The related userID for the packet
         /// </summary>
-        public long UserID { get; set; }
+        public int UserID { get; set; }
         /// <summary>
         /// Tuple payload with the actual packet data
         /// </summary>
@@ -147,7 +147,7 @@ namespace EVESharp.PythonTypes.Types.Network
             result.Type = (PacketType) (int) (packetData[0] as PyInteger);
             result.Source = (PyAddress) packetData[1];
             result.Destination = (PyAddress) packetData[2];
-            result.UserID = (packetData[3] is null) ? 0 : (long) (packetData[3] as PyInteger);
+            result.UserID = packetData[3] as PyInteger ?? 0;
             result.Payload = packetData[4] as PyTuple;
             result.OutOfBounds = packetData[5] as PyDictionary;
 

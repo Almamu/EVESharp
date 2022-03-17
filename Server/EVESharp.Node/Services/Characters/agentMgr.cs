@@ -1,3 +1,5 @@
+using EVESharp.EVE.Services;
+using EVESharp.EVE.Sessions;
 using EVESharp.Node.Agents;
 using EVESharp.Node.Network;
 using EVESharp.PythonTypes.Types.Collections;
@@ -7,6 +9,7 @@ namespace EVESharp.Node.Services.Characters
 {
     public class agentMgr : ClientBoundService
     {
+        public override AccessLevel AccessLevel => AccessLevel.None;
         private AgentManager AgentManager { get; init; }
         private NodeContainer Container { get; init; }
         
@@ -16,7 +19,7 @@ namespace EVESharp.Node.Services.Characters
             this.Container = container;
         }
 
-        protected agentMgr(int agentID, NodeContainer container, AgentManager agentManager, BoundServiceManager manager, Client client) : base(manager, client, agentID)
+        protected agentMgr(int agentID, NodeContainer container, AgentManager agentManager, BoundServiceManager manager, Session session) : base(manager, session, agentID)
         {
             this.AgentManager = agentManager;
             this.Container = container;
@@ -53,7 +56,7 @@ namespace EVESharp.Node.Services.Characters
 
         protected override BoundService CreateBoundInstance(ServiceBindParams bindParams, CallInformation call)
         {
-            return new agentMgr(bindParams.ObjectID, this.Container, this.AgentManager, this.BoundServiceManager, call.Client);
+            return new agentMgr(bindParams.ObjectID, this.Container, this.AgentManager, this.BoundServiceManager, call.Session);
         }
     }
 }

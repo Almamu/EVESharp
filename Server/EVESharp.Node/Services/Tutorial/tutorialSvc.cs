@@ -1,5 +1,5 @@
-using EVESharp.Common.Services;
 using EVESharp.EVE.Packets.Complex;
+using EVESharp.EVE.Services;
 using EVESharp.Node.Database;
 using EVESharp.Node.Network;
 using EVESharp.PythonTypes.Types.Collections;
@@ -8,8 +8,9 @@ using EVESharp.PythonTypes.Types.Primitives;
 
 namespace EVESharp.Node.Services.Tutorial
 {
-    public class tutorialSvc : IService
+    public class tutorialSvc : Service
     {
+        public override AccessLevel AccessLevel => AccessLevel.Station;
         private CacheStorage CacheStorage { get; init; }
         private TutorialsDB DB { get; init; }
         

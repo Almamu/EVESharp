@@ -10,7 +10,7 @@ namespace EVESharp.EVE.Packets
         public long UserID { get; init; } = 0;
         public PyInteger MaxSessionTime { get; init; } = null;
         public int UserType { get; init; } = 1;
-        public int Role { get; init; } = 0;
+        public ulong Role { get; init; } = 0;
         public string Address { get; init; } = "";
         public PyBool InDetention { get; init; } = null;
         public PyList ClientHashes { get; init; } = new PyList();

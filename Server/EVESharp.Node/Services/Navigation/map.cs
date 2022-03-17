@@ -1,19 +1,19 @@
-using System.Collections.Generic;
-using EVESharp.Common.Services;
 using EVESharp.EVE.Packets.Complex;
+using EVESharp.EVE.Services;
 using EVESharp.Node.Inventory;
 using EVESharp.Node.Inventory.Items.Types;
 using EVESharp.Node.Network;
 using EVESharp.Node.StaticData.Inventory.Station;
-using EVESharp.Node.StaticData;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Database;
 using EVESharp.PythonTypes.Types.Primitives;
+using Service = EVESharp.EVE.Services.Service;
 
 namespace EVESharp.Node.Services.Navigation
 {
-    public class map : IService
+    public class map : Service
     {
+        public override AccessLevel AccessLevel => AccessLevel.None;
         private enum HistoryType
         {
             PodKill = 3,

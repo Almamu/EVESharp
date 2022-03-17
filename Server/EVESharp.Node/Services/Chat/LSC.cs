@@ -1,8 +1,8 @@
 using System;
 using System.IO;
 using EVESharp.Common.Logging;
-using EVESharp.Common.Services;
 using EVESharp.EVE.Packets.Exceptions;
+using EVESharp.EVE.Services;
 using EVESharp.Node.Chat;
 using EVESharp.Node.Database;
 using EVESharp.Node.Exceptions;
@@ -10,6 +10,7 @@ using EVESharp.Node.Inventory;
 using EVESharp.Node.Inventory.Items.Types;
 using EVESharp.Node.Network;
 using EVESharp.Node.Notifications.Client.Chat;
+using EVESharp.Node.Sessions;
 using EVESharp.PythonTypes;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Database;
@@ -17,8 +18,9 @@ using EVESharp.PythonTypes.Types.Primitives;
 
 namespace EVESharp.Node.Services.Chat
 {
-    public class LSC : IService
+    public class LSC : Service
     {
+        public override AccessLevel AccessLevel => AccessLevel.Location;
         /// <summary>
         /// The type of notification used through the whole LSC service
         /// </summary>
@@ -101,7 +103,7 @@ namespace EVESharp.Node.Services.Chat
 
         public PyDataType GetChannels(CallInformation call)
         {
-            return this.DB.GetChannelsForCharacter(call.Client.EnsureCharacterIsSelected(), call.Client.CorporationID);
+            return this.DB.GetChannelsForCharacter(call.Session.EnsureCharacterIsSelected(), call.Session.CorporationID);
         }
 
         public PyDataType GetChannels(PyInteger reload, CallInformation call)
@@ -111,7 +113,7 @@ namespace EVESharp.Node.Services.Chat
 
         public PyDataType GetMembers(PyDataType channel, CallInformation call)
         {
-            int callerCharacterID = call.Client.EnsureCharacterIsSelected();
+            int callerCharacterID = call.Session.EnsureCharacterIsSelected();
 
             int channelID;
             string channelType;
@@ -184,7 +186,7 @@ namespace EVESharp.Node.Services.Chat
         
         public PyList<PyTuple> JoinChannels(PyList channels, PyInteger role, CallInformation call)
         {
-            int callerCharacterID = call.Client.EnsureCharacterIsSelected();
+            int callerCharacterID = call.Session.EnsureCharacterIsSelected();
 
             PyList<PyTuple> result = new PyList<PyTuple>();
 
@@ -222,7 +224,7 @@ namespace EVESharp.Node.Services.Chat
                 // we don't want people in local to know about players unless they talk there
                 if (channelType != ChatDB.CHANNEL_TYPE_REGIONID && channelType != ChatDB.CHANNEL_TYPE_CONSTELLATIONID && channelType != ChatDB.CHANNEL_TYPE_SOLARSYSTEMID2)
                 {
-                    OnLSC joinNotification = new OnLSC(call.Client, "JoinChannel", channelIDExtended, new PyTuple(0));
+                    OnLSC joinNotification = new OnLSC(call.Session, "JoinChannel", channelIDExtended, new PyTuple(0));
 
                     if (channelType == ChatDB.CHANNEL_TYPE_NORMAL)
                     {
@@ -258,7 +260,7 @@ namespace EVESharp.Node.Services.Chat
                     if (channelType == ChatDB.CHANNEL_TYPE_NORMAL && channelID != entityID)
                     {
                         // notify all characters in the channel
-                        this.NotificationManager.NotifyCharacter(callerCharacterID, new OnLSC(call.Client, "DestroyChannel", channelID, new PyTuple(0)));
+                        this.NotificationManager.NotifyCharacter(callerCharacterID, new OnLSC(call.Session, "DestroyChannel", channelID, new PyTuple(0)));
                     }
                     
                     Log.Error($"LSC could not get channel information. Error: {e.Message}");
@@ -270,7 +272,7 @@ namespace EVESharp.Node.Services.Chat
 
         public PyDataType GetMyMessages(CallInformation call)
         {
-            return this.MessagesDB.GetMailHeaders(call.Client.EnsureCharacterIsSelected());
+            return this.MessagesDB.GetMailHeaders(call.Session.EnsureCharacterIsSelected());
         }
         
         public PyDataType GetRookieHelpChannel(CallInformation call)
@@ -280,7 +282,7 @@ namespace EVESharp.Node.Services.Chat
 
         public PyDataType SendMessage(PyDataType channel, PyString message, CallInformation call)
         {
-            int callerCharacterID = call.Client.EnsureCharacterIsSelected();
+            int callerCharacterID = call.Session.EnsureCharacterIsSelected();
 
             int channelID;
             int? entityID;
@@ -307,7 +309,7 @@ namespace EVESharp.Node.Services.Chat
             {
                 this.NotificationManager.NotifyCharacters(
                     this.DB.GetOnlineCharsOnChannel(channelID),
-                    new OnLSC(call.Client, "SendMessage", channelID, notificationBody)
+                    new OnLSC(call.Session, "SendMessage", channelID, notificationBody)
                 );
             }
             else
@@ -324,7 +326,7 @@ namespace EVESharp.Node.Services.Chat
                 this.NotificationManager.SendNotification(
                     channelType,
                     new PyList(1) {[0] = entityID},
-                    new OnLSC(call.Client, "SendMessage", identifier, notificationBody)
+                    new OnLSC(call.Session, "SendMessage", identifier, notificationBody)
                 );
 
             }
@@ -362,7 +364,7 @@ namespace EVESharp.Node.Services.Chat
         
         public PyDataType LeaveChannel(PyDataType channel, PyInteger announce, CallInformation call)
         {
-            int callerCharacterID = call.Client.EnsureCharacterIsSelected();
+            int callerCharacterID = call.Session.EnsureCharacterIsSelected();
 
             int channelID;
             string channelType;
@@ -385,7 +387,7 @@ namespace EVESharp.Node.Services.Chat
             if (channelType != ChatDB.CHANNEL_TYPE_CORPID && channelType != ChatDB.CHANNEL_TYPE_SOLARSYSTEMID2 && announce == 1)
             {
                 // notify everyone in the channel only when it should
-                OnLSC leaveNotification = new OnLSC(call.Client, "LeaveChannel", channel, new PyTuple(0));
+                OnLSC leaveNotification = new OnLSC(call.Session, "LeaveChannel", channel, new PyTuple(0));
                 
                 if (channelType != ChatDB.CHANNEL_TYPE_NORMAL)
                     this.NotificationManager.SendNotification(channelType, new PyList(1) {[0] = channel}, leaveNotification);
@@ -403,7 +405,7 @@ namespace EVESharp.Node.Services.Chat
 
         public PyDataType CreateChannel(PyString name, CallInformation call)
         {
-            int callerCharacterID = call.Client.EnsureCharacterIsSelected();
+            int callerCharacterID = call.Session.EnsureCharacterIsSelected();
 
             if (name.Length > 60)
                 throw new ChatCustomChannelNameTooLong(60);
@@ -444,7 +446,7 @@ namespace EVESharp.Node.Services.Chat
 
         public PyDataType DestroyChannel(PyInteger channelID, CallInformation call)
         {
-            int callerCharacterID = call.Client.EnsureCharacterIsSelected();
+            int callerCharacterID = call.Session.EnsureCharacterIsSelected();
 
             // ensure the character has enough permissions
             if (this.DB.IsCharacterAdminOfChannel(channelID, callerCharacterID) == false)
@@ -457,14 +459,14 @@ namespace EVESharp.Node.Services.Chat
             this.DB.DestroyChannel(channelID);
             
             // notify all characters in the channel
-            this.NotificationManager.NotifyCharacters(characters, new OnLSC(call.Client, "DestroyChannel", channelID, new PyTuple(0)));
+            this.NotificationManager.NotifyCharacters(characters, new OnLSC(call.Session, "DestroyChannel", channelID, new PyTuple(0)));
 
             return null;
         }
 
         public PyDataType AccessControl(PyInteger channelID, PyInteger characterID, PyInteger accessLevel, CallInformation call)
         {
-            int callerCharacterID = call.Client.EnsureCharacterIsSelected();
+            int callerCharacterID = call.Session.EnsureCharacterIsSelected();
 
             if (this.DB.IsCharacterOperatorOrAdminOfChannel(channelID, callerCharacterID) == false)
                 throw new LSCCannotAccessControl("Insufficient permissions");
@@ -484,7 +486,7 @@ namespace EVESharp.Node.Services.Chat
             // get users in the channel that are online now
             this.NotificationManager.NotifyCharacters(
                 this.DB.GetOnlineCharsOnChannel(channelID),
-                new OnLSC(call.Client, "AccessControl", channelID, args)
+                new OnLSC(call.Session, "AccessControl", channelID, args)
             );
             
             // TODO: CHECK IF THIS IS A CHARACTER'S ADDRESS BOOK AND CHECK FOR OTHER CHARACTER'S ADDRESSBOOK STATUS
@@ -495,12 +497,12 @@ namespace EVESharp.Node.Services.Chat
 
         public PyDataType ForgetChannel(PyInteger channelID, CallInformation call)
         {
-            int callerCharacterID = call.Client.EnsureCharacterIsSelected();
+            int callerCharacterID = call.Session.EnsureCharacterIsSelected();
 
             // announce leaving, important in private channels
             this.NotificationManager.NotifyCharacters(
                 this.DB.GetOnlineCharsOnChannel(channelID),
-                new OnLSC(call.Client, "LeaveChannel", channelID, new PyTuple(0))
+                new OnLSC(call.Session, "LeaveChannel", channelID, new PyTuple(0))
             );
 
             this.DB.LeaveChannel(channelID, callerCharacterID);
@@ -516,6 +518,8 @@ namespace EVESharp.Node.Services.Chat
             {
                 // this user's character might not be in the service
                 // so fetch the name from the database
+                // TODO: SUPPORT REMOTE SERVICE CALLS AGAIN
+                /*
                 call.OriginalCall.Client.SendException(
                     call.OriginalCall,
                     new UserError(
@@ -527,10 +531,12 @@ namespace EVESharp.Node.Services.Chat
                         }
                     )
                 );
+                */
             }
             
             // return an empty response to the original calling client, this should get mechanism going for the JoinChannel notification
-            callInfo.Client.Transport.SendCallResult(call.OriginalCall, null);
+            // TODO: SUPPORT REMOTE SERVICE CALLS AGAIN
+            // callInfo.Client.Transport.SendCallResult(call.OriginalCall, null);
             
             // character has accepted, notify all users of the channel
             string channelType = this.DB.GetChannelType(call.ChannelID);
@@ -542,7 +548,7 @@ namespace EVESharp.Node.Services.Chat
                 // notify all the characters in the channel
                 this.NotificationManager.NotifyCharacters(
                     this.DB.GetOnlineCharsOnChannel(call.ChannelID),
-                    new OnLSC(callInfo.Client, "JoinChannel", call.ChannelID, new PyTuple(0))
+                    new OnLSC(callInfo.Session, "JoinChannel", call.ChannelID, new PyTuple(0))
                 );  
             }
         }
@@ -552,15 +558,18 @@ namespace EVESharp.Node.Services.Chat
             // if the call timed out the character is not connected
             InviteExtraInfo call = callInfo.ExtraInfo as InviteExtraInfo;
 
+            // TODO: SUPPORT REMOTE SERVICE CALLS AGAIN
+            /*
             call.OriginalCall.Client.SendException(
                 call.OriginalCall,
                 new ChtCharNotReachable(call.ToCharacterID)
             );
+            */
         }
 
         public PyDataType Invite(PyInteger characterID, PyInteger channelID, PyString channelTitle, PyBool addAllowed, CallInformation call)
         {
-            int callerCharacterID = call.Client.EnsureCharacterIsSelected();
+            int callerCharacterID = call.Session.EnsureCharacterIsSelected();
 
             try
             {
@@ -570,7 +579,7 @@ namespace EVESharp.Node.Services.Chat
                 if (ItemFactory.IsNPC(characterID) == true)
                     throw new ChtNPC(characterID);
 
-                    // ensure our character has admin perms first
+                // ensure our character has admin perms first
                 if (this.DB.IsCharacterOperatorOrAdminOfChannel(channelID, callerCharacterID) == false)
                     throw new ChtWrongRole(this.DB.GetChannelName(channelID), "Operator");
 
@@ -578,6 +587,7 @@ namespace EVESharp.Node.Services.Chat
                 if (this.DB.IsCharacterMemberOfChannel(channelID, characterID) == true)
                     throw new ChtAlreadyInChannel(characterID);
 
+                // TODO: THIS WONT WORK ON MULTIPLE-NODES ENVIRONMENTS, NEEDS FIXING
                 Character character = this.ItemFactory.GetItem<Character>(callerCharacterID);
 
                 PyTuple args = new PyTuple(4)
@@ -598,11 +608,14 @@ namespace EVESharp.Node.Services.Chat
                 };
                 
                 // no timeout for this call
+                // TODO: SUPPORT REMOTE SERVICE CALLS AGAIN
+                /*
                 call.Client.Transport.SendServiceCall(
                     "LSC", "ChatInvite", args, new PyDictionary(),
                     InviteAnswerCallback, InviteTimeoutCallback,
                     info, ProvisionalResponse.DEFAULT_TIMEOUT - 5
                 );
+                */
                 
                 // subscribe the user to the chat
                 this.DB.JoinChannel(channelID, characterID);
@@ -619,7 +632,7 @@ namespace EVESharp.Node.Services.Chat
 
         public PyDataType Page(PyList destinationMailboxes, PyString subject, PyString message, CallInformation call)
         {
-            int callerCharacterID = call.Client.EnsureCharacterIsSelected();
+            int callerCharacterID = call.Session.EnsureCharacterIsSelected();
             
             // TODO: AS IT IS RIGHT NOW THE USER CAN INJECT HTML IF THE CALL IS DONE MANUALL (THROUGH CUSTOM CODE OR IMPLEMENTING THE FULL GAME PROTOCOL)
             // TODO: THE HTML IT SUPPORTS IS NOT THAT BIG, BUT BETTER BE SAFE AND DO SOME DETECTIONS HERE TO PREVENT HTML FROM BEING USED!
@@ -632,7 +645,7 @@ namespace EVESharp.Node.Services.Chat
         public PyDataType GetMessageDetails(PyInteger channelID, PyInteger messageID, CallInformation call)
         {
             // ensure the player is allowed to read messages off this mail list
-            if (this.DB.IsPlayerAllowedToRead(channelID, call.Client.EnsureCharacterIsSelected()) == false)
+            if (this.DB.IsPlayerAllowedToRead(channelID, call.Session.EnsureCharacterIsSelected()) == false)
                 return null;
             
             return this.MessagesDB.GetMessageDetails(channelID, messageID);
@@ -640,7 +653,7 @@ namespace EVESharp.Node.Services.Chat
 
         public PyDataType MarkMessagesRead(PyList messageIDs, CallInformation call)
         {
-            int callerCharacterID = call.Client.EnsureCharacterIsSelected();
+            int callerCharacterID = call.Session.EnsureCharacterIsSelected();
             
             this.MessagesDB.MarkMessagesRead(callerCharacterID, messageIDs.GetEnumerable<PyInteger>());
             
@@ -649,7 +662,7 @@ namespace EVESharp.Node.Services.Chat
 
         public PyDataType DeleteMessages(PyInteger mailboxID, PyList messageIDs, CallInformation call)
         {
-            int callerCharacterID = call.Client.EnsureCharacterIsSelected();
+            int callerCharacterID = call.Session.EnsureCharacterIsSelected();
             
             this.MessagesDB.DeleteMessages(callerCharacterID, mailboxID, messageIDs.GetEnumerable<PyInteger>());
 

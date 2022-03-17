@@ -1,16 +1,15 @@
-using System.Collections.Generic;
-using EVESharp.Common.Services;
+using EVESharp.EVE.Services;
 using EVESharp.Node.Inventory;
 using EVESharp.Node.Inventory.Items.Types;
 using EVESharp.Node.Network;
-using EVESharp.Node.Exceptions;
+using EVESharp.Node.Sessions;
 using EVESharp.PythonTypes.Types.Collections;
-using EVESharp.PythonTypes.Types.Primitives;
 
 namespace EVESharp.Node.Services.Stations
 {
-    public class station : IService
+    public class station : Service
     {
+        public override AccessLevel AccessLevel => AccessLevel.None;
         private ItemFactory ItemFactory { get; }
         public station(ItemFactory itemFactory) 
         {
@@ -19,7 +18,7 @@ namespace EVESharp.Node.Services.Stations
 
         public PyTuple GetStationItemBits(CallInformation call)
         {
-            int stationID = call.Client.EnsureCharacterIsInStation();
+            int stationID = call.Session.EnsureCharacterIsInStation();
 
             Station station = this.ItemFactory.GetStaticStation(stationID);
 
@@ -35,7 +34,7 @@ namespace EVESharp.Node.Services.Stations
 
         public PyList<PyTuple> GetGuests(CallInformation call)
         {
-            int stationID = call.Client.EnsureCharacterIsInStation();
+            int stationID = call.Session.EnsureCharacterIsInStation();
 
             Station station = this.ItemFactory.GetStaticStation(stationID);
             PyList<PyTuple> result = new PyList<PyTuple>();

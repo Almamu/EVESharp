@@ -1,4 +1,6 @@
 ﻿using System.Collections.Generic;
+using EVESharp.EVE.Services;
+using EVESharp.EVE.Sessions;
 using EVESharp.Node.Database;
 using EVESharp.Node.Inventory.Items.Types;
 using EVESharp.Node.Network;
@@ -11,11 +13,13 @@ namespace EVESharp.Node.Services.Corporations
 {
     public class OfficesSparseRowsetService : SparseRowsetDatabaseService
     {
+        public override AccessLevel AccessLevel => AccessLevel.None;
+        
         private Dictionary<PyDataType, int> RowsIndex = new Dictionary<PyDataType, int>();
         private Corporation Corporation { get; }
         private CorporationDB DB { get; }
         
-        public OfficesSparseRowsetService(Corporation corporation, CorporationDB db, SparseRowsetHeader rowsetHeader, BoundServiceManager manager, Client client) : base(rowsetHeader, manager, client, true)
+        public OfficesSparseRowsetService(Corporation corporation, CorporationDB db, SparseRowsetHeader rowsetHeader, BoundServiceManager manager, Session session) : base(rowsetHeader, manager, session, true)
         {
             this.DB = db;
             this.Corporation = corporation;
@@ -59,9 +63,9 @@ namespace EVESharp.Node.Services.Corporations
             throw new System.NotImplementedException();
         }
 
-        public override bool IsClientAllowedToCall(CallInformation call)
+        public override bool IsClientAllowedToCall(ServiceCall call)
         {
-            return call.Client.CorporationID == this.Corporation.ID;
+            return call.Session.CorporationID == this.Corporation.ID;
         }
     }
 }

@@ -1,6 +1,9 @@
 using EVESharp.EVE;
 using EVESharp.EVE.Packets.Exceptions;
+using EVESharp.EVE.Services;
+using EVESharp.EVE.Sessions;
 using EVESharp.Node.Database;
+using EVESharp.Node.Dogma;
 using EVESharp.Node.Exceptions.corpRegistry;
 using EVESharp.Node.Exceptions.inventory;
 using EVESharp.Node.Inventory;
@@ -12,6 +15,7 @@ using EVESharp.Node.StaticData.Corporation;
 using EVESharp.Node.StaticData.Inventory;
 using EVESharp.Node.Exceptions;
 using EVESharp.Node.Exceptions.ship;
+using EVESharp.Node.Sessions;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Primitives;
 using Container = EVESharp.Node.StaticData.Inventory.Container;
@@ -20,6 +24,7 @@ namespace EVESharp.Node.Services.Inventory
 {
     public class invbroker : ClientBoundService
     {
+        public override AccessLevel AccessLevel => AccessLevel.None;
         private int mObjectID;
         
         private ItemFactory ItemFactory { get; }
@@ -27,22 +32,25 @@ namespace EVESharp.Node.Services.Inventory
         private NodeContainer NodeContainer { get; }
         private SystemManager SystemManager => this.ItemFactory.SystemManager;
         private NotificationManager NotificationManager { get; init; }
+        private Node.Dogma.Dogma Dogma { get; }
 
-        public invbroker(ItemDB itemDB, ItemFactory itemFactory, NodeContainer nodeContainer, NotificationManager notificationManager, BoundServiceManager manager) : base(manager)
+        public invbroker(ItemDB itemDB, ItemFactory itemFactory, NodeContainer nodeContainer, NotificationManager notificationManager, Node.Dogma.Dogma dogma, BoundServiceManager manager) : base(manager)
         {
             this.ItemFactory = itemFactory;
             this.ItemDB = itemDB;
             this.NodeContainer = nodeContainer;
             this.NotificationManager = notificationManager;
+            this.Dogma = dogma;
         }
 
-        private invbroker(ItemDB itemDB, ItemFactory itemFactory, NodeContainer nodeContainer, NotificationManager notificationManager, BoundServiceManager manager, int objectID, Client client) : base(manager, client, objectID)
+        private invbroker(ItemDB itemDB, ItemFactory itemFactory, NodeContainer nodeContainer, NotificationManager notificationManager, Node.Dogma.Dogma dogma, BoundServiceManager manager, int objectID, Session session) : base(manager, session, objectID)
         {
             this.ItemFactory = itemFactory;
             this.ItemDB = itemDB;
             this.mObjectID = objectID;
             this.NodeContainer = nodeContainer;
             this.NotificationManager = notificationManager;
+            this.Dogma = dogma;
         }
 
         private ItemInventory CheckInventoryBeforeLoading(ItemEntity inventoryItem)
@@ -58,7 +66,7 @@ namespace EVESharp.Node.Services.Inventory
             return inventoryItem as ItemInventory;
         }
 
-        private PySubStruct BindInventory(ItemInventory inventoryItem, int ownerID, Client client, Flags flag)
+        private PySubStruct BindInventory(ItemInventory inventoryItem, int ownerID, Session session, Flags flag)
         {
             ItemInventory inventory = inventoryItem;
             
@@ -67,12 +75,12 @@ namespace EVESharp.Node.Services.Inventory
                 inventory = this.ItemFactory.MetaInventoryManager.RegisterMetaInventoryForOwnerID(inventoryItem, ownerID, flag);
             
             // create an instance of the inventory service and bind it to the item data
-            return BoundInventory.BindInventory(this.ItemDB, inventory, flag, this.ItemFactory, this.NodeContainer, this.NotificationManager, this.BoundServiceManager, client);
+            return BoundInventory.BindInventory(this.ItemDB, inventory, flag, this.ItemFactory, this.NodeContainer, this.NotificationManager, this.Dogma, this.BoundServiceManager, session);
         }
 
         public PySubStruct GetInventoryFromId(PyInteger itemID, PyInteger one, CallInformation call)
         {
-            int ownerID = call.Client.EnsureCharacterIsSelected();
+            int ownerID = call.Session.EnsureCharacterIsSelected();
             ItemEntity inventoryItem = this.ItemFactory.LoadItem(itemID);
 
             if (inventoryItem is not Station)
@@ -81,13 +89,13 @@ namespace EVESharp.Node.Services.Inventory
             return this.BindInventory(
                 this.CheckInventoryBeforeLoading(inventoryItem),
                 ownerID,
-                call.Client, Flags.None
+                call.Session, Flags.None
             );
         }
 
         public PySubStruct GetInventory(PyInteger containerID, PyInteger origOwnerID, CallInformation call)
         {
-            int ownerID = call.Client.EnsureCharacterIsSelected();
+            int ownerID = call.Session.EnsureCharacterIsSelected();
             
             Flags flag = Flags.None;
             
@@ -102,7 +110,7 @@ namespace EVESharp.Node.Services.Inventory
                     if (origOwnerID is not null)
                         ownerID = origOwnerID;
 
-                    if (ownerID != call.Client.CharacterID && CorporationRole.SecurityOfficer.Is(call.Client.CorporationRole) == false)
+                    if (ownerID != call.Session.CharacterID && CorporationRole.SecurityOfficer.Is(call.Session.CorporationRole) == false)
                         throw new CrpAccessDenied(MLS.UI_CORP_ACCESSDENIED13);
                     
                     break;
@@ -114,12 +122,12 @@ namespace EVESharp.Node.Services.Inventory
                     break;
                 case (int) Container.CorpMarket:
                     flag = Flags.CorpMarket;
-                    ownerID = call.Client.CorporationID;
+                    ownerID = call.Session.CorporationID;
                     
                     // check permissions
-                    if (CorporationRole.Accountant.Is(call.Client.CorporationRole) == false &&
-                        CorporationRole.JuniorAccountant.Is(call.Client.CorporationRole) == false &&
-                        CorporationRole.Trader.Is(call.Client.CorporationRole) == false)
+                    if (CorporationRole.Accountant.Is(call.Session.CorporationRole) == false &&
+                        CorporationRole.JuniorAccountant.Is(call.Session.CorporationRole) == false &&
+                        CorporationRole.Trader.Is(call.Session.CorporationRole) == false)
                         throw new CrpAccessDenied(MLS.UI_CORP_ACCESSDENIED14);
                     break;
                 
@@ -133,16 +141,18 @@ namespace EVESharp.Node.Services.Inventory
             return this.BindInventory(
                 this.CheckInventoryBeforeLoading(inventoryItem),
                 ownerID,
-                call.Client, flag
+                call.Session, flag
             );
         }
 
         public PyDataType TrashItems(PyList itemIDs, PyInteger stationID, CallInformation call)
         {
+            int callerCharacterID = call.Session.EnsureCharacterIsSelected();
+            
             foreach (PyInteger itemID in itemIDs.GetEnumerable<PyInteger>())
             {
                 // do not trash the active ship
-                if (itemID == call.Client.ShipID)
+                if (itemID == call.Session.ShipID)
                     throw new CantMoveActiveShip();
 
                 ItemEntity item = this.ItemFactory.GetItem(itemID);
@@ -152,7 +162,7 @@ namespace EVESharp.Node.Services.Inventory
                 // remove the item off the ItemManager
                 this.ItemFactory.DestroyItem(item);
                 // notify the client of the change
-                call.Client.NotifyMultiEvent(OnItemChange.BuildLocationChange(item, oldFlag, oldLocation));
+                this.Dogma.QueueMultiEvent(callerCharacterID, OnItemChange.BuildLocationChange(item, oldFlag, oldLocation));
                 // TODO: CHECK IF THE ITEM HAS ANY META INVENTORY AND/OR BOUND SERVICE
                 // TODO: AND FREE THOSE TOO SO THE ITEMS CAN BE REMOVED OFF THE DATABASE
             }
@@ -165,7 +175,7 @@ namespace EVESharp.Node.Services.Inventory
             ItemEntity item = this.ItemFactory.GetItem(itemID);
 
             // ensure the itemID is owned by the client's character
-            if (item.OwnerID != call.Client.EnsureCharacterIsSelected())
+            if (item.OwnerID != call.Session.EnsureCharacterIsSelected())
                 throw new TheItemIsNotYoursToTake(itemID);
 
             item.Name = newLabel;
@@ -185,7 +195,7 @@ namespace EVESharp.Node.Services.Inventory
         {
             ItemEntity item = this.ItemFactory.GetItem(containerID);
 
-            if (item.OwnerID != call.Client.EnsureCharacterIsSelected())
+            if (item.OwnerID != call.Session.EnsureCharacterIsSelected())
                 throw new TheItemIsNotYoursToTake(containerID);
             
             // ensure the item is a cargo container
@@ -209,7 +219,7 @@ namespace EVESharp.Node.Services.Inventory
             item.Persist();
 
             // notify the client
-            call.Client.NotifyMultiEvent(OnItemChange.BuildSingletonChange(item, oldSingleton));
+            this.Dogma.QueueMultiEvent(item.OwnerID, OnItemChange.BuildSingletonChange(item, oldSingleton));
 
             return null;
         }
@@ -249,7 +259,7 @@ namespace EVESharp.Node.Services.Inventory
             if (this.MachoResolveObject(bindParams, call) != this.NodeContainer.NodeID)
                 throw new CustomError("Trying to bind an object that does not belong to us!");
             
-            return new invbroker(this.ItemDB, this.ItemFactory, this.NodeContainer, this.NotificationManager, this.BoundServiceManager, bindParams.ObjectID, call.Client);
+            return new invbroker(this.ItemDB, this.ItemFactory, this.NodeContainer, this.NotificationManager, this.Dogma, this.BoundServiceManager, bindParams.ObjectID, call.Session);
         }
     }
 }

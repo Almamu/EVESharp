@@ -1,12 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.CompilerServices;
-using EVESharp.Common.Constants;
 using EVESharp.Common.Logging;
-using EVESharp.Common.Services;
 using EVESharp.EVE;
+using EVESharp.EVE.Services;
 using EVESharp.Node.Database;
+using EVESharp.Node.Dogma;
 using EVESharp.Node.Exceptions.slash;
 using EVESharp.Node.Inventory;
 using EVESharp.Node.Inventory.Items;
@@ -15,34 +14,34 @@ using EVESharp.Node.Market;
 using EVESharp.Node.Network;
 using EVESharp.Node.Notifications.Client.Inventory;
 using EVESharp.Node.Notifications.Client.Skills;
+using EVESharp.Node.Sessions;
 using EVESharp.Node.StaticData.Inventory;
-using EVESharp.Node.Services.Account;
-using EVESharp.Node.StaticData;
-using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Primitives;
-using Type = EVESharp.Node.StaticData.Inventory.Type;
 
 namespace EVESharp.Node.Services.Network
 {
-    public class slash : IService
+    public class slash : Service
     {
+        public override AccessLevel AccessLevel => AccessLevel.None;
         private TypeManager TypeManager => this.ItemFactory.TypeManager;
         private ItemFactory ItemFactory { get; }
         private Channel Log { get; }
         private CharacterDB CharacterDB { get; }
         private NotificationManager NotificationManager { get; }
         private WalletManager WalletManager { get; }
+        private Node.Dogma.Dogma Dogma { get; }
 
         private readonly Dictionary<string, Action<string[], CallInformation>> mCommands =
             new Dictionary<string, Action<string[], CallInformation>>();
         
-        public slash(Logger logger, ItemFactory itemFactory, CharacterDB characterDB, NotificationManager notificationManager, WalletManager walletManager)
+        public slash(Logger logger, ItemFactory itemFactory, CharacterDB characterDB, NotificationManager notificationManager, WalletManager walletManager, Node.Dogma.Dogma dogma)
         {
             this.Log = logger.CreateLogChannel("Slash");
             this.ItemFactory = itemFactory;
             this.CharacterDB = characterDB;
             this.NotificationManager = notificationManager;
             this.WalletManager = walletManager;
+            this.Dogma = dogma;
 
                 // register commands
             this.mCommands["create"] = CreateCmd;
@@ -64,7 +63,7 @@ namespace EVESharp.Node.Services.Network
         
         public PyDataType SlashCmd(PyString line, CallInformation call)
         {
-            if ((call.Client.Role & (int) Roles.ROLE_ADMIN) != (int) Roles.ROLE_ADMIN)
+            if ((call.Session.Role & (int) Roles.ROLE_ADMIN) != (int) Roles.ROLE_ADMIN)
                 throw new SlashError("Only admins can run slash commands!");
 
             try
@@ -106,7 +105,7 @@ namespace EVESharp.Node.Services.Network
                 throw new SlashError("giveisk second argument must be the ISK quantity to give");
 
             int targetCharacterID = 0;
-            int originCharacterID = call.Client.EnsureCharacterIsSelected();
+            int originCharacterID = call.Session.EnsureCharacterIsSelected();
             double finalBalance = 0;
             
             if (targetCharacter == "me")
@@ -148,15 +147,15 @@ namespace EVESharp.Node.Services.Network
             if (argv.Length > 2)
                 quantity = int.Parse(argv[2]);
 
-            if (call.Client.StationID == null)
+            if (call.Session.StationID == null)
                 throw new SlashError("Creating items can only be done at station");
             // ensure the typeID exists
             if (this.TypeManager.ContainsKey(typeID) == false)
                 throw new SlashError("The specified typeID doesn't exist");
             
             // create a new item with the correct locationID
-            Station location = this.ItemFactory.GetStaticStation((int) call.Client.StationID);
-            Character character = this.ItemFactory.GetItem<Character>(call.Client.EnsureCharacterIsSelected());
+            Station location = this.ItemFactory.GetStaticStation((int) call.Session.StationID);
+            Character character = this.ItemFactory.GetItem<Character>(call.Session.EnsureCharacterIsSelected());
             
             StaticData.Inventory.Type itemType = this.TypeManager[typeID];
             ItemEntity item = this.ItemFactory.CreateSimpleItem(itemType, character, location, Flags.Hangar, quantity);
@@ -164,7 +163,7 @@ namespace EVESharp.Node.Services.Network
             item.Persist();
             
             // send client a notification so they can display the item in the hangar
-            call.Client.NotifyMultiEvent(OnItemChange.BuildNewItemChange(item));
+            this.Dogma.QueueMultiEvent(call.Session.EnsureCharacterIsSelected(), OnItemChange.BuildNewItemChange(item));
         }
 
         private static int ParseIntegerThatMightBeDecimal(string value)
@@ -183,7 +182,7 @@ namespace EVESharp.Node.Services.Network
             if (argv.Length != 4)
                 throw new SlashError("GiveSkill must have 4 arguments");
 
-            int characterID = call.Client.EnsureCharacterIsSelected();
+            int characterID = call.Session.EnsureCharacterIsSelected();
             
             string target = argv[1].Trim(new [] { '"', ' '});
             string skillType = argv[2];
@@ -211,7 +210,7 @@ namespace EVESharp.Node.Services.Network
 
                         skill.Level = level;
                         skill.Persist();
-                        call.Client.NotifyMultiEvent(new OnSkillTrained(skill));
+                        this.Dogma.QueueMultiEvent(character.ID, new OnSkillTrained(skill));
                     }
                     else
                     {
@@ -219,8 +218,8 @@ namespace EVESharp.Node.Services.Network
                         Skill skill = this.ItemFactory.CreateSkill(pair.Value, character, level,
                             SkillHistoryReason.GMGiveSkill);
 
-                        call.Client.NotifyMultiEvent(OnItemChange.BuildNewItemChange(skill));
-                        call.Client.NotifyMultiEvent(new OnSkillInjected());
+                        this.Dogma.QueueMultiEvent(character.ID, OnItemChange.BuildNewItemChange(skill));
+                        this.Dogma.QueueMultiEvent(character.ID, new OnSkillInjected());
                     }
                 }
             }
@@ -236,9 +235,9 @@ namespace EVESharp.Node.Services.Network
 
                     skill.Level = level;
                     skill.Persist();
-                    call.Client.NotifyMultiEvent(new OnSkillStartTraining(skill));
-                    call.Client.NotifyAttributeChange(new Attributes[] { Attributes.skillPoints, Attributes.skillLevel}, skill);
-                    call.Client.NotifyMultiEvent(new OnSkillTrained(skill));
+                    this.Dogma.QueueMultiEvent(character.ID, new OnSkillStartTraining(skill));
+                    this.Dogma.NotifyAttributeChange(character.ID, new Attributes[] { Attributes.skillPoints, Attributes.skillLevel}, skill);
+                    this.Dogma.QueueMultiEvent(character.ID, new OnSkillTrained(skill));
                 }
                 else
                 {
@@ -246,8 +245,8 @@ namespace EVESharp.Node.Services.Network
                     Skill skill = this.ItemFactory.CreateSkill(this.TypeManager[skillTypeID], character, level,
                         SkillHistoryReason.GMGiveSkill);
 
-                    call.Client.NotifyMultiEvent(OnItemChange.BuildNewItemChange(skill));
-                    call.Client.NotifyMultiEvent(new OnSkillInjected());
+                    this.Dogma.QueueMultiEvent(character.ID, OnItemChange.BuildNewItemChange(skill));
+                    this.Dogma.QueueMultiEvent(character.ID, new OnSkillInjected());
                 }
             }
         }

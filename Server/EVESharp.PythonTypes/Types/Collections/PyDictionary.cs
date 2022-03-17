@@ -93,6 +93,11 @@ namespace EVESharp.PythonTypes.Types.Collections
             return this.mDictionary.Remove(key);
         }
 
+        public void Clear()
+        {
+            this.mDictionary.Clear();
+        }
+
         public bool ContainsKey(PyDataType key)
         {
             return this.mDictionary.ContainsKey(key);

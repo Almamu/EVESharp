@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using EVESharp.EVE.Packets.Complex;
+using EVESharp.Node.Dogma;
 using EVESharp.Node.StaticData.Corporation;
 using EVESharp.Node.Inventory;
 using EVESharp.Node.Notifications;
@@ -15,31 +16,31 @@ namespace EVESharp.Node.Network
         /// <summary>
         /// idType to use when notificating characters
         /// </summary>
-        private const string NOTIFICATION_TYPE_CHARACTER = "charid";
+        public const string NOTIFICATION_TYPE_CHARACTER = "charid";
         /// <summary>
         /// idType to use when notificating corporations
         /// </summary>
-        private const string NOTIFICATION_TYPE_CORPORATON = "corpid";
+        public const string NOTIFICATION_TYPE_CORPORATON = "corpid";
         /// <summary>
         /// idType to use when notificating stations
         /// </summary>
-        private const string NOTIFICATION_TYPE_STATION = "stationid";
+        public const string NOTIFICATION_TYPE_STATION = "stationid";
         /// <summary>
         /// idType to use when notificating owners (corporation, character, alliances...)
         /// </summary>
-        private const string NOTIFICATION_TYPE_OWNER = "ownerid";
+        public const string NOTIFICATION_TYPE_OWNER = "ownerid";
         /// <summary>
         /// idType to use when notificating owners (corporation, character, alliances...) at a specific station
         /// </summary>
-        private const string NOTIFICATION_TYPE_OWNER_LOCATIONID = "ownerid&locationid";
+        public const string NOTIFICATION_TYPE_OWNER_LOCATIONID = "ownerid&locationid";
         /// <summary>
         /// idType to use when notificating corporation members based on role
         /// </summary>
-        private const string NOTIFICATION_TYPE_CORPORATION_ROLE = "corpid&corprole";
+        public const string NOTIFICATION_TYPE_CORPORATION_ROLE = "corpid&corprole";
         /// <summary>
         /// idType to use when notificating corporation members based on role
         /// </summary>
-        private const string NOTIFICATION_TYPE_ALLIANCE = "allianceid";
+        public const string NOTIFICATION_TYPE_ALLIANCE = "allianceid";
         
         /// <summary>
         /// The connection this notification manager is using to send notifications through
@@ -51,15 +52,9 @@ namespace EVESharp.Node.Network
         /// </summary>
         public NodeContainer Container { get; }
         
-        /// <summary>
-        /// The client manager used by this notification manager to decide whether to send a notification or not
-        /// </summary>
-        public ClientManager ClientManager { get; }
-        
-        public NotificationManager(NodeContainer container, ClientManager clientManager)
+        public NotificationManager(NodeContainer container)
         {
             this.Container = container;
-            this.ClientManager = clientManager;
         }
 
         public void NotifyCharacters(PyList<PyInteger> characterIDs, string type, PyTuple notification)
@@ -72,9 +67,6 @@ namespace EVESharp.Node.Network
         public void NotifyCharacter(int characterID, string type, PyTuple notification)
         {
             // do not waste network resources on useless notifications
-            if (this.ClientManager.ContainsCharacterID(characterID) == false)
-                return;
-
             this.SendNotification(type, NOTIFICATION_TYPE_CHARACTER, characterID, notification);
         }
 
@@ -85,10 +77,6 @@ namespace EVESharp.Node.Network
         
         public void NotifyCharacter(int characterID, ClientNotification entry)
         {
-            // do not waste network resources on useless notifications
-            if (this.ClientManager.ContainsCharacterID(characterID) == false)
-                return;
-            
             // build a proper notification for this
             this.SendNotification(NOTIFICATION_TYPE_CHARACTER, characterID, entry);
         }
@@ -164,8 +152,7 @@ namespace EVESharp.Node.Network
                 UserID = -1
             };
 
-            // TODO: SEND NOTIFICATION
-            // this.MachoServerTransport.Send(packet);
+            this.MachoServerTransport.MachoNet.QueuePacket(packet);
         }
 
         public void SendNotification(string idType, int id, ClientNotification data)

@@ -1,13 +1,13 @@
-﻿using EVESharp.Common.Services;
+﻿using EVESharp.EVE.Services;
 using EVESharp.Node.Database;
 using EVESharp.Node.Network;
-using EVESharp.Node.StaticData.Inventory;
 using EVESharp.PythonTypes.Types.Primitives;
 
 namespace EVESharp.Node.Services.Data
 {
-    public class lookupSvc : IService
+    public class lookupSvc : Service
     {
+        public override AccessLevel AccessLevel => AccessLevel.None;
         private LookupDB DB { get; }
         
         public lookupSvc(LookupDB db)

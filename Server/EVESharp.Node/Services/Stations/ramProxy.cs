@@ -1,19 +1,19 @@
-﻿using EVESharp.Common.Services;
-using EVESharp.EVE.Packets.Exceptions;
+﻿using EVESharp.EVE.Packets.Exceptions;
+using EVESharp.EVE.Services;
 using EVESharp.Node.Database;
 using EVESharp.Node.Inventory;
 using EVESharp.Node.Inventory.Items.Types;
 using EVESharp.Node.Network;
+using EVESharp.Node.Sessions;
 using EVESharp.Node.StaticData.Inventory;
-using EVESharp.Node.Inventory.Items;
-using EVESharp.Node.Inventory.Items.Attributes;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Primitives;
 
 namespace EVESharp.Node.Services.Stations
 {
-    public class ramProxy : IService
+    public class ramProxy : Service
     {
+        public override AccessLevel AccessLevel => AccessLevel.None;
         private ItemFactory ItemFactory { get; }
         private RAMDB DB { get; }
         
@@ -25,7 +25,7 @@ namespace EVESharp.Node.Services.Stations
         
         public PyDataType GetRelevantCharSkills(CallInformation call)
         {
-            Character character = this.ItemFactory.GetItem<Character>(call.Client.EnsureCharacterIsSelected());
+            Character character = this.ItemFactory.GetItem<Character>(call.Session.EnsureCharacterIsSelected());
             
             // i guess this call fetches skills that affect maximumManufacturingJobCount and maximumResearchJobCount
             return new PyTuple(2)
@@ -49,9 +49,9 @@ namespace EVESharp.Node.Services.Stations
         public PyDataType AssemblyLinesSelect(PyString typeFlag, CallInformation call)
         {
             if (typeFlag == "region")
-                return this.DB.GetRegionDetails(call.Client.RegionID);
+                return this.DB.GetRegionDetails(call.Session.RegionID);
             if (typeFlag == "char")
-                return this.DB.GetPersonalDetails(call.Client.EnsureCharacterIsSelected());
+                return this.DB.GetPersonalDetails(call.Session.EnsureCharacterIsSelected());
             
             // TODO: HANDLE CORP AND ALLIANCE!
 
@@ -65,7 +65,7 @@ namespace EVESharp.Node.Services.Stations
 
         public PyDataType GetJobs2(PyInteger ownerID, PyBool completed, PyInteger fromDate, PyInteger toDate, CallInformation call)
         {
-            if (ownerID != call.Client.EnsureCharacterIsSelected())
+            if (ownerID != call.Session.EnsureCharacterIsSelected())
                 throw new CustomError("Corporation and/or alliance stuff not implemented yet!");
             
             return this.DB.GetJobs2(ownerID, completed, fromDate ?? long.MinValue, toDate ?? long.MaxValue);

@@ -25,6 +25,9 @@
 using System;
 using System.Collections.Generic;
 using EVESharp.Common.Logging;
+using EVESharp.EVE.Services;
+using EVESharp.EVE.Services.Exceptions;
+using EVESharp.EVE.Sessions;
 using EVESharp.Node.Services.Account;
 using EVESharp.Node.Services.Alliances;
 using EVESharp.Node.Services.CacheSvc;
@@ -46,7 +49,7 @@ using EVESharp.PythonTypes.Types.Primitives;
 
 namespace EVESharp.Node.Network
 {
-    public class ServiceManager : EVESharp.Common.Services.ServiceManager
+    public class ServiceManager : IServiceManager<string>
     {
         private int mNextCallID = 0;
         private Dictionary<int, RemoteCall> mCallCallbacks = new Dictionary<int, RemoteCall>();
@@ -287,12 +290,12 @@ namespace EVESharp.Node.Network
         /// <param name="timeoutCallback">The function to call if the call timeout expires</param>
         /// <param name="timeoutSeconds">The amount of seconds to wait until timing out</param>
         /// <returns>The callID to be notified to the client</returns>
-        public int ExpectRemoteServiceResult(Action<RemoteCall, PyDataType> callback, Client client, object extraInfo = null,
+        public int ExpectRemoteServiceResult(Action<RemoteCall, PyDataType> callback, Session session, object extraInfo = null,
             Action<RemoteCall> timeoutCallback = null, int timeoutSeconds = 0)
         {
             RemoteCall entry = new RemoteCall
             {
-                Callback = callback, ExtraInfo = extraInfo, TimeoutCallback = timeoutCallback, Client = client
+                Callback = callback, ExtraInfo = extraInfo, TimeoutCallback = timeoutCallback, Session = session
             };
 
             return this.ExpectRemoteServiceResult(entry, timeoutSeconds);
@@ -312,10 +315,21 @@ namespace EVESharp.Node.Network
         {
             RemoteCall entry = new RemoteCall
             {
-                Callback = callback, ExtraInfo = extraInfo, TimeoutCallback = timeoutCallback, Client = null, NodeID = nodeID
+                Callback = callback, ExtraInfo = extraInfo, TimeoutCallback = timeoutCallback, Session = null, NodeID = nodeID
             };
 
             return this.ExpectRemoteServiceResult(entry, timeoutSeconds);
+        }
+
+        public PyDataType ServiceCall(string service, string method, ServiceCall call)
+        {
+            // search for the service locally
+            object svc = this.GetType().GetProperty(service)?.GetValue(this);
+
+            if (svc is not Service svcInstance)
+                throw new MissingServiceException<string>(service, method);
+
+            return svcInstance.ExecuteCall(method, call);
         }
     }
 }

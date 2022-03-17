@@ -1,19 +1,21 @@
-using EVESharp.Common.Services;
 using EVESharp.EVE.Packets.Complex;
 using EVESharp.EVE.Packets.Exceptions;
+using EVESharp.EVE.Services;
 using EVESharp.Node.Database;
 using EVESharp.Node.Inventory;
 using EVESharp.Node.Inventory.Items.Types;
 using EVESharp.Node.Network;
 using EVESharp.Node.Notifications.Client.Character;
+using EVESharp.Node.Sessions;
 using EVESharp.Node.StaticData.Standings;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Primitives;
 
 namespace EVESharp.Node.Services.War
 {
-    public class standing2 : IService
+    public class standing2 : Service
     {
+        public override AccessLevel AccessLevel => AccessLevel.None;
         private StandingDB DB { get; }
         private CacheStorage CacheStorage { get; }
         private ItemFactory ItemFactory { get; }
@@ -55,7 +57,7 @@ namespace EVESharp.Node.Services.War
 
         public PyTuple GetCharStandings(CallInformation call)
         {
-            int callerCharacterID = call.Client.EnsureCharacterIsSelected();
+            int callerCharacterID = call.Session.EnsureCharacterIsSelected();
 
             return new PyTuple(3)
             {
@@ -67,7 +69,7 @@ namespace EVESharp.Node.Services.War
 
         public PyTuple GetCorpStandings(CallInformation call)
         {
-            int corporationID = call.Client.CorporationID;
+            int corporationID = call.Session.CorporationID;
 
             return new PyTuple(3)
             {
@@ -80,9 +82,9 @@ namespace EVESharp.Node.Services.War
         public PyDataType GetStandingTransactions(PyInteger from, PyInteger to, PyInteger direction, PyInteger eventID,
             PyInteger eventTypeID, PyInteger eventDateTime, CallInformation call)
         {
-            int callerCharacterID = call.Client.EnsureCharacterIsSelected();
+            int callerCharacterID = call.Session.EnsureCharacterIsSelected();
             
-            if (from != call.Client.CorporationID && from != callerCharacterID && to != call.Client.CorporationID &&
+            if (from != call.Session.CorporationID && from != callerCharacterID && to != call.Session.CorporationID &&
                 to != callerCharacterID)
                 throw new CustomError("You can only view standings that concern you");
             
@@ -108,7 +110,7 @@ namespace EVESharp.Node.Services.War
 
         public PyDataType SetPlayerStanding(PyInteger entityID, PyDecimal standing, PyString reason, CallInformation call)
         {
-            int callerCharacterID = call.Client.EnsureCharacterIsSelected();
+            int callerCharacterID = call.Session.EnsureCharacterIsSelected();
             
             this.DB.CreateStandingTransaction((int) EventType.StandingPlayerSetStanding, callerCharacterID, entityID, standing, reason);
             this.DB.SetPlayerStanding(callerCharacterID, entityID, standing);
@@ -125,14 +127,14 @@ namespace EVESharp.Node.Services.War
         public PyDataType SetCorpStanding(PyInteger entityID, PyDecimal standing, PyString reason, CallInformation call)
         {
             // check for permissions
-            this.DB.CreateStandingTransaction((int) EventType.StandingPlayerCorpSetStanding, call.Client.CorporationID, entityID, standing, reason);
-            this.DB.SetPlayerStanding(call.Client.CorporationID, entityID, standing);
+            this.DB.CreateStandingTransaction((int) EventType.StandingPlayerCorpSetStanding, call.Session.CorporationID, entityID, standing, reason);
+            this.DB.SetPlayerStanding(call.Session.CorporationID, entityID, standing);
             
             // TODO: MAYBE SEND ONSETCORPSTANDING NOTIFICATION?!
             // send the same notification to both players
             this.NotificationManager.NotifyOwners(
-                new PyList<PyInteger>(2) {[0] = call.Client.CorporationID, [1] = entityID},
-                new OnStandingSet(call.Client.CorporationID, entityID, standing)
+                new PyList<PyInteger>(2) {[0] = call.Session.CorporationID, [1] = entityID},
+                new OnStandingSet(call.Session.CorporationID, entityID, standing)
             );
 
             return null;

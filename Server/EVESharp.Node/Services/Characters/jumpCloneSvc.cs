@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using EVESharp.EVE;
 using EVESharp.EVE.Packets.Exceptions;
+using EVESharp.EVE.Services;
+using EVESharp.EVE.Sessions;
 using EVESharp.Node.Database;
 using EVESharp.Node.Exceptions.jumpCloneSvc;
 using EVESharp.Node.Inventory;
@@ -14,6 +16,7 @@ using EVESharp.Node.StaticData.Inventory;
 using EVESharp.Node.Exceptions;
 using EVESharp.Node.Inventory.SystemEntities;
 using EVESharp.Node.Services.Account;
+using EVESharp.Node.Sessions;
 using EVESharp.Node.StaticData;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Database;
@@ -24,6 +27,8 @@ namespace EVESharp.Node.Services.Characters
 {
     public class jumpCloneSvc : ClientBoundService
     {
+        public override AccessLevel AccessLevel => AccessLevel.None;
+        
         private ItemDB ItemDB { get; }
         private MarketDB MarketDB { get; }
         private ItemFactory ItemFactory { get; }
@@ -44,7 +49,7 @@ namespace EVESharp.Node.Services.Characters
         }
         
         protected jumpCloneSvc(int locationID, ItemDB itemDB, MarketDB marketDB, ItemFactory itemFactory,
-            SystemManager systemManager, BoundServiceManager manager, WalletManager walletManager, NotificationManager notificationManager, Client client) : base(manager, client, locationID)
+            SystemManager systemManager, BoundServiceManager manager, WalletManager walletManager, NotificationManager notificationManager, Session session) : base(manager, session, locationID)
         {
             this.ItemDB = itemDB;
             this.MarketDB = marketDB;
@@ -66,7 +71,7 @@ namespace EVESharp.Node.Services.Characters
 
         public PyDataType GetCloneState(CallInformation call)
         {
-            int callerCharacterID = call.Client.EnsureCharacterIsSelected();
+            int callerCharacterID = call.Session.EnsureCharacterIsSelected();
             
             Character character = this.ItemFactory.GetItem<Character>(callerCharacterID);
 
@@ -82,11 +87,11 @@ namespace EVESharp.Node.Services.Characters
         public PyDataType DestroyInstalledClone(PyInteger jumpCloneID, CallInformation call)
         {
             // if the clone is not loaded the clone cannot be removed, players can only remove clones from where they're at
-            int callerCharacterID = call.Client.EnsureCharacterIsSelected();
+            int callerCharacterID = call.Session.EnsureCharacterIsSelected();
             
             if (this.ItemFactory.TryGetItem(jumpCloneID, out ItemEntity clone) == false)
                 throw new JumpCantDestroyNonLocalClone();
-            if (clone.LocationID != call.Client.LocationID)
+            if (clone.LocationID != call.Session.LocationID)
                 throw new JumpCantDestroyNonLocalClone();
             if (clone.OwnerID != callerCharacterID)
                 throw new MktNotOwner();
@@ -102,7 +107,7 @@ namespace EVESharp.Node.Services.Characters
 
         public PyDataType GetShipCloneState(CallInformation call)
         {
-            return this.ItemDB.GetClonesInShipForCharacter(call.Client.EnsureCharacterIsSelected());
+            return this.ItemDB.GetClonesInShipForCharacter(call.Session.EnsureCharacterIsSelected());
         }
 
         public PyDataType CloneJump(PyInteger locationID, PyBool unknown, CallInformation call)
@@ -122,8 +127,8 @@ namespace EVESharp.Node.Services.Characters
 
         public PyDataType InstallCloneInStation(CallInformation call)
         {
-            int callerCharacterID = call.Client.EnsureCharacterIsSelected();
-            int stationID = call.Client.EnsureCharacterIsInStation();
+            int callerCharacterID = call.Session.EnsureCharacterIsSelected();
+            int stationID = call.Session.EnsureCharacterIsInStation();
             
             Character character = this.ItemFactory.GetItem<Character>(callerCharacterID);
             
@@ -195,7 +200,7 @@ namespace EVESharp.Node.Services.Characters
             if (nodeID != this.BoundServiceManager.Container.NodeID)
                 throw new CustomError("Trying to bind an object that does not belong to us!");
 
-            return new jumpCloneSvc(bindParams.ObjectID, this.ItemDB, this.MarketDB, this.ItemFactory, this.SystemManager, this.BoundServiceManager, this.WalletManager, this.NotificationManager, call.Client);
+            return new jumpCloneSvc(bindParams.ObjectID, this.ItemDB, this.MarketDB, this.ItemFactory, this.SystemManager, this.BoundServiceManager, this.WalletManager, this.NotificationManager, call.Session);
         }
     }
 }

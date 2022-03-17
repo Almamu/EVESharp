@@ -4,7 +4,10 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using EVESharp.EVE;
 using EVESharp.EVE.Packets.Exceptions;
+using EVESharp.EVE.Services;
+using EVESharp.EVE.Sessions;
 using EVESharp.Node.Database;
+using EVESharp.Node.Dogma;
 using EVESharp.Node.Exceptions;
 using EVESharp.Node.Exceptions.repairSvc;
 using EVESharp.Node.Inventory;
@@ -14,18 +17,20 @@ using EVESharp.Node.Market;
 using EVESharp.Node.Network;
 using EVESharp.Node.Notifications.Client.Inventory;
 using EVESharp.Node.StaticData.Inventory;
-using EVESharp.Node.StaticData.Inventory.Station;
 using EVESharp.Node.Inventory.Items.Attributes;
 using EVESharp.Node.Services.Account;
 using EVESharp.Node.Services.Inventory;
+using EVESharp.Node.Sessions;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Database;
 using EVESharp.PythonTypes.Types.Primitives;
+using Service = EVESharp.Node.StaticData.Inventory.Station.Service;
 
 namespace EVESharp.Node.Services.Stations
 {
     public class repairSvc : ClientBoundService
     {
+        public override AccessLevel AccessLevel => AccessLevel.None;
         private const double BASEPRICE_MULTIPLIER_MODULE = 0.0125;
         private const double BASEPRICE_MULTIPLIER_SHIP = 0.000088;
         private ItemFactory ItemFactory { get; }
@@ -38,8 +43,9 @@ namespace EVESharp.Node.Services.Stations
         private NotificationManager NotificationManager { get; }
         private NodeContainer Container { get; }
         private WalletManager WalletManager { get; }
+        private Node.Dogma.Dogma Dogma { get; }
 
-        public repairSvc(RepairDB repairDb, MarketDB marketDb, InsuranceDB insuranceDb, NodeContainer nodeContainer, NotificationManager notificationManager, ItemFactory itemFactory, BoundServiceManager manager, WalletManager walletManager) : base(manager)
+        public repairSvc(RepairDB repairDb, MarketDB marketDb, InsuranceDB insuranceDb, NodeContainer nodeContainer, NotificationManager notificationManager, ItemFactory itemFactory, BoundServiceManager manager, WalletManager walletManager, Node.Dogma.Dogma dogma) : base(manager)
         {
             this.ItemFactory = itemFactory;
             this.MarketDB = marketDb;
@@ -48,9 +54,10 @@ namespace EVESharp.Node.Services.Stations
             this.NotificationManager = notificationManager;
             this.Container = nodeContainer;
             this.WalletManager = walletManager;
+            this.Dogma = dogma;
         }
         
-        protected repairSvc(RepairDB repairDb, MarketDB marketDb, InsuranceDB insuranceDb, NodeContainer nodeContainer, NotificationManager notificationManager, ItemInventory inventory, ItemFactory itemFactory, BoundServiceManager manager, WalletManager walletManager, Client client) : base(manager, client, inventory.ID)
+        protected repairSvc(RepairDB repairDb, MarketDB marketDb, InsuranceDB insuranceDb, NodeContainer nodeContainer, NotificationManager notificationManager, ItemInventory inventory, ItemFactory itemFactory, BoundServiceManager manager, WalletManager walletManager, Node.Dogma.Dogma dogma, Session session) : base(manager, session, inventory.ID)
         {
             this.mInventory = inventory;
             this.ItemFactory = itemFactory;
@@ -60,6 +67,7 @@ namespace EVESharp.Node.Services.Stations
             this.NotificationManager = notificationManager;
             this.Container = nodeContainer;
             this.WalletManager = walletManager;
+            this.Dogma = dogma;
         }
 
         public PyDataType GetDamageReports(PyList itemIDs, CallInformation call)
@@ -148,10 +156,10 @@ namespace EVESharp.Node.Services.Stations
         public PyDataType RepairItems(PyList itemIDs, PyDecimal iskRepairValue, CallInformation call)
         {
             // ensure the player has enough balance to do the fixing
-            Station station = this.ItemFactory.GetStaticStation(call.Client.EnsureCharacterIsInStation());
+            Station station = this.ItemFactory.GetStaticStation(call.Session.EnsureCharacterIsInStation());
 
             // take the wallet lock and ensure the character has enough balance
-            using Wallet wallet = this.WalletManager.AcquireWallet(call.Client.EnsureCharacterIsSelected(), WalletKeys.MAIN_WALLET);
+            using Wallet wallet = this.WalletManager.AcquireWallet(call.Session.EnsureCharacterIsSelected(), WalletKeys.MAIN_WALLET);
             {
                 wallet.EnsureEnoughBalance(iskRepairValue);
                 // build a list of items to be fixed
@@ -230,7 +238,7 @@ namespace EVESharp.Node.Services.Stations
         
         public PyDataType UnasembleItems(PyDictionary validIDsByStationID, PyList skipChecks, CallInformation call)
         {
-            int characterID = call.Client.EnsureCharacterIsSelected();
+            int characterID = call.Session.EnsureCharacterIsSelected();
             List<RepairDB.ItemRepackageEntry> entries = new List<RepairDB.ItemRepackageEntry>();
 
             bool ignoreContractVoiding = false;
@@ -282,7 +290,7 @@ namespace EVESharp.Node.Services.Stations
                                 Flags oldFlag = itemInInventory.Flag;
                                 this.ItemFactory.DestroyItem(itemInInventory);
                                 // notify the client about the change
-                                call.Client.NotifyMultiEvent(OnItemChange.BuildLocationChange(itemInInventory, oldFlag, entry.ItemID));
+                                this.Dogma.QueueMultiEvent(characterID, OnItemChange.BuildLocationChange(itemInInventory, oldFlag, entry.ItemID));
                             }
                             else
                             {
@@ -292,7 +300,7 @@ namespace EVESharp.Node.Services.Stations
                                 itemInInventory.Flag = Flags.Hangar;
                             
                                 // notify the client about the change
-                                call.Client.NotifyMultiEvent(OnItemChange.BuildLocationChange(itemInInventory, oldFlag, entry.ItemID));
+                                this.Dogma.QueueMultiEvent(characterID, OnItemChange.BuildLocationChange(itemInInventory, oldFlag, entry.ItemID));
                                 // save the item
                                 itemInInventory.Persist();
                             }
@@ -301,7 +309,7 @@ namespace EVESharp.Node.Services.Stations
                     
                     // update the singleton flag too
                     item.Singleton = false;
-                    call.Client.NotifyMultiEvent(OnItemChange.BuildSingletonChange(item, true));
+                    this.Dogma.QueueMultiEvent(characterID, OnItemChange.BuildSingletonChange(item, true));
 
                     // load was required, the item is not needed anymore
                     if (loadRequired == true)
@@ -350,12 +358,12 @@ namespace EVESharp.Node.Services.Stations
             if (station.HasService(Service.RepairFacilities) == false)
                 throw new CustomError("This station does not allow for repair facilities services");
             // ensure the player is in this station
-            if (station.ID != call.Client.StationID)
+            if (station.ID != call.Session.StationID)
                 throw new CanOnlyDoInStations();
             
-            ItemInventory inventory = this.ItemFactory.MetaInventoryManager.RegisterMetaInventoryForOwnerID(station, call.Client.EnsureCharacterIsSelected(), Flags.Hangar);
+            ItemInventory inventory = this.ItemFactory.MetaInventoryManager.RegisterMetaInventoryForOwnerID(station, call.Session.EnsureCharacterIsSelected(), Flags.Hangar);
             
-            return new repairSvc(this.RepairDB, this.MarketDB, this.InsuranceDB, this.Container, this.NotificationManager, inventory, this.ItemFactory, this.BoundServiceManager, this.WalletManager, call.Client);
+            return new repairSvc(this.RepairDB, this.MarketDB, this.InsuranceDB, this.Container, this.NotificationManager, inventory, this.ItemFactory, this.BoundServiceManager, this.WalletManager, this.Dogma, call.Session);
         }
     }
 }

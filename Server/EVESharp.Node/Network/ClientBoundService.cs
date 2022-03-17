@@ -1,4 +1,6 @@
 ﻿using System;
+using EVESharp.EVE.Services;
+using EVESharp.EVE.Sessions;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Primitives;
 
@@ -9,7 +11,7 @@ namespace EVESharp.Node.Network
         /// <summary>
         /// The client that owns this bound service
         /// </summary>
-        public Client Client { get; }
+        public Session Session { get; }
         
         /// <summary>
         /// Creates a base bound service to no client to be used as a normal service
@@ -25,10 +27,9 @@ namespace EVESharp.Node.Network
         /// <param name="manager">The bound service manager used by this service</param>
         /// <param name="client">The client that it belongs to</param>
         /// <param name="objectID">The object it's bound to</param>
-        public ClientBoundService(BoundServiceManager manager, Client client, int objectID) : base(manager, objectID)
+        public ClientBoundService(BoundServiceManager manager, Session session, int objectID) : base(manager, objectID)
         {
-            this.Client = client;
-            this.Client.OnClientDisconnectedEvent += this.OnClientDisconnectedHandler;
+            this.Session = session;
         }
 
         /// <summary>
@@ -72,16 +73,16 @@ namespace EVESharp.Node.Network
 
                 CallInformation callInformation = new CallInformation
                 {
-                    Client = call.Client,
-                    NamedPayload = namedArguments,
+                    MachoNet = call.MachoNet,
                     CallID = call.CallID,
-                    From = call.From,
-                    PacketType = call.PacketType,
-                    Service = null,
-                    To = call.To
+                    Destination = call.Destination,
+                    Source = call.Source,
+                    Payload = arguments,
+                    NamedPayload = namedArguments,
+                    Session = call.Session
                 };
                 
-                result[1] = this.BoundServiceManager.ServiceCall(instance.BoundID, func, arguments, callInformation);
+                result[1] = this.BoundServiceManager.ServiceCall(instance.BoundID, func, callInformation);
             }
 
             return result;
@@ -100,21 +101,17 @@ namespace EVESharp.Node.Network
             
         }
 
-        /// <summary>
-        /// Event fired from the client when a disconnection is detected
-        /// </summary>
-        /// <param name="client"></param>
-        protected void OnClientDisconnectedHandler(object sender, ClientEventArgs args)
+        public override bool IsClientAllowedToCall(ServiceCall call)
+        {
+            return this.Session.UserID == call.Session.UserID;
+        }
+
+        public override void ClientHasReleasedThisObject(Session session)
         {
             // first call any freeing code (if any)
             this.OnClientDisconnected();
             // then tell the bound service that we are not alive anymore
             this.BoundServiceManager.UnbindService(this);
-        }
-
-        public override bool IsClientAllowedToCall(CallInformation call)
-        {
-            return this.Client == call.Client;
         }
     }
 }

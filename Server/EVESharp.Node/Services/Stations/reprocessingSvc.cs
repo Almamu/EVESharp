@@ -3,7 +3,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using EVESharp.EVE.Packets.Exceptions;
+using EVESharp.EVE.Services;
+using EVESharp.EVE.Sessions;
 using EVESharp.Node.Database;
+using EVESharp.Node.Dogma;
 using EVESharp.Node.Exceptions;
 using EVESharp.Node.Exceptions.jumpCloneSvc;
 using EVESharp.Node.Exceptions.reprocessingSvc;
@@ -13,19 +16,22 @@ using EVESharp.Node.Inventory.Items.Types;
 using EVESharp.Node.Network;
 using EVESharp.Node.Notifications.Client.Inventory;
 using EVESharp.Node.StaticData.Inventory;
-using EVESharp.Node.StaticData.Inventory.Station;
 using EVESharp.Node.Exceptions.repairSvc;
 using EVESharp.Node.Inventory.Items.Attributes;
 using EVESharp.Node.Market;
 using EVESharp.Node.Services.Inventory;
+using EVESharp.Node.Sessions;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Database;
 using EVESharp.PythonTypes.Types.Primitives;
+using Service = EVESharp.Node.StaticData.Inventory.Station.Service;
 
 namespace EVESharp.Node.Services.Stations
 {
     public class reprocessingSvc : ClientBoundService
     {
+        public override AccessLevel AccessLevel => AccessLevel.None;
+        
         private static Dictionary<Types, Types> sOreTypeIDtoProcessingSkillTypeID = new Dictionary<Types, Types>()
         {
             {Types.Arkonor, Types.ArkonorProcessing},
@@ -54,15 +60,17 @@ namespace EVESharp.Node.Services.Stations
         private Corporation mCorporation;
         private StandingDB StandingDB { get; }
         private ReprocessingDB ReprocessingDB { get; }
+        private Node.Dogma.Dogma Dogma { get; }
 
-        public reprocessingSvc(ReprocessingDB reprocessingDb, StandingDB standingDb, ItemFactory itemFactory, BoundServiceManager manager) : base(manager)
+        public reprocessingSvc(ReprocessingDB reprocessingDb, StandingDB standingDb, ItemFactory itemFactory, BoundServiceManager manager, Node.Dogma.Dogma dogma) : base(manager)
         {
             this.ReprocessingDB = reprocessingDb;
             this.StandingDB = standingDb;
             this.ItemFactory = itemFactory;
+            this.Dogma = dogma;
         }
         
-        protected reprocessingSvc(ReprocessingDB reprocessingDb, StandingDB standingDb, Corporation corporation, Station station, ItemInventory inventory, ItemFactory itemFactory, BoundServiceManager manager, Client client) : base(manager, client, inventory.ID)
+        protected reprocessingSvc(ReprocessingDB reprocessingDb, StandingDB standingDb, Corporation corporation, Station station, ItemInventory inventory, ItemFactory itemFactory, BoundServiceManager manager, Node.Dogma.Dogma dogma, Session session) : base(manager, session, inventory.ID)
         {
             this.ReprocessingDB = reprocessingDb;
             this.StandingDB = standingDb;
@@ -70,6 +78,7 @@ namespace EVESharp.Node.Services.Stations
             this.mStation = station;
             this.mInventory = inventory;
             this.ItemFactory = itemFactory;
+            this.Dogma = dogma;
         }
 
         private double CalculateCombinedYield(Character character)
@@ -131,8 +140,8 @@ namespace EVESharp.Node.Services.Stations
 
         public PyDataType GetReprocessingInfo(CallInformation call)
         {
-            int stationID = call.Client.EnsureCharacterIsInStation();
-            Character character = this.ItemFactory.GetItem<Character>(call.Client.EnsureCharacterIsSelected());
+            int stationID = call.Session.EnsureCharacterIsInStation();
+            Character character = this.ItemFactory.GetItem<Character>(call.Session.EnsureCharacterIsSelected());
 
             double standing = GetStanding(character);
 
@@ -204,7 +213,7 @@ namespace EVESharp.Node.Services.Stations
         
         public PyDataType GetQuotes(PyList itemIDs, CallInformation call)
         {
-            Character character = this.ItemFactory.GetItem<Character>(call.Client.EnsureCharacterIsSelected());
+            Character character = this.ItemFactory.GetItem<Character>(call.Session.EnsureCharacterIsSelected());
             
             PyDictionary<PyInteger, PyDataType> result = new PyDictionary<PyInteger, PyDataType>();
 
@@ -219,7 +228,7 @@ namespace EVESharp.Node.Services.Stations
             return result;
         }
 
-        private void Reprocess(Character character, ItemEntity item, Client client)
+        private void Reprocess(Character character, ItemEntity item, Session session)
         {
             if (item.Quantity < item.Type.PortionSize)
                 throw new QuantityLessThanMinimumPortion(item.Type);
@@ -241,13 +250,13 @@ namespace EVESharp.Node.Services.Stations
                 ItemEntity newItem = this.ItemFactory.CreateSimpleItem(this.TypeManager[recoverable.TypeID], character, this.mStation,
                     Flags.Hangar, quantityForClient);
                 // notify the client about the new item
-                client.NotifyMultiEvent(OnItemChange.BuildNewItemChange(newItem));
+                this.Dogma.QueueMultiEvent(session.EnsureCharacterIsSelected(), OnItemChange.BuildNewItemChange(newItem));
             }
         }
 
         public PyDataType Reprocess(PyList itemIDs, PyInteger ownerID, PyInteger flag, PyBool unknown, PyList skipChecks, CallInformation call)
         {
-            Character character = this.ItemFactory.GetItem<Character>(call.Client.EnsureCharacterIsSelected());
+            Character character = this.ItemFactory.GetItem<Character>(call.Session.EnsureCharacterIsSelected());
             
             // TODO: TAKE INTO ACCOUNT OWNERID AND FLAG, THESE MOST LIKELY WILL BE USED BY CORP STUFF
             foreach (PyInteger itemID in itemIDs.GetEnumerable<PyInteger>())
@@ -256,12 +265,12 @@ namespace EVESharp.Node.Services.Stations
                     throw new MktNotOwner();
 
                 // reprocess the item
-                this.Reprocess(character, item, call.Client);
+                this.Reprocess(character, item, call.Session);
                 int oldLocationID = item.LocationID;
                 // finally remove the item from the inventories
                 this.ItemFactory.DestroyItem(item);
                 // notify the client about the item being destroyed
-                call.Client.NotifyMultiEvent(OnItemChange.BuildLocationChange(item, oldLocationID));
+                this.Dogma.QueueMultiEvent(character.ID, OnItemChange.BuildLocationChange(item, oldLocationID));
             }
             
             return null;
@@ -284,13 +293,13 @@ namespace EVESharp.Node.Services.Stations
 
             if (station.HasService(Service.ReprocessingPlant) == false)
                 throw new CustomError("This station does not allow for reprocessing plant services");
-            if (station.ID != call.Client.StationID)
+            if (station.ID != call.Session.StationID)
                 throw new CanOnlyDoInStations();
 
             Corporation corporation = this.ItemFactory.GetItem<Corporation>(station.OwnerID);
-            ItemInventory inventory = this.ItemFactory.MetaInventoryManager.RegisterMetaInventoryForOwnerID(station, call.Client.EnsureCharacterIsSelected(), Flags.Hangar);
+            ItemInventory inventory = this.ItemFactory.MetaInventoryManager.RegisterMetaInventoryForOwnerID(station, call.Session.EnsureCharacterIsSelected(), Flags.Hangar);
             
-            return new reprocessingSvc(this.ReprocessingDB, this.StandingDB, corporation, station, inventory, this.ItemFactory, this.BoundServiceManager, call.Client);
+            return new reprocessingSvc(this.ReprocessingDB, this.StandingDB, corporation, station, inventory, this.ItemFactory, this.BoundServiceManager, this.Dogma, call.Session);
         }
     }
 }

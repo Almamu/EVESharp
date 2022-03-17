@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using EVESharp.EVE.Packets.Complex;
+using EVESharp.EVE.Sessions;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Primitives;
 
@@ -12,21 +13,21 @@ namespace EVESharp.Node.Notifications.Client.Chat
         public int? AllianceID { get; init; }
         public int? CorporationID { get; init; }
         public int? CharacterID { get; init; }
-        public long? Role { get; init; }
+        public ulong? Role { get; init; }
         public long? CorporationRole { get; init; }
         public int? WarFactionID { get; init; }
         public string Type { get; init; }
         public PyDataType Channel { get; init; }
         public PyTuple Arguments { get; init; }
         
-        public OnLSC(Network.Client client, string type, PyDataType channel, PyTuple args) : base(NOTIFICATION_NAME)
+        public OnLSC(Session session, string type, PyDataType channel, PyTuple args) : base(NOTIFICATION_NAME)
         {
-            this.AllianceID = client.AllianceID;
-            this.CorporationID = client.CorporationID;
-            this.CharacterID = client.CharacterID;
-            this.Role = client.Role;
-            this.CorporationRole = client.CorporationRole;
-            this.WarFactionID = client.WarFactionID;
+            this.AllianceID = session.AllianceID;
+            this.CorporationID = session.CorporationID;
+            this.CharacterID = session.CharacterID;
+            this.Role = session.Role;
+            this.CorporationRole = session.CorporationRole;
+            this.WarFactionID = session.WarFactionID;
             this.Type = type;
             this.Channel = channel;
             this.Arguments = args;

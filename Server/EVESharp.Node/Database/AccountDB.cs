@@ -58,7 +58,7 @@ namespace EVESharp.Node.Database
             }
         }
 
-        public bool LoginPlayer(string username, string password, ref long accountid, ref bool banned, ref long role)
+        public bool LoginPlayer(string username, string password, ref int accountid, ref bool banned, ref ulong role)
         {
             MySqlConnection connection = null;
             MySqlDataReader reader = Database.Select(ref connection,
@@ -80,9 +80,9 @@ namespace EVESharp.Node.Database
                     if (reader.Read() == false)
                         return false;
 
-                    accountid = reader.GetInt64(0);
+                    accountid = reader.GetInt32(0);
                     banned = reader.GetBoolean(2);
-                    role = (long) reader.GetUInt64(3);
+                    role = reader.GetUInt64(3);
 
                     return true;
                 }

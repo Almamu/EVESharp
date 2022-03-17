@@ -67,6 +67,7 @@ namespace EVESharp.Node.Inventory
         public StationManager StationManager { get; private set; }
         public SystemManager SystemManager { get; private set; }
         public AncestryManager AncestryManager { get; private set; }
+        public Dogma.Dogma Dogma { get; private set; }
         public ItemDB ItemDB { get; private set; }
         public CharacterDB CharacterDB { get; private set; }
         public CorporationDB CorporationDB { get; private set; }
@@ -129,6 +130,7 @@ namespace EVESharp.Node.Inventory
             this.ItemManager = this.DependencyInjection.GetInstance<ItemManager>();
             // the ancestry manager is also needed
             this.AncestryManager = this.DependencyInjection.GetInstance<AncestryManager>();
+            this.Dogma = this.DependencyInjection.GetInstance<Dogma.Dogma>();
             
             this.AttributeManager.Load();
             this.CategoryManager.Load();

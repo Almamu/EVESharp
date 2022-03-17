@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using System.Net.Http;
@@ -13,9 +14,11 @@ using EVESharp.Common.Logging;
 using EVESharp.EVE;
 using EVESharp.EVE.Packets;
 using EVESharp.EVE.Packets.Exceptions;
+using EVESharp.EVE.Sessions;
 using EVESharp.Node.Accounts;
 using EVESharp.Node.Configuration;
 using EVESharp.Node.Database;
+using EVESharp.Node.Exceptions.contractMgr;
 using EVESharp.Node.Inventory;
 using EVESharp.Node.Inventory.Items;
 using EVESharp.Node.Inventory.Items.Types;
@@ -29,8 +32,10 @@ using EVESharp.PythonTypes;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Network;
 using EVESharp.PythonTypes.Types.Primitives;
+using Org.BouncyCastle.Bcpg;
 using Character = EVESharp.Node.Inventory.Items.Types.Character;
 using Container = SimpleInjector.Container;
+using SessionManager = EVESharp.Node.Sessions.SessionManager;
 
 namespace EVESharp.Node.Network
 {
@@ -41,17 +46,16 @@ namespace EVESharp.Node.Network
         private Channel CallLog { get; }
         private Channel ResultLog { get; }
 #endif
-        private MachoServerTransport MachoServerTransport { get; }
+        private MachoServerTransport Transport { get; }
         public NodeContainer Container { get; }
         public SystemManager SystemManager { get; }
         public ItemFactory ItemFactory { get; }
-        public ServiceManager ServiceManager { get; set; }
-        public ClientManager ClientManager { get; }
+        public ServiceManager ServiceManager { get; private set; }
         public BoundServiceManager BoundServiceManager { get; }
-        public AccountDB AccountDB { get; }
         public NotificationManager NotificationManager { get; }
         public TimerManager TimerManager { get; }
-        private General Configuration { get; }
+        public SessionManager SessionManager { get; set; }
+        public General Configuration { get; }
         public GeneralDB GeneralDB { get; }
         public LoginQueue LoginQueue { get; init; }
         private Container DependencyInjection { get; }
@@ -59,9 +63,8 @@ namespace EVESharp.Node.Network
 
         public event EventHandler OnClusterTimer;
         
-        public MachoNet(NodeContainer container, SystemManager systemManager,
-            ClientManager clientManager, BoundServiceManager boundServiceManager, ItemFactory itemFactory,
-            Logger logger, AccountDB accountDB, General configuration, NotificationManager notificationManager,
+        public MachoNet(NodeContainer container, SystemManager systemManager, BoundServiceManager boundServiceManager,
+            ItemFactory itemFactory, Logger logger, General configuration, NotificationManager notificationManager,
             TimerManager timerManager, LoginQueue loginQueue, GeneralDB generalDB, Container dependencyInjection)
         {
             this.Log = logger.CreateLogChannel("MachoNet");
@@ -70,17 +73,15 @@ namespace EVESharp.Node.Network
             this.ResultLog = logger.CreateLogChannel("ResultDebug", true);
 #endif
             this.SystemManager = systemManager;
-            this.ClientManager = clientManager;
             this.BoundServiceManager = boundServiceManager;
             this.ItemFactory = itemFactory;
             this.Container = container;
-            this.AccountDB = accountDB;
             this.Configuration = configuration;
             this.NotificationManager = notificationManager;
             this.TimerManager = timerManager;
             this.LoginQueue = loginQueue;
             this.GeneralDB = generalDB;
-            this.MachoServerTransport = new MachoServerTransport(this.Configuration.MachoNet.Port, this, logger);
+            this.Transport = new MachoServerTransport(this.Configuration.MachoNet.Port, this, logger);
             this.DependencyInjection = dependencyInjection;
         }
 
@@ -108,7 +109,15 @@ namespace EVESharp.Node.Network
         {
             // register ourselves with the orchestrator and get our node id AND address
             HttpClient client = new HttpClient();
-            HttpResponseMessage response = await client.PostAsJsonAsync($"{this.Configuration.Cluster.OrchestatorURL}/Nodes/register", this.MachoServerTransport.Port);
+            HttpContent content = new FormUrlEncodedContent(new Dictionary<string, string> {
+                {"port", this.Transport.Port.ToString()},
+                {"role", this.Configuration.MachoNet.Mode switch
+                {
+                    MachoNetMode.Proxy => "proxy",
+                    MachoNetMode.Server => "server"
+                }}
+            });
+            HttpResponseMessage response = await client.PostAsync($"{this.Configuration.Cluster.OrchestatorURL}/Nodes/register",  content);
 
             // make sure we have a proper answer
             response.EnsureSuccessStatusCode();
@@ -160,12 +169,165 @@ namespace EVESharp.Node.Network
             Log.Warning("Starting up in single-node mode");
             Log.Trace("Starting up in single-node mode");
             
+            // update the configuration to reflect the mode change
+            this.Configuration.MachoNet.Mode = MachoNetMode.Single;
+            // set the nodeID to something that is not 0
+            this.Container.NodeID = Common.Constants.Network.PROXY_NODE_ID;
+            
             this.StartListening();
         }
 
         private void StartListening()
         {
-            this.MachoServerTransport.Listen();
+            this.Transport.Listen();
+        }
+
+        /// <summary>
+        /// Adds an outgoing packet to the queue so it gets sent to the correct transports
+        /// </summary>
+        /// <param name="packet">The packet to send</param>
+        public void QueuePacket(PyPacket packet)
+        {
+            // this function is kind of a lie, it won't queue anything
+            // everything is sent
+            switch (packet.Destination)
+            {
+                case PyAddressBroadcast:
+                    this.QueueBroadcastPacket(packet);
+                    break;
+                
+                case PyAddressClient:
+                    this.QueueClientPacket(packet);
+                    break;
+                
+                case PyAddressNode:
+                    this.QueueNodePacket(packet);
+                    break;
+            }
+        }
+
+        private void QueueMulticastPacket(PyPacket packet)
+        {
+            // TODO: IMPLEMENT MULTICAST
+            Log.Error("Multicast not supported yet!");
+        }
+
+        private void QueueSimpleBroadcastPacket(PyPacket packet)
+        {
+            PyAddressBroadcast dest = packet.Destination as PyAddressBroadcast;
+            // an ownerid requires some special handling
+            bool isOwnerID = dest.IDType == "ownerid";
+
+            foreach (PyInteger id in dest.IDsOfInterest.GetEnumerable<PyInteger>())
+            {
+                foreach ((int _, MachoClientTransport transport) in this.Transport.ClientTransports)
+                {
+                    if (isOwnerID == true)
+                    {
+                        if (transport.Session[Session.ALLIANCE_ID] == id ||
+                            transport.Session[Session.CHAR_ID] == id ||
+                            transport.Session[Session.CORP_ID] == id)
+                            transport.Socket.Send(packet);
+                    }
+                    else if (transport.Session[dest.IDType] == id)
+                    {
+                        // transport found, notify it
+                        transport.Socket.Send(packet);
+                    }
+                }
+            }
+        }
+
+        private void QueueComplexBroadcastPacket(PyPacket packet)
+        {
+            PyAddressBroadcast dest = packet.Destination as PyAddressBroadcast;
+            
+            // extract the actual ids used in the destination
+            string[] criteria = dest.IDType.Value.Split('&');
+            // TODO: SUPPORT ownerid AS NOTIFICATION HERE
+
+            foreach (PyTuple id in dest.IDsOfInterest.GetEnumerable<PyTuple>())
+            {
+                // ignore invalid ids
+                if (id.Count != criteria.Length)
+                    continue;
+
+                foreach ((int _, MachoClientTransport transport) in this.Transport.ClientTransports)
+                {
+                    bool found = true;
+                    
+                    // validate both values
+                    for (int i = 0; i < criteria.Length; i++)
+                    {
+                        if (transport.Session[criteria[i]] != id[i])
+                        {
+                            found = false;
+                            break;
+                        }
+                    }
+
+                    if (found)
+                        transport.Socket.Send(packet);
+                }
+            }
+        }
+
+        private void QueueNodeBroadcastPacket(PyPacket packet)
+        {
+            PyAddressBroadcast dest = packet.Destination as PyAddressBroadcast;
+
+            foreach (PyInteger id in dest.IDsOfInterest.GetEnumerable<PyInteger>())
+            {
+                if (this.Transport.NodeTransports.TryGetValue(id, out MachoNodeTransport transport) == true)
+                    transport.Socket.Send(packet);
+            }
+        }
+        
+        private void QueueBroadcastPacket(PyPacket packet)
+        {
+            PyAddressBroadcast dest = packet.Destination as PyAddressBroadcast;
+
+            switch (dest.IDType)
+            {
+                case "*multicastID":
+                    this.QueueMulticastPacket(packet);
+                    break;
+                case "corpid&corprole":
+                    this.QueueComplexBroadcastPacket(packet);
+                    break;
+                case "ownerid&locationid":
+                    this.QueueComplexBroadcastPacket(packet);
+                    break;
+                case "nodeid":
+                    // TODO: IS THIS NECCESARY? THIS SHOULDN'T REALLY HAPPEN? BUT MIGHT COME HANDY
+                    this.QueueNodeBroadcastPacket(packet);
+                    break;
+                default:
+                    this.QueueSimpleBroadcastPacket(packet);
+                    break;
+            }
+        }
+
+        private void QueueClientPacket(PyPacket packet)
+        {
+            PyAddressClient dest = packet.Destination as PyAddressClient;
+
+            if (this.Transport.ClientTransports.TryGetValue(dest.ClientID, out MachoClientTransport transport) == false)
+                throw new Exception("Trying to queue a packet for an unknown client");
+            
+            // client found, send packet
+            transport.Socket.Send(packet);
+        }
+
+        private void QueueNodePacket(PyPacket packet)
+        {
+            PyAddressNode dest = packet.Destination as PyAddressNode;
+
+            if (this.Transport.NodeTransports.TryGetValue(dest.NodeID, out MachoNodeTransport transport) == false)
+                throw new Exception($"Trying to queue a packet for an unknown node ({dest.NodeID}");
+            
+            // node found, send packet
+            transport.Socket.Send(packet);
         }
 
         private void HandleOnSolarSystemLoaded(PyTuple data)
@@ -190,35 +352,6 @@ namespace EVESharp.Node.Network
             this.SystemManager.LoadSolarSystem(solarSystemID);
         }
 
-        private void HandleOnClientDisconnected(PyTuple data)
-        {
-            if (data.Count != 1)
-            {
-                Log.Error("Received OnClientDisconnected notification with the wrong format");
-                return;
-            }
-
-            PyDataType first = data[0];
-
-            if (first is PyInteger == false)
-            {
-                Log.Error("Received OnClientDisconnected notification with the wrong format");
-                return;
-            }
-
-            PyInteger clientID = first as PyInteger;
-            
-            // remove the client from the session list and free it's data
-            if (this.ClientManager.TryGetClient(clientID, out Client client) == false)
-            {
-                Log.Error($"Received OnClientDisconnected notification for an unknown client {clientID}");
-                return;
-            }
-
-            // finally remove the client from the manager, this will take care of freeing everything else
-            this.ClientManager.Remove(client);
-        }
-
         private void HandleOnItemUpdate(Notifications.Nodes.Inventory.OnItemChange change)
         {
             foreach ((PyInteger itemID, PyDictionary _changes) in change.Updates)
@@ -234,12 +367,8 @@ namespace EVESharp.Node.Network
                     // trust that the notification got to the correct node
                     // load the item and check the owner, if it's logged in and the locationID is loaded by us
                     // that means the item should be kept here
-                    if (this.ItemFactory.TryGetItem(item.LocationID, out ItemEntity location) == false || this.ClientManager.ContainsCharacterID(item.OwnerID) == false)
-                    {
-                        // this item should not be loaded, so unload and return
-                        this.ItemFactory.UnloadItem(item);
+                    if (this.ItemFactory.TryGetItem(item.LocationID, out ItemEntity location) == false)
                         return;
-                    }
 
                     bool locationBelongsToUs = true;
 
@@ -448,9 +577,6 @@ namespace EVESharp.Node.Network
             {
                 case "OnSolarSystemLoad":
                     this.HandleOnSolarSystemLoaded(packet.Payload[1] as PyTuple);
-                    break;
-                case "OnClientDisconnected":
-                    this.HandleOnClientDisconnected(packet.Payload[1] as PyTuple);
                     break;
                 case Notifications.Nodes.Inventory.OnItemChange.NOTIFICATION_NAME:
                     this.HandleOnItemUpdate(packet.Payload);

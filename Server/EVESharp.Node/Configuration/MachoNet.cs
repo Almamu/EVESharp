@@ -22,7 +22,7 @@ namespace EVESharp.Node.Configuration
             else
                 this.Port = ushort.Parse(section["port"]);
 
-            string mode = (section["model"] ?? "single").ToLower();
+            string mode = (section["mode"] ?? "single").ToLower();
 
             this.Mode = mode switch
             {

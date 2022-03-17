@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
 using EVESharp.Common.Database;
-using EVESharp.Common.Services;
 using EVESharp.EVE;
 using EVESharp.EVE.Packets.Complex;
+using EVESharp.EVE.Services;
 using EVESharp.Node.Corporations;
 using EVESharp.Node.Database;
 using EVESharp.Node.Exceptions.corpRegistry;
@@ -17,8 +17,9 @@ using EVESharp.PythonTypes.Types.Primitives;
 
 namespace EVESharp.Node.Services.Account
 {
-    public class billMgr : IService
+    public class billMgr : Service
     {
+        public override AccessLevel AccessLevel => AccessLevel.None;
         private CacheStorage CacheStorage { get; }
         private BillsDB DB { get; init; }
         private CorporationDB CorporationDB { get; init; }
@@ -55,15 +56,15 @@ namespace EVESharp.Node.Services.Account
         public PyDataType GetCorporationBillsReceivable(CallInformation call)
         {
             // make sure the player has the accountant role
-            if (CorporationRole.Accountant.Is(call.Client.CorporationRole) == false &&
-                CorporationRole.JuniorAccountant.Is(call.Client.CorporationRole) == false)
+            if (CorporationRole.Accountant.Is(call.Session.CorporationRole) == false &&
+                CorporationRole.JuniorAccountant.Is(call.Session.CorporationRole) == false)
                 throw new CrpAccessDenied(MLS.UI_CORP_ACCESSDENIED3);
             
             return Database.CRowset(
                 BillsDB.GET_RECEIVABLE,
                 new Dictionary<string, object>()
                 {
-                    {"_creditorID", call.Client.CorporationID}
+                    {"_creditorID", call.Session.CorporationID}
                 }
             );
         }
@@ -71,15 +72,15 @@ namespace EVESharp.Node.Services.Account
         public PyDataType GetCorporationBills(CallInformation call)
         {
             // make sure the player has the accountant role
-            if (CorporationRole.Accountant.Is(call.Client.CorporationRole) == false &&
-                CorporationRole.JuniorAccountant.Is(call.Client.CorporationRole) == false)
+            if (CorporationRole.Accountant.Is(call.Session.CorporationRole) == false &&
+                CorporationRole.JuniorAccountant.Is(call.Session.CorporationRole) == false)
                 throw new CrpAccessDenied(MLS.UI_CORP_ACCESSDENIED3);
             
             return Database.CRowset(
                 BillsDB.GET_PAYABLE,
                 new Dictionary<string, object>()
                 {
-                    {"_debtorID", call.Client.CorporationID}
+                    {"_debtorID", call.Session.CorporationID}
                 }
             );
         }

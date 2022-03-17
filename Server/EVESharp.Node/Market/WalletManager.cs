@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using EVESharp.Common.Database;
 using EVESharp.Database;
 using EVESharp.EVE;
+using EVESharp.EVE.Sessions;
 using EVESharp.Node.Database;
 using EVESharp.Node.Network;
 using EVESharp.Node.StaticData.Corporation;
@@ -146,63 +147,63 @@ namespace EVESharp.Node.Market
             );
         }
 
-        public bool IsAccessAllowed(Client client, int accountKey, int ownerID)
+        public bool IsAccessAllowed(Session session, int accountKey, int ownerID)
         {
-            if (ownerID == client.CharacterID)
+            if (ownerID == session.CharacterID)
                 return true;
             
-            if (ownerID == client.CorporationID)
+            if (ownerID == session.CorporationID)
             {
                 // check for permissions
                 // check if the character has any accounting roles and set the correct accountKey based on the data
-                if (CorporationRole.AccountCanQuery1.Is(client.CorporationRole) && accountKey == WalletKeys.MAIN_WALLET)
+                if (CorporationRole.AccountCanQuery1.Is(session.CorporationRole) && accountKey == WalletKeys.MAIN_WALLET)
                     return true;
-                if (CorporationRole.AccountCanQuery2.Is(client.CorporationRole) && accountKey == WalletKeys.SECOND_WALLET)
+                if (CorporationRole.AccountCanQuery2.Is(session.CorporationRole) && accountKey == WalletKeys.SECOND_WALLET)
                     return true;
-                if (CorporationRole.AccountCanQuery3.Is(client.CorporationRole) && accountKey == WalletKeys.THIRD_WALLET)
+                if (CorporationRole.AccountCanQuery3.Is(session.CorporationRole) && accountKey == WalletKeys.THIRD_WALLET)
                     return true;
-                if (CorporationRole.AccountCanQuery4.Is(client.CorporationRole) && accountKey == WalletKeys.FOURTH_WALLET)
+                if (CorporationRole.AccountCanQuery4.Is(session.CorporationRole) && accountKey == WalletKeys.FOURTH_WALLET)
                     return true;
-                if (CorporationRole.AccountCanQuery5.Is(client.CorporationRole) && accountKey == WalletKeys.FIFTH_WALLET)
+                if (CorporationRole.AccountCanQuery5.Is(session.CorporationRole) && accountKey == WalletKeys.FIFTH_WALLET)
                     return true;
-                if (CorporationRole.AccountCanQuery6.Is(client.CorporationRole) && accountKey == WalletKeys.SIXTH_WALLET)
+                if (CorporationRole.AccountCanQuery6.Is(session.CorporationRole) && accountKey == WalletKeys.SIXTH_WALLET)
                     return true;
-                if (CorporationRole.AccountCanQuery7.Is(client.CorporationRole) && accountKey == WalletKeys.SEVENTH_WALLET)
+                if (CorporationRole.AccountCanQuery7.Is(session.CorporationRole) && accountKey == WalletKeys.SEVENTH_WALLET)
                     return true;
                 // last chance, accountant role
-                if (CorporationRole.Accountant.Is(client.CorporationRole))
+                if (CorporationRole.Accountant.Is(session.CorporationRole))
                     return true;
-                if (CorporationRole.JuniorAccountant.Is(client.CorporationRole))
+                if (CorporationRole.JuniorAccountant.Is(session.CorporationRole))
                     return true;
             }
 
             return false;
         }
 
-        public bool IsTakeAllowed(Client client, int accountKey, int ownerID)
+        public bool IsTakeAllowed(Session session, int accountKey, int ownerID)
         {
-            if (ownerID == client.CharacterID)
+            if (ownerID == session.CharacterID)
                 return true;
             
-            if (ownerID == client.CorporationID)
+            if (ownerID == session.CorporationID)
             {
                 // check for permissions
                 // check if the character has any accounting roles and set the correct accountKey based on the data
-                if (CorporationRole.AccountCanTake1.Is(client.CorporationRole) && accountKey == WalletKeys.MAIN_WALLET)
+                if (CorporationRole.AccountCanTake1.Is(session.CorporationRole) && accountKey == WalletKeys.MAIN_WALLET)
                     return true;
-                if (CorporationRole.AccountCanTake2.Is(client.CorporationRole) && accountKey == WalletKeys.SECOND_WALLET)
+                if (CorporationRole.AccountCanTake2.Is(session.CorporationRole) && accountKey == WalletKeys.SECOND_WALLET)
                     return true;
-                if (CorporationRole.AccountCanTake3.Is(client.CorporationRole) && accountKey == WalletKeys.THIRD_WALLET)
+                if (CorporationRole.AccountCanTake3.Is(session.CorporationRole) && accountKey == WalletKeys.THIRD_WALLET)
                     return true;
-                if (CorporationRole.AccountCanTake4.Is(client.CorporationRole) && accountKey == WalletKeys.FOURTH_WALLET)
+                if (CorporationRole.AccountCanTake4.Is(session.CorporationRole) && accountKey == WalletKeys.FOURTH_WALLET)
                     return true;
-                if (CorporationRole.AccountCanTake5.Is(client.CorporationRole) && accountKey == WalletKeys.FIFTH_WALLET)
+                if (CorporationRole.AccountCanTake5.Is(session.CorporationRole) && accountKey == WalletKeys.FIFTH_WALLET)
                     return true;
-                if (CorporationRole.AccountCanTake6.Is(client.CorporationRole) && accountKey == WalletKeys.SIXTH_WALLET)
+                if (CorporationRole.AccountCanTake6.Is(session.CorporationRole) && accountKey == WalletKeys.SIXTH_WALLET)
                     return true;
-                if (CorporationRole.AccountCanTake7.Is(client.CorporationRole) && accountKey == WalletKeys.SEVENTH_WALLET)
+                if (CorporationRole.AccountCanTake7.Is(session.CorporationRole) && accountKey == WalletKeys.SEVENTH_WALLET)
                     return true;
-                if (CorporationRole.Accountant.Is(client.CorporationRole))
+                if (CorporationRole.Accountant.Is(session.CorporationRole))
                     return true;
             }
 

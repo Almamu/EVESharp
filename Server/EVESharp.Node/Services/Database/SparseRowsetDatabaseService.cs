@@ -1,4 +1,6 @@
 ﻿using System;
+using EVESharp.EVE;
+using EVESharp.EVE.Sessions;
 using EVESharp.Node.Network;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Database;
@@ -39,7 +41,7 @@ namespace EVESharp.Node.Services.Database
         /// <param name="primaryKey"></param>
         public abstract void RemoveRow(PyDataType primaryKey);
 
-        protected SparseRowsetDatabaseService(SparseRowsetHeader rowsetHeader, BoundServiceManager manager, Client client, bool keepAlive = false) : base(manager, 0, keepAlive)
+        protected SparseRowsetDatabaseService(SparseRowsetHeader rowsetHeader, BoundServiceManager manager, Session session, bool keepAlive = false) : base(manager, 0, keepAlive)
         {
             this.RowsetHeader = rowsetHeader;
         }
@@ -59,7 +61,7 @@ namespace EVESharp.Node.Services.Database
             throw new NotImplementedException();
         }
 
-        public PyDataType MachoBindObject(PyDictionary dictPayload, Client client)
+        public PyDataType MachoBindObject(PyDictionary dictPayload, Session session)
         {
             // TODO: the expiration time is 1 day, might be better to properly support this?
             // TODO: investigate these a bit more closely in the future
@@ -77,16 +79,10 @@ namespace EVESharp.Node.Services.Database
         /// <summary>
         /// Ensures the client is registered in the list
         /// </summary>
-        /// <param name="client">Client to register</param>
-        public void BindToClient(Client client)
+        /// <param name="session">Session to register</param>
+        public void BindToSession(Session session)
         {
-            if (this.Clients.Contains(client) == false)
-            {
-                this.Clients.Add(client);
-
-                // register the on client disconnect event
-                client.OnClientDisconnectedEvent += this.OnClientDisconnectedHandler;    
-            }
+            this.Sessions.TryAdd(session.UserID, session);
         }
     }
 }

@@ -28,6 +28,7 @@ using System.Threading.Tasks;
 using EVESharp.Common.Database;
 using EVESharp.Common.Logging;
 using EVESharp.Common.Logging.Streams;
+using EVESharp.Node.Sessions;
 using EVESharp.Node.Accounts;
 using EVESharp.Node.Agents;
 using EVESharp.Node.Chat;
@@ -54,7 +55,6 @@ using EVESharp.Node.Services.Network;
 using EVESharp.Node.Services.Stations;
 using EVESharp.Node.Services.Tutorial;
 using EVESharp.Node.Services.War;
-using EVESharp.Node.Services;
 using SimpleInjector;
 using Container = SimpleInjector.Container;
 using MachoNet = EVESharp.Node.Network.MachoNet;
@@ -115,7 +115,7 @@ namespace EVESharp.Node
                 // register basic dependencies first
                 dependencies.Register<Logger>(Lifestyle.Singleton);
                 dependencies.Register<DatabaseConnection>(Lifestyle.Singleton);
-                dependencies.Register<ClientManager>(Lifestyle.Singleton);
+                dependencies.Register<SessionManager>(Lifestyle.Singleton);
                 dependencies.Register<NodeContainer>(Lifestyle.Singleton);
                 dependencies.Register<CacheStorage>(Lifestyle.Singleton);
                 dependencies.Register<ItemManager>(Lifestyle.Singleton);
@@ -130,7 +130,6 @@ namespace EVESharp.Node
                 dependencies.Register<SystemManager>(Lifestyle.Singleton);
                 dependencies.Register<ServiceManager>(Lifestyle.Singleton);
                 dependencies.Register<BoundServiceManager>(Lifestyle.Singleton);
-                // dependencies.Register<MachoServerTransport>(Lifestyle.Singleton);
                 dependencies.Register<NotificationManager>(Lifestyle.Singleton);
                 dependencies.Register<MachoNet>(Lifestyle.Singleton);
                 dependencies.Register<ExpressionManager>(Lifestyle.Singleton);
@@ -138,6 +137,7 @@ namespace EVESharp.Node
                 dependencies.Register<MailManager>(Lifestyle.Singleton);
                 dependencies.Register<AgentManager>(Lifestyle.Singleton);
                 dependencies.Register<AncestryManager>(Lifestyle.Singleton);
+                dependencies.Register<Dogma.Dogma>(Lifestyle.Singleton);
 
                 // register the database accessors dependencies
                 dependencies.Register<AccountDB>(Lifestyle.Singleton);

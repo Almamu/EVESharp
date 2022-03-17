@@ -1,14 +1,15 @@
 ﻿using System;
-using EVESharp.Common.Services;
 using EVESharp.EVE.Packets.Complex;
+using EVESharp.EVE.Services;
 using EVESharp.Node.Inventory;
 using EVESharp.Node.Network;
 using EVESharp.PythonTypes.Types.Primitives;
 
 namespace EVESharp.Node.Services.Stations
 {
-    public class stationSvc : IService
+    public class stationSvc : Service
     {
+        public override AccessLevel AccessLevel => AccessLevel.None;
         private ItemFactory ItemFactory { get; }
         private CacheStorage CacheStorage { get; }
         

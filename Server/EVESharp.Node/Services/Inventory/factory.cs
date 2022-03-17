@@ -1,13 +1,14 @@
-﻿using EVESharp.Common.Services;
+﻿using EVESharp.EVE.Services;
 using EVESharp.Node.Database;
 using EVESharp.Node.Network;
-using EVESharp.Node.Inventory.Items;
+using EVESharp.Node.Sessions;
 using EVESharp.PythonTypes.Types.Primitives;
 
 namespace EVESharp.Node.Services.Inventory
 {
-    public class factory : IService
+    public class factory : Service
     {
+        public override AccessLevel AccessLevel => AccessLevel.None;
         public FactoryDB DB { get; }
         
         public factory(FactoryDB db)
@@ -17,7 +18,7 @@ namespace EVESharp.Node.Services.Inventory
         
         public PyDataType GetBlueprintAttributes(PyInteger blueprintID, CallInformation call)
         {
-            return this.DB.GetBlueprintAttributes(blueprintID, call.Client.EnsureCharacterIsSelected());
+            return this.DB.GetBlueprintAttributes(blueprintID, call.Session.EnsureCharacterIsSelected());
         }
 
         public PyDataType GetMaterialsForTypeWithActivity(PyInteger blueprintTypeID, PyInteger _, CallInformation call)

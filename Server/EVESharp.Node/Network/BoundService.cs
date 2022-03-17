@@ -1,10 +1,11 @@
-using EVESharp.Common.Services;
+using EVESharp.EVE.Services;
+using EVESharp.EVE.Sessions;
 using EVESharp.Node.Services;
 using EVESharp.PythonTypes.Types.Primitives;
 
 namespace EVESharp.Node.Network
 {
-    public abstract class BoundService : IService
+    public abstract class BoundService : Service
     {
         /// <summary>
         /// The bound service's ID that identifies it
@@ -96,6 +97,12 @@ namespace EVESharp.Node.Network
         /// </summary>
         /// <param name="call">The call information</param>
         /// <returns></returns>
-        public abstract bool IsClientAllowedToCall(CallInformation call);
+        public abstract bool IsClientAllowedToCall(ServiceCall call);
+
+        /// <summary>
+        /// Handles when a client frees this object (like when it's disconnected)
+        /// </summary>
+        /// <param name="session">Session of the user that free'd us</param>
+        public abstract void ClientHasReleasedThisObject(Session session);
     }
 }

@@ -1,18 +1,18 @@
-using System;
-using EVESharp.Common.Services;
 using EVESharp.EVE;
+using EVESharp.EVE.Services;
 using EVESharp.Node.Database;
 using EVESharp.Node.Inventory;
 using EVESharp.Node.Inventory.Items.Types;
 using EVESharp.Node.Market;
 using EVESharp.Node.Network;
-using EVESharp.Node.Services.Account;
+using EVESharp.Node.Sessions;
 using EVESharp.PythonTypes.Types.Primitives;
 
 namespace EVESharp.Node.Services.Characters
 {
-    public class charmgr : IService
+    public class charmgr : Service
     {
+        public override AccessLevel AccessLevel => AccessLevel.None;
         private CharacterDB DB { get; }
         private MarketDB MarketDB { get; }
         private ItemFactory ItemFactory { get; }
@@ -44,7 +44,7 @@ namespace EVESharp.Node.Services.Characters
         public PyDataType AddToBounty(PyInteger characterID, PyInteger bounty, CallInformation call)
         {
             // get character's object
-            Character character = this.ItemFactory.GetItem<Character>(call.Client.EnsureCharacterIsSelected());
+            Character character = this.ItemFactory.GetItem<Character>(call.Session.EnsureCharacterIsSelected());
             
             // access the wallet and do the required changes
             using Wallet wallet = this.WalletManager.AcquireWallet(character.ID, WalletKeys.MAIN_WALLET);
@@ -58,7 +58,7 @@ namespace EVESharp.Node.Services.Characters
             }
             
             // create the bounty record and update the information in the database
-            this.DB.AddToBounty(call.Client.EnsureCharacterIsSelected(), characterID, bounty);
+            this.DB.AddToBounty(character.ID, characterID, bounty);
             
             return null;
         }

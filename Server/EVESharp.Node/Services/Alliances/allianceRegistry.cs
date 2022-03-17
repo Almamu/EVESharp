@@ -1,10 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Data;
 using EVESharp.Common.Database;
 using EVESharp.Database;
 using EVESharp.EVE;
 using EVESharp.EVE.Packets.Exceptions;
+using EVESharp.EVE.Services;
+using EVESharp.EVE.Sessions;
 using EVESharp.Node.Alliances;
 using EVESharp.Node.Database;
 using EVESharp.Node.Exceptions.allianceRegistry;
@@ -15,43 +16,44 @@ using EVESharp.Node.Network;
 using EVESharp.Node.Notifications.Client.Alliances;
 using EVESharp.Node.Notifications.Nodes.Corps;
 using EVESharp.Node.StaticData.Corporation;
-using EVESharp.Node.Services.Corporations;
-using EVESharp.PythonTypes.Types.Collections;
-using EVESharp.PythonTypes.Types.Database;
 using EVESharp.PythonTypes.Types.Primitives;
 using MySql.Data.MySqlClient;
+using SessionManager = EVESharp.Node.Sessions.SessionManager;
 
 namespace EVESharp.Node.Services.Alliances
 {
     public class allianceRegistry : MultiClientBoundService
     {
+        public override AccessLevel AccessLevel => AccessLevel.None;
+        
         private DatabaseConnection Database { get; init; }
         private CorporationDB CorporationDB { get; init; }
         private ChatDB ChatDB { get; init; }
         private NotificationManager NotificationManager { get; init; }
         private ItemFactory ItemFactory { get; init; }
         private Alliance Alliance { get; init; }
-        private ClientManager ClientManager { get; init; }
+        private SessionManager SessionManager { get; }
 
-        public allianceRegistry(DatabaseConnection databaseConnection, CorporationDB corporationDB, ChatDB chatDB, ItemFactory itemFactory, NotificationManager notificationManager, BoundServiceManager manager, ClientManager clientManager, MachoNet machoNet) : base(manager)
+        public allianceRegistry(DatabaseConnection databaseConnection, CorporationDB corporationDB, ChatDB chatDB, ItemFactory itemFactory, NotificationManager notificationManager, BoundServiceManager manager, MachoNet machoNet, SessionManager sessionManager) : base(manager)
         {
             this.Database = databaseConnection;
             this.CorporationDB = corporationDB;
             this.ChatDB = chatDB;
             this.NotificationManager = notificationManager;
             this.ItemFactory = itemFactory;
-            this.ClientManager = clientManager;
+            this.SessionManager = sessionManager;
             
             machoNet.OnClusterTimer += PerformTimedEvents;
         }
         
-        private allianceRegistry(Alliance alliance, DatabaseConnection databaseConnection, CorporationDB corporationDB, ItemFactory itemFactory, NotificationManager notificationManager, MultiClientBoundService parent) : base(parent, alliance.ID)
+        private allianceRegistry(Alliance alliance, DatabaseConnection databaseConnection, CorporationDB corporationDB, ItemFactory itemFactory, NotificationManager notificationManager, SessionManager sessionManager, MultiClientBoundService parent) : base(parent, alliance.ID)
         {
             this.Database = databaseConnection;
             this.CorporationDB = corporationDB;
             this.NotificationManager = notificationManager;
             this.ItemFactory = itemFactory;
             this.Alliance = alliance;
+            this.SessionManager = sessionManager;
         }
 
         private IEnumerable<ApplicationEntry> GetAcceptedAlliances(long minimumTime)
@@ -102,23 +104,16 @@ namespace EVESharp.Node.Services.Alliances
                     // notify the node that owns the reference to this corporation
                     this.NotificationManager.NotifyNode(nodeID, change);
                 }
-            
-                // join everyone to the correct channel
-                this.ClientManager.TryGetClientsByCorporationID(entry.CorporationID, out Dictionary<int, Client> clients);
-
+                
                 foreach (int characterID in this.CorporationDB.GetMembersForCorp(entry.CorporationID))
                 {
                     // join the player to the corp channel
                     this.ChatDB.JoinEntityChannel(entry.AllianceID, characterID, ChatDB.CHATROLE_CONVERSATIONALIST);
                     this.ChatDB.JoinChannel(entry.AllianceID, characterID, ChatDB.CHATROLE_CONVERSATIONALIST);
-
-                    if (clients is not null && clients.TryGetValue(characterID, out Client client) == true)
-                    {
-                        // update session and send session change
-                        client.AllianceID = entry.AllianceID;
-                        client.SendSessionChange();
-                    }
                 }
+                
+                // send session change based on the corporationID, only one packet needed
+                this.SessionManager.PerformSessionUpdate(Session.CORP_ID, entry.CorporationID, new Session() {[Session.ALLIANCE_ID] = entry.AllianceID});
             }
 
             // finally remove all the applications
@@ -139,9 +134,9 @@ namespace EVESharp.Node.Services.Alliances
             return this.BoundServiceManager.Container.NodeID;
         }
 
-        public override bool IsClientAllowedToCall(CallInformation call)
+        public override bool IsClientAllowedToCall(ServiceCall call)
         {
-            return call.Client.AllianceID == this.ObjectID;
+            return call.Session.AllianceID == this.ObjectID;
         }
 
         protected override MultiClientBoundService CreateBoundInstance(ServiceBindParams bindParams, CallInformation call)
@@ -151,7 +146,7 @@ namespace EVESharp.Node.Services.Alliances
 
             Alliance alliance = this.ItemFactory.LoadItem<Alliance>(bindParams.ObjectID);
             
-            return new allianceRegistry(alliance, this.Database, this.CorporationDB, this.ItemFactory, this.NotificationManager, this);
+            return new allianceRegistry(alliance, this.Database, this.CorporationDB, this.ItemFactory, this.NotificationManager, this.SessionManager, this);
         }
 
         public PyDataType GetAlliance(CallInformation call)
@@ -172,9 +167,9 @@ namespace EVESharp.Node.Services.Alliances
 
         public PyDataType UpdateAlliance(PyString description, PyString url, CallInformation call)
         {
-            if (this.Alliance.ExecutorCorpID != call.Client.CorporationID)
+            if (this.Alliance.ExecutorCorpID != call.Session.CorporationID)
                 throw new CrpAccessDenied(MLS.UI_CORP_UPDATE_ALLIANCE_NOT_EXECUTOR);
-            if (CorporationRole.Director.Is(call.Client.CorporationRole) == false)
+            if (CorporationRole.Director.Is(call.Session.CorporationRole) == false)
                 throw new CrpAccessDenied(MLS.UI_CORP_UPDATE_ALLIANCE_NOT_DIRECTOR);
 
             this.Alliance.Description = description;
@@ -232,9 +227,9 @@ namespace EVESharp.Node.Services.Alliances
 
         public PyDataType SetRelationship(PyInteger relationship, PyInteger toID, CallInformation call)
         {
-            if (this.Alliance.ExecutorCorpID != call.Client.CorporationID)
+            if (this.Alliance.ExecutorCorpID != call.Session.CorporationID)
                 throw new CrpAccessDenied(MLS.UI_CORP_SET_RELATIONSHIP_EXECUTOR_ONLY);
-            if (CorporationRole.Director.Is(call.Client.CorporationRole) == false)
+            if (CorporationRole.Director.Is(call.Session.CorporationRole) == false)
                 throw new CrpAccessDenied(MLS.UI_CORP_SET_RELATIONSHIP_DIRECTOR_ONLY);
             
             Database.Procedure(
@@ -259,12 +254,12 @@ namespace EVESharp.Node.Services.Alliances
 
         public PyDataType DeclareExecutorSupport(PyInteger executorID, CallInformation call)
         {
-            if (CorporationRole.Director.Is(call.Client.CorporationRole) == false)
+            if (CorporationRole.Director.Is(call.Session.CorporationRole) == false)
                 throw new CrpAccessDenied(MLS.UI_CORP_DECLARE_EXEC_SUPPORT_DIRECTOR_ONLY);
             
             // get corporation's join date
             long minimumJoinDate = DateTime.UtcNow.AddDays(-7).ToFileTimeUtc();
-            long corporationJoinDate = this.CorporationDB.GetAllianceJoinDate(call.Client.CorporationID);
+            long corporationJoinDate = this.CorporationDB.GetAllianceJoinDate(call.Session.CorporationID);
 
             if (corporationJoinDate > minimumJoinDate)
                 throw new CanNotDeclareExecutorInFirstWeek();
@@ -274,14 +269,14 @@ namespace EVESharp.Node.Services.Alliances
                 AlliancesDB.UPDATE_SUPPORTED_EXECUTOR,
                 new Dictionary<string, object>()
                 {
-                    {"_corporationID", call.Client.CorporationID},
+                    {"_corporationID", call.Session.CorporationID},
                     {"_chosenExecutorID", executorID},
                     {"_allianceID", this.ObjectID}
                 }
             );
             
             OnAllianceMemberChanged change =
-                new OnAllianceMemberChanged(this.ObjectID, call.Client.CorporationID)
+                new OnAllianceMemberChanged(this.ObjectID, call.Session.CorporationID)
                     .AddChange("chosenExecutorID", 0, executorID);
 
             this.NotificationManager.NotifyAlliance(this.ObjectID, change);
@@ -327,9 +322,9 @@ namespace EVESharp.Node.Services.Alliances
 
         public PyDataType DeleteRelationship(PyInteger toID, CallInformation call)
         {
-            if (this.Alliance.ExecutorCorpID != call.Client.CorporationID)
+            if (this.Alliance.ExecutorCorpID != call.Session.CorporationID)
                 throw new CrpAccessDenied(MLS.UI_CORP_DELETE_RELATIONSHIP_EXECUTOR_ONLY);
-            if (CorporationRole.Director.Is(call.Client.CorporationRole) == false)
+            if (CorporationRole.Director.Is(call.Session.CorporationRole) == false)
                 throw new CrpAccessDenied(MLS.UI_CORP_DELETE_RELATIONSHIP_DIRECTOR_ONLY);
             
             Database.Procedure(
@@ -357,9 +352,9 @@ namespace EVESharp.Node.Services.Alliances
 
         public PyDataType UpdateApplication(PyInteger corporationID, PyString message, PyInteger newStatus, CallInformation call)
         {
-            if (this.Alliance.ExecutorCorpID != call.Client.CorporationID)
+            if (this.Alliance.ExecutorCorpID != call.Session.CorporationID)
                 throw new CrpAccessDenied(MLS.UI_CORP_DELETE_RELATIONSHIP_EXECUTOR_ONLY);
-            if (CorporationRole.Director.Is(call.Client.CorporationRole) == false)
+            if (CorporationRole.Director.Is(call.Session.CorporationRole) == false)
                 throw new CrpAccessDenied(MLS.UI_CORP_DELETE_RELATIONSHIP_DIRECTOR_ONLY);
 
             switch ((int) newStatus)
