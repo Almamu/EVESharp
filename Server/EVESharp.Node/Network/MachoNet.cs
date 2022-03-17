@@ -82,6 +82,7 @@ namespace EVESharp.Node.Network
             this.LoginQueue = loginQueue;
             this.GeneralDB = generalDB;
             this.Transport = new MachoServerTransport(this.Configuration.MachoNet.Port, this, logger);
+            this.NotificationManager.MachoServerTransport = this.Transport;
             this.DependencyInjection = dependencyInjection;
         }
 

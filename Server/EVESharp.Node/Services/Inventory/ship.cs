@@ -58,7 +58,7 @@ namespace EVESharp.Node.Services.Inventory
             // change character's location to the pod
             character.LocationID = capsule.ID;
             // notify the client about the item changes
-            this.Dogma.QueueMultiEvent(callerCharacterID, OnItemChange.BuildLocationChange(capsule, Flags.Capsule, capsule.LocationID));
+            this.Dogma.QueueMultiEvent(callerCharacterID, OnItemChange.BuildLocationChange(capsule, Flags.Capsule, this.ItemFactory.LocationRecycler.ID));
             this.Dogma.QueueMultiEvent(callerCharacterID, OnItemChange.BuildLocationChange(character, Flags.Pilot, call.Session.ShipID));
             // notify the client
             this.SessionManager.PerformSessionUpdate(Session.CHAR_ID, callerCharacterID, new Session() { ShipID = capsule.ID });
@@ -94,6 +94,7 @@ namespace EVESharp.Node.Services.Inventory
             newShip.CheckPrerequisites(character);
             
             // move the character into this new ship
+            newShip.AddItem(character);
             character.LocationID = newShip.ID;
             // finally update the session
             this.SessionManager.PerformSessionUpdate(Session.CHAR_ID, callerCharacterID, new Session(){ShipID = newShip.ID});

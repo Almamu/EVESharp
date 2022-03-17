@@ -45,7 +45,7 @@ namespace EVESharp.Node.Network
         /// <summary>
         /// The connection this notification manager is using to send notifications through
         /// </summary>
-        public MachoServerTransport MachoServerTransport { get; }
+        public MachoServerTransport MachoServerTransport { get; set; }
         
         /// <summary>
         /// The node this notification manager belongs to
@@ -211,8 +211,7 @@ namespace EVESharp.Node.Network
                 Payload = dataContainer
             };
 
-            // TODO: SEND NOTIFICATION
-            // this.MachoServerTransport.Send(packet);
+            this.MachoServerTransport.MachoNet.QueuePacket(packet);
         }
     }
 }

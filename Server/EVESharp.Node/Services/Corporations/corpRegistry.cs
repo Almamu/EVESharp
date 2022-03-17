@@ -518,7 +518,7 @@ namespace EVESharp.Node.Services.Corporations
             this.ValidateCorporationName(corporationName, tickerName);
             
             int stationID = call.Session.EnsureCharacterIsInStation();
-            int corporationStartupCost = this.Container.Constants[Constants.corporationStartupCost];
+            int corporationStartupCost = -this.Container.Constants[Constants.corporationStartupCost];
             int callerCharacterID = call.Session.EnsureCharacterIsSelected();
             
             // TODO: PROPERLY IMPLEMENT THIS CHECK, RIGHT NOW THE CHARACTER AND THE CORPREGISTRY INSTANCES DO NOT HAVE TO BE LOADED ON THE SAME NODE
@@ -532,7 +532,7 @@ namespace EVESharp.Node.Services.Corporations
             long corporationManagementLevel = character.GetSkillLevel(Types.CorporationManagement);
             
             if (corporationManagementLevel < 1)
-                throw new PlayerCantCreateCorporation(corporationStartupCost);
+                throw new PlayerCantCreateCorporation(-corporationStartupCost);
             
             try
             {
@@ -540,7 +540,7 @@ namespace EVESharp.Node.Services.Corporations
                 using (Wallet wallet = this.WalletManager.AcquireWallet(character.ID, WalletKeys.MAIN_WALLET))
                 {
                     // ensure there's enough balance
-                    wallet.EnsureEnoughBalance(corporationStartupCost);
+                    wallet.EnsureEnoughBalance(-corporationStartupCost);
                     
                     // create the corporation in the corporation table
                     int corporationID = this.DB.CreateCorporation(
@@ -565,14 +565,16 @@ namespace EVESharp.Node.Services.Corporations
                     // build the notification of corporation change
                     Notifications.Client.Corporations.OnCorporationMemberChanged change = new Notifications.Client.Corporations.OnCorporationMemberChanged(character.ID, call.Session.CorporationID, corporationID);
                     // start the session change for the client
-                    Session update = new Session();
-                    
-                    update.CorporationID = corporationID;
-                    update.CorporationRole = long.MaxValue; // this gives all the permissions to the character
-                    update.RolesAtBase = long.MaxValue;
-                    update.RolesAtOther = long.MaxValue;
-                    update.RolesAtHQ = long.MaxValue;
-                    update.RolesAtAll = long.MaxValue;
+                    Session update = new Session
+                    {
+                        CorporationID = corporationID,
+                        CorporationRole = long.MaxValue, // this gives all the permissions to the character
+                        RolesAtBase = long.MaxValue,
+                        RolesAtOther = long.MaxValue,
+                        RolesAtHQ = long.MaxValue,
+                        RolesAtAll = long.MaxValue
+                    };
+
                     // update the character to reflect the new ownership
                     character.CorporationID = corporationID;
                     character.Roles = long.MaxValue;

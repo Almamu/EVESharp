@@ -136,7 +136,7 @@ namespace EVESharp.Node.Services.Dogma
 
             ItemEntity item = this.ItemFactory.LoadItem(itemID);
 
-            if (item.OwnerID != callerCharacterID && item.OwnerID != call.Session.CorporationID)
+            if (item.ID != callerCharacterID && item.OwnerID != callerCharacterID && item.OwnerID != call.Session.CorporationID)
                 throw new TheItemIsNotYoursToTake(itemID);
             
             return new Row(
