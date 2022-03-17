@@ -1360,6 +1360,11 @@ namespace EVESharp.Node.Database
                 return reader.GetInt32(0);
             }
         }
+
+        public void ClearNodeOwnership()
+        {
+            this.Database.Query("UPDATE invItems SET nodeID = 0;");
+        }
         
         public ItemDB(DatabaseConnection db, ItemFactory factory, TimerManager timerManager, NodeContainer container) : base(db)
         {

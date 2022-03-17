@@ -27,6 +27,23 @@ namespace EVESharp.PythonTypes.Types.Collections
             set => this.mList[index] = value;
         }
 
+        public override int GetHashCode()
+        {
+            // a somewhat similar implementation based on python's
+            int length = this.Count;
+            int mult = 1000003;
+            int currentHash = 0x345678;
+
+            foreach (PyDataType data in this.mList)
+            {
+                int elementHash = data.GetHashCode();
+                currentHash = (currentHash ^ elementHash) * mult;
+                mult += 82520 + length + length; // shift the multiplier
+            }
+
+            return currentHash + 97531;
+        }
+
         public int Count => this.mList.Length;
 
         public IEnumerator<PyDataType> GetEnumerator()

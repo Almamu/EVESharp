@@ -91,6 +91,20 @@ namespace EVESharp.PythonTypes.Types.Collections
             this.mList = seed;
         }
 
+        public override int GetHashCode()
+        {
+            // a somewhat similar implementation based on python's
+            int value = 0;
+
+            foreach (PyDataType data in this.mList)
+            {
+                value |= data.GetHashCode();
+                value <<= 3;
+            }
+
+            return value;
+        }
+
         public void Add(PyDataType pyDataType)
         {
             this.mList.Add(pyDataType);

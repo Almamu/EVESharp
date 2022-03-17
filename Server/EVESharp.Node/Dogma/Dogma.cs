@@ -595,7 +595,7 @@ public class Dogma
     /// <param name="notif">The notification</param>
     public void QueueMultiEvent(string idType, int id, PyTuple notif)
     {
-        PyList<PyInteger> ids = new PyList<PyInteger>() {[0] = id};
+        PyList<PyInteger> ids = new PyList<PyInteger>() {id};
         
         this.QueueMultiEvent(new PyTuple(2) {[0] = idType, [1] = ids}, notif);
     }
@@ -608,7 +608,7 @@ public class Dogma
     /// <param name="notif">The notification</param>
     public void QueueMultiEvent(string idType, PyTuple id, PyTuple notif)
     {
-        PyList<PyTuple> ids = new PyList<PyTuple>() {[0] = id};
+        PyList<PyTuple> ids = new PyList<PyTuple>() {id};
         
         this.QueueMultiEvent(new PyTuple(2) {[0] = idType, [1] = ids}, notif);
     }

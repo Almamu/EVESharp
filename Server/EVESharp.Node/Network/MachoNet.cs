@@ -173,6 +173,8 @@ namespace EVESharp.Node.Network
             this.Configuration.MachoNet.Mode = MachoNetMode.Single;
             // set the nodeID to something that is not 0
             this.Container.NodeID = Common.Constants.Network.PROXY_NODE_ID;
+            // clear nodeIDs from the invItems table
+            this.ItemFactory.ItemDB.ClearNodeOwnership();
             
             this.StartListening();
         }

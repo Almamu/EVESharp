@@ -60,8 +60,8 @@ namespace EVESharp.Node.Services.Inventory
             // notify the client about the item changes
             this.Dogma.QueueMultiEvent(callerCharacterID, OnItemChange.BuildLocationChange(capsule, Flags.Capsule, capsule.LocationID));
             this.Dogma.QueueMultiEvent(callerCharacterID, OnItemChange.BuildLocationChange(character, Flags.Pilot, call.Session.ShipID));
-            // update session
-            call.Session.ShipID = capsule.ID;
+            // notify the client
+            this.SessionManager.PerformSessionUpdate(Session.CHAR_ID, callerCharacterID, new Session() { ShipID = capsule.ID });
             
             // persist changes!
             capsule.Persist();
@@ -96,7 +96,7 @@ namespace EVESharp.Node.Services.Inventory
             // move the character into this new ship
             character.LocationID = newShip.ID;
             // finally update the session
-            this.SessionManager.PerformSessionUpdate(Session.CHAR_ID, callerCharacterID, new Session(){[Session.SHIP_ID] = newShip.ID});
+            this.SessionManager.PerformSessionUpdate(Session.CHAR_ID, callerCharacterID, new Session(){ShipID = newShip.ID});
             // notify the client about the change in location
             this.Dogma.QueueMultiEvent(callerCharacterID, OnItemChange.BuildLocationChange(character, Flags.Pilot, currentShip.ID));
 
