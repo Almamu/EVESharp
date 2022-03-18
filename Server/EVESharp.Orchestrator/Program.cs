@@ -1,4 +1,3 @@
-using EVESharp.Common.Database;
 using EVESharp.Orchestator.Models;
 using MySql.Data.MySqlClient;
 

@@ -34,15 +34,15 @@ namespace EVESharp.Common.Network
 #if DEBUG
             this.mPacketLog = this.Log.Logger.CreateLogChannel("NetworkDebug", true);
 #endif
-
             // setup async callback handlers
             this.SetupCallbacks();
             // start the receiving callbacks
             this.BeginReceive(new byte[64 * 1024], this.mReceiveCallback);
         }
 
-        public EVEClientSocket(Channel logChannel) : base(new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp))
+        public EVEClientSocket(Channel logChannel) : base(new Socket(AddressFamily.InterNetworkV6, SocketType.Stream, ProtocolType.Tcp))
         {
+            // ensure we support both ipv4 and ipv6
             this.Log = logChannel;
 
             // take into account network debugging for developers
@@ -288,8 +288,13 @@ namespace EVESharp.Common.Network
 
         protected override void DefaultExceptionHandler(Exception ex)
         {
-            Log.Error("Unhandled exception on underlying socket:");
-            Log.Error(ex.Message);
+            Log.Error("Unhandled exception on the underlying socket:");
+
+            do
+            {
+                Log.Error(ex.Message);
+                Log.Error(ex.StackTrace);
+            } while ((ex = ex.InnerException) != null);
         }
     }
 }

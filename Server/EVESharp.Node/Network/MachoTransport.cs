@@ -28,6 +28,14 @@ public class MachoTransport
         this.Log = logger.CreateLogChannel(socket.GetRemoteAddress());
     }
 
+    public MachoTransport(MachoServerTransport transport, EVEClientSocket socket, Channel logger)
+    {
+        this.Session = new Session();
+        this.Server = transport;
+        this.Socket = socket;
+        this.Log = logger;
+    }
+
     public MachoTransport(MachoTransport source)
     {
         this.Session = source.Session;

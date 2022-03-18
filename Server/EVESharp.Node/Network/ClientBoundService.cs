@@ -84,6 +84,9 @@ namespace EVESharp.Node.Network
                 
                 result[1] = this.BoundServiceManager.ServiceCall(instance.BoundID, func, callInformation);
             }
+            
+            // signal that the object was bound, this will be used by the proxy to notify this node on important stuff
+            call.ResultNamedPayload["OID+"] = new PyList<PyInteger>() {instance.BoundID};
 
             return result;
         }

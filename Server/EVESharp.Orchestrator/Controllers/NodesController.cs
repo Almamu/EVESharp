@@ -50,7 +50,7 @@ public class NodesController : ControllerBase
     }
     
     [HttpGet("{address}")]
-    public ActionResult<Node> GetNodeInformation(string address)
+    public ActionResult<Node> GetNodeByAddress(string address)
     {
         using (MySqlConnection connection = this.DB.Get())
         {
@@ -75,9 +75,98 @@ public class NodesController : ControllerBase
             }
         }
     }
+    
+    [HttpGet("node/{nodeID}")]
+    public ActionResult<Node> GetNodeInformation(int nodeID)
+    {
+        using (MySqlConnection connection = this.DB.Get())
+        {
+            MySqlCommand cmd = new MySqlCommand("SELECT id, ip, port, role, lastHeartBeat FROM cluster WHERE id = @nodeID;", connection);
+
+            cmd.Parameters.AddWithValue("@nodeID", nodeID);
+            cmd.Prepare();
+
+            using (MySqlDataReader reader = cmd.ExecuteReader())
+            {
+                if (reader.Read() == false)
+                    return NotFound();
+                
+                return new Node
+                {
+                    NodeID = reader.GetInt32(0),
+                    IP = reader.GetString(1),
+                    Port = reader.GetInt16(2),
+                    Role = reader.GetString (3),
+                    LastHeartBeat = reader.GetInt64(4)
+                };
+            }
+        }
+    }
+
+    [HttpGet("proxies")]
+    public ActionResult<List<Node>> GetProxies()
+    {
+        using (MySqlConnection connection = this.DB.Get())
+        {
+            MySqlCommand cmd = new MySqlCommand("SELECT id, ip, port, role, lastHeartBeat FROM cluster WHERE role = @mode;", connection);
+
+            cmd.Parameters.AddWithValue("@mode", "proxy");
+            cmd.Prepare();
+
+            using (MySqlDataReader reader = cmd.ExecuteReader())
+            {
+                List<Node> result = new List<Node>();
+
+                while (reader.Read() == true)
+                {
+                    result.Add(new Node
+                    {
+                        NodeID = reader.GetInt32(0),
+                        IP = reader.GetString(1),
+                        Port = reader.GetInt16(2),
+                        Role = reader.GetString (3),
+                        LastHeartBeat = reader.GetInt64(4)
+                    });
+                }
+
+                return result;
+            }
+        }
+    }
+
+    [HttpGet("servers")]
+    public ActionResult<List<Node>> GetServers()
+    {
+        using (MySqlConnection connection = this.DB.Get())
+        {
+            MySqlCommand cmd = new MySqlCommand("SELECT id, ip, port, role, lastHeartBeat FROM cluster WHERE role = @mode;", connection);
+
+            cmd.Parameters.AddWithValue("@mode", "server");
+            cmd.Prepare();
+
+            using (MySqlDataReader reader = cmd.ExecuteReader())
+            {
+                List<Node> result = new List<Node>();
+
+                while (reader.Read() == true)
+                {
+                    result.Add(new Node
+                    {
+                        NodeID = reader.GetInt32(0),
+                        IP = reader.GetString(1),
+                        Port = reader.GetInt16(2),
+                        Role = reader.GetString (3),
+                        LastHeartBeat = reader.GetInt64(4)
+                    });
+                }
+
+                return result;
+            }
+        }
+    }
 
     [HttpPost("register")]
-    public object RegisterNewNode([FromForm]short port, [FromForm]string role)
+    public object RegisterNewNode([FromForm]ushort port, [FromForm]string role)
     {
         if (role != "proxy" && role != "server")
             return this.BadRequest ($"Unknown node role... {role}");

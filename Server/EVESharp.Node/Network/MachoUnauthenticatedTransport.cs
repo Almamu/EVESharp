@@ -1,54 +1,151 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Net.Http;
+using System.Text.Json;
+using System.Text.Json.Nodes;
+using System.Threading.Tasks;
 using EVESharp.Common.Logging;
 using EVESharp.Common.Network;
 using EVESharp.EVE;
 using EVESharp.EVE.Packets;
 using EVESharp.Node.Accounts;
+using EVESharp.Node.Configuration;
 using EVESharp.PythonTypes.Types.Collections;
+using EVESharp.PythonTypes.Types.Network;
 using EVESharp.PythonTypes.Types.Primitives;
 
 namespace EVESharp.Node.Network;
 
 public class MachoUnauthenticatedTransport : MachoTransport
 {
-    public MachoUnauthenticatedTransport(MachoServerTransport transport, EVEClientSocket socket, Logger logger) : base(transport, socket, logger)
+    public MachoUnauthenticatedTransport(MachoServerTransport transport, Channel channel) :
+        base(transport, new EVEClientSocket(channel), channel)
     {
-        // store the remote address first
-        this.Session.Address = socket.GetRemoteAddress();
-        // send low level version exchange to start authorization chain
-        this.SendLowLevelVersionExchange();
-        this.Socket.SetReceiveCallback(ReceiveFirstMessageCallback);
+        this.Socket.SetReceiveCallback(ReceiveLowLevelVersionExchange);
         this.Socket.SetExceptionHandler(HandleException);
     }
 
-    private void ReceiveFirstMessageCallback(PyDataType ar)
+    public MachoUnauthenticatedTransport(MachoServerTransport transport, EVEClientSocket socket, Logger logger) : base(transport, socket, logger)
     {
-        try
-        {
-            // depending on the type of data we're receiving, this has to be treated differently
-            if (ar is PyObjectData)
-            {
-                this.HandleIdentificationReq(ar);
-            }
-            else
-            {
-                this.HandleLowLevelVersionExchange(ar);
-            }
-        }
-        catch (Exception e)
-        {
-            Log.Error($"Exception caught on IdentificationReq/LowLevelVersionExchange: {e.Message}");
-            throw;
-        }
+        // send low level version exchange to start authorization chain
+        this.SendLowLevelVersionExchange();
+        this.Socket.SetReceiveCallback(ReceiveLowLevelVersionExchange);
+        this.Socket.SetExceptionHandler(HandleException);
+    }
+
+    public void Connect(string ip, ushort port)
+    {
+        // connect
+        this.Socket.Connect(ip, port);
+        // send the LowLevelVersionExchange to validate versions
+        this.SendLowLevelVersionExchange();
+    }
+
+    private void ReceiveLowLevelVersionExchange(PyDataType ar)
+    {
+        // store the remote address in the session
+        this.Session.Address = this.Socket.GetRemoteAddress();
+        
+        // depending on the type of data we're receiving, this has to be treated differently
+        this.HandleLowLevelVersionExchange(ar);
     }
 
     private void HandleIdentificationReq(IdentificationReq req)
     {
+        // validate the identification req against the orchestration manager first
+        Task<bool> validation = this.ValidateIdentificationReq(req);
+        // wait for the task to be completed
+        validation.Wait();
+
+        // if the connection could not be validated do nothing else
+        if (validation.Result == false)
+        {
+            Log.Fatal("IdentificationReq and Orchestrator do not say the same thing, aborting connection");
+            this.AbortConnection();
+            return;
+        }
         
-        Log.Error("Cannot handle identification req yet!");
+        // store the NodeID in the session
+        this.Session.NodeID = req.NodeID;
+
+        // send our identification response back and store the connection as whatever it is
+        // so we can start receiving data
+        switch (req.Mode)
+        {
+            case "proxy":
+                // resolve the connection to a proxy transport
+                this.Server.ResolveProxyTransport(this);
+                break;
+            case "server":
+                // resolve the connection to a node transport
+                this.Server.ResolveNodeTransport(this);
+                break;
+        }
+        
+        // send our identification res so the destination knows what to do
+        this.Socket.Send(
+            new IdentificationRsp()
+            {
+                Accepted = true,
+                NodeID = this.Server.MachoNet.Container.NodeID,
+                Mode = this.Server.MachoNet.Configuration.MachoNet.Mode switch
+                {
+                    MachoNetMode.Proxy => "proxy",
+                    MachoNetMode.Server => "server"
+                }
+            }
+        );
     }
 
+    private void HandleIdentificationRsp(IdentificationRsp rsp)
+    {
+        // store the NodeID in the session
+        this.Session.NodeID = rsp.NodeID;
+        
+        switch (rsp.Mode)
+        {
+            case "proxy":
+                // resolve the connection to a proxy transport
+                this.Server.ResolveProxyTransport(this);
+                break;
+            case "server":
+                // resolve the connection to a node transport
+                this.Server.ResolveNodeTransport(this);
+                break;
+        }
+    }
+    
+    private void HandleIdentificationFlow(PyPacket packet)
+    {
+        switch (packet.Type)
+        {
+            case PyPacket.PacketType.IDENTIFICATION_REQ:
+                this.HandleIdentificationReq(packet);
+                break;
+            case PyPacket.PacketType.IDENTIFICATION_RSP:
+                this.HandleIdentificationRsp(packet);
+                break;
+        }
+    }
+
+    private async Task<bool> ValidateIdentificationReq(IdentificationReq req)
+    {
+        // register ourselves with the orchestrator and get our node id AND address
+        HttpClient client = new HttpClient();
+        HttpResponseMessage response = await client.GetAsync($"{this.Server.MachoNet.Configuration.Cluster.OrchestatorURL}/Nodes/{req.Address}");
+
+        // make sure we have a proper answer
+        response.EnsureSuccessStatusCode();
+        // read the json and extract the required information
+        Stream inputStream = await response.Content.ReadAsStreamAsync();
+
+        JsonObject result = JsonSerializer.Deserialize<JsonObject>(inputStream);
+
+        // validate the data we've received back
+        return await Task.FromResult(req.NodeID == (long) result["nodeID"] && req.Mode == result["role"].ToString());
+    }
+    
     private void HandleLowLevelVersionExchange(LowLevelVersionExchange ex)
     {
         Log.Debug("Handling low level version exchange");
@@ -85,22 +182,15 @@ public class MachoUnauthenticatedTransport : MachoTransport
 
         this.Socket.Send(data);
     }
-
-    private void ReceiveLowLevelVersionExchangeCallback(PyDataType ar)
-    {
-        try
-        {
-            this.HandleLowLevelVersionExchange(ar);
-        }
-        catch (Exception e)
-        {
-            Log.Error($"Exception caught on LowLevelVersionExchange: {e.Message}");
-            throw;
-        }
-    }
-
+    
     private void ReceiveCommandCallback(PyDataType packet)
     {
+        if (PyPacket.IsPyPacket(packet) == true)
+        {
+            this.HandleIdentificationFlow(packet);
+            return;
+        }
+
         ClientCommand command = packet;
 
         if (command.Command == "QC")
@@ -111,7 +201,7 @@ public class MachoUnauthenticatedTransport : MachoTransport
             // send low level version exchange required
             this.SendLowLevelVersionExchange();
             // wait for a new low level version exchange again
-            this.Socket.SetReceiveCallback(ReceiveLowLevelVersionExchangeCallback);
+            this.Socket.SetReceiveCallback(ReceiveLowLevelVersionExchange);
         }
         else if (command.Command == "VK")
         {
@@ -200,7 +290,7 @@ public class MachoUnauthenticatedTransport : MachoTransport
     {
         if (loginStatus == LoginStatus.Success)
         {
-            // We should check for a exact number of nodes here when we have the needed infraestructure
+            // We should check for a exact number of nodes here when we have the needed infrastructure
             if (true)
             {
                 AuthenticationRsp rsp = new AuthenticationRsp();

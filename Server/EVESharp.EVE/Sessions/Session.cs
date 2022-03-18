@@ -1,4 +1,5 @@
-﻿using EVESharp.EVE.Packets.Exceptions;
+﻿using System.Collections.Generic;
+using EVESharp.EVE.Packets.Exceptions;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Primitives;
 
@@ -11,6 +12,11 @@ namespace EVESharp.EVE.Sessions
         /// (nodes where a bound instance is for this client, etc)
         /// </summary>
         public PyList<PyInteger> NodesOfInterest { get; } = new PyList<PyInteger>();
+
+        /// <summary>
+        /// List of bound objects that are assigned to this session
+        /// </summary>
+        public Dictionary<int, int> BoundObjects { get; } = new Dictionary<int, int>();
 
         public static Session FromPyDictionary(PyDictionary origin)
         {
@@ -65,7 +71,7 @@ namespace EVESharp.EVE.Sessions
         public const string RACE_ID = "raceID";
         public const string NODE_ID = "nodeid";
 
-        public int NodeID { get => this[NODE_ID] as PyInteger ?? 0; set => this[NODE_ID] = value; }
+        public long NodeID { get => this[NODE_ID] as PyInteger ?? 0; set => this[NODE_ID] = value; }
         public string LanguageID { get => this[LANGUAGEID] as PyString; set => this[LANGUAGEID] = value; }
         public int UserID { get => this[USERID] as PyInteger; set => this[USERID] = value; }
         public int UserType { get => this[USER_TYPE] as PyInteger; set => this[USER_TYPE] = value; }

@@ -59,13 +59,15 @@ namespace EVESharp.Node.Network
         public GeneralDB GeneralDB { get; }
         public LoginQueue LoginQueue { get; init; }
         private Container DependencyInjection { get; }
+        private HttpClient HttpClient { get; }
         public int ErrorCount = 0;
 
         public event EventHandler OnClusterTimer;
         
         public MachoNet(NodeContainer container, SystemManager systemManager, BoundServiceManager boundServiceManager,
             ItemFactory itemFactory, Logger logger, General configuration, NotificationManager notificationManager,
-            TimerManager timerManager, LoginQueue loginQueue, GeneralDB generalDB, Container dependencyInjection)
+            TimerManager timerManager, LoginQueue loginQueue, GeneralDB generalDB, HttpClient httpClient,
+            Container dependencyInjection)
         {
             this.Log = logger.CreateLogChannel("MachoNet");
 #if DEBUG
@@ -83,6 +85,7 @@ namespace EVESharp.Node.Network
             this.GeneralDB = generalDB;
             this.Transport = new MachoServerTransport(this.Configuration.MachoNet.Port, this, logger);
             this.NotificationManager.MachoServerTransport = this.Transport;
+            this.HttpClient = httpClient;
             this.DependencyInjection = dependencyInjection;
         }
 
@@ -109,16 +112,15 @@ namespace EVESharp.Node.Network
         private async void RegisterNode()
         {
             // register ourselves with the orchestrator and get our node id AND address
-            HttpClient client = new HttpClient();
             HttpContent content = new FormUrlEncodedContent(new Dictionary<string, string> {
-                {"port", this.Transport.Port.ToString()},
+                {"port", this.Configuration.MachoNet.Port.ToString()},
                 {"role", this.Configuration.MachoNet.Mode switch
                 {
                     MachoNetMode.Proxy => "proxy",
                     MachoNetMode.Server => "server"
                 }}
             });
-            HttpResponseMessage response = await client.PostAsync($"{this.Configuration.Cluster.OrchestatorURL}/Nodes/register",  content);
+            HttpResponseMessage response = await this.HttpClient.PostAsync($"{this.Configuration.Cluster.OrchestatorURL}/Nodes/register",  content);
 
             // make sure we have a proper answer
             response.EnsureSuccessStatusCode();
@@ -159,6 +161,13 @@ namespace EVESharp.Node.Network
                 Log.Error($"Error contacting orchestrator: {e.Message}");
                 this.RunInSingleNodeMode();
             }
+            
+            // wait 5 seconds and connect to the proxy
+            Log.Info("Waiting 5 seconds before connecting to all the currently active proxies");
+
+            Task.Delay(5000).Wait();
+            
+            this.EstablishConnectionWithProxies();
         }
 
         private void RunInSingleNodeMode()
@@ -183,6 +192,68 @@ namespace EVESharp.Node.Network
         private void StartListening()
         {
             this.Transport.Listen();
+        }
+
+        private async void EstablishConnectionWithProxies()
+        {
+            HttpResponseMessage response = await this.HttpClient.GetAsync($"{this.Configuration.Cluster.OrchestatorURL}/Nodes/proxies");
+
+            // make sure we have a proper answer
+            response.EnsureSuccessStatusCode();
+            // read the json and extract the required information
+            Stream inputStream = await response.Content.ReadAsStreamAsync();
+
+            JsonArray result = JsonSerializer.Deserialize<JsonArray>(inputStream);
+
+            foreach (JsonObject proxy in result)
+            {
+                long nodeID = (long) proxy["nodeID"];
+
+                this.OpenNodeConnection(nodeID);
+            }
+        }
+
+        /// <summary>
+        /// Opens a connection to the given proxy
+        /// </summary>
+        /// <param name="nodeID">The nodeID of the proxy to connect to</param>
+        public async void OpenNodeConnection(long nodeID)
+        {
+            Log.Info($"Looking up NodeID {nodeID}...");
+            HttpResponseMessage response = await this.HttpClient.GetAsync($"{this.Configuration.Cluster.OrchestatorURL}/Nodes/node/{nodeID}");
+
+            // make sure we have a proper answer
+            response.EnsureSuccessStatusCode();
+            // read the json and extract the required information
+            Stream inputStream = await response.Content.ReadAsStreamAsync();
+
+            JsonObject result = JsonSerializer.Deserialize<JsonObject>(inputStream);
+
+            // get address and port
+            string ip = result["ip"].ToString();
+            ushort port = (ushort) result["port"];
+            string role = result["role"].ToString();
+            
+            Log.Info($"Found {role} with NodeID {nodeID} on address {ip}, opening connection...");
+            
+            // finally open a connection and register it in the transport list
+            MachoUnauthenticatedTransport transport =
+                new MachoUnauthenticatedTransport(this.Transport, Log.Logger.CreateLogChannel($"{role}-{nodeID}"));
+            // open a connection
+            transport.Connect(ip, port);
+            // send an identification req to start the authentication flow
+            transport.Socket.Send(
+                new IdentificationReq()
+                {
+                    Address = this.Container.Address,
+                    NodeID = this.Container.NodeID,
+                    Mode = this.Configuration.MachoNet.Mode switch
+                    {
+                        MachoNetMode.Proxy => "proxy",
+                        MachoNetMode.Server => "server"
+                    }
+                }
+            );
         }
 
         /// <summary>

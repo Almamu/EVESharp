@@ -23,6 +23,7 @@
 */
 
 using System;
+using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using EVESharp.Common.Database;
@@ -113,6 +114,7 @@ namespace EVESharp.Node
                 Container dependencies = new Container();
                 
                 // register basic dependencies first
+                dependencies.RegisterInstance(new HttpClient());
                 dependencies.Register<Logger>(Lifestyle.Singleton);
                 dependencies.Register<DatabaseConnection>(Lifestyle.Singleton);
                 dependencies.Register<SessionManager>(Lifestyle.Singleton);

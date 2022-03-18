@@ -378,7 +378,8 @@ namespace EVESharp.Node.Network
                 Source = packet.Source,
                 Destination = packet.Destination,
                 MachoNet = this.Server.MachoNet,
-                Session = this.Session
+                Session = this.Session,
+                ResultNamedPayload = new PyDictionary<PyString, PyDataType>()
             };
 
             try

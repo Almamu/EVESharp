@@ -7,8 +7,6 @@ namespace EVESharp.EVE.Packets
 {
     public class IdentificationRsp
     {
-        private const string TYPE_NAME = "macho.IdentificationRsp";
-
         /// <summary>
         /// Whether the identification request was accepted or not
         /// </summary>
@@ -16,34 +14,45 @@ namespace EVESharp.EVE.Packets
         /// <summary>
         /// The nodeID of the answering node
         /// </summary>
-        public int NodeID { get; init; }
+        public long NodeID { get; init; }
+        /// <summary>
+        /// The mode the node is running at
+        /// </summary>
+        public string Mode { get; init; }
+
+        public static implicit operator PyPacket(IdentificationRsp info)
+        {
+            return new PyPacket(PyPacket.PacketType.IDENTIFICATION_RSP)
+            {
+                Source = new PyAddressAny(0),
+                Destination = new PyAddressAny(0),
+                Payload = new PyTuple(3)
+                {
+                    [0] = info.Accepted,
+                    [1] = info.NodeID,
+                    [2] = info.Mode
+                }
+            };
+        }
 
         public static implicit operator PyDataType(IdentificationRsp info)
         {
-            return new PyObjectData(TYPE_NAME, new PyTuple(2)
-                {
-                    [0] = info.Accepted,
-                    [1] = info.NodeID
-                }
-            );
+            return (PyPacket) info;
         }
 
-        public static implicit operator IdentificationRsp(PyDataType info)
+        public static implicit operator IdentificationRsp(PyPacket info)
         {
-            if (info is PyObjectData == false)
-                throw new InvalidDataException($"Expected container of type ObjectData");
-
-            PyObjectData data = info as PyObjectData;
-
-            if (data.Name != TYPE_NAME)
-                throw new InvalidDataException($"Expected ObjectData of type {TYPE_NAME} but got {data.Name}");
-
-            PyTuple arguments = data.Arguments as PyTuple;
+            if (info.Type != PyPacket.PacketType.IDENTIFICATION_RSP)
+                throw new InvalidDataException($"Expected packet of IdentificationRsp type");
+            
+            if (info.Payload.Count != 3)
+                throw new InvalidDataException($"Expected tuple with specific element count");
 
             IdentificationRsp result = new IdentificationRsp
             {
-                Accepted = arguments[0] as PyBool,
-                NodeID = arguments[1] as PyInteger
+                Accepted = info.Payload[0] as PyBool,
+                NodeID = info.Payload[1] as PyInteger,
+                Mode = info.Payload[2] as PyString
             };
             
             return result;

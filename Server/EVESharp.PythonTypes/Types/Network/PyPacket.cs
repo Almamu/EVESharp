@@ -123,6 +123,22 @@ namespace EVESharp.PythonTypes.Types.Network
             return new PyObjectData(packet.TypeString, args);
         }
 
+        /// <summary>
+        /// Checks if the given PyDataType looks like a PyPacket
+        /// </summary>
+        /// <param name="data"></param>
+        /// <returns></returns>
+        public static bool IsPyPacket(PyDataType data)
+        {
+            if (data is PyChecksumedStream stream)
+                data = stream.Data;
+
+            if (data is PySubStream subStream)
+                data = subStream.Stream;
+
+            return data is PyObjectData;
+        }
+
         public static implicit operator PyPacket(PyDataType data)
         {
             PyPacket result = new PyPacket();

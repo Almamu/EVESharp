@@ -12,7 +12,9 @@ namespace EVESharp.Common.Network
 
         public EVESocket()
         {
-            this.Socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+            this.Socket = new Socket(AddressFamily.InterNetworkV6, SocketType.Stream, ProtocolType.Tcp);
+            // ensure we support both ipv4 and ipv6
+            this.Socket.SetSocketOption(SocketOptionLevel.IPv6, SocketOptionName.IPv6Only, false);
             this.SetTransferBuffers();
             // set a default exception handler
             this.SetExceptionHandler(DefaultExceptionHandler);
@@ -21,6 +23,8 @@ namespace EVESharp.Common.Network
         protected EVESocket(Socket socket)
         {
             this.Socket = socket;
+            // ensure we support both ipv4 and ipv6
+            // this.Socket.SetSocketOption(SocketOptionLevel.IPv6, SocketOptionName.IPv6Only, false);
             this.SetTransferBuffers();
             // set a default exception handler
             this.SetExceptionHandler(DefaultExceptionHandler);

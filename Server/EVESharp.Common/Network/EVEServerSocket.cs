@@ -1,5 +1,6 @@
 using System;
 using System.Net;
+using System.Net.Sockets;
 using EVESharp.Common.Logging;
 
 namespace EVESharp.Common.Network
@@ -18,7 +19,7 @@ namespace EVESharp.Common.Network
         public void Listen()
         {
             // bind the socket to the correct endpoint
-            this.Socket.Bind(new IPEndPoint(IPAddress.Any, this.Port));
+            this.Socket.Bind(new IPEndPoint(IPAddress.IPv6Any, this.Port));
             this.Socket.Listen(20);
         }
 

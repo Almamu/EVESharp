@@ -17,11 +17,11 @@ namespace EVESharp.Node.Network
         /// <summary>
         /// The registered and validated node transports
         /// </summary>
-        public Dictionary<int, MachoNodeTransport> NodeTransports { get; } = new Dictionary<int, MachoNodeTransport>();
+        public Dictionary<long, MachoNodeTransport> NodeTransports { get; } = new Dictionary<long, MachoNodeTransport>();
         /// <summary>
         /// The registered and validated proxy transports
         /// </summary>
-        public Dictionary<int, MachoProxyTransport> ProxyTransports { get; } = new Dictionary<int, MachoProxyTransport>();
+        public Dictionary<long, MachoProxyTransport> ProxyTransports { get; } = new Dictionary<long, MachoProxyTransport>();
         /// <summary>
         /// The unvalidated transports
         /// </summary>
@@ -72,6 +72,7 @@ namespace EVESharp.Node.Network
 
         public void ResolveNodeTransport(MachoUnauthenticatedTransport transport)
         {
+            Log.Info($"Connection from server with nodeID {transport.Session.NodeID}");
             // first remove the transport from the unauthenticated list
             this.UnauthenticatedTransports.Remove(transport);
             
@@ -86,6 +87,7 @@ namespace EVESharp.Node.Network
 
         public void ResolveProxyTransport(MachoUnauthenticatedTransport transport)
         {
+            Log.Info($"Connection from proxy with nodeID {transport.Session.NodeID}");
             // first remove the transport from the unauthenticated list
             this.UnauthenticatedTransports.Remove(transport);
             
@@ -109,8 +111,10 @@ namespace EVESharp.Node.Network
                     this.ClientTransports.Remove(transport.Session.UserID);
                     break;
                 case MachoNodeTransport:
-                case MachoProxyTransport:
                     this.NodeTransports.Remove(transport.Session.NodeID);
+                    break;
+                case MachoProxyTransport:
+                    this.ProxyTransports.Remove(transport.Session.NodeID);
                     break;
             }
         }

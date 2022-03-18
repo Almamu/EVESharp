@@ -1,3 +1,4 @@
+using System;
 using System.IO;
 using IniParser.Model;
 
@@ -17,13 +18,8 @@ namespace EVESharp.Node.Configuration
 
         public void Load(KeyDataCollection section)
         {
-            if (section.ContainsKey("port") == false)
-                this.Port = 26000;
-            else
-                this.Port = ushort.Parse(section["port"]);
-
             string mode = (section["mode"] ?? "single").ToLower();
-
+            
             this.Mode = mode switch
             {
                 "proxy" => MachoNetMode.Proxy,
@@ -31,6 +27,17 @@ namespace EVESharp.Node.Configuration
                 "server" => MachoNetMode.Server,
                 _ => throw new InvalidDataException("Only 'proxy', 'server' or 'single' modes available")
             };
+
+            if (section.ContainsKey("port") == false)
+            {
+                // determine the port based on some random data so the nodes do not collide
+                if (this.Mode == MachoNetMode.Server)
+                    this.Port = (ushort) new Random().Next(26001, 27000);
+                else
+                    this.Port = 26000;
+            }
+            else
+                this.Port = ushort.Parse(section["port"]);
         }
     }
 }
