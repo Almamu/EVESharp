@@ -90,6 +90,7 @@ public class SessionManager : EVE.Sessions.SessionManager
                 Source = new PyAddressNode(this.MachoNet.Container.NodeID),
                 Destination = new PyAddressBroadcast(session.NodesOfInterest, "nodeid"),
                 Payload = scn,
+                UserID = session.UserID,
                 OutOfBounds = new PyDictionary()
                 {
                     ["channel"] = "sessionchange"
@@ -101,6 +102,7 @@ public class SessionManager : EVE.Sessions.SessionManager
                 Source = new PyAddressNode(this.MachoNet.Container.NodeID),
                 Destination = new PyAddressClient(session.UserID),
                 Payload = scn,
+                UserID = session.UserID,
                 OutOfBounds = new PyDictionary()
                 {
                     ["channel"] = "sessionchange"
@@ -114,7 +116,16 @@ public class SessionManager : EVE.Sessions.SessionManager
 
     private void PerformSessionUpdateForNode(string idType, int id, Session newValues)
     {
-        // TODO: CONTACT PROXY AND SEND NEW VALUES
+        PyPacket packet = new PyPacket(PyPacket.PacketType.NOTIFICATION)
+        {
+            Source = new PyAddressNode(this.MachoNet.Container.NodeID),
+            Destination = new PyAddressAny(0),
+            Payload = new PyTuple(2) {[0] = "UpdateSessionAttributes", [1] = new PyTuple(3) {[0] = idType, [1] = id, [2] = newValues}}
+        };
+        
+        // notify all proxies
+        foreach ((long _, MachoTransport transport) in this.MachoNet.Transport.ProxyTransports)
+            transport.Socket.Send(packet);
     }
 
     public new void FreeSession(Session session)

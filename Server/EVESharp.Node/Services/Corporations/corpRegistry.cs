@@ -1292,7 +1292,7 @@ namespace EVESharp.Node.Services.Corporations
                 );
             }
             
-            foreach ((int _, Session session) in this.Sessions)
+            foreach ((long _, Session session) in this.Sessions)
             {
                 int characterID = session.EnsureCharacterIsSelected();
                 // characterID should never be null here
@@ -1341,9 +1341,9 @@ namespace EVESharp.Node.Services.Corporations
             return new corpRegistry (this.DB, this.Database, this.ChatDB, this.CharacterDB, this.NotificationManager, this.MailManager, this.WalletManager, this.Container, this.ItemFactory, this.AncestryManager, this.SessionManager, corp, bindParams.ExtraValue, this);
         }
 
-        public override bool IsClientAllowedToCall(ServiceCall call)
+        public override bool IsClientAllowedToCall(Session session)
         {
-            return this.Corporation.ID == call.Session.CorporationID;
+            return this.Corporation.ID == session.CorporationID;
         }
 
         public PyDataType DeleteRecruitmentAd(PyInteger advertID, CallInformation call)

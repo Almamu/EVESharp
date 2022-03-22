@@ -1264,6 +1264,26 @@ namespace EVESharp.Common.Database
             }
         }
 
+        public void Procedure(string procedureName)
+        {
+            try
+            {
+                MySqlConnection connection = null;
+                MySqlCommand command = this.PrepareProcedureCall(ref connection, procedureName);
+                
+                using (connection)
+                using (command)
+                {
+                    command.ExecuteNonQuery();
+                }
+            }
+            catch (Exception e)
+            {
+                Log.Error($"MySQL errors: {e.Message}");
+                throw;
+            }
+        }
+
         /// <summary>
         /// Calls the given procedure
         /// </summary>

@@ -19,7 +19,7 @@ CREATE TABLE `invItems` (
   `singleton` int(10) unsigned NOT NULL default '0',
   `quantity` int(10) unsigned NOT NULL default '0',
   `customInfo` text,
-  `nodeID` int(10) unsigned DEFAULT NULL,
+  `nodeID` bigint(20) DEFAULT NULL,
   PRIMARY KEY  (`itemID`),
   KEY `typeID` (`typeID`),
   KEY `locationID` (`locationID`),

@@ -23,6 +23,11 @@ namespace EVESharp.Node.Network
         /// </summary>
         public Dictionary<long, MachoProxyTransport> ProxyTransports { get; } = new Dictionary<long, MachoProxyTransport>();
         /// <summary>
+        /// Full list of active transports for this node
+        /// </summary>
+        public List<MachoTransport> TransportList { get; } = new List<MachoTransport>();
+
+        /// <summary>
         /// The unvalidated transports
         /// </summary>
         public List<MachoTransport> UnauthenticatedTransports { get; } = new List<MachoTransport>();
@@ -55,7 +60,7 @@ namespace EVESharp.Node.Network
         /// <summary>
         /// Registers the given transport as a client's transport
         /// </summary>
-        /// <param name="clientTransport"></param>
+        /// <param name="transport"></param>
         public void ResolveClientTransport(MachoUnauthenticatedTransport transport)
         {
             // first remove the transport from the unauthenticated list
@@ -68,6 +73,7 @@ namespace EVESharp.Node.Network
                 original.AbortConnection();
 
             this.ClientTransports.Add(newTransport.Session.UserID, newTransport);
+            this.TransportList.Add(newTransport);
         }
 
         public void ResolveNodeTransport(MachoUnauthenticatedTransport transport)
@@ -75,7 +81,7 @@ namespace EVESharp.Node.Network
             Log.Info($"Connection from server with nodeID {transport.Session.NodeID}");
             // first remove the transport from the unauthenticated list
             this.UnauthenticatedTransports.Remove(transport);
-            
+
             // create the new client transport and store it somewhere
             MachoNodeTransport newTransport = new MachoNodeTransport(transport);
             
@@ -83,6 +89,7 @@ namespace EVESharp.Node.Network
                 original.AbortConnection();
 
             this.NodeTransports.Add(newTransport.Session.NodeID, newTransport);
+            this.TransportList.Add(newTransport);
         }
 
         public void ResolveProxyTransport(MachoUnauthenticatedTransport transport)
@@ -98,10 +105,14 @@ namespace EVESharp.Node.Network
                 original.AbortConnection();
 
             this.ProxyTransports.Add(newTransport.Session.NodeID, newTransport);
+            this.TransportList.Add(newTransport);
         }
         
         public void OnTransportTerminated(MachoTransport transport)
         {
+            if (transport is not MachoUnauthenticatedTransport)
+                this.TransportList.Remove(transport);
+            
             switch (transport)
             {
                 case MachoUnauthenticatedTransport:

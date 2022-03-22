@@ -111,7 +111,13 @@ namespace EVESharp.Node.Network
                 }
                 else
                 {
-                    // let macho net handle the destination of the packet
+                    // update the outofbounds data with the session information
+                    if (pyPacket.OutOfBounds is null)
+                        pyPacket.OutOfBounds = new PyDictionary();
+                    
+                    pyPacket.OutOfBounds["Session"] = this.Session;
+                    
+                    // re-queue the packet
                     this.Server.MachoNet.QueuePacket(pyPacket);
                 }
             }
@@ -156,7 +162,7 @@ namespace EVESharp.Node.Network
             }
             catch (PyException ex)
             {
-                this.SendException(packet.Source, packet.Destination, packet.Type, ex);
+                this.Server.MachoNet.SendException(packet.Source, packet.Destination, packet.Type, ex);
             }
             catch (Exception ex)
             {
@@ -169,11 +175,11 @@ namespace EVESharp.Node.Network
                 // send client a proper notification about the error based on the roles
                 if ((this.Session.Role & (int) Roles.ROLE_PROGRAMMER) == (int) Roles.ROLE_PROGRAMMER)
                 {
-                    this.SendException(packet.Source, packet.Destination, packet.Type, new CustomError($"An internal server error occurred.<br><b>Reference</b>: {errorID}<br><b>Message</b>: {ex.Message}<br><b>Stack trace</b>:<br>{ex.StackTrace.Replace("\n", "<br>")}"));
+                    this.Server.MachoNet.SendException(packet.Source, packet.Destination, packet.Type, new CustomError($"An internal server error occurred.<br><b>Reference</b>: {errorID}<br><b>Message</b>: {ex.Message}<br><b>Stack trace</b>:<br>{ex.StackTrace.Replace("\n", "<br>")}"));
                 }
                 else
                 {
-                    this.SendException(packet.Source, packet.Destination, packet.Type, new CustomError($"An internal server error occurred. <b>Reference</b>: {errorID}"));
+                    this.Server.MachoNet.SendException(packet.Source, packet.Destination, packet.Type, new CustomError($"An internal server error occurred. <b>Reference</b>: {errorID}"));
                 }
             }
         }
@@ -194,12 +200,6 @@ namespace EVESharp.Node.Network
 
         private void HandleNotification(PyPacket packet)
         {
-            if (packet.Source is PyAddressAny)
-            {
-                this.Server.MachoNet.HandleBroadcastNotification(packet);
-                return;
-            }
-            
             PyTuple callInfo = ((packet.Payload[0] as PyTuple)[1] as PySubStream).Stream as PyTuple;
 
             PyList objectIDs = callInfo[0] as PyList;
@@ -379,7 +379,7 @@ namespace EVESharp.Node.Network
                 Destination = packet.Destination,
                 MachoNet = this.Server.MachoNet,
                 Session = this.Session,
-                ResultNamedPayload = new PyDictionary<PyString, PyDataType>()
+                ResutOutOfBounds = new PyDictionary<PyString, PyDataType>()
             };
 
             try
@@ -452,15 +452,15 @@ namespace EVESharp.Node.Network
 #endif
                 }
 
-                this.SendCallResult(callInformation, callResult);
+                this.Server.MachoNet.SendCallResult(callInformation, callResult, callInformation.ResutOutOfBounds);
             }
             catch (PyException e)
             {
-                this.SendException(callInformation, packet.Type, e);
+                this.Server.MachoNet.SendException(callInformation, packet.Type, e);
             }
             catch (ProvisionalResponse provisional)
             {
-                this.SendProvisionalResponse(callInformation, provisional);
+                this.Server.MachoNet.SendProvisionalResponse(callInformation, provisional);
             }
             catch (Exception ex)
             {
@@ -473,106 +473,13 @@ namespace EVESharp.Node.Network
                 // send client a proper notification about the error based on the roles
                 if ((callInformation.Session.Role & (int) Roles.ROLE_PROGRAMMER) == (int) Roles.ROLE_PROGRAMMER)
                 {
-                    this.SendException(callInformation, packet.Type, new CustomError($"An internal server error occurred.<br><b>Reference</b>: {errorID}<br><b>Message</b>: {ex.Message}<br><b>Stack trace</b>:<br>{ex.StackTrace.Replace("\n", "<br>")}"));
+                    this.Server.MachoNet.SendException(callInformation, packet.Type, new CustomError($"An internal server error occurred.<br><b>Reference</b>: {errorID}<br><b>Message</b>: {ex.Message}<br><b>Stack trace</b>:<br>{ex.StackTrace.Replace("\n", "<br>")}"));
                 }
                 else
                 {
-                    this.SendException(callInformation, packet.Type, new CustomError($"An internal server error occurred. <b>Reference</b>: {errorID}"));
+                    this.Server.MachoNet.SendException(callInformation, packet.Type, new CustomError($"An internal server error occurred. <b>Reference</b>: {errorID}"));
                 }
             }
-        }
-
-        public void SendProvisionalResponse(CallInformation answerTo, ProvisionalResponse response)
-        {
-            PyPacket result = new PyPacket(PyPacket.PacketType.CALL_RSP);
-            
-            // ensure destination has clientID in it
-            PyAddressClient source = answerTo.Source as PyAddressClient;
-
-            source.ClientID = answerTo.Session.UserID;
-            // switch source and dest
-            result.Source = answerTo.Destination;
-            result.Destination = source;
-
-            result.UserID = source.ClientID;
-            result.Payload = new PyTuple(0);
-            result.OutOfBounds = new PyDictionary
-            {
-                ["provisional"] = new PyTuple(3)
-                {
-                    [0] = response.Timeout, // macho timeout in seconds
-                    [1] = response.EventID,
-                    [2] = response.Arguments
-                }
-            };
-
-            this.Socket.Send(result);
-        }
-
-
-        public void SendCallResult(CallInformation answerTo, PyDataType content)
-        {
-            // ensure destination has clientID in it
-            PyAddressClient originalSource = answerTo.Source as PyAddressClient;
-            originalSource.ClientID = answerTo.Session.UserID;
-
-            this.Socket.Send(
-                new PyPacket(PyPacket.PacketType.CALL_RSP)
-                {
-                    // switch source and dest
-                    Source = answerTo.Destination,
-                    Destination = originalSource,
-                    UserID = originalSource.ClientID,
-                    Payload = new PyTuple(1) {[0] = new PySubStream(content)}
-                }
-            );
-        }
-        
-        public void SendException(CallInformation answerTo, PyPacket.PacketType packetType, PyDataType content)
-        {
-            // build a new packet with the correct information
-            PyPacket result = new PyPacket(PyPacket.PacketType.ERRORRESPONSE);
-
-            // ensure destination has clientID in it
-            PyAddressClient source = answerTo.Source as PyAddressClient;
-
-            source.ClientID = answerTo.Session.UserID;
-            // switch source and dest
-            result.Source = answerTo.Destination;
-            result.Destination = source;
-
-            result.UserID = source.ClientID;
-            result.Payload = new PyTuple(3)
-            {
-                [0] = (int) packetType,
-                [1] = (int) MachoErrorType.WrappedException,
-                [2] = new PyTuple (1) { [0] = new PySubStream(content) }, 
-            };
-
-            this.Socket.Send(result);
-        }
-
-        public void SendException(PyAddress source, PyAddress destination, PyPacket.PacketType packetType, PyDataType content)
-        {
-            PyAddressClient clientAddress = source as PyAddressClient;
-
-            // ensure the client id is valid
-            clientAddress.ClientID = this.Session.UserID;
-
-            PyPacket result = new PyPacket(PyPacket.PacketType.ERRORRESPONSE)
-            {
-                Source = destination,
-                Destination = clientAddress,
-                UserID = clientAddress.ClientID,
-                Payload = new PyTuple(3)
-                {
-                    [0] = (int) packetType,
-                    [1] = (int) MachoErrorType.WrappedException,
-                    [2] = new PyTuple(1) {[0] = new PySubStream(content)}
-                }
-            };
-
-            this.Socket.Send(result);
         }
 
         public void SendServiceCall(string service, string call, PyTuple args, PyDictionary namedPayload,

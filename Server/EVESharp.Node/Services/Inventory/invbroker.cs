@@ -60,10 +60,10 @@ namespace EVESharp.Node.Services.Inventory
                 throw new ItemNotContainer(inventoryItem.ID);
             
             // extra check, ensure it's a singleton if not a station
-            if (inventoryItem is Station == false && inventoryItem.Singleton == false)
+            if (inventoryItem.Type.Group.ID != (int) Groups.Station && inventoryItem.Singleton == false)
                 throw new AssembleCCFirst();
             
-            return inventoryItem as ItemInventory;
+            return (ItemInventory) inventoryItem;
         }
 
         private PySubStruct BindInventory(ItemInventory inventoryItem, int ownerID, Session session, Flags flag)
@@ -109,8 +109,9 @@ namespace EVESharp.Node.Services.Inventory
 
                     if (origOwnerID is not null)
                         ownerID = origOwnerID;
-
-                    if (ownerID != call.Session.CharacterID && CorporationRole.SecurityOfficer.Is(call.Session.CorporationRole) == false)
+                    if (ownerID != call.Session.CharacterID && ownerID != call.Session.CorporationID)
+                        throw new CrpAccessDenied(MLS.UI_CORP_ACCESSDENIED13);
+                    if (ownerID == call.Session.CorporationID && CorporationRole.SecurityOfficer.Is(call.Session.CorporationRole) == false)
                         throw new CrpAccessDenied(MLS.UI_CORP_ACCESSDENIED13);
                     
                     break;
@@ -135,11 +136,16 @@ namespace EVESharp.Node.Services.Inventory
                     throw new CustomError($"Trying to open container ID ({containerID.Value}) is not supported");
             }
             
+            // these inventories are usually meta
+            
             // get the inventory item first
-            ItemEntity inventoryItem = this.ItemFactory.LoadItem(this.mObjectID);
+            ItemInventory inventoryItem = this.ItemFactory.LoadItem<ItemInventory>(this.mObjectID);
 
+            // create a metainventory for it
+            ItemInventory metaInventory = this.ItemFactory.MetaInventoryManager.RegisterMetaInventoryForOwnerID(inventoryItem, ownerID, flag);
+            
             return this.BindInventory(
-                this.CheckInventoryBeforeLoading(inventoryItem),
+                this.CheckInventoryBeforeLoading(metaInventory),
                 ownerID,
                 call.Session, flag
             );
@@ -247,10 +253,7 @@ namespace EVESharp.Node.Services.Inventory
             else
                 throw new CustomError("Unknown item's groupID");
 
-            if (this.SystemManager.SolarSystemBelongsToUs(solarSystemID) == true)
-                return this.BoundServiceManager.Container.NodeID;
-
-            return this.SystemManager.GetNodeSolarSystemBelongsTo(solarSystemID);
+            return this.SystemManager.LoadSolarSystemOnCluster(solarSystemID);
         }
 
         protected override BoundService CreateBoundInstance(ServiceBindParams bindParams, CallInformation call)

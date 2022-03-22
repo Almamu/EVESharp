@@ -78,7 +78,7 @@ namespace EVESharp.PythonTypes.Types.Network
         /// <summary>
         /// The related userID for the packet
         /// </summary>
-        public int UserID { get; set; }
+        public long UserID { get; set; }
         /// <summary>
         /// Tuple payload with the actual packet data
         /// </summary>

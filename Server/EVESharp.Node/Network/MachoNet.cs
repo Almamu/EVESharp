@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Json;
@@ -10,6 +12,7 @@ using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using EVESharp.Common.Constants;
+using EVESharp.Common.Database;
 using EVESharp.Common.Logging;
 using EVESharp.EVE;
 using EVESharp.EVE.Packets;
@@ -33,6 +36,7 @@ using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Network;
 using EVESharp.PythonTypes.Types.Primitives;
 using Org.BouncyCastle.Bcpg;
+using AccountDB = EVESharp.Database.AccountDB;
 using Character = EVESharp.Node.Inventory.Items.Types.Character;
 using Container = SimpleInjector.Container;
 using SessionManager = EVESharp.Node.Sessions.SessionManager;
@@ -46,46 +50,47 @@ namespace EVESharp.Node.Network
         private Channel CallLog { get; }
         private Channel ResultLog { get; }
 #endif
-        private MachoServerTransport Transport { get; }
+        public MachoServerTransport Transport { get; }
         public NodeContainer Container { get; }
-        public SystemManager SystemManager { get; }
         public ItemFactory ItemFactory { get; }
         public ServiceManager ServiceManager { get; private set; }
         public BoundServiceManager BoundServiceManager { get; }
         public NotificationManager NotificationManager { get; }
         public TimerManager TimerManager { get; }
         public SessionManager SessionManager { get; set; }
+        public SystemManager SystemManager { get; set; }
         public General Configuration { get; }
         public GeneralDB GeneralDB { get; }
-        public LoginQueue LoginQueue { get; init; }
+        public LoginQueue LoginQueue { get; set; }
         private Container DependencyInjection { get; }
         private HttpClient HttpClient { get; }
+        private DatabaseConnection Database { get; }
         public int ErrorCount = 0;
+        private Dictionary<int, long> ClientToProxyCache { get; } = new Dictionary<int, long>();
 
         public event EventHandler OnClusterTimer;
         
-        public MachoNet(NodeContainer container, SystemManager systemManager, BoundServiceManager boundServiceManager,
+        public MachoNet(NodeContainer container, BoundServiceManager boundServiceManager,
             ItemFactory itemFactory, Logger logger, General configuration, NotificationManager notificationManager,
-            TimerManager timerManager, LoginQueue loginQueue, GeneralDB generalDB, HttpClient httpClient,
-            Container dependencyInjection)
+            TimerManager timerManager, GeneralDB generalDB, HttpClient httpClient,
+            DatabaseConnection databaseConnection, Container dependencyInjection)
         {
             this.Log = logger.CreateLogChannel("MachoNet");
 #if DEBUG
             this.CallLog = logger.CreateLogChannel("CallDebug", true);
             this.ResultLog = logger.CreateLogChannel("ResultDebug", true);
 #endif
-            this.SystemManager = systemManager;
             this.BoundServiceManager = boundServiceManager;
             this.ItemFactory = itemFactory;
             this.Container = container;
             this.Configuration = configuration;
             this.NotificationManager = notificationManager;
             this.TimerManager = timerManager;
-            this.LoginQueue = loginQueue;
             this.GeneralDB = generalDB;
             this.Transport = new MachoServerTransport(this.Configuration.MachoNet.Port, this, logger);
             this.NotificationManager.MachoServerTransport = this.Transport;
             this.HttpClient = httpClient;
+            this.Database = databaseConnection;
             this.DependencyInjection = dependencyInjection;
         }
 
@@ -94,7 +99,7 @@ namespace EVESharp.Node.Network
             Log.Info("Initializing service manager");
 
             this.ServiceManager = this.DependencyInjection.GetInstance<ServiceManager>();
-
+            
             switch (this.Configuration.MachoNet.Mode)
             {
                 case MachoNetMode.Proxy:
@@ -185,6 +190,7 @@ namespace EVESharp.Node.Network
             this.Container.NodeID = Common.Constants.Network.PROXY_NODE_ID;
             // clear nodeIDs from the invItems table
             this.ItemFactory.ItemDB.ClearNodeOwnership();
+            Database.Procedure(AccountDB.RESET_CLIENT_ADDRESSES);
             
             this.StartListening();
         }
@@ -217,7 +223,7 @@ namespace EVESharp.Node.Network
         /// Opens a connection to the given proxy
         /// </summary>
         /// <param name="nodeID">The nodeID of the proxy to connect to</param>
-        public async void OpenNodeConnection(long nodeID)
+        public async Task<MachoTransport> OpenNodeConnection(long nodeID)
         {
             Log.Info($"Looking up NodeID {nodeID}...");
             HttpResponseMessage response = await this.HttpClient.GetAsync($"{this.Configuration.Cluster.OrchestatorURL}/Nodes/node/{nodeID}");
@@ -254,6 +260,8 @@ namespace EVESharp.Node.Network
                     }
                 }
             );
+            
+            return transport;
         }
 
         /// <summary>
@@ -294,7 +302,7 @@ namespace EVESharp.Node.Network
 
             foreach (PyInteger id in dest.IDsOfInterest.GetEnumerable<PyInteger>())
             {
-                foreach ((int _, MachoClientTransport transport) in this.Transport.ClientTransports)
+                foreach (MachoTransport transport in this.Transport.TransportList)
                 {
                     if (isOwnerID == true)
                     {
@@ -318,7 +326,8 @@ namespace EVESharp.Node.Network
             
             // extract the actual ids used in the destination
             string[] criteria = dest.IDType.Value.Split('&');
-            // TODO: SUPPORT ownerid AS NOTIFICATION HERE
+            // determine which ones are ownerIds to take them into account
+            bool[] isOwnerID = Array.ConvertAll(criteria, x => x == "ownerid");
 
             foreach (PyTuple id in dest.IDsOfInterest.GetEnumerable<PyTuple>())
             {
@@ -326,15 +335,26 @@ namespace EVESharp.Node.Network
                 if (id.Count != criteria.Length)
                     continue;
 
-                foreach ((int _, MachoClientTransport transport) in this.Transport.ClientTransports)
+                foreach (MachoTransport transport in this.Transport.TransportList)
                 {
                     bool found = true;
                     
                     // validate both values
                     for (int i = 0; i < criteria.Length; i++)
                     {
-                        if (transport.Session[criteria[i]] != id[i])
+                        if (isOwnerID[i] == true)
                         {
+                            if (transport.Session[Session.ALLIANCE_ID] != id[i] &&
+                                transport.Session[Session.CHAR_ID] != id[i] &&
+                                transport.Session[Session.CORP_ID] != id[i])
+                            {
+                                found = false;
+                                break;
+                            }
+                        }
+                        else if (transport.Session[criteria[i]] != id[i])
+                        {
+                            // transport found, notify it
                             found = false;
                             break;
                         }
@@ -346,7 +366,7 @@ namespace EVESharp.Node.Network
             }
         }
 
-        private void QueueNodeBroadcastPacket(PyPacket packet)
+        private async void QueueNodeBroadcastPacket(PyPacket packet)
         {
             PyAddressBroadcast dest = packet.Destination as PyAddressBroadcast;
 
@@ -354,36 +374,100 @@ namespace EVESharp.Node.Network
             {
                 if (this.Transport.NodeTransports.TryGetValue(id, out MachoNodeTransport transport) == true)
                     transport.Socket.Send(packet);
+                else
+                {
+                    // try a connection to the node and queue the notification
+                    MachoTransport newTransport = await this.OpenNodeConnection(id);
+
+                    newTransport.QueuePostAuthenticationPacket(packet);
+                }
             }
         }
         
         private void QueueBroadcastPacket(PyPacket packet)
         {
             PyAddressBroadcast dest = packet.Destination as PyAddressBroadcast;
-
-            switch (dest.IDType)
+            
+            if (this.Configuration.MachoNet.Mode == MachoNetMode.Server)
             {
-                case "*multicastID":
-                    this.QueueMulticastPacket(packet);
-                    break;
-                case "corpid&corprole":
-                    this.QueueComplexBroadcastPacket(packet);
-                    break;
-                case "ownerid&locationid":
-                    this.QueueComplexBroadcastPacket(packet);
-                    break;
-                case "nodeid":
-                    // TODO: IS THIS NECCESARY? THIS SHOULDN'T REALLY HAPPEN? BUT MIGHT COME HANDY
-                    this.QueueNodeBroadcastPacket(packet);
-                    break;
-                default:
-                    this.QueueSimpleBroadcastPacket(packet);
-                    break;
+                switch (dest.IDType)
+                {
+                    case "nodeid":
+                        // TODO: IS THIS NECCESARY? THIS SHOULDN'T REALLY HAPPEN? BUT MIGHT COME HANDY
+                        this.QueueNodeBroadcastPacket(packet);
+                        break;
+                    default:
+                        // send packet to the proxies
+                        foreach ((long _, MachoProxyTransport proxy) in this.Transport.ProxyTransports)
+                            proxy.Socket.Send(packet);
+                        break;
+                }
             }
+            else
+            {
+                switch (dest.IDType)
+                {
+                    case "*multicastID":
+                        this.QueueMulticastPacket(packet);
+                        break;
+                    case "corpid&corprole":
+                        this.QueueComplexBroadcastPacket(packet);
+                        break;
+                    case "ownerid&locationid":
+                        this.QueueComplexBroadcastPacket(packet);
+                        break;
+                    case "nodeid":
+                        // TODO: IS THIS NECCESARY? THIS SHOULDN'T REALLY HAPPEN? BUT MIGHT COME HANDY
+                        this.QueueNodeBroadcastPacket(packet);
+                        break;
+                    default:
+                        this.QueueSimpleBroadcastPacket(packet);
+                        break;
+                }                
+            }
+        }
+
+        private void QueueClientPacketFromNode(PyPacket packet)
+        {
+            PyAddressClient dest = packet.Destination as PyAddressClient;
+            
+            // check if the client is in our transport cache
+            // otherwise fetch it from the database
+            if (this.ClientToProxyCache.TryGetValue(dest.ClientID, out long nodeID) == false)
+            {
+                // resolve the nodeID from the database
+                nodeID = Database.Scalar<long>(
+                    AccountDB.RESOLVE_CLIENT_ADDRESS,
+                    new Dictionary<string, object>()
+                    {
+                        {"_clientID", (int) dest.ClientID}
+                    }
+                );
+            }
+            
+            // notify proxy
+            if (this.Transport.ProxyTransports.TryGetValue(nodeID, out MachoProxyTransport transport) == false)
+            {
+                // open a connection to the proxy and HOPE it's actually what we're looking for
+                // make sure the packet is queue on it's output list
+                Task<MachoTransport> task = this.OpenNodeConnection(nodeID);
+                task.Wait();
+                task.Result.QueuePostAuthenticationPacket(packet);
+                return;
+            }
+            
+            // finally let the proxy know
+            transport.Socket.Send(packet);
         }
 
         private void QueueClientPacket(PyPacket packet)
         {
+            if (this.Configuration.MachoNet.Mode == MachoNetMode.Server)
+            {
+                this.QueueClientPacketFromNode(packet);
+                return;
+            }
+
             PyAddressClient dest = packet.Destination as PyAddressClient;
 
             if (this.Transport.ClientTransports.TryGetValue(dest.ClientID, out MachoClientTransport transport) == false)
@@ -404,273 +488,133 @@ namespace EVESharp.Node.Network
             transport.Socket.Send(packet);
         }
 
-        private void HandleOnSolarSystemLoaded(PyTuple data)
+        /// <summary>
+        /// Sends a heartbeat to the orchestrator agent to signal our node being up and running healthily
+        /// </summary>
+        public async void PerformHeartbeat()
         {
-            if (data.Count != 1)
-            {
-                Log.Error("Received OnSolarSystemLoad notification with the wrong format");
-                return;
-            }
-
-            PyDataType first = data[0];
-
-            if (first is PyInteger == false)
-            {
-                Log.Error("Received OnSolarSystemLoad notification with the wrong format");
-                return;
-            }
-
-            PyInteger solarSystemID = first as PyInteger;
-
-            // mark as loaded
-            this.SystemManager.LoadSolarSystem(solarSystemID);
+            Log.Debug("Sending heartbeat to orchestration agent");
+            // register ourselves with the orchestrator and get our node id AND address
+            HttpContent content = new FormUrlEncodedContent(new Dictionary<string, string> {
+                {"address", this.Container.Address},
+                {"load", "0.0"}
+            });
+            await this.HttpClient.PostAsync($"{this.Configuration.Cluster.OrchestatorURL}/Nodes/heartbeat",  content);
         }
-
-        private void HandleOnItemUpdate(Notifications.Nodes.Inventory.OnItemChange change)
+        
+        /// <summary>
+        /// Sends a provisional response to the given call
+        /// </summary>
+        /// <param name="answerTo"></param>
+        /// <param name="response"></param>
+        public void SendProvisionalResponse(CallInformation answerTo, ProvisionalResponse response)
         {
-            foreach ((PyInteger itemID, PyDictionary _changes) in change.Updates)
+            PyPacket result = new PyPacket(PyPacket.PacketType.CALL_RSP);
+            
+            // ensure destination has clientID in it
+            PyAddressClient source = answerTo.Source as PyAddressClient;
+
+            source.ClientID = answerTo.Session.UserID;
+            // switch source and dest
+            result.Source = answerTo.Destination;
+            result.Destination = source;
+
+            result.UserID = source.ClientID;
+            result.Payload = new PyTuple(0);
+            result.OutOfBounds = new PyDictionary
             {
-                PyDictionary<PyString, PyTuple> changes = _changes.GetEnumerable<PyString, PyTuple>();
-                
-                ItemEntity item = this.ItemFactory.LoadItem(itemID, out bool loadRequired);
-                
-                // if the item was just loaded there's extra things to take into account
-                // as the item might not even need a notification to the character it belongs to
-                if (loadRequired == true)
+                ["provisional"] = new PyTuple(3)
                 {
-                    // trust that the notification got to the correct node
-                    // load the item and check the owner, if it's logged in and the locationID is loaded by us
-                    // that means the item should be kept here
-                    if (this.ItemFactory.TryGetItem(item.LocationID, out ItemEntity location) == false)
-                        return;
-
-                    bool locationBelongsToUs = true;
-
-                    switch (location)
-                    {
-                        case Station _:
-                            locationBelongsToUs = this.SystemManager.StationBelongsToUs(location.ID);
-                            break;
-                        case SolarSystem _:
-                            locationBelongsToUs = this.SystemManager.SolarSystemBelongsToUs(location.ID);
-                            break;
-                    }
-
-                    if (locationBelongsToUs == false)
-                    {
-                        this.ItemFactory.UnloadItem(item);
-                        return;
-                    }
+                    [0] = response.Timeout, // macho timeout in seconds
+                    [1] = response.EventID,
+                    [2] = response.Arguments
                 }
+            };
 
-                OnItemChange itemChange = new OnItemChange(item);
-                
-                // update item and build change notification
-                if (changes.TryGetValue("locationID", out PyTuple locationChange) == true)
+            this.QueuePacket(result);
+        }
+
+        /// <summary>
+        /// Sends a call result to the given call
+        /// </summary>
+        /// <param name="answerTo"></param>
+        /// <param name="content"></param>
+        public void SendCallResult(CallInformation answerTo, PyDataType content, PyDictionary namedPayload)
+        {
+            // ensure destination has clientID in it
+            PyAddressClient originalSource = answerTo.Source as PyAddressClient;
+            originalSource.ClientID = answerTo.Session.UserID;
+
+            this.QueuePacket(
+                new PyPacket(PyPacket.PacketType.CALL_RSP)
                 {
-                    PyInteger oldValue = locationChange[0] as PyInteger;
-                    PyInteger newValue = locationChange[1] as PyInteger;
-                    
-                    itemChange.AddChange(ItemChange.LocationID, oldValue);
-                    item.LocationID = newValue;
+                    // switch source and dest
+                    Source = answerTo.Destination,
+                    Destination = originalSource,
+                    UserID = originalSource.ClientID,
+                    Payload = new PyTuple(1) {[0] = new PySubStream(content)},
+                    OutOfBounds = namedPayload
                 }
-                
-                if (changes.TryGetValue ("quantity", out PyTuple quantityChange) == true)
-                {
-                    PyInteger oldValue = quantityChange[0] as PyInteger;
-                    PyInteger newValue = quantityChange[1] as PyInteger;
+            );
+        }
+        
+        /// <summary>
+        /// Sends an exception as answer to the given call
+        /// </summary>
+        /// <param name="answerTo"></param>
+        /// <param name="packetType"></param>
+        /// <param name="content"></param>
+        public void SendException(CallInformation answerTo, PyPacket.PacketType packetType, PyDataType content)
+        {
+            // build a new packet with the correct information
+            PyPacket result = new PyPacket(PyPacket.PacketType.ERRORRESPONSE);
 
-                    itemChange.AddChange(ItemChange.Quantity, oldValue);
-                    item.Quantity = newValue;
+            // ensure destination has clientID in it
+            PyAddressClient source = answerTo.Source as PyAddressClient;
+
+            source.ClientID = answerTo.Session.UserID;
+            // switch source and dest
+            result.Source = answerTo.Destination;
+            result.Destination = source;
+
+            result.UserID = source.ClientID;
+            result.Payload = new PyTuple(3)
+            {
+                [0] = (int) packetType,
+                [1] = (int) MachoErrorType.WrappedException,
+                [2] = new PyTuple (1) { [0] = new PySubStream(content) }, 
+            };
+
+            this.QueuePacket(result);
+        }
+        
+        /// <summary>
+        /// Sends an exception as answer to the given call
+        /// </summary>
+        /// <param name="answerTo"></param>
+        /// <param name="packetType"></param>
+        /// <param name="content"></param>
+        public void SendException(PyAddress source, PyAddress destination, PyPacket.PacketType packetType, PyDataType content)
+        {
+            int userID = 0;
+
+            if (destination is PyAddressClient client)
+                userID = client.ClientID;
+
+            PyPacket result = new PyPacket(PyPacket.PacketType.ERRORRESPONSE)
+            {
+                Source = source,
+                Destination = destination,
+                UserID = userID,
+                Payload = new PyTuple(3)
+                {
+                    [0] = (int) packetType,
+                    [1] = (int) MachoErrorType.WrappedException,
+                    [2] = new PyTuple(1) {[0] = new PySubStream(content)}
                 }
-                
-                if (changes.TryGetValue("ownerID", out PyTuple ownerChange) == true)
-                {
-                    PyInteger oldValue = ownerChange[0] as PyInteger;
-                    PyInteger newValue = ownerChange[1] as PyInteger;
+            };
 
-                    itemChange.AddChange(ItemChange.OwnerID, oldValue);
-                    item.OwnerID = newValue;
-                }
-
-                if (changes.TryGetValue("singleton", out PyTuple singletonChange) == true)
-                {
-                    PyBool oldValue = singletonChange[0] as PyBool;
-                    PyBool newValue = singletonChange[1] as PyBool;
-
-                    itemChange.AddChange(ItemChange.Singleton, oldValue);
-                    item.Singleton = newValue;
-                }
-                
-                // TODO: IDEALLY THIS WOULD BE ENQUEUED SO ALL OF THEM ARE SENT AT THE SAME TIME
-                // TODO: BUT FOR NOW THIS SHOULD SUFFICE
-                // send the notification
-                this.NotificationManager.NotifyCharacter(item.OwnerID, "OnMultiEvent", 
-                    new PyTuple(1) {[0] = new PyList(1) {[0] = itemChange}});
-
-                if (item.LocationID == this.ItemFactory.LocationRecycler.ID)
-                    // the item is removed off the database if the new location is the recycler
-                    item.Destroy();
-                else if (item.LocationID == this.ItemFactory.LocationMarket.ID)
-                    // items that are moved to the market can be unloaded
-                    this.ItemFactory.UnloadItem(item);
-                else
-                    // save the item if the new location is not removal
-                    item.Persist();    
-            }
-        }
-
-        private void HandleOnClusterTimer(PyTuple data)
-        {
-            Log.Info("Received a cluster request to run timed events on services...");
-
-            this.OnClusterTimer?.Invoke(this, null);
-        }
-
-        private void HandleOnCorporationMemberChanged(OnCorporationMemberChanged change)
-        {
-            // this notification does not need to send anything to anyone as the clients will already get notified
-            // based on their corporation IDs
-            
-            if (this.ServiceManager.corpRegistry.FindInstanceForObjectID(change.OldCorporationID, out corpRegistry oldService) == true && oldService.MembersSparseRowset is not null)
-                oldService.MembersSparseRowset.RemoveRow(change.MemberID);
-
-            if (this.ServiceManager.corpRegistry.FindInstanceForObjectID(change.NewCorporationID, out corpRegistry newService) == true && newService.MembersSparseRowset is not null)
-            {
-                PyDictionary<PyString, PyTuple> changes = new PyDictionary<PyString, PyTuple>()
-                {
-                    ["characterID"] = new PyTuple(2) {[0] = null, [1] = change.MemberID},
-                    ["title"] = new PyTuple(2) {[0] = null, [1] = ""},
-                    ["startDateTime"] = new PyTuple(2) {[0] = null, [1] = DateTime.UtcNow.ToFileTimeUtc ()},
-                    ["roles"] = new PyTuple(2) {[0] = null, [1] = 0},
-                    ["rolesAtHQ"] = new PyTuple(2) {[0] = null, [1] = 0},
-                    ["rolesAtBase"] = new PyTuple(2) {[0] = null, [1] = 0},
-                    ["rolesAtOther"] = new PyTuple(2) {[0] = null, [1] = 0},
-                    ["titleMask"] = new PyTuple(2) {[0] = null, [1] = 0},
-                    ["grantableRoles"] = new PyTuple(2) {[0] = null, [1] = 0},
-                    ["grantableRolesAtHQ"] = new PyTuple(2) {[0] = null, [1] = 0},
-                    ["grantableRolesAtBase"] = new PyTuple(2) {[0] = null, [1] = 0},
-                    ["grantableRolesAtOther"] = new PyTuple(2) {[0] = null, [1] = 0},
-                    ["divisionID"] = new PyTuple(2) {[0] = null, [1] = 0},
-                    ["squadronID"] = new PyTuple(2) {[0] = null, [1] = 0},
-                    ["baseID"] = new PyTuple(2) {[0] = null, [1] = 0},
-                    ["blockRoles"] = new PyTuple(2) {[0] = null, [1] = 0},
-                    ["gender"] = new PyTuple(2) {[0] = null, [1] = 0}
-                };
-                
-                newService.MembersSparseRowset.AddRow(change.MemberID, changes);
-            }
-            
-            // the only thing needed is to check for a Character reference and update it's corporationID to the correct one
-            if (this.ItemFactory.TryGetItem(change.MemberID, out Inventory.Items.Types.Character character) == false)
-                // if the character is not loaded it could mean that the package arrived on to the node while the player was logging out
-                // so this is safe to ignore 
-                return;
-
-            // set the corporation to the new one
-            character.CorporationID = change.NewCorporationID;
-            // this change usually means that the character is now in a new corporation, so everything corp-related is back to 0
-            character.Roles = 0;
-            character.RolesAtBase = 0;
-            character.RolesAtHq = 0;
-            character.RolesAtOther = 0;
-            character.TitleMask = 0;
-            character.GrantableRoles = 0;
-            character.GrantableRolesAtBase = 0;
-            character.GrantableRolesAtOther = 0;
-            character.GrantableRolesAtHQ = 0;
-            // persist the character
-            character.Persist();
-            // nothing else needed
-            Log.Debug($"Updated character ({character.ID}) coporation ID from {change.OldCorporationID} to {change.NewCorporationID}");
-        }
-
-        private void HandleOnCorporationMemberUpdated(OnCorporationMemberUpdated change)
-        {
-            // this notification does not need to send anything to anyone as the clients will already get notified
-            // by the session change
-            
-            // the only thing needed is to check for a Character reference and update it's roles to the correct onews
-            if (this.ItemFactory.TryGetItem(change.CharacterID, out Inventory.Items.Types.Character character) == false)
-                // if the character is not loaded it could mean that the package arrived on the node wile the player was logging out
-                // so this is safe to ignore
-                return;
-            
-            // update the roles and everything else
-            character.Roles = change.Roles;
-            character.RolesAtBase = change.RolesAtBase;
-            character.RolesAtHq = change.RolesAtHQ;
-            character.RolesAtOther = change.RolesAtOther;
-            character.GrantableRoles = change.GrantableRoles;
-            character.GrantableRolesAtBase = change.GrantableRolesAtBase;
-            character.GrantableRolesAtOther = change.GrantableRolesAtOther;
-            character.GrantableRolesAtHQ = change.GrantableRolesAtHQ;
-            // some debugging is well received
-            Log.Debug($"Updated character ({character.ID}) roles");
-        }
-
-        private void HandleOnCorporationChanged(OnCorporationChanged change)
-        {
-            // this notification does not need to send anything to anyone as the clients will already get notified
-            // by the session change
-            
-            // the only thing needed is to check for a Corporation reference and update it's alliance information to the new values
-            if (this.ItemFactory.TryGetItem(change.CorporationID, out Corporation corporation) == false)
-                // if the corporation is not loaded it could mean that the package arrived on the node wile the last player was logging out
-                // so this is safe to ignore
-                return;
-            
-            // update basic information
-            corporation.AllianceID = change.AllianceID;
-            corporation.ExecutorCorpID = change.ExecutorCorpID;
-            corporation.StartDate = change.AllianceID is null ? null : DateTime.UtcNow.ToFileTimeUtc();
-            corporation.Persist();
-            
-            // some debugging is well received
-            Log.Debug($"Updated corporation afilliation ({corporation.ID}) to ({corporation.AllianceID})");
-        }
-
-        public void HandleBroadcastNotification(PyPacket packet)
-        {
-            // this packet is an internal one
-            if (packet.Payload.Count != 2)
-            {
-                Log.Error("Received ClusterController notification with the wrong format");
-                return;
-            }
-
-            if (packet.Payload[0] is not PyString notification)
-            {
-                Log.Error("Received ClusterController notification with the wrong format");
-                return;
-            }
-            
-            Log.Debug($"Received a notification from ClusterController of type {notification.Value}");
-            
-            switch (notification)
-            {
-                case "OnSolarSystemLoad":
-                    this.HandleOnSolarSystemLoaded(packet.Payload[1] as PyTuple);
-                    break;
-                case Notifications.Nodes.Inventory.OnItemChange.NOTIFICATION_NAME:
-                    this.HandleOnItemUpdate(packet.Payload);
-                    break;
-                case "OnClusterTimer":
-                    this.HandleOnClusterTimer(packet.Payload[1] as PyTuple);
-                    break;
-                case OnCorporationMemberChanged.NOTIFICATION_NAME:
-                    this.HandleOnCorporationMemberChanged(packet.Payload);
-                    break;
-                case OnCorporationMemberUpdated.NOTIFICATION_NAME:
-                    this.HandleOnCorporationMemberUpdated(packet.Payload);
-                    break;
-                case OnCorporationChanged.NOTIFICATION_NAME:
-                    this.HandleOnCorporationChanged(packet.Payload);
-                    break;
-                default:
-                    Log.Fatal("Received ClusterController notification with the wrong format");
-                    break;
-            }
+            this.QueuePacket(result);
         }
     }
 }

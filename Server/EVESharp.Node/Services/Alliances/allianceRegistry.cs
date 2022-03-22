@@ -134,9 +134,9 @@ namespace EVESharp.Node.Services.Alliances
             return this.BoundServiceManager.Container.NodeID;
         }
 
-        public override bool IsClientAllowedToCall(ServiceCall call)
+        public override bool IsClientAllowedToCall(Session session)
         {
-            return call.Session.AllianceID == this.ObjectID;
+            return session.AllianceID == this.ObjectID;
         }
 
         protected override MultiClientBoundService CreateBoundInstance(ServiceBindParams bindParams, CallInformation call)

@@ -328,6 +328,23 @@ namespace EVESharp.Node.Network
 
             if (svc is not Service svcInstance)
                 throw new MissingServiceException<string>(service, method);
+            
+            // check the access level value to ensure the client can call this service here
+            switch (svcInstance.AccessLevel)
+            {
+                case AccessLevel.Location:
+                    if (call.Session.ContainsKey(Session.LOCATION_ID) == false)
+                        throw new UnauthorizedCallException<string>(service, method, call.Session.Role);
+                    break;
+                case AccessLevel.Station:
+                    if (call.Session.ContainsKey(Session.STATION_ID) == false)
+                        throw new UnauthorizedCallException<string>(service, method, call.Session.Role);
+                    break;
+                case AccessLevel.SolarSystem:
+                    if (call.Session.ContainsKey(Session.SOLAR_SYSTEM_ID) == false)
+                        throw new UnauthorizedCallException<string>(service, method, call.Session.Role);
+                    break;
+            }
 
             return svcInstance.ExecuteCall(method, call);
         }

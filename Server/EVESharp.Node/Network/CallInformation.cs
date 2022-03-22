@@ -10,6 +10,6 @@ namespace EVESharp.Node.Network
     public class CallInformation : ServiceCall
     {
         public MachoNet MachoNet { get; init; }
-        public PyDictionary<PyString,PyDataType> ResultNamedPayload { get; init; }
+        public PyDictionary<PyString,PyDataType> ResutOutOfBounds { get; init; }
     }
 }

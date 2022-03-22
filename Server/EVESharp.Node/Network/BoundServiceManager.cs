@@ -19,14 +19,13 @@ namespace EVESharp.Node.Network
         public Logger Logger { get; }
         
         private int mNextBoundID = 1;
-        private readonly Dictionary<int, BoundService> mBoundServices;
+        public Dictionary<int, BoundService> BoundServices { get; } = new Dictionary<int, BoundService>();
         private Channel Log { get; }
 
         public BoundServiceManager(NodeContainer container, Logger logger)
         {
             this.Logger = logger;
             this.Container = container;
-            this.mBoundServices = new Dictionary<int, BoundService>();
             this.Log = this.Logger.CreateLogChannel("BoundService");
         }
 
@@ -37,12 +36,12 @@ namespace EVESharp.Node.Network
         /// <returns>The boundID of this service</returns>
         public int BindService(BoundService service)
         {
-            lock (this.mBoundServices)
+            lock (this.BoundServices)
             {
                 int boundID = this.mNextBoundID++;
 
                 // add the service to the bound services map
-                this.mBoundServices[boundID] = service;
+                this.BoundServices[boundID] = service;
 
                 return boundID;
             }
@@ -57,8 +56,8 @@ namespace EVESharp.Node.Network
             this.Log.Debug($"Unbinding service {service.BoundID}");
             
             // remove the service from the bound list
-            lock (this.mBoundServices)
-                this.mBoundServices.Remove(service.BoundID);
+            lock (this.BoundServices)
+                this.BoundServices.Remove(service.BoundID);
         }
 
         /// <summary>
@@ -71,8 +70,8 @@ namespace EVESharp.Node.Network
             
             // TODO: TAKE INTO ACCOUNT THE KEEPALIVE OR DELEGATE THIS TO THE BOUND SERVICE ITSELF
             
-            lock (this.mBoundServices)
-                this.mBoundServices.Remove(boundID);
+            lock (this.BoundServices)
+                this.BoundServices.Remove(boundID);
         }
         
         /// <param name="boundID">The boundID to generate the string for</param>
@@ -93,9 +92,9 @@ namespace EVESharp.Node.Network
         /// <exception cref="UnauthorizedCallException{int}"></exception>
         public PyDataType ServiceCall(int boundID, string method, ServiceCall call)
         {
-            if (this.mBoundServices.TryGetValue(boundID, out BoundService service) == false)
+            if (this.BoundServices.TryGetValue(boundID, out BoundService service) == false)
                 throw new MissingServiceException<int>(boundID, method);
-            if (service.IsClientAllowedToCall(call) == false)
+            if (service.IsClientAllowedToCall(call.Session) == false)
                 throw new UnauthorizedCallException<int>(boundID, method, call.Session.Role);
             
             Log.Trace($"Calling {service.Name}::{method} on bound service {boundID}");

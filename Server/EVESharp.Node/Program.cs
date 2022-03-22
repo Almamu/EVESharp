@@ -263,6 +263,8 @@ namespace EVESharp.Node
                 
                 // create the node container
                 dependencies.GetInstance<NodeContainer>();
+                // ensure the login queue is created too
+                dependencies.GetInstance<LoginQueue>();
                 
                 logChannel.Info("Initializing timer manager");
                 dependencies.GetInstance<TimerManager>().Start();
@@ -285,7 +287,12 @@ namespace EVESharp.Node
                 logChannel.Trace("Node startup done");
 
                 while (true)
-                    Thread.Sleep(1);
+                {
+                    // wait 45 seconds to send a heartbeat
+                    Thread.Sleep(45 * 1000);
+                    
+                    dependencies.GetInstance<MachoNet>().PerformHeartbeat();
+                }
             }
             catch (Exception e)
             {

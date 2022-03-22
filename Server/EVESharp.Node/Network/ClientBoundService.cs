@@ -86,7 +86,7 @@ namespace EVESharp.Node.Network
             }
             
             // signal that the object was bound, this will be used by the proxy to notify this node on important stuff
-            call.ResultNamedPayload["OID+"] = new PyList<PyInteger>() {instance.BoundID};
+            call.ResutOutOfBounds["OID+"] = new PyList<PyInteger>() {instance.BoundID};
 
             return result;
         }
@@ -104,9 +104,9 @@ namespace EVESharp.Node.Network
             
         }
 
-        public override bool IsClientAllowedToCall(ServiceCall call)
+        public override bool IsClientAllowedToCall(Session session)
         {
-            return this.Session.UserID == call.Session.UserID;
+            return this.Session.UserID == session.UserID;
         }
 
         public override void ClientHasReleasedThisObject(Session session)
@@ -115,6 +115,19 @@ namespace EVESharp.Node.Network
             this.OnClientDisconnected();
             // then tell the bound service that we are not alive anymore
             this.BoundServiceManager.UnbindService(this);
+        }
+
+        /// <summary>
+        /// Applies the given session change to the service's cached sessions (if found)
+        /// </summary>
+        /// <param name="userID">The user to update sessions for</param>
+        /// <param name="changes">The delta of changes</param>
+        public override void ApplySessionChange(long userID, PyDictionary<PyString, PyTuple> changes)
+        {
+            if (this.Session.UserID != userID)
+                return;
+            
+            this.Session.ApplyDelta(changes);
         }
     }
 }

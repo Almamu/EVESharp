@@ -241,33 +241,7 @@ namespace EVESharp.Node.Services.Dogma
             else
                 throw new CustomError("Unknown item's groupID");
 
-            if (this.SystemManager.SolarSystemBelongsToUs(solarSystemID) == true)
-                return this.BoundServiceManager.Container.NodeID;
-
-            long nodeID = this.SystemManager.GetNodeSolarSystemBelongsTo(solarSystemID);
-
-            if (nodeID == 0)
-            {
-                // the solar system is not loaded anywhere, load it somewhere...
-                // TODO: PROPERLY DETERMINE WHERE TO LOAD SOLAR SYSTEMS, DO IT RANDOMNLY FOR NOW
-                if (call.MachoNet.Configuration.MachoNet.Mode == MachoNetMode.Single)
-                {
-                    // single mode means load everything on us!
-                    this.SystemManager.LoadSolarSystem(solarSystemID);
-
-                    return this.BoundServiceManager.Container.NodeID;
-                }
-                else if (call.MachoNet.Configuration.MachoNet.Mode == MachoNetMode.Proxy)
-                {
-                    // TODO: IMPLEMENT THIS
-                }
-                else
-                {
-                    throw new Exception("Unexpected call on MachoResolveObject on normal node");
-                }
-            }
-
-            return nodeID;
+            return this.SystemManager.LoadSolarSystemOnCluster(solarSystemID);
         }
 
         protected override BoundService CreateBoundInstance(ServiceBindParams bindParams, CallInformation call)

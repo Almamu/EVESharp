@@ -26,7 +26,7 @@ namespace EVESharp.Node.Inventory
                 // only create a new meta inventory if there is none already registered for that owner in that location for that flag
                 if (inventories.TryGetValue(flag, out ItemInventoryByOwnerID metaInventory) == false)
                 {
-                    metaInventory = new ItemInventoryByOwnerID(ownerID, inventory);
+                    metaInventory = new ItemInventoryByOwnerID(ownerID, flag, inventory);
                     
                     this.MetaInventories[inventory.ID][ownerID][flag] = metaInventory;
                     this.MetaInventoriesByOwner[ownerID][flag] = metaInventory;

@@ -623,13 +623,13 @@ namespace EVESharp.Node.Database
         /// </summary>
         /// <param name="character"></param>
         /// <returns></returns>
-        public Rowset GetOwnerNoteLabels(Character character)
+        public Rowset GetOwnerNoteLabels(int characterID)
         {
             return Database.PrepareRowsetQuery(
                 "SELECT noteID, label FROM chrOwnerNote WHERE ownerID = @ownerID",
                 new Dictionary<string, object>()
                 {
-                    {"@ownerID", character.ID}
+                    {"@ownerID", characterID}
                 }
             );
         }

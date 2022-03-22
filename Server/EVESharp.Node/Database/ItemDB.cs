@@ -411,12 +411,12 @@ namespace EVESharp.Node.Database
                     throw new ItemNotLoadedException(itemID, "Trying to load an item that is loaded on another node!");
                     
                 // Update the database information
-                Database.PrepareQuery(
-                    "UPDATE invItems SET nodeID = @nodeID WHERE itemID = @itemID",
+                Database.Procedure(
+                    EVESharp.Database.ItemDB.SET_ITEM_NODE,
                     new Dictionary<string, object>()
                     {
-                        {"@nodeID", this.Container.NodeID},
-                        {"@itemID", itemID}
+                        {"_nodeID", this.Container.NodeID},
+                        {"_itemID", itemID}
                     }
                 );
 
@@ -891,15 +891,16 @@ namespace EVESharp.Node.Database
             }
         }
 
-        public Dictionary<int, ItemEntity> LoadItemsLocatedAtByOwner(int locationID, int ownerID)
+        public Dictionary<int, ItemEntity> LoadItemsLocatedAtByOwner(int locationID, int ownerID, Flags itemFlag)
         {
             MySqlConnection connection = null;
             MySqlDataReader reader = Database.Select(ref connection,
-                "SELECT itemID FROM invItems WHERE locationID = @locationID AND ownerID = @ownerID",
+                "SELECT itemID FROM invItems WHERE locationID = @locationID AND ownerID = @ownerID AND flag = @flag",
                 new Dictionary<string, object>()
                 {
                     {"@locationID", locationID},
-                    {"@ownerID", ownerID}
+                    {"@ownerID", ownerID},
+                    {"@flag", (int) itemFlag}
                 }
             );
 

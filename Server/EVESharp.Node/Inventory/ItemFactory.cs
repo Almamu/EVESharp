@@ -388,9 +388,9 @@ namespace EVESharp.Node.Inventory
             return this.ItemDB.LoadItemsLocatedAt(location.ID, ignoreFlag);
         }
 
-        public Dictionary<int, ItemEntity> LoadItemsLocatedAtByOwner(ItemEntity location, int ownerID)
+        public Dictionary<int, ItemEntity> LoadItemsLocatedAtByOwner(ItemEntity location, int ownerID, Flags itemFlag)
         {
-            return this.ItemDB.LoadItemsLocatedAtByOwner(location.ID, ownerID);
+            return this.ItemDB.LoadItemsLocatedAtByOwner(location.ID, ownerID, itemFlag);
         }
 
         public bool IsItemLoaded(int itemID)

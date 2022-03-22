@@ -1,6 +1,8 @@
-﻿using EVESharp.Common.Logging;
+﻿using System.Collections.Generic;
+using EVESharp.Common.Logging;
 using EVESharp.Common.Network;
 using EVESharp.EVE.Sessions;
+using EVESharp.PythonTypes.Types.Primitives;
 
 namespace EVESharp.Node.Network;
 
@@ -19,6 +21,10 @@ public class MachoTransport
     /// The underlying socket to send/receive data
     /// </summary>
     public EVEClientSocket Socket { get; }
+    /// <summary>
+    /// Queue of packets to be sent through the transport after the authentication happens
+    /// </summary>
+    protected Queue<PyDataType> PostAuthenticationQueue { get; } = new Queue<PyDataType>();
 
     public MachoTransport(MachoServerTransport transport, EVEClientSocket socket, Logger logger)
     {
@@ -43,7 +49,25 @@ public class MachoTransport
         this.Socket = source.Socket;
         this.Server = source.Server;
     }
-        
+
+    /// <summary>
+    /// Adds data to be sent after authentication happens
+    /// </summary>
+    /// <param name="data"></param>
+    public void QueuePostAuthenticationPacket(PyDataType data)
+    {
+        this.PostAuthenticationQueue.Enqueue(data);
+    }
+
+    /// <summary>
+    /// Flushes the post authentication packets queue and sends everything
+    /// </summary>
+    protected void SendPostAuthenticationPackets()
+    {
+        foreach (PyDataType packet in this.PostAuthenticationQueue)
+            this.Socket.Send(packet);
+    }
+    
     public void AbortConnection()
     {
         this.Socket.GracefulDisconnect();

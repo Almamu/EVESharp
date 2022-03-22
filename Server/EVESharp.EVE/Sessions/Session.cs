@@ -70,8 +70,10 @@ namespace EVESharp.EVE.Sessions
         public const string WARFACTION_ID = "warfactionid";
         public const string RACE_ID = "raceID";
         public const string NODE_ID = "nodeid";
+        public const string LOAD_METRIC = "loadMetric";
 
         public long NodeID { get => this[NODE_ID] as PyInteger ?? 0; set => this[NODE_ID] = value; }
+        public long LoadMetric { get => this[LOAD_METRIC] as PyInteger ?? 0; set => this[LOAD_METRIC] = value; }
         public string LanguageID { get => this[LANGUAGEID] as PyString; set => this[LANGUAGEID] = value; }
         public int UserID { get => this[USERID] as PyInteger; set => this[USERID] = value; }
         public int UserType { get => this[USER_TYPE] as PyInteger; set => this[USER_TYPE] = value; }
@@ -90,8 +92,29 @@ namespace EVESharp.EVE.Sessions
         public long RolesAtHQ { get => this[ROLES_AT_HQ] as PyInteger; set => this[ROLES_AT_HQ] = value; }
         public long RolesAtOther { get => this[ROLES_AT_OTHER] as PyInteger; set => this[ROLES_AT_OTHER] = value; }
         public int? ShipID { get => this[SHIP_ID] as PyInteger; set => this[SHIP_ID] = value; }
-        public int? StationID { get => this[STATION_ID] as PyInteger; set => this[STATION_ID] = value; }
-        public int? SolarSystemID { get => this[SOLAR_SYSTEM_ID] as PyInteger; set => this[SOLAR_SYSTEM_ID] = value; }
+
+        public int? StationID
+        {
+            get => this[STATION_ID] as PyInteger;
+            set
+            {
+                this[STATION_ID] = value;
+                this[SOLAR_SYSTEM_ID] = null;
+                this[LOCATION_ID] = value;
+            }
+        }
+
+        public int? SolarSystemID
+        {
+            get => this[SOLAR_SYSTEM_ID] as PyInteger;
+            set
+            {
+                this[SOLAR_SYSTEM_ID] = value;
+                this[STATION_ID] = null;
+                this[LOCATION_ID] = value;
+            }
+        }
+
         public int LocationID {get => this[LOCATION_ID] as PyInteger; set => this[LOCATION_ID] = value; }
         public int? AllianceID { get => this[ALLIANCE_ID] as PyInteger; set =>  this[ALLIANCE_ID] = value; }
         public int? WarFactionID { get => this[WARFACTION_ID] as PyInteger; set =>  this[WARFACTION_ID] = value; }

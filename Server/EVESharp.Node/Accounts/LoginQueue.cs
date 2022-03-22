@@ -25,11 +25,13 @@
 using System;
 using System.Collections.Generic;
 using System.Threading;
+using EVESharp.Common.Database;
 using EVESharp.Common.Logging;
 using EVESharp.EVE.Packets;
 using EVESharp.Node.Configuration;
 using EVESharp.Node.Database;
 using EVESharp.Node.Network;
+using MachoNet = EVESharp.Node.Network.MachoNet;
 
 namespace EVESharp.Node.Accounts
 {
@@ -38,6 +40,8 @@ namespace EVESharp.Node.Accounts
         private readonly Queue<LoginQueueEntry> Queue = new Queue<LoginQueueEntry>();
         private AccountDB AccountDB { get; }
         private Authentication Configuration { get; }
+        private DatabaseConnection Database { get; }
+        private MachoNet MachoNet { get; }
         private Channel Log { get; set; }
 
         public void Enqueue(MachoUnauthenticatedTransport connection, AuthenticationReq request)
@@ -85,6 +89,16 @@ namespace EVESharp.Node.Accounts
                 Log.Trace(": success");
 
                 status = LoginStatus.Success;
+                
+                // register player to the new address
+                Database.Procedure(
+                    EVESharp.Database.AccountDB.REGISTER_CLIENT_ADDRESS,
+                    new Dictionary<string, object>()
+                    {
+                        {"_clientID", accountID},
+                        {"_proxyNodeID", MachoNet.Container.NodeID}
+                    }
+                );
             }
 
             entry.Connection.SendLoginNotification(status, accountID, role);
@@ -137,11 +151,14 @@ namespace EVESharp.Node.Accounts
             Log.Error("LoginQueue is closing... Bye Bye!");
         }
 
-        public LoginQueue(Authentication configuration, AccountDB db, Logger logger)
+        public LoginQueue(DatabaseConnection databaseConnection, MachoNet machoNet, Authentication configuration, AccountDB db, Logger logger)
         {
+            this.Database = databaseConnection;
+            this.MachoNet = machoNet;
             this.Log = logger.CreateLogChannel("LoginQueue");
             this.Configuration = configuration;
             this.AccountDB = db;
+            this.MachoNet.LoginQueue = this;
             
             // start the queue thread
             new Thread(Run).Start();

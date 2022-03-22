@@ -10,6 +10,7 @@ CREATE TABLE IF NOT EXISTS `account` (
   `role` bigint(20) unsigned NOT NULL,
   `online` tinyint(1) NOT NULL,
   `banned` tinyint(1) NOT NULL,
+  `proxyNodeID` bigint(20) NOT NULL,
   PRIMARY KEY (`accountID`),
   UNIQUE KEY `accountName` (`accountName`)
 ) ENGINE=InnoDB  DEFAULT CHARSET=utf8 ;

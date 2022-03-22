@@ -63,9 +63,9 @@ namespace EVESharp.Node.Services.Corporations
             throw new System.NotImplementedException();
         }
 
-        public override bool IsClientAllowedToCall(ServiceCall call)
+        public override bool IsClientAllowedToCall(Session session)
         {
-            return call.Session.CorporationID == this.Corporation.ID;
+            return session.CorporationID == this.Corporation.ID;
         }
     }
 }

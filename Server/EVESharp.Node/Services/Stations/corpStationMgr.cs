@@ -309,7 +309,7 @@ namespace EVESharp.Node.Services.Stations
             if (this.SystemManager.SolarSystemBelongsToUs(solarSystemID) == true)
                 return this.BoundServiceManager.Container.NodeID;
 
-            return this.SystemManager.GetNodeSolarSystemBelongsTo(solarSystemID);
+            return this.SystemManager.LoadSolarSystemOnCluster(solarSystemID);
         }
 
         protected override BoundService CreateBoundInstance(ServiceBindParams bindParams, CallInformation call)

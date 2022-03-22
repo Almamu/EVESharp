@@ -50,7 +50,7 @@ namespace EVESharp.Node.Services.Characters
 {
     public class character : Service
     {
-        public override AccessLevel AccessLevel => AccessLevel.None;
+        public override AccessLevel AccessLevel => AccessLevel.LocationPreferred;
         enum NameValidationResults
         {
             Valid = 1,
@@ -499,9 +499,7 @@ namespace EVESharp.Node.Services.Characters
 
         public PyDataType GetOwnerNoteLabels(CallInformation call)
         {
-            Character character = this.ItemFactory.GetItem<Character>(call.Session.EnsureCharacterIsSelected());
-
-            return this.DB.GetOwnerNoteLabels(character);
+            return this.DB.GetOwnerNoteLabels(call.Session.EnsureCharacterIsSelected());
         }
 
         public PyDataType GetCloneTypeID(CallInformation call)

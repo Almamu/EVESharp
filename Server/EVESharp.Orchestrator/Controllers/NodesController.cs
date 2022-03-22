@@ -20,7 +20,8 @@ public class NodesController : ControllerBase
     }
     
     [HttpGet(Name = "GetNodeList")]
-    public IEnumerable<Node> GetNodeList()
+    [Produces("application/json")]
+    public ActionResult<IEnumerable<Node>> GetNodeList()
     {
         List<Node> result = new List<Node>();
         
@@ -50,6 +51,7 @@ public class NodesController : ControllerBase
     }
     
     [HttpGet("{address}")]
+    [Produces("application/json")]
     public ActionResult<Node> GetNodeByAddress(string address)
     {
         using (MySqlConnection connection = this.DB.Get())
@@ -77,6 +79,7 @@ public class NodesController : ControllerBase
     }
     
     [HttpGet("node/{nodeID}")]
+    [Produces("application/json")]
     public ActionResult<Node> GetNodeInformation(int nodeID)
     {
         using (MySqlConnection connection = this.DB.Get())
@@ -104,6 +107,7 @@ public class NodesController : ControllerBase
     }
 
     [HttpGet("proxies")]
+    [Produces("application/json")]
     public ActionResult<List<Node>> GetProxies()
     {
         using (MySqlConnection connection = this.DB.Get())
@@ -135,6 +139,7 @@ public class NodesController : ControllerBase
     }
 
     [HttpGet("servers")]
+    [Produces("application/json")]
     public ActionResult<List<Node>> GetServers()
     {
         using (MySqlConnection connection = this.DB.Get())
@@ -166,7 +171,8 @@ public class NodesController : ControllerBase
     }
 
     [HttpPost("register")]
-    public object RegisterNewNode([FromForm]ushort port, [FromForm]string role)
+    [Produces("application/json")]
+    public ActionResult<object> RegisterNewNode([FromForm]ushort port, [FromForm]string role)
     {
         if (role != "proxy" && role != "server")
             return this.BadRequest ($"Unknown node role... {role}");
@@ -200,19 +206,45 @@ public class NodesController : ControllerBase
     }
 
     [HttpPost("heartbeat")]
-    public void DoHeartbeat([FromBody] string address)
+    public void DoHeartbeat([FromForm] string address, [FromForm] float load)
     {
-        Logger.LogInformation("Received heartbeat from {address}", address);
+        Logger.LogInformation("Received heartbeat from {address} with load {load}", address, load);
 
         using (MySqlConnection connection = this.DB.Get())
         {
-            MySqlCommand cmd = new MySqlCommand("UPDATE cluster SET lastHeartBeat = @lastHeartBeat WHERE address = @address;", connection);
+            MySqlCommand cmd = new MySqlCommand("UPDATE cluster SET lastHeartBeat = @lastHeartBeat, `load` = @load WHERE address LIKE @address;", connection);
 
             cmd.Parameters.AddWithValue("@lastHeartBeat", DateTime.UtcNow.ToFileTimeUtc());
+            cmd.Parameters.AddWithValue("@load", load);
             cmd.Parameters.AddWithValue("@address", address);
 
             cmd.Prepare();
             cmd.ExecuteNonQuery();
+        }
+    }
+
+    [HttpGet("next")]
+    [Produces("application/json")]
+    public ActionResult<long> GetNextNode()
+    {
+        using (MySqlConnection connection = this.DB.Get())
+        {
+            MySqlCommand cmd = new MySqlCommand("SELECT id, `load` FROM cluster WHERE lastHeartBeat > @lastHeartBeat AND role LIKE @role ORDER BY `load` DESC LIMIT 1;", connection);
+
+            cmd.Parameters.AddWithValue("@lastHeartBeat", DateTime.Now.AddSeconds(-90).ToFileTimeUtc());
+            cmd.Parameters.AddWithValue("@role", "server");
+            cmd.Prepare();
+
+            using (MySqlDataReader reader = cmd.ExecuteReader())
+            {
+                // this should be something more appropriate, but bad request should be more than enough
+                if (reader.Read() == false)
+                    return BadRequest();
+                
+                Logger.LogInformation("Returned node ({nodeID}) with lowest load ({load})", reader.GetInt32(0), reader.GetDouble(1));
+
+                return reader.GetInt64(0);
+            }
         }
     }
 }

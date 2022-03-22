@@ -23,9 +23,11 @@ if (restartOnStartup)
     {
         MySqlCommand items = new MySqlCommand("UPDATE invItems SET nodeID = 0;", connection);
         MySqlCommand nodes = new MySqlCommand("DELETE FROM cluster;", connection);
+        MySqlCommand accounts = new MySqlCommand("UPDATE account SET proxyNodeID = 0;", connection);
 
         nodes.ExecuteNonQuery();
         items.ExecuteNonQuery();
+        accounts.ExecuteNonQuery();
     }
 }
 

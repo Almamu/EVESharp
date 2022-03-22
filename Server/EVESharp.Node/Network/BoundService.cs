@@ -1,6 +1,7 @@
 using EVESharp.EVE.Services;
 using EVESharp.EVE.Sessions;
 using EVESharp.Node.Services;
+using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Primitives;
 
 namespace EVESharp.Node.Network
@@ -95,14 +96,21 @@ namespace EVESharp.Node.Network
         /// <summary>
         /// Checks if the caller has enough permissions to use this bound service
         /// </summary>
-        /// <param name="call">The call information</param>
+        /// <param name="session">The session to check against</param>
         /// <returns></returns>
-        public abstract bool IsClientAllowedToCall(ServiceCall call);
+        public abstract bool IsClientAllowedToCall(Session session);
 
         /// <summary>
         /// Handles when a client frees this object (like when it's disconnected)
         /// </summary>
         /// <param name="session">Session of the user that free'd us</param>
         public abstract void ClientHasReleasedThisObject(Session session);
+
+        /// <summary>
+        /// Applies the given session change to the service's cached sessions (if found)
+        /// </summary>
+        /// <param name="userID">The user to update sessions for</param>
+        /// <param name="changes">The delta of changes</param>
+        public abstract void ApplySessionChange(long userID, PyDictionary<PyString, PyTuple> changes);
     }
 }

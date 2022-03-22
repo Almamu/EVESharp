@@ -14,7 +14,7 @@ namespace EVESharp.Node.Network
         /// <summary>
         /// List of clients that have access to this bound service
         /// </summary>
-        protected Dictionary<int, Session> Sessions { get; }
+        protected Dictionary<long, Session> Sessions { get; } = new Dictionary<long, Session>();
         /// <summary>
         /// The bound service that created this entity
         /// </summary>
@@ -33,20 +33,17 @@ namespace EVESharp.Node.Network
         public MultiClientBoundService(BoundServiceManager manager, bool keepAlive = false) : base(manager)
         {
             this.mRegisteredServices = new Dictionary<int, MultiClientBoundService>();
-            this.Sessions = new Dictionary<int, Session>();
             this.KeepAlive = keepAlive;
         }
 
         public MultiClientBoundService(MultiClientBoundService parent, int objectID, bool keepAlive = false) : base(parent.BoundServiceManager, objectID)
         {
             this.Parent = parent;
-            this.Sessions = new Dictionary<int, Session>();
             this.KeepAlive = keepAlive;
         }
 
         public MultiClientBoundService(BoundServiceManager manager, int objectID, bool keepAlive = false) : base(manager, objectID)
         {
-            this.Sessions = new Dictionary<int, Session>();
             this.KeepAlive = keepAlive;
         }
 
@@ -133,6 +130,9 @@ namespace EVESharp.Node.Network
                 
                 result[1] = this.BoundServiceManager.ServiceCall(instance.BoundID, func, callInformation);
             }
+            
+            // signal that the object was bound, this will be used by the proxy to notify this node on important stuff
+            call.ResutOutOfBounds["OID+"] = new PyList<PyInteger>() {instance.BoundID};
 
             return result;
         }
@@ -168,6 +168,19 @@ namespace EVESharp.Node.Network
                 // check for the parent service and unregister ourselves from it
                 this.Parent?.mRegisteredServices.Remove(this.ObjectID);
             }
+        }
+
+        /// <summary>
+        /// Applies the given session change to the service's cached sessions (if found)
+        /// </summary>
+        /// <param name="userID">The user to update sessions for</param>
+        /// <param name="changes">The delta of changes</param>
+        public override void ApplySessionChange(long userID, PyDictionary<PyString, PyTuple> changes)
+        {
+            if (this.Sessions.TryGetValue(userID, out Session session) == false)
+                return;
+
+            session.ApplyDelta(changes);
         }
     }
 }
