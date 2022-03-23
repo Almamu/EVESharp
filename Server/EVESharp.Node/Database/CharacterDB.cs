@@ -695,7 +695,7 @@ namespace EVESharp.Node.Database
         public void UpdateCharacterLogonDateTime(int characterID)
         {
             Database.PrepareQuery(
-                "UPDATE chrInformation SET logonDateTime = @date WHERE characterID = @characterID",
+                "UPDATE chrInformation SET logonDateTime = @date, online = 1 WHERE characterID = @characterID",
                 new Dictionary<string, object>()
                 {
                     {"@characterID", characterID},
@@ -711,11 +711,10 @@ namespace EVESharp.Node.Database
         public void UpdateCharacterInformation(Character character)
         {
             Database.PrepareQuery(
-                "UPDATE chrInformation SET online = @online, activeCloneID = @activeCloneID, freeRespecs = @freeRespecs, nextRespecTime = @nextRespecTime, timeLastJump = @timeLastJump, description = @description, warFactionID = @warFactionID, corporationID = @corporationID, corporationDateTime = @corporationDateTime, corpAccountKey = @corpAccountKey WHERE characterID = @characterID",
+                "UPDATE chrInformation SET activeCloneID = @activeCloneID, freeRespecs = @freeRespecs, nextRespecTime = @nextRespecTime, timeLastJump = @timeLastJump, description = @description, warFactionID = @warFactionID, corporationID = @corporationID, corporationDateTime = @corporationDateTime, corpAccountKey = @corpAccountKey WHERE characterID = @characterID",
                 new Dictionary<string, object>()
                 {
                     {"@characterID", character.ID},
-                    {"@online", character.Online},
                     {"@activeCloneID", character.ActiveCloneID},
                     {"@freeRespecs", character.FreeReSpecs},
                     {"@nextRespecTime", character.NextReSpecTime},

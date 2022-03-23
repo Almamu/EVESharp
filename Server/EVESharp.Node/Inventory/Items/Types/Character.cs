@@ -43,7 +43,7 @@ namespace EVESharp.Node.Inventory.Items.Types
             double camPos1, double camPos2, double camPos3, double? morph1E, double? morph1N, double? morph1S,
             double? morph1W, double? morph2E, double? morph2N, double? morph2S, double? morph2W, double? morph3E,
             double? morph3N, double? morph3S, double? morph3W, double? morph4E, double? morph4N, double? morph4S,
-            double? morph4W, int stationId, int solarSystemId, int constellationId, int regionId, int online,
+            double? morph4W, int stationId, int solarSystemId, int constellationId, int regionId,
             int freeReSpecs, long nextReSpecTime, long timeLastJump, int titleMask, int? warFactionID, int corpAccountKey,
             long grantableRoles, long grantableRolesAtBase, long grantableRolesAtHq, long grantableRolesAtOther,
             int? baseID) : base(from)
@@ -111,7 +111,6 @@ namespace EVESharp.Node.Inventory.Items.Types
             this.mSolarSystemID = solarSystemId;
             this.mConstellationID = constellationId;
             this.mRegionID = regionId;
-            this.mOnline = online;
             this.mFreeReSpecs = freeReSpecs;
             this.mNextReSpecTime = nextReSpecTime;
             this.mTimeLastJump = timeLastJump;
@@ -315,16 +314,6 @@ namespace EVESharp.Node.Inventory.Items.Types
             }
         }
 
-        public int Online
-        {
-            get => this.mOnline;
-            set
-            {
-                this.mOnline = value;
-                this.Dirty = true;
-            }
-        }
-
         public Clone ActiveClone
         {
             get
@@ -454,7 +443,6 @@ namespace EVESharp.Node.Inventory.Items.Types
         private int mSolarSystemID;
         private int mConstellationID;
         private int mRegionID;
-        private int mOnline;
         private int mFreeReSpecs;
         private long mNextReSpecTime;
         private long mTimeLastJump;

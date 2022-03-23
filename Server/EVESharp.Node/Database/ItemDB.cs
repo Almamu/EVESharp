@@ -630,7 +630,6 @@ namespace EVESharp.Node.Database
                     reader.GetInt32(59),
                     reader.GetInt32(60),
                     reader.GetInt32(61),
-                    reader.GetInt32(62),
                     reader.GetInt32(63),
                     reader.GetInt64(64),
                     reader.GetInt64(65),

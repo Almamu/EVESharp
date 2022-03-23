@@ -225,6 +225,10 @@ namespace EVESharp.Node.Network
         /// <param name="nodeID">The nodeID of the proxy to connect to</param>
         public async Task<MachoTransport> OpenNodeConnection(long nodeID)
         {
+            // check if there's a connection already and return that one instead
+            if (this.Transport.NodeTransports.TryGetValue(nodeID, out MachoNodeTransport nodeTransport) == true)
+                return nodeTransport;
+            
             Log.Info($"Looking up NodeID {nodeID}...");
             HttpResponseMessage response = await this.HttpClient.GetAsync($"{this.Configuration.Cluster.OrchestatorURL}/Nodes/node/{nodeID}");
 
@@ -284,6 +288,11 @@ namespace EVESharp.Node.Network
                 
                 case PyAddressNode:
                     this.QueueNodePacket(packet);
+                    break;
+                
+                case PyAddressAny:
+                    Log.Fatal("Trying to queue a packet to Any address. This should not happen!");
+                    Log.Fatal(PrettyPrinter.FromDataType(packet));
                     break;
             }
         }

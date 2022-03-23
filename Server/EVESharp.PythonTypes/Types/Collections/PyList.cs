@@ -120,6 +120,16 @@ namespace EVESharp.PythonTypes.Types.Collections
             this.mList.RemoveAt(index);
         }
 
+        public void Clear()
+        {
+            this.mList.Clear();
+        }
+
+        public bool Contains(PyDataType data)
+        {
+            return this.mList.Contains(data);
+        }
+        
         public int Count => this.mList.Count;
 
         public List<PyDataType>.Enumerator GetIterator()

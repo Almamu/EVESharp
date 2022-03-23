@@ -16,7 +16,7 @@ namespace EVESharp.EVE.Sessions
         /// <summary>
         /// List of bound objects that are assigned to this session
         /// </summary>
-        public Dictionary<int, int> BoundObjects { get; } = new Dictionary<int, int>();
+        public Dictionary<int, long> BoundObjects { get; } = new Dictionary<int, long>();
 
         public static Session FromPyDictionary(PyDictionary origin)
         {

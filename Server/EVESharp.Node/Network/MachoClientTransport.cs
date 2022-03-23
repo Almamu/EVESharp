@@ -1,12 +1,16 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using EVESharp.Common.Logging;
 using EVESharp.Common.Network;
 using EVESharp.EVE;
 using EVESharp.EVE.Packets;
 using EVESharp.EVE.Packets.Exceptions;
 using EVESharp.Node.Accounts;
+using EVESharp.Node.Configuration;
 using EVESharp.Node.Sessions;
 using EVESharp.PythonTypes;
 using EVESharp.PythonTypes.Types.Collections;
@@ -43,6 +47,17 @@ namespace EVESharp.Node.Network
             this.Server.OnTransportTerminated(this);
             // remove the session
             this.SessionManager.FreeSession(this.Session);
+            // tell all the nodes that we're dead now
+            this.Server.MachoNet.QueuePacket(
+                new PyPacket(PyPacket.PacketType.NOTIFICATION)
+                {
+                    Source = new PyAddressAny(0),
+                    Destination = new PyAddressBroadcast(this.Session.NodesOfInterest, "nodeid"),
+                    Payload = new PyTuple(2) {[0] = "ClientHasDisconnected", [1] = new PyTuple(1) { [0] = this.Session.UserID }},
+                    UserID = this.Session.UserID,
+                    OutOfBounds = new PyDictionary() {["Session"] = this.Session}
+                }
+            );
         }
         private void HandleException(Exception ex)
         {
@@ -200,28 +215,17 @@ namespace EVESharp.Node.Network
 
         private void HandleNotification(PyPacket packet)
         {
-            PyTuple callInfo = ((packet.Payload[0] as PyTuple)[1] as PySubStream).Stream as PyTuple;
-
-            PyList objectIDs = callInfo[0] as PyList;
-            string call = callInfo[1] as PyString;
-
-            if (call != "ClientHasReleasedTheseObjects")
-            {
-                Log.Error($"Received notification from client with unknown method {call}");
+            // add session to the packet
+            packet.OutOfBounds["Session"] = this.Session;
+            // re-queue the packet as it has to reach a specific node
+            this.Server.MachoNet.QueuePacket(packet);
+            // check if there's any OOB useful data and remove the related objects
+            if (packet.OutOfBounds.TryGetValue("OID-", out PyDictionary data) == false)
                 return;
-            }
-            
-            // search for the given objects in the bound service
-            // and sure they're freed
-            foreach (PyTuple objectID in objectIDs.GetEnumerable<PyTuple>())
-            {
-                if (objectID[0] is PyString == false)
-                {
-                    Log.Fatal("Expected bound call with bound string, but got something different");
-                    return;
-                }
 
-                string boundString = objectID[0] as PyString;
+            foreach ((PyString guid, PyInteger refID) in data.GetEnumerable<PyString, PyInteger>())
+            {
+                string boundString = guid;
 
                 // parse the bound string to get back proper node and bound ids
                 Match regexMatch = Regex.Match(boundString, "N=([0-9]+):([0-9]+)");
@@ -234,18 +238,20 @@ namespace EVESharp.Node.Network
 
                 int nodeID = int.Parse(regexMatch.Groups[1].Value);
                 int boundID = int.Parse(regexMatch.Groups[2].Value);
-
-                if (nodeID != this.Server.MachoNet.Container.NodeID)
-                {
-                    Log.Fatal("Got a ClientHasReleasedTheseObjects call for an object ID that doesn't belong to us");
-                    // TODO: MIGHT BE A GOOD IDEA TO RELAY THIS CALL TO THE CORRECT NODE
-                    // TODO: INSIDE THE NETWORK, AT LEAST THAT'S WHAT CCP IS DOING BASED
-                    // TODO: ON THE CLIENT'S CODE... NEEDS MORE INVESTIGATION
-                    return;
-                }
                 
-                this.Server.MachoNet.BoundServiceManager.FreeBoundService(boundID);
+                // cleanup the association if any
+                this.Session.BoundObjects.Remove(boundID);
+                // if the bound service is local, do it too
+                this.Server.MachoNet.BoundServiceManager.ClientHasReleasedThisObject(boundID, this.Session);
             }
+            
+            // update the nodes of interest list
+            // TODO: FIND A BETTER WAY OF DOING THIS
+            this.Session.NodesOfInterest.Clear();
+            
+            foreach((int boundID, long nodeID) in this.Session.BoundObjects)
+                if (this.Session.NodesOfInterest.Contains(nodeID) == false)
+                    this.Session.NodesOfInterest.Add(nodeID);
         }
         
         private void HandlePingReq(PyPacket packet)

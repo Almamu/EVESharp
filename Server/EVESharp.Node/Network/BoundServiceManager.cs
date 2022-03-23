@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using EVESharp.Common.Logging;
 using EVESharp.EVE.Services;
 using EVESharp.EVE.Services.Exceptions;
+using EVESharp.EVE.Sessions;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Primitives;
 
@@ -102,9 +103,12 @@ namespace EVESharp.Node.Network
             return service.ExecuteCall(method, call);
         }
 
-        public void ClientHasReleasedTheseObjects(PyTuple objectInformation)
+        public void ClientHasReleasedThisObject(int boundID, Session session)
         {
+            if (this.BoundServices.TryGetValue(boundID, out BoundService svc) == false)
+                return;
             
+            svc.ClientHasReleasedThisObject(session);
         }
     }
 }

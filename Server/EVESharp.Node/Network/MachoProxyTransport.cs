@@ -181,7 +181,46 @@ public class MachoProxyTransport : MachoTransport
     private void HandleClientNotification(PyPacket packet)
     {
         // this notification is only for ClientHasReleasedTheseObjects
-        // TODO: HANDLE THIS
+        PyTuple callInfo = ((packet.Payload[0] as PyTuple)[1] as PySubStream).Stream as PyTuple;
+
+        PyList objectIDs = callInfo[0] as PyList;
+        string call = callInfo[1] as PyString;
+
+        if (call != "ClientHasReleasedTheseObjects")
+        {
+            Log.Error($"Received notification from client with unknown method {call}");
+            return;
+        }
+        
+        Session session = EVE.Sessions.Session.FromPyDictionary(packet.OutOfBounds["Session"] as PyDictionary);
+        
+        // search for the given objects in the bound service
+        // and sure they're freed
+        foreach (PyTuple objectID in objectIDs.GetEnumerable<PyTuple>())
+        {
+            if (objectID[0] is PyString == false)
+            {
+                Log.Fatal("Expected bound call with bound string, but got something different");
+                return;
+            }
+
+            string boundString = objectID[0] as PyString;
+
+            // parse the bound string to get back proper node and bound ids
+            Match regexMatch = Regex.Match(boundString, "N=([0-9]+):([0-9]+)");
+
+            if (regexMatch.Groups.Count != 3)
+            {
+                Log.Fatal($"Cannot find nodeID and boundID in the boundString {boundString}");
+                return;
+            }
+
+            int nodeID = int.Parse(regexMatch.Groups[1].Value);
+            int boundID = int.Parse(regexMatch.Groups[2].Value);
+
+            if (nodeID == this.Server.MachoNet.Container.NodeID)
+                this.Server.MachoNet.BoundServiceManager.ClientHasReleasedThisObject(boundID, session);
+        }
     }
     
     private void HandleNotification(PyPacket packet)
@@ -228,6 +267,9 @@ public class MachoProxyTransport : MachoTransport
                 break;
             case OnCorporationChanged.NOTIFICATION_NAME:
                 this.HandleOnCorporationChanged(packet.Payload);
+                break;
+            case "ClientHasDisconnected":
+                this.HandleClientHasDisconnected(packet.Payload[1] as PyTuple);
                 break;
             default:
                 Log.Fatal("Received ClusterController notification with the wrong format");
@@ -459,5 +501,12 @@ public class MachoProxyTransport : MachoTransport
         
         // some debugging is well received
         Log.Debug($"Updated corporation afilliation ({corporation.ID}) to ({corporation.AllianceID})");
+    }
+
+    private void HandleClientHasDisconnected(PyTuple data)
+    {
+        PyInteger userID = data[0] as PyInteger;
+        
+        
     }
 }

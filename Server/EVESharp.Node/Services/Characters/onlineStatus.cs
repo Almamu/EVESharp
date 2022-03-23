@@ -32,14 +32,7 @@ namespace EVESharp.Node.Services.Characters
         public PyDataType GetOnlineStatus(PyInteger characterID, CallInformation call)
         {
             // TODO: CHECK IF THE OTHER CHARACTER HAS US IN THEIR ADDRESSBOOK?
-            try
-            {
-                return this.ItemFactory.GetItem<Character>(characterID).Online;
-            }
-            catch (Exception)
-            {
-                return this.CharacterDB.IsOnline(characterID);
-            }
+            return this.CharacterDB.IsOnline(characterID);
         }
     }
 }

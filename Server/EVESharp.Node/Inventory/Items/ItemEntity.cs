@@ -40,7 +40,7 @@ using Type = EVESharp.Node.StaticData.Inventory.Type;
 
 namespace EVESharp.Node.Inventory.Items
 {
-    public abstract class ItemEntity : DatabaseEntity
+    public abstract class ItemEntity : DatabaseEntity, IDisposable
     {
         public ItemFactory ItemFactory { get; }
 

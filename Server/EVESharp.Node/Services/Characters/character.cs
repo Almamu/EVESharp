@@ -469,10 +469,6 @@ namespace EVESharp.Node.Services.Characters
             if (character.WarFactionID is not null)
                 updates.WarFactionID = character.WarFactionID;
 
-            // update the character and set it's only flag to true
-            character.Online = 1;
-            // the online status must be persisted after update, so force the entity to be updated in the database
-            character.Persist();
             // update the logon status
             this.DB.UpdateCharacterLogonDateTime(character.ID);
             // unload the character, let the session change handler handle everything
