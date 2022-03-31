@@ -45,9 +45,9 @@ namespace EVESharp.Node.Services.Stations
                 result.Add(
                     new PyTuple(4)
                     {
-                        [0] = character.CharacterID,
-                        [1] = character.Corporation.ID,
-                        [2] = character.Corporation.AllianceID,
+                        [0] = character.ID,
+                        [1] = character.CorporationID,
+                        [2] = character.AllianceID,
                         [3] = 0 // facWarID
                     }
                 );

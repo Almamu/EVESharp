@@ -25,7 +25,6 @@
 using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
-using EVESharp.Common.Logging;
 using EVESharp.EVE;
 using EVESharp.EVE.Packets.Exceptions;
 using EVESharp.EVE.Services;
@@ -44,6 +43,7 @@ using EVESharp.Node.StaticData.Inventory;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Database;
 using EVESharp.PythonTypes.Types.Primitives;
+using Serilog;
 using SessionManager = EVESharp.Node.Sessions.SessionManager;
 
 namespace EVESharp.Node.Services.Characters
@@ -74,14 +74,14 @@ namespace EVESharp.Node.Services.Characters
         private AncestryManager AncestryManager { get; init; }
         private SessionManager SessionManager { get; }
         private readonly Configuration.Character mConfiguration = null;
-        private readonly Channel Log = null;
+        private ILogger Log { get; }
 
         public character(CacheStorage cacheStorage, CharacterDB db, ChatDB chatDB, CorporationDB corporationDB,
-            ItemFactory itemFactory, Logger logger, Configuration.Character configuration, NodeContainer container,
+            ItemFactory itemFactory, ILogger logger, Configuration.Character configuration, NodeContainer container,
             NotificationManager notificationManager, WalletManager walletManager, AncestryManager ancestryManager,
             SessionManager sessionManager)
         {
-            this.Log = logger.CreateLogChannel("character");
+            this.Log = logger;
             this.mConfiguration = configuration;
             this.DB = db;
             this.ChatDB = chatDB;
@@ -352,7 +352,7 @@ namespace EVESharp.Node.Services.Characters
             Clone clone = this.ItemFactory.CreateClone(cloneType, station, character);
 
             character.LocationID = ship.ID;
-            character.ActiveClone = clone;
+            character.ActiveCloneID = clone.ID;
 
             // get the wallet for the player and give the money specified in the configuration
             using Wallet wallet = this.WalletManager.AcquireWallet(character.ID, WalletKeys.MAIN_WALLET);
@@ -505,7 +505,9 @@ namespace EVESharp.Node.Services.Characters
             if (character.ActiveCloneID is null)
                 throw new CustomError("You do not have any medical clone...");
 
-            return character.ActiveClone.Type.ID;
+            // TODO: FETCH THIS FROM THE DATABASE INSTEAD
+            // return character.ActiveClone.Type.ID;
+            return (int) Types.CloneGradeAlpha;
         }
 
         public PyDataType GetHomeStation(CallInformation call)
@@ -515,7 +517,9 @@ namespace EVESharp.Node.Services.Characters
             if (character.ActiveCloneID is null)
                 throw new CustomError("You do not have any medical clone...");
 
-            return character.ActiveClone.LocationID;
+            // TODO: FETCH THIS FROM THE DATABASE INSTEAD
+            // return character.ActiveClone.LocationID;
+            return call.Session.StationID;
         }
 
         public PyDataType GetCharacterDescription(PyInteger characterID, CallInformation call)

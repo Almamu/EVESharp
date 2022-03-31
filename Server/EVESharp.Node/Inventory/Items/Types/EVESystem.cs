@@ -1,10 +1,16 @@
 using System;
+using EVESharp.Common.Database;
+using EVESharp.Node.Inventory.Items.Types.Information;
 using EVESharp.Node.StaticData.Inventory;
 
 namespace EVESharp.Node.Inventory.Items.Types
 {
     public class EVESystem : ItemInventory
     {
+        public EVESystem(Information.Item info) : base(info)
+        {
+        }
+
         public EVESystem(ItemEntity @from) : base(@from)
         {
         }

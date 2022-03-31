@@ -88,10 +88,11 @@ namespace EVESharp.Node.Services.Stations
             Character character = this.ItemFactory.GetItem<Character>(session.EnsureCharacterIsSelected());
 
             // TODO: CHECK STANDINGS TO ENSURE THIS STATION CAN BE USED
+            // TODO: ADD CURRENT CORPORATION'S STATION BACK TO THE LIST
             List<Station> availableStations = new List<Station>
             {
                 this.ItemFactory.Stations[stationID],
-                this.ItemFactory.Stations[character.Corporation.StationID]
+                // this.ItemFactory.Stations[character.Corporation.StationID]
             };
             
             return availableStations;
@@ -161,9 +162,10 @@ namespace EVESharp.Node.Services.Stations
                 wallet.CreateJournalRecord(MarketReference.CloneTransfer, null, station.ID, -contractCost, $"Moved clone to {station.Name}");
             }
             
+            // TODO: REIMPLEMENT THIS
             // set clone's station
-            character.ActiveClone.LocationID = stationID;
-            character.ActiveClone.Persist();
+            // character.ActiveClone.LocationID = stationID;
+            // character.ActiveClone.Persist();
             
             // persist character info
             character.Persist();
@@ -212,12 +214,13 @@ namespace EVESharp.Node.Services.Stations
             int stationID = call.Session.EnsureCharacterIsInStation();
             
             Character character = this.ItemFactory.GetItem<Character>(callerCharacterID);
-            StaticData.Inventory.Type newCloneType = this.TypeManager[cloneTypeID];
+            Type newCloneType = this.TypeManager[cloneTypeID];
 
             if (newCloneType.Group.ID != (int) Groups.Clone)
                 throw new CustomError("Only clone types allowed!");
-            if (character.ActiveClone.Type.BasePrice > newCloneType.BasePrice)
-                throw new MedicalThisCloneIsWorse();
+            // TODO: REIMPLEMENT THIS CHECK
+            //if (character.ActiveClone.Type.BasePrice > newCloneType.BasePrice)
+            //    throw new MedicalThisCloneIsWorse();
 
             Station station = this.ItemFactory.GetStaticStation(stationID);
 
@@ -227,10 +230,11 @@ namespace EVESharp.Node.Services.Stations
                 wallet.CreateTransactionRecord(TransactionType.Buy, character.ID, this.ItemFactory.LocationSystem.ID, newCloneType.ID, 1, newCloneType.BasePrice, station.ID);
             }
             
+            // TODO: REIMPLEMENT THIS
             // update active clone's information
-            character.ActiveClone.Type = newCloneType;
-            character.ActiveClone.Name = newCloneType.Name;
-            character.ActiveClone.Persist();
+            // character.ActiveClone.Type = newCloneType;
+            // character.ActiveClone.Name = newCloneType.Name;
+            // character.ActiveClone.Persist();
             character.Persist();
             
             return null;
@@ -307,14 +311,14 @@ namespace EVESharp.Node.Services.Stations
             int solarSystemID = this.ItemFactory.GetStaticStation(parameters.ObjectID).SolarSystemID;
 
             if (this.SystemManager.SolarSystemBelongsToUs(solarSystemID) == true)
-                return this.BoundServiceManager.Container.NodeID;
+                return this.BoundServiceManager.MachoNet.NodeID;
 
             return this.SystemManager.LoadSolarSystemOnCluster(solarSystemID);
         }
 
         protected override BoundService CreateBoundInstance(ServiceBindParams bindParams, CallInformation call)
         {
-            if (this.MachoResolveObject(bindParams, call) != this.BoundServiceManager.Container.NodeID)
+            if (this.MachoResolveObject(bindParams, call) != this.BoundServiceManager.MachoNet.NodeID)
                 throw new CustomError("Trying to bind an object that does not belong to us!");
             
             return new corpStationMgr(this.MarketDB, this.StationDB, this.BillsDB, this.NotificationManager, this.ItemFactory, this.Container, this.BoundServiceManager, this.WalletManager, call.Session);

@@ -22,18 +22,36 @@
     Creator: Almamu
 */
 
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using EVESharp.Common.Configuration;
+using EVESharp.Common.Database;
+using EVESharp.Node.Inventory.Items.Types.Information;
 using EVESharp.Node.StaticData.Inventory;
 
 namespace EVESharp.Node.Inventory.Items
 {
     public abstract class ItemInventory : ItemEntity
     {
-        public ItemInventory(ItemEntity from) : base(from.Database, from.HasName ? from.Name : null, from.ID, from.Type, from.OwnerID, from.LocationID,
-            from.Flag, from.Contraband, from.Singleton, from.Quantity, from.X, from.Y, from.Z, from.CustomInfo,
-            from.Attributes, from.ItemFactory)
+        public delegate ConcurrentDictionary<int, ItemEntity> InventoryLoadEventHandler(ItemInventory inventory, Flags ignoreFlags);
+
+        public delegate void InventoryUnloadEventHandler(ItemInventory inventory);
+
+        /// <summary>
+        /// Event called by the item to request the inventory contents
+        /// </summary>
+        public InventoryLoadEventHandler OnInventoryLoad;
+        /// <summary>
+        /// Event called by the item to request the inventory to be unloaded
+        /// </summary>
+        public InventoryUnloadEventHandler OnInventoryUnload;
+        
+        protected ItemInventory(Item info) : base(info)
+        {
+        }
+
+        public ItemInventory(ItemEntity from) : base(from)
         {
         }
 
@@ -41,7 +59,8 @@ namespace EVESharp.Node.Inventory.Items
         {
             lock (this)
             {
-                this.mItems = this.ItemFactory.LoadItemsLocatedAt(this, ignoreFlags);
+                // ensure the list exists if no handler is there yet
+                this.Items = this.OnInventoryLoad?.Invoke(this, ignoreFlags) ?? new ConcurrentDictionary<int, ItemEntity>();
                 this.mContentsLoaded = true;
             }
         }
@@ -52,10 +71,8 @@ namespace EVESharp.Node.Inventory.Items
             {
                 if (this.mContentsLoaded == false)
                     return;
-                
-                // unload all the items that are in the inventory
-                foreach((int _, ItemEntity item) in this.mItems)
-                    this.ItemFactory.UnloadItem(item);
+
+                this.OnInventoryUnload?.Invoke(this);
             }
         }
 
@@ -78,7 +95,7 @@ namespace EVESharp.Node.Inventory.Items
             }
         }
         
-        public Dictionary<int, ItemEntity> Items
+        public ConcurrentDictionary<int, ItemEntity> Items
         {
             get
             {
@@ -109,49 +126,19 @@ namespace EVESharp.Node.Inventory.Items
                 return;
 
             lock (this.Items)
-                this.Items.Remove(item.ID);
-        }
-
-        protected override void SaveToDB()
-        {
-            base.SaveToDB();
-            
-            if (this.mContentsLoaded == true)
-            {
-                // persist all the items
-                lock(this.Items)
-                    foreach ((int _, ItemEntity item) in this.Items)
-                        item.Persist();
-            }
-        }
-
-        public override void Destroy()
-        {
-            // first destroy all the items inside this inventory
-            // this might trigger the item loading mechanism but it's needed to ensure
-            // that all the childs are removed off the database too
-            this.ItemFactory.DestroyItems(this.Items);
-
-            // finally call our base destroy method as this will get rid of the item from the database
-            // for good
-            base.Destroy();
+                this.Items.TryRemove(item.ID, out _);
         }
 
         public override void Dispose()
         {
-            base.Dispose();
-            
-            // unload all the items loaded in this inventory if they're loaded
+            // trigger the unload of the contents of the inventory
             if (this.ContentsLoaded == true)
-            {
-                this.ContentsLoaded = false;
-                
-                // set the item list to null again
-                this.mItems = null;
-            }
+                this.UnloadContents();
+            
+            base.Dispose();
         }
 
-        protected Dictionary<int, ItemEntity> mItems;
+        protected ConcurrentDictionary<int, ItemEntity> mItems;
         private bool mContentsLoaded = false;
     }
 }

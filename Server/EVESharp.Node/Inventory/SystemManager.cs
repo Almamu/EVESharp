@@ -33,12 +33,11 @@ using EVESharp.Common.Database;
 using EVESharp.Node.Configuration;
 using EVESharp.Node.Database;
 using EVESharp.Node.Inventory.Items.Types;
-using EVESharp.Node.Inventory.SystemEntities;
+using EVESharp.Node.Server.Shared;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Network;
 using EVESharp.PythonTypes.Types.Primitives;
 using ItemDB = EVESharp.Database.ItemDB;
-using MachoNet = EVESharp.Node.Network.MachoNet;
 
 namespace EVESharp.Node.Inventory
 {
@@ -46,24 +45,24 @@ namespace EVESharp.Node.Inventory
     {
         private DatabaseConnection Database { get; }
         private ItemFactory ItemFactory { get; }
-        private MachoNet MachoNet { get; }
+        private IMachoNet MachoNet { get; }
         private HttpClient HttpClient { get; }
 
-        private Dictionary<int, long> mSolarsystemToNodeID = new Dictionary<int, long>();
+        private readonly Dictionary<int, long> mSolarsystemToNodeID = new Dictionary<int, long>();
 
         private void LoadSolarSystemOnNode(int solarSystemID, long nodeID)
         {
             this.SignalSolarSystemLoaded(solarSystemID, nodeID);
             
             // now tell the server to load it
-            this.MachoNet.QueuePacket(
+            this.MachoNet.QueueOutputPacket(
                 new PyPacket(PyPacket.PacketType.NOTIFICATION)
                 {
                     Destination = new PyAddressNode(nodeID),
-                    Source = new PyAddressNode(this.MachoNet.Container.NodeID),
+                    Source = new PyAddressNode(this.MachoNet.NodeID),
                     Payload = new PyTuple(2) {[0] = "OnSolarSystemLoad", [1] = new PyTuple(1){[0] = solarSystemID}},
                     OutOfBounds = new PyDictionary(),
-                    UserID = this.MachoNet.Container.NodeID
+                    UserID = this.MachoNet.NodeID
                 }
             );
         }
@@ -76,7 +75,7 @@ namespace EVESharp.Node.Inventory
             if (nodeID != 0)
             {
                 // if the id is ours means that this belongs to us
-                if (nodeID == this.MachoNet.Container.NodeID)
+                if (nodeID == this.MachoNet.NodeID)
                 {
                     // make sure it is marked as loaded locally
                     this.mSolarsystemToNodeID[solarSystemID] = nodeID;
@@ -87,16 +86,16 @@ namespace EVESharp.Node.Inventory
             }
             
             // determine mode the server is running on
-            if (this.MachoNet.Configuration.MachoNet.Mode == MachoNetMode.Single)
+            if (this.MachoNet.Mode == RunMode.Single)
             {
                 this.LoadSolarSystemLocally(solarSystemID);
                 
-                return this.MachoNet.Container.NodeID;
+                return this.MachoNet.NodeID;
             }
-            else if (this.MachoNet.Configuration.MachoNet.Mode == MachoNetMode.Proxy)
+            else if (this.MachoNet.Mode == RunMode.Proxy)
             {
                 // determine what node is going to load it and let it know
-                Task<HttpResponseMessage> task = this.HttpClient.GetAsync($"{this.MachoNet.Configuration.Cluster.OrchestatorURL}/Nodes/next");
+                Task<HttpResponseMessage> task = this.HttpClient.GetAsync($"{this.MachoNet.OrchestratorURL}/Nodes/next");
 
                 task.Wait();
                 task.Result.EnsureSuccessStatusCode();
@@ -118,7 +117,7 @@ namespace EVESharp.Node.Inventory
 
         private void LoadSolarSystemLocally(int solarSystemID)
         {
-            this.SignalSolarSystemLoaded(solarSystemID, this.MachoNet.Container.NodeID);
+            this.SignalSolarSystemLoaded(solarSystemID, this.MachoNet.NodeID);
         }
 
         private void SignalSolarSystemLoaded(int solarSystemID, long nodeID)
@@ -170,14 +169,12 @@ namespace EVESharp.Node.Inventory
             );
         }
         
-        public SystemManager(HttpClient httpClient, ItemFactory itemFactory, DatabaseConnection databaseConnection, MachoNet machoNet)
+        public SystemManager(HttpClient httpClient, ItemFactory itemFactory, DatabaseConnection databaseConnection, IMachoNet machoNet)
         {
             this.HttpClient = httpClient;
             this.MachoNet = machoNet;
             this.Database = databaseConnection;
             this.ItemFactory = itemFactory;
-
-            this.MachoNet.SystemManager = this;
         }
     }
 }

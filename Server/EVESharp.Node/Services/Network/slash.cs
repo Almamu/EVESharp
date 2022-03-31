@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using EVESharp.Common.Logging;
 using EVESharp.EVE;
 using EVESharp.EVE.Services;
 using EVESharp.Node.Database;
@@ -17,6 +16,7 @@ using EVESharp.Node.Notifications.Client.Skills;
 using EVESharp.Node.Sessions;
 using EVESharp.Node.StaticData.Inventory;
 using EVESharp.PythonTypes.Types.Primitives;
+using Serilog;
 
 namespace EVESharp.Node.Services.Network
 {
@@ -25,7 +25,7 @@ namespace EVESharp.Node.Services.Network
         public override AccessLevel AccessLevel => AccessLevel.None;
         private TypeManager TypeManager => this.ItemFactory.TypeManager;
         private ItemFactory ItemFactory { get; }
-        private Channel Log { get; }
+        private ILogger Log { get; }
         private CharacterDB CharacterDB { get; }
         private NotificationManager NotificationManager { get; }
         private WalletManager WalletManager { get; }
@@ -34,9 +34,9 @@ namespace EVESharp.Node.Services.Network
         private readonly Dictionary<string, Action<string[], CallInformation>> mCommands =
             new Dictionary<string, Action<string[], CallInformation>>();
         
-        public slash(Logger logger, ItemFactory itemFactory, CharacterDB characterDB, NotificationManager notificationManager, WalletManager walletManager, Node.Dogma.Dogma dogma)
+        public slash(ILogger logger, ItemFactory itemFactory, CharacterDB characterDB, NotificationManager notificationManager, WalletManager walletManager, Node.Dogma.Dogma dogma)
         {
-            this.Log = logger.CreateLogChannel("Slash");
+            this.Log = logger;
             this.ItemFactory = itemFactory;
             this.CharacterDB = characterDB;
             this.NotificationManager = notificationManager;

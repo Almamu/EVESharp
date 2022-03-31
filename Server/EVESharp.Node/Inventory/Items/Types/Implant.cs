@@ -5,7 +5,7 @@ namespace EVESharp.Node.Inventory.Items.Types
 {
     public class Implant : ItemEntity
     {
-        public Implant(ItemEntity from) : base(from)
+        public Implant(Information.Item info) : base(info)
         {
         }
         
@@ -19,10 +19,9 @@ namespace EVESharp.Node.Inventory.Items.Types
                 return;
 
             int typeID = (int) this.Attributes[StaticData.Inventory.Attributes.prereqimplant].Integer;
-            Type type = this.ItemFactory.TypeManager[typeID];
 
             if (character.PluggedInImplantsByTypeID.ContainsKey(typeID) == false)
-                throw new PrereqImplantMissing(type);
+                throw new PrereqImplantMissing(typeID);
         }
     }
 }

@@ -23,22 +23,31 @@
 */
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
-using EVESharp.Common.Logging;
+using System.Xml.XPath;
+using EVESharp.Common.Database;
+using EVESharp.Database;
 using EVESharp.Node.Database;
 using EVESharp.Node.Dogma;
 using EVESharp.Node.Inventory.Exceptions;
 using EVESharp.Node.Inventory.Items;
 using EVESharp.Node.Inventory.Items.Types;
-using EVESharp.Node.Inventory.SystemEntities;
 using EVESharp.Node.StaticData;
 using EVESharp.Node.StaticData.Inventory;
 using EVESharp.Node.Dogma.Interpreter;
+using EVESharp.Node.Exceptions.corpStationMgr;
 using EVESharp.Node.Inventory.Items.Dogma;
+using EVESharp.Node.Server.Shared;
+using Serilog;
 using SimpleInjector;
+using Alliance = EVESharp.Node.Inventory.Items.Types.Alliance;
+using Blueprint = EVESharp.Node.Inventory.Items.Types.Blueprint;
 using Container = SimpleInjector.Container;
 using Environment = EVESharp.Node.Dogma.Interpreter.Environment;
+using ItemDB = EVESharp.Node.Database.ItemDB;
 using Type = EVESharp.Node.StaticData.Inventory.Type;
+using Information = EVESharp.Node.Inventory.Items.Types.Information;
 
 namespace EVESharp.Node.Inventory
 {
@@ -58,7 +67,6 @@ namespace EVESharp.Node.Inventory
         public const int NPC_CHARACTER_ID_MAX = 100000000;
         public const int USERGENERATED_ID_MIN = 100000000;
         
-        public NodeContainer NodeContainer { get; }
         public AttributeManager AttributeManager { get; private set; }
         public ItemManager ItemManager { get; private set; }
         public CategoryManager CategoryManager { get; private set; }
@@ -73,7 +81,9 @@ namespace EVESharp.Node.Inventory
         public CorporationDB CorporationDB { get; private set; }
         public InsuranceDB InsuranceDB { get; private set; }
         public SkillDB SkillDB { get; private set; }
-        public Channel Log { get; init; }
+        public ILogger Log { get; init; }
+        public NodeContainer NodeContainer { get; }
+        public IMachoNet MachoNet { get; }
         private Container DependencyInjection { get; }
 
         public MetaInventoryManager MetaInventoryManager { get; }
@@ -94,14 +104,18 @@ namespace EVESharp.Node.Inventory
         public ItemEntity OwnerSCC { get; private set; }
         public ExpressionManager ExpressionManager { get; }
 
-        public ItemFactory(Logger logger, NodeContainer nodeContainer, MetaInventoryManager metaInventoryManager, ExpressionManager expressionManager, Container dependencyInjection)
+        protected DatabaseConnection Database { get; }
+        public ItemFactory(ILogger logger, IMachoNet machoNet, DatabaseConnection databaseConnection, NodeContainer nodeContainer, MetaInventoryManager metaInventoryManager, ExpressionManager expressionManager, Container dependencyInjection)
         {
-            this.Log = logger.CreateLogChannel("ItemFactory");
-            
+            this.Log = logger;
+
+            this.Database = databaseConnection;
             this.DependencyInjection = dependencyInjection;
+            this.MachoNet = machoNet;
             this.NodeContainer = nodeContainer;
             this.MetaInventoryManager = metaInventoryManager;
             this.ExpressionManager = expressionManager;
+            this.MetaInventoryManager.OnMetaInventoryCreated += OnMetaInventoryCreated;
         }
 
         /// <summary>
@@ -148,12 +162,10 @@ namespace EVESharp.Node.Inventory
         private void Load()
         {
             // load all the items in the database that do not belong to any user (so-called static items)
-            List<ItemEntity> items = this.ItemDB.LoadStaticItems();
-
-            foreach (ItemEntity item in items)
+            foreach (Information.Item item in this.ItemDB.LoadStaticItems())
                 this.PerformItemLoad(item);
 
-            Log.Info($"Preloaded {this.mItemList.Count} static items");
+            Log.Information($"Preloaded {this.mItemList.Count} static items");
             
             // store useful items like recycler and system
             this.LocationRecycler = this.GetItem<EVESystem>(this.NodeContainer.Constants[Constants.locationRecycler]);
@@ -173,6 +185,8 @@ namespace EVESharp.Node.Inventory
         /// <returns>Whether the item exists in the manager or not</returns>
         public bool TryGetItem(int itemID, out ItemEntity item)
         {
+            item = null;
+            
             return this.mItemList.TryGetValue(itemID, out item);
         }
 
@@ -187,7 +201,7 @@ namespace EVESharp.Node.Inventory
         {
             item = null;
             
-            if (this.mItemList.TryGetValue(itemID, out ItemEntity tmp) == false || tmp is T == false)
+            if (this.mItemList.TryGetValue(itemID, out ItemEntity tmp) == false || tmp is not T)
                 return false;
 
             item = (T) tmp;
@@ -202,10 +216,13 @@ namespace EVESharp.Node.Inventory
         /// <returns>The loaded item</returns>
         public ItemEntity LoadItem(int itemID)
         {
-            if (this.TryGetItem(itemID, out ItemEntity item) == false)
-                return this.PerformItemLoad(this.ItemDB.LoadItem(itemID));
+            lock (this)
+            {
+                if (this.TryGetItem(itemID, out ItemEntity item) == false)
+                    return this.PerformItemLoad(this.ItemDB.LoadItem(itemID, this.MachoNet.NodeID));
 
-            return item;
+                return item;
+            }
         }
 
         /// <summary>
@@ -216,16 +233,19 @@ namespace EVESharp.Node.Inventory
         /// <returns>The loaded item</returns>
         public ItemEntity LoadItem(int itemID, out bool loadRequired)
         {
-            if (this.TryGetItem(itemID, out ItemEntity item) == false)
+            lock (this)
             {
-                loadRequired = true;
+                if (this.TryGetItem(itemID, out ItemEntity item) == false)
+                {
+                    loadRequired = true;
                 
-                return this.PerformItemLoad(this.ItemDB.LoadItem(itemID));
+                    return this.PerformItemLoad(this.ItemDB.LoadItem(itemID, this.MachoNet.NodeID));
+                }
+
+                loadRequired = false;
+
+                return item;
             }
-
-            loadRequired = false;
-
-            return item;
         }
         
         /// <summary>
@@ -251,10 +271,13 @@ namespace EVESharp.Node.Inventory
         /// <exception cref="ItemNotLoadedException">If the item doesn't exist</exception>
         public ItemEntity GetItem(int itemID)
         {
-            if (this.TryGetItem(itemID, out ItemEntity item) == false)
-                throw new ItemNotLoadedException(itemID);
+            lock (this)
+            {
+                if (this.TryGetItem(itemID, out ItemEntity item) == false)
+                    throw new ItemNotLoadedException(itemID);
 
-            return item;
+                return item;
+            }
         }
 
         public T GetItem<T>(int itemID) where T : ItemEntity
@@ -344,12 +367,12 @@ namespace EVESharp.Node.Inventory
         /// </summary>
         /// <param name="item">The item to load</param>
         /// <returns>The new instance of the item with the extra information loaded</returns>
-        private ItemEntity PerformItemLoad(ItemEntity item)
+        private ItemEntity PerformItemLoad(Information.Item item)
         {
             if (item is null)
                 return null;
-
-            item = item.Type.Group.Category.ID switch
+            
+            ItemEntity wrapperItem = item.Type.Group.Category.ID switch
             {
                 // catch all for system items
                 (int) Categories.System => LoadSystem(item),
@@ -365,32 +388,42 @@ namespace EVESharp.Node.Inventory
                 (int) Categories.Accessories => LoadAccessories(item),
                 (int) Categories.Implant => LoadImplant(item),
                 (int) Categories.Module => LoadModule(item),
-                _ => item
+                _ => new Item(item)
             };
 
             // check if there's an inventory loaded that should contain this item
-            if (this.mItemList.TryGetValue(item.LocationID, out ItemEntity location) == true && location is ItemInventory inventory)
-                inventory.AddItem(item);
+            if (this.TryGetItem (item.LocationID, out ItemEntity location) == true && location is ItemInventory inventory)
+                inventory.AddItem(wrapperItem);
             
             // notify the meta inventory manager about the new item only if the item is user-generated
             if (item.ID >= USERGENERATED_ID_MIN)
-                this.MetaInventoryManager.OnItemLoaded(item);
+                this.MetaInventoryManager.OnItemLoaded(wrapperItem);
 
             // ensure the item is in the loaded list
-            this.mItemList.Add(item.ID, item);
+            this.mItemList.Add(item.ID, wrapperItem);
 
-            // finally return the item
-            return item;
+            // subscribe to item's events and return the item
+            return this.SubscribeToEvents(wrapperItem);
         }
 
-        public Dictionary<int, ItemEntity> LoadItemsLocatedAt(ItemEntity location, Flags ignoreFlag = Flags.None)
+        public ConcurrentDictionary<int, ItemEntity> LoadItemsLocatedAt(ItemEntity location, Flags ignoreFlag = Flags.None)
         {
-            return this.ItemDB.LoadItemsLocatedAt(location.ID, ignoreFlag);
+            ConcurrentDictionary<int, ItemEntity> result = new ConcurrentDictionary<int, ItemEntity>();
+
+            foreach (int itemID in this.ItemDB.LoadItemsLocatedAt(location.ID, ignoreFlag))
+                result[itemID] = this.LoadItem(itemID);
+
+            return result;
         }
 
-        public Dictionary<int, ItemEntity> LoadItemsLocatedAtByOwner(ItemEntity location, int ownerID, Flags itemFlag)
+        public ConcurrentDictionary<int, ItemEntity> LoadItemsLocatedAtByOwner(ItemEntity location, int ownerID, Flags itemFlag)
         {
-            return this.ItemDB.LoadItemsLocatedAtByOwner(location.ID, ownerID, itemFlag);
+            ConcurrentDictionary<int, ItemEntity> result = new ConcurrentDictionary<int, ItemEntity>();
+
+            foreach (int itemID in this.ItemDB.LoadItemsLocatedAtByOwner(location.ID, ownerID, itemFlag))
+                result[itemID] = this.LoadItem(itemID);
+
+            return result;
         }
 
         public bool IsItemLoaded(int itemID)
@@ -398,12 +431,12 @@ namespace EVESharp.Node.Inventory
             return mItemList.ContainsKey(itemID);
         }
 
-        private ItemEntity LoadSystem(ItemEntity item)
+        private ItemEntity LoadSystem(Information.Item item)
         {
             return new EVESystem(item);
         }
 
-        private ItemEntity LoadCelestial(ItemEntity item)
+        private ItemEntity LoadCelestial(Information.Item item)
         {
             switch (item.Type.Group.ID)
             {
@@ -423,87 +456,85 @@ namespace EVESharp.Node.Inventory
                     return this.LoadContainer(item);
                 default:
                     Log.Warning($"Loading celestial {item.ID} from item group {item.Type.Group.ID} as normal item");
-                    return item;
+                    return new Item(item);
             }
         }
         
-        private ItemEntity LoadBlueprint(ItemEntity item)
+        private ItemEntity LoadBlueprint(Information.Item item)
         {
-            return this.ItemDB.LoadBlueprint(item);
+            return new Blueprint(this.ItemDB.LoadBlueprint(item));
         }
 
-        private ItemEntity LoadOwner(ItemEntity item)
+        private ItemEntity LoadOwner(Information.Item item)
         {
             switch (item.Type.Group.ID)
             {
                 case (int) Groups.Character:
-                    return this.ItemDB.LoadCharacter(item);
+                    return new Character(this.ItemDB.LoadCharacter(item));
                 case (int) Groups.Corporation:
-                    return this.ItemDB.LoadCorporation(item);
+                    return new Corporation(this.ItemDB.LoadCorporation(item));
                 case (int) Groups.Faction:
                     return this.LoadFaction(item);
                 case (int) Groups.Alliance:
-                    return this.ItemDB.LoadAlliance(item);
+                    return new Alliance(this.ItemDB.LoadAlliance(item));
                 default:
                     Log.Warning($"Loading owner {item.ID} from item group {item.Type.Group.ID} as normal item");
-                    return item;
+                    return new Item(item);
             }
         }
 
-        private ItemEntity LoadFaction(ItemEntity item)
+        private ItemEntity LoadFaction(Information.Item item)
         {
-            return this.mFactions[item.ID] = this.ItemDB.LoadFaction(item);
+            return this.mFactions[item.ID] = new Faction(this.ItemDB.LoadFaction(item));
         }
 
-        private ItemEntity LoadAccessories(ItemEntity item)
+        private ItemEntity LoadAccessories(Information.Item item)
         {
             switch (item.Type.Group.ID)
             {
                 case (int) Groups.Clone:
-                    return this.ItemDB.LoadClone(item);
+                    return new Clone(item);
                 default:
                     Log.Warning($"Loading accessory {item.ID} from item group {item.Type.Group.ID} as normal item");
-                    return item;
+                    return new Item(item);
             }
         }
 
-        private ItemEntity LoadSkill(ItemEntity item)
+        private ItemEntity LoadSkill(Information.Item item)
         {
-            return this.ItemDB.LoadSkill(item);
+            return new Skill(item, this.NodeContainer.Constants[Constants.skillPointMultiplier]);
         }
 
-        private ItemEntity LoadShip(ItemEntity item)
+        private ItemEntity LoadShip(Information.Item item)
         {
-            return this.ItemDB.LoadShip(item);
+            return new Ship(item);
         }
 
-        private Implant LoadImplant(ItemEntity item)
+        private Implant LoadImplant(Information.Item item)
         {
-            return this.ItemDB.LoadImplant(item);
+            return new Implant(item);
         }
 
-        private ItemEntity LoadSolarSystem(ItemEntity item)
+        private ItemEntity LoadSolarSystem(Information.Item item)
         {
-            SolarSystem solarSystem = this.ItemDB.LoadSolarSystem(item);
-
-            return this.mSolarSystems[solarSystem.ID] = solarSystem;
+            return this.mSolarSystems[item.ID] = new SolarSystem(this.ItemDB.LoadSolarSystem(item));
         }
 
-        private ItemEntity LoadStation(ItemEntity item)
+        private ItemEntity LoadStation(Information.Item item)
         {
             switch (item.Type.Group.ID)
             {
                 case (int) Groups.StationServices:
                     return this.LoadStationServices(item);
                 case (int) Groups.Station:
-                    return this.mStations[item.ID] = this.ItemDB.LoadStation(item);
+                    return this.mStations[item.ID] = new Station(this.ItemDB.LoadStation(item));
                 default:
                     Log.Warning($"Loading station item {item.ID} from item group {item.Type.Group.ID} as normal item");
-                    return item;
+                    return new Item(item);
             }
         }
 
-        private ItemEntity LoadStationServices(ItemEntity item)
+        private ItemEntity LoadStationServices(Information.Item item)
         {
             switch (item.Type.ID)
             {
@@ -511,26 +542,26 @@ namespace EVESharp.Node.Inventory
                     return new OfficeFolder(item);
                 default:
                     Log.Warning($"Loading station service item {item.ID} as normal item");
-                    return item;
+                    return null;
             }
         }
 
-        private ItemEntity LoadConstellation(ItemEntity item)
+        private ItemEntity LoadConstellation(Information.Item item)
         {
-            return this.ItemDB.LoadConstellation(item);
+            return new Constellation(this.ItemDB.LoadConstellation(item));
         }
 
-        private ItemEntity LoadRegion(ItemEntity item)
+        private ItemEntity LoadRegion(Information.Item item)
         {
-            return this.ItemDB.LoadRegion(item);
+            return new Region(this.ItemDB.LoadRegion(item));
         }
 
-        private ItemEntity LoadContainer(ItemEntity item)
+        private ItemEntity LoadContainer(Information.Item item)
         {
             return new Items.Types.Container(item);
         }
 
-        private ShipModule LoadModule(ItemEntity item)
+        private ShipModule LoadModule(Information.Item item)
         {
             return new ShipModule(item);
         }
@@ -586,7 +617,7 @@ namespace EVESharp.Node.Inventory
             return skill;
         }
 
-        public Ship CreateShip(StaticData.Inventory.Type shipType, ItemEntity location, Character owner)
+        public Ship CreateShip(Type shipType, ItemEntity location, Character owner)
         {
             int shipID = (int) this.ItemDB.CreateShip(shipType, location, owner);
 
@@ -603,7 +634,7 @@ namespace EVESharp.Node.Inventory
         public void UnloadItem(ItemEntity item)
         {
             // first ensure there's no meta inventory holding this item hostage
-            if (this.MetaInventoryManager.GetOwnerInventoryAtLocation(item.LocationID, item.OwnerID, item.Flag, out ItemInventoryByOwnerID _) == true)
+            if (this.MetaInventoryManager.GetOwnerInventoryAtLocation(item.ID, item.OwnerID, item.Flag, out ItemInventoryByOwnerID _) == true)
                 return;
             
             if (this.mItemList.Remove(item.ID) == false)
@@ -611,9 +642,6 @@ namespace EVESharp.Node.Inventory
 
             // dispose of it
             item.Dispose();
-
-            // update the ownership information
-            this.ItemDB.UnloadItem(item.ID);
         }
 
         public void UnloadItem(int itemID)
@@ -645,17 +673,142 @@ namespace EVESharp.Node.Inventory
             item.Destroy();
         }
 
+        private ItemEntity SubscribeToEvents(ItemEntity origin)
+        {
+            origin.OnItemDestroyed += this.OnItemDestroyed;
+            origin.OnItemDisposed += this.OnItemDisposed;
+            origin.OnItemPersisted += this.OnItemPersisted;
+
+            if (origin is ItemInventory inventory)
+                this.SubscribeToInventoryEvents(inventory);
+
+            if (origin is Character character)
+                character.OnSkillQueueLoad += this.OnSkillQueueLoad;
+
+            return origin;
+        }
+
+        private void SubscribeToInventoryEvents(ItemInventory inventory)
+        {
+            // extra events for inventories
+            inventory.OnInventoryLoad += this.OnInventoryLoad;
+            inventory.OnInventoryUnload += this.OnInventoryUnload;    
+        }
+
+        private void OnMetaInventoryCreated(ItemInventoryByOwnerID metaInventory)
+        {
+            // subscribe to the inventory events
+            this.SubscribeToInventoryEvents(metaInventory);
+        }
+
+        private List<Character.SkillQueueEntry> OnSkillQueueLoad(Character character, Dictionary<int, Skill> skillQueue)
+        {
+            return this.CharacterDB.LoadSkillQueue(character, skillQueue);
+        }
+
+        private ConcurrentDictionary<int, ItemEntity> OnInventoryLoad(ItemInventory inventory, Flags ignoreFlags)
+        {
+            if (inventory is ItemInventoryByOwnerID byOwner)
+                return this.LoadItemsLocatedAtByOwner(byOwner, byOwner.OwnerID, byOwner.InventoryFlag);
+            
+            return this.LoadItemsLocatedAt(inventory, ignoreFlags);
+        }
+
+        private void OnInventoryUnload(ItemInventory inventory)
+        {
+            foreach ((int _, ItemEntity item) in inventory.Items)
+                this.UnloadItem(item);
+        }
+
+        private void OnItemDestroyed(ItemEntity item)
+        {
+            // delete items of an inventory too
+            // this will trigger the load of the inventory
+            // but it's a necessary evil for now
+            // TODO: DO NOT LOAD THE ITEMS JUST FOR REMOVING THINGS?
+            if (item is ItemInventory inventory)
+                this.DestroyItems(inventory.Items);
+
+            // TODO: ADD SPECIAL HANDLING FOR ITEMS THAT NEED EXTRA CLEANUP
+            this.ItemDB.DestroyItem(item);
+        }
+
+        private void OnItemPersisted(ItemEntity item)
+        {
+            // TODO: ADD SPECIAL HANDLING FOR ITEMS THAT HAVE EXTRA DATA
+            if (item.Information.New == true || item.Information.Dirty == true)
+            {
+                this.ItemDB.PersistEntity(item);
+
+                switch (item)
+                {
+                    case Alliance alliance:
+                        this.PersistAlliance(alliance);
+                        break;
+                    case Blueprint blueprint:
+                        this.ItemDB.PersistBlueprint(blueprint.BlueprintInformation);
+                        break;
+                    case Ship ship:
+                        this.InsuranceDB.UnInsureShip(ship.ID);
+                        break;
+                    case Corporation corporation:
+                        this.CorporationDB.UpdateCorporationInformation(corporation);
+                        break;
+                    case Character character:
+                        this.CharacterDB.UpdateCharacterInformation(character);
+                        break;
+                }
+            }
+            
+            // for inventories save every item too
+            if (item is ItemInventory inventory && inventory.ContentsLoaded == true)
+            {
+                foreach ((int _, ItemEntity inventoryItem) in inventory.Items)
+                    inventoryItem.Persist();
+            }
+
+            // persist the attributes too
+            this.ItemDB.PersistAttributeList(item, item.Attributes);
+        }
+
+        private void OnItemDisposed(ItemEntity item)
+        {
+            // update the ownership information
+            this.ItemDB.UnloadItem(item.ID);
+        }
+        
+        public void DestroyItems(ConcurrentDictionary<int, ItemEntity> items)
+        {
+            foreach (KeyValuePair<int, ItemEntity> pair in items)
+                this.DestroyItem(pair.Value);
+        }
+        
         public void DestroyItems(Dictionary<int, ItemEntity> items)
         {
             foreach (KeyValuePair<int, ItemEntity> pair in items)
                 this.DestroyItem(pair.Value);
         }
 
+
         public void DestroyItems(List<ItemEntity> items)
         {
             foreach (ItemEntity item in items)
                 this.DestroyItem(item);
         }
-        
+
+        private void PersistAlliance(Alliance alliance)
+        {
+            // update the alliance information
+            Database.Procedure(
+                AlliancesDB.UPDATE,
+                new Dictionary<string, object>()
+                {
+                    {"_description", alliance.Description},
+                    {"_url", alliance.Url},
+                    {"_allianceID", alliance.ID},
+                    {"_executorCorpID", alliance.ExecutorCorpID}
+                }
+            );
+        }
     }
 }

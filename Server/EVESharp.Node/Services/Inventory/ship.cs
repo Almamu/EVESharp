@@ -188,7 +188,7 @@ namespace EVESharp.Node.Services.Inventory
 
         protected override BoundService CreateBoundInstance(ServiceBindParams bindParams, CallInformation call)
         {
-            if (this.MachoResolveObject(bindParams, call) != this.BoundServiceManager.Container.NodeID)
+            if (this.MachoResolveObject(bindParams, call) != this.BoundServiceManager.MachoNet.NodeID)
                 throw new CustomError("Trying to bind an object that does not belong to us!");
 
             if (bindParams.ExtraValue != (int) Groups.Station && bindParams.ExtraValue != (int) Groups.SolarSystem)

@@ -5,29 +5,34 @@ using System.Net.Http;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Threading.Tasks;
-using EVESharp.Common.Logging;
 using EVESharp.Common.Network;
 using EVESharp.EVE;
 using EVESharp.EVE.Packets;
 using EVESharp.Node.Accounts;
 using EVESharp.Node.Configuration;
+using EVESharp.Node.Server.Shared;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Network;
 using EVESharp.PythonTypes.Types.Primitives;
+using Serilog;
 
 namespace EVESharp.Node.Network;
 
 public class MachoUnauthenticatedTransport : MachoTransport
 {
-    public MachoUnauthenticatedTransport(MachoServerTransport transport, Channel channel) :
-        base(transport, new EVEClientSocket(channel), channel)
+    private HttpClient HttpClient { get; }
+    
+    public MachoUnauthenticatedTransport(IMachoNet machoNet, HttpClient httpClient, ILogger channel) :
+        base(machoNet, new EVEClientSocket(channel), channel)
     {
+        this.HttpClient = httpClient;
         this.Socket.SetReceiveCallback(ReceiveLowLevelVersionExchange);
         this.Socket.SetExceptionHandler(HandleException);
     }
 
-    public MachoUnauthenticatedTransport(MachoServerTransport transport, EVEClientSocket socket, Logger logger) : base(transport, socket, logger)
+    public MachoUnauthenticatedTransport(IMachoNet machoNet, HttpClient httpClient, EVEClientSocket socket, ILogger logger) : base(machoNet, socket, logger)
     {
+        this.HttpClient = httpClient;
         // send low level version exchange to start authorization chain
         this.SendLowLevelVersionExchange();
         this.Socket.SetReceiveCallback(ReceiveLowLevelVersionExchange);
@@ -49,6 +54,27 @@ public class MachoUnauthenticatedTransport : MachoTransport
         
         // depending on the type of data we're receiving, this has to be treated differently
         this.HandleLowLevelVersionExchange(ar);
+    }
+
+    /// <summary>
+    /// Ensures the identification req is actually legitimate
+    /// </summary>
+    /// <param name="req"></param>
+    /// <returns></returns>
+    private async Task<bool> ValidateIdentificationReq(IdentificationReq req)
+    {
+        // register ourselves with the orchestrator and get our node id AND address
+        HttpResponseMessage response = await this.HttpClient.GetAsync($"{this.MachoNet.OrchestratorURL}/Nodes/{req.Address}");
+
+        // make sure we have a proper answer
+        response.EnsureSuccessStatusCode();
+        // read the json and extract the required information
+        Stream inputStream = await response.Content.ReadAsStreamAsync();
+
+        JsonObject result = JsonSerializer.Deserialize<JsonObject>(inputStream);
+
+        // validate the data we've received back
+        return await Task.FromResult(req.NodeID == (long) result["nodeID"] && req.Mode == result["role"].ToString());
     }
 
     private void HandleIdentificationReq(IdentificationReq req)
@@ -75,11 +101,11 @@ public class MachoUnauthenticatedTransport : MachoTransport
         {
             case "proxy":
                 // resolve the connection to a proxy transport
-                this.Server.ResolveProxyTransport(this);
+                this.MachoNet.TransportManager.ResolveProxyTransport(this);
                 break;
             case "server":
                 // resolve the connection to a node transport
-                this.Server.ResolveNodeTransport(this);
+                this.MachoNet.TransportManager.ResolveNodeTransport(this);
                 break;
         }
         
@@ -88,11 +114,11 @@ public class MachoUnauthenticatedTransport : MachoTransport
             new IdentificationRsp()
             {
                 Accepted = true,
-                NodeID = this.Server.MachoNet.Container.NodeID,
-                Mode = this.Server.MachoNet.Configuration.MachoNet.Mode switch
+                NodeID = this.MachoNet.NodeID,
+                Mode = this.MachoNet.Mode switch
                 {
-                    MachoNetMode.Proxy => "proxy",
-                    MachoNetMode.Server => "server"
+                    RunMode.Proxy => "proxy",
+                    RunMode.Server => "server"
                 }
             }
         );
@@ -107,11 +133,11 @@ public class MachoUnauthenticatedTransport : MachoTransport
         {
             case "proxy":
                 // resolve the connection to a proxy transport
-                this.Server.ResolveProxyTransport(this);
+                this.MachoNet.TransportManager.ResolveProxyTransport(this);
                 break;
             case "server":
                 // resolve the connection to a node transport
-                this.Server.ResolveNodeTransport(this);
+                this.MachoNet.TransportManager.ResolveNodeTransport(this);
                 break;
         }
     }
@@ -128,23 +154,6 @@ public class MachoUnauthenticatedTransport : MachoTransport
                 break;
         }
     }
-
-    private async Task<bool> ValidateIdentificationReq(IdentificationReq req)
-    {
-        // register ourselves with the orchestrator and get our node id AND address
-        HttpClient client = new HttpClient();
-        HttpResponseMessage response = await client.GetAsync($"{this.Server.MachoNet.Configuration.Cluster.OrchestatorURL}/Nodes/{req.Address}");
-
-        // make sure we have a proper answer
-        response.EnsureSuccessStatusCode();
-        // read the json and extract the required information
-        Stream inputStream = await response.Content.ReadAsStreamAsync();
-
-        JsonObject result = JsonSerializer.Deserialize<JsonObject>(inputStream);
-
-        // validate the data we've received back
-        return await Task.FromResult(req.NodeID == (long) result["nodeID"] && req.Mode == result["role"].ToString());
-    }
     
     private void HandleLowLevelVersionExchange(LowLevelVersionExchange ex)
     {
@@ -156,12 +165,11 @@ public class MachoUnauthenticatedTransport : MachoTransport
 
     private void HandleException(Exception ex)
     {
-        Log.Error("Exception detected: ");
+        Log.Error("Exception detected:");
 
         do
         {
-            Log.Error(ex.Message);
-            Log.Error(ex.StackTrace);
+            Log.Error("{0}\n{1}", ex.Message, ex.StackTrace);
         } while ((ex = ex.InnerException) != null);
     }
 
@@ -176,7 +184,7 @@ public class MachoUnauthenticatedTransport : MachoTransport
             Build = Game.BUILD,
             MachoVersion = Game.MACHO_VERSION,
             Version = Game.VERSION,
-            UserCount = this.Server.ClientTransports.Count,
+            UserCount = this.MachoNet.TransportManager.ClientTransports.Count,
             Region = Game.REGION
         };
 
@@ -197,7 +205,7 @@ public class MachoUnauthenticatedTransport : MachoTransport
         {
             Log.Debug("Received QueueCheck command");
             // send player position on the queue
-            this.Socket.Send(new PyInteger(this.Server.MachoNet.LoginQueue.Count()));
+            this.Socket.Send(new PyInteger(this.MachoNet.LoginQueue.Count()));
             // send low level version exchange required
             this.SendLowLevelVersionExchange();
             // wait for a new low level version exchange again
@@ -238,7 +246,7 @@ public class MachoUnauthenticatedTransport : MachoTransport
 
         if (request.user_password is null)
         {
-            Log.Trace("Rejected by server; requesting plain password");
+            Log.Verbose("Rejected by server; requesting plain password");
             // request the user a plain password
             this.Socket.Send(new PyInteger(1)); // 1 => plain, 2 => hashed
             return;
@@ -253,7 +261,7 @@ public class MachoUnauthenticatedTransport : MachoTransport
             this.Session.LanguageID = request.user_languageid;
 
         // add the user to the authentication queue
-        this.Server.MachoNet.LoginQueue.Enqueue(this, request);
+        this.MachoNet.LoginQueue.Enqueue(this, request);
     }
 
     private void ReceiveLoginResultResponse(PyDataType packet)
@@ -266,7 +274,7 @@ public class MachoUnauthenticatedTransport : MachoTransport
         // Handshake sent when we are mostly in
         HandshakeAck ack = new HandshakeAck
         {
-            LiveUpdates = this.Server.MachoNet.GeneralDB.FetchLiveUpdates(),
+            LiveUpdates = this.MachoNet.GeneralDB.FetchLiveUpdates(),
             JIT = this.Session.LanguageID,
             UserID = this.Session.UserID,
             MaxSessionTime = null,
@@ -281,9 +289,7 @@ public class MachoUnauthenticatedTransport : MachoTransport
         // send the response first
         this.Socket.Send(ack);
         // move the connection to the authenticated user list
-        this.Server.ResolveClientTransport(this);
-        // send the initial session state
-        this.Server.MachoNet.SessionManager.InitializeSession(this.Session);
+        this.MachoNet.TransportManager.ResolveClientTransport(this);
     }
 
     public void SendLoginNotification(LoginStatus loginStatus, int accountID, ulong role)
@@ -301,8 +307,8 @@ public class MachoUnauthenticatedTransport : MachoTransport
                 rsp.serverChallenge = "";
                 rsp.func_marshaled_code = func_marshaled_code;
                 rsp.verification = false;
-                rsp.cluster_usercount = this.Server.ClientTransports.Count;
-                rsp.proxy_nodeid = this.Server.MachoNet.Container.NodeID;
+                rsp.cluster_usercount = this.MachoNet.TransportManager.ClientTransports.Count;
+                rsp.proxy_nodeid = this.MachoNet.NodeID;
                 rsp.user_logonqueueposition = 1;
                 rsp.challenge_responsehash = "55087";
 
@@ -327,7 +333,7 @@ public class MachoUnauthenticatedTransport : MachoTransport
                 // Pretty funny, "AutClusterStarting" maybe they mean "AuthClusterStarting"
                 this.Socket.Send(new GPSTransportClosed("AutClusterStarting"));
 
-                Log.Trace("Rejected by server; cluster is starting");
+                Log.Verbose("Rejected by server; cluster is starting");
 
                 this.AbortConnection();
             }

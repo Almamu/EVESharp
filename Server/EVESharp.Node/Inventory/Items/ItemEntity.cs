@@ -37,13 +37,13 @@ using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Database;
 using EVESharp.PythonTypes.Types.Primitives;
 using Type = EVESharp.Node.StaticData.Inventory.Type;
-
+using Information = EVESharp.Node.Inventory.Items.Types.Information;
 namespace EVESharp.Node.Inventory.Items
 {
-    public abstract class ItemEntity : DatabaseEntity, IDisposable
+    public delegate void ItemEventHandler(ItemEntity sender);
+    
+    public abstract class ItemEntity : IDisposable
     {
-        public ItemFactory ItemFactory { get; }
-
         public static readonly DBRowDescriptor EntityItemDescriptor = new DBRowDescriptor()
         {
             Columns =
@@ -61,220 +61,183 @@ namespace EVESharp.Node.Inventory.Items
                 new DBRowDescriptor.Column("customInfo", FieldType.Str)
             }
         };
-
-        private int mID;
-        private string mName;
-        private StaticData.Inventory.Type mType;
-        private int mOwnerID;
-        private int mLocationID;
-        private Flags mFlag;
-        private bool mContraband;
-        private bool mSingleton;
-        private int mQuantity; // TODO: DEPRECATE THIS AND USE QUANTITY ATTRIBUTE
-        private double? mX;
-        private double? mY;
-        private double? mZ;
-        private string mCustomInfo;
-        private AttributeList mAttributes;
+        
+        /// <summary>
+        /// Indicates if the object is new in the database or not
+        /// </summary>
+        public bool New { get; set; }
+        
+        /// <summary>
+        /// Holds the actual item's information
+        /// </summary>
+        public Information.Item Information { get; }
+        
         private bool mHadName;
         private bool mHadPosition;
 
-        public int ID => mID;
-        public AttributeList Attributes => mAttributes;
-
-        public DatabaseConnection Database { get; init; }
-        public StaticData.Inventory.Type Type
-        {
-            get => this.mType;
-            set
-            {
-                this.mType = value;
-                this.Dirty = true;
-            }
-        }
-
+        public int ID => this.Information.ID;
+        public AttributeList Attributes => this.Information.Attributes;
+        public Type Type => this.Information.Type;
         public string Name
         {
-            get => mName ?? Type.Name;
+            get => this.Information.Name ?? Type.Name;
             set 
             {
-                mName = value;
-                this.Dirty = true;
+                this.Information.Name = value;
+                this.Information.Dirty = true;
             }
         }
 
         public virtual int OwnerID
         {
-            get => mOwnerID;
+            get => this.Information.OwnerID;
             set
             {
-                this.mOwnerID = value;
-                this.Dirty = true;
+                this.Information.OwnerID = value;
+                this.Information.Dirty = true;
             }
         }
 
         public int LocationID
         {
-            get => mLocationID;
+            get => this.Information.LocationID;
             set
             {
-                this.mLocationID = value;
-                this.Dirty = true;
+                this.Information.LocationID = value;
+                this.Information.Dirty = true;
             }
         }
 
         public Flags Flag
         {
-            get => mFlag;
+            get => this.Information.Flag;
             set
             {
-                this.mFlag = value;
-                this.Dirty = true;
+                this.Information.Flag = value;
+                this.Information.Dirty = true;
             }
         }
 
         public bool Contraband
         {
-            get => mContraband;
+            get => this.Information.Contraband;
             set
             {
-                this.mContraband = value;
-                this.Dirty = true;
+                this.Information.Contraband = value;
+                this.Information.Dirty = true;
             }
         }
 
         public bool Singleton
         {
-            get => mSingleton;
+            get => this.Information.Singleton;
             set
             {
-                this.mSingleton = value;
-                this.Dirty = true;
+                this.Information.Singleton = value;
+                this.Information.Dirty = true;
             }
         }
 
         public int Quantity
         {
-            get => mQuantity;
+            get => this.Information.Quantity;
             set
             {
-                this.mQuantity = value;
-                this.Dirty = true;
+                this.Information.Quantity = value;
+                this.Information.Dirty = true;
             }
         }
 
         public double? X
         {
-            get => mX;
+            get => this.Information.X;
             set
             {
-                this.mX = value;
-                this.Dirty = true;
+                this.Information.X = value;
+                this.Information.Dirty = true;
             }
         }
 
         public double? Y
         {
-            get => mY;
+            get => this.Information.Y;
             set
             {
-                this.mY = value;
-                this.Dirty = true;
+                this.Information.Y = value;
+                this.Information.Dirty = true;
             }
         }
 
         public double? Z
         {
-            get => mZ;
+            get => this.Information.Z;
             set
             {
-                this.mZ = value;
-                this.Dirty = true;
+                this.Information.Z = value;
+                this.Information.Dirty = true;
             }
         }
 
         public string CustomInfo
         {
-            get => mCustomInfo;
+            get => this.Information.CustomInfo;
             set
             {
-                this.mCustomInfo = value;
-                this.Dirty = true;
+                this.Information.CustomInfo = value;
+                this.Information.Dirty = true;
             }
         }
 
-        public bool HasName => this.mName is not null;
+        public bool HasName => this.Information.Name is not null;
         public virtual bool HasPosition => this.X is not null && this.Y is not null && this.Z is not null;
         public bool HadName => this.mHadName;
         public bool HadPosition => this.mHadPosition;
         
-        public ItemEntity(DatabaseConnection databaseConnection, string entityName, int entityId,
-            StaticData.Inventory.Type type, int ownerID, int locationID, Flags entityFlag, bool entityContraband,
-            bool entitySingleton, int entityQuantity, double? x, double? y, double? z, string entityCustomInfo,
-            AttributeList attributes, ItemFactory itemFactory)
+        /// <summary>
+        /// Event called by the item when it's destroyed
+        /// </summary>
+        public ItemEventHandler OnItemDestroyed;
+        /// <summary>
+        /// Event called by the item when it's disposed of
+        /// </summary>
+        public ItemEventHandler OnItemDisposed;
+        /// <summary>
+        /// Event called by the item when it's persisted to the database
+        /// </summary>
+        public ItemEventHandler OnItemPersisted;
+        
+        public ItemEntity(Information.Item info)
         {
-            this.Database = databaseConnection;
-            this.mName = entityName;
-            this.mID = entityId;
-            this.mType = type;
-            this.mOwnerID = ownerID;
-            this.mLocationID = locationID;
-            this.mFlag = entityFlag;
-            this.mContraband = entityContraband;
-            this.mSingleton = entitySingleton;
-            this.mQuantity = entityQuantity;
-            this.mCustomInfo = entityCustomInfo;
-            this.mAttributes = attributes;
-            this.mX = x;
-            this.mY = y;
-            this.mZ = z;
-
-            this.ItemFactory = itemFactory;
-            this.mHadName = entityName is not null;
-            this.mHadPosition = x is not null && y is not null && z is not null;
-        }
-
-        public ItemEntity(DatabaseConnection databaseConnection, string entityName, int entityId,
-            StaticData.Inventory.Type type, ItemEntity entityOwner, ItemEntity entityLocation, Flags entityFlag,
-            bool entityContraband, bool entitySingleton, int entityQuantity, double? x, double? y, double? z,
-            string entityCustomInfo, AttributeList attributes, ItemFactory itemFactory) : this(
-            databaseConnection, entityName, entityId, type, entityOwner.ID, entityLocation.ID,
-            entityFlag, entityContraband, entitySingleton, entityQuantity, x, y, z, entityCustomInfo,
-            attributes, itemFactory)
-        {
-        }
-
-        public ItemEntity(ItemEntity from) : this(from.Database, from.HasName ? from.Name : null,
-            from.ID, from.Type, from.OwnerID, from.LocationID, from.Flag, from.Contraband, from.Singleton,
-            from.Quantity, from.X, from.Y, from.Z, from.CustomInfo, from.Attributes, from.ItemFactory)
-        {
-        }
-
-        protected override void SaveToDB()
-        {
-            this.ItemFactory.ItemDB.PersistEntity(this);
-        }
-
-        public override void Persist()
-        {
-            // persist is overriden so the attributes are persisted regardless of the Dirty flag
-            base.Persist();
+            this.Information = info;
             
-            // persist the attribute list too
-            this.Attributes.Persist(this);
+            this.mHadName = this.Information.Name is not null;
+            this.mHadPosition = this.Information.X is not null && this.Information.Y is not null && this.Information.Z is not null;
         }
 
-        public override void Destroy()
+        protected ItemEntity(ItemEntity from) : this(from.Information)
         {
-            base.Destroy();
-
-            this.ItemFactory.ItemDB.DestroyItem(this);
+            // keep the status of the original name and position indications
+            this.mHadName = from.mHadName;
+            this.mHadPosition = from.mHadPosition;
         }
 
-        public override void Dispose()
+        public virtual void Persist()
         {
-            // persist the item to the database
+            this.OnItemPersisted?.Invoke(this);
+        }
+
+        public virtual void Destroy()
+        {
+            this.OnItemDestroyed?.Invoke(this);
+        }
+
+        public virtual void Dispose()
+        {
+            // ensure things are persisted
             this.Persist();
+            
+            // fire the dispose event
+            this.OnItemDisposed?.Invoke(this);
         }
 
         public PyPackedRow GetEntityRow()
@@ -313,10 +276,10 @@ namespace EVESharp.Node.Inventory.Items
             int skillLevel = (int) this.Attributes[skillLevelRequirement];
 
             if (skills.ContainsKey(skillTypeID) == false)
-                throw new SkillMissingException(this.ItemFactory.TypeManager[skillTypeID]);
+                throw new SkillMissingException(skillTypeID);
 
             if (skills[skillTypeID].Level < skillLevel)
-                throw new SkillMissingException(this.ItemFactory.TypeManager[skillTypeID]);
+                throw new SkillMissingException(skillTypeID);
         }
 
         public virtual void CheckPrerequisites(Character character)
@@ -350,7 +313,7 @@ namespace EVESharp.Node.Inventory.Items
                 }
                 catch (SkillMissingException e)
                 {
-                    missingSkills.Add(e.Skill.ID);
+                    missingSkills.Add(e.SkillTypeID);
                 }
             }
 

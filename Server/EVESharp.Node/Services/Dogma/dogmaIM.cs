@@ -38,15 +38,18 @@ namespace EVESharp.Node.Services.Dogma
         private AttributeManager AttributeManager => this.ItemFactory.AttributeManager;
         private SystemManager SystemManager => this.ItemFactory.SystemManager;
         private NotificationManager NotificationManager { get; }
+        private EffectsManager EffectsManager { get; }
         
-        public dogmaIM(ItemFactory itemFactory, NotificationManager notificationManager, BoundServiceManager manager) : base(manager)
+        public dogmaIM(EffectsManager effectsManager, ItemFactory itemFactory, NotificationManager notificationManager, BoundServiceManager manager) : base(manager)
         {
+            this.EffectsManager = effectsManager;
             this.ItemFactory = itemFactory;
             this.NotificationManager = notificationManager;
         }
 
-        protected dogmaIM(int locationID, ItemFactory itemFactory, NotificationManager notificationManager, BoundServiceManager manager, Session session) : base(manager, session, locationID)
+        protected dogmaIM(int locationID, EffectsManager effectsManager, ItemFactory itemFactory, NotificationManager notificationManager, BoundServiceManager manager, Session session) : base(manager, session, locationID)
         {
+            this.EffectsManager = effectsManager;
             this.ItemFactory = itemFactory;
             this.NotificationManager = notificationManager;
         }
@@ -64,33 +67,42 @@ namespace EVESharp.Node.Services.Dogma
 
             if (ship is null)
                 throw new CustomError($"Cannot get information for ship {call.Session.ShipID}");
-            
-            // ensure the player can use this ship
-            ship.EnsureOwnership(callerCharacterID, call.Session.CorporationID, call.Session.CorporationRole, true);
 
-            ItemInfo itemInfo = new ItemInfo();
-            
-            // TODO: find all the items inside this ship that are not characters
-            itemInfo.AddRow(
-	            ship.ID, ship.GetEntityRow(), ship.GetEffects (), ship.Attributes, DateTime.UtcNow.ToFileTime()
-	        );
-
-            foreach ((int _, ItemEntity item) in ship.Items)
+            try
             {
-                if (item.IsInModuleSlot() == false && item.IsInRigSlot() == true)
-                    continue;
-        
-                itemInfo.AddRow(
-                    item.ID,
-                    item.GetEntityRow(),
-                    item.GetEffects (),
-                    item.Attributes,
-                    DateTime.UtcNow.ToFileTime()
-                );
-                break;
-            }
+                // ensure the player can use this ship
+                ship.EnsureOwnership(callerCharacterID, call.Session.CorporationID, call.Session.CorporationRole, true);
 
-            return itemInfo;
+                ItemInfo itemInfo = new ItemInfo();
+            
+                // TODO: find all the items inside this ship that are not characters
+                itemInfo.AddRow(
+                    ship.ID, ship.GetEntityRow(), ship.GetEffects (), ship.Attributes, DateTime.UtcNow.ToFileTime()
+                );
+
+                foreach ((int _, ItemEntity item) in ship.Items)
+                {
+                    if (item.IsInModuleSlot() == false && item.IsInRigSlot() == true)
+                        continue;
+        
+                    itemInfo.AddRow(
+                        item.ID,
+                        item.GetEntityRow(),
+                        item.GetEffects (),
+                        item.Attributes,
+                        DateTime.UtcNow.ToFileTime()
+                    );
+                    break;
+                }
+
+                return itemInfo;
+            }
+            catch (Exception e)
+            {
+                // there was an exception, the ship has to be unloaded as it's not going to be used anymore
+                this.ItemFactory.UnloadItem(ship);
+                throw;
+            }
         }
 
         public PyDataType CharGetInfo(CallInformation call)
@@ -218,14 +230,18 @@ namespace EVESharp.Node.Services.Dogma
 
         public PyDataType Activate(PyInteger itemID, PyString effectName, PyDataType target, PyDataType repeat, CallInformation call)
         {
-            this.ItemFactory.GetItem<ShipModule>(itemID).ApplyEffect(effectName, call.Session);
+            ShipModule module = this.ItemFactory.GetItem<ShipModule>(itemID);
+            
+            this.EffectsManager.GetForItem(module).ApplyEffect(effectName, call.Session);
             
             return null;
         }
 
         public PyDataType Deactivate(PyInteger itemID, PyString effectName, CallInformation call)
         {
-            this.ItemFactory.GetItem<ShipModule>(itemID).StopApplyingEffect(effectName, call.Session);
+            ShipModule module = this.ItemFactory.GetItem<ShipModule>(itemID);
+            
+            this.EffectsManager.GetForItem(module).StopApplyingEffect(effectName, call.Session);
             
             return null;
         }
@@ -248,7 +264,7 @@ namespace EVESharp.Node.Services.Dogma
         {
             int characterID = call.Session.EnsureCharacterIsSelected();
             
-            if (this.MachoResolveObject(bindParams, call) != this.BoundServiceManager.Container.NodeID)
+            if (this.MachoResolveObject(bindParams, call) != this.BoundServiceManager.MachoNet.NodeID)
                 throw new CustomError("Trying to bind an object that does not belong to us!");
             
             // make sure the character is loaded
@@ -263,7 +279,7 @@ namespace EVESharp.Node.Services.Dogma
                 this.NotificationManager.NotifyStation(bindParams.ObjectID, new OnCharNowInStation(call.Session));
             }
 
-            return new dogmaIM(bindParams.ObjectID, this.ItemFactory, this.NotificationManager, this.BoundServiceManager, call.Session);
+            return new dogmaIM(bindParams.ObjectID, this.EffectsManager, this.ItemFactory, this.NotificationManager, this.BoundServiceManager, call.Session);
         }
 
         protected override void OnClientDisconnected()
@@ -278,6 +294,13 @@ namespace EVESharp.Node.Services.Dogma
                 
                 // notify all station guests
                 this.NotificationManager.NotifyStation(this.ObjectID, new OnCharNoLongerInStation(this.Session));
+                
+                // check if the character is loaded or their ship is loaded and unload it
+                // TODO: THIS MIGHT REQUIRE CHANGES WHEN DESTINY WORK IS STARTED
+                this.ItemFactory.UnloadItem(characterID);
+                
+                if (this.Session.ShipID is not null)
+                    this.ItemFactory.UnloadItem((int) this.Session.ShipID);
             }
         }
     }

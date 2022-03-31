@@ -38,7 +38,7 @@ namespace EVESharp.Node.Services.War
         protected override long MachoResolveObject(ServiceBindParams parameters, CallInformation call)
         {
             // TODO: PROPERLY HANDLE THIS
-            return this.BoundServiceManager.Container.NodeID;
+            return this.BoundServiceManager.MachoNet.NodeID;
         }
 
         protected override BoundService CreateBoundInstance(ServiceBindParams bindParams, CallInformation call)

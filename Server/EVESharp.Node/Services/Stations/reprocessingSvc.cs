@@ -279,14 +279,14 @@ namespace EVESharp.Node.Services.Stations
         protected override long MachoResolveObject(ServiceBindParams parameters, CallInformation call)
         {
             if (this.SystemManager.StationBelongsToUs(parameters.ObjectID) == true)
-                return this.BoundServiceManager.Container.NodeID;
+                return this.BoundServiceManager.MachoNet.NodeID;
 
             return this.SystemManager.GetNodeStationBelongsTo(parameters.ObjectID);
         }
 
         protected override BoundService CreateBoundInstance(ServiceBindParams bindParams, CallInformation call)
         {
-            if (this.MachoResolveObject(bindParams, call) != this.BoundServiceManager.Container.NodeID)
+            if (this.MachoResolveObject(bindParams, call) != this.BoundServiceManager.MachoNet.NodeID)
                 throw new CustomError("Trying to bind an object that does not belong to us!");
 
             Station station = this.ItemFactory.GetStaticStation(bindParams.ObjectID);

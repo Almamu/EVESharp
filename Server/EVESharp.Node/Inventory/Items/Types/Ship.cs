@@ -36,21 +36,13 @@ namespace EVESharp.Node.Inventory.Items.Types
                 .Where(x => x.Value.Flag.IsLowModule())
                 .ToDictionary(x => x.Value.Flag, x => x.Value);
         
-        public Ship(ItemEntity from) : base(from)
+        public Ship(Information.Item info) : base(info)
         {
         }
 
         protected override void LoadContents(Flags ignoreFlags = Flags.None)
         {
             base.LoadContents(Flags.Pilot);
-        }
-
-        public override void Destroy()
-        {
-            base.Destroy();
-            
-            // remove insurance off the database
-            this.ItemFactory.InsuranceDB.UnInsureShip(this.ID);
         }
     }
 }

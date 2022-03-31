@@ -26,40 +26,34 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using EVESharp.Common.Database;
-using EVESharp.Common.Logging;
+using EVESharp.Common.Network.Messages;
 using EVESharp.EVE.Packets;
 using EVESharp.Node.Configuration;
 using EVESharp.Node.Database;
 using EVESharp.Node.Network;
-using MachoNet = EVESharp.Node.Network.MachoNet;
+using EVESharp.Node.Server.Shared;
+using Serilog;
 
 namespace EVESharp.Node.Accounts
 {
-    public class LoginQueue
+    public class LoginQueue : MessageProcessor<LoginQueueEntry>
     {
-        private readonly Queue<LoginQueueEntry> Queue = new Queue<LoginQueueEntry>();
         private AccountDB AccountDB { get; }
         private Authentication Configuration { get; }
         private DatabaseConnection Database { get; }
-        private MachoNet MachoNet { get; }
-        private Channel Log { get; set; }
 
-        public void Enqueue(MachoUnauthenticatedTransport connection, AuthenticationReq request)
+        public void Enqueue(MachoUnauthenticatedTransport transport, AuthenticationReq req)
         {
-            // Just to be thread safe
-            lock (this.Queue)
-            {
-                LoginQueueEntry entry = new LoginQueueEntry
+            this.Enqueue(
+                new LoginQueueEntry
                 {
-                    Connection = connection,
-                    Request = request
-                };
-                
-                this.Queue.Enqueue(entry);
-            }
+                    Connection = transport,
+                    Request = req
+                }
+            );
         }
 
-        public void HandleLogin(LoginQueueEntry entry)
+        protected override void HandleMessage(LoginQueueEntry entry)
         {
             Log.Debug("Processing login for " + entry.Request.user_name);
             LoginStatus status = LoginStatus.Waiting;
@@ -72,7 +66,7 @@ namespace EVESharp.Node.Accounts
             if (this.AccountDB.AccountExists(entry.Request.user_name) == false)
                 if (this.Configuration.Autoaccount == true)
                 {
-                    Log.Info($"Auto account enabled, creating account for user {entry.Request.user_name}");
+                    Log.Information($"Auto account enabled, creating account for user {entry.Request.user_name}");
 
                     // Create the account
                     this.AccountDB.CreateAccount(entry.Request.user_name, entry.Request.user_password, (ulong) this.Configuration.Role);                    
@@ -80,13 +74,13 @@ namespace EVESharp.Node.Accounts
 
             if (this.AccountDB.LoginPlayer(entry.Request.user_name, entry.Request.user_password, ref accountID, ref banned, ref role) == false || banned == true)
             {
-                Log.Trace(": Rejected by database");
+                Log.Verbose(": Rejected by database");
 
                 status = LoginStatus.Failed;
             }
             else
             {
-                Log.Trace(": success");
+                Log.Verbose(": success");
 
                 status = LoginStatus.Success;
                 
@@ -96,7 +90,7 @@ namespace EVESharp.Node.Accounts
                     new Dictionary<string, object>()
                     {
                         {"_clientID", accountID},
-                        {"_proxyNodeID", MachoNet.Container.NodeID}
+                        {"_proxyNodeID", entry.Connection.MachoNet.NodeID}
                     }
                 );
             }
@@ -104,69 +98,13 @@ namespace EVESharp.Node.Accounts
             entry.Connection.SendLoginNotification(status, accountID, role);
         }
 
-        private void Run()
+        public LoginQueue(DatabaseConnection databaseConnection, Authentication configuration, AccountDB db, ILogger logger)
+            : base(logger, 5)
         {
-            // We should never exit from this loop
-            try
-            {
-                while (true)
-                {
-                    Thread.Sleep(1);
-
-                    if (Environment.HasShutdownStarted)
-                        // This will shutdown all the nodes
-                        // throw new ProxyClosingException();
-                        return;
-
-                    if (this.Queue.Count == 0)
-                        continue;
-
-                    // Thread safe stuff
-                    lock (this.Queue)
-                    {
-                        LoginQueueEntry now = this.Queue.Dequeue();
-
-                        if (now is null) 
-                            continue;
-
-                        HandleLogin(now);
-                    }
-                }
-            }
-            catch (ThreadAbortException)
-            {
-                // throw new ProxyClosingException();
-                return;
-            }
-            /*catch (ProxyClosingException)
-            {
-                throw new ProxyClosingException();
-            }*/
-            catch (Exception ex)
-            {
-                Log.Error("Unhandled exception... " + ex.Message);
-                Log.Error("Stack trace: " + ex.StackTrace);
-            }
-
-            Log.Error("LoginQueue is closing... Bye Bye!");
-        }
-
-        public LoginQueue(DatabaseConnection databaseConnection, MachoNet machoNet, Authentication configuration, AccountDB db, Logger logger)
-        {
+            // login should not be using too many processes
             this.Database = databaseConnection;
-            this.MachoNet = machoNet;
-            this.Log = logger.CreateLogChannel("LoginQueue");
             this.Configuration = configuration;
             this.AccountDB = db;
-            this.MachoNet.LoginQueue = this;
-            
-            // start the queue thread
-            new Thread(Run).Start();
-        }
-
-        public int Count()
-        {
-            return this.Queue.Count;
         }
     }
 }

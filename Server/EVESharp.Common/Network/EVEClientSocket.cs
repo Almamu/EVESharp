@@ -9,6 +9,7 @@ using EVESharp.PythonTypes;
 using EVESharp.PythonTypes.Compression;
 using EVESharp.PythonTypes.Marshal;
 using EVESharp.PythonTypes.Types.Primitives;
+using Serilog;
 
 namespace EVESharp.Common.Network
 {
@@ -21,18 +22,16 @@ namespace EVESharp.Common.Network
         private readonly Queue<byte[]> mOutputQueue = new Queue<byte[]>();
         private readonly StreamPacketizer mPacketizer = new StreamPacketizer();
         private Action<PyDataType> mPacketReceiveCallback = null;
+        public ILogger Log { get; }
 #if DEBUG
-        private readonly Channel mPacketLog = null;
+        public ILogger PacketLog { get; }
 #endif
-        public Channel Log { get; set; }
 
-        public EVEClientSocket(Socket socket, Channel logChannel) : base(socket)
+        public EVEClientSocket(Socket socket, ILogger logChannel) : base(socket)
         {
             this.Log = logChannel;
-
-            // take into account network debugging for developers
 #if DEBUG
-            this.mPacketLog = this.Log.Logger.CreateLogChannel("NetworkDebug", true);
+            this.PacketLog = logChannel.ForContext<EVEClientSocket>("NetworkDebug", true);
 #endif
             // setup async callback handlers
             this.SetupCallbacks();
@@ -40,14 +39,12 @@ namespace EVESharp.Common.Network
             this.BeginReceive(new byte[64 * 1024], this.mReceiveCallback);
         }
 
-        public EVEClientSocket(Channel logChannel) : base(new Socket(AddressFamily.InterNetworkV6, SocketType.Stream, ProtocolType.Tcp))
+        public EVEClientSocket(ILogger logChannel) : base(new Socket(AddressFamily.InterNetworkV6, SocketType.Stream, ProtocolType.Tcp))
         {
             // ensure we support both ipv4 and ipv6
             this.Log = logChannel;
-
-            // take into account network debugging for developers
 #if DEBUG
-            this.mPacketLog = this.Log.Logger.CreateLogChannel("NetworkDebug", true);
+            this.PacketLog = logChannel.ForContext<EVEClientSocket>("NetworkDebug", true);
 #endif
 
             this.SetupCallbacks();
@@ -104,7 +101,7 @@ namespace EVESharp.Common.Network
                         // unmarshal the packet
                         PyDataType packet = Unmarshal.ReadFromByteArray(this.mPacketizer.PopItem());
 #if DEBUG
-                        this.mPacketLog.Trace(PrettyPrinter.FromDataType(packet));
+                        PacketLog.Verbose(PrettyPrinter.FromDataType(packet));
 #endif
                         // and invoke the callback for the packet handling if it is present
                         this.mPacketReceiveCallback.Invoke(packet);
@@ -173,7 +170,7 @@ namespace EVESharp.Common.Network
         public void Send(PyDataType packet)
         {
 #if DEBUG
-            this.mPacketLog.Trace(PrettyPrinter.FromDataType(packet));
+            PacketLog.Verbose(PrettyPrinter.FromDataType(packet));
 #endif
             // marshal the packet first
             byte[] encodedPacket = EVESharp.PythonTypes.Marshal.Marshal.ToByteArray(packet);

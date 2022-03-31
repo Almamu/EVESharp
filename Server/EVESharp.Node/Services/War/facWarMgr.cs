@@ -158,7 +158,6 @@ namespace EVESharp.Node.Services.War
             // set the new faction id and corporation
             character.WarFactionID = factionID;
             character.CorporationID = faction.MilitiaCorporationId;
-            character.Corporation = this.ItemFactory.GetItem<Corporation>(faction.MilitiaCorporationId);
             character.CorporationDateTime = DateTime.UtcNow.ToFileTimeUtc();
             // create employment record
             this.CharacterDB.CreateEmploymentRecord(character.ID, faction.MilitiaCorporationId, character.CorporationDateTime);

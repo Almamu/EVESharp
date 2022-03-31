@@ -22,12 +22,13 @@
     Creator: Almamu
 */
 
+using EVESharp.Common.Network.Messages;
 using EVESharp.EVE.Packets;
 using EVESharp.Node.Network;
 
 namespace EVESharp.Node.Accounts
 {
-    public class LoginQueueEntry
+    public class LoginQueueEntry : IMessage
     {
         public AuthenticationReq Request { get; set; }
         public MachoUnauthenticatedTransport Connection { get; set; }

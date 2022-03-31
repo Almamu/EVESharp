@@ -49,7 +49,7 @@ namespace EVESharp.Node.Services.Market
         private WalletManager WalletManager { get; }
         private Node.Dogma.Dogma Dogma { get; }
         
-        public marketProxy(MarketDB db, CharacterDB characterDB, ItemDB itemDB, SolarSystemDB solarSystemDB, ItemFactory itemFactory, CacheStorage cacheStorage, NodeContainer nodeContainer, NotificationManager notificationManager, WalletManager walletManager, Node.Dogma.Dogma dogma, MachoNet machoNet)
+        public marketProxy(MarketDB db, CharacterDB characterDB, ItemDB itemDB, SolarSystemDB solarSystemDB, ItemFactory itemFactory, CacheStorage cacheStorage, NodeContainer nodeContainer, NotificationManager notificationManager, WalletManager walletManager, Node.Dogma.Dogma dogma)
         {
             this.DB = db;
             this.CharacterDB = characterDB;
@@ -62,7 +62,8 @@ namespace EVESharp.Node.Services.Market
             this.WalletManager = walletManager;
             this.Dogma = dogma;
 
-            machoNet.OnClusterTimer += this.PerformTimedEvents;
+            // TODO: RE-IMPLEMENT ON CLUSTER TIMER
+            // machoNet.OnClusterTimer += this.PerformTimedEvents;
         }
 
         private PyDataType GetNewTransactions(int entityID, PyInteger sellBuy, PyInteger typeID, PyDataType clientID,

@@ -62,7 +62,7 @@ namespace EVESharp.Node.Services.Corporations
         private long CorporationAdvertisementFlatFee { get; init; }
         private long CorporationAdvertisementDailyRate { get; init; }
         
-        public corpRegistry(CorporationDB db, DatabaseConnection databaseConnection, ChatDB chatDB, CharacterDB characterDB, NotificationManager notificationManager, MailManager mailManager, WalletManager walletManager, NodeContainer container, ItemFactory itemFactory, BoundServiceManager manager, AncestryManager ancestryManager, MachoNet machoNet, SessionManager sessionManager) : base(manager)
+        public corpRegistry(CorporationDB db, DatabaseConnection databaseConnection, ChatDB chatDB, CharacterDB characterDB, NotificationManager notificationManager, MailManager mailManager, WalletManager walletManager, NodeContainer container, ItemFactory itemFactory, BoundServiceManager manager, AncestryManager ancestryManager, SessionManager sessionManager) : base(manager)
         {
             this.DB = db;
             this.Database = databaseConnection;
@@ -76,7 +76,8 @@ namespace EVESharp.Node.Services.Corporations
             this.AncestryManager = ancestryManager;
             this.SessionManager = sessionManager;
             
-            machoNet.OnClusterTimer += this.PerformTimedEvents;
+            // TODO: RE-IMPLEMENT ON CLUSTER TIMER
+            // machoNet.OnClusterTimer += this.PerformTimedEvents;
         }
 
         protected corpRegistry(CorporationDB db, DatabaseConnection databaseConnection, ChatDB chatDB, CharacterDB characterDB, NotificationManager notificationManager, MailManager mailManager, WalletManager walletManager, NodeContainer container, ItemFactory itemFactory, AncestryManager ancestryManager, SessionManager sessionManager, Corporation corp, int isMaster, corpRegistry parent) : base (parent, corp.ID)
@@ -1328,12 +1329,12 @@ namespace EVESharp.Node.Services.Corporations
         {
             // TODO: CHECK IF ANY NODE HAS THIS CORPORATION LOADED
             // TODO: IF NOT, LOAD IT HERE AND RETURN OUR ID
-            return this.BoundServiceManager.Container.NodeID;
+            return this.BoundServiceManager.MachoNet.NodeID;
         }
 
         protected override MultiClientBoundService CreateBoundInstance(ServiceBindParams bindParams, CallInformation call)
         {
-            if (this.MachoResolveObject(bindParams, call) != this.BoundServiceManager.Container.NodeID)
+            if (this.MachoResolveObject(bindParams, call) != this.BoundServiceManager.MachoNet.NodeID)
                 throw new CustomError("Trying to bind an object that does not belong to us!");
 
             Corporation corp = this.ItemFactory.LoadItem<Corporation>(bindParams.ObjectID);

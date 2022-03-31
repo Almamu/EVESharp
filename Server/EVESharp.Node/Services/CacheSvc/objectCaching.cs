@@ -22,24 +22,24 @@
     Creator: Almamu
 */
 
-using EVESharp.Common.Logging;
 using EVESharp.EVE.Packets.Exceptions;
 using EVESharp.EVE.Services;
 using EVESharp.Node.Network;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Primitives;
+using Serilog;
 
 namespace EVESharp.Node.Services.CacheSvc
 {
     public class objectCaching : Service
     {
         public override AccessLevel AccessLevel => AccessLevel.None;
-        private Channel Log { get; }
+        private ILogger Log { get; }
         private CacheStorage CacheStorage { get; }
 
-        public objectCaching(CacheStorage cacheStorage, Logger logger)
+        public objectCaching(CacheStorage cacheStorage, ILogger logger)
         {
-            this.Log = logger.CreateLogChannel("objectCaching");
+            this.Log = logger;
             this.CacheStorage = cacheStorage;
         }
         

@@ -1,8 +1,9 @@
 ﻿using System.Collections.Generic;
-using EVESharp.Common.Logging;
 using EVESharp.Common.Network;
 using EVESharp.EVE.Sessions;
+using EVESharp.Node.Server.Shared;
 using EVESharp.PythonTypes.Types.Primitives;
+using Serilog;
 
 namespace EVESharp.Node.Network;
 
@@ -12,32 +13,24 @@ public class MachoTransport
     /// The session associated with this transport
     /// </summary>
     public Session Session { get; }
-    protected Channel Log { get; }
-    /// <summary>
-    /// The server transport that created it
-    /// </summary>
-    protected MachoServerTransport Server { get; }
+    public ILogger Log { get; }
     /// <summary>
     /// The underlying socket to send/receive data
     /// </summary>
     public EVEClientSocket Socket { get; }
     /// <summary>
+    /// The MachoNet protocol version in use by this transport
+    /// </summary>
+    public IMachoNet MachoNet { get; }
+    /// <summary>
     /// Queue of packets to be sent through the transport after the authentication happens
     /// </summary>
     protected Queue<PyDataType> PostAuthenticationQueue { get; } = new Queue<PyDataType>();
 
-    public MachoTransport(MachoServerTransport transport, EVEClientSocket socket, Logger logger)
+    public MachoTransport(IMachoNet machoNet, EVEClientSocket socket, ILogger logger)
     {
         this.Session = new Session();
-        this.Server = transport;
-        this.Socket = socket;
-        this.Log = logger.CreateLogChannel(socket.GetRemoteAddress());
-    }
-
-    public MachoTransport(MachoServerTransport transport, EVEClientSocket socket, Channel logger)
-    {
-        this.Session = new Session();
-        this.Server = transport;
+        this.MachoNet = machoNet;
         this.Socket = socket;
         this.Log = logger;
     }
@@ -47,7 +40,7 @@ public class MachoTransport
         this.Session = source.Session;
         this.Log = source.Log;
         this.Socket = source.Socket;
-        this.Server = source.Server;
+        this.MachoNet = source.MachoNet;
     }
 
     /// <summary>
@@ -73,6 +66,6 @@ public class MachoTransport
         this.Socket.GracefulDisconnect();
 
         // remove the transport from the list
-        this.Server.OnTransportTerminated(this);
+        this.MachoNet.OnTransportTerminated(this);
     }
 }

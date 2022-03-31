@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using EVESharp.Common.Logging;
 using EVESharp.EVE.Packets.Exceptions;
 using EVESharp.EVE.Services;
 using EVESharp.EVE.Sessions;
@@ -20,6 +19,7 @@ using EVESharp.Node.Inventory.Items.Attributes;
 using EVESharp.Node.Sessions;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Primitives;
+using Serilog;
 using Attribute = EVESharp.Node.Inventory.Items.Attributes.Attribute;
 
 namespace EVESharp.Node.Services.Characters
@@ -35,29 +35,29 @@ namespace EVESharp.Node.Services.Characters
         private ItemFactory ItemFactory { get; }
         private TimerManager TimerManager { get; }
         private SystemManager SystemManager => this.ItemFactory.SystemManager;
-        private Channel Log { get; }
+        private ILogger Log { get; }
         private Character Character { get; }
         private Node.Dogma.Dogma Dogma { get; }
         
         public skillMgr(SkillDB db, ItemFactory itemFactory, TimerManager timerManager, Node.Dogma.Dogma dogma,
-            BoundServiceManager manager, Logger logger) : base(manager)
+            BoundServiceManager manager, ILogger logger) : base(manager)
         {
             this.DB = db;
             this.ItemFactory = itemFactory;
             this.TimerManager = timerManager;
             this.Dogma = dogma;
-            this.Log = logger.CreateLogChannel("SkillManager");
+            this.Log = logger;
         }
 
         protected skillMgr(SkillDB db, ItemFactory itemFactory, TimerManager timerManager, Node.Dogma.Dogma dogma,
-            BoundServiceManager manager, Logger logger, Session session) : base(manager, session, session.EnsureCharacterIsSelected())
+            BoundServiceManager manager, ILogger logger, Session session) : base(manager, session, session.EnsureCharacterIsSelected())
         {
             this.DB = db;
             this.ItemFactory = itemFactory;
             this.TimerManager = timerManager;
             this.Dogma = dogma;
             this.Character = this.ItemFactory.GetItem<Character>(this.ObjectID);
-            this.Log = logger.CreateLogChannel("SkillManager");
+            this.Log = logger;
 
             this.InitializeCharacter();
         }
@@ -742,17 +742,17 @@ namespace EVESharp.Node.Services.Characters
             int solarSystemID = call.Session.SolarSystemID2;
 
             if (this.SystemManager.SolarSystemBelongsToUs(solarSystemID) == true)
-                return this.BoundServiceManager.Container.NodeID;
+                return this.BoundServiceManager.MachoNet.NodeID;
 
             return this.SystemManager.GetNodeSolarSystemBelongsTo(solarSystemID);
         }
 
         protected override BoundService CreateBoundInstance(ServiceBindParams bindParams, CallInformation call)
         {
-            if (this.MachoResolveObject(bindParams, call) != this.BoundServiceManager.Container.NodeID)
+            if (this.MachoResolveObject(bindParams, call) != this.BoundServiceManager.MachoNet.NodeID)
                 throw new CustomError("Trying to bind an object that does not belong to us!");
             
-            return new skillMgr (this.DB, this.ItemFactory, this.TimerManager, this.Dogma, this.BoundServiceManager, this.BoundServiceManager.Logger, call.Session);
+            return new skillMgr (this.DB, this.ItemFactory, this.TimerManager, this.Dogma, this.BoundServiceManager, this.Log, call.Session);
         }
     }
 }

@@ -26,92 +26,31 @@ using System;
 using EVESharp.Node.Inventory.Items;
 using EVESharp.Node.StaticData.Inventory;
 
-namespace EVESharp.Node.Inventory.SystemEntities
+namespace EVESharp.Node.Inventory.Items.Types
 {
     public class Region : ItemInventory
     {
-        public Region(ItemEntity from, double x, double y, double z,
-            double xMin, double yMin, double zMin, double xMax, double yMax, double zMax, int? factionId,
-            double radius) : base(from)
+        public Information.Region RegionInformation { get; }
+        public Region(Information.Region region) : base(region.Information)
         {
-            this.mX = x;
-            this.mY = y;
-            this.mZ = z;
-            this.mXMin = xMin;
-            this.mYMin = yMin;
-            this.mZMin = zMin;
-            this.mXMax = xMax;
-            this.mYMax = yMax;
-            this.mZMax = zMax;
-            this.mFactionId = factionId;
-            this.mRadius = radius;
+            this.RegionInformation = region;
         }
-
-        private double mX, mY, mZ, mXMin, mYMin, mZMin, mXMax, mYMax, mZMax;
-        private int? mFactionId;
-        private double mRadius;
         
-        public new double X
-        {
-            get => mX;
-        }
-
-        public new double Y
-        {
-            get => mY;
-        }
-
-        public new double Z
-        {
-            get => mZ;
-        }
-
-        public double XMin
-        {
-            get => mXMin;
-        }
-
-        public double YMin
-        {
-            get => mYMin;
-        }
-
-        public double ZMin
-        {
-            get => mZMin;
-        }
-
-        public double XMax
-        {
-            get => mXMax;
-        }
-
-        public double YMax
-        {
-            get => mYMax;
-        }
-
-        public double ZMax
-        {
-            get => mZMax;
-        }
-
-        public int? FactionID
-        {
-            get => mFactionId;
-        }
-
-        public double Radius
-        {
-            get => mRadius;
-        }
+        public double XMin => this.RegionInformation.XMin;
+        public double YMin => this.RegionInformation.YMin;
+        public double ZMin => this.RegionInformation.ZMin;
+        public double XMax => this.RegionInformation.XMax;
+        public double YMax => this.RegionInformation.YMax;
+        public double ZMax => this.RegionInformation.ZMax;
+        public int? FactionID => this.RegionInformation.FactionID;
+        public double Radius => this.RegionInformation.Radius;
 
         protected override void LoadContents(Flags ignoreFlags = Flags.None)
         {
             throw new NotImplementedException();
         }
 
-        protected override void SaveToDB()
+        public override void Persist()
         {
             // regions cannot be updated
             throw new NotImplementedException();

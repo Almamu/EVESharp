@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using EVESharp.Node.Exceptions;
 using EVESharp.Node.Exceptions.character;
@@ -32,155 +33,76 @@ namespace EVESharp.Node.Inventory.Items.Types
             }
         }
         
-        public Character(TimerManager timerManager, ItemEntity from, int characterId,
-            int accountId, int? activeCloneID, string title, string description,
-            double securityRating, string petitionMessage, int logonMinutes, int corporationId, long roles,
-            long rolesAtBase, long rolesAtHq, long rolesAtOther, long corporationDateTime, long startDateTime,
-            long createDateTime, int ancestryId, int careerId, int schoolId, int careerSpecialityId,
-            int gender, int? accessoryId, int? beardId, int costumeId, int? decoId, int eyebrowsId, int eyesId,
-            int hairId, int? lipstickId, int? makeupId, int skinId, int backgroundId, int lightId, double headRotation1,
-            double headRotation2, double headRotation3, double eyeRotation1, double eyeRotation2, double eyeRotation3,
-            double camPos1, double camPos2, double camPos3, double? morph1E, double? morph1N, double? morph1S,
-            double? morph1W, double? morph2E, double? morph2N, double? morph2S, double? morph2W, double? morph3E,
-            double? morph3N, double? morph3S, double? morph3W, double? morph4E, double? morph4N, double? morph4S,
-            double? morph4W, int stationId, int solarSystemId, int constellationId, int regionId,
-            int freeReSpecs, long nextReSpecTime, long timeLastJump, int titleMask, int? warFactionID, int corpAccountKey,
-            long grantableRoles, long grantableRolesAtBase, long grantableRolesAtHq, long grantableRolesAtOther,
-            int? baseID) : base(from)
-        {
-            this.TimerManager = timerManager;
-            this.mCharacterID = characterId;
-            this.mAccountID = accountId;
-            this.mActiveCloneID = activeCloneID;
-            this.mTitle = title;
-            this.mDescription = description;
-            this.mSecurityRating = securityRating;
-            this.mPetitionMessage = petitionMessage;
-            this.mLogonMinutes = logonMinutes;
-            this.mCorporationID = corporationId;
-            this.mRoles = roles;
-            this.mRolesAtBase = rolesAtBase;
-            this.mRolesAtHq = rolesAtHq;
-            this.mRolesAtOther = rolesAtOther;
-            this.mCorporationDateTime = corporationDateTime;
-            this.mStartDateTime = startDateTime;
-            this.mCreateDateTime = createDateTime;
-            this.mAncestryID = ancestryId;
-            this.mCareerID = careerId;
-            this.mSchoolID = schoolId;
-            this.mCareerSpecialityID = careerSpecialityId;
-            this.mGender = gender;
-            this.mAccessoryID = accessoryId;
-            this.mBeardID = beardId;
-            this.mCostumeID = costumeId;
-            this.mDecoID = decoId;
-            this.mEyebrowsID = eyebrowsId;
-            this.mEyesID = eyesId;
-            this.mHairID = hairId;
-            this.mLipstickID = lipstickId;
-            this.mMakeupID = makeupId;
-            this.mSkinID = skinId;
-            this.mBackgroundID = backgroundId;
-            this.mLightID = lightId;
-            this.mHeadRotation1 = headRotation1;
-            this.mHeadRotation2 = headRotation2;
-            this.mHeadRotation3 = headRotation3;
-            this.mEyeRotation1 = eyeRotation1;
-            this.mEyeRotation2 = eyeRotation2;
-            this.mEyeRotation3 = eyeRotation3;
-            this.mCamPos1 = camPos1;
-            this.mCamPos2 = camPos2;
-            this.mCamPos3 = camPos3;
-            this.mMorph1E = morph1E;
-            this.mMorph1N = morph1N;
-            this.mMorph1S = morph1S;
-            this.mMorph1W = morph1W;
-            this.mMorph2E = morph2E;
-            this.mMorph2N = morph2N;
-            this.mMorph2S = morph2S;
-            this.mMorph2W = morph2W;
-            this.mMorph3E = morph3E;
-            this.mMorph3N = morph3N;
-            this.mMorph3S = morph3S;
-            this.mMorph3W = morph3W;
-            this.mMorph4E = morph4E;
-            this.mMorph4N = morph4N;
-            this.mMorph4S = morph4S;
-            this.mMorph4W = morph4W;
-            this.mStationID = stationId;
-            this.mSolarSystemID = solarSystemId;
-            this.mConstellationID = constellationId;
-            this.mRegionID = regionId;
-            this.mFreeReSpecs = freeReSpecs;
-            this.mNextReSpecTime = nextReSpecTime;
-            this.mTimeLastJump = timeLastJump;
-            this.mTitleMask = titleMask;
-            this.mWarFactionID = warFactionID;
-            this.mCorpAccountKey = corpAccountKey;
-            this.mGrantableRoles = grantableRoles;
-            this.mGrantableRolesAtHQ = grantableRolesAtHq;
-            this.mGrantableRolesAtBase = grantableRolesAtBase;
-            this.mGrantableRolesAtOther = grantableRolesAtOther;
-            this.mBaseID = baseID;
-        }
+        public Information.Character CharacterInformation { get; }
 
-        private TimerManager TimerManager { get; }
-        public int CharacterID => mCharacterID;
-        public int AccountID => mAccountID;
+        public delegate List<SkillQueueEntry> CharacterSkillQueueLoadEventHandler(Character character, Dictionary<int, Skill> skillQueue);
+        
+        public Character(Information.Character info) : base(info.Information)
+        {
+            this.CharacterInformation = info;
+        }
+        
+        public int AccountID => this.CharacterInformation.AccountID;
 
         public int? ActiveCloneID
         {
-            get => this.mActiveCloneID;
+            get => this.CharacterInformation.ActiveCloneID;
             set
             {
-                this.Dirty = true;
-                this.mActiveCloneID = value;
+                this.Information.Dirty = true;
+                this.CharacterInformation.ActiveCloneID = value;
             }
         }
 
-        public string Title => mTitle;
+        public string Title => this.CharacterInformation.Title;
 
         public string Description
         {
-            get => this.mDescription;
+            get => this.CharacterInformation.Description;
             set
             {
-                this.Dirty = true;
-                this.mDescription = value;
+                this.Information.Dirty = true;
+                this.CharacterInformation.Description = value;
             }
         }
 
         public int TitleMask
         {
-            get => this.mTitleMask;
+            get => this.CharacterInformation.TitleMask;
             set
             {
-                this.Dirty = true;
-                this.mTitleMask = value;
+                this.Information.Dirty = true;
+                this.CharacterInformation.TitleMask = value;
             }
         }
 
         public int CorporationID
         {
-            get => this.mCorporationID;
+            get => this.CharacterInformation.CorporationID;
             set
             {
-                this.Dirty = true;
-                this.mCorporationID = value;
+                this.Information.Dirty = true;
+                this.CharacterInformation.CorporationID = value;
             }
         }
+
+        public int? AllianceID
+        {
+            get => this.CharacterInformation.AllianceID;
+            set => this.CharacterInformation.AllianceID = value;
+        }
         
-        public double SecurityRating => mSecurityRating;
-        public string PetitionMessage => mPetitionMessage;
-        public int LogonMinutes => mLogonMinutes;
+        public double SecurityRating => this.CharacterInformation.SecurityRating;
+        public string PetitionMessage => this.CharacterInformation.PetitionMessage;
+        public int LogonMinutes => this.CharacterInformation.LogonMinutes;
 
         /// <summary>
         /// WARNING: THIS FIELD IS NOT SAVED
         /// </summary>
         public long Roles
         {
-            get => this.mRoles;
-            set => this.mRoles = value;
+            get => this.CharacterInformation.Roles;
+            set => this.CharacterInformation.Roles = value;
         }
 
         /// <summary>
@@ -188,8 +110,8 @@ namespace EVESharp.Node.Inventory.Items.Types
         /// </summary>
         public long RolesAtBase
         {
-            get => this.mRolesAtBase;
-            set => this.mRolesAtBase = value;
+            get => this.CharacterInformation.RolesAtBase;
+            set => this.CharacterInformation.RolesAtBase = value;
         }
 
         /// <summary>
@@ -197,8 +119,8 @@ namespace EVESharp.Node.Inventory.Items.Types
         /// </summary>
         public long RolesAtHq
         {
-            get => this.mRolesAtHq;
-            set => this.mRolesAtHq = value;
+            get => this.CharacterInformation.RolesAtHq;
+            set => this.CharacterInformation.RolesAtHq = value;
         }
 
         /// <summary>
@@ -206,8 +128,8 @@ namespace EVESharp.Node.Inventory.Items.Types
         /// </summary>
         public long RolesAtOther
         {
-            get => this.mRolesAtOther;
-            set => this.mRolesAtOther = value;
+            get => this.CharacterInformation.RolesAtOther;
+            set => this.CharacterInformation.RolesAtOther = value;
         }
 
         /// <summary>
@@ -215,133 +137,116 @@ namespace EVESharp.Node.Inventory.Items.Types
         /// </summary>
         public int? BaseID
         {
-            get => this.mBaseID;
-            set => this.mBaseID = value;
+            get => this.CharacterInformation.BaseID;
+            set => this.CharacterInformation.BaseID = value;
         }
 
         public long CorporationDateTime
         {
-            get => this.mCorporationDateTime;
+            get => this.CharacterInformation.CorporationDateTime;
             set
             {
-                this.Dirty = true;
-                this.mCorporationDateTime = value;
+                this.Information.Dirty = true;
+                this.CharacterInformation.CorporationDateTime = value;
             }
         }
 
         public int CorpAccountKey
         {
-            get => this.mCorpAccountKey;
-            set => this.mCorpAccountKey = value;
+            get => this.CharacterInformation.CorpAccountKey;
+            set
+            {
+                this.Information.Dirty = true;
+                this.CharacterInformation.CorpAccountKey = value;
+            }
         }
         
-        public long StartDateTime => mStartDateTime;
-        public long CreateDateTime => mCreateDateTime;
-        public int AncestryID => mAncestryID;
-        public int CareerID => mCareerID;
-        public int SchoolID => mSchoolID;
-        public int CareerSpecialityID => mCareerSpecialityID;
-        public int Gender => mGender;
-        public int? AccessoryID => mAccessoryID;
-        public int? BeardID => mBeardID;
-        public int CostumeID => mCostumeID;
-        public int? DecoID => mDecoID;
-        public int EyebrowsID => mEyebrowsID;
-        public int EyesID => mEyesID;
-        public int HairID => mHairID;
-        public int? LipstickID => mLipstickID;
-        public int? MakeupID => mMakeupID;
-        public int SkinID => mSkinID;
-        public int BackgroundID => mBackgroundID;
-        public int LightID => mLightID;
-        public double HeadRotation1 => mHeadRotation1;
-        public double HeadRotation2 => mHeadRotation2;
-        public double HeadRotation3 => mHeadRotation3;
-        public double EyeRotation1 => mEyeRotation1;
-        public double EyeRotation2 => mEyeRotation2;
-        public double EyeRotation3 => mEyeRotation3;
-        public double CamPos1 => mCamPos1;
-        public double CamPos2 => mCamPos2;
-        public double CamPos3 => mCamPos3;
-        public double? Morph1E => mMorph1E;
-        public double? Morph1N => mMorph1N;
-        public double? Morph1S => mMorph1S;
-        public double? Morph1W => mMorph1W;
-        public double? Morph2E => mMorph2E;
-        public double? Morph2N => mMorph2N;
-        public double? Morph2S => mMorph2S;
-        public double? Morph2W => mMorph2W;
-        public double? Morph3E => mMorph3E;
-        public double? Morph3N => mMorph3N;
-        public double? Morph3S => mMorph3S;
-        public double? Morph3W => mMorph3W;
-        public double? Morph4E => mMorph4E;
-        public double? Morph4N => mMorph4N;
-        public double? Morph4S => mMorph4S;
-        public double? Morph4W => mMorph4W;
-        public int StationID => mStationID;
-        public int SolarSystemID => mSolarSystemID;
-        public int ConstellationID => mConstellationID;
-        public int RegionID => mRegionID;
+        public long StartDateTime => this.CharacterInformation.StartDateTime;
+        public long CreateDateTime => this.CharacterInformation.CreateDateTime;
+        public int AncestryID => this.CharacterInformation.AncestryID;
+        public int CareerID => this.CharacterInformation.CareerID;
+        public int SchoolID => this.CharacterInformation.SchoolID;
+        public int CareerSpecialityID => this.CharacterInformation.CareerSpecialityID;
+        public int Gender => this.CharacterInformation.Gender;
+        public int? AccessoryID => this.CharacterInformation.AncestryID;
+        public int? BeardID => this.CharacterInformation.BeardID;
+        public int CostumeID => this.CharacterInformation.CostumeID;
+        public int? DecoID => this.CharacterInformation.DecoID;
+        public int EyebrowsID => this.CharacterInformation.EyebrowsID;
+        public int EyesID => this.CharacterInformation.EyesID;
+        public int HairID => this.CharacterInformation.HairID;
+        public int? LipstickID => this.CharacterInformation.LipstickID;
+        public int? MakeupID => this.CharacterInformation.MakeupID;
+        public int SkinID => this.CharacterInformation.SkinID;
+        public int BackgroundID => this.CharacterInformation.BackgroundID;
+        public int LightID => this.CharacterInformation.LightID;
+        public double HeadRotation1 => this.CharacterInformation.HeadRotation1;
+        public double HeadRotation2 => this.CharacterInformation.HeadRotation2;
+        public double HeadRotation3 => this.CharacterInformation.HeadRotation3;
+        public double EyeRotation1 => this.CharacterInformation.EyeRotation1;
+        public double EyeRotation2 => this.CharacterInformation.EyeRotation2;
+        public double EyeRotation3 => this.CharacterInformation.EyeRotation3;
+        public double CamPos1 => this.CharacterInformation.CamPos1;
+        public double CamPos2 => this.CharacterInformation.CamPos2;
+        public double CamPos3 => this.CharacterInformation.CamPos3;
+        public double? Morph1E => this.CharacterInformation.Morph1E;
+        public double? Morph1N => this.CharacterInformation.Morph1N;
+        public double? Morph1S => this.CharacterInformation.Morph1S;
+        public double? Morph1W => this.CharacterInformation.Morph1W;
+        public double? Morph2E => this.CharacterInformation.Morph2E;
+        public double? Morph2N => this.CharacterInformation.Morph2N;
+        public double? Morph2S => this.CharacterInformation.Morph2S;
+        public double? Morph2W => this.CharacterInformation.Morph2W;
+        public double? Morph3E => this.CharacterInformation.Morph3E;
+        public double? Morph3N => this.CharacterInformation.Morph3N;
+        public double? Morph3S => this.CharacterInformation.Morph3S;
+        public double? Morph3W => this.CharacterInformation.Morph3W;
+        public double? Morph4E => this.CharacterInformation.Morph4E;
+        public double? Morph4N => this.CharacterInformation.Morph4N;
+        public double? Morph4S => this.CharacterInformation.Morph4S;
+        public double? Morph4W => this.CharacterInformation.Morph4W;
+        public int StationID => this.CharacterInformation.StationID;
+        public int SolarSystemID => this.CharacterInformation.SolarSystemID;
+        public int ConstellationID => this.CharacterInformation.ConstellationID;
+        public int RegionID => this.CharacterInformation.RegionID;
 
         public int FreeReSpecs
         {
-            get => mFreeReSpecs;
+            get => this.CharacterInformation.FreeReSpecs;
             set
             {
-                this.Dirty = true;
-                this.mFreeReSpecs = value;
+                this.Information.Dirty = true;
+                this.CharacterInformation.FreeReSpecs = value;
             }
         }
 
         public long NextReSpecTime
         {
-            get => mNextReSpecTime;
+            get => this.CharacterInformation.NextReSpecTime;
             set
             {
-                this.Dirty = true;
-                this.mNextReSpecTime = value;
+                this.Information.Dirty = true;
+                this.CharacterInformation.NextReSpecTime = value;
             }
         }
 
         public long TimeLastJump
         {
-            get => this.mTimeLastJump;
+            get => this.CharacterInformation.TimeLastJump;
             set
             {
-                this.Dirty = true;
-                this.mTimeLastJump = value;
-            }
-        }
-
-        public Clone ActiveClone
-        {
-            get
-            {
-                if (this.mActiveClone == null)
-                    this.mActiveClone = this.ItemFactory.LoadItem<Clone>((int) this.ActiveCloneID);
-
-                return this.mActiveClone;
-            }
-
-            set
-            {
-                // free the current active clone (if loaded)
-                if (this.mActiveClone != null)
-                    this.ItemFactory.UnloadItem(this.mActiveClone);
-                
-                this.ActiveCloneID = value.ID;
-                this.mActiveClone = value;
+                this.Information.Dirty = true;
+                this.CharacterInformation.TimeLastJump = value;
             }
         }
 
         public int? WarFactionID
         {
-            get => this.mWarFactionID;
+            get => this.CharacterInformation.WarFactionID;
             set
             {
-                this.Dirty = true;
-                this.mWarFactionID = value;
+                this.Information.Dirty = true;
+                this.CharacterInformation.WarFactionID = value;
             }
         }
 
@@ -350,8 +255,8 @@ namespace EVESharp.Node.Inventory.Items.Types
         /// </summary>
         public long GrantableRoles
         {
-            get => this.mGrantableRoles;
-            set => this.mGrantableRoles = value;
+            get => this.CharacterInformation.GrantableRoles;
+            set => this.CharacterInformation.GrantableRoles = value;
         }
 
         /// <summary>
@@ -359,8 +264,8 @@ namespace EVESharp.Node.Inventory.Items.Types
         /// </summary>
         public long GrantableRolesAtHQ
         {
-            get => this.mGrantableRolesAtHQ;
-            set => this.mGrantableRolesAtHQ = value;
+            get => this.CharacterInformation.GrantableRolesAtHQ;
+            set => this.CharacterInformation.GrantableRolesAtHQ = value;
         }
 
         /// <summary>
@@ -368,8 +273,8 @@ namespace EVESharp.Node.Inventory.Items.Types
         /// </summary>
         public long GrantableRolesAtBase
         {
-            get => this.mGrantableRolesAtBase;
-            set => this.mGrantableRolesAtBase = value;
+            get => this.CharacterInformation.GrantableRolesAtBase;
+            set => this.CharacterInformation.GrantableRolesAtBase = value;
         }
 
         /// <summary>
@@ -377,87 +282,11 @@ namespace EVESharp.Node.Inventory.Items.Types
         /// </summary>
         public long GrantableRolesAtOther
         {
-            get => this.mGrantableRolesAtOther;
-            set => this.mGrantableRolesAtOther = value;
+            get => this.CharacterInformation.GrantableRolesAtOther;
+            set => this.CharacterInformation.GrantableRolesAtOther = value;
         }
         
-        private int mCharacterID;
-        private int mAccountID;
-        private int? mActiveCloneID;
-        private string mTitle;
-        private string mDescription;
-        private double mSecurityRating;
-        private string mPetitionMessage;
-        private int mLogonMinutes;
-        private int mCorporationID;
-        private long mRoles;
-        private long mRolesAtBase;
-        private long mRolesAtHq;
-        private long mRolesAtOther;
-        private long mCorporationDateTime;
-        private long mStartDateTime;
-        private long mCreateDateTime;
-        private int mAncestryID;
-        private int mCareerID;
-        private int mSchoolID;
-        private int mCareerSpecialityID;
-        private int mGender;
-        private int? mAccessoryID;
-        private int? mBeardID;
-        private int mCostumeID;
-        private int? mDecoID;
-        private int mEyebrowsID;
-        private int mEyesID;
-        private int mHairID;
-        private int? mLipstickID;
-        private int? mMakeupID;
-        private int mSkinID;
-        private int mBackgroundID;
-        private int mLightID;
-        private double mHeadRotation1;
-        private double mHeadRotation2;
-        private double mHeadRotation3;
-        private double mEyeRotation1;
-        private double mEyeRotation2;
-        private double mEyeRotation3;
-        private double mCamPos1;
-        private double mCamPos2;
-        private double mCamPos3;
-        private double? mMorph1E;
-        private double? mMorph1N;
-        private double? mMorph1S;
-        private double? mMorph1W;
-        private double? mMorph2E;
-        private double? mMorph2N;
-        private double? mMorph2S;
-        private double? mMorph2W;
-        private double? mMorph3E;
-        private double? mMorph3N;
-        private double? mMorph3S;
-        private double? mMorph3W;
-        private double? mMorph4E;
-        private double? mMorph4N;
-        private double? mMorph4S;
-        private double? mMorph4W;
-        private int mStationID;
-        private int mSolarSystemID;
-        private int mConstellationID;
-        private int mRegionID;
-        private int mFreeReSpecs;
-        private long mNextReSpecTime;
-        private long mTimeLastJump;
-        private int mTitleMask;
-        private int? mWarFactionID;
-        private int mCorpAccountKey;
-        private long mGrantableRoles;
-        private long mGrantableRolesAtHQ;
-        private long mGrantableRolesAtBase;
-        private long mGrantableRolesAtOther;
-        private int? mBaseID;
-        
         private List<SkillQueueEntry> mSkillQueue;
-        private Corporation mCorporation = null;
-        private Clone mActiveClone = null;
         private double mSkillPoints = 0.0f;
 
         public long Charisma
@@ -500,29 +329,15 @@ namespace EVESharp.Node.Inventory.Items.Types
                 
                 // accessing the skillQueue might be a modification attempt
                 // so the character must be marked as dirty
-                this.Dirty = true;
+                this.Information.Dirty = true;
                 return this.mSkillQueue;
             }
         }
 
-        public Corporation Corporation
-        {
-            get
-            {
-                if (this.mCorporation != null)
-                    return this.mCorporation;
-
-                this.mCorporation = this.ItemFactory.LoadItem(this.CorporationID) as Corporation;
-
-                return this.mCorporation;
-            }
-
-            set
-            {
-                this.Dirty = true;
-                this.mCorporation = value;
-            }
-        }
+        /// <summary>
+        /// Event fired when the skill queue has to be loaded
+        /// </summary>
+        public CharacterSkillQueueLoadEventHandler OnSkillQueueLoad;
         
         public Dictionary<int, Skill> InjectedSkills =>
             this.Items
@@ -560,7 +375,7 @@ namespace EVESharp.Node.Inventory.Items.Types
                 .Where(x => x.Value.Flag == Flags.SkillInTraining && x.Value is Skill)
                 .ToDictionary(dict => dict.Key, dict => dict.Value as Skill);
 
-            this.mSkillQueue = base.ItemFactory.CharacterDB.LoadSkillQueue(this, skillQueue);
+            this.mSkillQueue = this.OnSkillQueueLoad?.Invoke(this, skillQueue);
         }
 
         public void CalculateSkillPoints()
@@ -627,14 +442,6 @@ namespace EVESharp.Node.Inventory.Items.Types
                 if (implant.Attributes[StaticData.Inventory.Attributes.implantness].Integer == implantSlot)
                     throw new OnlyOneImplantActive(newImplant);
             }
-        }
-        
-        protected override void SaveToDB()
-        {
-            base.SaveToDB();
-
-            // update the relevant character information
-            this.ItemFactory.CharacterDB.UpdateCharacterInformation(this);
         }
     }
 }

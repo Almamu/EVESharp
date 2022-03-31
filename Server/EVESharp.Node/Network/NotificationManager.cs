@@ -5,6 +5,7 @@ using EVESharp.Node.StaticData.Corporation;
 using EVESharp.Node.Inventory;
 using EVESharp.Node.Notifications;
 using EVESharp.Node.Notifications.Nodes;
+using EVESharp.Node.Server.Shared;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Network;
 using EVESharp.PythonTypes.Types.Primitives;
@@ -43,18 +44,13 @@ namespace EVESharp.Node.Network
         public const string NOTIFICATION_TYPE_ALLIANCE = "allianceid";
         
         /// <summary>
-        /// The connection this notification manager is using to send notifications through
-        /// </summary>
-        public MachoServerTransport MachoServerTransport { get; set; }
-        
-        /// <summary>
         /// The node this notification manager belongs to
         /// </summary>
-        public NodeContainer Container { get; }
+        public IMachoNet MachoNet { get; }
         
-        public NotificationManager(NodeContainer container)
+        public NotificationManager(IMachoNet machoNet)
         {
-            this.Container = container;
+            this.MachoNet = machoNet;
         }
 
         public void NotifyCharacters(PyList<PyInteger> characterIDs, string type, PyTuple notification)
@@ -152,7 +148,7 @@ namespace EVESharp.Node.Network
                 UserID = -1
             };
 
-            this.MachoServerTransport.MachoNet.QueuePacket(packet);
+            this.MachoNet.QueueOutputPacket(packet);
         }
 
         public void SendNotification(string idType, int id, ClientNotification data)
@@ -204,14 +200,14 @@ namespace EVESharp.Node.Network
             PyPacket packet = new PyPacket(PyPacket.PacketType.NOTIFICATION)
             {
                 Destination = new PyAddressBroadcast(idsOfInterest, idType, notificationType),
-                Source = new PyAddressNode(this.Container.NodeID),
+                Source = new PyAddressNode(this.MachoNet.NodeID),
                 
                 // set the userID to -1, this will indicate the cluster controller to fill it in
                 UserID = -1,
                 Payload = dataContainer
             };
 
-            this.MachoServerTransport.MachoNet.QueuePacket(packet);
+            this.MachoNet.QueueOutputPacket(packet);
         }
     }
 }

@@ -275,7 +275,7 @@ namespace EVESharp.Node.Services.Stations
                     continue;
                 
                 // extra situation, the repair is happening on a item in our node, the client must know immediately
-                if (entry.NodeID == this.Container.NodeID || this.SystemManager.StationBelongsToUs(entry.LocationID) == true)
+                if (entry.NodeID == call.MachoNet.NodeID || this.SystemManager.StationBelongsToUs(entry.LocationID) == true)
                 {
                     ItemEntity item = this.ItemFactory.LoadItem(entry.ItemID, out bool loadRequired);
 
@@ -343,14 +343,14 @@ namespace EVESharp.Node.Services.Stations
         protected override long MachoResolveObject(ServiceBindParams parameters, CallInformation call)
         {
             if (this.SystemManager.StationBelongsToUs(parameters.ObjectID) == true)
-                return this.BoundServiceManager.Container.NodeID;
+                return this.BoundServiceManager.MachoNet.NodeID;
 
             return this.SystemManager.GetNodeStationBelongsTo(parameters.ObjectID);
         }
 
         protected override BoundService CreateBoundInstance(ServiceBindParams bindParams, CallInformation call)
         {
-            if (this.MachoResolveObject(bindParams, call) != this.BoundServiceManager.Container.NodeID)
+            if (this.MachoResolveObject(bindParams, call) != this.BoundServiceManager.MachoNet.NodeID)
                 throw new CustomError("Trying to bind an object that does not belong to us!");
 
             Station station = this.ItemFactory.GetStaticStation(bindParams.ObjectID);

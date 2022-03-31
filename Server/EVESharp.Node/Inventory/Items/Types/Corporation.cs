@@ -6,151 +6,231 @@ namespace EVESharp.Node.Inventory.Items.Types
 {
     public class Corporation : ItemInventory
     {
-        public Corporation(ItemEntity @from, string description, string tickerName, string url, double taxRate,
-            double minimumJoinStanding, int corporationType, bool hasPlayerPersonnelManager,
-            bool sendCharTerminationMessage, int creatorID, int ceoID, int stationID, int raceID, int? allianceID, long shares,
-            int memberCount, int memberLimit, int allowedMemberRaceIDs, int graphicId, int? shape1, int? shape2,
-            int? shape3, int? color1, int? color2, int? color3, string typeface, string division1, string division2,
-            string division3, string division4, string division5, string division6, string division7,
-            string walletDivision1, string walletDivision2, string walletDivision3, string walletDivision4,
-            string walletDivision5, string walletDivision6, string walletDivision7, bool deleted, long? startDate,
-            int? executorCorpID) : base(@from)
+        public Information.Corporation CorporationInformation { get; }
+        public Corporation(Information.Corporation info) : base(info.Information)
         {
-            this.Description = description;
-            this.mTickerName = tickerName;
-            this.Url = url;
-            this.TaxRate = taxRate;
-            this.mMinimumJoinStanding = minimumJoinStanding;
-            this.mCorporationType = corporationType;
-            this.mHasPlayerPersonnelManager = hasPlayerPersonnelManager;
-            this.mSendCharTerminationMessage = sendCharTerminationMessage;
-            this.mCreatorID = creatorID;
-            this.mCeoID = ceoID;
-            this.mStationID = stationID;
-            this.mRaceID = raceID;
-            this.mAllianceID = allianceID;
-            this.mShares = shares;
-            this.mMemberCount = memberCount;
-            this.MemberLimit = memberLimit;
-            this.AllowedMemberRaceIDs = allowedMemberRaceIDs;
-            this.mGraphicID = graphicId;
-            this.mShape1 = shape1;
-            this.mShape2 = shape2;
-            this.mShape3 = shape3;
-            this.mColor1 = color1;
-            this.mColor2 = color2;
-            this.mColor3 = color3;
-            this.mTypeface = typeface;
-            this.Division1 = division1;
-            this.Division2 = division2;
-            this.Division3 = division3;
-            this.Division4 = division4;
-            this.Division5 = division5;
-            this.Division6 = division6;
-            this.Division7 = division7;
-            this.WalletDivision1 = walletDivision1;
-            this.WalletDivision2 = walletDivision2;
-            this.WalletDivision3 = walletDivision3;
-            this.WalletDivision4 = walletDivision4;
-            this.WalletDivision5 = walletDivision5;
-            this.WalletDivision6 = walletDivision6;
-            this.WalletDivision7 = walletDivision7;
-            this.mDeleted = deleted;
-            this.mStartDate = startDate;
-            this.mExecutorCorpID = executorCorpID;
+            this.CorporationInformation = info;
         }
 
-        string mTickerName;
-        double mMinimumJoinStanding;
-        int mCorporationType;
-        bool mHasPlayerPersonnelManager;
-        bool mSendCharTerminationMessage;
-        int mCreatorID;
-        int mCeoID;
-        int mStationID;
-        int mRaceID;
-        int? mAllianceID;
-        long mShares;
-        int mMemberCount;
-        int mGraphicID;
-        int? mShape1;
-        int? mShape2;
-        int? mShape3;
-        int? mColor1;
-        int? mColor2;
-        int? mColor3;
-        string mTypeface;
-        bool mDeleted;
-        long? mStartDate;
-        int? mExecutorCorpID;
-
-        public string Description { get; set; }
-        public string TickerName => mTickerName;
-        public string Url { get; set; }
-        public double TaxRate { get; set; }
-        public double MinimumJoinStanding => mMinimumJoinStanding;
-        public int CorporationType => mCorporationType;
-        public bool HasPlayerPersonnelManager => mHasPlayerPersonnelManager;
-        public bool SendCharTerminationMessage => mSendCharTerminationMessage;
-        public int CreatorID => mCreatorID;
-        public int CeoID => this.mCeoID;
-        public int StationID => mStationID;
-        public int RaceID => mRaceID;
+        public string Description
+        {
+            get => this.CorporationInformation.Description;
+            set
+            {
+                this.Information.Dirty = true;
+                this.CorporationInformation.Description = value;
+            }
+        }
+        public string TickerName => this.CorporationInformation.TickerName;
+        public string Url
+        {
+            get => this.CorporationInformation.Url;
+            set
+            {
+                this.Information.Dirty = true;
+                this.CorporationInformation.Url = value;
+            }
+        }
+        public double TaxRate
+        {
+            get => this.CorporationInformation.TaxRate;
+            set
+            {
+                this.Information.Dirty = true;
+                this.CorporationInformation.TaxRate = value;
+            }
+        }
+        public double MinimumJoinStanding => this.CorporationInformation.MinimumJoinStanding;
+        public int CorporationType => this.CorporationInformation.CorporationType;
+        public bool HasPlayerPersonnelManager => this.CorporationInformation.HasPlayerPersonnelManager;
+        public bool SendCharTerminationMessage => this.CorporationInformation.SendCharTerminationMessage;
+        public int CreatorID => this.CorporationInformation.CreatorID;
+        public int CeoID => this.CorporationInformation.CeoID;
+        public int StationID => this.CorporationInformation.StationID;
+        public int RaceID => this.CorporationInformation.RaceID;
 
         public int? AllianceID
         {
-            get => this.mAllianceID;
+            get => this.CorporationInformation.AllianceID;
             set
             {
-                this.Dirty = true;
-                this.mAllianceID = value;
+                this.Information.Dirty = true;
+                this.CorporationInformation.AllianceID = value;
             }
         }
-        public long Shares => mShares;
-        public int MemberCount => mMemberCount;
-        public int MemberLimit { get; set; }
-        public int AllowedMemberRaceIDs { get; set; }
-        public int GraphicId => mGraphicID;
-        public int? Shape1 => mShape1;
-        public int? Shape2 => mShape2;
-        public int? Shape3 => mShape3;
-        public int? Color1 => mColor1;
-        public int? Color2 => mColor2;
-        public int? Color3 => mColor3;
-        public string Typeface => mTypeface;
-        public string Division1 { get; set; }
-        public string Division2 { get; set; }
-        public string Division3 { get; set; }
-        public string Division4 { get; set; }
-        public string Division5 { get; set; }
-        public string Division6 { get; set; }
-        public string Division7 { get; set; }
-        public string WalletDivision1 { get; set; }
-        public string WalletDivision2 { get; set; }
-        public string WalletDivision3 { get; set; }
-        public string WalletDivision4 { get; set; }
-        public string WalletDivision5 { get; set; }
-        public string WalletDivision6 { get; set; }
-        public string WalletDivision7 { get; set; }
-        public bool Deleted => mDeleted;
+        public long Shares => this.CorporationInformation.Shares;
+        public int MemberCount => this.CorporationInformation.MemberCount;
+        public int MemberLimit
+        {
+            get => this.CorporationInformation.MemberLimit;
+            set
+            {
+                this.Information.Dirty = true;
+                this.CorporationInformation.MemberLimit = value;
+            }
+        }
+        public int AllowedMemberRaceIDs
+        {
+            get => this.CorporationInformation.AllowedMemberRaceIDs;
+            set
+            {
+                this.Information.Dirty = true;
+                this.CorporationInformation.AllowedMemberRaceIDs = value;
+            }
+        }
+        public int GraphicId => this.CorporationInformation.GraphicId;
+        public int? Shape1 => this.CorporationInformation.Shape1;
+        public int? Shape2 => this.CorporationInformation.Shape2;
+        public int? Shape3 => this.CorporationInformation.Shape3;
+        public int? Color1 => this.CorporationInformation.Color1;
+        public int? Color2 => this.CorporationInformation.Color2;
+        public int? Color3 => this.CorporationInformation.Color3;
+        public string Typeface => this.CorporationInformation.Typeface;
+        public string Division1
+        {
+            get => this.CorporationInformation.Division1;
+            set
+            {
+                this.Information.Dirty = true;
+                this.CorporationInformation.Division1 = value;
+            }
+        }
+        public string Division2
+        {
+            get => this.CorporationInformation.Division2;
+            set
+            {
+                this.Information.Dirty = true;
+                this.CorporationInformation.Division2 = value;
+            }
+        }
+        public string Division3
+        {
+            get => this.CorporationInformation.Division3;
+            set
+            {
+                this.Information.Dirty = true;
+                this.CorporationInformation.Division3 = value;
+            }
+        }
+        public string Division4
+        {
+            get => this.CorporationInformation.Division4;
+            set
+            {
+                this.Information.Dirty = true;
+                this.CorporationInformation.Division4 = value;
+            }
+        }
+        public string Division5
+        {
+            get => this.CorporationInformation.Division5;
+            set
+            {
+                this.Information.Dirty = true;
+                this.CorporationInformation.Division5 = value;
+            }
+        }
+        public string Division6
+        {
+            get => this.CorporationInformation.Division6;
+            set
+            {
+                this.Information.Dirty = true;
+                this.CorporationInformation.Division6 = value;
+            }
+        }
+        public string Division7
+        {
+            get => this.CorporationInformation.Division7;
+            set
+            {
+                this.Information.Dirty = true;
+                this.CorporationInformation.Division7 = value;
+            }
+        }
+        public string WalletDivision1
+        {
+            get => this.CorporationInformation.WalletDivision1;
+            set
+            {
+                this.Information.Dirty = true;
+                this.CorporationInformation.WalletDivision1 = value;
+            }
+        }
+        public string WalletDivision2
+        {
+            get => this.CorporationInformation.WalletDivision2;
+            set
+            {
+                this.Information.Dirty = true;
+                this.CorporationInformation.WalletDivision2 = value;
+            }
+        }
+        public string WalletDivision3
+        {
+            get => this.CorporationInformation.WalletDivision3;
+            set
+            {
+                this.Information.Dirty = true;
+                this.CorporationInformation.WalletDivision3 = value;
+            }
+        }
+        public string WalletDivision4
+        {
+            get => this.CorporationInformation.WalletDivision4;
+            set
+            {
+                this.Information.Dirty = true;
+                this.CorporationInformation.WalletDivision4 = value;
+            }
+        }
+        public string WalletDivision5
+        {
+            get => this.CorporationInformation.WalletDivision5;
+            set
+            {
+                this.Information.Dirty = true;
+                this.CorporationInformation.WalletDivision5 = value;
+            }
+        }
+        public string WalletDivision6
+        {
+            get => this.CorporationInformation.WalletDivision6;
+            set
+            {
+                this.Information.Dirty = true;
+                this.CorporationInformation.WalletDivision6 = value;
+            }
+        }
+        public string WalletDivision7
+        {
+            get => this.CorporationInformation.WalletDivision7;
+            set
+            {
+                this.Information.Dirty = true;
+                this.CorporationInformation.WalletDivision7 = value;
+            }
+        }
+        public bool Deleted => this.CorporationInformation.Deleted;
 
         public long? StartDate
         {
-            get => this.mStartDate;
+            get => this.CorporationInformation.StartDate;
             set
             {
-                this.Dirty = true;
-                this.mStartDate = value;
+                this.Information.Dirty = true;
+                this.CorporationInformation.StartDate = value;
             }
         }
 
         public int? ExecutorCorpID
         {
-            get => this.mExecutorCorpID;
+            get => this.CorporationInformation.ExecutorCorpID;
             set
             {
-                this.Dirty = true;
-                this.mExecutorCorpID = value;
+                this.Information.Dirty = true;
+                this.CorporationInformation.ExecutorCorpID = value;
             }
         }
         
@@ -248,14 +328,6 @@ namespace EVESharp.Node.Inventory.Items.Types
                     [41] = this.Deleted
                 }
             );
-        }
-        
-        protected override void SaveToDB()
-        {
-            base.SaveToDB();
-
-            // update the relevant character information
-            this.ItemFactory.CorporationDB.UpdateCorporationInformation(this);
         }
     }
 }

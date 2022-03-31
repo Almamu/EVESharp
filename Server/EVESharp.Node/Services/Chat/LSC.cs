@@ -1,6 +1,5 @@
 using System;
 using System.IO;
-using EVESharp.Common.Logging;
 using EVESharp.EVE.Packets.Exceptions;
 using EVESharp.EVE.Services;
 using EVESharp.Node.Chat;
@@ -15,6 +14,7 @@ using EVESharp.PythonTypes;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Database;
 using EVESharp.PythonTypes.Types.Primitives;
+using Serilog;
 
 namespace EVESharp.Node.Services.Chat
 {
@@ -29,14 +29,13 @@ namespace EVESharp.Node.Services.Chat
         private MessagesDB MessagesDB { get; }
         private ChatDB DB { get; }
         private CharacterDB CharacterDB { get; }
-        private Channel Log;
+        private ILogger Log;
         private ItemFactory ItemFactory { get; }
         private NodeContainer NodeContainer { get; }
         private NotificationManager NotificationManager { get; }
         private MailManager MailManager { get; }
-        private MachoNet MachoNet { get; }
 
-        public LSC(ChatDB db, MessagesDB messagesDB, CharacterDB characterDB, ItemFactory itemFactory, NodeContainer nodeContainer, Logger logger, NotificationManager notificationManager, MachoNet machoNet, MailManager mailManager)
+        public LSC(ChatDB db, MessagesDB messagesDB, CharacterDB characterDB, ItemFactory itemFactory, NodeContainer nodeContainer, ILogger logger, NotificationManager notificationManager, MailManager mailManager)
         {
             this.DB = db;
             this.MessagesDB = messagesDB;
@@ -44,9 +43,8 @@ namespace EVESharp.Node.Services.Chat
             this.ItemFactory = itemFactory;
             this.NodeContainer = nodeContainer;
             this.NotificationManager = notificationManager;
-            this.MachoNet = machoNet;
             this.MailManager = mailManager;
-            this.Log = logger.CreateLogChannel("LSC");
+            this.Log = logger;
         }
 
         private void ParseTupleChannelIdentifier(PyTuple tuple, out int channelID, out string channelType, out int? entityID)

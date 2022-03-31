@@ -3,22 +3,25 @@ using EVESharp.EVE.Packets;
 using EVESharp.EVE.Sessions;
 using EVESharp.Node.Configuration;
 using EVESharp.Node.Network;
+using EVESharp.Node.Server.Shared;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Network;
-using MachoNet = EVESharp.Node.Network.MachoNet;
 
 namespace EVESharp.Node.Sessions;
 
 public class SessionManager : EVE.Sessions.SessionManager
 {
-    private General Configuration { get; }
-    private MachoNet MachoNet { get; }
+    private IMachoNet MachoNet { get; }
+    private TransportManager TransportManager { get; }
     
-    public SessionManager(General configuration, MachoNet machoNet)
+    public SessionManager(TransportManager transportManager, IMachoNet machoNet)
     {
-        this.Configuration = configuration;
+        this.TransportManager = transportManager;
         this.MachoNet = machoNet;
-        this.MachoNet.SessionManager = this;
+        
+        // register events
+        this.TransportManager.OnTransportRemoved += OnTransportClosed;
+        this.TransportManager.OnClientResolved += OnClientResolved;
     }
 
     public void InitializeSession(Session session)
@@ -26,25 +29,23 @@ public class SessionManager : EVE.Sessions.SessionManager
         // add the session to the list first
         this.RegisterSession(session);
         
-        // build session initialization packet
-        SessionInitialStateNotification notif = new SessionInitialStateNotification()
-        {
-            Session = session
-        };
         // build the initial state notification
         PyPacket packet = new PyPacket(PyPacket.PacketType.SESSIONINITIALSTATENOTIFICATION)
         {
-            Source = new PyAddressNode(this.MachoNet.Container.NodeID),
+            Source = new PyAddressNode(this.MachoNet.NodeID),
             Destination = new PyAddressClient(session.UserID, 0),
             UserID = session.UserID,
-            Payload = notif,
+            Payload = new SessionInitialStateNotification()
+            {
+                Session = session
+            },
             OutOfBounds = new PyDictionary
             {
                 ["channel"] = "sessionchange"
             }
         };
         // send the packet to the player
-        this.MachoNet.QueuePacket(packet);
+        this.MachoNet.QueueOutputPacket(packet);
     }
     
     /// <summary>
@@ -55,13 +56,13 @@ public class SessionManager : EVE.Sessions.SessionManager
     /// <param name="newValues">The new values for the session</param>
     public void PerformSessionUpdate(string idType, int id, Session newValues)
     {
-        switch (this.Configuration.MachoNet.Mode)
+        switch (this.MachoNet.Mode)
         {
-            case MachoNetMode.Proxy:
-            case MachoNetMode.Single:
+            case RunMode.Proxy:
+            case RunMode.Single:
                 this.PerformSessionUpdateForProxy(idType, id, newValues);
                 break;
-            case MachoNetMode.Server:
+            case RunMode.Server:
                 this.PerformSessionUpdateForNode(idType, id, newValues);
                 break;
         }
@@ -87,7 +88,7 @@ public class SessionManager : EVE.Sessions.SessionManager
             // difference noticed, send session change to relevant nodes and player
             PyPacket nodePacket = new PyPacket(PyPacket.PacketType.SESSIONCHANGENOTIFICATION)
             {
-                Source = new PyAddressNode(this.MachoNet.Container.NodeID),
+                Source = new PyAddressNode(this.MachoNet.NodeID),
                 Destination = new PyAddressBroadcast(session.NodesOfInterest, "nodeid"),
                 Payload = scn,
                 UserID = session.UserID,
@@ -99,7 +100,7 @@ public class SessionManager : EVE.Sessions.SessionManager
 
             PyPacket clientPacket = new PyPacket(PyPacket.PacketType.SESSIONCHANGENOTIFICATION)
             {
-                Source = new PyAddressNode(this.MachoNet.Container.NodeID),
+                Source = new PyAddressNode(this.MachoNet.NodeID),
                 Destination = new PyAddressClient(session.UserID),
                 Payload = scn,
                 UserID = session.UserID,
@@ -109,8 +110,8 @@ public class SessionManager : EVE.Sessions.SessionManager
                 }
             };
 
-            this.MachoNet.QueuePacket(nodePacket);
-            this.MachoNet.QueuePacket(clientPacket);
+            this.MachoNet.QueueOutputPacket(nodePacket);
+            this.MachoNet.QueueOutputPacket(clientPacket);
         }
     }
 
@@ -118,18 +119,29 @@ public class SessionManager : EVE.Sessions.SessionManager
     {
         PyPacket packet = new PyPacket(PyPacket.PacketType.NOTIFICATION)
         {
-            Source = new PyAddressNode(this.MachoNet.Container.NodeID),
+            Source = new PyAddressNode(this.MachoNet.NodeID),
             Destination = new PyAddressAny(0),
             Payload = new PyTuple(2) {[0] = "UpdateSessionAttributes", [1] = new PyTuple(3) {[0] = idType, [1] = id, [2] = newValues}}
         };
         
         // notify all proxies
-        foreach ((long _, MachoTransport transport) in this.MachoNet.Transport.ProxyTransports)
+        foreach ((long _, MachoTransport transport) in this.MachoNet.TransportManager.ProxyTransports)
             transport.Socket.Send(packet);
     }
 
     public new void FreeSession(Session session)
     {
         base.FreeSession(session);
+    }
+
+    private void OnTransportClosed(object? sender, MachoTransport transport)
+    {
+        if (transport is MachoClientTransport)
+            this.FreeSession(transport.Session);
+    }
+
+    private void OnClientResolved(object? sender, MachoClientTransport transport)
+    {
+        this.InitializeSession(transport.Session);
     }
 }

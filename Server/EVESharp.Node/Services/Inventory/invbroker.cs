@@ -33,9 +33,11 @@ namespace EVESharp.Node.Services.Inventory
         private SystemManager SystemManager => this.ItemFactory.SystemManager;
         private NotificationManager NotificationManager { get; init; }
         private Node.Dogma.Dogma Dogma { get; }
+        private EffectsManager EffectsManager { get; }
 
-        public invbroker(ItemDB itemDB, ItemFactory itemFactory, NodeContainer nodeContainer, NotificationManager notificationManager, Node.Dogma.Dogma dogma, BoundServiceManager manager) : base(manager)
+        public invbroker(ItemDB itemDB, EffectsManager effectsManager, ItemFactory itemFactory, NodeContainer nodeContainer, NotificationManager notificationManager, Node.Dogma.Dogma dogma, BoundServiceManager manager) : base(manager)
         {
+            this.EffectsManager = effectsManager;
             this.ItemFactory = itemFactory;
             this.ItemDB = itemDB;
             this.NodeContainer = nodeContainer;
@@ -43,8 +45,9 @@ namespace EVESharp.Node.Services.Inventory
             this.Dogma = dogma;
         }
 
-        private invbroker(ItemDB itemDB, ItemFactory itemFactory, NodeContainer nodeContainer, NotificationManager notificationManager, Node.Dogma.Dogma dogma, BoundServiceManager manager, int objectID, Session session) : base(manager, session, objectID)
+        private invbroker(ItemDB itemDB, EffectsManager effectsManager, ItemFactory itemFactory, NodeContainer nodeContainer, NotificationManager notificationManager, Node.Dogma.Dogma dogma, BoundServiceManager manager, int objectID, Session session) : base(manager, session, objectID)
         {
+            this.EffectsManager = effectsManager;
             this.ItemFactory = itemFactory;
             this.ItemDB = itemDB;
             this.mObjectID = objectID;
@@ -75,7 +78,7 @@ namespace EVESharp.Node.Services.Inventory
                 inventory = this.ItemFactory.MetaInventoryManager.RegisterMetaInventoryForOwnerID(inventoryItem, ownerID, flag);
             
             // create an instance of the inventory service and bind it to the item data
-            return BoundInventory.BindInventory(this.ItemDB, inventory, flag, this.ItemFactory, this.NodeContainer, this.NotificationManager, this.Dogma, this.BoundServiceManager, session);
+            return BoundInventory.BindInventory(this.ItemDB, this.EffectsManager, inventory, flag, this.ItemFactory, this.NodeContainer, this.NotificationManager, this.Dogma, this.BoundServiceManager, session);
         }
 
         public PySubStruct GetInventoryFromId(PyInteger itemID, PyInteger one, CallInformation call)
@@ -259,10 +262,10 @@ namespace EVESharp.Node.Services.Inventory
         protected override BoundService CreateBoundInstance(ServiceBindParams bindParams, CallInformation call)
         {
             
-            if (this.MachoResolveObject(bindParams, call) != this.NodeContainer.NodeID)
+            if (this.MachoResolveObject(bindParams, call) != call.MachoNet.NodeID)
                 throw new CustomError("Trying to bind an object that does not belong to us!");
             
-            return new invbroker(this.ItemDB, this.ItemFactory, this.NodeContainer, this.NotificationManager, this.Dogma, this.BoundServiceManager, bindParams.ObjectID, call.Session);
+            return new invbroker(this.ItemDB, this.EffectsManager, this.ItemFactory, this.NodeContainer, this.NotificationManager, this.Dogma, this.BoundServiceManager, bindParams.ObjectID, call.Session);
         }
     }
 }

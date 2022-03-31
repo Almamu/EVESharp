@@ -28,7 +28,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using EVESharp.Common.Database;
 using EVESharp.Common.Logging;
-using EVESharp.Common.Logging.Streams;
+using EVESharp.Common.Network.Messages;
 using EVESharp.Node.Sessions;
 using EVESharp.Node.Accounts;
 using EVESharp.Node.Agents;
@@ -39,6 +39,8 @@ using EVESharp.Node.Dogma;
 using EVESharp.Node.Inventory;
 using EVESharp.Node.Market;
 using EVESharp.Node.Network;
+using EVESharp.Node.Server.Shared;
+using EVESharp.Node.Server.Shared.Messages;
 using EVESharp.Node.Services.Account;
 using EVESharp.Node.Services.Alliances;
 using EVESharp.Node.Services.CacheSvc;
@@ -56,29 +58,34 @@ using EVESharp.Node.Services.Network;
 using EVESharp.Node.Services.Stations;
 using EVESharp.Node.Services.Tutorial;
 using EVESharp.Node.Services.War;
+using EVESharp.Node.SimpleInject;
+using Org.BouncyCastle.Crypto;
+using Serilog;
+using Serilog.Core;
+using Serilog.Events;
+using Serilog.Templates;
 using SimpleInjector;
 using Container = SimpleInjector.Container;
-using MachoNet = EVESharp.Node.Network.MachoNet;
 
 namespace EVESharp.Node
 {
     class Program
     {
-        static async Task InitializeItemFactory(Channel logChannel, Container dependencies)
+        static async Task InitializeItemFactory(ILogger logChannel, Container dependencies)
         {
             await Task.Run(() =>
             {
-                logChannel.Info("Initializing item factory");
+                logChannel.Information("Initializing item factory");
                 dependencies.GetInstance<ItemFactory>().Init();
                 logChannel.Debug("Item Factory Initialized");
             });
         }
 
-        static async Task InitializeCache(Channel logChannel, Container dependencies)
+        static async Task InitializeCache(ILogger logChannel, Container dependencies)
         {
             await Task.Run(() =>
             {
-                logChannel.Info("Initializing cache");
+                logChannel.Information("Initializing cache");
                 CacheStorage cacheStorage = dependencies.GetInstance<CacheStorage>();
                 // prime bulk data
                 cacheStorage.Load(
@@ -98,24 +105,91 @@ namespace EVESharp.Node
                     CacheStorage.CharacterAppearanceCacheQueries,
                     CacheStorage.CharacterAppearanceCacheTypes
                 );
-                logChannel.Info("Cache Initialized");
+                logChannel.Information("Cache Initialized");
             });
+        }
+
+        private static Logger SetupLogger(General configuration)
+        {
+            LoggerConfiguration loggerConfiguration = new LoggerConfiguration().MinimumLevel.Verbose();
+
+            // create a default expression template to ensure the text has the correct format
+            ExpressionTemplate template = new ExpressionTemplate(
+                "{UtcDateTime(@t):yyyy-MM-dd HH:mm:ss} {@l:u1} {Coalesce(Coalesce(Name, Substring(SourceContext, LastIndexOf(SourceContext, '.') + 1)), 'Program')}: {@m:lj}\n{@x}"
+            );
+            
+            // setup channels to be ignored based on the logging configuration
+            loggerConfiguration.Filter.ByExcluding(logEvent =>
+            {
+                // check if it should be hidden by default
+                if (logEvent.Properties.TryGetValue(LoggingExtensions.HIDDEN_PROPERTY_NAME, out LogEventPropertyValue value) == true)
+                {
+                    // now check if the name is in the allowed list
+                    string name = "";
+
+                    if (logEvent.Properties.TryGetValue("Name", out LogEventPropertyValue nameProp) == true)
+                        name = nameProp.ToString();
+                    else if (logEvent.Properties.TryGetValue("SourceContext", out LogEventPropertyValue sourceContext) == true)
+                        name = sourceContext.ToString();
+
+                    return !configuration.Logging.EnableChannels.Contains(name);
+                }
+
+                return false;
+            });
+            // log to console by default
+            loggerConfiguration.WriteTo.Console(template);
+
+            if (configuration.FileLog.Enabled == true)
+                loggerConfiguration.WriteTo.File(template, $"{configuration.FileLog.Directory}/{configuration.FileLog.LogFile}");
+
+            // TODO: ADD SUPPORT FOR LOGLITE BACK
+
+            return loggerConfiguration.CreateLogger();
+        }
+
+        private static Container SetupDIContainer(ILogger baseLogger)
+        {
+            Container container = new Container();
+
+            // change how dependencies are resolved to ensure serilog instances are properly provided
+            container.Options.DependencyInjectionBehavior =
+                new SerilogContextualLoggerInjectionBehavior(container.Options, baseLogger);
+
+            return container;
+        }
+
+        private static General LoadConfiguration()
+        {
+            // TODO: REPLACE WITH JSON CONFIGURATION FROM .NET INSTEAD?
+            return General.LoadFromFile("configuration.conf");
         }
         
         static void Main(string[] argv)
         {
-            Channel logChannel = null;
-            Logger log = null;
-            Thread logFlushing = null;
+            // load configuration first
+            General configuration = LoadConfiguration();
+            // initialize the logging system
+            Logger log = SetupLogger(configuration);
+            // finally initialize the dependency injection
+            Container dependencies = SetupDIContainer(log);
             
+            using (log)
             try
             {
-                // create the dependency injector container
-                Container dependencies = new Container();
-                
+                // register configuration dependencies first
+                dependencies.RegisterInstance(configuration);
+                dependencies.RegisterInstance(configuration.Database);
+                dependencies.RegisterInstance(configuration.MachoNet);
+                dependencies.RegisterInstance(configuration.Authentication);
+                dependencies.RegisterInstance(configuration.LogLite);
+                dependencies.RegisterInstance(configuration.FileLog);
+                dependencies.RegisterInstance(configuration.Logging);
+                dependencies.RegisterInstance(configuration.Character);
+
                 // register basic dependencies first
                 dependencies.RegisterInstance(new HttpClient());
-                dependencies.Register<Logger>(Lifestyle.Singleton);
+                dependencies.RegisterInstance(log);
                 dependencies.Register<DatabaseConnection>(Lifestyle.Singleton);
                 dependencies.Register<SessionManager>(Lifestyle.Singleton);
                 dependencies.Register<NodeContainer>(Lifestyle.Singleton);
@@ -133,7 +207,6 @@ namespace EVESharp.Node
                 dependencies.Register<ServiceManager>(Lifestyle.Singleton);
                 dependencies.Register<BoundServiceManager>(Lifestyle.Singleton);
                 dependencies.Register<NotificationManager>(Lifestyle.Singleton);
-                dependencies.Register<MachoNet>(Lifestyle.Singleton);
                 dependencies.Register<ExpressionManager>(Lifestyle.Singleton);
                 dependencies.Register<WalletManager>(Lifestyle.Singleton);
                 dependencies.Register<MailManager>(Lifestyle.Singleton);
@@ -214,100 +287,98 @@ namespace EVESharp.Node
                 dependencies.Register<petitioner>(Lifestyle.Singleton);
                 dependencies.Register<allianceRegistry>(Lifestyle.Singleton);
                 dependencies.Register<LoginQueue>(Lifestyle.Singleton);
+                dependencies.Register<ClusterManager>(Lifestyle.Singleton);
+                dependencies.Register<TransportManager>(Lifestyle.Singleton);
+                dependencies.Register<EffectsManager>(Lifestyle.Singleton);
+
+                // depending on the server mode initialize a different macho instance
+                switch (configuration.MachoNet.Mode)
+                {
+                    case MachoNetMode.Single:
+                        dependencies.Register<IMachoNet, Server.Single.MachoNet>(Lifestyle.Singleton);
+                        dependencies.Register<MessageProcessor<MachoMessage>, Server.Single.Messages.MessageProcessor>(Lifestyle.Singleton);
+                        break;
+                    case MachoNetMode.Proxy:
+                        dependencies.Register<IMachoNet, Server.Proxy.MachoNet>(Lifestyle.Singleton);
+                        dependencies.Register<MessageProcessor<MachoMessage>, Server.Proxy.Messages.MessageProcessor>(Lifestyle.Singleton);
+                        break;
+                    case MachoNetMode.Server:
+                        dependencies.Register<IMachoNet, Server.Node.MachoNet>(Lifestyle.Singleton);
+                        dependencies.Register<MessageProcessor<MachoMessage>, Server.Node.Messages.MessageProcessor>(Lifestyle.Singleton);
+                        break;
+                }
                 
-                dependencies.RegisterInstance(General.LoadFromFile("configuration.conf", dependencies));
                 // disable auto-verification on the container as it triggers creation of instances before they're needed
                 dependencies.Options.EnableAutoVerification = false;
-                
-                General configuration = dependencies.GetInstance<General>();
 
-                log = dependencies.GetInstance<Logger>();
+                log.Information("Initializing EVESharp Node");
+                log.Fatal("Initializing EVESharp Node");
+                log.Error("Initializing EVESharp Node");
+                log.Warning("Initializing EVESharp Node");
+                log.Debug("Initializing EVESharp Node");
+                log.Verbose("Initializing EVESharp Node");
 
-                logChannel = log.CreateLogChannel("main");
-                // add log streams
-                log.AddLogStream(new ConsoleLogStream());
-
-                if (configuration.LogLite.Enabled == true)
-                    log.AddLogStream(new LogLiteStream("Node", log, configuration.LogLite));
-                if (configuration.FileLog.Enabled == true)
-                    log.AddLogStream(new FileLogStream(configuration.FileLog));
-
-                // run a thread for log flushing
-                logFlushing = new Thread(() =>
-                {
-                    try
-                    {
-                        while (true)
-                        {
-                            log.Flush();
-                            Thread.Sleep(1);
-                        }
-                    }
-                    catch
-                    {
-                        // ignored
-                    }
-                });
-                logFlushing.Start();
-
-                logChannel.Info("Initializing EVESharp Node");
-                logChannel.Fatal("Initializing EVESharp Node");
-                logChannel.Error("Initializing EVESharp Node");
-                logChannel.Warning("Initializing EVESharp Node");
-                logChannel.Debug("Initializing EVESharp Node");
-                logChannel.Trace("Initializing EVESharp Node");
-                
                 // connect to the database
                 dependencies.GetInstance<DatabaseConnection>();
                 // sDatabase.Query("SET global max_allowed_packet=1073741824");
-                
+
                 // create the node container
                 dependencies.GetInstance<NodeContainer>();
-                // ensure the login queue is created too
-                dependencies.GetInstance<LoginQueue>();
-                
-                logChannel.Info("Initializing timer manager");
+                // ensure the message processor is created
+                dependencies.GetInstance<MessageProcessor<MachoMessage>>();
+
+                log.Information("Initializing timer manager");
                 dependencies.GetInstance<TimerManager>().Start();
-                logChannel.Debug("Done");
+                log.Debug("Done");
 
                 // do some parallel initialization, cache priming and static item loading can be performed in parallel
                 // this makes the changes quicker
-                Task cacheStorage = InitializeCache(logChannel, dependencies);
-                Task itemFactory = InitializeItemFactory(logChannel, dependencies);
-                
+                Task cacheStorage = InitializeCache(log, dependencies);
+                Task itemFactory = InitializeItemFactory(log, dependencies);
+
                 // wait for all the tasks to be done
                 Task.WaitAll(itemFactory, cacheStorage);
-                
-                logChannel.Info("Initializing solar system manager");
-                dependencies.GetInstance<SystemManager>();
-                logChannel.Debug("Done");
 
-                dependencies.GetInstance<MachoNet>().Initialize();
+                log.Information("Initializing solar system manager");
+                dependencies.GetInstance<SystemManager>();
+                log.Debug("Done");
                 
-                logChannel.Trace("Node startup done");
+                // register the current machonet handler
+                IMachoNet machoNet = dependencies.GetInstance<IMachoNet>();
+                
+                // initialize the machonet protocol
+                machoNet.Initialize();
+                
+                // based on the mode do some things with the cluster manager
+                ClusterManager cluster = dependencies.GetInstance<ClusterManager>();
+                
+                // register with the server
+                if (machoNet.Mode != RunMode.Single)
+                    cluster.RegisterNode();
+
+                if (machoNet.Mode == RunMode.Server)
+                {
+                    // wait for 5 seconds and connect to proxies
+                    Thread.Sleep(5000);
+                    // connect to proxies
+                    cluster.EstablishConnectionWithProxies();
+                }
+
+                log.Verbose("Node startup done");
 
                 while (true)
                 {
                     // wait 45 seconds to send a heartbeat
                     Thread.Sleep(45 * 1000);
-                    
-                    dependencies.GetInstance<MachoNet>().PerformHeartbeat();
+
+                    if (machoNet.Mode != RunMode.Single)
+                        dependencies.GetInstance<ClusterManager>().PerformHeartbeat();
                 }
             }
             catch (Exception e)
             {
-                if (log is null || logChannel is null)
-                {
-                    Console.WriteLine(e.ToString());
-                }
-                else
-                {
-                    logChannel?.Error(e.ToString());
-                    logChannel?.Fatal("Node stopped...");
-                    log?.Flush();
-                    // stop the logging thread
-                    logFlushing?.Interrupt();
-                }
+                log.Fatal("Node stopped...");
+                log.Fatal(e.ToString());
             }
         }
     }

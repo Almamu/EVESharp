@@ -1,16 +1,16 @@
 using System;
 using System.Net;
 using System.Net.Sockets;
-using EVESharp.Common.Logging;
+using Serilog;
 
 namespace EVESharp.Common.Network
 {
     public class EVEServerSocket : EVESocket
     {
-        public Channel Log { get; }
+        public ILogger Log { get; }
         public int Port { get; }
 
-        public EVEServerSocket(int port, Channel logChannel)
+        public EVEServerSocket(int port, ILogger logChannel)
         {
             this.Log = logChannel;
             this.Port = port;

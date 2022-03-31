@@ -23,22 +23,22 @@
 */
 
 using System;
-using EVESharp.Common.Logging;
 using EVESharp.EVE.Services;
 using EVESharp.Node.Network;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Primitives;
+using Serilog;
 
 namespace EVESharp.Node.Services.Network
 {
     public class alert : Service
     {
         public override AccessLevel AccessLevel => AccessLevel.None;
-        private Channel Log { get; }
+        private ILogger Log { get; }
 
-        public alert(Logger logger)
+        public alert(ILogger logger)
         {
-            this.Log = logger.CreateLogChannel("alert");
+            this.Log = logger;
         }
 
         public PyTuple BeanCount(PyInteger stackID, CallInformation call)

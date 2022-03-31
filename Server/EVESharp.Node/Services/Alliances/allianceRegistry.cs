@@ -34,7 +34,7 @@ namespace EVESharp.Node.Services.Alliances
         private Alliance Alliance { get; init; }
         private SessionManager SessionManager { get; }
 
-        public allianceRegistry(DatabaseConnection databaseConnection, CorporationDB corporationDB, ChatDB chatDB, ItemFactory itemFactory, NotificationManager notificationManager, BoundServiceManager manager, MachoNet machoNet, SessionManager sessionManager) : base(manager)
+        public allianceRegistry(DatabaseConnection databaseConnection, CorporationDB corporationDB, ChatDB chatDB, ItemFactory itemFactory, NotificationManager notificationManager, BoundServiceManager manager, SessionManager sessionManager) : base(manager)
         {
             this.Database = databaseConnection;
             this.CorporationDB = corporationDB;
@@ -43,7 +43,8 @@ namespace EVESharp.Node.Services.Alliances
             this.ItemFactory = itemFactory;
             this.SessionManager = sessionManager;
             
-            machoNet.OnClusterTimer += PerformTimedEvents;
+            // TODO: RE-IMPLEMENT ON CLUSTER TIMER
+            // machoNet.OnClusterTimer += PerformTimedEvents;
         }
         
         private allianceRegistry(Alliance alliance, DatabaseConnection databaseConnection, CorporationDB corporationDB, ItemFactory itemFactory, NotificationManager notificationManager, SessionManager sessionManager, MultiClientBoundService parent) : base(parent, alliance.ID)
@@ -131,7 +132,7 @@ namespace EVESharp.Node.Services.Alliances
         {
             // TODO: CHECK IF ANY NODE HAS THIS ALLIANCE LOADED
             // TODO: IF NOT, LOAD IT HERE AND RETURN OUR ID
-            return this.BoundServiceManager.Container.NodeID;
+            return this.BoundServiceManager.MachoNet.NodeID;
         }
 
         public override bool IsClientAllowedToCall(Session session)
@@ -141,7 +142,7 @@ namespace EVESharp.Node.Services.Alliances
 
         protected override MultiClientBoundService CreateBoundInstance(ServiceBindParams bindParams, CallInformation call)
         {
-            if (this.MachoResolveObject(bindParams, call) != this.BoundServiceManager.Container.NodeID)
+            if (this.MachoResolveObject(bindParams, call) != this.BoundServiceManager.MachoNet.NodeID)
                 throw new CustomError("Trying to bind an object that does not belong to us!");
 
             Alliance alliance = this.ItemFactory.LoadItem<Alliance>(bindParams.ObjectID);

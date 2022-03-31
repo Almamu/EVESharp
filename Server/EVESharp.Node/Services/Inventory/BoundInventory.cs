@@ -36,9 +36,11 @@ namespace EVESharp.Node.Services.Inventory
         private ItemFactory ItemFactory { get; }
         private NotificationManager NotificationManager { get; init; }
         private Node.Dogma.Dogma Dogma { get; }
+        private EffectsManager EffectsManager { get; }
 
-        public BoundInventory(ItemDB itemDB, ItemInventory item, ItemFactory itemFactory, NodeContainer nodeContainer, NotificationManager notificationManager, Node.Dogma.Dogma dogma, BoundServiceManager manager, Session session) : base(manager, session, item.ID)
+        public BoundInventory(ItemDB itemDB, EffectsManager effectsManager, ItemInventory item, ItemFactory itemFactory, NodeContainer nodeContainer, NotificationManager notificationManager, Node.Dogma.Dogma dogma, BoundServiceManager manager, Session session) : base(manager, session, item.ID)
         {
+            this.EffectsManager = effectsManager;
             this.mInventory = item;
             this.mFlag = Flags.None;
             this.ItemDB = itemDB;
@@ -48,8 +50,9 @@ namespace EVESharp.Node.Services.Inventory
             this.Dogma = dogma;
         }
 
-        public BoundInventory(ItemDB itemDB, ItemInventory item, Flags flag, ItemFactory itemFactory, NodeContainer nodeContainer, NotificationManager notificationManager, Node.Dogma.Dogma dogma, BoundServiceManager manager, Session session) : base(manager, session, item.ID)
+        public BoundInventory(ItemDB itemDB, EffectsManager effectsManager, ItemInventory item, Flags flag, ItemFactory itemFactory, NodeContainer nodeContainer, NotificationManager notificationManager, Node.Dogma.Dogma dogma, BoundServiceManager manager, Session session) : base(manager, session, item.ID)
         {
+            this.EffectsManager = effectsManager;
             this.mInventory = item;
             this.mFlag = flag;
             this.ItemDB = itemDB;
@@ -249,11 +252,13 @@ namespace EVESharp.Node.Services.Inventory
             {
                 if (item is ShipModule module)
                 {
+                    ItemEffects effects = this.EffectsManager.GetForItem(module);
+                    
                     if (module.Attributes[Attributes.isOnline] == 1)
-                        module.StopApplyingEffect("online", session);
+                        effects.StopApplyingEffect("online", session);
 
                     // disable passive effects too
-                    module.StopApplyingPassiveEffects(session);
+                    effects.StopApplyingPassiveEffects(session);
                 }
             }
             
@@ -380,17 +385,19 @@ namespace EVESharp.Node.Services.Inventory
                     if (item is ShipModule shipModule2)
                         module = shipModule2;
                 }
+
+                ItemEffects effects = this.EffectsManager.GetForItem(module);
                 
                 try
                 {
                     // apply all the passive effects (this also blocks the item fitting if the initialization fails)
-                    module?.ApplyPassiveEffects(session);
+                    effects?.ApplyPassiveEffects(session);
                     // extra check, ensure that the character has the required skills
                 }
                 catch (UserError)
                 {
                     // ensure that the passive effects that got applied already are removed from the item
-                    module?.StopApplyingPassiveEffects(session);
+                    effects?.StopApplyingPassiveEffects(session);
 
                     int newOldLocation = item.LocationID;
                     Flags newOldFlag = item.Flag;
@@ -419,7 +426,7 @@ namespace EVESharp.Node.Services.Inventory
                 
                 // put the module online after fitting it as long as it's a normal module
                 if (module?.IsRigSlot() == false)
-                    module?.ApplyEffect("online", session);
+                    effects?.ApplyEffect("online", session);
             }
             else
             {
@@ -673,9 +680,9 @@ namespace EVESharp.Node.Services.Inventory
             return null;
         }
 
-        public static PySubStruct BindInventory(ItemDB itemDB, ItemInventory item, Flags flag, ItemFactory itemFactory, NodeContainer nodeContainer, NotificationManager notificationManager, Node.Dogma.Dogma dogma, BoundServiceManager boundServiceManager, Session session)
+        public static PySubStruct BindInventory(ItemDB itemDB, EffectsManager effectsManager, ItemInventory item, Flags flag, ItemFactory itemFactory, NodeContainer nodeContainer, NotificationManager notificationManager, Node.Dogma.Dogma dogma, BoundServiceManager boundServiceManager, Session session)
         {
-            BoundService instance = new BoundInventory(itemDB, item, flag, itemFactory, nodeContainer, notificationManager, dogma, boundServiceManager, session);
+            BoundService instance = new BoundInventory(itemDB, effectsManager, item, flag, itemFactory, nodeContainer, notificationManager, dogma, boundServiceManager, session);
             // bind the service
             int boundID = boundServiceManager.BindService(instance);
             // build the bound service string
@@ -710,7 +717,7 @@ namespace EVESharp.Node.Services.Inventory
             if (item is ShipModule module)
             {
                 // disable passive effects
-                module.StopApplyingPassiveEffects(call.Session);
+                this.EffectsManager.GetForItem(module).StopApplyingPassiveEffects(call.Session);
             }
             
             int oldLocationID = item.LocationID;

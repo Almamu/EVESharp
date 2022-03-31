@@ -8,7 +8,7 @@ namespace EVESharp.Node.Inventory.Items.Types
     {
         private readonly double mSkillPointMultiplier;
         
-        public Skill(ItemEntity from, double skillPointMultiplier) : base(from)
+        public Skill(Information.Item info, double skillPointMultiplier) : base(info)
         {
             this.mSkillPointMultiplier = skillPointMultiplier;
         }

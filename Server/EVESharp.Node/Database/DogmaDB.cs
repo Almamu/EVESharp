@@ -2,12 +2,12 @@
 using System.Collections.Generic;
 using System.Linq;
 using EVESharp.Common.Database;
-using EVESharp.Common.Logging;
 using EVESharp.Node.Inventory.Items.Attributes;
 using EVESharp.Node.Inventory.Items.Dogma;
 using EVESharp.Node.StaticData.Inventory;
 using MySql.Data.MySqlClient;
 using EVESharp.Node.Inventory.Items;
+using Serilog;
 
 namespace EVESharp.Node.Database
 {
@@ -24,7 +24,7 @@ namespace EVESharp.Node.Database
             public int? AttributeID;
         }
         
-        private Channel Log { get; init; }
+        private ILogger Log { get; init; }
         public Dictionary<int, Expression> LoadDogmaExpressions()
         {
             MySqlConnection connection = null;
@@ -114,9 +114,9 @@ namespace EVESharp.Node.Database
             };
         }
         
-        public DogmaDB(Logger logger, DatabaseConnection db) : base(db)
+        public DogmaDB(ILogger logger, DatabaseConnection db) : base(db)
         {
-            this.Log = logger.CreateLogChannel("DogmaDB");
+            this.Log = logger;
         }
     }
 }

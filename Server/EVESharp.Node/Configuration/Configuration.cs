@@ -16,7 +16,7 @@ namespace EVESharp.Node.Configuration
         public Character Character { get; } = new Character();
         public Cluster Cluster { get; } = new Cluster();
 
-        public static General LoadFromFile(string filename, Container container)
+        public static General LoadFromFile(string filename)
         {
             FileIniDataParser parser = new FileIniDataParser();
             IniData data = parser.ReadFile(filename);
@@ -36,15 +36,6 @@ namespace EVESharp.Node.Configuration
                 config.Logging.Load(data["logging"]);
             if (data.Sections.ContainsSection("character") == true)
                 config.Character.Load(data["character"]);
-
-            // register all the configuration options as dependencies available
-            container.RegisterInstance(config.Database);
-            container.RegisterInstance(config.MachoNet);
-            container.RegisterInstance(config.Authentication);
-            container.RegisterInstance(config.LogLite);
-            container.RegisterInstance(config.FileLog);
-            container.RegisterInstance(config.Logging);
-            container.RegisterInstance(config.Character);
             
             return config;
         }

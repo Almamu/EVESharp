@@ -28,7 +28,6 @@ using System.Data;
 using EVESharp.Common.Database;
 using EVESharp.Node.StaticData;
 using MySql.Data.MySqlClient;
-using EVESharp.Node.Inventory.SystemEntities;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Database;
 using EVESharp.PythonTypes.Types.Primitives;

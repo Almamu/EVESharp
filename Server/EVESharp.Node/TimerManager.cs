@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading;
-using EVESharp.Common.Logging;
+using Serilog;
 
 namespace EVESharp.Node
 {
@@ -14,13 +14,13 @@ namespace EVESharp.Node
     public class TimerManager
     {
         private readonly Thread mThread = null;
-        private readonly Channel Log = null;
+        private readonly ILogger Log = null;
         private readonly List<Timer> mItemTimers = new List<Timer>();
         private readonly List<Timer> mCallTimers = new List<Timer>();
         
-        public TimerManager(Logger logger)
+        public TimerManager(ILogger logger)
         {
-            this.Log = logger.CreateLogChannel("TimerManager");
+            this.Log = logger;
             this.mThread = new Thread(Run);
         }
 
@@ -89,7 +89,7 @@ namespace EVESharp.Node
         /// </summary>
         private void Run()
         {
-            Log.Info("Timer thread started");
+            Log.Information("Timer thread started");
 
             try
             {

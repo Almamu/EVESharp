@@ -33,7 +33,7 @@ namespace EVESharp.Node.Services.Inventory
         private WalletManager WalletManager { get; }
         private MailManager MailManager { get; }
 
-        public insuranceSvc(ItemFactory itemFactory, InsuranceDB db, MarketDB marketDB, WalletManager walletManager, MailManager mailManager, BoundServiceManager manager, MachoNet machoNet) : base(manager)
+        public insuranceSvc(ItemFactory itemFactory, InsuranceDB db, MarketDB marketDB, WalletManager walletManager, MailManager mailManager, BoundServiceManager manager) : base(manager)
         {
             this.DB = db;
             this.ItemFactory = itemFactory;
@@ -41,7 +41,8 @@ namespace EVESharp.Node.Services.Inventory
             this.WalletManager = walletManager;
             this.MailManager = mailManager;
 
-            machoNet.OnClusterTimer += PerformTimedEvents;
+            // TODO: RE-IMPLEMENT ON CLUSTER TIMER
+            // machoNet.OnClusterTimer += PerformTimedEvents;
         }
 
         protected insuranceSvc(ItemFactory itemFactory, InsuranceDB db, MarketDB marketDB, WalletManager walletManager, MailManager mailManager, BoundServiceManager manager, int stationID, Session session) : base (manager, session, stationID)
@@ -186,14 +187,14 @@ namespace EVESharp.Node.Services.Inventory
             int solarSystemID = this.ItemFactory.GetStaticStation(parameters.ObjectID).SolarSystemID;
 
             if (this.SystemManager.SolarSystemBelongsToUs(solarSystemID) == true)
-                return this.BoundServiceManager.Container.NodeID;
+                return this.BoundServiceManager.MachoNet.NodeID;
 
             return this.SystemManager.GetNodeSolarSystemBelongsTo(solarSystemID);
         }
 
         protected override BoundService CreateBoundInstance(ServiceBindParams bindParams, CallInformation call)
         {
-            if (this.MachoResolveObject(bindParams, call) != this.BoundServiceManager.Container.NodeID)
+            if (this.MachoResolveObject(bindParams, call) != this.BoundServiceManager.MachoNet.NodeID)
                 throw new CustomError("Trying to bind an object that does not belong to us!");
             
             return new insuranceSvc(this.ItemFactory, this.DB, this.MarketDB, this.WalletManager, this.MailManager, this.BoundServiceManager, bindParams.ObjectID, call.Session);

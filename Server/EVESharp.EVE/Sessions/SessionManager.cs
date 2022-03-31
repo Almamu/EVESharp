@@ -57,7 +57,7 @@ public class SessionManager
     /// <summary>
     /// Updates attributes and returns a delta of the differences
     /// </summary>
-    /// <param name="sessionID">The session to update</param>
+    /// <param name="current">The session to update</param>
     /// <param name="values">The new values to set</param>
     /// <returns>The delta of the session</returns>
     /// <exception cref="InvalidDataException">If the session cannot be found</exception>

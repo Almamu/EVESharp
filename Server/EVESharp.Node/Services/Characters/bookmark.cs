@@ -19,13 +19,11 @@ namespace EVESharp.Node.Services.Characters
         public override AccessLevel AccessLevel => AccessLevel.None;
         private DatabaseConnection Database { get; init; }
         private ItemFactory ItemFactory { get; }
-        private MachoNet MachoNet { get; }
         
-        public bookmark(DatabaseConnection connection, ItemFactory itemFactory, MachoNet machoNet)
+        public bookmark(DatabaseConnection connection, ItemFactory itemFactory)
         {
             this.Database = connection;
             this.ItemFactory = itemFactory;
-            this.MachoNet = machoNet;
         }
 
         public PyDataType GetBookmarks(CallInformation call)

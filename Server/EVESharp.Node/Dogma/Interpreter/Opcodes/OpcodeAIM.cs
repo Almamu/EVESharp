@@ -48,7 +48,7 @@ namespace EVESharp.Node.Dogma.Interpreter.Opcodes
             item.Attributes[attribute].AddModifier(this.Change.LeftSide.Association, target.Attributes[this.Attribute.Attribute]);
             
             // notify the character
-            this.Interpreter.Environment.Self.ItemFactory.Dogma.NotifyAttributeChange(
+            this.Interpreter.Environment.ItemFactory.Dogma.NotifyAttributeChange(
                 this.Interpreter.Environment.Session.EnsureCharacterIsSelected(),
                 attribute,
                 item

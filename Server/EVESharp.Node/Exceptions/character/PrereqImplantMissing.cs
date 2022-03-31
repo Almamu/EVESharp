@@ -9,7 +9,11 @@ namespace EVESharp.Node.Exceptions.character
 {
     public class PrereqImplantMissing : UserError
     {
-        public PrereqImplantMissing(Type requirement) : base("PrereqImplantMissing", new PyDictionary() { ["typeName"] = FormatTypeIDAsName(requirement.ID) })
+        public PrereqImplantMissing(int typeID) : base("PrereqImplantMissing", new PyDictionary() { ["typeName"] = FormatTypeIDAsName(typeID) })
+        {
+        }
+
+        public PrereqImplantMissing(Type type) : this(type.ID)
         {
         }
     }

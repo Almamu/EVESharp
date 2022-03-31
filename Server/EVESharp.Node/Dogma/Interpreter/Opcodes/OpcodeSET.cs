@@ -36,7 +36,7 @@ namespace EVESharp.Node.Dogma.Interpreter.Opcodes
                     item.Attributes[att.AttributeToAffect.Attribute].Integer = defint.Value;
                     
                     // notify the character
-                    this.Interpreter.Environment.Self.ItemFactory.Dogma.NotifyAttributeChange(
+                    this.Interpreter.Environment.ItemFactory.Dogma.NotifyAttributeChange(
                         this.Interpreter.Environment.Session.EnsureCharacterIsSelected(),
                         attribute,
                         item

@@ -34,9 +34,12 @@ using AttributeInfo = EVESharp.Node.StaticData.Inventory.Attribute;
 
 namespace EVESharp.Node.Inventory.Items.Attributes
 {
-    public class Attribute : DatabaseEntity
+    public class Attribute
     {
         private const double TOLERANCE = 0.0001;
+        public bool Dirty { get; set; }
+        public bool New { get; set; }
+
         protected bool Equals(Attribute other)
         {
             if (this.ValueType == ItemAttributeValueType.Integer && other.ValueType == ItemAttributeValueType.Integer)
@@ -210,14 +213,6 @@ namespace EVESharp.Node.Inventory.Items.Attributes
                 default:
                     throw new InvalidDataException();
             }
-        }
-
-        protected override void SaveToDB()
-        {
-            // item attributes cannot be saved by themselves
-            // only AttributeList have enough information to perform that save
-            // so use that class instead
-            throw new System.NotImplementedException();
         }
         
         public static implicit operator PyDataType(Attribute attribute)

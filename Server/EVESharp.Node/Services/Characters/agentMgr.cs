@@ -51,7 +51,7 @@ namespace EVESharp.Node.Services.Characters
 
         protected override long MachoResolveObject(ServiceBindParams parameters, CallInformation call)
         {
-            return this.Container.NodeID;
+            return call.MachoNet.NodeID;
         }
 
         protected override BoundService CreateBoundInstance(ServiceBindParams bindParams, CallInformation call)

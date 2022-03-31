@@ -25,16 +25,17 @@
 using System;
 using System.Collections.Generic;
 using EVESharp.Common.Database;
-using EVESharp.Common.Logging;
 using EVESharp.EVE.Packets.Complex;
 using EVESharp.Node.Inventory;
 using EVESharp.Node.StaticData.Inventory;
 using MySql.Data.MySqlClient;
 using EVESharp.Node.Inventory.Items;
+using EVESharp.Node.Server.Shared;
 using EVESharp.PythonTypes.Marshal;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Database;
 using EVESharp.PythonTypes.Types.Primitives;
+using Serilog;
 
 namespace EVESharp.Node
 {
@@ -325,8 +326,8 @@ namespace EVESharp.Node
         /// </summary>
         private readonly PyDictionary mCacheHints = new PyDictionary();
         
-        private NodeContainer Container { get; }
-        private Channel Log { get; }
+        private IMachoNet MachoNet { get; }
+        private ILogger Log { get; }
 
         /// <summary>
         /// Checks if a cached object already exists
@@ -397,7 +398,7 @@ namespace EVESharp.Node
         {
             byte[] marshalData = Marshal.ToByteArray(data);
             
-            CachedHint hint = CachedHint.FromPyObject(name, marshalData, timestamp, this.Container.NodeID);
+            CachedHint hint = CachedHint.FromPyObject(name, marshalData, timestamp, this.MachoNet.NodeID);
 
             // save cache hint
             this.mCacheHints[name] = hint;
@@ -418,7 +419,7 @@ namespace EVESharp.Node
             
             string index = $"{service}::{method}";
             PyDataType objectID = this.GenerateObjectIDForCall(service, method);
-            CachedHint hint = CachedHint.FromPyObject(objectID, marshalData, timestamp, this.Container.NodeID);
+            CachedHint hint = CachedHint.FromPyObject(objectID, marshalData, timestamp, this.MachoNet.NodeID);
             
             // save cache hint
             this.mCacheHints[index] = hint;
@@ -566,10 +567,10 @@ namespace EVESharp.Node
             }
         }
 
-        public CacheStorage(NodeContainer container, DatabaseConnection db, Logger logger) : base(db)
+        public CacheStorage(IMachoNet machoNet, DatabaseConnection db, ILogger logger) : base(db)
         {
-            this.Log = logger.CreateLogChannel("CacheStorage");
-            this.Container = container;
+            this.Log = logger;
+            this.MachoNet = machoNet;
         }
     }
 }

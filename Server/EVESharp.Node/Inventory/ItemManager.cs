@@ -24,27 +24,26 @@
 
 using System;
 using System.Collections.Generic;
-using EVESharp.Common.Logging;
 using EVESharp.Node.Database;
 using EVESharp.Node.Dogma;
 using EVESharp.Node.Inventory.Exceptions;
 using EVESharp.Node.Inventory.Items;
 using EVESharp.Node.Inventory.Items.Types;
-using EVESharp.Node.Inventory.SystemEntities;
 using EVESharp.Node.StaticData;
 using EVESharp.Node.StaticData.Inventory;
+using Serilog;
 using Type = EVESharp.Node.StaticData.Inventory.Type;
 
 namespace EVESharp.Node.Inventory
 {
     public class ItemManager
     {
-        private Channel Log { get; }
+        private ILogger Log { get; }
         private NodeContainer NodeContainer { get; }
-        public ItemManager(Logger logger, NodeContainer nodeContainer)
+        public ItemManager(ILogger logger, NodeContainer nodeContainer)
         {
             // create a log channel for the rare occurence of the ItemManager wanting to log something
-            this.Log = logger.CreateLogChannel("ItemManager");
+            this.Log = logger;
             this.NodeContainer = nodeContainer;
         }
     }

@@ -24,7 +24,6 @@
 
 using System;
 using System.Collections.Generic;
-using EVESharp.Common.Logging;
 using EVESharp.EVE.Services;
 using EVESharp.EVE.Services.Exceptions;
 using EVESharp.EVE.Sessions;
@@ -46,6 +45,7 @@ using EVESharp.Node.Services.Stations;
 using EVESharp.Node.Services.Tutorial;
 using EVESharp.Node.Services.War;
 using EVESharp.PythonTypes.Types.Primitives;
+using Serilog;
 
 namespace EVESharp.Node.Network
 {
@@ -55,10 +55,8 @@ namespace EVESharp.Node.Network
         private Dictionary<int, RemoteCall> mCallCallbacks = new Dictionary<int, RemoteCall>();
         public NodeContainer Container { get; }
         public CacheStorage CacheStorage { get; }
-        public BoundServiceManager BoundServiceManager { get; }
         public TimerManager TimerManager { get; }
-        public Logger Logger { get; }
-        private Channel Log { get; }
+        private ILogger Log { get; }
         public objectCaching objectCaching { get; }
         public machoNet machoNet { get; }
         public alert alert { get; }
@@ -106,8 +104,7 @@ namespace EVESharp.Node.Network
         public allianceRegistry allianceRegistry { get; }
 
         public ServiceManager(
-            NodeContainer container, CacheStorage storage, Logger logger, TimerManager timerManager,
-            BoundServiceManager boundServiceManager,
+            NodeContainer container, CacheStorage storage, ILogger logger, TimerManager timerManager,
             machoNet machoNet,
             objectCaching objectCaching,
             alert alert,
@@ -156,11 +153,9 @@ namespace EVESharp.Node.Network
         {
             this.Container = container;
             this.CacheStorage = storage;
-            this.BoundServiceManager = boundServiceManager;
             this.TimerManager = timerManager;
-            this.Logger = logger;
-            this.Log = this.Logger.CreateLogChannel("ServiceManager");
-            
+            this.Log = logger;
+
             // store all the services
             this.machoNet = machoNet;
             this.objectCaching = objectCaching;
@@ -285,7 +280,7 @@ namespace EVESharp.Node.Network
         /// Reserves a slot in the call list and prepares timeout timers in case the call wait time expires 
         /// </summary>
         /// <param name="callback">The function to call when the answer is received</param>
-        /// <param name="client">The client that is getting the call</param>
+        /// <param name="session">The session that is getting the call</param>
         /// <param name="extraInfo">Any extra information to store for later usage</param>
         /// <param name="timeoutCallback">The function to call if the call timeout expires</param>
         /// <param name="timeoutSeconds">The amount of seconds to wait until timing out</param>

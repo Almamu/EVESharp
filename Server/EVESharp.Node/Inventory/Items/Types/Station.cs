@@ -11,52 +11,26 @@ namespace EVESharp.Node.Inventory.Items.Types
 {
     public class Station : ItemInventory
     {
-        private StaticData.Inventory.Station.Type mStationType;
-        private Operation mOperations;
-        private Dictionary<int, Character> mGuests;
+        public Information.Station StationInformation { get; }
         
-        private int mSecurity;
-        private double mDockingCostPerVolume;
-        private double mMaxShipVolumeDockable;
-        private int mOfficeRentalCost;
-        private int mConstellationID;
-        private int mRegionID;
-        private double mReprocessingEfficiency;
-        private double mReprocessingStationsTake;
-        private int mReprocessingHangarFlag;
-        
-        public Station(StaticData.Inventory.Station.Type stationType, Operation operations, int security,
-            double dockingCostPerVolume, double maxShipVolumeDockable, int officeRentalCost, int constellationId,
-            int regionId, double reprocessingEfficiency, double reprocessingStationsTake, int reprocessingHangarFlag,
-            ItemEntity from) : base(from)
+        public Station(Information.Station info) : base(info.Information)
         {
-            this.mStationType = stationType;
-            this.mOperations = operations;
-            this.mSecurity = security;
-            this.mDockingCostPerVolume = dockingCostPerVolume;
-            this.mMaxShipVolumeDockable = maxShipVolumeDockable;
-            this.mOfficeRentalCost = officeRentalCost;
-            this.mConstellationID = constellationId;
-            this.mRegionID = regionId;
-            this.mReprocessingEfficiency = reprocessingEfficiency;
-            this.mReprocessingStationsTake = reprocessingStationsTake;
-            this.mReprocessingHangarFlag = reprocessingHangarFlag;
-            this.mGuests = new Dictionary<int, Character>();
+            this.StationInformation = info;
         }
 
-        public Operation Operations => this.mOperations;
-        public StaticData.Inventory.Station.Type StationType => this.mStationType;
-        public Dictionary<int, Character> Guests => this.mGuests;
-        public int Security => mSecurity;
-        public double DockingCostPerVolume => mDockingCostPerVolume;
-        public double MaxShipVolumeDockable => mMaxShipVolumeDockable;
-        public int OfficeRentalCost => mOfficeRentalCost;
+        public Operation Operations => this.StationInformation.Operations;
+        public Type StationType => this.StationInformation.Type;
+        public Dictionary<int, Character> Guests { get; } = new Dictionary<int, Character>();
+        public int Security => this.StationInformation.Security;
+        public double DockingCostPerVolume => this.StationInformation.DockingCostPerVolume;
+        public double MaxShipVolumeDockable => this.StationInformation.MaxShipVolumeDockable;
+        public int OfficeRentalCost => this.StationInformation.OfficeRentalCost;
         public int SolarSystemID => this.LocationID;
-        public int ConstellationID => mConstellationID;
-        public int RegionID => mRegionID;
-        public double ReprocessingEfficiency => mReprocessingEfficiency;
-        public double ReprocessingStationsTake => mReprocessingStationsTake;
-        public int ReprocessingHangarFlag => mReprocessingHangarFlag;
+        public int ConstellationID => this.StationInformation.ConstellationID;
+        public int RegionID => this.StationInformation.RegionID;
+        public double ReprocessingEfficiency => this.StationInformation.ReprocessingEfficiency;
+        public double ReprocessingStationsTake => this.StationInformation.ReprocessingStationsTake;
+        public int ReprocessingHangarFlag => this.StationInformation.ReprocessingHangarFlag;
 
         public PyDataType GetStationInfo()
         {
@@ -89,7 +63,7 @@ namespace EVESharp.Node.Inventory.Items.Types
             return KeyVal.FromDictionary(data);
         }
 
-        public bool HasService(StaticData.Inventory.Station.Service service)
+        public bool HasService(Service service)
         {
             return (this.Operations.ServiceMask & (int) service) == (int) service;
         }

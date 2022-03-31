@@ -22,68 +22,22 @@
     Creator: Almamu
 */
 
+using EVESharp.Common.Database;
+using EVESharp.Node.Inventory.Items.Types.Information;
+
 namespace EVESharp.Node.Inventory.Items.Types
 {
     public class Blueprint : ItemEntity
     {
-        public Blueprint(ItemEntity @from, bool copy, int materialLevel, int productivityLevel, int licensedProductionRunsRemaining) : base(@from)
+        public Information.Blueprint BlueprintInformation { get; }
+        public Blueprint(Information.Blueprint information) : base(information.Information)
         {
-            this.mCopy = copy;
-            this.mMaterialLevel = materialLevel;
-            this.mProductivityLevel = productivityLevel;
-            this.mLicensedProductionRunsRemaining = licensedProductionRunsRemaining;
+            this.BlueprintInformation = information;
         }
-
-        private bool mCopy;
-        private int mMaterialLevel;
-        private int mProductivityLevel;
-        private int mLicensedProductionRunsRemaining;
-
-        public bool Copy
-        {
-            get => mCopy;
-            set
-            {
-                this.mCopy = value;
-                this.Dirty = true;
-            }
-        }
-
-        public int MaterialLevel
-        {
-            get => mMaterialLevel;
-            set
-            {
-                this.mMaterialLevel = value;
-                this.Dirty = true;
-            }
-        }
-
-        public int ProductivityLevel
-        {
-            get => mProductivityLevel;
-            set
-            {
-                this.mProductivityLevel = value;
-                this.Dirty = true;
-            }
-        }
-
-        public int LicensedProductionRunsRemaining
-        {
-            get => mLicensedProductionRunsRemaining;
-            set
-            {
-                this.mLicensedProductionRunsRemaining = value;
-                this.Dirty = true;
-            }
-        }
-
-        protected override void SaveToDB()
-        {
-            base.SaveToDB();
-            
-            this.ItemFactory.ItemDB.PersistBlueprint(this.ID, this.Copy, this.MaterialLevel, this.ProductivityLevel, this.LicensedProductionRunsRemaining);
-        }
+        
+        public bool Copy => this.BlueprintInformation.IsCopy;
+        public int MaterialLevel => this.BlueprintInformation.MaterialLevel;
+        public int ProductivityLevel => this.BlueprintInformation.ProductivityLevel;
+        public int LicensedProductionRunsRemaining => this.BlueprintInformation.LicensedProductionRunsRemaining;
     }
 }

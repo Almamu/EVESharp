@@ -26,21 +26,21 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.IO;
-using EVESharp.Common.Logging;
 using MySql.Data.MySqlClient;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Database;
 using EVESharp.PythonTypes.Types.Primitives;
+using Serilog;
 
 namespace EVESharp.Common.Database
 {
     public class DatabaseConnection : IDatabaseConnection
     {
         public Dictionary<string, ColumnCharset> ColumnCharsets { get; init; } = new Dictionary<string, ColumnCharset>();
-        private Channel Log { get; }
+        private ILogger Log { get; }
         private readonly string mConnectionString;
 
-        public DatabaseConnection(Configuration.Database configuration, Logger logger)
+        public DatabaseConnection(Configuration.Database configuration, ILogger logger)
         {
             MySqlConnectionStringBuilder stringBuilder = new MySqlConnectionStringBuilder
             {
@@ -52,7 +52,7 @@ namespace EVESharp.Common.Database
             };
             
             this.mConnectionString = stringBuilder.ToString();
-            this.Log = logger.CreateLogChannel("Database");
+            this.Log = logger;
             this.FetchDatabaseColumnCharsets(configuration);
         }
 

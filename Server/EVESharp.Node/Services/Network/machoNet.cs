@@ -49,9 +49,9 @@ namespace EVESharp.Node.Services.Network
                 PyDictionary dict = new PyDictionary();
                 
                 // indicate the required access levels for the service to be callable
-                foreach (PropertyInfo property in call.MachoNet.ServiceManager.GetType().GetProperties(BindingFlags.Public))
+                foreach (PropertyInfo property in call.ServiceManager.GetType().GetProperties(BindingFlags.Public))
                 {
-                    object value = property.GetValue(call.MachoNet.ServiceManager);
+                    object value = property.GetValue(call.ServiceManager);
                     
                     // ignore things that are not services
                     if (value is not Service)

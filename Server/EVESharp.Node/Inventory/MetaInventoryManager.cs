@@ -7,9 +7,15 @@ namespace EVESharp.Node.Inventory
 {
     public class MetaInventoryManager
     {
+        public delegate void MetaInventoryItemEvent(ItemInventoryByOwnerID metaInventory);
         private Dictionary<int, Dictionary<int, Dictionary<Flags, ItemInventoryByOwnerID>>> MetaInventories { get; } = new Dictionary<int, Dictionary<int, Dictionary<Flags, ItemInventoryByOwnerID>>>();
 
         private Dictionary<int, Dictionary<Flags, ItemInventoryByOwnerID>> MetaInventoriesByOwner { get; } = new Dictionary<int, Dictionary<Flags, ItemInventoryByOwnerID>>();
+
+        /// <summary>
+        /// Event fired when a new meta inventory is created
+        /// </summary>
+        public MetaInventoryItemEvent OnMetaInventoryCreated;
 
         public ItemInventory RegisterMetaInventoryForOwnerID(ItemInventory inventory, int ownerID, Flags flag)
         {
@@ -27,9 +33,12 @@ namespace EVESharp.Node.Inventory
                 if (inventories.TryGetValue(flag, out ItemInventoryByOwnerID metaInventory) == false)
                 {
                     metaInventory = new ItemInventoryByOwnerID(ownerID, flag, inventory);
-                    
+
                     this.MetaInventories[inventory.ID][ownerID][flag] = metaInventory;
                     this.MetaInventoriesByOwner[ownerID][flag] = metaInventory;
+
+                    // fire the creation event
+                    this.OnMetaInventoryCreated?.Invoke(metaInventory);
                 }
 
                 return metaInventory;
@@ -52,8 +61,6 @@ namespace EVESharp.Node.Inventory
                 {
                     // unload off the MetaInventories list
                     this.MetaInventories[metaInventory.ID].Remove(ownerID);
-                    // signal the inventory to unload itself
-                    metaInventory.Dispose();
                 }
             }
 

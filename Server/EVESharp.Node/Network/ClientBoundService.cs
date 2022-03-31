@@ -51,7 +51,7 @@ namespace EVESharp.Node.Network
             // TODO: the expiration time is 1 day, might be better to properly support this?
             // TODO: investigate these a bit more closely in the future
             // TODO: i'm not so sure about the expiration time
-            PyTuple boundServiceInformation = new PyTuple(2)
+            this.BoundServiceInformation = new PyTuple(2)
             {
                 [0] = instance.BoundString,
                 [1] = DateTime.UtcNow.Add(TimeSpan.FromDays(1)).ToFileTime()
@@ -60,7 +60,7 @@ namespace EVESharp.Node.Network
             // after the service is bound the call can be run (if required)
             PyTuple result = new PyTuple(2)
             {
-                [0] = new PySubStruct(new PySubStream(boundServiceInformation)),
+                [0] = new PySubStruct(new PySubStream(this.BoundServiceInformation)),
                 [1] = null
             };
             
@@ -79,14 +79,16 @@ namespace EVESharp.Node.Network
                     Source = call.Source,
                     Payload = arguments,
                     NamedPayload = namedArguments,
-                    Session = call.Session
+                    Session = call.Session,
+                    BoundServiceManager = call.BoundServiceManager,
+                    ServiceManager = call.ServiceManager
                 };
                 
                 result[1] = this.BoundServiceManager.ServiceCall(instance.BoundID, func, callInformation);
             }
             
             // signal that the object was bound, this will be used by the proxy to notify this node on important stuff
-            call.ResutOutOfBounds["OID+"] = new PyList<PyInteger>() {instance.BoundID};
+            call.ResultOutOfBounds["OID+"] = new PyList<PyInteger>() {this.BoundServiceInformation};
 
             return result;
         }

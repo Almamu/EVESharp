@@ -2,7 +2,7 @@
 {
     public class OfficeFolder : ItemInventory
     {
-        public OfficeFolder(ItemEntity @from) : base(@from)
+        public OfficeFolder(Information.Item info) : base(info)
         {
         }
     }

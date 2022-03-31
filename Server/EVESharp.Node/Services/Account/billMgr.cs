@@ -27,7 +27,7 @@ namespace EVESharp.Node.Services.Account
         private NotificationManager NotificationManager { get; init; }
         private DatabaseConnection Database { get; init; }
 
-        public billMgr(CacheStorage cacheStorage, DatabaseConnection databaseConnection, BillsDB db, CorporationDB corporationDb, MachoNet machoNet, ItemFactory itemFactory, NotificationManager notificationManager)
+        public billMgr(CacheStorage cacheStorage, DatabaseConnection databaseConnection, BillsDB db, CorporationDB corporationDb, ItemFactory itemFactory, NotificationManager notificationManager)
         {
             this.CacheStorage = cacheStorage;
             this.Database = databaseConnection;
@@ -36,7 +36,8 @@ namespace EVESharp.Node.Services.Account
             this.ItemFactory = itemFactory;
             this.NotificationManager = notificationManager;
 
-            machoNet.OnClusterTimer += this.PerformTimedEvents;
+            // TODO: RE-IMPLEMENT ON CLUSTER TIMER
+            // machoNet.OnClusterTimer += this.PerformTimedEvents;
         }
 
         public PyDataType GetBillTypes(CallInformation call)

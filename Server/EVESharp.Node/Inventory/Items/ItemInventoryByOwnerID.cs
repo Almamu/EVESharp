@@ -7,7 +7,6 @@ namespace EVESharp.Node.Inventory.Items
     public class ItemInventoryByOwnerID : ItemInventory
     {
         private int mOwnerID;
-        private Flags mInventoryFlag;
 
         public override int OwnerID
         {
@@ -15,22 +14,22 @@ namespace EVESharp.Node.Inventory.Items
             set => this.mOwnerID = value;
         }
 
-        public Flags InventoryFlag => this.mInventoryFlag;
+        public Flags InventoryFlag { get; }
 
         public ItemInventoryByOwnerID(int ownerID, Flags flag, ItemInventory @from) : base(@from)
         {
             this.mOwnerID = ownerID;
-            this.mInventoryFlag = flag;
+            this.InventoryFlag = flag;
         }
 
-        protected override void LoadContents(Flags ignoreFlags = Flags.None)
+        public override void Persist()
         {
-            lock (this)
-            {
-                this.mItems = this.ItemFactory.LoadItemsLocatedAtByOwner(this, this.OwnerID, this.InventoryFlag);
-                
-                this.ContentsLoaded = true;
-            }
+            // persist should do nothing as these are just virtual items
+        }
+
+        public override void Dispose()
+        {
+            // dispose should do nothing as these are just virtual items
         }
 
         public override void Destroy()

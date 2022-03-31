@@ -30,8 +30,7 @@ using EVESharp.Node.Inventory.Exceptions;
 using EVESharp.Node.Inventory.Items;
 using EVESharp.Node.Inventory.Items.Attributes;
 using EVESharp.Node.Inventory.Items.Dogma;
-using EVESharp.Node.Inventory.Items.Types;
-using EVESharp.Node.Inventory.SystemEntities;
+using EVESharp.Node.Inventory.Items.Types.Information;
 using EVESharp.Node.Network;
 using EVESharp.Node.StaticData;
 using EVESharp.Node.StaticData.Dogma;
@@ -46,8 +45,6 @@ namespace EVESharp.Node.Database
     public class ItemDB : DatabaseAccessor
     {
         private ItemFactory ItemFactory { get; }
-        private TimerManager TimerManager { get; }
-        private NodeContainer Container { get; }
         private AttributeManager AttributeManager => this.ItemFactory.AttributeManager;
         private GroupManager GroupManager => this.ItemFactory.GroupManager;
         private CategoryManager CategoryManager => this.ItemFactory.CategoryManager;
@@ -336,7 +333,7 @@ namespace EVESharp.Node.Database
             }
         }
 
-        public List<ItemEntity> LoadStaticItems()
+        public IEnumerable<Item> LoadStaticItems()
         {
             MySqlConnection connection = null;
             MySqlDataReader reader = Database.Select(ref connection,
@@ -346,45 +343,34 @@ namespace EVESharp.Node.Database
             using (connection)
             using (reader)
             {
-                List<ItemEntity> itemList = new List<ItemEntity>();
-                
-                while (reader.Read () == true)
-                    itemList.Add(this.BuildItemFromReader(reader));
-
-                return itemList;
+                while (reader.Read() == true)
+                    yield return this.BuildItemFromReader(reader);
             }
         }
 
         private Item BuildItemFromReader(MySqlDataReader reader)
         {
             Type itemType = this.TypeManager[reader.GetInt32(2)];
-            Item newItem = new Item(
-                this.Database,
-                reader.GetStringOrNull(1), // itemName
-                reader.GetInt32(0), // itemID
-                itemType, // typeID
-                reader.GetInt32(3), // ownerID
-                reader.GetInt32(4), // locationID
-                (Flags) reader.GetInt32(5), // flag
-                reader.GetBoolean(6), // contraband
-                reader.GetBoolean(7), // singleton
-                reader.GetInt32(8), // quantity
-                reader.GetDoubleOrNull(9), // x
-                reader.GetDoubleOrNull(10), // y
-                reader.GetDoubleOrNull(11), // z
-                reader.GetStringOrNull(12), // customInfo
-                new AttributeList(
-                    this.ItemFactory,
-                    itemType,
-                    this.LoadAttributesForItem(reader.GetInt32(0))
-                ), 
-                this.ItemFactory
-            );
-
-            return newItem;
+            return new Item()
+            {
+                ID = reader.GetInt32(0),
+                Name = reader.GetStringOrNull(1),
+                Type = this.TypeManager[reader.GetInt32(2)],
+                OwnerID = reader.GetInt32(3),
+                LocationID = reader.GetInt32(4),
+                Flag = (Flags) reader.GetInt32(5),
+                Contraband = reader.GetBoolean(6),
+                Singleton = reader.GetBoolean(7),
+                Quantity = reader.GetInt32(8),
+                X = reader.GetDoubleOrNull(9),
+                Y = reader.GetDoubleOrNull(10),
+                Z = reader.GetDoubleOrNull(11),
+                CustomInfo = reader.GetStringOrNull(12),
+                Attributes = new AttributeList(this.ItemFactory, itemType, this.LoadAttributesForItem(reader.GetInt32(0)))
+            };
         }
         
-        public Item LoadItem(int itemID)
+        public Item LoadItem(int itemID, long nodeID)
         {
             MySqlConnection connection = null;
             MySqlDataReader reader = Database.Select(ref connection,
@@ -415,7 +401,7 @@ namespace EVESharp.Node.Database
                     EVESharp.Database.ItemDB.SET_ITEM_NODE,
                     new Dictionary<string, object>()
                     {
-                        {"_nodeID", this.Container.NodeID},
+                        {"_nodeID", nodeID},
                         {"_itemID", itemID}
                     }
                 );
@@ -446,7 +432,7 @@ namespace EVESharp.Node.Database
             }
         }
 
-        public Blueprint LoadBlueprint(ItemEntity item)
+        public Blueprint LoadBlueprint(Item item)
         {
             MySqlConnection connection = null;
             MySqlDataReader reader = Database.Select(ref connection,
@@ -463,11 +449,18 @@ namespace EVESharp.Node.Database
                 if (reader.Read() == false)
                     return null;
 
-                return new Blueprint(item, reader.GetBoolean(0), reader.GetInt32(1), reader.GetInt32(2), reader.GetInt32(3));
+                return new Blueprint()
+                {
+                    Information = item,
+                    IsCopy = reader.GetBoolean(0),
+                    MaterialLevel = reader.GetInt32(1),
+                    ProductivityLevel = reader.GetInt32(2),
+                    LicensedProductionRunsRemaining = reader.GetInt32(3)
+                };
             }
         }
 
-        public Corporation LoadCorporation(ItemEntity item)
+        public Corporation LoadCorporation(Item item)
         {
             MySqlConnection connection = null;
             MySqlDataReader reader = Database.Select(ref connection,
@@ -491,68 +484,70 @@ namespace EVESharp.Node.Database
                 if (reader.Read() == false)
                     return null;
 
-                return new Corporation(item,
-                    reader.GetString(0),
-                    reader.GetString(1),
-                    reader.GetString(2),
-                    reader.GetDouble(3),
-                    reader.GetDouble(4),
-                    reader.GetInt32(5),
-                    reader.GetBoolean(6),
-                    reader.GetBoolean(7),
-                    reader.GetInt32(8),
-                    reader.GetInt32(9),
-                    reader.GetInt32(10),
-                    reader.GetInt32(11),
-                    reader.GetInt32OrNull(12),
-                    reader.GetInt64(13),
-                    reader.GetInt32(14),
-                    reader.GetInt32(15),
-                    reader.GetInt32(16),
-                    reader.GetInt32(17),
-                    reader.GetInt32OrNull(18),
-                    reader.GetInt32OrNull(19),
-                    reader.GetInt32OrNull(20),
-                    reader.GetInt32OrNull(21),
-                    reader.GetInt32OrNull(22),
-                    reader.GetInt32OrNull(23),
-                    reader.GetStringOrNull(24),
-                    reader.GetStringOrNull(25),
-                    reader.GetStringOrNull(26),
-                    reader.GetStringOrNull(27),
-                    reader.GetStringOrNull(28),
-                    reader.GetStringOrNull(29),
-                    reader.GetStringOrNull(30),
-                    reader.GetStringOrNull(31),
-                    reader.GetStringOrNull(32),
-                    reader.GetStringOrNull(33),
-                    reader.GetStringOrNull(34),
-                    reader.GetStringOrNull(35),
-                    reader.GetStringOrNull(36),
-                    reader.GetStringOrNull(37),
-                    reader.GetStringOrNull(38),
-                    reader.GetBoolean(39),
-                    reader.GetInt64OrNull(40),
-                    reader.GetInt32OrNull(41)
-                );
+                return new Corporation()
+                {
+                    Description = reader.GetString(0),
+                    TickerName = reader.GetString(1),
+                    Url = reader.GetString(2),
+                    TaxRate = reader.GetDouble(3),
+                    MinimumJoinStanding = reader.GetDouble(4),
+                    CorporationType = reader.GetInt32(5),
+                    HasPlayerPersonnelManager = reader.GetBoolean(6),
+                    SendCharTerminationMessage = reader.GetBoolean(7),
+                    CreatorID = reader.GetInt32(8),
+                    CeoID = reader.GetInt32(9),
+                    StationID = reader.GetInt32(10),
+                    RaceID = reader.GetInt32(11),
+                    AllianceID = reader.GetInt32OrNull(12),
+                    Shares = reader.GetInt64(13),
+                    MemberCount = reader.GetInt32(14),
+                    MemberLimit = reader.GetInt32(15),
+                    AllowedMemberRaceIDs = reader.GetInt32(16),
+                    GraphicId = reader.GetInt32(17),
+                    Shape1 = reader.GetInt32OrNull(18),
+                    Shape2 = reader.GetInt32OrNull(19),
+                    Shape3 = reader.GetInt32OrNull(20),
+                    Color1 = reader.GetInt32OrNull(21),
+                    Color2 = reader.GetInt32OrNull(22),
+                    Color3 = reader.GetInt32OrNull(23),
+                    Typeface = reader.GetStringOrNull(24),
+                    Division1 = reader.GetStringOrNull(25),
+                    Division2 = reader.GetStringOrNull(26),
+                    Division3 = reader.GetStringOrNull(27),
+                    Division4 = reader.GetStringOrNull(28),
+                    Division5 = reader.GetStringOrNull(29),
+                    Division6 = reader.GetStringOrNull(30),
+                    Division7 = reader.GetStringOrNull(31),
+                    WalletDivision1 = reader.GetStringOrNull(32),
+                    WalletDivision2 = reader.GetStringOrNull(33),
+                    WalletDivision3 = reader.GetStringOrNull(34),
+                    WalletDivision4 = reader.GetStringOrNull(35),
+                    WalletDivision5 = reader.GetStringOrNull(36),
+                    WalletDivision6 = reader.GetStringOrNull(37),
+                    WalletDivision7 = reader.GetStringOrNull(38),
+                    Deleted = reader.GetBoolean(39),
+                    StartDate = reader.GetInt64OrNull(40),
+                    ExecutorCorpID = reader.GetInt32OrNull(41),
+                    Information = item
+                };
             }
         }
         
-        public Character LoadCharacter(ItemEntity item)
+        public Character LoadCharacter(Item item)
         {
             MySqlConnection connection = null;
             MySqlDataReader reader = Database.Select(ref connection,
-                "SELECT characterID, accountID, activeCloneID, title, description, securityRating," +
+                "SELECT allianceID, accountID, activeCloneID, title, chrInformation.description, securityRating," +
                 " petitionMessage, logonMinutes, corporationID, roles, rolesAtBase, rolesAtHQ," +
                 " rolesAtOther, corporationDateTime, startDateTime, createDateTime, ancestryID, careerID, schoolID," +
                 " careerSpecialityID, gender, accessoryID, beardID, costumeID, decoID, eyebrowsID, eyesID, hairID," +
                 " lipstickID, makeupID, skinID, backgroundID, lightID, headRotation1, headRotation2, headRotation3," +
                 " eyeRotation1, eyeRotation2, eyeRotation3, camPos1, camPos2, camPos3, morph1e, morph1n, morph1s," +
                 " morph1w, morph2e, morph2n, morph2s, morph2w, morph3e, morph3n, morph3s, morph3w, morph4e, morph4n," +
-                " morph4s, morph4w, stationID, solarSystemID, constellationID, regionID, online, freeRespecs, nextRespecTime," +
+                " morph4s, morph4w, chrInformation.stationID, solarSystemID, constellationID, regionID, online, freeRespecs, nextRespecTime," +
                 " timeLastJump, titleMask, warfactionID, corpAccountKey, " +
                 " grantableRoles, grantableRolesAtBase, grantableRolesAtHQ, grantableRolesAtOther, baseID " +
-                "FROM chrInformation WHERE characterID = @itemID",
+                "FROM chrInformation LEFT JOIN corporation USING(corporationID) WHERE characterID = @itemID",
                 new Dictionary<string, object>()
                 {
                     {"@itemID", item.ID}
@@ -564,88 +559,88 @@ namespace EVESharp.Node.Database
             {
                 if (reader.Read() == false)
                     return null;
-                
-                return new Character(
-                    this.TimerManager,
-                    item,
-                    reader.GetInt32(0),
-                    reader.GetInt32OrDefault(1),
-                    reader.GetInt32OrNull(2),
-                    reader.GetString(3),
-                    reader.GetString(4),
-                    reader.GetDouble(5),
-                    reader.GetString(6),
-                    reader.GetInt32(7),
-                    reader.GetInt32(8),
-                    reader.GetInt64(9),
-                    reader.GetInt64(10),
-                    reader.GetInt64(11),
-                    reader.GetInt64(12),
-                    reader.GetInt64(13),
-                    reader.GetInt64(14),
-                    reader.GetInt64(15),
-                    reader.GetInt32(16),
-                    reader.GetInt32(17),
-                    reader.GetInt32(18),
-                    reader.GetInt32(19),
-                    reader.GetInt32(20),
-                    reader.GetInt32OrNull(21),
-                    reader.GetInt32OrNull(22),
-                    reader.GetInt32(23),
-                    reader.GetInt32OrNull(24),
-                    reader.GetInt32(25),
-                    reader.GetInt32(26),
-                    reader.GetInt32(27),
-                    reader.GetInt32OrNull(28),
-                    reader.GetInt32OrNull(29),
-                    reader.GetInt32(30),
-                    reader.GetInt32(31),
-                    reader.GetInt32(32),
-                    reader.GetDouble(33),
-                    reader.GetDouble(34),
-                    reader.GetDouble(35),
-                    reader.GetDouble(36),
-                    reader.GetDouble(37),
-                    reader.GetDouble(38),
-                    reader.GetDouble(39),
-                    reader.GetDouble(40),
-                    reader.GetDouble(41),
-                    reader.GetDoubleOrNull(42),
-                    reader.GetDoubleOrNull(43),
-                    reader.GetDoubleOrNull(44),
-                    reader.GetDoubleOrNull(45),
-                    reader.GetDoubleOrNull(46),
-                    reader.GetDoubleOrNull(47),
-                    reader.GetDoubleOrNull(48),
-                    reader.GetDoubleOrNull(49),
-                    reader.GetDoubleOrNull(50),
-                    reader.GetDoubleOrNull(51),
-                    reader.GetDoubleOrNull(52),
-                    reader.GetDoubleOrNull(53),
-                    reader.GetDoubleOrNull(54),
-                    reader.GetDoubleOrNull(55),
-                    reader.GetDoubleOrNull(56),
-                    reader.GetDoubleOrNull(57),
-                    reader.GetInt32(58),
-                    reader.GetInt32(59),
-                    reader.GetInt32(60),
-                    reader.GetInt32(61),
-                    reader.GetInt32(63),
-                    reader.GetInt64(64),
-                    reader.GetInt64(65),
-                    reader.GetInt32(66),
-                    reader.GetInt32OrNull(67),
-                    reader.GetInt32(68),
-                    reader.GetInt64(69),
-                    reader.GetInt64(70),
-                    reader.GetInt64(71),
-                    reader.GetInt64(72),
-                    reader.GetInt32OrNull(73)
-                );
+
+                return new Character()
+                {
+                    Information = item,
+                    AllianceID = reader.GetInt32OrNull(0),
+                    AccountID = reader.GetInt32OrDefault(1),
+                    ActiveCloneID = reader.GetInt32OrNull(2),
+                    Title = reader.GetString(3),
+                    Description = reader.GetString(4),
+                    SecurityRating = reader.GetDouble(5),
+                    PetitionMessage = reader.GetString(6),
+                    LogonMinutes = reader.GetInt32(7),
+                    CorporationID = reader.GetInt32(8),
+                    Roles = reader.GetInt64(9),
+                    RolesAtBase = reader.GetInt64(10),
+                    RolesAtHq = reader.GetInt64(11),
+                    RolesAtOther = reader.GetInt64(12),
+                    CorporationDateTime = reader.GetInt64(13),
+                    StartDateTime = reader.GetInt64(14),
+                    CreateDateTime = reader.GetInt64(15),
+                    AncestryID = reader.GetInt32(16),
+                    CareerID = reader.GetInt32(17),
+                    SchoolID = reader.GetInt32(18),
+                    CareerSpecialityID = reader.GetInt32(19),
+                    Gender = reader.GetInt32(20),
+                    AccessoryID = reader.GetInt32OrNull(21),
+                    BeardID = reader.GetInt32OrNull(22),
+                    CostumeID = reader.GetInt32(23),
+                    DecoID = reader.GetInt32OrNull(24),
+                    EyebrowsID = reader.GetInt32(25),
+                    EyesID = reader.GetInt32(26),
+                    HairID = reader.GetInt32(27),
+                    LipstickID = reader.GetInt32OrNull(28),
+                    MakeupID = reader.GetInt32OrNull(29),
+                    SkinID = reader.GetInt32(30),
+                    BackgroundID = reader.GetInt32(31),
+                    LightID = reader.GetInt32(32),
+                    HeadRotation1 = reader.GetDouble(33),
+                    HeadRotation2 = reader.GetDouble(34),
+                    HeadRotation3 = reader.GetDouble(35),
+                    EyeRotation1 = reader.GetDouble(36),
+                    EyeRotation2 = reader.GetDouble(37),
+                    EyeRotation3 = reader.GetDouble(38),
+                    CamPos1 = reader.GetDouble(39),
+                    CamPos2 = reader.GetDouble(40),
+                    CamPos3 = reader.GetDouble(41),
+                    Morph1E = reader.GetDoubleOrNull(42),
+                    Morph1N = reader.GetDoubleOrNull(43),
+                    Morph1S = reader.GetDoubleOrNull(44),
+                    Morph1W = reader.GetDoubleOrNull(45),
+                    Morph2E = reader.GetDoubleOrNull(46),
+                    Morph2N = reader.GetDoubleOrNull(47),
+                    Morph2S = reader.GetDoubleOrNull(48),
+                    Morph2W = reader.GetDoubleOrNull(49),
+                    Morph3E = reader.GetDoubleOrNull(50),
+                    Morph3N = reader.GetDoubleOrNull(51),
+                    Morph3S = reader.GetDoubleOrNull(52),
+                    Morph3W = reader.GetDoubleOrNull(53),
+                    Morph4E = reader.GetDoubleOrNull(54),
+                    Morph4N = reader.GetDoubleOrNull(55),
+                    Morph4S = reader.GetDoubleOrNull(56),
+                    Morph4W = reader.GetDoubleOrNull(57),
+                    StationID = reader.GetInt32(58),
+                    SolarSystemID = reader.GetInt32(59),
+                    ConstellationID = reader.GetInt32(60),
+                    RegionID = reader.GetInt32(61),
+                    FreeReSpecs = reader.GetInt32(63),
+                    NextReSpecTime = reader.GetInt64(64),
+                    TimeLastJump = reader.GetInt64(65),
+                    TitleMask = reader.GetInt32(66),
+                    WarFactionID = reader.GetInt32OrNull(67),
+                    CorpAccountKey = reader.GetInt32(68),
+                    GrantableRoles = reader.GetInt64(69),
+                    GrantableRolesAtBase = reader.GetInt64(70),
+                    GrantableRolesAtHQ = reader.GetInt64(71),
+                    GrantableRolesAtOther = reader.GetInt64(72),
+                    BaseID = reader.GetInt32OrNull(73)
+                };
             }
         }
 
-        public Faction LoadFaction(ItemEntity item)
+        public Faction LoadFaction(Item item)
         {
             MySqlConnection connection = null;
             MySqlDataReader reader = Database.Select(ref connection,
@@ -663,21 +658,23 @@ namespace EVESharp.Node.Database
             {
                 if (reader.Read() == false)
                     return null;
-                
-                return new Faction(item,
-                    reader.GetString(0),
-                    reader.GetInt32(1),
-                    reader.GetInt32(2),
-                    reader.GetInt32(3),
-                    reader.GetDouble(4),
-                    reader.GetInt32(5),
-                    reader.GetInt32(6),
-                    reader.GetInt32(7)
-                );
+
+                return new Faction()
+                {
+                    Description = reader.GetString(0),
+                    RaceIDs = reader.GetInt32(1),
+                    SolarSystemID = reader.GetInt32(2),
+                    CorporationID = reader.GetInt32(3),
+                    SizeFactor = reader.GetDouble(4),
+                    StationCount = reader.GetInt32(5),
+                    StationSystemCount = reader.GetInt32(6),
+                    MilitiaCorporationID = reader.GetInt32(7),
+                    Information = item
+                };
             }
         }
 
-        public Alliance LoadAlliance(ItemEntity item)
+        public Alliance LoadAlliance(Item item)
         {
             MySqlConnection connection = null;
             MySqlDataReader reader = Database.Select(ref connection,
@@ -694,35 +691,21 @@ namespace EVESharp.Node.Database
                 if (reader.Read() == false)
                     return null;
 
-                return new Alliance(
-                    item,
-                    reader.GetString(0),
-                    reader.GetString(1),
-                    reader.GetString(2),
-                    reader.GetInt32OrNull(3),
-                    reader.GetInt32(4),
-                    reader.GetInt32(5),
-                    reader.GetInt16(6)
-                );
+                return new Alliance()
+                {
+                    ShortName = reader.GetString(0),
+                    Description = reader.GetString(1),
+                    URL = reader.GetString(2),
+                    ExecutorCorpID = reader.GetInt32OrNull(3),
+                    CreatorCorpID = reader.GetInt32(4),
+                    CreatorCharID = reader.GetInt32(5),
+                    Dictatorial = reader.GetBoolean(6),
+                    Information = item
+                };
             }
         }
-
-        public Skill LoadSkill(ItemEntity item)
-        {
-            return new Skill(item, this.Container.Constants[Constants.skillPointMultiplier]);
-        }
-
-        public Ship LoadShip(ItemEntity item)
-        {
-            return new Ship(item);
-        }
-
-        public Implant LoadImplant(ItemEntity item)
-        {
-            return new Implant(item);
-        }
-
-        public Station LoadStation(ItemEntity item)
+        
+        public Station LoadStation(Item item)
         {
             MySqlConnection connection = null;
             MySqlDataReader reader = Database.Select(ref connection,
@@ -739,26 +722,22 @@ namespace EVESharp.Node.Database
                 if (reader.Read() == false)
                     return null;
 
-                return new Station(
-                    this.StationManager.StationTypes[item.Type.ID],
-                    this.StationManager.Operations[reader.GetInt32(0)],
-                    reader.GetInt32(1),
-                    reader.GetDouble(2),
-                    reader.GetDouble(3),
-                    reader.GetInt32(4),
-                    reader.GetInt32(5),
-                    reader.GetInt32(6),
-                    reader.GetDouble(7),
-                    reader.GetDouble(8),
-                    reader.GetInt32(9),
-                    item
-                );
+                return new Station()
+                {
+                    Type = this.StationManager.StationTypes[item.Type.ID],
+                    Operations = this.StationManager.Operations[reader.GetInt32(0)],
+                    Security = reader.GetInt32(1),
+                    DockingCostPerVolume = reader.GetDouble(2),
+                    MaxShipVolumeDockable = reader.GetDouble(3),
+                    OfficeRentalCost = reader.GetInt32(4),
+                    ConstellationID = reader.GetInt32(5),
+                    RegionID = reader.GetInt32(6),
+                    ReprocessingEfficiency = reader.GetDouble(7),
+                    ReprocessingStationsTake = reader.GetDouble(8),
+                    ReprocessingHangarFlag = reader.GetInt32(9),
+                    Information = item,
+                };
             }
-        }
-
-        public Clone LoadClone(ItemEntity item)
-        {
-            return new Clone(item);
         }
 
         private void SaveItemName(ulong itemID, Type type, string itemName)
@@ -856,7 +835,7 @@ namespace EVESharp.Node.Database
             return newItemID;
         }
 
-        public ulong CreateShip(Type shipType, ItemEntity location, Character owner)
+        public ulong CreateShip(Type shipType, ItemEntity location, ItemEntity owner)
         {
             return this.CreateItem(
                 $"{owner.Name}'s {shipType.Name}", shipType, owner, location, Flags.Hangar,
@@ -864,7 +843,7 @@ namespace EVESharp.Node.Database
             );
         }
 
-        public Dictionary<int, ItemEntity> LoadItemsLocatedAt(int locationID, Flags ignoreFlag)
+        public IEnumerable<int> LoadItemsLocatedAt(int locationID, Flags ignoreFlag)
         {
             MySqlConnection connection = null;
             MySqlDataReader reader = Database.Select(ref connection,
@@ -879,18 +858,12 @@ namespace EVESharp.Node.Database
             using (connection)
             using (reader)
             {
-                Dictionary<int, ItemEntity> items = new Dictionary<int, ItemEntity>();
-
                 while (reader.Read())
-                {
-                    items[reader.GetInt32(0)] = this.ItemFactory.LoadItem(reader.GetInt32(0));
-                }
-
-                return items;
+                    yield return reader.GetInt32(0);
             }
         }
 
-        public Dictionary<int, ItemEntity> LoadItemsLocatedAtByOwner(int locationID, int ownerID, Flags itemFlag)
+        public IEnumerable<int> LoadItemsLocatedAtByOwner(int locationID, int ownerID, Flags itemFlag)
         {
             MySqlConnection connection = null;
             MySqlDataReader reader = Database.Select(ref connection,
@@ -906,18 +879,12 @@ namespace EVESharp.Node.Database
             using (connection)
             using (reader)
             {
-                Dictionary<int, ItemEntity> items = new Dictionary<int, ItemEntity>();
-
                 while (reader.Read())
-                {
-                    items[reader.GetInt32(0)] = this.ItemFactory.LoadItem(reader.GetInt32(0));
-                }
-
-                return items;
+                    yield return reader.GetInt32(0);
             }
         }
         
-        public SolarSystem LoadSolarSystem(ItemEntity item)
+        public SolarSystem LoadSolarSystem(Item item)
         {   
             MySqlConnection connection = null;
             MySqlDataReader reader = Database.Select(ref connection,
@@ -934,36 +901,38 @@ namespace EVESharp.Node.Database
                 if (reader.Read() == false)
                     return null;
 
-                return new SolarSystem(item,
-                    reader.GetInt32(0),
-                    reader.GetInt32(1),
-                    reader.GetDouble(2),
-                    reader.GetDouble(3),
-                    reader.GetDouble(4),
-                    reader.GetDouble(5),
-                    reader.GetDouble(6),
-                    reader.GetDouble(7),
-                    reader.GetDouble(8),
-                    reader.GetDouble(9),
-                    reader.GetDouble(10),
-                    reader.GetDouble(11),
-                    reader.GetBoolean(12),
-                    reader.GetBoolean(13),
-                    reader.GetBoolean(14),
-                    reader.GetBoolean(15),
-                    reader.GetBoolean(16),
-                    reader.GetBoolean(17),
-                    reader.GetBoolean(18),
-                    reader.GetDouble(19),
-                    reader.GetInt32OrNull(20),
-                    reader.GetDouble(21),
-                    reader.GetInt32(22),
-                    reader.GetStringOrNull(23)
-                );
+                return new SolarSystem()
+                {
+                    RegionId = reader.GetInt32(0),
+                    ConstellationId = reader.GetInt32(1),
+                    MapX = reader.GetDouble(2),
+                    MapY = reader.GetDouble(3),
+                    MapZ = reader.GetDouble(4),
+                    MapXMin = reader.GetDouble(5),
+                    MapYMin = reader.GetDouble(6),
+                    MapZMin = reader.GetDouble(7),
+                    MapXMax = reader.GetDouble(8),
+                    MapYMax = reader.GetDouble(9),
+                    MapZMax = reader.GetDouble(10),
+                    Luminosity = reader.GetDouble(11),
+                    Border = reader.GetBoolean(12),
+                    Fringe = reader.GetBoolean(13),
+                    Corridor = reader.GetBoolean(14),
+                    Hub = reader.GetBoolean(15),
+                    International = reader.GetBoolean(16),
+                    Regional = reader.GetBoolean(17),
+                    Constellation = reader.GetBoolean(18),
+                    Security = reader.GetDouble(19),
+                    FactionId = reader.GetInt32OrNull(20),
+                    Radius = reader.GetDouble(21),
+                    SunTypeId = reader.GetInt32(22),
+                    SecurityClass = reader.GetStringOrNull(23),
+                    Information = item
+                };
             }
         }
 
-        public Constellation LoadConstellation(ItemEntity item)
+        public Constellation LoadConstellation(Item item)
         {   
             MySqlConnection connection = null;
             MySqlDataReader reader = Database.Select(ref connection,
@@ -980,28 +949,30 @@ namespace EVESharp.Node.Database
                 if (reader.Read() == false)
                     return null;
 
-                return new Constellation(item,
-                    reader.GetInt32(0),
-                    reader.GetDouble(1),
-                    reader.GetDouble(2),
-                    reader.GetDouble(3),
-                    reader.GetDouble(4),
-                    reader.GetDouble(5),
-                    reader.GetDouble(6),
-                    reader.GetDouble(7),
-                    reader.GetDouble(8),
-                    reader.GetDouble(9),
-                    reader.GetInt32OrNull(10),
-                    reader.GetDouble(11)
-                );
+                return new Constellation()
+                {
+                    RegionId = reader.GetInt32(0),
+                    X = reader.GetDouble(1),
+                    Y = reader.GetDouble(2),
+                    Z = reader.GetDouble(3),
+                    XMin = reader.GetDouble(4),
+                    YMin = reader.GetDouble(5),
+                    ZMin = reader.GetDouble(6),
+                    XMax = reader.GetDouble(7),
+                    YMax = reader.GetDouble(8),
+                    ZMax = reader.GetDouble(9),
+                    FactionId = reader.GetInt32OrNull(10),
+                    Radius = reader.GetDouble(11),
+                    Information = item
+                };
             }
         }
         
-        public Region LoadRegion(ItemEntity item)
+        public Region LoadRegion(Item item)
         {   
             MySqlConnection connection = null;
             MySqlDataReader reader = Database.Select(ref connection,
-                "SELECT x, y, z, xMin, yMin, zMin, xMax, yMax, zMax, factionID, radius FROM mapRegions WHERE regionID = @regionID",
+                "SELECT xMin, yMin, zMin, xMax, yMax, zMax, factionID, radius FROM mapRegions WHERE regionID = @regionID",
                 new Dictionary<string, object>()
                 {
                     {"@regionID", item.ID}
@@ -1014,19 +985,18 @@ namespace EVESharp.Node.Database
                 if (reader.Read() == false)
                     return null;
 
-                return new Region(item,
-                    reader.GetDouble(0),
-                    reader.GetDouble(1),
-                    reader.GetDouble(2),
-                    reader.GetDouble(3),
-                    reader.GetDouble(4),
-                    reader.GetDouble(5),
-                    reader.GetDouble(6),
-                    reader.GetDouble(7),
-                    reader.GetDouble(8),
-                    reader.GetInt32OrNull(9),
-                    reader.GetDouble(10)
-                );
+                return new Region()
+                {
+                    XMin = reader.GetDouble(0),
+                    YMin = reader.GetDouble(1),
+                    ZMin = reader.GetDouble(2),
+                    XMax = reader.GetDouble(3),
+                    YMax = reader.GetDouble(4),
+                    ZMax = reader.GetDouble(5),
+                    FactionID = reader.GetInt32OrNull(6),
+                    Radius = reader.GetDouble(7),
+                    Information = item
+                };
             }
         }
 
@@ -1180,17 +1150,17 @@ namespace EVESharp.Node.Database
             }
         }
 
-        public void PersistBlueprint(int itemID, bool copy, int materialLevel, int productivityLevel, int licensedProductionRunsRemaining)
+        public void PersistBlueprint(Blueprint information)
         {
             Database.PrepareQuery(
                 "UPDATE invBlueprints SET copy = @copy, materialLevel = @materialLevel, productivityLevel = @productivityLevel, licensedProductionRunsRemaining = @licensedProductionRunsRemaining WHERE itemID = @itemID",
                 new Dictionary<string, object>()
                 {
-                    {"@itemID", itemID},
-                    {"@copy", copy},
-                    {"@materialLevel", materialLevel},
-                    {"@productivityLevel", productivityLevel},
-                    {"@licensedProductionRunsRemaining", licensedProductionRunsRemaining}
+                    {"@itemID", information.Information.ID},
+                    {"@copy", information.IsCopy},
+                    {"@materialLevel", information.MaterialLevel},
+                    {"@productivityLevel", information.ProductivityLevel},
+                    {"@licensedProductionRunsRemaining", information.LicensedProductionRunsRemaining}
                 }
             );
         }
@@ -1360,17 +1330,10 @@ namespace EVESharp.Node.Database
                 return reader.GetInt32(0);
             }
         }
-
-        public void ClearNodeOwnership()
-        {
-            this.Database.Query("UPDATE invItems SET nodeID = 0;");
-        }
         
-        public ItemDB(DatabaseConnection db, ItemFactory factory, TimerManager timerManager, NodeContainer container) : base(db)
+        public ItemDB(DatabaseConnection db, ItemFactory factory) : base(db)
         {
             this.ItemFactory = factory;
-            this.TimerManager = timerManager;
-            this.Container = container;
         }
     }
 }

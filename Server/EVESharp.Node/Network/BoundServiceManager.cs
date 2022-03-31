@@ -1,10 +1,13 @@
+using System;
 using System.Collections.Generic;
-using EVESharp.Common.Logging;
+using System.Text.RegularExpressions;
 using EVESharp.EVE.Services;
 using EVESharp.EVE.Services.Exceptions;
 using EVESharp.EVE.Sessions;
+using EVESharp.Node.Server.Shared;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Primitives;
+using Serilog;
 
 namespace EVESharp.Node.Network
 {
@@ -16,18 +19,15 @@ namespace EVESharp.Node.Network
     /// </summary>
     public class BoundServiceManager : IServiceManager<int>
     {
-        public NodeContainer Container { get; }
-        public Logger Logger { get; }
-        
         private int mNextBoundID = 1;
+        public IMachoNet MachoNet { get; }
         public Dictionary<int, BoundService> BoundServices { get; } = new Dictionary<int, BoundService>();
-        private Channel Log { get; }
+        private ILogger Log { get; }
 
-        public BoundServiceManager(NodeContainer container, Logger logger)
+        public BoundServiceManager(IMachoNet machoNet, ILogger logger)
         {
-            this.Logger = logger;
-            this.Container = container;
-            this.Log = this.Logger.CreateLogChannel("BoundService");
+            this.MachoNet = machoNet;
+            this.Log = logger;
         }
 
         /// <summary>
@@ -79,7 +79,21 @@ namespace EVESharp.Node.Network
         /// <returns>A string representation of the given boundID</returns>
         public string BuildBoundServiceString(int boundID)
         {
-            return $"N={this.Container.NodeID}:{boundID}";
+            return $"N={this.MachoNet.NodeID}:{boundID}";
+        }
+
+        public static void ParseBoundServiceString(string guid, out int nodeID, out int boundID)
+        {
+            // parse the bound string to get back proper node and bound ids
+            Match regexMatch = Regex.Match(guid, "N=([0-9]+):([0-9]+)");
+
+            if (regexMatch.Groups.Count != 3)
+            {
+                throw new Exception($"Cannot find nodeID and boundID in the boundString {guid}");
+            }
+
+            nodeID = int.Parse(regexMatch.Groups[1].Value);
+            boundID = int.Parse(regexMatch.Groups[2].Value);
         }
 
         /// <summary>
@@ -98,7 +112,7 @@ namespace EVESharp.Node.Network
             if (service.IsClientAllowedToCall(call.Session) == false)
                 throw new UnauthorizedCallException<int>(boundID, method, call.Session.Role);
             
-            Log.Trace($"Calling {service.Name}::{method} on bound service {boundID}");
+            Log.Verbose($"Calling {service.Name}::{method} on bound service {boundID}");
 
             return service.ExecuteCall(method, call);
         }
@@ -109,6 +123,18 @@ namespace EVESharp.Node.Network
                 return;
             
             svc.ClientHasReleasedThisObject(session);
+        }
+
+        public void OnClientDisconnected(Session session)
+        {
+            // TODO: IMPLEMENT THIS LIKE AN EVENT
+            foreach ((int _, BoundService service) in this.BoundServices)
+            {
+                if (service.IsClientAllowedToCall(session) == false)
+                    continue;
+                
+                service.ClientHasReleasedThisObject(session);
+            }
         }
     }
 }

@@ -2,7 +2,7 @@
 {
     public class Container : ItemInventory
     {
-        public Container(ItemEntity @from) : base(@from)
+        public Container(Information.Item item) : base(item)
         {
         }
     }

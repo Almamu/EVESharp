@@ -14,7 +14,6 @@ using EVESharp.Node.Network;
 using EVESharp.Node.Notifications.Client.Clones;
 using EVESharp.Node.StaticData.Inventory;
 using EVESharp.Node.Exceptions;
-using EVESharp.Node.Inventory.SystemEntities;
 using EVESharp.Node.Services.Account;
 using EVESharp.Node.Sessions;
 using EVESharp.Node.StaticData;
@@ -187,7 +186,7 @@ namespace EVESharp.Node.Services.Characters
                 throw new CustomError("Unknown item's groupID");
 
             if (this.SystemManager.SolarSystemBelongsToUs(solarSystemID) == true)
-                return this.BoundServiceManager.Container.NodeID;
+                return this.BoundServiceManager.MachoNet.NodeID;
 
             return this.SystemManager.GetNodeSolarSystemBelongsTo(solarSystemID);
         }
@@ -197,7 +196,7 @@ namespace EVESharp.Node.Services.Characters
             // ensure this node will take care of the instance
             long nodeID = this.MachoResolveObject(bindParams, call);
 
-            if (nodeID != this.BoundServiceManager.Container.NodeID)
+            if (nodeID != this.BoundServiceManager.MachoNet.NodeID)
                 throw new CustomError("Trying to bind an object that does not belong to us!");
 
             return new jumpCloneSvc(bindParams.ObjectID, this.ItemDB, this.MarketDB, this.ItemFactory, this.SystemManager, this.BoundServiceManager, this.WalletManager, this.NotificationManager, call.Session);

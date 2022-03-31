@@ -17,6 +17,10 @@ namespace EVESharp.Node.Network
         /// </summary>
         public string BoundString { get; init; }
         /// <summary>
+        /// Specific information about the bound service
+        /// </summary>
+        public PyTuple BoundServiceInformation { get; protected set; }
+        /// <summary>
         /// The objectID to which this service was bound to
         /// </summary>
         public int ObjectID { get; init; }
