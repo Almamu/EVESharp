@@ -35,17 +35,6 @@ namespace EVESharp.Node.Network
             
             // clean up ourselves
             this.MachoNet.OnTransportTerminated(this);
-            // tell all the nodes that we're dead now
-            this.MachoNet.QueueOutputPacket(
-                new PyPacket(PyPacket.PacketType.NOTIFICATION)
-                {
-                    Source = new PyAddressAny(0),
-                    Destination = new PyAddressBroadcast(this.Session.NodesOfInterest, "nodeid"),
-                    Payload = new PyTuple(2) {[0] = "ClientHasDisconnected", [1] = new PyTuple(1) { [0] = this.Session.UserID }},
-                    UserID = this.Session.UserID,
-                    OutOfBounds = new PyDictionary() {["Session"] = this.Session}
-                }
-            );
         }
         
         private void HandleException(Exception ex)

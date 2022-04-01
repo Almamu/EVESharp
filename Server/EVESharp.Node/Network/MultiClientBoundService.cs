@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using EVESharp.EVE;
 using EVESharp.EVE.Sessions;
@@ -14,7 +15,7 @@ namespace EVESharp.Node.Network
         /// <summary>
         /// List of clients that have access to this bound service
         /// </summary>
-        protected Dictionary<long, Session> Sessions { get; } = new Dictionary<long, Session>();
+        protected ConcurrentDictionary<int, Session> Sessions { get; } = new ConcurrentDictionary<int, Session>();
         /// <summary>
         /// The bound service that created this entity
         /// </summary>
@@ -55,14 +56,17 @@ namespace EVESharp.Node.Network
         /// <returns></returns>
         public bool FindInstanceForObjectID<T>(int objectID, out T service) where T : MultiClientBoundService
         {
-            service = null;
+            lock (this.mRegisteredServices)
+            {
+                service = null;
             
-            if (this.mRegisteredServices.TryGetValue(objectID, out MultiClientBoundService tmp) == false)
-                return false;
+                if (this.mRegisteredServices.TryGetValue(objectID, out MultiClientBoundService tmp) == false)
+                    return false;
 
-            service = tmp as T;
+                service = tmp as T;
             
-            return true;
+                return true;
+            }
         }
 
         /// <summary>
@@ -93,7 +97,8 @@ namespace EVESharp.Node.Network
             }
 
             // add the client to the list
-            instance.Sessions.Add(call.Session.EnsureCharacterIsSelected(), call.Session);
+            if (instance.Sessions.TryAdd(call.Session.EnsureCharacterIsSelected(), call.Session) == false)
+                throw new Exception("Cannot register the bound service to the character");
             
             // TODO: the expiration time is 1 day, might be better to properly support this?
             // TODO: investigate these a bit more closely in the future
@@ -161,7 +166,7 @@ namespace EVESharp.Node.Network
             // call any freeing code (if any)
             this.OnClientDisconnected(session);
             // remove the client from the list
-            this.Sessions.Remove(session.UserID);
+            this.Sessions.Remove(session.EnsureCharacterIsSelected(), out _);
 
             if (this.Sessions.Count == 0 && this.KeepAlive == false)
             {
@@ -175,11 +180,11 @@ namespace EVESharp.Node.Network
         /// <summary>
         /// Applies the given session change to the service's cached sessions (if found)
         /// </summary>
-        /// <param name="userID">The user to update sessions for</param>
+        /// <param name="characterID">The character to update the session for</param>
         /// <param name="changes">The delta of changes</param>
-        public override void ApplySessionChange(long userID, PyDictionary<PyString, PyTuple> changes)
+        public override void ApplySessionChange(int characterID, PyDictionary<PyString, PyTuple> changes)
         {
-            if (this.Sessions.TryGetValue(userID, out Session session) == false)
+            if (this.Sessions.TryGetValue(characterID, out Session session) == false)
                 return;
 
             session.ApplyDelta(changes);

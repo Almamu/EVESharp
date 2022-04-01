@@ -122,11 +122,11 @@ namespace EVESharp.Node.Network
         /// <summary>
         /// Applies the given session change to the service's cached sessions (if found)
         /// </summary>
-        /// <param name="userID">The user to update sessions for</param>
+        /// <param name="characterID">The characterID to update the session for</param>
         /// <param name="changes">The delta of changes</param>
-        public override void ApplySessionChange(long userID, PyDictionary<PyString, PyTuple> changes)
+        public override void ApplySessionChange(int characterID, PyDictionary<PyString, PyTuple> changes)
         {
-            if (this.Session.UserID != userID)
+            if (this.Session.CharacterID != characterID)
                 return;
             
             this.Session.ApplyDelta(changes);

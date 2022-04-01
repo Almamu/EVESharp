@@ -2,6 +2,7 @@
 using EVESharp.EVE;
 using EVESharp.EVE.Sessions;
 using EVESharp.Node.Network;
+using EVESharp.Node.Sessions;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Database;
 using EVESharp.PythonTypes.Types.Primitives;
@@ -82,7 +83,7 @@ namespace EVESharp.Node.Services.Database
         /// <param name="session">Session to register</param>
         public void BindToSession(Session session)
         {
-            this.Sessions.TryAdd(session.UserID, session);
+            this.Sessions.TryAdd(session.EnsureCharacterIsSelected(), session);
         }
     }
 }

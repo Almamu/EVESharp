@@ -74,6 +74,11 @@ public interface IMachoNet
     /// <param name="packet">The packet to queue</param>
     public void QueueInputPacket(MachoTransport origin, PyPacket packet);
     /// <summary>
+    /// Queues a packet to be processed and dispatched properly
+    /// </summary>
+    /// <param name="packet">The packet to queue</param>
+    public void QueueInputPacket(PyPacket packet) => this.QueueInputPacket(null, packet);
+    /// <summary>
     /// Notifies MachoNet that a transport was closed
     /// </summary>
     /// <param name="transport"></param>

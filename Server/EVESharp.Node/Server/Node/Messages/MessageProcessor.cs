@@ -62,8 +62,11 @@ public class MessageProcessor : Shared.Messages.MessageProcessor
         
         SessionChangeNotification scn = machoMessage.Packet.Payload;
         
+        // get the characterID
+        int characterID = machoMessage.Packet.OutOfBounds["characterID"] as PyInteger;
+        
         foreach ((int _, BoundService service) in this.BoundServiceManager.BoundServices)
-            service.ApplySessionChange(machoMessage.Packet.UserID, scn.Changes);
+            service.ApplySessionChange(characterID, scn.Changes);
     }
 
     private void HandleClientNotification(MachoMessage message)

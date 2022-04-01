@@ -185,9 +185,12 @@ namespace EVESharp.Node.Inventory
         /// <returns>Whether the item exists in the manager or not</returns>
         public bool TryGetItem(int itemID, out ItemEntity item)
         {
-            item = null;
+            lock (this)
+            {
+                item = null;
             
-            return this.mItemList.TryGetValue(itemID, out item);
+                return this.mItemList.TryGetValue(itemID, out item);               
+            }
         }
 
         /// <summary>
@@ -199,14 +202,17 @@ namespace EVESharp.Node.Inventory
         /// <returns></returns>
         public bool TryGetItem<T>(int itemID, out T item) where T : ItemEntity
         {
-            item = null;
+            lock (this)
+            {
+                item = null;
             
-            if (this.mItemList.TryGetValue(itemID, out ItemEntity tmp) == false || tmp is not T)
-                return false;
+                if (this.mItemList.TryGetValue(itemID, out ItemEntity tmp) == false || tmp is not T)
+                    return false;
 
-            item = (T) tmp;
+                item = (T) tmp;
             
-            return true;
+                return true;                
+            }
         }
 
         /// <summary>
@@ -369,41 +375,44 @@ namespace EVESharp.Node.Inventory
         /// <returns>The new instance of the item with the extra information loaded</returns>
         private ItemEntity PerformItemLoad(Information.Item item)
         {
-            if (item is null)
-                return null;
-            
-            ItemEntity wrapperItem = item.Type.Group.Category.ID switch
+            lock (this)
             {
-                // catch all for system items
-                (int) Categories.System => LoadSystem(item),
-                // celestial items are a kind of subcategory
-                // load them in specific ways based on the type of celestial item
-                (int) Categories.Celestial => LoadCelestial(item),
-                (int) Categories.Blueprint => LoadBlueprint(item),
-                // owner items are a kind of subcategory too
-                (int) Categories.Owner => LoadOwner(item),
-                (int) Categories.Skill => LoadSkill(item),
-                (int) Categories.Ship => LoadShip(item),
-                (int) Categories.Station => LoadStation(item),
-                (int) Categories.Accessories => LoadAccessories(item),
-                (int) Categories.Implant => LoadImplant(item),
-                (int) Categories.Module => LoadModule(item),
-                _ => new Item(item)
-            };
-
-            // check if there's an inventory loaded that should contain this item
-            if (this.TryGetItem (item.LocationID, out ItemEntity location) == true && location is ItemInventory inventory)
-                inventory.AddItem(wrapperItem);
+                if (item is null)
+                    return null;
             
-            // notify the meta inventory manager about the new item only if the item is user-generated
-            if (item.ID >= USERGENERATED_ID_MIN)
-                this.MetaInventoryManager.OnItemLoaded(wrapperItem);
+                ItemEntity wrapperItem = item.Type.Group.Category.ID switch
+                {
+                    // catch all for system items
+                    (int) Categories.System => LoadSystem(item),
+                    // celestial items are a kind of subcategory
+                    // load them in specific ways based on the type of celestial item
+                    (int) Categories.Celestial => LoadCelestial(item),
+                    (int) Categories.Blueprint => LoadBlueprint(item),
+                    // owner items are a kind of subcategory too
+                    (int) Categories.Owner => LoadOwner(item),
+                    (int) Categories.Skill => LoadSkill(item),
+                    (int) Categories.Ship => LoadShip(item),
+                    (int) Categories.Station => LoadStation(item),
+                    (int) Categories.Accessories => LoadAccessories(item),
+                    (int) Categories.Implant => LoadImplant(item),
+                    (int) Categories.Module => LoadModule(item),
+                    _ => new Item(item)
+                };
 
-            // ensure the item is in the loaded list
-            this.mItemList.Add(item.ID, wrapperItem);
+                // check if there's an inventory loaded that should contain this item
+                if (this.TryGetItem (item.LocationID, out ItemEntity location) == true && location is ItemInventory inventory)
+                    inventory.AddItem(wrapperItem);
+            
+                // notify the meta inventory manager about the new item only if the item is user-generated
+                if (item.ID >= USERGENERATED_ID_MIN)
+                    this.MetaInventoryManager.OnItemLoaded(wrapperItem);
 
-            // subscribe to item's events and return the item
-            return this.SubscribeToEvents(wrapperItem);
+                // ensure the item is in the loaded list
+                this.mItemList.Add(item.ID, wrapperItem);
+
+                // subscribe to item's events and return the item
+                return this.SubscribeToEvents(wrapperItem);
+            }
         }
 
         public ConcurrentDictionary<int, ItemEntity> LoadItemsLocatedAt(ItemEntity location, Flags ignoreFlag = Flags.None)
@@ -428,7 +437,8 @@ namespace EVESharp.Node.Inventory
 
         public bool IsItemLoaded(int itemID)
         {
-            return mItemList.ContainsKey(itemID);
+            lock(this)
+                return mItemList.ContainsKey(itemID);
         }
 
         private ItemEntity LoadSystem(Information.Item item)
@@ -633,15 +643,18 @@ namespace EVESharp.Node.Inventory
 
         public void UnloadItem(ItemEntity item)
         {
-            // first ensure there's no meta inventory holding this item hostage
-            if (this.MetaInventoryManager.GetOwnerInventoryAtLocation(item.ID, item.OwnerID, item.Flag, out ItemInventoryByOwnerID _) == true)
-                return;
+            lock (this)
+            {
+                // first ensure there's no meta inventory holding this item hostage
+                if (this.MetaInventoryManager.GetOwnerInventoryAtLocation(item.ID, item.OwnerID, item.Flag, out ItemInventoryByOwnerID _) == true)
+                    return;
             
-            if (this.mItemList.Remove(item.ID) == false)
-                return;
+                if (this.mItemList.Remove(item.ID) == false)
+                    return;
 
-            // dispose of it
-            item.Dispose();
+                // dispose of it
+                item.Dispose();
+            }
         }
 
         public void UnloadItem(int itemID)
@@ -654,23 +667,26 @@ namespace EVESharp.Node.Inventory
 
         public void DestroyItem(ItemEntity item)
         {
-            // remove the item off the list and throw an exception if the item wasn't loaded in this item manager
-            if (this.mItemList.Remove(item.ID) == false)
-                throw new ArgumentException("Cannot destroy an item that was not loaded by this item manager");
+            lock (this)
+            {
+                // remove the item off the list and throw an exception if the item wasn't loaded in this item manager
+                if (this.mItemList.Remove(item.ID) == false)
+                    throw new ArgumentException("Cannot destroy an item that was not loaded by this item manager");
 
-            // ensure the meta inventories know this item is not there anymore
-            this.MetaInventoryManager.OnItemDestroyed(item);
+                // ensure the meta inventories know this item is not there anymore
+                this.MetaInventoryManager.OnItemDestroyed(item);
             
-            // make sure the location it's at knows the item is no more
-            if (this.TryGetItem(item.LocationID, out ItemEntity location) == true && location is ItemInventory inventory)
-                inventory.RemoveItem(item);
+                // make sure the location it's at knows the item is no more
+                if (this.TryGetItem(item.LocationID, out ItemEntity location) == true && location is ItemInventory inventory)
+                    inventory.RemoveItem(item);
             
-            // set the item to the recycler location just in case something has a reference to it somewhere
-            item.LocationID = this.LocationRecycler.ID;
-            // item.Flag = ItemFlags.None;
+                // set the item to the recycler location just in case something has a reference to it somewhere
+                item.LocationID = this.LocationRecycler.ID;
+                // item.Flag = ItemFlags.None;
 
-            // finally remove the item off the database
-            item.Destroy();
+                // finally remove the item off the database
+                item.Destroy();
+            }
         }
 
         private ItemEntity SubscribeToEvents(ItemEntity origin)

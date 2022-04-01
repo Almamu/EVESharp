@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Net.Http;
+using System.Reflection;
 using EVESharp.Common.Logging;
 using EVESharp.Common.Network.Messages;
 using EVESharp.Node.Accounts;
@@ -100,6 +101,28 @@ public class MachoNet : IMachoNet
 
     public void OnTransportTerminated(MachoTransport transport)
     {
+        // build the packet to be sent to everyone
+        PyPacket clusterPacket = new PyPacket(PyPacket.PacketType.NOTIFICATION)
+        {
+            Source = new PyAddressNode(this.NodeID),
+            Destination = new PyAddressBroadcast(transport.Session.NodesOfInterest, "nodeid"),
+            Payload = new PyTuple(2) {[0] = "ClientHasDisconnected", [1] = new PyTuple(1) {[0] = transport.Session.UserID}},
+            UserID = transport.Session.UserID,
+            OutOfBounds = new PyDictionary() {["Session"] = transport.Session}
+        };
+        PyPacket localPacket = new PyPacket(PyPacket.PacketType.NOTIFICATION)
+        {
+            Source = new PyAddressNode(this.NodeID),
+            Destination = new PyAddressNode(this.NodeID),
+            Payload = new PyTuple(2) {[0] = "ClientHasDisconnected", [1] = new PyTuple(1) {[0] = transport.Session.UserID}},
+            UserID = transport.Session.UserID,
+            OutOfBounds = new PyDictionary() {["Session"] = transport.Session}
+        };
+        // tell all the nodes that we're dead now
+        // HACK: UGH THAT CASTING IS UGLY! HOPEFULLY THIS CHANGES ON NEWER C# VERSIONS
+        ((IMachoNet)this).QueueOutputPacket(clusterPacket);
+        // queue the packet as input too so the proxy handles the disconnection too
+        ((IMachoNet)this).QueueInputPacket(localPacket);
         // remove the transport from the list
         this.TransportManager.OnTransportTerminated(transport);
     }

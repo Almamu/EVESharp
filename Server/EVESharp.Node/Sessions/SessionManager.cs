@@ -94,7 +94,8 @@ public class SessionManager : EVE.Sessions.SessionManager
                 UserID = session.UserID,
                 OutOfBounds = new PyDictionary()
                 {
-                    ["channel"] = "sessionchange"
+                    ["channel"] = "sessionchange",
+                    ["characterID"] = session.CharacterID
                 }
             };
 

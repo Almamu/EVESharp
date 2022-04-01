@@ -136,6 +136,9 @@ public class MessageProcessor : Shared.Messages.MessageProcessor
             case "UpdateSessionAttributes":
                 this.HandleUpdateSessionAttributes(packet.Payload[1] as PyTuple);
                 break;
+            case "ClientHasDisconnected":
+                this.HandleClientHasDisconnected(packet.Payload[1] as PyTuple, packet.OutOfBounds);
+                break;
             default:
                 Log.Fatal("Received notification with the wrong format");
                 break;
@@ -150,5 +153,11 @@ public class MessageProcessor : Shared.Messages.MessageProcessor
         PyDictionary newValues = payload[2] as PyDictionary;
 
         this.SessionManager.PerformSessionUpdate(idType, id, Session.FromPyDictionary (newValues));
+    }
+
+    private void HandleClientHasDisconnected(PyTuple data, PyDictionary oob)
+    {
+        // unbind the player from all the services
+        this.BoundServiceManager.OnClientDisconnected(Session.FromPyDictionary(oob ["Session"] as PyDictionary));
     }
 }
