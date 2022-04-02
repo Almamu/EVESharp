@@ -1,9 +1,11 @@
+using System.Runtime.CompilerServices;
 using EVESharp.PythonTypes.Types.Collections;
 
 namespace EVESharp.PythonTypes.Types.Primitives
 {
     public class PyObject : PyDataType
     {
+
         public bool IsType2 { get; }
         public PyTuple Header { get; }
         public PyList List { get; }
@@ -19,7 +21,7 @@ namespace EVESharp.PythonTypes.Types.Primitives
 
         public override int GetHashCode()
         {
-            return (IsType2 ? 1 : 0) | Header.GetHashCode() << 8 | List.GetHashCode() << 16 | Dictionary.GetHashCode() << 24;
+            return (IsType2 ? 1 : 0) ^ Header.GetHashCode() ^ List.GetHashCode() ^ Dictionary.GetHashCode() ^ 0x36120485;
         }
     }
 }

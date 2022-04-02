@@ -1,22 +1,15 @@
 using System;
+using System.Runtime.CompilerServices;
 
 namespace EVESharp.PythonTypes.Types.Primitives
 {
     public class PyInteger : PyDataType
     {
-        protected bool Equals(PyInteger other)
+        private bool Equals(PyInteger other)
         {
-            return Value.Equals(other.Value);
+            return other.Value == this.Value;
         }
-
-        public override bool Equals(object obj)
-        {
-            if (ReferenceEquals(null, obj)) return false;
-            if (ReferenceEquals(this, obj)) return true;
-            if (obj.GetType() != this.GetType()) return false;
-            return Equals((PyInteger) obj);
-        }
-
+        
         public override int GetHashCode()
         {
             return Value.GetHashCode();
@@ -66,116 +59,36 @@ namespace EVESharp.PythonTypes.Types.Primitives
             this.Value = value;
             this.IntegerType = IntegerTypeEnum.Byte;
         }
-        
-        public static bool operator ==(PyInteger obj1, PyInteger obj2)
-        {
-            if (ReferenceEquals(obj1, obj2)) return true;
-            if (ReferenceEquals(null, obj1)) return false;
-            if (ReferenceEquals(null, obj2)) return false;
 
-            return obj1.Value == obj2.Value;
+        public static bool operator ==(PyInteger obj, PyInteger other)
+        {
+            if (ReferenceEquals(null, obj)) return false;
+
+            return obj.Equals(other);
         }
 
-        public static bool operator !=(PyInteger obj1, PyInteger obj2)
+        public static bool operator !=(PyInteger obj, PyInteger other)
         {
-            return !(obj1 == obj2);
+            return !(obj == other);
         }
         
-        public static bool operator >(PyInteger obj, long value)
+        public static bool operator >(PyInteger obj, PyInteger other)
         {
-            return obj.Value > value;
+            return obj.Value > other.Value;
         }
         
-        public static bool operator >=(PyInteger obj, long value)
+        public static bool operator >=(PyInteger obj, PyInteger other)
         {
-            return obj.Value >= value;
+            return obj.Value >= other.Value;
         }
-        public static bool operator <=(PyInteger obj, long value)
+        public static bool operator <=(PyInteger obj, PyInteger other)
         {
-            return obj.Value <= value;
-        }
-
-        public static bool operator <(PyInteger obj, long value)
-        {
-            return obj.Value < value;
+            return obj.Value <= other.Value;
         }
 
-        public static bool operator ==(PyInteger obj, long value)
+        public static bool operator <(PyInteger obj, PyInteger other)
         {
-            if (ReferenceEquals(null, obj)) return false;
-
-            return obj.Value == value;
-        }
-
-        public static bool operator !=(PyInteger obj, long value)
-        {
-            return !(obj == value);
-        }
-
-        public static bool operator >(PyInteger obj, int value)
-        {
-            return obj.Value > value;
-        }
-
-        public static bool operator <(PyInteger obj, int value)
-        {
-            return obj.Value < value;
-        }
-
-        public static bool operator ==(PyInteger obj, int value)
-        {
-            if (ReferenceEquals(null, obj)) return false;
-
-            return obj.Value == value;
-        }
-
-        public static bool operator !=(PyInteger obj, int value)
-        {
-            return !(obj == value);
-        }
-
-        public static bool operator >(PyInteger obj, short value)
-        {
-            return obj.Value > value;
-        }
-
-        public static bool operator <(PyInteger obj, short value)
-        {
-            return obj.Value < value;
-        }
-
-        public static bool operator ==(PyInteger obj, short value)
-        {
-            if (ReferenceEquals(null, obj)) return false;
-
-            return obj.Value == value;
-        }
-
-        public static bool operator !=(PyInteger obj, short value)
-        {
-            return !(obj == value);
-        }
-
-        public static bool operator >(PyInteger obj, byte value)
-        {
-            return obj.Value > value;
-        }
-
-        public static bool operator <(PyInteger obj, byte value)
-        {
-            return obj.Value < value;
-        }
-
-        public static bool operator ==(PyInteger obj, byte value)
-        {
-            if (ReferenceEquals(null, obj)) return false;
-
-            return obj.Value == value;
-        }
-
-        public static bool operator !=(PyInteger obj, byte value)
-        {
-            return !(obj == value);
+            return obj.Value < other.Value;
         }
 
         public static implicit operator double?(PyInteger obj)

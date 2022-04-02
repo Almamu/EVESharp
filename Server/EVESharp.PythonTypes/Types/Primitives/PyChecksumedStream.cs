@@ -12,9 +12,9 @@ namespace EVESharp.PythonTypes.Types.Primitives
         public override int GetHashCode()
         {
             if (this.Data is null)
-                return 0;
+                return 0x24521455;
             
-            return this.Data.GetHashCode() + 1;
+            return this.Data.GetHashCode() ^ 0x24521455; // some random magic number to spread the hashcode
         }
     }
 }

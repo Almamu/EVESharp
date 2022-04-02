@@ -26,7 +26,6 @@ namespace EVESharp.PythonTypes.Types.Collections
             get => this.mList[index];
             set => this.mList[index] = value;
         }
-
         public override int GetHashCode()
         {
             // a somewhat similar implementation based on python's

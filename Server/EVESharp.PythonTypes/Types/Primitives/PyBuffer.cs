@@ -6,23 +6,9 @@ namespace EVESharp.PythonTypes.Types.Primitives
 {
     public class PyBuffer : PyDataType
     {
-        protected bool Equals(PyBuffer other)
-        {
-            return this.Value.SequenceEqual(other.Value);
-        }
-
-        public override bool Equals(object obj)
-        {
-            if (ReferenceEquals(null, obj)) return false;
-            if (ReferenceEquals(this, obj)) return true;
-            if (obj.GetType() != this.GetType()) return false;
-            
-            return Equals((PyBuffer) obj);
-        }
-
         public override int GetHashCode()
         {
-            return Value.GetHashCode();
+            return (int) CRC32.Checksum(this.Value);
         }
 
         public byte[] Value { get; }
@@ -38,23 +24,9 @@ namespace EVESharp.PythonTypes.Types.Primitives
             return obj.Value;
         }
 
-        public static explicit operator PyBuffer(byte[] value)
+        public static implicit operator PyBuffer(byte[] value)
         {
             return new PyBuffer(value);
-        }
-
-        public static bool operator ==(PyBuffer left, PyBuffer right)
-        {
-            if (ReferenceEquals(left, right)) return true;
-            if (ReferenceEquals(left, null)) return false;
-            if (ReferenceEquals(right, null)) return false;
-            
-            return left.Equals(right);
-        }
-
-        public static bool operator !=(PyBuffer left, PyBuffer right)
-        {
-            return !(left == right);
         }
     }
 }

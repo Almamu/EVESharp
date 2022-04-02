@@ -2,19 +2,6 @@ namespace EVESharp.PythonTypes.Types.Primitives
 {
     public class PyToken : PyDataType
     {
-        protected bool Equals(PyToken other)
-        {
-            return Token == other.Token;
-        }
-
-        public override bool Equals(object obj)
-        {
-            if (ReferenceEquals(null, obj)) return false;
-            if (ReferenceEquals(this, obj)) return true;
-            if (obj.GetType() != this.GetType()) return false;
-            return Equals((PyToken) obj);
-        }
-
         public override int GetHashCode()
         {
             return (Token is not null ? Token.GetHashCode() : 0);

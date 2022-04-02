@@ -4,28 +4,24 @@ using EVESharp.PythonTypes.Types.Collections;
 
 namespace EVESharp.PythonTypes.Types.Primitives
 {
-    public class PyDataType
+    /// <summary>
+    /// Base class for all the python data types that EVE supports
+    /// </summary>
+    public abstract class PyDataType
     {
-        protected bool Equals(PyDataType other)
-        {
-            return this == other;
-        }
-
         public override bool Equals(object obj)
         {
-            if (ReferenceEquals(null, obj)) return false;
+            // first check references to make things quick under some situations
             if (ReferenceEquals(this, obj)) return true;
-            if (obj.GetType() != this.GetType()) return false;
-            return Equals((PyDataType) obj);
+            // last but not least, check types
+            if (this.GetType() != obj.GetType()) return false;
+            
+            return obj is PyDataType && this.GetHashCode() == obj.GetHashCode();
         }
 
         public override int GetHashCode()
         {
             throw new NotImplementedException();
-        }
-
-        protected PyDataType()
-        {
         }
 
         public static implicit operator PyDataType(string str)
@@ -175,25 +171,11 @@ namespace EVESharp.PythonTypes.Types.Primitives
         
         public static bool operator ==(PyDataType left, PyDataType right)
         {
-            // check references first
-            if (ReferenceEquals(left, right)) return true;
-            // if references are not the same, ensure they are not nulls
-            if (ReferenceEquals(left, null)) return false;
-            if (ReferenceEquals(right, null)) return false;
-            if (left.GetType() != right.GetType()) return false;
+            // ensure the left side is not null so it can be used for comparison
+            if (ReferenceEquals(null, left)) return false;
             
-            // they're the same type and have some value, cast and call the proper equals method
-            return left switch
-            {
-                PyInteger integer => integer == (PyInteger) right,
-                PyDecimal @decimal => @decimal == (PyDecimal) right,
-                PyString @string => @string == (PyString) right,
-                PyNone => true,
-                PyBool @bool => @bool == (PyBool) right,
-                PyBuffer @buffer => @buffer == (PyBuffer) right,
-                PyToken @token => @token == (PyToken) right,
-                _ => false
-            };
+            // call the Equals method to perform the actual comparison
+            return left.Equals(right);
         }
 
         public static bool operator !=(PyDataType left, PyDataType right)

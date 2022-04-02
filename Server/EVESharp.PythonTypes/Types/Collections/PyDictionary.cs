@@ -62,7 +62,23 @@ namespace EVESharp.PythonTypes.Types.Collections
 
         public override int GetHashCode()
         {
-            return this.mDictionary.GetHashCode();
+            // a similar implementation to PyTuple to make my life easy
+            int length = this.Count;
+            int mult = 1000003;
+            int mul2 = 1000005;
+            int currentHash = 0x63521485;
+
+            foreach ((PyDataType key, PyDataType value) in this.mDictionary)
+            {
+                mult += 52368 + length + length; // shift the multiplier
+                int elementHash = key?.GetHashCode() ?? 0 * mult;
+                mul2 += 58212 + length + length; // shift the multiplier
+                elementHash ^= (value?.GetHashCode() ?? 0 * mul2) << 3;
+                currentHash = (currentHash ^ elementHash) * mult;
+                mult += 82520 + length + length; // shift the multiplier
+            }
+
+            return currentHash + 97531;
         }
 
         public bool TryGetValue(PyDataType key, out PyDataType value)

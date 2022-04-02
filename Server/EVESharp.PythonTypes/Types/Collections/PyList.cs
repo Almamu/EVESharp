@@ -94,7 +94,7 @@ namespace EVESharp.PythonTypes.Types.Collections
         public override int GetHashCode()
         {
             // a somewhat similar implementation based on python's
-            int value = 0;
+            int value = 0x66241585;
 
             foreach (PyDataType data in this.mList)
             {

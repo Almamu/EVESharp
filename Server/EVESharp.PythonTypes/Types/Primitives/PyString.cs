@@ -6,19 +6,6 @@ namespace EVESharp.PythonTypes.Types.Primitives
 {
     public class PyString : PyDataType
     {
-        protected bool Equals(PyString other)
-        {
-            return Value == other.Value;
-        }
-
-        public override bool Equals(object obj)
-        {
-            if (ReferenceEquals(null, obj)) return false;
-            if (ReferenceEquals(this, obj)) return true;
-            if (obj.GetType() != this.GetType()) return false;
-            return Equals((PyString) obj);
-        }
-
         public override int GetHashCode()
         {
             return (Value is not null ? Value.GetHashCode() : 0);

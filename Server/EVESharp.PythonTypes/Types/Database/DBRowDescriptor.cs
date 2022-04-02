@@ -22,6 +22,11 @@ namespace EVESharp.PythonTypes.Types.Database
             public string Name { get; }
             public FieldType Type { get; }
 
+            public override int GetHashCode()
+            {
+                return this.Name.GetHashCode() ^ this.Type.GetHashCode();
+            }
+
             public Column(string name, FieldType type)
             {
                 this.Name = name;
@@ -64,6 +69,21 @@ namespace EVESharp.PythonTypes.Types.Database
         public DBRowDescriptor()
         {
             this.Columns = new List<Column>();
+        }
+
+        public override int GetHashCode()
+        {
+            int length = this.Columns.Count;
+            int mult = 100005;
+            int currentHash = 0x24157585;
+
+            foreach (Column column in this.Columns)
+            {
+                currentHash = (currentHash ^ column.GetHashCode()) * mult;
+                mult += 52418 + length + length;
+            }
+
+            return currentHash;
         }
 
         public static implicit operator PyObject(DBRowDescriptor descriptor)

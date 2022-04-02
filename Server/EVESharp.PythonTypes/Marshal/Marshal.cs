@@ -14,7 +14,7 @@ namespace EVESharp.PythonTypes.Marshal
     /// Takes care of parsing marshalled data from the Python-side into C# objects that the
     /// project can use to process the input data
     /// </summary>
-    public static class Marshal
+    public class Marshal
     {
         /// <summary>
         /// Separator for the PyObject's data
@@ -30,32 +30,80 @@ namespace EVESharp.PythonTypes.Marshal
         public static byte[] ToByteArray(PyDataType data, bool writeHeader = true)
         {
             MemoryStream stream = new MemoryStream();
+            Marshal marshal = new Marshal(data, stream);
 
-            WriteToStream(stream, data, writeHeader);
+            marshal.Process(writeHeader);
 
             return stream.ToArray();
         }
 
+        private BinaryWriter mWriter;
+        private PyDataType mData;
         /// <summary>
-        /// Converts the given <paramref name="data" /> python type into a byte stream and writes it to <paramref name="stream" />
+        /// A key->value pair for saved elements so they can be updated
         /// </summary>
-        /// <param name="stream">The stream to write the byte data into</param>
-        /// <param name="data">The Python type to convert into a byte stream</param>
+        private Dictionary<int, long> mHashToPosition = new Dictionary<int, long>();
+        /// <summary>
+        /// A key->value pair for saved elements so we know their index
+        /// </summary>
+        private Dictionary<int, int> mHashToListPosition = new Dictionary<int, int>();
+
+        /// <summary>
+        /// Creates a new Marshal context with the given stream as backing storage
+        /// </summary>
+        /// <param name="data">The data to marshal</param>
+        /// <param name="output">The stream to write into</param>
+        /// <exception cref="NotSupportedException">When the given stream does not support seeking</exception>
+        protected Marshal(PyDataType data, Stream output)
+        {
+            this.mData = data;
+
+            if (output.CanSeek == false)
+                throw new NotSupportedException("The stream must have seeking capabilities for the marshal to work");
+            
+            this.mWriter = new BinaryWriter(output);
+        }
+
+        /// <summary>
+        /// Converts the given <see cref="mData"/> python type into a byte stream and writes it to <see name="mStream" />
+        /// </summary>
         /// <param name="writeHeader">Whether the Marshal header has to be written or not</param>
         /// <returns>The full object converted into a byte stream</returns>
-        public static void WriteToStream(Stream stream, PyDataType data, bool writeHeader = true)
+        public void Process(bool writeHeader = true)
         {
-            BinaryWriter writer = new BinaryWriter(stream);
-
             if (writeHeader)
             {
                 // write the marshal magic header
-                writer.Write(Specification.MARSHAL_HEADER);
-                // save-list isn't supported yet in the marshal (and will likely never be)
-                writer.Write(0);
+                this.mWriter.Write(Specification.MARSHAL_HEADER);
+                // write a temporal save list to the stream so we reserve the position
+                this.mWriter.Write(0);
             }
 
-            Process(writer, data);
+            this.Process(this.mWriter, this.mData);
+
+            if (writeHeader && this.mHashToListPosition.Count > 0)
+            {
+                // write the saved element list
+                for (int position = 0; position < this.mHashToListPosition.Count; position ++)
+                    this.mWriter.Write((int) position + 1);
+                
+                // finally go back to where the count is and write it too
+                this.mWriter.Seek(1, SeekOrigin.Begin);
+                this.mWriter.Write(this.mHashToListPosition.Count);
+            }
+        }
+
+        /// <summary>
+        /// Determines if the given PyDataType can be stored as a saved element
+        /// </summary>
+        /// <param name="data"></param>
+        /// <returns></returns>
+        private static bool CanBeSaved(PyDataType data)
+        {
+            return data is not null && data is not PyNone && data is not PyInteger
+            {
+                Value: >= short.MinValue and <= short.MaxValue
+            };
         }
 
         /// <summary>
@@ -65,9 +113,45 @@ namespace EVESharp.PythonTypes.Marshal
         /// </summary>
         /// <param name="writer">The writer were to write the data to</param>
         /// <param name="data">The python object to convert</param>
-        /// <exception cref="InvalidDataException">If an unknow python data type is detected</exception>
-        private static void Process(BinaryWriter writer, PyDataType data)
+        /// <exception cref="InvalidDataException">If an unknown python data type is detected</exception>
+        private void Process(BinaryWriter writer, PyDataType data)
         {
+            long opcodePosition = writer.BaseStream.Position;
+            int hash = data?.GetHashCode() ?? 0;
+            bool canBeSaved = CanBeSaved(data);
+            
+            // ignore specific values as they're not really worth it
+            if (canBeSaved)
+            {
+                // check if the object was already saved and write it as such
+                if (this.mHashToPosition.TryGetValue(hash, out long position) == true)
+                {
+                    // check if the hash is not already in there and add it
+                    if (this.mHashToListPosition.TryGetValue(hash, out int listPosition) == false)
+                    {
+                        listPosition = this.mHashToListPosition.Count;
+                        this.mHashToListPosition.Add(hash, listPosition);
+                        
+                        // move to the opcode position and overwrite the value with the correct flag
+                        writer.Seek((int) position, SeekOrigin.Begin);
+                        byte current = (byte) writer.BaseStream.ReadByte();
+                        // seek back again
+                        writer.Seek(-1, SeekOrigin.Current);
+                        // write the new value
+                        writer.Write((byte) (current | Specification.SAVE_MASK));
+                        // seek back to where we were
+                        writer.Seek(0, SeekOrigin.End);
+                    }
+                    
+                    // the object was already saved once, so that value can be used
+                    writer.WriteOpcode(Opcode.SavedStreamElement);
+                    // write the positional value
+                    writer.WriteSizeEx(listPosition + 1);
+                    // and done
+                    return;
+                }
+            }
+            
             switch (data)
             {
                 case null:
@@ -122,6 +206,14 @@ namespace EVESharp.PythonTypes.Marshal
                 default:
                     throw new InvalidDataException($"Unexpected type {data.GetType()}");
             }
+            
+            // some smaller elements don't benefit from being written as saved elements
+            if (canBeSaved)
+            {
+                // store the element in the map with it's opcode position if it's not already there
+                if (this.mHashToPosition.ContainsKey(hash) == false)
+                    this.mHashToPosition.Add(hash, opcodePosition);
+            }
         }
 
         /// <summary>
@@ -139,7 +231,7 @@ namespace EVESharp.PythonTypes.Marshal
         /// </summary>
         /// <param name="writer">Where to write the encoded data to</param>
         /// <param name="data">The value to write</param>
-        private static void ProcessInteger(BinaryWriter writer, PyInteger data)
+        private void ProcessInteger(BinaryWriter writer, PyInteger data)
         {
             if (data.Value == 1)
                 writer.WriteOpcode(Opcode.IntegerOne);
@@ -179,7 +271,7 @@ namespace EVESharp.PythonTypes.Marshal
         /// </summary>
         /// <param name="writer">Where to write the encoded data to</param>
         /// <param name="data">The value to write</param>
-        private static void ProcessDecimal(BinaryWriter writer, PyDecimal data)
+        private void ProcessDecimal(BinaryWriter writer, PyDecimal data)
         {
             if (data == 0.0)
                 writer.WriteOpcode(Opcode.RealZero);
@@ -193,13 +285,14 @@ namespace EVESharp.PythonTypes.Marshal
         /// <summary>
         /// Converts the given <paramref name="token"/> to it's byte array representation.
         /// Tokens are basic ASCII strings with a variable length up to 255 bytes
+        /// They represent the name of a python type on the other side of the wire
         ///
         /// The following opcodes are supported
         /// <seealso cref="Opcode.Token" /> 2 bytes minimum, the string data comes right after the length indicator
         /// </summary>
         /// <param name="writer">Where to write the encoded data to</param>
         /// <param name="token">The value to write</param>
-        private static void ProcessToken(BinaryWriter writer, PyToken token)
+        private void ProcessToken(BinaryWriter writer, PyToken token)
         {
             if (token.Length > byte.MaxValue)
                 throw new InvalidDataException($"Token length cannot be greater than {byte.MaxValue}");
@@ -219,7 +312,7 @@ namespace EVESharp.PythonTypes.Marshal
         /// </summary>
         /// <param name="writer">Where to write the encoded data to</param>
         /// <param name="boolean">The value to write</param>
-        private static void ProcessBool(BinaryWriter writer, PyBool boolean)
+        private void ProcessBool(BinaryWriter writer, PyBool boolean)
         {
             if (boolean)
                 writer.WriteOpcode(Opcode.BoolTrue);
@@ -237,7 +330,7 @@ namespace EVESharp.PythonTypes.Marshal
         /// </summary>
         /// <param name="writer">Where to write the encoded data to</param>
         /// <param name="buffer">The value to write</param>
-        private static void ProcessBuffer(BinaryWriter writer, PyBuffer buffer)
+        private void ProcessBuffer(BinaryWriter writer, PyBuffer buffer)
         {
             writer.WriteOpcode(Opcode.Buffer);
             writer.WriteSizeEx(buffer.Value.Length);
@@ -254,15 +347,15 @@ namespace EVESharp.PythonTypes.Marshal
         /// </summary>
         /// <param name="writer">Where to write the encoded data to</param>
         /// <param name="dictionary">The value to write</param>
-        private static void ProcessDictionary(BinaryWriter writer, PyDictionary dictionary)
+        private void ProcessDictionary(BinaryWriter writer, PyDictionary dictionary)
         {
             writer.WriteOpcode(Opcode.Dictionary);
             writer.WriteSizeEx(dictionary.Length);
 
             foreach (PyDictionaryKeyValuePair pair in dictionary)
             {
-                Process(writer, pair.Value);
-                Process(writer, pair.Key);
+                this.Process(writer, pair.Value);
+                this.Process(writer, pair.Key);
             }
         }
 
@@ -278,7 +371,7 @@ namespace EVESharp.PythonTypes.Marshal
         /// </summary>
         /// <param name="writer">Where to write the encoded data to</param>
         /// <param name="list">The value to write</param>
-        private static void ProcessList(BinaryWriter writer, PyList list)
+        private void ProcessList(BinaryWriter writer, PyList list)
         {
             if (list.Count == 0)
                 writer.WriteOpcode(Opcode.ListEmpty);
@@ -291,13 +384,13 @@ namespace EVESharp.PythonTypes.Marshal
             }
 
             foreach (PyDataType entry in list)
-                Process(writer, entry);
+                this.Process(writer, entry);
         }
 
         /// <summary>
         /// Converts the given <paramref name="data"/> to it's byte array representation.
         /// ObjectData are simple representations of Python objects.
-        /// These objects are composed by one python string that indicates the type of the object (it's name)
+        /// These objects are composed by one python token that indicates the type of the object (it's name)
         /// and an argument object that can be any kind of Python type
         ///
         /// The following opcodes are supported
@@ -305,11 +398,11 @@ namespace EVESharp.PythonTypes.Marshal
         /// </summary>
         /// <param name="writer">Where to write the encoded data to</param>
         /// <param name="data">The value to write</param>
-        private static void ProcessObjectData(BinaryWriter writer, PyObjectData data)
+        private void ProcessObjectData(BinaryWriter writer, PyObjectData data)
         {
             writer.WriteOpcode(Opcode.ObjectData);
-            Process(writer, data.Name);
-            Process(writer, data.Arguments);
+            this.Process(writer, data.Name);
+            this.Process(writer, data.Arguments);
         }
 
         /// <summary>
@@ -319,7 +412,7 @@ namespace EVESharp.PythonTypes.Marshal
         /// <seealso cref="Opcode.None" />
         /// </summary>
         /// <param name="writer">Where to write the encoded data to</param>
-        private static void ProcessNone(BinaryWriter writer)
+        private void ProcessNone(BinaryWriter writer)
         {
             writer.WriteOpcode(Opcode.None);
         }
@@ -345,19 +438,19 @@ namespace EVESharp.PythonTypes.Marshal
         /// </summary>
         /// <param name="writer">Where to write the encoded data to</param>
         /// <param name="data">The value to write</param>
-        private static void ProcessObject(BinaryWriter writer, PyObject data)
+        private void ProcessObject(BinaryWriter writer, PyObject data)
         {
             if (data.IsType2 == true)
                 writer.WriteOpcode(Opcode.ObjectType2);
             else
                 writer.WriteOpcode(Opcode.ObjectType1);
 
-            Process(writer, data.Header);
+            this.Process(writer, data.Header);
 
             if (data.List.Count > 0)
             {
                 foreach (PyDataType entry in data.List)
-                    Process(writer, entry);
+                    this.Process(writer, entry);
             }
 
             writer.Write(PACKED_TERMINATOR);
@@ -366,8 +459,8 @@ namespace EVESharp.PythonTypes.Marshal
             {
                 foreach (PyDictionaryKeyValuePair<PyDataType,PyDataType> entry in data.Dictionary)
                 {
-                    Process(writer, entry.Key);
-                    Process(writer, entry.Value);
+                    this.Process(writer, entry.Key);
+                    this.Process(writer, entry.Value);
                 }
             }
 
@@ -393,7 +486,7 @@ namespace EVESharp.PythonTypes.Marshal
         /// </summary>
         /// <param name="writer">Where to write the encoded data to</param>
         /// <param name="data">The value to write</param>
-        private static void ProcessString(BinaryWriter writer, PyString data)
+        private void ProcessString(BinaryWriter writer, PyString data)
         {
             if (data.Length == 0)
                 writer.WriteOpcode(data.IsUTF8 == true ? Opcode.WStringEmpty : Opcode.StringEmpty);
@@ -454,7 +547,7 @@ namespace EVESharp.PythonTypes.Marshal
         /// </summary>
         /// <param name="writer">Where to write the encoded data to</param>
         /// <param name="data">The value to write</param>
-        private static void ProcessSubStream(BinaryWriter writer, PySubStream data)
+        private void ProcessSubStream(BinaryWriter writer, PySubStream data)
         {
             // this marshals the data only if the data changed from the original (or if it's a new PySubStream)
             byte[] buffer = data.ByteStream;
@@ -475,7 +568,7 @@ namespace EVESharp.PythonTypes.Marshal
         /// </summary>
         /// <param name="writer">Where to write the encoded data to</param>
         /// <param name="data">The value to write</param>
-        private static void ProcessChecksumedStream(BinaryWriter writer, PyChecksumedStream data)
+        private void ProcessChecksumedStream(BinaryWriter writer, PyChecksumedStream data)
         {
             byte[] buffer = ToByteArray(data.Data, false);
 
@@ -496,10 +589,10 @@ namespace EVESharp.PythonTypes.Marshal
         /// </summary>
         /// <param name="writer">Where to write the encoded data to</param>
         /// <param name="data">The value to write</param>
-        private static void ProcessSubStruct(BinaryWriter writer, PySubStruct data)
+        private void ProcessSubStruct(BinaryWriter writer, PySubStruct data)
         {
             writer.WriteOpcode(Opcode.SubStruct);
-            Process(writer, data.Definition);
+            this.Process(writer, data.Definition);
         }
 
         /// <summary>
@@ -515,7 +608,7 @@ namespace EVESharp.PythonTypes.Marshal
         /// </summary>
         /// <param name="writer">Where to write the encoded data to</param>
         /// <param name="tuple">The value to write</param>
-        private static void ProcessTuple(BinaryWriter writer, PyTuple tuple)
+        private void ProcessTuple(BinaryWriter writer, PyTuple tuple)
         {
             if (tuple.Count == 0)
                 writer.WriteOpcode(Opcode.TupleEmpty);
@@ -530,7 +623,7 @@ namespace EVESharp.PythonTypes.Marshal
             }
 
             foreach (PyDataType entry in tuple)
-                Process(writer, entry);
+                this.Process(writer, entry);
         }
 
         /// <summary>
@@ -562,10 +655,10 @@ namespace EVESharp.PythonTypes.Marshal
         /// </summary>
         /// <param name="writer">Where to write the encoded data to</param>
         /// <param name="packedRow">The value to write</param>
-        private static void ProcessPackedRow(BinaryWriter writer, PyPackedRow packedRow)
+        private void ProcessPackedRow(BinaryWriter writer, PyPackedRow packedRow)
         {
             writer.WriteOpcode(Opcode.PackedRow);
-            Process(writer, packedRow.Header);
+            this.Process(writer, packedRow.Header);
             // bit where null flags will be written
             int booleanBits = 0;
             int nullBits = 0;
@@ -659,7 +752,7 @@ namespace EVESharp.PythonTypes.Marshal
                     case FieldType.Str:
                     case FieldType.WStr:
                             // write the object to the proper memory stream
-                            Process(objectWriter, packedRow[column.Name]);
+                            this.Process(objectWriter, packedRow[column.Name]);
                             continue;
 
                     default:

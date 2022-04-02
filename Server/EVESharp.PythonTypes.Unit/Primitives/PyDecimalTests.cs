@@ -1,0 +1,40 @@
+﻿using EVESharp.PythonTypes.Types.Primitives;
+using NUnit.Framework;
+
+namespace EVESharp.PythonTypes.Unit.Primitives;
+
+public class PyDecimalTests
+{
+    private const double VALUE1 = 100;
+    private const double VALUE2 = 150;
+    
+    [Test]
+    public void DecimalComparison()
+    {
+        PyDecimal obj1 = new PyDecimal(VALUE1);
+        PyDecimal obj2 = new PyDecimal(VALUE2);
+        PyDecimal obj3 = new PyDecimal(VALUE1);
+
+        Assert.True(obj1 == obj3);
+        Assert.False(obj2 == obj3);
+        Assert.True(obj1 < obj2);
+        Assert.True(obj1 <= obj3);
+        Assert.True(obj1 >= obj3);
+        Assert.True(obj2 > obj1);
+
+        Assert.True(obj1 == VALUE1);
+        Assert.False(obj1 == VALUE2);
+        Assert.False(obj1 != VALUE1);
+        Assert.True(obj1 != VALUE2);
+    }
+
+    [Test]
+    public void DecimalAssignment()
+    {
+        PyDecimal obj1 = VALUE1;
+        PyDecimal obj2 = VALUE2;
+        
+        Assert.True(obj1 == VALUE1);
+        Assert.True(obj2 == VALUE2);
+    }
+}

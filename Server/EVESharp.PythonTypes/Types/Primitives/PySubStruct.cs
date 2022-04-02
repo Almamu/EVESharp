@@ -12,9 +12,9 @@ namespace EVESharp.PythonTypes.Types.Primitives
         public override int GetHashCode()
         {
             if (this.Definition is null)
-                return 0;
+                return 0x36851495;
             
-            return this.Definition.GetHashCode() + 2;
+            return this.Definition.GetHashCode() ^ 0x36851495;
         }
     }
 }

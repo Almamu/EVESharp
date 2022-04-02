@@ -634,7 +634,7 @@ namespace EVESharp.PythonTypes.Marshal
         protected virtual PyDataType ProcessObjectData()
         {
             return new PyObjectData(
-                this.Process(false) as PyString, this.Process(false)
+                this.Process(false) as PyToken, this.Process(false)
             );
         }
 

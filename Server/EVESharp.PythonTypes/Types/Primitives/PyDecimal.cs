@@ -1,3 +1,4 @@
+using System;
 using System.Globalization;
 
 namespace EVESharp.PythonTypes.Types.Primitives
@@ -8,19 +9,6 @@ namespace EVESharp.PythonTypes.Types.Primitives
         {
             Double,
             Float
-        }
-
-        protected bool Equals(PyDecimal other)
-        {
-            return Value.Equals(other.Value);
-        }
-
-        public override bool Equals(object obj)
-        {
-            if (ReferenceEquals(null, obj)) return false;
-            if (ReferenceEquals(this, obj)) return true;
-            if (obj.GetType() != this.GetType()) return false;
-            return Equals((PyDecimal) obj);
         }
 
         public override int GetHashCode()
@@ -42,71 +30,35 @@ namespace EVESharp.PythonTypes.Types.Primitives
             this.Value = value;
             this.DecimalType = DecimalTypeEnum.Float;
         }
-
-        public static bool operator ==(PyDecimal obj1, PyDecimal obj2)
+        
+        public static bool operator >(PyDecimal obj, PyDecimal value)
         {
-            if (ReferenceEquals(obj1, obj2)) return true;
-            if (ReferenceEquals(null, obj1)) return false;
-            if (ReferenceEquals(null, obj2)) return false;
-
-            return obj1.Value.Equals(obj2.Value);
-        }
-
-        public static bool operator !=(PyDecimal obj1, PyDecimal obj2)
-        {
-            return !(obj1 == obj2);
+            return obj.Value > value.Value;
         }
         
-        public static bool operator >(PyDecimal obj, double value)
+        public static bool operator >=(PyDecimal obj, PyDecimal value)
         {
-            return obj.Value > value;
-        }
-        
-        public static bool operator >=(PyDecimal obj, double value)
-        {
-            return obj.Value >= value;
+            return obj.Value >= value.Value;
         }
 
-        public static bool operator <(PyDecimal obj, double value)
+        public static bool operator <(PyDecimal obj, PyDecimal value)
         {
-            return obj.Value < value;
+            return obj.Value < value.Value;
         }
 
-        public static bool operator <=(PyDecimal obj, double value)
+        public static bool operator <=(PyDecimal obj, PyDecimal value)
         {
-            return obj.Value <= value;
+            return obj.Value <= value.Value;
         }
 
-        public static bool operator ==(PyDecimal obj, double value)
+        public static bool operator ==(PyDecimal obj, PyDecimal value)
         {
             if (ReferenceEquals(null, obj)) return false;
 
             return obj.Value.Equals(value);
         }
 
-        public static bool operator !=(PyDecimal obj, double value)
-        {
-            return !(obj == value);
-        }
-
-        public static bool operator >(PyDecimal obj, float value)
-        {
-            return obj.Value > value;
-        }
-
-        public static bool operator <(PyDecimal obj, float value)
-        {
-            return obj.Value < value;
-        }
-
-        public static bool operator ==(PyDecimal obj, float value)
-        {
-            if (ReferenceEquals(null, obj)) return false;
-
-            return obj.Value.Equals(value);
-        }
-
-        public static bool operator !=(PyDecimal obj, float value)
+        public static bool operator !=(PyDecimal obj, PyDecimal value)
         {
             return !(obj == value);
         }
@@ -124,6 +76,11 @@ namespace EVESharp.PythonTypes.Types.Primitives
         public static explicit operator float(PyDecimal obj)
         {
             return (float) obj.Value;
+        }
+
+        public static explicit operator float?(PyDecimal obj)
+        {
+            return (float?) obj?.Value;
         }
 
         public static implicit operator PyDecimal(double value)

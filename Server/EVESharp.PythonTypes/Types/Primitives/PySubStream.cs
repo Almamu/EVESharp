@@ -30,11 +30,13 @@ namespace EVESharp.PythonTypes.Types.Primitives
         {
             get
             {
-                if (this.mIsUnmarshaled == false ||
-                    (this.mCurrentStream?.GetHashCode() == this.mOriginalStream?.GetHashCode() && this.mByteStream is not null))
+                // check hash codes and types to ensure they're equal
+                if (this.mByteStream is not null && (this.mIsUnmarshaled == false || this.mCurrentStream == this.mOriginalStream))
                     return this.mByteStream;
 
-                this.mIsUnmarshaled = true;
+                // make sure the old and new value are the same so checks work fine
+                this.mOriginalStream = this.mCurrentStream;
+                
                 // update the byte stream with the new value
                 return this.mByteStream = Marshal.Marshal.ToByteArray(this.mCurrentStream);
             }
@@ -54,15 +56,7 @@ namespace EVESharp.PythonTypes.Types.Primitives
 
         public override int GetHashCode()
         {
-            // TODO: PROPERLY REFINE THIS, RIGHT NOW THE HASHCODE WILL BE DIFFERENT BASED ON THE CURRENT DECODE STATUS
-            if (this.mByteStream is not null)
-                return this.mByteStream.GetHashCode();
-            if (this.mCurrentStream is not null)
-                return this.mCurrentStream.GetHashCode() * 2;
-            if (this.mOriginalStream is not null)
-                return this.mOriginalStream.GetHashCode() * 2;
-            
-            return 0;
+            return (int) CRC32.Checksum(this.ByteStream) ^ 0x35415879;
         }
     }
 }
