@@ -699,14 +699,14 @@ namespace EVESharp.PythonTypes.Marshal
         /// <exception cref="InvalidDataException">If any error was found in the data</exception>
         protected virtual PyDataType ProcessSubStream()
         {
+            // get the length
             uint length = this.mReader.ReadSizeEx();
             byte[] buffer = new byte[length];
 
+            // read the full substream from the buffer
             this.mStream.Read(buffer, 0, buffer.Length);
-
-            PyDataType result = ReadFromByteArray(buffer);
-
-            return new PySubStream(result);
+            
+            return new PySubStream(buffer);
         }
 
         /// <summary>

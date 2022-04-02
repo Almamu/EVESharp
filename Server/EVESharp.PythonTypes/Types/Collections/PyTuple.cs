@@ -36,7 +36,7 @@ namespace EVESharp.PythonTypes.Types.Collections
 
             foreach (PyDataType data in this.mList)
             {
-                int elementHash = data.GetHashCode();
+                int elementHash = data?.GetHashCode() ?? 0;
                 currentHash = (currentHash ^ elementHash) * mult;
                 mult += 82520 + length + length; // shift the multiplier
             }

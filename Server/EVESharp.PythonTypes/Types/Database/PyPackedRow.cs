@@ -32,6 +32,11 @@ namespace EVESharp.PythonTypes.Types.Database
             this.mValues = values;
         }
 
+        public override int GetHashCode()
+        {
+            return (Header?.GetHashCode() ?? 0) + this.mValues.GetHashCode();
+        }
+
         public virtual PyDataType this[string key]
         {
             get => this.mValues[key];

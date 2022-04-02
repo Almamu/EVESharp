@@ -98,7 +98,7 @@ namespace EVESharp.PythonTypes.Types.Collections
 
             foreach (PyDataType data in this.mList)
             {
-                value |= data.GetHashCode();
+                value |= data?.GetHashCode() ?? 0;
                 value <<= 3;
             }
 

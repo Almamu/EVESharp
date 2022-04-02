@@ -16,5 +16,10 @@ namespace EVESharp.PythonTypes.Types.Primitives
             this.List = list ?? new PyList();
             this.Dictionary = dict ?? new PyDictionary();
         }
+
+        public override int GetHashCode()
+        {
+            return (IsType2 ? 1 : 0) | Header.GetHashCode() << 8 | List.GetHashCode() << 16 | Dictionary.GetHashCode() << 24;
+        }
     }
 }

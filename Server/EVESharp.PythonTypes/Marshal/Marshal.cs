@@ -456,7 +456,8 @@ namespace EVESharp.PythonTypes.Marshal
         /// <param name="data">The value to write</param>
         private static void ProcessSubStream(BinaryWriter writer, PySubStream data)
         {
-            byte[] buffer = ToByteArray(data.Stream);
+            // this marshals the data only if the data changed from the original (or if it's a new PySubStream)
+            byte[] buffer = data.ByteStream;
 
             writer.WriteOpcode(Opcode.SubStream);
             writer.WriteSizeEx(buffer.Length);

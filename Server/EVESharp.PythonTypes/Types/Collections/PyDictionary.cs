@@ -60,6 +60,11 @@ namespace EVESharp.PythonTypes.Types.Collections
             this.mDictionary = seed;
         }
 
+        public override int GetHashCode()
+        {
+            return this.mDictionary.GetHashCode();
+        }
+
         public bool TryGetValue(PyDataType key, out PyDataType value)
         {
             return this.mDictionary.TryGetValue(key, out value);

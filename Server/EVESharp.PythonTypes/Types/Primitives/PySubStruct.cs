@@ -8,5 +8,13 @@ namespace EVESharp.PythonTypes.Types.Primitives
         {
             this.Definition = definition;
         }
+
+        public override int GetHashCode()
+        {
+            if (this.Definition is null)
+                return 0;
+            
+            return this.Definition.GetHashCode() + 2;
+        }
     }
 }

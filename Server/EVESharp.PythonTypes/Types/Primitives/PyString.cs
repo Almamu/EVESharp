@@ -21,7 +21,7 @@ namespace EVESharp.PythonTypes.Types.Primitives
 
         public override int GetHashCode()
         {
-            return (Value != null ? Value.GetHashCode() : 0);
+            return (Value is not null ? Value.GetHashCode() : 0);
         }
 
         public string Value { get; }

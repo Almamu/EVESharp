@@ -8,5 +8,13 @@ namespace EVESharp.PythonTypes.Types.Primitives
         {
             this.Data = data;
         }
+
+        public override int GetHashCode()
+        {
+            if (this.Data is null)
+                return 0;
+            
+            return this.Data.GetHashCode() + 1;
+        }
     }
 }

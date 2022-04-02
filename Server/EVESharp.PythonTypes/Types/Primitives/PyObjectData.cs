@@ -10,5 +10,10 @@ namespace EVESharp.PythonTypes.Types.Primitives
             this.Name = name;
             this.Arguments = arguments;
         }
+
+        public override int GetHashCode()
+        {
+            return (this.Name?.GetHashCode() ?? 0) << 16 | (this.Arguments?.GetHashCode() ?? 0);
+        }
     }
 }
