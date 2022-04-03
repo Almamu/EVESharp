@@ -43,7 +43,7 @@ namespace EVESharp.PythonTypes.Marshal
         private Stream mStream;
         protected BinaryReader mReader;
         protected PyDataType[] mSavedList;
-        private int mCurrentSavedIndex;
+        protected int mCurrentSavedIndex;
         protected int[] mSavedElementsMap;
 
         protected Unmarshal(Stream stream)
