@@ -136,19 +136,19 @@ namespace EVESharp.Common.Network
             try
             {
                 state.Received = this.EndReceive(asyncResult);
+
+                // receiving 0 bytes means the socket has to be closed
+                if (state.Received == 0)
+                {
+                    this.ForcefullyDisconnect();
+                    this.FireOnConnectionLostHandler();
+                    return;
+                }
             }
             catch (Exception e)
             {
                 // an exception here means the connection closed
                 this.HandleException(e);
-                return;
-            }
-
-            // receiving 0 bytes means the socket has to be closed
-            if (state.Received == 0)
-            {
-                this.ForcefullyDisconnect();
-                this.FireOnConnectionLostHandler();
                 return;
             }
 

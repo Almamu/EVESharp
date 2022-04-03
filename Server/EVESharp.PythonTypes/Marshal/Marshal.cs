@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -30,15 +31,30 @@ namespace EVESharp.PythonTypes.Marshal
         public static byte[] ToByteArray(PyDataType data, bool writeHeader = true)
         {
             MemoryStream stream = new MemoryStream();
+
+            WriteToStream(stream, data, writeHeader);
+
+            return stream.ToArray();
+        }
+        
+        /// <summary>
+        /// Converts the given <paramref name="data" /> python type into a byte stream and writes it to <paramref name="stream" />
+        /// </summary>
+        /// <param name="stream">The stream to write the byte data into</param>
+        /// <param name="data">The Python type to convert into a byte stream</param>
+        /// <param name="writeHeader">Whether the Marshal header has to be written or not</param>
+        /// <returns>The full object converted into a byte stream</returns>
+        public static void WriteToStream(Stream stream, PyDataType data, bool writeHeader = true)
+        {
             Marshal marshal = new Marshal(data, stream);
 
             marshal.Process(writeHeader);
-
-            return stream.ToArray();
         }
 
         private BinaryWriter mWriter;
         private PyDataType mData;
+        
+        
         /// <summary>
         /// A key->value pair for saved elements so they can be updated
         /// </summary>
@@ -83,9 +99,12 @@ namespace EVESharp.PythonTypes.Marshal
 
             if (writeHeader && this.mHashToListPosition.Count > 0)
             {
+                // order the map by the position
+                IOrderedEnumerable<KeyValuePair<int, int>> ordered = this.mHashToListPosition.OrderBy(x => this.mHashToPosition[x.Key]);
+                
                 // write the saved element list
-                for (int position = 0; position < this.mHashToListPosition.Count; position ++)
-                    this.mWriter.Write((int) position + 1);
+                foreach ((int _, int position) in ordered)
+                    this.mWriter.Write(position + 1);
                 
                 // finally go back to where the count is and write it too
                 this.mWriter.Seek(1, SeekOrigin.Begin);
@@ -100,10 +119,24 @@ namespace EVESharp.PythonTypes.Marshal
         /// <returns></returns>
         private static bool CanBeSaved(PyDataType data)
         {
-            return data is not null && data is not PyNone && data is not PyInteger
+            if (data is PyInteger {Value: < int.MinValue or > int.MaxValue})
+                return true;
+            if (data is PyString {Value: {Length: > 1}})
+                return true;
+            
+            switch (data)
             {
-                Value: >= short.MinValue and <= short.MaxValue
-            };
+                case PyObject:
+                case PyObjectData:
+                case PyDictionary:
+                case PyList:
+                case PyTuple:
+                case PySubStruct:
+                case PyBuffer:
+                    return true;
+                default:
+                    return false;
+            }
         }
 
         /// <summary>
@@ -119,7 +152,7 @@ namespace EVESharp.PythonTypes.Marshal
             long opcodePosition = writer.BaseStream.Position;
             int hash = data?.GetHashCode() ?? 0;
             bool canBeSaved = CanBeSaved(data);
-            
+
             // ignore specific values as they're not really worth it
             if (canBeSaved)
             {
@@ -150,6 +183,9 @@ namespace EVESharp.PythonTypes.Marshal
                     // and done
                     return;
                 }
+                
+                // store the element in the map with it's opcode position if it's not already there
+                this.mHashToPosition.Add(hash, opcodePosition);
             }
             
             switch (data)
@@ -205,14 +241,6 @@ namespace EVESharp.PythonTypes.Marshal
                     break;
                 default:
                     throw new InvalidDataException($"Unexpected type {data.GetType()}");
-            }
-            
-            // some smaller elements don't benefit from being written as saved elements
-            if (canBeSaved)
-            {
-                // store the element in the map with it's opcode position if it's not already there
-                if (this.mHashToPosition.ContainsKey(hash) == false)
-                    this.mHashToPosition.Add(hash, opcodePosition);
             }
         }
 
