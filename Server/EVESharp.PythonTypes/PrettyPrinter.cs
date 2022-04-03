@@ -237,7 +237,7 @@ namespace EVESharp.PythonTypes
 
         private void ProcessObjectData(PyObjectData data)
         {
-            this.mStringBuilder.AppendFormat("[PyObjectData {0}]", data.Name.Token);
+            this.mStringBuilder.AppendFormat("[PyObjectData {0}]", data.Name.Value);
             this.mStringBuilder.AppendLine();
             this.mIndentation++;
 

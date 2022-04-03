@@ -19,8 +19,19 @@ namespace EVESharp.PythonTypes.Types.Primitives
 
         public PyString(string value, bool isUTF8 = false)
         {
-            this.Value = value;
             this.IsStringTableEntry = false;
+            
+            // do a quick lookup, is the string in the table entry?
+            int index = StringTableUtils.Entries.FindIndex(x => x == value);
+
+            // string found in the table, write a string entry and return
+            if (index != -1)
+            {
+                this.IsStringTableEntry = true;
+                this.StringTableEntryIndex = (StringTableUtils.EntryList) index;
+            }
+            
+            this.Value = value;
             this.IsUTF8 = isUTF8;
         }
 

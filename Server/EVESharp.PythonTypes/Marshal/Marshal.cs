@@ -119,13 +119,12 @@ namespace EVESharp.PythonTypes.Marshal
         /// <returns></returns>
         private static bool CanBeSaved(PyDataType data)
         {
-            if (data is PyInteger {Value: < int.MinValue or > int.MaxValue})
-                return true;
-            if (data is PyString {Value: {Length: > 1}})
+            if (data is PyString {IsStringTableEntry: false} pyString && pyString.Value.Length > 1)
                 return true;
             
             switch (data)
             {
+                case PyInteger {Value: < int.MinValue or > int.MaxValue}:
                 case PyObject:
                 case PyObjectData:
                 case PyDictionary:
@@ -530,17 +529,6 @@ namespace EVESharp.PythonTypes.Marshal
             }
             else
             {
-                // do a quick lookup, is the string in the table entry?
-                int index = StringTableUtils.Entries.FindIndex(x => x == data.Value);
-
-                // string found in the table, write a string entry and return
-                if (index != -1)
-                {
-                    writer.WriteOpcode(Opcode.StringTable);
-                    writer.Write((byte) (index + 1));
-                    return;
-                }
-            
                 // no match found in the table, normal string found, write it to the marshal stream
                 if (data.IsUTF8)
                 {
