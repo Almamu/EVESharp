@@ -21,6 +21,7 @@ public class PyObjectTests
         PyObject obj4 = new PyObject(true, tuple1, list, dict);
         PyObject obj5 = new PyObject(true, tuple2, list, dict);
         PyObject obj6 = new PyObject(true, tuple1, list, dict);
+        PyObject obj7 = null;
 
         Assert.True(obj1 == obj3);
         Assert.True(obj4 == obj6);
@@ -34,5 +35,16 @@ public class PyObjectTests
 
         Assert.False(obj1 == obj4);
         Assert.True(obj1 != obj4);
+        
+        Assert.False(obj1 == null);
+        Assert.True(obj1 != null);
+        Assert.False(obj1 is null);
+        Assert.True(obj1 is not null);
+        Assert.True(obj7 == null);
+        Assert.False(obj7 != null);
+        Assert.True(obj7 is null);
+        Assert.False(obj7 is not null);
+        Assert.False(obj1 == obj7);
+        Assert.True(obj1 != obj7);
     }
 }

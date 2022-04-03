@@ -19,6 +19,7 @@ public class PyObjectDataTests
         PyObjectData obj4 = new PyObjectData("HELLO", tuple2);
         PyObjectData obj5 = new PyObjectData("WORLD", tuple2);
         PyObjectData obj6 = new PyObjectData("HELLO", tuple2);
+        PyObjectData obj7 = null;
 
         Assert.True(obj1 == obj3);
         Assert.False(obj1 == obj2);
@@ -32,5 +33,16 @@ public class PyObjectDataTests
 
         Assert.False(obj1 == obj4);
         Assert.True(obj1 != obj4);
+        
+        Assert.False(obj1 == null);
+        Assert.True(obj1 != null);
+        Assert.False(obj1 is null);
+        Assert.True(obj1 is not null);
+        Assert.True(obj7 == null);
+        Assert.False(obj7 != null);
+        Assert.True(obj7 is null);
+        Assert.False(obj7 is not null);
+        Assert.False(obj1 == obj7);
+        Assert.True(obj1 != obj7);
     }
 }

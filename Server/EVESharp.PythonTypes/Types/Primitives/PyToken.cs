@@ -2,6 +2,13 @@ namespace EVESharp.PythonTypes.Types.Primitives
 {
     public class PyToken : PyDataType
     {
+        private bool Equals(PyToken other)
+        {
+            if (ReferenceEquals(null, other)) return false;
+
+            return this.Token.Equals(other.Token);
+        }
+        
         public override int GetHashCode()
         {
             return (Token is not null ? Token.GetHashCode() : 0);
@@ -25,22 +32,17 @@ namespace EVESharp.PythonTypes.Types.Primitives
             return value.Token;
         }
 
-        public static bool operator ==(PyToken obj, string value)
+        public static bool operator ==(PyToken left, PyToken right)
         {
-            if (ReferenceEquals(null, obj) == true)
-            {
-                if (value is null)
-                    return true;
+            if (ReferenceEquals(left, right)) return true;
+            if (ReferenceEquals(null, left)) return false;
 
-                return false;
-            }
-
-            return obj.Token == value;
+            return left.Equals(right);
         }
 
-        public static bool operator !=(PyToken obj, string value)
+        public static bool operator !=(PyToken left, PyToken right)
         {
-            return !(obj == value);
+            return !(left == right);
         }
     }
 }

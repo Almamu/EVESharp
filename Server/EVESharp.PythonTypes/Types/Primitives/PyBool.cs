@@ -2,6 +2,13 @@ namespace EVESharp.PythonTypes.Types.Primitives
 {
     public class PyBool : PyDataType
     {
+        private bool Equals(PyBool other)
+        {
+            if (ReferenceEquals(null, other)) return false;
+            
+            return this.Value == other.Value;
+        }
+        
         public override int GetHashCode()
         {
             return Value.GetHashCode();
@@ -14,16 +21,17 @@ namespace EVESharp.PythonTypes.Types.Primitives
             this.Value = value;
         }
 
-        public static bool operator ==(PyBool obj, bool value)
+        public static bool operator ==(PyBool left, PyBool right)
         {
-            if (ReferenceEquals(null, obj) == true) return false;
+            if (ReferenceEquals(left, right)) return true;
+            if (ReferenceEquals(null, left)) return false;
 
-            return obj.Value == value;
+            return left.Equals(right);
         }
         
-        public static bool operator !=(PyBool obj, bool value)
+        public static bool operator !=(PyBool left, PyBool right)
         {
-            return !(obj == value);
+            return !(left == right);
         }
 
         public static bool operator true(PyBool obj)

@@ -13,6 +13,7 @@ public class PyIntegerTests
         PyInteger obj1 = new PyInteger(VALUE1);
         PyInteger obj2 = new PyInteger(VALUE2);
         PyInteger obj3 = new PyInteger(VALUE1);
+        PyInteger obj4 = null;
 
         Assert.True(obj1 == obj3);
         Assert.False(obj2 == obj3);
@@ -25,6 +26,17 @@ public class PyIntegerTests
         Assert.False(obj1 == VALUE2);
         Assert.False(obj1 != VALUE1);
         Assert.True(obj1 != VALUE2);
+        
+        Assert.False(obj1 == null);
+        Assert.True(obj1 != null);
+        Assert.False(obj1 is null);
+        Assert.True(obj1 is not null);
+        Assert.True(obj4 == null);
+        Assert.False(obj4 != null);
+        Assert.True(obj4 is null);
+        Assert.False(obj4 is not null);
+        Assert.False(obj1 == obj4);
+        Assert.True(obj1 != obj4);
     }
 
     [Test]

@@ -7,7 +7,9 @@ namespace EVESharp.PythonTypes.Types.Primitives
     {
         private bool Equals(PyInteger other)
         {
-            return other.Value == this.Value;
+            if (ReferenceEquals(null, other)) return false;
+
+            return this.Value.Equals(other.Value);
         }
         
         public override int GetHashCode()
@@ -60,11 +62,12 @@ namespace EVESharp.PythonTypes.Types.Primitives
             this.IntegerType = IntegerTypeEnum.Byte;
         }
 
-        public static bool operator ==(PyInteger obj, PyInteger other)
+        public static bool operator ==(PyInteger left, PyInteger right)
         {
-            if (ReferenceEquals(null, obj)) return false;
+            if (ReferenceEquals(left, right)) return true;
+            if (ReferenceEquals(null, left)) return false;
 
-            return obj.Equals(other);
+            return left.Equals(right);
         }
 
         public static bool operator !=(PyInteger obj, PyInteger other)

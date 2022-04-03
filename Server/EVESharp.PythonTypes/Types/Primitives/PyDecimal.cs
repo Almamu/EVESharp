@@ -1,10 +1,19 @@
 using System;
 using System.Globalization;
+using System.Runtime.CompilerServices;
+using System.Xml.Xsl;
 
 namespace EVESharp.PythonTypes.Types.Primitives
 {
     public class PyDecimal : PyDataType
     {
+        private bool Equals(PyDecimal other)
+        {
+            if (ReferenceEquals(null, other)) return false;
+
+            return this.Value.Equals(other.Value);
+        }
+        
         public enum DecimalTypeEnum
         {
             Double,
@@ -51,11 +60,12 @@ namespace EVESharp.PythonTypes.Types.Primitives
             return obj.Value <= value.Value;
         }
 
-        public static bool operator ==(PyDecimal obj, PyDecimal value)
+        public static bool operator ==(PyDecimal left, PyDecimal right)
         {
-            if (ReferenceEquals(null, obj)) return false;
+            if (ReferenceEquals(left, right)) return true;
+            if (ReferenceEquals(null, left)) return false;
 
-            return obj.Value.Equals(value);
+            return left.Equals(right);
         }
 
         public static bool operator !=(PyDecimal obj, PyDecimal value)

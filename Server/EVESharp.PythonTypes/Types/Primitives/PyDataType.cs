@@ -13,6 +13,7 @@ namespace EVESharp.PythonTypes.Types.Primitives
         {
             // first check references to make things quick under some situations
             if (ReferenceEquals(this, obj)) return true;
+            if (ReferenceEquals(null, obj)) return false;
             // last but not least, check types
             if (this.GetType() != obj.GetType()) return false;
             
@@ -172,8 +173,13 @@ namespace EVESharp.PythonTypes.Types.Primitives
         public static bool operator ==(PyDataType left, PyDataType right)
         {
             // ensure the left side is not null so it can be used for comparison
+            if (ReferenceEquals(left, right)) return true;
+            // do extra checks for PyNones just in case
+            if (left is PyNone && ReferenceEquals(null, right)) return true;
+            if (right is PyNone && ReferenceEquals(null, left)) return true;
+            // normal checks for other types
             if (ReferenceEquals(null, left)) return false;
-            
+
             // call the Equals method to perform the actual comparison
             return left.Equals(right);
         }
