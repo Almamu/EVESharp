@@ -21,14 +21,11 @@ namespace EVESharp.PythonTypes.Types.Primitives
         {
             this.IsStringTableEntry = false;
             
-            // do a quick lookup, is the string in the table entry?
-            int index = StringTableUtils.Entries.FindIndex(x => x == value);
-
             // string found in the table, write a string entry and return
-            if (index != -1)
+            if (StringTableUtils.LookupTable.TryGetValue(value, out StringTableUtils.EntryList index) == true)
             {
                 this.IsStringTableEntry = true;
-                this.StringTableEntryIndex = (StringTableUtils.EntryList) index;
+                this.StringTableEntryIndex = index;
             }
             
             this.Value = value;
