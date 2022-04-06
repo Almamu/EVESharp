@@ -24,6 +24,10 @@ public abstract class MessageProcessor<T> where T : IMessage
     /// Logger used by this message processor
     /// </summary>
     protected ILogger Log { get; init; }
+    /// <summary>
+    /// The cancellation token all the threads will use to check for termination
+    /// </summary>
+    protected CancellationTokenSource Token { get; private set; }
 
     public MessageProcessor(ILogger logger, int numberOfThreads)
     {
@@ -53,6 +57,8 @@ public abstract class MessageProcessor<T> where T : IMessage
     /// </summary>
     private void InitializeThreads()
     {
+        this.Token = new CancellationTokenSource();
+        
         for (int i = 0; i < this.NumberOfThreads; i++)
         {
             Thread thread = new Thread(Run);
@@ -68,25 +74,20 @@ public abstract class MessageProcessor<T> where T : IMessage
     /// </summary>
     private void Run()
     {
-        try
+        while (this.Token.IsCancellationRequested == false)
         {
-            while (true)
+            try
             {
-                try
-                {
-                    // wait for one second for there to be any data
-                    if (this.mMessages.TryTake(out T message, 1000) == true)
-                        this.HandleMessage(message);
-                }
-                catch (Exception e)
-                {
-                    Log.Error("Exception handling message on MessageProcessor: {e}", e);
-                }
+                // wait for one second for there to be any data
+                if (this.mMessages.TryTake(out T message, 1000) == true)
+                    this.HandleMessage(message);
             }
-        }
-        catch (ThreadInterruptedException e)
-        {
-            // expected situation, let the run method end
+            catch (Exception e)
+            {
+                Log.Error("Exception handling message on MessageProcessor: {e}", e);
+            }
+
+            Thread.Sleep(1);
         }
     }
 
@@ -95,8 +96,7 @@ public abstract class MessageProcessor<T> where T : IMessage
     /// </summary>
     public void Stop()
     {
-        foreach (Thread thread in this.mThreads)
-            thread.Interrupt();
+        this.Token.Cancel();
     }
 
     /// <summary>
