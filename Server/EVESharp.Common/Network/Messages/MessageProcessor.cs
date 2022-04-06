@@ -68,17 +68,35 @@ public abstract class MessageProcessor<T> where T : IMessage
     /// </summary>
     private void Run()
     {
-        while (true)
+        try
         {
-            try
+            while (true)
             {
-                this.HandleMessage(this.mMessages.Take());
-            }
-            catch (Exception e)
-            {
-                Log.Error("Exception handling message on MessageProcessor: {e}", e);
+                try
+                {
+                    // wait for one second for there to be any data
+                    if (this.mMessages.TryTake(out T message, 1000) == true)
+                        this.HandleMessage(message);
+                }
+                catch (Exception e)
+                {
+                    Log.Error("Exception handling message on MessageProcessor: {e}", e);
+                }
             }
         }
+        catch (ThreadInterruptedException e)
+        {
+            // expected situation, let the run method end
+        }
+    }
+
+    /// <summary>
+    /// Stops this message processor and all it's threads
+    /// </summary>
+    public void Stop()
+    {
+        foreach (Thread thread in this.mThreads)
+            thread.Interrupt();
     }
 
     /// <summary>
