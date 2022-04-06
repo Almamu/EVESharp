@@ -119,12 +119,11 @@ namespace EVESharp.PythonTypes.Marshal
         /// <returns></returns>
         private static bool CanBeSaved(PyDataType data)
         {
-            if (data is PyString {IsStringTableEntry: false} pyString && pyString.Value.Length > 1)
+            if (data is PyString {IsStringTableEntry: false} pyString && pyString.Value.Length > 1 && pyString.IsUTF8 == false)
                 return true;
             
             switch (data)
             {
-                case PyInteger {Value: < int.MinValue or > int.MaxValue}:
                 case PyObject:
                 case PyObjectData:
                 case PyDictionary:
