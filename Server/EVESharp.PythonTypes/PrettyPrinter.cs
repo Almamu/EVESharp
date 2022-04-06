@@ -19,11 +19,11 @@ namespace EVESharp.PythonTypes
         /// <summary>
         /// The output buffer used to write the values to
         /// </summary>
-        private readonly StringBuilder mStringBuilder = new StringBuilder();
+        protected readonly StringBuilder mStringBuilder = new StringBuilder();
         /// <summary>
         /// The current level of indention
         /// </summary>
-        private int mIndentation = 0;
+        protected int mIndentation = 0;
 
         /// <summary>
         /// Utility method, creates a new pretty printer instance and dumps the given <paramref name="obj" />
@@ -43,12 +43,12 @@ namespace EVESharp.PythonTypes
         /// Obtains the finalized dump
         /// </summary>
         /// <returns>The string representation of the dumped data with this PrettyPrinter's instance</returns>
-        private string GetResult()
+        protected string GetResult()
         {
             return this.mStringBuilder.ToString();
         }
 
-        private void AppendIndentation()
+        protected virtual void AppendIndentation()
         {
             // add indentation to the string
             for (int i = 0; i < this.mIndentation; i++)
@@ -60,16 +60,17 @@ namespace EVESharp.PythonTypes
         /// formatter for proper dump
         /// </summary>
         /// <param name="obj">The python type to dump</param>
-        private void Process(PyDataType obj)
+        protected void Process(PyDataType obj)
         {
             this.AppendIndentation();
             this.ProcessPythonType(obj);
         }
 
-        private void ProcessPythonType(PyDataType obj)
+        protected virtual void ProcessPythonType(PyDataType obj)
         {
             switch (obj)
             {
+                case PyNone:
                 case null:
                     this.ProcessNone();
                     break;
@@ -124,43 +125,43 @@ namespace EVESharp.PythonTypes
             }
         }
 
-        private void ProcessString(PyString str)
+        protected virtual void ProcessString(PyString str)
         {
             this.mStringBuilder.AppendFormat("[PyString {0} char(s): '{1}']", str.Length, str.Value);
             this.mStringBuilder.AppendLine();
         }
 
-        private void ProcessToken(PyToken token)
+        protected virtual void ProcessToken(PyToken token)
         {
             this.mStringBuilder.AppendFormat("[PyToken {0} bytes: '{1}']", token.Token.Length, token.Token);
             this.mStringBuilder.AppendLine();
         }
 
-        private void ProcessBoolean(PyBool boolean)
+        protected virtual void ProcessBoolean(PyBool boolean)
         {
             this.mStringBuilder.AppendFormat("[PyBool {0}]", (boolean) ? "true" : "false");
             this.mStringBuilder.AppendLine();
         }
 
-        private void ProcessInteger(PyInteger integer)
+        protected virtual void ProcessInteger(PyInteger integer)
         {
             this.mStringBuilder.AppendFormat("[PyInteger {0}]", integer.Value);
             this.mStringBuilder.AppendLine();
         }
 
-        private void ProcessDecimal(PyDecimal dec)
+        protected virtual void ProcessDecimal(PyDecimal dec)
         {
             this.mStringBuilder.AppendFormat("[PyDecimal {0}]", dec.Value);
             this.mStringBuilder.AppendLine();
         }
 
-        private void ProcessNone()
+        protected virtual void ProcessNone()
         {
             this.mStringBuilder.Append("[PyNone]");
             this.mStringBuilder.AppendLine();
         }
 
-        private void ProcessTuple(PyTuple tuple)
+        protected virtual void ProcessTuple(PyTuple tuple)
         {
             this.mStringBuilder.AppendFormat("[PyTuple {0} items]", tuple.Count);
             this.mStringBuilder.AppendLine();
@@ -173,7 +174,7 @@ namespace EVESharp.PythonTypes
             this.mIndentation--;
         }
 
-        private void ProcessList(PyList list)
+        protected virtual void ProcessList(PyList list)
         {
             this.mStringBuilder.AppendFormat("[PyList {0} items]", list.Count);
             this.mStringBuilder.AppendLine();
@@ -186,7 +187,7 @@ namespace EVESharp.PythonTypes
             this.mIndentation--;
         }
 
-        private void ProcessBuffer(PyBuffer buffer)
+        protected virtual void ProcessBuffer(PyBuffer buffer)
         {
             this.mStringBuilder.AppendFormat(
                 "[PyBuffer {0} bytes: {1}]", buffer.Length, HexDump.ByteArrayToHexViaLookup32(buffer.Value)
@@ -194,7 +195,7 @@ namespace EVESharp.PythonTypes
             this.mStringBuilder.AppendLine();
         }
 
-        private void ProcessDictionary(PyDictionary dictionary)
+        protected virtual void ProcessDictionary(PyDictionary dictionary)
         {
             this.mStringBuilder.AppendFormat("[PyDictionary {0} entries]", dictionary.Length);
             this.mStringBuilder.AppendLine();
@@ -210,7 +211,7 @@ namespace EVESharp.PythonTypes
             this.mIndentation--;
         }
 
-        private void ProcessChecksumedStream(PyChecksumedStream stream)
+        protected virtual void ProcessChecksumedStream(PyChecksumedStream stream)
         {
             this.mStringBuilder.Append("[PyChecksumedStream]");
             this.mStringBuilder.AppendLine();
@@ -221,7 +222,7 @@ namespace EVESharp.PythonTypes
             this.mIndentation--;
         }
 
-        private void ProcessObject(PyObject obj)
+        protected virtual void ProcessObject(PyObject obj)
         {
             this.mStringBuilder.AppendFormat("[PyObject {0}]", (obj.IsType2) ? "Type2" : "Type1");
             this.mStringBuilder.AppendLine();
@@ -235,7 +236,7 @@ namespace EVESharp.PythonTypes
             this.mIndentation--;
         }
 
-        private void ProcessObjectData(PyObjectData data)
+        protected virtual void ProcessObjectData(PyObjectData data)
         {
             this.mStringBuilder.AppendFormat("[PyObjectData {0}]", data.Name.Value);
             this.mStringBuilder.AppendLine();
@@ -246,7 +247,7 @@ namespace EVESharp.PythonTypes
             this.mIndentation--;
         }
 
-        private void ProcessSubStream(PySubStream stream)
+        protected virtual void ProcessSubStream(PySubStream stream)
         {
             this.mStringBuilder.AppendFormat("[PySubStream]");
             this.mStringBuilder.AppendLine();
@@ -257,7 +258,7 @@ namespace EVESharp.PythonTypes
             this.mIndentation--;
         }
 
-        private void ProcessSubStruct(PySubStruct subStruct)
+        protected virtual void ProcessSubStruct(PySubStruct subStruct)
         {
             this.mStringBuilder.AppendFormat("[PySubStruct]");
             this.mStringBuilder.AppendLine();
@@ -268,7 +269,7 @@ namespace EVESharp.PythonTypes
             this.mIndentation--;
         }
 
-        private void ProcessPackedRow(PyPackedRow packedRow)
+        protected virtual void ProcessPackedRow(PyPackedRow packedRow)
         {
             this.mStringBuilder.AppendFormat("[PyPackedRow {0} columns]", packedRow.Header.Columns.Count);
             if (packedRow.Header.Columns.Count > 0)
@@ -286,10 +287,8 @@ namespace EVESharp.PythonTypes
             this.mIndentation--;
         }
 
-        private PrettyPrinter()
+        protected PrettyPrinter()
         {
         }
-
-        // TODO: MIGHT BE A GOOD IDEA TO IMPLEMENT A MARSHAL-STREAM DUMP TOO
     }
 }
