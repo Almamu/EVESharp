@@ -124,10 +124,10 @@ namespace EVESharp.PythonTypes.Marshal
             
             switch (data)
             {
+                case PyList {Count: > 0}:
                 case PyObject:
                 case PyObjectData:
                 case PyDictionary:
-                case PyList:
                 case PyTuple:
                 case PySubStruct:
                 case PyBuffer:
