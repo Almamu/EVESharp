@@ -1,11 +1,10 @@
 ﻿using EVESharp.EVE.Packets.Exceptions;
 
-namespace EVESharp.Node.Exceptions
+namespace EVESharp.Node.Exceptions;
+
+public class ChtCannotInviteSelf : UserError
 {
-    public class ChtCannotInviteSelf : UserError
+    public ChtCannotInviteSelf() : base("ChtCannotInviteSelf")
     {
-        public ChtCannotInviteSelf() : base("ChtCannotInviteSelf")
-        {
-        }
     }
 }

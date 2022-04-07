@@ -26,23 +26,22 @@ using System.Collections.Generic;
 using EVESharp.Node.Database;
 using EVESharp.Node.StaticData.Inventory;
 
-namespace EVESharp.Node.Inventory
+namespace EVESharp.Node.Inventory;
+
+public class GroupManager
 {
-    public class GroupManager
+    private ItemDB                 ItemDB { get; }
+    private Dictionary<int, Group> mGroups = null;
+
+    public void Load()
     {
-        private ItemDB ItemDB { get; }
-        private Dictionary<int, Group> mGroups = null;
+        this.mGroups = this.ItemDB.LoadItemGroups();
+    }
 
-        public void Load()
-        {
-            this.mGroups = this.ItemDB.LoadItemGroups();
-        }
+    public Group this[int id] { get => this.mGroups[id]; }
 
-        public Group this[int id] { get => this.mGroups[id]; }
-
-        public GroupManager(ItemDB itemDB)
-        {
-            this.ItemDB = itemDB;
-        }
+    public GroupManager(ItemDB itemDB)
+    {
+        this.ItemDB = itemDB;
     }
 }

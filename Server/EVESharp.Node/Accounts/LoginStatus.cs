@@ -22,12 +22,11 @@
     Creator: Almamu
 */
 
-namespace EVESharp.Node.Accounts
+namespace EVESharp.Node.Accounts;
+
+public enum LoginStatus
 {
-    public enum LoginStatus
-    {
-        Waiting = 0,
-        Success = 1,
-        Failed = 2,
-    }
+    Waiting = 0,
+    Success = 1,
+    Failed  = 2,
 }

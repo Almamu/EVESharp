@@ -1,12 +1,11 @@
 ﻿using EVESharp.EVE.Packets.Exceptions;
 using EVESharp.PythonTypes.Types.Collections;
 
-namespace EVESharp.Node.Exceptions.contractMgr
+namespace EVESharp.Node.Exceptions.contractMgr;
+
+public class ConAuctionAlreadyClaimed : UserError
 {
-    public class ConAuctionAlreadyClaimed : UserError
+    public ConAuctionAlreadyClaimed() : base("ConAuctionAlreadyClaimed")
     {
-        public ConAuctionAlreadyClaimed() : base("ConAuctionAlreadyClaimed")
-        {
-        }
     }
 }

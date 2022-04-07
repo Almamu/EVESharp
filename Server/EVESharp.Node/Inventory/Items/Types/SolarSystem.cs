@@ -29,100 +29,99 @@ using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Database;
 using EVESharp.PythonTypes.Types.Primitives;
 
-namespace EVESharp.Node.Inventory.Items.Types
+namespace EVESharp.Node.Inventory.Items.Types;
+
+public class SolarSystem : ItemInventory
 {
-    public class SolarSystem : ItemInventory
+    public Information.SolarSystem SolarSystemInformation { get; }
+    public SolarSystem(Information.SolarSystem info) : base(info.Information)
     {
-        public Information.SolarSystem SolarSystemInformation { get; }
-        public SolarSystem(Information.SolarSystem info) : base(info.Information)
-        {
-            this.SolarSystemInformation = info;
-            this.BelongsToUs = false;
-        }
+        this.SolarSystemInformation = info;
+        this.BelongsToUs            = false;
+    }
         
-        public int RegionId => this.SolarSystemInformation.RegionId;
-        public int ConstellationId => this.SolarSystemInformation.ConstellationId;
-        public double MapX => this.SolarSystemInformation.MapX;
-        public double MapY => this.SolarSystemInformation.MapY;
-        public double MapZ => this.SolarSystemInformation.MapZ;
-        public double MapXMin => this.SolarSystemInformation.MapXMin;
-        public double MapYMin => this.SolarSystemInformation.MapYMin;
-        public double MapZMin => this.SolarSystemInformation.MapZMin;
-        public double MapXMax => this.SolarSystemInformation.MapXMax;
-        public double MapYMax => this.SolarSystemInformation.MapYMax;
-        public double MapZMax => this.SolarSystemInformation.MapZMax;
-        public double Luminosity => this.SolarSystemInformation.Luminosity;
-        public bool Border => this.SolarSystemInformation.Border;
-        public bool Fringe => this.SolarSystemInformation.Fringe;
-        public bool Corridor => this.SolarSystemInformation.Corridor;
-        public bool Hub => this.SolarSystemInformation.Hub;
-        public bool International => this.SolarSystemInformation.International;
-        public bool Regional => this.SolarSystemInformation.Regional;
-        public bool Constellation => this.SolarSystemInformation.Constellation;
-        public double Security => this.SolarSystemInformation.Security;
-        public int? FactionId => this.SolarSystemInformation.FactionId;
-        public double Radius => this.SolarSystemInformation.Radius;
-        public int SunTypeId => this.SolarSystemInformation.SunTypeId;
-        public string SecurityClass => this.SolarSystemInformation.SecurityClass;
-        public bool BelongsToUs { get; set; }
+    public int    RegionId        => this.SolarSystemInformation.RegionId;
+    public int    ConstellationId => this.SolarSystemInformation.ConstellationId;
+    public double MapX            => this.SolarSystemInformation.MapX;
+    public double MapY            => this.SolarSystemInformation.MapY;
+    public double MapZ            => this.SolarSystemInformation.MapZ;
+    public double MapXMin         => this.SolarSystemInformation.MapXMin;
+    public double MapYMin         => this.SolarSystemInformation.MapYMin;
+    public double MapZMin         => this.SolarSystemInformation.MapZMin;
+    public double MapXMax         => this.SolarSystemInformation.MapXMax;
+    public double MapYMax         => this.SolarSystemInformation.MapYMax;
+    public double MapZMax         => this.SolarSystemInformation.MapZMax;
+    public double Luminosity      => this.SolarSystemInformation.Luminosity;
+    public bool   Border          => this.SolarSystemInformation.Border;
+    public bool   Fringe          => this.SolarSystemInformation.Fringe;
+    public bool   Corridor        => this.SolarSystemInformation.Corridor;
+    public bool   Hub             => this.SolarSystemInformation.Hub;
+    public bool   International   => this.SolarSystemInformation.International;
+    public bool   Regional        => this.SolarSystemInformation.Regional;
+    public bool   Constellation   => this.SolarSystemInformation.Constellation;
+    public double Security        => this.SolarSystemInformation.Security;
+    public int?   FactionId       => this.SolarSystemInformation.FactionId;
+    public double Radius          => this.SolarSystemInformation.Radius;
+    public int    SunTypeId       => this.SolarSystemInformation.SunTypeId;
+    public string SecurityClass   => this.SolarSystemInformation.SecurityClass;
+    public bool   BelongsToUs     { get; set; }
 
         
-        protected override void LoadContents(Flags ignoreFlags = Flags.None)
-        {
-            throw new NotImplementedException();
-        }
+    protected override void LoadContents(Flags ignoreFlags = Flags.None)
+    {
+        throw new NotImplementedException();
+    }
 
-        public override void Persist()
-        {
-            // solar systems cannot be updated
-            throw new NotImplementedException();
-        }
+    public override void Persist()
+    {
+        // solar systems cannot be updated
+        throw new NotImplementedException();
+    }
 
-        public override void Destroy()
-        {
-            throw new NotImplementedException("Stations cannot be destroyed as they're regarded as static data!");
-        }
+    public override void Destroy()
+    {
+        throw new NotImplementedException("Stations cannot be destroyed as they're regarded as static data!");
+    }
 
-        public PyDataType GetSolarSystemInfo()
-        {
-            // TODO: CHECK WHERE WE CAN FETCH allianceID, sovereigntyLevel and constellationSovereignty
-            // TODO: AS THESE SEEM TO BE DYNAMIC VALUES
-            return new Row(
-                new PyList<PyString>(14)
-                {
-                    [0]  = "solarSystemID",
-                    [1]  = "solarSystemName",
-                    [2]  = "x",
-                    [3]  = "y",
-                    [4]  = "z",
-                    [5]  = "radius",
-                    [6]  = "security",
-                    [7]  = "constellationID",
-                    [8]  = "factionID",
-                    [9]  = "sunTypeID",
-                    [10] = "regionID",
-                    [11] = "allianceID",
-                    [12] = "sovereigntyLevel",
-                    [13] = "constellationSovereignty"
-                },
-                new PyList(14)
-                {
-                    [0]  = this.ID,
-                    [1]  = this.Name,
-                    [2]  = this.X,
-                    [3]  = this.Y,
-                    [4]  = this.Z,
-                    [5]  = this.Radius,
-                    [6]  = this.Security,
-                    [7]  = this.ConstellationId,
-                    [8]  = this.FactionId,
-                    [9]  = this.SunTypeId,
-                    [10] = this.RegionId,
-                    [11] = null,
-                    [12] = 0,
-                    [13] = 0
-                }
-            );
-        }
+    public PyDataType GetSolarSystemInfo()
+    {
+        // TODO: CHECK WHERE WE CAN FETCH allianceID, sovereigntyLevel and constellationSovereignty
+        // TODO: AS THESE SEEM TO BE DYNAMIC VALUES
+        return new Row(
+            new PyList<PyString>(14)
+            {
+                [0]  = "solarSystemID",
+                [1]  = "solarSystemName",
+                [2]  = "x",
+                [3]  = "y",
+                [4]  = "z",
+                [5]  = "radius",
+                [6]  = "security",
+                [7]  = "constellationID",
+                [8]  = "factionID",
+                [9]  = "sunTypeID",
+                [10] = "regionID",
+                [11] = "allianceID",
+                [12] = "sovereigntyLevel",
+                [13] = "constellationSovereignty"
+            },
+            new PyList(14)
+            {
+                [0]  = this.ID,
+                [1]  = this.Name,
+                [2]  = this.X,
+                [3]  = this.Y,
+                [4]  = this.Z,
+                [5]  = this.Radius,
+                [6]  = this.Security,
+                [7]  = this.ConstellationId,
+                [8]  = this.FactionId,
+                [9]  = this.SunTypeId,
+                [10] = this.RegionId,
+                [11] = null,
+                [12] = 0,
+                [13] = 0
+            }
+        );
     }
 }

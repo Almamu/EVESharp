@@ -27,26 +27,25 @@ using EVESharp.Node.Database;
 using EVESharp.Node.StaticData;
 using EVESharp.Node.StaticData.Inventory;
 
-namespace EVESharp.Node.Inventory
+namespace EVESharp.Node.Inventory;
+
+public class AncestryManager
 {
-    public class AncestryManager
-    {
-        private CharacterDB DB { get; }
-        private Dictionary<int, Ancestry> mAncestries = null;
+    private CharacterDB               DB { get; }
+    private Dictionary<int, Ancestry> mAncestries = null;
         
-        public Dictionary<int, Bloodline> Bloodlines { get; private set; }
+    public Dictionary<int, Bloodline> Bloodlines { get; private set; }
 
-        public void Load()
-        {
-            this.Bloodlines = this.DB.GetBloodlineInformation();
-            this.mAncestries = this.DB.GetAncestryInformation(this.Bloodlines);
-        }
+    public void Load()
+    {
+        this.Bloodlines  = this.DB.GetBloodlineInformation();
+        this.mAncestries = this.DB.GetAncestryInformation(this.Bloodlines);
+    }
 
-        public Ancestry this[int id] { get => this.mAncestries[id]; }
+    public Ancestry this[int id] { get => this.mAncestries[id]; }
 
-        public AncestryManager(CharacterDB db)
-        {
-            this.DB = db;
-        }
+    public AncestryManager(CharacterDB db)
+    {
+        this.DB = db;
     }
 }

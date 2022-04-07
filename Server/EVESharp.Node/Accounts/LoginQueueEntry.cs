@@ -26,11 +26,10 @@ using EVESharp.Common.Network.Messages;
 using EVESharp.EVE.Packets;
 using EVESharp.Node.Network;
 
-namespace EVESharp.Node.Accounts
+namespace EVESharp.Node.Accounts;
+
+public class LoginQueueEntry : IMessage
 {
-    public class LoginQueueEntry : IMessage
-    {
-        public AuthenticationReq Request { get; set; }
-        public MachoUnauthenticatedTransport Connection { get; set; }
-    }
+    public AuthenticationReq             Request    { get; set; }
+    public MachoUnauthenticatedTransport Connection { get; set; }
 }

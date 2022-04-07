@@ -72,114 +72,114 @@ using Serilog.Templates;
 using SimpleInjector;
 using Container = SimpleInjector.Container;
 
-namespace EVESharp.Node
+namespace EVESharp.Node;
+
+class Program
 {
-    class Program
+    static async Task InitializeItemFactory(ILogger logChannel, Container dependencies)
     {
-        static async Task InitializeItemFactory(ILogger logChannel, Container dependencies)
+        await Task.Run(() =>
         {
-            await Task.Run(() =>
-            {
-                logChannel.Information("Initializing item factory");
-                dependencies.GetInstance<ItemFactory>().Init();
-                logChannel.Debug("Item Factory Initialized");
-            });
-        }
+            logChannel.Information("Initializing item factory");
+            dependencies.GetInstance<ItemFactory>().Init();
+            logChannel.Debug("Item Factory Initialized");
+        });
+    }
 
-        static async Task InitializeCache(ILogger logChannel, Container dependencies)
+    static async Task InitializeCache(ILogger logChannel, Container dependencies)
+    {
+        await Task.Run(() =>
         {
-            await Task.Run(() =>
-            {
-                logChannel.Information("Initializing cache");
-                CacheStorage cacheStorage = dependencies.GetInstance<CacheStorage>();
-                // prime bulk data
-                cacheStorage.Load(
-                    CacheStorage.LoginCacheTable,
-                    CacheStorage.LoginCacheQueries,
-                    CacheStorage.LoginCacheTypes
-                );
-                // prime character creation cache
-                cacheStorage.Load(
-                    CacheStorage.CreateCharacterCacheTable,
-                    CacheStorage.CreateCharacterCacheQueries,
-                    CacheStorage.CreateCharacterCacheTypes
-                );
-                // prime character appearance cache
-                cacheStorage.Load(
-                    CacheStorage.CharacterAppearanceCacheTable,
-                    CacheStorage.CharacterAppearanceCacheQueries,
-                    CacheStorage.CharacterAppearanceCacheTypes
-                );
-                logChannel.Information("Cache Initialized");
-            });
-        }
-
-        private static Logger SetupLogger(General configuration)
-        {
-            LoggerConfiguration loggerConfiguration = new LoggerConfiguration().MinimumLevel.Verbose();
-
-            // create a default expression template to ensure the text has the correct format
-            ExpressionTemplate template = new ExpressionTemplate(
-                "{UtcDateTime(@t):yyyy-MM-dd HH:mm:ss} {@l:u1} {Coalesce(Coalesce(Name, Substring(SourceContext, LastIndexOf(SourceContext, '.') + 1)), 'Program')}: {@m:lj}\n{@x}"
+            logChannel.Information("Initializing cache");
+            CacheStorage cacheStorage = dependencies.GetInstance<CacheStorage>();
+            // prime bulk data
+            cacheStorage.Load(
+                CacheStorage.LoginCacheTable,
+                CacheStorage.LoginCacheQueries,
+                CacheStorage.LoginCacheTypes
             );
+            // prime character creation cache
+            cacheStorage.Load(
+                CacheStorage.CreateCharacterCacheTable,
+                CacheStorage.CreateCharacterCacheQueries,
+                CacheStorage.CreateCharacterCacheTypes
+            );
+            // prime character appearance cache
+            cacheStorage.Load(
+                CacheStorage.CharacterAppearanceCacheTable,
+                CacheStorage.CharacterAppearanceCacheQueries,
+                CacheStorage.CharacterAppearanceCacheTypes
+            );
+            logChannel.Information("Cache Initialized");
+        });
+    }
+
+    private static Logger SetupLogger(General configuration)
+    {
+        LoggerConfiguration loggerConfiguration = new LoggerConfiguration().MinimumLevel.Verbose();
+
+        // create a default expression template to ensure the text has the correct format
+        ExpressionTemplate template = new ExpressionTemplate(
+            "{UtcDateTime(@t):yyyy-MM-dd HH:mm:ss} {@l:u1} {Coalesce(Coalesce(Name, Substring(SourceContext, LastIndexOf(SourceContext, '.') + 1)), 'Program')}: {@m:lj}\n{@x}"
+        );
             
-            // setup channels to be ignored based on the logging configuration
-            loggerConfiguration.Filter.ByExcluding(logEvent =>
+        // setup channels to be ignored based on the logging configuration
+        loggerConfiguration.Filter.ByExcluding(logEvent =>
+        {
+            // check if it should be hidden by default
+            if (logEvent.Properties.TryGetValue(LoggingExtensions.HIDDEN_PROPERTY_NAME, out LogEventPropertyValue value) == true)
             {
-                // check if it should be hidden by default
-                if (logEvent.Properties.TryGetValue(LoggingExtensions.HIDDEN_PROPERTY_NAME, out LogEventPropertyValue value) == true)
-                {
-                    // now check if the name is in the allowed list
-                    string name = "";
+                // now check if the name is in the allowed list
+                string name = "";
 
-                    if (logEvent.Properties.TryGetValue("Name", out LogEventPropertyValue nameProp) == true)
-                        name = nameProp.ToString();
-                    else if (logEvent.Properties.TryGetValue("SourceContext", out LogEventPropertyValue sourceContext) == true)
-                        name = sourceContext.ToString();
+                if (logEvent.Properties.TryGetValue("Name", out LogEventPropertyValue nameProp) == true)
+                    name = nameProp.ToString();
+                else if (logEvent.Properties.TryGetValue("SourceContext", out LogEventPropertyValue sourceContext) == true)
+                    name = sourceContext.ToString();
 
-                    return !configuration.Logging.EnableChannels.Contains(name);
-                }
+                return !configuration.Logging.EnableChannels.Contains(name);
+            }
 
-                return false;
-            });
-            // log to console by default
-            loggerConfiguration.WriteTo.Console(template);
+            return false;
+        });
+        // log to console by default
+        loggerConfiguration.WriteTo.Console(template);
 
-            if (configuration.FileLog.Enabled == true)
-                loggerConfiguration.WriteTo.File(template, $"{configuration.FileLog.Directory}/{configuration.FileLog.LogFile}");
+        if (configuration.FileLog.Enabled == true)
+            loggerConfiguration.WriteTo.File(template, $"{configuration.FileLog.Directory}/{configuration.FileLog.LogFile}");
 
-            // TODO: ADD SUPPORT FOR LOGLITE BACK
+        // TODO: ADD SUPPORT FOR LOGLITE BACK
 
-            return loggerConfiguration.CreateLogger();
-        }
+        return loggerConfiguration.CreateLogger();
+    }
 
-        private static Container SetupDIContainer(ILogger baseLogger)
-        {
-            Container container = new Container();
+    private static Container SetupDIContainer(ILogger baseLogger)
+    {
+        Container container = new Container();
 
-            // change how dependencies are resolved to ensure serilog instances are properly provided
-            container.Options.DependencyInjectionBehavior =
-                new SerilogContextualLoggerInjectionBehavior(container.Options, baseLogger);
+        // change how dependencies are resolved to ensure serilog instances are properly provided
+        container.Options.DependencyInjectionBehavior =
+            new SerilogContextualLoggerInjectionBehavior(container.Options, baseLogger);
 
-            return container;
-        }
+        return container;
+    }
 
-        private static General LoadConfiguration()
-        {
-            // TODO: REPLACE WITH JSON CONFIGURATION FROM .NET INSTEAD?
-            return General.LoadFromFile("configuration.conf");
-        }
+    private static General LoadConfiguration()
+    {
+        // TODO: REPLACE WITH JSON CONFIGURATION FROM .NET INSTEAD?
+        return General.LoadFromFile("configuration.conf");
+    }
         
-        static void Main(string[] argv)
-        {
-            // load configuration first
-            General configuration = LoadConfiguration();
-            // initialize the logging system
-            Logger log = SetupLogger(configuration);
-            // finally initialize the dependency injection
-            Container dependencies = SetupDIContainer(log);
+    static void Main(string[] argv)
+    {
+        // load configuration first
+        General configuration = LoadConfiguration();
+        // initialize the logging system
+        Logger log = SetupLogger(configuration);
+        // finally initialize the dependency injection
+        Container dependencies = SetupDIContainer(log);
             
-            using (log)
+        using (log)
             try
             {
                 // register configuration dependencies first
@@ -339,7 +339,7 @@ namespace EVESharp.Node
                 // do some parallel initialization, cache priming and static item loading can be performed in parallel
                 // this makes the changes quicker
                 Task cacheStorage = InitializeCache(log, dependencies);
-                Task itemFactory = InitializeItemFactory(log, dependencies);
+                Task itemFactory  = InitializeItemFactory(log, dependencies);
 
                 // wait for all the tasks to be done
                 Task.WaitAll(itemFactory, cacheStorage);
@@ -385,6 +385,5 @@ namespace EVESharp.Node
                 log.Fatal("Node stopped...");
                 log.Fatal(e.ToString());
             }
-        }
     }
 }

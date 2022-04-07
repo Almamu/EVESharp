@@ -1,12 +1,11 @@
 ﻿using EVESharp.EVE.Packets.Exceptions;
 using EVESharp.PythonTypes.Types.Primitives;
 
-namespace EVESharp.Node.Exceptions.marketProxy
+namespace EVESharp.Node.Exceptions.marketProxy;
+
+public class MktAsksMustSpecifyItems : UserError
 {
-    public class MktAsksMustSpecifyItems : UserError
+    public MktAsksMustSpecifyItems() : base("MktAsksMustSpecifyItems")
     {
-        public MktAsksMustSpecifyItems() : base("MktAsksMustSpecifyItems")
-        {
-        }
     }
 }

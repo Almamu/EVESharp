@@ -1,20 +1,19 @@
 using IniParser.Model;
 
-namespace EVESharp.Common.Configuration
-{
-    public class Database
-    {
-        public string Username { get; private set; }
-        public string Password { get; private set; }
-        public string Hostname { get; private set; }
-        public string Name { get; private set; }
+namespace EVESharp.Common.Configuration;
 
-        public void Load(KeyDataCollection section)
-        {
-            this.Username = section["username"];
-            this.Password = section["password"];
-            this.Hostname = section["hostname"];
-            this.Name = section["name"];
-        }
+public class Database
+{
+    public string Username { get; private set; }
+    public string Password { get; private set; }
+    public string Hostname { get; private set; }
+    public string Name     { get; private set; }
+
+    public void Load(KeyDataCollection section)
+    {
+        this.Username = section["username"];
+        this.Password = section["password"];
+        this.Hostname = section["hostname"];
+        this.Name     = section["name"];
     }
 }

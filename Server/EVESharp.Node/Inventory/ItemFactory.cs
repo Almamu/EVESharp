@@ -49,782 +49,781 @@ using ItemDB = EVESharp.Node.Database.ItemDB;
 using Type = EVESharp.Node.StaticData.Inventory.Type;
 using Information = EVESharp.Node.Inventory.Items.Types.Information;
 
-namespace EVESharp.Node.Inventory
+namespace EVESharp.Node.Inventory;
+
+public class ItemFactory
 {
-    public class ItemFactory
+    public const int FACTION_ID_MIN         = 500000;
+    public const int FACTION_ID_MAX         = 1000000;
+    public const int NPC_CORPORATION_ID_MIN = 1000000;
+    public const int NPC_CORPORATION_ID_MAX = 2000000;
+    public const int CELESTIAL_ID_MIN       = 40000000;
+    public const int CELESTIAL_ID_MAX       = 50000000;
+    public const int SOLARSYSTEM_ID_MIN     = 30000000;
+    public const int SOLARSYSTEM_ID_MAX     = 40000000;
+    public const int STATION_ID_MIN         = 60000000;
+    public const int STATION_ID_MAX         = 70000000;
+    public const int NPC_CHARACTER_ID_MIN   = 10000;
+    public const int NPC_CHARACTER_ID_MAX   = 100000000;
+    public const int USERGENERATED_ID_MIN   = 100000000;
+        
+    public  AttributeManager AttributeManager    { get; private set; }
+    public  ItemManager      ItemManager         { get; private set; }
+    public  CategoryManager  CategoryManager     { get; private set; }
+    public  GroupManager     GroupManager        { get; private set; }
+    public  TypeManager      TypeManager         { get; private set; }
+    public  StationManager   StationManager      { get; private set; }
+    public  SystemManager    SystemManager       { get; private set; }
+    public  AncestryManager  AncestryManager     { get; private set; }
+    public  Dogma.Dogma      Dogma               { get; private set; }
+    public  ItemDB           ItemDB              { get; private set; }
+    public  CharacterDB      CharacterDB         { get; private set; }
+    public  CorporationDB    CorporationDB       { get; private set; }
+    public  InsuranceDB      InsuranceDB         { get; private set; }
+    public  SkillDB          SkillDB             { get; private set; }
+    public  ILogger          Log                 { get; init; }
+    public  NodeContainer    NodeContainer       { get; }
+    public  IMachoNet        MachoNet            { get; }
+    private Container        DependencyInjection { get; }
+
+    public           MetaInventoryManager         MetaInventoryManager { get; }
+    private readonly Dictionary<int, ItemEntity>  mItemList     = new Dictionary<int, ItemEntity>();
+    private readonly Dictionary<int, Station>     mStations     = new Dictionary<int, Station>();
+    private readonly Dictionary<int, SolarSystem> mSolarSystems = new Dictionary<int, SolarSystem>();
+    private readonly Dictionary<int, Faction>     mFactions     = new Dictionary<int, Faction>();
+
+    public Dictionary<int, Station>     Stations          => this.mStations;
+    public Dictionary<int, SolarSystem> SolarSystems      => this.mSolarSystems;
+    public Dictionary<int, Faction>     Factions          => this.mFactions;
+    public EVESystem                    OwnerBank         { get; private set; }
+    public EVESystem                    LocationSystem    { get; private set; }
+    public EVESystem                    LocationRecycler  { get; private set; }
+    public EVESystem                    LocationMarket    { get; private set; }
+    public EVESystem                    LocationUniverse  { get; private set; }
+    public EVESystem                    LocationTemp      { get; private set; }
+    public ItemEntity                   OwnerSCC          { get; private set; }
+    public ExpressionManager            ExpressionManager { get; }
+
+    protected DatabaseConnection Database { get; }
+    public ItemFactory(ILogger logger, IMachoNet machoNet, DatabaseConnection databaseConnection, NodeContainer nodeContainer, MetaInventoryManager metaInventoryManager, ExpressionManager expressionManager, Container dependencyInjection)
     {
-        public const int FACTION_ID_MIN = 500000;
-        public const int FACTION_ID_MAX = 1000000;
-        public const int NPC_CORPORATION_ID_MIN = 1000000;
-        public const int NPC_CORPORATION_ID_MAX = 2000000;
-        public const int CELESTIAL_ID_MIN = 40000000;
-        public const int CELESTIAL_ID_MAX = 50000000;
-        public const int SOLARSYSTEM_ID_MIN = 30000000;
-        public const int SOLARSYSTEM_ID_MAX = 40000000;
-        public const int STATION_ID_MIN = 60000000;
-        public const int STATION_ID_MAX = 70000000;
-        public const int NPC_CHARACTER_ID_MIN = 10000;
-        public const int NPC_CHARACTER_ID_MAX = 100000000;
-        public const int USERGENERATED_ID_MIN = 100000000;
-        
-        public AttributeManager AttributeManager { get; private set; }
-        public ItemManager ItemManager { get; private set; }
-        public CategoryManager CategoryManager { get; private set; }
-        public GroupManager GroupManager { get; private set; }
-        public TypeManager TypeManager { get; private set; }
-        public StationManager StationManager { get; private set; }
-        public SystemManager SystemManager { get; private set; }
-        public AncestryManager AncestryManager { get; private set; }
-        public Dogma.Dogma Dogma { get; private set; }
-        public ItemDB ItemDB { get; private set; }
-        public CharacterDB CharacterDB { get; private set; }
-        public CorporationDB CorporationDB { get; private set; }
-        public InsuranceDB InsuranceDB { get; private set; }
-        public SkillDB SkillDB { get; private set; }
-        public ILogger Log { get; init; }
-        public NodeContainer NodeContainer { get; }
-        public IMachoNet MachoNet { get; }
-        private Container DependencyInjection { get; }
+        this.Log = logger;
 
-        public MetaInventoryManager MetaInventoryManager { get; }
-        private readonly Dictionary<int, ItemEntity> mItemList = new Dictionary<int, ItemEntity>();
-        private readonly Dictionary<int, Station> mStations = new Dictionary<int, Station>();
-        private readonly Dictionary<int, SolarSystem> mSolarSystems = new Dictionary<int, SolarSystem>();
-        private readonly Dictionary<int, Faction> mFactions = new Dictionary<int, Faction>();
+        this.Database                                    =  databaseConnection;
+        this.DependencyInjection                         =  dependencyInjection;
+        this.MachoNet                                    =  machoNet;
+        this.NodeContainer                               =  nodeContainer;
+        this.MetaInventoryManager                        =  metaInventoryManager;
+        this.ExpressionManager                           =  expressionManager;
+        this.MetaInventoryManager.OnMetaInventoryCreated += OnMetaInventoryCreated;
+    }
 
-        public Dictionary<int, Station> Stations => this.mStations;
-        public Dictionary<int, SolarSystem> SolarSystems => this.mSolarSystems;
-        public Dictionary<int, Faction> Factions => this.mFactions;
-        public EVESystem OwnerBank { get; private set; }
-        public EVESystem LocationSystem { get; private set; }
-        public EVESystem LocationRecycler { get; private set; }
-        public EVESystem LocationMarket { get; private set; }
-        public EVESystem LocationUniverse { get; private set; }
-        public EVESystem LocationTemp { get; private set; }
-        public ItemEntity OwnerSCC { get; private set; }
-        public ExpressionManager ExpressionManager { get; }
+    /// <summary>
+    /// Initializes the item factory and loads the required subsystems
+    /// </summary>
+    public void Init()
+    {
+        this.ItemDB        = this.DependencyInjection.GetInstance<ItemDB>();
+        this.CharacterDB   = this.DependencyInjection.GetInstance<CharacterDB>();
+        this.InsuranceDB   = this.DependencyInjection.GetInstance<InsuranceDB>();
+        this.SkillDB       = this.DependencyInjection.GetInstance<SkillDB>();
+        this.CorporationDB = this.DependencyInjection.GetInstance<CorporationDB>();
 
-        protected DatabaseConnection Database { get; }
-        public ItemFactory(ILogger logger, IMachoNet machoNet, DatabaseConnection databaseConnection, NodeContainer nodeContainer, MetaInventoryManager metaInventoryManager, ExpressionManager expressionManager, Container dependencyInjection)
-        {
-            this.Log = logger;
-
-            this.Database = databaseConnection;
-            this.DependencyInjection = dependencyInjection;
-            this.MachoNet = machoNet;
-            this.NodeContainer = nodeContainer;
-            this.MetaInventoryManager = metaInventoryManager;
-            this.ExpressionManager = expressionManager;
-            this.MetaInventoryManager.OnMetaInventoryCreated += OnMetaInventoryCreated;
-        }
-
-        /// <summary>
-        /// Initializes the item factory and loads the required subsystems
-        /// </summary>
-        public void Init()
-        {
-            this.ItemDB = this.DependencyInjection.GetInstance<ItemDB>();
-            this.CharacterDB = this.DependencyInjection.GetInstance<CharacterDB>();
-            this.InsuranceDB = this.DependencyInjection.GetInstance<InsuranceDB>();
-            this.SkillDB = this.DependencyInjection.GetInstance<SkillDB>();
-            this.CorporationDB = this.DependencyInjection.GetInstance<CorporationDB>();
-
-            this.SystemManager = this.DependencyInjection.GetInstance<SystemManager>();
-            // station manager goes first
-            this.StationManager = this.DependencyInjection.GetInstance<StationManager>();
-            // attribute manager goes first
-            this.AttributeManager = this.DependencyInjection.GetInstance<AttributeManager>();
-            // category manager goes first
-            this.CategoryManager = this.DependencyInjection.GetInstance<CategoryManager>();
-            // then groups
-            this.GroupManager = this.DependencyInjection.GetInstance<GroupManager>();
-            // then the type manager
-            this.TypeManager = this.DependencyInjection.GetInstance<TypeManager>();
-            // finally the item manager
-            this.ItemManager = this.DependencyInjection.GetInstance<ItemManager>();
-            // the ancestry manager is also needed
-            this.AncestryManager = this.DependencyInjection.GetInstance<AncestryManager>();
-            this.Dogma = this.DependencyInjection.GetInstance<Dogma.Dogma>();
+        this.SystemManager = this.DependencyInjection.GetInstance<SystemManager>();
+        // station manager goes first
+        this.StationManager = this.DependencyInjection.GetInstance<StationManager>();
+        // attribute manager goes first
+        this.AttributeManager = this.DependencyInjection.GetInstance<AttributeManager>();
+        // category manager goes first
+        this.CategoryManager = this.DependencyInjection.GetInstance<CategoryManager>();
+        // then groups
+        this.GroupManager = this.DependencyInjection.GetInstance<GroupManager>();
+        // then the type manager
+        this.TypeManager = this.DependencyInjection.GetInstance<TypeManager>();
+        // finally the item manager
+        this.ItemManager = this.DependencyInjection.GetInstance<ItemManager>();
+        // the ancestry manager is also needed
+        this.AncestryManager = this.DependencyInjection.GetInstance<AncestryManager>();
+        this.Dogma           = this.DependencyInjection.GetInstance<Dogma.Dogma>();
             
-            this.AttributeManager.Load();
-            this.CategoryManager.Load();
-            this.GroupManager.Load();
-            this.TypeManager.Load();
-            this.StationManager.Load();
-            this.AncestryManager.Load();
+        this.AttributeManager.Load();
+        this.CategoryManager.Load();
+        this.GroupManager.Load();
+        this.TypeManager.Load();
+        this.StationManager.Load();
+        this.AncestryManager.Load();
 
-            this.Load();
-        }
+        this.Load();
+    }
 
-        /// <summary>
-        /// Initializes the item manager and loads the required items
-        /// </summary>
-        private void Load()
-        {
-            // load all the items in the database that do not belong to any user (so-called static items)
-            foreach (Information.Item item in this.ItemDB.LoadStaticItems())
-                this.PerformItemLoad(item);
+    /// <summary>
+    /// Initializes the item manager and loads the required items
+    /// </summary>
+    private void Load()
+    {
+        // load all the items in the database that do not belong to any user (so-called static items)
+        foreach (Information.Item item in this.ItemDB.LoadStaticItems())
+            this.PerformItemLoad(item);
 
-            Log.Information($"Preloaded {this.mItemList.Count} static items");
+        Log.Information($"Preloaded {this.mItemList.Count} static items");
             
-            // store useful items like recycler and system
-            this.LocationRecycler = this.GetItem<EVESystem>(this.NodeContainer.Constants[Constants.locationRecycler]);
-            this.LocationSystem = this.GetItem<EVESystem>(this.NodeContainer.Constants[Constants.locationSystem]);
-            this.LocationUniverse = this.GetItem<EVESystem>(this.NodeContainer.Constants[Constants.locationUniverse]);
-            this.LocationMarket = this.GetItem<EVESystem>(this.NodeContainer.Constants[Constants.locationMarket]);
-            this.LocationTemp = this.GetItem<EVESystem>(this.NodeContainer.Constants[Constants.locationTemp]);
-            this.OwnerBank = this.GetItem<EVESystem>(this.NodeContainer.Constants[Constants.ownerBank]);
-            this.OwnerSCC = this.GetItem(this.NodeContainer.Constants[Constants.ownerSecureCommerceCommission]);
-        }
+        // store useful items like recycler and system
+        this.LocationRecycler = this.GetItem<EVESystem>(this.NodeContainer.Constants[Constants.locationRecycler]);
+        this.LocationSystem   = this.GetItem<EVESystem>(this.NodeContainer.Constants[Constants.locationSystem]);
+        this.LocationUniverse = this.GetItem<EVESystem>(this.NodeContainer.Constants[Constants.locationUniverse]);
+        this.LocationMarket   = this.GetItem<EVESystem>(this.NodeContainer.Constants[Constants.locationMarket]);
+        this.LocationTemp     = this.GetItem<EVESystem>(this.NodeContainer.Constants[Constants.locationTemp]);
+        this.OwnerBank        = this.GetItem<EVESystem>(this.NodeContainer.Constants[Constants.ownerBank]);
+        this.OwnerSCC         = this.GetItem(this.NodeContainer.Constants[Constants.ownerSecureCommerceCommission]);
+    }
 
-        /// <summary>
-        /// Checks if an item exists and returns it
-        /// </summary>
-        /// <param name="itemID">The item to get</param>
-        /// <param name="item">Where to put the item</param>
-        /// <returns>Whether the item exists in the manager or not</returns>
-        public bool TryGetItem(int itemID, out ItemEntity item)
+    /// <summary>
+    /// Checks if an item exists and returns it
+    /// </summary>
+    /// <param name="itemID">The item to get</param>
+    /// <param name="item">Where to put the item</param>
+    /// <returns>Whether the item exists in the manager or not</returns>
+    public bool TryGetItem(int itemID, out ItemEntity item)
+    {
+        lock (this)
         {
-            lock (this)
-            {
-                item = null;
+            item = null;
             
-                return this.mItemList.TryGetValue(itemID, out item);               
-            }
+            return this.mItemList.TryGetValue(itemID, out item);               
         }
+    }
 
-        /// <summary>
-        /// Shorthand method to get an item of an specific type
-        /// </summary>
-        /// <param name="itemID"></param>
-        /// <param name="item"></param>
-        /// <typeparam name="T"></typeparam>
-        /// <returns></returns>
-        public bool TryGetItem<T>(int itemID, out T item) where T : ItemEntity
+    /// <summary>
+    /// Shorthand method to get an item of an specific type
+    /// </summary>
+    /// <param name="itemID"></param>
+    /// <param name="item"></param>
+    /// <typeparam name="T"></typeparam>
+    /// <returns></returns>
+    public bool TryGetItem<T>(int itemID, out T item) where T : ItemEntity
+    {
+        lock (this)
         {
-            lock (this)
-            {
-                item = null;
+            item = null;
             
-                if (this.mItemList.TryGetValue(itemID, out ItemEntity tmp) == false || tmp is not T)
-                    return false;
+            if (this.mItemList.TryGetValue(itemID, out ItemEntity tmp) == false || tmp is not T)
+                return false;
 
-                item = (T) tmp;
+            item = (T) tmp;
             
-                return true;                
-            }
+            return true;                
         }
+    }
 
-        /// <summary>
-        /// Loads an item if it's not already loaded and returns it'
-        /// </summary>
-        /// <param name="itemID">The item to load</param>
-        /// <returns>The loaded item</returns>
-        public ItemEntity LoadItem(int itemID)
-        {
-            lock (this)
-            {
-                if (this.TryGetItem(itemID, out ItemEntity item) == false)
-                    return this.PerformItemLoad(this.ItemDB.LoadItem(itemID, this.MachoNet.NodeID));
-
-                return item;
-            }
-        }
-
-        /// <summary>
-        /// Loads an item if it's not already loaded and returns it
-        /// </summary>
-        /// <param name="itemID">The item to load</param>
-        /// <param name="loadRequired">Whether the item was loaded or already existed</param>
-        /// <returns>The loaded item</returns>
-        public ItemEntity LoadItem(int itemID, out bool loadRequired)
-        {
-            lock (this)
-            {
-                if (this.TryGetItem(itemID, out ItemEntity item) == false)
-                {
-                    loadRequired = true;
-                
-                    return this.PerformItemLoad(this.ItemDB.LoadItem(itemID, this.MachoNet.NodeID));
-                }
-
-                loadRequired = false;
-
-                return item;
-            }
-        }
-        
-        /// <summary>
-        /// Loads an item if it's not already loaded and returns it'
-        /// </summary>
-        /// <param name="itemID">The item to load</param>
-        /// <returns>The loaded item</returns>
-        public T LoadItem<T>(int itemID) where T : ItemEntity
-        {
-            return this.LoadItem(itemID) as T;
-        }
-
-        public T LoadItem<T>(int itemID, out bool loadRequired) where T : ItemEntity
-        {
-            return this.LoadItem(itemID, out loadRequired) as T;
-        }
-
-        /// <summary>
-        /// Gets the given item
-        /// </summary>
-        /// <param name="itemID">The item to get</param>
-        /// <returns>The item</returns>
-        /// <exception cref="ItemNotLoadedException">If the item doesn't exist</exception>
-        public ItemEntity GetItem(int itemID)
-        {
-            lock (this)
-            {
-                if (this.TryGetItem(itemID, out ItemEntity item) == false)
-                    throw new ItemNotLoadedException(itemID);
-
-                return item;
-            }
-        }
-
-        public T GetItem<T>(int itemID) where T : ItemEntity
-        {
-            return this.GetItem(itemID) as T;
-        }
-
-        public static bool IsFactionID(int itemID)
-        {
-            return itemID >= FACTION_ID_MIN && itemID < FACTION_ID_MAX;
-        }
-
-        public static bool IsStationID(int itemID)
-        {
-            return itemID >= STATION_ID_MIN && itemID < STATION_ID_MAX;
-        }
-
-        public static bool IsSolarSystemID(int itemID)
-        {
-            return itemID >= SOLARSYSTEM_ID_MIN && itemID < SOLARSYSTEM_ID_MAX;
-        }
-
-        public static bool IsNPCCorporationID(int itemID)
-        {
-            return itemID >= NPC_CORPORATION_ID_MIN && itemID < NPC_CORPORATION_ID_MAX;
-        }
-
-        public static bool IsNPC(int itemID)
-        {
-            return itemID >= NPC_CHARACTER_ID_MIN && itemID < NPC_CHARACTER_ID_MAX;
-        }
-
-        public static bool IsCelestialID(int itemID)
-        {
-            return itemID >= CELESTIAL_ID_MIN && itemID < CELESTIAL_ID_MAX;
-        }
-
-        public static bool IsStaticData(int itemID)
-        {
-            return itemID < USERGENERATED_ID_MIN;
-        }
-        
-        /// <summary>
-        /// Gets the <see cref="ItemEntity"/> of the given faction
-        /// </summary>
-        /// <param name="factionID">The factionID to get</param>
-        /// <returns>The item</returns>
-        /// <exception cref="ArgumentOutOfRangeException">If the id is not a faction</exception>
-        public Faction GetStaticFaction(int factionID)
-        {
-            if (ItemFactory.IsFactionID(factionID) == false)
-                throw new ArgumentOutOfRangeException($"The id {factionID} does not belong to a faction");
-
-            return this.GetItem<Faction>(factionID);
-        }
-        
-        /// <summary>
-        /// Gets the <see cref="ItemEntity"/> of the given station
-        /// </summary>
-        /// <param name="stationID">The stationID to get</param>
-        /// <returns>The item</returns>
-        /// <exception cref="ArgumentOutOfRangeException">If the id is not a station</exception>
-        public Station GetStaticStation(int stationID)
-        {
-            if (ItemFactory.IsStationID(stationID) == false)
-                throw new ArgumentOutOfRangeException($"The id {stationID} does not belong to a station");
-
-            return this.GetItem<Station>(stationID);
-        }
-        
-        /// <summary>
-        /// Gets the <see cref="ItemEntity"/> of the given solar system
-        /// </summary>
-        /// <param name="solarSystemID">The solarSystemID to get</param>
-        /// <returns>The item</returns>
-        /// <exception cref="ArgumentOutOfRangeException">If the id is not a solar system</exception>
-        public SolarSystem GetStaticSolarSystem(int solarSystemID)
-        {
-            if (ItemFactory.IsSolarSystemID(solarSystemID) == false)
-                throw new ArgumentOutOfRangeException($"The id {solarSystemID} does not belong to a solar system");
-            
-            return this.GetItem<SolarSystem>(solarSystemID);
-        }
-
-        /// <summary>
-        /// Performs the extra, additional steps required for loading the given item
-        /// </summary>
-        /// <param name="item">The item to load</param>
-        /// <returns>The new instance of the item with the extra information loaded</returns>
-        private ItemEntity PerformItemLoad(Information.Item item)
-        {
-            lock (this)
-            {
-                if (item is null)
-                    return null;
-            
-                ItemEntity wrapperItem = item.Type.Group.Category.ID switch
-                {
-                    // catch all for system items
-                    (int) Categories.System => LoadSystem(item),
-                    // celestial items are a kind of subcategory
-                    // load them in specific ways based on the type of celestial item
-                    (int) Categories.Celestial => LoadCelestial(item),
-                    (int) Categories.Blueprint => LoadBlueprint(item),
-                    // owner items are a kind of subcategory too
-                    (int) Categories.Owner => LoadOwner(item),
-                    (int) Categories.Skill => LoadSkill(item),
-                    (int) Categories.Ship => LoadShip(item),
-                    (int) Categories.Station => LoadStation(item),
-                    (int) Categories.Accessories => LoadAccessories(item),
-                    (int) Categories.Implant => LoadImplant(item),
-                    (int) Categories.Module => LoadModule(item),
-                    _ => new Item(item)
-                };
-
-                // check if there's an inventory loaded that should contain this item
-                if (this.TryGetItem (item.LocationID, out ItemEntity location) == true && location is ItemInventory inventory)
-                    inventory.AddItem(wrapperItem);
-            
-                // notify the meta inventory manager about the new item only if the item is user-generated
-                if (item.ID >= USERGENERATED_ID_MIN)
-                    this.MetaInventoryManager.OnItemLoaded(wrapperItem);
-
-                // ensure the item is in the loaded list
-                this.mItemList.Add(item.ID, wrapperItem);
-
-                // subscribe to item's events and return the item
-                return this.SubscribeToEvents(wrapperItem);
-            }
-        }
-
-        public ConcurrentDictionary<int, ItemEntity> LoadItemsLocatedAt(ItemEntity location, Flags ignoreFlag = Flags.None)
-        {
-            ConcurrentDictionary<int, ItemEntity> result = new ConcurrentDictionary<int, ItemEntity>();
-
-            foreach (int itemID in this.ItemDB.LoadItemsLocatedAt(location.ID, ignoreFlag))
-                result[itemID] = this.LoadItem(itemID);
-
-            return result;
-        }
-
-        public ConcurrentDictionary<int, ItemEntity> LoadItemsLocatedAtByOwner(ItemEntity location, int ownerID, Flags itemFlag)
-        {
-            ConcurrentDictionary<int, ItemEntity> result = new ConcurrentDictionary<int, ItemEntity>();
-
-            foreach (int itemID in this.ItemDB.LoadItemsLocatedAtByOwner(location.ID, ownerID, itemFlag))
-                result[itemID] = this.LoadItem(itemID);
-
-            return result;
-        }
-
-        public bool IsItemLoaded(int itemID)
-        {
-            lock(this)
-                return mItemList.ContainsKey(itemID);
-        }
-
-        private ItemEntity LoadSystem(Information.Item item)
-        {
-            return new EVESystem(item);
-        }
-
-        private ItemEntity LoadCelestial(Information.Item item)
-        {
-            switch (item.Type.Group.ID)
-            {
-                case (int) Groups.SolarSystem:
-                    return this.LoadSolarSystem(item);
-                case (int) Groups.Station:
-                    return this.LoadStation(item);
-                case (int) Groups.Constellation:
-                    return this.LoadConstellation(item);
-                case (int) Groups.Region:
-                    return this.LoadRegion(item);
-                case (int) Groups.CargoContainer:
-                case (int) Groups.SecureCargoContainer:
-                case (int) Groups.AuditLogSecureContainer:
-                case (int) Groups.FreightContainer:
-                case (int) Groups.Tool:
-                    return this.LoadContainer(item);
-                default:
-                    Log.Warning($"Loading celestial {item.ID} from item group {item.Type.Group.ID} as normal item");
-                    return new Item(item);
-            }
-        }
-        
-        private ItemEntity LoadBlueprint(Information.Item item)
-        {
-            return new Blueprint(this.ItemDB.LoadBlueprint(item));
-        }
-
-        private ItemEntity LoadOwner(Information.Item item)
-        {
-            switch (item.Type.Group.ID)
-            {
-                case (int) Groups.Character:
-                    return new Character(this.ItemDB.LoadCharacter(item));
-                case (int) Groups.Corporation:
-                    return new Corporation(this.ItemDB.LoadCorporation(item));
-                case (int) Groups.Faction:
-                    return this.LoadFaction(item);
-                case (int) Groups.Alliance:
-                    return new Alliance(this.ItemDB.LoadAlliance(item));
-                default:
-                    Log.Warning($"Loading owner {item.ID} from item group {item.Type.Group.ID} as normal item");
-                    return new Item(item);
-            }
-        }
-
-        private ItemEntity LoadFaction(Information.Item item)
-        {
-            return this.mFactions[item.ID] = new Faction(this.ItemDB.LoadFaction(item));
-        }
-
-        private ItemEntity LoadAccessories(Information.Item item)
-        {
-            switch (item.Type.Group.ID)
-            {
-                case (int) Groups.Clone:
-                    return new Clone(item);
-                default:
-                    Log.Warning($"Loading accessory {item.ID} from item group {item.Type.Group.ID} as normal item");
-                    return new Item(item);
-            }
-        }
-
-        private ItemEntity LoadSkill(Information.Item item)
-        {
-            return new Skill(item, this.NodeContainer.Constants[Constants.skillPointMultiplier]);
-        }
-
-        private ItemEntity LoadShip(Information.Item item)
-        {
-            return new Ship(item);
-        }
-
-        private Implant LoadImplant(Information.Item item)
-        {
-            return new Implant(item);
-        }
-
-        private ItemEntity LoadSolarSystem(Information.Item item)
-        {
-            return this.mSolarSystems[item.ID] = new SolarSystem(this.ItemDB.LoadSolarSystem(item));
-        }
-
-        private ItemEntity LoadStation(Information.Item item)
-        {
-            switch (item.Type.Group.ID)
-            {
-                case (int) Groups.StationServices:
-                    return this.LoadStationServices(item);
-                case (int) Groups.Station:
-                    return this.mStations[item.ID] = new Station(this.ItemDB.LoadStation(item));
-                default:
-                    Log.Warning($"Loading station item {item.ID} from item group {item.Type.Group.ID} as normal item");
-                    return new Item(item);
-            }
-        }
-
-        private ItemEntity LoadStationServices(Information.Item item)
-        {
-            switch (item.Type.ID)
-            {
-                case (int) Types.OfficeFolder:
-                    return new OfficeFolder(item);
-                default:
-                    Log.Warning($"Loading station service item {item.ID} as normal item");
-                    return null;
-            }
-        }
-
-        private ItemEntity LoadConstellation(Information.Item item)
-        {
-            return new Constellation(this.ItemDB.LoadConstellation(item));
-        }
-
-        private ItemEntity LoadRegion(Information.Item item)
-        {
-            return new Region(this.ItemDB.LoadRegion(item));
-        }
-
-        private ItemEntity LoadContainer(Information.Item item)
-        {
-            return new Items.Types.Container(item);
-        }
-
-        private ShipModule LoadModule(Information.Item item)
-        {
-            return new ShipModule(item);
-        }
-
-        public ItemEntity CreateSimpleItem(StaticData.Inventory.Type type, int owner, int location, Flags flag, int quantity = 1,
-            bool contraband = false, bool singleton = false)
-        {
-            return this.CreateSimpleItem(null, type.ID, owner, location, flag, quantity, contraband, singleton);
-        }
-
-        public ItemEntity CreateSimpleItem(string itemName, int typeID, int ownerID, int locationID, Flags flag,
-            int quantity = 1, bool contraband = false, bool singleton = false, double x = 0.0, double y = 0.0, double z = 0.0,
-            string customInfo = null)
-        {
-            int itemID = (int) this.ItemDB.CreateItem(itemName, typeID, ownerID, locationID, flag, contraband, singleton,
-                quantity, x, y, z, customInfo);
-
-            return this.LoadItem(itemID);
-        }
-        
-        public ItemEntity CreateSimpleItem(string itemName, StaticData.Inventory.Type type, ItemEntity owner, ItemEntity location, Flags flag,
-            bool contraband = false, bool singleton = false, int quantity = 1, double x = 0.0, double y = 0.0, double z = 0.0, string customInfo = null)
-        {
-            return this.CreateSimpleItem(itemName, type.ID, owner.ID, location.ID, flag, quantity, contraband, singleton,
-                x, y, z, customInfo);
-        }
-
-        public ItemEntity CreateSimpleItem(StaticData.Inventory.Type type, ItemEntity owner, ItemEntity location, Flags flags,
-            int quantity = 1, bool contraband = false, bool singleton = false)
-        {
-            return this.CreateSimpleItem(null, type, owner, location, flags, contraband, singleton, quantity);
-        }
-
-        public Skill CreateSkill(StaticData.Inventory.Type skillType, Character character, int level = 0, SkillHistoryReason reason = SkillHistoryReason.SkillTrainingComplete)
-        {
-            int skillID = this.SkillDB.CreateSkill(skillType, character);
-
-            Skill skill = this.LoadItem<Skill>(skillID);
-
-            // update skill level
-            skill.Level = level;
-            
-            // add skill to the character's inventory
-            character.AddItem(skill);
-
-            // create a history entry if needed
-            if (reason != SkillHistoryReason.None)
-                this.SkillDB.CreateSkillHistoryRecord(skillType, character, reason, skill.GetSkillPointsForLevel(level));
-
-            // persist the skill to the database
-            skill.Persist();
-            
-            return skill;
-        }
-
-        public Ship CreateShip(Type shipType, ItemEntity location, Character owner)
-        {
-            int shipID = (int) this.ItemDB.CreateShip(shipType, location, owner);
-
-            Ship ship = this.LoadItem<Ship>(shipID);
-
-            return ship;
-        }
-
-        public Clone CreateClone(StaticData.Inventory.Type cloneType, ItemEntity location, Character owner)
-        {
-            return this.CreateSimpleItem(cloneType, owner, location, Flags.Clone, 1, false, true) as Clone;
-        }
-
-        public void UnloadItem(ItemEntity item)
-        {
-            lock (this)
-            {
-                // first ensure there's no meta inventory holding this item hostage
-                if (this.MetaInventoryManager.GetOwnerInventoryAtLocation(item.ID, item.OwnerID, item.Flag, out ItemInventoryByOwnerID _) == true)
-                    return;
-            
-                if (this.mItemList.Remove(item.ID) == false)
-                    return;
-
-                // dispose of it
-                item.Dispose();
-            }
-        }
-
-        public void UnloadItem(int itemID)
+    /// <summary>
+    /// Loads an item if it's not already loaded and returns it'
+    /// </summary>
+    /// <param name="itemID">The item to load</param>
+    /// <returns>The loaded item</returns>
+    public ItemEntity LoadItem(int itemID)
+    {
+        lock (this)
         {
             if (this.TryGetItem(itemID, out ItemEntity item) == false)
+                return this.PerformItemLoad(this.ItemDB.LoadItem(itemID, this.MachoNet.NodeID));
+
+            return item;
+        }
+    }
+
+    /// <summary>
+    /// Loads an item if it's not already loaded and returns it
+    /// </summary>
+    /// <param name="itemID">The item to load</param>
+    /// <param name="loadRequired">Whether the item was loaded or already existed</param>
+    /// <returns>The loaded item</returns>
+    public ItemEntity LoadItem(int itemID, out bool loadRequired)
+    {
+        lock (this)
+        {
+            if (this.TryGetItem(itemID, out ItemEntity item) == false)
+            {
+                loadRequired = true;
+                
+                return this.PerformItemLoad(this.ItemDB.LoadItem(itemID, this.MachoNet.NodeID));
+            }
+
+            loadRequired = false;
+
+            return item;
+        }
+    }
+        
+    /// <summary>
+    /// Loads an item if it's not already loaded and returns it'
+    /// </summary>
+    /// <param name="itemID">The item to load</param>
+    /// <returns>The loaded item</returns>
+    public T LoadItem<T>(int itemID) where T : ItemEntity
+    {
+        return this.LoadItem(itemID) as T;
+    }
+
+    public T LoadItem<T>(int itemID, out bool loadRequired) where T : ItemEntity
+    {
+        return this.LoadItem(itemID, out loadRequired) as T;
+    }
+
+    /// <summary>
+    /// Gets the given item
+    /// </summary>
+    /// <param name="itemID">The item to get</param>
+    /// <returns>The item</returns>
+    /// <exception cref="ItemNotLoadedException">If the item doesn't exist</exception>
+    public ItemEntity GetItem(int itemID)
+    {
+        lock (this)
+        {
+            if (this.TryGetItem(itemID, out ItemEntity item) == false)
+                throw new ItemNotLoadedException(itemID);
+
+            return item;
+        }
+    }
+
+    public T GetItem<T>(int itemID) where T : ItemEntity
+    {
+        return this.GetItem(itemID) as T;
+    }
+
+    public static bool IsFactionID(int itemID)
+    {
+        return itemID >= FACTION_ID_MIN && itemID < FACTION_ID_MAX;
+    }
+
+    public static bool IsStationID(int itemID)
+    {
+        return itemID >= STATION_ID_MIN && itemID < STATION_ID_MAX;
+    }
+
+    public static bool IsSolarSystemID(int itemID)
+    {
+        return itemID >= SOLARSYSTEM_ID_MIN && itemID < SOLARSYSTEM_ID_MAX;
+    }
+
+    public static bool IsNPCCorporationID(int itemID)
+    {
+        return itemID >= NPC_CORPORATION_ID_MIN && itemID < NPC_CORPORATION_ID_MAX;
+    }
+
+    public static bool IsNPC(int itemID)
+    {
+        return itemID >= NPC_CHARACTER_ID_MIN && itemID < NPC_CHARACTER_ID_MAX;
+    }
+
+    public static bool IsCelestialID(int itemID)
+    {
+        return itemID >= CELESTIAL_ID_MIN && itemID < CELESTIAL_ID_MAX;
+    }
+
+    public static bool IsStaticData(int itemID)
+    {
+        return itemID < USERGENERATED_ID_MIN;
+    }
+        
+    /// <summary>
+    /// Gets the <see cref="ItemEntity"/> of the given faction
+    /// </summary>
+    /// <param name="factionID">The factionID to get</param>
+    /// <returns>The item</returns>
+    /// <exception cref="ArgumentOutOfRangeException">If the id is not a faction</exception>
+    public Faction GetStaticFaction(int factionID)
+    {
+        if (ItemFactory.IsFactionID(factionID) == false)
+            throw new ArgumentOutOfRangeException($"The id {factionID} does not belong to a faction");
+
+        return this.GetItem<Faction>(factionID);
+    }
+        
+    /// <summary>
+    /// Gets the <see cref="ItemEntity"/> of the given station
+    /// </summary>
+    /// <param name="stationID">The stationID to get</param>
+    /// <returns>The item</returns>
+    /// <exception cref="ArgumentOutOfRangeException">If the id is not a station</exception>
+    public Station GetStaticStation(int stationID)
+    {
+        if (ItemFactory.IsStationID(stationID) == false)
+            throw new ArgumentOutOfRangeException($"The id {stationID} does not belong to a station");
+
+        return this.GetItem<Station>(stationID);
+    }
+        
+    /// <summary>
+    /// Gets the <see cref="ItemEntity"/> of the given solar system
+    /// </summary>
+    /// <param name="solarSystemID">The solarSystemID to get</param>
+    /// <returns>The item</returns>
+    /// <exception cref="ArgumentOutOfRangeException">If the id is not a solar system</exception>
+    public SolarSystem GetStaticSolarSystem(int solarSystemID)
+    {
+        if (ItemFactory.IsSolarSystemID(solarSystemID) == false)
+            throw new ArgumentOutOfRangeException($"The id {solarSystemID} does not belong to a solar system");
+            
+        return this.GetItem<SolarSystem>(solarSystemID);
+    }
+
+    /// <summary>
+    /// Performs the extra, additional steps required for loading the given item
+    /// </summary>
+    /// <param name="item">The item to load</param>
+    /// <returns>The new instance of the item with the extra information loaded</returns>
+    private ItemEntity PerformItemLoad(Information.Item item)
+    {
+        lock (this)
+        {
+            if (item is null)
+                return null;
+            
+            ItemEntity wrapperItem = item.Type.Group.Category.ID switch
+            {
+                // catch all for system items
+                (int) Categories.System => LoadSystem(item),
+                // celestial items are a kind of subcategory
+                // load them in specific ways based on the type of celestial item
+                (int) Categories.Celestial => LoadCelestial(item),
+                (int) Categories.Blueprint => LoadBlueprint(item),
+                // owner items are a kind of subcategory too
+                (int) Categories.Owner       => LoadOwner(item),
+                (int) Categories.Skill       => LoadSkill(item),
+                (int) Categories.Ship        => LoadShip(item),
+                (int) Categories.Station     => LoadStation(item),
+                (int) Categories.Accessories => LoadAccessories(item),
+                (int) Categories.Implant     => LoadImplant(item),
+                (int) Categories.Module      => LoadModule(item),
+                _                            => new Item(item)
+            };
+
+            // check if there's an inventory loaded that should contain this item
+            if (this.TryGetItem (item.LocationID, out ItemEntity location) == true && location is ItemInventory inventory)
+                inventory.AddItem(wrapperItem);
+            
+            // notify the meta inventory manager about the new item only if the item is user-generated
+            if (item.ID >= USERGENERATED_ID_MIN)
+                this.MetaInventoryManager.OnItemLoaded(wrapperItem);
+
+            // ensure the item is in the loaded list
+            this.mItemList.Add(item.ID, wrapperItem);
+
+            // subscribe to item's events and return the item
+            return this.SubscribeToEvents(wrapperItem);
+        }
+    }
+
+    public ConcurrentDictionary<int, ItemEntity> LoadItemsLocatedAt(ItemEntity location, Flags ignoreFlag = Flags.None)
+    {
+        ConcurrentDictionary<int, ItemEntity> result = new ConcurrentDictionary<int, ItemEntity>();
+
+        foreach (int itemID in this.ItemDB.LoadItemsLocatedAt(location.ID, ignoreFlag))
+            result[itemID] = this.LoadItem(itemID);
+
+        return result;
+    }
+
+    public ConcurrentDictionary<int, ItemEntity> LoadItemsLocatedAtByOwner(ItemEntity location, int ownerID, Flags itemFlag)
+    {
+        ConcurrentDictionary<int, ItemEntity> result = new ConcurrentDictionary<int, ItemEntity>();
+
+        foreach (int itemID in this.ItemDB.LoadItemsLocatedAtByOwner(location.ID, ownerID, itemFlag))
+            result[itemID] = this.LoadItem(itemID);
+
+        return result;
+    }
+
+    public bool IsItemLoaded(int itemID)
+    {
+        lock(this)
+            return mItemList.ContainsKey(itemID);
+    }
+
+    private ItemEntity LoadSystem(Information.Item item)
+    {
+        return new EVESystem(item);
+    }
+
+    private ItemEntity LoadCelestial(Information.Item item)
+    {
+        switch (item.Type.Group.ID)
+        {
+            case (int) Groups.SolarSystem:
+                return this.LoadSolarSystem(item);
+            case (int) Groups.Station:
+                return this.LoadStation(item);
+            case (int) Groups.Constellation:
+                return this.LoadConstellation(item);
+            case (int) Groups.Region:
+                return this.LoadRegion(item);
+            case (int) Groups.CargoContainer:
+            case (int) Groups.SecureCargoContainer:
+            case (int) Groups.AuditLogSecureContainer:
+            case (int) Groups.FreightContainer:
+            case (int) Groups.Tool:
+                return this.LoadContainer(item);
+            default:
+                Log.Warning($"Loading celestial {item.ID} from item group {item.Type.Group.ID} as normal item");
+                return new Item(item);
+        }
+    }
+        
+    private ItemEntity LoadBlueprint(Information.Item item)
+    {
+        return new Blueprint(this.ItemDB.LoadBlueprint(item));
+    }
+
+    private ItemEntity LoadOwner(Information.Item item)
+    {
+        switch (item.Type.Group.ID)
+        {
+            case (int) Groups.Character:
+                return new Character(this.ItemDB.LoadCharacter(item));
+            case (int) Groups.Corporation:
+                return new Corporation(this.ItemDB.LoadCorporation(item));
+            case (int) Groups.Faction:
+                return this.LoadFaction(item);
+            case (int) Groups.Alliance:
+                return new Alliance(this.ItemDB.LoadAlliance(item));
+            default:
+                Log.Warning($"Loading owner {item.ID} from item group {item.Type.Group.ID} as normal item");
+                return new Item(item);
+        }
+    }
+
+    private ItemEntity LoadFaction(Information.Item item)
+    {
+        return this.mFactions[item.ID] = new Faction(this.ItemDB.LoadFaction(item));
+    }
+
+    private ItemEntity LoadAccessories(Information.Item item)
+    {
+        switch (item.Type.Group.ID)
+        {
+            case (int) Groups.Clone:
+                return new Clone(item);
+            default:
+                Log.Warning($"Loading accessory {item.ID} from item group {item.Type.Group.ID} as normal item");
+                return new Item(item);
+        }
+    }
+
+    private ItemEntity LoadSkill(Information.Item item)
+    {
+        return new Skill(item, this.NodeContainer.Constants[Constants.skillPointMultiplier]);
+    }
+
+    private ItemEntity LoadShip(Information.Item item)
+    {
+        return new Ship(item);
+    }
+
+    private Implant LoadImplant(Information.Item item)
+    {
+        return new Implant(item);
+    }
+
+    private ItemEntity LoadSolarSystem(Information.Item item)
+    {
+        return this.mSolarSystems[item.ID] = new SolarSystem(this.ItemDB.LoadSolarSystem(item));
+    }
+
+    private ItemEntity LoadStation(Information.Item item)
+    {
+        switch (item.Type.Group.ID)
+        {
+            case (int) Groups.StationServices:
+                return this.LoadStationServices(item);
+            case (int) Groups.Station:
+                return this.mStations[item.ID] = new Station(this.ItemDB.LoadStation(item));
+            default:
+                Log.Warning($"Loading station item {item.ID} from item group {item.Type.Group.ID} as normal item");
+                return new Item(item);
+        }
+    }
+
+    private ItemEntity LoadStationServices(Information.Item item)
+    {
+        switch (item.Type.ID)
+        {
+            case (int) Types.OfficeFolder:
+                return new OfficeFolder(item);
+            default:
+                Log.Warning($"Loading station service item {item.ID} as normal item");
+                return null;
+        }
+    }
+
+    private ItemEntity LoadConstellation(Information.Item item)
+    {
+        return new Constellation(this.ItemDB.LoadConstellation(item));
+    }
+
+    private ItemEntity LoadRegion(Information.Item item)
+    {
+        return new Region(this.ItemDB.LoadRegion(item));
+    }
+
+    private ItemEntity LoadContainer(Information.Item item)
+    {
+        return new Items.Types.Container(item);
+    }
+
+    private ShipModule LoadModule(Information.Item item)
+    {
+        return new ShipModule(item);
+    }
+
+    public ItemEntity CreateSimpleItem(StaticData.Inventory.Type type,               int  owner, int location, Flags flag, int quantity = 1,
+                                       bool                      contraband = false, bool singleton = false)
+    {
+        return this.CreateSimpleItem(null, type.ID, owner, location, flag, quantity, contraband, singleton);
+    }
+
+    public ItemEntity CreateSimpleItem(string itemName,       int  typeID,             int  ownerID,           int    locationID, Flags flag,
+                                       int    quantity   = 1, bool contraband = false, bool singleton = false, double x = 0.0, double y = 0.0, double z = 0.0,
+                                       string customInfo = null)
+    {
+        int itemID = (int) this.ItemDB.CreateItem(itemName, typeID, ownerID, locationID, flag, contraband, singleton,
+                                                  quantity, x, y, z, customInfo);
+
+        return this.LoadItem(itemID);
+    }
+        
+    public ItemEntity CreateSimpleItem(string itemName, StaticData.Inventory.Type type, ItemEntity owner, ItemEntity location, Flags flag,
+                                       bool contraband = false, bool singleton = false, int quantity = 1, double x = 0.0, double y = 0.0, double z = 0.0, string customInfo = null)
+    {
+        return this.CreateSimpleItem(itemName, type.ID, owner.ID, location.ID, flag, quantity, contraband, singleton,
+                                     x, y, z, customInfo);
+    }
+
+    public ItemEntity CreateSimpleItem(StaticData.Inventory.Type type,         ItemEntity owner,              ItemEntity location, Flags flags,
+                                       int                       quantity = 1, bool       contraband = false, bool       singleton = false)
+    {
+        return this.CreateSimpleItem(null, type, owner, location, flags, contraband, singleton, quantity);
+    }
+
+    public Skill CreateSkill(StaticData.Inventory.Type skillType, Character character, int level = 0, SkillHistoryReason reason = SkillHistoryReason.SkillTrainingComplete)
+    {
+        int skillID = this.SkillDB.CreateSkill(skillType, character);
+
+        Skill skill = this.LoadItem<Skill>(skillID);
+
+        // update skill level
+        skill.Level = level;
+            
+        // add skill to the character's inventory
+        character.AddItem(skill);
+
+        // create a history entry if needed
+        if (reason != SkillHistoryReason.None)
+            this.SkillDB.CreateSkillHistoryRecord(skillType, character, reason, skill.GetSkillPointsForLevel(level));
+
+        // persist the skill to the database
+        skill.Persist();
+            
+        return skill;
+    }
+
+    public Ship CreateShip(Type shipType, ItemEntity location, Character owner)
+    {
+        int shipID = (int) this.ItemDB.CreateShip(shipType, location, owner);
+
+        Ship ship = this.LoadItem<Ship>(shipID);
+
+        return ship;
+    }
+
+    public Clone CreateClone(StaticData.Inventory.Type cloneType, ItemEntity location, Character owner)
+    {
+        return this.CreateSimpleItem(cloneType, owner, location, Flags.Clone, 1, false, true) as Clone;
+    }
+
+    public void UnloadItem(ItemEntity item)
+    {
+        lock (this)
+        {
+            // first ensure there's no meta inventory holding this item hostage
+            if (this.MetaInventoryManager.GetOwnerInventoryAtLocation(item.ID, item.OwnerID, item.Flag, out ItemInventoryByOwnerID _) == true)
                 return;
             
+            if (this.mItemList.Remove(item.ID) == false)
+                return;
+
+            // dispose of it
+            item.Dispose();
+        }
+    }
+
+    public void UnloadItem(int itemID)
+    {
+        if (this.TryGetItem(itemID, out ItemEntity item) == false)
+            return;
+            
+        this.UnloadItem(item);
+    }
+
+    public void DestroyItem(ItemEntity item)
+    {
+        lock (this)
+        {
+            // remove the item off the list and throw an exception if the item wasn't loaded in this item manager
+            if (this.mItemList.Remove(item.ID) == false)
+                throw new ArgumentException("Cannot destroy an item that was not loaded by this item manager");
+
+            // ensure the meta inventories know this item is not there anymore
+            this.MetaInventoryManager.OnItemDestroyed(item);
+            
+            // make sure the location it's at knows the item is no more
+            if (this.TryGetItem(item.LocationID, out ItemEntity location) == true && location is ItemInventory inventory)
+                inventory.RemoveItem(item);
+            
+            // set the item to the recycler location just in case something has a reference to it somewhere
+            item.LocationID = this.LocationRecycler.ID;
+            // item.Flag = ItemFlags.None;
+
+            // finally remove the item off the database
+            item.Destroy();
+        }
+    }
+
+    private ItemEntity SubscribeToEvents(ItemEntity origin)
+    {
+        origin.OnItemDestroyed += this.OnItemDestroyed;
+        origin.OnItemDisposed  += this.OnItemDisposed;
+        origin.OnItemPersisted += this.OnItemPersisted;
+
+        if (origin is ItemInventory inventory)
+            this.SubscribeToInventoryEvents(inventory);
+
+        if (origin is Character character)
+            character.OnSkillQueueLoad += this.OnSkillQueueLoad;
+
+        return origin;
+    }
+
+    private void SubscribeToInventoryEvents(ItemInventory inventory)
+    {
+        // extra events for inventories
+        inventory.OnInventoryLoad   += this.OnInventoryLoad;
+        inventory.OnInventoryUnload += this.OnInventoryUnload;    
+    }
+
+    private void OnMetaInventoryCreated(ItemInventoryByOwnerID metaInventory)
+    {
+        // subscribe to the inventory events
+        this.SubscribeToInventoryEvents(metaInventory);
+    }
+
+    private List<Character.SkillQueueEntry> OnSkillQueueLoad(Character character, Dictionary<int, Skill> skillQueue)
+    {
+        return this.CharacterDB.LoadSkillQueue(character, skillQueue);
+    }
+
+    private ConcurrentDictionary<int, ItemEntity> OnInventoryLoad(ItemInventory inventory, Flags ignoreFlags)
+    {
+        if (inventory is ItemInventoryByOwnerID byOwner)
+            return this.LoadItemsLocatedAtByOwner(byOwner, byOwner.OwnerID, byOwner.InventoryFlag);
+            
+        return this.LoadItemsLocatedAt(inventory, ignoreFlags);
+    }
+
+    private void OnInventoryUnload(ItemInventory inventory)
+    {
+        foreach ((int _, ItemEntity item) in inventory.Items)
             this.UnloadItem(item);
-        }
+    }
 
-        public void DestroyItem(ItemEntity item)
+    private void OnItemDestroyed(ItemEntity item)
+    {
+        // delete items of an inventory too
+        // this will trigger the load of the inventory
+        // but it's a necessary evil for now
+        // TODO: DO NOT LOAD THE ITEMS JUST FOR REMOVING THINGS?
+        if (item is ItemInventory inventory)
+            this.DestroyItems(inventory.Items);
+
+        // TODO: ADD SPECIAL HANDLING FOR ITEMS THAT NEED EXTRA CLEANUP
+        this.ItemDB.DestroyItem(item);
+    }
+
+    private void OnItemPersisted(ItemEntity item)
+    {
+        // TODO: ADD SPECIAL HANDLING FOR ITEMS THAT HAVE EXTRA DATA
+        if (item.Information.New == true || item.Information.Dirty == true)
         {
-            lock (this)
+            this.ItemDB.PersistEntity(item);
+
+            switch (item)
             {
-                // remove the item off the list and throw an exception if the item wasn't loaded in this item manager
-                if (this.mItemList.Remove(item.ID) == false)
-                    throw new ArgumentException("Cannot destroy an item that was not loaded by this item manager");
-
-                // ensure the meta inventories know this item is not there anymore
-                this.MetaInventoryManager.OnItemDestroyed(item);
-            
-                // make sure the location it's at knows the item is no more
-                if (this.TryGetItem(item.LocationID, out ItemEntity location) == true && location is ItemInventory inventory)
-                    inventory.RemoveItem(item);
-            
-                // set the item to the recycler location just in case something has a reference to it somewhere
-                item.LocationID = this.LocationRecycler.ID;
-                // item.Flag = ItemFlags.None;
-
-                // finally remove the item off the database
-                item.Destroy();
+                case Alliance alliance:
+                    this.PersistAlliance(alliance);
+                    break;
+                case Blueprint blueprint:
+                    this.ItemDB.PersistBlueprint(blueprint.BlueprintInformation);
+                    break;
+                case Ship ship:
+                    this.InsuranceDB.UnInsureShip(ship.ID);
+                    break;
+                case Corporation corporation:
+                    this.CorporationDB.UpdateCorporationInformation(corporation);
+                    break;
+                case Character character:
+                    this.CharacterDB.UpdateCharacterInformation(character);
+                    break;
             }
         }
-
-        private ItemEntity SubscribeToEvents(ItemEntity origin)
-        {
-            origin.OnItemDestroyed += this.OnItemDestroyed;
-            origin.OnItemDisposed += this.OnItemDisposed;
-            origin.OnItemPersisted += this.OnItemPersisted;
-
-            if (origin is ItemInventory inventory)
-                this.SubscribeToInventoryEvents(inventory);
-
-            if (origin is Character character)
-                character.OnSkillQueueLoad += this.OnSkillQueueLoad;
-
-            return origin;
-        }
-
-        private void SubscribeToInventoryEvents(ItemInventory inventory)
-        {
-            // extra events for inventories
-            inventory.OnInventoryLoad += this.OnInventoryLoad;
-            inventory.OnInventoryUnload += this.OnInventoryUnload;    
-        }
-
-        private void OnMetaInventoryCreated(ItemInventoryByOwnerID metaInventory)
-        {
-            // subscribe to the inventory events
-            this.SubscribeToInventoryEvents(metaInventory);
-        }
-
-        private List<Character.SkillQueueEntry> OnSkillQueueLoad(Character character, Dictionary<int, Skill> skillQueue)
-        {
-            return this.CharacterDB.LoadSkillQueue(character, skillQueue);
-        }
-
-        private ConcurrentDictionary<int, ItemEntity> OnInventoryLoad(ItemInventory inventory, Flags ignoreFlags)
-        {
-            if (inventory is ItemInventoryByOwnerID byOwner)
-                return this.LoadItemsLocatedAtByOwner(byOwner, byOwner.OwnerID, byOwner.InventoryFlag);
             
-            return this.LoadItemsLocatedAt(inventory, ignoreFlags);
-        }
-
-        private void OnInventoryUnload(ItemInventory inventory)
+        // for inventories save every item too
+        if (item is ItemInventory inventory && inventory.ContentsLoaded == true)
         {
-            foreach ((int _, ItemEntity item) in inventory.Items)
-                this.UnloadItem(item);
+            foreach ((int _, ItemEntity inventoryItem) in inventory.Items)
+                inventoryItem.Persist();
         }
 
-        private void OnItemDestroyed(ItemEntity item)
-        {
-            // delete items of an inventory too
-            // this will trigger the load of the inventory
-            // but it's a necessary evil for now
-            // TODO: DO NOT LOAD THE ITEMS JUST FOR REMOVING THINGS?
-            if (item is ItemInventory inventory)
-                this.DestroyItems(inventory.Items);
+        // persist the attributes too
+        this.ItemDB.PersistAttributeList(item, item.Attributes);
+    }
 
-            // TODO: ADD SPECIAL HANDLING FOR ITEMS THAT NEED EXTRA CLEANUP
-            this.ItemDB.DestroyItem(item);
-        }
-
-        private void OnItemPersisted(ItemEntity item)
-        {
-            // TODO: ADD SPECIAL HANDLING FOR ITEMS THAT HAVE EXTRA DATA
-            if (item.Information.New == true || item.Information.Dirty == true)
-            {
-                this.ItemDB.PersistEntity(item);
-
-                switch (item)
-                {
-                    case Alliance alliance:
-                        this.PersistAlliance(alliance);
-                        break;
-                    case Blueprint blueprint:
-                        this.ItemDB.PersistBlueprint(blueprint.BlueprintInformation);
-                        break;
-                    case Ship ship:
-                        this.InsuranceDB.UnInsureShip(ship.ID);
-                        break;
-                    case Corporation corporation:
-                        this.CorporationDB.UpdateCorporationInformation(corporation);
-                        break;
-                    case Character character:
-                        this.CharacterDB.UpdateCharacterInformation(character);
-                        break;
-                }
-            }
-            
-            // for inventories save every item too
-            if (item is ItemInventory inventory && inventory.ContentsLoaded == true)
-            {
-                foreach ((int _, ItemEntity inventoryItem) in inventory.Items)
-                    inventoryItem.Persist();
-            }
-
-            // persist the attributes too
-            this.ItemDB.PersistAttributeList(item, item.Attributes);
-        }
-
-        private void OnItemDisposed(ItemEntity item)
-        {
-            // update the ownership information
-            this.ItemDB.UnloadItem(item.ID);
-        }
+    private void OnItemDisposed(ItemEntity item)
+    {
+        // update the ownership information
+        this.ItemDB.UnloadItem(item.ID);
+    }
         
-        public void DestroyItems(ConcurrentDictionary<int, ItemEntity> items)
-        {
-            foreach (KeyValuePair<int, ItemEntity> pair in items)
-                this.DestroyItem(pair.Value);
-        }
+    public void DestroyItems(ConcurrentDictionary<int, ItemEntity> items)
+    {
+        foreach (KeyValuePair<int, ItemEntity> pair in items)
+            this.DestroyItem(pair.Value);
+    }
         
-        public void DestroyItems(Dictionary<int, ItemEntity> items)
-        {
-            foreach (KeyValuePair<int, ItemEntity> pair in items)
-                this.DestroyItem(pair.Value);
-        }
+    public void DestroyItems(Dictionary<int, ItemEntity> items)
+    {
+        foreach (KeyValuePair<int, ItemEntity> pair in items)
+            this.DestroyItem(pair.Value);
+    }
 
 
-        public void DestroyItems(List<ItemEntity> items)
-        {
-            foreach (ItemEntity item in items)
-                this.DestroyItem(item);
-        }
+    public void DestroyItems(List<ItemEntity> items)
+    {
+        foreach (ItemEntity item in items)
+            this.DestroyItem(item);
+    }
 
-        private void PersistAlliance(Alliance alliance)
-        {
-            // update the alliance information
-            Database.Procedure(
-                AlliancesDB.UPDATE,
-                new Dictionary<string, object>()
-                {
-                    {"_description", alliance.Description},
-                    {"_url", alliance.Url},
-                    {"_allianceID", alliance.ID},
-                    {"_executorCorpID", alliance.ExecutorCorpID}
-                }
-            );
-        }
+    private void PersistAlliance(Alliance alliance)
+    {
+        // update the alliance information
+        Database.Procedure(
+            AlliancesDB.UPDATE,
+            new Dictionary<string, object>()
+            {
+                {"_description", alliance.Description},
+                {"_url", alliance.Url},
+                {"_allianceID", alliance.ID},
+                {"_executorCorpID", alliance.ExecutorCorpID}
+            }
+        );
     }
 }

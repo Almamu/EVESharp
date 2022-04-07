@@ -3,46 +3,45 @@ using System.Net;
 using System.Net.Sockets;
 using Serilog;
 
-namespace EVESharp.Common.Network
+namespace EVESharp.Common.Network;
+
+public class EVEServerSocket : EVESocket
 {
-    public class EVEServerSocket : EVESocket
+    public ILogger Log  { get; }
+    public int     Port { get; }
+
+    public EVEServerSocket(int port, ILogger logChannel)
     {
-        public ILogger Log { get; }
-        public int Port { get; }
+        this.Log  = logChannel;
+        this.Port = port;
+    }
 
-        public EVEServerSocket(int port, ILogger logChannel)
-        {
-            this.Log = logChannel;
-            this.Port = port;
-        }
+    public void Listen()
+    {
+        // bind the socket to the correct endpoint
+        this.Socket.Bind(new IPEndPoint(IPAddress.IPv6Any, this.Port));
+        this.Socket.Listen(20);
+    }
 
-        public void Listen()
-        {
-            // bind the socket to the correct endpoint
-            this.Socket.Bind(new IPEndPoint(IPAddress.IPv6Any, this.Port));
-            this.Socket.Listen(20);
-        }
+    public void BeginAccept(AsyncCallback callback)
+    {
+        this.Socket.BeginAccept(callback, this);
+    }
 
-        public void BeginAccept(AsyncCallback callback)
-        {
-            this.Socket.BeginAccept(callback, this);
-        }
+    public EVEClientSocket EndAccept(IAsyncResult asyncResult)
+    {
+        return new EVEClientSocket(this.Socket.EndAccept(asyncResult), Log);
+    }
 
-        public EVEClientSocket EndAccept(IAsyncResult asyncResult)
-        {
-            return new EVEClientSocket(this.Socket.EndAccept(asyncResult), Log);
-        }
+    public override void GracefulDisconnect()
+    {
+        // graceful disconnect is the same as forcefully in a listening socket
+        this.ForcefullyDisconnect();
+    }
 
-        public override void GracefulDisconnect()
-        {
-            // graceful disconnect is the same as forcefully in a listening socket
-            this.ForcefullyDisconnect();
-        }
-
-        protected override void DefaultExceptionHandler(Exception ex)
-        {
-            Log.Error("Unhandled exception on underlying socket:");
-            Log.Error(ex.Message);
-        }
+    protected override void DefaultExceptionHandler(Exception ex)
+    {
+        Log.Error("Unhandled exception on underlying socket:");
+        Log.Error(ex.Message);
     }
 }

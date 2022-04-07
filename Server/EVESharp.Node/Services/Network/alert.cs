@@ -29,45 +29,44 @@ using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Primitives;
 using Serilog;
 
-namespace EVESharp.Node.Services.Network
+namespace EVESharp.Node.Services.Network;
+
+public class alert : Service
 {
-    public class alert : Service
+    public override AccessLevel AccessLevel => AccessLevel.None;
+    private         ILogger     Log         { get; }
+
+    public alert(ILogger logger)
     {
-        public override AccessLevel AccessLevel => AccessLevel.None;
-        private ILogger Log { get; }
+        this.Log = logger;
+    }
 
-        public alert(ILogger logger)
+    public PyTuple BeanCount(PyInteger stackID, CallInformation call)
+    {
+        return new PyTuple(2)
         {
-            this.Log = logger;
-        }
+            [0] = null,
+            [1] = 0
+        };
+    }
 
-        public PyTuple BeanCount(PyInteger stackID, CallInformation call)
-        {
-            return new PyTuple(2)
-            {
-                [0] = null,
-                [1] = 0
-            };
-        }
-
-        public PyDataType SendClientStackTraceAlert(PyTuple stackInfo, PyString stackTrace, PyString type, PyDataType extra = null, CallInformation call = null)
-        {
-            Log.Fatal(
-                "Received the following client's stack trace:" + Environment.NewLine +
-                $"------------------ {type.Value} ------------------" + Environment.NewLine +
-                $"{(stackInfo[1] as PyString).Value}" + Environment.NewLine +
-                stackTrace.Value
-            );
+    public PyDataType SendClientStackTraceAlert(PyTuple stackInfo, PyString stackTrace, PyString type, PyDataType extra = null, CallInformation call = null)
+    {
+        Log.Fatal(
+            "Received the following client's stack trace:" + Environment.NewLine +
+            $"------------------ {type.Value} ------------------" + Environment.NewLine +
+            $"{(stackInfo[1] as PyString).Value}" + Environment.NewLine +
+            stackTrace.Value
+        );
             
-            // the client should receive anything to know that the stack trace arrived to the server
-            return null;
-        }
+        // the client should receive anything to know that the stack trace arrived to the server
+        return null;
+    }
 
-        public PyDataType BeanDelivery(PyDictionary beanCounts, CallInformation call)
-        {
-            // I'm not joking, send me the stack trace NOW!!!
-            // :P
-            return null;
-        }
+    public PyDataType BeanDelivery(PyDictionary beanCounts, CallInformation call)
+    {
+        // I'm not joking, send me the stack trace NOW!!!
+        // :P
+        return null;
     }
 }

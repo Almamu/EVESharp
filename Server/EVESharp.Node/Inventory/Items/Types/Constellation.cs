@@ -26,43 +26,42 @@ using System;
 using EVESharp.Node.Inventory.Items;
 using EVESharp.Node.StaticData.Inventory;
 
-namespace EVESharp.Node.Inventory.Items.Types
+namespace EVESharp.Node.Inventory.Items.Types;
+
+public class Constellation : ItemInventory
 {
-    public class Constellation : ItemInventory
+    public Information.Constellation ConstellationInformation { get; }
+        
+    public Constellation(Information.Constellation constellation) : base(constellation.Information)
     {
-        public Information.Constellation ConstellationInformation { get; }
+        this.ConstellationInformation = constellation;
+    }
+    public int    RegionId  => this.ConstellationInformation.RegionId;
+    public double X         => this.ConstellationInformation.X;
+    public double Y         => this.ConstellationInformation.Y;
+    public double Z         => this.ConstellationInformation.Z;
+    public double XMin      => this.ConstellationInformation.XMin;
+    public double YMin      => this.ConstellationInformation.YMin;
+    public double ZMin      => this.ConstellationInformation.ZMin;
+    public double XMax      => this.ConstellationInformation.XMax;
+    public double YMax      => this.ConstellationInformation.YMax;
+    public double ZMax      => this.ConstellationInformation.ZMax;
+    public int?   FactionId => this.ConstellationInformation.FactionId;
+    public double Radius    => this.ConstellationInformation.Radius;
         
-        public Constellation(Information.Constellation constellation) : base(constellation.Information)
-        {
-            this.ConstellationInformation = constellation;
-        }
-        public int RegionId => this.ConstellationInformation.RegionId;
-        public double X => this.ConstellationInformation.X;
-        public double Y => this.ConstellationInformation.Y;
-        public double Z => this.ConstellationInformation.Z;
-        public double XMin => this.ConstellationInformation.XMin;
-        public double YMin => this.ConstellationInformation.YMin;
-        public double ZMin => this.ConstellationInformation.ZMin;
-        public double XMax => this.ConstellationInformation.XMax;
-        public double YMax => this.ConstellationInformation.YMax;
-        public double ZMax => this.ConstellationInformation.ZMax;
-        public int? FactionId => this.ConstellationInformation.FactionId;
-        public double Radius => this.ConstellationInformation.Radius;
-        
-        protected override void LoadContents(Flags ignoreFlags = Flags.None)
-        {
-            throw new NotImplementedException();
-        }
+    protected override void LoadContents(Flags ignoreFlags = Flags.None)
+    {
+        throw new NotImplementedException();
+    }
 
-        public override void Persist()
-        {
-            // constellations cannot be updated
-            throw new NotImplementedException();
-        }
+    public override void Persist()
+    {
+        // constellations cannot be updated
+        throw new NotImplementedException();
+    }
 
-        public override void Destroy()
-        {
-            throw new NotImplementedException("Stations cannot be destroyed as they're regarded as static data!");
-        }
+    public override void Destroy()
+    {
+        throw new NotImplementedException("Stations cannot be destroyed as they're regarded as static data!");
     }
 }

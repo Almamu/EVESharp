@@ -1,9 +1,8 @@
-﻿namespace EVESharp.Node.Exceptions
+﻿namespace EVESharp.Node.Exceptions;
+
+public class LSCCannotAccessControl : LSCStandardException
 {
-    public class LSCCannotAccessControl : LSCStandardException
+    public LSCCannotAccessControl(string message) : base("LSCCannotAccessControl", message)
     {
-        public LSCCannotAccessControl(string message) : base("LSCCannotAccessControl", message)
-        {
-        }
     }
 }

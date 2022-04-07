@@ -22,23 +22,22 @@
     Creator: Almamu
 */
 
-namespace EVESharp.Node.StaticData.Inventory
-{
-    public class Category
-    {
-        public int ID { get; }
-        public string Name { get; }
-        public string Description { get; }
-        public int GraphicID { get; }
-        public bool Published { get; }
+namespace EVESharp.Node.StaticData.Inventory;
 
-        public Category(int id, string name, string description, int graphicID, bool published)
-        {
-            this.ID = id;
-            this.Name = name;
-            this.Description = description;
-            this.GraphicID = graphicID;
-            this.Published = published;
-        }
+public class Category
+{
+    public int    ID          { get; }
+    public string Name        { get; }
+    public string Description { get; }
+    public int    GraphicID   { get; }
+    public bool   Published   { get; }
+
+    public Category(int id, string name, string description, int graphicID, bool published)
+    {
+        this.ID          = id;
+        this.Name        = name;
+        this.Description = description;
+        this.GraphicID   = graphicID;
+        this.Published   = published;
     }
 }

@@ -1,11 +1,10 @@
 ﻿using EVESharp.EVE.Packets.Exceptions;
 
-namespace EVESharp.Node.Exceptions.skillMgr
+namespace EVESharp.Node.Exceptions.skillMgr;
+
+public class RespecAttributesTooHigh : UserError
 {
-    public class RespecAttributesTooHigh : UserError
+    public RespecAttributesTooHigh() : base("RespecAttributesTooHigh")
     {
-        public RespecAttributesTooHigh() : base("RespecAttributesTooHigh")
-        {
-        }
     }
 }

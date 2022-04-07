@@ -3,42 +3,41 @@ using EVESharp.EVE.Packets.Complex;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Primitives;
 
-namespace EVESharp.Node.Notifications.Client.Alliances
+namespace EVESharp.Node.Notifications.Client.Alliances;
+
+public class OnAllianceMemberChanged : ClientNotification
 {
-    public class OnAllianceMemberChanged : ClientNotification
+    private const string NOTIFICATION_NAME = "OnAllianceMemberChanged";
+        
+    public int          AllianceID { get; init; }
+    public int          CorpID     { get; init; }
+    public PyDictionary Changes    { get; init; }
+        
+    public OnAllianceMemberChanged(int allianceID, int corpID) : base(NOTIFICATION_NAME)
     {
-        private const string NOTIFICATION_NAME = "OnAllianceMemberChanged";
-        
-        public int AllianceID { get; init; }
-        public int CorpID { get; init; }
-        public PyDictionary Changes { get; init; }
-        
-        public OnAllianceMemberChanged(int allianceID, int corpID) : base(NOTIFICATION_NAME)
-        {
-            this.AllianceID = allianceID;
-            this.CorpID = corpID;
-            this.Changes = new PyDictionary();
-        }
+        this.AllianceID = allianceID;
+        this.CorpID     = corpID;
+        this.Changes    = new PyDictionary();
+    }
 
-        public OnAllianceMemberChanged AddChange(string changeName, PyDataType oldValue, PyDataType newValue)
+    public OnAllianceMemberChanged AddChange(string changeName, PyDataType oldValue, PyDataType newValue)
+    {
+        this.Changes[changeName] = new PyTuple(2)
         {
-            this.Changes[changeName] = new PyTuple(2)
-            {
-                [0] = oldValue,
-                [1] = newValue
-            };
+            [0] = oldValue,
+            [1] = newValue
+        };
 
-            return this;
-        }
+        return this;
+    }
 
-        public override List<PyDataType> GetElements()
+    public override List<PyDataType> GetElements()
+    {
+        return new List<PyDataType>()
         {
-            return new List<PyDataType>()
-            {
-                this.AllianceID,
-                this.CorpID,
-                this.Changes
-            };
-        }
+            this.AllianceID,
+            this.CorpID,
+            this.Changes
+        };
     }
 }

@@ -4,47 +4,46 @@ using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Primitives;
 using MySql.Data.MySqlClient;
 
-namespace EVESharp.PythonTypes.Types.Database
+namespace EVESharp.PythonTypes.Types.Database;
+
+public static class IntIntDictionary
 {
-    public static class IntIntDictionary
+    /// <summary>
+    /// Simple helper method that creates a correct IntegerIntegerDictionary and returns
+    /// it's PyDataType representation, ready to be sent to the EVE Online client
+    /// </summary>
+    /// <param name="reader">The MySqlDataReader to read the data from</param>
+    /// <returns></returns>
+    public static PyDictionary<PyInteger,PyInteger> FromMySqlDataReader(MySqlDataReader reader)
     {
-        /// <summary>
-        /// Simple helper method that creates a correct IntegerIntegerDictionary and returns
-        /// it's PyDataType representation, ready to be sent to the EVE Online client
-        /// </summary>
-        /// <param name="reader">The MySqlDataReader to read the data from</param>
-        /// <returns></returns>
-        public static PyDictionary<PyInteger,PyInteger> FromMySqlDataReader(MySqlDataReader reader)
+        PyDictionary<PyInteger,PyInteger> result = new PyDictionary<PyInteger,PyInteger>();
+
+        Type keyType = reader.GetFieldType(0);
+        Type valType = reader.GetFieldType(1);
+            
+        if (keyType != typeof(long) && keyType != typeof(int) && keyType != typeof(short) &&
+            keyType != typeof(byte) && keyType != typeof(ulong) && keyType != typeof(uint) &&
+            keyType != typeof(ushort) && keyType != typeof(sbyte) && valType != typeof(long) &&
+            valType != typeof(int) && valType != typeof(short) && valType != typeof(byte) &&
+            valType != typeof(ulong) && valType != typeof(uint) && valType != typeof(ushort) &&
+            valType != typeof(sbyte))
+            throw new InvalidDataException("Expected two fields of type int");
+            
+        while (reader.Read() == true)
         {
-            PyDictionary<PyInteger,PyInteger> result = new PyDictionary<PyInteger,PyInteger>();
+            // ignore null keys
+            if (reader.IsDBNull(0) == true)
+                continue;
 
-            Type keyType = reader.GetFieldType(0);
-            Type valType = reader.GetFieldType(1);
-            
-            if (keyType != typeof(long) && keyType != typeof(int) && keyType != typeof(short) &&
-                keyType != typeof(byte) && keyType != typeof(ulong) && keyType != typeof(uint) &&
-                keyType != typeof(ushort) && keyType != typeof(sbyte) && valType != typeof(long) &&
-                valType != typeof(int) && valType != typeof(short) && valType != typeof(byte) &&
-                valType != typeof(ulong) && valType != typeof(uint) && valType != typeof(ushort) &&
-                valType != typeof(sbyte))
-                throw new InvalidDataException("Expected two fields of type int");
-            
-            while (reader.Read() == true)
-            {
-                // ignore null keys
-                if (reader.IsDBNull(0) == true)
-                    continue;
+            int key = reader.GetInt32(0);
+            int val = 0;
 
-                int key = reader.GetInt32(0);
-                int val = 0;
+            if (reader.IsDBNull(1) == false)
+                val = reader.GetInt32(1);
 
-                if (reader.IsDBNull(1) == false)
-                    val = reader.GetInt32(1);
-
-                result[key] = val;
-            }
-
-            return result;
+            result[key] = val;
         }
+
+        return result;
     }
 }

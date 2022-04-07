@@ -1,9 +1,8 @@
-﻿namespace EVESharp.Node.Alliances
+﻿namespace EVESharp.Node.Alliances;
+
+public class ApplicationEntry
 {
-    public class ApplicationEntry
-    {
-        public int CorporationID { get; init; }
-        public int AllianceID { get; init; }
-        public int? ExecutorCorpID { get; init; }
-    }
+    public int  CorporationID  { get; init; }
+    public int  AllianceID     { get; init; }
+    public int? ExecutorCorpID { get; init; }
 }

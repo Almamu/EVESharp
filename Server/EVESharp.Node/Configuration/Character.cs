@@ -1,20 +1,19 @@
 using IniParser.Model;
 
-namespace EVESharp.Node.Configuration
+namespace EVESharp.Node.Configuration;
+
+public class Character
 {
-    public class Character
+    public double Balance { get; private set; }
+
+    public void Load(KeyDataCollection section)
     {
-        public double Balance { get; private set; }
-
-        public void Load(KeyDataCollection section)
+        if (section.ContainsKey("balance") == false)
         {
-            if (section.ContainsKey("balance") == false)
-            {
-                this.Balance = 50000.0;
-                return;
-            }
-
-            this.Balance = double.Parse(section["balance"]);
+            this.Balance = 50000.0;
+            return;
         }
+
+        this.Balance = double.Parse(section["balance"]);
     }
 }

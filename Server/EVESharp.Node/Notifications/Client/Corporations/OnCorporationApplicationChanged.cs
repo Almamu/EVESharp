@@ -3,42 +3,41 @@ using EVESharp.EVE.Packets.Complex;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Primitives;
 
-namespace EVESharp.Node.Notifications.Client.Corporations
+namespace EVESharp.Node.Notifications.Client.Corporations;
+
+public class OnCorporationApplicationChanged : ClientNotification
 {
-    public class OnCorporationApplicationChanged : ClientNotification
+    private const string NOTIFICATION_NAME = "OnCorporationApplicationChanged";
+        
+    public  int                            CorporationID { get; init; }
+    public  int                            ApplicantID   { get; init; }
+    private PyDictionary<PyString,PyTuple> Changes       { get; init; }
+        
+    public OnCorporationApplicationChanged(int corporationID, int applicantID) : base(NOTIFICATION_NAME)
     {
-        private const string NOTIFICATION_NAME = "OnCorporationApplicationChanged";
-        
-        public int CorporationID { get; init; }
-        public int ApplicantID { get; init; }
-        private PyDictionary<PyString,PyTuple> Changes { get; init; }
-        
-        public OnCorporationApplicationChanged(int corporationID, int applicantID) : base(NOTIFICATION_NAME)
-        {
-            this.CorporationID = corporationID;
-            this.ApplicantID = applicantID;
-            this.Changes = new PyDictionary<PyString, PyTuple>();
-        }
+        this.CorporationID = corporationID;
+        this.ApplicantID   = applicantID;
+        this.Changes       = new PyDictionary<PyString, PyTuple>();
+    }
 
-        public OnCorporationApplicationChanged AddValue(string columnName, PyDataType oldValue, PyDataType newValue)
+    public OnCorporationApplicationChanged AddValue(string columnName, PyDataType oldValue, PyDataType newValue)
+    {
+        this.Changes[columnName] = new PyTuple(2)
         {
-            this.Changes[columnName] = new PyTuple(2)
-            {
-                [0] = oldValue,
-                [1] = newValue
-            };
+            [0] = oldValue,
+            [1] = newValue
+        };
 
-            return this;
-        }
+        return this;
+    }
 
-        public override List<PyDataType> GetElements()
+    public override List<PyDataType> GetElements()
+    {
+        return new List<PyDataType>()
         {
-            return new List<PyDataType>()
-            {
-                this.ApplicantID,
-                this.CorporationID,
-                this.Changes
-            };
-        }
+            this.ApplicantID,
+            this.CorporationID,
+            this.Changes
+        };
     }
 }

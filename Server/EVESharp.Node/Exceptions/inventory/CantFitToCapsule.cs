@@ -1,12 +1,11 @@
 ﻿using EVESharp.EVE.Packets.Exceptions;
 using EVESharp.PythonTypes.Types.Collections;
 
-namespace EVESharp.Node.Exceptions.inventory
+namespace EVESharp.Node.Exceptions.inventory;
+
+public class CantFitToCapsule : UserError
 {
-    public class CantFitToCapsule : UserError
+    public CantFitToCapsule() : base("CantFitToCapsule")
     {
-        public CantFitToCapsule() : base("CantFitToCapsule")
-        {
-        }
     }
 }

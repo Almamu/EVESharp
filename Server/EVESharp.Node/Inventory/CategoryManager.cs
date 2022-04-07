@@ -26,23 +26,22 @@ using System.Collections.Generic;
 using EVESharp.Node.Database;
 using EVESharp.Node.StaticData.Inventory;
 
-namespace EVESharp.Node.Inventory
+namespace EVESharp.Node.Inventory;
+
+public class CategoryManager
 {
-    public class CategoryManager
+    private ItemDB                    ItemDB { get; }
+    private Dictionary<int, Category> mCategories = null;
+
+    public void Load()
     {
-        private ItemDB ItemDB { get; }
-        private Dictionary<int, Category> mCategories = null;
+        this.mCategories = this.ItemDB.LoadItemCategories();
+    }
 
-        public void Load()
-        {
-            this.mCategories = this.ItemDB.LoadItemCategories();
-        }
+    public Category this[int id] { get => this.mCategories[id]; }
 
-        public Category this[int id] { get => this.mCategories[id]; }
-
-        public CategoryManager(ItemDB itemDB)
-        {
-            this.ItemDB = itemDB;
-        }
+    public CategoryManager(ItemDB itemDB)
+    {
+        this.ItemDB = itemDB;
     }
 }

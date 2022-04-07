@@ -1,9 +1,8 @@
-﻿namespace EVESharp.Node.Exceptions
+﻿namespace EVESharp.Node.Exceptions;
+
+public class LSCCannotSendMessage : LSCStandardException
 {
-    public class LSCCannotSendMessage : LSCStandardException
+    public LSCCannotSendMessage(string message) : base("LSCCannotSendMessage", message)
     {
-        public LSCCannotSendMessage(string message) : base("LSCCannotSendMessage", message)
-        {
-        }
     }
 }

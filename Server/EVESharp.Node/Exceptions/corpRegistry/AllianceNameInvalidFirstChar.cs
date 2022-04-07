@@ -1,12 +1,11 @@
 ﻿using EVESharp.EVE.Packets.Exceptions;
 
-namespace EVESharp.Node.Exceptions.corpRegistry
+namespace EVESharp.Node.Exceptions.corpRegistry;
+
+public class AllianceNameInvalidFirstChar : UserError
 {
-    public class AllianceNameInvalidFirstChar : UserError
+    public AllianceNameInvalidFirstChar() : base("AllianceNameInvalidFirstChar")
     {
-        public AllianceNameInvalidFirstChar() : base("AllianceNameInvalidFirstChar")
-        {
             
-        }
     }
 }

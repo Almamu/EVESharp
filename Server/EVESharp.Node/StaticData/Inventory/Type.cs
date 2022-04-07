@@ -29,53 +29,52 @@ using EVESharp.Node.Inventory;
 using EVESharp.Node.Inventory.Items.Attributes;
 using EVESharp.Node.Inventory.Items.Dogma;
 
-namespace EVESharp.Node.StaticData.Inventory
+namespace EVESharp.Node.StaticData.Inventory;
+
+public class Type
 {
-    public class Type
-    {
-        public int ID { get; }
-        public Group Group { get; }
-        public string Name { get; }
-        public string Description { get; }
-        public int GraphicID { get; }
-        public double Radius { get; }
-        public double Mass { get; }
-        public double Volume { get; }
-        public double Capacity { get; }
-        public int PortionSize { get; }
-        public int RaceID { get; }
-        public double BasePrice { get; }
-        public bool Published { get; }
-        public int MarketGroupID { get; }
-        public double ChanceOfDuplicating { get; }
-        public Dictionary<int, Node.Inventory.Items.Attributes.Attribute> Attributes { get; }
-        public Dictionary<int, Effect> Effects { get; }
-        public Dictionary<string, Effect> EffectsByName { get; }
+    public int                                                        ID                  { get; }
+    public Group                                                      Group               { get; }
+    public string                                                     Name                { get; }
+    public string                                                     Description         { get; }
+    public int                                                        GraphicID           { get; }
+    public double                                                     Radius              { get; }
+    public double                                                     Mass                { get; }
+    public double                                                     Volume              { get; }
+    public double                                                     Capacity            { get; }
+    public int                                                        PortionSize         { get; }
+    public int                                                        RaceID              { get; }
+    public double                                                     BasePrice           { get; }
+    public bool                                                       Published           { get; }
+    public int                                                        MarketGroupID       { get; }
+    public double                                                     ChanceOfDuplicating { get; }
+    public Dictionary<int, Node.Inventory.Items.Attributes.Attribute> Attributes          { get; }
+    public Dictionary<int, Effect>                                    Effects             { get; }
+    public Dictionary<string, Effect>                                 EffectsByName       { get; }
         
-        public Type(int id, Group group, string name, string description,
-            int graphicID, double radius, double mass, double volume, double capacity,
-            int portionSize, int raceID, double basePrice, bool published, int marketGroupId,
-            double chanceOfDuplicating, Dictionary<int, Node.Inventory.Items.Attributes.Attribute> defaultAttributes,
-            Dictionary<int, Effect> effects)
-        {
-            this.ID = id;
-            this.Group = group;
-            this.Name = name;
-            this.Description = description;
-            this.GraphicID = graphicID;
-            this.Radius = radius;
-            this.Mass = mass;
-            this.Volume = volume;
-            this.Capacity = capacity;
-            this.PortionSize = portionSize;
-            this.RaceID = raceID;
-            this.BasePrice = basePrice;
-            this.Published = published;
-            this.MarketGroupID = marketGroupId;
-            this.ChanceOfDuplicating = chanceOfDuplicating;
-            this.Attributes = defaultAttributes;
-            this.Effects = effects;
-            this.EffectsByName = this.Effects.ToDictionary(x => x.Value.EffectName, x => x.Value);
-        }
+    public Type(int                     id,                  Group group, string name, string description,
+                int                     graphicID,           double radius, double mass, double volume, double capacity,
+                int                     portionSize,         int raceID, double basePrice, bool published, int marketGroupId,
+                double                  chanceOfDuplicating, Dictionary<int, Node.Inventory.Items.Attributes.Attribute> defaultAttributes,
+                Dictionary<int, Effect> effects)
+    {
+        this.ID                  = id;
+        this.Group               = group;
+        this.Name                = name;
+        this.Description         = description;
+        this.GraphicID           = graphicID;
+        this.Radius              = radius;
+        this.Mass                = mass;
+        this.Volume              = volume;
+        this.Capacity            = capacity;
+        this.PortionSize         = portionSize;
+        this.RaceID              = raceID;
+        this.BasePrice           = basePrice;
+        this.Published           = published;
+        this.MarketGroupID       = marketGroupId;
+        this.ChanceOfDuplicating = chanceOfDuplicating;
+        this.Attributes          = defaultAttributes;
+        this.Effects             = effects;
+        this.EffectsByName       = this.Effects.ToDictionary(x => x.Value.EffectName, x => x.Value);
     }
 }

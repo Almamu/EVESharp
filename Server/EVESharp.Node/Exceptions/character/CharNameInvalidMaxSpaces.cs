@@ -1,11 +1,10 @@
 ﻿using EVESharp.EVE.Packets.Exceptions;
 
-namespace EVESharp.Node.Exceptions.character
+namespace EVESharp.Node.Exceptions.character;
+
+class CharNameInvalidMaxSpaces : UserError
 {
-    class CharNameInvalidMaxSpaces : UserError
+    public CharNameInvalidMaxSpaces() : base("CharNameInvalidMaxSpaces")
     {
-        public CharNameInvalidMaxSpaces() : base("CharNameInvalidMaxSpaces")
-        {
-        }
     }
 }

@@ -1,11 +1,10 @@
 ﻿using System.Runtime.InteropServices;
 
-namespace EVESharp.Destiny
+namespace EVESharp.Destiny;
+
+[StructLayout(LayoutKind.Sequential, Pack = 1)]
+public struct FollowState
 {
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
-    public struct FollowState
-    {
-        public long UnkFollowId;
-        public float UnkRange;
-    }
+    public long  UnkFollowId;
+    public float UnkRange;
 }

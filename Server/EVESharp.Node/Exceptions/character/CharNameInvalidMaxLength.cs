@@ -1,11 +1,10 @@
 ﻿using EVESharp.EVE.Packets.Exceptions;
 
-namespace EVESharp.Node.Exceptions.character
+namespace EVESharp.Node.Exceptions.character;
+
+class CharNameInvalidMaxLength : UserError
 {
-    class CharNameInvalidMaxLength : UserError
+    public CharNameInvalidMaxLength() : base("CharNameInvalidMaxLength")
     {
-        public CharNameInvalidMaxLength() : base("CharNameInvalidMaxLength")
-        {
-        }
     }
 }

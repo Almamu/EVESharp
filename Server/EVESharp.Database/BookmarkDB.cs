@@ -22,12 +22,11 @@
     Creator: Almamu
 */
 
-namespace EVESharp.Database
+namespace EVESharp.Database;
+
+public class BookmarkDB
 {
-    public class BookmarkDB
-    {
-        public const string GET = "ChrBookmarksGet";
-        public const string DELETE = "ChrBookmarksDelete";
-        public const string CREATE = "ChrBookmarksCreate";
-    }
+    public const string GET    = "ChrBookmarksGet";
+    public const string DELETE = "ChrBookmarksDelete";
+    public const string CREATE = "ChrBookmarksCreate";
 }

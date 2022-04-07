@@ -2,34 +2,33 @@
 using System.Collections.Generic;
 using EVESharp.PythonTypes.Types.Primitives;
 
-namespace EVESharp.PythonTypes.Types.Collections
+namespace EVESharp.PythonTypes.Types.Collections;
+
+public class PyListEnumerator<T> : IPyListEnumerator<T> where T : PyDataType
 {
-    public class PyListEnumerator<T> : IPyListEnumerator<T> where T : PyDataType
+    protected readonly IEnumerator<PyDataType> mEnumerator;
+
+    public PyListEnumerator(IEnumerator<PyDataType> enumerator)
     {
-        protected readonly IEnumerator<PyDataType> mEnumerator;
-
-        public PyListEnumerator(IEnumerator<PyDataType> enumerator)
-        {
-            this.mEnumerator = enumerator;
-        }
+        this.mEnumerator = enumerator;
+    }
         
-        public bool MoveNext()
-        {
-            return this.mEnumerator.MoveNext();
-        }
+    public bool MoveNext()
+    {
+        return this.mEnumerator.MoveNext();
+    }
 
-        public void Reset()
-        {
-            this.mEnumerator.Reset();
-        }
+    public void Reset()
+    {
+        this.mEnumerator.Reset();
+    }
 
-        public T Current => this.mEnumerator.Current as T;
+    public T Current => this.mEnumerator.Current as T;
 
-        object? IEnumerator.Current => Current;
+    object? IEnumerator.Current => Current;
 
-        public void Dispose()
-        {
-            this.mEnumerator.Dispose();
-        }
+    public void Dispose()
+    {
+        this.mEnumerator.Dispose();
     }
 }

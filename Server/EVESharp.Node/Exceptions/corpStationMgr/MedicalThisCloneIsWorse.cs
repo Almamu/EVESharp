@@ -1,11 +1,10 @@
 ﻿using EVESharp.EVE.Packets.Exceptions;
 
-namespace EVESharp.Node.Exceptions.corpStationMgr
+namespace EVESharp.Node.Exceptions.corpStationMgr;
+
+public class MedicalThisCloneIsWorse : UserError
 {
-    public class MedicalThisCloneIsWorse : UserError
+    public MedicalThisCloneIsWorse() : base("MedicalThisCloneIsWorse")
     {
-        public MedicalThisCloneIsWorse() : base("MedicalThisCloneIsWorse")
-        {
-        }
     }
 }

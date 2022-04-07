@@ -4,21 +4,20 @@ using EVESharp.Node.Network;
 using EVESharp.Node.Sessions;
 using EVESharp.PythonTypes.Types.Primitives;
 
-namespace EVESharp.Node.Services.Corporations
+namespace EVESharp.Node.Services.Corporations;
+
+public class LPSvc : Service
 {
-    public class LPSvc : Service
+    public override AccessLevel   AccessLevel => AccessLevel.None;
+    private         CorporationDB DB          { get; }
+        
+    public LPSvc(CorporationDB db)
     {
-        public override AccessLevel AccessLevel => AccessLevel.None;
-        private CorporationDB DB { get; }
+        this.DB = db;
+    }
         
-        public LPSvc(CorporationDB db)
-        {
-            this.DB = db;
-        }
-        
-        public PyDecimal GetLPForCharacterCorp (PyInteger corporationID, CallInformation call)
-        {
-            return this.DB.GetLPForCharacterCorp(corporationID, call.Session.EnsureCharacterIsSelected());
-        }
+    public PyDecimal GetLPForCharacterCorp (PyInteger corporationID, CallInformation call)
+    {
+        return this.DB.GetLPForCharacterCorp(corporationID, call.Session.EnsureCharacterIsSelected());
     }
 }

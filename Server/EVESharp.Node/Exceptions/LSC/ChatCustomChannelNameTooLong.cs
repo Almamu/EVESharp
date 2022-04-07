@@ -2,13 +2,12 @@
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Primitives;
 
-namespace EVESharp.Node.Exceptions
+namespace EVESharp.Node.Exceptions;
+
+public class ChatCustomChannelNameTooLong : UserError
 {
-    public class ChatCustomChannelNameTooLong : UserError
+    public ChatCustomChannelNameTooLong(int max) : base("ChatCustomChannelNameTooLong",
+                                                        new PyDictionary {["max"] = max})
     {
-        public ChatCustomChannelNameTooLong(int max) : base("ChatCustomChannelNameTooLong",
-            new PyDictionary {["max"] = max})
-        {
-        }
     }
 }

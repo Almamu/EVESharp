@@ -34,77 +34,76 @@ using EVESharp.Node.Network;
 using EVESharp.Node.Server.Shared;
 using Serilog;
 
-namespace EVESharp.Node.Accounts
-{
-    public class LoginQueue : MessageProcessor<LoginQueueEntry>
-    {
-        private AccountDB AccountDB { get; }
-        private Authentication Configuration { get; }
-        private DatabaseConnection Database { get; }
+namespace EVESharp.Node.Accounts;
 
-        public void Enqueue(MachoUnauthenticatedTransport transport, AuthenticationReq req)
+public class LoginQueue : MessageProcessor<LoginQueueEntry>
+{
+    private AccountDB          AccountDB     { get; }
+    private Authentication     Configuration { get; }
+    private DatabaseConnection Database      { get; }
+
+    public void Enqueue(MachoUnauthenticatedTransport transport, AuthenticationReq req)
+    {
+        this.Enqueue(
+            new LoginQueueEntry
+            {
+                Connection = transport,
+                Request    = req
+            }
+        );
+    }
+
+    protected override void HandleMessage(LoginQueueEntry entry)
+    {
+        Log.Debug("Processing login for " + entry.Request.user_name);
+        LoginStatus status = LoginStatus.Waiting;
+
+        int   accountID = 0;
+        bool  banned    = false;
+        ulong role      = 0;
+
+        // First check if the account exists
+        if (this.AccountDB.AccountExists(entry.Request.user_name) == false)
+            if (this.Configuration.Autoaccount == true)
+            {
+                Log.Information($"Auto account enabled, creating account for user {entry.Request.user_name}");
+
+                // Create the account
+                this.AccountDB.CreateAccount(entry.Request.user_name, entry.Request.user_password, (ulong) this.Configuration.Role);                    
+            }
+
+        if (this.AccountDB.LoginPlayer(entry.Request.user_name, entry.Request.user_password, ref accountID, ref banned, ref role) == false || banned == true)
         {
-            this.Enqueue(
-                new LoginQueueEntry
+            Log.Verbose(": Rejected by database");
+
+            status = LoginStatus.Failed;
+        }
+        else
+        {
+            Log.Verbose(": success");
+
+            status = LoginStatus.Success;
+                
+            // register player to the new address
+            Database.Procedure(
+                EVESharp.Database.AccountDB.REGISTER_CLIENT_ADDRESS,
+                new Dictionary<string, object>()
                 {
-                    Connection = transport,
-                    Request = req
+                    {"_clientID", accountID},
+                    {"_proxyNodeID", entry.Connection.MachoNet.NodeID}
                 }
             );
         }
 
-        protected override void HandleMessage(LoginQueueEntry entry)
-        {
-            Log.Debug("Processing login for " + entry.Request.user_name);
-            LoginStatus status = LoginStatus.Waiting;
+        entry.Connection.SendLoginNotification(status, accountID, role);
+    }
 
-            int accountID = 0;
-            bool banned = false;
-            ulong role = 0;
-
-            // First check if the account exists
-            if (this.AccountDB.AccountExists(entry.Request.user_name) == false)
-                if (this.Configuration.Autoaccount == true)
-                {
-                    Log.Information($"Auto account enabled, creating account for user {entry.Request.user_name}");
-
-                    // Create the account
-                    this.AccountDB.CreateAccount(entry.Request.user_name, entry.Request.user_password, (ulong) this.Configuration.Role);                    
-                }
-
-            if (this.AccountDB.LoginPlayer(entry.Request.user_name, entry.Request.user_password, ref accountID, ref banned, ref role) == false || banned == true)
-            {
-                Log.Verbose(": Rejected by database");
-
-                status = LoginStatus.Failed;
-            }
-            else
-            {
-                Log.Verbose(": success");
-
-                status = LoginStatus.Success;
-                
-                // register player to the new address
-                Database.Procedure(
-                    EVESharp.Database.AccountDB.REGISTER_CLIENT_ADDRESS,
-                    new Dictionary<string, object>()
-                    {
-                        {"_clientID", accountID},
-                        {"_proxyNodeID", entry.Connection.MachoNet.NodeID}
-                    }
-                );
-            }
-
-            entry.Connection.SendLoginNotification(status, accountID, role);
-        }
-
-        public LoginQueue(DatabaseConnection databaseConnection, Authentication configuration, AccountDB db, ILogger logger)
-            : base(logger, 5)
-        {
-            // login should not be using too many processes
-            this.Database = databaseConnection;
-            this.Configuration = configuration;
-            this.AccountDB = db;
-        }
+    public LoginQueue(DatabaseConnection databaseConnection, Authentication configuration, AccountDB db, ILogger logger)
+        : base(logger, 5)
+    {
+        // login should not be using too many processes
+        this.Database      = databaseConnection;
+        this.Configuration = configuration;
+        this.AccountDB     = db;
     }
 }

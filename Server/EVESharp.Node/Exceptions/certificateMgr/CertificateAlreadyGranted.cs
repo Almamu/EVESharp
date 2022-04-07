@@ -1,11 +1,10 @@
 ﻿using EVESharp.EVE.Packets.Exceptions;
 
-namespace EVESharp.Node.Exceptions.certificateMgr
+namespace EVESharp.Node.Exceptions.certificateMgr;
+
+public class CertificateAlreadyGranted : UserError
 {
-    public class CertificateAlreadyGranted : UserError
+    public CertificateAlreadyGranted() : base("CertificateAlreadyGranted")
     {
-        public CertificateAlreadyGranted() : base("CertificateAlreadyGranted")
-        {
-        }
     }
 }

@@ -2,69 +2,68 @@
 using EVESharp.PythonTypes.Types.Primitives;
 using NUnit.Framework;
 
-namespace EVESharp.PythonTypes.Unit.Marshaling
+namespace EVESharp.PythonTypes.Unit.Marshaling;
+
+public class TokenMarshalingTests
 {
-    public class TokenMarshalingTests
+    private static string sTokenMarshal_Empty = "";
+    private static string sTokenMarshal_Normal = "Test";
+    private static string sTokenMarshal_TooLong = "pC78GCVf2cAkVxDxALVQnW7T3hAR2D6T8nZg7vPc75t38n7E3RLbx7cBYFVP2BfWeUMKLXeXqfmmKr464cc8J8MsmbXZ9NsAt4YLDYDFgrgPY9vnVJ3cXdz4Q9ukjtguekrBfNdFCHhTL95WYcq4TyVRbNTkdvGgvkjXgR4PD4Jc9AFtWJcQfPcqk9qrvNDrzuHh6VnUjhJ8P6LKTbf4E74mBFJkQBbNV53P2qKTVBsuRt5MTnvvPBxaEb8prfxX6W6E9Ayh";
+
+    private static byte[] sTokenMarshal_EmptyBuffer  = new byte[] {0x02, 0x00};
+    private static byte[] sTokenMarshal_NormalBuffer = new byte[] {0x02, 0x04, 0x54, 0x65, 0x73, 0x74};
+        
+    [Test]
+    public void TokenMarshaling_Empty()
     {
-        private static string sTokenMarshal_Empty = "";
-        private static string sTokenMarshal_Normal = "Test";
-        private static string sTokenMarshal_TooLong = "pC78GCVf2cAkVxDxALVQnW7T3hAR2D6T8nZg7vPc75t38n7E3RLbx7cBYFVP2BfWeUMKLXeXqfmmKr464cc8J8MsmbXZ9NsAt4YLDYDFgrgPY9vnVJ3cXdz4Q9ukjtguekrBfNdFCHhTL95WYcq4TyVRbNTkdvGgvkjXgR4PD4Jc9AFtWJcQfPcqk9qrvNDrzuHh6VnUjhJ8P6LKTbf4E74mBFJkQBbNV53P2qKTVBsuRt5MTnvvPBxaEb8prfxX6W6E9Ayh";
+        PyToken token = new PyToken(sTokenMarshal_Empty);
 
-        private static byte[] sTokenMarshal_EmptyBuffer = new byte[] {0x02, 0x00};
-        private static byte[] sTokenMarshal_NormalBuffer = new byte[] {0x02, 0x04, 0x54, 0x65, 0x73, 0x74};
+        byte[] output = Marshal.Marshal.ToByteArray(token, false);
+            
+        Assert.AreEqual(sTokenMarshal_EmptyBuffer, output);
+    }
         
-        [Test]
-        public void TokenMarshaling_Empty()
-        {
-            PyToken token = new PyToken(sTokenMarshal_Empty);
+    [Test]
+    public void TokenMarshaling_Normal()
+    {
+        PyToken token = new PyToken(sTokenMarshal_Normal);
 
-            byte[] output = Marshal.Marshal.ToByteArray(token, false);
+        byte[] output = Marshal.Marshal.ToByteArray(token, false);
             
-            Assert.AreEqual(sTokenMarshal_EmptyBuffer, output);
-        }
+        Assert.AreEqual(sTokenMarshal_NormalBuffer, output);
+    }
         
-        [Test]
-        public void TokenMarshaling_Normal()
-        {
-            PyToken token = new PyToken(sTokenMarshal_Normal);
+    [Test]
+    public void TokenMarshaling_TooLong()
+    {
+        PyToken token = new PyToken(sTokenMarshal_TooLong);
 
-            byte[] output = Marshal.Marshal.ToByteArray(token, false);
+        Assert.Catch(() => Marshal.Marshal.ToByteArray(token, false));
+    }
+
+    [Test]
+    public void TokenUmarshal_Empty()
+    {
+        PyDataType result = Unmarshal.ReadFromByteArray(sTokenMarshal_EmptyBuffer, false);
             
-            Assert.AreEqual(sTokenMarshal_NormalBuffer, output);
-        }
-        
-        [Test]
-        public void TokenMarshaling_TooLong()
-        {
-            PyToken token = new PyToken(sTokenMarshal_TooLong);
+        Assert.IsInstanceOf<PyToken>(result);
 
-            Assert.Catch(() => Marshal.Marshal.ToByteArray(token, false));
-        }
-
-        [Test]
-        public void TokenUmarshal_Empty()
-        {
-            PyDataType result = Unmarshal.ReadFromByteArray(sTokenMarshal_EmptyBuffer, false);
+        PyToken pyToken = result as PyToken;
             
-            Assert.IsInstanceOf<PyToken>(result);
+        Assert.AreEqual(sTokenMarshal_Empty.Length, pyToken.Length);
+        Assert.AreEqual(sTokenMarshal_Empty,        pyToken.Token);
+    }
 
-            PyToken pyToken = result as PyToken;
+    [Test]
+    public void TokenUmarshal_Normal()
+    {
+        PyDataType result = Unmarshal.ReadFromByteArray(sTokenMarshal_NormalBuffer, false);
             
-            Assert.AreEqual(sTokenMarshal_Empty.Length, pyToken.Length);
-            Assert.AreEqual(sTokenMarshal_Empty, pyToken.Token);
-        }
+        Assert.IsInstanceOf<PyToken>(result);
 
-        [Test]
-        public void TokenUmarshal_Normal()
-        {
-            PyDataType result = Unmarshal.ReadFromByteArray(sTokenMarshal_NormalBuffer, false);
+        PyToken pyToken = result as PyToken;
             
-            Assert.IsInstanceOf<PyToken>(result);
-
-            PyToken pyToken = result as PyToken;
-            
-            Assert.AreEqual(sTokenMarshal_Normal.Length, pyToken.Length);
-            Assert.AreEqual(sTokenMarshal_Normal, pyToken.Token);
-        }
+        Assert.AreEqual(sTokenMarshal_Normal.Length, pyToken.Length);
+        Assert.AreEqual(sTokenMarshal_Normal,        pyToken.Token);
     }
 }

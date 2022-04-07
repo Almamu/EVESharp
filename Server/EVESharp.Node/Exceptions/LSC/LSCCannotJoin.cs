@@ -1,9 +1,8 @@
-﻿namespace EVESharp.Node.Exceptions
+﻿namespace EVESharp.Node.Exceptions;
+
+public class LSCCannotJoin : LSCStandardException
 {
-    public class LSCCannotJoin : LSCStandardException
+    public LSCCannotJoin(string message) : base("LSCCannotJoin", message)
     {
-        public LSCCannotJoin(string message) : base("LSCCannotJoin", message)
-        {
-        }
     }
 }

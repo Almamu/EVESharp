@@ -39,142 +39,141 @@ using EVESharp.PythonTypes.Types.Network;
 using EVESharp.PythonTypes.Types.Primitives;
 using ItemDB = EVESharp.Database.ItemDB;
 
-namespace EVESharp.Node.Inventory
+namespace EVESharp.Node.Inventory;
+
+public class SystemManager
 {
-    public class SystemManager
+    private DatabaseConnection Database    { get; }
+    private ItemFactory        ItemFactory { get; }
+    private IMachoNet          MachoNet    { get; }
+    private HttpClient         HttpClient  { get; }
+
+    private readonly Dictionary<int, long> mSolarsystemToNodeID = new Dictionary<int, long>();
+
+    private void LoadSolarSystemOnNode(int solarSystemID, long nodeID)
     {
-        private DatabaseConnection Database { get; }
-        private ItemFactory ItemFactory { get; }
-        private IMachoNet MachoNet { get; }
-        private HttpClient HttpClient { get; }
-
-        private readonly Dictionary<int, long> mSolarsystemToNodeID = new Dictionary<int, long>();
-
-        private void LoadSolarSystemOnNode(int solarSystemID, long nodeID)
-        {
-            this.SignalSolarSystemLoaded(solarSystemID, nodeID);
+        this.SignalSolarSystemLoaded(solarSystemID, nodeID);
             
-            // now tell the server to load it
-            this.MachoNet.QueueOutputPacket(
-                new PyPacket(PyPacket.PacketType.NOTIFICATION)
-                {
-                    Destination = new PyAddressNode(nodeID),
-                    Source = new PyAddressNode(this.MachoNet.NodeID),
-                    Payload = new PyTuple(2) {[0] = "OnSolarSystemLoad", [1] = new PyTuple(1){[0] = solarSystemID}},
-                    OutOfBounds = new PyDictionary(),
-                    UserID = this.MachoNet.NodeID
-                }
-            );
-        }
-
-        public long LoadSolarSystemOnCluster(int solarSystemID)
-        {
-            // first check if the solar system is already loaded, otherwise load it
-            long nodeID = this.GetNodeSolarSystemBelongsTo(solarSystemID);
-
-            if (nodeID != 0)
+        // now tell the server to load it
+        this.MachoNet.QueueOutputPacket(
+            new PyPacket(PyPacket.PacketType.NOTIFICATION)
             {
-                // if the id is ours means that this belongs to us
-                if (nodeID == this.MachoNet.NodeID)
-                {
-                    // make sure it is marked as loaded locally
-                    this.mSolarsystemToNodeID[solarSystemID] = nodeID;
-                    this.ItemFactory.GetStaticSolarSystem(solarSystemID).BelongsToUs = true;
-                }
-
-                return nodeID;
+                Destination = new PyAddressNode(nodeID),
+                Source      = new PyAddressNode(this.MachoNet.NodeID),
+                Payload     = new PyTuple(2) {[0] = "OnSolarSystemLoad", [1] = new PyTuple(1){[0] = solarSystemID}},
+                OutOfBounds = new PyDictionary(),
+                UserID      = this.MachoNet.NodeID
             }
-            
-            // determine mode the server is running on
-            if (this.MachoNet.Mode == RunMode.Single)
+        );
+    }
+
+    public long LoadSolarSystemOnCluster(int solarSystemID)
+    {
+        // first check if the solar system is already loaded, otherwise load it
+        long nodeID = this.GetNodeSolarSystemBelongsTo(solarSystemID);
+
+        if (nodeID != 0)
+        {
+            // if the id is ours means that this belongs to us
+            if (nodeID == this.MachoNet.NodeID)
             {
-                this.LoadSolarSystemLocally(solarSystemID);
+                // make sure it is marked as loaded locally
+                this.mSolarsystemToNodeID[solarSystemID]                         = nodeID;
+                this.ItemFactory.GetStaticSolarSystem(solarSystemID).BelongsToUs = true;
+            }
+
+            return nodeID;
+        }
+            
+        // determine mode the server is running on
+        if (this.MachoNet.Mode == RunMode.Single)
+        {
+            this.LoadSolarSystemLocally(solarSystemID);
                 
-                return this.MachoNet.NodeID;
-            }
-            else if (this.MachoNet.Mode == RunMode.Proxy)
-            {
-                // determine what node is going to load it and let it know
-                Task<HttpResponseMessage> task = this.HttpClient.GetAsync($"{this.MachoNet.OrchestratorURL}/Nodes/next");
+            return this.MachoNet.NodeID;
+        }
+        else if (this.MachoNet.Mode == RunMode.Proxy)
+        {
+            // determine what node is going to load it and let it know
+            Task<HttpResponseMessage> task = this.HttpClient.GetAsync($"{this.MachoNet.OrchestratorURL}/Nodes/next");
 
-                task.Wait();
-                task.Result.EnsureSuccessStatusCode();
-                // read the json and extract the required information
-                Stream inputStream = task.Result.Content.ReadAsStream();
+            task.Wait();
+            task.Result.EnsureSuccessStatusCode();
+            // read the json and extract the required information
+            Stream inputStream = task.Result.Content.ReadAsStream();
 
-                nodeID = JsonSerializer.Deserialize<long>(inputStream);
+            nodeID = JsonSerializer.Deserialize<long>(inputStream);
 
-                // mark the solar system to load on the given node
-                this.LoadSolarSystemOnNode(solarSystemID, nodeID);
+            // mark the solar system to load on the given node
+            this.LoadSolarSystemOnNode(solarSystemID, nodeID);
                 
-                return nodeID;
-            }
-            else
+            return nodeID;
+        }
+        else
+        {
+            throw new Exception("Cannot signal a solar system as loaded from a server");
+        }
+    }
+
+    private void LoadSolarSystemLocally(int solarSystemID)
+    {
+        this.SignalSolarSystemLoaded(solarSystemID, this.MachoNet.NodeID);
+    }
+
+    private void SignalSolarSystemLoaded(int solarSystemID, long nodeID)
+    {
+        // mark the item as loaded by that node
+        Database.Procedure(
+            ItemDB.SET_ITEM_NODE,
+            new Dictionary<string, object>()
             {
-                throw new Exception("Cannot signal a solar system as loaded from a server");
+                {"_itemID", solarSystemID},
+                {"_nodeID", nodeID}
             }
-        }
-
-        private void LoadSolarSystemLocally(int solarSystemID)
-        {
-            this.SignalSolarSystemLoaded(solarSystemID, this.MachoNet.NodeID);
-        }
-
-        private void SignalSolarSystemLoaded(int solarSystemID, long nodeID)
-        {
-            // mark the item as loaded by that node
-            Database.Procedure(
-                ItemDB.SET_ITEM_NODE,
-                new Dictionary<string, object>()
-                {
-                    {"_itemID", solarSystemID},
-                    {"_nodeID", nodeID}
-                }
-            );
+        );
             
-            this.mSolarsystemToNodeID[solarSystemID] = nodeID;
-        }
+        this.mSolarsystemToNodeID[solarSystemID] = nodeID;
+    }
         
-        public bool StationBelongsToUs(int stationID)
-        {
-            Station station = this.ItemFactory.GetStaticStation(stationID);
+    public bool StationBelongsToUs(int stationID)
+    {
+        Station station = this.ItemFactory.GetStaticStation(stationID);
 
-            return this.SolarSystemBelongsToUs(station.SolarSystemID);
-        }
+        return this.SolarSystemBelongsToUs(station.SolarSystemID);
+    }
 
-        public bool SolarSystemBelongsToUs(int solarSystemID)
-        {
-            return this.ItemFactory.GetStaticSolarSystem(solarSystemID).BelongsToUs;
-        }
+    public bool SolarSystemBelongsToUs(int solarSystemID)
+    {
+        return this.ItemFactory.GetStaticSolarSystem(solarSystemID).BelongsToUs;
+    }
 
-        public long GetNodeStationBelongsTo(int stationID)
-        {
-            Station station = this.ItemFactory.GetStaticStation(stationID);
+    public long GetNodeStationBelongsTo(int stationID)
+    {
+        Station station = this.ItemFactory.GetStaticStation(stationID);
 
-            return this.GetNodeSolarSystemBelongsTo(station.LocationID);
-        }
+        return this.GetNodeSolarSystemBelongsTo(station.LocationID);
+    }
 
-        public long GetNodeSolarSystemBelongsTo(int solarSystemID)
-        {
-            // check if it's loaded locally first, otherwise hit the database
-            if (this.mSolarsystemToNodeID.TryGetValue(solarSystemID, out long nodeID) == true)
-                return nodeID;
+    public long GetNodeSolarSystemBelongsTo(int solarSystemID)
+    {
+        // check if it's loaded locally first, otherwise hit the database
+        if (this.mSolarsystemToNodeID.TryGetValue(solarSystemID, out long nodeID) == true)
+            return nodeID;
             
-            return Database.Scalar<long>(
-                ItemDB.GET_ITEM_NODE,
-                new Dictionary<string, object>()
-                {
-                    {"_itemID", solarSystemID}
-                }
-            );
-        }
+        return Database.Scalar<long>(
+            ItemDB.GET_ITEM_NODE,
+            new Dictionary<string, object>()
+            {
+                {"_itemID", solarSystemID}
+            }
+        );
+    }
         
-        public SystemManager(HttpClient httpClient, ItemFactory itemFactory, DatabaseConnection databaseConnection, IMachoNet machoNet)
-        {
-            this.HttpClient = httpClient;
-            this.MachoNet = machoNet;
-            this.Database = databaseConnection;
-            this.ItemFactory = itemFactory;
-        }
+    public SystemManager(HttpClient httpClient, ItemFactory itemFactory, DatabaseConnection databaseConnection, IMachoNet machoNet)
+    {
+        this.HttpClient  = httpClient;
+        this.MachoNet    = machoNet;
+        this.Database    = databaseConnection;
+        this.ItemFactory = itemFactory;
     }
 }

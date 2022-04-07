@@ -1,11 +1,10 @@
 ﻿using EVESharp.EVE.Packets.Exceptions;
 
-namespace EVESharp.Node.Exceptions.character
+namespace EVESharp.Node.Exceptions.character;
+
+class CharNameInvalid : UserError
 {
-    class CharNameInvalid : UserError
+    public CharNameInvalid() : base("CharNameInvalid")
     {
-        public CharNameInvalid() : base("CharNameInvalid")
-        {
-        }
     }
 }

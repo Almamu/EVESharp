@@ -1,12 +1,11 @@
 ﻿using EVESharp.EVE.Packets.Exceptions;
 using EVESharp.PythonTypes.Types.Collections;
 
-namespace EVESharp.Node.Exceptions.corporationSvc
+namespace EVESharp.Node.Exceptions.corporationSvc;
+
+public class ConfirmCreatingMedal : UserError
 {
-    public class ConfirmCreatingMedal : UserError
+    public ConfirmCreatingMedal(int cost) : base("ConfirmCreatingMedal", new PyDictionary {["cost"] = cost})
     {
-        public ConfirmCreatingMedal(int cost) : base("ConfirmCreatingMedal", new PyDictionary {["cost"] = cost})
-        {
-        }
     }
 }

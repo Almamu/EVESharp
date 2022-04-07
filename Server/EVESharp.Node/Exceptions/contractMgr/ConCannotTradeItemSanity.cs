@@ -1,12 +1,11 @@
 ﻿using EVESharp.EVE.Packets.Exceptions;
 using EVESharp.PythonTypes.Types.Primitives;
 
-namespace EVESharp.Node.Exceptions.contractMgr
+namespace EVESharp.Node.Exceptions.contractMgr;
+
+public class ConCannotTradeItemSanity : UserError
 {
-    public class ConCannotTradeItemSanity : UserError
+    public ConCannotTradeItemSanity() : base("ConCannotTradeItemSanity")
     {
-        public ConCannotTradeItemSanity() : base("ConCannotTradeItemSanity")
-        {
-        }
     }
 }

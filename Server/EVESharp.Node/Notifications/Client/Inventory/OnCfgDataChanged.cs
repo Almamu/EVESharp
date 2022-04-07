@@ -4,43 +4,42 @@ using EVESharp.Node.Inventory.Items;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Primitives;
 
-namespace EVESharp.Node.Notifications.Client.Inventory
+namespace EVESharp.Node.Notifications.Client.Inventory;
+
+public class OnCfgDataChanged : ClientNotification
 {
-    public class OnCfgDataChanged : ClientNotification
+    private const string NOTIFICATION_NAME = "OnCfgDataChanged";
+
+    public string     What { get; init; }
+    public PyDataType Data { get; init; }
+
+    private OnCfgDataChanged(string what, PyDataType data) : base(NOTIFICATION_NAME)
     {
-        private const string NOTIFICATION_NAME = "OnCfgDataChanged";
+        this.What = what;
+        this.Data = data;
+    }
 
-        public string What { get; init; }
-        public PyDataType Data { get; init; }
-
-        private OnCfgDataChanged(string what, PyDataType data) : base(NOTIFICATION_NAME)
+    public override List<PyDataType> GetElements()
+    {
+        return new List<PyDataType>()
         {
-            this.What = what;
-            this.Data = data;
-        }
+            this.What,
+            this.Data
+        };
+    }
 
-        public override List<PyDataType> GetElements()
-        {
-            return new List<PyDataType>()
+    public static OnCfgDataChanged BuildItemLabelChange(ItemEntity item)
+    {
+        return new OnCfgDataChanged(
+            "evelocations",
+            new PyList(5)
             {
-                this.What,
-                this.Data
-            };
-        }
-
-        public static OnCfgDataChanged BuildItemLabelChange(ItemEntity item)
-        {
-            return new OnCfgDataChanged(
-                "evelocations",
-                new PyList(5)
-                {
-                    [0] = item.ID,
-                    [1] = item.Name,
-                    [2] = item.X,
-                    [3] = item.Y,
-                    [4] = item.Z
-                }
-            );
-        }
+                [0] = item.ID,
+                [1] = item.Name,
+                [2] = item.X,
+                [3] = item.Y,
+                [4] = item.Z
+            }
+        );
     }
 }

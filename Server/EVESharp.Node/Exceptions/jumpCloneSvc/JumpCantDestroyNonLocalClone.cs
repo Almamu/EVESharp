@@ -1,11 +1,10 @@
 ﻿using EVESharp.EVE.Packets.Exceptions;
 
-namespace EVESharp.Node.Exceptions.jumpCloneSvc
+namespace EVESharp.Node.Exceptions.jumpCloneSvc;
+
+public class JumpCantDestroyNonLocalClone : UserError
 {
-    public class JumpCantDestroyNonLocalClone : UserError
+    public JumpCantDestroyNonLocalClone() : base("JumpCantDestroyNonLocalClone")
     {
-        public JumpCantDestroyNonLocalClone() : base("JumpCantDestroyNonLocalClone")
-        {
-        }
     }
 }

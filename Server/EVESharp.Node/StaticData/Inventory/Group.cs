@@ -22,37 +22,36 @@
     Creator: Almamu
 */
 
-namespace EVESharp.Node.StaticData.Inventory
-{
-    public class Group
-    {
-        public int ID { get; }
-        public Category Category { get; }
-        public string Name { get; }
-        public string Description { get; }
-        public int GraphicID { get; }
-        public bool UseBasePrice { get; }
-        public bool AllowManufacture { get; }
-        public bool AllowRecycler { get; }
-        public bool Anchored { get; }
-        public bool Anchorable { get; }
-        public bool FittableNonSingleton { get; }
-        public bool Published { get; }
+namespace EVESharp.Node.StaticData.Inventory;
 
-        public Group(int id, Category category, string name, string description, int graphicId, bool useBasePrice, bool allowManufacture, bool allowRecycler, bool anchored, bool anchorable, bool fittableNonSingleton, bool published)
-        {
-            this.ID = id;
-            this.Category = category;
-            this.Name = name;
-            this.Description = description;
-            this.GraphicID = graphicId;
-            this.UseBasePrice = useBasePrice;
-            this.AllowManufacture = allowManufacture;
-            this.AllowRecycler = allowRecycler;
-            this.Anchored = anchored;
-            this.Anchorable = anchorable;
-            this.FittableNonSingleton = fittableNonSingleton;
-            this.Published = published;
-        }
+public class Group
+{
+    public int      ID                   { get; }
+    public Category Category             { get; }
+    public string   Name                 { get; }
+    public string   Description          { get; }
+    public int      GraphicID            { get; }
+    public bool     UseBasePrice         { get; }
+    public bool     AllowManufacture     { get; }
+    public bool     AllowRecycler        { get; }
+    public bool     Anchored             { get; }
+    public bool     Anchorable           { get; }
+    public bool     FittableNonSingleton { get; }
+    public bool     Published            { get; }
+
+    public Group(int id, Category category, string name, string description, int graphicId, bool useBasePrice, bool allowManufacture, bool allowRecycler, bool anchored, bool anchorable, bool fittableNonSingleton, bool published)
+    {
+        this.ID                   = id;
+        this.Category             = category;
+        this.Name                 = name;
+        this.Description          = description;
+        this.GraphicID            = graphicId;
+        this.UseBasePrice         = useBasePrice;
+        this.AllowManufacture     = allowManufacture;
+        this.AllowRecycler        = allowRecycler;
+        this.Anchored             = anchored;
+        this.Anchorable           = anchorable;
+        this.FittableNonSingleton = fittableNonSingleton;
+        this.Published            = published;
     }
 }

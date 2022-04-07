@@ -1,11 +1,10 @@
-﻿namespace EVESharp.Node.Market
+﻿namespace EVESharp.Node.Market;
+
+public enum BillTypes
 {
-    public enum BillTypes
-    {
-        MarketFine = 1,
-        RentalBill = 2,
-        BrokerBill = 3,
-        WarBill = 4,
-        AllianceMaintenanceBill = 5
-    }
+    MarketFine              = 1,
+    RentalBill              = 2,
+    BrokerBill              = 3,
+    WarBill                 = 4,
+    AllianceMaintenanceBill = 5
 }

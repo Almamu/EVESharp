@@ -17,57 +17,56 @@ using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Network;
 using EVESharp.PythonTypes.Types.Primitives;
 
-namespace EVESharp.Node.Network
+namespace EVESharp.Node.Network;
+
+public class MachoClientTransport : MachoTransport
 {
-    public class MachoClientTransport : MachoTransport
+    public MachoClientTransport(MachoTransport source) : base(source)
     {
-        public MachoClientTransport(MachoTransport source) : base(source)
-        {
-            // finally assign the correct packet handler
-            this.Socket.SetReceiveCallback(ReceiveNormalPacket);
-            this.Socket.SetExceptionHandler(HandleException);
-            this.Socket.SetOnConnectionLostHandler(HandleConnectionLost);
-        }
+        // finally assign the correct packet handler
+        this.Socket.SetReceiveCallback(ReceiveNormalPacket);
+        this.Socket.SetExceptionHandler(HandleException);
+        this.Socket.SetOnConnectionLostHandler(HandleConnectionLost);
+    }
 
-        private void HandleConnectionLost()
-        {
-            Log.Fatal("Client {0} lost connection to the server", this.Session.UserID);
+    private void HandleConnectionLost()
+    {
+        Log.Fatal("Client {0} lost connection to the server", this.Session.UserID);
             
-            // clean up ourselves
-            this.MachoNet.OnTransportTerminated(this);
-        }
+        // clean up ourselves
+        this.MachoNet.OnTransportTerminated(this);
+    }
         
-        private void HandleException(Exception ex)
+    private void HandleException(Exception ex)
+    {
+        Log.Error("Exception detected: ");
+
+        do
         {
-            Log.Error("Exception detected: ");
+            Log.Error("{0}\n{1}", ex.Message, ex.StackTrace);
+        } while ((ex = ex.InnerException) != null);
+    }
 
-            do
-            {
-                Log.Error("{0}\n{1}", ex.Message, ex.StackTrace);
-            } while ((ex = ex.InnerException) != null);
-        }
+    private void ReceiveNormalPacket(PyDataType packet)
+    {
+        if (packet is PyObject)
+            throw new Exception("Got exception from client");
 
-        private void ReceiveNormalPacket(PyDataType packet)
-        {
-            if (packet is PyObject)
-                throw new Exception("Got exception from client");
-
-            PyPacket pyPacket = packet;
+        PyPacket pyPacket = packet;
             
-            // replace the address if specific situations occur (why is CCP doing it like this?)
-            if (pyPacket.Type == PyPacket.PacketType.NOTIFICATION && pyPacket.Source is PyAddressNode)
-                pyPacket.Source = new PyAddressClient(this.Session.UserID);
-            // ensure the source address is right as it cannot be trusted
-            if (pyPacket.Source is not PyAddressClient source)
-                throw new Exception("Received a packet from client without a source client address");
-            if (pyPacket.UserID != this.Session.UserID)
-                throw new Exception("Received a packet coming from a client trying to spoof it's userID");
+        // replace the address if specific situations occur (why is CCP doing it like this?)
+        if (pyPacket.Type == PyPacket.PacketType.NOTIFICATION && pyPacket.Source is PyAddressNode)
+            pyPacket.Source = new PyAddressClient(this.Session.UserID);
+        // ensure the source address is right as it cannot be trusted
+        if (pyPacket.Source is not PyAddressClient source)
+            throw new Exception("Received a packet from client without a source client address");
+        if (pyPacket.UserID != this.Session.UserID)
+            throw new Exception("Received a packet coming from a client trying to spoof it's userID");
             
-            // ensure the clientId is set in the PyAddressClient
-            source.ClientID = this.Session.UserID;
+        // ensure the clientId is set in the PyAddressClient
+        source.ClientID = this.Session.UserID;
             
-            // queue the input packet into machoNet so it handles it
-            this.MachoNet.QueueInputPacket(this, pyPacket);
-        }
-    }    
+        // queue the input packet into machoNet so it handles it
+        this.MachoNet.QueueInputPacket(this, pyPacket);
+    }
 }

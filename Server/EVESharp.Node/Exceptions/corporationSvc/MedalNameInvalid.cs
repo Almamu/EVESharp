@@ -1,11 +1,10 @@
 ﻿using EVESharp.EVE.Packets.Exceptions;
 
-namespace EVESharp.Node.Exceptions.corporationSvc
+namespace EVESharp.Node.Exceptions.corporationSvc;
+
+class MedalNameInvalid : UserError
 {
-    class MedalNameInvalid : UserError
+    public MedalNameInvalid() : base("MedalNameInvalid")
     {
-        public MedalNameInvalid() : base("MedalNameInvalid")
-        {
-        }
     }
 }

@@ -4,90 +4,89 @@ using System.Linq;
 using EVESharp.PythonTypes.Types.Primitives;
 using MySql.Data.MySqlClient;
 
-namespace EVESharp.PythonTypes.Types.Database
+namespace EVESharp.PythonTypes.Types.Database;
+
+/// <summary>
+/// Extended Python type that represents a normal row in the database that is compressed when marshaled
+/// </summary>
+public class PyPackedRow : PyDataType
 {
     /// <summary>
-    /// Extended Python type that represents a normal row in the database that is compressed when marshaled
+    /// The header for this PyPackedRow
     /// </summary>
-    public class PyPackedRow : PyDataType
+    public DBRowDescriptor Header { get; }
+
+    private readonly Dictionary<string, PyDataType> mValues = new Dictionary<string, PyDataType>();
+
+    public PyPackedRow(DBRowDescriptor descriptor)
     {
-        /// <summary>
-        /// The header for this PyPackedRow
-        /// </summary>
-        public DBRowDescriptor Header { get; }
+        this.Header = descriptor;
+    }
 
-        private readonly Dictionary<string, PyDataType> mValues = new Dictionary<string, PyDataType>();
+    public PyPackedRow(DBRowDescriptor descriptor, Dictionary<string, PyDataType> values)
+    {
+        this.Header = descriptor;
 
-        public PyPackedRow(DBRowDescriptor descriptor)
-        {
-            this.Header = descriptor;
-        }
+        if (values.Count != this.Header.Columns.Count)
+            throw new Exception("PackedRow must have the same value count as DBRowDescriptor");
 
-        public PyPackedRow(DBRowDescriptor descriptor, Dictionary<string, PyDataType> values)
-        {
-            this.Header = descriptor;
+        this.mValues = values;
+    }
 
-            if (values.Count != this.Header.Columns.Count)
-                throw new Exception("PackedRow must have the same value count as DBRowDescriptor");
+    public override int GetHashCode()
+    {
+        // a similar implementation to PyTuple to make my life easy
+        int length      = this.mValues.Count;
+        int mult        = 1000003;
+        int mul2        = 1000005;
+        int currentHash = 0x63521485;
 
-            this.mValues = values;
-        }
-
-        public override int GetHashCode()
-        {
-            // a similar implementation to PyTuple to make my life easy
-            int length = this.mValues.Count;
-            int mult = 1000003;
-            int mul2 = 1000005;
-            int currentHash = 0x63521485;
-
-            IOrderedEnumerable<DBRowDescriptor.Column> enumerator = this.Header.Columns.OrderByDescending(c => Utils.GetTypeBits(c.Type));
+        IOrderedEnumerable<DBRowDescriptor.Column> enumerator = this.Header.Columns.OrderByDescending(c => Utils.GetTypeBits(c.Type));
             
-            foreach (DBRowDescriptor.Column column in enumerator)
-            {
-                PyDataType value = this[column.Name];
+        foreach (DBRowDescriptor.Column column in enumerator)
+        {
+            PyDataType value = this[column.Name];
                 
-                mult += 52368 + length + length; // shift the multiplier
-                int elementHash = column.Name?.GetHashCode() ?? 0 * mult;
-                mul2 += 58212 + length + length; // shift the multiplier
-                elementHash ^= (value?.GetHashCode() ?? 0 * mul2) << 3;
-                currentHash = (currentHash ^ elementHash) * mult;
-                mult += 82520 + length + length; // shift the multiplier
-            }
+            mult += 52368 + length + length; // shift the multiplier
+            int elementHash = column.Name?.GetHashCode() ?? 0 * mult;
+            mul2        += 58212 + length + length; // shift the multiplier
+            elementHash ^= (value?.GetHashCode() ?? 0 * mul2) << 3;
+            currentHash =  (currentHash ^ elementHash) * mult;
+            mult        += 82520 + length + length; // shift the multiplier
+        }
 
-            currentHash += + 97531;
+        currentHash += + 97531;
             
-            return (Header?.GetHashCode() ?? 0) ^ (currentHash << 8) ^ 0x56478512;
-        }
+        return (Header?.GetHashCode() ?? 0) ^ (currentHash << 8) ^ 0x56478512;
+    }
 
-        public virtual PyDataType this[string key]
-        {
-            get => this.mValues[key];
-            set => this.mValues[key] = value;
-        }
+    public virtual PyDataType this[string key]
+    {
+        get => this.mValues[key];
+        set => this.mValues[key] = value;
+    }
 
-        /// <summary>
-        /// Simple helper method that creates the correct PackedRow data off a result row and
-        /// returns it's PyDataType representation, ready to be sent to the EVE Online client
-        /// </summary>
-        /// <param name="reader"></param>
-        /// <param name="descriptor"></param>
-        /// <returns></returns>
-        public static PyPackedRow FromMySqlDataReader(MySqlDataReader reader, DBRowDescriptor descriptor)
-        {
-            PyPackedRow row = new PyPackedRow(descriptor);
+    /// <summary>
+    /// Simple helper method that creates the correct PackedRow data off a result row and
+    /// returns it's PyDataType representation, ready to be sent to the EVE Online client
+    /// </summary>
+    /// <param name="reader"></param>
+    /// <param name="descriptor"></param>
+    /// <returns></returns>
+    public static PyPackedRow FromMySqlDataReader(MySqlDataReader reader, DBRowDescriptor descriptor)
+    {
+        PyPackedRow row = new PyPackedRow(descriptor);
 
-            int i = 0;
+        int i = 0;
 
-            foreach (DBRowDescriptor.Column column in descriptor.Columns)
-                row[column.Name] = IDatabaseConnection.ObjectFromColumn(reader, column.Type, i++);
+        foreach (DBRowDescriptor.Column column in descriptor.Columns)
+            row[column.Name] = IDatabaseConnection.ObjectFromColumn(reader, column.Type, i++);
 
-            return row;
-        }
+        return row;
+    }
 
-        public static PyPackedRow FromMySqlDataReader(MySqlDataReader reader, CRowset rowset)
-        {
-            return FromMySqlDataReader(reader, rowset.Header);
-        }
+    public static PyPackedRow FromMySqlDataReader(MySqlDataReader reader, CRowset rowset)
+    {
+        return FromMySqlDataReader(reader, rowset.Header);
     }
 }

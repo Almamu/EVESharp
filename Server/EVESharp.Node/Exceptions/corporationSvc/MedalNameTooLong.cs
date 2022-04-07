@@ -1,11 +1,10 @@
 ﻿using EVESharp.EVE.Packets.Exceptions;
 
-namespace EVESharp.Node.Exceptions.corporationSvc
+namespace EVESharp.Node.Exceptions.corporationSvc;
+
+class MedalNameTooLong : UserError
 {
-    class MedalNameTooLong : UserError
+    public MedalNameTooLong() : base("MedalNameTooLong")
     {
-        public MedalNameTooLong() : base("MedalNameTooLong")
-        {
-        }
     }
 }

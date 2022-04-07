@@ -1,9 +1,8 @@
-﻿namespace EVESharp.Node.Inventory.Items.Types
+﻿namespace EVESharp.Node.Inventory.Items.Types;
+
+public class OfficeFolder : ItemInventory
 {
-    public class OfficeFolder : ItemInventory
+    public OfficeFolder(Information.Item info) : base(info)
     {
-        public OfficeFolder(Information.Item info) : base(info)
-        {
-        }
     }
 }

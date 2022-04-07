@@ -5,94 +5,93 @@ using System.IO;
 using EVESharp.PythonTypes.Types.Primitives;
 using EVESharp.PythonTypes.Types.Database;
 
-namespace EVESharp.PythonTypes.Types.Collections
+namespace EVESharp.PythonTypes.Types.Collections;
+
+public class PyTuple : PyDataType, IEnumerable<PyDataType>
 {
-    public class PyTuple : PyDataType, IEnumerable<PyDataType>
+    private readonly PyDataType[] mList;
+
+    protected PyTuple(PyDataType[] original)
     {
-        private readonly PyDataType[] mList;
-
-        protected PyTuple(PyDataType[] original)
-        {
-            this.mList = original;
-        }
+        this.mList = original;
+    }
         
-        public PyTuple(int size)
+    public PyTuple(int size)
+    {
+        this.mList = new PyDataType[size];
+    }
+
+    public PyDataType this[int index]
+    {
+        get => this.mList[index];
+        set => this.mList[index] = value;
+    }
+    public override int GetHashCode()
+    {
+        // a somewhat similar implementation based on python's
+        int length      = this.Count;
+        int mult        = 1000003;
+        int currentHash = 0x345678;
+
+        foreach (PyDataType data in this.mList)
         {
-            this.mList = new PyDataType[size];
+            int elementHash = data?.GetHashCode() ?? 0;
+            currentHash =  (currentHash ^ elementHash) * mult;
+            mult        += 82520 + length + length; // shift the multiplier
         }
 
-        public PyDataType this[int index]
+        return currentHash + 97531;
+    }
+
+    public int Count => this.mList.Length;
+
+    public IEnumerator<PyDataType> GetEnumerator()
+    {
+        return ((IEnumerable<PyDataType>) this.mList).GetEnumerator();
+    }
+
+    IEnumerator IEnumerable.GetEnumerator()
+    {
+        return GetEnumerator();
+    }
+
+    public bool TryGetValue<T>(int key, out T value) where T : PyDataType
+    {
+        if (key < this.mList.Length)
         {
-            get => this.mList[index];
-            set => this.mList[index] = value;
-        }
-        public override int GetHashCode()
-        {
-            // a somewhat similar implementation based on python's
-            int length = this.Count;
-            int mult = 1000003;
-            int currentHash = 0x345678;
-
-            foreach (PyDataType data in this.mList)
-            {
-                int elementHash = data?.GetHashCode() ?? 0;
-                currentHash = (currentHash ^ elementHash) * mult;
-                mult += 82520 + length + length; // shift the multiplier
-            }
-
-            return currentHash + 97531;
-        }
-
-        public int Count => this.mList.Length;
-
-        public IEnumerator<PyDataType> GetEnumerator()
-        {
-            return ((IEnumerable<PyDataType>) this.mList).GetEnumerator();
+            value = this.mList[key] as T;
+            return true;
         }
 
-        IEnumerator IEnumerable.GetEnumerator()
-        {
-            return GetEnumerator();
-        }
+        value = null;
+        return false;
+    }
 
-        public bool TryGetValue<T>(int key, out T value) where T : PyDataType
-        {
-            if (key < this.mList.Length)
-            {
-                value = this.mList[key] as T;
-                return true;
-            }
+    public void CopyTo(PyTuple destination, int sourceIndex, int destinationIndex, int count)
+    {
+        // perform some boundaries checks to ensure the data fits
+        if (
+            (count + destinationIndex - sourceIndex) > destination.Count ||
+            sourceIndex > this.Count ||
+            sourceIndex + count > this.Count ||
+            sourceIndex < 0 ||
+            destinationIndex < 0)
+            throw new IndexOutOfRangeException("Trying to copy tuple items that would be out of range");
 
-            value = null;
-            return false;
-        }
+        // copy data over
+        Array.Copy(
+            this.mList, sourceIndex,
+            destination.mList, destinationIndex, count
+        );
+    }
 
-        public void CopyTo(PyTuple destination, int sourceIndex, int destinationIndex, int count)
-        {
-            // perform some boundaries checks to ensure the data fits
-            if (
-                (count + destinationIndex - sourceIndex) > destination.Count ||
-                sourceIndex > this.Count ||
-                sourceIndex + count > this.Count ||
-                sourceIndex < 0 ||
-                destinationIndex < 0)
-                throw new IndexOutOfRangeException("Trying to copy tuple items that would be out of range");
+    public static implicit operator PyTuple(List<PyDataType> data)
+    {
+        return data == null ? null : new PyTuple(data.ToArray());
+    }
 
-            // copy data over
-            Array.Copy(
-                this.mList, sourceIndex,
-                destination.mList, destinationIndex, count
-            );
-        }
-
-        public static implicit operator PyTuple(List<PyDataType> data)
-        {
-            return data == null ? null : new PyTuple(data.ToArray());
-        }
-
-        public static implicit operator PyTuple(PyDataType[] data)
-        {
-            return new PyTuple(data);
-        }
+    public static implicit operator PyTuple(PyDataType[] data)
+    {
+        return new PyTuple(data);
     }
 }

@@ -1,12 +1,11 @@
 ﻿using EVESharp.EVE.Packets.Exceptions;
 using EVESharp.PythonTypes.Types.Collections;
 
-namespace EVESharp.Node.Exceptions.certificateMgr
+namespace EVESharp.Node.Exceptions.certificateMgr;
+
+public class CertificateSkillPrerequisitesNotMet : UserError
 {
-    public class CertificateSkillPrerequisitesNotMet : UserError
+    public CertificateSkillPrerequisitesNotMet() : base("CertificateSkillPrerequisitesNotMet")
     {
-        public CertificateSkillPrerequisitesNotMet() : base("CertificateSkillPrerequisitesNotMet")
-        {
-        }
     }
 }

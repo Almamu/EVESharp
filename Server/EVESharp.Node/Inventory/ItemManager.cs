@@ -34,17 +34,16 @@ using EVESharp.Node.StaticData.Inventory;
 using Serilog;
 using Type = EVESharp.Node.StaticData.Inventory.Type;
 
-namespace EVESharp.Node.Inventory
+namespace EVESharp.Node.Inventory;
+
+public class ItemManager
 {
-    public class ItemManager
+    private ILogger       Log           { get; }
+    private NodeContainer NodeContainer { get; }
+    public ItemManager(ILogger logger, NodeContainer nodeContainer)
     {
-        private ILogger Log { get; }
-        private NodeContainer NodeContainer { get; }
-        public ItemManager(ILogger logger, NodeContainer nodeContainer)
-        {
-            // create a log channel for the rare occurence of the ItemManager wanting to log something
-            this.Log = logger;
-            this.NodeContainer = nodeContainer;
-        }
+        // create a log channel for the rare occurence of the ItemManager wanting to log something
+        this.Log           = logger;
+        this.NodeContainer = nodeContainer;
     }
 }

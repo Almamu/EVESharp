@@ -1,12 +1,11 @@
 ﻿using EVESharp.EVE.Packets.Exceptions;
 
-namespace EVESharp.Node.Exceptions.corpRegistry
+namespace EVESharp.Node.Exceptions.corpRegistry;
+
+public class AllianceShortNameInvalidTaken : UserError
 {
-    public class AllianceShortNameInvalidTaken : UserError
+    public AllianceShortNameInvalidTaken() : base("AllianceShortNameInvalidTaken")
     {
-        public AllianceShortNameInvalidTaken() : base("AllianceShortNameInvalidTaken")
-        {
             
-        }
     }
 }

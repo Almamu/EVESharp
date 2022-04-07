@@ -7,87 +7,86 @@ using EVESharp.Node.Inventory.Items;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Primitives;
 
-namespace EVESharp.Node.Notifications.Nodes.Inventory
+namespace EVESharp.Node.Notifications.Nodes.Inventory;
+
+public class OnItemChange : InterNodeNotification
 {
-    public class OnItemChange : InterNodeNotification
+    public const string NOTIFICATION_NAME = "OnItemChange";
+        
+    public PyDictionary<PyInteger, PyDictionary> Updates { get; init; }
+
+    public OnItemChange() : base(NOTIFICATION_NAME)
     {
-        public const string NOTIFICATION_NAME = "OnItemChange";
+        this.Updates = new PyDictionary<PyInteger, PyDictionary>();
+    }
+
+    protected OnItemChange(PyDictionary<PyInteger, PyDictionary> updates) : base(NOTIFICATION_NAME)
+    {
+        this.Updates = updates;
+    }
+
+    public OnItemChange AddChange(int itemID, string updatedValue, PyDataType oldValue, PyDataType newValue)
+    {
+        if (this.Updates.TryGetValue(itemID, out PyDictionary changes) == false)
+            changes = this.Updates[itemID] = new PyDictionary<PyString, PyTuple>();
+
+        changes[updatedValue] = new PyTuple(2) {[0] = oldValue, [1] = newValue};
+
+        return this;
+    }
         
-        public PyDictionary<PyInteger, PyDictionary> Updates { get; init; }
+    public static OnItemChange BuildQuantityChange(int itemID, int oldQuantity, int newQuantity)
+    {
+        return new OnItemChange().AddChange(itemID, "quantity", oldQuantity, newQuantity);
+    }
 
-        public OnItemChange() : base(NOTIFICATION_NAME)
-        {
-            this.Updates = new PyDictionary<PyInteger, PyDictionary>();
-        }
+    public static OnItemChange BuildLocationChange(int itemID, Flags oldFlag, Flags newFlag)
+    {
+        return new OnItemChange().AddChange(itemID, "flag", (int) oldFlag, (int) newFlag);
+    }
 
-        protected OnItemChange(PyDictionary<PyInteger, PyDictionary> updates) : base(NOTIFICATION_NAME)
-        {
-            this.Updates = updates;
-        }
+    public static OnItemChange BuildLocationChange(int itemID, int oldLocation, int newLocation)
+    {
+        return new OnItemChange().AddChange(itemID, "locationID", oldLocation, newLocation);
+    }
 
-        public OnItemChange AddChange(int itemID, string updatedValue, PyDataType oldValue, PyDataType newValue)
-        {
-            if (this.Updates.TryGetValue(itemID, out PyDictionary changes) == false)
-                changes = this.Updates[itemID] = new PyDictionary<PyString, PyTuple>();
+    public static OnItemChange BuildLocationChange(int itemID, Flags oldFlag, Flags newFlag, int oldLocation, int newLocation)
+    {
+        OnItemChange change = new OnItemChange();
 
-            changes[updatedValue] = new PyTuple(2) {[0] = oldValue, [1] = newValue};
+        if (oldFlag != newFlag)
+            change.AddChange(itemID, "flag", (int) oldFlag, (int) newFlag);
+        if (oldLocation != newLocation)
+            change.AddChange(itemID, "locationID", oldLocation, newLocation);
 
-            return this;
-        }
-        
-        public static OnItemChange BuildQuantityChange(int itemID, int oldQuantity, int newQuantity)
-        {
-            return new OnItemChange().AddChange(itemID, "quantity", oldQuantity, newQuantity);
-        }
+        return change;
+    }
 
-        public static OnItemChange BuildLocationChange(int itemID, Flags oldFlag, Flags newFlag)
-        {
-            return new OnItemChange().AddChange(itemID, "flag", (int) oldFlag, (int) newFlag);
-        }
+    public static OnItemChange BuildNewItemChange(int itemID, int locationID)
+    {
+        // new items are notified as being moved from location 0 to the actual location
+        return BuildLocationChange(itemID, 0, locationID);
+    }
 
-        public static OnItemChange BuildLocationChange(int itemID, int oldLocation, int newLocation)
-        {
-            return new OnItemChange().AddChange(itemID, "locationID", oldLocation, newLocation);
-        }
+    public static OnItemChange BuildSingletonChange(int itemID, bool oldSingleton, bool newSingleton)
+    {
+        return new OnItemChange().AddChange(itemID, "singleton", oldSingleton, newSingleton);
+    }
 
-        public static OnItemChange BuildLocationChange(int itemID, Flags oldFlag, Flags newFlag, int oldLocation, int newLocation)
-        {
-            OnItemChange change = new OnItemChange();
+    protected override PyDataType GetNotification()
+    {
+        return this.Updates;
+    }
 
-            if (oldFlag != newFlag)
-                change.AddChange(itemID, "flag", (int) oldFlag, (int) newFlag);
-            if (oldLocation != newLocation)
-                change.AddChange(itemID, "locationID", oldLocation, newLocation);
+    public static implicit operator OnItemChange(PyTuple notification)
+    {
+        if (notification.Count != 2)
+            throw new InvalidCastException("Expected a tuple with one item");
+        if (notification[0] is not PyString name || name != NOTIFICATION_NAME)
+            throw new InvalidCastException($"Expected a {NOTIFICATION_NAME}");
+        if (notification[1] is not PyDictionary list)
+            throw new InvalidCastException("Expected a list as the first element");
 
-            return change;
-        }
-
-        public static OnItemChange BuildNewItemChange(int itemID, int locationID)
-        {
-            // new items are notified as being moved from location 0 to the actual location
-            return BuildLocationChange(itemID, 0, locationID);
-        }
-
-        public static OnItemChange BuildSingletonChange(int itemID, bool oldSingleton, bool newSingleton)
-        {
-            return new OnItemChange().AddChange(itemID, "singleton", oldSingleton, newSingleton);
-        }
-
-        protected override PyDataType GetNotification()
-        {
-            return this.Updates;
-        }
-
-        public static implicit operator OnItemChange(PyTuple notification)
-        {
-            if (notification.Count != 2)
-                throw new InvalidCastException("Expected a tuple with one item");
-            if (notification[0] is not PyString name || name != NOTIFICATION_NAME)
-                throw new InvalidCastException($"Expected a {NOTIFICATION_NAME}");
-            if (notification[1] is not PyDictionary list)
-                throw new InvalidCastException("Expected a list as the first element");
-
-            return new OnItemChange(list.GetEnumerable<PyInteger, PyDictionary>());
-        }
+        return new OnItemChange(list.GetEnumerable<PyInteger, PyDictionary>());
     }
 }

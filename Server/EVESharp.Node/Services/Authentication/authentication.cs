@@ -29,33 +29,32 @@ using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Database;
 using EVESharp.PythonTypes.Types.Primitives;
 
-namespace EVESharp.Node.Services.Network
+namespace EVESharp.Node.Services.Network;
+
+public class authentication : Service
 {
-    public class authentication : Service
+    public override  AccessLevel    AccessLevel => AccessLevel.None;
+    private readonly Authentication mConfiguration = null;
+
+    public authentication(Authentication configuration)
     {
-        public override AccessLevel AccessLevel => AccessLevel.None;
-        private readonly Authentication mConfiguration = null;
+        this.mConfiguration = configuration;
+    }
 
-        public authentication(Authentication configuration)
-        {
-            this.mConfiguration = configuration;
-        }
-
-        public PyDataType GetPostAuthenticationMessage(CallInformation call)
-        {
-            if (this.mConfiguration.MessageType == AuthenticationMessageType.NoMessage)
-                return null;
-
-            if (this.mConfiguration.MessageType == AuthenticationMessageType.HTMLMessage)
-            {
-                return KeyVal.FromDictionary(new PyDictionary
-                    {
-                        ["message"] = this.mConfiguration.Message
-                    }
-                );
-            }
-
+    public PyDataType GetPostAuthenticationMessage(CallInformation call)
+    {
+        if (this.mConfiguration.MessageType == AuthenticationMessageType.NoMessage)
             return null;
+
+        if (this.mConfiguration.MessageType == AuthenticationMessageType.HTMLMessage)
+        {
+            return KeyVal.FromDictionary(new PyDictionary
+                {
+                    ["message"] = this.mConfiguration.Message
+                }
+            );
         }
+
+        return null;
     }
 }

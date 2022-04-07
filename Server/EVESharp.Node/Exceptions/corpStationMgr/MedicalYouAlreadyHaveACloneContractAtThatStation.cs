@@ -1,11 +1,10 @@
 ﻿using EVESharp.EVE.Packets.Exceptions;
 
-namespace EVESharp.Node.Exceptions.corpStationMgr
+namespace EVESharp.Node.Exceptions.corpStationMgr;
+
+public class MedicalYouAlreadyHaveACloneContractAtThatStation : UserError
 {
-    public class MedicalYouAlreadyHaveACloneContractAtThatStation : UserError
+    public MedicalYouAlreadyHaveACloneContractAtThatStation() : base("MedicalYouAlreadyHaveACloneContractAtThatStation")
     {
-        public MedicalYouAlreadyHaveACloneContractAtThatStation() : base("MedicalYouAlreadyHaveACloneContractAtThatStation")
-        {
-        }
     }
 }

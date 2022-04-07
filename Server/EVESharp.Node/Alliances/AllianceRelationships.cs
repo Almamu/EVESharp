@@ -1,10 +1,9 @@
-﻿namespace EVESharp.Node.Alliances
+﻿namespace EVESharp.Node.Alliances;
+
+public enum AllianceRelationships : int
 {
-    public enum AllianceRelationships : int
-    {
-        NonAgressionPact = 1,
-        Friend = 2,
-        Competitor = 3,
-        Enemy = 4
-    }
+    NonAgressionPact = 1,
+    Friend           = 2,
+    Competitor       = 3,
+    Enemy            = 4
 }

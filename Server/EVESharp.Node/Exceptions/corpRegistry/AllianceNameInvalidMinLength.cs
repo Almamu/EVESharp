@@ -1,12 +1,11 @@
 ﻿using EVESharp.EVE.Packets.Exceptions;
 
-namespace EVESharp.Node.Exceptions.corpRegistry
+namespace EVESharp.Node.Exceptions.corpRegistry;
+
+public class AllianceNameInvalidMinLength : UserError
 {
-    public class AllianceNameInvalidMinLength : UserError
+    public AllianceNameInvalidMinLength() : base("AllianceNameInvalidMinLength")
     {
-        public AllianceNameInvalidMinLength() : base("AllianceNameInvalidMinLength")
-        {
             
-        }
     }
 }

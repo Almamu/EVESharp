@@ -3,45 +3,44 @@ using EVESharp.EVE.Packets.Complex;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Primitives;
 
-namespace EVESharp.Node.Notifications.Client.Corporations
+namespace EVESharp.Node.Notifications.Client.Corporations;
+
+public class OnCorporationVoteChanged : ClientNotification
 {
-    public class OnCorporationVoteChanged : ClientNotification
+    private const string NOTIFICATION_NAME = "OnCorporationVoteChanged";
+        
+    public  int                            CorporationID { get; init; }
+    public  int                            VoteCaseID    { get; init; }
+    public  int                            CharacterID   { get; init; }
+    private PyDictionary<PyString,PyTuple> Changes       { get; init; }
+        
+    public OnCorporationVoteChanged(int corporationID, int voteCaseID, int characterID) : base(NOTIFICATION_NAME)
     {
-        private const string NOTIFICATION_NAME = "OnCorporationVoteChanged";
-        
-        public int CorporationID { get; init; }
-        public int VoteCaseID { get; init; }
-        public int CharacterID { get; init; }
-        private PyDictionary<PyString,PyTuple> Changes { get; init; }
-        
-        public OnCorporationVoteChanged(int corporationID, int voteCaseID, int characterID) : base(NOTIFICATION_NAME)
-        {
-            this.CorporationID = corporationID;
-            this.VoteCaseID = voteCaseID;
-            this.CharacterID = characterID;
-            this.Changes = new PyDictionary<PyString, PyTuple>();
-        }
+        this.CorporationID = corporationID;
+        this.VoteCaseID    = voteCaseID;
+        this.CharacterID   = characterID;
+        this.Changes       = new PyDictionary<PyString, PyTuple>();
+    }
 
-        public OnCorporationVoteChanged AddValue(string columnName, PyDataType oldValue, PyDataType newValue)
+    public OnCorporationVoteChanged AddValue(string columnName, PyDataType oldValue, PyDataType newValue)
+    {
+        this.Changes[columnName] = new PyTuple(2)
         {
-            this.Changes[columnName] = new PyTuple(2)
-            {
-                [0] = oldValue,
-                [1] = newValue
-            };
+            [0] = oldValue,
+            [1] = newValue
+        };
 
-            return this;
-        }
+        return this;
+    }
 
-        public override List<PyDataType> GetElements()
+    public override List<PyDataType> GetElements()
+    {
+        return new List<PyDataType>()
         {
-            return new List<PyDataType>()
-            {
-                this.CorporationID,
-                this.VoteCaseID,
-                this.CharacterID,
-                this.Changes
-            };
-        }
+            this.CorporationID,
+            this.VoteCaseID,
+            this.CharacterID,
+            this.Changes
+        };
     }
 }

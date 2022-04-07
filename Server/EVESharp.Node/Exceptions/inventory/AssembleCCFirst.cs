@@ -1,11 +1,10 @@
 ﻿using EVESharp.EVE.Packets.Exceptions;
 
-namespace EVESharp.Node.Exceptions.inventory
+namespace EVESharp.Node.Exceptions.inventory;
+
+public class AssembleCCFirst : UserError
 {
-    public class AssembleCCFirst : UserError
+    public AssembleCCFirst() : base("AssembleCCFirst")
     {
-        public AssembleCCFirst() : base("AssembleCCFirst")
-        {
-        }
     }
 }

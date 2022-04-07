@@ -22,737 +22,736 @@ using EVESharp.PythonTypes.Types.Primitives;
 using Serilog;
 using Attribute = EVESharp.Node.Inventory.Items.Attributes.Attribute;
 
-namespace EVESharp.Node.Services.Characters
+namespace EVESharp.Node.Services.Characters;
+
+public class skillMgr : ClientBoundService
 {
-    public class skillMgr : ClientBoundService
+    public override AccessLevel AccessLevel => AccessLevel.None;
+        
+    private const int              MAXIMUM_ATTRIBUTE_POINTS       = 15;
+    private const int              MINIMUM_ATTRIBUTE_POINTS       = 5;
+    private const int              MAXIMUM_TOTAL_ATTRIBUTE_POINTS = 39;
+    private       SkillDB          DB            { get; }
+    private       ItemFactory      ItemFactory   { get; }
+    private       TimerManager     TimerManager  { get; }
+    private       SystemManager    SystemManager => this.ItemFactory.SystemManager;
+    private       ILogger          Log           { get; }
+    private       Character        Character     { get; }
+    private       Node.Dogma.Dogma Dogma         { get; }
+        
+    public skillMgr(SkillDB             db,      ItemFactory itemFactory, TimerManager timerManager, Node.Dogma.Dogma dogma,
+                    BoundServiceManager manager, ILogger     logger) : base(manager)
     {
-        public override AccessLevel AccessLevel => AccessLevel.None;
+        this.DB           = db;
+        this.ItemFactory  = itemFactory;
+        this.TimerManager = timerManager;
+        this.Dogma        = dogma;
+        this.Log          = logger;
+    }
+
+    protected skillMgr(SkillDB             db,      ItemFactory itemFactory, TimerManager timerManager, Node.Dogma.Dogma dogma,
+                       BoundServiceManager manager, ILogger     logger,      Session      session) : base(manager, session, session.EnsureCharacterIsSelected())
+    {
+        this.DB           = db;
+        this.ItemFactory  = itemFactory;
+        this.TimerManager = timerManager;
+        this.Dogma        = dogma;
+        this.Character    = this.ItemFactory.GetItem<Character>(this.ObjectID);
+        this.Log          = logger;
+
+        this.InitializeCharacter();
+    }
         
-        private const int MAXIMUM_ATTRIBUTE_POINTS = 15;
-        private const int MINIMUM_ATTRIBUTE_POINTS = 5;
-        private const int MAXIMUM_TOTAL_ATTRIBUTE_POINTS = 39;
-        private SkillDB DB { get; }
-        private ItemFactory ItemFactory { get; }
-        private TimerManager TimerManager { get; }
-        private SystemManager SystemManager => this.ItemFactory.SystemManager;
-        private ILogger Log { get; }
-        private Character Character { get; }
-        private Node.Dogma.Dogma Dogma { get; }
-        
-        public skillMgr(SkillDB db, ItemFactory itemFactory, TimerManager timerManager, Node.Dogma.Dogma dogma,
-            BoundServiceManager manager, ILogger logger) : base(manager)
-        {
-            this.DB = db;
-            this.ItemFactory = itemFactory;
-            this.TimerManager = timerManager;
-            this.Dogma = dogma;
-            this.Log = logger;
-        }
-
-        protected skillMgr(SkillDB db, ItemFactory itemFactory, TimerManager timerManager, Node.Dogma.Dogma dogma,
-            BoundServiceManager manager, ILogger logger, Session session) : base(manager, session, session.EnsureCharacterIsSelected())
-        {
-            this.DB = db;
-            this.ItemFactory = itemFactory;
-            this.TimerManager = timerManager;
-            this.Dogma = dogma;
-            this.Character = this.ItemFactory.GetItem<Character>(this.ObjectID);
-            this.Log = logger;
-
-            this.InitializeCharacter();
-        }
-        
-        private void SetupTimerForNextSkillInQueue()
-        {
-            if (this.Character.SkillQueue.Count == 0)
-                return;
+    private void SetupTimerForNextSkillInQueue()
+    {
+        if (this.Character.SkillQueue.Count == 0)
+            return;
             
-            Character.SkillQueueEntry entry = this.Character.SkillQueue[0];
+        Character.SkillQueueEntry entry = this.Character.SkillQueue[0];
             
-            if (entry.Skill.ExpiryTime == 0)
-                return;
+        if (entry.Skill.ExpiryTime == 0)
+            return;
 
-            // send notification of skill training started
-            this.Dogma.QueueMultiEvent(this.Session.EnsureCharacterIsSelected(), new OnSkillStartTraining(entry.Skill));
+        // send notification of skill training started
+        this.Dogma.QueueMultiEvent(this.Session.EnsureCharacterIsSelected(), new OnSkillStartTraining(entry.Skill));
             
-            this.TimerManager.EnqueueItemTimer(entry.Skill.ExpiryTime, OnSkillTrainingCompleted, entry.Skill.ID);
-        }
+        this.TimerManager.EnqueueItemTimer(entry.Skill.ExpiryTime, OnSkillTrainingCompleted, entry.Skill.ID);
+    }
 
-        private void SetupReSpecTimers()
-        {
-            if (this.Character.FreeReSpecs == 0 && this.Character.NextReSpecTime > 0)
-                this.TimerManager.EnqueueItemTimer(this.Character.NextReSpecTime, OnNextReSpecAvailable, this.Character.ID);
-        }
+    private void SetupReSpecTimers()
+    {
+        if (this.Character.FreeReSpecs == 0 && this.Character.NextReSpecTime > 0)
+            this.TimerManager.EnqueueItemTimer(this.Character.NextReSpecTime, OnNextReSpecAvailable, this.Character.ID);
+    }
 
-        private void InitializeCharacter()
-        {
-            // perform basic checks on the skill queue
+    private void InitializeCharacter()
+    {
+        // perform basic checks on the skill queue
                 
-            // iterate the skill queue and generate a timer for the first skill that must be trained
-            // this also prepares the correct notification for multiple skill training done
-            PyList<PyInteger> skillTypeIDs = new PyList<PyInteger>();
-            List<Character.SkillQueueEntry> toRemove = new List<Character.SkillQueueEntry>();
+        // iterate the skill queue and generate a timer for the first skill that must be trained
+        // this also prepares the correct notification for multiple skill training done
+        PyList<PyInteger>               skillTypeIDs = new PyList<PyInteger>();
+        List<Character.SkillQueueEntry> toRemove     = new List<Character.SkillQueueEntry>();
 
-            foreach (Character.SkillQueueEntry entry in this.Character.SkillQueue)
+        foreach (Character.SkillQueueEntry entry in this.Character.SkillQueue)
+        {
+            if (entry.Skill.ExpiryTime < DateTime.Now.ToFileTimeUtc())
             {
-                if (entry.Skill.ExpiryTime < DateTime.Now.ToFileTimeUtc())
-                {
-                    // ensure the skill is marked as trained and that they have the correct values stored
-                    entry.Skill.Level = entry.TargetLevel;
-                    entry.Skill.Flag = Flags.Skill;
-                    entry.Skill.ExpiryTime = 0;
+                // ensure the skill is marked as trained and that they have the correct values stored
+                entry.Skill.Level      = entry.TargetLevel;
+                entry.Skill.Flag       = Flags.Skill;
+                entry.Skill.ExpiryTime = 0;
 
-                    // add the skill to the list of trained skills for the big notification
-                    skillTypeIDs.Add(entry.Skill.Type.ID);
-                    toRemove.Add(entry);
+                // add the skill to the list of trained skills for the big notification
+                skillTypeIDs.Add(entry.Skill.Type.ID);
+                toRemove.Add(entry);
                     
-                    // update it's location in the client if needed
-                    this.Dogma.QueueMultiEvent(this.Character.ID, OnItemChange.BuildLocationChange(entry.Skill, Flags.SkillInTraining));
-                    // also notify attribute changes
-                    this.Dogma.NotifyAttributeChange(this.Character.ID, new Attributes[] { Attributes.skillPoints, Attributes.skillLevel}, entry.Skill);
-                }
+                // update it's location in the client if needed
+                this.Dogma.QueueMultiEvent(this.Character.ID, OnItemChange.BuildLocationChange(entry.Skill, Flags.SkillInTraining));
+                // also notify attribute changes
+                this.Dogma.NotifyAttributeChange(this.Character.ID, new Attributes[] { Attributes.skillPoints, Attributes.skillLevel}, entry.Skill);
             }
+        }
 
-            // remove skills that already expired
-            this.Character.SkillQueue.RemoveAll(x => toRemove.Contains(x));
+        // remove skills that already expired
+        this.Character.SkillQueue.RemoveAll(x => toRemove.Contains(x));
 
-            // send notification of multiple skills being finished training (if any)
-            if (skillTypeIDs.Count > 0)
-                this.Dogma.QueueMultiEvent(this.Session.EnsureCharacterIsSelected(), new OnGodmaMultipleSkillsTrained(skillTypeIDs));
+        // send notification of multiple skills being finished training (if any)
+        if (skillTypeIDs.Count > 0)
+            this.Dogma.QueueMultiEvent(this.Session.EnsureCharacterIsSelected(), new OnGodmaMultipleSkillsTrained(skillTypeIDs));
             
-            // persists the skill queue
+        // persists the skill queue
+        this.Character.Persist();
+            
+        // setup the process for training next skill in the queue
+        this.SetupTimerForNextSkillInQueue();
+    }
+
+    private void FreeSkillQueueTimers()
+    {
+        if (this.Character.SkillQueue.Count == 0)
+            return;
+
+        Character.SkillQueueEntry entry = this.Character.SkillQueue[0];
+
+        if (entry.Skill.ExpiryTime == 0)
+            return;
+
+        this.TimerManager.DequeueItemTimer(entry.Skill.ID, entry.Skill.ExpiryTime);
+    }
+
+    private void FreeReSpecTimers()
+    {
+        if (this.Character.NextReSpecTime == 0)
+            return;
+            
+        this.TimerManager.DequeueItemTimer(this.Character.ID, this.Character.NextReSpecTime);
+    }
+
+    protected override void OnClientDisconnected()
+    {
+        this.FreeSkillQueueTimers();
+        this.FreeReSpecTimers();
+    }
+
+    private void OnNextReSpecAvailable(int itemID)
+    {
+        // update respec values
+        this.Character.NextReSpecTime = 0;
+        this.Character.FreeReSpecs    = 1;
+        this.Character.Persist();
+    }
+
+    private void OnSkillTrainingCompleted(int itemID)
+    {
+        Skill skill = this.Character.Items[itemID] as Skill;
+            
+        // set the skill to the proper flag and set the correct attributes
+        skill.Flag       = Flags.Skill;
+        skill.Level      = skill.Level + 1;
+        skill.ExpiryTime = 0;
+            
+        // make sure the client is aware of the new item's status
+        this.Dogma.QueueMultiEvent(this.Character.ID, OnItemChange.BuildLocationChange(skill, Flags.SkillInTraining));
+        // also notify attribute changes
+        this.Dogma.NotifyAttributeChange(this.Character.ID, new Attributes[] { Attributes.skillPoints, Attributes.skillLevel}, skill);
+        this.Dogma.QueueMultiEvent(this.Character.ID, new OnSkillTrained(skill));
+
+        skill.Persist();
+            
+        // create history entry
+        this.DB.CreateSkillHistoryRecord(skill.Type, this.Character, SkillHistoryReason.SkillTrainingComplete, skill.Points);
+
+        // finally remove it off the skill queue
+        this.Character.SkillQueue.RemoveAll(x => x.Skill.ID == skill.ID && x.TargetLevel == skill.Level);
+
+        this.Character.CalculateSkillPoints();
+            
+        // get the next skill from the queue (if any) and send the client proper notifications
+        if (this.Character.SkillQueue.Count == 0)
+        {
             this.Character.Persist();
-            
-            // setup the process for training next skill in the queue
-            this.SetupTimerForNextSkillInQueue();
+            return;
         }
 
-        private void FreeSkillQueueTimers()
-        {
-            if (this.Character.SkillQueue.Count == 0)
-                return;
-
-            Character.SkillQueueEntry entry = this.Character.SkillQueue[0];
-
-            if (entry.Skill.ExpiryTime == 0)
-                return;
-
-            this.TimerManager.DequeueItemTimer(entry.Skill.ID, entry.Skill.ExpiryTime);
-        }
-
-        private void FreeReSpecTimers()
-        {
-            if (this.Character.NextReSpecTime == 0)
-                return;
+        skill = this.Character.SkillQueue[0].Skill;
             
-            this.TimerManager.DequeueItemTimer(this.Character.ID, this.Character.NextReSpecTime);
-        }
+        // setup the process for training next skill in the queue
+        this.SetupTimerForNextSkillInQueue();
 
-        protected override void OnClientDisconnected()
+        // create history entry
+        this.DB.CreateSkillHistoryRecord(skill.Type, this.Character, SkillHistoryReason.SkillTrainingStarted, skill.Points);
+            
+        // persist the character changes
+        this.Character.Persist();
+    }
+
+    public PyDataType GetSkillQueue(CallInformation call)
+    {
+        Character character = this.ItemFactory.GetItem<Character>(call.Session.EnsureCharacterIsSelected());
+
+        PyList skillQueueList = new PyList(character.SkillQueue.Count);
+
+        int index = 0;
+            
+        foreach (Character.SkillQueueEntry entry in character.SkillQueue)
+            skillQueueList[index++] = entry;
+
+        return skillQueueList;
+    }
+
+    public PyDataType GetSkillHistory(CallInformation call)
+    {
+        return this.DB.GetSkillHistory(call.Session.EnsureCharacterIsSelected());
+    }
+
+    public PyDataType InjectSkillIntoBrain(PyList itemIDs, CallInformation call)
+    {
+        foreach (PyInteger item in itemIDs.GetEnumerable<PyInteger>())
         {
-            this.FreeSkillQueueTimers();
-            this.FreeReSpecTimers();
-        }
-
-        private void OnNextReSpecAvailable(int itemID)
-        {
-            // update respec values
-            this.Character.NextReSpecTime = 0;
-            this.Character.FreeReSpecs = 1;
-            this.Character.Persist();
-        }
-
-        private void OnSkillTrainingCompleted(int itemID)
-        {
-            Skill skill = this.Character.Items[itemID] as Skill;
-            
-            // set the skill to the proper flag and set the correct attributes
-            skill.Flag = Flags.Skill;
-            skill.Level = skill.Level + 1;
-            skill.ExpiryTime = 0;
-            
-            // make sure the client is aware of the new item's status
-            this.Dogma.QueueMultiEvent(this.Character.ID, OnItemChange.BuildLocationChange(skill, Flags.SkillInTraining));
-            // also notify attribute changes
-            this.Dogma.NotifyAttributeChange(this.Character.ID, new Attributes[] { Attributes.skillPoints, Attributes.skillLevel}, skill);
-            this.Dogma.QueueMultiEvent(this.Character.ID, new OnSkillTrained(skill));
-
-            skill.Persist();
-            
-            // create history entry
-            this.DB.CreateSkillHistoryRecord(skill.Type, this.Character, SkillHistoryReason.SkillTrainingComplete, skill.Points);
-
-            // finally remove it off the skill queue
-            this.Character.SkillQueue.RemoveAll(x => x.Skill.ID == skill.ID && x.TargetLevel == skill.Level);
-
-            this.Character.CalculateSkillPoints();
-            
-            // get the next skill from the queue (if any) and send the client proper notifications
-            if (this.Character.SkillQueue.Count == 0)
+            try
             {
-                this.Character.Persist();
-                return;
-            }
+                // get the item by it's ID and change the location of it
+                Skill skill = this.ItemFactory.GetItem<Skill>(item);
 
-            skill = this.Character.SkillQueue[0].Skill;
-            
-            // setup the process for training next skill in the queue
-            this.SetupTimerForNextSkillInQueue();
+                // check if the character already has this skill injected
+                if (this.Character.InjectedSkillsByTypeID.ContainsKey(skill.Type.ID) == true)
+                    throw new CharacterAlreadyKnowsSkill(skill.Type);
 
-            // create history entry
-            this.DB.CreateSkillHistoryRecord(skill.Type, this.Character, SkillHistoryReason.SkillTrainingStarted, skill.Points);
-            
-            // persist the character changes
-            this.Character.Persist();
-        }
-
-        public PyDataType GetSkillQueue(CallInformation call)
-        {
-            Character character = this.ItemFactory.GetItem<Character>(call.Session.EnsureCharacterIsSelected());
-
-            PyList skillQueueList = new PyList(character.SkillQueue.Count);
-
-            int index = 0;
-            
-            foreach (Character.SkillQueueEntry entry in character.SkillQueue)
-                skillQueueList[index++] = entry;
-
-            return skillQueueList;
-        }
-
-        public PyDataType GetSkillHistory(CallInformation call)
-        {
-            return this.DB.GetSkillHistory(call.Session.EnsureCharacterIsSelected());
-        }
-
-        public PyDataType InjectSkillIntoBrain(PyList itemIDs, CallInformation call)
-        {
-            foreach (PyInteger item in itemIDs.GetEnumerable<PyInteger>())
-            {
-                try
+                // is this a stack of skills?
+                if (skill.Quantity > 1)
                 {
-                    // get the item by it's ID and change the location of it
-                    Skill skill = this.ItemFactory.GetItem<Skill>(item);
+                    // add one of the skill into the character's brain
+                    Skill newStack = this.ItemFactory.CreateSkill(skill.Type, this.Character, 0, SkillHistoryReason.None);
 
-                    // check if the character already has this skill injected
-                    if (this.Character.InjectedSkillsByTypeID.ContainsKey(skill.Type.ID) == true)
-                        throw new CharacterAlreadyKnowsSkill(skill.Type);
+                    // subtract one from the quantity
+                    skill.Quantity -= 1;
 
-                    // is this a stack of skills?
-                    if (skill.Quantity > 1)
-                    {
-                        // add one of the skill into the character's brain
-                        Skill newStack = this.ItemFactory.CreateSkill(skill.Type, this.Character, 0, SkillHistoryReason.None);
+                    // save to database
+                    skill.Persist();
 
-                        // subtract one from the quantity
-                        skill.Quantity -= 1;
+                    // finally notify the client
+                    this.Dogma.QueueMultiEvent(call.Session.EnsureCharacterIsSelected(), OnItemChange.BuildQuantityChange(skill, skill.Quantity + 1));
+                    this.Dogma.QueueMultiEvent(call.Session.EnsureCharacterIsSelected(), OnItemChange.BuildNewItemChange(newStack));
+                }
+                else
+                {
+                    // store old values for the notification
+                    int   oldLocationID = skill.LocationID;
+                    Flags oldFlag       = skill.Flag;
 
-                        // save to database
-                        skill.Persist();
-
-                        // finally notify the client
-                        this.Dogma.QueueMultiEvent(call.Session.EnsureCharacterIsSelected(), OnItemChange.BuildQuantityChange(skill, skill.Quantity + 1));
-                        this.Dogma.QueueMultiEvent(call.Session.EnsureCharacterIsSelected(), OnItemChange.BuildNewItemChange(newStack));
-                    }
-                    else
-                    {
-                        // store old values for the notification
-                        int oldLocationID = skill.LocationID;
-                        Flags oldFlag = skill.Flag;
-
-                        // now set the new values
-                        skill.LocationID = this.Character.ID;
-                        skill.Flag = Flags.Skill;
-                        skill.Level = 0;
-                        skill.Singleton = true;
+                    // now set the new values
+                    skill.LocationID = this.Character.ID;
+                    skill.Flag       = Flags.Skill;
+                    skill.Level      = 0;
+                    skill.Singleton  = true;
                         
-                        // ensure the character has the skill in his/her brain
-                        this.Character.AddItem(skill);
+                    // ensure the character has the skill in his/her brain
+                    this.Character.AddItem(skill);
 
-                        // ensure the changes are saved
-                        skill.Persist();
+                    // ensure the changes are saved
+                    skill.Persist();
 
-                        // notify the character of the change in the item
-                        this.Dogma.QueueMultiEvent(call.Session.EnsureCharacterIsSelected(), OnItemChange.BuildLocationChange(skill, oldFlag, oldLocationID));
-                        this.Dogma.QueueMultiEvent(call.Session.EnsureCharacterIsSelected(), OnItemChange.BuildSingletonChange(skill, false));
-                    }
-                }
-                catch (CharacterAlreadyKnowsSkill)
-                {
-                    throw;
-                }
-                catch (Exception)
-                {
-                    Log.Error($"Cannot inject itemID {item} into {this.Character.ID}'s brain...");
-                    throw;
+                    // notify the character of the change in the item
+                    this.Dogma.QueueMultiEvent(call.Session.EnsureCharacterIsSelected(), OnItemChange.BuildLocationChange(skill, oldFlag, oldLocationID));
+                    this.Dogma.QueueMultiEvent(call.Session.EnsureCharacterIsSelected(), OnItemChange.BuildSingletonChange(skill, false));
                 }
             }
-            
-            // send the skill injected notification to refresh windows if needed
-            this.Dogma.QueueMultiEvent(call.Session.EnsureCharacterIsSelected(), new OnSkillInjected());
-
-            return null;
+            catch (CharacterAlreadyKnowsSkill)
+            {
+                throw;
+            }
+            catch (Exception)
+            {
+                Log.Error($"Cannot inject itemID {item} into {this.Character.ID}'s brain...");
+                throw;
+            }
         }
+            
+        // send the skill injected notification to refresh windows if needed
+        this.Dogma.QueueMultiEvent(call.Session.EnsureCharacterIsSelected(), new OnSkillInjected());
+
+        return null;
+    }
         
-        public PyDataType SaveSkillQueue(PyList queue, CallInformation call)
+    public PyDataType SaveSkillQueue(PyList queue, CallInformation call)
+    {
+        if (this.Character.SkillQueue.Count > 0)
         {
-            if (this.Character.SkillQueue.Count > 0)
-            {
-                // calculate current skill in training points
-                Skill currentSkill = this.Character.SkillQueue[0].Skill;
+            // calculate current skill in training points
+            Skill currentSkill = this.Character.SkillQueue[0].Skill;
 
-                if (currentSkill.ExpiryTime > 0)
-                {
-                    // get the total amount of minutes the skill would have taken to train completely
-                    long pointsLeft = (long) (currentSkill.GetSkillPointsForLevel(this.Character.SkillQueue[0].TargetLevel) - currentSkill.Points);
-
-                    TimeSpan timeLeft = TimeSpan.FromMinutes(pointsLeft / this.Character.GetSkillPointsPerMinute(currentSkill));
-                    DateTime endTime = DateTime.FromFileTimeUtc(currentSkill.ExpiryTime);
-                    DateTime startTime = endTime.Subtract(timeLeft);
-                    TimeSpan timePassed = DateTime.UtcNow - startTime;
-
-                    // calculate the skill points to add
-                    double skillPointsToAdd = timePassed.TotalMinutes * this.Character.GetSkillPointsPerMinute(currentSkill);
-                
-                    currentSkill.Points += skillPointsToAdd;
-                }
-                
-                // remove the timer associated with the queue
-                this.FreeSkillQueueTimers();
-                
-                foreach (Character.SkillQueueEntry entry in this.Character.SkillQueue)
-                {
-                    entry.Skill.Flag = Flags.Skill;
-                    
-                    this.Dogma.QueueMultiEvent(call.Session.EnsureCharacterIsSelected(), OnItemChange.BuildLocationChange(entry.Skill, Flags.SkillInTraining));
-            
-                    // send notification of skill training stopped
-                    this.Dogma.QueueMultiEvent(call.Session.EnsureCharacterIsSelected(), new OnSkillTrainingStopped(entry.Skill));
-
-                    // create history entry
-                    this.DB.CreateSkillHistoryRecord(entry.Skill.Type, this.Character, SkillHistoryReason.SkillTrainingCancelled,
-                        entry.Skill.Points);
-                    
-                    entry.Skill.ExpiryTime = 0;
-                    entry.Skill.Persist();
-                }
-
-                this.Character.SkillQueue.Clear();
-            }
-
-            DateTime startDateTime = DateTime.UtcNow;
-            bool first = true;
-            
-            foreach (PyTuple entry in queue.GetEnumerable<PyTuple>())
-            {
-                // ignore wrong entries
-                if (entry.Count != 2)
-                    continue;
-
-                int typeID = entry[0] as PyInteger;
-                int level = entry[1] as PyInteger;
-                
-                // search for an item with the given typeID
-                ItemEntity item = this.Character.Items.First(x => x.Value.Type.ID == typeID && (x.Value.Flag == Flags.Skill || x.Value.Flag == Flags.SkillInTraining)).Value;
-
-                // ignore items that are not skills
-                if (item is Skill == false)
-                    continue;
-
-                Skill skill = item as Skill;
-
-                double skillPointsLeft = skill.GetSkillPointsForLevel(level) - skill.Points;
-
-                TimeSpan duration = TimeSpan.FromMinutes(skillPointsLeft / this.Character.GetSkillPointsPerMinute(skill));
-
-                DateTime expiryTime = startDateTime + duration;
-                
-                skill.ExpiryTime = expiryTime.ToFileTimeUtc();
-                skill.Flag = Flags.SkillInTraining;
-
-                this.Dogma.QueueMultiEvent(call.Session.EnsureCharacterIsSelected(), OnItemChange.BuildLocationChange(skill, Flags.Skill));
-                
-                startDateTime = expiryTime;
-                
-                // skill added to the queue, persist the character to ensure all the changes are saved
-                this.Character.SkillQueue.Add(new Character.SkillQueueEntry() { Skill = skill, TargetLevel = level });
-                
-                if (first == true)
-                {
-                    // skill was trained, send the success message
-                    this.Dogma.QueueMultiEvent(call.Session.EnsureCharacterIsSelected(), new OnSkillStartTraining(skill));
-                
-                    // create history entry
-                    this.DB.CreateSkillHistoryRecord(skill.Type, this.Character, SkillHistoryReason.SkillTrainingStarted, skill.Points);
-
-                    first = false;
-                }
-
-                skill.Persist();
-            }
-            
-            // ensure the timer is present for the first skill in the queue
-            this.SetupTimerForNextSkillInQueue();
-            
-            // finally persist the data to the database
-            this.Character.Persist();
-
-            return null;
-        }
-
-        public PyDataType CharStartTrainingSkillByTypeID(PyInteger typeID, CallInformation call)
-        {
-            // get the skill the player wants to train
-            Skill skill = this.Character.InjectedSkills.First(x => x.Value.Type.ID == typeID).Value;
-            
-            // do not start the skill training if the level is 5 already
-            if (skill is null || skill.Level == 5)
-                return null;
-
-            PyList<PyTuple> queue = new PyList<PyTuple>(1)
-            {
-                [0] = new PyTuple(2)
-                {
-                    [0] = typeID,
-                    [1] = skill.Level + 1
-                }
-            };
-
-
-            // build a list of skills to train based off the original queue
-            // but with the new skill on top
-            foreach (Character.SkillQueueEntry entry in this.Character.SkillQueue)
-            {
-                // ignore the skill in the queue if it was the one requested
-                if (entry.Skill.Type.ID == typeID)
-                    continue;
-
-                queue.Add(
-                    new PyTuple(2)
-                    {
-                        [0] = entry.Skill.Type.ID,
-                        [1] = entry.TargetLevel
-                    }
-                );
-            }
-            
-            // save the new skill queue
-            return this.SaveSkillQueue(queue, call);
-        }
-
-        public PyDataType GetEndOfTraining(CallInformation call)
-        {
-            // do not allow the user to do that if the skill queue is empty
-            if (this.Character.SkillQueue.Count == 0)
-                return 0;
-
-            return this.Character.SkillQueue[0].Skill.ExpiryTime;
-        }
-
-        public PyDataType CharStopTrainingSkill(CallInformation call)
-        {
-            // iterate the whole skill queue, stop it and recalculate points for the skills
-            if (this.Character.SkillQueue.Count == 0)
-                return null;
-
-            // only the skill on the front should have it's skillpoints recalculated
-            Skill skill = this.Character.SkillQueue[0].Skill;
-
-            if (skill.ExpiryTime > 0)
+            if (currentSkill.ExpiryTime > 0)
             {
                 // get the total amount of minutes the skill would have taken to train completely
-                long pointsLeft = (long) (skill.GetSkillPointsForLevel(this.Character.SkillQueue[0].TargetLevel) - skill.Points);
+                long pointsLeft = (long) (currentSkill.GetSkillPointsForLevel(this.Character.SkillQueue[0].TargetLevel) - currentSkill.Points);
 
-                TimeSpan timeLeft = TimeSpan.FromMinutes(pointsLeft / this.Character.GetSkillPointsPerMinute(skill));
-                DateTime endTime = DateTime.FromFileTimeUtc(skill.ExpiryTime);
-                DateTime startTime = endTime.Subtract(timeLeft);
+                TimeSpan timeLeft   = TimeSpan.FromMinutes(pointsLeft / this.Character.GetSkillPointsPerMinute(currentSkill));
+                DateTime endTime    = DateTime.FromFileTimeUtc(currentSkill.ExpiryTime);
+                DateTime startTime  = endTime.Subtract(timeLeft);
                 TimeSpan timePassed = DateTime.UtcNow - startTime;
 
                 // calculate the skill points to add
-                double skillPointsToAdd = timePassed.TotalMinutes * this.Character.GetSkillPointsPerMinute(skill);
+                double skillPointsToAdd = timePassed.TotalMinutes * this.Character.GetSkillPointsPerMinute(currentSkill);
                 
-                skill.Points += skillPointsToAdd;
+                currentSkill.Points += skillPointsToAdd;
             }
-            
+                
+            // remove the timer associated with the queue
             this.FreeSkillQueueTimers();
-            
+                
             foreach (Character.SkillQueueEntry entry in this.Character.SkillQueue)
             {
-                // mark the skill as stopped and store it in the database
+                entry.Skill.Flag = Flags.Skill;
+                    
+                this.Dogma.QueueMultiEvent(call.Session.EnsureCharacterIsSelected(), OnItemChange.BuildLocationChange(entry.Skill, Flags.SkillInTraining));
+            
+                // send notification of skill training stopped
+                this.Dogma.QueueMultiEvent(call.Session.EnsureCharacterIsSelected(), new OnSkillTrainingStopped(entry.Skill));
+
+                // create history entry
+                this.DB.CreateSkillHistoryRecord(entry.Skill.Type, this.Character, SkillHistoryReason.SkillTrainingCancelled,
+                                                 entry.Skill.Points);
+                    
                 entry.Skill.ExpiryTime = 0;
                 entry.Skill.Persist();
+            }
+
+            this.Character.SkillQueue.Clear();
+        }
+
+        DateTime startDateTime = DateTime.UtcNow;
+        bool     first         = true;
+            
+        foreach (PyTuple entry in queue.GetEnumerable<PyTuple>())
+        {
+            // ignore wrong entries
+            if (entry.Count != 2)
+                continue;
+
+            int typeID = entry[0] as PyInteger;
+            int level  = entry[1] as PyInteger;
                 
-                // notify the skill is not in training anymore
-                this.Dogma.QueueMultiEvent(call.Session.EnsureCharacterIsSelected(), new OnSkillTrainingStopped(entry.Skill));
+            // search for an item with the given typeID
+            ItemEntity item = this.Character.Items.First(x => x.Value.Type.ID == typeID && (x.Value.Flag == Flags.Skill || x.Value.Flag == Flags.SkillInTraining)).Value;
+
+            // ignore items that are not skills
+            if (item is Skill == false)
+                continue;
+
+            Skill skill = item as Skill;
+
+            double skillPointsLeft = skill.GetSkillPointsForLevel(level) - skill.Points;
+
+            TimeSpan duration = TimeSpan.FromMinutes(skillPointsLeft / this.Character.GetSkillPointsPerMinute(skill));
+
+            DateTime expiryTime = startDateTime + duration;
+                
+            skill.ExpiryTime = expiryTime.ToFileTimeUtc();
+            skill.Flag       = Flags.SkillInTraining;
+
+            this.Dogma.QueueMultiEvent(call.Session.EnsureCharacterIsSelected(), OnItemChange.BuildLocationChange(skill, Flags.Skill));
+                
+            startDateTime = expiryTime;
+                
+            // skill added to the queue, persist the character to ensure all the changes are saved
+            this.Character.SkillQueue.Add(new Character.SkillQueueEntry() { Skill = skill, TargetLevel = level });
+                
+            if (first == true)
+            {
+                // skill was trained, send the success message
+                this.Dogma.QueueMultiEvent(call.Session.EnsureCharacterIsSelected(), new OnSkillStartTraining(skill));
                 
                 // create history entry
-                this.DB.CreateSkillHistoryRecord(entry.Skill.Type, this.Character, SkillHistoryReason.SkillTrainingCancelled, entry.Skill.Points);
+                this.DB.CreateSkillHistoryRecord(skill.Type, this.Character, SkillHistoryReason.SkillTrainingStarted, skill.Points);
+
+                first = false;
             }
 
+            skill.Persist();
+        }
+            
+        // ensure the timer is present for the first skill in the queue
+        this.SetupTimerForNextSkillInQueue();
+            
+        // finally persist the data to the database
+        this.Character.Persist();
+
+        return null;
+    }
+
+    public PyDataType CharStartTrainingSkillByTypeID(PyInteger typeID, CallInformation call)
+    {
+        // get the skill the player wants to train
+        Skill skill = this.Character.InjectedSkills.First(x => x.Value.Type.ID == typeID).Value;
+            
+        // do not start the skill training if the level is 5 already
+        if (skill is null || skill.Level == 5)
             return null;
-        }
 
-        public PyDataType AddToEndOfSkillQueue(PyInteger typeID, PyInteger level, CallInformation call)
+        PyList<PyTuple> queue = new PyList<PyTuple>(1)
         {
-            // the skill queue must start only if it's empty OR there's something already in there
-            bool shouldStart = true;
-
-            if (this.Character.SkillQueue.Count > 0)
-                shouldStart = this.Character.SkillQueue[0].Skill.ExpiryTime != 0;
-
-            // get the skill the player wants to train
-            Skill skill = this.Character.InjectedSkills.First(x => x.Value.Type.ID == typeID).Value;
-            
-            // do not start the skill training if the level is 5 already
-            if (skill is null || skill.Level == 5)
-                return null;
-
-            PyList<PyTuple> queue = new PyList<PyTuple>();
-
-            bool alreadyAdded = false;
-            
-            // build a list of skills to train based off the original queue
-            // but with the new skill on top
-            foreach (Character.SkillQueueEntry entry in this.Character.SkillQueue)
+            [0] = new PyTuple(2)
             {
-                // ignore the skill in the queue if it was the one requested
-                if (entry.Skill.Type.ID == typeID && entry.TargetLevel == level)
-                    alreadyAdded = true;
-
-                queue.Add(
-                    new PyTuple(2)
-                    {
-                        [0] = entry.Skill.Type.ID,
-                        [1] = entry.TargetLevel
-                    }
-                );
+                [0] = typeID,
+                [1] = skill.Level + 1
             }
+        };
 
-            if (alreadyAdded == false)
-            {
-                queue.Add(
-                    new PyTuple(2)
-                    {
-                        [0] = typeID,
-                        [1] = level
-                    }
-                );
-            }
-            
-            // save the new skill queue
-            this.SaveSkillQueue(queue, call);
 
-            if (shouldStart == false)
-            {
-                // stop the queue, there's nothing we should be training as the queue is currently paused
-                this.CharStopTrainingSkill(call);
-            }
-            
-            return null;
-        }
-
-        public PyDictionary<PyString, PyInteger> GetRespecInfo(CallInformation call)
+        // build a list of skills to train based off the original queue
+        // but with the new skill on top
+        foreach (Character.SkillQueueEntry entry in this.Character.SkillQueue)
         {
-            return new PyDictionary<PyString, PyInteger>
-            {
-                ["nextRespecTime"] = this.Character.NextReSpecTime,
-                ["freeRespecs"] = this.Character.FreeReSpecs
-            };
-        }
+            // ignore the skill in the queue if it was the one requested
+            if (entry.Skill.Type.ID == typeID)
+                continue;
 
-        public PyDataType GetCharacterAttributeModifiers(PyInteger attributeID, CallInformation call)
-        {
-            Attributes attribute;
-
-            switch ((int) attributeID)
-            {
-                case (int) Attributes.willpower:
-                    attribute = Attributes.willpowerBonus;
-                    break;
-                case (int) Attributes.charisma:
-                    attribute = Attributes.charismaBonus;
-                    break;
-                case (int) Attributes.memory:
-                    attribute = Attributes.memoryBonus;
-                    break;
-                case (int) Attributes.intelligence:
-                    attribute = Attributes.intelligenceBonus;
-                    break;
-                case (int) Attributes.perception:
-                    attribute = Attributes.perceptionBonus;
-                    break;
-                default:
-                    return new PyList<PyTuple>();
-            }
-            
-            PyList<PyTuple> modifiers = new PyList<PyTuple>();
-            
-            foreach (KeyValuePair<int, ItemEntity> modifier in this.Character.Modifiers)
-            {
-                if (modifier.Value.Attributes.AttributeExists(attribute) == true)
+            queue.Add(
+                new PyTuple(2)
                 {
-                    // for now add all the elements as dgmAssModAdd
-                    // check ApplyModifiers on attributes.py
-                    // TODO: THE THIRD PARAMETER HERE WAS DECIDED RANDOMLY BASED ON THE CODE ITSELF
-                    // TODO: BUT THAT DOESN'T MEAN THAT IT'S ENTIRELY CORRECT
-                    // TODO: SO MAYBE CHECK IF THIS IS CORRECT SOMETIME AFTER
-                    modifiers.Add(
-                        new PyTuple(4)
-                        {
-                            [0] = modifier.Value.ID,
-                            [1] = modifier.Value.Type.ID,
-                            [2] = 2,
-                            [3] = modifier.Value.Attributes[attribute]                            
-                        }
-                    );
+                    [0] = entry.Skill.Type.ID,
+                    [1] = entry.TargetLevel
                 }
-            }
-            
-            // search for skills that modify this attribute
-            return modifiers;
-        }
-
-        public PyDataType RespecCharacter(PyInteger charisma, PyInteger intelligence, PyInteger memory,
-            PyInteger perception, PyInteger willpower, CallInformation call)
-        {
-            if (charisma < MINIMUM_ATTRIBUTE_POINTS || intelligence < MINIMUM_ATTRIBUTE_POINTS ||
-                memory < MINIMUM_ATTRIBUTE_POINTS || perception < MINIMUM_ATTRIBUTE_POINTS ||
-                willpower < MINIMUM_ATTRIBUTE_POINTS)
-                throw new RespecAttributesTooLow();
-            if (charisma >= MAXIMUM_ATTRIBUTE_POINTS || intelligence >= MAXIMUM_ATTRIBUTE_POINTS ||
-                memory >= MAXIMUM_ATTRIBUTE_POINTS || perception >= MAXIMUM_ATTRIBUTE_POINTS ||
-                willpower >= MAXIMUM_ATTRIBUTE_POINTS)
-                throw new RespecAttributesTooHigh();
-            if (charisma + intelligence + memory + perception + willpower != MAXIMUM_TOTAL_ATTRIBUTE_POINTS)
-                throw new RespecAttributesMisallocated();
-            
-            if (this.Character.FreeReSpecs == 0)
-                throw new CustomError("You've already remapped your character too much times at once, wait some time");
-            
-            // check if the respec is the same as it was already
-            if (charisma == this.Character.Charisma && intelligence == this.Character.Intelligence &&
-                memory == this.Character.Memory && perception == this.Character.Perception && willpower == this.Character.Willpower)
-                throw new CustomError("No changes detected on the neural map");
-            
-            // take one respec out
-            this.Character.FreeReSpecs--;
-            
-            // if respec is zero now means we don't have any free respecs until a year later
-            if (this.Character.FreeReSpecs == 0)
-                this.Character.NextReSpecTime = DateTime.UtcNow.AddYears(1).ToFileTimeUtc();
-            
-            // ensure the respec timer is there
-            this.SetupReSpecTimers();
-            
-            // finally set our attributes to the correct values
-            this.Character.Charisma = charisma;
-            this.Character.Intelligence = intelligence;
-            this.Character.Memory = memory;
-            this.Character.Perception = perception;
-            this.Character.Willpower = willpower;
-
-            // save the character
-            this.Character.Persist();
-            
-            // notify the game of the change on the character
-            this.Dogma.NotifyAttributeChange(
-                this.Character.ID,
-                new Node.Inventory.Items.Attributes.Attribute[]
-                {
-                    this.Character.Attributes[Attributes.charisma],
-                    this.Character.Attributes[Attributes.perception],
-                    this.Character.Attributes[Attributes.intelligence],
-                    this.Character.Attributes[Attributes.memory],
-                    this.Character.Attributes[Attributes.willpower]
-                },
-                this.Character
             );
+        }
+            
+        // save the new skill queue
+        return this.SaveSkillQueue(queue, call);
+    }
 
+    public PyDataType GetEndOfTraining(CallInformation call)
+    {
+        // do not allow the user to do that if the skill queue is empty
+        if (this.Character.SkillQueue.Count == 0)
+            return 0;
+
+        return this.Character.SkillQueue[0].Skill.ExpiryTime;
+    }
+
+    public PyDataType CharStopTrainingSkill(CallInformation call)
+    {
+        // iterate the whole skill queue, stop it and recalculate points for the skills
+        if (this.Character.SkillQueue.Count == 0)
             return null;
+
+        // only the skill on the front should have it's skillpoints recalculated
+        Skill skill = this.Character.SkillQueue[0].Skill;
+
+        if (skill.ExpiryTime > 0)
+        {
+            // get the total amount of minutes the skill would have taken to train completely
+            long pointsLeft = (long) (skill.GetSkillPointsForLevel(this.Character.SkillQueue[0].TargetLevel) - skill.Points);
+
+            TimeSpan timeLeft   = TimeSpan.FromMinutes(pointsLeft / this.Character.GetSkillPointsPerMinute(skill));
+            DateTime endTime    = DateTime.FromFileTimeUtc(skill.ExpiryTime);
+            DateTime startTime  = endTime.Subtract(timeLeft);
+            TimeSpan timePassed = DateTime.UtcNow - startTime;
+
+            // calculate the skill points to add
+            double skillPointsToAdd = timePassed.TotalMinutes * this.Character.GetSkillPointsPerMinute(skill);
+                
+            skill.Points += skillPointsToAdd;
+        }
+            
+        this.FreeSkillQueueTimers();
+            
+        foreach (Character.SkillQueueEntry entry in this.Character.SkillQueue)
+        {
+            // mark the skill as stopped and store it in the database
+            entry.Skill.ExpiryTime = 0;
+            entry.Skill.Persist();
+                
+            // notify the skill is not in training anymore
+            this.Dogma.QueueMultiEvent(call.Session.EnsureCharacterIsSelected(), new OnSkillTrainingStopped(entry.Skill));
+                
+            // create history entry
+            this.DB.CreateSkillHistoryRecord(entry.Skill.Type, this.Character, SkillHistoryReason.SkillTrainingCancelled, entry.Skill.Points);
         }
 
-        public PyDataType CharAddImplant(PyInteger itemID, CallInformation call)
-        {
-            if (this.Character.SkillQueue.Count > 0)
-                throw new FailedPlugInImplant();
-            int characterID = call.Session.EnsureCharacterIsSelected();
-            
-            // get the item and plug it into our brain now!
-            ItemEntity item = this.ItemFactory.LoadItem(itemID);
-            
-            // ensure the item is somewhere we can interact with it
-            item.EnsureOwnership(characterID, call.Session.CorporationID, call.Session.CorporationRole, true);
+        return null;
+    }
 
-            // check if the slot is free or not
-            this.Character.EnsureFreeImplantSlot(item);
+    public PyDataType AddToEndOfSkillQueue(PyInteger typeID, PyInteger level, CallInformation call)
+    {
+        // the skill queue must start only if it's empty OR there's something already in there
+        bool shouldStart = true;
+
+        if (this.Character.SkillQueue.Count > 0)
+            shouldStart = this.Character.SkillQueue[0].Skill.ExpiryTime != 0;
+
+        // get the skill the player wants to train
+        Skill skill = this.Character.InjectedSkills.First(x => x.Value.Type.ID == typeID).Value;
             
-            // check ownership and skills required to plug in the implant
-            item.CheckPrerequisites(this.Character);
+        // do not start the skill training if the level is 5 already
+        if (skill is null || skill.Level == 5)
+            return null;
+
+        PyList<PyTuple> queue = new PyList<PyTuple>();
+
+        bool alreadyAdded = false;
             
-            // separate the item if there's more than one
-            if (item.Quantity > 1)
+        // build a list of skills to train based off the original queue
+        // but with the new skill on top
+        foreach (Character.SkillQueueEntry entry in this.Character.SkillQueue)
+        {
+            // ignore the skill in the queue if it was the one requested
+            if (entry.Skill.Type.ID == typeID && entry.TargetLevel == level)
+                alreadyAdded = true;
+
+            queue.Add(
+                new PyTuple(2)
+                {
+                    [0] = entry.Skill.Type.ID,
+                    [1] = entry.TargetLevel
+                }
+            );
+        }
+
+        if (alreadyAdded == false)
+        {
+            queue.Add(
+                new PyTuple(2)
+                {
+                    [0] = typeID,
+                    [1] = level
+                }
+            );
+        }
+            
+        // save the new skill queue
+        this.SaveSkillQueue(queue, call);
+
+        if (shouldStart == false)
+        {
+            // stop the queue, there's nothing we should be training as the queue is currently paused
+            this.CharStopTrainingSkill(call);
+        }
+            
+        return null;
+    }
+
+    public PyDictionary<PyString, PyInteger> GetRespecInfo(CallInformation call)
+    {
+        return new PyDictionary<PyString, PyInteger>
+        {
+            ["nextRespecTime"] = this.Character.NextReSpecTime,
+            ["freeRespecs"]    = this.Character.FreeReSpecs
+        };
+    }
+
+    public PyDataType GetCharacterAttributeModifiers(PyInteger attributeID, CallInformation call)
+    {
+        Attributes attribute;
+
+        switch ((int) attributeID)
+        {
+            case (int) Attributes.willpower:
+                attribute = Attributes.willpowerBonus;
+                break;
+            case (int) Attributes.charisma:
+                attribute = Attributes.charismaBonus;
+                break;
+            case (int) Attributes.memory:
+                attribute = Attributes.memoryBonus;
+                break;
+            case (int) Attributes.intelligence:
+                attribute = Attributes.intelligenceBonus;
+                break;
+            case (int) Attributes.perception:
+                attribute = Attributes.perceptionBonus;
+                break;
+            default:
+                return new PyList<PyTuple>();
+        }
+            
+        PyList<PyTuple> modifiers = new PyList<PyTuple>();
+            
+        foreach (KeyValuePair<int, ItemEntity> modifier in this.Character.Modifiers)
+        {
+            if (modifier.Value.Attributes.AttributeExists(attribute) == true)
             {
-                item.Quantity--;
-                
-                // notify the client of the stack change
-                this.Dogma.QueueMultiEvent(call.Session.EnsureCharacterIsSelected(), OnItemChange.BuildQuantityChange(item, item.Quantity + 1));
-                
-                // save the item to the database
-                item.Persist();
-                
-                // create the new item with a default location and flag
-                // this way the item location change notification is only needed once
-                item = this.ItemFactory.CreateSimpleItem(item.Type, item.OwnerID, 0,
-                    Flags.None, 1, item.Contraband, item.Singleton);
+                // for now add all the elements as dgmAssModAdd
+                // check ApplyModifiers on attributes.py
+                // TODO: THE THIRD PARAMETER HERE WAS DECIDED RANDOMLY BASED ON THE CODE ITSELF
+                // TODO: BUT THAT DOESN'T MEAN THAT IT'S ENTIRELY CORRECT
+                // TODO: SO MAYBE CHECK IF THIS IS CORRECT SOMETIME AFTER
+                modifiers.Add(
+                    new PyTuple(4)
+                    {
+                        [0] = modifier.Value.ID,
+                        [1] = modifier.Value.Type.ID,
+                        [2] = 2,
+                        [3] = modifier.Value.Attributes[attribute]                            
+                    }
+                );
             }
-
-            int oldLocationID = item.LocationID;
-            Flags oldFlag = item.Flag;
+        }
             
-            item.LocationID = this.Character.ID;
-            item.Flag = Flags.Implant;
+        // search for skills that modify this attribute
+        return modifiers;
+    }
 
-            this.Dogma.QueueMultiEvent(call.Session.EnsureCharacterIsSelected(), OnItemChange.BuildLocationChange(item, oldFlag, oldLocationID));
+    public PyDataType RespecCharacter(PyInteger charisma,   PyInteger intelligence, PyInteger       memory,
+                                      PyInteger perception, PyInteger willpower,    CallInformation call)
+    {
+        if (charisma < MINIMUM_ATTRIBUTE_POINTS || intelligence < MINIMUM_ATTRIBUTE_POINTS ||
+            memory < MINIMUM_ATTRIBUTE_POINTS || perception < MINIMUM_ATTRIBUTE_POINTS ||
+            willpower < MINIMUM_ATTRIBUTE_POINTS)
+            throw new RespecAttributesTooLow();
+        if (charisma >= MAXIMUM_ATTRIBUTE_POINTS || intelligence >= MAXIMUM_ATTRIBUTE_POINTS ||
+            memory >= MAXIMUM_ATTRIBUTE_POINTS || perception >= MAXIMUM_ATTRIBUTE_POINTS ||
+            willpower >= MAXIMUM_ATTRIBUTE_POINTS)
+            throw new RespecAttributesTooHigh();
+        if (charisma + intelligence + memory + perception + willpower != MAXIMUM_TOTAL_ATTRIBUTE_POINTS)
+            throw new RespecAttributesMisallocated();
+            
+        if (this.Character.FreeReSpecs == 0)
+            throw new CustomError("You've already remapped your character too much times at once, wait some time");
+            
+        // check if the respec is the same as it was already
+        if (charisma == this.Character.Charisma && intelligence == this.Character.Intelligence &&
+            memory == this.Character.Memory && perception == this.Character.Perception && willpower == this.Character.Willpower)
+            throw new CustomError("No changes detected on the neural map");
+            
+        // take one respec out
+        this.Character.FreeReSpecs--;
+            
+        // if respec is zero now means we don't have any free respecs until a year later
+        if (this.Character.FreeReSpecs == 0)
+            this.Character.NextReSpecTime = DateTime.UtcNow.AddYears(1).ToFileTimeUtc();
+            
+        // ensure the respec timer is there
+        this.SetupReSpecTimers();
+            
+        // finally set our attributes to the correct values
+        this.Character.Charisma     = charisma;
+        this.Character.Intelligence = intelligence;
+        this.Character.Memory       = memory;
+        this.Character.Perception   = perception;
+        this.Character.Willpower    = willpower;
 
-            // add the item to the inventory it belongs
-            this.Character.AddItem(item);
+        // save the character
+        this.Character.Persist();
+            
+        // notify the game of the change on the character
+        this.Dogma.NotifyAttributeChange(
+            this.Character.ID,
+            new Node.Inventory.Items.Attributes.Attribute[]
+            {
+                this.Character.Attributes[Attributes.charisma],
+                this.Character.Attributes[Attributes.perception],
+                this.Character.Attributes[Attributes.intelligence],
+                this.Character.Attributes[Attributes.memory],
+                this.Character.Attributes[Attributes.willpower]
+            },
+            this.Character
+        );
 
-            // persist item changes to database
+        return null;
+    }
+
+    public PyDataType CharAddImplant(PyInteger itemID, CallInformation call)
+    {
+        if (this.Character.SkillQueue.Count > 0)
+            throw new FailedPlugInImplant();
+        int characterID = call.Session.EnsureCharacterIsSelected();
+            
+        // get the item and plug it into our brain now!
+        ItemEntity item = this.ItemFactory.LoadItem(itemID);
+            
+        // ensure the item is somewhere we can interact with it
+        item.EnsureOwnership(characterID, call.Session.CorporationID, call.Session.CorporationRole, true);
+
+        // check if the slot is free or not
+        this.Character.EnsureFreeImplantSlot(item);
+            
+        // check ownership and skills required to plug in the implant
+        item.CheckPrerequisites(this.Character);
+            
+        // separate the item if there's more than one
+        if (item.Quantity > 1)
+        {
+            item.Quantity--;
+                
+            // notify the client of the stack change
+            this.Dogma.QueueMultiEvent(call.Session.EnsureCharacterIsSelected(), OnItemChange.BuildQuantityChange(item, item.Quantity + 1));
+                
+            // save the item to the database
             item.Persist();
-            
-            return null;
+                
+            // create the new item with a default location and flag
+            // this way the item location change notification is only needed once
+            item = this.ItemFactory.CreateSimpleItem(item.Type, item.OwnerID, 0,
+                                                     Flags.None, 1, item.Contraband, item.Singleton);
         }
 
-        public PyDataType RemoveImplantFromCharacter(PyInteger itemID, CallInformation call)
-        {
-            if (this.Character.Items.TryGetValue(itemID, out ItemEntity item) == false)
-                throw new CustomError("This implant is not in your brain!");
+        int   oldLocationID = item.LocationID;
+        Flags oldFlag       = item.Flag;
+            
+        item.LocationID = this.Character.ID;
+        item.Flag       = Flags.Implant;
 
-            // now destroy the item
-            this.ItemFactory.DestroyItem(item);
+        this.Dogma.QueueMultiEvent(call.Session.EnsureCharacterIsSelected(), OnItemChange.BuildLocationChange(item, oldFlag, oldLocationID));
+
+        // add the item to the inventory it belongs
+        this.Character.AddItem(item);
+
+        // persist item changes to database
+        item.Persist();
             
-            // notify the change
-            this.Dogma.QueueMultiEvent(call.Session.EnsureCharacterIsSelected(), OnItemChange.BuildLocationChange(item, this.Character.ID));
+        return null;
+    }
+
+    public PyDataType RemoveImplantFromCharacter(PyInteger itemID, CallInformation call)
+    {
+        if (this.Character.Items.TryGetValue(itemID, out ItemEntity item) == false)
+            throw new CustomError("This implant is not in your brain!");
+
+        // now destroy the item
+        this.ItemFactory.DestroyItem(item);
             
-            return null;
-        }
+        // notify the change
+        this.Dogma.QueueMultiEvent(call.Session.EnsureCharacterIsSelected(), OnItemChange.BuildLocationChange(item, this.Character.ID));
+            
+        return null;
+    }
         
-        protected override long MachoResolveObject(ServiceBindParams parameters, CallInformation call)
-        {
-            int solarSystemID = call.Session.SolarSystemID2;
+    protected override long MachoResolveObject(ServiceBindParams parameters, CallInformation call)
+    {
+        int solarSystemID = call.Session.SolarSystemID2;
 
-            if (this.SystemManager.SolarSystemBelongsToUs(solarSystemID) == true)
-                return this.BoundServiceManager.MachoNet.NodeID;
+        if (this.SystemManager.SolarSystemBelongsToUs(solarSystemID) == true)
+            return this.BoundServiceManager.MachoNet.NodeID;
 
-            return this.SystemManager.GetNodeSolarSystemBelongsTo(solarSystemID);
-        }
+        return this.SystemManager.GetNodeSolarSystemBelongsTo(solarSystemID);
+    }
 
-        protected override BoundService CreateBoundInstance(ServiceBindParams bindParams, CallInformation call)
-        {
-            if (this.MachoResolveObject(bindParams, call) != this.BoundServiceManager.MachoNet.NodeID)
-                throw new CustomError("Trying to bind an object that does not belong to us!");
+    protected override BoundService CreateBoundInstance(ServiceBindParams bindParams, CallInformation call)
+    {
+        if (this.MachoResolveObject(bindParams, call) != this.BoundServiceManager.MachoNet.NodeID)
+            throw new CustomError("Trying to bind an object that does not belong to us!");
             
-            return new skillMgr (this.DB, this.ItemFactory, this.TimerManager, this.Dogma, this.BoundServiceManager, this.Log, call.Session);
-        }
+        return new skillMgr (this.DB, this.ItemFactory, this.TimerManager, this.Dogma, this.BoundServiceManager, this.Log, call.Session);
     }
 }

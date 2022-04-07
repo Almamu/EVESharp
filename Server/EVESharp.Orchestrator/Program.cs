@@ -1,7 +1,7 @@
 using EVESharp.Orchestator.Models;
 using MySql.Data.MySqlClient;
 
-var builder = WebApplication.CreateBuilder(args);
+WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 
@@ -31,7 +31,7 @@ if (restartOnStartup)
     }
 }
 
-var app = builder.Build();
+WebApplication app = builder.Build();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())

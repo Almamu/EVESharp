@@ -1,12 +1,11 @@
 ﻿using EVESharp.EVE.Packets.Exceptions;
 using EVESharp.PythonTypes.Types.Collections;
 
-namespace EVESharp.Node.Exceptions.corpRegistry
+namespace EVESharp.Node.Exceptions.corpRegistry;
+
+public class CorpNameInvalidMinLength : UserError
 {
-    public class CorpNameInvalidMinLength : UserError
+    public CorpNameInvalidMinLength() : base("CorpNameInvalidMinLength")
     {
-        public CorpNameInvalidMinLength() : base("CorpNameInvalidMinLength")
-        {
-        }
     }
 }

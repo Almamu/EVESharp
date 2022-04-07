@@ -1,12 +1,11 @@
 ﻿using EVESharp.EVE.Packets.Exceptions;
 using EVESharp.PythonTypes.Types.Primitives;
 
-namespace EVESharp.Node.Exceptions.contractMgr
+namespace EVESharp.Node.Exceptions.contractMgr;
+
+public class ConDurationZero : UserError
 {
-    public class ConDurationZero : UserError
+    public ConDurationZero() : base("ConDurationZero")
     {
-        public ConDurationZero() : base("ConDurationZero")
-        {
-        }
     }
 }
