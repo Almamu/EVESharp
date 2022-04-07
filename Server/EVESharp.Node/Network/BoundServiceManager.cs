@@ -28,6 +28,8 @@ namespace EVESharp.Node.Network
         {
             this.MachoNet = machoNet;
             this.Log = logger;
+            // register on transport closed so proxies and single-instance servers cleanup properly
+            this.MachoNet.TransportManager.OnTransportRemoved += OnTransportRemoved;
         }
 
         /// <summary>
@@ -135,6 +137,14 @@ namespace EVESharp.Node.Network
                 
                 service.ClientHasReleasedThisObject(session);
             }
+        }
+
+        public void OnTransportRemoved(object sender, MachoTransport transport)
+        {
+            if (transport is not MachoClientTransport clientTransport)
+                return;
+            
+            this.OnClientDisconnected(clientTransport.Session);
         }
     }
 }
