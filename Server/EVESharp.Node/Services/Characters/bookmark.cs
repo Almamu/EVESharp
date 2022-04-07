@@ -17,45 +17,38 @@ namespace EVESharp.Node.Services.Characters;
 public class bookmark : Service
 {
     public override AccessLevel        AccessLevel => AccessLevel.None;
-    private         DatabaseConnection Database    { get; init; }
+    private         DatabaseConnection Database    { get; }
     private         ItemFactory        ItemFactory { get; }
-        
-    public bookmark(DatabaseConnection connection, ItemFactory itemFactory)
+
+    public bookmark (DatabaseConnection connection, ItemFactory itemFactory)
     {
-        this.Database    = connection;
-        this.ItemFactory = itemFactory;
+        Database    = connection;
+        ItemFactory = itemFactory;
     }
 
-    public PyDataType GetBookmarks(CallInformation call)
+    public PyDataType GetBookmarks (CallInformation call)
     {
-        return Database.Rowset(
+        return Database.Rowset (
             BookmarkDB.GET,
-            new Dictionary<string, object>()
-            {
-                {"_ownerID", call.Session.EnsureCharacterIsSelected()}
-            }
+            new Dictionary <string, object> {{"_ownerID", call.Session.EnsureCharacterIsSelected ()}}
         );
     }
 
-    public PyDataType BookmarkLocation(PyInteger itemID, PyDataType unk, PyString name, PyString comment, CallInformation call)
+    public PyDataType BookmarkLocation (PyInteger itemID, PyDataType unk, PyString name, PyString comment, CallInformation call)
     {
-        if (ItemFactory.IsStaticData(itemID) == false)
-        {
-            throw new CustomError("Bookmarks for non-static locations are not supported yet!");
-        }
+        if (ItemFactory.IsStaticData (itemID) == false)
+            throw new CustomError ("Bookmarks for non-static locations are not supported yet!");
 
-        ItemEntity item = this.ItemFactory.GetItem(itemID);
+        ItemEntity item = ItemFactory.GetItem (itemID);
 
         if (item.HasPosition == false)
-        {
-            throw new CustomError("Cannot bookmark a non-location item");
-        }
+            throw new CustomError ("Cannot bookmark a non-location item");
 
-        ulong bookmarkID = Database.Scalar<ulong>(
+        ulong bookmarkID = Database.Scalar <ulong> (
             BookmarkDB.CREATE,
-            new Dictionary<string, object>()
+            new Dictionary <string, object>
             {
-                {"_ownerID", call.Session.EnsureCharacterIsSelected()},
+                {"_ownerID", call.Session.EnsureCharacterIsSelected ()},
                 {"_itemID", itemID},
                 {"_typeID", item.Type.ID},
                 {"_memo", name},
@@ -68,7 +61,8 @@ public class bookmark : Service
             }
         );
 
-        PyDataType bookmark = KeyVal.FromDictionary(new PyDictionary
+        PyDataType bookmark = KeyVal.FromDictionary (
+            new PyDictionary
             {
                 ["bookmarkID"] = bookmarkID,
                 ["itemID"]     = item.ID,
@@ -79,17 +73,17 @@ public class bookmark : Service
                 ["y"]          = item.Y,
                 ["z"]          = item.Z,
                 ["locationID"] = item.LocationID,
-                ["created"]    = DateTime.UtcNow.ToFileTimeUtc()
+                ["created"]    = DateTime.UtcNow.ToFileTimeUtc ()
             }
         );
-            
+
         // send a request to the client to update the bookmarks
         // TODO: SUPPORT REMOTE SERVICE CALLS AGAIN
         /*
         call.Client.Transport.SendServiceCall("addressbook", "OnBookmarkAdd",
             new PyTuple(1) {[0] = bookmark}, new PyDictionary(), null);
         */
-            
+
         return new PyTuple (7)
         {
             [0] = bookmarkID, // bookmarkID
@@ -102,18 +96,18 @@ public class bookmark : Service
         };
     }
 
-    public PyDataType DeleteBookmarks(PyList bookmarkIDs, CallInformation call)
+    public PyDataType DeleteBookmarks (PyList bookmarkIDs, CallInformation call)
     {
         // if no ids are specified, there's nothing to do
         if (bookmarkIDs.Count == 0)
             return null;
 
-        Database.Procedure(
+        Database.Procedure (
             BookmarkDB.DELETE,
-            new Dictionary<string, object>()
+            new Dictionary <string, object>
             {
-                {"_ownerID", call.Session.EnsureCharacterIsSelected()},
-                {"_bookmarkIDs", PyString.Join(',', bookmarkIDs.GetEnumerable<PyInteger>()).Value}
+                {"_ownerID", call.Session.EnsureCharacterIsSelected ()},
+                {"_bookmarkIDs", PyString.Join (',', bookmarkIDs.GetEnumerable <PyInteger> ()).Value}
             }
         );
 

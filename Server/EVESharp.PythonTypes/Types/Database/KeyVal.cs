@@ -16,14 +16,14 @@ public class KeyVal
     /// <param name="connection">The connection used</param>
     /// <param name="reader"></param>
     /// <returns></returns>
-    public static PyDataType FromMySqlDataReader(IDatabaseConnection connection, MySqlDataReader reader)
+    public static PyDataType FromMySqlDataReader (IDatabaseConnection connection, MySqlDataReader reader)
     {
-        PyDictionary data = new PyDictionary();
+        PyDictionary data = new PyDictionary ();
 
         for (int i = 0; i < reader.FieldCount; i++)
-            data[reader.GetName(i)] = IDatabaseConnection.ObjectFromColumn(reader, connection.GetFieldType(reader, i), i);
-            
-        return new PyObjectData(OBJECT_NAME, data);
+            data [reader.GetName (i)] = IDatabaseConnection.ObjectFromColumn (reader, connection.GetFieldType (reader, i), i);
+
+        return new PyObjectData (OBJECT_NAME, data);
     }
 
     /// <summary>
@@ -32,9 +32,9 @@ public class KeyVal
     /// </summary>
     /// <param name="columns"></param>
     /// <returns></returns>
-    public static PyDataType FromDictionary(PyDictionary columns)
+    public static PyDataType FromDictionary (PyDictionary columns)
     {
-        return new PyObjectData(OBJECT_NAME, columns);
+        return new PyObjectData (OBJECT_NAME, columns);
     }
 
     /// <summary>
@@ -43,11 +43,11 @@ public class KeyVal
     /// <param name="from">The KeyVal to convert to a dictionary</param>
     /// <returns>The information in the keyval</returns>
     /// <exception cref="InvalidCastException">If the type is not a keyval</exception>
-    public static PyDictionary ToDictionary(PyObjectData from)
+    public static PyDictionary ToDictionary (PyObjectData from)
     {
         if (from.Name != OBJECT_NAME)
-            throw new InvalidCastException($"Trying to cast a {from.Name} to a {OBJECT_NAME}");
-            
+            throw new InvalidCastException ($"Trying to cast a {from.Name} to a {OBJECT_NAME}");
+
         return from.Arguments as PyDictionary;
     }
 }

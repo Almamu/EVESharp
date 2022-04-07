@@ -1,6 +1,6 @@
 namespace EVESharp.Node.StaticData.Inventory;
 
-public enum Categories : int
+public enum Categories
 {
     System        = 0,
     Owner         = 1,
@@ -28,5 +28,5 @@ public enum Categories : int
     Abstract      = 29,
     Subsystem     = 32,
     AncientRelics = 34,
-    Decryptors    = 35,
+    Decryptors    = 35
 }

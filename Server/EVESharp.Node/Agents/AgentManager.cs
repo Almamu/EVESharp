@@ -9,29 +9,27 @@ namespace EVESharp.Node.Agents;
 
 public class AgentManager
 {
-    private DatabaseConnection DB { get; init; }
-        
-    public AgentManager(DatabaseConnection db)
+    private DatabaseConnection DB { get; }
+
+    public AgentManager (DatabaseConnection db)
     {
-        this.DB = db;
+        DB = db;
     }
 
-    public CRowset GetAgents()
+    public CRowset GetAgents ()
     {
-        return DB.CRowset(AgentDB.GET_AGENTS);
+        return DB.CRowset (AgentDB.GET_AGENTS);
     }
 
-    public PyDataType GetInfo(int agentID)
+    public PyDataType GetInfo (int agentID)
     {
-        PyDictionary<PyString, PyDataType> information = DB.Dictionary(AgentDB.GET_INFO,
-                                                                       new Dictionary<string, object>()
-                                                                       {
-                                                                           {"@agentID", agentID}
-                                                                       }
+        PyDictionary <PyString, PyDataType> information = DB.Dictionary (
+            AgentDB.GET_INFO,
+            new Dictionary <string, object> {{"@agentID", agentID}}
         );
 
-        information["services"] = new PyList();
+        information ["services"] = new PyList ();
 
-        return KeyVal.FromDictionary(information);
+        return KeyVal.FromDictionary (information);
     }
 }

@@ -9,30 +9,30 @@ namespace EVESharp.Node.Notifications.Client.Station;
 public class OnCharNowInStation : ClientNotification
 {
     private const string NOTIFICATION_NAME = "OnCharNowInStation";
-        
+
     public int? CharacterID   { get; init; }
     public int? CorporationID { get; init; }
     public int? AllianceID    { get; init; }
     public int? WarFactionID  { get; init; }
-        
-    public OnCharNowInStation(Session session) : base(NOTIFICATION_NAME)
+
+    public OnCharNowInStation (Session session) : base (NOTIFICATION_NAME)
     {
-        this.CharacterID   = session.CharacterID;
-        this.CorporationID = session.CorporationID;
-        this.AllianceID    = session.AllianceID;
-        this.WarFactionID  = session.WarFactionID;
+        CharacterID   = session.CharacterID;
+        CorporationID = session.CorporationID;
+        AllianceID    = session.AllianceID;
+        WarFactionID  = session.WarFactionID;
     }
 
-    public override List<PyDataType> GetElements()
+    public override List <PyDataType> GetElements ()
     {
-        return new List<PyDataType>()
+        return new List <PyDataType>
         {
-            new PyTuple(4)
+            new PyTuple (4)
             {
-                [0] = this.CharacterID,
-                [1] = this.CorporationID,
-                [2] = this.AllianceID,
-                [3] = this.WarFactionID
+                [0] = CharacterID,
+                [1] = CorporationID,
+                [2] = AllianceID,
+                [3] = WarFactionID
             }
         };
     }

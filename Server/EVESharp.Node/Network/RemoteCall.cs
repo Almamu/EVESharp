@@ -1,5 +1,4 @@
 ﻿using System;
-using EVESharp.EVE.Services;
 using EVESharp.EVE.Sessions;
 using EVESharp.PythonTypes.Types.Primitives;
 
@@ -21,11 +20,11 @@ public class RemoteCall
     /// <summary>
     /// The function to call when the call result is received
     /// </summary>
-    public Action<RemoteCall, PyDataType> Callback { get; init; }
+    public Action <RemoteCall, PyDataType> Callback { get; init; }
     /// <summary>
     /// The function to call when the timeout is reached
     /// </summary>
-    public Action<RemoteCall> TimeoutCallback { get; init; }
+    public Action <RemoteCall> TimeoutCallback { get; init; }
     /// <summary>
     /// Related node
     /// </summary>

@@ -13,14 +13,14 @@ public class OnAccountChange : ClientNotification
     public string Wallet     { get; init; }
     public int    OwnerID    { get; init; }
     public double NewBalance { get; init; }
-        
-    public OnAccountChange(int accountKey, int ownerID, double newBalance) : base(NOTIFICATION_NAME)
-    {
-        this.AccountKey = accountKey;
-        this.OwnerID    = ownerID;
-        this.NewBalance = newBalance;
 
-        this.Wallet = this.AccountKey switch
+    public OnAccountChange (int accountKey, int ownerID, double newBalance) : base (NOTIFICATION_NAME)
+    {
+        AccountKey = accountKey;
+        OwnerID    = ownerID;
+        NewBalance = newBalance;
+
+        Wallet = AccountKey switch
         {
             WalletKeys.MAIN_WALLET    => "cash",
             WalletKeys.SECOND_WALLET  => "cash2",
@@ -33,13 +33,13 @@ public class OnAccountChange : ClientNotification
         };
     }
 
-    public override List<PyDataType> GetElements()
+    public override List <PyDataType> GetElements ()
     {
-        return new List<PyDataType>()
+        return new List <PyDataType>
         {
-            this.Wallet,
-            this.OwnerID,
-            this.NewBalance
+            Wallet,
+            OwnerID,
+            NewBalance
         };
     }
 }

@@ -5,13 +5,13 @@ namespace EVESharp.Node.Dogma;
 
 public class EffectsManager
 {
-    private Dogma Dogma { get; }
+    private Dogma       Dogma       { get; }
     private ItemFactory ItemFactory { get; }
-    
-    public EffectsManager(ItemFactory itemFactory, Dogma dogma)
+
+    public EffectsManager (ItemFactory itemFactory, Dogma dogma)
     {
-        this.ItemFactory = itemFactory;
-        this.Dogma = dogma;
+        ItemFactory = itemFactory;
+        Dogma       = dogma;
     }
 
     /// <summary>
@@ -19,11 +19,11 @@ public class EffectsManager
     /// </summary>
     /// <param name="module">The ship module to apply effects to</param>
     /// <returns></returns>
-    public ItemEffects GetForItem(ShipModule module)
+    public ItemEffects GetForItem (ShipModule module)
     {
         if (module is null)
             return null;
-        
-        return module.ItemEffects ??= new ItemEffects(module, this.ItemFactory);
+
+        return module.ItemEffects ??= new ItemEffects (module, ItemFactory);
     }
 }

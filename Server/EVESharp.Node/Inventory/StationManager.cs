@@ -1,29 +1,26 @@
 using System.Collections.Generic;
 using EVESharp.Node.Database;
 using EVESharp.Node.StaticData.Inventory.Station;
-using EVESharp.Node.StaticData;
 
 namespace EVESharp.Node.Inventory;
 
 public class StationManager
 {
-    private StationDB                  StationDB { get; }
-    private Dictionary<int, Operation> mOperations;
-    private Dictionary<int, Type>      mStationTypes;
-    private Dictionary<int, string>    mServices;
-    public StationManager(StationDB stationDB)
+    private StationDB StationDB { get; }
+
+    public Dictionary <int, Operation> Operations   { get; private set; }
+    public Dictionary <int, Type>      StationTypes { get; private set; }
+    public Dictionary <int, string>    Services     { get; private set; }
+
+    public StationManager (StationDB stationDB)
     {
-        this.StationDB = stationDB;
+        StationDB = stationDB;
     }
 
-    public void Load()
+    public void Load ()
     {
-        this.mOperations   = this.StationDB.LoadOperations();
-        this.mStationTypes = this.StationDB.LoadStationTypes();
-        this.mServices     = this.StationDB.LoadServices();
+        Operations   = StationDB.LoadOperations ();
+        StationTypes = StationDB.LoadStationTypes ();
+        Services     = StationDB.LoadServices ();
     }
-
-    public Dictionary<int, Operation> Operations   => this.mOperations;
-    public Dictionary<int, Type>      StationTypes => this.mStationTypes;
-    public Dictionary<int, string>    Services     => this.mServices;
 }

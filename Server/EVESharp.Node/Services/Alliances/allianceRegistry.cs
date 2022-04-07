@@ -25,367 +25,346 @@ namespace EVESharp.Node.Services.Alliances;
 public class allianceRegistry : MultiClientBoundService
 {
     public override AccessLevel AccessLevel => AccessLevel.None;
-        
-    private DatabaseConnection  Database            { get; init; }
-    private CorporationDB       CorporationDB       { get; init; }
-    private ChatDB              ChatDB              { get; init; }
-    private NotificationManager NotificationManager { get; init; }
-    private ItemFactory         ItemFactory         { get; init; }
-    private Alliance            Alliance            { get; init; }
+
+    private DatabaseConnection  Database            { get; }
+    private CorporationDB       CorporationDB       { get; }
+    private ChatDB              ChatDB              { get; }
+    private NotificationManager NotificationManager { get; }
+    private ItemFactory         ItemFactory         { get; }
+    private Alliance            Alliance            { get; }
     private SessionManager      SessionManager      { get; }
 
-    public allianceRegistry(DatabaseConnection databaseConnection, CorporationDB corporationDB, ChatDB chatDB, ItemFactory itemFactory, NotificationManager notificationManager, BoundServiceManager manager, SessionManager sessionManager) : base(manager)
+    public allianceRegistry (
+        DatabaseConnection  databaseConnection, CorporationDB  corporationDB, ChatDB chatDB, ItemFactory itemFactory, NotificationManager notificationManager,
+        BoundServiceManager manager,            SessionManager sessionManager
+    ) : base (manager)
     {
-        this.Database            = databaseConnection;
-        this.CorporationDB       = corporationDB;
-        this.ChatDB              = chatDB;
-        this.NotificationManager = notificationManager;
-        this.ItemFactory         = itemFactory;
-        this.SessionManager      = sessionManager;
-            
+        Database            = databaseConnection;
+        CorporationDB       = corporationDB;
+        ChatDB              = chatDB;
+        NotificationManager = notificationManager;
+        ItemFactory         = itemFactory;
+        SessionManager      = sessionManager;
+
         // TODO: RE-IMPLEMENT ON CLUSTER TIMER
         // machoNet.OnClusterTimer += PerformTimedEvents;
     }
-        
-    private allianceRegistry(Alliance alliance, DatabaseConnection databaseConnection, CorporationDB corporationDB, ItemFactory itemFactory, NotificationManager notificationManager, SessionManager sessionManager, MultiClientBoundService parent) : base(parent, alliance.ID)
+
+    private allianceRegistry (
+        Alliance alliance, DatabaseConnection databaseConnection, CorporationDB corporationDB, ItemFactory itemFactory, NotificationManager notificationManager,
+        SessionManager sessionManager, MultiClientBoundService parent
+    ) : base (parent, alliance.ID)
     {
-        this.Database            = databaseConnection;
-        this.CorporationDB       = corporationDB;
-        this.NotificationManager = notificationManager;
-        this.ItemFactory         = itemFactory;
-        this.Alliance            = alliance;
-        this.SessionManager      = sessionManager;
+        Database            = databaseConnection;
+        CorporationDB       = corporationDB;
+        NotificationManager = notificationManager;
+        ItemFactory         = itemFactory;
+        Alliance            = alliance;
+        SessionManager      = sessionManager;
     }
 
-    private IEnumerable<ApplicationEntry> GetAcceptedAlliances(long minimumTime)
+    private IEnumerable <ApplicationEntry> GetAcceptedAlliances (long minimumTime)
     {
         // TODO: THIS ONE MIGHT HAVE A BETTER PLACE SOMEWHERE, BUT FOR NOW IT'LL LIVE HERE
         MySqlConnection connection = null;
-        MySqlDataReader reader = Database.Select(
+        MySqlDataReader reader = Database.Select (
             ref connection,
             $"SELECT corporationID, allianceID, executorCorpID FROM crpApplications LEFT JOIN crpAlliances USING(allianceID) WHERE `state` = {(int) AllianceApplicationStatus.Accepted} AND applicationUpdateTime < @limit",
-            new Dictionary<string, object>()
-            {
-                {"@limit", minimumTime}
-            }
+            new Dictionary <string, object> {{"@limit", minimumTime}}
         );
-            
+
         using (connection)
         using (reader)
         {
-            while (reader.Read() == true)
-            {
+            while (reader.Read ())
                 yield return new ApplicationEntry
                 {
-                    CorporationID  = reader.GetInt32(0),
-                    AllianceID     = reader.GetInt32(1),
-                    ExecutorCorpID = reader.GetInt32OrNull(2)
-                };                    
-            }
+                    CorporationID  = reader.GetInt32 (0),
+                    AllianceID     = reader.GetInt32 (1),
+                    ExecutorCorpID = reader.GetInt32OrNull (2)
+                };
         }
     }
 
-    private void PerformTimedEvents(object? sender, EventArgs e)
+    private void PerformTimedEvents (object? sender, EventArgs e)
     {
-        long minimumTime = DateTime.UtcNow.AddHours(-24).ToFileTimeUtc();
-            
+        long minimumTime = DateTime.UtcNow.AddHours (-24).ToFileTimeUtc ();
+
         // check alliances that were accepted more than 24 hours ago
-        foreach (ApplicationEntry entry in this.GetAcceptedAlliances(minimumTime))
+        foreach (ApplicationEntry entry in this.GetAcceptedAlliances (minimumTime))
         {
             // first update the corporation to join it to the alliance in the database
-            this.CorporationDB.UpdateCorporationInformation(entry.CorporationID, entry.AllianceID, DateTime.UtcNow.ToFileTimeUtc(), entry.ExecutorCorpID);
+            CorporationDB.UpdateCorporationInformation (entry.CorporationID, entry.AllianceID, DateTime.UtcNow.ToFileTimeUtc (), entry.ExecutorCorpID);
             // now check if any node has it loaded and notify it about the changes
-            long nodeID = this.ItemFactory.ItemDB.GetItemNode(entry.CorporationID);
+            long nodeID = ItemFactory.ItemDB.GetItemNode (entry.CorporationID);
 
             if (nodeID > 0)
             {
                 OnCorporationChanged change =
-                    new OnCorporationChanged(entry.CorporationID, entry.AllianceID, entry.ExecutorCorpID);
+                    new OnCorporationChanged (entry.CorporationID, entry.AllianceID, entry.ExecutorCorpID);
 
                 // notify the node that owns the reference to this corporation
-                this.NotificationManager.NotifyNode(nodeID, change);
+                NotificationManager.NotifyNode (nodeID, change);
             }
-                
-            foreach (int characterID in this.CorporationDB.GetMembersForCorp(entry.CorporationID))
+
+            foreach (int characterID in CorporationDB.GetMembersForCorp (entry.CorporationID))
             {
                 // join the player to the corp channel
-                this.ChatDB.JoinEntityChannel(entry.AllianceID, characterID, ChatDB.CHATROLE_CONVERSATIONALIST);
-                this.ChatDB.JoinChannel(entry.AllianceID, characterID, ChatDB.CHATROLE_CONVERSATIONALIST);
+                ChatDB.JoinEntityChannel (entry.AllianceID, characterID);
+                ChatDB.JoinChannel (entry.AllianceID, characterID);
             }
-                
+
             // send session change based on the corporationID, only one packet needed
-            this.SessionManager.PerformSessionUpdate(Session.CORP_ID, entry.CorporationID, new Session() {[Session.ALLIANCE_ID] = entry.AllianceID});
+            SessionManager.PerformSessionUpdate (Session.CORP_ID, entry.CorporationID, new Session {[Session.ALLIANCE_ID] = entry.AllianceID});
         }
 
         // finally remove all the applications
-        Database.Procedure(
+        Database.Procedure (
             AlliancesDB.HOUSEKEEP_APPLICATIONS,
-            new Dictionary<string, object>()
-            {
-                {"_limit", minimumTime}
-            }
+            new Dictionary <string, object> {{"_limit", minimumTime}}
         );
     }
 
 
-    protected override long MachoResolveObject(ServiceBindParams parameters, CallInformation call)
+    protected override long MachoResolveObject (ServiceBindParams parameters, CallInformation call)
     {
         // TODO: CHECK IF ANY NODE HAS THIS ALLIANCE LOADED
         // TODO: IF NOT, LOAD IT HERE AND RETURN OUR ID
-        return this.BoundServiceManager.MachoNet.NodeID;
+        return BoundServiceManager.MachoNet.NodeID;
     }
 
-    public override bool IsClientAllowedToCall(Session session)
+    public override bool IsClientAllowedToCall (Session session)
     {
-        return session.AllianceID == this.ObjectID;
+        return session.AllianceID == ObjectID;
     }
 
-    protected override MultiClientBoundService CreateBoundInstance(ServiceBindParams bindParams, CallInformation call)
+    protected override MultiClientBoundService CreateBoundInstance (ServiceBindParams bindParams, CallInformation call)
     {
-        if (this.MachoResolveObject(bindParams, call) != this.BoundServiceManager.MachoNet.NodeID)
-            throw new CustomError("Trying to bind an object that does not belong to us!");
+        if (this.MachoResolveObject (bindParams, call) != BoundServiceManager.MachoNet.NodeID)
+            throw new CustomError ("Trying to bind an object that does not belong to us!");
 
-        Alliance alliance = this.ItemFactory.LoadItem<Alliance>(bindParams.ObjectID);
-            
-        return new allianceRegistry(alliance, this.Database, this.CorporationDB, this.ItemFactory, this.NotificationManager, this.SessionManager, this);
+        Alliance alliance = ItemFactory.LoadItem <Alliance> (bindParams.ObjectID);
+
+        return new allianceRegistry (alliance, Database, CorporationDB, ItemFactory, NotificationManager, SessionManager, this);
     }
 
-    public PyDataType GetAlliance(CallInformation call)
+    public PyDataType GetAlliance (CallInformation call)
     {
-        return this.GetAlliance(this.ObjectID, call);
+        return this.GetAlliance (ObjectID, call);
     }
 
-    public PyDataType GetAlliance(PyInteger allianceID, CallInformation call)
+    public PyDataType GetAlliance (PyInteger allianceID, CallInformation call)
     {
-        return Database.Row(
+        return Database.Row (
             AlliancesDB.GET,
-            new Dictionary<string, object>()
-            {
-                {"_allianceID", allianceID}
-            }
+            new Dictionary <string, object> {{"_allianceID", allianceID}}
         );
     }
 
-    public PyDataType UpdateAlliance(PyString description, PyString url, CallInformation call)
+    public PyDataType UpdateAlliance (PyString description, PyString url, CallInformation call)
     {
-        if (this.Alliance.ExecutorCorpID != call.Session.CorporationID)
-            throw new CrpAccessDenied(MLS.UI_CORP_UPDATE_ALLIANCE_NOT_EXECUTOR);
-        if (CorporationRole.Director.Is(call.Session.CorporationRole) == false)
-            throw new CrpAccessDenied(MLS.UI_CORP_UPDATE_ALLIANCE_NOT_DIRECTOR);
+        if (Alliance.ExecutorCorpID != call.Session.CorporationID)
+            throw new CrpAccessDenied (MLS.UI_CORP_UPDATE_ALLIANCE_NOT_EXECUTOR);
+        if (CorporationRole.Director.Is (call.Session.CorporationRole) == false)
+            throw new CrpAccessDenied (MLS.UI_CORP_UPDATE_ALLIANCE_NOT_DIRECTOR);
 
-        this.Alliance.Description = description;
-        this.Alliance.Url         = url;
-        this.Alliance.Persist();
+        Alliance.Description = description;
+        Alliance.Url         = url;
+        Alliance.Persist ();
 
-        OnAllianceChanged change = new OnAllianceChanged(this.ObjectID);
+        OnAllianceChanged change = new OnAllianceChanged (ObjectID);
 
         change
-            .AddChange("description",    this.Alliance.Description,    description)
-            .AddChange("url",            this.Alliance.Url,            url)
-            .AddChange("executorCorpID", this.Alliance.ExecutorCorpID, this.Alliance.ExecutorCorpID)
-            .AddChange("creatorCorpID",  this.Alliance.CreatorCorpID,  this.Alliance.CreatorCorpID)
-            .AddChange("creatorCharID",  this.Alliance.CreatorCharID,  this.Alliance.CreatorCharID)
-            .AddChange("dictatorial",    this.Alliance.Dictatorial,    this.Alliance.Dictatorial)
-            .AddChange("deleted",        false,                        false);
-            
-        this.NotificationManager.NotifyAlliance(this.ObjectID, change);
+            .AddChange ("description",    Alliance.Description,    description)
+            .AddChange ("url",            Alliance.Url,            url)
+            .AddChange ("executorCorpID", Alliance.ExecutorCorpID, Alliance.ExecutorCorpID)
+            .AddChange ("creatorCorpID",  Alliance.CreatorCorpID,  Alliance.CreatorCorpID)
+            .AddChange ("creatorCharID",  Alliance.CreatorCharID,  Alliance.CreatorCharID)
+            .AddChange ("dictatorial",    Alliance.Dictatorial,    Alliance.Dictatorial)
+            .AddChange ("deleted",        false,                   false);
+
+        NotificationManager.NotifyAlliance (ObjectID, change);
 
         return null;
     }
 
-    public PyDataType GetRelationships(CallInformation call)
+    public PyDataType GetRelationships (CallInformation call)
     {
-        return Database.IndexRowset(
+        return Database.IndexRowset (
             0, AlliancesDB.GET_RELATIONSHIPS,
-            new Dictionary<string, object>()
-            {
-                {"_allianceID", this.ObjectID}
-            }
+            new Dictionary <string, object> {{"_allianceID", ObjectID}}
         );
     }
 
-    public PyDataType GetAllianceMembers(PyInteger allianceID, CallInformation call)
+    public PyDataType GetAllianceMembers (PyInteger allianceID, CallInformation call)
     {
-        return Database.Rowset(
+        return Database.Rowset (
             AlliancesDB.GET_MEMBERS_PUBLIC,
-            new Dictionary<string, object>()
-            {
-                {"_allianceID", allianceID}
-            }
+            new Dictionary <string, object> {{"_allianceID", allianceID}}
         );
     }
 
-    public PyDataType GetMembers(CallInformation call)
+    public PyDataType GetMembers (CallInformation call)
     {
-        return Database.IndexRowset(
+        return Database.IndexRowset (
             0, AlliancesDB.GET_MEMBERS_PRIVATE,
-            new Dictionary<string, object>()
-            {
-                {"_allianceID", this.ObjectID}
-            }
+            new Dictionary <string, object> {{"_allianceID", ObjectID}}
         );
     }
 
-    public PyDataType SetRelationship(PyInteger relationship, PyInteger toID, CallInformation call)
+    public PyDataType SetRelationship (PyInteger relationship, PyInteger toID, CallInformation call)
     {
-        if (this.Alliance.ExecutorCorpID != call.Session.CorporationID)
-            throw new CrpAccessDenied(MLS.UI_CORP_SET_RELATIONSHIP_EXECUTOR_ONLY);
-        if (CorporationRole.Director.Is(call.Session.CorporationRole) == false)
-            throw new CrpAccessDenied(MLS.UI_CORP_SET_RELATIONSHIP_DIRECTOR_ONLY);
-            
-        Database.Procedure(
+        if (Alliance.ExecutorCorpID != call.Session.CorporationID)
+            throw new CrpAccessDenied (MLS.UI_CORP_SET_RELATIONSHIP_EXECUTOR_ONLY);
+        if (CorporationRole.Director.Is (call.Session.CorporationRole) == false)
+            throw new CrpAccessDenied (MLS.UI_CORP_SET_RELATIONSHIP_DIRECTOR_ONLY);
+
+        Database.Procedure (
             AlliancesDB.UPDATE_RELATIONSHIP,
-            new Dictionary<string, object>()
+            new Dictionary <string, object>
             {
-                {"_fromID", this.ObjectID},
+                {"_fromID", ObjectID},
                 {"_toID", toID},
                 {"_relationship", relationship}
             }
         );
-                
-        OnAllianceRelationshipChanged change =
-            new OnAllianceRelationshipChanged(this.ObjectID, toID)
-                .AddChange("toID",         null, toID)
-                .AddChange("relationship", null, relationship);
 
-        this.NotificationManager.NotifyAlliance(this.ObjectID, change);
-            
+        OnAllianceRelationshipChanged change =
+            new OnAllianceRelationshipChanged (ObjectID, toID)
+                .AddChange ("toID",         null, toID)
+                .AddChange ("relationship", null, relationship);
+
+        NotificationManager.NotifyAlliance (ObjectID, change);
+
         return null;
     }
 
-    public PyDataType DeclareExecutorSupport(PyInteger executorID, CallInformation call)
+    public PyDataType DeclareExecutorSupport (PyInteger executorID, CallInformation call)
     {
-        if (CorporationRole.Director.Is(call.Session.CorporationRole) == false)
-            throw new CrpAccessDenied(MLS.UI_CORP_DECLARE_EXEC_SUPPORT_DIRECTOR_ONLY);
-            
+        if (CorporationRole.Director.Is (call.Session.CorporationRole) == false)
+            throw new CrpAccessDenied (MLS.UI_CORP_DECLARE_EXEC_SUPPORT_DIRECTOR_ONLY);
+
         // get corporation's join date
-        long minimumJoinDate     = DateTime.UtcNow.AddDays(-7).ToFileTimeUtc();
-        long corporationJoinDate = this.CorporationDB.GetAllianceJoinDate(call.Session.CorporationID);
+        long minimumJoinDate     = DateTime.UtcNow.AddDays (-7).ToFileTimeUtc ();
+        long corporationJoinDate = CorporationDB.GetAllianceJoinDate (call.Session.CorporationID);
 
         if (corporationJoinDate > minimumJoinDate)
-            throw new CanNotDeclareExecutorInFirstWeek();
+            throw new CanNotDeclareExecutorInFirstWeek ();
 
         // update corporation's supported executor and get the new alliance's executor id back (if any)
-        int? executorCorpID = Database.Scalar<int?>(
+        int? executorCorpID = Database.Scalar <int?> (
             AlliancesDB.UPDATE_SUPPORTED_EXECUTOR,
-            new Dictionary<string, object>()
+            new Dictionary <string, object>
             {
                 {"_corporationID", call.Session.CorporationID},
                 {"_chosenExecutorID", executorID},
-                {"_allianceID", this.ObjectID}
+                {"_allianceID", ObjectID}
             }
         );
-            
-        OnAllianceMemberChanged change =
-            new OnAllianceMemberChanged(this.ObjectID, call.Session.CorporationID)
-                .AddChange("chosenExecutorID", 0, executorID);
 
-        this.NotificationManager.NotifyAlliance(this.ObjectID, change);
-            
+        OnAllianceMemberChanged change =
+            new OnAllianceMemberChanged (ObjectID, call.Session.CorporationID)
+                .AddChange ("chosenExecutorID", 0, executorID);
+
+        NotificationManager.NotifyAlliance (ObjectID, change);
+
         // notify the alliance about the executor change
-        if (this.Alliance.ExecutorCorpID != executorCorpID)
+        if (Alliance.ExecutorCorpID != executorCorpID)
         {
             OnAllianceChanged allianceChange =
-                new OnAllianceChanged(this.ObjectID)
-                    .AddChange("executorCorpID", this.Alliance.ExecutorCorpID, executorCorpID);
-                
-            this.NotificationManager.NotifyAlliance(this.ObjectID, allianceChange);
+                new OnAllianceChanged (ObjectID)
+                    .AddChange ("executorCorpID", Alliance.ExecutorCorpID, executorCorpID);
+
+            NotificationManager.NotifyAlliance (ObjectID, allianceChange);
         }
-            
+
         // update the executor and store it
-        this.Alliance.ExecutorCorpID = executorCorpID;
-        this.Alliance.Persist();
+        Alliance.ExecutorCorpID = executorCorpID;
+        Alliance.Persist ();
 
         return null;
     }
 
-    public PyDataType GetApplications(CallInformation call)
+    public PyDataType GetApplications (CallInformation call)
     {
-        return Database.IndexRowset(
+        return Database.IndexRowset (
             1, AlliancesDB.LIST_APPLICATIONS,
-            new Dictionary<string, object>()
-            {
-                {"_allianceID", this.ObjectID}
-            }
+            new Dictionary <string, object> {{"_allianceID", ObjectID}}
         );
     }
 
-    public PyDataType GetBills(CallInformation call)
+    public PyDataType GetBills (CallInformation call)
     {
-        return Database.CRowset(
+        return Database.CRowset (
             BillsDB.GET_PAYABLE,
-            new Dictionary<string, object>()
-            {
-                {"_debtorID", this.ObjectID}
-            }
+            new Dictionary <string, object> {{"_debtorID", ObjectID}}
         );
     }
 
-    public PyDataType DeleteRelationship(PyInteger toID, CallInformation call)
+    public PyDataType DeleteRelationship (PyInteger toID, CallInformation call)
     {
-        if (this.Alliance.ExecutorCorpID != call.Session.CorporationID)
-            throw new CrpAccessDenied(MLS.UI_CORP_DELETE_RELATIONSHIP_EXECUTOR_ONLY);
-        if (CorporationRole.Director.Is(call.Session.CorporationRole) == false)
-            throw new CrpAccessDenied(MLS.UI_CORP_DELETE_RELATIONSHIP_DIRECTOR_ONLY);
-            
-        Database.Procedure(
+        if (Alliance.ExecutorCorpID != call.Session.CorporationID)
+            throw new CrpAccessDenied (MLS.UI_CORP_DELETE_RELATIONSHIP_EXECUTOR_ONLY);
+        if (CorporationRole.Director.Is (call.Session.CorporationRole) == false)
+            throw new CrpAccessDenied (MLS.UI_CORP_DELETE_RELATIONSHIP_DIRECTOR_ONLY);
+
+        Database.Procedure (
             AlliancesDB.REMOVE_RELATIONSHIP,
-            new Dictionary<string, object>()
+            new Dictionary <string, object>
             {
-                {"_fromID", this.ObjectID},
+                {"_fromID", ObjectID},
                 {"_toID", toID}
             }
         );
 
         OnAllianceRelationshipChanged change =
-            new OnAllianceRelationshipChanged(this.ObjectID, toID)
-                .AddChange("toID", toID, null);
+            new OnAllianceRelationshipChanged (ObjectID, toID)
+                .AddChange ("toID", toID, null);
 
         return null;
     }
 
-    public PyDataType GetRankedAlliances(CallInformation call)
+    public PyDataType GetRankedAlliances (CallInformation call)
     {
-        return Database.Rowset(
-            AlliancesDB.LIST
-        );
+        return Database.Rowset (AlliancesDB.LIST);
     }
 
-    public PyDataType UpdateApplication(PyInteger corporationID, PyString message, PyInteger newStatus, CallInformation call)
+    public PyDataType UpdateApplication (PyInteger corporationID, PyString message, PyInteger newStatus, CallInformation call)
     {
-        if (this.Alliance.ExecutorCorpID != call.Session.CorporationID)
-            throw new CrpAccessDenied(MLS.UI_CORP_DELETE_RELATIONSHIP_EXECUTOR_ONLY);
-        if (CorporationRole.Director.Is(call.Session.CorporationRole) == false)
-            throw new CrpAccessDenied(MLS.UI_CORP_DELETE_RELATIONSHIP_DIRECTOR_ONLY);
+        if (Alliance.ExecutorCorpID != call.Session.CorporationID)
+            throw new CrpAccessDenied (MLS.UI_CORP_DELETE_RELATIONSHIP_EXECUTOR_ONLY);
+        if (CorporationRole.Director.Is (call.Session.CorporationRole) == false)
+            throw new CrpAccessDenied (MLS.UI_CORP_DELETE_RELATIONSHIP_DIRECTOR_ONLY);
 
         switch ((int) newStatus)
         {
             case (int) AllianceApplicationStatus.Accepted:
             case (int) AllianceApplicationStatus.Rejected:
-                Database.Procedure(
+                Database.Procedure (
                     "CrpAlliancesUpdateApplication",
-                    new Dictionary<string, object>()
+                    new Dictionary <string, object>
                     {
                         {"_corporationID", corporationID},
-                        {"_allianceID", this.ObjectID},
+                        {"_allianceID", ObjectID},
                         {"_newStatus", newStatus},
-                        {"_currentTime", DateTime.UtcNow.ToFileTimeUtc()}
+                        {"_currentTime", DateTime.UtcNow.ToFileTimeUtc ()}
                     }
                 );
-                break;
-                
-            default:
-                throw new CustomError("Unknown status for alliance application");
-        }
-            
-        OnAllianceApplicationChanged change =
-            new OnAllianceApplicationChanged(this.ObjectID, corporationID)
-                .AddChange("allianceID",    this.ObjectID,                       this.ObjectID)
-                .AddChange("corporationID", corporationID,                       corporationID)
-                .AddChange("state",         (int) AllianceApplicationStatus.New, newStatus);
 
-        this.NotificationManager.NotifyAlliance(this.ObjectID, change);
-        this.NotificationManager.NotifyCorporationByRole(corporationID, CorporationRole.Director, change);
+                break;
+
+            default:
+                throw new CustomError ("Unknown status for alliance application");
+        }
+
+        OnAllianceApplicationChanged change =
+            new OnAllianceApplicationChanged (ObjectID, corporationID)
+                .AddChange ("allianceID",    ObjectID,                            ObjectID)
+                .AddChange ("corporationID", corporationID,                       corporationID)
+                .AddChange ("state",         (int) AllianceApplicationStatus.New, newStatus);
+
+        NotificationManager.NotifyAlliance (ObjectID, change);
+        NotificationManager.NotifyCorporationByRole (corporationID, CorporationRole.Director, change);
 
         return null;
     }

@@ -8,12 +8,12 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="MySql.Data" Version="8.0.28" />
-        <PackageReference Include="Swashbuckle.AspNetCore" Version="6.2.3" />
+        <PackageReference Include="MySql.Data" Version="8.0.28"/>
+        <PackageReference Include="Swashbuckle.AspNetCore" Version="6.2.3"/>
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\EVESharp.Common\EVESharp.Common.csproj" />
+        <ProjectReference Include="..\EVESharp.Common\EVESharp.Common.csproj"/>
     </ItemGroup>
 
 </Project>

@@ -7,19 +7,16 @@ namespace EVESharp.Node.Notifications.Client.Chat;
 public class OnContactLoggedOn : ClientNotification
 {
     private const string NOTIFICATION_NAME = "OnContactLoggedOn";
-        
+
     public int CharacterID { get; init; }
-        
-    public OnContactLoggedOn(int characterID) : base(NOTIFICATION_NAME)
+
+    public OnContactLoggedOn (int characterID) : base (NOTIFICATION_NAME)
     {
-        this.CharacterID = characterID;
+        CharacterID = characterID;
     }
 
-    public override List<PyDataType> GetElements()
+    public override List <PyDataType> GetElements ()
     {
-        return new List<PyDataType>()
-        {
-            this.CharacterID
-        };
+        return new List <PyDataType> {CharacterID};
     }
 }

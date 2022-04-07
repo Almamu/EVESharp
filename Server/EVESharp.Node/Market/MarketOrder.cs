@@ -20,22 +20,26 @@ public class MarketOrder
     public int             CorporationID { get; }
     public bool            IsCorp        { get; }
 
-    public MarketOrder(int orderID, int typeID, int characterID, int locationID, double price, int accountID, int unitsLeft, int minimumUnits, int range, int jumps, double escrow, TransactionType bid, long issued, int corporationID, bool isCorp)
+    public MarketOrder (
+        int  orderID,      int typeID, int characterID, int    locationID, double          price, int  accountID, int unitsLeft,
+        int  minimumUnits, int range,  int jumps,       double escrow,     TransactionType bid,   long issued,    int corporationID,
+        bool isCorp
+    )
     {
-        this.OrderID       = orderID;
-        this.TypeID        = typeID;
-        this.CharacterID   = characterID;
-        this.LocationID    = locationID;
-        this.Price         = price;
-        this.AccountID     = accountID;
-        this.UnitsLeft     = unitsLeft;
-        this.MinimumUnits  = minimumUnits;
-        this.Range         = range;
-        this.Jumps         = jumps;
-        this.Escrow        = escrow;
-        this.Bid           = bid;
-        this.Issued        = issued;
-        this.CorporationID = corporationID;
-        this.IsCorp        = isCorp;
+        OrderID       = orderID;
+        TypeID        = typeID;
+        CharacterID   = characterID;
+        LocationID    = locationID;
+        Price         = price;
+        AccountID     = accountID;
+        UnitsLeft     = unitsLeft;
+        MinimumUnits  = minimumUnits;
+        Range         = range;
+        Jumps         = jumps;
+        Escrow        = escrow;
+        Bid           = bid;
+        Issued        = issued;
+        CorporationID = corporationID;
+        IsCorp        = isCorp;
     }
 }

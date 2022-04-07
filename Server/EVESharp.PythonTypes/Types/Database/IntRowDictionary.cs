@@ -1,5 +1,3 @@
-using System;
-using System.IO;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Primitives;
 using MySql.Data.MySqlClient;
@@ -16,16 +14,14 @@ public class IntRowDictionary
     /// <param name="reader">The MySqlDataReader to read the data from</param>
     /// <param name="keyColumnIndex">The column to use as index for the IntRowDictionary</param>
     /// <returns></returns>
-    public static PyDictionary FromMySqlDataReader(IDatabaseConnection connection, MySqlDataReader reader, int keyColumnIndex)
+    public static PyDictionary FromMySqlDataReader (IDatabaseConnection connection, MySqlDataReader reader, int keyColumnIndex)
     {
-        PyDictionary result = new PyDictionary();
-        connection.GetDatabaseHeaders(reader, out PyList<PyString> header, out FieldType[] fieldTypes);
+        PyDictionary result = new PyDictionary ();
+        connection.GetDatabaseHeaders (reader, out PyList <PyString> header, out FieldType [] fieldTypes);
 
-        while (reader.Read() == true)
-        {
-            result [reader.GetInt32(keyColumnIndex)] = Row.FromMySqlDataReader(reader, header, fieldTypes);
-        }
-            
+        while (reader.Read ())
+            result [reader.GetInt32 (keyColumnIndex)] = Row.FromMySqlDataReader (reader, header, fieldTypes);
+
         return result;
     }
 }

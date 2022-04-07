@@ -36,34 +36,34 @@ public class alert : Service
     public override AccessLevel AccessLevel => AccessLevel.None;
     private         ILogger     Log         { get; }
 
-    public alert(ILogger logger)
+    public alert (ILogger logger)
     {
-        this.Log = logger;
+        Log = logger;
     }
 
-    public PyTuple BeanCount(PyInteger stackID, CallInformation call)
+    public PyTuple BeanCount (PyInteger stackID, CallInformation call)
     {
-        return new PyTuple(2)
+        return new PyTuple (2)
         {
             [0] = null,
             [1] = 0
         };
     }
 
-    public PyDataType SendClientStackTraceAlert(PyTuple stackInfo, PyString stackTrace, PyString type, PyDataType extra = null, CallInformation call = null)
+    public PyDataType SendClientStackTraceAlert (PyTuple stackInfo, PyString stackTrace, PyString type, PyDataType extra = null, CallInformation call = null)
     {
-        Log.Fatal(
+        Log.Fatal (
             "Received the following client's stack trace:" + Environment.NewLine +
             $"------------------ {type.Value} ------------------" + Environment.NewLine +
-            $"{(stackInfo[1] as PyString).Value}" + Environment.NewLine +
+            $"{(stackInfo [1] as PyString).Value}" + Environment.NewLine +
             stackTrace.Value
         );
-            
+
         // the client should receive anything to know that the stack trace arrived to the server
         return null;
     }
 
-    public PyDataType BeanDelivery(PyDictionary beanCounts, CallInformation call)
+    public PyDataType BeanDelivery (PyDictionary beanCounts, CallInformation call)
     {
         // I'm not joking, send me the stack trace NOW!!!
         // :P

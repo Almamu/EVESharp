@@ -4,16 +4,16 @@ public class PySubStruct : PyDataType
 {
     public PyDataType Definition { get; }
 
-    public PySubStruct(PyDataType definition)
+    public PySubStruct (PyDataType definition)
     {
-        this.Definition = definition;
+        Definition = definition;
     }
 
-    public override int GetHashCode()
+    public override int GetHashCode ()
     {
-        if (this.Definition is null)
+        if (Definition is null)
             return 0x36851495;
-            
-        return this.Definition.GetHashCode() ^ 0x36851495;
+
+        return Definition.GetHashCode () ^ 0x36851495;
     }
 }

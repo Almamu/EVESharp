@@ -2,7 +2,5 @@
 
 public class OfficeFolder : ItemInventory
 {
-    public OfficeFolder(Information.Item info) : base(info)
-    {
-    }
+    public OfficeFolder (Information.Item info) : base (info) { }
 }

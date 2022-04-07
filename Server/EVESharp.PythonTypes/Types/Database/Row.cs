@@ -13,26 +13,26 @@ public class Row
     /// <summary>
     /// The columns for this row
     /// </summary>
-    public PyList<PyString> Header { get; }
+    public PyList <PyString> Header { get; }
     /// <summary>
     /// The values for each column
     /// </summary>
     public PyList Line { get; }
 
-    public Row(PyList<PyString> header, PyList line)
+    public Row (PyList <PyString> header, PyList line)
     {
-        this.Header = header;
-        this.Line   = line;
+        Header = header;
+        Line   = line;
     }
-        
-    public static implicit operator PyDataType(Row row)
+
+    public static implicit operator PyDataType (Row row)
     {
-        PyDictionary data = new PyDictionary();
+        PyDictionary data = new PyDictionary ();
 
-        data["header"] = row.Header;
-        data["line"]   = row.Line;
+        data ["header"] = row.Header;
+        data ["line"]   = row.Line;
 
-        return new PyObjectData(ROW_TYPE_NAME, data);
+        return new PyObjectData (ROW_TYPE_NAME, data);
     }
 
     /// <summary>
@@ -43,14 +43,14 @@ public class Row
     /// <param name="header"></param>
     /// <param name="fieldTypes"></param>
     /// <returns></returns>
-    public static Row FromMySqlDataReader(MySqlDataReader reader, PyList<PyString> header, FieldType[] fieldTypes)
+    public static Row FromMySqlDataReader (MySqlDataReader reader, PyList <PyString> header, FieldType [] fieldTypes)
     {
-        PyList row = new PyList(reader.FieldCount);
+        PyList row = new PyList (reader.FieldCount);
 
         for (int i = 0; i < reader.FieldCount; i++)
-            row[i] = IDatabaseConnection.ObjectFromColumn(reader, fieldTypes[i], i);
+            row [i] = IDatabaseConnection.ObjectFromColumn (reader, fieldTypes [i], i);
 
-        return new Row(header, row);
+        return new Row (header, row);
     }
 
     /// <summary>
@@ -60,17 +60,17 @@ public class Row
     /// <param name="connection">The connection used</param>
     /// <param name="reader"></param>
     /// <returns></returns>
-    public static Row FromMySqlDataReader(IDatabaseConnection connection, MySqlDataReader reader)
+    public static Row FromMySqlDataReader (IDatabaseConnection connection, MySqlDataReader reader)
     {
-        PyList<PyString> header = new PyList<PyString>(reader.FieldCount);
-        PyList           row    = new PyList(reader.FieldCount);
+        PyList <PyString> header = new PyList <PyString> (reader.FieldCount);
+        PyList            row    = new PyList (reader.FieldCount);
 
         for (int i = 0; i < reader.FieldCount; i++)
         {
-            header[i] = reader.GetName(i);
-            row[i]    = IDatabaseConnection.ObjectFromColumn(reader, connection.GetFieldType(reader, i), i);
+            header [i] = reader.GetName (i);
+            row [i]    = IDatabaseConnection.ObjectFromColumn (reader, connection.GetFieldType (reader, i), i);
         }
-            
-        return new Row(header, row);
+
+        return new Row (header, row);
     }
 }

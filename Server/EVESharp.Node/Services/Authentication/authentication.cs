@@ -33,27 +33,21 @@ namespace EVESharp.Node.Services.Network;
 
 public class authentication : Service
 {
+    private readonly Authentication mConfiguration;
     public override  AccessLevel    AccessLevel => AccessLevel.None;
-    private readonly Authentication mConfiguration = null;
 
-    public authentication(Authentication configuration)
+    public authentication (Authentication configuration)
     {
         this.mConfiguration = configuration;
     }
 
-    public PyDataType GetPostAuthenticationMessage(CallInformation call)
+    public PyDataType GetPostAuthenticationMessage (CallInformation call)
     {
         if (this.mConfiguration.MessageType == AuthenticationMessageType.NoMessage)
             return null;
 
         if (this.mConfiguration.MessageType == AuthenticationMessageType.HTMLMessage)
-        {
-            return KeyVal.FromDictionary(new PyDictionary
-                {
-                    ["message"] = this.mConfiguration.Message
-                }
-            );
-        }
+            return KeyVal.FromDictionary (new PyDictionary {["message"] = this.mConfiguration.Message});
 
         return null;
     }

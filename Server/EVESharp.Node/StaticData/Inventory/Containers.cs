@@ -12,5 +12,5 @@ public enum Container
     Offices           = 10009,
     StationCharacters = 10010,
     Character         = 10011,
-    CorpMarket        = 10012,
+    CorpMarket        = 10012
 }

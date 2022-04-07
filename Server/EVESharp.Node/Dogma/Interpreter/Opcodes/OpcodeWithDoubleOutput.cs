@@ -2,9 +2,7 @@
 
 public abstract class OpcodeWithDoubleOutput : Opcode
 {
-    protected OpcodeWithDoubleOutput(Interpreter interpreter) : base(interpreter)
-    {
-    }
+    protected OpcodeWithDoubleOutput (Interpreter interpreter) : base (interpreter) { }
 
-    public abstract double Execute();
+    public abstract double Execute ();
 }

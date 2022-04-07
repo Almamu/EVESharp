@@ -22,21 +22,19 @@
     Creator: Almamu
 */
 
-using EVESharp.Common.Database;
-using EVESharp.Node.Inventory.Items.Types.Information;
-
 namespace EVESharp.Node.Inventory.Items.Types;
 
 public class Blueprint : ItemEntity
 {
     public Information.Blueprint BlueprintInformation { get; }
-    public Blueprint(Information.Blueprint information) : base(information.Information)
+
+    public bool Copy                            => BlueprintInformation.IsCopy;
+    public int  MaterialLevel                   => BlueprintInformation.MaterialLevel;
+    public int  ProductivityLevel               => BlueprintInformation.ProductivityLevel;
+    public int  LicensedProductionRunsRemaining => BlueprintInformation.LicensedProductionRunsRemaining;
+
+    public Blueprint (Information.Blueprint information) : base (information.Information)
     {
-        this.BlueprintInformation = information;
+        BlueprintInformation = information;
     }
-        
-    public bool Copy                            => this.BlueprintInformation.IsCopy;
-    public int  MaterialLevel                   => this.BlueprintInformation.MaterialLevel;
-    public int  ProductivityLevel               => this.BlueprintInformation.ProductivityLevel;
-    public int  LicensedProductionRunsRemaining => this.BlueprintInformation.LicensedProductionRunsRemaining;
 }

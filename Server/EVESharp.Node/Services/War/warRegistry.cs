@@ -3,46 +3,45 @@ using EVESharp.EVE.Services;
 using EVESharp.EVE.Sessions;
 using EVESharp.Node.Network;
 using EVESharp.Node.StaticData;
-using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Primitives;
 
 namespace EVESharp.Node.Services.War;
 
 public class warRegistry : ClientBoundService
 {
-    public override AccessLevel   AccessLevel => AccessLevel.None;
-    private         NodeContainer Container   { get; init; }
     private         int           mObjectID;
+    public override AccessLevel   AccessLevel => AccessLevel.None;
+    private         NodeContainer Container   { get; }
 
-    public warRegistry(NodeContainer container, BoundServiceManager manager) : base(manager)
+    public warRegistry (NodeContainer container, BoundServiceManager manager) : base (manager)
     {
-        this.Container = container;
+        Container = container;
     }
 
-    private warRegistry(NodeContainer container, BoundServiceManager manager, int objectID, Session session) : base(manager, session, objectID)
+    private warRegistry (NodeContainer container, BoundServiceManager manager, int objectID, Session session) : base (manager, session, objectID)
     {
-        this.Container = container;
+        Container      = container;
         this.mObjectID = objectID;
     }
-        
-    public PyDataType GetWars(PyInteger ownerID, CallInformation call)
+
+    public PyDataType GetWars (PyInteger ownerID, CallInformation call)
     {
-        return new WarInfo();
+        return new WarInfo ();
     }
 
-    public PyDataType GetCostOfWarAgainst(PyInteger corporationID, CallInformation call)
+    public PyDataType GetCostOfWarAgainst (PyInteger corporationID, CallInformation call)
     {
-        return this.Container.Constants[Constants.warDeclarationCost].Value;
+        return Container.Constants [Constants.warDeclarationCost].Value;
     }
-        
-    protected override long MachoResolveObject(ServiceBindParams parameters, CallInformation call)
+
+    protected override long MachoResolveObject (ServiceBindParams parameters, CallInformation call)
     {
         // TODO: PROPERLY HANDLE THIS
-        return this.BoundServiceManager.MachoNet.NodeID;
+        return BoundServiceManager.MachoNet.NodeID;
     }
 
-    protected override BoundService CreateBoundInstance(ServiceBindParams bindParams, CallInformation call)
+    protected override BoundService CreateBoundInstance (ServiceBindParams bindParams, CallInformation call)
     {
-        return new warRegistry(this.Container, this.BoundServiceManager, bindParams.ObjectID, call.Session);
+        return new warRegistry (Container, BoundServiceManager, bindParams.ObjectID, call.Session);
     }
 }

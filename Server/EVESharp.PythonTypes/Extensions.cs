@@ -1,8 +1,6 @@
 using System;
 using System.IO;
-using System.Runtime.CompilerServices;
-using EVESharp.PythonTypes.Types.Collections;
-using EVESharp.PythonTypes.Types.Primitives;
+using EVESharp.PythonTypes.Marshal;
 
 namespace EVESharp.PythonTypes;
 
@@ -13,9 +11,9 @@ public static class Extensions
     /// </summary>
     /// <param name="w">The binary writer in use</param>
     /// <param name="op">The opcode to write</param>
-    public static void WriteOpcode(this BinaryWriter w, Marshal.Opcode op)
+    public static void WriteOpcode (this BinaryWriter w, Opcode op)
     {
-        w.Write((byte) op);
+        w.Write ((byte) op);
     }
 
     /// <summary>
@@ -25,11 +23,13 @@ public static class Extensions
     /// </summary>
     /// <param name="reader"></param>
     /// <returns>The read size indicator</returns>
-    public static uint ReadSizeEx(this BinaryReader reader)
+    public static uint ReadSizeEx (this BinaryReader reader)
     {
-        byte len = reader.ReadByte();
+        byte len = reader.ReadByte ();
+
         if (len == 0xFF)
-            return reader.ReadUInt32();
+            return reader.ReadUInt32 ();
+
         return len;
     }
 
@@ -40,16 +40,16 @@ public static class Extensions
     /// </summary>
     /// <param name="writer"></param>
     /// <param name="len">The size indicator to write</param>
-    public static void WriteSizeEx(this BinaryWriter writer, uint len)
+    public static void WriteSizeEx (this BinaryWriter writer, uint len)
     {
         if (len < 0xFF)
         {
-            writer.Write((byte) len);
+            writer.Write ((byte) len);
         }
         else
         {
-            writer.Write((byte) 0xFF);
-            writer.Write(len);
+            writer.Write ((byte) 0xFF);
+            writer.Write (len);
         }
     }
 
@@ -58,9 +58,9 @@ public static class Extensions
     /// </summary>
     /// <param name="writer"></param>
     /// <param name="len"></param>
-    public static void WriteSizeEx(this BinaryWriter writer, int len)
+    public static void WriteSizeEx (this BinaryWriter writer, int len)
     {
-        WriteSizeEx(writer, (uint) len);
+        WriteSizeEx (writer, (uint) len);
     }
 
     /// <summary>
@@ -68,15 +68,15 @@ public static class Extensions
     /// </summary>
     /// <param name="reader"></param>
     /// <returns></returns>
-    public static byte PeekByte(this BinaryReader reader)
+    public static byte PeekByte (this BinaryReader reader)
     {
         if (reader.BaseStream.CanSeek == false)
-            throw new InvalidOperationException("Byte peeking can only be performed on seekable streams!");
-            
+            throw new InvalidOperationException ("Byte peeking can only be performed on seekable streams!");
+
         long origPos = reader.BaseStream.Position;
-        byte res     = reader.ReadByte();
+        byte res     = reader.ReadByte ();
         reader.BaseStream.Position = origPos;
-            
+
         return res;
     }
 }

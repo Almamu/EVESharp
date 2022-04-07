@@ -37,37 +37,37 @@ public class objectCaching : Service
     private         ILogger      Log          { get; }
     private         CacheStorage CacheStorage { get; }
 
-    public objectCaching(CacheStorage cacheStorage, ILogger logger)
+    public objectCaching (CacheStorage cacheStorage, ILogger logger)
     {
-        this.Log          = logger;
-        this.CacheStorage = cacheStorage;
+        Log          = logger;
+        CacheStorage = cacheStorage;
     }
-        
-    public PyDataType GetCachableObject(PyInteger shared, PyTuple objectID, PyTuple objectVersion, PyInteger nodeID, CallInformation call)
+
+    public PyDataType GetCachableObject (PyInteger shared, PyTuple objectID, PyTuple objectVersion, PyInteger nodeID, CallInformation call)
     {
         // TODO: CHECK CACHEOK EXCEPTION ON CLIENT
-        Log.Debug($"Received cache request for a tuple objectID");
-            
+        Log.Debug ("Received cache request for a tuple objectID");
+
         if (objectID.Count != 3 || objectID [2] is PyTuple == false)
-            throw new CustomError("Requesting cache with an unknown objectID");
+            throw new CustomError ("Requesting cache with an unknown objectID");
 
-        PyTuple callInformation = objectID[2] as PyTuple;
+        PyTuple callInformation = objectID [2] as PyTuple;
 
-        if (callInformation.Count != 2 || callInformation[0] is PyString == false ||
-            callInformation[1] is PyString == false)
-            throw new CustomError("Requesting cache with an unknown objectID");
+        if (callInformation.Count != 2 || callInformation [0] is PyString == false ||
+            callInformation [1] is PyString == false)
+            throw new CustomError ("Requesting cache with an unknown objectID");
 
-        string service = callInformation[0] as PyString;
-        string method  = callInformation[1] as PyString;
-            
-        return this.CacheStorage.Get(service, method);
+        string service = callInformation [0] as PyString;
+        string method  = callInformation [1] as PyString;
+
+        return CacheStorage.Get (service, method);
     }
 
-    public PyDataType GetCachableObject(PyInteger shared, PyString objectID, PyTuple objectVersion, PyInteger nodeID, CallInformation call)
+    public PyDataType GetCachableObject (PyInteger shared, PyString objectID, PyTuple objectVersion, PyInteger nodeID, CallInformation call)
     {
         // TODO: CHECK CACHEOK EXCEPTION ON CLIENT
-        Log.Debug($"Received cache request for {objectID.Value}");
+        Log.Debug ($"Received cache request for {objectID.Value}");
 
-        return this.CacheStorage.Get(objectID);
+        return CacheStorage.Get (objectID);
     }
 }

@@ -4,7 +4,6 @@ using System.Linq;
 using EVESharp.EVE;
 using EVESharp.EVE.Services;
 using EVESharp.Node.Database;
-using EVESharp.Node.Dogma;
 using EVESharp.Node.Exceptions.slash;
 using EVESharp.Node.Inventory;
 using EVESharp.Node.Inventory.Items;
@@ -17,13 +16,16 @@ using EVESharp.Node.Sessions;
 using EVESharp.Node.StaticData.Inventory;
 using EVESharp.PythonTypes.Types.Primitives;
 using Serilog;
+using Type = EVESharp.Node.StaticData.Inventory.Type;
 
 namespace EVESharp.Node.Services.Network;
 
 public class slash : Service
 {
+    private readonly Dictionary <string, Action <string [], CallInformation>> mCommands =
+        new Dictionary <string, Action <string [], CallInformation>> ();
     public override AccessLevel         AccessLevel         => AccessLevel.None;
-    private         TypeManager         TypeManager         => this.ItemFactory.TypeManager;
+    private         TypeManager         TypeManager         => ItemFactory.TypeManager;
     private         ItemFactory         ItemFactory         { get; }
     private         ILogger             Log                 { get; }
     private         CharacterDB         CharacterDB         { get; }
@@ -31,53 +33,53 @@ public class slash : Service
     private         WalletManager       WalletManager       { get; }
     private         Node.Dogma.Dogma    Dogma               { get; }
 
-    private readonly Dictionary<string, Action<string[], CallInformation>> mCommands =
-        new Dictionary<string, Action<string[], CallInformation>>();
-        
-    public slash(ILogger logger, ItemFactory itemFactory, CharacterDB characterDB, NotificationManager notificationManager, WalletManager walletManager, Node.Dogma.Dogma dogma)
+    public slash (
+        ILogger          logger, ItemFactory itemFactory, CharacterDB characterDB, NotificationManager notificationManager, WalletManager walletManager,
+        Node.Dogma.Dogma dogma
+    )
     {
-        this.Log                 = logger;
-        this.ItemFactory         = itemFactory;
-        this.CharacterDB         = characterDB;
-        this.NotificationManager = notificationManager;
-        this.WalletManager       = walletManager;
-        this.Dogma               = dogma;
+        Log                 = logger;
+        ItemFactory         = itemFactory;
+        CharacterDB         = characterDB;
+        NotificationManager = notificationManager;
+        WalletManager       = walletManager;
+        Dogma               = dogma;
 
         // register commands
-        this.mCommands["create"]     = CreateCmd;
-        this.mCommands["createitem"] = CreateCmd;
-        this.mCommands["giveskills"] = GiveSkillCmd;
-        this.mCommands["giveskill"]  = GiveSkillCmd;
-        this.mCommands["giveisk"]    = GiveIskCmd;
+        this.mCommands ["create"]     = this.CreateCmd;
+        this.mCommands ["createitem"] = this.CreateCmd;
+        this.mCommands ["giveskills"] = this.GiveSkillCmd;
+        this.mCommands ["giveskill"]  = this.GiveSkillCmd;
+        this.mCommands ["giveisk"]    = this.GiveIskCmd;
     }
 
-    private string GetCommandListForClient()
+    private string GetCommandListForClient ()
     {
         string result = "";
 
-        foreach (KeyValuePair<string, Action<string[], CallInformation>> pair in this.mCommands)
+        foreach (KeyValuePair <string, Action <string [], CallInformation>> pair in this.mCommands)
             result += $"'{pair.Key}',";
 
         return $"[{result}]";
     }
-        
-    public PyDataType SlashCmd(PyString line, CallInformation call)
+
+    public PyDataType SlashCmd (PyString line, CallInformation call)
     {
         if ((call.Session.Role & (int) Roles.ROLE_ADMIN) != (int) Roles.ROLE_ADMIN)
-            throw new SlashError("Only admins can run slash commands!");
+            throw new SlashError ("Only admins can run slash commands!");
 
         try
         {
-            string[] parts = line.Value.Split(' ');
+            string [] parts = line.Value.Split (' ');
 
             // get the command name
-            string command = parts[0].TrimStart('/');
+            string command = parts [0].TrimStart ('/');
 
             // only a "/" means the client is requesting the list of commands available
-            if (command.Length == 0 || this.mCommands.ContainsKey(command) == false)
-                throw new SlashError("Commands: " + this.GetCommandListForClient());
+            if (command.Length == 0 || this.mCommands.ContainsKey (command) == false)
+                throw new SlashError ("Commands: " + this.GetCommandListForClient ());
 
-            this.mCommands[command].Invoke(parts, call);
+            this.mCommands [command].Invoke (parts, call);
         }
         catch (SlashError)
         {
@@ -85,168 +87,171 @@ public class slash : Service
         }
         catch (Exception e)
         {
-            this.Log.Error(e.Message);
-            this.Log.Error(e.StackTrace);
-                
-            throw new SlashError($"Runtime error: {e.Message}");
+            Log.Error (e.Message);
+            Log.Error (e.StackTrace);
+
+            throw new SlashError ($"Runtime error: {e.Message}");
         }
-            
+
         return null;
     }
 
-    private void GiveIskCmd(string[] argv, CallInformation call)
+    private void GiveIskCmd (string [] argv, CallInformation call)
     {
         if (argv.Length < 3)
-            throw new SlashError("giveisk takes two arguments");
+            throw new SlashError ("giveisk takes two arguments");
 
-        string targetCharacter = argv[1];
-            
-        if (double.TryParse(argv[2], out double iskQuantity) == false)
-            throw new SlashError("giveisk second argument must be the ISK quantity to give");
+        string targetCharacter = argv [1];
+
+        if (double.TryParse (argv [2], out double iskQuantity) == false)
+            throw new SlashError ("giveisk second argument must be the ISK quantity to give");
 
         int    targetCharacterID = 0;
-        int    originCharacterID = call.Session.EnsureCharacterIsSelected();
+        int    originCharacterID = call.Session.EnsureCharacterIsSelected ();
         double finalBalance      = 0;
-            
+
         if (targetCharacter == "me")
         {
             targetCharacterID = originCharacterID;
         }
         else
         {
-            List<int> matches = this.CharacterDB.FindCharacters(targetCharacter);
+            List <int> matches = CharacterDB.FindCharacters (targetCharacter);
 
             if (matches.Count > 1)
-                throw new SlashError("There's more than one character that matches the search criteria, please narrow it down");
+                throw new SlashError ("There's more than one character that matches the search criteria, please narrow it down");
 
-            targetCharacterID = matches[0];
+            targetCharacterID = matches [0];
         }
 
-        using Wallet wallet = this.WalletManager.AcquireWallet(targetCharacterID, WalletKeys.MAIN_WALLET);
+        using Wallet wallet = WalletManager.AcquireWallet (targetCharacterID, WalletKeys.MAIN_WALLET);
         {
             if (iskQuantity < 0)
             {
-                wallet.EnsureEnoughBalance(iskQuantity);
-                wallet.CreateJournalRecord(MarketReference.GMCashTransfer, this.ItemFactory.OwnerSCC.ID, null, -iskQuantity);
+                wallet.EnsureEnoughBalance (iskQuantity);
+                wallet.CreateJournalRecord (MarketReference.GMCashTransfer, ItemFactory.OwnerSCC.ID, null, -iskQuantity);
             }
             else
             {
-                wallet.CreateJournalRecord(MarketReference.GMCashTransfer, this.ItemFactory.OwnerSCC.ID, targetCharacterID, null, iskQuantity);
+                wallet.CreateJournalRecord (MarketReference.GMCashTransfer, ItemFactory.OwnerSCC.ID, targetCharacterID, null, iskQuantity);
             }
         }
     }
 
-    private void CreateCmd(string[] argv, CallInformation call)
+    private void CreateCmd (string [] argv, CallInformation call)
     {
         if (argv.Length < 2)
-            throw new SlashError("create takes at least one argument");
-            
-        int typeID   = int.Parse(argv[1]);
+            throw new SlashError ("create takes at least one argument");
+
+        int typeID   = int.Parse (argv [1]);
         int quantity = 1;
-            
+
         if (argv.Length > 2)
-            quantity = int.Parse(argv[2]);
+            quantity = int.Parse (argv [2]);
 
         if (call.Session.StationID == null)
-            throw new SlashError("Creating items can only be done at station");
+            throw new SlashError ("Creating items can only be done at station");
+
         // ensure the typeID exists
-        if (this.TypeManager.ContainsKey(typeID) == false)
-            throw new SlashError("The specified typeID doesn't exist");
-            
+        if (TypeManager.ContainsKey (typeID) == false)
+            throw new SlashError ("The specified typeID doesn't exist");
+
         // create a new item with the correct locationID
-        Station   location  = this.ItemFactory.GetStaticStation((int) call.Session.StationID);
-        Character character = this.ItemFactory.GetItem<Character>(call.Session.EnsureCharacterIsSelected());
-            
-        StaticData.Inventory.Type itemType = this.TypeManager[typeID];
-        ItemEntity                item     = this.ItemFactory.CreateSimpleItem(itemType, character, location, Flags.Hangar, quantity);
+        Station   location  = ItemFactory.GetStaticStation ((int) call.Session.StationID);
+        Character character = ItemFactory.GetItem <Character> (call.Session.EnsureCharacterIsSelected ());
 
-        item.Persist();
-            
+        Type       itemType = TypeManager [typeID];
+        ItemEntity item     = ItemFactory.CreateSimpleItem (itemType, character, location, Flags.Hangar, quantity);
+
+        item.Persist ();
+
         // send client a notification so they can display the item in the hangar
-        this.Dogma.QueueMultiEvent(call.Session.EnsureCharacterIsSelected(), OnItemChange.BuildNewItemChange(item));
+        Dogma.QueueMultiEvent (call.Session.EnsureCharacterIsSelected (), OnItemChange.BuildNewItemChange (item));
     }
 
-    private static int ParseIntegerThatMightBeDecimal(string value)
+    private static int ParseIntegerThatMightBeDecimal (string value)
     {
-        int index = value.IndexOf('.');
-                
-        if (index != -1)
-            value = value.Substring(0, index);
+        int index = value.IndexOf ('.');
 
-        return int.Parse(value);
+        if (index != -1)
+            value = value.Substring (0, index);
+
+        return int.Parse (value);
     }
-        
-    private void GiveSkillCmd(string[] argv, CallInformation call)
+
+    private void GiveSkillCmd (string [] argv, CallInformation call)
     {
         // TODO: NOT NODE-SAFE, MUST REIMPLEMENT TAKING THAT INTO ACCOUNT!
         if (argv.Length != 4)
-            throw new SlashError("GiveSkill must have 4 arguments");
+            throw new SlashError ("GiveSkill must have 4 arguments");
 
-        int characterID = call.Session.EnsureCharacterIsSelected();
-            
-        string target    = argv[1].Trim(new [] { '"', ' '});
-        string skillType = argv[2];
-        int    level     = ParseIntegerThatMightBeDecimal(argv[3]);
+        int characterID = call.Session.EnsureCharacterIsSelected ();
 
-        if (target != "me" && target != characterID.ToString())
-            throw new SlashError("giveskill only supports me for now");
+        string target    = argv [1].Trim ('"', ' ');
+        string skillType = argv [2];
+        int    level     = ParseIntegerThatMightBeDecimal (argv [3]);
 
-        Character character = this.ItemFactory.GetItem<Character>(characterID);
-            
+        if (target != "me" && target != characterID.ToString ())
+            throw new SlashError ("giveskill only supports me for now");
+
+        Character character = ItemFactory.GetItem <Character> (characterID);
+
         if (skillType == "all")
         {
             // player wants all the skills!
-            IEnumerable<KeyValuePair<int, StaticData.Inventory.Type>> skillTypes =
-                this.TypeManager.Where(x => x.Value.Group.Category.ID == (int) Categories.Skill && x.Value.Published == true);
+            IEnumerable <KeyValuePair <int, Type>> skillTypes =
+                TypeManager.Where (x => x.Value.Group.Category.ID == (int) Categories.Skill && x.Value.Published);
 
-            Dictionary<int, Skill> injectedSkills = character.InjectedSkillsByTypeID;
+            Dictionary <int, Skill> injectedSkills = character.InjectedSkillsByTypeID;
 
-            foreach (KeyValuePair<int, StaticData.Inventory.Type> pair in skillTypes)
-            {
+            foreach (KeyValuePair <int, Type> pair in skillTypes)
                 // skill already injected, train it to the desired level
-                if (injectedSkills.ContainsKey(pair.Key) == true)
+                if (injectedSkills.ContainsKey (pair.Key))
                 {
-                    Skill skill = injectedSkills[pair.Key];
+                    Skill skill = injectedSkills [pair.Key];
 
                     skill.Level = level;
-                    skill.Persist();
-                    this.Dogma.QueueMultiEvent(character.ID, new OnSkillTrained(skill));
+                    skill.Persist ();
+                    Dogma.QueueMultiEvent (character.ID, new OnSkillTrained (skill));
                 }
                 else
                 {
                     // skill not injected, create it, inject and done
-                    Skill skill = this.ItemFactory.CreateSkill(pair.Value, character, level,
-                                                               SkillHistoryReason.GMGiveSkill);
+                    Skill skill = ItemFactory.CreateSkill (
+                        pair.Value, character, level,
+                        SkillHistoryReason.GMGiveSkill
+                    );
 
-                    this.Dogma.QueueMultiEvent(character.ID, OnItemChange.BuildNewItemChange(skill));
-                    this.Dogma.QueueMultiEvent(character.ID, new OnSkillInjected());
+                    Dogma.QueueMultiEvent (character.ID, OnItemChange.BuildNewItemChange (skill));
+                    Dogma.QueueMultiEvent (character.ID, new OnSkillInjected ());
                 }
-            }
         }
         else
         {
-            Dictionary<int, Skill> injectedSkills = character.InjectedSkillsByTypeID;
-                
-            int skillTypeID = ParseIntegerThatMightBeDecimal(skillType);
+            Dictionary <int, Skill> injectedSkills = character.InjectedSkillsByTypeID;
 
-            if (injectedSkills.ContainsKey(skillTypeID) == true)
+            int skillTypeID = ParseIntegerThatMightBeDecimal (skillType);
+
+            if (injectedSkills.ContainsKey (skillTypeID))
             {
-                Skill skill = injectedSkills[skillTypeID];
+                Skill skill = injectedSkills [skillTypeID];
 
                 skill.Level = level;
-                skill.Persist();
-                this.Dogma.QueueMultiEvent(character.ID, new OnSkillStartTraining(skill));
-                this.Dogma.NotifyAttributeChange(character.ID, new Attributes[] { Attributes.skillPoints, Attributes.skillLevel}, skill);
-                this.Dogma.QueueMultiEvent(character.ID, new OnSkillTrained(skill));
+                skill.Persist ();
+                Dogma.QueueMultiEvent (character.ID, new OnSkillStartTraining (skill));
+                Dogma.NotifyAttributeChange (character.ID, new [] {Attributes.skillPoints, Attributes.skillLevel}, skill);
+                Dogma.QueueMultiEvent (character.ID, new OnSkillTrained (skill));
             }
             else
             {
                 // skill not injected, create it, inject and done
-                Skill skill = this.ItemFactory.CreateSkill(this.TypeManager[skillTypeID], character, level,
-                                                           SkillHistoryReason.GMGiveSkill);
+                Skill skill = ItemFactory.CreateSkill (
+                    TypeManager [skillTypeID], character, level,
+                    SkillHistoryReason.GMGiveSkill
+                );
 
-                this.Dogma.QueueMultiEvent(character.ID, OnItemChange.BuildNewItemChange(skill));
-                this.Dogma.QueueMultiEvent(character.ID, new OnSkillInjected());
+                Dogma.QueueMultiEvent (character.ID, OnItemChange.BuildNewItemChange (skill));
+                Dogma.QueueMultiEvent (character.ID, new OnSkillInjected ());
             }
         }
     }

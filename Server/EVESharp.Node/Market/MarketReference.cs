@@ -1,6 +1,6 @@
 ﻿namespace EVESharp.Node.Market;
 
-public enum MarketReference : int
+public enum MarketReference
 {
     SkipLog                         = -1,
     Undefined                       = 0,

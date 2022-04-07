@@ -19,26 +19,24 @@ public class PyAddressClient : PyAddress
     /// </summary>
     public PyString Service { get; }
 
-    public PyAddressClient() : base(TYPE_CLIENT)
+    public PyAddressClient () : base (TYPE_CLIENT) { }
+
+    public PyAddressClient (PyInteger clientID) : base (TYPE_CLIENT)
     {
+        ClientID = clientID;
     }
 
-    public PyAddressClient(PyInteger clientID) : base(TYPE_CLIENT)
+    public PyAddressClient (PyInteger clientID, PyInteger callID = null, PyString service = null) : this (clientID)
     {
-        this.ClientID = clientID;
+        CallID  = callID;
+        Service = service;
     }
 
-    public PyAddressClient(PyInteger clientID, PyInteger callID = null, PyString service = null) : this(clientID)
+    public static implicit operator PyDataType (PyAddressClient value)
     {
-        this.CallID  = callID;
-        this.Service = service;
-    }
-
-    public static implicit operator PyDataType(PyAddressClient value)
-    {
-        return new PyObjectData(
+        return new PyObjectData (
             OBJECT_TYPE,
-            new PyTuple(4)
+            new PyTuple (4)
             {
                 [0] = value.Type,
                 [1] = value.ClientID,
@@ -48,21 +46,21 @@ public class PyAddressClient : PyAddress
         );
     }
 
-    public static implicit operator PyAddressClient(PyObjectData value)
+    public static implicit operator PyAddressClient (PyObjectData value)
     {
         if (value.Name != OBJECT_TYPE)
-            throw new InvalidDataException($"Expected {OBJECT_TYPE} for PyAddress object, got {value.Name}");
+            throw new InvalidDataException ($"Expected {OBJECT_TYPE} for PyAddress object, got {value.Name}");
 
         PyTuple  data = value.Arguments as PyTuple;
-        PyString type = data[0] as PyString;
+        PyString type = data [0] as PyString;
 
         if (type != TYPE_CLIENT)
-            throw new InvalidDataException($"Trying to cast a different PyAddress ({type}) to PyAddressClient");
+            throw new InvalidDataException ($"Trying to cast a different PyAddress ({type}) to PyAddressClient");
 
-        return new PyAddressClient(
-            data[1] as PyInteger,
-            data[2] as PyInteger,
-            data[3] as PyString
+        return new PyAddressClient (
+            data [1] as PyInteger,
+            data [2] as PyInteger,
+            data [3] as PyString
         );
     }
 }

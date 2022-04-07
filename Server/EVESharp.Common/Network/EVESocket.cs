@@ -6,52 +6,52 @@ namespace EVESharp.Common.Network;
 
 public abstract class EVESocket
 {
-    protected Socket            Socket { get; init; }
-    private   Action<Exception> mExceptionHandler = null;
-    private   Action            mOnConnectionLost = null;
+    private   Action <Exception> mExceptionHandler;
+    private   Action             mOnConnectionLost;
+    protected Socket             Socket { get; init; }
 
-    public EVESocket()
+    public EVESocket ()
     {
-        this.Socket = new Socket(AddressFamily.InterNetworkV6, SocketType.Stream, ProtocolType.Tcp);
+        Socket = new Socket (AddressFamily.InterNetworkV6, SocketType.Stream, ProtocolType.Tcp);
         // ensure we support both ipv4 and ipv6
-        this.Socket.SetSocketOption(SocketOptionLevel.IPv6, SocketOptionName.IPv6Only, false);
-        this.SetTransferBuffers();
+        Socket.SetSocketOption (SocketOptionLevel.IPv6, SocketOptionName.IPv6Only, false);
+        this.SetTransferBuffers ();
         // set a default exception handler
-        this.SetExceptionHandler(DefaultExceptionHandler);
+        this.SetExceptionHandler (this.DefaultExceptionHandler);
     }
 
-    protected EVESocket(Socket socket)
+    protected EVESocket (Socket socket)
     {
-        this.Socket = socket;
+        Socket = socket;
         // ensure we support both ipv4 and ipv6
         // this.Socket.SetSocketOption(SocketOptionLevel.IPv6, SocketOptionName.IPv6Only, false);
-        this.SetTransferBuffers();
+        this.SetTransferBuffers ();
         // set a default exception handler
-        this.SetExceptionHandler(DefaultExceptionHandler);
+        this.SetExceptionHandler (this.DefaultExceptionHandler);
     }
 
-    private void SetTransferBuffers()
+    private void SetTransferBuffers ()
     {
         // 64 kb should be plenty for most situations
-        this.Socket.ReceiveBufferSize = 64 * 1024;
-        this.Socket.SendBufferSize    = 64 * 1024;
+        Socket.ReceiveBufferSize = 64 * 1024;
+        Socket.SendBufferSize    = 64 * 1024;
     }
 
-    public void SetExceptionHandler(Action<Exception> exceptionHandler)
+    public void SetExceptionHandler (Action <Exception> exceptionHandler)
     {
-        this.mExceptionHandler = exceptionHandler ?? throw new ArgumentNullException(nameof(exceptionHandler));
+        this.mExceptionHandler = exceptionHandler ?? throw new ArgumentNullException (nameof (exceptionHandler));
     }
 
-    public void SetOnConnectionLostHandler(Action onConnectionLostHandler)
+    public void SetOnConnectionLostHandler (Action onConnectionLostHandler)
     {
         this.mOnConnectionLost = onConnectionLostHandler;
     }
 
-    protected void FireOnConnectionLostHandler()
+    protected void FireOnConnectionLostHandler ()
     {
         try
         {
-            this.mOnConnectionLost?.Invoke();
+            this.mOnConnectionLost?.Invoke ();
         }
         catch (Exception)
         {
@@ -59,15 +59,14 @@ public abstract class EVESocket
         }
     }
 
-    protected void HandleException(Exception ex)
+    protected void HandleException (Exception ex)
     {
         // object disposed exception happens if we try to double-close the connection
         // we don't really care about those, so just mark them as handled
         bool handled = ex is ObjectDisposedException;
-            
+
         // check for specific disconnection scenarios
         if (ex is SocketException socketException)
-        {
             switch (socketException.SocketErrorCode)
             {
                 case SocketError.ConnectionAborted:
@@ -90,36 +89,36 @@ public abstract class EVESocket
                 case SocketError.ProtocolOption:
                 case SocketError.HostNotFound:
                     handled = true;
-                    this.FireOnConnectionLostHandler();
+                    this.FireOnConnectionLostHandler ();
+
                     break;
             }
-        }
-            
+
         // call the custom exception handler only if the exception cannot be handled by the socket itself
         if (handled == false)
-            this.mExceptionHandler.Invoke(ex);
+            this.mExceptionHandler.Invoke (ex);
     }
 
-    protected abstract void DefaultExceptionHandler(Exception ex);
+    protected abstract void DefaultExceptionHandler (Exception ex);
 
     /// <summary>
     /// Disconnects the socket flushing all the input/output buffers
     /// </summary>
-    public abstract void GracefulDisconnect();
+    public abstract void GracefulDisconnect ();
 
-    public void ForcefullyDisconnect()
+    public void ForcefullyDisconnect ()
     {
         // disconnect and shutdown the socket
-        this.Socket.Disconnect(false);
-        this.Socket.Shutdown(SocketShutdown.Both);
+        Socket.Disconnect (false);
+        Socket.Shutdown (SocketShutdown.Both);
         // finally close it
-        this.Socket.Close();
+        Socket.Close ();
     }
 
-    public string GetRemoteAddress()
+    public string GetRemoteAddress ()
     {
-        IPEndPoint endPoint = this.Socket.RemoteEndPoint as IPEndPoint;
+        IPEndPoint endPoint = Socket.RemoteEndPoint as IPEndPoint;
 
-        return endPoint?.Address.ToString();
+        return endPoint?.Address.ToString ();
     }
 }

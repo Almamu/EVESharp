@@ -49,61 +49,61 @@ using Serilog;
 
 namespace EVESharp.Node.Network;
 
-public class ServiceManager : IServiceManager<string>
+public class ServiceManager : IServiceManager <string>
 {
-    private int                         mNextCallID    = 0;
-    private Dictionary<int, RemoteCall> mCallCallbacks = new Dictionary<int, RemoteCall>();
-    public  NodeContainer               Container        { get; }
-    public  CacheStorage                CacheStorage     { get; }
-    public  TimerManager                TimerManager     { get; }
-    private ILogger                     Log              { get; }
-    public  objectCaching               objectCaching    { get; }
-    public  machoNet                    machoNet         { get; }
-    public  alert                       alert            { get; }
-    public  authentication              authentication   { get; }
-    public  character                   character        { get; }
-    public  userSvc                     userSvc          { get; }
-    public  charmgr                     charmgr          { get; }
-    public  config                      config           { get; }
-    public  dogmaIM                     dogmaIM          { get; }
-    public  invbroker                   invbroker        { get; }
-    public  warRegistry                 warRegistry      { get; }
-    public  station                     station          { get; }
-    public  map                         map              { get; }
-    public  account                     account          { get; }
-    public  skillMgr                    skillMgr         { get; }
-    public  contractMgr                 contractMgr      { get; }
-    public  corpStationMgr              corpStationMgr   { get; }
-    public  bookmark                    bookmark         { get; }
-    public  LSC                         LSC              { get; }
-    public  onlineStatus                onlineStatus     { get; }
-    public  billMgr                     billMgr          { get; }
-    public  facWarMgr                   facWarMgr        { get; }
-    public  corporationSvc              corporationSvc   { get; }
-    public  clientStatsMgr              clientStatsMgr   { get; }
-    public  voiceMgr                    voiceMgr         { get; }
-    public  standing2                   standing2        { get; }
-    public  tutorialSvc                 tutorialSvc      { get; }
-    public  agentMgr                    agentMgr         { get; }
-    public  corpRegistry                corpRegistry     { get; }
-    public  marketProxy                 marketProxy      { get; }
-    public  stationSvc                  stationSvc       { get; }
-    public  certificateMgr              certificateMgr   { get; }
-    public  jumpCloneSvc                jumpCloneSvc     { get; }
-    public  LPSvc                       LPSvc            { get; }
-    public  lookupSvc                   lookupSvc        { get; }
-    public  insuranceSvc                insuranceSvc     { get; }
-    public  slash                       slash            { get; }
-    public  ship                        ship             { get; }
-    public  corpmgr                     corpmgr          { get; }
-    public  repairSvc                   repairSvc        { get; }
-    public  reprocessingSvc             reprocessingSvc  { get; }
-    public  ramProxy                    ramProxy         { get; }
-    public  factory                     factory          { get; }
-    public  petitioner                  petitioner       { get; }
-    public  allianceRegistry            allianceRegistry { get; }
+    private readonly Dictionary <int, RemoteCall> mCallCallbacks = new Dictionary <int, RemoteCall> ();
+    private          int                          mNextCallID;
+    public           NodeContainer                Container        { get; }
+    public           CacheStorage                 CacheStorage     { get; }
+    public           TimerManager                 TimerManager     { get; }
+    private          ILogger                      Log              { get; }
+    public           objectCaching                objectCaching    { get; }
+    public           machoNet                     machoNet         { get; }
+    public           alert                        alert            { get; }
+    public           authentication               authentication   { get; }
+    public           character                    character        { get; }
+    public           userSvc                      userSvc          { get; }
+    public           charmgr                      charmgr          { get; }
+    public           config                       config           { get; }
+    public           dogmaIM                      dogmaIM          { get; }
+    public           invbroker                    invbroker        { get; }
+    public           warRegistry                  warRegistry      { get; }
+    public           station                      station          { get; }
+    public           map                          map              { get; }
+    public           account                      account          { get; }
+    public           skillMgr                     skillMgr         { get; }
+    public           contractMgr                  contractMgr      { get; }
+    public           corpStationMgr               corpStationMgr   { get; }
+    public           bookmark                     bookmark         { get; }
+    public           LSC                          LSC              { get; }
+    public           onlineStatus                 onlineStatus     { get; }
+    public           billMgr                      billMgr          { get; }
+    public           facWarMgr                    facWarMgr        { get; }
+    public           corporationSvc               corporationSvc   { get; }
+    public           clientStatsMgr               clientStatsMgr   { get; }
+    public           voiceMgr                     voiceMgr         { get; }
+    public           standing2                    standing2        { get; }
+    public           tutorialSvc                  tutorialSvc      { get; }
+    public           agentMgr                     agentMgr         { get; }
+    public           corpRegistry                 corpRegistry     { get; }
+    public           marketProxy                  marketProxy      { get; }
+    public           stationSvc                   stationSvc       { get; }
+    public           certificateMgr               certificateMgr   { get; }
+    public           jumpCloneSvc                 jumpCloneSvc     { get; }
+    public           LPSvc                        LPSvc            { get; }
+    public           lookupSvc                    lookupSvc        { get; }
+    public           insuranceSvc                 insuranceSvc     { get; }
+    public           slash                        slash            { get; }
+    public           ship                         ship             { get; }
+    public           corpmgr                      corpmgr          { get; }
+    public           repairSvc                    repairSvc        { get; }
+    public           reprocessingSvc              reprocessingSvc  { get; }
+    public           ramProxy                     ramProxy         { get; }
+    public           factory                      factory          { get; }
+    public           petitioner                   petitioner       { get; }
+    public           allianceRegistry             allianceRegistry { get; }
 
-    public ServiceManager(
+    public ServiceManager (
         NodeContainer    container, CacheStorage storage, ILogger logger, TimerManager timerManager,
         machoNet         machoNet,
         objectCaching    objectCaching,
@@ -149,12 +149,13 @@ public class ServiceManager : IServiceManager<string>
         ramProxy         ramProxy,
         factory          factory,
         petitioner       petitioner,
-        allianceRegistry allianceRegistry)
+        allianceRegistry allianceRegistry
+    )
     {
-        this.Container    = container;
-        this.CacheStorage = storage;
-        this.TimerManager = timerManager;
-        this.Log          = logger;
+        Container    = container;
+        CacheStorage = storage;
+        TimerManager = timerManager;
+        Log          = logger;
 
         // store all the services
         this.machoNet         = machoNet;
@@ -204,22 +205,53 @@ public class ServiceManager : IServiceManager<string>
         this.allianceRegistry = allianceRegistry;
     }
 
+    public PyDataType ServiceCall (string service, string method, ServiceCall call)
+    {
+        // search for the service locally
+        object svc = this.GetType ().GetProperty (service)?.GetValue (this);
+
+        if (svc is not Service svcInstance)
+            throw new MissingServiceException <string> (service, method);
+
+        // check the access level value to ensure the client can call this service here
+        switch (svcInstance.AccessLevel)
+        {
+            case AccessLevel.Location:
+                if (call.Session.ContainsKey (Session.LOCATION_ID) == false)
+                    throw new UnauthorizedCallException <string> (service, method, call.Session.Role);
+
+                break;
+            case AccessLevel.Station:
+                if (call.Session.ContainsKey (Session.STATION_ID) == false)
+                    throw new UnauthorizedCallException <string> (service, method, call.Session.Role);
+
+                break;
+            case AccessLevel.SolarSystem:
+                if (call.Session.ContainsKey (Session.SOLAR_SYSTEM_ID) == false)
+                    throw new UnauthorizedCallException <string> (service, method, call.Session.Role);
+
+                break;
+        }
+
+        return svcInstance.ExecuteCall (method, call);
+    }
+
     /// <summary>
     /// Callback fired by the <seealso cref="TimerManager"/> when a call timeout has been reached
     /// </summary>
     /// <param name="callID">The callID that expired</param>
-    public void CallTimeoutExpired(int callID)
+    public void CallTimeoutExpired (int callID)
     {
-        Log.Warning($"Timeout for call {callID} expired before getting an answer.");
-            
+        Log.Warning ($"Timeout for call {callID} expired before getting an answer.");
+
         // get call id and call the timeout callback
-        RemoteCall call = this.mCallCallbacks[callID];
+        RemoteCall call = this.mCallCallbacks [callID];
 
         // call the callback if available
-        call.TimeoutCallback?.Invoke(call);
+        call.TimeoutCallback?.Invoke (call);
 
         // finally remove from the list
-        this.mCallCallbacks.Remove(callID);
+        this.mCallCallbacks.Remove (callID);
     }
 
     /// <summary>
@@ -228,25 +260,26 @@ public class ServiceManager : IServiceManager<string>
     /// </summary>
     /// <param name="callID">The callID that completed</param>
     /// <param name="result">The result of the call</param>
-    public void ReceivedRemoteCallAnswer(int callID, PyDataType result)
+    public void ReceivedRemoteCallAnswer (int callID, PyDataType result)
     {
-        if (this.mCallCallbacks.ContainsKey(callID) == false)
+        if (this.mCallCallbacks.ContainsKey (callID) == false)
         {
-            Log.Warning($"Received an answer for call {callID} after the timeout expired, ignoring answer...");
+            Log.Warning ($"Received an answer for call {callID} after the timeout expired, ignoring answer...");
+
             return;
         }
-            
+
         // remove the timer from the list
-        this.TimerManager.DequeueCallTimer(callID);
-            
+        TimerManager.DequeueCallTimer (callID);
+
         // get the callback information
-        RemoteCall call = this.mCallCallbacks[callID];
-            
+        RemoteCall call = this.mCallCallbacks [callID];
+
         // invoke the handler
-        call.Callback?.Invoke(call, result);
+        call.Callback?.Invoke (call, result);
 
         // remove the call from the list
-        this.mCallCallbacks.Remove(callID);
+        this.mCallCallbacks.Remove (callID);
     }
 
     /// <summary>
@@ -255,23 +288,20 @@ public class ServiceManager : IServiceManager<string>
     /// <param name="entry">The RemoteCall entry to associate with this call</param>
     /// <param name="timeoutSeconds">The amount of seconds to wait until timing out</param>
     /// <returns>The callID to be notified to the client</returns>
-    private int ExpectRemoteServiceResult(RemoteCall entry, int timeoutSeconds = 0)
+    private int ExpectRemoteServiceResult (RemoteCall entry, int timeoutSeconds = 0)
     {
         // get the new callID
         int callID = ++this.mNextCallID;
 
         // add the callback to the list
-        this.mCallCallbacks[callID] = entry;
-            
+        this.mCallCallbacks [callID] = entry;
+
         // create the timer (if needed)
         if (timeoutSeconds > 0)
-        {
-            this.TimerManager.EnqueueCallTimer(
-                DateTime.UtcNow.AddSeconds(timeoutSeconds).ToFileTimeUtc(),
-                CallTimeoutExpired,
+            TimerManager.EnqueueCallTimer (
+                DateTime.UtcNow.AddSeconds (timeoutSeconds).ToFileTimeUtc (), this.CallTimeoutExpired,
                 callID
             );
-        }
 
         return callID;
     }
@@ -285,15 +315,20 @@ public class ServiceManager : IServiceManager<string>
     /// <param name="timeoutCallback">The function to call if the call timeout expires</param>
     /// <param name="timeoutSeconds">The amount of seconds to wait until timing out</param>
     /// <returns>The callID to be notified to the client</returns>
-    public int ExpectRemoteServiceResult(Action<RemoteCall, PyDataType> callback,               Session session, object extraInfo = null,
-                                         Action<RemoteCall>             timeoutCallback = null, int     timeoutSeconds = 0)
+    public int ExpectRemoteServiceResult (
+        Action <RemoteCall, PyDataType> callback,               Session session, object extraInfo = null,
+        Action <RemoteCall>             timeoutCallback = null, int     timeoutSeconds = 0
+    )
     {
         RemoteCall entry = new RemoteCall
         {
-            Callback = callback, ExtraInfo = extraInfo, TimeoutCallback = timeoutCallback, Session = session
+            Callback        = callback,
+            ExtraInfo       = extraInfo,
+            TimeoutCallback = timeoutCallback,
+            Session         = session
         };
 
-        return this.ExpectRemoteServiceResult(entry, timeoutSeconds);
+        return this.ExpectRemoteServiceResult (entry, timeoutSeconds);
     }
 
     /// <summary>
@@ -305,42 +340,20 @@ public class ServiceManager : IServiceManager<string>
     /// <param name="timeoutCallback">The function to call if the call timeout expires</param>
     /// <param name="timeoutSeconds">The amount of seconds to wait until timing out</param>
     /// <returns>The callID to be notified to the client</returns>
-    public int ExpectRemoteServiceResult(Action<RemoteCall, PyDataType> callback,               int nodeID, object extraInfo = null,
-                                         Action<RemoteCall>             timeoutCallback = null, int timeoutSeconds = 0)
+    public int ExpectRemoteServiceResult (
+        Action <RemoteCall, PyDataType> callback,               int nodeID, object extraInfo = null,
+        Action <RemoteCall>             timeoutCallback = null, int timeoutSeconds = 0
+    )
     {
         RemoteCall entry = new RemoteCall
         {
-            Callback = callback, ExtraInfo = extraInfo, TimeoutCallback = timeoutCallback, Session = null, NodeID = nodeID
+            Callback        = callback,
+            ExtraInfo       = extraInfo,
+            TimeoutCallback = timeoutCallback,
+            Session         = null,
+            NodeID          = nodeID
         };
 
-        return this.ExpectRemoteServiceResult(entry, timeoutSeconds);
-    }
-
-    public PyDataType ServiceCall(string service, string method, ServiceCall call)
-    {
-        // search for the service locally
-        object svc = this.GetType().GetProperty(service)?.GetValue(this);
-
-        if (svc is not Service svcInstance)
-            throw new MissingServiceException<string>(service, method);
-            
-        // check the access level value to ensure the client can call this service here
-        switch (svcInstance.AccessLevel)
-        {
-            case AccessLevel.Location:
-                if (call.Session.ContainsKey(Session.LOCATION_ID) == false)
-                    throw new UnauthorizedCallException<string>(service, method, call.Session.Role);
-                break;
-            case AccessLevel.Station:
-                if (call.Session.ContainsKey(Session.STATION_ID) == false)
-                    throw new UnauthorizedCallException<string>(service, method, call.Session.Role);
-                break;
-            case AccessLevel.SolarSystem:
-                if (call.Session.ContainsKey(Session.SOLAR_SYSTEM_ID) == false)
-                    throw new UnauthorizedCallException<string>(service, method, call.Session.Role);
-                break;
-        }
-
-        return svcInstance.ExecuteCall(method, call);
+        return this.ExpectRemoteServiceResult (entry, timeoutSeconds);
     }
 }

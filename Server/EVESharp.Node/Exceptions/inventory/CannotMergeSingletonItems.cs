@@ -4,7 +4,5 @@ namespace EVESharp.Node.Exceptions.inventory;
 
 public class CannotMergeSingletonItems : UserError
 {
-    public CannotMergeSingletonItems() : base("CannotMergeSingletonItems")
-    {
-    }
+    public CannotMergeSingletonItems () : base ("CannotMergeSingletonItems") { }
 }

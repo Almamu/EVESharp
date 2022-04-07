@@ -1,31 +1,27 @@
-using System;
-using System.Linq;
-using System.Runtime.CompilerServices;
-
 namespace EVESharp.PythonTypes.Types.Primitives;
 
 public class PyBuffer : PyDataType
 {
-    public override int GetHashCode()
+    public byte [] Value  { get; }
+    public int     Length => Value.Length;
+
+    public PyBuffer (byte [] value)
     {
-        return (int) CRC32.Checksum(this.Value);
+        Value = value;
     }
 
-    public byte[] Value  { get; }
-    public int    Length => this.Value.Length;
-
-    public PyBuffer(byte[] value)
+    public override int GetHashCode ()
     {
-        this.Value = value;
+        return (int) CRC32.Checksum (Value);
     }
 
-    public static implicit operator byte[](PyBuffer obj)
+    public static implicit operator byte [] (PyBuffer obj)
     {
         return obj.Value;
     }
 
-    public static implicit operator PyBuffer(byte[] value)
+    public static implicit operator PyBuffer (byte [] value)
     {
-        return new PyBuffer(value);
+        return new PyBuffer (value);
     }
 }

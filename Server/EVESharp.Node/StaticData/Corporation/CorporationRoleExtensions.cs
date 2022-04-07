@@ -2,7 +2,7 @@
 
 public static class CorporationRoleExtensions
 {
-    public static bool Is(this CorporationRole role, long value)
+    public static bool Is (this CorporationRole role, long value)
     {
         long longRole = (long) role;
 

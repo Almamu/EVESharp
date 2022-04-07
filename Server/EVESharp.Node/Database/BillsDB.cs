@@ -1,7 +1,6 @@
 ﻿using System.Collections.Generic;
 using EVESharp.Common.Database;
 using EVESharp.Node.Market;
-using EVESharp.PythonTypes.Types.Database;
 
 namespace EVESharp.Node.Database;
 
@@ -9,6 +8,9 @@ public class BillsDB : DatabaseAccessor
 {
     public const string GET_RECEIVABLE = "MktBillsGetReceivable";
     public const string GET_PAYABLE    = "MktBillsGetPayable";
+
+    public BillsDB (DatabaseConnection db) : base (db) { }
+
     /// <summary>
     /// Creates a bill with the given information
     /// </summary>
@@ -20,11 +22,14 @@ public class BillsDB : DatabaseAccessor
     /// <param name="interest">The amount of interests</param>
     /// <param name="externalID">Extra information for the EVE Client</param>
     /// <param name="externalID2">Extra information for the EVE Client</param>
-    public ulong CreateBill(BillTypes type, int debtorID, int creditorID, double amount, long dueDateTime, double interest, int? externalID = null, int? externalID2 = null)
+    public ulong CreateBill (
+        BillTypes type, int debtorID, int creditorID, double amount, long dueDateTime, double interest, int? externalID = null,
+        int?      externalID2 = null
+    )
     {
-        return Database.PrepareQueryLID(
+        return Database.PrepareQueryLID (
             "INSERT INTO mktBills(billTypeID, debtorID, creditorID, amount, dueDateTime, interest, externalID, paid, externalID2)VALUES(@billTypeID, @debtorID, @creditorID, @amount, @dueDateTime, @interest, @externalID, 0, @externalID2)",
-            new Dictionary<string, object>()
+            new Dictionary <string, object>
             {
                 {"@billTypeID", (int) type},
                 {"@debtorID", debtorID},
@@ -36,9 +41,5 @@ public class BillsDB : DatabaseAccessor
                 {"@externalID2", externalID2 ?? -1}
             }
         );
-    }
-        
-    public BillsDB(DatabaseConnection db) : base(db)
-    {
     }
 }

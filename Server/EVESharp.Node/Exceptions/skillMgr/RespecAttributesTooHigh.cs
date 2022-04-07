@@ -4,7 +4,5 @@ namespace EVESharp.Node.Exceptions.skillMgr;
 
 public class RespecAttributesTooHigh : UserError
 {
-    public RespecAttributesTooHigh() : base("RespecAttributesTooHigh")
-    {
-    }
+    public RespecAttributesTooHigh () : base ("RespecAttributesTooHigh") { }
 }

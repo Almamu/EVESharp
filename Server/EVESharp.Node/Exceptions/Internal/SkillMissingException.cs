@@ -1,18 +1,19 @@
 ﻿using System;
+using Type = EVESharp.Node.StaticData.Inventory.Type;
 
 namespace EVESharp.Node.Exceptions.Internal;
 
 public class SkillMissingException : Exception
 {
     public int SkillTypeID { get; }
-        
-    public SkillMissingException(StaticData.Inventory.Type skill)
+
+    public SkillMissingException (Type skill)
     {
-        this.SkillTypeID = skill.ID;
+        SkillTypeID = skill.ID;
     }
 
-    public SkillMissingException(int skillTypeID)
+    public SkillMissingException (int skillTypeID)
     {
-        this.SkillTypeID = skillTypeID;
+        SkillTypeID = skillTypeID;
     }
 }

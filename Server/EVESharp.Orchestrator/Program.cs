@@ -1,49 +1,47 @@
 using EVESharp.Orchestator.Models;
 using MySql.Data.MySqlClient;
 
-WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
+WebApplicationBuilder builder = WebApplication.CreateBuilder (args);
 
 // Add services to the container.
 
-Database db = new Database(builder.Configuration.GetConnectionString("DefaultConnection"));
+Database db = new Database (builder.Configuration.GetConnectionString ("DefaultConnection"));
 
-builder.Services.AddControllers();
+builder.Services.AddControllers ();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
-builder.Services.AddSingleton(db);
+builder.Services.AddEndpointsApiExplorer ();
+builder.Services.AddSwaggerGen ();
+builder.Services.AddSingleton (db);
 
 // check for the settings and restart things if needed
-bool restartOnStartup = bool.Parse(builder.Configuration.GetSection("Cluster")["ResetOnStartup"]);
+bool restartOnStartup = bool.Parse (builder.Configuration.GetSection ("Cluster") ["ResetOnStartup"]);
 
 if (restartOnStartup)
-{
     // set things to zero
-    using (MySqlConnection connection = db.Get())
+    using (MySqlConnection connection = db.Get ())
     {
-        MySqlCommand items = new MySqlCommand("UPDATE invItems SET nodeID = 0;", connection);
-        MySqlCommand nodes = new MySqlCommand("DELETE FROM cluster;", connection);
-        MySqlCommand accounts = new MySqlCommand("UPDATE account SET proxyNodeID = 0;", connection);
+        MySqlCommand items    = new MySqlCommand ("UPDATE invItems SET nodeID = 0;",     connection);
+        MySqlCommand nodes    = new MySqlCommand ("DELETE FROM cluster;",                connection);
+        MySqlCommand accounts = new MySqlCommand ("UPDATE account SET proxyNodeID = 0;", connection);
 
-        nodes.ExecuteNonQuery();
-        items.ExecuteNonQuery();
-        accounts.ExecuteNonQuery();
+        nodes.ExecuteNonQuery ();
+        items.ExecuteNonQuery ();
+        accounts.ExecuteNonQuery ();
     }
-}
 
-WebApplication app = builder.Build();
+WebApplication app = builder.Build ();
 
 // Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
+if (app.Environment.IsDevelopment ())
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
+    app.UseSwagger ();
+    app.UseSwaggerUI ();
 }
 
-app.UseHttpsRedirection();
+app.UseHttpsRedirection ();
 
-app.UseAuthorization();
+app.UseAuthorization ();
 
-app.MapControllers();
+app.MapControllers ();
 
-app.Run();
+app.Run ();

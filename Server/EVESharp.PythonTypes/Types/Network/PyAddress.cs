@@ -17,18 +17,18 @@ public abstract class PyAddress
 
     protected PyString Type { get; }
 
-    protected PyAddress(PyString type)
+    protected PyAddress (PyString type)
     {
-        this.Type = type;
+        Type = type;
     }
 
-    public static implicit operator PyAddress(PyObjectData value)
+    public static implicit operator PyAddress (PyObjectData value)
     {
         if (value.Name != OBJECT_TYPE)
-            throw new InvalidDataException($"Expected {OBJECT_TYPE} for PyAddress object, got {value.Name}");
+            throw new InvalidDataException ($"Expected {OBJECT_TYPE} for PyAddress object, got {value.Name}");
 
         PyTuple  data = value.Arguments as PyTuple;
-        PyString type = data[0] as PyString;
+        PyString type = data [0] as PyString;
 
         switch (type)
         {
@@ -45,11 +45,11 @@ public abstract class PyAddress
                 return (PyAddressBroadcast) value;
 
             default:
-                throw new InvalidDataException($"Unknown PyAddress type {type}");
+                throw new InvalidDataException ($"Unknown PyAddress type {type}");
         }
     }
 
-    public static implicit operator PyDataType(PyAddress address)
+    public static implicit operator PyDataType (PyAddress address)
     {
         if (address is PyAddressAny any)
             return any;
@@ -59,6 +59,7 @@ public abstract class PyAddress
             return client;
         if (address is PyAddressNode node)
             return node;
-        throw new InvalidDataException();
+
+        throw new InvalidDataException ();
     }
 }

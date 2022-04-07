@@ -1,20 +1,6 @@
-﻿using System;
-using System.Linq;
-using System.Runtime.InteropServices;
-using EVESharp.EVE.Packets.Exceptions;
-using EVESharp.EVE.Sessions;
-using EVESharp.Node.Dogma;
-using EVESharp.Node.Dogma.Interpreter;
-using EVESharp.Node.Dogma.Interpreter.Opcodes;
-using EVESharp.Node.Exceptions.dogma;
+﻿using EVESharp.Node.Dogma;
 using EVESharp.Node.Inventory.Items.Dogma;
-using EVESharp.Node.Network;
-using EVESharp.Node.Notifications.Client.Inventory;
-using EVESharp.Node.StaticData.Dogma;
-using EVESharp.Node.Inventory.Items.Attributes;
-using EVESharp.Node.Sessions;
 using EVESharp.PythonTypes.Types.Collections;
-using EVESharp.PythonTypes.Types.Primitives;
 
 namespace EVESharp.Node.Inventory.Items.Types;
 
@@ -22,34 +8,34 @@ public class ShipModule : ItemEntity
 {
     public GodmaShipEffectsList Effects     { get; }
     public ItemEffects          ItemEffects { get; set; }
-        
-    public ShipModule(Information.Item info) : base(info)
+
+    public ShipModule (Information.Item info) : base (info)
     {
-        this.Effects = new GodmaShipEffectsList();
-    }
-        
-    public override PyDictionary GetEffects()
-    {
-        return this.Effects;
+        Effects = new GodmaShipEffectsList ();
     }
 
-    public bool IsHighSlot()
+    public override PyDictionary GetEffects ()
     {
-        return this.Effects.ContainsKey((int) EffectsEnum.HighPower) == true;
+        return Effects;
     }
 
-    public bool IsMediumSlot()
+    public bool IsHighSlot ()
     {
-        return this.Effects.ContainsKey((int) EffectsEnum.MedPower) == true;
+        return Effects.ContainsKey ((int) EffectsEnum.HighPower);
     }
 
-    public bool IsLowSlot()
+    public bool IsMediumSlot ()
     {
-        return this.Effects.ContainsKey((int) EffectsEnum.LowPower) == true;
+        return Effects.ContainsKey ((int) EffectsEnum.MedPower);
     }
 
-    public bool IsRigSlot()
+    public bool IsLowSlot ()
     {
-        return this.Effects.ContainsKey((int) EffectsEnum.RigSlot) == true;
+        return Effects.ContainsKey ((int) EffectsEnum.LowPower);
+    }
+
+    public bool IsRigSlot ()
+    {
+        return Effects.ContainsKey ((int) EffectsEnum.RigSlot);
     }
 }

@@ -22,29 +22,35 @@
     Creator: Almamu
 */
 
-using System;
 using System.Collections.Generic;
-using System.Threading;
 using EVESharp.Common.Database;
 using EVESharp.Common.Network.Messages;
 using EVESharp.EVE.Packets;
 using EVESharp.Node.Configuration;
 using EVESharp.Node.Database;
 using EVESharp.Node.Network;
-using EVESharp.Node.Server.Shared;
 using Serilog;
 
 namespace EVESharp.Node.Accounts;
 
-public class LoginQueue : MessageProcessor<LoginQueueEntry>
+public class LoginQueue : MessageProcessor <LoginQueueEntry>
 {
     private AccountDB          AccountDB     { get; }
     private Authentication     Configuration { get; }
     private DatabaseConnection Database      { get; }
 
-    public void Enqueue(MachoUnauthenticatedTransport transport, AuthenticationReq req)
+    public LoginQueue (DatabaseConnection databaseConnection, Authentication configuration, AccountDB db, ILogger logger)
+        : base (logger, 5)
     {
-        this.Enqueue(
+        // login should not be using too many processes
+        Database      = databaseConnection;
+        Configuration = configuration;
+        AccountDB     = db;
+    }
+
+    public void Enqueue (MachoUnauthenticatedTransport transport, AuthenticationReq req)
+    {
+        this.Enqueue (
             new LoginQueueEntry
             {
                 Connection = transport,
@@ -53,9 +59,9 @@ public class LoginQueue : MessageProcessor<LoginQueueEntry>
         );
     }
 
-    protected override void HandleMessage(LoginQueueEntry entry)
+    protected override void HandleMessage (LoginQueueEntry entry)
     {
-        Log.Debug("Processing login for " + entry.Request.user_name);
+        Log.Debug ("Processing login for " + entry.Request.user_name);
         LoginStatus status = LoginStatus.Waiting;
 
         int   accountID = 0;
@@ -63,31 +69,31 @@ public class LoginQueue : MessageProcessor<LoginQueueEntry>
         ulong role      = 0;
 
         // First check if the account exists
-        if (this.AccountDB.AccountExists(entry.Request.user_name) == false)
-            if (this.Configuration.Autoaccount == true)
+        if (AccountDB.AccountExists (entry.Request.user_name) == false)
+            if (Configuration.Autoaccount)
             {
-                Log.Information($"Auto account enabled, creating account for user {entry.Request.user_name}");
+                Log.Information ($"Auto account enabled, creating account for user {entry.Request.user_name}");
 
                 // Create the account
-                this.AccountDB.CreateAccount(entry.Request.user_name, entry.Request.user_password, (ulong) this.Configuration.Role);                    
+                AccountDB.CreateAccount (entry.Request.user_name, entry.Request.user_password, (ulong) Configuration.Role);
             }
 
-        if (this.AccountDB.LoginPlayer(entry.Request.user_name, entry.Request.user_password, ref accountID, ref banned, ref role) == false || banned == true)
+        if (AccountDB.LoginPlayer (entry.Request.user_name, entry.Request.user_password, ref accountID, ref banned, ref role) == false || banned)
         {
-            Log.Verbose(": Rejected by database");
+            Log.Verbose (": Rejected by database");
 
             status = LoginStatus.Failed;
         }
         else
         {
-            Log.Verbose(": success");
+            Log.Verbose (": success");
 
             status = LoginStatus.Success;
-                
+
             // register player to the new address
-            Database.Procedure(
+            Database.Procedure (
                 EVESharp.Database.AccountDB.REGISTER_CLIENT_ADDRESS,
-                new Dictionary<string, object>()
+                new Dictionary <string, object>
                 {
                     {"_clientID", accountID},
                     {"_proxyNodeID", entry.Connection.MachoNet.NodeID}
@@ -95,15 +101,6 @@ public class LoginQueue : MessageProcessor<LoginQueueEntry>
             );
         }
 
-        entry.Connection.SendLoginNotification(status, accountID, role);
-    }
-
-    public LoginQueue(DatabaseConnection databaseConnection, Authentication configuration, AccountDB db, ILogger logger)
-        : base(logger, 5)
-    {
-        // login should not be using too many processes
-        this.Database      = databaseConnection;
-        this.Configuration = configuration;
-        this.AccountDB     = db;
+        entry.Connection.SendLoginNotification (status, accountID, role);
     }
 }

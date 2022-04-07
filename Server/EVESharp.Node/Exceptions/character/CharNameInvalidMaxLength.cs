@@ -2,9 +2,7 @@
 
 namespace EVESharp.Node.Exceptions.character;
 
-class CharNameInvalidMaxLength : UserError
+internal class CharNameInvalidMaxLength : UserError
 {
-    public CharNameInvalidMaxLength() : base("CharNameInvalidMaxLength")
-    {
-    }
+    public CharNameInvalidMaxLength () : base ("CharNameInvalidMaxLength") { }
 }

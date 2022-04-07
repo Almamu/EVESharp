@@ -8,21 +8,21 @@ namespace EVESharp.Node.Notifications.Client.Corporations;
 public class OnCorporationRecruitmentAdChanged : ClientNotification
 {
     private const string NOTIFICATION_NAME = "OnCorporationRecruitmentAdChanged";
-        
-    public  int                            CorporationID { get; init; }
-    public  ulong                          AdID          { get; init; }
-    private PyDictionary<PyString,PyTuple> Changes       { get; init; }
-        
-    public OnCorporationRecruitmentAdChanged(int corporationID, ulong adID) : base(NOTIFICATION_NAME)
+
+    public  int                              CorporationID { get; init; }
+    public  ulong                            AdID          { get; init; }
+    private PyDictionary <PyString, PyTuple> Changes       { get; }
+
+    public OnCorporationRecruitmentAdChanged (int corporationID, ulong adID) : base (NOTIFICATION_NAME)
     {
-        this.CorporationID = corporationID;
-        this.AdID          = adID;
-        this.Changes       = new PyDictionary<PyString, PyTuple>();
+        CorporationID = corporationID;
+        AdID          = adID;
+        Changes       = new PyDictionary <PyString, PyTuple> ();
     }
 
-    public OnCorporationRecruitmentAdChanged AddValue(string columnName, PyDataType oldValue, PyDataType newValue)
+    public OnCorporationRecruitmentAdChanged AddValue (string columnName, PyDataType oldValue, PyDataType newValue)
     {
-        this.Changes[columnName] = new PyTuple(2)
+        Changes [columnName] = new PyTuple (2)
         {
             [0] = oldValue,
             [1] = newValue
@@ -31,13 +31,13 @@ public class OnCorporationRecruitmentAdChanged : ClientNotification
         return this;
     }
 
-    public override List<PyDataType> GetElements()
+    public override List <PyDataType> GetElements ()
     {
-        return new List<PyDataType>()
+        return new List <PyDataType>
         {
-            this.CorporationID,
-            this.AdID,
-            this.Changes
+            CorporationID,
+            AdID,
+            Changes
         };
     }
 }

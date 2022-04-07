@@ -9,7 +9,7 @@ namespace EVESharp.Node.Notifications.Client.Chat;
 public class OnLSC : ClientNotification
 {
     private const string NOTIFICATION_NAME = "OnLSC";
-        
+
     public int?       AllianceID      { get; init; }
     public int?       CorporationID   { get; init; }
     public int?       CharacterID     { get; init; }
@@ -19,39 +19,39 @@ public class OnLSC : ClientNotification
     public string     Type            { get; init; }
     public PyDataType Channel         { get; init; }
     public PyTuple    Arguments       { get; init; }
-        
-    public OnLSC(Session session, string type, PyDataType channel, PyTuple args) : base(NOTIFICATION_NAME)
+
+    public OnLSC (Session session, string type, PyDataType channel, PyTuple args) : base (NOTIFICATION_NAME)
     {
-        this.AllianceID      = session.AllianceID;
-        this.CorporationID   = session.CorporationID;
-        this.CharacterID     = session.CharacterID;
-        this.Role            = session.Role;
-        this.CorporationRole = session.CorporationRole;
-        this.WarFactionID    = session.WarFactionID;
-        this.Type            = type;
-        this.Channel         = channel;
-        this.Arguments       = args;
+        AllianceID      = session.AllianceID;
+        CorporationID   = session.CorporationID;
+        CharacterID     = session.CharacterID;
+        Role            = session.Role;
+        CorporationRole = session.CorporationRole;
+        WarFactionID    = session.WarFactionID;
+        Type            = type;
+        Channel         = channel;
+        Arguments       = args;
     }
 
-    public override List<PyDataType> GetElements()
+    public override List <PyDataType> GetElements ()
     {
-        PyTuple who = new PyTuple(6)
+        PyTuple who = new PyTuple (6)
         {
-            [0] = this.AllianceID,
-            [1] = this.CorporationID,
-            [2] = this.CharacterID,
-            [3] = this.Role,
-            [4] = this.CorporationRole,
-            [5] = this.WarFactionID
+            [0] = AllianceID,
+            [1] = CorporationID,
+            [2] = CharacterID,
+            [3] = Role,
+            [4] = CorporationRole,
+            [5] = WarFactionID
         };
 
-        return new List<PyDataType>()
+        return new List <PyDataType>
         {
-            this.Channel,
+            Channel,
             1,
-            this.Type,
+            Type,
             who,
-            this.Arguments
+            Arguments
         };
     }
 }

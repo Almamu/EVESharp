@@ -8,21 +8,21 @@ namespace EVESharp.Node.Notifications.Client.Alliances;
 public class OnAllianceMemberChanged : ClientNotification
 {
     private const string NOTIFICATION_NAME = "OnAllianceMemberChanged";
-        
+
     public int          AllianceID { get; init; }
     public int          CorpID     { get; init; }
     public PyDictionary Changes    { get; init; }
-        
-    public OnAllianceMemberChanged(int allianceID, int corpID) : base(NOTIFICATION_NAME)
+
+    public OnAllianceMemberChanged (int allianceID, int corpID) : base (NOTIFICATION_NAME)
     {
-        this.AllianceID = allianceID;
-        this.CorpID     = corpID;
-        this.Changes    = new PyDictionary();
+        AllianceID = allianceID;
+        CorpID     = corpID;
+        Changes    = new PyDictionary ();
     }
 
-    public OnAllianceMemberChanged AddChange(string changeName, PyDataType oldValue, PyDataType newValue)
+    public OnAllianceMemberChanged AddChange (string changeName, PyDataType oldValue, PyDataType newValue)
     {
-        this.Changes[changeName] = new PyTuple(2)
+        Changes [changeName] = new PyTuple (2)
         {
             [0] = oldValue,
             [1] = newValue
@@ -31,13 +31,13 @@ public class OnAllianceMemberChanged : ClientNotification
         return this;
     }
 
-    public override List<PyDataType> GetElements()
+    public override List <PyDataType> GetElements ()
     {
-        return new List<PyDataType>()
+        return new List <PyDataType>
         {
-            this.AllianceID,
-            this.CorpID,
-            this.Changes
+            AllianceID,
+            CorpID,
+            Changes
         };
     }
 }

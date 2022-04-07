@@ -4,7 +4,5 @@ namespace EVESharp.Node.Exceptions.inventory;
 
 public class AssembleCCFirst : UserError
 {
-    public AssembleCCFirst() : base("AssembleCCFirst")
-    {
-    }
+    public AssembleCCFirst () : base ("AssembleCCFirst") { }
 }

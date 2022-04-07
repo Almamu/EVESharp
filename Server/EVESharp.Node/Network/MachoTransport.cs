@@ -25,47 +25,47 @@ public class MachoTransport
     /// <summary>
     /// Queue of packets to be sent through the transport after the authentication happens
     /// </summary>
-    protected Queue<PyDataType> PostAuthenticationQueue { get; } = new Queue<PyDataType>();
+    protected Queue <PyDataType> PostAuthenticationQueue { get; } = new Queue <PyDataType> ();
 
-    public MachoTransport(IMachoNet machoNet, EVEClientSocket socket, ILogger logger)
+    public MachoTransport (IMachoNet machoNet, EVEClientSocket socket, ILogger logger)
     {
-        this.Session = new Session();
-        this.MachoNet = machoNet;
-        this.Socket = socket;
-        this.Log = logger;
+        Session  = new Session ();
+        MachoNet = machoNet;
+        Socket   = socket;
+        Log      = logger;
     }
 
-    public MachoTransport(MachoTransport source)
+    public MachoTransport (MachoTransport source)
     {
-        this.Session = source.Session;
-        this.Log = source.Log;
-        this.Socket = source.Socket;
-        this.MachoNet = source.MachoNet;
+        Session  = source.Session;
+        Log      = source.Log;
+        Socket   = source.Socket;
+        MachoNet = source.MachoNet;
     }
 
     /// <summary>
     /// Adds data to be sent after authentication happens
     /// </summary>
     /// <param name="data"></param>
-    public void QueuePostAuthenticationPacket(PyDataType data)
+    public void QueuePostAuthenticationPacket (PyDataType data)
     {
-        this.PostAuthenticationQueue.Enqueue(data);
+        PostAuthenticationQueue.Enqueue (data);
     }
 
     /// <summary>
     /// Flushes the post authentication packets queue and sends everything
     /// </summary>
-    protected void SendPostAuthenticationPackets()
+    protected void SendPostAuthenticationPackets ()
     {
-        foreach (PyDataType packet in this.PostAuthenticationQueue)
-            this.Socket.Send(packet);
+        foreach (PyDataType packet in PostAuthenticationQueue)
+            Socket.Send (packet);
     }
-    
-    public void AbortConnection()
+
+    public void AbortConnection ()
     {
-        this.Socket.GracefulDisconnect();
+        Socket.GracefulDisconnect ();
 
         // remove the transport from the list
-        this.MachoNet.OnTransportTerminated(this);
+        MachoNet.OnTransportTerminated (this);
     }
 }

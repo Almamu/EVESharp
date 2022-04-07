@@ -2,9 +2,7 @@
 
 public abstract class OpcodeWithIntegerOutput : Opcode
 {
-    protected OpcodeWithIntegerOutput(Interpreter interpreter) : base(interpreter)
-    {
-    }
+    protected OpcodeWithIntegerOutput (Interpreter interpreter) : base (interpreter) { }
 
-    public abstract int Execute();
+    public abstract int Execute ();
 }

@@ -4,8 +4,8 @@ public abstract class DatabaseAccessor
 {
     protected DatabaseConnection Database { get; init; }
 
-    protected DatabaseAccessor(DatabaseConnection db)
+    protected DatabaseAccessor (DatabaseConnection db)
     {
-        this.Database = db;
+        Database = db;
     }
 }

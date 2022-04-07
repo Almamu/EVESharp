@@ -2,7 +2,5 @@
 
 public class DogmaMachineException : System.Exception
 {
-    public DogmaMachineException(string message) : base(message)
-    {
-    }
+    public DogmaMachineException (string message) : base (message) { }
 }

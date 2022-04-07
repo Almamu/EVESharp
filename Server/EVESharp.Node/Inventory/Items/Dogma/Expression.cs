@@ -12,10 +12,10 @@ public class Expression
     public Expression                       FirstArgument   { get; set; }
     public Expression                       SecondArgument  { get; set; }
     public StaticData.Inventory.Attributes? AttributeID     { get; init; }
-    public byte[]                           VMCode          { get; private set; }
+    public byte []                          VMCode          { get; private set; }
 
-    public void Compile()
+    public void Compile ()
     {
-        this.VMCode = new Compiler().CompileExpression(this);
+        VMCode = new Compiler ().CompileExpression (this);
     }
 }

@@ -1,6 +1,6 @@
 ﻿namespace EVESharp.Node.StaticData.Inventory.Station;
 
-public enum Service : int
+public enum Service
 {
     BountyMissions        = 1,
     AssassinationMissions = 2,
@@ -27,5 +27,5 @@ public enum Service : int
     OfficeRental          = 4194304,
     JumpCloneFacility     = 8388608,
     LoyaltyPointStore     = 16777216,
-    NavyOffices           = 33554432,
+    NavyOffices           = 33554432
 }

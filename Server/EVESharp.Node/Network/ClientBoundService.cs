@@ -1,5 +1,4 @@
 ﻿using System;
-using EVESharp.EVE.Services;
 using EVESharp.EVE.Sessions;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Primitives;
@@ -12,14 +11,12 @@ public abstract class ClientBoundService : BoundService
     /// The client that owns this bound service
     /// </summary>
     public Session Session { get; }
-        
+
     /// <summary>
     /// Creates a base bound service to no client to be used as a normal service
     /// </summary>
     /// <param name="manager">The bound service manager used by this service</param>
-    public ClientBoundService(BoundServiceManager manager) : base(manager)
-    {
-    }
+    public ClientBoundService (BoundServiceManager manager) : base (manager) { }
 
     /// <summary>
     /// Creates a bound service to the given objectID
@@ -27,9 +24,9 @@ public abstract class ClientBoundService : BoundService
     /// <param name="manager">The bound service manager used by this service</param>
     /// <param name="client">The client that it belongs to</param>
     /// <param name="objectID">The object it's bound to</param>
-    public ClientBoundService(BoundServiceManager manager, Session session, int objectID) : base(manager, objectID)
+    public ClientBoundService (BoundServiceManager manager, Session session, int objectID) : base (manager, objectID)
     {
-        this.Session = session;
+        Session = session;
     }
 
     /// <summary>
@@ -43,33 +40,33 @@ public abstract class ClientBoundService : BoundService
     /// <param name="callInfo">The information on the call</param>
     /// <param name="call">The call object with extra information</param>
     /// <returns></returns>
-    protected override PyDataType MachoBindObject(ServiceBindParams bindParams, PyDataType callInfo, CallInformation call)
+    protected override PyDataType MachoBindObject (ServiceBindParams bindParams, PyDataType callInfo, CallInformation call)
     {
         // create the bound instance and register it in the bound services
-        BoundService instance = this.CreateBoundInstance(bindParams, call);
+        BoundService instance = this.CreateBoundInstance (bindParams, call);
 
         // TODO: the expiration time is 1 day, might be better to properly support this?
         // TODO: investigate these a bit more closely in the future
         // TODO: i'm not so sure about the expiration time
-        this.BoundServiceInformation = new PyTuple(2)
+        BoundServiceInformation = new PyTuple (2)
         {
             [0] = instance.BoundString,
-            [1] = DateTime.UtcNow.Add(TimeSpan.FromDays(1)).ToFileTime()
+            [1] = DateTime.UtcNow.Add (TimeSpan.FromDays (1)).ToFileTime ()
         };
 
         // after the service is bound the call can be run (if required)
-        PyTuple result = new PyTuple(2)
+        PyTuple result = new PyTuple (2)
         {
-            [0] = new PySubStruct(new PySubStream(this.BoundServiceInformation)),
+            [0] = new PySubStruct (new PySubStream (BoundServiceInformation)),
             [1] = null
         };
-            
+
         if (callInfo is not null)
         {
             PyTuple      data           = callInfo as PyTuple;
-            string       func           = data[0] as PyString;
-            PyTuple      arguments      = data[1] as PyTuple;
-            PyDictionary namedArguments = data[2] as PyDictionary;
+            string       func           = data [0] as PyString;
+            PyTuple      arguments      = data [1] as PyTuple;
+            PyDictionary namedArguments = data [2] as PyDictionary;
 
             CallInformation callInformation = new CallInformation
             {
@@ -83,12 +80,12 @@ public abstract class ClientBoundService : BoundService
                 BoundServiceManager = call.BoundServiceManager,
                 ServiceManager      = call.ServiceManager
             };
-                
-            result[1] = this.BoundServiceManager.ServiceCall(instance.BoundID, func, callInformation);
+
+            result [1] = BoundServiceManager.ServiceCall (instance.BoundID, func, callInformation);
         }
-            
+
         // signal that the object was bound, this will be used by the proxy to notify this node on important stuff
-        call.ResultOutOfBounds["OID+"] = new PyList<PyInteger>() {this.BoundServiceInformation};
+        call.ResultOutOfBounds ["OID+"] = new PyList <PyInteger> {BoundServiceInformation};
 
         return result;
     }
@@ -99,24 +96,21 @@ public abstract class ClientBoundService : BoundService
     /// <param name="bindParams">The information required for the instantiation</param>
     /// <returns>The new boudn service</returns>
     /// <exception cref="NotImplementedException">If this has not been implemented by the class</exception>
-    protected abstract BoundService CreateBoundInstance(ServiceBindParams bindParams, CallInformation call);
+    protected abstract BoundService CreateBoundInstance (ServiceBindParams bindParams, CallInformation call);
 
-    protected virtual void OnClientDisconnected()
+    protected virtual void OnClientDisconnected () { }
+
+    public override bool IsClientAllowedToCall (Session session)
     {
-            
+        return Session.UserID == session.UserID;
     }
 
-    public override bool IsClientAllowedToCall(Session session)
-    {
-        return this.Session.UserID == session.UserID;
-    }
-
-    public override void ClientHasReleasedThisObject(Session session)
+    public override void ClientHasReleasedThisObject (Session session)
     {
         // first call any freeing code (if any)
-        this.OnClientDisconnected();
+        this.OnClientDisconnected ();
         // then tell the bound service that we are not alive anymore
-        this.BoundServiceManager.UnbindService(this);
+        BoundServiceManager.UnbindService (this);
     }
 
     /// <summary>
@@ -124,11 +118,11 @@ public abstract class ClientBoundService : BoundService
     /// </summary>
     /// <param name="characterID">The characterID to update the session for</param>
     /// <param name="changes">The delta of changes</param>
-    public override void ApplySessionChange(int characterID, PyDictionary<PyString, PyTuple> changes)
+    public override void ApplySessionChange (int characterID, PyDictionary <PyString, PyTuple> changes)
     {
-        if (this.Session.CharacterID != characterID)
+        if (Session.CharacterID != characterID)
             return;
-            
-        this.Session.ApplyDelta(changes);
+
+        Session.ApplyDelta (changes);
     }
 }

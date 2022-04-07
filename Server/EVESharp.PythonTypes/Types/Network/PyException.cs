@@ -26,27 +26,24 @@ public class PyException : Exception
     public PyDictionary Keywords { get; protected set; }
     public PyDataType Extra { get; }
 
-    public PyException(string type, string reason, PyDataType extra, PyDictionary keywords)
+    public PyException (string type, string reason, PyDataType extra, PyDictionary keywords)
     {
-        this.Type     = type;
-        this.Reason   = reason;
-        this.Extra    = extra;
-        this.Keywords = keywords;
+        Type     = type;
+        Reason   = reason;
+        Extra    = extra;
+        Keywords = keywords;
     }
 
-    public static implicit operator PyDataType(PyException ex)
+    public static implicit operator PyDataType (PyException ex)
     {
-        PyTuple data = new PyTuple(ex.Extra is null ? 1 : 2)
-        {
-            [0] = ex.Reason
-        };
-            
+        PyTuple data = new PyTuple (ex.Extra is null ? 1 : 2) {[0] = ex.Reason};
+
         if (ex.Extra is not null)
-            data[1] = ex.Extra;
-            
-        return new PyObject(
+            data [1] = ex.Extra;
+
+        return new PyObject (
             false,
-            new PyTuple(3)
+            new PyTuple (3)
             {
                 [0] = ex.Type,
                 [1] = data,
@@ -55,48 +52,40 @@ public class PyException : Exception
         );
     }
 
-    public static implicit operator PyException(PyDataType exception)
+    public static implicit operator PyException (PyDataType exception)
     {
         if (exception is PyObject == false)
-            throw new Exception("Expected object");
+            throw new Exception ("Expected object");
 
         PyObject ex = exception as PyObject;
 
-        if(ex.Header.Count == 1)
-            return new PyException(
-                ex.Header[0] as PyToken, "", null, null
-            );
-        if (ex.Header.Count == 2 && ex.Header[1] is PyTuple)
+        if (ex.Header.Count == 1)
+            return new PyException (ex.Header [0] as PyToken, "", null, null);
+
+        if (ex.Header.Count == 2 && ex.Header [1] is PyTuple)
         {
-            PyTuple extra = ex.Header[1] as PyTuple;
-                
-            if(extra.Count == 1)
-                return new PyException(
-                    ex.Header[0] as PyToken, ex.Header[1] as PyString, null, null
-                );
-            if(extra.Count == 2)
-                return new PyException(
-                    ex.Header[0] as PyToken, extra[0] as PyString, extra[1], null
-                );
-                
-            throw new InvalidDataException("Unexpected amount of arguments for a PyException");   
+            PyTuple extra = ex.Header [1] as PyTuple;
+
+            if (extra.Count == 1)
+                return new PyException (ex.Header [0] as PyToken, ex.Header [1] as PyString, null, null);
+            if (extra.Count == 2)
+                return new PyException (ex.Header [0] as PyToken, extra [0] as PyString, extra [1], null);
+
+            throw new InvalidDataException ("Unexpected amount of arguments for a PyException");
         }
-        if(ex.Header.Count == 3)
+
+        if (ex.Header.Count == 3)
         {
-            PyTuple extra = ex.Header[1] as PyTuple;
-                
-            if(extra.Count == 1)
-                return new PyException(
-                    ex.Header[0] as PyToken, ex.Header[1] as PyString, null, ex.Header[2] as PyDictionary
-                );
-            if(extra.Count == 2)
-                return new PyException(
-                    ex.Header[0] as PyToken, extra[0] as PyString, extra[1], ex.Header[2] as PyDictionary
-                );
-                
-            throw new InvalidDataException("Unexpected amount of arguments for a PyException");
+            PyTuple extra = ex.Header [1] as PyTuple;
+
+            if (extra.Count == 1)
+                return new PyException (ex.Header [0] as PyToken, ex.Header [1] as PyString, null, ex.Header [2] as PyDictionary);
+            if (extra.Count == 2)
+                return new PyException (ex.Header [0] as PyToken, extra [0] as PyString, extra [1], ex.Header [2] as PyDictionary);
+
+            throw new InvalidDataException ("Unexpected amount of arguments for a PyException");
         }
-            
-        throw new InvalidDataException("Unexpected amount of arguments for a PyException");
+
+        throw new InvalidDataException ("Unexpected amount of arguments for a PyException");
     }
 }

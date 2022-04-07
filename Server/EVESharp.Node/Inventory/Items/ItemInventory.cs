@@ -23,10 +23,6 @@
 */
 
 using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Runtime.CompilerServices;
-using EVESharp.Common.Configuration;
-using EVESharp.Common.Database;
 using EVESharp.Node.Inventory.Items.Types.Information;
 using EVESharp.Node.StaticData.Inventory;
 
@@ -34,9 +30,11 @@ namespace EVESharp.Node.Inventory.Items;
 
 public abstract class ItemInventory : ItemEntity
 {
-    public delegate ConcurrentDictionary<int, ItemEntity> InventoryLoadEventHandler(ItemInventory inventory, Flags ignoreFlags);
+    public delegate ConcurrentDictionary <int, ItemEntity> InventoryLoadEventHandler (ItemInventory inventory, Flags ignoreFlags);
 
-    public delegate void InventoryUnloadEventHandler(ItemInventory inventory);
+    public delegate void InventoryUnloadEventHandler (ItemInventory inventory);
+
+    protected ConcurrentDictionary <int, ItemEntity> mItems;
 
     /// <summary>
     /// Event called by the item to request the inventory contents
@@ -46,41 +44,8 @@ public abstract class ItemInventory : ItemEntity
     /// Event called by the item to request the inventory to be unloaded
     /// </summary>
     public InventoryUnloadEventHandler OnInventoryUnload;
-        
-    protected ItemInventory(Item info) : base(info)
-    {
-    }
 
-    public ItemInventory(ItemEntity from) : base(from)
-    {
-    }
-
-    protected virtual void LoadContents(Flags ignoreFlags = Flags.None)
-    {
-        lock (this)
-        {
-            // ensure the list exists if no handler is there yet
-            this.Items           = this.OnInventoryLoad?.Invoke(this, ignoreFlags) ?? new ConcurrentDictionary<int, ItemEntity>();
-            this.mContentsLoaded = true;
-        }
-    }
-
-    protected virtual void UnloadContents()
-    {
-        lock (this)
-        {
-            if (this.mContentsLoaded == false)
-                return;
-
-            this.OnInventoryUnload?.Invoke(this);
-        }
-    }
-
-    public bool ContentsLoaded
-    {
-        get => this.mContentsLoaded;
-        set => this.mContentsLoaded = value;
-    }
+    public bool ContentsLoaded { get; set; }
 
     public new bool Singleton
     {
@@ -88,56 +53,82 @@ public abstract class ItemInventory : ItemEntity
         set
         {
             base.Singleton = value;
-    
+
             // non-singleton inventories cannot be manipulated, so the items inside can be free'd
             if (base.Singleton == false)
-                this.UnloadContents();
+                this.UnloadContents ();
         }
     }
-        
-    public ConcurrentDictionary<int, ItemEntity> Items
+
+    public ConcurrentDictionary <int, ItemEntity> Items
     {
         get
         {
-            if (this.mContentsLoaded == false)
-                this.LoadContents();
+            if (ContentsLoaded == false)
+                this.LoadContents ();
 
             return this.mItems;
         }
-            
+
         protected set => this.mItems = value;
     }
 
-    public virtual void AddItem(ItemEntity item)
+    protected ItemInventory (Item info) : base (info) { }
+
+    public ItemInventory (ItemEntity from) : base (from) { }
+
+    protected virtual void LoadContents (Flags ignoreFlags = Flags.None)
+    {
+        lock (this)
+        {
+            // ensure the list exists if no handler is there yet
+            Items          = this.OnInventoryLoad?.Invoke (this, ignoreFlags) ?? new ConcurrentDictionary <int, ItemEntity> ();
+            ContentsLoaded = true;
+        }
+    }
+
+    protected virtual void UnloadContents ()
+    {
+        lock (this)
+        {
+            if (ContentsLoaded == false)
+                return;
+
+            this.OnInventoryUnload?.Invoke (this);
+        }
+    }
+
+    public virtual void AddItem (ItemEntity item)
     {
         // do not add anything if the inventory is not loaded
         // this prevents loading the full inventory for operations
         // that don't really need it
-        if (this.mContentsLoaded == false)
+        if (ContentsLoaded == false)
             return;
-            
-        lock (this.Items)
-            this.Items[item.ID] = item;
+
+        lock (Items)
+        {
+            Items [item.ID] = item;
+        }
     }
 
-    public void RemoveItem(ItemEntity item)
+    public void RemoveItem (ItemEntity item)
     {
-        if (this.mContentsLoaded == false)
+        if (ContentsLoaded == false)
             return;
 
-        lock (this.Items)
-            this.Items.TryRemove(item.ID, out _);
+        lock (Items)
+        {
+            Items.TryRemove (item.ID, out _);
+        }
     }
 
-    public override void Dispose()
+    public override void Dispose ()
     {
         // trigger the unload of the contents of the inventory
-        if (this.ContentsLoaded == true)
-            this.UnloadContents();
-            
-        base.Dispose();
-    }
+        if (ContentsLoaded)
+            this.UnloadContents ();
 
-    protected ConcurrentDictionary<int, ItemEntity> mItems;
-    private   bool                                  mContentsLoaded = false;
+        base.Dispose ();
+    }
 }

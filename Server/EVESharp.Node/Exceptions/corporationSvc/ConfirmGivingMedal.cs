@@ -5,7 +5,5 @@ namespace EVESharp.Node.Exceptions.corporationSvc;
 
 public class ConfirmGivingMedal : UserError
 {
-    public ConfirmGivingMedal(int cost) : base("ConfirmGivingMedal", new PyDictionary {["cost"] = cost})
-    {
-    }
+    public ConfirmGivingMedal (int cost) : base ("ConfirmGivingMedal", new PyDictionary {["cost"] = cost}) { }
 }

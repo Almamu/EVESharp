@@ -1,6 +1,6 @@
 namespace EVESharp.Node.StaticData.Inventory;
 
-public enum Attributes : int
+public enum Attributes
 {
     isOnline                                     = 2,
     damage                                       = 3,
@@ -1433,5 +1433,5 @@ public enum Attributes : int
     shipBonusATC1                                = 1574,
     shipBonusATC2                                = 1575,
     shipBonusATF1                                = 1576,
-    shipBonusATF2                                = 1577,
+    shipBonusATF2                                = 1577
 }

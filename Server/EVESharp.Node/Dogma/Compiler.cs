@@ -16,33 +16,33 @@ public class Compiler
     /// </summary>
     /// <param name="rootExpression">The expression to compile</param>
     /// <returns>The bytecode for the expression</returns>
-    public byte[] CompileExpression(Expression rootExpression)
+    public byte [] CompileExpression (Expression rootExpression)
     {
-        MemoryStream stream = new MemoryStream();
-        BinaryWriter writer = new BinaryWriter(stream);
+        MemoryStream stream = new MemoryStream ();
+        BinaryWriter writer = new BinaryWriter (stream);
 
-        this.CompileOpcode(rootExpression, writer);
+        this.CompileOpcode (rootExpression, writer);
 
         // return the full buffer
-        return stream.GetBuffer();
+        return stream.GetBuffer ();
     }
 
-    private void CompileOpcode(Expression expression, BinaryWriter writer)
+    private void CompileOpcode (Expression expression, BinaryWriter writer)
     {
         // as long as there's a first argument, that one goes before the current one
-        writer.WriteOperand(expression.Operand);
-            
+        writer.WriteOperand (expression.Operand);
+
         // write the first argument
         if (expression.FirstArgument is not null)
-            this.CompileOpcode(expression.FirstArgument, writer);
+            this.CompileOpcode (expression.FirstArgument, writer);
         // if there's a value also write the string to the buffer
         if (expression.ExpressionValue is not null)
-            writer.Write(expression.ExpressionValue);
+            writer.Write (expression.ExpressionValue);
         // if there's a attributeID also write it to the buffer
         if (expression.AttributeID is not null)
-            writer.Write((int) expression.AttributeID);
+            writer.Write ((int) expression.AttributeID);
         // finally write the second argument
         if (expression.SecondArgument is not null)
-            this.CompileOpcode(expression.SecondArgument, writer);
+            this.CompileOpcode (expression.SecondArgument, writer);
     }
 }

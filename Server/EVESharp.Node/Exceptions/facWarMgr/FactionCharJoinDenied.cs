@@ -5,7 +5,11 @@ namespace EVESharp.Node.Exceptions.facWarMgr;
 
 public class FactionCharJoinDenied : UserError
 {
-    public FactionCharJoinDenied(string reason, int hoursLeft) : base("FactionCharJoinDenied", new PyDictionary {["reason"] = reason, ["hours"] = hoursLeft})
-    {
-    }
+    public FactionCharJoinDenied (string reason, int hoursLeft) : base (
+        "FactionCharJoinDenied", new PyDictionary
+        {
+            ["reason"] = reason,
+            ["hours"]  = hoursLeft
+        }
+    ) { }
 }

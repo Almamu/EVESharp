@@ -118,5 +118,5 @@ public enum CorporationRole : long
     /// <summary>
     /// Can fully manage corporation fittings
     /// </summary>
-    FittingManager = 576460752303423488L,	
-};
+    FittingManager = 576460752303423488L
+}

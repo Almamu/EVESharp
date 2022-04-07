@@ -2,24 +2,21 @@ namespace EVESharp.Node.StaticData;
 
 public class Constant
 {
-    private string mName;
-    private long   mValue;
+    public string Name  { get; }
+    public long   Value { get; }
 
-    public Constant(string name, long value)
+    public Constant (string name, long value)
     {
-        this.mName  = name;
-        this.mValue = value;
+        Name  = name;
+        Value = value;
     }
 
-    public string Name  => this.mName;
-    public long   Value => this.mValue;
-
-    public static implicit operator long(Constant constant)
+    public static implicit operator long (Constant constant)
     {
         return constant.Value;
     }
 
-    public static implicit operator int(Constant constant)
+    public static implicit operator int (Constant constant)
     {
         return (int) constant.Value;
     }

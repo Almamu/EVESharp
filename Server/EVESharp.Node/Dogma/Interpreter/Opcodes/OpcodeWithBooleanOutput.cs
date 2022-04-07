@@ -2,9 +2,7 @@
 
 public abstract class OpcodeWithBooleanOutput : Opcode
 {
-    protected OpcodeWithBooleanOutput(Interpreter interpreter) : base(interpreter)
-    {
-    }
+    protected OpcodeWithBooleanOutput (Interpreter interpreter) : base (interpreter) { }
 
-    public abstract bool Execute();
+    public abstract bool Execute ();
 }

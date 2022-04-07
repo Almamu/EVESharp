@@ -7,19 +7,19 @@ namespace EVESharp.Node.Notifications.Client.Contracts;
 public class OnContractOutbid : ClientNotification
 {
     private const string NOTIFICATION_NAME = "OnContractOutbid";
-        
+
     public int ContractID { get; init; }
-        
-    public OnContractOutbid(int contractID) : base(NOTIFICATION_NAME)
+
+    public OnContractOutbid (int contractID) : base (NOTIFICATION_NAME)
     {
-        this.ContractID = contractID;
+        ContractID = contractID;
     }
 
-    public override List<PyDataType> GetElements()
+    public override List <PyDataType> GetElements ()
     {
-        return new List<PyDataType>()
+        return new List <PyDataType>
         {
-            this.ContractID,
+            ContractID,
             null
         };
     }

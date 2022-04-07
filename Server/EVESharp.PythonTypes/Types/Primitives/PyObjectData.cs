@@ -5,14 +5,14 @@ public class PyObjectData : PyDataType
     public PyString   Name      { get; }
     public PyDataType Arguments { get; }
 
-    public PyObjectData(PyString name, PyDataType arguments)
+    public PyObjectData (PyString name, PyDataType arguments)
     {
-        this.Name      = name;
-        this.Arguments = arguments;
+        Name      = name;
+        Arguments = arguments;
     }
 
-    public override int GetHashCode()
+    public override int GetHashCode ()
     {
-        return (this.Name?.GetHashCode() ?? 0) ^ (this.Arguments?.GetHashCode() ?? 0) ^ 0x69548514;
+        return (Name?.GetHashCode () ?? 0) ^ (Arguments?.GetHashCode () ?? 0) ^ 0x69548514;
     }
 }

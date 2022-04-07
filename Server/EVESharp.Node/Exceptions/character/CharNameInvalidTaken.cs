@@ -2,9 +2,7 @@
 
 namespace EVESharp.Node.Exceptions.character;
 
-class CharNameInvalidTaken : UserError
+internal class CharNameInvalidTaken : UserError
 {
-    public CharNameInvalidTaken() : base("CharNameInvalidTaken")
-    {
-    }
+    public CharNameInvalidTaken () : base ("CharNameInvalidTaken") { }
 }

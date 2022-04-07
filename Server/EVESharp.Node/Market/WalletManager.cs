@@ -7,29 +7,33 @@ using EVESharp.EVE.Sessions;
 using EVESharp.Node.Database;
 using EVESharp.Node.Network;
 using EVESharp.Node.StaticData.Corporation;
-using EVESharp.PythonTypes.Types.Collections;
-using EVESharp.PythonTypes.Types.Database;
 using MySql.Data.MySqlClient;
 
 namespace EVESharp.Node.Market;
 
 public class WalletManager
 {
-    private NotificationManager NotificationManager { get; init; }
-    private DatabaseConnection  Database            { get; init; }
-        
-    public Wallet AcquireWallet(int ownerID, int walletKey, bool isCorporation = false)
+    private NotificationManager NotificationManager { get; }
+    private DatabaseConnection  Database            { get; }
+
+    public WalletManager (DatabaseConnection database, NotificationManager notificationManager)
+    {
+        Database            = database;
+        NotificationManager = notificationManager;
+    }
+
+    public Wallet AcquireWallet (int ownerID, int walletKey, bool isCorporation = false)
     {
         // TODO: CHECK PERMISSIONS
-        return new Wallet()
+        return new Wallet
         {
-            Connection          = this.AcquireLock(ownerID, walletKey, out double balance),
+            Connection          = this.AcquireLock (ownerID, walletKey, out double balance),
             OwnerID             = ownerID,
             WalletKey           = walletKey,
             Balance             = balance,
             OriginalBalance     = balance,
             Database            = Database,
-            NotificationManager = this.NotificationManager,
+            NotificationManager = NotificationManager,
             ForCorporation      = isCorporation,
             WalletManager       = this
         };
@@ -39,26 +43,26 @@ public class WalletManager
     /// Acquires a lock for modifying wallets on the database
     /// </summary>
     /// <returns></returns>
-    private MySqlConnection AcquireLock(int ownerID, int walletKey, out double balance)
+    private MySqlConnection AcquireLock (int ownerID, int walletKey, out double balance)
     {
         MySqlConnection connection = null;
         // acquire the lock
-        Database.GetLock(ref connection, $"wallet_{ownerID}_{walletKey}");
+        Database.GetLock (ref connection, $"wallet_{ownerID}_{walletKey}");
 
         // get the current owner's balance
-        balance = Database.Scalar<double>(
+        balance = Database.Scalar <double> (
             ref connection,
             WalletDB.GET_WALLET_BALANCE,
-            new Dictionary<string, object>()
+            new Dictionary <string, object>
             {
                 {"_walletKey", walletKey},
                 {"_ownerID", ownerID}
             }
         );
-            
+
         return connection;
     }
-        
+
     /// <summary>
     /// Special situation for Market
     ///
@@ -66,11 +70,11 @@ public class WalletManager
     /// This allows to take exclusive control over it and perform any actions required
     /// </summary>
     /// <param name="connection"></param>
-    public void ReleaseLock(MySqlConnection connection, int ownerID, int walletKey)
+    public void ReleaseLock (MySqlConnection connection, int ownerID, int walletKey)
     {
-        Database.ReleaseLock(connection, $"wallet_{ownerID}_{walletKey}");
+        Database.ReleaseLock (connection, $"wallet_{ownerID}_{walletKey}");
     }
-        
+
     /// <summary>
     /// Creates a transaction record in the wallet without modifying the wallet balance
     /// </summary>
@@ -83,15 +87,18 @@ public class WalletManager
     /// <param name="amount">The amount of ISK</param>
     /// <param name="stationID">The place where the transaction was recorded</param>
     /// <param name="accountKey">The account key where the transaction was recorded</param>
-    public void CreateTransactionRecord(int ownerID, TransactionType type, int characterID, int otherID, int typeID, int quantity, double amount, int stationID, int accountKey)
+    public void CreateTransactionRecord (
+        int ownerID,   TransactionType type, int characterID, int otherID, int typeID, int quantity, double amount,
+        int stationID, int             accountKey
+    )
     {
         // market transactions do not affect the wallet value because these are paid either when placing the sell/buy order
         // or when fullfiling it
-        Database.Procedure(
+        Database.Procedure (
             WalletDB.RECORD_TRANSACTION,
-            new Dictionary<string, object>()
+            new Dictionary <string, object>
             {
-                {"_transactionDateTime", DateTime.UtcNow.ToFileTimeUtc()},
+                {"_transactionDateTime", DateTime.UtcNow.ToFileTimeUtc ()},
                 {"_typeID", typeID},
                 {"_quantity", quantity},
                 {"_price", amount},
@@ -104,17 +111,19 @@ public class WalletManager
             }
         );
     }
-        
-    public void CreateJournalForOwner(MarketReference reference, int  characterID, int    ownerID1,
-                                      int?            ownerID2,  int? referenceID, double amount, double finalBalance, string reason, int accountKey)
-    {
-        reason = reason.Substring(0, Math.Min(reason.Length, 43));
 
-        Database.Procedure(
+    public void CreateJournalForOwner (
+        MarketReference reference, int  characterID, int    ownerID1,
+        int?            ownerID2,  int? referenceID, double amount, double finalBalance, string reason, int accountKey
+    )
+    {
+        reason = reason.Substring (0, Math.Min (reason.Length, 43));
+
+        Database.Procedure (
             WalletDB.CREATE_JOURNAL_ENTRY,
-            new Dictionary<string, object>()
+            new Dictionary <string, object>
             {
-                {"_transactionDate", DateTime.UtcNow.ToFileTimeUtc()},
+                {"_transactionDate", DateTime.UtcNow.ToFileTimeUtc ()},
                 {"_entryTypeID", (int) reference},
                 {"_charID", characterID},
                 {"_ownerID1", ownerID1},
@@ -134,11 +143,11 @@ public class WalletManager
     /// <param name="ownerID">The ownerID</param>
     /// <param name="accountKey">The accountKey</param>
     /// <param name="startingBalance">The starting balance of the wallet</param>
-    public void CreateWallet(int ownerID, int accountKey, double startingBalance)
+    public void CreateWallet (int ownerID, int accountKey, double startingBalance)
     {
-        Database.Procedure(
+        Database.Procedure (
             WalletDB.CREATE_WALLET,
-            new Dictionary<string, object>()
+            new Dictionary <string, object>
             {
                 {"_walletKey", accountKey},
                 {"_ownerID", ownerID},
@@ -147,90 +156,85 @@ public class WalletManager
         );
     }
 
-    public bool IsAccessAllowed(Session session, int accountKey, int ownerID)
+    public bool IsAccessAllowed (Session session, int accountKey, int ownerID)
     {
         if (ownerID == session.CharacterID)
             return true;
-            
+
         if (ownerID == session.CorporationID)
         {
             // check for permissions
             // check if the character has any accounting roles and set the correct accountKey based on the data
-            if (CorporationRole.AccountCanQuery1.Is(session.CorporationRole) && accountKey == WalletKeys.MAIN_WALLET)
+            if (CorporationRole.AccountCanQuery1.Is (session.CorporationRole) && accountKey == WalletKeys.MAIN_WALLET)
                 return true;
-            if (CorporationRole.AccountCanQuery2.Is(session.CorporationRole) && accountKey == WalletKeys.SECOND_WALLET)
+            if (CorporationRole.AccountCanQuery2.Is (session.CorporationRole) && accountKey == WalletKeys.SECOND_WALLET)
                 return true;
-            if (CorporationRole.AccountCanQuery3.Is(session.CorporationRole) && accountKey == WalletKeys.THIRD_WALLET)
+            if (CorporationRole.AccountCanQuery3.Is (session.CorporationRole) && accountKey == WalletKeys.THIRD_WALLET)
                 return true;
-            if (CorporationRole.AccountCanQuery4.Is(session.CorporationRole) && accountKey == WalletKeys.FOURTH_WALLET)
+            if (CorporationRole.AccountCanQuery4.Is (session.CorporationRole) && accountKey == WalletKeys.FOURTH_WALLET)
                 return true;
-            if (CorporationRole.AccountCanQuery5.Is(session.CorporationRole) && accountKey == WalletKeys.FIFTH_WALLET)
+            if (CorporationRole.AccountCanQuery5.Is (session.CorporationRole) && accountKey == WalletKeys.FIFTH_WALLET)
                 return true;
-            if (CorporationRole.AccountCanQuery6.Is(session.CorporationRole) && accountKey == WalletKeys.SIXTH_WALLET)
+            if (CorporationRole.AccountCanQuery6.Is (session.CorporationRole) && accountKey == WalletKeys.SIXTH_WALLET)
                 return true;
-            if (CorporationRole.AccountCanQuery7.Is(session.CorporationRole) && accountKey == WalletKeys.SEVENTH_WALLET)
+            if (CorporationRole.AccountCanQuery7.Is (session.CorporationRole) && accountKey == WalletKeys.SEVENTH_WALLET)
                 return true;
+
             // last chance, accountant role
-            if (CorporationRole.Accountant.Is(session.CorporationRole))
+            if (CorporationRole.Accountant.Is (session.CorporationRole))
                 return true;
-            if (CorporationRole.JuniorAccountant.Is(session.CorporationRole))
+            if (CorporationRole.JuniorAccountant.Is (session.CorporationRole))
                 return true;
         }
 
         return false;
     }
 
-    public bool IsTakeAllowed(Session session, int accountKey, int ownerID)
+    public bool IsTakeAllowed (Session session, int accountKey, int ownerID)
     {
         if (ownerID == session.CharacterID)
             return true;
-            
+
         if (ownerID == session.CorporationID)
         {
             // check for permissions
             // check if the character has any accounting roles and set the correct accountKey based on the data
-            if (CorporationRole.AccountCanTake1.Is(session.CorporationRole) && accountKey == WalletKeys.MAIN_WALLET)
+            if (CorporationRole.AccountCanTake1.Is (session.CorporationRole) && accountKey == WalletKeys.MAIN_WALLET)
                 return true;
-            if (CorporationRole.AccountCanTake2.Is(session.CorporationRole) && accountKey == WalletKeys.SECOND_WALLET)
+            if (CorporationRole.AccountCanTake2.Is (session.CorporationRole) && accountKey == WalletKeys.SECOND_WALLET)
                 return true;
-            if (CorporationRole.AccountCanTake3.Is(session.CorporationRole) && accountKey == WalletKeys.THIRD_WALLET)
+            if (CorporationRole.AccountCanTake3.Is (session.CorporationRole) && accountKey == WalletKeys.THIRD_WALLET)
                 return true;
-            if (CorporationRole.AccountCanTake4.Is(session.CorporationRole) && accountKey == WalletKeys.FOURTH_WALLET)
+            if (CorporationRole.AccountCanTake4.Is (session.CorporationRole) && accountKey == WalletKeys.FOURTH_WALLET)
                 return true;
-            if (CorporationRole.AccountCanTake5.Is(session.CorporationRole) && accountKey == WalletKeys.FIFTH_WALLET)
+            if (CorporationRole.AccountCanTake5.Is (session.CorporationRole) && accountKey == WalletKeys.FIFTH_WALLET)
                 return true;
-            if (CorporationRole.AccountCanTake6.Is(session.CorporationRole) && accountKey == WalletKeys.SIXTH_WALLET)
+            if (CorporationRole.AccountCanTake6.Is (session.CorporationRole) && accountKey == WalletKeys.SIXTH_WALLET)
                 return true;
-            if (CorporationRole.AccountCanTake7.Is(session.CorporationRole) && accountKey == WalletKeys.SEVENTH_WALLET)
+            if (CorporationRole.AccountCanTake7.Is (session.CorporationRole) && accountKey == WalletKeys.SEVENTH_WALLET)
                 return true;
-            if (CorporationRole.Accountant.Is(session.CorporationRole))
+            if (CorporationRole.Accountant.Is (session.CorporationRole))
                 return true;
         }
 
         return false;
     }
-        
+
     /// <summary>
     /// Obtains the wallet balance for the given owner and wallet
     /// </summary>
     /// <param name="ownerID">The owner to get the wallet balance for</param>
     /// <param name="walletKey">The wallet to get balance for</param>
     /// <returns>The wallet's balance</returns>
-    public double GetWalletBalance(int ownerID, int walletKey = WalletKeys.MAIN_WALLET)
+    public double GetWalletBalance (int ownerID, int walletKey = WalletKeys.MAIN_WALLET)
     {
-        return Database.Scalar<double>(
+        return Database.Scalar <double> (
             WalletDB.GET_WALLET_BALANCE,
-            new Dictionary<string, object>()
+            new Dictionary <string, object>
             {
                 {"_ownerID", ownerID},
                 {"_walletKey", walletKey}
             }
         );
-    }
-
-    public WalletManager(DatabaseConnection database, NotificationManager notificationManager)
-    {
-        this.Database            = database;
-        this.NotificationManager = notificationManager;
     }
 }

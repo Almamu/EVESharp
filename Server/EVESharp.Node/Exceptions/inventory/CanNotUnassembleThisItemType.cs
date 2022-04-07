@@ -4,7 +4,5 @@ namespace EVESharp.Node.Exceptions.inventory;
 
 public class CanNotUnassembleThisItemType : UserError
 {
-    public CanNotUnassembleThisItemType() : base("CanNotUnassembleThisItemType")
-    {
-    }
+    public CanNotUnassembleThisItemType () : base ("CanNotUnassembleThisItemType") { }
 }

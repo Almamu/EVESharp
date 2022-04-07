@@ -4,8 +4,5 @@ namespace EVESharp.Node.Exceptions.corpRegistry;
 
 public class AllianceNameInvalidTaken : UserError
 {
-    public AllianceNameInvalidTaken() : base("AllianceNameInvalidTaken")
-    {
-            
-    }
+    public AllianceNameInvalidTaken () : base ("AllianceNameInvalidTaken") { }
 }

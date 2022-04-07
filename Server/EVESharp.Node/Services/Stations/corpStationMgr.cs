@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using EVESharp.EVE;
 using EVESharp.EVE.Packets.Exceptions;
 using EVESharp.EVE.Services;
@@ -14,13 +13,10 @@ using EVESharp.Node.Market;
 using EVESharp.Node.Network;
 using EVESharp.Node.Notifications.Client.Corporations;
 using EVESharp.Node.Notifications.Client.Wallet;
+using EVESharp.Node.Sessions;
 using EVESharp.Node.StaticData;
 using EVESharp.Node.StaticData.Corporation;
 using EVESharp.Node.StaticData.Inventory;
-using EVESharp.Node.Exceptions;
-using EVESharp.Node.Exceptions.Internal;
-using EVESharp.Node.Services.Account;
-using EVESharp.Node.Sessions;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Database;
 using EVESharp.PythonTypes.Types.Primitives;
@@ -32,295 +28,312 @@ public class corpStationMgr : ClientBoundService
 {
     public override AccessLevel         AccessLevel         => AccessLevel.None;
     private         ItemFactory         ItemFactory         { get; }
-    private         ItemDB              ItemDB              => this.ItemFactory.ItemDB;
+    private         ItemDB              ItemDB              => ItemFactory.ItemDB;
     private         MarketDB            MarketDB            { get; }
-    private         StationDB           StationDB           { get; init; }
-    private         BillsDB             BillsDB             { get; init; }
-    private         TypeManager         TypeManager         => this.ItemFactory.TypeManager;
-    private         SystemManager       SystemManager       => this.ItemFactory.SystemManager;
+    private         StationDB           StationDB           { get; }
+    private         BillsDB             BillsDB             { get; }
+    private         TypeManager         TypeManager         => ItemFactory.TypeManager;
+    private         SystemManager       SystemManager       => ItemFactory.SystemManager;
     private         WalletManager       WalletManager       { get; }
     private         NodeContainer       Container           { get; }
-    private         NotificationManager NotificationManager { get; init; }
-        
-    public corpStationMgr(MarketDB marketDB, StationDB stationDb, BillsDB billsDb, NotificationManager notificationManager, ItemFactory itemFactory, NodeContainer container, BoundServiceManager manager, WalletManager walletManager) : base(manager)
+    private         NotificationManager NotificationManager { get; }
+
+    public corpStationMgr (
+        MarketDB marketDB, StationDB stationDb, BillsDB billsDb, NotificationManager notificationManager, ItemFactory itemFactory, NodeContainer container,
+        BoundServiceManager manager, WalletManager walletManager
+    ) : base (manager)
     {
-        this.MarketDB            = marketDB;
-        this.StationDB           = stationDb;
-        this.BillsDB             = billsDb;
-        this.NotificationManager = notificationManager;
-        this.ItemFactory         = itemFactory;
-        this.Container           = container;
-        this.WalletManager       = walletManager;
-    }
-        
-    // TODO: PROVIDE OBJECTID PROPERLY
-    protected corpStationMgr(MarketDB marketDB, StationDB stationDb, BillsDB billsDb, NotificationManager notificationManager, ItemFactory itemFactory, NodeContainer container, BoundServiceManager manager, WalletManager walletManager, Session session) : base(manager, session, 0)
-    {
-        this.MarketDB            = marketDB;
-        this.StationDB           = stationDb;
-        this.BillsDB             = billsDb;
-        this.NotificationManager = notificationManager;
-        this.ItemFactory         = itemFactory;
-        this.Container           = container;
-        this.WalletManager       = walletManager;
+        MarketDB            = marketDB;
+        StationDB           = stationDb;
+        BillsDB             = billsDb;
+        NotificationManager = notificationManager;
+        ItemFactory         = itemFactory;
+        Container           = container;
+        WalletManager       = walletManager;
     }
 
-    public PyList GetCorporateStationOffice(CallInformation call)
+    // TODO: PROVIDE OBJECTID PROPERLY
+    protected corpStationMgr (
+        MarketDB marketDB, StationDB stationDb, BillsDB billsDb, NotificationManager notificationManager, ItemFactory itemFactory, NodeContainer container,
+        BoundServiceManager manager, WalletManager walletManager, Session session
+    ) : base (manager, session, 0)
+    {
+        MarketDB            = marketDB;
+        StationDB           = stationDb;
+        BillsDB             = billsDb;
+        NotificationManager = notificationManager;
+        ItemFactory         = itemFactory;
+        Container           = container;
+        WalletManager       = walletManager;
+    }
+
+    public PyList GetCorporateStationOffice (CallInformation call)
     {
         // TODO: IMPLEMENT WHEN CORPORATION SUPPORT IS IN PLACE
-        return new PyList();
+        return new PyList ();
     }
 
-    public PyDataType DoStandingCheckForStationService(PyInteger stationServiceID, CallInformation call)
+    public PyDataType DoStandingCheckForStationService (PyInteger stationServiceID, CallInformation call)
     {
-        call.Session.EnsureCharacterIsSelected();
-        call.Session.EnsureCharacterIsInStation();
-            
+        call.Session.EnsureCharacterIsSelected ();
+        call.Session.EnsureCharacterIsInStation ();
+
         // TODO: CHECK ACTUAL STANDING VALUE
-            
+
         return null;
     }
 
-    private List<Station> GetPotentialHomeStations(Session session)
+    private List <Station> GetPotentialHomeStations (Session session)
     {
-        int stationID = session.EnsureCharacterIsInStation();
-            
-        Character character = this.ItemFactory.GetItem<Character>(session.EnsureCharacterIsSelected());
+        int stationID = session.EnsureCharacterIsInStation ();
+
+        Character character = ItemFactory.GetItem <Character> (session.EnsureCharacterIsSelected ());
 
         // TODO: CHECK STANDINGS TO ENSURE THIS STATION CAN BE USED
         // TODO: ADD CURRENT CORPORATION'S STATION BACK TO THE LIST
-        List<Station> availableStations = new List<Station>
+        List <Station> availableStations = new List <Station>
         {
-            this.ItemFactory.Stations[stationID],
+            ItemFactory.Stations [stationID]
             // this.ItemFactory.Stations[character.Corporation.StationID]
         };
-            
+
         return availableStations;
     }
-        
-    public PyDataType GetPotentialHomeStations(CallInformation call)
+
+    public PyDataType GetPotentialHomeStations (CallInformation call)
     {
-        List<Station> availableStations = this.GetPotentialHomeStations(call.Session);
-        Rowset result = new Rowset(new PyList<PyString>(3)
+        List <Station> availableStations = this.GetPotentialHomeStations (call.Session);
+        Rowset result = new Rowset (
+            new PyList <PyString> (3)
             {
                 [0] = "stationID",
                 [1] = "typeID",
-                [2] = "serviceMask", 
+                [2] = "serviceMask"
             }
         );
-            
+
         // build the return
         foreach (Station station in availableStations)
-        {
-            result.Rows.Add(new PyList(3)
+            result.Rows.Add (
+                new PyList (3)
                 {
                     [0] = station.ID,
                     [1] = station.Type.ID,
                     [2] = station.Operations.ServiceMask
                 }
             );
-        }
-            
+
         return result;
     }
 
-    public PyDataType SetHomeStation(PyInteger stationID, CallInformation call)
+    public PyDataType SetHomeStation (PyInteger stationID, CallInformation call)
     {
-        int callerCharacterID = call.Session.EnsureCharacterIsSelected();
-        call.Session.EnsureCharacterIsInStation();
-            
-        Character character = this.ItemFactory.GetItem<Character>(callerCharacterID);
-            
+        int callerCharacterID = call.Session.EnsureCharacterIsSelected ();
+        call.Session.EnsureCharacterIsInStation ();
+
+        Character character = ItemFactory.GetItem <Character> (callerCharacterID);
+
         // ensure the station selected is in the list of available stations for this character
-        Station station = this.GetPotentialHomeStations(call.Session).Find(x => x.ID == stationID);
+        Station station = this.GetPotentialHomeStations (call.Session).Find (x => x.ID == stationID);
 
         if (station is null)
-            throw new CustomError("The selected station is not in your allowed list...");
+            throw new CustomError ("The selected station is not in your allowed list...");
 
         // we could check if the current station is the same as the new one
         // but in reality it doesn't matter much, if the user wants to pay twice for it, sure, why not
         // in practice it doesn't make much difference
         // it also simplifies code that needs to communicate between nodes
-            
+
         // what we need to do tho is ensure there's no other clone in here in the first place
-        Rowset clones = this.ItemDB.GetClonesForCharacter(character.ID, (int) character.ActiveCloneID);
+        Rowset clones = ItemDB.GetClonesForCharacter (character.ID, (int) character.ActiveCloneID);
 
         foreach (PyList entry in clones.Rows)
         {
-            int locationID = entry[2] as PyInteger;
+            int locationID = entry [2] as PyInteger;
 
             // if a clone is already there, refuse to have the medical in there
             if (locationID == stationID)
-                throw new MedicalYouAlreadyHaveACloneContractAtThatStation();
+                throw new MedicalYouAlreadyHaveACloneContractAtThatStation ();
         }
 
-        using Wallet wallet = this.WalletManager.AcquireWallet(character.ID, WalletKeys.MAIN_WALLET);
+        using Wallet wallet = WalletManager.AcquireWallet (character.ID, WalletKeys.MAIN_WALLET);
         {
-            double contractCost = this.Container.Constants[Constants.costCloneContract];
-                
-            wallet.EnsureEnoughBalance(contractCost);
-            wallet.CreateJournalRecord(MarketReference.CloneTransfer, null, station.ID, -contractCost, $"Moved clone to {station.Name}");
+            double contractCost = Container.Constants [Constants.costCloneContract];
+
+            wallet.EnsureEnoughBalance (contractCost);
+            wallet.CreateJournalRecord (MarketReference.CloneTransfer, null, station.ID, -contractCost, $"Moved clone to {station.Name}");
         }
-            
+
         // TODO: REIMPLEMENT THIS
         // set clone's station
         // character.ActiveClone.LocationID = stationID;
         // character.ActiveClone.Persist();
-            
+
         // persist character info
-        character.Persist();
-                
+        character.Persist ();
+
         // invalidate client's cache
         // TODO: REIMPLEMENT THIS CALL
         // this.Client.ServiceManager.jumpCloneSvc.OnCloneUpdate(character.ID);
-            
+
         return null;
     }
 
-    public PyBool DoesPlayersCorpHaveJunkAtStation(CallInformation call)
+    public PyBool DoesPlayersCorpHaveJunkAtStation (CallInformation call)
     {
-        if (ItemFactory.IsNPCCorporationID(call.Session.CorporationID) == true)
+        if (ItemFactory.IsNPCCorporationID (call.Session.CorporationID))
             return false;
-            
+
         // TODO: PROPERLY IMPLEMENT THIS ONE
         return false;
     }
 
-    public PyTuple GetCorporateStationInfo(CallInformation call)
+    public PyTuple GetCorporateStationInfo (CallInformation call)
     {
-        int stationID = call.Session.EnsureCharacterIsInStation();
-            
-        return new PyTuple(3)
+        int stationID = call.Session.EnsureCharacterIsInStation ();
+
+        return new PyTuple (3)
         {
-            [0] = this.StationDB.GetOfficesOwners(stationID), // eveowners list
-            [1] = this.StationDB.GetCorporations(stationID), // corporations list
-            [2] = this.StationDB.GetOfficesList(stationID)  // offices list
+            [0] = StationDB.GetOfficesOwners (stationID), // eveowners list
+            [1] = StationDB.GetCorporations (stationID), // corporations list
+            [2] = StationDB.GetOfficesList (stationID) // offices list
         };
     }
 
-    public PyInteger GetNumberOfUnrentedOffices(CallInformation call)
+    public PyInteger GetNumberOfUnrentedOffices (CallInformation call)
     {
-        int stationID = call.Session.EnsureCharacterIsInStation();
+        int stationID = call.Session.EnsureCharacterIsInStation ();
 
         // if no amount of office slots are indicated in the station type return 24 as a default value
-        int maximumOffices = this.ItemFactory.GetItem<Station>(stationID).StationType.OfficeSlots ?? 24;
+        int maximumOffices = ItemFactory.GetItem <Station> (stationID).StationType.OfficeSlots ?? 24;
 
-        return maximumOffices - this.StationDB.CountRentedOffices(stationID);
+        return maximumOffices - StationDB.CountRentedOffices (stationID);
     }
 
-    public PyDataType SetCloneTypeID(PyInteger cloneTypeID, CallInformation call)
+    public PyDataType SetCloneTypeID (PyInteger cloneTypeID, CallInformation call)
     {
-        int callerCharacterID = call.Session.EnsureCharacterIsSelected();
-        int stationID         = call.Session.EnsureCharacterIsInStation();
-            
-        Character character    = this.ItemFactory.GetItem<Character>(callerCharacterID);
-        Type      newCloneType = this.TypeManager[cloneTypeID];
+        int callerCharacterID = call.Session.EnsureCharacterIsSelected ();
+        int stationID         = call.Session.EnsureCharacterIsInStation ();
+
+        Character character    = ItemFactory.GetItem <Character> (callerCharacterID);
+        Type      newCloneType = TypeManager [cloneTypeID];
 
         if (newCloneType.Group.ID != (int) Groups.Clone)
-            throw new CustomError("Only clone types allowed!");
+            throw new CustomError ("Only clone types allowed!");
         // TODO: REIMPLEMENT THIS CHECK
         //if (character.ActiveClone.Type.BasePrice > newCloneType.BasePrice)
         //    throw new MedicalThisCloneIsWorse();
 
-        Station station = this.ItemFactory.GetStaticStation(stationID);
+        Station station = ItemFactory.GetStaticStation (stationID);
 
-        using Wallet wallet = this.WalletManager.AcquireWallet(character.ID, WalletKeys.MAIN_WALLET);
+        using Wallet wallet = WalletManager.AcquireWallet (character.ID, WalletKeys.MAIN_WALLET);
         {
-            wallet.EnsureEnoughBalance(newCloneType.BasePrice);
-            wallet.CreateTransactionRecord(TransactionType.Buy, character.ID, this.ItemFactory.LocationSystem.ID, newCloneType.ID, 1, newCloneType.BasePrice, station.ID);
+            wallet.EnsureEnoughBalance (newCloneType.BasePrice);
+            wallet.CreateTransactionRecord (
+                TransactionType.Buy, character.ID, ItemFactory.LocationSystem.ID, newCloneType.ID, 1, newCloneType.BasePrice, station.ID
+            );
         }
-            
+
         // TODO: REIMPLEMENT THIS
         // update active clone's information
         // character.ActiveClone.Type = newCloneType;
         // character.ActiveClone.Name = newCloneType.Name;
         // character.ActiveClone.Persist();
-        character.Persist();
-            
+        character.Persist ();
+
         return null;
     }
 
-    public PyInteger GetQuoteForRentingAnOffice(CallInformation call)
+    public PyInteger GetQuoteForRentingAnOffice (CallInformation call)
     {
-        int stationID = call.Session.EnsureCharacterIsInStation();
+        int stationID = call.Session.EnsureCharacterIsInStation ();
 
         // make sure the user is director or allowed to rent
-        if (CorporationRole.Director.Is(call.Session.CorporationRole) == false && CorporationRole.CanRentOffice.Is(call.Session.CorporationRole) == false)
-            throw new RentingOfficeQuotesOnlyGivenToActiveCEOsOrEquivale();
-            
-        return this.ItemFactory.Stations[stationID].OfficeRentalCost;
+        if (CorporationRole.Director.Is (call.Session.CorporationRole) == false && CorporationRole.CanRentOffice.Is (call.Session.CorporationRole) == false)
+            throw new RentingOfficeQuotesOnlyGivenToActiveCEOsOrEquivale ();
+
+        return ItemFactory.Stations [stationID].OfficeRentalCost;
     }
 
-    public PyDataType RentOffice(PyInteger cost, CallInformation call)
+    public PyDataType RentOffice (PyInteger cost, CallInformation call)
     {
-        int rentalCost  = this.GetQuoteForRentingAnOffice(call);
-        int stationID   = call.Session.EnsureCharacterIsInStation();
-        int characterID = call.Session.EnsureCharacterIsSelected();
-            
+        int rentalCost  = this.GetQuoteForRentingAnOffice (call);
+        int stationID   = call.Session.EnsureCharacterIsInStation ();
+        int characterID = call.Session.EnsureCharacterIsSelected ();
+
         // double check to ensure the amout we're paying is what we require now
         if (rentalCost != cost)
-            throw new RentingAnOfficeCostsMore(rentalCost);
+            throw new RentingAnOfficeCostsMore (rentalCost);
+
         // check that there's enoug offices left
-        if (this.GetNumberOfUnrentedOffices(call) <= 0)
-            throw new NoOfficesAreAvailableForRenting();
+        if (this.GetNumberOfUnrentedOffices (call) <= 0)
+            throw new NoOfficesAreAvailableForRenting ();
+
         // check if there's any office rented by us already
-        if (this.StationDB.CorporationHasOfficeRentedAt(call.Session.CorporationID, stationID) == true)
-            throw new RentingYouHaveAnOfficeHere();
-        if (CorporationRole.CanRentOffice.Is(call.Session.CorporationRole) == false && CorporationRole.Director.Is(call.Session.CorporationRole) == false)
-            throw new RentingOfficeQuotesOnlyGivenToActiveCEOsOrEquivale();
+        if (StationDB.CorporationHasOfficeRentedAt (call.Session.CorporationID, stationID))
+            throw new RentingYouHaveAnOfficeHere ();
+        if (CorporationRole.CanRentOffice.Is (call.Session.CorporationRole) == false && CorporationRole.Director.Is (call.Session.CorporationRole) == false)
+            throw new RentingOfficeQuotesOnlyGivenToActiveCEOsOrEquivale ();
+
         // ensure the character has the required skill to manage offices
-        this.ItemFactory.GetItem<Character>(characterID).EnsureSkillLevel(Types.PublicRelations);
+        ItemFactory.GetItem <Character> (characterID).EnsureSkillLevel (Types.PublicRelations);
         // RentingOfficeRequestDenied
-        int ownerCorporationID = this.ItemFactory.Stations[stationID].OwnerID;
+        int ownerCorporationID = ItemFactory.Stations [stationID].OwnerID;
+
         // perform the transaction
-        using (Wallet corpWallet = this.WalletManager.AcquireWallet(call.Session.CorporationID, call.Session.CorpAccountKey, true))
+        using (Wallet corpWallet = WalletManager.AcquireWallet (call.Session.CorporationID, call.Session.CorpAccountKey, true))
         {
-            corpWallet.EnsureEnoughBalance(rentalCost);
-            corpWallet.CreateJournalRecord(MarketReference.OfficeRentalFee, ownerCorporationID, null, -rentalCost);
+            corpWallet.EnsureEnoughBalance (rentalCost);
+            corpWallet.CreateJournalRecord (MarketReference.OfficeRentalFee, ownerCorporationID, null, -rentalCost);
         }
+
         // create the office folder
-        ItemEntity item = this.ItemFactory.CreateSimpleItem(
-            this.TypeManager[Types.OfficeFolder], call.Session.CorporationID,
+        ItemEntity item = ItemFactory.CreateSimpleItem (
+            TypeManager [Types.OfficeFolder], call.Session.CorporationID,
             stationID, Flags.Office, 1, false, true
         );
-        long dueDate = DateTime.UtcNow.AddDays(30).ToFileTimeUtc();
+        long dueDate = DateTime.UtcNow.AddDays (30).ToFileTimeUtc ();
         // create the bill record for the renewal
-        int billID = (int) this.BillsDB.CreateBill(
+        int billID = (int) BillsDB.CreateBill (
             BillTypes.RentalBill, call.Session.CorporationID, ownerCorporationID,
             rentalCost, dueDate, 0, (int) Types.OfficeFolder, stationID
         );
         // create the record in the database
-        this.StationDB.RentOffice(call.Session.CorporationID, stationID, item.ID, dueDate, rentalCost, billID);
+        StationDB.RentOffice (call.Session.CorporationID, stationID, item.ID, dueDate, rentalCost, billID);
         // notify all characters in the station about the office change
-        this.NotificationManager.NotifyStation(stationID, new OnOfficeRentalChanged(call.Session.CorporationID, item.ID, item.ID));
+        NotificationManager.NotifyStation (stationID, new OnOfficeRentalChanged (call.Session.CorporationID, item.ID, item.ID));
         // notify all the characters about the bill received
-        this.NotificationManager.NotifyCorporation(call.Session.CorporationID, new OnBillReceived());
+        NotificationManager.NotifyCorporation (call.Session.CorporationID, new OnBillReceived ());
+
         // return the new officeID
         return item.ID;
         // TODO: NOTIFY THE CORPREGISTRY SERVICE TO UPDATE THIS LIST OF OFFICES
     }
 
-    public PyDataType MoveCorpHQHere(CallInformation call)
+    public PyDataType MoveCorpHQHere (CallInformation call)
     {
         // TODO: IMPLEMENT THIS!
         return null;
     }
-        
-    protected override long MachoResolveObject(ServiceBindParams parameters, CallInformation call)
+
+    protected override long MachoResolveObject (ServiceBindParams parameters, CallInformation call)
     {
-        int solarSystemID = this.ItemFactory.GetStaticStation(parameters.ObjectID).SolarSystemID;
+        int solarSystemID = ItemFactory.GetStaticStation (parameters.ObjectID).SolarSystemID;
 
-        if (this.SystemManager.SolarSystemBelongsToUs(solarSystemID) == true)
-            return this.BoundServiceManager.MachoNet.NodeID;
+        if (SystemManager.SolarSystemBelongsToUs (solarSystemID))
+            return BoundServiceManager.MachoNet.NodeID;
 
-        return this.SystemManager.LoadSolarSystemOnCluster(solarSystemID);
+        return SystemManager.LoadSolarSystemOnCluster (solarSystemID);
     }
 
-    protected override BoundService CreateBoundInstance(ServiceBindParams bindParams, CallInformation call)
+    protected override BoundService CreateBoundInstance (ServiceBindParams bindParams, CallInformation call)
     {
-        if (this.MachoResolveObject(bindParams, call) != this.BoundServiceManager.MachoNet.NodeID)
-            throw new CustomError("Trying to bind an object that does not belong to us!");
-            
-        return new corpStationMgr(this.MarketDB, this.StationDB, this.BillsDB, this.NotificationManager, this.ItemFactory, this.Container, this.BoundServiceManager, this.WalletManager, call.Session);
+        if (this.MachoResolveObject (bindParams, call) != BoundServiceManager.MachoNet.NodeID)
+            throw new CustomError ("Trying to bind an object that does not belong to us!");
+
+        return new corpStationMgr (
+            MarketDB, StationDB, BillsDB, NotificationManager, ItemFactory, Container, BoundServiceManager, WalletManager,
+            call.Session
+        );
     }
 }

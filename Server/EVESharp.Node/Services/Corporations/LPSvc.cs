@@ -10,14 +10,14 @@ public class LPSvc : Service
 {
     public override AccessLevel   AccessLevel => AccessLevel.None;
     private         CorporationDB DB          { get; }
-        
-    public LPSvc(CorporationDB db)
+
+    public LPSvc (CorporationDB db)
     {
-        this.DB = db;
+        DB = db;
     }
-        
+
     public PyDecimal GetLPForCharacterCorp (PyInteger corporationID, CallInformation call)
     {
-        return this.DB.GetLPForCharacterCorp(corporationID, call.Session.EnsureCharacterIsSelected());
+        return DB.GetLPForCharacterCorp (corporationID, call.Session.EnsureCharacterIsSelected ());
     }
 }

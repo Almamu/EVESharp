@@ -203,10 +203,10 @@ public static class StringTableUtils
         agent_StandardMissionDetails,
         agent_OfferDetails,
         agent_ResearchMissionDetails,
-        agent_StorylineMissionDetails,
+        agent_StorylineMissionDetails
     }
-        
-    public static readonly Dictionary<string,EntryList> LookupTable = new Dictionary<string, EntryList>()
+
+    public static readonly Dictionary <string, EntryList> LookupTable = new Dictionary <string, EntryList>
     {
         {"*corpid", EntryList._corpid},
         {"*locationid", EntryList._locationid},
@@ -402,10 +402,10 @@ public static class StringTableUtils
         {"agent.StandardMissionDetails", EntryList.agent_StandardMissionDetails},
         {"agent.OfferDetails", EntryList.agent_OfferDetails},
         {"agent.ResearchMissionDetails", EntryList.agent_ResearchMissionDetails},
-        {"agent.StorylineMissionDetails", EntryList.agent_StorylineMissionDetails},
+        {"agent.StorylineMissionDetails", EntryList.agent_StorylineMissionDetails}
     };
 
-    public static readonly List<string> Entries = new List<string>
+    public static readonly List <string> Entries = new List <string>
     {
         "*corpid",
         "*locationid",
@@ -601,6 +601,6 @@ public static class StringTableUtils
         "agent.StandardMissionDetails",
         "agent.OfferDetails",
         "agent.ResearchMissionDetails",
-        "agent.StorylineMissionDetails",
+        "agent.StorylineMissionDetails"
     };
 }

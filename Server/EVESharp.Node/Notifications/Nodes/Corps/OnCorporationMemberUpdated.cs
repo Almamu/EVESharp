@@ -1,6 +1,5 @@
 ﻿using System;
 using EVESharp.EVE.Packets.Complex;
-using EVESharp.Node.Exceptions.corpStationMgr;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Primitives;
 
@@ -23,66 +22,71 @@ public class OnCorporationMemberUpdated : InterNodeNotification
     public int? BlockRoles            { get; init; }
     public long TitleMask             { get; init; }
 
-    public OnCorporationMemberUpdated(int  characterID, long roles,                long grantableRoles, long rolesAtHQ,             long grantableRolesAtHQ,
-                                      long rolesAtBase, long grantableRolesAtBase, long rolesAtOther,   long grantableRolesAtOther, int? baseID,
-                                      int? blockRoles,  long titleMask) : base(NOTIFICATION_NAME)
+    public OnCorporationMemberUpdated (
+        int  characterID, long roles,                long grantableRoles, long rolesAtHQ,             long grantableRolesAtHQ,
+        long rolesAtBase, long grantableRolesAtBase, long rolesAtOther,   long grantableRolesAtOther, int? baseID,
+        int? blockRoles,  long titleMask
+    ) : base (NOTIFICATION_NAME)
     {
-        this.CharacterID           = characterID;
-        this.Roles                 = roles;
-        this.GrantableRoles        = grantableRoles;
-        this.RolesAtHQ             = rolesAtHQ;
-        this.GrantableRolesAtHQ    = grantableRolesAtHQ;
-        this.RolesAtBase           = rolesAtBase;
-        this.GrantableRolesAtBase  = grantableRolesAtBase;
-        this.RolesAtOther          = rolesAtOther;
-        this.GrantableRolesAtOther = grantableRolesAtOther;
-        this.BaseID                = baseID;
-        this.BlockRoles            = blockRoles;
-        this.TitleMask             = titleMask;
+        CharacterID           = characterID;
+        Roles                 = roles;
+        GrantableRoles        = grantableRoles;
+        RolesAtHQ             = rolesAtHQ;
+        GrantableRolesAtHQ    = grantableRolesAtHQ;
+        RolesAtBase           = rolesAtBase;
+        GrantableRolesAtBase  = grantableRolesAtBase;
+        RolesAtOther          = rolesAtOther;
+        GrantableRolesAtOther = grantableRolesAtOther;
+        BaseID                = baseID;
+        BlockRoles            = blockRoles;
+        TitleMask             = titleMask;
     }
 
-    protected override PyDataType GetNotification()
+    protected override PyDataType GetNotification ()
     {
         return new PyDictionary
         {
-            ["characterID"]           = this.CharacterID,
-            ["roles"]                 = this.Roles,
-            ["grantableRoles"]        = this.GrantableRoles,
-            ["rolesAtHQ"]             = this.RolesAtHQ,
-            ["grantableRolesAtHQ"]    = this.GrantableRolesAtHQ,
-            ["rolesAtBase"]           = this.RolesAtBase,
-            ["grantableRolesAtBase"]  = this.GrantableRolesAtBase,
-            ["rolesAtOther"]          = this.RolesAtOther,
-            ["grantableRolesAtOther"] = this.GrantableRolesAtOther,
-            ["baseID"]                = this.BaseID,
-            ["blockRoles"]            = this.BlockRoles,
-            ["titleMask"]             = this.TitleMask
+            ["characterID"]           = CharacterID,
+            ["roles"]                 = Roles,
+            ["grantableRoles"]        = GrantableRoles,
+            ["rolesAtHQ"]             = RolesAtHQ,
+            ["grantableRolesAtHQ"]    = GrantableRolesAtHQ,
+            ["rolesAtBase"]           = RolesAtBase,
+            ["grantableRolesAtBase"]  = GrantableRolesAtBase,
+            ["rolesAtOther"]          = RolesAtOther,
+            ["grantableRolesAtOther"] = GrantableRolesAtOther,
+            ["baseID"]                = BaseID,
+            ["blockRoles"]            = BlockRoles,
+            ["titleMask"]             = TitleMask
         };
     }
-        
 
-    public static implicit operator OnCorporationMemberUpdated(PyTuple notification)
+
+    public static implicit operator OnCorporationMemberUpdated (PyTuple notification)
     {
         if (notification.Count != 2)
-            throw new InvalidCastException("Expected a tuple with two items");
-        if (notification[0] is not PyString name || name != NOTIFICATION_NAME)
-            throw new InvalidCastException($"Expected a {NOTIFICATION_NAME}");
-        if (notification[1] is not PyDictionary data)
-            throw new InvalidCastException("Expected a dictionary as the first element");
-            
-        data.TryGetValue("characterID",           out PyInteger characterID);
-        data.TryGetValue("roles",                 out PyInteger roles);
-        data.TryGetValue("grantableRoles",        out PyInteger grantableRoles);
-        data.TryGetValue("rolesAtHQ",             out PyInteger rolesAtHQ);
-        data.TryGetValue("grantableRolesAtHQ",    out PyInteger grantableRolesAtHQ);
-        data.TryGetValue("rolesAtBase",           out PyInteger rolesAtBase);
-        data.TryGetValue("grantableRolesAtBase",  out PyInteger grantableRolesAtBase);
-        data.TryGetValue("rolesAtOther",          out PyInteger rolesAtOther);
-        data.TryGetValue("grantableRolesAtOther", out PyInteger grantableRolesAtOther);
-        data.TryGetValue("baseID",                out PyInteger baseID);
-        data.TryGetValue("blockRoles",            out PyInteger blockRoles);
-        data.TryGetValue("titleMask",             out PyInteger titleMask);
+            throw new InvalidCastException ("Expected a tuple with two items");
+        if (notification [0] is not PyString name || name != NOTIFICATION_NAME)
+            throw new InvalidCastException ($"Expected a {NOTIFICATION_NAME}");
+        if (notification [1] is not PyDictionary data)
+            throw new InvalidCastException ("Expected a dictionary as the first element");
 
-        return new OnCorporationMemberUpdated(characterID, roles, grantableRoles, rolesAtHQ, grantableRolesAtHQ, rolesAtBase, grantableRolesAtBase, rolesAtOther, grantableRolesAtOther, baseID, blockRoles, titleMask);
+        data.TryGetValue ("characterID",           out PyInteger characterID);
+        data.TryGetValue ("roles",                 out PyInteger roles);
+        data.TryGetValue ("grantableRoles",        out PyInteger grantableRoles);
+        data.TryGetValue ("rolesAtHQ",             out PyInteger rolesAtHQ);
+        data.TryGetValue ("grantableRolesAtHQ",    out PyInteger grantableRolesAtHQ);
+        data.TryGetValue ("rolesAtBase",           out PyInteger rolesAtBase);
+        data.TryGetValue ("grantableRolesAtBase",  out PyInteger grantableRolesAtBase);
+        data.TryGetValue ("rolesAtOther",          out PyInteger rolesAtOther);
+        data.TryGetValue ("grantableRolesAtOther", out PyInteger grantableRolesAtOther);
+        data.TryGetValue ("baseID",                out PyInteger baseID);
+        data.TryGetValue ("blockRoles",            out PyInteger blockRoles);
+        data.TryGetValue ("titleMask",             out PyInteger titleMask);
+
+        return new OnCorporationMemberUpdated (
+            characterID, roles, grantableRoles, rolesAtHQ, grantableRolesAtHQ, rolesAtBase, grantableRolesAtBase, rolesAtOther,
+            grantableRolesAtOther, baseID, blockRoles, titleMask
+        );
     }
 }

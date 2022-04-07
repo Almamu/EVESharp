@@ -8,5 +8,5 @@ public enum CorporationVotes
     KickMember   = 3,
     General      = 4,
     ItemLockdown = 5,
-    ItemUnlock   = 6,
+    ItemUnlock   = 6
 }

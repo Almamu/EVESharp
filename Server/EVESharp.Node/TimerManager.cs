@@ -13,38 +13,45 @@ namespace EVESharp.Node;
 /// </summary>
 public class TimerManager
 {
-    private readonly Thread      mThread     = null;
-    private readonly ILogger     Log         = null;
-    private readonly List<Timer> mItemTimers = new List<Timer>();
-    private readonly List<Timer> mCallTimers = new List<Timer>();
-        
-    public TimerManager(ILogger logger)
+    private readonly List <Timer> mCallTimers = new List <Timer> ();
+    private readonly List <Timer> mItemTimers = new List <Timer> ();
+    private readonly Thread       mThread;
+    private          ILogger      Log { get; }
+
+    public TimerManager (ILogger logger)
     {
-        this.Log     = logger;
-        this.mThread = new Thread(Run);
+        Log          = logger;
+        this.mThread = new Thread (this.Run);
     }
 
     /// <summary>
     /// Starts the thread for the TimerManager
     /// </summary>
-    public void Start()
+    public void Start ()
     {
-        this.mThread.Start();
+        this.mThread.Start ();
     }
-        
+
     /// <summary>
     /// Adds a new timed event related to an item
     /// </summary>
     /// <param name="dateTime">The timestamp when the event should fire up</param>
     /// <param name="callback">What function to call</param>
     /// <param name="itemID">The related itemID</param>
-    public void EnqueueItemTimer(long dateTime, Action<int> callback, int itemID)
+    public void EnqueueItemTimer (long dateTime, Action <int> callback, int itemID)
     {
         lock (this.mItemTimers)
         {
-            this.mItemTimers.Add(new Timer () { DateTime = dateTime, Callback = callback, CallbackParameter = itemID });
+            this.mItemTimers.Add (
+                new Timer
+                {
+                    DateTime          = dateTime,
+                    Callback          = callback,
+                    CallbackParameter = itemID
+                }
+            );
             // reorder the list
-            this.mItemTimers.Sort((x, y) => x.DateTime.CompareTo(y.DateTime));
+            this.mItemTimers.Sort ((x, y) => x.DateTime.CompareTo (y.DateTime));
         }
     }
 
@@ -54,12 +61,19 @@ public class TimerManager
     /// <param name="dateTime">The timestamp when the event should fire up</param>
     /// <param name="callback">What function to call</param>
     /// <param name="callID">The callID it's related to</param>
-    public void EnqueueCallTimer(long dateTime, Action<int> callback, int callID)
+    public void EnqueueCallTimer (long dateTime, Action <int> callback, int callID)
     {
         lock (this.mCallTimers)
         {
-            this.mCallTimers.Add(new Timer () { DateTime = dateTime, Callback = callback, CallbackParameter = callID });
-            this.mCallTimers.Sort((x, y) => x.DateTime.CompareTo(y.DateTime));
+            this.mCallTimers.Add (
+                new Timer
+                {
+                    DateTime          = dateTime,
+                    Callback          = callback,
+                    CallbackParameter = callID
+                }
+            );
+            this.mCallTimers.Sort ((x, y) => x.DateTime.CompareTo (y.DateTime));
         }
     }
 
@@ -68,37 +82,41 @@ public class TimerManager
     /// </summary>
     /// <param name="itemID"></param>
     /// <param name="dateTime"></param>
-    public void DequeueItemTimer(int itemID, long dateTime)
+    public void DequeueItemTimer (int itemID, long dateTime)
     {
         lock (this.mItemTimers)
-            this.mItemTimers.RemoveAll(x => x.CallbackParameter == itemID && x.DateTime == dateTime);
+        {
+            this.mItemTimers.RemoveAll (x => x.CallbackParameter == itemID && x.DateTime == dateTime);
+        }
     }
 
     /// <summary>
     /// Removes the call timer that matches the given criteria
     /// </summary>
     /// <param name="callID"></param>
-    public void DequeueCallTimer(int callID)
+    public void DequeueCallTimer (int callID)
     {
         lock (this.mCallTimers)
-            this.mCallTimers.RemoveAll(x => x.CallbackParameter == callID);
+        {
+            this.mCallTimers.RemoveAll (x => x.CallbackParameter == callID);
+        }
     }
-        
+
     /// <summary>
     /// Main body of the timer thread
     /// </summary>
-    private void Run()
+    private void Run ()
     {
-        Log.Information("Timer thread started");
+        Log.Information ("Timer thread started");
 
         try
         {
             while (true)
             {
                 // wait 1 second between ticks to keep the cpu usage low here
-                Thread.Sleep(1000);
+                Thread.Sleep (1000);
 
-                long currentDateTime = DateTime.UtcNow.ToFileTimeUtc();
+                long currentDateTime = DateTime.UtcNow.ToFileTimeUtc ();
 
                 lock (this.mItemTimers)
                 {
@@ -108,13 +126,13 @@ public class TimerManager
                         if (timer.DateTime > currentDateTime)
                             break;
 
-                        Log.Debug($"Firing callback for timer on itemID {timer.CallbackParameter}");
-                            
-                        timer.Callback?.Invoke(timer.CallbackParameter);
+                        Log.Debug ($"Firing callback for timer on itemID {timer.CallbackParameter}");
+
+                        timer.Callback?.Invoke (timer.CallbackParameter);
                     }
 
                     // remove timers that have already been fired
-                    this.mItemTimers.RemoveAll(x => x.DateTime <= currentDateTime);                        
+                    this.mItemTimers.RemoveAll (x => x.DateTime <= currentDateTime);
                 }
 
                 lock (this.mCallTimers)
@@ -125,20 +143,20 @@ public class TimerManager
                         if (timer.DateTime > currentDateTime)
                             break;
 
-                        Log.Debug($"Firing callback for timer on callID {timer.CallbackParameter}");
+                        Log.Debug ($"Firing callback for timer on callID {timer.CallbackParameter}");
 
-                        timer.Callback?.Invoke(timer.CallbackParameter);
+                        timer.Callback?.Invoke (timer.CallbackParameter);
                     }
-                        
+
                     // remove timers that have already been fired
-                    this.mCallTimers.RemoveAll(x => x.DateTime <= currentDateTime);
+                    this.mCallTimers.RemoveAll (x => x.DateTime <= currentDateTime);
                 }
             }
         }
         catch (Exception e)
         {
-            Log.Fatal($"Timer thread stopped: {e.Message}, timed events won't work from now on!!");
-            Log.Fatal(e.StackTrace);
+            Log.Fatal ($"Timer thread stopped: {e.Message}, timed events won't work from now on!!");
+            Log.Fatal (e.StackTrace);
         }
     }
 }

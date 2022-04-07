@@ -17,58 +17,59 @@ public class Authentication
     public bool                      Autoaccount { get; private set; }
     public long                      Role        { get; private set; }
 
-    public void Load(KeyDataCollection section)
+    public void Load (KeyDataCollection section)
     {
-        if (section.ContainsKey("loginMessageType") == false)
+        if (section.ContainsKey ("loginMessageType") == false)
         {
-            this.MessageType = AuthenticationMessageType.NoMessage;
+            MessageType = AuthenticationMessageType.NoMessage;
+
             return;
         }
 
-        string value = section["loginMessageType"].ToUpper();
+        string value = section ["loginMessageType"].ToUpper ();
 
         switch (value)
         {
             case "MESSAGE":
-                if (section.ContainsKey("loginMessage") == false)
-                    throw new Exception(
-                        "Authentication service configuration must specify an HTML message"
-                    );
-                this.Message     = section["loginMessage"];
-                this.MessageType = AuthenticationMessageType.HTMLMessage;
+                if (section.ContainsKey ("loginMessage") == false)
+                    throw new Exception ("Authentication service configuration must specify an HTML message");
+
+                Message     = section ["loginMessage"];
+                MessageType = AuthenticationMessageType.HTMLMessage;
+
                 break;
             case "NONE":
             default:
-                this.MessageType = AuthenticationMessageType.NoMessage;
+                MessageType = AuthenticationMessageType.NoMessage;
+
                 break;
         }
-            
-        if (section.ContainsKey("autoaccount") == false)
+
+        if (section.ContainsKey ("autoaccount") == false)
             return;
 
-        string enablestring = section["autoaccount"].ToUpper();
+        string enablestring = section ["autoaccount"].ToUpper ();
 
-        this.Autoaccount = enablestring == "YES" || enablestring == "1" || enablestring == "TRUE";
+        Autoaccount = enablestring == "YES" || enablestring == "1" || enablestring == "TRUE";
 
-        if (section.ContainsKey("role") == false)
-            throw new Exception("With autoaccount enabled you MUST specify a default role");
+        if (section.ContainsKey ("role") == false)
+            throw new Exception ("With autoaccount enabled you MUST specify a default role");
 
-        string   rolestring = section["role"];
-        string[] rolelist   = rolestring.Split(",");
+        string    rolestring = section ["role"];
+        string [] rolelist   = rolestring.Split (",");
 
         foreach (string role in rolelist)
         {
-            string trimedRole = role.Trim();
+            string trimedRole = role.Trim ();
 
             // ignore empty roles
             if (trimedRole == "")
                 continue;
-                
-            if (Roles.TryParse(trimedRole, out Roles roleValue) == false)
-                throw new Exception($"Unknown role value {role.Trim()}");
 
-            this.Role |= (long) roleValue;
+            if (Enum.TryParse (trimedRole, out Roles roleValue) == false)
+                throw new Exception ($"Unknown role value {role.Trim ()}");
+
+            Role |= (long) roleValue;
         }
-
     }
 }

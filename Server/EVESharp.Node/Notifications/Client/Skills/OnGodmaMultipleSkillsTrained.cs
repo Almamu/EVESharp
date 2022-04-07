@@ -8,16 +8,16 @@ namespace EVESharp.Node.Notifications.Client.Skills;
 public class OnGodmaMultipleSkillsTrained : ClientNotification
 {
     private const string NOTIFICATION_NAME = "OnGodmaMultipleSkillsTrained";
-        
-    public PyList<PyInteger> SkillTypeIDs { get; }
-        
-    public OnGodmaMultipleSkillsTrained(PyList<PyInteger> skillTypeIDs) : base(NOTIFICATION_NAME)
+
+    public PyList <PyInteger> SkillTypeIDs { get; }
+
+    public OnGodmaMultipleSkillsTrained (PyList <PyInteger> skillTypeIDs) : base (NOTIFICATION_NAME)
     {
-        this.SkillTypeIDs = skillTypeIDs;
+        SkillTypeIDs = skillTypeIDs;
     }
 
-    public override List<PyDataType> GetElements()
+    public override List <PyDataType> GetElements ()
     {
-        return new List<PyDataType>() {this.SkillTypeIDs};
+        return new List <PyDataType> {SkillTypeIDs};
     }
 }

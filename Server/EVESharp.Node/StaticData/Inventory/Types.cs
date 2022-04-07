@@ -5,7 +5,7 @@ namespace EVESharp.Node.StaticData.Inventory;
      *
      * Please only add the ones used through the source code and not the full list
      */
-public enum Types : int
+public enum Types
 {
     System                      = 0,
     Corporation                 = 2,

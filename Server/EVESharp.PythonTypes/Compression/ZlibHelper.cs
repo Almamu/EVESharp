@@ -1,5 +1,4 @@
 using System.IO;
-using System.IO.Compression;
 using Org.BouncyCastle.Utilities.Zlib;
 
 namespace EVESharp.PythonTypes.Compression;
@@ -14,9 +13,9 @@ public static class ZlibHelper
     /// </summary>
     /// <param name="stream">The stream with the compressed data</param>
     /// <returns></returns>
-    public static ZInputStream DecompressStream(Stream stream)
+    public static ZInputStream DecompressStream (Stream stream)
     {
-        return new ZInputStream(stream);
+        return new ZInputStream (stream);
     }
 
     /// <summary>
@@ -24,14 +23,14 @@ public static class ZlibHelper
     /// </summary>
     /// <param name="input">The data to compress</param>
     /// <returns></returns>
-    public static byte[] Compress(byte[] input)
+    public static byte [] Compress (byte [] input)
     {
-        MemoryStream sourceStream = new MemoryStream();
-        ZOutputStream stream       = new ZOutputStream(sourceStream, 1);
+        MemoryStream  sourceStream = new MemoryStream ();
+        ZOutputStream stream       = new ZOutputStream (sourceStream, 1);
         // write zlib header
-        stream.Write(input);
-        stream.Finish();
+        stream.Write (input);
+        stream.Finish ();
 
-        return sourceStream.GetBuffer();
+        return sourceStream.GetBuffer ();
     }
 }

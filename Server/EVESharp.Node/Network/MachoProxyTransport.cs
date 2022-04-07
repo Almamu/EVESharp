@@ -5,17 +5,17 @@ namespace EVESharp.Node.Network;
 
 public class MachoProxyTransport : MachoTransport
 {
-    public MachoProxyTransport(MachoTransport source) : base(source)
+    public MachoProxyTransport (MachoTransport source) : base (source)
     {
-        this.Socket.SetReceiveCallback(HandleProxyPacket);
-        this.SendPostAuthenticationPackets();
+        Socket.SetReceiveCallback (this.HandleProxyPacket);
+        this.SendPostAuthenticationPackets ();
     }
 
-    private void HandleProxyPacket(PyDataType data)
+    private void HandleProxyPacket (PyDataType data)
     {
         // these should directly be PyPackets
         PyPacket packet = data;
-        
-        this.MachoNet.QueueInputPacket(this, packet);
+
+        MachoNet.QueueInputPacket (this, packet);
     }
 }

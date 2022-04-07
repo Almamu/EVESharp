@@ -1,7 +1,3 @@
-﻿using EVESharp.PythonTypes.Types.Primitives;
+﻿namespace EVESharp.Common.Network.Messages;
 
-namespace EVESharp.Common.Network.Messages;
-
-public interface IMessage
-{
-}
+public interface IMessage { }

@@ -2,9 +2,7 @@
 
 namespace EVESharp.Node.Exceptions.character;
 
-class CharNameInvalidBannedWord : UserError
+internal class CharNameInvalidBannedWord : UserError
 {
-    public CharNameInvalidBannedWord() : base("CharNameInvalidBannedWord")
-    {
-    }
+    public CharNameInvalidBannedWord () : base ("CharNameInvalidBannedWord") { }
 }

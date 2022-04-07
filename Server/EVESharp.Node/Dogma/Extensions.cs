@@ -10,8 +10,8 @@ public static class Extensions
     /// </summary>
     /// <param name="w">The binary writer in use</param>
     /// <param name="op">The opcode to write</param>
-    public static void WriteOperand(this BinaryWriter w, EffectOperand op)
+    public static void WriteOperand (this BinaryWriter w, EffectOperand op)
     {
-        w.Write((byte) op);
+        w.Write ((byte) op);
     }
 }

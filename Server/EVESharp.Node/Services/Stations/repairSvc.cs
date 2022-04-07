@@ -1,13 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.CompilerServices;
 using EVESharp.EVE;
 using EVESharp.EVE.Packets.Exceptions;
 using EVESharp.EVE.Services;
 using EVESharp.EVE.Sessions;
 using EVESharp.Node.Database;
-using EVESharp.Node.Dogma;
 using EVESharp.Node.Exceptions;
 using EVESharp.Node.Exceptions.repairSvc;
 using EVESharp.Node.Inventory;
@@ -16,11 +13,8 @@ using EVESharp.Node.Inventory.Items.Types;
 using EVESharp.Node.Market;
 using EVESharp.Node.Network;
 using EVESharp.Node.Notifications.Client.Inventory;
-using EVESharp.Node.StaticData.Inventory;
-using EVESharp.Node.Inventory.Items.Attributes;
-using EVESharp.Node.Services.Account;
-using EVESharp.Node.Services.Inventory;
 using EVESharp.Node.Sessions;
+using EVESharp.Node.StaticData.Inventory;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Database;
 using EVESharp.PythonTypes.Types.Primitives;
@@ -30,58 +24,64 @@ namespace EVESharp.Node.Services.Stations;
 
 public class repairSvc : ClientBoundService
 {
-    public override AccessLevel         AccessLevel => AccessLevel.None;
-    private const   double              BASEPRICE_MULTIPLIER_MODULE = 0.0125;
-    private const   double              BASEPRICE_MULTIPLIER_SHIP   = 0.000088;
-    private         ItemFactory         ItemFactory   { get; }
-    private         SystemManager       SystemManager => this.ItemFactory.SystemManager;
-    private         TypeManager         TypeManager   => this.ItemFactory.TypeManager;
-    private         ItemInventory       mInventory;
-    private         MarketDB            MarketDB            { get; }
-    private         RepairDB            RepairDB            { get; }
-    private         InsuranceDB         InsuranceDB         { get; }
-    private         NotificationManager NotificationManager { get; }
-    private         NodeContainer       Container           { get; }
-    private         WalletManager       WalletManager       { get; }
-    private         Node.Dogma.Dogma    Dogma               { get; }
+    private const    double              BASEPRICE_MULTIPLIER_MODULE = 0.0125;
+    private const    double              BASEPRICE_MULTIPLIER_SHIP   = 0.000088;
+    private readonly ItemInventory       mInventory;
+    public override  AccessLevel         AccessLevel         => AccessLevel.None;
+    private          ItemFactory         ItemFactory         { get; }
+    private          SystemManager       SystemManager       => ItemFactory.SystemManager;
+    private          TypeManager         TypeManager         => ItemFactory.TypeManager;
+    private          MarketDB            MarketDB            { get; }
+    private          RepairDB            RepairDB            { get; }
+    private          InsuranceDB         InsuranceDB         { get; }
+    private          NotificationManager NotificationManager { get; }
+    private          NodeContainer       Container           { get; }
+    private          WalletManager       WalletManager       { get; }
+    private          Node.Dogma.Dogma    Dogma               { get; }
 
-    public repairSvc(RepairDB repairDb, MarketDB marketDb, InsuranceDB insuranceDb, NodeContainer nodeContainer, NotificationManager notificationManager, ItemFactory itemFactory, BoundServiceManager manager, WalletManager walletManager, Node.Dogma.Dogma dogma) : base(manager)
+    public repairSvc (
+        RepairDB    repairDb,    MarketDB            marketDb, InsuranceDB   insuranceDb, NodeContainer nodeContainer, NotificationManager notificationManager,
+        ItemFactory itemFactory, BoundServiceManager manager,  WalletManager walletManager, Node.Dogma.Dogma dogma
+    ) : base (manager)
     {
-        this.ItemFactory         = itemFactory;
-        this.MarketDB            = marketDb;
-        this.RepairDB            = repairDb;
-        this.InsuranceDB         = insuranceDb;
-        this.NotificationManager = notificationManager;
-        this.Container           = nodeContainer;
-        this.WalletManager       = walletManager;
-        this.Dogma               = dogma;
-    }
-        
-    protected repairSvc(RepairDB repairDb, MarketDB marketDb, InsuranceDB insuranceDb, NodeContainer nodeContainer, NotificationManager notificationManager, ItemInventory inventory, ItemFactory itemFactory, BoundServiceManager manager, WalletManager walletManager, Node.Dogma.Dogma dogma, Session session) : base(manager, session, inventory.ID)
-    {
-        this.mInventory          = inventory;
-        this.ItemFactory         = itemFactory;
-        this.MarketDB            = marketDb;
-        this.RepairDB            = repairDb;
-        this.InsuranceDB         = insuranceDb;
-        this.NotificationManager = notificationManager;
-        this.Container           = nodeContainer;
-        this.WalletManager       = walletManager;
-        this.Dogma               = dogma;
+        ItemFactory         = itemFactory;
+        MarketDB            = marketDb;
+        RepairDB            = repairDb;
+        InsuranceDB         = insuranceDb;
+        NotificationManager = notificationManager;
+        Container           = nodeContainer;
+        WalletManager       = walletManager;
+        Dogma               = dogma;
     }
 
-    public PyDataType GetDamageReports(PyList itemIDs, CallInformation call)
+    protected repairSvc (
+        RepairDB      repairDb,  MarketDB    marketDb,    InsuranceDB         insuranceDb, NodeContainer nodeContainer, NotificationManager notificationManager,
+        ItemInventory inventory, ItemFactory itemFactory, BoundServiceManager manager,     WalletManager walletManager, Node.Dogma.Dogma dogma, Session session
+    ) : base (manager, session, inventory.ID)
     {
-        PyDictionary<PyInteger, PyDataType> response = new PyDictionary<PyInteger, PyDataType>();
-            
-        foreach (PyInteger itemID in itemIDs.GetEnumerable<PyInteger>())
+        this.mInventory     = inventory;
+        ItemFactory         = itemFactory;
+        MarketDB            = marketDb;
+        RepairDB            = repairDb;
+        InsuranceDB         = insuranceDb;
+        NotificationManager = notificationManager;
+        Container           = nodeContainer;
+        WalletManager       = walletManager;
+        Dogma               = dogma;
+    }
+
+    public PyDataType GetDamageReports (PyList itemIDs, CallInformation call)
+    {
+        PyDictionary <PyInteger, PyDataType> response = new PyDictionary <PyInteger, PyDataType> ();
+
+        foreach (PyInteger itemID in itemIDs.GetEnumerable <PyInteger> ())
         {
             // ensure the given item is in the list
-            if (this.mInventory.Items.TryGetValue(itemID, out ItemEntity item) == false)
+            if (this.mInventory.Items.TryGetValue (itemID, out ItemEntity item) == false)
                 continue;
 
-            Rowset quote = new Rowset(
-                new PyList<PyString>(6)
+            Rowset quote = new Rowset (
+                new PyList <PyString> (6)
                 {
                     [0] = "itemID",
                     [1] = "typeID",
@@ -91,51 +91,51 @@ public class repairSvc : ClientBoundService
                     [5] = "costToRepairOneUnitOfDamage"
                 }
             );
-                
+
             if (item is Ship ship)
             {
                 foreach ((int _, ItemEntity module) in ship.Items)
                 {
-                    if (module.IsInModuleSlot() == false && module.IsInRigSlot() == false)
+                    if (module.IsInModuleSlot () == false && module.IsInRigSlot () == false)
                         continue;
 
-                    quote.Rows.Add(
-                        new PyList()
+                    quote.Rows.Add (
+                        new PyList
                         {
                             module.ID,
                             module.Type.ID,
                             module.Type.Group.ID,
-                            module.Attributes[Attributes.damage],
-                            module.Attributes[Attributes.hp],
+                            module.Attributes [Attributes.damage],
+                            module.Attributes [Attributes.hp],
                             // modules should calculate this value differently, but for now this will suffice
                             module.Type.BasePrice * BASEPRICE_MULTIPLIER_MODULE
                         }
                     );
                 }
-                    
-                    
-                quote.Rows.Add(
-                    new PyList()
+
+
+                quote.Rows.Add (
+                    new PyList
                     {
                         item.ID,
                         item.Type.ID,
                         item.Type.Group.ID,
-                        item.Attributes[Attributes.damage],
-                        item.Attributes[Attributes.hp],
+                        item.Attributes [Attributes.damage],
+                        item.Attributes [Attributes.hp],
                         item.Type.BasePrice * BASEPRICE_MULTIPLIER_SHIP
                     }
                 );
             }
             else
             {
-                quote.Rows.Add(
-                    new PyList()
+                quote.Rows.Add (
+                    new PyList
                     {
                         item.ID,
                         item.Type.ID,
                         item.Type.Group.ID,
-                        item.Attributes[Attributes.damage],
-                        item.Attributes[Attributes.hp],
+                        item.Attributes [Attributes.damage],
+                        item.Attributes [Attributes.hp],
                         item.Type.BasePrice * BASEPRICE_MULTIPLIER_MODULE
                     }
                 );
@@ -144,70 +144,70 @@ public class repairSvc : ClientBoundService
             // the client used to send a lot of extra information on this call
             // but in reality that data is not used by the client at all
             // most likely remnants of older eve client versions
-            response[itemID] = new Row(
-                new PyList<PyString>(1) {[0] = "quote"},
-                new PyList(1) {[0]           = quote}
+            response [itemID] = new Row (
+                new PyList <PyString> (1) {[0] = "quote"},
+                new PyList (1) {[0]            = quote}
             );
         }
-            
+
         return response;
     }
 
-    public PyDataType RepairItems(PyList itemIDs, PyDecimal iskRepairValue, CallInformation call)
+    public PyDataType RepairItems (PyList itemIDs, PyDecimal iskRepairValue, CallInformation call)
     {
         // ensure the player has enough balance to do the fixing
-        Station station = this.ItemFactory.GetStaticStation(call.Session.EnsureCharacterIsInStation());
+        Station station = ItemFactory.GetStaticStation (call.Session.EnsureCharacterIsInStation ());
 
         // take the wallet lock and ensure the character has enough balance
-        using Wallet wallet = this.WalletManager.AcquireWallet(call.Session.EnsureCharacterIsSelected(), WalletKeys.MAIN_WALLET);
+        using Wallet wallet = WalletManager.AcquireWallet (call.Session.EnsureCharacterIsSelected (), WalletKeys.MAIN_WALLET);
         {
-            wallet.EnsureEnoughBalance(iskRepairValue);
+            wallet.EnsureEnoughBalance (iskRepairValue);
             // build a list of items to be fixed
-            List<ItemEntity> items = new List<ItemEntity>();
+            List <ItemEntity> items = new List <ItemEntity> ();
 
             double quantityLeft = iskRepairValue;
-                
-            foreach (PyInteger itemID in itemIDs.GetEnumerable<PyInteger>())
+
+            foreach (PyInteger itemID in itemIDs.GetEnumerable <PyInteger> ())
             {
                 // ensure the given item is in the list
-                if (this.mInventory.Items.TryGetValue(itemID, out ItemEntity item) == false)
+                if (this.mInventory.Items.TryGetValue (itemID, out ItemEntity item) == false)
                     continue;
 
                 // calculate how much to fix it
                 if (item is Ship)
-                    quantityLeft -= Math.Min(item.Attributes[Attributes.damage] * (item.Type.BasePrice * BASEPRICE_MULTIPLIER_SHIP), quantityLeft);
+                    quantityLeft -= Math.Min (item.Attributes [Attributes.damage] * (item.Type.BasePrice * BASEPRICE_MULTIPLIER_SHIP), quantityLeft);
                 else
-                    quantityLeft -= Math.Min(item.Attributes[Attributes.damage] * (item.Type.BasePrice * BASEPRICE_MULTIPLIER_MODULE), quantityLeft);
+                    quantityLeft -= Math.Min (item.Attributes [Attributes.damage] * (item.Type.BasePrice * BASEPRICE_MULTIPLIER_MODULE), quantityLeft);
 
                 // add the item to the list
-                items.Add(item);
-                    
+                items.Add (item);
+
                 // if there's not enough money left then break the loop and fix whatever's possible 
                 if (quantityLeft <= 0.0)
                     break;
             }
 
             quantityLeft = iskRepairValue;
-                
+
             // go through all the items again and fix them
             foreach (ItemEntity item in items)
             {
                 double repairPrice = 0.0f;
 
                 if (item is Ship)
-                    repairPrice = item.Attributes[Attributes.damage] * (item.Type.BasePrice * BASEPRICE_MULTIPLIER_SHIP);
+                    repairPrice = item.Attributes [Attributes.damage] * (item.Type.BasePrice * BASEPRICE_MULTIPLIER_SHIP);
                 else
-                    repairPrice = item.Attributes[Attributes.damage] * (item.Type.BasePrice * BASEPRICE_MULTIPLIER_MODULE);
+                    repairPrice = item.Attributes [Attributes.damage] * (item.Type.BasePrice * BASEPRICE_MULTIPLIER_MODULE);
 
                 // full item can be repaired!
                 if (repairPrice <= quantityLeft)
                 {
-                    item.Attributes[Attributes.damage].Integer = 0;
+                    item.Attributes [Attributes.damage].Integer = 0;
                 }
                 else
                 {
                     int repairUnits = 0;
-                        
+
                     // calculate how much can be repaired with the quantity left
                     if (item is Ship)
                     {
@@ -222,29 +222,29 @@ public class repairSvc : ClientBoundService
 
                     // only perform changes on the damage if there's units we can pay for repair
                     if (repairUnits > 0)
-                        item.Attributes[Attributes.damage] -= repairUnits;
+                        item.Attributes [Attributes.damage] -= repairUnits;
                 }
 
                 quantityLeft -= repairPrice;
                 // persist item changes
-                item.Persist();
+                item.Persist ();
             }
-                
-            wallet.CreateJournalRecord(MarketReference.RepairBill, station.OwnerID, null, -(iskRepairValue - quantityLeft));
+
+            wallet.CreateJournalRecord (MarketReference.RepairBill, station.OwnerID, null, -(iskRepairValue - quantityLeft));
         }
 
         return null;
     }
-        
-    public PyDataType UnasembleItems(PyDictionary validIDsByStationID, PyList skipChecks, CallInformation call)
+
+    public PyDataType UnasembleItems (PyDictionary validIDsByStationID, PyList skipChecks, CallInformation call)
     {
-        int                               characterID = call.Session.EnsureCharacterIsSelected();
-        List<RepairDB.ItemRepackageEntry> entries     = new List<RepairDB.ItemRepackageEntry>();
+        int                                characterID = call.Session.EnsureCharacterIsSelected ();
+        List <RepairDB.ItemRepackageEntry> entries     = new List <RepairDB.ItemRepackageEntry> ();
 
         bool ignoreContractVoiding       = false;
         bool ignoreRepackageWithUpgrades = false;
-            
-        foreach (PyString check in skipChecks.GetEnumerable<PyString>())
+
+        foreach (PyString check in skipChecks.GetEnumerable <PyString> ())
         {
             if (check == "RepairUnassembleVoidsContract")
                 ignoreContractVoiding = true;
@@ -252,20 +252,20 @@ public class repairSvc : ClientBoundService
                 ignoreRepackageWithUpgrades = true;
         }
 
-        foreach ((PyInteger stationID, PyList itemIDs) in validIDsByStationID.GetEnumerable<PyInteger, PyList>())
+        foreach ((PyInteger stationID, PyList itemIDs) in validIDsByStationID.GetEnumerable <PyInteger, PyList> ())
         {
-            foreach (PyInteger itemID in itemIDs.GetEnumerable<PyInteger>())
+            foreach (PyInteger itemID in itemIDs.GetEnumerable <PyInteger> ())
             {
-                RepairDB.ItemRepackageEntry entry = this.RepairDB.GetItemToRepackage(itemID, characterID, stationID);
+                RepairDB.ItemRepackageEntry entry = RepairDB.GetItemToRepackage (itemID, characterID, stationID);
 
-                if (entry.HasContract == true && ignoreContractVoiding == false)
-                    throw new RepairUnassembleVoidsContract(itemID);
-                if (entry.HasUpgrades == true && ignoreRepackageWithUpgrades == false)
-                    throw new ConfirmRepackageSomethingWithUpgrades();
+                if (entry.HasContract && ignoreContractVoiding == false)
+                    throw new RepairUnassembleVoidsContract (itemID);
+                if (entry.HasUpgrades && ignoreRepackageWithUpgrades == false)
+                    throw new ConfirmRepackageSomethingWithUpgrades ();
                 if (entry.Damage != 0.0)
-                    throw new CantRepackageDamagedItem();
+                    throw new CantRepackageDamagedItem ();
 
-                entries.Add(entry);
+                entries.Add (entry);
             }
         }
 
@@ -273,24 +273,22 @@ public class repairSvc : ClientBoundService
         {
             if (entry.Singleton == false)
                 continue;
-                
+
             // extra situation, the repair is happening on a item in our node, the client must know immediately
-            if (entry.NodeID == call.MachoNet.NodeID || this.SystemManager.StationBelongsToUs(entry.LocationID) == true)
+            if (entry.NodeID == call.MachoNet.NodeID || SystemManager.StationBelongsToUs (entry.LocationID))
             {
-                ItemEntity item = this.ItemFactory.LoadItem(entry.ItemID, out bool loadRequired);
+                ItemEntity item = ItemFactory.LoadItem (entry.ItemID, out bool loadRequired);
 
                 // the item is an inventory, take everything out!
                 if (item is ItemInventory inventory)
-                {
                     foreach ((int _, ItemEntity itemInInventory) in inventory.Items)
-                    {
                         // if the item is in a rig slot, destroy it
-                        if (itemInInventory.IsInRigSlot() == true)
+                        if (itemInInventory.IsInRigSlot ())
                         {
                             Flags oldFlag = itemInInventory.Flag;
-                            this.ItemFactory.DestroyItem(itemInInventory);
+                            ItemFactory.DestroyItem (itemInInventory);
                             // notify the client about the change
-                            this.Dogma.QueueMultiEvent(characterID, OnItemChange.BuildLocationChange(itemInInventory, oldFlag, entry.ItemID));
+                            Dogma.QueueMultiEvent (characterID, OnItemChange.BuildLocationChange (itemInInventory, oldFlag, entry.ItemID));
                         }
                         else
                         {
@@ -298,71 +296,72 @@ public class repairSvc : ClientBoundService
                             // update item's location
                             itemInInventory.LocationID = entry.LocationID;
                             itemInInventory.Flag       = Flags.Hangar;
-                            
+
                             // notify the client about the change
-                            this.Dogma.QueueMultiEvent(characterID, OnItemChange.BuildLocationChange(itemInInventory, oldFlag, entry.ItemID));
+                            Dogma.QueueMultiEvent (characterID, OnItemChange.BuildLocationChange (itemInInventory, oldFlag, entry.ItemID));
                             // save the item
-                            itemInInventory.Persist();
+                            itemInInventory.Persist ();
                         }
-                    }
-                }
-                    
+
                 // update the singleton flag too
                 item.Singleton = false;
-                this.Dogma.QueueMultiEvent(characterID, OnItemChange.BuildSingletonChange(item, true));
+                Dogma.QueueMultiEvent (characterID, OnItemChange.BuildSingletonChange (item, true));
 
                 // load was required, the item is not needed anymore
-                if (loadRequired == true)
-                {
-                    this.ItemFactory.UnloadItem(item);
-                }
+                if (loadRequired)
+                    ItemFactory.UnloadItem (item);
             }
             else
             {
-                long nodeID = this.SystemManager.GetNodeStationBelongsTo(entry.LocationID);
+                long nodeID = SystemManager.GetNodeStationBelongsTo (entry.LocationID);
 
                 if (nodeID > 0)
                 {
-                    Notifications.Nodes.Inventory.OnItemChange change = new Notifications.Nodes.Inventory.OnItemChange();
+                    Notifications.Nodes.Inventory.OnItemChange change = new Notifications.Nodes.Inventory.OnItemChange ();
 
-                    change.AddChange(entry.ItemID, "singleton", true, false);
-                        
-                    this.NotificationManager.NotifyNode(nodeID, change);
+                    change.AddChange (entry.ItemID, "singleton", true, false);
+
+                    NotificationManager.NotifyNode (nodeID, change);
                 }
             }
-                
+
             // finally repackage the item
-            this.RepairDB.RepackageItem(entry.ItemID, entry.LocationID);
+            RepairDB.RepackageItem (entry.ItemID, entry.LocationID);
             // remove any insurance contract for the ship
-            this.InsuranceDB.UnInsureShip(entry.ItemID);
+            InsuranceDB.UnInsureShip (entry.ItemID);
         }
-            
+
         return null;
     }
 
-    protected override long MachoResolveObject(ServiceBindParams parameters, CallInformation call)
+    protected override long MachoResolveObject (ServiceBindParams parameters, CallInformation call)
     {
-        if (this.SystemManager.StationBelongsToUs(parameters.ObjectID) == true)
-            return this.BoundServiceManager.MachoNet.NodeID;
+        if (SystemManager.StationBelongsToUs (parameters.ObjectID))
+            return BoundServiceManager.MachoNet.NodeID;
 
-        return this.SystemManager.GetNodeStationBelongsTo(parameters.ObjectID);
+        return SystemManager.GetNodeStationBelongsTo (parameters.ObjectID);
     }
 
-    protected override BoundService CreateBoundInstance(ServiceBindParams bindParams, CallInformation call)
+    protected override BoundService CreateBoundInstance (ServiceBindParams bindParams, CallInformation call)
     {
-        if (this.MachoResolveObject(bindParams, call) != this.BoundServiceManager.MachoNet.NodeID)
-            throw new CustomError("Trying to bind an object that does not belong to us!");
+        if (this.MachoResolveObject (bindParams, call) != BoundServiceManager.MachoNet.NodeID)
+            throw new CustomError ("Trying to bind an object that does not belong to us!");
 
-        Station station = this.ItemFactory.GetStaticStation(bindParams.ObjectID);
+        Station station = ItemFactory.GetStaticStation (bindParams.ObjectID);
 
-        if (station.HasService(Service.RepairFacilities) == false)
-            throw new CustomError("This station does not allow for repair facilities services");
+        if (station.HasService (Service.RepairFacilities) == false)
+            throw new CustomError ("This station does not allow for repair facilities services");
+
         // ensure the player is in this station
         if (station.ID != call.Session.StationID)
-            throw new CanOnlyDoInStations();
-            
-        ItemInventory inventory = this.ItemFactory.MetaInventoryManager.RegisterMetaInventoryForOwnerID(station, call.Session.EnsureCharacterIsSelected(), Flags.Hangar);
-            
-        return new repairSvc(this.RepairDB, this.MarketDB, this.InsuranceDB, this.Container, this.NotificationManager, inventory, this.ItemFactory, this.BoundServiceManager, this.WalletManager, this.Dogma, call.Session);
+            throw new CanOnlyDoInStations ();
+
+        ItemInventory inventory =
+            ItemFactory.MetaInventoryManager.RegisterMetaInventoryForOwnerID (station, call.Session.EnsureCharacterIsSelected (), Flags.Hangar);
+
+        return new repairSvc (
+            RepairDB, MarketDB, InsuranceDB, Container, NotificationManager, inventory, ItemFactory, BoundServiceManager,
+            WalletManager, Dogma, call.Session
+        );
     }
 }

@@ -2,9 +2,7 @@
 
 namespace EVESharp.Node.Exceptions.corporationSvc;
 
-class MedalNameTooLong : UserError
+internal class MedalNameTooLong : UserError
 {
-    public MedalNameTooLong() : base("MedalNameTooLong")
-    {
-    }
+    public MedalNameTooLong () : base ("MedalNameTooLong") { }
 }

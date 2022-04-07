@@ -26,7 +26,7 @@ public struct ZeroCompressionOpcode
     /// </summary>
     public bool SecondIsZero;
 
-    public ZeroCompressionOpcode(byte firstLength, bool firstIsZero, byte secondLength, bool secondIsZero)
+    public ZeroCompressionOpcode (byte firstLength, bool firstIsZero, byte secondLength, bool secondIsZero)
     {
         this.FirstLength  = firstLength;
         this.FirstIsZero  = firstIsZero;
@@ -34,21 +34,21 @@ public struct ZeroCompressionOpcode
         this.SecondIsZero = secondIsZero;
     }
 
-    public static implicit operator byte(ZeroCompressionOpcode opcode)
+    public static implicit operator byte (ZeroCompressionOpcode opcode)
     {
         byte value = 0;
 
         value |= (byte) (opcode.FirstLength & 0x07);
-        value |= (byte) ((opcode.FirstIsZero == true) ? 0x08 : 0x00);
+        value |= (byte) (opcode.FirstIsZero ? 0x08 : 0x00);
         value |= (byte) ((opcode.SecondLength & 0x07) << 4);
-        value |= (byte) ((opcode.SecondIsZero == true) ? 0x80 : 0x00);
+        value |= (byte) (opcode.SecondIsZero ? 0x80 : 0x00);
 
         return value;
     }
 
-    public static implicit operator ZeroCompressionOpcode(byte source)
+    public static implicit operator ZeroCompressionOpcode (byte source)
     {
-        return new ZeroCompressionOpcode(
+        return new ZeroCompressionOpcode (
             (byte) (source & 0x07),
             (source & 0x08) == 0x08,
             (byte) ((source & 0x70) >> 4),

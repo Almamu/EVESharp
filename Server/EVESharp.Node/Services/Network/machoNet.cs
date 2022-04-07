@@ -28,7 +28,6 @@ using EVESharp.EVE.Services;
 using EVESharp.Node.Network;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Primitives;
-using ServiceManager = EVESharp.Node.Network.ServiceManager;
 
 namespace EVESharp.Node.Services.Network;
 
@@ -36,51 +35,51 @@ public class machoNet : Service
 {
     public override AccessLevel  AccessLevel  => AccessLevel.None;
     private         CacheStorage CacheStorage { get; }
-        
-    public machoNet(CacheStorage cacheStorage)
+
+    public machoNet (CacheStorage cacheStorage)
     {
-        this.CacheStorage = cacheStorage;
+        CacheStorage = cacheStorage;
     }
 
-    public PyTuple GetInitVals(CallInformation call)
+    public PyTuple GetInitVals (CallInformation call)
     {
-        if (this.CacheStorage.Exists("machoNet.serviceInfo") == false)
+        if (CacheStorage.Exists ("machoNet.serviceInfo") == false)
         {
-            PyDictionary dict = new PyDictionary();
-                
+            PyDictionary dict = new PyDictionary ();
+
             // indicate the required access levels for the service to be callable
-            foreach (PropertyInfo property in call.ServiceManager.GetType().GetProperties(BindingFlags.Public))
+            foreach (PropertyInfo property in call.ServiceManager.GetType ().GetProperties (BindingFlags.Public))
             {
-                object value = property.GetValue(call.ServiceManager);
-                    
+                object value = property.GetValue (call.ServiceManager);
+
                 // ignore things that are not services
                 if (value is not Service)
                     continue;
 
                 Service service = value as Service;
 
-                dict[service.Name] = service.AccessLevel switch
+                dict [service.Name] = service.AccessLevel switch
                 {
                     AccessLevel.Location          => "location",
                     AccessLevel.LocationPreferred => "locationPreferred",
                     AccessLevel.Station           => "station",
                     AccessLevel.SolarSystem       => "solarsystem",
-                    _                             => null,
+                    _                             => null
                 };
             }
-                
-            this.CacheStorage.Store("machoNet.serviceInfo", dict, DateTime.UtcNow.ToFileTimeUtc());
+
+            CacheStorage.Store ("machoNet.serviceInfo", dict, DateTime.UtcNow.ToFileTimeUtc ());
         }
 
-        return new PyTuple(2)
+        return new PyTuple (2)
         {
-            [0] = this.CacheStorage.GetHint("machoNet.serviceInfo"),
-            [1] = this.CacheStorage.GetHints(CacheStorage.LoginCacheTable)
+            [0] = CacheStorage.GetHint ("machoNet.serviceInfo"),
+            [1] = CacheStorage.GetHints (CacheStorage.LoginCacheTable)
         };
     }
 
-    public PyInteger GetTime(CallInformation call)
+    public PyInteger GetTime (CallInformation call)
     {
-        return DateTime.UtcNow.ToFileTimeUtc();
+        return DateTime.UtcNow.ToFileTimeUtc ();
     }
 }

@@ -4,7 +4,5 @@ namespace EVESharp.Node.Exceptions.jumpCloneSvc;
 
 public class MktNotOwner : UserError
 {
-    public MktNotOwner() : base("MktNotOwner")
-    {
-    }
+    public MktNotOwner () : base ("MktNotOwner") { }
 }

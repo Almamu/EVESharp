@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -21,48 +20,19 @@ public class Marshal
     /// Separator for the PyObject's data
     /// </summary>
     public const byte PACKED_TERMINATOR = 0x2D;
-
-    /// <summary>
-    /// Converts the given <paramref name="data" /> python type into a byte stream
-    /// </summary>
-    /// <param name="data">The Python type to convert into a byte stream</param>
-    /// <param name="writeHeader">Whether the Marshal header has to be written or not</param>
-    /// <returns>The full object converted into a byte stream</returns>
-    public static byte[] ToByteArray(PyDataType data, bool writeHeader = true)
-    {
-        MemoryStream stream = new MemoryStream();
-
-        WriteToStream(stream, data, writeHeader);
-
-        return stream.ToArray();
-    }
-        
-    /// <summary>
-    /// Converts the given <paramref name="data" /> python type into a byte stream and writes it to <paramref name="stream" />
-    /// </summary>
-    /// <param name="stream">The stream to write the byte data into</param>
-    /// <param name="data">The Python type to convert into a byte stream</param>
-    /// <param name="writeHeader">Whether the Marshal header has to be written or not</param>
-    /// <returns>The full object converted into a byte stream</returns>
-    public static void WriteToStream(Stream stream, PyDataType data, bool writeHeader = true)
-    {
-        Marshal marshal = new Marshal(data, stream);
-
-        marshal.Process(writeHeader);
-    }
-
-    private BinaryWriter mWriter;
-    private PyDataType   mData;
-        
-        
-    /// <summary>
-    /// A key->value pair for saved elements so they can be updated
-    /// </summary>
-    private Dictionary<int, long> mHashToPosition = new Dictionary<int, long>();
+    private readonly PyDataType mData;
     /// <summary>
     /// A key->value pair for saved elements so we know their index
     /// </summary>
-    private Dictionary<int, int> mHashToListPosition = new Dictionary<int, int>();
+    private readonly Dictionary <int, int> mHashToListPosition = new Dictionary <int, int> ();
+
+
+    /// <summary>
+    /// A key->value pair for saved elements so they can be updated
+    /// </summary>
+    private readonly Dictionary <int, long> mHashToPosition = new Dictionary <int, long> ();
+
+    private readonly BinaryWriter mWriter;
 
     /// <summary>
     /// Creates a new Marshal context with the given stream as backing storage
@@ -70,14 +40,43 @@ public class Marshal
     /// <param name="data">The data to marshal</param>
     /// <param name="output">The stream to write into</param>
     /// <exception cref="NotSupportedException">When the given stream does not support seeking</exception>
-    protected Marshal(PyDataType data, Stream output)
+    protected Marshal (PyDataType data, Stream output)
     {
         this.mData = data;
 
         if (output.CanSeek == false)
-            throw new NotSupportedException("The stream must have seeking capabilities for the marshal to work");
-            
-        this.mWriter = new BinaryWriter(output);
+            throw new NotSupportedException ("The stream must have seeking capabilities for the marshal to work");
+
+        this.mWriter = new BinaryWriter (output);
+    }
+
+    /// <summary>
+    /// Converts the given <paramref name="data" /> python type into a byte stream
+    /// </summary>
+    /// <param name="data">The Python type to convert into a byte stream</param>
+    /// <param name="writeHeader">Whether the Marshal header has to be written or not</param>
+    /// <returns>The full object converted into a byte stream</returns>
+    public static byte [] ToByteArray (PyDataType data, bool writeHeader = true)
+    {
+        MemoryStream stream = new MemoryStream ();
+
+        WriteToStream (stream, data, writeHeader);
+
+        return stream.ToArray ();
+    }
+
+    /// <summary>
+    /// Converts the given <paramref name="data" /> python type into a byte stream and writes it to <paramref name="stream" />
+    /// </summary>
+    /// <param name="stream">The stream to write the byte data into</param>
+    /// <param name="data">The Python type to convert into a byte stream</param>
+    /// <param name="writeHeader">Whether the Marshal header has to be written or not</param>
+    /// <returns>The full object converted into a byte stream</returns>
+    public static void WriteToStream (Stream stream, PyDataType data, bool writeHeader = true)
+    {
+        Marshal marshal = new Marshal (data, stream);
+
+        marshal.Process (writeHeader);
     }
 
     /// <summary>
@@ -85,30 +84,30 @@ public class Marshal
     /// </summary>
     /// <param name="writeHeader">Whether the Marshal header has to be written or not</param>
     /// <returns>The full object converted into a byte stream</returns>
-    public void Process(bool writeHeader = true)
+    public void Process (bool writeHeader = true)
     {
         if (writeHeader)
         {
             // write the marshal magic header
-            this.mWriter.Write(Specification.MARSHAL_HEADER);
+            this.mWriter.Write (Specification.MARSHAL_HEADER);
             // write a temporal save list to the stream so we reserve the position
-            this.mWriter.Write(0);
+            this.mWriter.Write (0);
         }
 
-        this.Process(this.mWriter, this.mData);
+        this.Process (this.mWriter, this.mData);
 
         if (writeHeader && this.mHashToListPosition.Count > 0)
         {
             // order the map by the position
-            IOrderedEnumerable<KeyValuePair<int, int>> ordered = this.mHashToListPosition.OrderBy(x => this.mHashToPosition[x.Key]);
-                
+            IOrderedEnumerable <KeyValuePair <int, int>> ordered = this.mHashToListPosition.OrderBy (x => this.mHashToPosition [x.Key]);
+
             // write the saved element list
             foreach ((int _, int position) in ordered)
-                this.mWriter.Write(position + 1);
-                
+                this.mWriter.Write (position + 1);
+
             // finally go back to where the count is and write it too
-            this.mWriter.Seek(1, SeekOrigin.Begin);
-            this.mWriter.Write(this.mHashToListPosition.Count);
+            this.mWriter.Seek (1, SeekOrigin.Begin);
+            this.mWriter.Write (this.mHashToListPosition.Count);
         }
     }
 
@@ -117,11 +116,11 @@ public class Marshal
     /// </summary>
     /// <param name="data"></param>
     /// <returns></returns>
-    private static bool CanBeSaved(PyDataType data)
+    private static bool CanBeSaved (PyDataType data)
     {
         if (data is PyString {IsStringTableEntry: false} pyString && pyString.Value.Length > 1 && pyString.IsUTF8 == false)
             return true;
-            
+
         switch (data)
         {
             case PyObject:
@@ -144,100 +143,117 @@ public class Marshal
     /// <param name="writer">The writer were to write the data to</param>
     /// <param name="data">The python object to convert</param>
     /// <exception cref="InvalidDataException">If an unknown python data type is detected</exception>
-    private void Process(BinaryWriter writer, PyDataType data)
+    private void Process (BinaryWriter writer, PyDataType data)
     {
         long opcodePosition = writer.BaseStream.Position;
-        int  hash           = data?.GetHashCode() ?? 0;
-        bool canBeSaved     = CanBeSaved(data);
+        int  hash           = data?.GetHashCode () ?? 0;
+        bool canBeSaved     = CanBeSaved (data);
 
         // ignore specific values as they're not really worth it
         if (canBeSaved)
         {
             // check if the object was already saved and write it as such
-            if (this.mHashToPosition.TryGetValue(hash, out long position) == true)
+            if (this.mHashToPosition.TryGetValue (hash, out long position))
             {
                 // check if the hash is not already in there and add it
-                if (this.mHashToListPosition.TryGetValue(hash, out int listPosition) == false)
+                if (this.mHashToListPosition.TryGetValue (hash, out int listPosition) == false)
                 {
                     listPosition = this.mHashToListPosition.Count;
-                    this.mHashToListPosition.Add(hash, listPosition);
-                        
+                    this.mHashToListPosition.Add (hash, listPosition);
+
                     // move to the opcode position and overwrite the value with the correct flag
-                    writer.Seek((int) position, SeekOrigin.Begin);
-                    byte current = (byte) writer.BaseStream.ReadByte();
+                    writer.Seek ((int) position, SeekOrigin.Begin);
+                    byte current = (byte) writer.BaseStream.ReadByte ();
                     // seek back again
-                    writer.Seek(-1, SeekOrigin.Current);
+                    writer.Seek (-1, SeekOrigin.Current);
                     // write the new value
-                    writer.Write((byte) (current | Specification.SAVE_MASK));
+                    writer.Write ((byte) (current | Specification.SAVE_MASK));
                     // seek back to where we were
-                    writer.Seek(0, SeekOrigin.End);
+                    writer.Seek (0, SeekOrigin.End);
                 }
-                    
+
                 // the object was already saved once, so that value can be used
-                writer.WriteOpcode(Opcode.SavedStreamElement);
+                writer.WriteOpcode (Opcode.SavedStreamElement);
                 // write the positional value
-                writer.WriteSizeEx(listPosition + 1);
+                writer.WriteSizeEx (listPosition + 1);
+
                 // and done
                 return;
             }
-                
+
             // store the element in the map with it's opcode position if it's not already there
-            this.mHashToPosition.Add(hash, opcodePosition);
+            this.mHashToPosition.Add (hash, opcodePosition);
         }
-            
+
         switch (data)
         {
             case null:
             case PyNone _:
-                ProcessNone(writer);
+                this.ProcessNone (writer);
+
                 break;
             case PyInteger pyInteger:
-                ProcessInteger(writer, pyInteger);
+                this.ProcessInteger (writer, pyInteger);
+
                 break;
             case PyDecimal pyDecimal:
-                ProcessDecimal(writer, pyDecimal);
+                this.ProcessDecimal (writer, pyDecimal);
+
                 break;
             case PyToken pyToken:
-                ProcessToken(writer, pyToken);
+                this.ProcessToken (writer, pyToken);
+
                 break;
             case PyBool pyBool:
-                ProcessBool(writer, pyBool);
+                this.ProcessBool (writer, pyBool);
+
                 break;
             case PyBuffer pyBuffer:
-                ProcessBuffer(writer, pyBuffer);
+                this.ProcessBuffer (writer, pyBuffer);
+
                 break;
             case PyDictionary pyDictionary:
-                ProcessDictionary(writer, pyDictionary);
+                this.ProcessDictionary (writer, pyDictionary);
+
                 break;
             case PyList pyList:
-                ProcessList(writer, pyList);
+                this.ProcessList (writer, pyList);
+
                 break;
             case PyObjectData pyObjectData:
-                ProcessObjectData(writer, pyObjectData);
+                this.ProcessObjectData (writer, pyObjectData);
+
                 break;
             case PyObject pyObject:
-                ProcessObject(writer, pyObject);
+                this.ProcessObject (writer, pyObject);
+
                 break;
             case PyString pyString:
-                ProcessString(writer, pyString);
+                this.ProcessString (writer, pyString);
+
                 break;
             case PySubStream pySubStream:
-                ProcessSubStream(writer, pySubStream);
+                this.ProcessSubStream (writer, pySubStream);
+
                 break;
             case PyChecksumedStream pyChecksumedStream:
-                ProcessChecksumedStream(writer, pyChecksumedStream);
+                this.ProcessChecksumedStream (writer, pyChecksumedStream);
+
                 break;
             case PySubStruct pySubStruct:
-                ProcessSubStruct(writer, pySubStruct);
+                this.ProcessSubStruct (writer, pySubStruct);
+
                 break;
             case PyTuple pyTuple:
-                ProcessTuple(writer, pyTuple);
+                this.ProcessTuple (writer, pyTuple);
+
                 break;
             case PyPackedRow pyPackedRow:
-                ProcessPackedRow(writer, pyPackedRow);
+                this.ProcessPackedRow (writer, pyPackedRow);
+
                 break;
             default:
-                throw new InvalidDataException($"Unexpected type {data.GetType()}");
+                throw new InvalidDataException ($"Unexpected type {data.GetType ()}");
         }
     }
 
@@ -256,33 +272,39 @@ public class Marshal
     /// </summary>
     /// <param name="writer">Where to write the encoded data to</param>
     /// <param name="data">The value to write</param>
-    private void ProcessInteger(BinaryWriter writer, PyInteger data)
+    private void ProcessInteger (BinaryWriter writer, PyInteger data)
     {
         if (data.Value == 1)
-            writer.WriteOpcode(Opcode.IntegerOne);
+        {
+            writer.WriteOpcode (Opcode.IntegerOne);
+        }
         else if (data.Value == 0)
-            writer.WriteOpcode(Opcode.IntegerZero);
+        {
+            writer.WriteOpcode (Opcode.IntegerZero);
+        }
         else if (data.Value == -1)
-            writer.WriteOpcode(Opcode.IntegerMinusOne);
+        {
+            writer.WriteOpcode (Opcode.IntegerMinusOne);
+        }
         else if (data.Value >= sbyte.MinValue && data.Value <= sbyte.MaxValue)
         {
-            writer.WriteOpcode(Opcode.IntegerByte);
-            writer.Write((byte) data.Value);
+            writer.WriteOpcode (Opcode.IntegerByte);
+            writer.Write ((byte) data.Value);
         }
         else if (data.Value >= short.MinValue && data.Value <= short.MaxValue)
         {
-            writer.WriteOpcode(Opcode.IntegerSignedShort);
-            writer.Write((short) data.Value);
+            writer.WriteOpcode (Opcode.IntegerSignedShort);
+            writer.Write ((short) data.Value);
         }
         else if (data.Value >= int.MinValue && data.Value <= int.MaxValue)
         {
-            writer.WriteOpcode(Opcode.IntegerLong);
-            writer.Write((int) data.Value);
+            writer.WriteOpcode (Opcode.IntegerLong);
+            writer.Write ((int) data.Value);
         }
         else
         {
-            writer.WriteOpcode(Opcode.IntegerLongLong);
-            writer.Write(data.Value);
+            writer.WriteOpcode (Opcode.IntegerLongLong);
+            writer.Write (data.Value);
         }
     }
 
@@ -296,14 +318,16 @@ public class Marshal
     /// </summary>
     /// <param name="writer">Where to write the encoded data to</param>
     /// <param name="data">The value to write</param>
-    private void ProcessDecimal(BinaryWriter writer, PyDecimal data)
+    private void ProcessDecimal (BinaryWriter writer, PyDecimal data)
     {
         if (data == 0.0)
-            writer.WriteOpcode(Opcode.RealZero);
+        {
+            writer.WriteOpcode (Opcode.RealZero);
+        }
         else
         {
-            writer.WriteOpcode(Opcode.Real);
-            writer.Write(data.Value);
+            writer.WriteOpcode (Opcode.Real);
+            writer.Write (data.Value);
         }
     }
 
@@ -317,14 +341,14 @@ public class Marshal
     /// </summary>
     /// <param name="writer">Where to write the encoded data to</param>
     /// <param name="token">The value to write</param>
-    private void ProcessToken(BinaryWriter writer, PyToken token)
+    private void ProcessToken (BinaryWriter writer, PyToken token)
     {
         if (token.Length > byte.MaxValue)
-            throw new InvalidDataException($"Token length cannot be greater than {byte.MaxValue}");
-            
-        writer.WriteOpcode(Opcode.Token);
-        writer.Write((byte) token.Token.Length);
-        writer.Write(Encoding.ASCII.GetBytes(token));
+            throw new InvalidDataException ($"Token length cannot be greater than {byte.MaxValue}");
+
+        writer.WriteOpcode (Opcode.Token);
+        writer.Write ((byte) token.Token.Length);
+        writer.Write (Encoding.ASCII.GetBytes (token));
     }
 
     /// <summary>
@@ -337,12 +361,12 @@ public class Marshal
     /// </summary>
     /// <param name="writer">Where to write the encoded data to</param>
     /// <param name="boolean">The value to write</param>
-    private void ProcessBool(BinaryWriter writer, PyBool boolean)
+    private void ProcessBool (BinaryWriter writer, PyBool boolean)
     {
         if (boolean)
-            writer.WriteOpcode(Opcode.BoolTrue);
+            writer.WriteOpcode (Opcode.BoolTrue);
         else
-            writer.WriteOpcode(Opcode.BoolFalse);
+            writer.WriteOpcode (Opcode.BoolFalse);
     }
 
     /// <summary>
@@ -355,11 +379,11 @@ public class Marshal
     /// </summary>
     /// <param name="writer">Where to write the encoded data to</param>
     /// <param name="buffer">The value to write</param>
-    private void ProcessBuffer(BinaryWriter writer, PyBuffer buffer)
+    private void ProcessBuffer (BinaryWriter writer, PyBuffer buffer)
     {
-        writer.WriteOpcode(Opcode.Buffer);
-        writer.WriteSizeEx(buffer.Value.Length);
-        writer.Write(buffer);
+        writer.WriteOpcode (Opcode.Buffer);
+        writer.WriteSizeEx (buffer.Value.Length);
+        writer.Write (buffer);
     }
 
     /// <summary>
@@ -372,15 +396,15 @@ public class Marshal
     /// </summary>
     /// <param name="writer">Where to write the encoded data to</param>
     /// <param name="dictionary">The value to write</param>
-    private void ProcessDictionary(BinaryWriter writer, PyDictionary dictionary)
+    private void ProcessDictionary (BinaryWriter writer, PyDictionary dictionary)
     {
-        writer.WriteOpcode(Opcode.Dictionary);
-        writer.WriteSizeEx(dictionary.Length);
+        writer.WriteOpcode (Opcode.Dictionary);
+        writer.WriteSizeEx (dictionary.Length);
 
         foreach (PyDictionaryKeyValuePair pair in dictionary)
         {
-            this.Process(writer, pair.Value);
-            this.Process(writer, pair.Key);
+            this.Process (writer, pair.Value);
+            this.Process (writer, pair.Key);
         }
     }
 
@@ -396,20 +420,24 @@ public class Marshal
     /// </summary>
     /// <param name="writer">Where to write the encoded data to</param>
     /// <param name="list">The value to write</param>
-    private void ProcessList(BinaryWriter writer, PyList list)
+    private void ProcessList (BinaryWriter writer, PyList list)
     {
         if (list.Count == 0)
-            writer.WriteOpcode(Opcode.ListEmpty);
+        {
+            writer.WriteOpcode (Opcode.ListEmpty);
+        }
         else if (list.Count == 1)
-            writer.WriteOpcode(Opcode.ListOne);
+        {
+            writer.WriteOpcode (Opcode.ListOne);
+        }
         else
         {
-            writer.WriteOpcode(Opcode.List);
-            writer.WriteSizeEx(list.Count);
+            writer.WriteOpcode (Opcode.List);
+            writer.WriteSizeEx (list.Count);
         }
 
         foreach (PyDataType entry in list)
-            this.Process(writer, entry);
+            this.Process (writer, entry);
     }
 
     /// <summary>
@@ -423,11 +451,11 @@ public class Marshal
     /// </summary>
     /// <param name="writer">Where to write the encoded data to</param>
     /// <param name="data">The value to write</param>
-    private void ProcessObjectData(BinaryWriter writer, PyObjectData data)
+    private void ProcessObjectData (BinaryWriter writer, PyObjectData data)
     {
-        writer.WriteOpcode(Opcode.ObjectData);
-        this.Process(writer, data.Name);
-        this.Process(writer, data.Arguments);
+        writer.WriteOpcode (Opcode.ObjectData);
+        this.Process (writer, data.Name);
+        this.Process (writer, data.Arguments);
     }
 
     /// <summary>
@@ -437,9 +465,9 @@ public class Marshal
     /// <seealso cref="Opcode.None" />
     /// </summary>
     /// <param name="writer">Where to write the encoded data to</param>
-    private void ProcessNone(BinaryWriter writer)
+    private void ProcessNone (BinaryWriter writer)
     {
-        writer.WriteOpcode(Opcode.None);
+        writer.WriteOpcode (Opcode.None);
     }
 
     /// <summary>
@@ -463,33 +491,29 @@ public class Marshal
     /// </summary>
     /// <param name="writer">Where to write the encoded data to</param>
     /// <param name="data">The value to write</param>
-    private void ProcessObject(BinaryWriter writer, PyObject data)
+    private void ProcessObject (BinaryWriter writer, PyObject data)
     {
-        if (data.IsType2 == true)
-            writer.WriteOpcode(Opcode.ObjectType2);
+        if (data.IsType2)
+            writer.WriteOpcode (Opcode.ObjectType2);
         else
-            writer.WriteOpcode(Opcode.ObjectType1);
+            writer.WriteOpcode (Opcode.ObjectType1);
 
-        this.Process(writer, data.Header);
+        this.Process (writer, data.Header);
 
         if (data.List.Count > 0)
-        {
             foreach (PyDataType entry in data.List)
-                this.Process(writer, entry);
-        }
+                this.Process (writer, entry);
 
-        writer.Write(PACKED_TERMINATOR);
+        writer.Write (PACKED_TERMINATOR);
 
         if (data.Dictionary.Length > 0)
-        {
-            foreach (PyDictionaryKeyValuePair<PyDataType,PyDataType> entry in data.Dictionary)
+            foreach (PyDictionaryKeyValuePair <PyDataType, PyDataType> entry in data.Dictionary)
             {
-                this.Process(writer, entry.Key);
-                this.Process(writer, entry.Value);
+                this.Process (writer, entry.Key);
+                this.Process (writer, entry.Value);
             }
-        }
 
-        writer.Write(PACKED_TERMINATOR);
+        writer.Write (PACKED_TERMINATOR);
     }
 
     /// <summary>
@@ -511,37 +535,39 @@ public class Marshal
     /// </summary>
     /// <param name="writer">Where to write the encoded data to</param>
     /// <param name="data">The value to write</param>
-    private void ProcessString(BinaryWriter writer, PyString data)
+    private void ProcessString (BinaryWriter writer, PyString data)
     {
         if (data.Length == 0)
-            writer.WriteOpcode(data.IsUTF8 == true ? Opcode.WStringEmpty : Opcode.StringEmpty);
+        {
+            writer.WriteOpcode (data.IsUTF8 ? Opcode.WStringEmpty : Opcode.StringEmpty);
+        }
         else if (data.Length == 1 && data.IsUTF8 == false)
         {
-            writer.WriteOpcode(Opcode.StringChar);
-            writer.Write(Encoding.ASCII.GetBytes(data)[0]);
+            writer.WriteOpcode (Opcode.StringChar);
+            writer.Write (Encoding.ASCII.GetBytes (data) [0]);
         }
         else if (data.IsStringTableEntry)
         {
-            writer.WriteOpcode(Opcode.StringTable);
-            writer.Write((byte) (data.StringTableEntryIndex + 1));
+            writer.WriteOpcode (Opcode.StringTable);
+            writer.Write ((byte) (data.StringTableEntryIndex + 1));
         }
         else
         {
             // no match found in the table, normal string found, write it to the marshal stream
             if (data.IsUTF8)
             {
-                byte[] str = Encoding.UTF8.GetBytes(data.Value);
-                writer.WriteOpcode(Opcode.WStringUTF8);
-                writer.WriteSizeEx(str.Length);
-                writer.Write(str);
+                byte [] str = Encoding.UTF8.GetBytes (data.Value);
+                writer.WriteOpcode (Opcode.WStringUTF8);
+                writer.WriteSizeEx (str.Length);
+                writer.Write (str);
             }
             else
             {
                 // NOTE: ShortString doesn't seem to be used on Apocrypha
-                writer.WriteOpcode(Opcode.StringLong);
-                writer.WriteSizeEx(data.Length);
+                writer.WriteOpcode (Opcode.StringLong);
+                writer.WriteSizeEx (data.Length);
                 // writer.Write(Encoding.UTF8.GetBytes(data.Value));
-                writer.Write(Encoding.ASCII.GetBytes(data.Value));
+                writer.Write (Encoding.ASCII.GetBytes (data.Value));
             }
         }
     }
@@ -561,14 +587,14 @@ public class Marshal
     /// </summary>
     /// <param name="writer">Where to write the encoded data to</param>
     /// <param name="data">The value to write</param>
-    private void ProcessSubStream(BinaryWriter writer, PySubStream data)
+    private void ProcessSubStream (BinaryWriter writer, PySubStream data)
     {
         // this marshals the data only if the data changed from the original (or if it's a new PySubStream)
-        byte[] buffer = data.ByteStream;
+        byte [] buffer = data.ByteStream;
 
-        writer.WriteOpcode(Opcode.SubStream);
-        writer.WriteSizeEx(buffer.Length);
-        writer.Write(buffer);
+        writer.WriteOpcode (Opcode.SubStream);
+        writer.WriteSizeEx (buffer.Length);
+        writer.Write (buffer);
     }
 
     /// <summary>
@@ -582,15 +608,15 @@ public class Marshal
     /// </summary>
     /// <param name="writer">Where to write the encoded data to</param>
     /// <param name="data">The value to write</param>
-    private void ProcessChecksumedStream(BinaryWriter writer, PyChecksumedStream data)
+    private void ProcessChecksumedStream (BinaryWriter writer, PyChecksumedStream data)
     {
-        byte[] buffer = ToByteArray(data.Data, false);
+        byte [] buffer = ToByteArray (data.Data, false);
 
-        uint checksum = Adler32.Checksum(buffer);
+        uint checksum = Adler32.Checksum (buffer);
 
-        writer.WriteOpcode(Opcode.ChecksumedStream);
-        writer.Write(checksum);
-        writer.Write(buffer);
+        writer.WriteOpcode (Opcode.ChecksumedStream);
+        writer.Write (checksum);
+        writer.Write (buffer);
     }
 
     /// <summary>
@@ -603,10 +629,10 @@ public class Marshal
     /// </summary>
     /// <param name="writer">Where to write the encoded data to</param>
     /// <param name="data">The value to write</param>
-    private void ProcessSubStruct(BinaryWriter writer, PySubStruct data)
+    private void ProcessSubStruct (BinaryWriter writer, PySubStruct data)
     {
-        writer.WriteOpcode(Opcode.SubStruct);
-        this.Process(writer, data.Definition);
+        writer.WriteOpcode (Opcode.SubStruct);
+        this.Process (writer, data.Definition);
     }
 
     /// <summary>
@@ -622,22 +648,28 @@ public class Marshal
     /// </summary>
     /// <param name="writer">Where to write the encoded data to</param>
     /// <param name="tuple">The value to write</param>
-    private void ProcessTuple(BinaryWriter writer, PyTuple tuple)
+    private void ProcessTuple (BinaryWriter writer, PyTuple tuple)
     {
         if (tuple.Count == 0)
-            writer.WriteOpcode(Opcode.TupleEmpty);
+        {
+            writer.WriteOpcode (Opcode.TupleEmpty);
+        }
         else if (tuple.Count == 1)
-            writer.WriteOpcode(Opcode.TupleOne);
+        {
+            writer.WriteOpcode (Opcode.TupleOne);
+        }
         else if (tuple.Count == 2)
-            writer.WriteOpcode(Opcode.TupleTwo);
+        {
+            writer.WriteOpcode (Opcode.TupleTwo);
+        }
         else
         {
-            writer.WriteOpcode(Opcode.Tuple);
-            writer.WriteSizeEx(tuple.Count);
+            writer.WriteOpcode (Opcode.Tuple);
+            writer.WriteSizeEx (tuple.Count);
         }
 
         foreach (PyDataType entry in tuple)
-            this.Process(writer, entry);
+            this.Process (writer, entry);
     }
 
     /// <summary>
@@ -669,24 +701,24 @@ public class Marshal
     /// </summary>
     /// <param name="writer">Where to write the encoded data to</param>
     /// <param name="packedRow">The value to write</param>
-    private void ProcessPackedRow(BinaryWriter writer, PyPackedRow packedRow)
+    private void ProcessPackedRow (BinaryWriter writer, PyPackedRow packedRow)
     {
-        writer.WriteOpcode(Opcode.PackedRow);
-        this.Process(writer, packedRow.Header);
+        writer.WriteOpcode (Opcode.PackedRow);
+        this.Process (writer, packedRow.Header);
         // bit where null flags will be written
         int booleanBits = 0;
         int nullBits    = 0;
         int wholeBytes  = 0;
 
-        List<DBRowDescriptor.Column> booleanColumns = new List<DBRowDescriptor.Column>();
-            
+        List <DBRowDescriptor.Column> booleanColumns = new List <DBRowDescriptor.Column> ();
+
         foreach (DBRowDescriptor.Column column in packedRow.Header.Columns)
         {
-            int bitLength = Utils.GetTypeBits(column.Type);
+            int bitLength = Utils.GetTypeBits (column.Type);
 
             if (column.Type == FieldType.Bool)
             {
-                booleanColumns.Add(column);
+                booleanColumns.Add (column);
                 booleanBits++;
             }
 
@@ -695,101 +727,113 @@ public class Marshal
             if (bitLength >= 8)
                 wholeBytes += bitLength >> 3;
         }
-            
-        // build byte buffers for the bitfields like booleans and nulls
-        byte[] bitField = new byte[((booleanBits + nullBits) >> 3) + 1];
-            
-        // prepare the zero-compression stream
-        MemoryStream wholeByteStream = new MemoryStream(wholeBytes + bitField.Length);
-        MemoryStream objectStream    = new MemoryStream();
 
-        BinaryWriter wholeByteWriter = new BinaryWriter(wholeByteStream);
-        BinaryWriter objectWriter    = new BinaryWriter(objectStream);
+        // build byte buffers for the bitfields like booleans and nulls
+        byte [] bitField = new byte[((booleanBits + nullBits) >> 3) + 1];
+
+        // prepare the zero-compression stream
+        MemoryStream wholeByteStream = new MemoryStream (wholeBytes + bitField.Length);
+        MemoryStream objectStream    = new MemoryStream ();
+
+        BinaryWriter wholeByteWriter = new BinaryWriter (wholeByteStream);
+        BinaryWriter objectWriter    = new BinaryWriter (objectStream);
 
         // sort the columns by size and obtain some important statistics
-        IOrderedEnumerable<DBRowDescriptor.Column> enumerator = packedRow.Header.Columns.OrderByDescending(c => Utils.GetTypeBits(c.Type));
-            
+        IOrderedEnumerable <DBRowDescriptor.Column> enumerator = packedRow.Header.Columns.OrderByDescending (c => Utils.GetTypeBits (c.Type));
+
         foreach (DBRowDescriptor.Column column in enumerator)
         {
-            PyDataType value = packedRow[column.Name];
+            PyDataType value = packedRow [column.Name];
 
             switch (column.Type)
             {
                 case FieldType.UI8:
-                    wholeByteWriter.Write((ulong) (value as PyInteger ?? 0));
+                    wholeByteWriter.Write ((ulong) (value as PyInteger ?? 0));
+
                     break;
-                    
+
                 case FieldType.I8:
                 case FieldType.CY:
                 case FieldType.FileTime:
-                    wholeByteWriter.Write((long) (value as PyInteger ?? 0));
+                    wholeByteWriter.Write ((long) (value as PyInteger ?? 0));
+
                     break;
 
                 case FieldType.I4:
-                    wholeByteWriter.Write((int) (value as PyInteger ?? 0));
+                    wholeByteWriter.Write ((int) (value as PyInteger ?? 0));
+
                     break;
                 case FieldType.UI4:
-                    wholeByteWriter.Write((uint) (value as PyInteger ?? 0));
+                    wholeByteWriter.Write ((uint) (value as PyInteger ?? 0));
+
                     break;
                 case FieldType.I2:
-                    wholeByteWriter.Write((short) (value as PyInteger ?? 0));
+                    wholeByteWriter.Write ((short) (value as PyInteger ?? 0));
+
                     break;
                 case FieldType.UI2:
-                    wholeByteWriter.Write((ushort) (value as PyInteger ?? 0));
+                    wholeByteWriter.Write ((ushort) (value as PyInteger ?? 0));
+
                     break;
                 case FieldType.I1:
-                    wholeByteWriter.Write((sbyte) (value as PyInteger ?? 0));
+                    wholeByteWriter.Write ((sbyte) (value as PyInteger ?? 0));
+
                     break;
                 case FieldType.UI1:
-                    wholeByteWriter.Write((byte) (value as PyInteger ?? 0));
+                    wholeByteWriter.Write ((byte) (value as PyInteger ?? 0));
+
                     break;
 
                 case FieldType.R8:
-                    wholeByteWriter.Write((double) (value as PyDecimal ?? 0));
+                    wholeByteWriter.Write ((double) (value as PyDecimal ?? 0));
+
                     break;
 
                 case FieldType.R4:
-                    wholeByteWriter.Write((float) (value as PyDecimal ?? 0));
+                    wholeByteWriter.Write ((float) (value as PyDecimal ?? 0));
+
                     break;
 
                 // bools, bytes and str are handled differently
                 case FieldType.Bool:
                     if (value is not null && value as PyBool)
                     {
-                        int bit = booleanColumns.IndexOf(column);
-                            
-                        bitField[bit >> 3] |= (byte) (1 << (bit & 0x7));
+                        int bit = booleanColumns.IndexOf (column);
+
+                        bitField [bit >> 3] |= (byte) (1 << (bit & 0x7));
                     }
+
                     break;
-                    
+
                 case FieldType.Bytes:
                 case FieldType.Str:
                 case FieldType.WStr:
                     // write the object to the proper memory stream
-                    this.Process(objectWriter, packedRow[column.Name]);
+                    this.Process (objectWriter, packedRow [column.Name]);
+
                     continue;
 
                 default:
-                    throw new Exception($"Unknown field type {column.Type}");
+                    throw new Exception ($"Unknown field type {column.Type}");
             }
 
             if (value is null)
             {
-                int bit = packedRow.Header.Columns.IndexOf(column) + booleanBits;
-                    
-                bitField[bit >> 3] |= (byte) (1 << (bit & 0x7));
+                int bit = packedRow.Header.Columns.IndexOf (column) + booleanBits;
+
+                bitField [bit >> 3] |= (byte) (1 << (bit & 0x7));
             }
         }
-            
+
         // write the bit field buffer into the wholeByteWriter
-        wholeByteWriter.Write(bitField);
+        wholeByteWriter.Write (bitField);
         // create a reader for the stream
-        wholeByteStream.Seek(0, SeekOrigin.Begin);
+        wholeByteStream.Seek (0, SeekOrigin.Begin);
         // create the reader used to compress the buffer
-        BinaryReader reader = new BinaryReader(wholeByteStream);
+        BinaryReader reader = new BinaryReader (wholeByteStream);
         // finally compress the data into the output
-        ZeroCompressionUtils.ZeroCompress(reader, writer);
+        ZeroCompressionUtils.ZeroCompress (reader, writer);
         // as last step write the encoded objects after the packed data
-        objectStream.WriteTo(writer.BaseStream);
+        objectStream.WriteTo (writer.BaseStream);
     }
 }

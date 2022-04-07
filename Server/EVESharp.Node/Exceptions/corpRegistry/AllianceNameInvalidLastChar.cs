@@ -4,8 +4,5 @@ namespace EVESharp.Node.Exceptions.corpRegistry;
 
 public class AllianceNameInvalidLastChar : UserError
 {
-    public AllianceNameInvalidLastChar() : base("AllianceNameInvalidLastChar")
-    {
-            
-    }
+    public AllianceNameInvalidLastChar () : base ("AllianceNameInvalidLastChar") { }
 }

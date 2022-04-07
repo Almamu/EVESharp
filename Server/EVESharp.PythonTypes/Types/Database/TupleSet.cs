@@ -16,22 +16,22 @@ public static class TupleSet
     /// <param name="connection">The connection used</param>
     /// <param name="reader">The MySqlDataReader to read the data from</param>
     /// <returns></returns>
-    public static PyDataType FromMySqlDataReader(IDatabaseConnection connection, MySqlDataReader reader)
+    public static PyDataType FromMySqlDataReader (IDatabaseConnection connection, MySqlDataReader reader)
     {
-        connection.GetDatabaseHeaders(reader, out PyList<PyString> columns, out FieldType[] fieldTypes);
-        PyList rows = new PyList();
-            
-        while (reader.Read() == true)
+        connection.GetDatabaseHeaders (reader, out PyList <PyString> columns, out FieldType [] fieldTypes);
+        PyList rows = new PyList ();
+
+        while (reader.Read ())
         {
-            PyList linedata = new PyList(columns.Count);
+            PyList linedata = new PyList (columns.Count);
 
             for (int i = 0; i < columns.Count; i++)
-                linedata[i] = IDatabaseConnection.ObjectFromColumn(reader, fieldTypes[i], i);
+                linedata [i] = IDatabaseConnection.ObjectFromColumn (reader, fieldTypes [i], i);
 
-            rows.Add(linedata);
+            rows.Add (linedata);
         }
 
-        return new PyTuple(2)
+        return new PyTuple (2)
         {
             [0] = columns,
             [1] = rows

@@ -12,34 +12,30 @@ public class stationSvc : Service
     public override AccessLevel  AccessLevel  => AccessLevel.None;
     private         ItemFactory  ItemFactory  { get; }
     private         CacheStorage CacheStorage { get; }
-        
-    public stationSvc(ItemFactory itemFactory, CacheStorage cacheStorage)
+
+    public stationSvc (ItemFactory itemFactory, CacheStorage cacheStorage)
     {
-        this.ItemFactory  = itemFactory;
-        this.CacheStorage = cacheStorage;
+        ItemFactory  = itemFactory;
+        CacheStorage = cacheStorage;
     }
 
-    public PyDataType GetStation(PyInteger stationID, CallInformation call)
+    public PyDataType GetStation (PyInteger stationID, CallInformation call)
     {
         // generate cache for this call, why is this being called for every item in the assets window
         // when a list is expanded?!
 
-        if (this.CacheStorage.Exists("stationSvc", $"GetStation_{stationID}") == false)
-        {
-            this.CacheStorage.StoreCall(
-                "stationSvc", $"GetStation_{stationID}", 
-                this.ItemFactory.Stations[stationID].GetStationInfo(), 
-                DateTime.UtcNow.ToFileTimeUtc()
+        if (CacheStorage.Exists ("stationSvc", $"GetStation_{stationID}") == false)
+            CacheStorage.StoreCall (
+                "stationSvc", $"GetStation_{stationID}",
+                ItemFactory.Stations [stationID].GetStationInfo (),
+                DateTime.UtcNow.ToFileTimeUtc ()
             );
-        }
 
-        return CachedMethodCallResult.FromCacheHint(
-            this.CacheStorage.GetHint("stationSvc", $"GetStation_{stationID}")
-        );
+        return CachedMethodCallResult.FromCacheHint (CacheStorage.GetHint ("stationSvc", $"GetStation_{stationID}"));
     }
 
-    public PyDataType GetSolarSystem(PyInteger solarSystemID, CallInformation call)
+    public PyDataType GetSolarSystem (PyInteger solarSystemID, CallInformation call)
     {
-        return this.ItemFactory.SolarSystems[solarSystemID].GetSolarSystemInfo();
+        return ItemFactory.SolarSystems [solarSystemID].GetSolarSystemInfo ();
     }
 }

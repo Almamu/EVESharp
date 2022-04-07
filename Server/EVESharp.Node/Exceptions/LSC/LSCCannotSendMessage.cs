@@ -2,7 +2,5 @@
 
 public class LSCCannotSendMessage : LSCStandardException
 {
-    public LSCCannotSendMessage(string message) : base("LSCCannotSendMessage", message)
-    {
-    }
+    public LSCCannotSendMessage (string message) : base ("LSCCannotSendMessage", message) { }
 }

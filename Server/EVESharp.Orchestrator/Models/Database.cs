@@ -6,15 +6,15 @@ public class Database
 {
     public string ConnectionString { get; init; }
 
-    public Database(string connectionString)
+    public Database (string connectionString)
     {
-        this.ConnectionString = connectionString;
+        ConnectionString = connectionString;
     }
 
-    public MySqlConnection Get()
+    public MySqlConnection Get ()
     {
-        MySqlConnection connection = new MySqlConnection(this.ConnectionString);
-        connection.Open();
+        MySqlConnection connection = new MySqlConnection (ConnectionString);
+        connection.Open ();
 
         return connection;
     }

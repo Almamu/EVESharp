@@ -2,7 +2,6 @@
 using EVESharp.Node.Inventory;
 using EVESharp.Node.Inventory.Items;
 using EVESharp.Node.Inventory.Items.Types;
-using EVESharp.Node.Network;
 
 namespace EVESharp.Node.Dogma.Interpreter;
 

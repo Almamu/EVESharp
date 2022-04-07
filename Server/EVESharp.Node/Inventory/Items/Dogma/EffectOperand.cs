@@ -75,5 +75,5 @@ public enum EffectOperand
     TARGETSILENTLY        = 71,
     TOOLTARGETSKILLS      = 72,
     UE                    = 73,
-    VERIFYTARGETGROUP     = 74,
+    VERIFYTARGETGROUP     = 74
 }

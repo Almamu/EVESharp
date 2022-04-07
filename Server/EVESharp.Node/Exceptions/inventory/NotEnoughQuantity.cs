@@ -6,7 +6,5 @@ namespace EVESharp.Node.Exceptions.inventory;
 
 public class NotEnoughQuantity : UserError
 {
-    public NotEnoughQuantity(Type type) : base("NotEnoughQuantity", new PyDictionary() {["typename"] = FormatTypeIDAsName(type.ID)})
-    {
-    }
+    public NotEnoughQuantity (Type type) : base ("NotEnoughQuantity", new PyDictionary {["typename"] = FormatTypeIDAsName (type.ID)}) { }
 }

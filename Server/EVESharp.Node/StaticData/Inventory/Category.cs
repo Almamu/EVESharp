@@ -32,12 +32,12 @@ public class Category
     public int    GraphicID   { get; }
     public bool   Published   { get; }
 
-    public Category(int id, string name, string description, int graphicID, bool published)
+    public Category (int id, string name, string description, int graphicID, bool published)
     {
-        this.ID          = id;
-        this.Name        = name;
-        this.Description = description;
-        this.GraphicID   = graphicID;
-        this.Published   = published;
+        ID          = id;
+        Name        = name;
+        Description = description;
+        GraphicID   = graphicID;
+        Published   = published;
     }
 }

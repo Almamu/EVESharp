@@ -1,6 +1,6 @@
 namespace EVESharp.Node.StaticData.Inventory;
 
-public enum Groups : int
+public enum Groups
 {
     System                                         = 0,
     Character                                      = 1,
@@ -795,5 +795,5 @@ public enum Groups : int
     SecondarySun                                   = 995,
     StrategicCruiserBlueprints                     = 996,
     SleeperHullRelics                              = 997,
-    RuinedRelics                                   = 998,
+    RuinedRelics                                   = 998
 }

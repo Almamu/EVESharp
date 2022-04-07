@@ -1,7 +1,5 @@
-﻿using System.Collections.Generic;
-using EVESharp.EVE.Packets;
+﻿using EVESharp.EVE.Packets;
 using EVESharp.EVE.Sessions;
-using EVESharp.Node.Configuration;
 using EVESharp.Node.Network;
 using EVESharp.Node.Server.Shared;
 using EVESharp.PythonTypes.Types.Collections;
@@ -11,138 +9,140 @@ namespace EVESharp.Node.Sessions;
 
 public class SessionManager : EVE.Sessions.SessionManager
 {
-    private IMachoNet MachoNet { get; }
+    private IMachoNet        MachoNet         { get; }
     private TransportManager TransportManager { get; }
-    
-    public SessionManager(TransportManager transportManager, IMachoNet machoNet)
+
+    public SessionManager (TransportManager transportManager, IMachoNet machoNet)
     {
-        this.TransportManager = transportManager;
-        this.MachoNet = machoNet;
-        
+        TransportManager = transportManager;
+        MachoNet         = machoNet;
+
         // register events
-        this.TransportManager.OnTransportRemoved += OnTransportClosed;
-        this.TransportManager.OnClientResolved += OnClientResolved;
+        TransportManager.OnTransportRemoved += this.OnTransportClosed;
+        TransportManager.OnClientResolved   += this.OnClientResolved;
     }
 
-    public void InitializeSession(Session session)
+    public void InitializeSession (Session session)
     {
         // add the session to the list first
-        this.RegisterSession(session);
-        
+        this.RegisterSession (session);
+
         // build the initial state notification
-        PyPacket packet = new PyPacket(PyPacket.PacketType.SESSIONINITIALSTATENOTIFICATION)
+        PyPacket packet = new PyPacket (PyPacket.PacketType.SESSIONINITIALSTATENOTIFICATION)
         {
-            Source = new PyAddressNode(this.MachoNet.NodeID),
-            Destination = new PyAddressClient(session.UserID, 0),
-            UserID = session.UserID,
-            Payload = new SessionInitialStateNotification()
-            {
-                Session = session
-            },
-            OutOfBounds = new PyDictionary
-            {
-                ["channel"] = "sessionchange"
-            }
+            Source      = new PyAddressNode (MachoNet.NodeID),
+            Destination = new PyAddressClient (session.UserID, 0),
+            UserID      = session.UserID,
+            Payload     = new SessionInitialStateNotification {Session = session},
+            OutOfBounds = new PyDictionary {["channel"]                = "sessionchange"}
         };
         // send the packet to the player
-        this.MachoNet.QueueOutputPacket(packet);
+        MachoNet.QueueOutputPacket (packet);
     }
-    
+
     /// <summary>
     /// Updates sessions based on the idType and id as criteria
     /// </summary>
     /// <param name="idType"></param>
     /// <param name="id"></param>
     /// <param name="newValues">The new values for the session</param>
-    public void PerformSessionUpdate(string idType, int id, Session newValues)
+    public void PerformSessionUpdate (string idType, int id, Session newValues)
     {
-        switch (this.MachoNet.Mode)
+        switch (MachoNet.Mode)
         {
             case RunMode.Proxy:
             case RunMode.Single:
-                this.PerformSessionUpdateForProxy(idType, id, newValues);
+                this.PerformSessionUpdateForProxy (idType, id, newValues);
+
                 break;
             case RunMode.Server:
-                this.PerformSessionUpdateForNode(idType, id, newValues);
+                this.PerformSessionUpdateForNode (idType, id, newValues);
+
                 break;
         }
     }
 
-    private void PerformSessionUpdateForProxy(string idType, int id, Session newValues)
+    private void PerformSessionUpdateForProxy (string idType, int id, Session newValues)
     {
         // find all sessions
-        foreach (Session session in this.FindSession(idType, id))
+        foreach (Session session in this.FindSession (idType, id))
         {
-            SessionChange delta = UpdateAttributes(session, newValues);
+            SessionChange delta = UpdateAttributes (session, newValues);
 
             // no difference means no notification
             if (delta.Count == 0)
                 return;
 
-            SessionChangeNotification scn = new SessionChangeNotification()
+            SessionChangeNotification scn = new SessionChangeNotification
             {
-                Changes = delta,
+                Changes         = delta,
                 NodesOfInterest = session.NodesOfInterest
             };
-            
+
             // difference noticed, send session change to relevant nodes and player
-            PyPacket nodePacket = new PyPacket(PyPacket.PacketType.SESSIONCHANGENOTIFICATION)
+            PyPacket nodePacket = new PyPacket (PyPacket.PacketType.SESSIONCHANGENOTIFICATION)
             {
-                Source = new PyAddressNode(this.MachoNet.NodeID),
-                Destination = new PyAddressBroadcast(session.NodesOfInterest, "nodeid"),
-                Payload = scn,
-                UserID = session.UserID,
-                OutOfBounds = new PyDictionary()
+                Source      = new PyAddressNode (MachoNet.NodeID),
+                Destination = new PyAddressBroadcast (session.NodesOfInterest, "nodeid"),
+                Payload     = scn,
+                UserID      = session.UserID,
+                OutOfBounds = new PyDictionary
                 {
-                    ["channel"] = "sessionchange",
+                    ["channel"]     = "sessionchange",
                     ["characterID"] = session.CharacterID
                 }
             };
 
-            PyPacket clientPacket = new PyPacket(PyPacket.PacketType.SESSIONCHANGENOTIFICATION)
+            PyPacket clientPacket = new PyPacket (PyPacket.PacketType.SESSIONCHANGENOTIFICATION)
             {
-                Source = new PyAddressNode(this.MachoNet.NodeID),
-                Destination = new PyAddressClient(session.UserID),
-                Payload = scn,
-                UserID = session.UserID,
-                OutOfBounds = new PyDictionary()
-                {
-                    ["channel"] = "sessionchange"
-                }
+                Source      = new PyAddressNode (MachoNet.NodeID),
+                Destination = new PyAddressClient (session.UserID),
+                Payload     = scn,
+                UserID      = session.UserID,
+                OutOfBounds = new PyDictionary {["channel"] = "sessionchange"}
             };
 
-            this.MachoNet.QueueOutputPacket(nodePacket);
-            this.MachoNet.QueueOutputPacket(clientPacket);
+            MachoNet.QueueOutputPacket (nodePacket);
+            MachoNet.QueueOutputPacket (clientPacket);
         }
     }
 
-    private void PerformSessionUpdateForNode(string idType, int id, Session newValues)
+    private void PerformSessionUpdateForNode (string idType, int id, Session newValues)
     {
-        PyPacket packet = new PyPacket(PyPacket.PacketType.NOTIFICATION)
+        PyPacket packet = new PyPacket (PyPacket.PacketType.NOTIFICATION)
         {
-            Source = new PyAddressNode(this.MachoNet.NodeID),
-            Destination = new PyAddressAny(0),
-            Payload = new PyTuple(2) {[0] = "UpdateSessionAttributes", [1] = new PyTuple(3) {[0] = idType, [1] = id, [2] = newValues}}
+            Source      = new PyAddressNode (MachoNet.NodeID),
+            Destination = new PyAddressAny (0),
+            Payload = new PyTuple (2)
+            {
+                [0] = "UpdateSessionAttributes",
+                [1] = new PyTuple (3)
+                {
+                    [0] = idType,
+                    [1] = id,
+                    [2] = newValues
+                }
+            }
         };
-        
+
         // notify all proxies
-        foreach ((long _, MachoTransport transport) in this.MachoNet.TransportManager.ProxyTransports)
-            transport.Socket.Send(packet);
+        foreach ((long _, MachoTransport transport) in MachoNet.TransportManager.ProxyTransports)
+            transport.Socket.Send (packet);
     }
 
-    public new void FreeSession(Session session)
+    public new void FreeSession (Session session)
     {
-        base.FreeSession(session);
+        base.FreeSession (session);
     }
 
-    private void OnTransportClosed(object? sender, MachoTransport transport)
+    private void OnTransportClosed (object? sender, MachoTransport transport)
     {
         if (transport is MachoClientTransport)
-            this.FreeSession(transport.Session);
+            this.FreeSession (transport.Session);
     }
 
-    private void OnClientResolved(object? sender, MachoClientTransport transport)
+    private void OnClientResolved (object? sender, MachoClientTransport transport)
     {
-        this.InitializeSession(transport.Session);
+        this.InitializeSession (transport.Session);
     }
 }

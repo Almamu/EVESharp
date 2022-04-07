@@ -2,9 +2,7 @@
 
 namespace EVESharp.Node.Exceptions.corporationSvc;
 
-class MedalDescriptionInvalid : UserError
+internal class MedalDescriptionInvalid : UserError
 {
-    public MedalDescriptionInvalid() : base("MedalDescriptionInvalid")
-    {
-    }
+    public MedalDescriptionInvalid () : base ("MedalDescriptionInvalid") { }
 }

@@ -15,83 +15,87 @@ public class config : Service
     private         ConfigDB    DB          { get; }
     private         ILogger     Log         { get; }
     private         ItemFactory ItemFactory { get; }
-        
-    public config(ConfigDB db, ItemFactory itemFactory, ILogger log)
+
+    public config (ConfigDB db, ItemFactory itemFactory, ILogger log)
     {
-        this.DB          = db;
-        this.ItemFactory = itemFactory;
-        this.Log         = log;
+        DB          = db;
+        ItemFactory = itemFactory;
+        Log         = log;
     }
 
-    public PyDataType GetMultiOwnersEx(PyList ids, CallInformation call)
+    public PyDataType GetMultiOwnersEx (PyList ids, CallInformation call)
     {
-        return this.DB.GetMultiOwnersEx(ids.GetEnumerable<PyInteger>());
+        return DB.GetMultiOwnersEx (ids.GetEnumerable <PyInteger> ());
     }
 
-    public PyDataType GetMultiGraphicsEx(PyList ids, CallInformation call)
+    public PyDataType GetMultiGraphicsEx (PyList ids, CallInformation call)
     {
-        return this.DB.GetMultiGraphicsEx(ids.GetEnumerable<PyInteger>());
+        return DB.GetMultiGraphicsEx (ids.GetEnumerable <PyInteger> ());
     }
 
-    public PyDataType GetMultiLocationsEx(PyList ids, CallInformation call)
+    public PyDataType GetMultiLocationsEx (PyList ids, CallInformation call)
     {
-        return this.DB.GetMultiLocationsEx(ids.GetEnumerable<PyInteger>());
+        return DB.GetMultiLocationsEx (ids.GetEnumerable <PyInteger> ());
     }
 
-    public PyDataType GetMultiAllianceShortNamesEx(PyList ids, CallInformation call)
+    public PyDataType GetMultiAllianceShortNamesEx (PyList ids, CallInformation call)
     {
-        return this.DB.GetMultiAllianceShortNamesEx(ids.GetEnumerable<PyInteger>());
+        return DB.GetMultiAllianceShortNamesEx (ids.GetEnumerable <PyInteger> ());
     }
 
-    public PyDataType GetMultiCorpTickerNamesEx(PyList ids, CallInformation call)
+    public PyDataType GetMultiCorpTickerNamesEx (PyList ids, CallInformation call)
     {
-        return this.DB.GetMultiCorpTickerNamesEx(ids.GetEnumerable<PyInteger>());
+        return DB.GetMultiCorpTickerNamesEx (ids.GetEnumerable <PyInteger> ());
     }
-        
-    public PyDataType GetMap(PyInteger solarSystemID, CallInformation call)
+
+    public PyDataType GetMap (PyInteger solarSystemID, CallInformation call)
     {
-        return this.DB.GetMap(solarSystemID);
+        return DB.GetMap (solarSystemID);
     }
 
     // THESE PARAMETERS AREN'T REALLY USED ANYMORE, THIS FUNCTION IS USUALLY CALLED WITH LOCATIONID, 1
-    public PyDataType GetMapObjects(PyInteger locationID, PyInteger ignored1, CallInformation call)
+    public PyDataType GetMapObjects (PyInteger locationID, PyInteger ignored1, CallInformation call)
     {
-        return this.DB.GetMapObjects(locationID);
+        return DB.GetMapObjects (locationID);
     }
 
     // THESE PARAMETERS AREN'T REALLY USED ANYMORE THIS FUNCTION IS USUALLY CALLED WITH LOCATIONID, 0, 0, 0, 1, 0
-    public PyDataType GetMapObjects(PyInteger locationID,  PyInteger wantRegions, PyInteger wantConstellations,
-                                    PyInteger wantSystems, PyInteger wantItems,   PyInteger unknown, CallInformation call)
+    public PyDataType GetMapObjects (
+        PyInteger locationID,  PyInteger wantRegions, PyInteger wantConstellations,
+        PyInteger wantSystems, PyInteger wantItems,   PyInteger unknown, CallInformation call
+    )
     {
-        return this.DB.GetMapObjects(locationID);
+        return DB.GetMapObjects (locationID);
     }
 
-    public PyDataType GetMapOffices(PyInteger solarSystemID, CallInformation call)
+    public PyDataType GetMapOffices (PyInteger solarSystemID, CallInformation call)
     {
-        return this.DB.GetMapOffices(solarSystemID);
+        return DB.GetMapOffices (solarSystemID);
     }
 
-    public PyDataType GetCelestialStatistic(PyInteger celestialID, CallInformation call)
+    public PyDataType GetCelestialStatistic (PyInteger celestialID, CallInformation call)
     {
-        if (ItemFactory.IsCelestialID(celestialID) == false)
-            throw new CustomError($"Unexpected celestialID {celestialID}");
-            
+        if (ItemFactory.IsCelestialID (celestialID) == false)
+            throw new CustomError ($"Unexpected celestialID {celestialID}");
+
         // TODO: CHECK FOR STATIC DATA TO FETCH IT OFF MEMORY INSTEAD OF DATABASE?
-        return this.DB.GetCelestialStatistic(celestialID);
+        return DB.GetCelestialStatistic (celestialID);
     }
 
-    public PyDataType GetMultiInvTypesEx(PyList typeIDs, CallInformation call)
+    public PyDataType GetMultiInvTypesEx (PyList typeIDs, CallInformation call)
     {
-        return this.DB.GetMultiInvTypesEx(typeIDs.GetEnumerable<PyInteger>());
+        return DB.GetMultiInvTypesEx (typeIDs.GetEnumerable <PyInteger> ());
     }
 
-    public PyDataType GetStationSolarSystemsByOwner(PyInteger ownerID, CallInformation call)
+    public PyDataType GetStationSolarSystemsByOwner (PyInteger ownerID, CallInformation call)
     {
-        return this.DB.GetStationSolarSystemsByOwner(ownerID);
+        return DB.GetStationSolarSystemsByOwner (ownerID);
     }
 
-    public PyDataType GetMapConnections(PyInteger  itemID,        PyDataType isRegion,    PyDataType isConstellation,
-                                        PyDataType isSolarSystem, PyDataType isCelestial, PyInteger  unknown2 = null, CallInformation call = null)
+    public PyDataType GetMapConnections (
+        PyInteger  itemID,        PyDataType isRegion,    PyDataType isConstellation,
+        PyDataType isSolarSystem, PyDataType isCelestial, PyInteger  unknown2 = null, CallInformation call = null
+    )
     {
         bool isRegionBool        = false;
         bool isConstellationBool = false;
@@ -115,14 +119,15 @@ public class config : Service
         if (isCelestial is PyInteger celestialInt)
             isCelestialBool = celestialInt.Value == 1;
 
-        if (isRegionBool == true)
-            return this.DB.GetMapRegionConnection(itemID);
-        if (isConstellationBool == true)
-            return this.DB.GetMapConstellationConnection(itemID);
-        if (isSolarSystemBool == true)
-            return this.DB.GetMapSolarSystemConnection(itemID);
-        if (isCelestialBool == true)
-            Log.Error("GetMapConnections called with celestial id. Not implemented yet!");
+        if (isRegionBool)
+            return DB.GetMapRegionConnection (itemID);
+        if (isConstellationBool)
+            return DB.GetMapConstellationConnection (itemID);
+        if (isSolarSystemBool)
+            return DB.GetMapSolarSystemConnection (itemID);
+
+        if (isCelestialBool)
+            Log.Error ("GetMapConnections called with celestial id. Not implemented yet!");
 
         return null;
     }

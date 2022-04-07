@@ -6,10 +6,12 @@ namespace EVESharp.Node.Database;
 
 public class RAMDB : DatabaseAccessor
 {
-    public Rowset GetRegionDetails(int regionID)
+    public RAMDB (DatabaseConnection db) : base (db) { }
+
+    public Rowset GetRegionDetails (int regionID)
     {
         // TODO: IS THIS REALLY FETCHED FROM THE STATIONS TABLE?
-        return Database.PrepareRowsetQuery(
+        return Database.PrepareRowsetQuery (
             "SELECT" +
             " stationID AS containerID," +
             " stationTypeID AS containerTypeID," +
@@ -22,16 +24,13 @@ public class RAMDB : DatabaseAccessor
             " LEFT JOIN crpNPCCorporations AS corp ON ramAssemblyLineStations.ownerID = corp.corporationID" +
             " WHERE ramAssemblyLineStations.ownerID = corp.corporationID" +
             " AND ramAssemblyLineStations.regionID = @regionID",
-            new Dictionary<string, object>()
-            {
-                {"@regionID", regionID}
-            }
+            new Dictionary <string, object> {{"@regionID", regionID}}
         );
     }
 
-    public Rowset GetPersonalDetails(int characterID)
+    public Rowset GetPersonalDetails (int characterID)
     {
-        return Database.PrepareRowsetQuery(
+        return Database.PrepareRowsetQuery (
             "SELECT" +
             " station.stationID AS containerID," +
             " station.stationTypeID AS containerTypeID," +
@@ -43,29 +42,23 @@ public class RAMDB : DatabaseAccessor
             " LEFT JOIN ramAssemblyLines AS line ON station.stationID = line.containerID AND station.assemblyLineTypeID = line.assemblyLineTypeID AND station.ownerID = line.ownerID" +
             " WHERE station.ownerID = @characterID" +
             " AND (line.restrictionMask & 12) = 0", // (restrictionMask & (ramRestrictByCorp | ramRestrictByAlliance)) = 0
-            new Dictionary<string, object>()
-            {
-                {"@characterID", characterID}
-            }
+            new Dictionary <string, object> {{"@characterID", characterID}}
         );
     }
 
-    public Rowset AssemblyLinesGet(int containerID)
+    public Rowset AssemblyLinesGet (int containerID)
     {
         // TODO: CHECK FOR PERMISSIONS FIRST!
-        return Database.PrepareRowsetQuery(
+        return Database.PrepareRowsetQuery (
             "SELECT assemblyLineID, assemblyLineTypeID, containerID, nextFreeTime, costInstall, costPerHour, restrictionMask, discountPerGoodStandingPoint, surchargePerBadStandingPoint, minimumStanding, minimumCharSecurity, minimumCorpSecurity, maximumCharSecurity, maximumCorpSecurity FROM ramAssemblyLines WHERE containerID = @containerID",
-            new Dictionary<string, object>()
-            {
-                {"@containerID", containerID}
-            }
+            new Dictionary <string, object> {{"@containerID", containerID}}
         );
     }
 
-    public Rowset GetJobs2(int ownerID, bool completed, long fromDate, long toDate)
+    public Rowset GetJobs2 (int ownerID, bool completed, long fromDate, long toDate)
     {
-        return Database.PrepareRowsetQuery(
-            "SELECT"+
+        return Database.PrepareRowsetQuery (
+            "SELECT" +
             " job.jobID," +
             " job.assemblyLineID," +
             " assemblyLine.containerID," +
@@ -95,21 +88,17 @@ public class RAMDB : DatabaseAccessor
             " LEFT JOIN invBlueprints AS blueprint ON installedItem.itemID = blueprint.itemID" +
             " LEFT JOIN invBlueprintTypes AS blueprintType ON installedItem.typeID = blueprintType.blueprintTypeID" +
             " LEFT JOIN ramAssemblyLineStations AS station ON assemblyLine.containerID = station.stationID" +
-            " WHERE job.ownerID = @ownerID"+
-            $" AND job.completedStatusID {(completed == true ? "!=" : "=")} 0"+
+            " WHERE job.ownerID = @ownerID" +
+            $" AND job.completedStatusID {(completed ? "!=" : "=")} 0" +
             " AND job.installTime >= @fromDate" +
             " AND job.endProductionTime <= @toDate" +
             " GROUP BY job.jobID",
-            new Dictionary<string, object>()
+            new Dictionary <string, object>
             {
                 {"@ownerID", ownerID},
                 {"@fromDate", fromDate},
                 {"@toDate", toDate}
             }
         );
-    }
-        
-    public RAMDB(DatabaseConnection db) : base(db)
-    {
     }
 }

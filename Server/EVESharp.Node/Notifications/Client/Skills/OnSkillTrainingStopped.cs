@@ -8,22 +8,22 @@ namespace EVESharp.Node.Notifications.Client.Skills;
 public class OnSkillTrainingStopped : ClientNotification
 {
     private const string NOTIFICATION_NAME = "OnSkillTrainingStopped";
-        
+
     /// <summary>
     /// The skill this notification is about
     /// </summary>
     public Skill Skill { get; }
-        
-    public OnSkillTrainingStopped(Skill skill) : base(NOTIFICATION_NAME)
+
+    public OnSkillTrainingStopped (Skill skill) : base (NOTIFICATION_NAME)
     {
-        this.Skill = skill;
+        Skill = skill;
     }
 
-    public override List<PyDataType> GetElements()
+    public override List <PyDataType> GetElements ()
     {
-        return new List<PyDataType>()
+        return new List <PyDataType>
         {
-            this.Skill.ID,
+            Skill.ID,
             0
         };
     }

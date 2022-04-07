@@ -14,34 +14,34 @@ public static class IntIntDictionary
     /// </summary>
     /// <param name="reader">The MySqlDataReader to read the data from</param>
     /// <returns></returns>
-    public static PyDictionary<PyInteger,PyInteger> FromMySqlDataReader(MySqlDataReader reader)
+    public static PyDictionary <PyInteger, PyInteger> FromMySqlDataReader (MySqlDataReader reader)
     {
-        PyDictionary<PyInteger,PyInteger> result = new PyDictionary<PyInteger,PyInteger>();
+        PyDictionary <PyInteger, PyInteger> result = new PyDictionary <PyInteger, PyInteger> ();
 
-        Type keyType = reader.GetFieldType(0);
-        Type valType = reader.GetFieldType(1);
-            
-        if (keyType != typeof(long) && keyType != typeof(int) && keyType != typeof(short) &&
-            keyType != typeof(byte) && keyType != typeof(ulong) && keyType != typeof(uint) &&
-            keyType != typeof(ushort) && keyType != typeof(sbyte) && valType != typeof(long) &&
-            valType != typeof(int) && valType != typeof(short) && valType != typeof(byte) &&
-            valType != typeof(ulong) && valType != typeof(uint) && valType != typeof(ushort) &&
-            valType != typeof(sbyte))
-            throw new InvalidDataException("Expected two fields of type int");
-            
-        while (reader.Read() == true)
+        Type keyType = reader.GetFieldType (0);
+        Type valType = reader.GetFieldType (1);
+
+        if (keyType != typeof (long) && keyType != typeof (int) && keyType != typeof (short) &&
+            keyType != typeof (byte) && keyType != typeof (ulong) && keyType != typeof (uint) &&
+            keyType != typeof (ushort) && keyType != typeof (sbyte) && valType != typeof (long) &&
+            valType != typeof (int) && valType != typeof (short) && valType != typeof (byte) &&
+            valType != typeof (ulong) && valType != typeof (uint) && valType != typeof (ushort) &&
+            valType != typeof (sbyte))
+            throw new InvalidDataException ("Expected two fields of type int");
+
+        while (reader.Read ())
         {
             // ignore null keys
-            if (reader.IsDBNull(0) == true)
+            if (reader.IsDBNull (0))
                 continue;
 
-            int key = reader.GetInt32(0);
+            int key = reader.GetInt32 (0);
             int val = 0;
 
-            if (reader.IsDBNull(1) == false)
-                val = reader.GetInt32(1);
+            if (reader.IsDBNull (1) == false)
+                val = reader.GetInt32 (1);
 
-            result[key] = val;
+            result [key] = val;
         }
 
         return result;

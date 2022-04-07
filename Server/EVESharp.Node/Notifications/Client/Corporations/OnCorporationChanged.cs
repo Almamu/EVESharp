@@ -8,19 +8,19 @@ namespace EVESharp.Node.Notifications.Client.Corporations;
 public class OnCorporationChanged : ClientNotification
 {
     private const string NOTIFICATION_NAME = "OnCorporationChanged";
-        
+
     public int          CorporationID { get; init; }
     public PyDictionary Changes       { get; init; }
-        
-    public OnCorporationChanged(int corporationID) : base(NOTIFICATION_NAME)
+
+    public OnCorporationChanged (int corporationID) : base (NOTIFICATION_NAME)
     {
-        this.CorporationID = corporationID;
-        this.Changes       = new PyDictionary();
+        CorporationID = corporationID;
+        Changes       = new PyDictionary ();
     }
 
-    public OnCorporationChanged AddChange(string changeName, PyDataType oldValue, PyDataType newValue)
+    public OnCorporationChanged AddChange (string changeName, PyDataType oldValue, PyDataType newValue)
     {
-        this.Changes[changeName] = new PyTuple(2)
+        Changes [changeName] = new PyTuple (2)
         {
             [0] = oldValue,
             [1] = newValue
@@ -29,12 +29,12 @@ public class OnCorporationChanged : ClientNotification
         return this;
     }
 
-    public override List<PyDataType> GetElements()
+    public override List <PyDataType> GetElements ()
     {
-        return new List<PyDataType>()
+        return new List <PyDataType>
         {
-            this.CorporationID,
-            this.Changes
+            CorporationID,
+            Changes
         };
     }
 }

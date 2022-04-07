@@ -14,15 +14,13 @@ public static class PyPackedRowList
     /// </summary>
     /// <param name="connection">The connection used</param>
     /// <param name="reader"></param>
-    public static PyList<PyPackedRow> FromMySqlDataReader(IDatabaseConnection connection, MySqlDataReader reader)
+    public static PyList <PyPackedRow> FromMySqlDataReader (IDatabaseConnection connection, MySqlDataReader reader)
     {
-        DBRowDescriptor     descriptor = DBRowDescriptor.FromMySqlReader(connection, reader);
-        PyList<PyPackedRow> list       = new PyList<PyPackedRow>();
+        DBRowDescriptor      descriptor = DBRowDescriptor.FromMySqlReader (connection, reader);
+        PyList <PyPackedRow> list       = new PyList <PyPackedRow> ();
 
-        while (reader.Read() == true)
-        {
-            list.Add(PyPackedRow.FromMySqlDataReader(reader, descriptor));
-        }
+        while (reader.Read ())
+            list.Add (PyPackedRow.FromMySqlDataReader (reader, descriptor));
 
         return list;
     }

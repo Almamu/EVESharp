@@ -33,5 +33,5 @@ public enum FieldType
 
     Bytes = 0x80,
     Str   = 0x81,
-    WStr  = 0x82,
+    WStr  = 0x82
 }

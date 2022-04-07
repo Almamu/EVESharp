@@ -1,8 +1,4 @@
-using System;
 using System.IO;
-using MySql.Data.MySqlClient;
-using EVESharp.PythonTypes.Types.Collections;
-using EVESharp.PythonTypes.Types.Primitives;
 
 namespace EVESharp.PythonTypes.Types.Database;
 
@@ -17,7 +13,7 @@ public static class Utils
     /// <param name="type">The type to get the bit-size for</param>
     /// <returns>The amount of bits the type uses</returns>
     /// <exception cref="InvalidDataException">If an unknown type was specified</exception>
-    public static int GetTypeBits(FieldType type)
+    public static int GetTypeBits (FieldType type)
     {
         switch (type)
         {
@@ -51,7 +47,7 @@ public static class Utils
                 return 0;
 
             default:
-                throw new InvalidDataException("Invalid FieldType");
+                throw new InvalidDataException ("Invalid FieldType");
         }
     }
 }

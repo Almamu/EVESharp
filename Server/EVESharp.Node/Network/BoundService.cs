@@ -1,6 +1,5 @@
 using EVESharp.EVE.Services;
 using EVESharp.EVE.Sessions;
-using EVESharp.Node.Services;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Primitives;
 
@@ -25,14 +24,14 @@ public abstract class BoundService : Service
     /// </summary>
     public int ObjectID { get; init; }
     public BoundServiceManager BoundServiceManager { get; }
-        
+
     /// <summary>
     /// Creates a base bound service to no client to be used as a normal service
     /// </summary>
     /// <param name="manager">The bound service manager used by this service</param>
-    public BoundService(BoundServiceManager manager)
+    public BoundService (BoundServiceManager manager)
     {
-        this.BoundServiceManager = manager;
+        BoundServiceManager = manager;
     }
 
     /// <summary>
@@ -40,12 +39,12 @@ public abstract class BoundService : Service
     /// </summary>
     /// <param name="manager">The bound service manager used by this service</param>
     /// <param name="objectID">The object it's bound to</param>
-    public BoundService(BoundServiceManager manager, int objectID) : this(manager)
+    public BoundService (BoundServiceManager manager, int objectID) : this (manager)
     {
-        this.ObjectID = objectID;
-        
-        this.BoundID     = manager.BindService(this);
-        this.BoundString = manager.BuildBoundServiceString(this.BoundID);
+        ObjectID = objectID;
+
+        BoundID     = manager.BindService (this);
+        BoundString = manager.BuildBoundServiceString (BoundID);
     }
 
     /// <summary>
@@ -55,9 +54,9 @@ public abstract class BoundService : Service
     /// <param name="zero">Allways zero?</param>
     /// <param name="call"></param>
     /// <returns>The node where this object is stored</returns>
-    public PyInteger MachoResolveObject(PyDataType bindParams, PyInteger zero, CallInformation call)
+    public PyInteger MachoResolveObject (PyDataType bindParams, PyInteger zero, CallInformation call)
     {
-        return this.MachoResolveObject(bindParams, call);
+        return this.MachoResolveObject (bindParams, call);
     }
 
     /// <summary>
@@ -66,8 +65,8 @@ public abstract class BoundService : Service
     /// <param name="parameters">The parameters used for this resolve call</param>
     /// <param name="call">The caller information</param>
     /// <returns>The node where this object is stored</returns>
-    protected abstract long MachoResolveObject(ServiceBindParams parameters, CallInformation call);
-        
+    protected abstract long MachoResolveObject (ServiceBindParams parameters, CallInformation call);
+
     /// <summary>
     /// Binds a new object of this type with the given objectData to provide a stateful
     /// interface to itself
@@ -79,9 +78,9 @@ public abstract class BoundService : Service
     /// <param name="callInfo">The information on the call</param>
     /// <param name="call">The call object with extra information</param>
     /// <returns></returns>
-    public PyDataType MachoBindObject(PyDataType bindParams, PyDataType callInfo, CallInformation call)
+    public PyDataType MachoBindObject (PyDataType bindParams, PyDataType callInfo, CallInformation call)
     {
-        return this.MachoBindObject((ServiceBindParams) bindParams, callInfo, call);
+        return this.MachoBindObject ((ServiceBindParams) bindParams, callInfo, call);
     }
 
     /// <summary>
@@ -95,25 +94,25 @@ public abstract class BoundService : Service
     /// <param name="callInfo">The information on the call</param>
     /// <param name="call">The call object with extra information</param>
     /// <returns></returns>
-    protected abstract PyDataType MachoBindObject(ServiceBindParams bindParams, PyDataType callInfo, CallInformation call);
+    protected abstract PyDataType MachoBindObject (ServiceBindParams bindParams, PyDataType callInfo, CallInformation call);
 
     /// <summary>
     /// Checks if the caller has enough permissions to use this bound service
     /// </summary>
     /// <param name="session">The session to check against</param>
     /// <returns></returns>
-    public abstract bool IsClientAllowedToCall(Session session);
+    public abstract bool IsClientAllowedToCall (Session session);
 
     /// <summary>
     /// Handles when a client frees this object (like when it's disconnected)
     /// </summary>
     /// <param name="session">Session of the user that free'd us</param>
-    public abstract void ClientHasReleasedThisObject(Session session);
+    public abstract void ClientHasReleasedThisObject (Session session);
 
     /// <summary>
     /// Applies the given session change to the service's cached sessions (if found)
     /// </summary>
     /// <param name="characterID">The character to update sessions for</param>
     /// <param name="changes">The delta of changes</param>
-    public abstract void ApplySessionChange(int characterID, PyDictionary<PyString, PyTuple> changes);
+    public abstract void ApplySessionChange (int characterID, PyDictionary <PyString, PyTuple> changes);
 }

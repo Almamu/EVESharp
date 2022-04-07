@@ -27,14 +27,13 @@ using System.Collections.Generic;
 using EVESharp.Common.Database;
 using EVESharp.EVE.Packets.Complex;
 using EVESharp.Node.Inventory;
-using EVESharp.Node.StaticData.Inventory;
-using MySql.Data.MySqlClient;
-using EVESharp.Node.Inventory.Items;
 using EVESharp.Node.Server.Shared;
+using EVESharp.Node.StaticData.Inventory;
 using EVESharp.PythonTypes.Marshal;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Database;
 using EVESharp.PythonTypes.Types.Primitives;
+using MySql.Data.MySqlClient;
 using Serilog;
 
 namespace EVESharp.Node;
@@ -61,7 +60,7 @@ public class CacheStorage : DatabaseAccessor
     /// <summary>
     /// BulkData fetched by the EVE client on login
     /// </summary>
-    public static readonly Dictionary<string, string> LoginCacheTable = new Dictionary<string, string>()
+    public static readonly Dictionary <string, string> LoginCacheTable = new Dictionary <string, string>
     {
         {"config.BulkData.ramactivities", "config.BulkData.ramactivities"},
         {"config.BulkData.billtypes", "config.BulkData.billtypes"},
@@ -100,13 +99,13 @@ public class CacheStorage : DatabaseAccessor
         {"config.BulkData.units", "config.BulkData.units"},
         {"config.BulkData.dgmeffects", "config.BulkData.dgmeffects"},
         {"config.BulkData.types", "config.BulkData.types"},
-        {"config.BulkData.invmetatypes", "config.BulkData.invmetatypes"},
+        {"config.BulkData.invmetatypes", "config.BulkData.invmetatypes"}
     };
 
     /// <summary>
     /// Queries to populate the BulkData for the EVE Client on login
     /// </summary>
-    public static readonly string[] LoginCacheQueries =
+    public static readonly string [] LoginCacheQueries =
     {
         "SELECT activityID, activityName, iconNo, description, published FROM ramActivities",
         "SELECT billTypeID, billTypeName, description FROM billTypes",
@@ -155,7 +154,7 @@ public class CacheStorage : DatabaseAccessor
     /// <summary>
     /// How the BulkData for the EVE Client should be stored
     /// </summary>
-    public static readonly CacheObjectType[] LoginCacheTypes =
+    public static readonly CacheObjectType [] LoginCacheTypes =
     {
         CacheObjectType.TupleSet,
         CacheObjectType.TupleSet,
@@ -200,7 +199,7 @@ public class CacheStorage : DatabaseAccessor
     /// <summary>
     /// Cache entries for the character creation information
     /// </summary>
-    public static readonly Dictionary<string, string> CreateCharacterCacheTable = new Dictionary<string, string>()
+    public static readonly Dictionary <string, string> CreateCharacterCacheTable = new Dictionary <string, string>
     {
         {"charCreationInfo.bl_eyebrows", "eyebrows"},
         {"charCreationInfo.bl_eyes", "eyes"},
@@ -224,7 +223,7 @@ public class CacheStorage : DatabaseAccessor
     /// <summary>
     /// Queries to populate the character creation cache
     /// </summary>
-    public static readonly string[] CreateCharacterCacheQueries = new string[]
+    public static readonly string [] CreateCharacterCacheQueries =
     {
         "SELECT bloodlineID, gender, eyebrowsID, npc FROM chrBLEyebrows",
         "SELECT bloodlineID, gender, eyesID, npc FROM chrBLEyes",
@@ -248,7 +247,7 @@ public class CacheStorage : DatabaseAccessor
     /// <summary>
     /// How the character creation caches will be stored
     /// </summary>
-    public static readonly CacheObjectType[] CreateCharacterCacheTypes = new CacheObjectType[]
+    public static readonly CacheObjectType [] CreateCharacterCacheTypes =
     {
         CacheObjectType.Rowset,
         CacheObjectType.Rowset,
@@ -269,7 +268,7 @@ public class CacheStorage : DatabaseAccessor
         CacheObjectType.Rowset
     };
 
-    public static readonly Dictionary<string, string> CharacterAppearanceCacheTable = new Dictionary<string, string>()
+    public static readonly Dictionary <string, string> CharacterAppearanceCacheTable = new Dictionary <string, string>
     {
         {"charCreationInfo.eyebrows", "eyebrows"},
         {"charCreationInfo.eyes", "eyes"},
@@ -285,7 +284,7 @@ public class CacheStorage : DatabaseAccessor
         {"charCreationInfo.lipsticks", "lipsticks"}
     };
 
-    public static readonly string[] CharacterAppearanceCacheQueries = new string[]
+    public static readonly string [] CharacterAppearanceCacheQueries =
     {
         "SELECT eyebrowsID, eyebrowsName FROM chrEyebrows",
         "SELECT eyesID, eyesName FROM chrEyes",
@@ -301,7 +300,7 @@ public class CacheStorage : DatabaseAccessor
         "SELECT lipstickID, lipstickName FROM chrLipsticks"
     };
 
-    public static readonly CacheObjectType[] CharacterAppearanceCacheTypes = new CacheObjectType[]
+    public static readonly CacheObjectType [] CharacterAppearanceCacheTypes =
     {
         CacheObjectType.Rowset,
         CacheObjectType.Rowset,
@@ -320,22 +319,28 @@ public class CacheStorage : DatabaseAccessor
     /// <summary>
     /// Main storage of cache data for ease of querying
     /// </summary>
-    private readonly Dictionary<string, PyDataType> mCacheData = new Dictionary<string, PyDataType>();
+    private readonly Dictionary <string, PyDataType> mCacheData = new Dictionary <string, PyDataType> ();
     /// <summary>
     /// Hints for the EVE Client so it knows when to request cache data or use the one already stored
     /// </summary>
-    private readonly PyDictionary mCacheHints = new PyDictionary();
-        
+    private readonly PyDictionary mCacheHints = new PyDictionary ();
+
     private IMachoNet MachoNet { get; }
     private ILogger   Log      { get; }
+
+    public CacheStorage (IMachoNet machoNet, DatabaseConnection db, ILogger logger) : base (db)
+    {
+        Log      = logger;
+        MachoNet = machoNet;
+    }
 
     /// <summary>
     /// Checks if a cached object already exists
     /// </summary>
     /// <param name="name">The object to look for</param>
-    public bool Exists(string name)
+    public bool Exists (string name)
     {
-        return this.mCacheData.ContainsKey(name);
+        return this.mCacheData.ContainsKey (name);
     }
 
     /// <summary>
@@ -343,9 +348,9 @@ public class CacheStorage : DatabaseAccessor
     /// </summary>
     /// <param name="service">The service that generates the cache</param>
     /// <param name="method">The method that generates the cache</param>
-    public bool Exists(string service, string method)
+    public bool Exists (string service, string method)
     {
-        return this.mCacheData.ContainsKey($"{service}::{method}");
+        return this.mCacheData.ContainsKey ($"{service}::{method}");
     }
 
     /// <summary>
@@ -355,9 +360,9 @@ public class CacheStorage : DatabaseAccessor
     /// <param name="service">The service that generates the cache</param>
     /// <param name="method">The method that generates the cache</param>
     /// <returns>A Python type representing the cache identifier</returns>
-    private PyDataType GenerateObjectIDForCall(string service, string method)
+    private PyDataType GenerateObjectIDForCall (string service, string method)
     {
-        return new PyTuple(3)
+        return new PyTuple (3)
         {
             [0] = "Method Call",
             [1] = "server",
@@ -373,9 +378,9 @@ public class CacheStorage : DatabaseAccessor
     /// Gets the specified cached content if it exists. This content is ready to be sent to the EVE Client
     /// </summary>
     /// <param name="name">The cached content to look for</param>
-    public PyDataType Get(string name)
+    public PyDataType Get (string name)
     {
-        return this.mCacheData[name];
+        return this.mCacheData [name];
     }
 
     /// <summary>
@@ -383,9 +388,9 @@ public class CacheStorage : DatabaseAccessor
     /// </summary>
     /// <param name="service">The service that generated the cached content</param>
     /// <param name="method">The method that generated the cached content</param>
-    public PyDataType Get(string service, string method)
+    public PyDataType Get (string service, string method)
     {
-        return this.mCacheData[$"{service}::{method}"];
+        return this.mCacheData [$"{service}::{method}"];
     }
 
     /// <summary>
@@ -394,16 +399,16 @@ public class CacheStorage : DatabaseAccessor
     /// <param name="name">The name to identify the cached data by</param>
     /// <param name="data">The data to cache</param>
     /// <param name="timestamp">The timestamp of when the cached object was created</param>
-    public void Store(string name, PyDataType data, long timestamp)
+    public void Store (string name, PyDataType data, long timestamp)
     {
-        byte[] marshalData = Marshal.ToByteArray(data);
-            
-        CachedHint hint = CachedHint.FromPyObject(name, marshalData, timestamp, this.MachoNet.NodeID);
+        byte [] marshalData = Marshal.ToByteArray (data);
+
+        CachedHint hint = CachedHint.FromPyObject (name, marshalData, timestamp, MachoNet.NodeID);
 
         // save cache hint
-        this.mCacheHints[name] = hint;
+        this.mCacheHints [name] = hint;
         // save cache object
-        this.mCacheData[name] = CachedObject.FromCacheHint(hint, marshalData);
+        this.mCacheData [name] = CachedObject.FromCacheHint (hint, marshalData);
     }
 
     /// <summary>
@@ -413,18 +418,18 @@ public class CacheStorage : DatabaseAccessor
     /// <param name="method">The method that generated the cached object</param>
     /// <param name="data">The data to cache</param>
     /// <param name="timestamp">The timestamp of when the cached object was generated</param>
-    public void StoreCall(string service, string method, PyDataType data, long timestamp)
+    public void StoreCall (string service, string method, PyDataType data, long timestamp)
     {
-        byte[] marshalData = Marshal.ToByteArray(data);
-            
+        byte [] marshalData = Marshal.ToByteArray (data);
+
         string     index    = $"{service}::{method}";
-        PyDataType objectID = this.GenerateObjectIDForCall(service, method);
-        CachedHint hint     = CachedHint.FromPyObject(objectID, marshalData, timestamp, this.MachoNet.NodeID);
-            
+        PyDataType objectID = this.GenerateObjectIDForCall (service, method);
+        CachedHint hint     = CachedHint.FromPyObject (objectID, marshalData, timestamp, MachoNet.NodeID);
+
         // save cache hint
-        this.mCacheHints[index] = hint;
+        this.mCacheHints [index] = hint;
         // save cache object
-        this.mCacheData[index] = CachedObject.FromCacheHint(hint, marshalData);
+        this.mCacheData [index] = CachedObject.FromCacheHint (hint, marshalData);
     }
 
     /// <summary>
@@ -432,12 +437,12 @@ public class CacheStorage : DatabaseAccessor
     /// </summary>
     /// <param name="list">The list of hints to look for, key is used as cached object name and value is used as name for the client</param>
     /// <returns>A dictionary ready for the EVE Client with the hints for the cached objects</returns>
-    public PyDictionary<PyString, PyDataType> GetHints(Dictionary<string, string> list)
+    public PyDictionary <PyString, PyDataType> GetHints (Dictionary <string, string> list)
     {
-        PyDictionary<PyString, PyDataType> hints = new PyDictionary<PyString, PyDataType>();
+        PyDictionary <PyString, PyDataType> hints = new PyDictionary <PyString, PyDataType> ();
 
         foreach ((string key, string value) in list)
-            hints[value] = this.GetHint(key);
+            hints [value] = this.GetHint (key);
 
         return hints;
     }
@@ -447,9 +452,9 @@ public class CacheStorage : DatabaseAccessor
     /// </summary>
     /// <param name="name">The cached object to get the hint for</param>
     /// <returns>An object ready for the EVE Client with the hint information for the cached object</returns>
-    public PyDataType GetHint(string name)
+    public PyDataType GetHint (string name)
     {
-        return this.mCacheHints[name];
+        return this.mCacheHints [name];
     }
 
     /// <summary>
@@ -459,9 +464,9 @@ public class CacheStorage : DatabaseAccessor
     /// <param name="service">The service that generated the cached object</param>
     /// <param name="method">The method that generated the cached object</param>
     /// <returns>An object ready for the EVE Client with the hing information for the cached object</returns>
-    public PyDataType GetHint(string service, string method)
+    public PyDataType GetHint (string service, string method)
     {
-        return this.mCacheHints[$"{service}::{method}"];
+        return this.mCacheHints [$"{service}::{method}"];
     }
 
     /// <summary>
@@ -470,22 +475,22 @@ public class CacheStorage : DatabaseAccessor
     /// <param name="query">The query to run</param>
     /// <param name="type">The type of object to store</param>
     /// <returns>The final object to be used by the cache</returns>
-    private PyDataType QueryCacheObject(string query, CacheObjectType type)
+    private PyDataType QueryCacheObject (string query, CacheObjectType type)
     {
         MySqlConnection connection = null;
-        MySqlDataReader reader     = Database.Select(ref connection, query);
+        MySqlDataReader reader     = Database.Select (ref connection, query);
 
-        using(connection)
+        using (connection)
         using (reader)
         {
             return type switch
             {
-                CacheObjectType.Rowset        => Rowset.FromMySqlDataReader(Database, reader),
-                CacheObjectType.CRowset       => CRowset.FromMySqlDataReader(Database, reader),
-                CacheObjectType.TupleSet      => TupleSet.FromMySqlDataReader(Database, reader),
-                CacheObjectType.PackedRowList => PyPackedRowList.FromMySqlDataReader(Database, reader),
-                CacheObjectType.IntIntDict    => IntIntDictionary.FromMySqlDataReader(reader),
-                CacheObjectType.IndexRowset   => IndexRowset.FromMySqlDataReader(Database, reader, 0),
+                CacheObjectType.Rowset        => Rowset.FromMySqlDataReader (Database, reader),
+                CacheObjectType.CRowset       => CRowset.FromMySqlDataReader (Database, reader),
+                CacheObjectType.TupleSet      => TupleSet.FromMySqlDataReader (Database, reader),
+                CacheObjectType.PackedRowList => PyPackedRowList.FromMySqlDataReader (Database, reader),
+                CacheObjectType.IntIntDict    => IntIntDictionary.FromMySqlDataReader (reader),
+                CacheObjectType.IndexRowset   => IndexRowset.FromMySqlDataReader (Database, reader, 0),
                 _                             => null
             };
         }
@@ -497,25 +502,26 @@ public class CacheStorage : DatabaseAccessor
     /// <param name="name">The name of the cached object</param>
     /// <param name="query">The SQL query to run</param>
     /// <param name="type">How the result will be stored inside the cache</param>
-    public void Load(string name, string query, CacheObjectType type)
+    public void Load (string name, string query, CacheObjectType type)
     {
-        Log.Debug($"Loading cache data for {name} of type {type}");
+        Log.Debug ($"Loading cache data for {name} of type {type}");
 
         // if the cache already exists do not generate it again!
-        if (this.Exists(name) == true)
+        if (this.Exists (name))
             return;
 
         try
         {
-            Store(name, this.QueryCacheObject(query, type), DateTime.UtcNow.ToFileTimeUtc());
+            this.Store (name, this.QueryCacheObject (query, type), DateTime.UtcNow.ToFileTimeUtc ());
         }
         catch (Exception)
         {
-            Log.Error($"Cannot generate cache data for {name}");
+            Log.Error ($"Cannot generate cache data for {name}");
+
             throw;
         }
     }
-        
+
     /// <summary>
     /// Runs the given <paramref name="query"/> and stores the result as a cached object identified by the <paramref name="service"/> and
     /// <paramref name="method"/> that generated it
@@ -524,21 +530,22 @@ public class CacheStorage : DatabaseAccessor
     /// <param name="method">The method that generated the cached object</param>
     /// <param name="query">The SQL query to run</param>
     /// <param name="type">How the result will be stored inside the cache</param>
-    public void Load(string service, string method, string query, CacheObjectType type)
+    public void Load (string service, string method, string query, CacheObjectType type)
     {
-        Log.Debug($"Loading cache data for {service}::{method} of type {type}");
+        Log.Debug ($"Loading cache data for {service}::{method} of type {type}");
 
         // if the cache already exists do not generate it again!
-        if (this.Exists(service, method) == true)
+        if (this.Exists (service, method))
             return;
-            
+
         try
         {
-            StoreCall(service, method, this.QueryCacheObject(query, type), DateTime.UtcNow.ToFileTimeUtc());
+            this.StoreCall (service, method, this.QueryCacheObject (query, type), DateTime.UtcNow.ToFileTimeUtc ());
         }
         catch (Exception)
         {
-            Log.Error($"Cannot generate cache data for {service}::{method}");
+            Log.Error ($"Cannot generate cache data for {service}::{method}");
+
             throw;
         }
     }
@@ -553,23 +560,17 @@ public class CacheStorage : DatabaseAccessor
     /// <param name="queries">The queries to run</param>
     /// <param name="types">How to store each of the cached objects</param>
     /// <exception cref="ArgumentOutOfRangeException">The number of queries, names and types do not match</exception>
-    public void Load(Dictionary<string, string> names, string[] queries, CacheObjectType[] types)
+    public void Load (Dictionary <string, string> names, string [] queries, CacheObjectType [] types)
     {
         if (names.Count != queries.Length || names.Count != types.Length)
-            throw new ArgumentOutOfRangeException("names", "names, queries and types do not match in size");
+            throw new ArgumentOutOfRangeException ("names", "names, queries and types do not match in size");
 
         int i = 0;
 
         foreach ((string key, string _) in names)
         {
-            Load(key, queries[i], types[i]);
+            this.Load (key, queries [i], types [i]);
             i++;
         }
-    }
-
-    public CacheStorage(IMachoNet machoNet, DatabaseConnection db, ILogger logger) : base(db)
-    {
-        this.Log      = logger;
-        this.MachoNet = machoNet;
     }
 }

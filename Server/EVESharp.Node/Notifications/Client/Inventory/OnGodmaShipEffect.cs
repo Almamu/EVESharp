@@ -9,13 +9,13 @@ public class OnGodmaShipEffect : ClientNotification
 {
     public GodmaShipEffect EffectInfo { get; init; }
 
-    public OnGodmaShipEffect(GodmaShipEffect effectInfo) : base("OnGodmaShipEffect")
+    public OnGodmaShipEffect (GodmaShipEffect effectInfo) : base ("OnGodmaShipEffect")
     {
-        this.EffectInfo = effectInfo;
+        EffectInfo = effectInfo;
     }
 
-    public override List<PyDataType> GetElements()
+    public override List <PyDataType> GetElements ()
     {
-        return this.EffectInfo;
+        return EffectInfo;
     }
 }

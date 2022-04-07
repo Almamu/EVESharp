@@ -7,5 +7,5 @@ public enum RunMode
 {
     Single = 0,
     Server = 1,
-    Proxy = 2
+    Proxy  = 2
 }

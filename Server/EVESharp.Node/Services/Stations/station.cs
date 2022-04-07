@@ -11,18 +11,19 @@ public class station : Service
 {
     public override AccessLevel AccessLevel => AccessLevel.None;
     private         ItemFactory ItemFactory { get; }
-    public station(ItemFactory itemFactory) 
+
+    public station (ItemFactory itemFactory)
     {
-        this.ItemFactory = itemFactory;
+        ItemFactory = itemFactory;
     }
 
-    public PyTuple GetStationItemBits(CallInformation call)
+    public PyTuple GetStationItemBits (CallInformation call)
     {
-        int stationID = call.Session.EnsureCharacterIsInStation();
+        int stationID = call.Session.EnsureCharacterIsInStation ();
 
-        Station station = this.ItemFactory.GetStaticStation(stationID);
+        Station station = ItemFactory.GetStaticStation (stationID);
 
-        return new PyTuple(5)
+        return new PyTuple (5)
         {
             [0] = station.StationType.HangarGraphicID,
             [1] = station.OwnerID,
@@ -32,18 +33,17 @@ public class station : Service
         };
     }
 
-    public PyList<PyTuple> GetGuests(CallInformation call)
+    public PyList <PyTuple> GetGuests (CallInformation call)
     {
-        int stationID = call.Session.EnsureCharacterIsInStation();
+        int stationID = call.Session.EnsureCharacterIsInStation ();
 
-        Station         station = this.ItemFactory.GetStaticStation(stationID);
-        PyList<PyTuple> result  = new PyList<PyTuple>();
-            
+        Station          station = ItemFactory.GetStaticStation (stationID);
+        PyList <PyTuple> result  = new PyList <PyTuple> ();
+
         foreach ((int _, Character character) in station.Guests)
-        {
             // TODO: UPDATE WHEN FACTION WARS ARE SUPPORTED
-            result.Add(
-                new PyTuple(4)
+            result.Add (
+                new PyTuple (4)
                 {
                     [0] = character.ID,
                     [1] = character.CorporationID,
@@ -51,7 +51,6 @@ public class station : Service
                     [3] = 0 // facWarID
                 }
             );
-        }
 
         return result;
     }

@@ -8,21 +8,21 @@ namespace EVESharp.Node.Notifications.Client.Corporations;
 public class OnCorporationVoteCaseChanged : ClientNotification
 {
     private const string NOTIFICATION_NAME = "OnCorporationVoteCaseChanged";
-        
-    public  int                            CorporationID { get; init; }
-    public  int                            VoteCaseID    { get; init; }
-    private PyDictionary<PyString,PyTuple> Changes       { get; init; }
-        
-    public OnCorporationVoteCaseChanged(int corporationID, int voteCaseID) : base(NOTIFICATION_NAME)
+
+    public  int                              CorporationID { get; init; }
+    public  int                              VoteCaseID    { get; init; }
+    private PyDictionary <PyString, PyTuple> Changes       { get; }
+
+    public OnCorporationVoteCaseChanged (int corporationID, int voteCaseID) : base (NOTIFICATION_NAME)
     {
-        this.CorporationID = corporationID;
-        this.VoteCaseID    = voteCaseID;
-        this.Changes       = new PyDictionary<PyString, PyTuple>();
+        CorporationID = corporationID;
+        VoteCaseID    = voteCaseID;
+        Changes       = new PyDictionary <PyString, PyTuple> ();
     }
 
-    public OnCorporationVoteCaseChanged AddValue(string columnName, PyDataType oldValue, PyDataType newValue)
+    public OnCorporationVoteCaseChanged AddValue (string columnName, PyDataType oldValue, PyDataType newValue)
     {
-        this.Changes[columnName] = new PyTuple(2)
+        Changes [columnName] = new PyTuple (2)
         {
             [0] = oldValue,
             [1] = newValue
@@ -31,13 +31,13 @@ public class OnCorporationVoteCaseChanged : ClientNotification
         return this;
     }
 
-    public override List<PyDataType> GetElements()
+    public override List <PyDataType> GetElements ()
     {
-        return new List<PyDataType>()
+        return new List <PyDataType>
         {
-            this.CorporationID,
-            this.VoteCaseID,
-            this.Changes
+            CorporationID,
+            VoteCaseID,
+            Changes
         };
     }
 }

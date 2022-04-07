@@ -1,45 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
-using System.Linq;
-using System.Net;
-using System.Net.Http;
-using System.Net.Http.Json;
-using System.Text.Json;
-using System.Text.Json.Nodes;
-using System.Text.Json.Serialization;
-using System.Text.RegularExpressions;
-using System.Threading.Tasks;
-using EVESharp.Common.Constants;
-using EVESharp.Common.Database;
-using EVESharp.EVE;
-using EVESharp.EVE.Packets;
-using EVESharp.EVE.Packets.Exceptions;
-using EVESharp.EVE.Sessions;
-using EVESharp.Node.Accounts;
-using EVESharp.Node.Configuration;
-using EVESharp.Node.Database;
-using EVESharp.Node.Exceptions.contractMgr;
-using EVESharp.Node.Inventory;
-using EVESharp.Node.Inventory.Items;
-using EVESharp.Node.Inventory.Items.Types;
-using EVESharp.Node.Notifications.Client.Inventory;
-using EVESharp.Node.Notifications.Nodes.Corporations;
-using EVESharp.Node.Notifications.Nodes.Corps;
-using EVESharp.Node.Services.Corporations;
-using EVESharp.Node.Services;
-using EVESharp.PythonTypes;
-using EVESharp.PythonTypes.Types.Collections;
-using EVESharp.PythonTypes.Types.Network;
-using EVESharp.PythonTypes.Types.Primitives;
-using Org.BouncyCastle.Bcpg;
-using AccountDB = EVESharp.Database.AccountDB;
-using Character = EVESharp.Node.Inventory.Items.Types.Character;
-using Container = SimpleInjector.Container;
-using SessionManager = EVESharp.Node.Sessions.SessionManager;
-
-namespace EVESharp.Node.Network;
+﻿namespace EVESharp.Node.Network;
 
 /*public class MachoNet
 {

@@ -1,6 +1,6 @@
 ﻿namespace EVESharp.Node.Services.Contracts;
 
-public enum ContractStatus : int
+public enum ContractStatus
 {
     /// <summary>
     /// WARNING: THE EXPIRED STATUS DOES NOT REALLY EXISTS, BUT IS USED INTERNALLY BY THE SERVER CODE

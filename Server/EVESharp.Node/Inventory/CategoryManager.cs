@@ -30,18 +30,18 @@ namespace EVESharp.Node.Inventory;
 
 public class CategoryManager
 {
-    private ItemDB                    ItemDB { get; }
-    private Dictionary<int, Category> mCategories = null;
+    private Dictionary <int, Category> mCategories;
+    private ItemDB                     ItemDB { get; }
 
-    public void Load()
+    public Category this [int id] => this.mCategories [id];
+
+    public CategoryManager (ItemDB itemDB)
     {
-        this.mCategories = this.ItemDB.LoadItemCategories();
+        ItemDB = itemDB;
     }
 
-    public Category this[int id] { get => this.mCategories[id]; }
-
-    public CategoryManager(ItemDB itemDB)
+    public void Load ()
     {
-        this.ItemDB = itemDB;
+        this.mCategories = ItemDB.LoadItemCategories ();
     }
 }

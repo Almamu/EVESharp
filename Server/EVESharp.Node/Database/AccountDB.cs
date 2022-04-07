@@ -24,8 +24,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Security.Cryptography;
-using System.Text;
 using EVESharp.Common.Database;
 using MySql.Data.MySqlClient;
 
@@ -33,15 +31,15 @@ namespace EVESharp.Node.Database;
 
 public class AccountDB : DatabaseAccessor
 {
-    public bool AccountExists(string username)
+    public AccountDB (DatabaseConnection db) : base (db) { }
+
+    public bool AccountExists (string username)
     {
         MySqlConnection connection = null;
-        MySqlDataReader reader = Database.Select(ref connection,
-                                                 "SELECT COUNT(accountID) FROM account WHERE accountName = @username",
-                                                 new Dictionary<string, object>()
-                                                 {
-                                                     {"@username", username}
-                                                 }
+        MySqlDataReader reader = Database.Select (
+            ref connection,
+            "SELECT COUNT(accountID) FROM account WHERE accountName = @username",
+            new Dictionary <string, object> {{"@username", username}}
         );
 
         using (connection)
@@ -50,24 +48,25 @@ public class AccountDB : DatabaseAccessor
             //If any errors getting account count from database return account exists.
             if (reader.FieldCount != 1)
                 return true;
-                
-            if (reader.Read() == false)
+
+            if (reader.Read () == false)
                 return true;
-                
-            return (reader.GetInt64(0) > 0);
+
+            return reader.GetInt64 (0) > 0;
         }
     }
 
-    public bool LoginPlayer(string username, string password, ref int accountid, ref bool banned, ref ulong role)
+    public bool LoginPlayer (string username, string password, ref int accountid, ref bool banned, ref ulong role)
     {
         MySqlConnection connection = null;
-        MySqlDataReader reader = Database.Select(ref connection,
-                                                 "SELECT accountID, password, banned, role FROM account WHERE accountName LIKE @username AND password LIKE SHA1(@password)",
-                                                 new Dictionary<string, object>()
-                                                 {
-                                                     {"@username", username},
-                                                     {"@password", password}
-                                                 }
+        MySqlDataReader reader = Database.Select (
+            ref connection,
+            "SELECT accountID, password, banned, role FROM account WHERE accountName LIKE @username AND password LIKE SHA1(@password)",
+            new Dictionary <string, object>
+            {
+                {"@username", username},
+                {"@password", password}
+            }
         );
 
         using (connection)
@@ -77,23 +76,23 @@ public class AccountDB : DatabaseAccessor
                 if (reader.FieldCount == 0)
                     return false;
 
-                if (reader.Read() == false)
+                if (reader.Read () == false)
                     return false;
 
-                accountid = reader.GetInt32(0);
-                banned    = reader.GetBoolean(2);
-                role      = reader.GetUInt64(3);
+                accountid = reader.GetInt32 (0);
+                banned    = reader.GetBoolean (2);
+                role      = reader.GetUInt64 (3);
 
                 return true;
             }
         }
     }
 
-    public void CreateAccount(string name, string password, ulong role)
+    public void CreateAccount (string name, string password, ulong role)
     {
-        Database.PrepareQuery(
+        Database.PrepareQuery (
             "INSERT INTO account(accountID, accountName, password, role, online, banned)VALUES(NULL, @accountName, SHA1(@password), @role, 0, 0)",
-            new Dictionary<string, object>()
+            new Dictionary <string, object>
             {
                 {"@accountName", name},
                 {"@password", password},
@@ -102,28 +101,22 @@ public class AccountDB : DatabaseAccessor
         );
     }
 
-    public int GetAccountIDFromCharacterID(int characterID)
+    public int GetAccountIDFromCharacterID (int characterID)
     {
         MySqlConnection connection = null;
-        MySqlDataReader reader = Database.Select(ref connection,
-                                                 "SELECT accountID FROM chrInformation WHERE characterID = @characterID AND online = 1",
-                                                 new Dictionary<string, object>()
-                                                 {
-                                                     {"@characterID", characterID}
-                                                 }
+        MySqlDataReader reader = Database.Select (
+            ref connection,
+            "SELECT accountID FROM chrInformation WHERE characterID = @characterID AND online = 1",
+            new Dictionary <string, object> {{"@characterID", characterID}}
         );
-            
+
         using (connection)
         using (reader)
         {
-            if (reader.Read() == false)
-                throw new ArgumentOutOfRangeException(nameof(characterID), "Unknown characterID or characterID not online");
+            if (reader.Read () == false)
+                throw new ArgumentOutOfRangeException (nameof (characterID), "Unknown characterID or characterID not online");
 
-            return reader.GetInt32(0);
+            return reader.GetInt32 (0);
         }
-    }
-
-    public AccountDB(DatabaseConnection db) : base(db)
-    {
     }
 }

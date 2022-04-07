@@ -1,5 +1,3 @@
-using System;
-using System.IO;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Primitives;
 using MySql.Data.MySqlClient;
@@ -16,15 +14,15 @@ public class RowList
     /// <param name="connection">The connection used</param>
     /// <param name="reader">The MySqlDataReader to read the data from</param>
     /// <returns></returns>
-    public static PyDataType FromMySqlDataReader(IDatabaseConnection connection, MySqlDataReader reader)
+    public static PyDataType FromMySqlDataReader (IDatabaseConnection connection, MySqlDataReader reader)
     {
-        connection.GetDatabaseHeaders(reader, out PyList<PyString> headers, out FieldType[] fieldTypes);
-        PyList lines = new PyList();
-            
-        while (reader.Read() == true)
-            lines.Add(Row.FromMySqlDataReader(reader, headers, fieldTypes));
+        connection.GetDatabaseHeaders (reader, out PyList <PyString> headers, out FieldType [] fieldTypes);
+        PyList lines = new PyList ();
 
-        return new PyTuple(2)
+        while (reader.Read ())
+            lines.Add (Row.FromMySqlDataReader (reader, headers, fieldTypes));
+
+        return new PyTuple (2)
         {
             [0] = headers,
             [1] = lines

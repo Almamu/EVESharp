@@ -4,8 +4,5 @@ namespace EVESharp.Node.Exceptions.corpRegistry;
 
 public class AllianceNameInvalidMinLength : UserError
 {
-    public AllianceNameInvalidMinLength() : base("AllianceNameInvalidMinLength")
-    {
-            
-    }
+    public AllianceNameInvalidMinLength () : base ("AllianceNameInvalidMinLength") { }
 }

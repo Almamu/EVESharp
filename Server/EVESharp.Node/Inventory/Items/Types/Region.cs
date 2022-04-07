@@ -23,7 +23,6 @@
 */
 
 using System;
-using EVESharp.Node.Inventory.Items;
 using EVESharp.Node.StaticData.Inventory;
 
 namespace EVESharp.Node.Inventory.Items.Types;
@@ -31,33 +30,34 @@ namespace EVESharp.Node.Inventory.Items.Types;
 public class Region : ItemInventory
 {
     public Information.Region RegionInformation { get; }
-    public Region(Information.Region region) : base(region.Information)
-    {
-        this.RegionInformation = region;
-    }
-        
-    public double XMin      => this.RegionInformation.XMin;
-    public double YMin      => this.RegionInformation.YMin;
-    public double ZMin      => this.RegionInformation.ZMin;
-    public double XMax      => this.RegionInformation.XMax;
-    public double YMax      => this.RegionInformation.YMax;
-    public double ZMax      => this.RegionInformation.ZMax;
-    public int?   FactionID => this.RegionInformation.FactionID;
-    public double Radius    => this.RegionInformation.Radius;
 
-    protected override void LoadContents(Flags ignoreFlags = Flags.None)
+    public double XMin      => RegionInformation.XMin;
+    public double YMin      => RegionInformation.YMin;
+    public double ZMin      => RegionInformation.ZMin;
+    public double XMax      => RegionInformation.XMax;
+    public double YMax      => RegionInformation.YMax;
+    public double ZMax      => RegionInformation.ZMax;
+    public int?   FactionID => RegionInformation.FactionID;
+    public double Radius    => RegionInformation.Radius;
+
+    public Region (Information.Region region) : base (region.Information)
     {
-        throw new NotImplementedException();
+        RegionInformation = region;
     }
 
-    public override void Persist()
+    protected override void LoadContents (Flags ignoreFlags = Flags.None)
+    {
+        throw new NotImplementedException ();
+    }
+
+    public override void Persist ()
     {
         // regions cannot be updated
-        throw new NotImplementedException();
+        throw new NotImplementedException ();
     }
 
-    public override void Destroy()
+    public override void Destroy ()
     {
-        throw new NotImplementedException("Stations cannot be destroyed as they're regarded as static data!");
+        throw new NotImplementedException ("Stations cannot be destroyed as they're regarded as static data!");
     }
 }

@@ -4,7 +4,5 @@ namespace EVESharp.Node.Exceptions.jumpCloneSvc;
 
 public class JumpCantDestroyNonLocalClone : UserError
 {
-    public JumpCantDestroyNonLocalClone() : base("JumpCantDestroyNonLocalClone")
-    {
-    }
+    public JumpCantDestroyNonLocalClone () : base ("JumpCantDestroyNonLocalClone") { }
 }

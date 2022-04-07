@@ -4,7 +4,5 @@ namespace EVESharp.Node.Exceptions.corpStationMgr;
 
 public class MedicalYouAlreadyHaveACloneContractAtThatStation : UserError
 {
-    public MedicalYouAlreadyHaveACloneContractAtThatStation() : base("MedicalYouAlreadyHaveACloneContractAtThatStation")
-    {
-    }
+    public MedicalYouAlreadyHaveACloneContractAtThatStation () : base ("MedicalYouAlreadyHaveACloneContractAtThatStation") { }
 }

@@ -9,11 +9,11 @@ public class Database
     public string Hostname { get; private set; }
     public string Name     { get; private set; }
 
-    public void Load(KeyDataCollection section)
+    public void Load (KeyDataCollection section)
     {
-        this.Username = section["username"];
-        this.Password = section["password"];
-        this.Hostname = section["hostname"];
-        this.Name     = section["name"];
+        Username = section ["username"];
+        Password = section ["password"];
+        Hostname = section ["hostname"];
+        Name     = section ["name"];
     }
 }

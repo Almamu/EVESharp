@@ -2,10 +2,10 @@
 
 public class Relationship
 {
-    public int RelationshipID;
-    public int ParentID;
-    public int ParentTypeID;
-    public int ParentLevel;
     public int ChildID;
     public int ChildTypeID;
+    public int ParentID;
+    public int ParentLevel;
+    public int ParentTypeID;
+    public int RelationshipID;
 }

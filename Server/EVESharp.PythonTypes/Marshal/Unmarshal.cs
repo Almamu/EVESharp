@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -14,17 +13,30 @@ namespace EVESharp.PythonTypes.Marshal;
 
 public class Unmarshal
 {
+    protected int           mCurrentSavedIndex;
+    protected BinaryReader  mReader;
+    protected int []        mSavedElementsMap;
+    protected PyDataType [] mSavedList;
+
+    private Stream mStream;
+
+    protected Unmarshal (Stream stream)
+    {
+        this.mStream = stream;
+        this.mReader = new BinaryReader (this.mStream);
+    }
+
     /// <summary>
     /// Extracts the PyDataType off the given byte array
     /// </summary>
     /// <param name="data">Byte array to extract the PyDataType from</param>
     /// <param name="expectHeader">Whether a marshal header is expected or not</param>
     /// <returns>The unmarshaled PyDataType</returns>
-    public static PyDataType ReadFromByteArray(byte[] data, bool expectHeader = true)
+    public static PyDataType ReadFromByteArray (byte [] data, bool expectHeader = true)
     {
-        MemoryStream stream = new MemoryStream(data);
+        MemoryStream stream = new MemoryStream (data);
 
-        return ReadFromStream(stream, expectHeader);
+        return ReadFromStream (stream, expectHeader);
     }
 
     /// <summary>
@@ -33,48 +45,36 @@ public class Unmarshal
     /// <param name="stream">Stream to extract the PyDataType from</param>
     /// <param name="expectHeader">Whether a marshal header is expected or not</param>
     /// <returns>The unmarshaled PyDataType</returns>
-    public static PyDataType ReadFromStream(Stream stream, bool expectHeader = true)
+    public static PyDataType ReadFromStream (Stream stream, bool expectHeader = true)
     {
-        Unmarshal processor = new Unmarshal(stream);
+        Unmarshal processor = new Unmarshal (stream);
 
-        return processor.Process(expectHeader);
-    }
-
-    private   Stream       mStream;
-    protected BinaryReader mReader;
-    protected PyDataType[] mSavedList;
-    protected int          mCurrentSavedIndex;
-    protected int[]        mSavedElementsMap;
-
-    protected Unmarshal(Stream stream)
-    {
-        this.mStream = stream;
-        this.mReader = new BinaryReader(this.mStream);
+        return processor.Process (expectHeader);
     }
 
     /// <summary>
     /// Processes the marshal buffer header and decompress the data if needed
     /// </summary>
     /// <exception cref="InvalidDataException">If the header is not a correct marshal header</exception>
-    protected virtual void ProcessPacketHeader()
+    protected virtual void ProcessPacketHeader ()
     {
         // check the header and ensure we use the correct stream to read from it
-        byte header = (byte) this.mStream.ReadByte();
+        byte header = (byte) this.mStream.ReadByte ();
 
         if (header == Specification.ZLIB_HEADER)
         {
-            this.mStream.Seek(-1, SeekOrigin.Current);
-            this.mStream = ZlibHelper.DecompressStream(this.mStream);
-            header       = (byte) this.mStream.ReadByte();
+            this.mStream.Seek (-1, SeekOrigin.Current);
+            this.mStream = ZlibHelper.DecompressStream (this.mStream);
+            header       = (byte) this.mStream.ReadByte ();
         }
 
         if (header != Specification.MARSHAL_HEADER)
-            throw new InvalidDataException($"Expected Marshal header, but got {header}");
+            throw new InvalidDataException ($"Expected Marshal header, but got {header}");
 
         // create the reader
-        this.mReader = new BinaryReader(this.mStream);
+        this.mReader = new BinaryReader (this.mStream);
         // read the save list information
-        int saveCount = this.mReader.ReadInt32();
+        int saveCount = this.mReader.ReadInt32 ();
 
         // check if there are elements in the save list and parse the list-map first
         if (saveCount > 0)
@@ -82,11 +82,11 @@ public class Unmarshal
             // compressed streams cannot be seek'd so ensure that the stream is decompressed first
             if (this.mStream is ZInputStream)
             {
-                MemoryStream newStream = new MemoryStream();
-                this.mStream.CopyTo(newStream);
+                MemoryStream newStream = new MemoryStream ();
+                this.mStream.CopyTo (newStream);
                 this.mStream = newStream;
-                this.mReader = new BinaryReader(this.mStream);
-                this.mStream.Seek(0, SeekOrigin.Begin);
+                this.mReader = new BinaryReader (this.mStream);
+                this.mStream.Seek (0, SeekOrigin.Begin);
             }
 
             // reserve space for the savelist map and the actual elements in the save list
@@ -95,32 +95,32 @@ public class Unmarshal
 
             long currentPosition = this.mStream.Position;
             // read at the end of the stream to get the correct index to element mapping
-            this.mStream.Seek(-saveCount * 4, SeekOrigin.End);
+            this.mStream.Seek (-saveCount * 4, SeekOrigin.End);
 
             for (int i = 0; i < saveCount; i++)
-                this.mSavedElementsMap[i] = this.mReader.ReadInt32();
+                this.mSavedElementsMap [i] = this.mReader.ReadInt32 ();
 
             // go back to where the stream was after reading the amount of saved elements
-            this.mStream.Seek(currentPosition, SeekOrigin.Begin);
+            this.mStream.Seek (currentPosition, SeekOrigin.Begin);
         }
     }
 
-    protected virtual PyDataType ProcessOpcode(Opcode opcode)
+    protected virtual PyDataType ProcessOpcode (Opcode opcode)
     {
         // perform decode
         switch (opcode)
         {
-            case Opcode.IntegerVar:       return ProcessIntegerVar();
-            case Opcode.None:             return ProcessNone();
-            case Opcode.Buffer:           return ProcessBuffer();
-            case Opcode.Token:            return ProcessToken();
-            case Opcode.SubStruct:        return ProcessSubStruct();
-            case Opcode.SubStream:        return ProcessSubStream();
-            case Opcode.ChecksumedStream: return ProcessChecksumedStream();
-            case Opcode.Dictionary:       return ProcessDictionary();
-            case Opcode.PackedRow:        return ProcessPackedRow();
-            case Opcode.ObjectData:       return ProcessObjectData();
-                
+            case Opcode.IntegerVar:       return this.ProcessIntegerVar ();
+            case Opcode.None:             return this.ProcessNone ();
+            case Opcode.Buffer:           return this.ProcessBuffer ();
+            case Opcode.Token:            return this.ProcessToken ();
+            case Opcode.SubStruct:        return this.ProcessSubStruct ();
+            case Opcode.SubStream:        return this.ProcessSubStream ();
+            case Opcode.ChecksumedStream: return this.ProcessChecksumedStream ();
+            case Opcode.Dictionary:       return this.ProcessDictionary ();
+            case Opcode.PackedRow:        return this.ProcessPackedRow ();
+            case Opcode.ObjectData:       return this.ProcessObjectData ();
+
             case Opcode.IntegerLongLong:
             case Opcode.IntegerSignedShort:
             case Opcode.IntegerByte:
@@ -128,15 +128,15 @@ public class Unmarshal
             case Opcode.IntegerOne:
             case Opcode.IntegerZero:
             case Opcode.IntegerLong:
-                return ProcessInteger(opcode);
-                
+                return this.ProcessInteger (opcode);
+
             case Opcode.BoolFalse:
             case Opcode.BoolTrue:
-                return ProcessBool(opcode);
+                return this.ProcessBool (opcode);
 
             case Opcode.Real:
             case Opcode.RealZero:
-                return ProcessDecimal(opcode);
+                return this.ProcessDecimal (opcode);
 
             case Opcode.StringEmpty:
             case Opcode.StringChar:
@@ -147,73 +147,74 @@ public class Unmarshal
             case Opcode.WStringUCS2:
             case Opcode.WStringUCS2Char:
             case Opcode.WStringUTF8:
-                return ProcessString(opcode);
-                
+                return this.ProcessString (opcode);
+
             case Opcode.Tuple:
             case Opcode.TupleOne:
             case Opcode.TupleTwo:
             case Opcode.TupleEmpty:
-                return ProcessTuple(opcode);
+                return this.ProcessTuple (opcode);
 
             case Opcode.List:
             case Opcode.ListOne:
             case Opcode.ListEmpty:
-                return ProcessList(opcode);
+                return this.ProcessList (opcode);
 
             case Opcode.ObjectType1:
             case Opcode.ObjectType2:
-                return ProcessObject(opcode);
+                return this.ProcessObject (opcode);
 
             case Opcode.SavedStreamElement:
-                return this.mSavedList[
-                    this.mSavedElementsMap[this.mReader.ReadSizeEx() - 1] - 1
+                return this.mSavedList [
+                    this.mSavedElementsMap [this.mReader.ReadSizeEx () - 1] - 1
                 ];
-                
+
             default:
-                throw new InvalidDataException($"Unknown python type for opcode {opcode:X}");
+                throw new InvalidDataException ($"Unknown python type for opcode {opcode:X}");
         }
     }
-        
+
     /// <summary>
     /// Processes a python type from the current position of mStream
     /// </summary>
     /// <param name="expectHeader">Whether the unmarshaler should check for a Marshal header or not</param>
     /// <returns></returns>
     /// <exception cref="InvalidDataException">If any error was found during the unmarshal process</exception>
-    protected virtual PyDataType Process(bool expectHeader = true)
+    protected virtual PyDataType Process (bool expectHeader = true)
     {
         if (expectHeader)
-            this.ProcessPacketHeader();
+            this.ProcessPacketHeader ();
 
         // read the type's opcode from the stream
-        byte   header = this.mReader.ReadByte();
+        byte   header = this.mReader.ReadByte ();
         Opcode opcode = (Opcode) (header & Specification.OPCODE_MASK);
         bool   save   = (header & Specification.SAVE_MASK) == Specification.SAVE_MASK;
 
-        PyDataType data = this.ProcessOpcode(opcode);
+        PyDataType data = this.ProcessOpcode (opcode);
 
         // check if the element has to be saved
-        if (save == true)
-            this.mSavedList[this.mSavedElementsMap[this.mCurrentSavedIndex++] - 1] = data;
+        if (save)
+            this.mSavedList [this.mSavedElementsMap [this.mCurrentSavedIndex++] - 1] = data;
 
         return data;
     }
 
-    protected virtual PyDataType ProcessIntegerVar()
+    protected virtual PyDataType ProcessIntegerVar ()
     {
         // read the size
-        uint length = mReader.ReadSizeEx();
+        uint length = this.mReader.ReadSizeEx ();
+
         // emergency fallback, for longer integers read it as a PyBuffer
         if (length > 8)
-            return new PyBuffer(mReader.ReadBytes((int) length));
+            return new PyBuffer (this.mReader.ReadBytes ((int) length));
 
-        BigInteger value = new BigInteger(mReader.ReadBytes((int) length));
+        BigInteger value = new BigInteger (this.mReader.ReadBytes ((int) length));
 
-        if (length < 2) return new PyInteger((byte) value);
-        if (length < 3) return new PyInteger((short) value);
-        if (length < 5) return new PyInteger((int) value);
-            
-        return new PyInteger((long) value);
+        if (length < 2) return new PyInteger ((byte) value);
+        if (length < 3) return new PyInteger ((short) value);
+        if (length < 5) return new PyInteger ((int) value);
+
+        return new PyInteger ((long) value);
     }
 
     /// <summary>
@@ -231,26 +232,26 @@ public class Unmarshal
     /// <param name="opcode">Type of object to parse</param>
     /// <returns>The decoded python type</returns>
     /// <exception cref="InvalidDataException">If any error was detected in the data</exception>
-    protected virtual PyDataType ProcessInteger(Opcode opcode)
+    protected virtual PyDataType ProcessInteger (Opcode opcode)
     {
         switch (opcode)
         {
             case Opcode.IntegerLongLong:
-                return new PyInteger(mReader.ReadInt64());
+                return new PyInteger (this.mReader.ReadInt64 ());
             case Opcode.IntegerLong:
-                return new PyInteger(mReader.ReadInt32());
+                return new PyInteger (this.mReader.ReadInt32 ());
             case Opcode.IntegerSignedShort:
-                return new PyInteger(mReader.ReadInt16());
+                return new PyInteger (this.mReader.ReadInt16 ());
             case Opcode.IntegerByte:
-                return new PyInteger(mReader.ReadSByte());
+                return new PyInteger (this.mReader.ReadSByte ());
             case Opcode.IntegerOne:
-                return new PyInteger((sbyte) 1);
+                return new PyInteger ((sbyte) 1);
             case Opcode.IntegerZero:
-                return new PyInteger((sbyte) 0);
+                return new PyInteger ((sbyte) 0);
             case Opcode.IntegerMinusOne:
-                return new PyInteger((sbyte) -1);
+                return new PyInteger ((sbyte) -1);
             default:
-                throw new InvalidDataException($"Trying to parse a {opcode} as Integer");
+                throw new InvalidDataException ($"Trying to parse a {opcode} as Integer");
         }
     }
 
@@ -262,7 +263,7 @@ public class Unmarshal
     /// </summary>
     /// <returns>The decoded python type</returns>
     /// <exception cref="InvalidDataException">If any error was found in the data</exception>
-    protected virtual PyDataType ProcessNone()
+    protected virtual PyDataType ProcessNone ()
     {
         return null;
     }
@@ -275,11 +276,11 @@ public class Unmarshal
     /// </summary>
     /// <returns>The decoded python type</returns>
     /// <exception cref="InvalidDataException">If any error was found in the data</exception>
-    protected virtual PyDataType ProcessBuffer()
+    protected virtual PyDataType ProcessBuffer ()
     {
-        uint length = this.mReader.ReadSizeEx();
+        uint length = this.mReader.ReadSizeEx ();
 
-        return new PyBuffer(this.mReader.ReadBytes((int) length));
+        return new PyBuffer (this.mReader.ReadBytes ((int) length));
     }
 
     /// <summary>
@@ -292,16 +293,16 @@ public class Unmarshal
     /// <param name="opcode">Type of object to parse</param>
     /// <returns>The decoded python type</returns>
     /// <exception cref="InvalidDataException">If any error was found in the data</exception>
-    protected virtual PyDataType ProcessBool(Opcode opcode)
+    protected virtual PyDataType ProcessBool (Opcode opcode)
     {
         switch (opcode)
         {
             case Opcode.BoolTrue:
-                return new PyBool(true);
+                return new PyBool (true);
             case Opcode.BoolFalse:
-                return new PyBool(false);
+                return new PyBool (false);
             default:
-                throw new InvalidDataException($"Trying to parse a {opcode} as Boolean");
+                throw new InvalidDataException ($"Trying to parse a {opcode} as Boolean");
         }
     }
 
@@ -315,16 +316,16 @@ public class Unmarshal
     /// <param name="opcode">Type of object to parse</param>
     /// <returns>The decoded python type</returns>
     /// <exception cref="InvalidDataException">If any error was found in the data</exception>
-    protected virtual PyDataType ProcessDecimal(Opcode opcode)
+    protected virtual PyDataType ProcessDecimal (Opcode opcode)
     {
         switch (opcode)
         {
             case Opcode.RealZero:
-                return new PyDecimal(0.0);
+                return new PyDecimal (0.0);
             case Opcode.Real:
-                return new PyDecimal(this.mReader.ReadDouble());
+                return new PyDecimal (this.mReader.ReadDouble ());
             default:
-                throw new InvalidDataException($"Trying to parse a {opcode} as Decimal");
+                throw new InvalidDataException ($"Trying to parse a {opcode} as Decimal");
         }
     }
 
@@ -336,13 +337,9 @@ public class Unmarshal
     /// </summary>
     /// <returns>The decoded python type</returns>
     /// <exception cref="InvalidDataException">If any error was found in the data</exception>
-    protected virtual PyDataType ProcessToken()
+    protected virtual PyDataType ProcessToken ()
     {
-        return new PyToken(
-            Encoding.ASCII.GetString(
-                this.mReader.ReadBytes(this.mReader.ReadByte())
-            )
-        );
+        return new PyToken (Encoding.ASCII.GetString (this.mReader.ReadBytes (this.mReader.ReadByte ())));
     }
 
     /// <summary>
@@ -362,53 +359,31 @@ public class Unmarshal
     /// <param name="opcode">Type of object to parse</param>
     /// <returns>The decoded python type</returns>
     /// <exception cref="InvalidDataException">If any error was found in the data</exception>
-    protected virtual PyDataType ProcessString(Opcode opcode)
+    protected virtual PyDataType ProcessString (Opcode opcode)
     {
         switch (opcode)
         {
             case Opcode.StringEmpty:
-                return new PyString("");
+                return new PyString ("");
             case Opcode.StringChar:
-                return new PyString(new string(this.mReader.ReadChar(), 1));
+                return new PyString (new string (this.mReader.ReadChar (), 1));
             case Opcode.StringShort:
-                return new PyString(
-                    Encoding.ASCII.GetString(
-                        this.mReader.ReadBytes(this.mReader.ReadByte())
-                    )
-                );
+                return new PyString (Encoding.ASCII.GetString (this.mReader.ReadBytes (this.mReader.ReadByte ())));
             case Opcode.StringTable:
-                return new PyString(
-                    (StringTableUtils.EntryList) (this.mReader.ReadByte() - 1)
-                );
+                return new PyString ((StringTableUtils.EntryList) (this.mReader.ReadByte () - 1));
             case Opcode.StringLong:
-                return new PyString(
-                    Encoding.ASCII.GetString(
-                        this.mReader.ReadBytes((int) this.mReader.ReadSizeEx())
-                    )
-                );
+                return new PyString (Encoding.ASCII.GetString (this.mReader.ReadBytes ((int) this.mReader.ReadSizeEx ())));
             case Opcode.WStringEmpty:
-                return new PyString("", true);
+                return new PyString ("", true);
             case Opcode.WStringUCS2:
-                return new PyString(
-                    Encoding.Unicode.GetString(
-                        this.mReader.ReadBytes((int) this.mReader.ReadSizeEx())
-                    )
-                );
+                return new PyString (Encoding.Unicode.GetString (this.mReader.ReadBytes ((int) this.mReader.ReadSizeEx ())));
             case Opcode.WStringUCS2Char:
-                return new PyString(
-                    Encoding.Unicode.GetString(
-                        this.mReader.ReadBytes(2)
-                    )
-                );
+                return new PyString (Encoding.Unicode.GetString (this.mReader.ReadBytes (2)));
             case Opcode.WStringUTF8:
-                return new PyString(
-                    Encoding.UTF8.GetString(
-                        this.mReader.ReadBytes((int) this.mReader.ReadSizeEx())
-                    ), true
-                );
+                return new PyString (Encoding.UTF8.GetString (this.mReader.ReadBytes ((int) this.mReader.ReadSizeEx ())), true);
 
             default:
-                throw new InvalidDataException($"Trying to parse a {opcode} as String");
+                throw new InvalidDataException ($"Trying to parse a {opcode} as String");
         }
     }
 
@@ -424,35 +399,32 @@ public class Unmarshal
     /// <param name="opcode">Type of object to parse</param>
     /// <returns>The decoded python type</returns>
     /// <exception cref="InvalidDataException">If any error was found in the data</exception>
-    protected virtual PyDataType ProcessTuple(Opcode opcode)
+    protected virtual PyDataType ProcessTuple (Opcode opcode)
     {
         switch (opcode)
         {
             case Opcode.Tuple:
             {
-                uint    count = this.mReader.ReadSizeEx();
-                PyTuple tuple = new PyTuple((int) count);
+                uint    count = this.mReader.ReadSizeEx ();
+                PyTuple tuple = new PyTuple ((int) count);
 
                 for (int i = 0; i < count; i++)
-                    tuple[i] = this.Process(false);
+                    tuple [i] = this.Process (false);
 
                 return tuple;
             }
             case Opcode.TupleOne:
-                return new PyTuple(1)
-                {
-                    [0] = this.Process(false)
-                };
+                return new PyTuple (1) {[0] = this.Process (false)};
             case Opcode.TupleTwo:
-                return new PyTuple(2)
+                return new PyTuple (2)
                 {
-                    [0] = this.Process(false),
-                    [1] = this.Process(false)
+                    [0] = this.Process (false),
+                    [1] = this.Process (false)
                 };
             case Opcode.TupleEmpty:
-                return new PyTuple(0);
+                return new PyTuple (0);
             default:
-                throw new InvalidDataException($"Trying to parse a {opcode} as Tuple");
+                throw new InvalidDataException ($"Trying to parse a {opcode} as Tuple");
         }
     }
 
@@ -466,29 +438,26 @@ public class Unmarshal
     /// <param name="opcode">Type of object to parse</param>
     /// <returns>The decoded python type</returns>
     /// <exception cref="InvalidDataException">If any error was found in the data</exception>
-    protected virtual PyDataType ProcessList(Opcode opcode)
+    protected virtual PyDataType ProcessList (Opcode opcode)
     {
         switch (opcode)
         {
             case Opcode.ListEmpty:
-                return new PyList();
+                return new PyList ();
             case Opcode.ListOne:
-                return new PyList(1)
-                {
-                    [0] = this.Process(false)
-                };
+                return new PyList (1) {[0] = this.Process (false)};
             case Opcode.List:
             {
-                uint   count = this.mReader.ReadSizeEx();
-                PyList list  = new PyList((int) count);
+                uint   count = this.mReader.ReadSizeEx ();
+                PyList list  = new PyList ((int) count);
 
                 for (int i = 0; i < count; i++)
-                    list[i] = this.Process(false);
+                    list [i] = this.Process (false);
 
                 return list;
             }
             default:
-                throw new InvalidDataException($"Trying to parse a {opcode} as List");
+                throw new InvalidDataException ($"Trying to parse a {opcode} as List");
         }
     }
 
@@ -500,17 +469,17 @@ public class Unmarshal
     /// </summary>
     /// <returns>The decoded python type</returns>
     /// <exception cref="InvalidDataException">If any error was found in the data</exception>
-    protected virtual PyDataType ProcessDictionary()
+    protected virtual PyDataType ProcessDictionary ()
     {
-        PyDictionary dictionary = new PyDictionary();
-        uint         size       = this.mReader.ReadSizeEx();
+        PyDictionary dictionary = new PyDictionary ();
+        uint         size       = this.mReader.ReadSizeEx ();
 
         while (size-- > 0)
         {
-            PyDataType value = this.Process(false);
-            PyDataType key   = this.Process(false) ?? new PyNone();
+            PyDataType value = this.Process (false);
+            PyDataType key   = this.Process (false) ?? new PyNone ();
 
-            dictionary[key] = value;
+            dictionary [key] = value;
         }
 
         return dictionary;
@@ -524,23 +493,23 @@ public class Unmarshal
     /// </summary>
     /// <returns>The decoded python type</returns>
     /// <exception cref="InvalidDataException">If any error was found in the data</exception>
-    protected virtual PyDataType ProcessPackedRow()
+    protected virtual PyDataType ProcessPackedRow ()
     {
-        DBRowDescriptor                descriptor = this.Process(false);
-        Dictionary<string, PyDataType> data       = new Dictionary<string, PyDataType> ();
-        int                            wholeBytes = 0;
-        int                            nullBits   = 0;
-        int                            boolBits   = 0;
+        DBRowDescriptor                 descriptor = this.Process (false);
+        Dictionary <string, PyDataType> data       = new Dictionary <string, PyDataType> ();
+        int                             wholeBytes = 0;
+        int                             nullBits   = 0;
+        int                             boolBits   = 0;
 
-        List<DBRowDescriptor.Column> booleanColumns = new List<DBRowDescriptor.Column>();
-            
+        List <DBRowDescriptor.Column> booleanColumns = new List <DBRowDescriptor.Column> ();
+
         foreach (DBRowDescriptor.Column column in descriptor.Columns)
         {
-            int bitLength = Utils.GetTypeBits(column.Type);
+            int bitLength = Utils.GetTypeBits (column.Type);
 
             if (column.Type == FieldType.Bool)
             {
-                booleanColumns.Add(column);
+                booleanColumns.Add (column);
                 boolBits++;
             }
 
@@ -551,76 +520,86 @@ public class Unmarshal
         }
 
         // sort columns by the bit size and calculate other statistics for the PackedRow
-        IOrderedEnumerable<DBRowDescriptor.Column> enumerator = descriptor.Columns.OrderByDescending(c => Utils.GetTypeBits(c.Type));
+        IOrderedEnumerable <DBRowDescriptor.Column> enumerator = descriptor.Columns.OrderByDescending (c => Utils.GetTypeBits (c.Type));
 
-        MemoryStream decompressedStream = ZeroCompressionUtils.LoadZeroCompressed(this.mReader, wholeBytes + ((nullBits + boolBits) >> 3) + 1);
-        BinaryReader decompressedReader = new BinaryReader(decompressedStream);
-        byte[]       fullBuffer         = decompressedStream.GetBuffer();
+        MemoryStream decompressedStream = ZeroCompressionUtils.LoadZeroCompressed (this.mReader, wholeBytes + ((nullBits + boolBits) >> 3) + 1);
+        BinaryReader decompressedReader = new BinaryReader (decompressedStream);
+        byte []      fullBuffer         = decompressedStream.GetBuffer ();
 
         foreach (DBRowDescriptor.Column column in enumerator)
         {
-            int  bit    = (wholeBytes << 3) + descriptor.Columns.IndexOf(column) + boolBits;
-            bool isNull = (fullBuffer[bit >> 3] & (1 << (bit & 0x7))) == (1 << (bit & 0x7));
+            int  bit    = (wholeBytes << 3) + descriptor.Columns.IndexOf (column) + boolBits;
+            bool isNull = (fullBuffer [bit >> 3] & (1 << (bit & 0x7))) == 1 << (bit & 0x7);
 
             switch (column.Type)
             {
                 case FieldType.UI8:
-                    data[column.Name] = new PyInteger((long) decompressedReader.ReadUInt64());
+                    data [column.Name] = new PyInteger ((long) decompressedReader.ReadUInt64 ());
+
                     break;
                 case FieldType.I8:
                 case FieldType.CY:
                 case FieldType.FileTime:
-                    data[column.Name] = new PyInteger(decompressedReader.ReadInt64());
+                    data [column.Name] = new PyInteger (decompressedReader.ReadInt64 ());
+
                     break;
                 case FieldType.I4:
-                    data[column.Name] = new PyInteger(decompressedReader.ReadInt32());
+                    data [column.Name] = new PyInteger (decompressedReader.ReadInt32 ());
+
                     break;
                 case FieldType.UI4:
-                    data[column.Name] = new PyInteger(decompressedReader.ReadUInt32());
+                    data [column.Name] = new PyInteger (decompressedReader.ReadUInt32 ());
+
                     break;
                 case FieldType.UI2:
-                    data[column.Name] = new PyInteger(decompressedReader.ReadUInt16());
+                    data [column.Name] = new PyInteger (decompressedReader.ReadUInt16 ());
+
                     break;
                 case FieldType.I2:
-                    data[column.Name] = new PyInteger(decompressedReader.ReadInt16());
+                    data [column.Name] = new PyInteger (decompressedReader.ReadInt16 ());
+
                     break;
                 case FieldType.I1:
-                    data[column.Name] = new PyInteger(decompressedReader.ReadSByte());
+                    data [column.Name] = new PyInteger (decompressedReader.ReadSByte ());
+
                     break;
                 case FieldType.UI1:
-                    data[column.Name] = new PyInteger(decompressedReader.ReadByte());
+                    data [column.Name] = new PyInteger (decompressedReader.ReadByte ());
+
                     break;
                 case FieldType.R8:
-                    data[column.Name] = new PyDecimal(decompressedReader.ReadDouble());
+                    data [column.Name] = new PyDecimal (decompressedReader.ReadDouble ());
+
                     break;
                 case FieldType.R4:
-                    data[column.Name] = new PyDecimal(decompressedReader.ReadSingle());
+                    data [column.Name] = new PyDecimal (decompressedReader.ReadSingle ());
+
                     break;
                 case FieldType.Bool:
                 {
-                    int  boolBit = (wholeBytes << 3) + booleanColumns.IndexOf(column);
-                    bool isTrue  = (fullBuffer[boolBit >> 3] & (1 << (boolBit & 0x7))) == (1 << (boolBit & 0x7));
-                            
-                    data[column.Name] = new PyBool(isTrue);
+                    int  boolBit = (wholeBytes << 3) + booleanColumns.IndexOf (column);
+                    bool isTrue  = (fullBuffer [boolBit >> 3] & (1 << (boolBit & 0x7))) == 1 << (boolBit & 0x7);
+
+                    data [column.Name] = new PyBool (isTrue);
                 }
+
                     break;
                 case FieldType.Bytes:
                 case FieldType.WStr:
                 case FieldType.Str:
-                    data[column.Name] = this.Process(false);
+                    data [column.Name] = this.Process (false);
+
                     break;
-                    
+
                 default:
-                    throw new InvalidDataException($"Unknown column type {column.Type}");
+                    throw new InvalidDataException ($"Unknown column type {column.Type}");
             }
-                
-            if (isNull == true)
-            {
-                data[column.Name] = null;
-            }
+
+            if (isNull)
+                data [column.Name] = null;
         }
 
-        return new PyPackedRow(descriptor, data);
+        return new PyPackedRow (descriptor, data);
     }
 
     /// <summary>
@@ -631,11 +610,9 @@ public class Unmarshal
     /// </summary>
     /// <returns>The decoded python type</returns>
     /// <exception cref="InvalidDataException">If any error was found in the data</exception>
-    protected virtual PyDataType ProcessObjectData()
+    protected virtual PyDataType ProcessObjectData ()
     {
-        return new PyObjectData(
-            this.Process(false) as PyString, this.Process(false)
-        );
+        return new PyObjectData (this.Process (false) as PyString, this.Process (false));
     }
 
     /// <summary>
@@ -648,30 +625,30 @@ public class Unmarshal
     /// <param name="opcode">Type of object to parse</param>
     /// <returns>The decoded python type</returns>
     /// <exception cref="InvalidDataException">If any error was found in the data</exception>
-    protected virtual PyDataType ProcessObject(Opcode opcode)
+    protected virtual PyDataType ProcessObject (Opcode opcode)
     {
-        PyTuple      header = this.Process(false) as PyTuple;
-        PyList       list   = new PyList();
-        PyDictionary dict   = new PyDictionary();
+        PyTuple      header = this.Process (false) as PyTuple;
+        PyList       list   = new PyList ();
+        PyDictionary dict   = new PyDictionary ();
 
-        while (this.mReader.PeekChar() != Marshal.PACKED_TERMINATOR)
-            list.Add(this.Process(false));
+        while (this.mReader.PeekChar () != Marshal.PACKED_TERMINATOR)
+            list.Add (this.Process (false));
 
         // ignore packed terminator
-        this.mReader.ReadByte();
+        this.mReader.ReadByte ();
 
-        while (this.mReader.PeekChar() != Marshal.PACKED_TERMINATOR)
+        while (this.mReader.PeekChar () != Marshal.PACKED_TERMINATOR)
         {
-            PyString   key   = this.Process(false) as PyString;
-            PyDataType value = this.Process(false);
+            PyString   key   = this.Process (false) as PyString;
+            PyDataType value = this.Process (false);
 
-            dict[key] = value;
+            dict [key] = value;
         }
 
         // ignore packed terminator
-        this.mReader.ReadByte();
+        this.mReader.ReadByte ();
 
-        return new PyObject(opcode == Opcode.ObjectType2, header, list, dict);
+        return new PyObject (opcode == Opcode.ObjectType2, header, list, dict);
     }
 
     /// <summary>
@@ -682,11 +659,9 @@ public class Unmarshal
     /// </summary>
     /// <returns>The decoded python type</returns>
     /// <exception cref="InvalidDataException">If any error was found in the data</exception>
-    protected virtual PyDataType ProcessSubStruct()
+    protected virtual PyDataType ProcessSubStruct ()
     {
-        return new PySubStruct(
-            this.Process(false)
-        );
+        return new PySubStruct (this.Process (false));
     }
 
     /// <summary>
@@ -697,16 +672,16 @@ public class Unmarshal
     /// </summary>
     /// <returns>The decoded python type</returns>
     /// <exception cref="InvalidDataException">If any error was found in the data</exception>
-    protected virtual PyDataType ProcessSubStream()
+    protected virtual PyDataType ProcessSubStream ()
     {
         // get the length
-        uint   length = this.mReader.ReadSizeEx();
-        byte[] buffer = new byte[length];
+        uint    length = this.mReader.ReadSizeEx ();
+        byte [] buffer = new byte[length];
 
         // read the full substream from the buffer
-        this.mStream.Read(buffer, 0, buffer.Length);
-            
-        return new PySubStream(buffer);
+        this.mStream.Read (buffer, 0, buffer.Length);
+
+        return new PySubStream (buffer);
     }
 
     /// <summary>
@@ -717,12 +692,10 @@ public class Unmarshal
     /// </summary>
     /// <returns>The decoded python type</returns>
     /// <exception cref="InvalidDataException">If any error was found in the data</exception>
-    protected virtual PyDataType ProcessChecksumedStream()
+    protected virtual PyDataType ProcessChecksumedStream ()
     {
-        uint checksum = this.mReader.ReadUInt32();
+        uint checksum = this.mReader.ReadUInt32 ();
 
-        return new PyChecksumedStream(
-            this.Process(false)
-        );
+        return new PyChecksumedStream (this.Process (false));
     }
 }

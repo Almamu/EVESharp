@@ -1,6 +1,6 @@
 ﻿namespace EVESharp.Node.StaticData.Standings;
 
-public enum EventType : int
+public enum EventType
 {
     StandingAgentBuyOff                 = 71,
     StandingAgentDonation               = 72,
@@ -31,5 +31,5 @@ public enum EventType : int
     StandingSlashSet                    = 84,
     StandingStandingReset               = 25,
     StandingTutorialAgentInitial        = 81,
-    StandingUpdateStanding              = 45,
+    StandingUpdateStanding              = 45
 }

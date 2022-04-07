@@ -18,47 +18,44 @@ public enum SkillHistoryReason
     GMGiveSkill            = 39,
     SkillTrainingComplete2 = 53
 }
-    
+
 public class SkillDB : DatabaseAccessor
 {
     private ItemDB ItemDB { get; }
 
-    public int CreateSkill(StaticData.Inventory.Type skill, Character character)
+    public SkillDB (DatabaseConnection db, ItemDB itemDB) : base (db)
     {
-        return (int) this.ItemDB.CreateItem(
+        ItemDB = itemDB;
+    }
+
+    public int CreateSkill (Type skill, Character character)
+    {
+        return (int) ItemDB.CreateItem (
             null, skill, character, character, Flags.Skill,
             false, true, 1, null, null, null, null
         );
     }
 
-    public void CreateSkillHistoryRecord(StaticData.Inventory.Type skill, Character character, SkillHistoryReason reason, double skillPoints)
+    public void CreateSkillHistoryRecord (Type skill, Character character, SkillHistoryReason reason, double skillPoints)
     {
-        Database.PrepareQuery(
+        Database.PrepareQuery (
             "INSERT INTO chrSkillHistory(characterID, skillTypeID, eventID, logDateTime, absolutePoints)VALUES(@characterID, @skillTypeID, @eventID, @logDateTime, @skillPoints)",
-            new Dictionary<string, object>()
+            new Dictionary <string, object>
             {
                 {"@characterID", character.ID},
                 {"@skillTypeID", skill.ID},
                 {"@eventID", (int) reason},
-                {"@logDateTime", DateTime.UtcNow.ToFileTimeUtc()},
+                {"@logDateTime", DateTime.UtcNow.ToFileTimeUtc ()},
                 {"@skillPoints", skillPoints}
             }
         );
     }
 
-    public Rowset GetSkillHistory(int characterID)
+    public Rowset GetSkillHistory (int characterID)
     {
-        return Database.PrepareRowsetQuery(
+        return Database.PrepareRowsetQuery (
             "SELECT skillTypeID, eventID, logDateTime, absolutePoints FROM chrSkillHistory WHERE characterID=@characterID",
-            new Dictionary<string, object>()
-            {
-                {"@characterID", characterID}
-            }
+            new Dictionary <string, object> {{"@characterID", characterID}}
         );
-    }
-
-    public SkillDB(DatabaseConnection db, ItemDB itemDB) : base(db)
-    {
-        this.ItemDB = itemDB;
     }
 }

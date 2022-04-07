@@ -2,7 +2,5 @@
 
 public class LSCCannotAccessControl : LSCStandardException
 {
-    public LSCCannotAccessControl(string message) : base("LSCCannotAccessControl", message)
-    {
-    }
+    public LSCCannotAccessControl (string message) : base ("LSCCannotAccessControl", message) { }
 }

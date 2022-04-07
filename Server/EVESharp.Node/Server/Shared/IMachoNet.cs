@@ -1,10 +1,8 @@
-﻿using System.Net.Http;
-using EVESharp.Common.Network.Messages;
+﻿using EVESharp.Common.Network.Messages;
 using EVESharp.Node.Accounts;
 using EVESharp.Node.Database;
 using EVESharp.Node.Network;
 using EVESharp.Node.Server.Shared.Messages;
-using EVESharp.Node.Sessions;
 using EVESharp.PythonTypes.Types.Network;
 using Serilog;
 
@@ -43,7 +41,7 @@ public interface IMachoNet
     /// <summary>
     /// The message processor to use for this IMachoNet instance
     /// </summary>
-    public MessageProcessor<MachoMessage> MessageProcessor { get; set; }
+    public MessageProcessor <MachoMessage> MessageProcessor { get; set; }
     /// <summary>
     /// The transport manager in use for this IMachoNet instance
     /// </summary>
@@ -52,35 +50,47 @@ public interface IMachoNet
     /// The general database
     /// </summary>
     public GeneralDB GeneralDB { get; }
+
     /// <summary>
     /// Initializes this macho net instance
     /// </summary>
-    public void Initialize();
+    public void Initialize ();
+
     /// <summary>
     /// Queues a packet to be sent out
     /// </summary>
     /// <param name="origin">Where the packet originated (if any)</param>
     /// <param name="packet">The packet to queue</param>
-    public void QueueOutputPacket(MachoTransport origin, PyPacket packet);
+    public void QueueOutputPacket (MachoTransport origin, PyPacket packet);
+
     /// <summary>
     /// Queues a packet to be sent out
     /// </summary>
     /// <param name="packet"></param>
-    public void QueueOutputPacket(PyPacket packet) => this.QueueOutputPacket(null, packet);
+    public void QueueOutputPacket (PyPacket packet)
+    {
+        this.QueueOutputPacket (null, packet);
+    }
+
     /// <summary>
     /// Queues a packet to be processed and dispatched properly
     /// </summary>
     /// <param name="origin">Where the packet originated</param>
     /// <param name="packet">The packet to queue</param>
-    public void QueueInputPacket(MachoTransport origin, PyPacket packet);
+    public void QueueInputPacket (MachoTransport origin, PyPacket packet);
+
     /// <summary>
     /// Queues a packet to be processed and dispatched properly
     /// </summary>
     /// <param name="packet">The packet to queue</param>
-    public void QueueInputPacket(PyPacket packet) => this.QueueInputPacket(null, packet);
+    public void QueueInputPacket (PyPacket packet)
+    {
+        this.QueueInputPacket (null, packet);
+    }
+
     /// <summary>
     /// Notifies MachoNet that a transport was closed
     /// </summary>
     /// <param name="transport"></param>
-    public void OnTransportTerminated(MachoTransport transport);
+    public void OnTransportTerminated (MachoTransport transport);
 }

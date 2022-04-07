@@ -4,8 +4,5 @@ namespace EVESharp.Node.Exceptions.allianceRegistry;
 
 public class CanNotDeclareExecutorInFirstWeek : UserError
 {
-    public CanNotDeclareExecutorInFirstWeek() : base("CanNotDeclareExecutorInFirstWeek")
-    {
-            
-    }
+    public CanNotDeclareExecutorInFirstWeek () : base ("CanNotDeclareExecutorInFirstWeek") { }
 }

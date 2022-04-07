@@ -2,43 +2,33 @@ namespace EVESharp.Node.StaticData;
 
 public class Ancestry
 {
-    private int       mAncestryID;
-    private string    mName;
-    private Bloodline mBloodline;
-    private string    mDescription;
-    private int       mPerception;
-    private int       mWillpower;
-    private int       mCharisma;
-    private int       mMemory;
-    private int       mIntelligence;
-    private int       mGraphicID;
-    private string    mShortDescription;
+    public int       ID               { get; }
+    public string    Name             { get; }
+    public Bloodline Bloodline        { get; }
+    public string    Description      { get; }
+    public int       Perception       { get; }
+    public int       Willpower        { get; }
+    public int       Charisma         { get; }
+    public int       Memory           { get; }
+    public int       Intelligence     { get; }
+    public int       GraphicID        { get; }
+    public string    ShortDescription { get; }
 
-    public Ancestry(int ancestryId, string name,     Bloodline bloodline, string description,  int perception,
-                    int willpower,  int    charisma, int       memory,    int    intelligence, int graphicId, string shortDescription)
+    public Ancestry (
+        int ancestryId, string name,     Bloodline bloodline, string description,  int perception,
+        int willpower,  int    charisma, int       memory,    int    intelligence, int graphicId, string shortDescription
+    )
     {
-        mAncestryID       = ancestryId;
-        mName             = name;
-        mBloodline        = bloodline;
-        mDescription      = description;
-        mPerception       = perception;
-        mWillpower        = willpower;
-        mCharisma         = charisma;
-        mMemory           = memory;
-        mIntelligence     = intelligence;
-        mGraphicID        = graphicId;
-        mShortDescription = shortDescription;
+        ID               = ancestryId;
+        Name             = name;
+        Bloodline        = bloodline;
+        Description      = description;
+        Perception       = perception;
+        Willpower        = willpower;
+        Charisma         = charisma;
+        Memory           = memory;
+        Intelligence     = intelligence;
+        GraphicID        = graphicId;
+        ShortDescription = shortDescription;
     }
-
-    public int       ID               => mAncestryID;
-    public string    Name             => mName;
-    public Bloodline Bloodline        => mBloodline;
-    public string    Description      => mDescription;
-    public int       Perception       => mPerception;
-    public int       Willpower        => mWillpower;
-    public int       Charisma         => mCharisma;
-    public int       Memory           => mMemory;
-    public int       Intelligence     => mIntelligence;
-    public int       GraphicID        => mGraphicID;
-    public string    ShortDescription => mShortDescription;
 }

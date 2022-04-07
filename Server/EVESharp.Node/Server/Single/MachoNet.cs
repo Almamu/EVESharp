@@ -6,67 +6,79 @@ using EVESharp.Common.Network.Messages;
 using EVESharp.Node.Accounts;
 using EVESharp.Node.Configuration;
 using EVESharp.Node.Database;
-using EVESharp.Node.Inventory;
 using EVESharp.Node.Network;
-using EVESharp.Node.Server.Proxy.Messages;
 using EVESharp.Node.Server.Shared;
 using EVESharp.Node.Server.Shared.Messages;
-using EVESharp.Node.Sessions;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Network;
 using EVESharp.PythonTypes.Types.Primitives;
 using Serilog;
 using AccountDB = EVESharp.Database.AccountDB;
 using ItemDB = EVESharp.Database.ItemDB;
-using MessageProcessor = EVESharp.Node.Server.Proxy.Messages.MessageProcessor;
 
 namespace EVESharp.Node.Server.Single;
 
 public class MachoNet : IMachoNet
 {
-    private General Configuration { get; init; }
-    public long NodeID { get; set; } = Common.Constants.Network.PROXY_NODE_ID;
-    public string Address { get; set; }
-    public RunMode Mode => RunMode.Single;
-    public ushort Port => Configuration.MachoNet.Port;
-    public ILogger Log { get; }
-    public string OrchestratorURL => this.Configuration.Cluster.OrchestatorURL;
-    public LoginQueue LoginQueue { get; }
-    public MessageProcessor<MachoMessage> MessageProcessor { get; set; }
-    public TransportManager TransportManager { get; }
-    public GeneralDB GeneralDB { get; }
-    private DatabaseConnection Database { get; }
-    private MachoServerTransport Transport { get; set; }
-    private HttpClient HttpClient { get; }
+    private General              Configuration { get; }
+    private DatabaseConnection   Database      { get; }
+    private MachoServerTransport Transport     { get; set; }
+    private HttpClient           HttpClient    { get; }
 
-    public void Initialize()
+    public MachoNet (
+        GeneralDB generalDb,     HttpClient httpClient, DatabaseConnection databaseConnection, TransportManager transportManager, LoginQueue loginQueue,
+        General   configuration, ILogger    logger
+    )
     {
-        Log.Fatal("Starting MachoNet in single mode");
-        Log.Error("Starting MachoNet in single mode");
-        Log.Warning("Starting MachoNet in single mode");
-        Log.Information("Starting MachoNet in single mode");
-        Log.Verbose("Starting MachoNet in single mode");
-        Log.Debug("Starting MachoNet in single mode");
-        
-        Database.Procedure(ItemDB.CLEAR_NODE_ASSOCIATION);
-        Database.Procedure(AccountDB.RESET_CLIENT_ADDRESSES);
-
-        // start the server socket
-        this.Transport = new MachoServerTransport(this.Configuration.MachoNet.Port, this.HttpClient, this, Log.ForContext<MachoServerTransport>("Listener"));
-        this.Transport.Listen();
+        GeneralDB        = generalDb;
+        HttpClient       = httpClient;
+        Database         = databaseConnection;
+        LoginQueue       = loginQueue;
+        TransportManager = transportManager;
+        Configuration    = configuration;
+        Log              = logger;
     }
 
-    public void QueueOutputPacket(MachoTransport origin, PyPacket packet)
+    public long                            NodeID           { get; set; } = Common.Constants.Network.PROXY_NODE_ID;
+    public string                          Address          { get; set; }
+    public RunMode                         Mode             => RunMode.Single;
+    public ushort                          Port             => Configuration.MachoNet.Port;
+    public ILogger                         Log              { get; }
+    public string                          OrchestratorURL  => Configuration.Cluster.OrchestatorURL;
+    public LoginQueue                      LoginQueue       { get; }
+    public MessageProcessor <MachoMessage> MessageProcessor { get; set; }
+    public TransportManager                TransportManager { get; }
+    public GeneralDB                       GeneralDB        { get; }
+
+    public void Initialize ()
+    {
+        Log.Fatal ("Starting MachoNet in single mode");
+        Log.Error ("Starting MachoNet in single mode");
+        Log.Warning ("Starting MachoNet in single mode");
+        Log.Information ("Starting MachoNet in single mode");
+        Log.Verbose ("Starting MachoNet in single mode");
+        Log.Debug ("Starting MachoNet in single mode");
+
+        Database.Procedure (ItemDB.CLEAR_NODE_ASSOCIATION);
+        Database.Procedure (AccountDB.RESET_CLIENT_ADDRESSES);
+
+        // start the server socket
+        Transport = new MachoServerTransport (Configuration.MachoNet.Port, HttpClient, this, Log.ForContext <MachoServerTransport> ("Listener"));
+        Transport.Listen ();
+    }
+
+    public void QueueOutputPacket (MachoTransport origin, PyPacket packet)
     {
         // origin not being null means the packet came from a specific connection
         // and is a direct answer to it, so we can short-circuit through it
         // this can only happen if the destination is a client
         if (origin is not null && packet.Destination is PyAddressClient)
         {
-            origin.Socket.Send(packet);
+            origin.Socket.Send (packet);
+
             return;
         }
-        
+
         // TODO: OPTIMIZE THIS? ALL THE PACKETS ARE BEING MARSHALLED MULTIPLE TIMES
         // TODO: MAYBE IT'S BETTER TO DO IT ONCE AND SEND THE SAME DATA TO EVERYONE?
         // TODO: DO WE HAVE A REASON TO SEND A DIFFERENT PACKET TO EVERYONE?
@@ -74,152 +86,136 @@ public class MachoNet : IMachoNet
         switch (packet.Destination)
         {
             case PyAddressClient dest:
-                this.SendPacketToClient(dest.ClientID, packet);
+                this.SendPacketToClient (dest.ClientID, packet);
+
                 break;
             case PyAddressBroadcast:
-                this.SendBroadcastPacket(packet);
+                this.SendBroadcastPacket (packet);
+
                 break;
             case PyAddressNode:
             case PyAddressAny:
                 // a packet destinated to any node should be handled locally by us
-                this.QueueInputPacket(origin, packet);
+                this.QueueInputPacket (origin, packet);
+
                 break;
         }
     }
-    
-    public void QueueInputPacket(MachoTransport origin, PyPacket packet)
+
+    public void QueueInputPacket (MachoTransport origin, PyPacket packet)
     {
         // add the packet to the processor
-        this.MessageProcessor?.Enqueue(
+        MessageProcessor?.Enqueue (
             new MachoMessage
             {
-                Packet = packet,
+                Packet    = packet,
                 Transport = origin
             }
         );
     }
 
-    public void OnTransportTerminated(MachoTransport transport)
+    public void OnTransportTerminated (MachoTransport transport)
     {
         // remove the transport from the list
-        this.TransportManager.OnTransportTerminated(transport);
+        TransportManager.OnTransportTerminated (transport);
     }
 
-    private void SendPacketToClient(int clientID, PyPacket packet)
+    private void SendPacketToClient (int clientID, PyPacket packet)
     {
-        if (this.TransportManager.ClientTransports.TryGetValue(clientID, out MachoClientTransport transport) == false)
-            throw new Exception($"Cannot find a transport for client {clientID}");
+        if (TransportManager.ClientTransports.TryGetValue (clientID, out MachoClientTransport transport) == false)
+            throw new Exception ($"Cannot find a transport for client {clientID}");
 
         // send the data to the client
-        transport.Socket.Send(packet);
+        transport.Socket.Send (packet);
     }
 
     /// <summary>
     /// Reads the destination of a broadcast packet and queues it for everyone that should receive it
     /// </summary>
     /// <param name="packet">The packet to send</param>
-    private void SendBroadcastPacket(PyPacket packet)
+    private void SendBroadcastPacket (PyPacket packet)
     {
         PyAddressBroadcast dest = packet.Destination as PyAddressBroadcast;
 
         if (dest.IDType == "*multicastID")
-        {
-            this.SendMulticastBroadcastPacket(packet);
-        }
-        else if (dest.IDType.Value.Contains('&') == true)
-        {
-            this.SendComplexBroadcastPacket(packet);
-        }
+            this.SendMulticastBroadcastPacket (packet);
+        else if (dest.IDType.Value.Contains ('&'))
+            this.SendComplexBroadcastPacket (packet);
         else
-        {
-            this.SendSimpleBroadcastPacket(packet);
-        }
+            this.SendSimpleBroadcastPacket (packet);
     }
 
-    private void SendSimpleBroadcastPacket(PyPacket packet)
+    private void SendSimpleBroadcastPacket (PyPacket packet)
     {
-        PyAddressBroadcast dest = packet.Destination as PyAddressBroadcast;
-        bool isOwnerID = dest.IDType == "ownerid";
+        PyAddressBroadcast dest      = packet.Destination as PyAddressBroadcast;
+        bool               isOwnerID = dest.IDType == "ownerid";
 
-        foreach (PyInteger id in dest.IDsOfInterest.GetEnumerable<PyInteger>())
+        foreach (PyInteger id in dest.IDsOfInterest.GetEnumerable <PyInteger> ())
         {
             // loop all transports, search for the idtype given and send it
-            foreach (MachoTransport transport in this.TransportManager.TransportList)
-            {
-                if (isOwnerID == true)
+            foreach (MachoTransport transport in TransportManager.TransportList)
+                if (isOwnerID)
                 {
                     if (transport.Session.AllianceID == id ||
                         transport.Session.CharacterID == id ||
                         transport.Session.CorporationID == id)
-                        transport.Socket.Send(packet);
+                        transport.Socket.Send (packet);
                 }
-                else if (transport.Session[dest.IDType] == id)
+                else if (transport.Session [dest.IDType] == id)
                 {
-                    transport.Socket.Send(packet);
+                    transport.Socket.Send (packet);
                 }
-            }
         }
     }
 
-    private void SendComplexBroadcastPacket(PyPacket packet)
+    private void SendComplexBroadcastPacket (PyPacket packet)
     {
         PyAddressBroadcast dest = packet.Destination as PyAddressBroadcast;
-        
-        // extract the actual ids used to identify the destination
-        string[] criteria = dest.IDType.Value.Split('&');
-        // determine if any of those IDs is an ownerID so we can take it into account
-        bool[] isOwnerID = Array.ConvertAll(criteria, x => x == "ownerid");
 
-        foreach (PyTuple id in dest.IDsOfInterest.GetEnumerable<PyTuple>())
+        // extract the actual ids used to identify the destination
+        string [] criteria = dest.IDType.Value.Split ('&');
+        // determine if any of those IDs is an ownerID so we can take it into account
+        bool [] isOwnerID = Array.ConvertAll (criteria, x => x == "ownerid");
+
+        foreach (PyTuple id in dest.IDsOfInterest.GetEnumerable <PyTuple> ())
         {
             // ignore invalid ids for now
             if (id.Count != criteria.Length)
                 continue;
 
-            foreach (MachoTransport transport in this.TransportManager.TransportList)
+            foreach (MachoTransport transport in TransportManager.TransportList)
             {
                 bool found = true;
-                
+
                 // validate all the values
                 for (int i = 0; i < criteria.Length; i++)
-                {
-                    if (isOwnerID[i] == true)
+                    if (isOwnerID [i])
                     {
-                        if (transport.Session.AllianceID != id[i] &&
-                            transport.Session.CharacterID != id[i] &&
-                            transport.Session.CorporationID != id[i])
+                        if (transport.Session.AllianceID != id [i] &&
+                            transport.Session.CharacterID != id [i] &&
+                            transport.Session.CorporationID != id [i])
                         {
                             found = false;
+
                             break;
                         }
                     }
-                    else if (transport.Session[criteria[i]] != id[i])
+                    else if (transport.Session [criteria [i]] != id [i])
                     {
                         found = false;
+
                         break;
                     }
-                }
 
                 // notify the transport if all the rules matched
                 if (found)
-                    transport.Socket.Send(packet);
+                    transport.Socket.Send (packet);
             }
         }
     }
 
-    private void SendMulticastBroadcastPacket(PyPacket packet)
+    private void SendMulticastBroadcastPacket (PyPacket packet)
     {
-        throw new NotImplementedException();
-    }
-
-    public MachoNet(GeneralDB generalDb, HttpClient httpClient, DatabaseConnection databaseConnection, TransportManager transportManager, LoginQueue loginQueue, General configuration, ILogger logger)
-    {
-        this.GeneralDB = generalDb;
-        this.HttpClient = httpClient;
-        this.Database = databaseConnection;
-        this.LoginQueue = loginQueue;
-        this.TransportManager = transportManager;
-        this.Configuration = configuration;
-        this.Log = logger;
+        throw new NotImplementedException ();
     }
 }

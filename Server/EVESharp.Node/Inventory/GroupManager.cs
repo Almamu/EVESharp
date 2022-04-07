@@ -30,18 +30,18 @@ namespace EVESharp.Node.Inventory;
 
 public class GroupManager
 {
-    private ItemDB                 ItemDB { get; }
-    private Dictionary<int, Group> mGroups = null;
+    private Dictionary <int, Group> mGroups;
+    private ItemDB                  ItemDB { get; }
 
-    public void Load()
+    public Group this [int id] => this.mGroups [id];
+
+    public GroupManager (ItemDB itemDB)
     {
-        this.mGroups = this.ItemDB.LoadItemGroups();
+        ItemDB = itemDB;
     }
 
-    public Group this[int id] { get => this.mGroups[id]; }
-
-    public GroupManager(ItemDB itemDB)
+    public void Load ()
     {
-        this.ItemDB = itemDB;
+        this.mGroups = ItemDB.LoadItemGroups ();
     }
 }

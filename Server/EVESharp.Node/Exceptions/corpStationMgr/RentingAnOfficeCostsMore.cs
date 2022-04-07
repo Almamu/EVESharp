@@ -5,7 +5,5 @@ namespace EVESharp.Node.Exceptions.corpStationMgr;
 
 public class RentingAnOfficeCostsMore : UserError
 {
-    public RentingAnOfficeCostsMore(int amount) : base("RentingAnOfficeCostsMore", new PyDictionary {["amount"] = FormatISK(amount)})
-    {
-    }
+    public RentingAnOfficeCostsMore (int amount) : base ("RentingAnOfficeCostsMore", new PyDictionary {["amount"] = FormatISK (amount)}) { }
 }

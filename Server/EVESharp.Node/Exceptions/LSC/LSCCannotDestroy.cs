@@ -2,7 +2,5 @@
 
 public class LSCCannotDestroy : LSCStandardException
 {
-    public LSCCannotDestroy(string message) : base("LSCCannotDestroy", message)
-    {
-    }
+    public LSCCannotDestroy (string message) : base ("LSCCannotDestroy", message) { }
 }

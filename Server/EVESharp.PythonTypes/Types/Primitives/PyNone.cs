@@ -2,7 +2,7 @@
 
 public class PyNone : PyDataType
 {
-    public override int GetHashCode()
+    public override int GetHashCode ()
     {
         return 0;
     }

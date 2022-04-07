@@ -2,12 +2,12 @@ namespace EVESharp.Common.Network;
 
 public class SendCallbackState
 {
-    public byte[] Buffer { get; }
-    public int    Sent   { get; set; }
+    public byte [] Buffer { get; }
+    public int     Sent   { get; set; }
 
-    public SendCallbackState(byte[] buffer)
+    public SendCallbackState (byte [] buffer)
     {
-        this.Buffer = buffer;
-        this.Sent   = 0;
+        Buffer = buffer;
+        Sent   = 0;
     }
 }

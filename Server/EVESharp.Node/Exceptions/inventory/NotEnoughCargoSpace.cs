@@ -5,7 +5,11 @@ namespace EVESharp.Node.Exceptions.inventory;
 
 public class NotEnoughCargoSpace : UserError
 {
-    public NotEnoughCargoSpace(double volume, double available) : base("NotEnoughCargoSpace", new PyDictionary {["volume"] = FormatAmount(volume), ["available"] = FormatAmount(available)})
-    {
-    }
+    public NotEnoughCargoSpace (double volume, double available) : base (
+        "NotEnoughCargoSpace", new PyDictionary
+        {
+            ["volume"]    = FormatAmount (volume),
+            ["available"] = FormatAmount (available)
+        }
+    ) { }
 }

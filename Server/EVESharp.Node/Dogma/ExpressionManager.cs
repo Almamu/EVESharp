@@ -7,18 +7,18 @@ namespace EVESharp.Node.Dogma;
 
 public class ExpressionManager
 {
-    private ILogger                     Log         { get; }
-    private DogmaDB                     DB          { get; }
-    private Dictionary<int, Expression> Expressions { get; }
-        
-    public ExpressionManager(DogmaDB db, ILogger logger)
+    private ILogger                      Log         { get; }
+    private DogmaDB                      DB          { get; }
+    private Dictionary <int, Expression> Expressions { get; }
+
+    public Expression this [int index] => Expressions [index];
+
+    public ExpressionManager (DogmaDB db, ILogger logger)
     {
-        this.DB          = db;
-        this.Log         = logger;
-        this.Expressions = this.DB.LoadDogmaExpressions();
+        DB          = db;
+        Log         = logger;
+        Expressions = DB.LoadDogmaExpressions ();
 
-        Log.Debug($"Loaded {this.Expressions.Count} expressions for Dogma");
+        Log.Debug ($"Loaded {Expressions.Count} expressions for Dogma");
     }
-
-    public Expression this[int index] => this.Expressions[index];
 }

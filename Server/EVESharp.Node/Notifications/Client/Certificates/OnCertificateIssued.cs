@@ -7,19 +7,19 @@ namespace EVESharp.Node.Notifications.Client.Certificates;
 public class OnCertificateIssued : ClientNotification
 {
     private const string NOTIFICATION_NAME = "OnCertificateIssued";
-        
+
     public PyInteger CertificateID { get; }
-        
-    public OnCertificateIssued(PyInteger certificateID = null) : base(NOTIFICATION_NAME)
+
+    public OnCertificateIssued (PyInteger certificateID = null) : base (NOTIFICATION_NAME)
     {
-        this.CertificateID = certificateID;
+        CertificateID = certificateID;
     }
 
-    public override List<PyDataType> GetElements()
+    public override List <PyDataType> GetElements ()
     {
-        if (this.CertificateID == null)
-            return new List<PyDataType>();
-            
-        return new List<PyDataType>() {this.CertificateID};
+        if (CertificateID == null)
+            return new List <PyDataType> ();
+
+        return new List <PyDataType> {CertificateID};
     }
 }

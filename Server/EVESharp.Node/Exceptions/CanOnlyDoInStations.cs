@@ -4,7 +4,5 @@ namespace EVESharp.Node.Exceptions;
 
 public class CanOnlyDoInStations : UserError
 {
-    public CanOnlyDoInStations() : base("CanOnlyDoInStations")
-    {
-    }
+    public CanOnlyDoInStations () : base ("CanOnlyDoInStations") { }
 }

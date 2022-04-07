@@ -2,7 +2,6 @@
 using EVESharp.EVE.Packets.Complex;
 using EVESharp.Node.Inventory.Items;
 using EVESharp.Node.StaticData.Inventory;
-using EVESharp.Node.Inventory;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Primitives;
 
@@ -10,17 +9,16 @@ namespace EVESharp.Node.Notifications.Client.Inventory;
 
 public class OnItemChange : ClientNotification
 {
-    public ItemEntity                         Item    { get; }
-    public Dictionary<ItemChange, PyDataType> Changes { get; } = new Dictionary<ItemChange, PyDataType>();
-        
     /// <summary>
     /// The notification name
     /// </summary>
     private const string NOTIFICATION_NAME = "OnItemChange";
+    public ItemEntity                          Item    { get; }
+    public Dictionary <ItemChange, PyDataType> Changes { get; } = new Dictionary <ItemChange, PyDataType> ();
 
-    public OnItemChange(ItemEntity item) : base(NOTIFICATION_NAME)
+    public OnItemChange (ItemEntity item) : base (NOTIFICATION_NAME)
     {
-        this.Item = item;
+        Item = item;
     }
 
     /// <summary>
@@ -29,9 +27,9 @@ public class OnItemChange : ClientNotification
     /// <param name="change">The type of change that happened</param>
     /// <param name="oldValue">The old value for this change</param>
     /// <returns>Itself so methods can be chained</returns>
-    public OnItemChange AddChange(ItemChange change, PyDataType oldValue)
+    public OnItemChange AddChange (ItemChange change, PyDataType oldValue)
     {
-        this.Changes[change] = oldValue;
+        Changes [change] = oldValue;
 
         return this;
     }
@@ -40,60 +38,60 @@ public class OnItemChange : ClientNotification
     /// Builds the correct PyDictionary for the changes described by this notification
     /// </summary>
     /// <returns></returns>
-    private PyDictionary<PyInteger, PyDataType> BuildChangeDictionary()
+    private PyDictionary <PyInteger, PyDataType> BuildChangeDictionary ()
     {
-        PyDictionary<PyInteger, PyDataType> result = new PyDictionary<PyInteger, PyDataType>();
+        PyDictionary <PyInteger, PyDataType> result = new PyDictionary <PyInteger, PyDataType> ();
 
-        foreach ((ItemChange changeType, PyDataType oldValue) in this.Changes)
-            result[(int) changeType] = oldValue;
+        foreach ((ItemChange changeType, PyDataType oldValue) in Changes)
+            result [(int) changeType] = oldValue;
 
         return result;
     }
 
-    public override List<PyDataType> GetElements()
+    public override List <PyDataType> GetElements ()
     {
-        return new List<PyDataType>()
+        return new List <PyDataType>
         {
-            this.Item.GetEntityRow(),
-            this.BuildChangeDictionary()
+            Item.GetEntityRow (),
+            this.BuildChangeDictionary ()
         };
     }
 
-    public static OnItemChange BuildQuantityChange(ItemEntity item, int oldQuantity)
+    public static OnItemChange BuildQuantityChange (ItemEntity item, int oldQuantity)
     {
-        return new OnItemChange(item).AddChange(ItemChange.Quantity, oldQuantity);
+        return new OnItemChange (item).AddChange (ItemChange.Quantity, oldQuantity);
     }
 
-    public static OnItemChange BuildLocationChange(ItemEntity item, Flags oldFlag)
+    public static OnItemChange BuildLocationChange (ItemEntity item, Flags oldFlag)
     {
-        return new OnItemChange(item).AddChange(ItemChange.Flag, (int) oldFlag);
+        return new OnItemChange (item).AddChange (ItemChange.Flag, (int) oldFlag);
     }
 
-    public static OnItemChange BuildLocationChange(ItemEntity item, int? oldLocation)
+    public static OnItemChange BuildLocationChange (ItemEntity item, int? oldLocation)
     {
-        return new OnItemChange(item).AddChange(ItemChange.LocationID, oldLocation);
+        return new OnItemChange (item).AddChange (ItemChange.LocationID, oldLocation);
     }
 
-    public static OnItemChange BuildLocationChange(ItemEntity item, Flags oldFlag, int? oldLocation)
+    public static OnItemChange BuildLocationChange (ItemEntity item, Flags oldFlag, int? oldLocation)
     {
-        OnItemChange change = new OnItemChange(item);
+        OnItemChange change = new OnItemChange (item);
 
         if (item.Flag != oldFlag)
-            change.AddChange(ItemChange.Flag, (int) oldFlag);
+            change.AddChange (ItemChange.Flag, (int) oldFlag);
         if (item.LocationID != oldLocation)
-            change.AddChange(ItemChange.LocationID, oldLocation);
+            change.AddChange (ItemChange.LocationID, oldLocation);
 
         return change;
     }
 
-    public static OnItemChange BuildNewItemChange(ItemEntity item)
+    public static OnItemChange BuildNewItemChange (ItemEntity item)
     {
         // new items are notified as being moved from location 0 to the actual location
-        return BuildLocationChange(item, Flags.None, 0);
+        return BuildLocationChange (item, Flags.None, 0);
     }
 
-    public static OnItemChange BuildSingletonChange(ItemEntity item, bool oldSingleton)
+    public static OnItemChange BuildSingletonChange (ItemEntity item, bool oldSingleton)
     {
-        return new OnItemChange(item).AddChange(ItemChange.Singleton, oldSingleton);
+        return new OnItemChange (item).AddChange (ItemChange.Singleton, oldSingleton);
     }
 }

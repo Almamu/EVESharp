@@ -18,25 +18,26 @@ public class Attribute
     public int       HighIsGood           { get; }
     public int       CategoryID           { get; }
 
-    public Attribute(
+    public Attribute (
         int id,                   string name,         int category,  string description, Attribute maxAttribute, int attributeIdx, int graphicId,
         int chargeRechargeTimeId, double defaultValue, int published, string displayName, int       unitId,       int stackable,
-        int highIsGood,           int    categoryId)
+        int highIsGood,           int    categoryId
+    )
     {
-        this.ID                   = id;
-        this.Name                 = name;
-        this.Category             = category;
-        this.Description          = description;
-        this.MaxAttribute         = maxAttribute;
-        this.AttributeIDX         = attributeIdx;
-        this.GraphicID            = graphicId;
-        this.ChargeRechargeTimeID = chargeRechargeTimeId;
-        this.DefaultValue         = defaultValue;
-        this.Published            = published;
-        this.DisplayName          = displayName;
-        this.UnitID               = unitId;
-        this.Stackable            = stackable;
-        this.HighIsGood           = highIsGood;
-        this.CategoryID           = categoryId;
+        ID                   = id;
+        Name                 = name;
+        Category             = category;
+        Description          = description;
+        MaxAttribute         = maxAttribute;
+        AttributeIDX         = attributeIdx;
+        GraphicID            = graphicId;
+        ChargeRechargeTimeID = chargeRechargeTimeId;
+        DefaultValue         = defaultValue;
+        Published            = published;
+        DisplayName          = displayName;
+        UnitID               = unitId;
+        Stackable            = stackable;
+        HighIsGood           = highIsGood;
+        CategoryID           = categoryId;
     }
 }

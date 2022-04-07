@@ -1,6 +1,3 @@
-using System.Collections.Generic;
-using System.Runtime.CompilerServices;
-using System.Security.Permissions;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Primitives;
 using MySql.Data.MySqlClient;
@@ -21,40 +18,40 @@ public class IndexRowset
     /// Type of every row
     /// </summary>
     private const string ROW_TYPE_NAME = "util.Row";
-        
-    protected PyList<PyString>                Headers { get; }
-    protected PyDictionary<PyInteger, PyList> Lines   { get; }
+
+    protected PyList <PyString>                Headers { get; }
+    protected PyDictionary <PyInteger, PyList> Lines   { get; }
     /// <summary>
     /// The field used to index the Rowset
     /// </summary>
     public string IDName { get; set; }
 
-    public IndexRowset(string idName, PyList<PyString> headers)
+    public IndexRowset (string idName, PyList <PyString> headers)
     {
-        this.Headers = headers;
-        this.Lines   = new PyDictionary<PyInteger, PyList>();
-        this.IDName  = idName;
+        Headers = headers;
+        Lines   = new PyDictionary <PyInteger, PyList> ();
+        IDName  = idName;
     }
 
-    public static implicit operator PyDataType(IndexRowset rowset)
+    public static implicit operator PyDataType (IndexRowset rowset)
     {
-        PyDictionary container = new PyDictionary()
+        PyDictionary container = new PyDictionary
         {
             {"header", rowset.Headers},
-            {"RowClass", new PyToken(ROW_TYPE_NAME)},
+            {"RowClass", new PyToken (ROW_TYPE_NAME)},
             {"idName", rowset.IDName},
             {"items", rowset.Lines}
         };
 
-        return new PyObjectData(TYPE_NAME, container);
+        return new PyObjectData (TYPE_NAME, container);
     }
 
-    protected void AddRow(int index, PyList data)
+    protected void AddRow (int index, PyList data)
     {
-        if (data.Count != this.Headers.Count)
-            throw new InvalidParameterException("The row doesn't have the same amount of items as the header of the IndexRowset");
+        if (data.Count != Headers.Count)
+            throw new InvalidParameterException ("The row doesn't have the same amount of items as the header of the IndexRowset");
 
-        this.Lines[index] = data;
+        Lines [index] = data;
     }
 
     /// <summary>
@@ -66,22 +63,22 @@ public class IndexRowset
     /// <param name="reader">The MySqlDataReader to read the data from</param>
     /// <param name="indexField">The field to use as index for the rowset</param>
     /// <returns></returns>
-    public static IndexRowset FromMySqlDataReader(IDatabaseConnection connection, MySqlDataReader reader, int indexField)
+    public static IndexRowset FromMySqlDataReader (IDatabaseConnection connection, MySqlDataReader reader, int indexField)
     {
-        string indexFieldName = reader.GetName(indexField);
+        string indexFieldName = reader.GetName (indexField);
 
-        connection.GetDatabaseHeaders(reader, out PyList<PyString> headers, out FieldType[] fieldTypes);
-            
-        IndexRowset rowset = new IndexRowset(indexFieldName, headers);
+        connection.GetDatabaseHeaders (reader, out PyList <PyString> headers, out FieldType [] fieldTypes);
 
-        while (reader.Read() == true)
+        IndexRowset rowset = new IndexRowset (indexFieldName, headers);
+
+        while (reader.Read ())
         {
-            PyList row = new PyList(reader.FieldCount);
+            PyList row = new PyList (reader.FieldCount);
 
             for (int i = 0; i < row.Count; i++)
-                row[i] = IDatabaseConnection.ObjectFromColumn(reader, fieldTypes[i], i);
+                row [i] = IDatabaseConnection.ObjectFromColumn (reader, fieldTypes [i], i);
 
-            rowset.AddRow(reader.GetInt32(indexField), row);
+            rowset.AddRow (reader.GetInt32 (indexField), row);
         }
 
         return rowset;

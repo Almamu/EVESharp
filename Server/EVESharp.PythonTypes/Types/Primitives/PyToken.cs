@@ -2,45 +2,45 @@ namespace EVESharp.PythonTypes.Types.Primitives;
 
 public class PyToken : PyDataType
 {
-    private bool Equals(PyToken other)
-    {
-        if (ReferenceEquals(null, other)) return false;
-
-        return this.Token.Equals(other.Token);
-    }
-        
-    public override int GetHashCode()
-    {
-        return (Token is not null ? Token.GetHashCode() : 0);
-    }
-
     public string Token  { get; }
-    public int    Length => this.Token.Length;
+    public int    Length => Token.Length;
 
-    public PyToken(string token)
+    public PyToken (string token)
     {
-        this.Token = token;
+        Token = token;
     }
 
-    public static implicit operator PyToken(string value)
+    private bool Equals (PyToken other)
     {
-        return new PyToken(value);
+        if (ReferenceEquals (null, other)) return false;
+
+        return Token.Equals (other.Token);
     }
 
-    public static implicit operator string(PyToken value)
+    public override int GetHashCode ()
+    {
+        return Token is not null ? Token.GetHashCode () : 0;
+    }
+
+    public static implicit operator PyToken (string value)
+    {
+        return new PyToken (value);
+    }
+
+    public static implicit operator string (PyToken value)
     {
         return value.Token;
     }
 
-    public static bool operator ==(PyToken left, PyToken right)
+    public static bool operator == (PyToken left, PyToken right)
     {
-        if (ReferenceEquals(left, right)) return true;
-        if (ReferenceEquals(null, left)) return false;
+        if (ReferenceEquals (left, right)) return true;
+        if (ReferenceEquals (null, left)) return false;
 
-        return left.Equals(right);
+        return left.Equals (right);
     }
 
-    public static bool operator !=(PyToken left, PyToken right)
+    public static bool operator != (PyToken left, PyToken right)
     {
         return !(left == right);
     }

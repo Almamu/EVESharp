@@ -31,26 +31,22 @@ namespace EVESharp.Node.Inventory;
 
 public class AttributeManager
 {
-    private ItemDB                                                       ItemDB { get; }
-    private Dictionary<int, Attribute>                                   mAttributes        = null;
-    private Dictionary<int, Dictionary<int, Items.Attributes.Attribute>> mDefaultAttributes = null;
+    private Dictionary <int, Attribute> mAttributes;
+    private ItemDB                      ItemDB { get; }
 
-    public Dictionary<int, Dictionary<int, Items.Attributes.Attribute>> DefaultAttributes
-    {
-        get => this.mDefaultAttributes;
-    }
-        
-    public AttributeManager(ItemDB itemDB)
-    {
-        this.ItemDB = itemDB;
-    }
-        
-    public Attribute this[int        id] => this.mAttributes[id];
-    public Attribute this[Attributes id] => this[(int) id];
+    public Dictionary <int, Dictionary <int, AttributeInfo>> DefaultAttributes { get; private set; }
 
-    public void Load()
+    public Attribute this [int        id] => this.mAttributes [id];
+    public Attribute this [Attributes id] => this [(int) id];
+
+    public AttributeManager (ItemDB itemDB)
     {
-        this.mAttributes        = this.ItemDB.LoadAttributesInformation();
-        this.mDefaultAttributes = this.ItemDB.LoadDefaultAttributes();
+        ItemDB = itemDB;
+    }
+
+    public void Load ()
+    {
+        this.mAttributes  = ItemDB.LoadAttributesInformation ();
+        DefaultAttributes = ItemDB.LoadDefaultAttributes ();
     }
 }

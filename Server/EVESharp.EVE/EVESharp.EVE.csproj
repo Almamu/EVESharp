@@ -5,8 +5,8 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\EVESharp.Common\EVESharp.Common.csproj" />
-      <ProjectReference Include="..\EVESharp.PythonTypes\EVESharp.PythonTypes.csproj" />
+        <ProjectReference Include="..\EVESharp.Common\EVESharp.Common.csproj"/>
+        <ProjectReference Include="..\EVESharp.PythonTypes\EVESharp.PythonTypes.csproj"/>
     </ItemGroup>
 
 </Project>

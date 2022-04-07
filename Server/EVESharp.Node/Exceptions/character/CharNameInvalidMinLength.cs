@@ -2,9 +2,7 @@
 
 namespace EVESharp.Node.Exceptions.character;
 
-class CharNameInvalidMinLength : UserError
+internal class CharNameInvalidMinLength : UserError
 {
-    public CharNameInvalidMinLength() : base("CharNameInvalidMinLength")
-    {
-    }
+    public CharNameInvalidMinLength () : base ("CharNameInvalidMinLength") { }
 }

@@ -1,9 +1,6 @@
-using System.ComponentModel.DataAnnotations;
-using System.Runtime.CompilerServices;
-
 namespace EVESharp.Node.StaticData.Inventory;
 
-public enum Flags : int
+public enum Flags
 {
     None                          = 0,
     AutoFit                       = 0,
@@ -132,33 +129,33 @@ public enum Flags : int
 
 public static class FlagsExtensions
 {
-    public static bool IsModule(this Flags value)
+    public static bool IsModule (this Flags value)
     {
-        return value.IsHighModule() || value.IsMediumModule() || value.IsLowModule() || value.IsRigModule();
+        return value.IsHighModule () || value.IsMediumModule () || value.IsLowModule () || value.IsRigModule ();
     }
 
-    public static bool IsHighModule(this Flags value)
+    public static bool IsHighModule (this Flags value)
     {
         return value == Flags.HiSlot0 || value == Flags.HiSlot1 || value == Flags.HiSlot2 ||
                value == Flags.HiSlot3 || value == Flags.HiSlot4 || value == Flags.HiSlot5 ||
                value == Flags.HiSlot6 || value == Flags.HiSlot7;
     }
 
-    public static bool IsMediumModule(this Flags value)
+    public static bool IsMediumModule (this Flags value)
     {
         return value == Flags.MedSlot0 || value == Flags.MedSlot1 || value == Flags.MedSlot2 ||
                value == Flags.MedSlot3 || value == Flags.MedSlot4 || value == Flags.MedSlot5 ||
                value == Flags.MedSlot6 || value == Flags.MedSlot7;
     }
 
-    public static bool IsLowModule(this Flags value)
+    public static bool IsLowModule (this Flags value)
     {
         return value == Flags.LoSlot0 || value == Flags.LoSlot1 || value == Flags.LoSlot2 ||
                value == Flags.LoSlot3 || value == Flags.LoSlot4 || value == Flags.LoSlot5 ||
                value == Flags.LoSlot6 || value == Flags.LoSlot7;
     }
 
-    public static bool IsRigModule(this Flags value)
+    public static bool IsRigModule (this Flags value)
     {
         return value == Flags.RigSlot0 || value == Flags.RigSlot1 || value == Flags.RigSlot2 ||
                value == Flags.RigSlot3 || value == Flags.RigSlot4 || value == Flags.RigSlot5 ||

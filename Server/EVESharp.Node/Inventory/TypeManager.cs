@@ -27,51 +27,49 @@ using System.Collections.Generic;
 using EVESharp.Node.Database;
 using EVESharp.Node.Dogma;
 using EVESharp.Node.StaticData.Inventory;
-using EVESharp.Node.Inventory.Items;
-using EVESharp.Node.StaticData;
 
 namespace EVESharp.Node.Inventory;
 
-public class TypeManager : IReadOnlyDictionary<int, Type>
+public class TypeManager : IReadOnlyDictionary <int, Type>
 {
-    private ItemDB                ItemDB { get; }
-    private Dictionary<int, Type> mTypes = null;
-    public  ExpressionManager     ExpressionManager { get; }
+    private Dictionary <int, Type> mTypes;
+    private ItemDB                 ItemDB            { get; }
+    public  ExpressionManager      ExpressionManager { get; }
+    public Type this [Types id] => this [(int) id];
 
-    public void Load()
+    public TypeManager (ItemDB itemDB, ExpressionManager expressionManager)
     {
-        this.mTypes = this.ItemDB.LoadItemTypes(this.ExpressionManager);
+        ItemDB            = itemDB;
+        ExpressionManager = expressionManager;
     }
 
-    public bool ContainsKey(int typeID)
+    public bool ContainsKey (int typeID)
     {
-        return this.mTypes.ContainsKey(typeID);
+        return this.mTypes.ContainsKey (typeID);
     }
 
-    public bool TryGetValue(int typeID, out Type value)
+    public bool TryGetValue (int typeID, out Type value)
     {
-        return this.mTypes.TryGetValue(typeID, out value);
+        return this.mTypes.TryGetValue (typeID, out value);
     }
 
-    public Type this[int   id] => this.mTypes[id];
-    public Type this[Types id] => this[(int) id];
-    public IEnumerable<int>  Keys   => this.mTypes.Keys;
-    public IEnumerable<Type> Values => this.mTypes.Values;
-    public int               Count  => this.mTypes.Count;
+    public Type this [int id] => this.mTypes [id];
+    public IEnumerable <int>  Keys   => this.mTypes.Keys;
+    public IEnumerable <Type> Values => this.mTypes.Values;
+    public int                Count  => this.mTypes.Count;
 
-    public TypeManager(ItemDB itemDB, ExpressionManager expressionManager)
+    public IEnumerator <KeyValuePair <int, Type>> GetEnumerator ()
     {
-        this.ItemDB            = itemDB;
-        this.ExpressionManager = expressionManager;
+        return this.mTypes.GetEnumerator ();
     }
 
-    public IEnumerator<KeyValuePair<int, Type>> GetEnumerator()
+    IEnumerator IEnumerable.GetEnumerator ()
     {
-        return this.mTypes.GetEnumerator();
+        return this.GetEnumerator ();
     }
 
-    IEnumerator IEnumerable.GetEnumerator()
+    public void Load ()
     {
-        return GetEnumerator();
+        this.mTypes = ItemDB.LoadItemTypes (ExpressionManager);
     }
 }
