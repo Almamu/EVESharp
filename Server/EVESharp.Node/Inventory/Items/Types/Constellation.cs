@@ -29,19 +29,19 @@ namespace EVESharp.Node.Inventory.Items.Types;
 
 public class Constellation : ItemInventory
 {
-    public Information.Constellation ConstellationInformation { get; }
-    public int                       RegionId                 => ConstellationInformation.RegionId;
-    public double                    X                        => ConstellationInformation.X;
-    public double                    Y                        => ConstellationInformation.Y;
-    public double                    Z                        => ConstellationInformation.Z;
-    public double                    XMin                     => ConstellationInformation.XMin;
-    public double                    YMin                     => ConstellationInformation.YMin;
-    public double                    ZMin                     => ConstellationInformation.ZMin;
-    public double                    XMax                     => ConstellationInformation.XMax;
-    public double                    YMax                     => ConstellationInformation.YMax;
-    public double                    ZMax                     => ConstellationInformation.ZMax;
-    public int?                      FactionId                => ConstellationInformation.FactionId;
-    public double                    Radius                   => ConstellationInformation.Radius;
+    public     Information.Constellation ConstellationInformation { get; }
+    public     int                       RegionId                 => ConstellationInformation.RegionId;
+    public new double                    X                        => ConstellationInformation.X;
+    public new double                    Y                        => ConstellationInformation.Y;
+    public new double                    Z                        => ConstellationInformation.Z;
+    public     double                    XMin                     => ConstellationInformation.XMin;
+    public     double                    YMin                     => ConstellationInformation.YMin;
+    public     double                    ZMin                     => ConstellationInformation.ZMin;
+    public     double                    XMax                     => ConstellationInformation.XMax;
+    public     double                    YMax                     => ConstellationInformation.YMax;
+    public     double                    ZMax                     => ConstellationInformation.ZMax;
+    public     int?                      FactionId                => ConstellationInformation.FactionId;
+    public     double                    Radius                   => ConstellationInformation.Radius;
 
     public Constellation (Information.Constellation constellation) : base (constellation.Information)
     {

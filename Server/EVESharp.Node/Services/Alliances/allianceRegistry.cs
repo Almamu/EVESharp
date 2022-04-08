@@ -86,7 +86,7 @@ public class allianceRegistry : MultiClientBoundService
         }
     }
 
-    private void PerformTimedEvents (object? sender, EventArgs e)
+    private void PerformTimedEvents (object sender, EventArgs e)
     {
         long minimumTime = DateTime.UtcNow.AddHours (-24).ToFileTimeUtc ();
 

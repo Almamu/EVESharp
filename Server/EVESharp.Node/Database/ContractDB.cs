@@ -470,7 +470,7 @@ public class ContractDB : DatabaseAccessor
 
     public List <int> GetContractList (
         int? startContractID, int  limit, int? itemTypeID, PyList <PyInteger> notIssuedByIDs, PyList <PyInteger> issuedByIDs, int? assigneeID, int? locationID,
-        int? itemGroupID,     int? itemCategoryID, int priceMax, int priceMin, int? type, string? description, int callerID,
+        int? itemGroupID,     int? itemCategoryID, int priceMax, int priceMin, int? type, string description, int callerID,
         int  callerCorpID,    int? ownerID = null, int? status = null, bool includeExpired = false, bool expiredOnly = false
     )
     {

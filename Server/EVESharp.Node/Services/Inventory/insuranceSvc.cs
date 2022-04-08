@@ -159,7 +159,7 @@ public class insuranceSvc : ClientBoundService
         return null;
     }
 
-    public void PerformTimedEvents (object? sender, EventArgs args)
+    public void PerformTimedEvents (object sender, EventArgs args)
     {
         foreach (InsuranceDB.ExpiredContract contract in DB.GetExpiredContracts ())
         {

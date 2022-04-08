@@ -90,7 +90,7 @@ public class dogmaIM : ClientBoundService
 
             return itemInfo;
         }
-        catch (Exception e)
+        catch (Exception)
         {
             // there was an exception, the ship has to be unloaded as it's not going to be used anymore
             ItemFactory.UnloadItem (ship);

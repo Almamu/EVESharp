@@ -88,7 +88,7 @@ public class billMgr : Service
         return null;
     }
 
-    public void PerformTimedEvents (object? sender, EventArgs args)
+    public void PerformTimedEvents (object sender, EventArgs args)
     {
         List <CorporationOffice> offices = CorporationDB.FindOfficesCloseToRenewal ();
 

@@ -135,13 +135,13 @@ public class SessionManager : EVE.Sessions.SessionManager
         base.FreeSession (session);
     }
 
-    private void OnTransportClosed (object? sender, MachoTransport transport)
+    private void OnTransportClosed (object sender, MachoTransport transport)
     {
         if (transport is MachoClientTransport)
             this.FreeSession (transport.Session);
     }
 
-    private void OnClientResolved (object? sender, MachoClientTransport transport)
+    private void OnClientResolved (object sender, MachoClientTransport transport)
     {
         this.InitializeSession (transport.Session);
     }

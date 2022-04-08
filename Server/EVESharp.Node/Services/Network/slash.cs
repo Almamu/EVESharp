@@ -108,7 +108,6 @@ public class slash : Service
 
         int    targetCharacterID = 0;
         int    originCharacterID = call.Session.EnsureCharacterIsSelected ();
-        double finalBalance      = 0;
 
         if (targetCharacter == "me")
         {

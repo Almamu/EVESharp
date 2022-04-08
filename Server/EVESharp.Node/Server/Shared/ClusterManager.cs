@@ -40,7 +40,8 @@ public class ClusterManager
                     "role", MachoNet.Mode switch
                     {
                         RunMode.Proxy  => "proxy",
-                        RunMode.Server => "server"
+                        RunMode.Server => "server",
+                        _ => "single"
                     }
                 }
             }
@@ -139,7 +140,8 @@ public class ClusterManager
                 Mode = MachoNet.Mode switch
                 {
                     RunMode.Proxy  => "proxy",
-                    RunMode.Server => "server"
+                    RunMode.Server => "server",
+                    _ => "single"
                 }
             }
         );
