@@ -41,6 +41,8 @@ using EVESharp.Node.Market;
 using EVESharp.Node.Network;
 using EVESharp.Node.Server.Shared;
 using EVESharp.Node.Server.Shared.Messages;
+using EVESharp.Node.Server.Shared.Transports;
+using EVESharp.Node.Services;
 using EVESharp.Node.Services.Account;
 using EVESharp.Node.Services.Alliances;
 using EVESharp.Node.Services.Authentication;

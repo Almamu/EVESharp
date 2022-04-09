@@ -1,6 +1,6 @@
-﻿using EVESharp.EVE.Packets.Exceptions;
+﻿using EVESharp.EVE.Client.Exceptions;
+using EVESharp.EVE.Packets.Exceptions;
 using EVESharp.EVE.Sessions;
-using EVESharp.Node.Exceptions;
 
 namespace EVESharp.Node.Sessions;
 

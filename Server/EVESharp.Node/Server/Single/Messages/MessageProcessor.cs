@@ -2,6 +2,7 @@
 using EVESharp.Node.Network;
 using EVESharp.Node.Server.Shared;
 using EVESharp.Node.Server.Shared.Messages;
+using EVESharp.Node.Services;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Network;
 using EVESharp.PythonTypes.Types.Primitives;

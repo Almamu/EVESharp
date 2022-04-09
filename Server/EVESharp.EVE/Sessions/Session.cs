@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using EVESharp.EVE.Packets.Exceptions;
+using EVESharp.EVE.Wallet;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Primitives;
 
@@ -133,7 +134,7 @@ public class Session : PyDictionary <PyString, PyDataType>
     }
     public int CorpAccountKey
     {
-        get => this [CORP_ACCOUNT_KEY] as PyInteger ?? WalletKeys.MAIN_WALLET;
+        get => this [CORP_ACCOUNT_KEY] as PyInteger ?? Keys.MAIN;
         set => this [CORP_ACCOUNT_KEY] = value;
     }
     public int SolarSystemID2

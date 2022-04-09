@@ -25,7 +25,7 @@
 using System;
 using System.Collections.Generic;
 using EVESharp.Common.Database;
-using EVESharp.Node.StaticData;
+using EVESharp.EVE.StaticData;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Database;
 using EVESharp.PythonTypes.Types.Primitives;

@@ -1,15 +1,15 @@
 ﻿using System.Collections.Generic;
+using EVESharp.EVE.Client.Exceptions.certificateMgr;
 using EVESharp.EVE.Packets.Complex;
 using EVESharp.EVE.Services;
+using EVESharp.EVE.StaticData.Certificates;
 using EVESharp.Node.Cache;
 using EVESharp.Node.Database;
-using EVESharp.Node.Exceptions.certificateMgr;
 using EVESharp.Node.Inventory;
 using EVESharp.Node.Inventory.Items.Types;
 using EVESharp.Node.Network;
 using EVESharp.Node.Notifications.Client.Certificates;
 using EVESharp.Node.Sessions;
-using EVESharp.Node.StaticData.Certificates;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Primitives;
 

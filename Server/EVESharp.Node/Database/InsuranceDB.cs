@@ -29,7 +29,7 @@ using EVESharp.Node.Inventory;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Database;
 using MySql.Data.MySqlClient;
-using Type = EVESharp.Node.StaticData.Inventory.Type;
+using Type = EVESharp.EVE.StaticData.Inventory.Type;
 
 namespace EVESharp.Node.Database;
 

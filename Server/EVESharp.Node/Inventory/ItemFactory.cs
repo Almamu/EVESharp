@@ -27,19 +27,19 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using EVESharp.Common.Database;
 using EVESharp.Database;
+using EVESharp.EVE.StaticData;
+using EVESharp.EVE.StaticData.Inventory;
 using EVESharp.Node.Database;
 using EVESharp.Node.Dogma;
 using EVESharp.Node.Inventory.Exceptions;
 using EVESharp.Node.Inventory.Items;
 using EVESharp.Node.Inventory.Items.Types;
 using EVESharp.Node.Server.Shared;
-using EVESharp.Node.StaticData;
-using EVESharp.Node.StaticData.Inventory;
 using Serilog;
 using Container = SimpleInjector.Container;
 using Item = EVESharp.Node.Inventory.Items.Types.Information.Item;
 using ItemDB = EVESharp.Node.Database.ItemDB;
-using Type = EVESharp.Node.StaticData.Inventory.Type;
+using Type = EVESharp.EVE.StaticData.Inventory.Type;
 
 namespace EVESharp.Node.Inventory;
 

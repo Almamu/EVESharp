@@ -1,4 +1,5 @@
 using System;
+using EVESharp.EVE.Client;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Network;
 using EVESharp.PythonTypes.Types.Primitives;
@@ -12,12 +13,12 @@ public class GPSTransportClosed : PyException
     public GPSTransportClosed(string type) : base(TYPE_NAME, type, null, new PyDictionary())
     {
         this.Clock        = DateTime.UtcNow.ToFileTimeUtc();
-        this.Region       = Game.REGION;
+        this.Region       = VersionInfo.REGION;
         this.Reason       = type;
-        this.Version      = Game.VERSION;
-        this.Build        = Game.BUILD;
-        this.Codename     = Game.CODENAME;
-        this.MachoVersion = Game.MACHO_VERSION;
+        this.Version      = VersionInfo.VERSION;
+        this.Build        = VersionInfo.BUILD;
+        this.Codename     = VersionInfo.CODENAME;
+        this.MachoVersion = VersionInfo.MACHO_VERSION;
     }
 
     public static implicit operator PyDataType(GPSTransportClosed exception)

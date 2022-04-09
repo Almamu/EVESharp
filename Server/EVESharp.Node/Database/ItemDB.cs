@@ -24,19 +24,18 @@
 
 using System.Collections.Generic;
 using EVESharp.Common.Database;
+using EVESharp.EVE.Inventory.Attributes;
+using EVESharp.EVE.StaticData.Dogma;
+using EVESharp.EVE.StaticData.Inventory;
 using EVESharp.Node.Dogma;
 using EVESharp.Node.Inventory;
 using EVESharp.Node.Inventory.Exceptions;
 using EVESharp.Node.Inventory.Items;
-using EVESharp.Node.Inventory.Items.Attributes;
 using EVESharp.Node.Inventory.Items.Dogma;
 using EVESharp.Node.Inventory.Items.Types.Information;
-using EVESharp.Node.StaticData.Dogma;
-using EVESharp.Node.StaticData.Inventory;
 using EVESharp.PythonTypes.Types.Database;
 using MySql.Data.MySqlClient;
-using Attribute = EVESharp.Node.Inventory.Items.Attributes.Attribute;
-using AttributeInfo = EVESharp.Node.StaticData.Inventory.Attribute;
+using Attribute = EVESharp.EVE.Inventory.Attributes.Attribute;
 
 namespace EVESharp.Node.Database;
 
@@ -177,11 +176,7 @@ public class ItemDB : DatabaseAccessor
             {
                 int typeID = reader.GetInt32 (0);
 
-                Dictionary <int, Attribute> defaultAttributes = null;
-
-                if (AttributeManager.DefaultAttributes.ContainsKey (typeID))
-                    defaultAttributes = AttributeManager.DefaultAttributes [typeID];
-                else
+                if (AttributeManager.DefaultAttributes.TryGetValue (typeID, out Dictionary <int, Attribute> defaultAttributes) == false)
                     defaultAttributes = new Dictionary <int, Attribute> ();
 
                 if (effects.TryGetValue (typeID, out Dictionary <int, Effect> typeEffects) == false)
@@ -252,7 +247,7 @@ public class ItemDB : DatabaseAccessor
         }
     }
 
-    public Dictionary <int, AttributeInfo> LoadAttributesInformation ()
+    public Dictionary <int, AttributeType> LoadAttributesInformation ()
     {
         MySqlConnection connection = null;
 
@@ -266,11 +261,11 @@ public class ItemDB : DatabaseAccessor
         using (connection)
         using (reader)
         {
-            Dictionary <int, AttributeInfo> attributes = new Dictionary <int, AttributeInfo> ();
+            Dictionary <int, AttributeType> attributes = new Dictionary <int, AttributeType> ();
 
             while (reader.Read ())
             {
-                AttributeInfo info = new AttributeInfo (
+                AttributeType info = new AttributeType (
                     reader.GetInt32 (0),
                     reader.GetString (1),
                     reader.GetInt32 (2),
@@ -371,7 +366,7 @@ public class ItemDB : DatabaseAccessor
             Y          = reader.GetDoubleOrNull (10),
             Z          = reader.GetDoubleOrNull (11),
             CustomInfo = reader.GetStringOrNull (12),
-            Attributes = new AttributeList (ItemFactory, itemType, this.LoadAttributesForItem (reader.GetInt32 (0)))
+            Attributes = new AttributeList (itemType, this.LoadAttributesForItem (reader.GetInt32 (0)))
         };
     }
 

@@ -10,6 +10,7 @@ using EVESharp.Node.Notifications.Client.Inventory;
 using EVESharp.Node.Notifications.Nodes.Corps;
 using EVESharp.Node.Server.Shared;
 using EVESharp.Node.Server.Shared.Messages;
+using EVESharp.Node.Services;
 using EVESharp.Node.Services.Corporations;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Network;

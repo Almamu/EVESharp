@@ -1,5 +1,5 @@
 using System;
-using Attribute = EVESharp.Node.Inventory.Items.Attributes.Attribute;
+using Attribute = EVESharp.EVE.Inventory.Attributes.Attribute;
 
 namespace EVESharp.Node.Inventory.Items.Types;
 
@@ -9,30 +9,30 @@ public class Skill : ItemEntity
 
     public long Level
     {
-        get => Attributes [StaticData.Inventory.Attributes.skillLevel].Integer;
+        get => Attributes [EVE.StaticData.Inventory.Attributes.skillLevel].Integer;
         set
         {
-            Attributes [StaticData.Inventory.Attributes.skillLevel].Integer = value;
+            Attributes [EVE.StaticData.Inventory.Attributes.skillLevel].Integer = value;
             Points                                                          = this.GetSkillPointsForLevel (value);
         }
     }
 
     public double Points
     {
-        get => Attributes [StaticData.Inventory.Attributes.skillPoints].Float;
-        set => Attributes [StaticData.Inventory.Attributes.skillPoints].Float = value;
+        get => Attributes [EVE.StaticData.Inventory.Attributes.skillPoints].Float;
+        set => Attributes [EVE.StaticData.Inventory.Attributes.skillPoints].Float = value;
     }
 
-    public Attribute TimeConstant => Attributes [StaticData.Inventory.Attributes.skillTimeConstant];
+    public Attribute TimeConstant => Attributes [EVE.StaticData.Inventory.Attributes.skillTimeConstant];
 
-    public Attribute PrimaryAttribute => Attributes [StaticData.Inventory.Attributes.primaryAttribute];
+    public Attribute PrimaryAttribute => Attributes [EVE.StaticData.Inventory.Attributes.primaryAttribute];
 
-    public Attribute SecondaryAttribute => Attributes [StaticData.Inventory.Attributes.secondaryAttribute];
+    public Attribute SecondaryAttribute => Attributes [EVE.StaticData.Inventory.Attributes.secondaryAttribute];
 
     public long ExpiryTime
     {
-        get => Attributes [StaticData.Inventory.Attributes.expiryTime].Integer;
-        set => Attributes [StaticData.Inventory.Attributes.expiryTime].Integer = value;
+        get => Attributes [EVE.StaticData.Inventory.Attributes.expiryTime].Integer;
+        set => Attributes [EVE.StaticData.Inventory.Attributes.expiryTime].Integer = value;
     }
 
     public Skill (Information.Item info, double skillPointMultiplier) : base (info)

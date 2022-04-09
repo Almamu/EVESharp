@@ -1,6 +1,7 @@
 using EVESharp.Common;
 using System;
 using System.IO;
+using EVESharp.EVE.Client;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Primitives;
 
@@ -32,15 +33,15 @@ public class LowLevelVersionExchange
             
         result.UserCount = exchange[2] as PyInteger;
             
-        if (result.Birthday != Game.BIRTHDAY)
+        if (result.Birthday != VersionInfo.BIRTHDAY)
             throw new InvalidDataException("Wrong birthday in LowLevelVersionExchange");
-        if (result.Build != Game.BUILD)
+        if (result.Build != VersionInfo.BUILD)
             throw new InvalidDataException("Wrong build in LowLevelVersionExchange");
-        if (result.Codename != Game.CODENAME + "@" + Game.REGION)
+        if (result.Codename != VersionInfo.CODENAME + "@" + VersionInfo.REGION)
             throw new InvalidDataException("Wrong codename in LowLevelVersionExchange");
-        if (result.MachoVersion != Game.MACHO_VERSION)
+        if (result.MachoVersion != VersionInfo.MACHO_VERSION)
             throw new InvalidDataException("Wrong machoVersion in LowLevelVersionExchange");
-        if (Math.Abs(result.Version - Game.VERSION) > 0.001)
+        if (Math.Abs(result.Version - VersionInfo.VERSION) > 0.001)
             throw new InvalidDataException("Wrong version in LowLevelVersionExchange");
 
         return result;

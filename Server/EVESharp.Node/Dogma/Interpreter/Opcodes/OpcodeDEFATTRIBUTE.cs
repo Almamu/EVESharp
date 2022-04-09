@@ -1,5 +1,5 @@
 ﻿using System.IO;
-using EVESharp.Node.StaticData.Inventory;
+using EVESharp.EVE.StaticData.Inventory;
 
 namespace EVESharp.Node.Dogma.Interpreter.Opcodes;
 

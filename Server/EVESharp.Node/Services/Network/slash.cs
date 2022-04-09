@@ -2,9 +2,11 @@
 using System.Collections.Generic;
 using System.Linq;
 using EVESharp.EVE;
+using EVESharp.EVE.Client.Exceptions.slash;
 using EVESharp.EVE.Services;
+using EVESharp.EVE.StaticData.Inventory;
+using EVESharp.EVE.Wallet;
 using EVESharp.Node.Database;
-using EVESharp.Node.Exceptions.slash;
 using EVESharp.Node.Inventory;
 using EVESharp.Node.Inventory.Items;
 using EVESharp.Node.Inventory.Items.Types;
@@ -13,10 +15,9 @@ using EVESharp.Node.Network;
 using EVESharp.Node.Notifications.Client.Inventory;
 using EVESharp.Node.Notifications.Client.Skills;
 using EVESharp.Node.Sessions;
-using EVESharp.Node.StaticData.Inventory;
 using EVESharp.PythonTypes.Types.Primitives;
 using Serilog;
-using Type = EVESharp.Node.StaticData.Inventory.Type;
+using Type = EVESharp.EVE.StaticData.Inventory.Type;
 
 namespace EVESharp.Node.Services.Network;
 
@@ -123,7 +124,7 @@ public class slash : Service
             targetCharacterID = matches [0];
         }
 
-        using Wallet wallet = WalletManager.AcquireWallet (targetCharacterID, WalletKeys.MAIN_WALLET);
+        using Wallet wallet = WalletManager.AcquireWallet (targetCharacterID, Keys.MAIN);
         {
             if (iskQuantity < 0)
             {

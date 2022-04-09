@@ -1,5 +1,5 @@
 ﻿using System.IO;
-using EVESharp.Node.Dogma.Exception;
+using EVESharp.EVE.Dogma.Exception;
 
 namespace EVESharp.Node.Dogma.Interpreter.Opcodes;
 

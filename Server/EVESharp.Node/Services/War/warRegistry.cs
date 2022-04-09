@@ -1,8 +1,8 @@
 using EVESharp.EVE.Packets.Complex;
 using EVESharp.EVE.Services;
 using EVESharp.EVE.Sessions;
+using EVESharp.EVE.StaticData;
 using EVESharp.Node.Network;
-using EVESharp.Node.StaticData;
 using EVESharp.PythonTypes.Types.Primitives;
 
 namespace EVESharp.Node.Services.War;

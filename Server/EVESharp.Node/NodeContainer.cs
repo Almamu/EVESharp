@@ -1,6 +1,6 @@
 using System.Collections.Generic;
+using EVESharp.EVE.StaticData;
 using EVESharp.Node.Database;
-using EVESharp.Node.StaticData;
 
 namespace EVESharp.Node;
 

@@ -1,6 +1,6 @@
 ﻿using EVESharp.EVE.Packets.Complex;
+using EVESharp.EVE.StaticData.Corporation;
 using EVESharp.Node.Server.Shared;
-using EVESharp.Node.StaticData.Corporation;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Network;
 using EVESharp.PythonTypes.Types.Primitives;

@@ -1,15 +1,20 @@
 ﻿using System;
 using System.Collections.Generic;
 using EVESharp.EVE;
+using EVESharp.EVE.Client.Exceptions.corpRegistry;
+using EVESharp.EVE.Client.Exceptions.inventory;
+using EVESharp.EVE.Client.Exceptions.marketProxy;
+using EVESharp.EVE.Client.Messages;
 using EVESharp.EVE.Packets.Complex;
 using EVESharp.EVE.Packets.Exceptions;
 using EVESharp.EVE.Services;
 using EVESharp.EVE.Sessions;
+using EVESharp.EVE.StaticData;
+using EVESharp.EVE.StaticData.Corporation;
+using EVESharp.EVE.StaticData.Inventory;
+using EVESharp.EVE.Wallet;
 using EVESharp.Node.Cache;
 using EVESharp.Node.Database;
-using EVESharp.Node.Exceptions.corpRegistry;
-using EVESharp.Node.Exceptions.inventory;
-using EVESharp.Node.Exceptions.marketProxy;
 using EVESharp.Node.Inventory;
 using EVESharp.Node.Inventory.Items;
 using EVESharp.Node.Inventory.Items.Types;
@@ -18,9 +23,6 @@ using EVESharp.Node.Network;
 using EVESharp.Node.Notifications.Client.Inventory;
 using EVESharp.Node.Notifications.Client.Market;
 using EVESharp.Node.Sessions;
-using EVESharp.Node.StaticData;
-using EVESharp.Node.StaticData.Corporation;
-using EVESharp.Node.StaticData.Inventory;
 using EVESharp.PythonTypes.Types.Primitives;
 using MySql.Data.MySqlClient;
 
@@ -96,7 +98,7 @@ public class marketProxy : Service
 
         return this.GetNewTransactions (
             callerCharacterID, sellBuy, typeID, clientID, quantity, fromDate, maxPrice, minPrice,
-            WalletKeys.MAIN_WALLET
+            Keys.MAIN
         );
     }
 
@@ -692,7 +694,7 @@ public class marketProxy : Service
         }
 
         int ownerID    = character.ID;
-        int accountKey = WalletKeys.MAIN_WALLET;
+        int accountKey = Keys.MAIN;
 
         // make sure the user has permissions on the wallet of the corporation
         // for sell orders just look into if the user can query that wallet
@@ -916,7 +918,7 @@ public class marketProxy : Service
         }
 
         // notify the character about the change in the order
-        NotificationManager.NotifyCharacter (order.CharacterID, new OnOwnOrderChanged (order.TypeID, "Expiry", order.AccountID > WalletKeys.MAIN_WALLET));
+        NotificationManager.NotifyCharacter (order.CharacterID, new OnOwnOrderChanged (order.TypeID, "Expiry", order.AccountID > Keys.MAIN));
     }
 
     /// <summary>

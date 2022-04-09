@@ -1,12 +1,12 @@
 ﻿using System;
 using System.Threading;
+using EVESharp.EVE.StaticData.Inventory;
 using EVESharp.Node.Inventory.Items;
 using EVESharp.Node.Network;
 using EVESharp.Node.Notifications.Client.Inventory;
-using EVESharp.Node.StaticData.Inventory;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Primitives;
-using Attribute = EVESharp.Node.Inventory.Items.Attributes.Attribute;
+using Attribute = EVESharp.EVE.Inventory.Attributes.Attribute;
 
 namespace EVESharp.Node.Dogma;
 

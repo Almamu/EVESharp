@@ -1,22 +1,23 @@
 using EVESharp.EVE;
+using EVESharp.EVE.Client.Exceptions.corpRegistry;
+using EVESharp.EVE.Client.Exceptions.inventory;
+using EVESharp.EVE.Client.Messages;
 using EVESharp.EVE.Packets.Exceptions;
 using EVESharp.EVE.Services;
 using EVESharp.EVE.Sessions;
+using EVESharp.EVE.StaticData.Corporation;
+using EVESharp.EVE.StaticData.Inventory;
 using EVESharp.Node.Database;
 using EVESharp.Node.Dogma;
-using EVESharp.Node.Exceptions.corpRegistry;
-using EVESharp.Node.Exceptions.inventory;
 using EVESharp.Node.Inventory;
 using EVESharp.Node.Inventory.Items;
 using EVESharp.Node.Inventory.Items.Types;
 using EVESharp.Node.Network;
 using EVESharp.Node.Notifications.Client.Inventory;
 using EVESharp.Node.Sessions;
-using EVESharp.Node.StaticData.Corporation;
-using EVESharp.Node.StaticData.Inventory;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Primitives;
-using Container = EVESharp.Node.StaticData.Inventory.Container;
+using Container = EVESharp.EVE.StaticData.Inventory.Container;
 
 namespace EVESharp.Node.Services.Inventory;
 

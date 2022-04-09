@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using EVESharp.EVE;
 using EVESharp.EVE.Packets.Complex;
+using EVESharp.EVE.Wallet;
 using EVESharp.PythonTypes.Types.Primitives;
 
 namespace EVESharp.Node.Notifications.Client.Wallet;
@@ -22,13 +23,13 @@ public class OnAccountChange : ClientNotification
 
         Wallet = AccountKey switch
         {
-            WalletKeys.MAIN_WALLET    => "cash",
-            WalletKeys.SECOND_WALLET  => "cash2",
-            WalletKeys.THIRD_WALLET   => "cash3",
-            WalletKeys.FOURTH_WALLET  => "cash4",
-            WalletKeys.FIFTH_WALLET   => "cash5",
-            WalletKeys.SIXTH_WALLET   => "cash6",
-            WalletKeys.SEVENTH_WALLET => "cash7",
+            Keys.MAIN    => "cash",
+            Keys.SECOND  => "cash2",
+            Keys.THIRD   => "cash3",
+            Keys.FOURTH  => "cash4",
+            Keys.FIFTH   => "cash5",
+            Keys.SIXTH   => "cash6",
+            Keys.SEVENTH => "cash7",
             _                         => ""
         };
     }

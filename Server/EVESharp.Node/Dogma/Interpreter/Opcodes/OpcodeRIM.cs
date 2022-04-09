@@ -1,8 +1,8 @@
 ﻿using System.IO;
-using EVESharp.Node.Dogma.Exception;
+using EVESharp.EVE.Dogma.Exception;
+using EVESharp.EVE.StaticData.Inventory;
 using EVESharp.Node.Inventory.Items;
 using EVESharp.Node.Sessions;
-using EVESharp.Node.StaticData.Inventory;
 
 namespace EVESharp.Node.Dogma.Interpreter.Opcodes;
 

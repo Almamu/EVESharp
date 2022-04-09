@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using EVESharp.EVE.StaticData.Dogma;
 using EVESharp.Node.Inventory.Items.Types;
-using EVESharp.Node.StaticData.Dogma;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Primitives;
 

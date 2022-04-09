@@ -1,15 +1,15 @@
 ﻿using System;
+using EVESharp.EVE.Client.Exceptions.dogma;
 using EVESharp.EVE.Packets.Exceptions;
 using EVESharp.EVE.Sessions;
+using EVESharp.EVE.StaticData.Dogma;
+using EVESharp.EVE.StaticData.Inventory;
 using EVESharp.Node.Dogma.Interpreter.Opcodes;
-using EVESharp.Node.Exceptions.dogma;
 using EVESharp.Node.Inventory;
 using EVESharp.Node.Inventory.Items.Dogma;
 using EVESharp.Node.Inventory.Items.Types;
 using EVESharp.Node.Notifications.Client.Inventory;
 using EVESharp.Node.Sessions;
-using EVESharp.Node.StaticData.Dogma;
-using EVESharp.Node.StaticData.Inventory;
 using EVESharp.PythonTypes.Types.Primitives;
 using Environment = EVESharp.Node.Dogma.Interpreter.Environment;
 

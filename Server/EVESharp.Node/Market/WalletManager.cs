@@ -4,9 +4,10 @@ using EVESharp.Common.Database;
 using EVESharp.Database;
 using EVESharp.EVE;
 using EVESharp.EVE.Sessions;
+using EVESharp.EVE.StaticData.Corporation;
+using EVESharp.EVE.Wallet;
 using EVESharp.Node.Database;
 using EVESharp.Node.Network;
-using EVESharp.Node.StaticData.Corporation;
 using MySql.Data.MySqlClient;
 
 namespace EVESharp.Node.Market;
@@ -165,19 +166,19 @@ public class WalletManager
         {
             // check for permissions
             // check if the character has any accounting roles and set the correct accountKey based on the data
-            if (CorporationRole.AccountCanQuery1.Is (session.CorporationRole) && accountKey == WalletKeys.MAIN_WALLET)
+            if (CorporationRole.AccountCanQuery1.Is (session.CorporationRole) && accountKey == Keys.MAIN)
                 return true;
-            if (CorporationRole.AccountCanQuery2.Is (session.CorporationRole) && accountKey == WalletKeys.SECOND_WALLET)
+            if (CorporationRole.AccountCanQuery2.Is (session.CorporationRole) && accountKey == Keys.SECOND)
                 return true;
-            if (CorporationRole.AccountCanQuery3.Is (session.CorporationRole) && accountKey == WalletKeys.THIRD_WALLET)
+            if (CorporationRole.AccountCanQuery3.Is (session.CorporationRole) && accountKey == Keys.THIRD)
                 return true;
-            if (CorporationRole.AccountCanQuery4.Is (session.CorporationRole) && accountKey == WalletKeys.FOURTH_WALLET)
+            if (CorporationRole.AccountCanQuery4.Is (session.CorporationRole) && accountKey == Keys.FOURTH)
                 return true;
-            if (CorporationRole.AccountCanQuery5.Is (session.CorporationRole) && accountKey == WalletKeys.FIFTH_WALLET)
+            if (CorporationRole.AccountCanQuery5.Is (session.CorporationRole) && accountKey == Keys.FIFTH)
                 return true;
-            if (CorporationRole.AccountCanQuery6.Is (session.CorporationRole) && accountKey == WalletKeys.SIXTH_WALLET)
+            if (CorporationRole.AccountCanQuery6.Is (session.CorporationRole) && accountKey == Keys.SIXTH)
                 return true;
-            if (CorporationRole.AccountCanQuery7.Is (session.CorporationRole) && accountKey == WalletKeys.SEVENTH_WALLET)
+            if (CorporationRole.AccountCanQuery7.Is (session.CorporationRole) && accountKey == Keys.SEVENTH)
                 return true;
 
             // last chance, accountant role
@@ -199,19 +200,19 @@ public class WalletManager
         {
             // check for permissions
             // check if the character has any accounting roles and set the correct accountKey based on the data
-            if (CorporationRole.AccountCanTake1.Is (session.CorporationRole) && accountKey == WalletKeys.MAIN_WALLET)
+            if (CorporationRole.AccountCanTake1.Is (session.CorporationRole) && accountKey == Keys.MAIN)
                 return true;
-            if (CorporationRole.AccountCanTake2.Is (session.CorporationRole) && accountKey == WalletKeys.SECOND_WALLET)
+            if (CorporationRole.AccountCanTake2.Is (session.CorporationRole) && accountKey == Keys.SECOND)
                 return true;
-            if (CorporationRole.AccountCanTake3.Is (session.CorporationRole) && accountKey == WalletKeys.THIRD_WALLET)
+            if (CorporationRole.AccountCanTake3.Is (session.CorporationRole) && accountKey == Keys.THIRD)
                 return true;
-            if (CorporationRole.AccountCanTake4.Is (session.CorporationRole) && accountKey == WalletKeys.FOURTH_WALLET)
+            if (CorporationRole.AccountCanTake4.Is (session.CorporationRole) && accountKey == Keys.FOURTH)
                 return true;
-            if (CorporationRole.AccountCanTake5.Is (session.CorporationRole) && accountKey == WalletKeys.FIFTH_WALLET)
+            if (CorporationRole.AccountCanTake5.Is (session.CorporationRole) && accountKey == Keys.FIFTH)
                 return true;
-            if (CorporationRole.AccountCanTake6.Is (session.CorporationRole) && accountKey == WalletKeys.SIXTH_WALLET)
+            if (CorporationRole.AccountCanTake6.Is (session.CorporationRole) && accountKey == Keys.SIXTH)
                 return true;
-            if (CorporationRole.AccountCanTake7.Is (session.CorporationRole) && accountKey == WalletKeys.SEVENTH_WALLET)
+            if (CorporationRole.AccountCanTake7.Is (session.CorporationRole) && accountKey == Keys.SEVENTH)
                 return true;
             if (CorporationRole.Accountant.Is (session.CorporationRole))
                 return true;
@@ -226,7 +227,7 @@ public class WalletManager
     /// <param name="ownerID">The owner to get the wallet balance for</param>
     /// <param name="walletKey">The wallet to get balance for</param>
     /// <returns>The wallet's balance</returns>
-    public double GetWalletBalance (int ownerID, int walletKey = WalletKeys.MAIN_WALLET)
+    public double GetWalletBalance (int ownerID, int walletKey = Keys.MAIN)
     {
         return Database.Scalar <double> (
             WalletDB.GET_WALLET_BALANCE,

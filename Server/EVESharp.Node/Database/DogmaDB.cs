@@ -1,8 +1,7 @@
 ﻿using System.Collections.Generic;
 using EVESharp.Common.Database;
-using EVESharp.Node.Inventory.Items.Attributes;
-using EVESharp.Node.Inventory.Items.Dogma;
-using EVESharp.Node.StaticData.Inventory;
+using EVESharp.EVE.StaticData.Dogma;
+using EVESharp.EVE.StaticData.Inventory;
 using MySql.Data.MySqlClient;
 using Serilog;
 

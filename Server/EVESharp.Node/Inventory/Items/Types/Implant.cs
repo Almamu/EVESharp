@@ -1,4 +1,4 @@
-using EVESharp.Node.Exceptions.character;
+using EVESharp.EVE.Client.Exceptions.character;
 
 namespace EVESharp.Node.Inventory.Items.Types;
 
@@ -12,10 +12,10 @@ public class Implant : ItemEntity
         base.CheckPrerequisites (character);
 
         // check if the implant requires other implant used
-        if (Attributes.AttributeExists (StaticData.Inventory.Attributes.prereqimplant) == false)
+        if (Attributes.AttributeExists (EVE.StaticData.Inventory.Attributes.prereqimplant) == false)
             return;
 
-        int typeID = (int) Attributes [StaticData.Inventory.Attributes.prereqimplant].Integer;
+        int typeID = (int) Attributes [EVE.StaticData.Inventory.Attributes.prereqimplant].Integer;
 
         if (character.PluggedInImplantsByTypeID.ContainsKey (typeID) == false)
             throw new PrereqImplantMissing (typeID);

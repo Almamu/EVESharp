@@ -1,12 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using EVESharp.EVE;
+using EVESharp.EVE.Client.Exceptions;
+using EVESharp.EVE.Client.Exceptions.repairSvc;
 using EVESharp.EVE.Packets.Exceptions;
 using EVESharp.EVE.Services;
 using EVESharp.EVE.Sessions;
+using EVESharp.EVE.StaticData.Inventory;
+using EVESharp.EVE.Wallet;
 using EVESharp.Node.Database;
-using EVESharp.Node.Exceptions;
-using EVESharp.Node.Exceptions.repairSvc;
 using EVESharp.Node.Inventory;
 using EVESharp.Node.Inventory.Items;
 using EVESharp.Node.Inventory.Items.Types;
@@ -14,11 +16,10 @@ using EVESharp.Node.Market;
 using EVESharp.Node.Network;
 using EVESharp.Node.Notifications.Client.Inventory;
 using EVESharp.Node.Sessions;
-using EVESharp.Node.StaticData.Inventory;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Database;
 using EVESharp.PythonTypes.Types.Primitives;
-using Service = EVESharp.Node.StaticData.Inventory.Station.Service;
+using Service = EVESharp.EVE.StaticData.Inventory.Station.Service;
 
 namespace EVESharp.Node.Services.Stations;
 
@@ -159,7 +160,7 @@ public class repairSvc : ClientBoundService
         Station station = ItemFactory.GetStaticStation (call.Session.EnsureCharacterIsInStation ());
 
         // take the wallet lock and ensure the character has enough balance
-        using Wallet wallet = WalletManager.AcquireWallet (call.Session.EnsureCharacterIsSelected (), WalletKeys.MAIN_WALLET);
+        using Wallet wallet = WalletManager.AcquireWallet (call.Session.EnsureCharacterIsSelected (), Keys.MAIN);
         {
             wallet.EnsureEnoughBalance (iskRepairValue);
             // build a list of items to be fixed

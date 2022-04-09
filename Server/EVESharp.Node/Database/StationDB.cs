@@ -1,11 +1,11 @@
 using System;
 using System.Collections.Generic;
 using EVESharp.Common.Database;
-using EVESharp.Node.StaticData.Inventory;
-using EVESharp.Node.StaticData.Inventory.Station;
+using EVESharp.EVE.StaticData.Inventory;
+using EVESharp.EVE.StaticData.Inventory.Station;
 using EVESharp.PythonTypes.Types.Primitives;
 using MySql.Data.MySqlClient;
-using Type = EVESharp.Node.StaticData.Inventory.Station.Type;
+using Type = EVESharp.EVE.StaticData.Inventory.Station.Type;
 
 namespace EVESharp.Node.Database;
 

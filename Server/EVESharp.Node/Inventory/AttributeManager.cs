@@ -23,21 +23,21 @@
 */
 
 using System.Collections.Generic;
+using EVESharp.EVE.Inventory.Attributes;
+using EVESharp.EVE.StaticData.Inventory;
 using EVESharp.Node.Database;
-using EVESharp.Node.StaticData.Inventory;
-using AttributeInfo = EVESharp.Node.Inventory.Items.Attributes.Attribute;
 
 namespace EVESharp.Node.Inventory;
 
 public class AttributeManager
 {
-    private Dictionary <int, Attribute> mAttributes;
+    private Dictionary <int, AttributeType> mAttributes;
     private ItemDB                      ItemDB { get; }
 
-    public Dictionary <int, Dictionary <int, AttributeInfo>> DefaultAttributes { get; private set; }
+    public Dictionary <int, Dictionary <int, Attribute>> DefaultAttributes { get; private set; }
 
-    public Attribute this [int        id] => this.mAttributes [id];
-    public Attribute this [Attributes id] => this [(int) id];
+    public AttributeType this [int        id] => this.mAttributes [id];
+    public AttributeType this [Attributes id] => this [(int) id];
 
     public AttributeManager (ItemDB itemDB)
     {
@@ -46,7 +46,7 @@ public class AttributeManager
 
     public void Load ()
     {
-        this.mAttributes  = ItemDB.LoadAttributesInformation ();
-        DefaultAttributes = ItemDB.LoadDefaultAttributes ();
+        this.mAttributes       = ItemDB.LoadAttributesInformation ();
+        this.DefaultAttributes = ItemDB.LoadDefaultAttributes ();
     }
 }

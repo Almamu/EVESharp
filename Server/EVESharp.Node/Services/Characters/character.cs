@@ -26,12 +26,15 @@ using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using EVESharp.EVE;
+using EVESharp.EVE.Client.Exceptions.character;
 using EVESharp.EVE.Packets.Exceptions;
 using EVESharp.EVE.Services;
 using EVESharp.EVE.Sessions;
+using EVESharp.EVE.StaticData;
+using EVESharp.EVE.StaticData.Inventory;
+using EVESharp.EVE.Wallet;
 using EVESharp.Node.Cache;
 using EVESharp.Node.Database;
-using EVESharp.Node.Exceptions.character;
 using EVESharp.Node.Inventory;
 using EVESharp.Node.Inventory.Items;
 using EVESharp.Node.Inventory.Items.Types;
@@ -39,15 +42,13 @@ using EVESharp.Node.Market;
 using EVESharp.Node.Network;
 using EVESharp.Node.Notifications.Client.Chat;
 using EVESharp.Node.Sessions;
-using EVESharp.Node.StaticData;
-using EVESharp.Node.StaticData.Inventory;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Database;
 using EVESharp.PythonTypes.Types.Primitives;
 using Serilog;
 using Character = EVESharp.Node.Configuration.Character;
 using SessionManager = EVESharp.Node.Sessions.SessionManager;
-using Type = EVESharp.Node.StaticData.Inventory.Type;
+using Type = EVESharp.EVE.StaticData.Inventory.Type;
 
 namespace EVESharp.Node.Services.Characters;
 
@@ -278,7 +279,7 @@ public class character : Service
         );
 
         // create the wallet for the player
-        WalletManager.CreateWallet (itemID, WalletKeys.MAIN_WALLET, this.mConfiguration.Balance);
+        WalletManager.CreateWallet (itemID, Keys.MAIN, this.mConfiguration.Balance);
 
         return ItemFactory.LoadItem (itemID) as Node.Inventory.Items.Types.Character;
     }
@@ -373,7 +374,7 @@ public class character : Service
         character.ActiveCloneID = clone.ID;
 
         // get the wallet for the player and give the money specified in the configuration
-        using Wallet wallet = WalletManager.AcquireWallet (character.ID, WalletKeys.MAIN_WALLET);
+        using Wallet wallet = WalletManager.AcquireWallet (character.ID, Keys.MAIN);
         {
             wallet.CreateJournalRecord (MarketReference.Inheritance, null, null, this.mConfiguration.Balance);
         }

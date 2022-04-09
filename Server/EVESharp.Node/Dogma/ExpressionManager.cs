@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using EVESharp.EVE.StaticData.Dogma;
 using EVESharp.Node.Database;
 using EVESharp.Node.Inventory.Items.Dogma;
 using Serilog;

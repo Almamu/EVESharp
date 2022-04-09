@@ -1,12 +1,13 @@
 ﻿using System;
 using EVESharp.EVE;
+using EVESharp.EVE.Client.Exceptions.insuranceSvc;
+using EVESharp.EVE.Client.Exceptions.jumpCloneSvc;
 using EVESharp.EVE.Packets.Exceptions;
 using EVESharp.EVE.Services;
 using EVESharp.EVE.Sessions;
+using EVESharp.EVE.Wallet;
 using EVESharp.Node.Chat;
 using EVESharp.Node.Database;
-using EVESharp.Node.Exceptions.insuranceSvc;
-using EVESharp.Node.Exceptions.jumpCloneSvc;
 using EVESharp.Node.Inventory;
 using EVESharp.Node.Inventory.Items.Types;
 using EVESharp.Node.Market;
@@ -109,7 +110,7 @@ public class insuranceSvc : ClientBoundService
             throw new InsureShipFailedSingleContract (oldOwnerID);
         }
 
-        using Wallet wallet = WalletManager.AcquireWallet (character.ID, WalletKeys.MAIN_WALLET);
+        using Wallet wallet = WalletManager.AcquireWallet (character.ID, Keys.MAIN);
         {
             wallet.EnsureEnoughBalance (insuranceCost);
             wallet.CreateJournalRecord (MarketReference.Insurance, ItemFactory.OwnerSCC.ID, -item.ID, -insuranceCost, $"Insurance fee for {item.Name}");

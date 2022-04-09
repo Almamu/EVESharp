@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 using EVESharp.Common.Database;
-using EVESharp.Node.StaticData.Inventory;
+using EVESharp.EVE.StaticData.Inventory;
 using MySql.Data.MySqlClient;
 
 namespace EVESharp.Node.Database;

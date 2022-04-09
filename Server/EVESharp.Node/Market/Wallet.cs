@@ -3,11 +3,12 @@ using System.Collections.Generic;
 using EVESharp.Common.Database;
 using EVESharp.Database;
 using EVESharp.EVE;
+using EVESharp.EVE.Client.Exceptions;
+using EVESharp.EVE.StaticData.Corporation;
+using EVESharp.EVE.Wallet;
 using EVESharp.Node.Database;
-using EVESharp.Node.Exceptions;
 using EVESharp.Node.Network;
 using EVESharp.Node.Notifications.Client.Wallet;
-using EVESharp.Node.StaticData.Corporation;
 using MySql.Data.MySqlClient;
 
 namespace EVESharp.Node.Market;
@@ -54,13 +55,13 @@ public class Wallet : IDisposable
 
                 corpRoles |= (long) (WalletKey switch
                 {
-                    WalletKeys.MAIN_WALLET    => CorporationRole.AccountCanQuery1,
-                    WalletKeys.SECOND_WALLET  => CorporationRole.AccountCanQuery2,
-                    WalletKeys.THIRD_WALLET   => CorporationRole.AccountCanQuery3,
-                    WalletKeys.FOURTH_WALLET  => CorporationRole.AccountCanQuery4,
-                    WalletKeys.FIFTH_WALLET   => CorporationRole.AccountCanQuery5,
-                    WalletKeys.SIXTH_WALLET   => CorporationRole.AccountCanQuery6,
-                    WalletKeys.SEVENTH_WALLET => CorporationRole.AccountCanQuery7,
+                    Keys.MAIN    => CorporationRole.AccountCanQuery1,
+                    Keys.SECOND  => CorporationRole.AccountCanQuery2,
+                    Keys.THIRD   => CorporationRole.AccountCanQuery3,
+                    Keys.FOURTH  => CorporationRole.AccountCanQuery4,
+                    Keys.FIFTH   => CorporationRole.AccountCanQuery5,
+                    Keys.SIXTH   => CorporationRole.AccountCanQuery6,
+                    Keys.SEVENTH => CorporationRole.AccountCanQuery7,
                     _                         => CorporationRole.JuniorAccountant
                 });
 

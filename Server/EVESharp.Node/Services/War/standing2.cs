@@ -1,6 +1,7 @@
 using EVESharp.EVE.Packets.Complex;
 using EVESharp.EVE.Packets.Exceptions;
 using EVESharp.EVE.Services;
+using EVESharp.EVE.StaticData.Standings;
 using EVESharp.Node.Cache;
 using EVESharp.Node.Database;
 using EVESharp.Node.Inventory;
@@ -8,7 +9,6 @@ using EVESharp.Node.Inventory.Items.Types;
 using EVESharp.Node.Network;
 using EVESharp.Node.Notifications.Client.Character;
 using EVESharp.Node.Sessions;
-using EVESharp.Node.StaticData.Standings;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Primitives;
 

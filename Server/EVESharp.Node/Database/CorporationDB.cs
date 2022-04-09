@@ -1,11 +1,11 @@
 using System;
 using System.Collections.Generic;
 using EVESharp.Common.Database;
-using EVESharp.Node.Alliances;
-using EVESharp.Node.Corporations;
-using EVESharp.Node.Exceptions.corpRegistry;
+using EVESharp.EVE.Alliances;
+using EVESharp.EVE.Client.Exceptions.corpRegistry;
+using EVESharp.EVE.Corporations;
+using EVESharp.EVE.StaticData.Inventory;
 using EVESharp.Node.Inventory.Items.Types;
-using EVESharp.Node.StaticData.Inventory;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Database;
 using EVESharp.PythonTypes.Types.Primitives;

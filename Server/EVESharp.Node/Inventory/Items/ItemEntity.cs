@@ -24,18 +24,18 @@
 
 using System;
 using System.Collections.Generic;
-using EVESharp.Node.Exceptions.Internal;
-using EVESharp.Node.Exceptions.jumpCloneSvc;
-using EVESharp.Node.Exceptions.ship;
-using EVESharp.Node.Inventory.Items.Attributes;
+using EVESharp.EVE.Client.Exceptions.Internal;
+using EVESharp.EVE.Client.Exceptions.jumpCloneSvc;
+using EVESharp.EVE.Client.Exceptions.ship;
+using EVESharp.EVE.Inventory.Attributes;
+using EVESharp.EVE.StaticData.Corporation;
+using EVESharp.EVE.StaticData.Inventory;
 using EVESharp.Node.Inventory.Items.Types;
-using EVESharp.Node.StaticData.Corporation;
-using EVESharp.Node.StaticData.Inventory;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Database;
 using EVESharp.PythonTypes.Types.Primitives;
 using Item = EVESharp.Node.Inventory.Items.Types.Information.Item;
-using Type = EVESharp.Node.StaticData.Inventory.Type;
+using Type = EVESharp.EVE.StaticData.Inventory.Type;
 
 namespace EVESharp.Node.Inventory.Items;
 
@@ -263,7 +263,7 @@ public abstract class ItemEntity : IDisposable
     }
 
     protected void CheckSkillRequirement (
-        StaticData.Inventory.Attributes skillTypeIDRequirement, StaticData.Inventory.Attributes skillLevelRequirement, Dictionary <int, Skill> skills
+        EVE.StaticData.Inventory.Attributes skillTypeIDRequirement, EVE.StaticData.Inventory.Attributes skillLevelRequirement, Dictionary <int, Skill> skills
     )
     {
         if (Attributes.AttributeExists (skillLevelRequirement) == false ||
@@ -284,23 +284,23 @@ public abstract class ItemEntity : IDisposable
     {
         Dictionary <int, Skill> skills        = character.InjectedSkillsByTypeID;
         PyList <PyInteger>      missingSkills = new PyList <PyInteger> ();
-        StaticData.Inventory.Attributes [] attributes =
+        EVE.StaticData.Inventory.Attributes [] attributes =
         {
-            StaticData.Inventory.Attributes.requiredSkill1,
-            StaticData.Inventory.Attributes.requiredSkill2,
-            StaticData.Inventory.Attributes.requiredSkill3,
-            StaticData.Inventory.Attributes.requiredSkill4,
-            StaticData.Inventory.Attributes.requiredSkill5,
-            StaticData.Inventory.Attributes.requiredSkill6
+            EVE.StaticData.Inventory.Attributes.requiredSkill1,
+            EVE.StaticData.Inventory.Attributes.requiredSkill2,
+            EVE.StaticData.Inventory.Attributes.requiredSkill3,
+            EVE.StaticData.Inventory.Attributes.requiredSkill4,
+            EVE.StaticData.Inventory.Attributes.requiredSkill5,
+            EVE.StaticData.Inventory.Attributes.requiredSkill6
         };
-        StaticData.Inventory.Attributes [] levelAttributes =
+        EVE.StaticData.Inventory.Attributes [] levelAttributes =
         {
-            StaticData.Inventory.Attributes.requiredSkill1Level,
-            StaticData.Inventory.Attributes.requiredSkill2Level,
-            StaticData.Inventory.Attributes.requiredSkill3Level,
-            StaticData.Inventory.Attributes.requiredSkill4Level,
-            StaticData.Inventory.Attributes.requiredSkill5Level,
-            StaticData.Inventory.Attributes.requiredSkill6Level
+            EVE.StaticData.Inventory.Attributes.requiredSkill1Level,
+            EVE.StaticData.Inventory.Attributes.requiredSkill2Level,
+            EVE.StaticData.Inventory.Attributes.requiredSkill3Level,
+            EVE.StaticData.Inventory.Attributes.requiredSkill4Level,
+            EVE.StaticData.Inventory.Attributes.requiredSkill5Level,
+            EVE.StaticData.Inventory.Attributes.requiredSkill6Level
         };
 
         for (int i = 0; i < attributes.Length; i++)

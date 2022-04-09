@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using EVESharp.EVE.Packets.Complex;
 using EVESharp.Node.Inventory.Items;
 using EVESharp.PythonTypes.Types.Primitives;
-using Attribute = EVESharp.Node.Inventory.Items.Attributes.Attribute;
+using Attribute = EVESharp.EVE.Inventory.Attributes.Attribute;
 
 namespace EVESharp.Node.Notifications.Client.Inventory;
 

@@ -1,9 +1,11 @@
 ﻿using EVESharp.EVE;
+using EVESharp.EVE.Client.Exceptions.jumpCloneSvc;
 using EVESharp.EVE.Packets.Exceptions;
 using EVESharp.EVE.Services;
 using EVESharp.EVE.Sessions;
+using EVESharp.EVE.StaticData.Inventory;
+using EVESharp.EVE.Wallet;
 using EVESharp.Node.Database;
-using EVESharp.Node.Exceptions.jumpCloneSvc;
 using EVESharp.Node.Inventory;
 using EVESharp.Node.Inventory.Items;
 using EVESharp.Node.Inventory.Items.Types;
@@ -11,7 +13,6 @@ using EVESharp.Node.Market;
 using EVESharp.Node.Network;
 using EVESharp.Node.Notifications.Client.Clones;
 using EVESharp.Node.Sessions;
-using EVESharp.Node.StaticData.Inventory;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Database;
 using EVESharp.PythonTypes.Types.Primitives;
@@ -150,7 +151,7 @@ public class jumpCloneSvc : ClientBoundService
         // get character's station
         Station station = ItemFactory.GetStaticStation (stationID);
 
-        using Wallet wallet = WalletManager.AcquireWallet (character.ID, WalletKeys.MAIN_WALLET);
+        using Wallet wallet = WalletManager.AcquireWallet (character.ID, Keys.MAIN);
         {
             wallet.EnsureEnoughBalance (cost);
             wallet.CreateJournalRecord (MarketReference.JumpCloneInstallationFee, null, station.ID, -cost, $"Installed clone at {station.Name}");

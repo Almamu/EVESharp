@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using EVESharp.Common.Database;
-using EVESharp.Node.StaticData.Certificates;
+using EVESharp.EVE.StaticData.Certificates;
 using EVESharp.PythonTypes.Types.Database;
 using MySql.Data.MySqlClient;
 

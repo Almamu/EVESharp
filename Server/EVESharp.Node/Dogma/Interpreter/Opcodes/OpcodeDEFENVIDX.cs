@@ -1,20 +1,20 @@
 ﻿using System;
 using System.IO;
+using EVESharp.EVE.Dogma.Exception;
 using EVESharp.EVE.Packets.Exceptions;
-using EVESharp.Node.Dogma.Exception;
 using EVESharp.Node.Inventory.Items;
 
 namespace EVESharp.Node.Dogma.Interpreter.Opcodes;
 
 public class OpcodeDEFENVIDX : Opcode
 {
-    public Inventory.Items.Dogma.Environment Environment { get; private set; }
+    public EVE.StaticData.Dogma.Environment Environment { get; private set; }
 
     public OpcodeDEFENVIDX (Interpreter interpreter) : base (interpreter) { }
 
     public override Opcode LoadOpcode (BinaryReader reader)
     {
-        if (Enum.TryParse (reader.ReadString (), out Inventory.Items.Dogma.Environment environment) == false)
+        if (Enum.TryParse (reader.ReadString (), out EVE.StaticData.Dogma.Environment environment) == false)
             throw new DogmaMachineException ("Cannot determine environment id");
 
         Environment = environment;
@@ -28,22 +28,22 @@ public class OpcodeDEFENVIDX : Opcode
 
         switch (Environment)
         {
-            case Inventory.Items.Dogma.Environment.Self:
+            case EVE.StaticData.Dogma.Environment.Self:
                 item = Interpreter.Environment.Self;
 
                 break;
-            case Inventory.Items.Dogma.Environment.Char:
+            case EVE.StaticData.Dogma.Environment.Char:
                 item = Interpreter.Environment.Character;
 
                 break;
-            case Inventory.Items.Dogma.Environment.Ship:
+            case EVE.StaticData.Dogma.Environment.Ship:
                 item = Interpreter.Environment.Ship;
 
                 break;
-            case Inventory.Items.Dogma.Environment.Target:
-            case Inventory.Items.Dogma.Environment.Area:
-            case Inventory.Items.Dogma.Environment.Other:
-            case Inventory.Items.Dogma.Environment.Charge:
+            case EVE.StaticData.Dogma.Environment.Target:
+            case EVE.StaticData.Dogma.Environment.Area:
+            case EVE.StaticData.Dogma.Environment.Other:
+            case EVE.StaticData.Dogma.Environment.Charge:
             default:
                 throw new CustomError ("Unsupported target");
         }
