@@ -13,7 +13,7 @@ using EVESharp.Node.Dogma;
 using EVESharp.Node.Inventory;
 using EVESharp.Node.Inventory.Items;
 using EVESharp.Node.Inventory.Items.Types;
-using EVESharp.Node.Network;
+using EVESharp.Node.Notifications;
 using EVESharp.Node.Notifications.Client.Inventory;
 using EVESharp.Node.Sessions;
 using EVESharp.PythonTypes.Types.Collections;
@@ -26,18 +26,17 @@ public class BoundInventory : ClientBoundService
 {
     private readonly Flags mFlag;
 
-    private readonly ItemInventory       mInventory;
-    public override  AccessLevel         AccessLevel         => AccessLevel.None;
-    private          ItemDB              ItemDB              { get; }
-    private          NodeContainer       NodeContainer       { get; }
-    private          ItemFactory         ItemFactory         { get; }
-    private          NotificationManager NotificationManager { get; }
-    private          Node.Dogma.Dogma    Dogma               { get; }
-    private          EffectsManager      EffectsManager      { get; }
+    private readonly ItemInventory               mInventory;
+    public override  AccessLevel                 AccessLevel         => AccessLevel.None;
+    private          ItemDB                      ItemDB              { get; }
+    private          ItemFactory                 ItemFactory         { get; }
+    private          Notifications.Notifications Notifications { get; }
+    private          Node.Dogma.Dogma            Dogma               { get; }
+    private          EffectsManager              EffectsManager      { get; }
 
     public BoundInventory (
-        ItemDB              itemDB,              EffectsManager   effectsManager, ItemInventory item, ItemFactory itemFactory, NodeContainer nodeContainer,
-        NotificationManager notificationManager, Node.Dogma.Dogma dogma,          BoundServiceManager manager, Session session
+        ItemDB              itemDB,              EffectsManager   effectsManager, ItemInventory item, ItemFactory itemFactory,
+        Notifications.Notifications notifications, Node.Dogma.Dogma dogma,          BoundServiceManager manager, Session session
     ) : base (manager, session, item.ID)
     {
         EffectsManager      = effectsManager;
@@ -45,14 +44,13 @@ public class BoundInventory : ClientBoundService
         this.mFlag          = Flags.None;
         ItemDB              = itemDB;
         ItemFactory         = itemFactory;
-        NodeContainer       = nodeContainer;
-        NotificationManager = notificationManager;
+        Notifications = notifications;
         Dogma               = dogma;
     }
 
     public BoundInventory (
-        ItemDB              itemDB, EffectsManager effectsManager, ItemInventory item, Flags flag, ItemFactory itemFactory, NodeContainer nodeContainer,
-        NotificationManager notificationManager, Node.Dogma.Dogma dogma, BoundServiceManager manager, Session session
+        ItemDB                      itemDB, EffectsManager effectsManager, ItemInventory item, Flags flag, ItemFactory itemFactory,
+        Notifications.Notifications notifications, Node.Dogma.Dogma dogma, BoundServiceManager manager, Session session
     ) : base (manager, session, item.ID)
     {
         EffectsManager      = effectsManager;
@@ -60,8 +58,7 @@ public class BoundInventory : ClientBoundService
         this.mFlag          = flag;
         ItemDB              = itemDB;
         ItemFactory         = itemFactory;
-        NodeContainer       = nodeContainer;
-        NotificationManager = notificationManager;
+        Notifications = notifications;
         Dogma               = dogma;
     }
 
@@ -351,10 +348,10 @@ public class BoundInventory : ClientBoundService
                     .AddChange (ItemChange.Flag,       (int) oldFlag);
 
                 // notify the character about the change
-                NotificationManager.NotifyOwnerAtLocation (item.OwnerID, session.LocationID, changes);
+                Notifications.NotifyOwnerAtLocation (item.OwnerID, session.LocationID, changes);
                 // notify the old owner if it changed
                 if (item.OwnerID != oldOwnerID)
-                    NotificationManager.NotifyOwnerAtLocation (oldOwnerID, session.LocationID, changes);
+                    Notifications.NotifyOwnerAtLocation (oldOwnerID, session.LocationID, changes);
                 // update meta inventories too
                 ItemFactory.MetaInventoryManager.OnItemMoved (item, oldLocation, this.mInventory.ID, oldFlag, newFlag);
 
@@ -373,13 +370,13 @@ public class BoundInventory : ClientBoundService
 
                 OnItemChange quantityChange = OnItemChange.BuildQuantityChange (item, item.Quantity + 1);
                 // notify the character about the change in quantity
-                NotificationManager.NotifyOwnerAtLocation (item.OwnerID, session.LocationID, quantityChange);
+                Notifications.NotifyOwnerAtLocation (item.OwnerID, session.LocationID, quantityChange);
                 // notify the old owner if it changed
                 if (item.OwnerID != oldOwnerID)
-                    NotificationManager.NotifyOwnerAtLocation (item.OwnerID, session.LocationID, quantityChange);
+                    Notifications.NotifyOwnerAtLocation (item.OwnerID, session.LocationID, quantityChange);
 
                 // notify the new owner on the new item
-                NotificationManager.NotifyOwnerAtLocation (item.OwnerID, session.LocationID, OnItemChange.BuildLocationChange (newItem, Flags.None, 0));
+                Notifications.NotifyOwnerAtLocation (item.OwnerID, session.LocationID, OnItemChange.BuildLocationChange (newItem, Flags.None, 0));
 
                 item.Persist ();
 
@@ -414,11 +411,11 @@ public class BoundInventory : ClientBoundService
 
                 OnItemChange locationChange = OnItemChange.BuildLocationChange (item, newOldFlag, newOldLocation);
 
-                NotificationManager.NotifyOwnerAtLocation (item.OwnerID, session.LocationID, locationChange);
+                Notifications.NotifyOwnerAtLocation (item.OwnerID, session.LocationID, locationChange);
 
                 // notify the owners again
                 if (item.OwnerID != newOldOwnerID)
-                    NotificationManager.NotifyOwnerAtLocation (newOldOwnerID, session.LocationID, locationChange.AddChange (ItemChange.OwnerID, newOldOwnerID));
+                    Notifications.NotifyOwnerAtLocation (newOldOwnerID, session.LocationID, locationChange.AddChange (ItemChange.OwnerID, newOldOwnerID));
 
                 throw;
             }
@@ -457,10 +454,10 @@ public class BoundInventory : ClientBoundService
 
                 // notify the old owner
                 if (oldOwnerID != item.OwnerID)
-                    NotificationManager.NotifyOwnerAtLocation (oldOwnerID, session.LocationID, changes);
+                    Notifications.NotifyOwnerAtLocation (oldOwnerID, session.LocationID, changes);
 
                 // notify the new owner
-                NotificationManager.NotifyOwnerAtLocation (item.OwnerID, session.LocationID, changes);
+                Notifications.NotifyOwnerAtLocation (item.OwnerID, session.LocationID, changes);
                 // update meta inventories too
                 ItemFactory.MetaInventoryManager.OnItemMoved (item, oldLocation, this.mInventory.ID, oldFlag, newFlag);
 
@@ -480,13 +477,13 @@ public class BoundInventory : ClientBoundService
 
                 OnItemChange quantityChange = OnItemChange.BuildQuantityChange (item, item.Quantity + quantity);
                 // notify the character about the change in quantity
-                NotificationManager.NotifyOwnerAtLocation (item.OwnerID, session.LocationID, quantityChange);
+                Notifications.NotifyOwnerAtLocation (item.OwnerID, session.LocationID, quantityChange);
                 // notify the old owner if it changed
                 if (item.OwnerID != oldOwnerID)
-                    NotificationManager.NotifyOwnerAtLocation (item.OwnerID, session.LocationID, quantityChange);
+                    Notifications.NotifyOwnerAtLocation (item.OwnerID, session.LocationID, quantityChange);
 
                 // notify the new owner on the new item
-                NotificationManager.NotifyOwnerAtLocation (item.OwnerID, session.LocationID, OnItemChange.BuildLocationChange (newItem, Flags.None, 0));
+                Notifications.NotifyOwnerAtLocation (item.OwnerID, session.LocationID, OnItemChange.BuildLocationChange (newItem, Flags.None, 0));
 
                 item.Persist ();
 
@@ -689,12 +686,12 @@ public class BoundInventory : ClientBoundService
     }
 
     public static PySubStruct BindInventory (
-        ItemDB              itemDB, EffectsManager effectsManager, ItemInventory item, Flags flag, ItemFactory itemFactory, NodeContainer nodeContainer,
-        NotificationManager notificationManager, Node.Dogma.Dogma dogma, BoundServiceManager boundServiceManager, Session session
+        ItemDB                      itemDB, EffectsManager effectsManager, ItemInventory item, Flags flag, ItemFactory itemFactory,
+        Notifications.Notifications notifications, Node.Dogma.Dogma dogma, BoundServiceManager boundServiceManager, Session session
     )
     {
         BoundService instance = new BoundInventory (
-            itemDB, effectsManager, item, flag, itemFactory, nodeContainer, notificationManager, dogma,
+            itemDB, effectsManager, item, flag, itemFactory, notifications, dogma,
             boundServiceManager, session
         );
         // bind the service

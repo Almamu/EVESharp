@@ -4,6 +4,7 @@ using EVESharp.Database;
 using EVESharp.EVE;
 using EVESharp.EVE.Client.Exceptions.corpRegistry;
 using EVESharp.EVE.Client.Messages;
+using EVESharp.EVE.Market;
 using EVESharp.EVE.Packets.Complex;
 using EVESharp.EVE.Services;
 using EVESharp.EVE.Sessions;
@@ -11,9 +12,8 @@ using EVESharp.EVE.StaticData.Corporation;
 using EVESharp.EVE.Wallet;
 using EVESharp.Node.Cache;
 using EVESharp.Node.Database;
-using EVESharp.Node.Inventory;
 using EVESharp.Node.Market;
-using EVESharp.Node.Network;
+using EVESharp.Node.Notifications;
 using EVESharp.Node.Sessions;
 using EVESharp.PythonTypes.Types.Primitives;
 
@@ -21,25 +21,23 @@ namespace EVESharp.Node.Services.Account;
 
 public class account : Service
 {
-    public override AccessLevel         AccessLevel         => AccessLevel.None;
-    private         CharacterDB         DB                  { get; }
-    private         WalletManager       WalletManager       { get; }
-    private         ItemManager         ItemManager         { get; }
-    private         CacheStorage        CacheStorage        { get; }
-    private         NotificationManager NotificationManager { get; }
-    private         DatabaseConnection  Database            { get; }
+    public override AccessLevel                 AccessLevel         => AccessLevel.None;
+    private         CharacterDB                 DB                  { get; }
+    private         WalletManager               WalletManager       { get; }
+    private         CacheStorage                CacheStorage        { get; }
+    private         Notifications.Notifications Notifications { get; }
+    private         DatabaseConnection          Database            { get; }
 
     public account (
-        DatabaseConnection  databaseConnection, CharacterDB db, WalletManager walletManager, ItemManager itemManager, CacheStorage cacheStorage,
-        NotificationManager notificationManager
+        DatabaseConnection          databaseConnection, CharacterDB db, WalletManager walletManager, CacheStorage cacheStorage,
+        Notifications.Notifications notifications
     )
     {
         Database            = databaseConnection;
         DB                  = db;
         WalletManager       = walletManager;
-        ItemManager         = itemManager;
         CacheStorage        = cacheStorage;
-        NotificationManager = notificationManager;
+        Notifications = notifications;
     }
 
     [RequiredRole (Roles.ROLE_PLAYER)]

@@ -11,12 +11,13 @@ using EVESharp.Node.Dogma;
 using EVESharp.Node.Inventory;
 using EVESharp.Node.Inventory.Items;
 using EVESharp.Node.Inventory.Items.Types;
-using EVESharp.Node.Network;
+using EVESharp.Node.Notifications;
 using EVESharp.Node.Notifications.Client.Inventory;
 using EVESharp.Node.Sessions;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Primitives;
 using Container = EVESharp.EVE.StaticData.Inventory.Container;
+using Groups = EVESharp.EVE.StaticData.Inventory.Groups;
 
 namespace EVESharp.Node.Services.Inventory;
 
@@ -25,39 +26,36 @@ public class invbroker : ClientBoundService
     private readonly int         mObjectID;
     public override  AccessLevel AccessLevel => AccessLevel.None;
 
-    private ItemFactory         ItemFactory         { get; }
-    private ItemDB              ItemDB              { get; }
-    private NodeContainer       NodeContainer       { get; }
-    private SystemManager       SystemManager       => ItemFactory.SystemManager;
-    private NotificationManager NotificationManager { get; }
-    private Node.Dogma.Dogma    Dogma               { get; }
-    private EffectsManager      EffectsManager      { get; }
+    private ItemFactory                 ItemFactory         { get; }
+    private ItemDB                      ItemDB              { get; }
+    private SystemManager               SystemManager       => ItemFactory.SystemManager;
+    private Notifications.Notifications Notifications { get; }
+    private Node.Dogma.Dogma            Dogma               { get; }
+    private EffectsManager              EffectsManager      { get; }
 
     public invbroker (
-        ItemDB           itemDB, EffectsManager effectsManager, ItemFactory itemFactory, NodeContainer nodeContainer, NotificationManager notificationManager,
+        ItemDB           itemDB, EffectsManager effectsManager, ItemFactory itemFactory, Notifications.Notifications notifications,
         Node.Dogma.Dogma dogma,  BoundServiceManager manager
     ) : base (manager)
     {
-        EffectsManager      = effectsManager;
-        ItemFactory         = itemFactory;
-        ItemDB              = itemDB;
-        NodeContainer       = nodeContainer;
-        NotificationManager = notificationManager;
-        Dogma               = dogma;
+        EffectsManager = effectsManager;
+        ItemFactory    = itemFactory;
+        ItemDB         = itemDB;
+        Notifications  = notifications;
+        Dogma          = dogma;
     }
 
     private invbroker (
-        ItemDB           itemDB, EffectsManager effectsManager, ItemFactory itemFactory, NodeContainer nodeContainer, NotificationManager notificationManager,
+        ItemDB           itemDB, EffectsManager effectsManager, ItemFactory itemFactory, Notifications.Notifications notifications,
         Node.Dogma.Dogma dogma,  BoundServiceManager manager, int objectID, Session session
     ) : base (manager, session, objectID)
     {
-        EffectsManager      = effectsManager;
-        ItemFactory         = itemFactory;
-        ItemDB              = itemDB;
-        this.mObjectID      = objectID;
-        NodeContainer       = nodeContainer;
-        NotificationManager = notificationManager;
-        Dogma               = dogma;
+        EffectsManager = effectsManager;
+        ItemFactory    = itemFactory;
+        ItemDB         = itemDB;
+        this.mObjectID = objectID;
+        Notifications  = notifications;
+        Dogma          = dogma;
     }
 
     private ItemInventory CheckInventoryBeforeLoading (ItemEntity inventoryItem)
@@ -83,7 +81,7 @@ public class invbroker : ClientBoundService
 
         // create an instance of the inventory service and bind it to the item data
         return BoundInventory.BindInventory (
-            ItemDB, EffectsManager, inventory, flag, ItemFactory, NodeContainer, NotificationManager, Dogma,
+            ItemDB, EffectsManager, inventory, flag, ItemFactory, Notifications, Dogma,
             BoundServiceManager, session
         );
     }
@@ -205,7 +203,7 @@ public class invbroker : ClientBoundService
         item.Persist ();
 
         // notify the owner of the item
-        NotificationManager.NotifyOwner (item.OwnerID, OnCfgDataChanged.BuildItemLabelChange (item));
+        Notifications.NotifyOwner (item.OwnerID, OnCfgDataChanged.BuildItemLabelChange (item));
 
         // TODO: CHECK IF ITEM BELONGS TO CORP AND NOTIFY CHARACTERS IN THIS NODE?
         return null;
@@ -283,7 +281,7 @@ public class invbroker : ClientBoundService
             throw new CustomError ("Trying to bind an object that does not belong to us!");
 
         return new invbroker (
-            ItemDB, EffectsManager, ItemFactory, NodeContainer, NotificationManager, Dogma, BoundServiceManager, bindParams.ObjectID,
+            ItemDB, EffectsManager, ItemFactory, Notifications, Dogma, BoundServiceManager, bindParams.ObjectID,
             call.Session
         );
     }

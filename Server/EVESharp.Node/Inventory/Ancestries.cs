@@ -22,19 +22,28 @@
     Creator: Almamu
 */
 
-using Serilog;
+using System.Collections.Generic;
+using EVESharp.EVE.StaticData;
+using EVESharp.Node.Database;
 
 namespace EVESharp.Node.Inventory;
 
-public class ItemManager
+public class Ancestries
 {
-    private ILogger       Log           { get; }
-    private NodeContainer NodeContainer { get; }
+    private Dictionary <int, Ancestry> mAncestries;
+    private CharacterDB                DB         { get; }
+    private Bloodlines                 Bloodlines { get; }
 
-    public ItemManager (ILogger logger, NodeContainer nodeContainer)
+    public Ancestry this [int id] => this.mAncestries [id];
+
+    public Ancestries (CharacterDB db, Bloodlines bloodlines)
     {
-        // create a log channel for the rare occurence of the ItemManager wanting to log something
-        Log           = logger;
-        NodeContainer = nodeContainer;
+        DB         = db;
+        Bloodlines = bloodlines;
+    }
+
+    public void Load ()
+    {
+        this.mAncestries = DB.GetAncestryInformation (Bloodlines);
     }
 }

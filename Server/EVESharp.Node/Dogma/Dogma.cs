@@ -2,7 +2,7 @@
 using System.Threading;
 using EVESharp.EVE.StaticData.Inventory;
 using EVESharp.Node.Inventory.Items;
-using EVESharp.Node.Network;
+using EVESharp.Node.Notifications;
 using EVESharp.Node.Notifications.Client.Inventory;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Primitives;
@@ -28,11 +28,11 @@ public class Dogma
     /// <summary>
     /// Notification manager used to send notifications
     /// </summary>
-    private NotificationManager NotificationManager { get; }
+    private Notifications.Notifications Notifications { get; }
 
-    public Dogma (NotificationManager notificationManager)
+    public Dogma (Notifications.Notifications notifications)
     {
-        NotificationManager = notificationManager;
+        Notifications = notifications;
         this.mThread        = new Thread (this.Tick);
         this.mThread.Start ();
     }
@@ -45,7 +45,7 @@ public class Dogma
     public void NotifyAttributeChange (int ownerID, Attribute attribute, ItemEntity item)
     {
         this.QueueMultiEvent (
-            NotificationManager.NOTIFICATION_TYPE_OWNER,
+            NotificationIdType.Owner,
             ownerID,
             this.PrepareNotifyAttributeChange (attribute, item)
         );
@@ -59,7 +59,7 @@ public class Dogma
     public void NotifyAttributeChange (int ownerID, int locationID, Attribute attribute, ItemEntity item)
     {
         this.QueueMultiEvent (
-            NotificationManager.NOTIFICATION_TYPE_OWNER_LOCATIONID,
+            NotificationIdType.OwnerAndLocation,
             new PyTuple (2)
             {
                 [0] = ownerID,
@@ -74,7 +74,7 @@ public class Dogma
     /// </summary>
     /// <param name="attribute">The attribute to notify about</param>
     /// <param name="item">The item to notify about</param>
-    public void NotifyAttributeChange (string idType, int value, Attribute attribute, ItemEntity item)
+    public void NotifyAttributeChange (NotificationIdType idType, int value, Attribute attribute, ItemEntity item)
     {
         this.QueueMultiEvent (
             idType,
@@ -88,7 +88,7 @@ public class Dogma
     /// </summary>
     /// <param name="attribute">The attribute to notify about</param>
     /// <param name="item">The item to notify about</param>
-    public void NotifyAttributeChange (string idType, PyTuple value, Attribute attribute, ItemEntity item)
+    public void NotifyAttributeChange (NotificationIdType idType, PyTuple value, Attribute attribute, ItemEntity item)
     {
         this.QueueMultiEvent (
             idType,
@@ -102,7 +102,7 @@ public class Dogma
     /// </summary>
     /// <param name="attribute">The attribute to notify about</param>
     /// <param name="item">The item to notify about</param>
-    public void NotifyAttributeChange (string idType, PyList <PyInteger> value, Attribute attribute, ItemEntity item)
+    public void NotifyAttributeChange (NotificationIdType idType, PyList <PyInteger> value, Attribute attribute, ItemEntity item)
     {
         this.QueueMultiEvent (
             idType,
@@ -116,7 +116,7 @@ public class Dogma
     /// </summary>
     /// <param name="attribute">The attribute to notify about</param>
     /// <param name="item">The item to notify about</param>
-    public void NotifyAttributeChange (string idType, PyList <PyTuple> value, Attribute attribute, ItemEntity item)
+    public void NotifyAttributeChange (NotificationIdType idType, PyList <PyTuple> value, Attribute attribute, ItemEntity item)
     {
         this.QueueMultiEvent (
             idType,
@@ -133,7 +133,7 @@ public class Dogma
     public void NotifyAttributeChange (int ownerID, AttributeTypes attribute, ItemEntity item)
     {
         this.QueueMultiEvent (
-            NotificationManager.NOTIFICATION_TYPE_OWNER,
+            NotificationIdType.Owner,
             ownerID,
             this.PrepareNotifyAttributeChange (attribute, item)
         );
@@ -147,7 +147,7 @@ public class Dogma
     public void NotifyAttributeChange (int ownerID, int locationID, AttributeTypes attribute, ItemEntity item)
     {
         this.QueueMultiEvent (
-            NotificationManager.NOTIFICATION_TYPE_OWNER_LOCATIONID,
+            NotificationIdType.OwnerAndLocation,
             new PyTuple (2)
             {
                 [0] = ownerID,
@@ -162,7 +162,7 @@ public class Dogma
     /// </summary>
     /// <param name="attribute">The attribute to notify about</param>
     /// <param name="item">The item to notify about</param>
-    public void NotifyAttributeChange (string idType, int value, AttributeTypes attribute, ItemEntity item)
+    public void NotifyAttributeChange (NotificationIdType idType, int value, AttributeTypes attribute, ItemEntity item)
     {
         this.QueueMultiEvent (
             idType,
@@ -176,7 +176,7 @@ public class Dogma
     /// </summary>
     /// <param name="attribute">The attribute to notify about</param>
     /// <param name="item">The item to notify about</param>
-    public void NotifyAttributeChange (string idType, PyTuple value, AttributeTypes attribute, ItemEntity item)
+    public void NotifyAttributeChange (NotificationIdType idType, PyTuple value, AttributeTypes attribute, ItemEntity item)
     {
         this.QueueMultiEvent (
             idType,
@@ -190,7 +190,7 @@ public class Dogma
     /// </summary>
     /// <param name="attribute">The attribute to notify about</param>
     /// <param name="item">The item to notify about</param>
-    public void NotifyAttributeChange (string idType, PyList <PyInteger> value, AttributeTypes attribute, ItemEntity item)
+    public void NotifyAttributeChange (NotificationIdType idType, PyList <PyInteger> value, AttributeTypes attribute, ItemEntity item)
     {
         this.QueueMultiEvent (
             idType,
@@ -204,7 +204,7 @@ public class Dogma
     /// </summary>
     /// <param name="attribute">The attribute to notify about</param>
     /// <param name="item">The item to notify about</param>
-    public void NotifyAttributeChange (string idType, PyList <PyTuple> value, AttributeTypes attribute, ItemEntity item)
+    public void NotifyAttributeChange (NotificationIdType idType, PyList <PyTuple> value, AttributeTypes attribute, ItemEntity item)
     {
         this.QueueMultiEvent (
             idType,
@@ -221,7 +221,7 @@ public class Dogma
     public void NotifyAttributeChange (int ownerID, AttributeTypes [] attributes, ItemEntity item)
     {
         this.QueueMultiEvent (
-            NotificationManager.NOTIFICATION_TYPE_OWNER,
+            NotificationIdType.Owner,
             ownerID,
             this.PrepareNotifyAttributeChange (attributes, item)
         );
@@ -235,7 +235,7 @@ public class Dogma
     public void NotifyAttributeChange (int ownerID, int locationID, AttributeTypes [] attributes, ItemEntity item)
     {
         this.QueueMultiEvent (
-            NotificationManager.NOTIFICATION_TYPE_OWNER_LOCATIONID,
+            NotificationIdType.OwnerAndLocation,
             new PyTuple (2)
             {
                 [0] = ownerID,
@@ -250,7 +250,7 @@ public class Dogma
     /// </summary>
     /// <param name="attributes">The attributes to notify about</param>
     /// <param name="item">The item to notify about</param>
-    public void NotifyAttributeChange (string idType, int value, AttributeTypes [] attributes, ItemEntity item)
+    public void NotifyAttributeChange (NotificationIdType idType, int value, AttributeTypes [] attributes, ItemEntity item)
     {
         this.QueueMultiEvent (
             idType,
@@ -264,7 +264,7 @@ public class Dogma
     /// </summary>
     /// <param name="attributes">The attributes to notify about</param>
     /// <param name="item">The item to notify about</param>
-    public void NotifyAttributeChange (string idType, PyTuple value, AttributeTypes [] attributes, ItemEntity item)
+    public void NotifyAttributeChange (NotificationIdType idType, PyTuple value, AttributeTypes [] attributes, ItemEntity item)
     {
         this.QueueMultiEvent (
             idType,
@@ -278,7 +278,7 @@ public class Dogma
     /// </summary>
     /// <param name="attributes">The attributes to notify about</param>
     /// <param name="item">The item to notify about</param>
-    public void NotifyAttributeChange (string idType, PyList <PyInteger> value, AttributeTypes [] attributes, ItemEntity item)
+    public void NotifyAttributeChange (NotificationIdType idType, PyList <PyInteger> value, AttributeTypes [] attributes, ItemEntity item)
     {
         this.QueueMultiEvent (
             idType,
@@ -292,7 +292,7 @@ public class Dogma
     /// </summary>
     /// <param name="attributes">The attributes to notify about</param>
     /// <param name="item">The item to notify about</param>
-    public void NotifyAttributeChange (string idType, PyList <PyTuple> value, AttributeTypes [] attributes, ItemEntity item)
+    public void NotifyAttributeChange (NotificationIdType idType, PyList <PyTuple> value, AttributeTypes [] attributes, ItemEntity item)
     {
         this.QueueMultiEvent (
             idType,
@@ -310,7 +310,7 @@ public class Dogma
     public void NotifyAttributeChange (int ownerID, Attribute [] attributes, ItemEntity [] items)
     {
         this.QueueMultiEvent (
-            NotificationManager.NOTIFICATION_TYPE_OWNER,
+            NotificationIdType.Owner,
             ownerID,
             this.PrepareNotifyAttributeChange (attributes, items)
         );
@@ -325,7 +325,7 @@ public class Dogma
     public void NotifyAttributeChange (int ownerID, int locationID, Attribute [] attributes, ItemEntity [] items)
     {
         this.QueueMultiEvent (
-            NotificationManager.NOTIFICATION_TYPE_OWNER_LOCATIONID,
+            NotificationIdType.OwnerAndLocation,
             new PyTuple (2)
             {
                 [0] = ownerID,
@@ -341,7 +341,7 @@ public class Dogma
     /// <param name="attributes">The list of attributes that have changed</param>
     /// <param name="items">The list of items those attributes belong to</param>
     /// <exception cref="System.ArgumentOutOfRangeException">If the list of attributes and items is not the same size</exception>
-    public void NotifyAttributeChange (string idType, int value, Attribute [] attributes, ItemEntity [] items)
+    public void NotifyAttributeChange (NotificationIdType idType, int value, Attribute [] attributes, ItemEntity [] items)
     {
         this.QueueMultiEvent (
             idType,
@@ -356,7 +356,7 @@ public class Dogma
     /// <param name="attributes">The list of attributes that have changed</param>
     /// <param name="items">The list of items those attributes belong to</param>
     /// <exception cref="System.ArgumentOutOfRangeException">If the list of attributes and items is not the same size</exception>
-    public void NotifyAttributeChange (string idType, PyTuple value, Attribute [] attributes, ItemEntity [] items)
+    public void NotifyAttributeChange (NotificationIdType idType, PyTuple value, Attribute [] attributes, ItemEntity [] items)
     {
         this.QueueMultiEvent (
             idType,
@@ -371,7 +371,7 @@ public class Dogma
     /// <param name="attributes">The list of attributes that have changed</param>
     /// <param name="items">The list of items those attributes belong to</param>
     /// <exception cref="System.ArgumentOutOfRangeException">If the list of attributes and items is not the same size</exception>
-    public void NotifyAttributeChange (string idType, PyList <PyInteger> value, Attribute [] attributes, ItemEntity [] items)
+    public void NotifyAttributeChange (NotificationIdType idType, PyList <PyInteger> value, Attribute [] attributes, ItemEntity [] items)
     {
         this.QueueMultiEvent (
             idType,
@@ -386,7 +386,7 @@ public class Dogma
     /// <param name="attributes">The list of attributes that have changed</param>
     /// <param name="items">The list of items those attributes belong to</param>
     /// <exception cref="System.ArgumentOutOfRangeException">If the list of attributes and items is not the same size</exception>
-    public void NotifyAttributeChange (string idType, PyList <PyTuple> value, Attribute [] attributes, ItemEntity [] items)
+    public void NotifyAttributeChange (NotificationIdType idType, PyList <PyTuple> value, Attribute [] attributes, ItemEntity [] items)
     {
         this.QueueMultiEvent (
             idType,
@@ -416,7 +416,7 @@ public class Dogma
     public void NotifyAttributeChange (int ownerID, int locationID, Attribute [] attributes, ItemEntity item)
     {
         this.QueueMultiEvent (
-            NotificationManager.NOTIFICATION_TYPE_OWNER_LOCATIONID,
+            NotificationIdType.OwnerAndLocation,
             new PyTuple (2)
             {
                 [0] = ownerID,
@@ -431,7 +431,7 @@ public class Dogma
     /// </summary>
     /// <param name="attributes">The list of attributes that have changed</param>
     /// <param name="item">The item these attributes belong to</param>
-    public void NotifyAttributeChange (string idType, int value, Attribute [] attributes, ItemEntity item)
+    public void NotifyAttributeChange (NotificationIdType idType, int value, Attribute [] attributes, ItemEntity item)
     {
         this.QueueMultiEvent (
             idType,
@@ -445,7 +445,7 @@ public class Dogma
     /// </summary>
     /// <param name="attributes">The list of attributes that have changed</param>
     /// <param name="item">The item these attributes belong to</param>
-    public void NotifyAttributeChange (string idType, PyTuple value, Attribute [] attributes, ItemEntity item)
+    public void NotifyAttributeChange (NotificationIdType idType, PyTuple value, Attribute [] attributes, ItemEntity item)
     {
         this.QueueMultiEvent (
             idType,
@@ -459,7 +459,7 @@ public class Dogma
     /// </summary>
     /// <param name="attributes">The list of attributes that have changed</param>
     /// <param name="item">The item these attributes belong to</param>
-    public void NotifyAttributeChange (string idType, PyList <PyInteger> value, Attribute [] attributes, ItemEntity item)
+    public void NotifyAttributeChange (NotificationIdType idType, PyList <PyInteger> value, Attribute [] attributes, ItemEntity item)
     {
         this.QueueMultiEvent (
             idType,
@@ -473,7 +473,7 @@ public class Dogma
     /// </summary>
     /// <param name="attributes">The list of attributes that have changed</param>
     /// <param name="item">The item these attributes belong to</param>
-    public void NotifyAttributeChange (string idType, PyList <PyTuple> value, Attribute [] attributes, ItemEntity item)
+    public void NotifyAttributeChange (NotificationIdType idType, PyList <PyTuple> value, Attribute [] attributes, ItemEntity item)
     {
         this.QueueMultiEvent (
             idType,
@@ -485,7 +485,7 @@ public class Dogma
     public void NotifyAttributeChange (int ownerID, AttributeTypes attribute, ItemEntity [] items)
     {
         this.QueueMultiEvent (
-            NotificationManager.NOTIFICATION_TYPE_OWNER,
+            NotificationIdType.Owner,
             ownerID,
             this.PrepareNotifyAttributeChange (attribute, items)
         );
@@ -494,7 +494,7 @@ public class Dogma
     public void NotifyAttributeChange (int ownerID, int locationID, AttributeTypes attribute, ItemEntity [] items)
     {
         this.QueueMultiEvent (
-            NotificationManager.NOTIFICATION_TYPE_OWNER_LOCATIONID,
+            NotificationIdType.OwnerAndLocation,
             new PyTuple (2)
             {
                 [0] = ownerID,
@@ -504,7 +504,7 @@ public class Dogma
         );
     }
 
-    public void NotifyAttributeChange (string idType, int value, AttributeTypes attribute, ItemEntity [] items)
+    public void NotifyAttributeChange (NotificationIdType idType, int value, AttributeTypes attribute, ItemEntity [] items)
     {
         this.QueueMultiEvent (
             idType,
@@ -513,7 +513,7 @@ public class Dogma
         );
     }
 
-    public void NotifyAttributeChange (string idType, PyTuple value, AttributeTypes attribute, ItemEntity [] items)
+    public void NotifyAttributeChange (NotificationIdType idType, PyTuple value, AttributeTypes attribute, ItemEntity [] items)
     {
         this.QueueMultiEvent (
             idType,
@@ -522,7 +522,7 @@ public class Dogma
         );
     }
 
-    public void NotifyAttributeChange (string idType, PyList <PyInteger> value, AttributeTypes attribute, ItemEntity [] items)
+    public void NotifyAttributeChange (NotificationIdType idType, PyList <PyInteger> value, AttributeTypes attribute, ItemEntity [] items)
     {
         this.QueueMultiEvent (
             idType,
@@ -531,7 +531,7 @@ public class Dogma
         );
     }
 
-    public void NotifyAttributeChange (string idType, PyList <PyTuple> value, AttributeTypes attribute, ItemEntity [] items)
+    public void NotifyAttributeChange (NotificationIdType idType, PyList <PyTuple> value, AttributeTypes attribute, ItemEntity [] items)
     {
         this.QueueMultiEvent (
             idType,
@@ -623,14 +623,14 @@ public class Dogma
     /// <param name="idType">The type of id to use for notification</param>
     /// <param name="id">The value to notify</param>
     /// <param name="notif">The notification</param>
-    public void QueueMultiEvent (string idType, int id, PyTuple notif)
+    public void QueueMultiEvent (NotificationIdType idType, int id, PyTuple notif)
     {
         PyList <PyInteger> ids = new PyList <PyInteger> {id};
 
         this.QueueMultiEvent (
             new PyTuple (2)
             {
-                [0] = idType,
+                [0] = Node.Notifications.Notifications.NotificationTypeTranslation [idType],
                 [1] = ids
             }, notif
         );
@@ -642,14 +642,14 @@ public class Dogma
     /// <param name="idType">The type of id to use for notification</param>
     /// <param name="id">The value to notify</param>
     /// <param name="notif">The notification</param>
-    public void QueueMultiEvent (string idType, PyTuple id, PyTuple notif)
+    public void QueueMultiEvent (NotificationIdType idType, PyTuple id, PyTuple notif)
     {
         PyList <PyTuple> ids = new PyList <PyTuple> {id};
 
         this.QueueMultiEvent (
             new PyTuple (2)
             {
-                [0] = idType,
+                [0] = Node.Notifications.Notifications.NotificationTypeTranslation [idType],
                 [1] = ids
             }, notif
         );
@@ -661,12 +661,12 @@ public class Dogma
     /// <param name="idType"></param>
     /// <param name="ids"></param>
     /// <param name="notif"></param>
-    public void QueueMultiEvent (string idType, PyList <PyInteger> ids, PyTuple notif)
+    public void QueueMultiEvent (NotificationIdType idType, PyList <PyInteger> ids, PyTuple notif)
     {
         this.QueueMultiEvent (
             new PyTuple (2)
             {
-                [0] = idType,
+                [0] = Node.Notifications.Notifications.NotificationTypeTranslation [idType],
                 [1] = ids
             }, notif
         );
@@ -678,12 +678,12 @@ public class Dogma
     /// <param name="idType"></param>
     /// <param name="ids"></param>
     /// <param name="notif"></param>
-    public void QueueMultiEvent (string idType, PyList <PyTuple> ids, PyTuple notif)
+    public void QueueMultiEvent (NotificationIdType idType, PyList <PyTuple> ids, PyTuple notif)
     {
         this.QueueMultiEvent (
             new PyTuple (2)
             {
-                [0] = idType,
+                [0] = Node.Notifications.Notifications.NotificationTypeTranslation [idType],
                 [1] = ids
             }, notif
         );
@@ -696,7 +696,7 @@ public class Dogma
     /// <param name="notif">The notification's body</param>
     public void QueueMultiEvent (int ownerID, PyTuple notif)
     {
-        this.QueueMultiEvent (NotificationManager.NOTIFICATION_TYPE_OWNER, ownerID, notif);
+        this.QueueMultiEvent (NotificationIdType.Owner, ownerID, notif);
     }
 
     /// <summary>
@@ -707,7 +707,7 @@ public class Dogma
         lock (this.mPendingEvents)
         {
             foreach ((PyTuple type, PyList <PyTuple> notifs) in this.mPendingEvents)
-                NotificationManager.SendNotification (
+                Notifications.SendNotification (
                     "OnMultiEvent",
                     type [0] as PyString,
                     type [1] as PyList,

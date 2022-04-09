@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 using EVESharp.Common.Database;
-using EVESharp.EVE.StaticData;
+using EVESharp.Node.Configuration;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Database;
 using EVESharp.PythonTypes.Types.Primitives;
@@ -10,11 +10,11 @@ namespace EVESharp.Node.Database;
 
 public class ConfigDB : DatabaseAccessor
 {
-    private NodeContainer NodeContainer { get; }
+    private Constants Constants { get; }
 
-    public ConfigDB (NodeContainer nodeContainer, DatabaseConnection db) : base (db)
+    public ConfigDB (Constants constants, DatabaseConnection db) : base (db)
     {
-        NodeContainer = nodeContainer;
+        Constants = constants;
     }
 
     /// <summary>
@@ -167,7 +167,7 @@ public class ConfigDB : DatabaseAccessor
     /// <returns></returns>
     public CRowset GetMapObjects (int itemID)
     {
-        if (itemID == NodeContainer.Constants [Constants.locationUniverse])
+        if (itemID == Constants.LocationUniverse)
             return Database.PrepareCRowsetQuery (
                 $"SELECT groupID, typeID, itemID, itemName, {itemID} as locationID, orbitID, 0 AS connection, x, y, z FROM mapDenormalize WHERE typeID = 3"
             );

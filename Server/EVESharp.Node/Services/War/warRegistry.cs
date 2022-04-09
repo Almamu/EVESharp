@@ -1,7 +1,7 @@
 using EVESharp.EVE.Packets.Complex;
 using EVESharp.EVE.Services;
 using EVESharp.EVE.Sessions;
-using EVESharp.EVE.StaticData;
+using EVESharp.Node.Configuration;
 using EVESharp.PythonTypes.Types.Primitives;
 
 namespace EVESharp.Node.Services.War;
@@ -10,16 +10,16 @@ public class warRegistry : ClientBoundService
 {
     private         int           mObjectID;
     public override AccessLevel   AccessLevel => AccessLevel.None;
-    private         NodeContainer Container   { get; }
+    private         Constants Constants   { get; }
 
-    public warRegistry (NodeContainer container, BoundServiceManager manager) : base (manager)
+    public warRegistry (Constants constants, BoundServiceManager manager) : base (manager)
     {
-        Container = container;
+        Constants = constants;
     }
 
-    private warRegistry (NodeContainer container, BoundServiceManager manager, int objectID, Session session) : base (manager, session, objectID)
+    private warRegistry (Constants constants, BoundServiceManager manager, int objectID, Session session) : base (manager, session, objectID)
     {
-        Container      = container;
+        Constants      = constants;
         this.mObjectID = objectID;
     }
 
@@ -30,7 +30,7 @@ public class warRegistry : ClientBoundService
 
     public PyDataType GetCostOfWarAgainst (PyInteger corporationID, CallInformation call)
     {
-        return Container.Constants [Constants.warDeclarationCost].Value;
+        return Constants.WarDeclarationCost.Value;
     }
 
     protected override long MachoResolveObject (ServiceBindParams parameters, CallInformation call)
@@ -41,6 +41,6 @@ public class warRegistry : ClientBoundService
 
     protected override BoundService CreateBoundInstance (ServiceBindParams bindParams, CallInformation call)
     {
-        return new warRegistry (Container, BoundServiceManager, bindParams.ObjectID, call.Session);
+        return new warRegistry (Constants, BoundServiceManager, bindParams.ObjectID, call.Session);
     }
 }

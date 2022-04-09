@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 using EVESharp.Common.Database;
-using EVESharp.Node.Market;
+using EVESharp.EVE.Market;
 
 namespace EVESharp.Node.Database;
 

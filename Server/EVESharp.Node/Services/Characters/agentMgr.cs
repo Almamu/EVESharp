@@ -10,20 +10,17 @@ public class agentMgr : ClientBoundService
 {
     public override AccessLevel   AccessLevel  => AccessLevel.None;
     private         AgentManager  AgentManager { get; }
-    private         NodeContainer Container    { get; }
 
-    public agentMgr (NodeContainer container, AgentManager agentManager, BoundServiceManager manager) : base (manager)
+    public agentMgr (AgentManager agentManager, BoundServiceManager manager) : base (manager)
     {
         AgentManager = agentManager;
-        Container    = container;
     }
 
-    protected agentMgr (int agentID, NodeContainer container, AgentManager agentManager, BoundServiceManager manager, Session session) : base (
+    protected agentMgr (int agentID, AgentManager agentManager, BoundServiceManager manager, Session session) : base (
         manager, session, agentID
     )
     {
         AgentManager = agentManager;
-        Container    = container;
     }
 
     public PyDataType GetAgents (CallInformation call)
@@ -57,6 +54,6 @@ public class agentMgr : ClientBoundService
 
     protected override BoundService CreateBoundInstance (ServiceBindParams bindParams, CallInformation call)
     {
-        return new agentMgr (bindParams.ObjectID, Container, AgentManager, BoundServiceManager, call.Session);
+        return new agentMgr (bindParams.ObjectID, AgentManager, BoundServiceManager, call.Session);
     }
 }

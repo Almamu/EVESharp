@@ -1,4 +1,5 @@
 ﻿using EVESharp.EVE.Client.Exceptions.jumpCloneSvc;
+using EVESharp.EVE.Market;
 using EVESharp.EVE.Packets.Exceptions;
 using EVESharp.EVE.Services;
 using EVESharp.EVE.Sessions;
@@ -9,12 +10,13 @@ using EVESharp.Node.Inventory;
 using EVESharp.Node.Inventory.Items;
 using EVESharp.Node.Inventory.Items.Types;
 using EVESharp.Node.Market;
-using EVESharp.Node.Network;
+using EVESharp.Node.Notifications;
 using EVESharp.Node.Notifications.Client.Clones;
 using EVESharp.Node.Sessions;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Database;
 using EVESharp.PythonTypes.Types.Primitives;
+using Groups = EVESharp.EVE.StaticData.Inventory.Groups;
 
 namespace EVESharp.Node.Services.Characters;
 
@@ -22,17 +24,17 @@ public class jumpCloneSvc : ClientBoundService
 {
     public override AccessLevel AccessLevel => AccessLevel.None;
 
-    private ItemDB              ItemDB              { get; }
-    private MarketDB            MarketDB            { get; }
-    private ItemFactory         ItemFactory         { get; }
-    private TypeManager         TypeManager         => ItemFactory.TypeManager;
-    private SystemManager       SystemManager       { get; }
-    private NotificationManager NotificationManager { get; }
-    private WalletManager       WalletManager       { get; }
+    private ItemDB                      ItemDB              { get; }
+    private MarketDB                    MarketDB            { get; }
+    private ItemFactory                 ItemFactory         { get; }
+    private TypeManager                 TypeManager         => ItemFactory.TypeManager;
+    private SystemManager               SystemManager       { get; }
+    private Notifications.Notifications Notifications { get; }
+    private WalletManager               WalletManager       { get; }
 
     public jumpCloneSvc (
-        ItemDB        itemDB,        MarketDB      marketDB,      ItemFactory         itemFactory,
-        SystemManager systemManager, WalletManager walletManager, NotificationManager notificationManager, BoundServiceManager manager
+        ItemDB        itemDB,        MarketDB      marketDB,      ItemFactory itemFactory,
+        SystemManager systemManager, WalletManager walletManager, Notifications.Notifications notifications, BoundServiceManager manager
     ) : base (manager)
     {
         ItemDB              = itemDB;
@@ -40,12 +42,12 @@ public class jumpCloneSvc : ClientBoundService
         ItemFactory         = itemFactory;
         SystemManager       = systemManager;
         WalletManager       = walletManager;
-        NotificationManager = notificationManager;
+        Notifications = notifications;
     }
 
     protected jumpCloneSvc (
-        int           locationID,    ItemDB              itemDB,  MarketDB      marketDB,      ItemFactory         itemFactory,
-        SystemManager systemManager, BoundServiceManager manager, WalletManager walletManager, NotificationManager notificationManager, Session session
+        int           locationID,    ItemDB              itemDB,  MarketDB      marketDB,      ItemFactory itemFactory,
+        SystemManager systemManager, BoundServiceManager manager, WalletManager walletManager, Notifications.Notifications notifications, Session session
     ) : base (manager, session, locationID)
     {
         ItemDB              = itemDB;
@@ -53,7 +55,7 @@ public class jumpCloneSvc : ClientBoundService
         ItemFactory         = itemFactory;
         SystemManager       = systemManager;
         WalletManager       = walletManager;
-        NotificationManager = notificationManager;
+        Notifications = notifications;
     }
 
     /// <summary>
@@ -63,7 +65,7 @@ public class jumpCloneSvc : ClientBoundService
     /// <param name="characterID">The character to notify</param>
     public void OnCloneUpdate (int characterID)
     {
-        NotificationManager.NotifyCharacter (characterID, new OnJumpCloneCacheInvalidated ());
+        Notifications.NotifyCharacter (characterID, new OnJumpCloneCacheInvalidated ());
     }
 
     public PyDataType GetCloneState (CallInformation call)
@@ -197,7 +199,7 @@ public class jumpCloneSvc : ClientBoundService
             throw new CustomError ("Trying to bind an object that does not belong to us!");
 
         return new jumpCloneSvc (
-            bindParams.ObjectID, ItemDB, MarketDB, ItemFactory, SystemManager, BoundServiceManager, WalletManager, NotificationManager,
+            bindParams.ObjectID, ItemDB, MarketDB, ItemFactory, SystemManager, BoundServiceManager, WalletManager, Notifications,
             call.Session
         );
     }

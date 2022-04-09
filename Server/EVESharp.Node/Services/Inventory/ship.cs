@@ -10,6 +10,7 @@ using EVESharp.Node.Notifications.Client.Inventory;
 using EVESharp.Node.Sessions;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Primitives;
+using Groups = EVESharp.EVE.StaticData.Inventory.Groups;
 using SessionManager = EVESharp.Node.Sessions.SessionManager;
 
 namespace EVESharp.Node.Services.Inventory;

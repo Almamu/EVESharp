@@ -28,20 +28,20 @@ using EVESharp.Node.Database;
 
 namespace EVESharp.Node.Inventory;
 
-public class GroupManager
+public class Categories
 {
-    private Dictionary <int, Group> mGroups;
-    private ItemDB                  ItemDB { get; }
+    private Dictionary <int, Category> mCategories;
+    private ItemDB                     ItemDB { get; }
 
-    public Group this [int id] => this.mGroups [id];
+    public Category this [int id] => this.mCategories [id];
 
-    public GroupManager (ItemDB itemDB)
+    public Categories (ItemDB itemDB)
     {
         ItemDB = itemDB;
     }
 
     public void Load ()
     {
-        this.mGroups = ItemDB.LoadItemGroups ();
+        this.mCategories = ItemDB.LoadItemCategories ();
     }
 }

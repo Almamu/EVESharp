@@ -5,7 +5,7 @@ using EVESharp.EVE.Sessions;
 using EVESharp.Node.Inventory;
 using EVESharp.Node.Inventory.Items;
 using EVESharp.Node.Inventory.Items.Types;
-using EVESharp.Node.Network;
+using EVESharp.Node.Notifications;
 using EVESharp.Node.Notifications.Client.Inventory;
 using EVESharp.Node.Notifications.Nodes.Corps;
 using EVESharp.Node.Server.Shared;
@@ -22,16 +22,16 @@ namespace EVESharp.Node.Server.Node.Messages;
 
 public class MessageProcessor : Shared.Messages.MessageProcessor
 {
-    public NotificationManager NotificationManager { get; }
-    public ItemFactory         ItemFactory         { get; }
-    public SystemManager       SystemManager       { get; }
+    public Notifications.Notifications Notifications { get; }
+    public ItemFactory                 ItemFactory         { get; }
+    public SystemManager               SystemManager       { get; }
 
     public MessageProcessor (
-        IMachoNet      machoNet,       ILogger logger, NotificationManager notificationManager, ItemFactory itemFactory, SystemManager systemManager,
+        IMachoNet      machoNet,       ILogger logger, Notifications.Notifications notifications, ItemFactory itemFactory, SystemManager systemManager,
         ServiceManager serviceManager, BoundServiceManager boundServiceManager
     ) : base (machoNet, logger, serviceManager, boundServiceManager, 100)
     {
-        NotificationManager = notificationManager;
+        Notifications = notifications;
         ItemFactory         = itemFactory;
         SystemManager       = systemManager;
     }
@@ -297,7 +297,7 @@ public class MessageProcessor : Shared.Messages.MessageProcessor
             // TODO: IDEALLY THIS WOULD BE ENQUEUED SO ALL OF THEM ARE SENT AT THE SAME TIME
             // TODO: BUT FOR NOW THIS SHOULD SUFFICE
             // send the notification
-            NotificationManager.NotifyCharacter (
+            Notifications.NotifyCharacter (
                 item.OwnerID, "OnMultiEvent",
                 new PyTuple (1) {[0] = new PyList (1) {[0] = itemChange}}
             );

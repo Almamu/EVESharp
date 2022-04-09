@@ -26,10 +26,12 @@ public static class Constants
     public const string skillPointMultiplier = "skillPointMultiplier";
 
     // corp related constants
-    public const string corporationStartupCost = "corporationStartupCost";
-    public const string medalTaxCorporation    = "medalTaxCorporation";
-    public const string medalCost              = "medalCost";
-    public const string warDeclarationCost     = "warDeclarationCost";
+    public const string corporationStartupCost            = "corporationStartupCost";
+    public const string medalTaxCorporation               = "medalTaxCorporation";
+    public const string medalCost                         = "medalCost";
+    public const string warDeclarationCost                = "warDeclarationCost";
+    public const string corporationAdvertisementFlatFee   = "corporationAdvertisementFlatFee";
+    public const string corporationAdvertisementDailyRate = "corporationAdvertisementDailyRate";
 
     // alliance related constants
     public const string allianceCreationCost   = "allianceCreationCost";

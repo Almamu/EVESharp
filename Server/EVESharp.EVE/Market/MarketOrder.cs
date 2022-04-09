@@ -1,6 +1,4 @@
-﻿using EVESharp.Node.Database;
-
-namespace EVESharp.Node.Market;
+﻿namespace EVESharp.EVE.Market;
 
 public class MarketOrder
 {

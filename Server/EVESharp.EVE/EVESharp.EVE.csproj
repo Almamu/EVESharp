@@ -11,6 +11,7 @@
 
     <ItemGroup>
         <Folder Include="Account" />
+        <Folder Include="Client\Notifications" />
         <Folder Include="Inventory" />
     </ItemGroup>
 

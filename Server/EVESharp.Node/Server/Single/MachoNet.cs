@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Net.Http;
+using EVESharp.Common.Constants;
 using EVESharp.Common.Database;
 using EVESharp.Common.Logging;
 using EVESharp.Common.Network.Messages;
@@ -39,7 +40,7 @@ public class MachoNet : IMachoNet
         Log              = logger;
     }
 
-    public long                            NodeID           { get; set; } = Common.Constants.Network.PROXY_NODE_ID;
+    public long                            NodeID           { get; set; } = Network.PROXY_NODE_ID;
     public string                          Address          { get; set; }
     public RunMode                         Mode             => RunMode.Single;
     public ushort                          Port             => Configuration.MachoNet.Port;

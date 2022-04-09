@@ -26,6 +26,7 @@ using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using EVESharp.EVE.Client.Exceptions.character;
+using EVESharp.EVE.Market;
 using EVESharp.EVE.Packets.Exceptions;
 using EVESharp.EVE.Services;
 using EVESharp.EVE.Sessions;
@@ -38,7 +39,7 @@ using EVESharp.Node.Inventory;
 using EVESharp.Node.Inventory.Items;
 using EVESharp.Node.Inventory.Items.Types;
 using EVESharp.Node.Market;
-using EVESharp.Node.Network;
+using EVESharp.Node.Notifications;
 using EVESharp.Node.Notifications.Client.Chat;
 using EVESharp.Node.Sessions;
 using EVESharp.PythonTypes.Types.Collections;
@@ -56,24 +57,24 @@ public class character : Service
     private readonly Character   mConfiguration;
     public override  AccessLevel AccessLevel => AccessLevel.LocationPreferred;
 
-    private CharacterDB         DB                  { get; }
-    private CorporationDB       CorporationDB       { get; }
-    private ChatDB              ChatDB              { get; }
-    private ItemFactory         ItemFactory         { get; }
-    private TypeManager         TypeManager         => ItemFactory.TypeManager;
-    private CacheStorage        CacheStorage        { get; }
-    private NodeContainer       Container           { get; }
-    private NotificationManager NotificationManager { get; }
-    private WalletManager       WalletManager       { get; }
-    private AncestryManager     AncestryManager     { get; }
-    private SessionManager      SessionManager      { get; }
-    private ILogger             Log                 { get; }
+    private CharacterDB                 DB                  { get; }
+    private CorporationDB               CorporationDB       { get; }
+    private ChatDB                      ChatDB              { get; }
+    private ItemFactory                 ItemFactory         { get; }
+    private TypeManager                 TypeManager         => ItemFactory.TypeManager;
+    private CacheStorage                CacheStorage        { get; }
+    private Notifications.Notifications Notifications { get; }
+    private WalletManager               WalletManager       { get; }
+    private Ancestries                  Ancestries          { get; }
+    private Bloodlines                  Bloodlines          { get; }
+    private SessionManager              SessionManager      { get; }
+    private ILogger                     Log                 { get; }
 
     public character (
-        CacheStorage        cacheStorage,        CharacterDB   db,            ChatDB          chatDB,        CorporationDB corporationDB,
-        ItemFactory         itemFactory,         ILogger       logger,        Character       configuration, NodeContainer container,
-        NotificationManager notificationManager, WalletManager walletManager, AncestryManager ancestryManager,
-        SessionManager      sessionManager
+        CacheStorage                cacheStorage,        CharacterDB   db,            ChatDB     chatDB,        CorporationDB corporationDB,
+        ItemFactory                 itemFactory,         ILogger       logger,        Character  configuration,
+        Notifications.Notifications notifications, WalletManager walletManager, Ancestries ancestries,    Bloodlines    bloodlines,
+        SessionManager              sessionManager
     )
     {
         Log                 = logger;
@@ -83,10 +84,10 @@ public class character : Service
         CorporationDB       = corporationDB;
         ItemFactory         = itemFactory;
         CacheStorage        = cacheStorage;
-        Container           = container;
-        NotificationManager = notificationManager;
+        Notifications = notifications;
         WalletManager       = walletManager;
-        AncestryManager     = ancestryManager;
+        Ancestries          = ancestries;
+        Bloodlines          = bloodlines;
         SessionManager      = sessionManager;
     }
 
@@ -305,8 +306,8 @@ public class character : Service
         }
 
         // load bloodline and ancestry info for the requested character
-        Ancestry  ancestry  = AncestryManager [ancestryID];
-        Bloodline bloodline = AncestryManager.Bloodlines [bloodlineID];
+        Ancestry  ancestry  = Ancestries [ancestryID];
+        Bloodline bloodline = Bloodlines [bloodlineID];
 
         long currentTime = DateTime.UtcNow.ToFileTimeUtc ();
 
@@ -479,7 +480,7 @@ public class character : Service
         updates.RegionID        = character.RegionID;
         updates.HQID            = 0; // TODO: ADD SUPPORT FOR HQID
         updates.ShipID          = character.LocationID;
-        updates.RaceID          = AncestryManager [character.AncestryID].Bloodline.RaceID;
+        updates.RaceID          = Ancestries [character.AncestryID].Bloodline.RaceID;
 
         // check if the character has any accounting roles and set the correct accountKey based on the data
         if (WalletManager.IsAccessAllowed (updates, character.CorpAccountKey, updates.CorporationID))
@@ -495,7 +496,7 @@ public class character : Service
         // TODO: CHECK IF THE PLAYER IS GOING TO SPAWN IN THIS NODE AND IF IT IS NOT, UNLOAD IT FROM THE ITEM MANAGER
         PyList <PyInteger> onlineFriends = DB.GetOnlineFriendList (character);
 
-        NotificationManager.NotifyCharacters (onlineFriends, new OnContactLoggedOn (character.ID));
+        Notifications.NotifyCharacters (onlineFriends, new OnContactLoggedOn (character.ID));
 
         // unload the character
         ItemFactory.UnloadItem (characterID);

@@ -4,6 +4,7 @@ using EVESharp.Common.Database;
 using EVESharp.Database;
 using EVESharp.EVE.Packets.Exceptions;
 using EVESharp.EVE.Services;
+using EVESharp.EVE.StaticData.Inventory;
 using EVESharp.Node.Inventory;
 using EVESharp.Node.Inventory.Items;
 using EVESharp.Node.Sessions;
@@ -35,7 +36,7 @@ public class bookmark : Service
 
     public PyDataType BookmarkLocation (PyInteger itemID, PyDataType unk, PyString name, PyString comment, CallInformation call)
     {
-        if (ItemFactory.IsStaticData (itemID) == false)
+        if (ItemRanges.IsStaticData (itemID) == false)
             throw new CustomError ("Bookmarks for non-static locations are not supported yet!");
 
         ItemEntity item = ItemFactory.GetItem (itemID);

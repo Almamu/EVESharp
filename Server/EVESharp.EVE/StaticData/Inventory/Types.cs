@@ -1,10 +1,10 @@
 namespace EVESharp.EVE.StaticData.Inventory;
 
 /**
-     * Extracted from the eve online official dump
-     *
-     * Please only add the ones used through the source code and not the full list
-     */
+ * Extracted from the eve online official dump
+ *
+ * Please only add the ones used through the source code and not the full list
+ */
 public enum Types
 {
     System                      = 0,

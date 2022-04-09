@@ -38,7 +38,7 @@ using EVESharp.Node.Database;
 using EVESharp.Node.Dogma;
 using EVESharp.Node.Inventory;
 using EVESharp.Node.Market;
-using EVESharp.Node.Network;
+using EVESharp.Node.Notifications;
 using EVESharp.Node.Server.Shared;
 using EVESharp.Node.Server.Shared.Messages;
 using EVESharp.Node.Server.Shared.Transports;
@@ -68,6 +68,7 @@ using Serilog.Core;
 using Serilog.Events;
 using Serilog.Templates;
 using SimpleInjector;
+using Constants = EVESharp.Node.Configuration.Constants;
 using MachoNet = EVESharp.Node.Server.Single.MachoNet;
 using MessageProcessor = EVESharp.Node.Server.Single.Messages.MessageProcessor;
 
@@ -203,26 +204,26 @@ internal class Program
                 dependencies.RegisterInstance (log);
                 dependencies.Register <DatabaseConnection> (Lifestyle.Singleton);
                 dependencies.Register <SessionManager> (Lifestyle.Singleton);
-                dependencies.Register <NodeContainer> (Lifestyle.Singleton);
                 dependencies.Register <CacheStorage> (Lifestyle.Singleton);
-                dependencies.Register <ItemManager> (Lifestyle.Singleton);
                 dependencies.Register <MetaInventoryManager> (Lifestyle.Singleton);
                 dependencies.Register <AttributeManager> (Lifestyle.Singleton);
                 dependencies.Register <TypeManager> (Lifestyle.Singleton);
-                dependencies.Register <CategoryManager> (Lifestyle.Singleton);
-                dependencies.Register <GroupManager> (Lifestyle.Singleton);
+                dependencies.Register <Categories> (Lifestyle.Singleton);
+                dependencies.Register <Groups> (Lifestyle.Singleton);
                 dependencies.Register <StationManager> (Lifestyle.Singleton);
                 dependencies.Register <ItemFactory> (Lifestyle.Singleton);
                 dependencies.Register <TimerManager> (Lifestyle.Singleton);
                 dependencies.Register <SystemManager> (Lifestyle.Singleton);
                 dependencies.Register <ServiceManager> (Lifestyle.Singleton);
                 dependencies.Register <BoundServiceManager> (Lifestyle.Singleton);
-                dependencies.Register <NotificationManager> (Lifestyle.Singleton);
+                dependencies.Register <Notifications.Notifications> (Lifestyle.Singleton);
                 dependencies.Register <ExpressionManager> (Lifestyle.Singleton);
                 dependencies.Register <WalletManager> (Lifestyle.Singleton);
                 dependencies.Register <MailManager> (Lifestyle.Singleton);
                 dependencies.Register <AgentManager> (Lifestyle.Singleton);
-                dependencies.Register <AncestryManager> (Lifestyle.Singleton);
+                dependencies.Register <Ancestries> (Lifestyle.Singleton);
+                dependencies.Register <Bloodlines> (Lifestyle.Singleton);
+                dependencies.Register <Constants>(Lifestyle.Singleton);
                 dependencies.Register <Dogma.Dogma> (Lifestyle.Singleton);
 
                 // register the database accessors dependencies
@@ -336,8 +337,6 @@ internal class Program
                 dependencies.GetInstance <DatabaseConnection> ();
                 // sDatabase.Query("SET global max_allowed_packet=1073741824");
 
-                // create the node container
-                dependencies.GetInstance <NodeContainer> ();
                 // ensure the message processor is created
                 dependencies.GetInstance <MessageProcessor <MachoMessage>> ();
 

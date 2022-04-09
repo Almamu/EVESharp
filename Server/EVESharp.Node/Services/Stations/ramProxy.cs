@@ -42,7 +42,7 @@ public class ramProxy : Service
                 [(int) AttributeTypes.manufactureSlotLimit] =
                     1 + character.GetSkillLevel (Types.MassProduction) + character.GetSkillLevel (Types.AdvancedMassProduction),
                 [(int) AttributeTypes.maxLaborotorySlots] = 1 + character.GetSkillLevel (Types.LaboratoryOperation) +
-                                                        character.GetSkillLevel (Types.AdvancedLaboratoryOperation)
+                                                            character.GetSkillLevel (Types.AdvancedLaboratoryOperation)
             }
         };
     }

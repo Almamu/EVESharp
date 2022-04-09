@@ -55,7 +55,6 @@ public class ServiceManager : IServiceManager <string>
 {
     private readonly Dictionary <int, RemoteCall> mCallCallbacks = new Dictionary <int, RemoteCall> ();
     private          int                          mNextCallID;
-    public           NodeContainer                Container        { get; }
     public           CacheStorage                 CacheStorage     { get; }
     public           TimerManager                 TimerManager     { get; }
     private          ILogger                      Log              { get; }
@@ -106,7 +105,7 @@ public class ServiceManager : IServiceManager <string>
     public           allianceRegistry             allianceRegistry { get; }
 
     public ServiceManager (
-        NodeContainer    container, CacheStorage storage, ILogger logger, TimerManager timerManager,
+        CacheStorage storage, ILogger logger, TimerManager timerManager,
         machoNet         machoNet,
         objectCaching    objectCaching,
         alert            alert,
@@ -154,7 +153,6 @@ public class ServiceManager : IServiceManager <string>
         allianceRegistry allianceRegistry
     )
     {
-        Container    = container;
         CacheStorage = storage;
         TimerManager = timerManager;
         Log          = logger;

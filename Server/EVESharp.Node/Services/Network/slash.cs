@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using EVESharp.EVE;
 using EVESharp.EVE.Client.Exceptions.slash;
+using EVESharp.EVE.Market;
 using EVESharp.EVE.Services;
 using EVESharp.EVE.StaticData.Inventory;
 using EVESharp.EVE.Wallet;
@@ -11,12 +12,13 @@ using EVESharp.Node.Inventory;
 using EVESharp.Node.Inventory.Items;
 using EVESharp.Node.Inventory.Items.Types;
 using EVESharp.Node.Market;
-using EVESharp.Node.Network;
+using EVESharp.Node.Notifications;
 using EVESharp.Node.Notifications.Client.Inventory;
 using EVESharp.Node.Notifications.Client.Skills;
 using EVESharp.Node.Sessions;
 using EVESharp.PythonTypes.Types.Primitives;
 using Serilog;
+using Categories = EVESharp.EVE.StaticData.Inventory.Categories;
 using Type = EVESharp.EVE.StaticData.Inventory.Type;
 
 namespace EVESharp.Node.Services.Network;
@@ -25,24 +27,24 @@ public class slash : Service
 {
     private readonly Dictionary <string, Action <string [], CallInformation>> mCommands =
         new Dictionary <string, Action <string [], CallInformation>> ();
-    public override AccessLevel         AccessLevel         => AccessLevel.None;
-    private         TypeManager         TypeManager         => ItemFactory.TypeManager;
-    private         ItemFactory         ItemFactory         { get; }
-    private         ILogger             Log                 { get; }
-    private         CharacterDB         CharacterDB         { get; }
-    private         NotificationManager NotificationManager { get; }
-    private         WalletManager       WalletManager       { get; }
-    private         Node.Dogma.Dogma    Dogma               { get; }
+    public override AccessLevel                 AccessLevel         => AccessLevel.None;
+    private         TypeManager                 TypeManager         => ItemFactory.TypeManager;
+    private         ItemFactory                 ItemFactory         { get; }
+    private         ILogger                     Log                 { get; }
+    private         CharacterDB                 CharacterDB         { get; }
+    private         Notifications.Notifications Notifications { get; }
+    private         WalletManager               WalletManager       { get; }
+    private         Node.Dogma.Dogma            Dogma               { get; }
 
     public slash (
-        ILogger          logger, ItemFactory itemFactory, CharacterDB characterDB, NotificationManager notificationManager, WalletManager walletManager,
+        ILogger          logger, ItemFactory itemFactory, CharacterDB characterDB, Notifications.Notifications notifications, WalletManager walletManager,
         Node.Dogma.Dogma dogma
     )
     {
         Log                 = logger;
         ItemFactory         = itemFactory;
         CharacterDB         = characterDB;
-        NotificationManager = notificationManager;
+        Notifications = notifications;
         WalletManager       = walletManager;
         Dogma               = dogma;
 

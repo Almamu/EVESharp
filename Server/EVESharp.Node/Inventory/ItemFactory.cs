@@ -27,8 +27,8 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using EVESharp.Common.Database;
 using EVESharp.Database;
-using EVESharp.EVE.StaticData;
 using EVESharp.EVE.StaticData.Inventory;
+using EVESharp.Node.Configuration;
 using EVESharp.Node.Database;
 using EVESharp.Node.Dogma;
 using EVESharp.Node.Inventory.Exceptions;
@@ -36,6 +36,7 @@ using EVESharp.Node.Inventory.Items;
 using EVESharp.Node.Inventory.Items.Types;
 using EVESharp.Node.Server.Shared;
 using Serilog;
+using Character = EVESharp.Node.Inventory.Items.Types.Character;
 using Container = SimpleInjector.Container;
 using Item = EVESharp.Node.Inventory.Items.Types.Information.Item;
 using ItemDB = EVESharp.Node.Database.ItemDB;
@@ -45,29 +46,16 @@ namespace EVESharp.Node.Inventory;
 
 public class ItemFactory
 {
-    public const     int                          FACTION_ID_MIN         = 500000;
-    public const     int                          FACTION_ID_MAX         = 1000000;
-    public const     int                          NPC_CORPORATION_ID_MIN = 1000000;
-    public const     int                          NPC_CORPORATION_ID_MAX = 2000000;
-    public const     int                          CELESTIAL_ID_MIN       = 40000000;
-    public const     int                          CELESTIAL_ID_MAX       = 50000000;
-    public const     int                          SOLARSYSTEM_ID_MIN     = 30000000;
-    public const     int                          SOLARSYSTEM_ID_MAX     = 40000000;
-    public const     int                          STATION_ID_MIN         = 60000000;
-    public const     int                          STATION_ID_MAX         = 70000000;
-    public const     int                          NPC_CHARACTER_ID_MIN   = 10000;
-    public const     int                          NPC_CHARACTER_ID_MAX   = 100000000;
-    public const     int                          USERGENERATED_ID_MIN   = 100000000;
     private readonly Dictionary <int, ItemEntity> mItemList              = new Dictionary <int, ItemEntity> ();
 
     public  AttributeManager AttributeManager    { get; private set; }
-    public  ItemManager      ItemManager         { get; private set; }
-    public  CategoryManager  CategoryManager     { get; private set; }
-    public  GroupManager     GroupManager        { get; private set; }
+    public  Categories       Categories          { get; private set; }
+    public  Groups           Groups              { get; private set; }
     public  TypeManager      TypeManager         { get; private set; }
     public  StationManager   StationManager      { get; private set; }
     public  SystemManager    SystemManager       { get; private set; }
-    public  AncestryManager  AncestryManager     { get; private set; }
+    public  Ancestries       Ancestries          { get; private set; }
+    public  Bloodlines       Bloodlines          { get; private set; }
     public  Dogma.Dogma      Dogma               { get; private set; }
     public  ItemDB           ItemDB              { get; private set; }
     public  CharacterDB      CharacterDB         { get; private set; }
@@ -75,7 +63,7 @@ public class ItemFactory
     public  InsuranceDB      InsuranceDB         { get; private set; }
     public  SkillDB          SkillDB             { get; private set; }
     public  ILogger          Log                 { get; init; }
-    public  NodeContainer    NodeContainer       { get; }
+    public  Constants        Constants           { get; }
     public  IMachoNet        MachoNet            { get; }
     private Container        DependencyInjection { get; }
 
@@ -96,7 +84,7 @@ public class ItemFactory
     protected DatabaseConnection Database { get; }
 
     public ItemFactory (
-        ILogger logger, IMachoNet machoNet, DatabaseConnection databaseConnection, NodeContainer nodeContainer, MetaInventoryManager metaInventoryManager,
+        ILogger logger, IMachoNet machoNet, DatabaseConnection databaseConnection, Constants constants, MetaInventoryManager metaInventoryManager,
         ExpressionManager expressionManager, Container dependencyInjection
     )
     {
@@ -105,7 +93,7 @@ public class ItemFactory
         Database                                    =  databaseConnection;
         DependencyInjection                         =  dependencyInjection;
         MachoNet                                    =  machoNet;
-        NodeContainer                               =  nodeContainer;
+        Constants                                   =  constants;
         MetaInventoryManager                        =  metaInventoryManager;
         ExpressionManager                           =  expressionManager;
         MetaInventoryManager.OnMetaInventoryCreated += this.OnMetaInventoryCreated;
@@ -128,23 +116,24 @@ public class ItemFactory
         // attribute manager goes first
         AttributeManager = DependencyInjection.GetInstance <AttributeManager> ();
         // category manager goes first
-        CategoryManager = DependencyInjection.GetInstance <CategoryManager> ();
+        Categories = DependencyInjection.GetInstance <Categories> ();
         // then groups
-        GroupManager = DependencyInjection.GetInstance <GroupManager> ();
+        Groups = DependencyInjection.GetInstance <Groups> ();
         // then the type manager
         TypeManager = DependencyInjection.GetInstance <TypeManager> ();
-        // finally the item manager
-        ItemManager = DependencyInjection.GetInstance <ItemManager> ();
+        // bloodlines are required too
+        Bloodlines = DependencyInjection.GetInstance <Bloodlines> ();
         // the ancestry manager is also needed
-        AncestryManager = DependencyInjection.GetInstance <AncestryManager> ();
-        Dogma           = DependencyInjection.GetInstance <Dogma.Dogma> ();
+        Ancestries = DependencyInjection.GetInstance <Ancestries> ();
+        Dogma      = DependencyInjection.GetInstance <Dogma.Dogma> ();
 
         AttributeManager.Load ();
-        CategoryManager.Load ();
-        GroupManager.Load ();
+        Categories.Load ();
+        Groups.Load ();
         TypeManager.Load ();
         StationManager.Load ();
-        AncestryManager.Load ();
+        Bloodlines.Load ();
+        Ancestries.Load ();
 
         this.Load ();
     }
@@ -161,13 +150,13 @@ public class ItemFactory
         Log.Information ($"Preloaded {this.mItemList.Count} static items");
 
         // store useful items like recycler and system
-        LocationRecycler = this.GetItem <EVESystem> (NodeContainer.Constants [Constants.locationRecycler]);
-        LocationSystem   = this.GetItem <EVESystem> (NodeContainer.Constants [Constants.locationSystem]);
-        LocationUniverse = this.GetItem <EVESystem> (NodeContainer.Constants [Constants.locationUniverse]);
-        LocationMarket   = this.GetItem <EVESystem> (NodeContainer.Constants [Constants.locationMarket]);
-        LocationTemp     = this.GetItem <EVESystem> (NodeContainer.Constants [Constants.locationTemp]);
-        OwnerBank        = this.GetItem <EVESystem> (NodeContainer.Constants [Constants.ownerBank]);
-        OwnerSCC         = this.GetItem (NodeContainer.Constants [Constants.ownerSecureCommerceCommission]);
+        LocationRecycler = this.GetItem <EVESystem> (Constants.LocationRecycler);
+        LocationSystem   = this.GetItem <EVESystem> (Constants.LocationSystem);
+        LocationUniverse = this.GetItem <EVESystem> (Constants.LocationUniverse);
+        LocationMarket   = this.GetItem <EVESystem> (Constants.LocationMarket);
+        LocationTemp     = this.GetItem <EVESystem> (Constants.LocationTemp);
+        OwnerBank        = this.GetItem <EVESystem> (Constants.OwnerBank);
+        OwnerSCC         = this.GetItem (Constants.OwnerSecureCommerceCommission);
     }
 
     /// <summary>
@@ -283,42 +272,6 @@ public class ItemFactory
     {
         return this.GetItem (itemID) as T;
     }
-
-    public static bool IsFactionID (int itemID)
-    {
-        return itemID >= FACTION_ID_MIN && itemID < FACTION_ID_MAX;
-    }
-
-    public static bool IsStationID (int itemID)
-    {
-        return itemID >= STATION_ID_MIN && itemID < STATION_ID_MAX;
-    }
-
-    public static bool IsSolarSystemID (int itemID)
-    {
-        return itemID >= SOLARSYSTEM_ID_MIN && itemID < SOLARSYSTEM_ID_MAX;
-    }
-
-    public static bool IsNPCCorporationID (int itemID)
-    {
-        return itemID >= NPC_CORPORATION_ID_MIN && itemID < NPC_CORPORATION_ID_MAX;
-    }
-
-    public static bool IsNPC (int itemID)
-    {
-        return itemID >= NPC_CHARACTER_ID_MIN && itemID < NPC_CHARACTER_ID_MAX;
-    }
-
-    public static bool IsCelestialID (int itemID)
-    {
-        return itemID >= CELESTIAL_ID_MIN && itemID < CELESTIAL_ID_MAX;
-    }
-
-    public static bool IsStaticData (int itemID)
-    {
-        return itemID < USERGENERATED_ID_MIN;
-    }
-
     /// <summary>
     /// Gets the <see cref="ItemEntity"/> of the given faction
     /// </summary>
@@ -327,7 +280,7 @@ public class ItemFactory
     /// <exception cref="ArgumentOutOfRangeException">If the id is not a faction</exception>
     public Faction GetStaticFaction (int factionID)
     {
-        if (IsFactionID (factionID) == false)
+        if (ItemRanges.IsFactionID (factionID) == false)
             throw new ArgumentOutOfRangeException ($"The id {factionID} does not belong to a faction");
 
         return this.GetItem <Faction> (factionID);
@@ -341,7 +294,7 @@ public class ItemFactory
     /// <exception cref="ArgumentOutOfRangeException">If the id is not a station</exception>
     public Station GetStaticStation (int stationID)
     {
-        if (IsStationID (stationID) == false)
+        if (ItemRanges.IsStationID (stationID) == false)
             throw new ArgumentOutOfRangeException ($"The id {stationID} does not belong to a station");
 
         return this.GetItem <Station> (stationID);
@@ -355,7 +308,7 @@ public class ItemFactory
     /// <exception cref="ArgumentOutOfRangeException">If the id is not a solar system</exception>
     public SolarSystem GetStaticSolarSystem (int solarSystemID)
     {
-        if (IsSolarSystemID (solarSystemID) == false)
+        if (ItemRanges.IsSolarSystemID (solarSystemID) == false)
             throw new ArgumentOutOfRangeException ($"The id {solarSystemID} does not belong to a solar system");
 
         return this.GetItem <SolarSystem> (solarSystemID);
@@ -376,20 +329,20 @@ public class ItemFactory
             ItemEntity wrapperItem = item.Type.Group.Category.ID switch
             {
                 // catch all for system items
-                (int) Categories.System => this.LoadSystem (item),
+                (int) EVE.StaticData.Inventory.Categories.System => this.LoadSystem (item),
                 // celestial items are a kind of subcategory
                 // load them in specific ways based on the type of celestial item
-                (int) Categories.Celestial => this.LoadCelestial (item),
-                (int) Categories.Blueprint => this.LoadBlueprint (item),
+                (int) EVE.StaticData.Inventory.Categories.Celestial => this.LoadCelestial (item),
+                (int) EVE.StaticData.Inventory.Categories.Blueprint => this.LoadBlueprint (item),
                 // owner items are a kind of subcategory too
-                (int) Categories.Owner       => this.LoadOwner (item),
-                (int) Categories.Skill       => this.LoadSkill (item),
-                (int) Categories.Ship        => this.LoadShip (item),
-                (int) Categories.Station     => this.LoadStation (item),
-                (int) Categories.Accessories => this.LoadAccessories (item),
-                (int) Categories.Implant     => this.LoadImplant (item),
-                (int) Categories.Module      => this.LoadModule (item),
-                _                            => new Items.Types.Item (item)
+                (int) EVE.StaticData.Inventory.Categories.Owner       => this.LoadOwner (item),
+                (int) EVE.StaticData.Inventory.Categories.Skill       => this.LoadSkill (item),
+                (int) EVE.StaticData.Inventory.Categories.Ship        => this.LoadShip (item),
+                (int) EVE.StaticData.Inventory.Categories.Station     => this.LoadStation (item),
+                (int) EVE.StaticData.Inventory.Categories.Accessories => this.LoadAccessories (item),
+                (int) EVE.StaticData.Inventory.Categories.Implant     => this.LoadImplant (item),
+                (int) EVE.StaticData.Inventory.Categories.Module      => this.LoadModule (item),
+                _                                                     => new Items.Types.Item (item)
             };
 
             // check if there's an inventory loaded that should contain this item
@@ -397,7 +350,7 @@ public class ItemFactory
                 inventory.AddItem (wrapperItem);
 
             // notify the meta inventory manager about the new item only if the item is user-generated
-            if (item.ID >= USERGENERATED_ID_MIN)
+            if (item.ID >= ItemRanges.USERGENERATED_ID_MIN)
                 MetaInventoryManager.OnItemLoaded (wrapperItem);
 
             // ensure the item is in the loaded list
@@ -445,19 +398,19 @@ public class ItemFactory
     {
         switch (item.Type.Group.ID)
         {
-            case (int) Groups.SolarSystem:
+            case (int) EVE.StaticData.Inventory.Groups.SolarSystem:
                 return this.LoadSolarSystem (item);
-            case (int) Groups.Station:
+            case (int) EVE.StaticData.Inventory.Groups.Station:
                 return this.LoadStation (item);
-            case (int) Groups.Constellation:
+            case (int) EVE.StaticData.Inventory.Groups.Constellation:
                 return this.LoadConstellation (item);
-            case (int) Groups.Region:
+            case (int) EVE.StaticData.Inventory.Groups.Region:
                 return this.LoadRegion (item);
-            case (int) Groups.CargoContainer:
-            case (int) Groups.SecureCargoContainer:
-            case (int) Groups.AuditLogSecureContainer:
-            case (int) Groups.FreightContainer:
-            case (int) Groups.Tool:
+            case (int) EVE.StaticData.Inventory.Groups.CargoContainer:
+            case (int) EVE.StaticData.Inventory.Groups.SecureCargoContainer:
+            case (int) EVE.StaticData.Inventory.Groups.AuditLogSecureContainer:
+            case (int) EVE.StaticData.Inventory.Groups.FreightContainer:
+            case (int) EVE.StaticData.Inventory.Groups.Tool:
                 return this.LoadContainer (item);
             default:
                 Log.Warning ($"Loading celestial {item.ID} from item group {item.Type.Group.ID} as normal item");
@@ -475,13 +428,13 @@ public class ItemFactory
     {
         switch (item.Type.Group.ID)
         {
-            case (int) Groups.Character:
+            case (int) EVE.StaticData.Inventory.Groups.Character:
                 return new Character (ItemDB.LoadCharacter (item));
-            case (int) Groups.Corporation:
+            case (int) EVE.StaticData.Inventory.Groups.Corporation:
                 return new Corporation (ItemDB.LoadCorporation (item));
-            case (int) Groups.Faction:
+            case (int) EVE.StaticData.Inventory.Groups.Faction:
                 return this.LoadFaction (item);
-            case (int) Groups.Alliance:
+            case (int) EVE.StaticData.Inventory.Groups.Alliance:
                 return new Alliance (ItemDB.LoadAlliance (item));
             default:
                 Log.Warning ($"Loading owner {item.ID} from item group {item.Type.Group.ID} as normal item");
@@ -499,7 +452,7 @@ public class ItemFactory
     {
         switch (item.Type.Group.ID)
         {
-            case (int) Groups.Clone:
+            case (int) EVE.StaticData.Inventory.Groups.Clone:
                 return new Clone (item);
             default:
                 Log.Warning ($"Loading accessory {item.ID} from item group {item.Type.Group.ID} as normal item");
@@ -510,7 +463,7 @@ public class ItemFactory
 
     private ItemEntity LoadSkill (Item item)
     {
-        return new Skill (item, NodeContainer.Constants [Constants.skillPointMultiplier]);
+        return new Skill (item, Constants.SkillPointMultiplier);
     }
 
     private ItemEntity LoadShip (Item item)
@@ -532,9 +485,9 @@ public class ItemFactory
     {
         switch (item.Type.Group.ID)
         {
-            case (int) Groups.StationServices:
+            case (int) EVE.StaticData.Inventory.Groups.StationServices:
                 return this.LoadStationServices (item);
-            case (int) Groups.Station:
+            case (int) EVE.StaticData.Inventory.Groups.Station:
                 return Stations [item.ID] = new Station (ItemDB.LoadStation (item));
             default:
                 Log.Warning ($"Loading station item {item.ID} from item group {item.Type.Group.ID} as normal item");

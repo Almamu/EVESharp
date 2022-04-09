@@ -13,7 +13,7 @@ using EVESharp.EVE.StaticData.Corporation;
 using EVESharp.Node.Database;
 using EVESharp.Node.Inventory;
 using EVESharp.Node.Inventory.Items.Types;
-using EVESharp.Node.Network;
+using EVESharp.Node.Notifications;
 using EVESharp.Node.Notifications.Client.Alliances;
 using EVESharp.Node.Notifications.Nodes.Corps;
 using EVESharp.PythonTypes.Types.Primitives;
@@ -26,23 +26,23 @@ public class allianceRegistry : MultiClientBoundService
 {
     public override AccessLevel AccessLevel => AccessLevel.None;
 
-    private DatabaseConnection  Database            { get; }
-    private CorporationDB       CorporationDB       { get; }
-    private ChatDB              ChatDB              { get; }
-    private NotificationManager NotificationManager { get; }
-    private ItemFactory         ItemFactory         { get; }
-    private Alliance            Alliance            { get; }
-    private SessionManager      SessionManager      { get; }
+    private DatabaseConnection          Database            { get; }
+    private CorporationDB               CorporationDB       { get; }
+    private ChatDB                      ChatDB              { get; }
+    private Notifications.Notifications Notifications { get; }
+    private ItemFactory                 ItemFactory         { get; }
+    private Alliance                    Alliance            { get; }
+    private SessionManager              SessionManager      { get; }
 
     public allianceRegistry (
-        DatabaseConnection  databaseConnection, CorporationDB  corporationDB, ChatDB chatDB, ItemFactory itemFactory, NotificationManager notificationManager,
+        DatabaseConnection  databaseConnection, CorporationDB  corporationDB, ChatDB chatDB, ItemFactory itemFactory, Notifications.Notifications notifications,
         BoundServiceManager manager,            SessionManager sessionManager
     ) : base (manager)
     {
         Database            = databaseConnection;
         CorporationDB       = corporationDB;
         ChatDB              = chatDB;
-        NotificationManager = notificationManager;
+        Notifications = notifications;
         ItemFactory         = itemFactory;
         SessionManager      = sessionManager;
 
@@ -51,13 +51,13 @@ public class allianceRegistry : MultiClientBoundService
     }
 
     private allianceRegistry (
-        Alliance alliance, DatabaseConnection databaseConnection, CorporationDB corporationDB, ItemFactory itemFactory, NotificationManager notificationManager,
+        Alliance alliance, DatabaseConnection databaseConnection, CorporationDB corporationDB, ItemFactory itemFactory, Notifications.Notifications notifications,
         SessionManager sessionManager, MultiClientBoundService parent
     ) : base (parent, alliance.ID)
     {
         Database            = databaseConnection;
         CorporationDB       = corporationDB;
-        NotificationManager = notificationManager;
+        Notifications = notifications;
         ItemFactory         = itemFactory;
         Alliance            = alliance;
         SessionManager      = sessionManager;
@@ -104,7 +104,7 @@ public class allianceRegistry : MultiClientBoundService
                     new OnCorporationChanged (entry.CorporationID, entry.AllianceID, entry.ExecutorCorpID);
 
                 // notify the node that owns the reference to this corporation
-                NotificationManager.NotifyNode (nodeID, change);
+                Notifications.NotifyNode (nodeID, change);
             }
 
             foreach (int characterID in CorporationDB.GetMembersForCorp (entry.CorporationID))
@@ -145,7 +145,7 @@ public class allianceRegistry : MultiClientBoundService
 
         Alliance alliance = ItemFactory.LoadItem <Alliance> (bindParams.ObjectID);
 
-        return new allianceRegistry (alliance, Database, CorporationDB, ItemFactory, NotificationManager, SessionManager, this);
+        return new allianceRegistry (alliance, Database, CorporationDB, ItemFactory, Notifications, SessionManager, this);
     }
 
     public PyDataType GetAlliance (CallInformation call)
@@ -183,7 +183,7 @@ public class allianceRegistry : MultiClientBoundService
             .AddChange ("dictatorial",    Alliance.Dictatorial,    Alliance.Dictatorial)
             .AddChange ("deleted",        false,                   false);
 
-        NotificationManager.NotifyAlliance (ObjectID, change);
+        Notifications.NotifyAlliance (ObjectID, change);
 
         return null;
     }
@@ -234,7 +234,7 @@ public class allianceRegistry : MultiClientBoundService
                 .AddChange ("toID",         null, toID)
                 .AddChange ("relationship", null, relationship);
 
-        NotificationManager.NotifyAlliance (ObjectID, change);
+        Notifications.NotifyAlliance (ObjectID, change);
 
         return null;
     }
@@ -266,7 +266,7 @@ public class allianceRegistry : MultiClientBoundService
             new OnAllianceMemberChanged (ObjectID, call.Session.CorporationID)
                 .AddChange ("chosenExecutorID", 0, executorID);
 
-        NotificationManager.NotifyAlliance (ObjectID, change);
+        Notifications.NotifyAlliance (ObjectID, change);
 
         // notify the alliance about the executor change
         if (Alliance.ExecutorCorpID != executorCorpID)
@@ -275,7 +275,7 @@ public class allianceRegistry : MultiClientBoundService
                 new OnAllianceChanged (ObjectID)
                     .AddChange ("executorCorpID", Alliance.ExecutorCorpID, executorCorpID);
 
-            NotificationManager.NotifyAlliance (ObjectID, allianceChange);
+            Notifications.NotifyAlliance (ObjectID, allianceChange);
         }
 
         // update the executor and store it
@@ -363,8 +363,8 @@ public class allianceRegistry : MultiClientBoundService
                 .AddChange ("corporationID", corporationID,                       corporationID)
                 .AddChange ("state",         (int) AllianceApplicationStatus.New, newStatus);
 
-        NotificationManager.NotifyAlliance (ObjectID, change);
-        NotificationManager.NotifyCorporationByRole (corporationID, CorporationRole.Director, change);
+        Notifications.NotifyAlliance (ObjectID, change);
+        Notifications.NotifyCorporationByRole (corporationID, CorporationRole.Director, change);
 
         return null;
     }

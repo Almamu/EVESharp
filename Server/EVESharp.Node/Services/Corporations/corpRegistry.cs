@@ -8,21 +8,21 @@ using EVESharp.EVE.Alliances;
 using EVESharp.EVE.Client.Exceptions;
 using EVESharp.EVE.Client.Exceptions.corpRegistry;
 using EVESharp.EVE.Client.Messages;
+using EVESharp.EVE.Market;
 using EVESharp.EVE.Packets.Complex;
 using EVESharp.EVE.Packets.Exceptions;
 using EVESharp.EVE.Services;
 using EVESharp.EVE.Sessions;
-using EVESharp.EVE.StaticData;
 using EVESharp.EVE.StaticData.Corporation;
 using EVESharp.EVE.StaticData.Inventory;
 using EVESharp.EVE.Wallet;
 using EVESharp.Node.Chat;
+using EVESharp.Node.Configuration;
 using EVESharp.Node.Database;
 using EVESharp.Node.Inventory;
 using EVESharp.Node.Inventory.Items;
 using EVESharp.Node.Inventory.Items.Types;
 using EVESharp.Node.Market;
-using EVESharp.Node.Network;
 using EVESharp.Node.Notifications.Client.Alliances;
 using EVESharp.Node.Notifications.Client.Corporations;
 using EVESharp.Node.Notifications.Client.Wallet;
@@ -31,6 +31,7 @@ using EVESharp.Node.Sessions;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Database;
 using EVESharp.PythonTypes.Types.Primitives;
+using Character = EVESharp.Node.Inventory.Items.Types.Character;
 using OnCorporationChanged = EVESharp.Node.Notifications.Client.Corporations.OnCorporationChanged;
 using OnCorporationMemberChanged = EVESharp.Node.Notifications.Client.Corporations.OnCorporationMemberChanged;
 using SessionManager = EVESharp.Node.Sessions.SessionManager;
@@ -45,49 +46,49 @@ public class corpRegistry : MultiClientBoundService
     public Corporation Corporation { get; }
     public int         IsMaster    { get; }
 
-    private CorporationDB              DB                  { get; }
-    private ChatDB                     ChatDB              { get; }
-    private CharacterDB                CharacterDB         { get; }
-    private DatabaseConnection         Database            { get; }
-    private ItemFactory                ItemFactory         { get; }
-    private WalletManager              WalletManager       { get; }
-    private NodeContainer              Container           { get; }
-    private NotificationManager        NotificationManager { get; }
-    private MailManager                MailManager         { get; }
-    public  MembersSparseRowsetService MembersSparseRowset { get; private set; }
-    private OfficesSparseRowsetService OfficesSparseRowset { get; set; }
-    private AncestryManager            AncestryManager     { get; }
-    private SessionManager             SessionManager      { get; }
+    private CorporationDB               DB                  { get; }
+    private ChatDB                      ChatDB              { get; }
+    private CharacterDB                 CharacterDB         { get; }
+    private DatabaseConnection          Database            { get; }
+    private ItemFactory                 ItemFactory         { get; }
+    private WalletManager               WalletManager       { get; }
+    private Notifications.Notifications Notifications       { get; }
+    private MailManager                 MailManager         { get; }
+    public  MembersSparseRowsetService  MembersSparseRowset { get; private set; }
+    private OfficesSparseRowsetService  OfficesSparseRowset { get; set; }
+    private Ancestries                  Ancestries          { get; }
+    private Constants                   Constants           { get; }
+    private SessionManager              SessionManager      { get; }
 
     // constants
     private long CorporationAdvertisementFlatFee   { get; }
     private long CorporationAdvertisementDailyRate { get; }
 
     public corpRegistry (
-        CorporationDB   db,              DatabaseConnection databaseConnection, ChatDB chatDB, CharacterDB characterDB, NotificationManager notificationManager,
-        MailManager     mailManager,     WalletManager      walletManager,      NodeContainer container, ItemFactory itemFactory, BoundServiceManager manager,
-        AncestryManager ancestryManager, SessionManager     sessionManager
+        CorporationDB db,          DatabaseConnection databaseConnection, ChatDB chatDB, CharacterDB characterDB, Notifications.Notifications notifications,
+        MailManager   mailManager, WalletManager      walletManager, ItemFactory itemFactory, Constants constants, BoundServiceManager manager,
+        Ancestries    ancestries,  SessionManager     sessionManager
     ) : base (manager)
     {
-        DB                  = db;
-        Database            = databaseConnection;
-        ChatDB              = chatDB;
-        CharacterDB         = characterDB;
-        NotificationManager = notificationManager;
-        MailManager         = mailManager;
-        WalletManager       = walletManager;
-        Container           = container;
-        ItemFactory         = itemFactory;
-        AncestryManager     = ancestryManager;
-        SessionManager      = sessionManager;
+        DB             = db;
+        Database       = databaseConnection;
+        ChatDB         = chatDB;
+        CharacterDB    = characterDB;
+        Notifications  = notifications;
+        Constants      = constants;
+        MailManager    = mailManager;
+        WalletManager  = walletManager;
+        ItemFactory    = itemFactory;
+        Ancestries     = ancestries;
+        SessionManager = sessionManager;
 
         // TODO: RE-IMPLEMENT ON CLUSTER TIMER
         // machoNet.OnClusterTimer += this.PerformTimedEvents;
     }
 
     protected corpRegistry (
-        CorporationDB  db,             DatabaseConnection databaseConnection, ChatDB chatDB, CharacterDB characterDB, NotificationManager notificationManager,
-        MailManager    mailManager,    WalletManager      walletManager,      NodeContainer container, ItemFactory itemFactory, AncestryManager ancestryManager,
+        CorporationDB  db,             DatabaseConnection databaseConnection, ChatDB chatDB, CharacterDB characterDB, Notifications.Notifications notifications,
+        MailManager    mailManager,    WalletManager      walletManager,      Constants constants, ItemFactory itemFactory, Ancestries ancestries,
         SessionManager sessionManager, Corporation        corp,               int isMaster, corpRegistry parent
     ) : base (parent, corp.ID)
     {
@@ -95,17 +96,17 @@ public class corpRegistry : MultiClientBoundService
         Database                          = databaseConnection;
         ChatDB                            = chatDB;
         CharacterDB                       = characterDB;
-        NotificationManager               = notificationManager;
+        Notifications                     = notifications;
+        Constants                         = constants;
         MailManager                       = mailManager;
         WalletManager                     = walletManager;
-        Container                         = container;
         ItemFactory                       = itemFactory;
         SessionManager                    = sessionManager;
         Corporation                       = corp;
         IsMaster                          = isMaster;
-        CorporationAdvertisementFlatFee   = Container.Constants ["corporationAdvertisementFlatFee"].Value;
-        CorporationAdvertisementDailyRate = Container.Constants ["corporationAdvertisementDailyRate"].Value;
-        AncestryManager                   = ancestryManager;
+        CorporationAdvertisementFlatFee   = Constants.CorporationAdvertisementFlatFee;
+        CorporationAdvertisementDailyRate = Constants.CorporationAdvertisementDailyRate;
+        Ancestries                        = ancestries;
     }
 
     /// <summary>
@@ -181,8 +182,8 @@ public class corpRegistry : MultiClientBoundService
             );
 
             // send both notifications
-            NotificationManager.NotifyCorporation (call.Session.CorporationID, changeForNewHolder);
-            NotificationManager.NotifyCorporation (call.Session.CorporationID, changeForRestCorp);
+            Notifications.NotifyCorporation (call.Session.CorporationID, changeForNewHolder);
+            Notifications.NotifyCorporation (call.Session.CorporationID, changeForRestCorp);
         }
 
         return null;
@@ -220,8 +221,8 @@ public class corpRegistry : MultiClientBoundService
             );
 
             // send both notifications
-            NotificationManager.NotifyCorporation (call.Session.CorporationID, changeForNewHolder);
-            NotificationManager.NotifyCorporation (call.Session.CorporationID, changeForRestCorp);
+            Notifications.NotifyCorporation (call.Session.CorporationID, changeForNewHolder);
+            Notifications.NotifyCorporation (call.Session.CorporationID, changeForRestCorp);
         }
 
         return null;
@@ -243,7 +244,7 @@ public class corpRegistry : MultiClientBoundService
 
             // create a service for handling it's calls
             MembersSparseRowset =
-                new MembersSparseRowsetService (Corporation, DB, rowsetHeader, NotificationManager, BoundServiceManager, call.Session);
+                new MembersSparseRowsetService (Corporation, DB, rowsetHeader, Notifications, BoundServiceManager, call.Session);
 
             rowsetHeader.BoundObjectIdentifier = MembersSparseRowset.MachoBindObject (dict, call.Session);
         }
@@ -298,7 +299,7 @@ public class corpRegistry : MultiClientBoundService
     public PyDataType GetTitles (CallInformation call)
     {
         // check if the corp is NPC and return placeholder data from the crpTitlesTemplate
-        if (ItemFactory.IsNPCCorporationID (call.Session.CorporationID))
+        if (ItemRanges.IsNPCCorporationID (call.Session.CorporationID))
             return Database.DictRowList (CorporationDB.GET_TITLES_TEMPLATE);
 
         return Database.DictRowList (
@@ -440,10 +441,10 @@ public class corpRegistry : MultiClientBoundService
         using (Wallet wallet = WalletManager.AcquireWallet (Corporation.ID, call.Session.CorpAccountKey, true))
         {
             // ensure there's enough balance
-            wallet.EnsureEnoughBalance (Container.Constants [Constants.allianceCreationCost]);
+            wallet.EnsureEnoughBalance (Constants.AllianceCreationCost);
 
             // create the journal record for the alliance creation
-            wallet.CreateJournalRecord (MarketReference.AllianceRegistrationFee, null, null, -Container.Constants [Constants.allianceCreationCost]);
+            wallet.CreateJournalRecord (MarketReference.AllianceRegistrationFee, null, null, -Constants.AllianceCreationCost);
 
             // now create the alliance
             ItemEntity allianceItem = ItemFactory.CreateSimpleItem (
@@ -539,7 +540,7 @@ public class corpRegistry : MultiClientBoundService
         this.ValidateCorporationName (corporationName, tickerName);
 
         int stationID              = call.Session.EnsureCharacterIsInStation ();
-        int corporationStartupCost = -Container.Constants [Constants.corporationStartupCost];
+        int corporationStartupCost = -Constants.CorporationStartupCost;
         int callerCharacterID      = call.Session.EnsureCharacterIsSelected ();
 
         // TODO: PROPERLY IMPLEMENT THIS CHECK, RIGHT NOW THE CHARACTER AND THE CORPREGISTRY INSTANCES DO NOT HAVE TO BE LOADED ON THE SAME NODE
@@ -612,8 +613,8 @@ public class corpRegistry : MultiClientBoundService
                 CharacterDB.SetCharacterStasisTimer (character.ID, null);
                 character.CorporationDateTime = DateTime.UtcNow.ToFileTimeUtc ();
                 // notify cluster about the corporation changes
-                NotificationManager.NotifyCorporation (change.OldCorporationID, change);
-                NotificationManager.NotifyCorporation (change.NewCorporationID, change);
+                Notifications.NotifyCorporation (change.OldCorporationID, change);
+                Notifications.NotifyCorporation (change.NewCorporationID, change);
                 // create default wallets
                 WalletManager.CreateWallet (corporationID, Keys.MAIN,    0.0);
                 WalletManager.CreateWallet (corporationID, Keys.SECOND,  0.0);
@@ -734,7 +735,7 @@ public class corpRegistry : MultiClientBoundService
         );
 
         // notify all the players in the corp
-        NotificationManager.NotifyCorporation (call.Session.CorporationID, change);
+        Notifications.NotifyCorporation (call.Session.CorporationID, change);
 
         return null;
     }
@@ -759,7 +760,7 @@ public class corpRegistry : MultiClientBoundService
         Corporation.Url         = newUrl;
         Corporation.TaxRate     = newTax;
 
-        NotificationManager.NotifyCorporation (Corporation.ID, change);
+        Notifications.NotifyCorporation (Corporation.ID, change);
 
         return null;
     }
@@ -860,7 +861,7 @@ public class corpRegistry : MultiClientBoundService
         maximumMembers = corporationManagementLevel * 10 + empireControlLevel * 200 +
                          megacorpManagementLevel * 50 + sovereigntyLevel * 1000;
 
-        allowedRaceIDs = ethnicRelationsLevel > 0 ? 63 : AncestryManager [ceo.AncestryID].Bloodline.RaceID;
+        allowedRaceIDs = ethnicRelationsLevel > 0 ? 63 : Ancestries [ceo.AncestryID].Bloodline.RaceID;
     }
 
     public PyDataType UpdateCorporationAbilities (CallInformation call)
@@ -891,7 +892,7 @@ public class corpRegistry : MultiClientBoundService
         {
             DB.UpdateMemberLimits (Corporation.ID, Corporation.MemberLimit, Corporation.AllowedMemberRaceIDs);
 
-            NotificationManager.NotifyCorporation (Corporation.ID, change);
+            Notifications.NotifyCorporation (Corporation.ID, change);
 
             return true;
         }
@@ -1022,7 +1023,7 @@ public class corpRegistry : MultiClientBoundService
                 character.TitleMask = 0;
             }
 
-            NotificationManager.NotifyNode (
+            Notifications.NotifyNode (
                 ItemFactory.ItemDB.GetItemNode (characterID),
                 new OnCorporationMemberUpdated (
                     characterID, currentRoles, grantableRoles, rolesAtHQ, grantableRolesAtHQ,
@@ -1212,7 +1213,7 @@ public class corpRegistry : MultiClientBoundService
         }
 
         // notify the node about the changes
-        NotificationManager.NotifyNode (
+        Notifications.NotifyNode (
             ItemFactory.ItemDB.GetItemNode (characterID),
             new OnCorporationMemberUpdated (
                 characterID, roles, grantableRoles, rolesAtHQ, grantableRolesAtHQ,
@@ -1254,7 +1255,7 @@ public class corpRegistry : MultiClientBoundService
 
         try
         {
-            if (call.Session.CorporationID <= ItemFactory.NPC_CORPORATION_ID_MAX)
+            if (call.Session.CorporationID <= ItemRanges.NPC_CORPORATION_ID_MAX)
                 if (call.Session.WarFactionID is null)
                     throw new CrpCantQuitDefaultCorporation ();
 
@@ -1343,7 +1344,7 @@ public class corpRegistry : MultiClientBoundService
 
         // TODO: MAYBE NOTIFY CHARACTERS IN THE STATION?
         // notify corporation members
-        NotificationManager.NotifyCorporation (call.Session.CorporationID, changes);
+        Notifications.NotifyCorporation (call.Session.CorporationID, changes);
 
         return null;
     }
@@ -1386,7 +1387,7 @@ public class corpRegistry : MultiClientBoundService
             );
 
             // notify everyone about the title change
-            NotificationManager.NotifyCorporation (
+            Notifications.NotifyCorporation (
                 call.Session.CorporationID,
                 new OnTitleChanged (call.Session.CorporationID, titleID)
                     .AddChange ("titleName",             titleName,                  newName)
@@ -1451,8 +1452,8 @@ public class corpRegistry : MultiClientBoundService
         Corporation corp = ItemFactory.LoadItem <Corporation> (bindParams.ObjectID);
 
         return new corpRegistry (
-            DB, Database, ChatDB, CharacterDB, NotificationManager, MailManager, WalletManager, Container,
-            ItemFactory, AncestryManager, SessionManager, corp, bindParams.ExtraValue, this
+            DB, Database, ChatDB, CharacterDB, Notifications, MailManager, WalletManager, Constants,
+            ItemFactory, Ancestries, SessionManager, corp, bindParams.ExtraValue, this
         );
     }
 
@@ -1469,7 +1470,7 @@ public class corpRegistry : MultiClientBoundService
         if (DB.DeleteRecruitmentAd (advertID, call.Session.CorporationID))
             // TODO: MAYBE NOTIFY CHARACTERS IN THE STATION?
             // send notification
-            NotificationManager.NotifyCorporation (
+            Notifications.NotifyCorporation (
                 call.Session.CorporationID,
                 new OnCorporationRecruitmentAdChanged (call.Session.CorporationID, advertID)
                     .AddValue ("adID", advertID, null)
@@ -1496,7 +1497,7 @@ public class corpRegistry : MultiClientBoundService
                 .AddValue ("skillPoints", skillPoints, skillPoints);
 
             // TODO: MAYBE NOTIFY CHARACTERS IN THE STATION?
-            NotificationManager.NotifyCorporation (call.Session.CorporationID, changes);
+            Notifications.NotifyCorporation (call.Session.CorporationID, changes);
         }
 
         return null;
@@ -1530,8 +1531,8 @@ public class corpRegistry : MultiClientBoundService
             .AddValue ("applicationText",     null, text)
             .AddValue ("status",              null, 0);
 
-        NotificationManager.NotifyCorporationByRole (corporationID, CorporationRole.PersonnelManager, change);
-        NotificationManager.NotifyCharacter (characterID, change);
+        Notifications.NotifyCorporationByRole (corporationID, CorporationRole.PersonnelManager, change);
+        Notifications.NotifyCharacter (characterID, change);
 
         return null;
     }
@@ -1553,8 +1554,8 @@ public class corpRegistry : MultiClientBoundService
             .AddValue ("status",        0,             null);
 
         // notify about the application change
-        NotificationManager.NotifyCorporationByRole (corporationID, CorporationRole.PersonnelManager, change);
-        NotificationManager.NotifyCharacter (characterID, change);
+        Notifications.NotifyCorporationByRole (corporationID, CorporationRole.PersonnelManager, change);
+        Notifications.NotifyCharacter (characterID, change);
 
         return null;
     }
@@ -1590,8 +1591,8 @@ public class corpRegistry : MultiClientBoundService
             );
             CharacterDB.UpdateCorporationID (characterID, corporationID);
             // notify cluster about the corporation changes
-            NotificationManager.NotifyCorporation (change.OldCorporationID, change);
-            NotificationManager.NotifyCorporation (change.NewCorporationID, change);
+            Notifications.NotifyCorporation (change.OldCorporationID, change);
+            Notifications.NotifyCorporation (change.NewCorporationID, change);
             // create the employment record for the character
             CharacterDB.CreateEmploymentRecord (characterID, corporationID, DateTime.UtcNow.ToFileTimeUtc ());
 
@@ -1622,11 +1623,11 @@ public class corpRegistry : MultiClientBoundService
                 // get the node where the character is loaded
                 // the node where the corporation is loaded also needs to get notified so the members rowset can be updated
                 if (characterNodeID > 0)
-                    NotificationManager.NotifyNode (characterNodeID, nodeNotification);
+                    Notifications.NotifyNode (characterNodeID, nodeNotification);
                 if (newCorporationNodeID != characterNodeID)
-                    NotificationManager.NotifyNode (newCorporationNodeID, nodeNotification);
+                    Notifications.NotifyNode (newCorporationNodeID, nodeNotification);
                 if (oldCorporationNodeID != newCorporationNodeID && oldCorporationNodeID != characterNodeID)
-                    NotificationManager.NotifyNode (oldCorporationNodeID, nodeNotification);
+                    Notifications.NotifyNode (oldCorporationNodeID, nodeNotification);
             }
 
             // this one is a bit harder as this character might not be in the same node as this service
@@ -1659,8 +1660,8 @@ public class corpRegistry : MultiClientBoundService
             .AddValue ("status",        0,             null);
 
         // notify about the application change
-        NotificationManager.NotifyCorporationByRole (corporationID, CorporationRole.PersonnelManager, applicationChange);
-        NotificationManager.NotifyCharacter (characterID, applicationChange);
+        Notifications.NotifyCorporationByRole (corporationID, CorporationRole.PersonnelManager, applicationChange);
+        Notifications.NotifyCharacter (characterID, applicationChange);
 
         return null;
     }
@@ -1712,7 +1713,7 @@ public class corpRegistry : MultiClientBoundService
 
         // notify the new vote being created to all shareholders
         this.NotifyShareholders (corporationID, change);
-        NotificationManager.NotifyCorporationByRole (corporationID, CorporationRole.Director, change);
+        Notifications.NotifyCorporationByRole (corporationID, CorporationRole.Director, change);
 
         int optionText = 0;
         int parameter  = 1;
@@ -1798,7 +1799,7 @@ public class corpRegistry : MultiClientBoundService
                                           .AddValue ("optionID",    null, optionID);
         // notify the new vote to the original character
         this.NotifyShareholders (corporationID, change);
-        NotificationManager.NotifyCorporationByRole (corporationID, CorporationRole.Director, change);
+        Notifications.NotifyCorporationByRole (corporationID, CorporationRole.Director, change);
 
         return null;
     }
@@ -1829,9 +1830,9 @@ public class corpRegistry : MultiClientBoundService
                 .AddChange ("state",               null, (int) AllianceApplicationStatus.New);
 
         // TODO: WRITE A CUSTOM NOTIFICATION FOR ALLIANCE AND ROLE BASED
-        NotificationManager.NotifyAlliance (allianceID, newChange);
+        Notifications.NotifyAlliance (allianceID, newChange);
         // notify the player creating the application
-        NotificationManager.NotifyCorporationByRole (call.Session.CorporationID, CorporationRole.Director, newChange);
+        Notifications.NotifyCorporationByRole (call.Session.CorporationID, CorporationRole.Director, newChange);
 
         return null;
     }
@@ -1851,7 +1852,7 @@ public class corpRegistry : MultiClientBoundService
                     .AddChange ("applicationDateTime", DateTime.UtcNow.ToFileTimeUtc (), null)
                     .AddChange ("state",               0,                                null);
 
-            NotificationManager.NotifyAlliance ((int) currentApplicationAllianceID, change);
+            Notifications.NotifyAlliance ((int) currentApplicationAllianceID, change);
         }
     }
 
@@ -1867,6 +1868,6 @@ public class corpRegistry : MultiClientBoundService
             new Dictionary <string, object> {{"_corporationID", corporationID}}
         );
 
-        NotificationManager.NotifyCharacters (shareholders, change);
+        Notifications.NotifyCharacters (shareholders, change);
     }
 }

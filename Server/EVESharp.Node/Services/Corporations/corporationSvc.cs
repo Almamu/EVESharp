@@ -3,42 +3,43 @@ using EVESharp.Common.Database;
 using EVESharp.EVE.Client.Exceptions.corporationSvc;
 using EVESharp.EVE.Client.Exceptions.corpRegistry;
 using EVESharp.EVE.Client.Messages;
+using EVESharp.EVE.Market;
 using EVESharp.EVE.Services;
-using EVESharp.EVE.StaticData;
 using EVESharp.EVE.StaticData.Corporation;
+using EVESharp.Node.Configuration;
 using EVESharp.Node.Database;
 using EVESharp.Node.Inventory;
 using EVESharp.Node.Market;
-using EVESharp.Node.Network;
 using EVESharp.Node.Notifications.Client.Corporations;
 using EVESharp.Node.Sessions;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Database;
 using EVESharp.PythonTypes.Types.Primitives;
+using SimpleInjector;
 
 namespace EVESharp.Node.Services.Corporations;
 
 public class corporationSvc : Service
 {
-    public override AccessLevel         AccessLevel         => AccessLevel.None;
-    private         DatabaseConnection  Database            { get; }
-    private         CorporationDB       DB                  { get; }
-    private         NodeContainer       Container           { get; }
-    private         WalletManager       WalletManager       { get; }
-    private         ItemFactory         ItemFactory         { get; }
-    private         NotificationManager NotificationManager { get; }
+    public override AccessLevel                 AccessLevel   => AccessLevel.None;
+    private         DatabaseConnection          Database      { get; }
+    private         CorporationDB               DB            { get; }
+    private         WalletManager               WalletManager { get; }
+    private         Constants                   Constants     { get; }
+    private         ItemFactory                 ItemFactory   { get; }
+    private         Notifications.Notifications Notifications { get; }
 
     public corporationSvc (
-        DatabaseConnection  databaseConnection, CorporationDB db, NodeContainer container, WalletManager walletManager, ItemFactory itemFactory,
-        NotificationManager notificationManager
+        DatabaseConnection          databaseConnection, CorporationDB db, Constants constants, WalletManager walletManager, ItemFactory itemFactory,
+        Notifications.Notifications notifications
     )
     {
         Database            = databaseConnection;
         DB                  = db;
-        Container           = container;
+        Constants           = constants;
         WalletManager       = walletManager;
         ItemFactory         = itemFactory;
-        NotificationManager = notificationManager;
+        Notifications = notifications;
     }
 
     public PyTuple GetFactionInfo (CallInformation call)
@@ -158,13 +159,13 @@ public class corporationSvc : Service
         this.ValidateMedal (title, description, parts);
 
         if (pay == false)
-            throw new ConfirmCreatingMedal (Container.Constants [Constants.medalCost]);
+            throw new ConfirmCreatingMedal (Constants.MedalCost);
 
         using (Wallet wallet = WalletManager.AcquireWallet (call.Session.CorporationID, call.Session.CorpAccountKey, true))
         {
-            wallet.EnsureEnoughBalance (Container.Constants [Constants.medalCost]);
+            wallet.EnsureEnoughBalance (Constants.MedalCost);
             wallet.CreateJournalRecord (
-                MarketReference.MedalCreation, Container.Constants [Constants.medalTaxCorporation], null, -Container.Constants [Constants.medalCost]
+                MarketReference.MedalCreation, Constants.MedalTaxCorporation, null, -Constants.MedalCost
             );
         }
 
@@ -180,7 +181,7 @@ public class corporationSvc : Service
 
         this.ValidateMedal (title, description, parts);
 
-        throw new ConfirmCreatingMedal (Container.Constants [Constants.medalCost]);
+        throw new ConfirmCreatingMedal (Constants.MedalCost);
     }
 
     public PyDataType GetRecipientsOfMedal (PyInteger medalID, CallInformation call)
@@ -226,7 +227,7 @@ public class corporationSvc : Service
         if (CorporationRole.PersonnelManager.Is (call.Session.CorporationRole) == false && CorporationRole.Director.Is (call.Session.CorporationRole) == false)
             throw new CrpAccessDenied (MLS.UI_CORP_NEED_ROLE_PERS_MAN_OR_DIRECT);
 
-        throw new ConfirmCreatingMedal (Container.Constants [Constants.medalCost]);
+        throw new ConfirmCreatingMedal (Constants.MedalCost);
     }
 
     public PyDataType GiveMedalToCharacters (PyInteger medalID, PyList characterIDs, PyString reason, PyBool pay, CallInformation call)
@@ -237,13 +238,13 @@ public class corporationSvc : Service
             throw new CrpAccessDenied (MLS.UI_CORP_NEED_ROLE_PERS_MAN_OR_DIRECT);
 
         if (pay == false)
-            throw new ConfirmGivingMedal (Container.Constants [Constants.medalCost]);
+            throw new ConfirmGivingMedal (Constants.MedalCost);
 
         using (Wallet wallet = WalletManager.AcquireWallet (call.Session.CorporationID, call.Session.CorpAccountKey, true))
         {
-            wallet.EnsureEnoughBalance (Container.Constants [Constants.medalCost]);
+            wallet.EnsureEnoughBalance (Constants.MedalCost);
             wallet.CreateJournalRecord (
-                MarketReference.MedalIssuing, Container.Constants [Constants.medalTaxCorporation], null, -Container.Constants [Constants.medalCost]
+                MarketReference.MedalIssuing, Constants.MedalTaxCorporation, null, -Constants.MedalCost
             );
         }
 
@@ -252,7 +253,7 @@ public class corporationSvc : Service
             DB.GrantMedal (medalID, characterID, callerCharacterID, reason, 2);
 
         // notify all the characters
-        NotificationManager.NotifyCharacters (characterIDs.GetEnumerable <PyInteger> (), new OnMedalIssued ());
+        Notifications.NotifyCharacters (characterIDs.GetEnumerable <PyInteger> (), new OnMedalIssued ());
 
         // increase recipients for medals
         DB.IncreaseRecepientsForMedal (medalID, characterIDs.Count);

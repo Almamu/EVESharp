@@ -6,7 +6,7 @@ using EVESharp.Node.Cache;
 using EVESharp.Node.Database;
 using EVESharp.Node.Inventory;
 using EVESharp.Node.Inventory.Items.Types;
-using EVESharp.Node.Network;
+using EVESharp.Node.Notifications;
 using EVESharp.Node.Notifications.Client.Character;
 using EVESharp.Node.Sessions;
 using EVESharp.PythonTypes.Types.Collections;
@@ -16,18 +16,18 @@ namespace EVESharp.Node.Services.War;
 
 public class standing2 : Service
 {
-    public override AccessLevel         AccessLevel         => AccessLevel.None;
-    private         StandingDB          DB                  { get; }
-    private         CacheStorage        CacheStorage        { get; }
-    private         ItemFactory         ItemFactory         { get; }
-    private         NotificationManager NotificationManager { get; }
+    public override AccessLevel                 AccessLevel         => AccessLevel.None;
+    private         StandingDB                  DB                  { get; }
+    private         CacheStorage                CacheStorage        { get; }
+    private         ItemFactory                 ItemFactory         { get; }
+    private         Notifications.Notifications Notifications { get; }
 
-    public standing2 (CacheStorage cacheStorage, StandingDB db, ItemFactory itemFactory, NotificationManager notificationManager)
+    public standing2 (CacheStorage cacheStorage, StandingDB db, ItemFactory itemFactory, Notifications.Notifications notifications)
     {
         CacheStorage        = cacheStorage;
         DB                  = db;
         ItemFactory         = itemFactory;
-        NotificationManager = notificationManager;
+        Notifications = notifications;
     }
 
     public PyTuple GetMyKillRights (CallInformation call)
@@ -113,7 +113,7 @@ public class standing2 : Service
         DB.SetPlayerStanding (callerCharacterID, entityID, standing);
 
         // send the same notification to both players
-        NotificationManager.NotifyOwners (
+        Notifications.NotifyOwners (
             new PyList <PyInteger> (2)
             {
                 [0] = callerCharacterID,
@@ -133,7 +133,7 @@ public class standing2 : Service
 
         // TODO: MAYBE SEND ONSETCORPSTANDING NOTIFICATION?!
         // send the same notification to both players
-        NotificationManager.NotifyOwners (
+        Notifications.NotifyOwners (
             new PyList <PyInteger> (2)
             {
                 [0] = call.Session.CorporationID,

@@ -1,6 +1,7 @@
 ﻿using System;
 using EVESharp.EVE.Client.Exceptions.insuranceSvc;
 using EVESharp.EVE.Client.Exceptions.jumpCloneSvc;
+using EVESharp.EVE.Market;
 using EVESharp.EVE.Packets.Exceptions;
 using EVESharp.EVE.Services;
 using EVESharp.EVE.Sessions;

@@ -28,23 +28,21 @@ using EVESharp.Node.Database;
 
 namespace EVESharp.Node.Inventory;
 
-public class AncestryManager
+public class Bloodlines
 {
-    private Dictionary <int, Ancestry> mAncestries;
-    private CharacterDB                DB { get; }
+    private Dictionary <int, Bloodline> mBloodlines;
+    private CharacterDB                 DB { get; }
 
-    public Dictionary <int, Bloodline> Bloodlines { get; private set; }
 
-    public Ancestry this [int id] => this.mAncestries [id];
+    public Bloodline this [int id] => this.mBloodlines [id];
 
-    public AncestryManager (CharacterDB db)
+    public Bloodlines (CharacterDB db)
     {
         DB = db;
     }
 
     public void Load ()
     {
-        Bloodlines       = DB.GetBloodlineInformation ();
-        this.mAncestries = DB.GetAncestryInformation (Bloodlines);
+        this.mBloodlines = DB.GetBloodlineInformation ();
     }
 }

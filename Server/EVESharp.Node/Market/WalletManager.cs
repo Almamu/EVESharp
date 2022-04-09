@@ -2,24 +2,24 @@
 using System.Collections.Generic;
 using EVESharp.Common.Database;
 using EVESharp.Database;
+using EVESharp.EVE.Market;
 using EVESharp.EVE.Sessions;
 using EVESharp.EVE.StaticData.Corporation;
 using EVESharp.EVE.Wallet;
-using EVESharp.Node.Database;
-using EVESharp.Node.Network;
+using EVESharp.Node.Notifications;
 using MySql.Data.MySqlClient;
 
 namespace EVESharp.Node.Market;
 
 public class WalletManager
 {
-    private NotificationManager NotificationManager { get; }
-    private DatabaseConnection  Database            { get; }
+    private Notifications.Notifications Notifications { get; }
+    private DatabaseConnection          Database            { get; }
 
-    public WalletManager (DatabaseConnection database, NotificationManager notificationManager)
+    public WalletManager (DatabaseConnection database, Notifications.Notifications notifications)
     {
         Database            = database;
-        NotificationManager = notificationManager;
+        Notifications = notifications;
     }
 
     public Wallet AcquireWallet (int ownerID, int walletKey, bool isCorporation = false)
@@ -33,7 +33,7 @@ public class WalletManager
             Balance             = balance,
             OriginalBalance     = balance,
             Database            = Database,
-            NotificationManager = NotificationManager,
+            Notifications = Notifications,
             ForCorporation      = isCorporation,
             WalletManager       = this
         };

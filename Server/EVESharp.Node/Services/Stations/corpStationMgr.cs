@@ -1,70 +1,73 @@
 using System;
 using System.Collections.Generic;
 using EVESharp.EVE.Client.Exceptions.corpStationMgr;
+using EVESharp.EVE.Market;
 using EVESharp.EVE.Packets.Exceptions;
 using EVESharp.EVE.Services;
 using EVESharp.EVE.Sessions;
-using EVESharp.EVE.StaticData;
 using EVESharp.EVE.StaticData.Corporation;
 using EVESharp.EVE.StaticData.Inventory;
 using EVESharp.EVE.Wallet;
+using EVESharp.Node.Configuration;
 using EVESharp.Node.Database;
 using EVESharp.Node.Inventory;
 using EVESharp.Node.Inventory.Items;
 using EVESharp.Node.Inventory.Items.Types;
 using EVESharp.Node.Market;
-using EVESharp.Node.Network;
+using EVESharp.Node.Notifications;
 using EVESharp.Node.Notifications.Client.Corporations;
 using EVESharp.Node.Notifications.Client.Wallet;
 using EVESharp.Node.Sessions;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Database;
 using EVESharp.PythonTypes.Types.Primitives;
+using Character = EVESharp.Node.Inventory.Items.Types.Character;
+using Groups = EVESharp.EVE.StaticData.Inventory.Groups;
 using Type = EVESharp.EVE.StaticData.Inventory.Type;
 
 namespace EVESharp.Node.Services.Stations;
 
 public class corpStationMgr : ClientBoundService
 {
-    public override AccessLevel         AccessLevel         => AccessLevel.None;
-    private         ItemFactory         ItemFactory         { get; }
-    private         ItemDB              ItemDB              => ItemFactory.ItemDB;
-    private         MarketDB            MarketDB            { get; }
-    private         StationDB           StationDB           { get; }
-    private         BillsDB             BillsDB             { get; }
-    private         TypeManager         TypeManager         => ItemFactory.TypeManager;
-    private         SystemManager       SystemManager       => ItemFactory.SystemManager;
-    private         WalletManager       WalletManager       { get; }
-    private         NodeContainer       Container           { get; }
-    private         NotificationManager NotificationManager { get; }
+    public override AccessLevel                 AccessLevel   => AccessLevel.None;
+    private         ItemFactory                 ItemFactory   { get; }
+    private         ItemDB                      ItemDB        => ItemFactory.ItemDB;
+    private         MarketDB                    MarketDB      { get; }
+    private         StationDB                   StationDB     { get; }
+    private         BillsDB                     BillsDB       { get; }
+    private         TypeManager                 TypeManager   => ItemFactory.TypeManager;
+    private         SystemManager               SystemManager => ItemFactory.SystemManager;
+    private         WalletManager               WalletManager { get; }
+    private         Constants     Constants     { get; }
+    private         Notifications.Notifications Notifications { get; }
 
     public corpStationMgr (
-        MarketDB marketDB, StationDB stationDb, BillsDB billsDb, NotificationManager notificationManager, ItemFactory itemFactory, NodeContainer container,
+        MarketDB marketDB, StationDB stationDb, BillsDB billsDb, Notifications.Notifications notifications, ItemFactory itemFactory, Constants constants,
         BoundServiceManager manager, WalletManager walletManager
     ) : base (manager)
     {
-        MarketDB            = marketDB;
-        StationDB           = stationDb;
-        BillsDB             = billsDb;
-        NotificationManager = notificationManager;
-        ItemFactory         = itemFactory;
-        Container           = container;
-        WalletManager       = walletManager;
+        MarketDB      = marketDB;
+        StationDB     = stationDb;
+        BillsDB       = billsDb;
+        Notifications = notifications;
+        ItemFactory   = itemFactory;
+        Constants     = constants;
+        WalletManager = walletManager;
     }
 
     // TODO: PROVIDE OBJECTID PROPERLY
     protected corpStationMgr (
-        MarketDB marketDB, StationDB stationDb, BillsDB billsDb, NotificationManager notificationManager, ItemFactory itemFactory, NodeContainer container,
+        MarketDB marketDB, StationDB stationDb, BillsDB billsDb, Notifications.Notifications notifications, ItemFactory itemFactory, Constants constants,
         BoundServiceManager manager, WalletManager walletManager, Session session
     ) : base (manager, session, 0)
     {
-        MarketDB            = marketDB;
-        StationDB           = stationDb;
-        BillsDB             = billsDb;
-        NotificationManager = notificationManager;
-        ItemFactory         = itemFactory;
-        Container           = container;
-        WalletManager       = walletManager;
+        MarketDB      = marketDB;
+        StationDB     = stationDb;
+        BillsDB       = billsDb;
+        Notifications = notifications;
+        ItemFactory   = itemFactory;
+        Constants     = constants;
+        WalletManager = walletManager;
     }
 
     public PyList GetCorporateStationOffice (CallInformation call)
@@ -158,7 +161,7 @@ public class corpStationMgr : ClientBoundService
 
         using Wallet wallet = WalletManager.AcquireWallet (character.ID, Keys.MAIN);
         {
-            double contractCost = Container.Constants [Constants.costCloneContract];
+            double contractCost = Constants.CostCloneContract;
 
             wallet.EnsureEnoughBalance (contractCost);
             wallet.CreateJournalRecord (MarketReference.CloneTransfer, null, station.ID, -contractCost, $"Moved clone to {station.Name}");
@@ -181,7 +184,7 @@ public class corpStationMgr : ClientBoundService
 
     public PyBool DoesPlayersCorpHaveJunkAtStation (CallInformation call)
     {
-        if (ItemFactory.IsNPCCorporationID (call.Session.CorporationID))
+        if (ItemRanges.IsNPCCorporationID (call.Session.CorporationID))
             return false;
 
         // TODO: PROPERLY IMPLEMENT THIS ONE
@@ -301,9 +304,9 @@ public class corpStationMgr : ClientBoundService
         // create the record in the database
         StationDB.RentOffice (call.Session.CorporationID, stationID, item.ID, dueDate, rentalCost, billID);
         // notify all characters in the station about the office change
-        NotificationManager.NotifyStation (stationID, new OnOfficeRentalChanged (call.Session.CorporationID, item.ID, item.ID));
+        Notifications.NotifyStation (stationID, new OnOfficeRentalChanged (call.Session.CorporationID, item.ID, item.ID));
         // notify all the characters about the bill received
-        NotificationManager.NotifyCorporation (call.Session.CorporationID, new OnBillReceived ());
+        Notifications.NotifyCorporation (call.Session.CorporationID, new OnBillReceived ());
 
         // return the new officeID
         return item.ID;
@@ -332,7 +335,7 @@ public class corpStationMgr : ClientBoundService
             throw new CustomError ("Trying to bind an object that does not belong to us!");
 
         return new corpStationMgr (
-            MarketDB, StationDB, BillsDB, NotificationManager, ItemFactory, Container, BoundServiceManager, WalletManager,
+            MarketDB, StationDB, BillsDB, Notifications, ItemFactory, Constants, BoundServiceManager, WalletManager,
             call.Session
         );
     }

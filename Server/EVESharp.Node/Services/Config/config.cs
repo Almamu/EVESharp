@@ -1,5 +1,6 @@
 using EVESharp.EVE.Packets.Exceptions;
 using EVESharp.EVE.Services;
+using EVESharp.EVE.StaticData.Inventory;
 using EVESharp.Node.Database;
 using EVESharp.Node.Inventory;
 using EVESharp.PythonTypes.Types.Collections;
@@ -74,7 +75,7 @@ public class config : Service
 
     public PyDataType GetCelestialStatistic (PyInteger celestialID, CallInformation call)
     {
-        if (ItemFactory.IsCelestialID (celestialID) == false)
+        if (ItemRanges.IsCelestialID (celestialID) == false)
             throw new CustomError ($"Unexpected celestialID {celestialID}");
 
         // TODO: CHECK FOR STATIC DATA TO FETCH IT OFF MEMORY INSTEAD OF DATABASE?

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using EVESharp.EVE.Client.Exceptions;
 using EVESharp.EVE.Client.Exceptions.repairSvc;
+using EVESharp.EVE.Market;
 using EVESharp.EVE.Packets.Exceptions;
 using EVESharp.EVE.Services;
 using EVESharp.EVE.Sessions;
@@ -12,7 +13,6 @@ using EVESharp.Node.Inventory;
 using EVESharp.Node.Inventory.Items;
 using EVESharp.Node.Inventory.Items.Types;
 using EVESharp.Node.Market;
-using EVESharp.Node.Network;
 using EVESharp.Node.Notifications.Client.Inventory;
 using EVESharp.Node.Sessions;
 using EVESharp.PythonTypes.Types.Collections;
@@ -24,38 +24,36 @@ namespace EVESharp.Node.Services.Stations;
 
 public class repairSvc : ClientBoundService
 {
-    private const    double              BASEPRICE_MULTIPLIER_MODULE = 0.0125;
-    private const    double              BASEPRICE_MULTIPLIER_SHIP   = 0.000088;
-    private readonly ItemInventory       mInventory;
-    public override  AccessLevel         AccessLevel         => AccessLevel.None;
-    private          ItemFactory         ItemFactory         { get; }
-    private          SystemManager       SystemManager       => ItemFactory.SystemManager;
-    private          TypeManager         TypeManager         => ItemFactory.TypeManager;
-    private          MarketDB            MarketDB            { get; }
-    private          RepairDB            RepairDB            { get; }
-    private          InsuranceDB         InsuranceDB         { get; }
-    private          NotificationManager NotificationManager { get; }
-    private          NodeContainer       Container           { get; }
-    private          WalletManager       WalletManager       { get; }
-    private          Node.Dogma.Dogma    Dogma               { get; }
+    private const    double                      BASEPRICE_MULTIPLIER_MODULE = 0.0125;
+    private const    double                      BASEPRICE_MULTIPLIER_SHIP   = 0.000088;
+    private readonly ItemInventory               mInventory;
+    public override  AccessLevel                 AccessLevel         => AccessLevel.None;
+    private          ItemFactory                 ItemFactory         { get; }
+    private          SystemManager               SystemManager       => ItemFactory.SystemManager;
+    private          TypeManager                 TypeManager         => ItemFactory.TypeManager;
+    private          MarketDB                    MarketDB            { get; }
+    private          RepairDB                    RepairDB            { get; }
+    private          InsuranceDB                 InsuranceDB         { get; }
+    private          Notifications.Notifications Notifications { get; }
+    private          WalletManager               WalletManager       { get; }
+    private          Node.Dogma.Dogma            Dogma               { get; }
 
     public repairSvc (
-        RepairDB    repairDb,    MarketDB            marketDb, InsuranceDB   insuranceDb, NodeContainer nodeContainer, NotificationManager notificationManager,
+        RepairDB    repairDb,    MarketDB            marketDb, InsuranceDB   insuranceDb, Notifications.Notifications notifications,
         ItemFactory itemFactory, BoundServiceManager manager,  WalletManager walletManager, Node.Dogma.Dogma dogma
     ) : base (manager)
     {
-        ItemFactory         = itemFactory;
-        MarketDB            = marketDb;
-        RepairDB            = repairDb;
-        InsuranceDB         = insuranceDb;
-        NotificationManager = notificationManager;
-        Container           = nodeContainer;
-        WalletManager       = walletManager;
-        Dogma               = dogma;
+        ItemFactory   = itemFactory;
+        MarketDB      = marketDb;
+        RepairDB      = repairDb;
+        InsuranceDB   = insuranceDb;
+        Notifications = notifications;
+        WalletManager = walletManager;
+        Dogma         = dogma;
     }
 
     protected repairSvc (
-        RepairDB      repairDb,  MarketDB    marketDb,    InsuranceDB         insuranceDb, NodeContainer nodeContainer, NotificationManager notificationManager,
+        RepairDB      repairDb,  MarketDB    marketDb,    InsuranceDB         insuranceDb, Notifications.Notifications notifications,
         ItemInventory inventory, ItemFactory itemFactory, BoundServiceManager manager,     WalletManager walletManager, Node.Dogma.Dogma dogma, Session session
     ) : base (manager, session, inventory.ID)
     {
@@ -64,8 +62,7 @@ public class repairSvc : ClientBoundService
         MarketDB            = marketDb;
         RepairDB            = repairDb;
         InsuranceDB         = insuranceDb;
-        NotificationManager = notificationManager;
-        Container           = nodeContainer;
+        Notifications = notifications;
         WalletManager       = walletManager;
         Dogma               = dogma;
     }
@@ -321,7 +318,7 @@ public class repairSvc : ClientBoundService
 
                     change.AddChange (entry.ItemID, "singleton", true, false);
 
-                    NotificationManager.NotifyNode (nodeID, change);
+                    Notifications.NotifyNode (nodeID, change);
                 }
             }
 
@@ -360,7 +357,7 @@ public class repairSvc : ClientBoundService
             ItemFactory.MetaInventoryManager.RegisterMetaInventoryForOwnerID (station, call.Session.EnsureCharacterIsSelected (), Flags.Hangar);
 
         return new repairSvc (
-            RepairDB, MarketDB, InsuranceDB, Container, NotificationManager, inventory, ItemFactory, BoundServiceManager,
+            RepairDB, MarketDB, InsuranceDB, Notifications, inventory, ItemFactory, BoundServiceManager,
             WalletManager, Dogma, call.Session
         );
     }

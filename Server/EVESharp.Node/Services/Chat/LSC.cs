@@ -3,11 +3,12 @@ using System.IO;
 using EVESharp.EVE.Client.Exceptions.LSC;
 using EVESharp.EVE.Packets.Exceptions;
 using EVESharp.EVE.Services;
+using EVESharp.EVE.StaticData.Inventory;
 using EVESharp.Node.Chat;
 using EVESharp.Node.Database;
 using EVESharp.Node.Inventory;
 using EVESharp.Node.Inventory.Items.Types;
-using EVESharp.Node.Network;
+using EVESharp.Node.Notifications;
 using EVESharp.Node.Notifications.Client.Chat;
 using EVESharp.Node.Sessions;
 using EVESharp.PythonTypes;
@@ -27,25 +28,23 @@ public class LSC : Service
     private         ILogger     Log         { get; }
     public override AccessLevel AccessLevel => AccessLevel.Location;
 
-    private MessagesDB          MessagesDB          { get; }
-    private ChatDB              DB                  { get; }
-    private CharacterDB         CharacterDB         { get; }
-    private ItemFactory         ItemFactory         { get; }
-    private NodeContainer       NodeContainer       { get; }
-    private NotificationManager NotificationManager { get; }
-    private MailManager         MailManager         { get; }
+    private MessagesDB                  MessagesDB          { get; }
+    private ChatDB                      DB                  { get; }
+    private CharacterDB                 CharacterDB         { get; }
+    private ItemFactory                 ItemFactory         { get; }
+    private Notifications.Notifications Notifications { get; }
+    private MailManager                 MailManager         { get; }
 
     public LSC (
-        ChatDB              db, MessagesDB messagesDB, CharacterDB characterDB, ItemFactory itemFactory, NodeContainer nodeContainer, ILogger logger,
-        NotificationManager notificationManager, MailManager mailManager
+        ChatDB                      db, MessagesDB messagesDB, CharacterDB characterDB, ItemFactory itemFactory, ILogger logger,
+        Notifications.Notifications notifications, MailManager mailManager
     )
     {
         DB                  = db;
         MessagesDB          = messagesDB;
         CharacterDB         = characterDB;
         ItemFactory         = itemFactory;
-        NodeContainer       = nodeContainer;
-        NotificationManager = notificationManager;
+        Notifications = notifications;
         MailManager         = mailManager;
         Log                 = logger;
     }
@@ -255,13 +254,13 @@ public class LSC : Service
                         PyList <PyInteger> characters = DB.GetOnlineCharsOnChannel (channelID);
 
                         // notify them all
-                        NotificationManager.NotifyCharacters (characters, joinNotification);
+                        Notifications.NotifyCharacters (characters, joinNotification);
                     }
                 }
                 else
                 {
                     // notify all players on the channel
-                    NotificationManager.SendNotification (channelType, new PyList (1) {[0] = entityID}, joinNotification);
+                    Notifications.SendNotification (channelType, new PyList (1) {[0] = entityID}, joinNotification);
                 }
             }
 
@@ -276,7 +275,7 @@ public class LSC : Service
                 // can be removed from it's lists
                 if (channelType == ChatDB.CHANNEL_TYPE_NORMAL && channelID != entityID)
                     // notify all characters in the channel
-                    NotificationManager.NotifyCharacter (callerCharacterID, new OnLSC (call.Session, "DestroyChannel", channelID, new PyTuple (0)));
+                    Notifications.NotifyCharacter (callerCharacterID, new OnLSC (call.Session, "DestroyChannel", channelID, new PyTuple (0)));
 
                 Log.Error ($"LSC could not get channel information. Error: {e.Message}");
             }
@@ -322,7 +321,7 @@ public class LSC : Service
 
         if (channelType == ChatDB.CHANNEL_TYPE_NORMAL)
         {
-            NotificationManager.NotifyCharacters (
+            Notifications.NotifyCharacters (
                 DB.GetOnlineCharsOnChannel (channelID),
                 new OnLSC (call.Session, "SendMessage", channelID, notificationBody)
             );
@@ -338,7 +337,7 @@ public class LSC : Service
                 }
             };
 
-            NotificationManager.SendNotification (
+            Notifications.SendNotification (
                 channelType,
                 new PyList (1) {[0] = entityID},
                 new OnLSC (call.Session, "SendMessage", identifier, notificationBody)
@@ -406,9 +405,9 @@ public class LSC : Service
             OnLSC leaveNotification = new OnLSC (call.Session, "LeaveChannel", channel, new PyTuple (0));
 
             if (channelType != ChatDB.CHANNEL_TYPE_NORMAL)
-                NotificationManager.SendNotification (channelType, new PyList (1) {[0] = channel}, leaveNotification);
+                Notifications.SendNotification (channelType, new PyList (1) {[0] = channel}, leaveNotification);
             else
-                NotificationManager.NotifyCharacters (
+                Notifications.NotifyCharacters (
                     DB.GetOnlineCharsOnChannel (channelID),
                     leaveNotification
                 );
@@ -471,7 +470,7 @@ public class LSC : Service
         DB.DestroyChannel (channelID);
 
         // notify all characters in the channel
-        NotificationManager.NotifyCharacters (characters, new OnLSC (call.Session, "DestroyChannel", channelID, new PyTuple (0)));
+        Notifications.NotifyCharacters (characters, new OnLSC (call.Session, "DestroyChannel", channelID, new PyTuple (0)));
 
         return null;
     }
@@ -496,7 +495,7 @@ public class LSC : Service
         };
 
         // get users in the channel that are online now
-        NotificationManager.NotifyCharacters (
+        Notifications.NotifyCharacters (
             DB.GetOnlineCharsOnChannel (channelID),
             new OnLSC (call.Session, "AccessControl", channelID, args)
         );
@@ -512,7 +511,7 @@ public class LSC : Service
         int callerCharacterID = call.Session.EnsureCharacterIsSelected ();
 
         // announce leaving, important in private channels
-        NotificationManager.NotifyCharacters (
+        Notifications.NotifyCharacters (
             DB.GetOnlineCharsOnChannel (channelID),
             new OnLSC (call.Session, "LeaveChannel", channelID, new PyTuple (0))
         );
@@ -557,7 +556,7 @@ public class LSC : Service
         // TODO: CORP CHANNELS SHOULD BE SUPPORTED TOO
         if (channelType == ChatDB.CHANNEL_TYPE_NORMAL)
             // notify all the characters in the channel
-            NotificationManager.NotifyCharacters (
+            Notifications.NotifyCharacters (
                 DB.GetOnlineCharsOnChannel (call.ChannelID),
                 new OnLSC (callInfo.Session, "JoinChannel", call.ChannelID, new PyTuple (0))
             );
@@ -586,7 +585,7 @@ public class LSC : Service
             if (characterID == callerCharacterID)
                 throw new ChtCannotInviteSelf ();
 
-            if (ItemFactory.IsNPC (characterID))
+            if (ItemRanges.IsNPC (characterID))
                 throw new ChtNPC (characterID);
 
             // ensure our character has admin perms first

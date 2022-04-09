@@ -34,6 +34,8 @@ using EVESharp.Node.Inventory.Items;
 using EVESharp.Node.Inventory.Items.Types.Information;
 using EVESharp.PythonTypes.Types.Database;
 using MySql.Data.MySqlClient;
+using Categories = EVESharp.Node.Inventory.Categories;
+using Groups = EVESharp.Node.Inventory.Groups;
 
 namespace EVESharp.Node.Database;
 
@@ -41,8 +43,8 @@ public class ItemDB : DatabaseAccessor
 {
     private ItemFactory      ItemFactory      { get; }
     private AttributeManager AttributeManager => ItemFactory.AttributeManager;
-    private GroupManager     GroupManager     => ItemFactory.GroupManager;
-    private CategoryManager  CategoryManager  => ItemFactory.CategoryManager;
+    private Groups           Groups           => ItemFactory.Groups;
+    private Categories       Categories       => ItemFactory.Categories;
     private TypeManager      TypeManager      => ItemFactory.TypeManager;
     private StationManager   StationManager   => ItemFactory.StationManager;
 
@@ -182,7 +184,7 @@ public class ItemDB : DatabaseAccessor
 
                 Type type = new Type (
                     typeID,
-                    GroupManager [reader.GetInt32 (1)],
+                    Groups [reader.GetInt32 (1)],
                     reader.GetString (2),
                     reader.GetString (3),
                     reader.GetInt32OrDefault (4),
@@ -225,7 +227,7 @@ public class ItemDB : DatabaseAccessor
             {
                 Group group = new Group (
                     reader.GetInt32 (0),
-                    CategoryManager [reader.GetInt32 (1)],
+                    Categories [reader.GetInt32 (1)],
                     reader.GetString (2),
                     reader.GetString (3),
                     reader.GetInt32OrDefault (4),
@@ -334,7 +336,7 @@ public class ItemDB : DatabaseAccessor
         MySqlConnection connection = null;
         MySqlDataReader reader = Database.Select (
             ref connection,
-            $"SELECT itemID, eveNames.itemName, invItems.typeID, ownerID, locationID, flag, contraband, singleton, quantity, x, y, z, custominfo FROM invItems LEFT JOIN eveNames USING(itemID) LEFT JOIN invPositions USING (itemID) WHERE itemID < {ItemFactory.USERGENERATED_ID_MIN} AND (groupID = {(int) Groups.Station} OR groupID = {(int) Groups.Faction} OR groupID = {(int) Groups.SolarSystem} OR groupID = {(int) Groups.Corporation} OR groupID = {(int) Groups.System})"
+            $"SELECT itemID, eveNames.itemName, invItems.typeID, ownerID, locationID, flag, contraband, singleton, quantity, x, y, z, custominfo FROM invItems LEFT JOIN eveNames USING(itemID) LEFT JOIN invPositions USING (itemID) WHERE itemID < {ItemRanges.USERGENERATED_ID_MIN} AND (groupID = {(int) EVE.StaticData.Inventory.Groups.Station} OR groupID = {(int) EVE.StaticData.Inventory.Groups.Faction} OR groupID = {(int) EVE.StaticData.Inventory.Groups.SolarSystem} OR groupID = {(int) EVE.StaticData.Inventory.Groups.Corporation} OR groupID = {(int) EVE.StaticData.Inventory.Groups.System})"
         );
 
         using (connection)
@@ -386,7 +388,7 @@ public class ItemDB : DatabaseAccessor
             Item newItem = this.BuildItemFromReader (reader);
 
             // the non-user generated items cannot be owned by any node
-            if (itemID < ItemFactory.USERGENERATED_ID_MIN)
+            if (itemID < ItemRanges.USERGENERATED_ID_MIN)
                 return newItem;
 
             if (reader.IsDBNull (13) == false && reader.GetInt32 (13) != 0)
@@ -985,7 +987,7 @@ public class ItemDB : DatabaseAccessor
     public void UnloadItem (int itemID)
     {
         // non-user generated items are not owned by anyone
-        if (itemID < ItemFactory.USERGENERATED_ID_MIN)
+        if (itemID < ItemRanges.USERGENERATED_ID_MIN)
             return;
 
         Database.PrepareQuery ("UPDATE invItems SET nodeID = 0 WHERE itemID = @itemID", new Dictionary <string, object> {{"@itemID", itemID}});
@@ -1167,7 +1169,7 @@ public class ItemDB : DatabaseAccessor
             {
                 {"@ownerID", ownerID},
                 {"@locationID", locationID},
-                {"@blueprintCategoryID", Categories.Blueprint}
+                {"@blueprintCategoryID", EVE.StaticData.Inventory.Categories.Blueprint}
             }
         );
     }

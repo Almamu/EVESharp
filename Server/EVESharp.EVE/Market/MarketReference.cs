@@ -1,4 +1,4 @@
-﻿namespace EVESharp.Node.Market;
+﻿namespace EVESharp.EVE.Market;
 
 public enum MarketReference
 {

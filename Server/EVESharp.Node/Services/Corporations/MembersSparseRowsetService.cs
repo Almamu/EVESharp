@@ -5,7 +5,7 @@ using EVESharp.EVE.Services;
 using EVESharp.EVE.Sessions;
 using EVESharp.Node.Database;
 using EVESharp.Node.Inventory.Items.Types;
-using EVESharp.Node.Network;
+using EVESharp.Node.Notifications;
 using EVESharp.Node.Notifications.Client.Database;
 using EVESharp.Node.Services.Database;
 using EVESharp.PythonTypes.Types.Collections;
@@ -20,10 +20,10 @@ public class MembersSparseRowsetService : SparseRowsetDatabaseService
     public override AccessLevel                  AccessLevel         => AccessLevel.None;
     private         Corporation                  Corporation         { get; }
     private         CorporationDB                DB                  { get; }
-    private         NotificationManager          NotificationManager { get; }
+    private         Notifications.Notifications  Notifications { get; }
 
     public MembersSparseRowsetService (
-        Corporation corporation, CorporationDB db, SparseRowsetHeader rowsetHeader, NotificationManager notificationManager, BoundServiceManager manager,
+        Corporation corporation, CorporationDB db, SparseRowsetHeader rowsetHeader, Notifications.Notifications notifications, BoundServiceManager manager,
         Session     session
     ) : base (rowsetHeader, manager, session, true)
     {
@@ -32,7 +32,7 @@ public class MembersSparseRowsetService : SparseRowsetDatabaseService
 
         // get all the indexes based on the key
         this.RowsIndex      = DB.GetMembers (corporation.ID);
-        NotificationManager = notificationManager;
+        Notifications = notifications;
     }
 
     public override PyDataType Fetch (PyInteger startPos, PyInteger fetchSize, CallInformation call)
@@ -56,7 +56,7 @@ public class MembersSparseRowsetService : SparseRowsetDatabaseService
         // TODO: NOT TO MENTION THE LINQ USAGE, MAYBE THERE'S A BETTER WAY OF DOING IT
         PyList <PyDataType> characterIDs = new PyList <PyDataType> (Sessions.Select (x => (PyDataType) x.Value.CharacterID).ToList ());
 
-        NotificationManager.NotifyCharacters (
+        Notifications.NotifyCharacters (
             characterIDs.GetEnumerable <PyInteger> (),
             new OnObjectPublicAttributesUpdated (primaryKey, this, changes, notificationParams)
         );

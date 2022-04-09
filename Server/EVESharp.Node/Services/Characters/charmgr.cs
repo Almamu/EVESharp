@@ -1,3 +1,4 @@
+using EVESharp.EVE.Market;
 using EVESharp.EVE.Services;
 using EVESharp.EVE.Wallet;
 using EVESharp.Node.Database;

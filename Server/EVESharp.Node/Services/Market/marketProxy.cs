@@ -4,26 +4,27 @@ using EVESharp.EVE.Client.Exceptions.corpRegistry;
 using EVESharp.EVE.Client.Exceptions.inventory;
 using EVESharp.EVE.Client.Exceptions.marketProxy;
 using EVESharp.EVE.Client.Messages;
+using EVESharp.EVE.Market;
 using EVESharp.EVE.Packets.Complex;
 using EVESharp.EVE.Packets.Exceptions;
 using EVESharp.EVE.Services;
 using EVESharp.EVE.Sessions;
-using EVESharp.EVE.StaticData;
 using EVESharp.EVE.StaticData.Corporation;
 using EVESharp.EVE.StaticData.Inventory;
 using EVESharp.EVE.Wallet;
 using EVESharp.Node.Cache;
+using EVESharp.Node.Configuration;
 using EVESharp.Node.Database;
 using EVESharp.Node.Inventory;
 using EVESharp.Node.Inventory.Items;
 using EVESharp.Node.Inventory.Items.Types;
 using EVESharp.Node.Market;
-using EVESharp.Node.Network;
 using EVESharp.Node.Notifications.Client.Inventory;
 using EVESharp.Node.Notifications.Client.Market;
 using EVESharp.Node.Sessions;
 using EVESharp.PythonTypes.Types.Primitives;
 using MySql.Data.MySqlClient;
+using Character = EVESharp.Node.Inventory.Items.Types.Character;
 
 namespace EVESharp.Node.Services.Market;
 
@@ -32,34 +33,34 @@ public class marketProxy : Service
     private static readonly int []      JumpsPerSkillLevel = {-1, 0, 5, 10, 20, 50};
     public override         AccessLevel AccessLevel => AccessLevel.None;
 
-    private MarketDB            DB                  { get; }
-    private CharacterDB         CharacterDB         { get; }
-    private ItemDB              ItemDB              { get; }
-    private CacheStorage        CacheStorage        { get; }
-    private ItemFactory         ItemFactory         { get; }
-    private TypeManager         TypeManager         => ItemFactory.TypeManager;
-    private SolarSystemDB       SolarSystemDB       { get; }
-    private NodeContainer       NodeContainer       { get; }
-    private SystemManager       SystemManager       => ItemFactory.SystemManager;
-    private NotificationManager NotificationManager { get; }
-    private WalletManager       WalletManager       { get; }
-    private Node.Dogma.Dogma    Dogma               { get; }
+    private MarketDB                    DB            { get; }
+    private CharacterDB                 CharacterDB   { get; }
+    private ItemDB                      ItemDB        { get; }
+    private CacheStorage                CacheStorage  { get; }
+    private ItemFactory                 ItemFactory   { get; }
+    private TypeManager                 TypeManager   => ItemFactory.TypeManager;
+    private SolarSystemDB               SolarSystemDB { get; }
+    private Constants                   Constants     { get; }
+    private SystemManager               SystemManager => ItemFactory.SystemManager;
+    private Notifications.Notifications Notifications { get; }
+    private WalletManager               WalletManager { get; }
+    private Node.Dogma.Dogma            Dogma         { get; }
 
     public marketProxy (
         MarketDB      db,            CharacterDB characterDB, ItemDB itemDB, SolarSystemDB solarSystemDB, ItemFactory itemFactory, CacheStorage cacheStorage,
-        NodeContainer nodeContainer, NotificationManager notificationManager, WalletManager walletManager, Node.Dogma.Dogma dogma
+        Constants constants, Notifications.Notifications notifications, WalletManager walletManager, Node.Dogma.Dogma dogma
     )
     {
-        DB                  = db;
-        CharacterDB         = characterDB;
-        ItemDB              = itemDB;
-        SolarSystemDB       = solarSystemDB;
-        CacheStorage        = cacheStorage;
-        ItemFactory         = itemFactory;
-        NodeContainer       = nodeContainer;
-        NotificationManager = notificationManager;
-        WalletManager       = walletManager;
-        Dogma               = dogma;
+        DB            = db;
+        CharacterDB   = characterDB;
+        ItemDB        = itemDB;
+        SolarSystemDB = solarSystemDB;
+        CacheStorage  = cacheStorage;
+        ItemFactory   = itemFactory;
+        Constants     = constants;
+        Notifications = notifications;
+        WalletManager = walletManager;
+        Dogma         = dogma;
 
         // TODO: RE-IMPLEMENT ON CLUSTER TIMER
         // machoNet.OnClusterTimer += this.PerformTimedEvents;
@@ -197,7 +198,7 @@ public class marketProxy : Service
 
     private void CalculateSalesTax (long accountingLevel, int quantity, double price, out double tax, out double profit)
     {
-        double salesTax  = NodeContainer.Constants [Constants.mktTransactionTax] / 100.0 * (1 - accountingLevel * 0.1);
+        double salesTax  = Constants.MarketTransactionTax / 100.0 * (1 - accountingLevel * 0.1);
         double beforeTax = price * quantity;
 
         tax    = beforeTax * salesTax;
@@ -206,7 +207,7 @@ public class marketProxy : Service
 
     private void CalculateBrokerCost (long brokerLevel, int quantity, double price, out double brokerCost)
     {
-        double brokerPercentage = (double) NodeContainer.Constants [Constants.marketCommissionPercentage] / 100 * (1 - brokerLevel * 0.05);
+        double brokerPercentage = (double) Constants.MarketCommissionPercentage / 100 * (1 - brokerLevel * 0.05);
 
         // TODO: GET THE STANDINGS FOR THE CHARACTER
         double factionStanding = 0.0;
@@ -217,8 +218,8 @@ public class marketProxy : Service
         brokerPercentage = brokerPercentage * Math.Pow (2.0, -2 * weightedStanding);
         brokerCost       = price * quantity * brokerPercentage;
 
-        if (brokerCost < NodeContainer.Constants [Constants.mktMinimumFee])
-            brokerCost = NodeContainer.Constants [Constants.mktMinimumFee];
+        if (brokerCost < Constants.MarketMinimumFee)
+            brokerCost = Constants.MarketMinimumFee;
     }
 
     private void CheckSellOrderDistancePermissions (Character character, int stationID)
@@ -374,10 +375,10 @@ public class marketProxy : Service
                 long stationNode = SystemManager.GetNodeStationBelongsTo (stationID);
 
                 if (stationNode == 0 || SystemManager.StationBelongsToUs (stationID))
-                    NotificationManager.NotifyCharacter (item.OwnerID, OnItemChange.BuildLocationChange (item, ItemFactory.LocationMarket.ID));
+                    Notifications.NotifyCharacter (item.OwnerID, OnItemChange.BuildLocationChange (item, ItemFactory.LocationMarket.ID));
                 else
-                    NotificationManager.NotifyNode (
-                        stationNode, Notifications.Nodes.Inventory.OnItemChange.BuildLocationChange (itemID, ItemFactory.LocationMarket.ID, stationID)
+                    Notifications.NotifyNode (
+                        stationNode, Node.Notifications.Nodes.Inventory.OnItemChange.BuildLocationChange (itemID, ItemFactory.LocationMarket.ID, stationID)
                     );
             }
 
@@ -597,10 +598,10 @@ public class marketProxy : Service
                 ItemFactory.UnloadItem (item);
 
                 if (stationNode == 0 || SystemManager.StationBelongsToUs (stationID))
-                    NotificationManager.NotifyCharacter (character.ID, OnItemChange.BuildLocationChange (item, ItemFactory.LocationMarket.ID));
+                    Notifications.NotifyCharacter (character.ID, OnItemChange.BuildLocationChange (item, ItemFactory.LocationMarket.ID));
                 else
-                    NotificationManager.NotifyNode (
-                        stationNode, Notifications.Nodes.Inventory.OnItemChange.BuildLocationChange (item.ID, ItemFactory.LocationMarket.ID, stationID)
+                    Notifications.NotifyNode (
+                        stationNode, Node.Notifications.Nodes.Inventory.OnItemChange.BuildLocationChange (item.ID, ItemFactory.LocationMarket.ID, stationID)
                     );
             }
 
@@ -748,8 +749,8 @@ public class marketProxy : Service
             long currentTime = DateTime.UtcNow.ToFileTimeUtc ();
 
             // check for timers, no changes in less than 5 minutes
-            if (currentTime < order.Issued + TimeSpan.TicksPerSecond * NodeContainer.Constants [Constants.mktModificationDelay])
-                throw new MktOrderDelay (order.Issued + TimeSpan.TicksPerSecond * NodeContainer.Constants [Constants.mktModificationDelay] - currentTime);
+            if (currentTime < order.Issued + TimeSpan.TicksPerSecond * Constants.MarketModificationDelay)
+                throw new MktOrderDelay (order.Issued + TimeSpan.TicksPerSecond * Constants.MarketModificationDelay - currentTime);
 
             int orderOwnerID = order.IsCorp ? order.CorporationID : order.CharacterID;
 
@@ -775,10 +776,10 @@ public class marketProxy : Service
                 long stationNode = SystemManager.GetNodeStationBelongsTo (order.LocationID);
 
                 if (stationNode == 0 || SystemManager.StationBelongsToUs (order.LocationID))
-                    NotificationManager.NotifyCharacter (character.ID, OnItemChange.BuildLocationChange (item, ItemFactory.LocationMarket.ID));
+                    Notifications.NotifyCharacter (character.ID, OnItemChange.BuildLocationChange (item, ItemFactory.LocationMarket.ID));
                 else
-                    NotificationManager.NotifyNode (
-                        stationNode, Notifications.Nodes.Inventory.OnItemChange.BuildLocationChange (item.ID, ItemFactory.LocationMarket.ID, order.LocationID)
+                    Notifications.NotifyNode (
+                        stationNode, Node.Notifications.Nodes.Inventory.OnItemChange.BuildLocationChange (item.ID, ItemFactory.LocationMarket.ID, order.LocationID)
                     );
             }
 
@@ -789,7 +790,7 @@ public class marketProxy : Service
 
             if (order.IsCorp)
                 // send a notification to the owner
-                NotificationManager.NotifyCorporationByRole (call.Session.CorporationID, CorporationRole.Trader, notification);
+                Notifications.NotifyCorporationByRole (call.Session.CorporationID, CorporationRole.Trader, notification);
             else
                 // send a OnOwnOrderChange notification
                 Dogma.QueueMultiEvent (callerCharacterID, notification);
@@ -823,8 +824,8 @@ public class marketProxy : Service
             long currentTime = DateTime.UtcNow.ToFileTimeUtc ();
 
             // check for timers, no changes in less than 5 minutes
-            if (currentTime < order.Issued + TimeSpan.TicksPerSecond * NodeContainer.Constants [Constants.mktModificationDelay])
-                throw new MktOrderDelay (order.Issued + TimeSpan.TicksPerSecond * NodeContainer.Constants [Constants.mktModificationDelay] - currentTime);
+            if (currentTime < order.Issued + TimeSpan.TicksPerSecond * Constants.MarketModificationDelay)
+                throw new MktOrderDelay (order.Issued + TimeSpan.TicksPerSecond * Constants.MarketModificationDelay - currentTime);
 
             // ensure the order hasn't been modified since the user saw it on the screen
             if ((int) order.Bid != bid || order.LocationID != stationID || order.Price != price ||
@@ -868,7 +869,7 @@ public class marketProxy : Service
 
             if (order.IsCorp)
                 // send a notification to the owner
-                NotificationManager.NotifyCorporationByRole (call.Session.CorporationID, CorporationRole.Trader, notification);
+                Notifications.NotifyCorporationByRole (call.Session.CorporationID, CorporationRole.Trader, notification);
             else
                 // send a OnOwnOrderChange notification
                 Dogma.QueueMultiEvent (callerCharacterID, notification);
@@ -917,7 +918,7 @@ public class marketProxy : Service
         }
 
         // notify the character about the change in the order
-        NotificationManager.NotifyCharacter (order.CharacterID, new OnOwnOrderChanged (order.TypeID, "Expiry", order.AccountID > Keys.MAIN));
+        Notifications.NotifyCharacter (order.CharacterID, new OnOwnOrderChanged (order.TypeID, "Expiry", order.AccountID > Keys.MAIN));
     }
 
     /// <summary>
@@ -941,14 +942,14 @@ public class marketProxy : Service
         long stationNode = SystemManager.GetNodeStationBelongsTo (order.LocationID);
 
         if (stationNode == 0 || SystemManager.StationBelongsToUs (order.LocationID))
-            NotificationManager.NotifyCharacter (order.CharacterID, OnItemChange.BuildLocationChange (item, ItemFactory.LocationMarket.ID));
+            Notifications.NotifyCharacter (order.CharacterID, OnItemChange.BuildLocationChange (item, ItemFactory.LocationMarket.ID));
         else
-            NotificationManager.NotifyNode (
-                stationNode, Notifications.Nodes.Inventory.OnItemChange.BuildLocationChange (item.ID, ItemFactory.LocationMarket.ID, order.LocationID)
+            Notifications.NotifyNode (
+                stationNode, Node.Notifications.Nodes.Inventory.OnItemChange.BuildLocationChange (item.ID, ItemFactory.LocationMarket.ID, order.LocationID)
             );
 
         // finally notify the character about the order change
-        NotificationManager.NotifyCharacter (order.CharacterID, new OnOwnOrderChanged (order.TypeID, "Expiry"));
+        Notifications.NotifyCharacter (order.CharacterID, new OnOwnOrderChanged (order.TypeID, "Expiry"));
         // TODO: SEND AN EVEMAIL TO THE PLAYER?
     }
 

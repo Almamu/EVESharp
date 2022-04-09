@@ -3,7 +3,7 @@
     LICENSE:
     ------------------------------------------------------------------------------------
     This file is part of EVE#: The EVE Online Server Emulator
-    Copyright 2021 - EVE# Team
+    Copyright 2022 - EVE# Team
     ------------------------------------------------------------------------------------
     This program is free software; you can redistribute it and/or modify it under
     the terms of the GNU Lesser General Public License as published by the Free Software
@@ -27,7 +27,6 @@ using System.Collections.Generic;
 using EVESharp.Common.Database;
 using EVESharp.EVE.Packets.Complex;
 using EVESharp.EVE.StaticData.Inventory;
-using EVESharp.Node.Inventory;
 using EVESharp.Node.Server.Shared;
 using EVESharp.PythonTypes.Marshal;
 using EVESharp.PythonTypes.Types.Collections;
@@ -124,7 +123,7 @@ public class CacheStorage : DatabaseAccessor
         "SELECT typeID, requiredTypeID AS materialTypeID, quantity FROM typeActivityMaterials WHERE activityID = 6 AND damagePerJob = 1.0 UNION SELECT productTypeID AS typeID, requiredTypeID AS materialTypeID, quantity FROM typeActivityMaterials JOIN invBlueprintTypes ON typeID = blueprintTypeID WHERE activityID = 1 AND damagePerJob = 1.0",
         "SELECT a.assemblyLineTypeID, b.activityID, a.categoryID, a.timeMultiplier, a.materialMultiplier FROM ramAssemblyLineTypeDetailPerCategory AS a LEFT JOIN ramAssemblyLineTypes AS b ON a.assemblyLineTypeID = b.assemblyLineTypeID",
         "SELECT itemID AS ownerID, itemName AS ownerName, typeID FROM eveNames WHERE itemID = 0",
-        $"SELECT itemID AS ownerID, itemName AS ownerName, typeID FROM eveNames WHERE categoryID = 1 AND itemID < {ItemFactory.USERGENERATED_ID_MIN}",
+        $"SELECT itemID AS ownerID, itemName AS ownerName, typeID FROM eveNames WHERE categoryID = 1 AND itemID < {ItemRanges.USERGENERATED_ID_MIN}",
         "SELECT raceID, raceName, description, graphicID, shortDescription, 0 AS dataID FROM chrRaces",
         "SELECT attributeID, attributeName, description, graphicID FROM chrAttributes",
         "SELECT	typeID, attributeID, IF(valueInt IS NULL, valueFloat, valueInt) AS value FROM dgmTypeAttributes",
@@ -142,7 +141,7 @@ public class CacheStorage : DatabaseAccessor
 #endif
         "SELECT celestialID, description FROM mapCelestialDescriptions",
         "SELECT certificateID, categoryID, classID, grade, iconID, corpID, description, 0 AS dataID FROM crtCertificates",
-        $"SELECT itemID AS locationID, itemName as locationName, x, y, z FROM invItems LEFT JOIN eveNames USING (itemID) LEFT JOIN invPositions USING (itemID) WHERE (groupID = {(int) Groups.Station} OR groupID = {(int) Groups.Constellation} OR groupID = {(int) Groups.SolarSystem} OR groupID = {(int) Groups.Region}) AND itemID < {ItemFactory.USERGENERATED_ID_MIN}",
+        $"SELECT itemID AS locationID, itemName as locationName, x, y, z FROM invItems LEFT JOIN eveNames USING (itemID) LEFT JOIN invPositions USING (itemID) WHERE (groupID = {(int) Groups.Station} OR groupID = {(int) Groups.Constellation} OR groupID = {(int) Groups.SolarSystem} OR groupID = {(int) Groups.Region}) AND itemID < {ItemRanges.USERGENERATED_ID_MIN}",
         "SELECT factionID, typeID, standingLoss, confiscateMinSec, fineByValue, attackMinSec FROM invContrabandTypes",
         "SELECT relationshipID, parentID, parentTypeID, parentLevel, childID, childTypeID FROM crtRelationships",
         "SELECT unitID,unitName,displayName FROM eveUnits",

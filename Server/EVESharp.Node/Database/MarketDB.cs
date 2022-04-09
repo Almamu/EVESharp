@@ -2,23 +2,16 @@
 using System.Collections.Generic;
 using EVESharp.Common.Database;
 using EVESharp.EVE.Client.Exceptions.marketProxy;
+using EVESharp.EVE.Market;
 using EVESharp.EVE.StaticData.Corporation;
 using EVESharp.EVE.StaticData.Inventory;
 using EVESharp.Node.Inventory;
-using EVESharp.Node.Market;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Database;
 using EVESharp.PythonTypes.Types.Primitives;
 using MySql.Data.MySqlClient;
 
 namespace EVESharp.Node.Database;
-
-public enum TransactionType
-{
-    Sell   = 0,
-    Buy    = 1,
-    Either = 2
-}
 
 public class MarketDB : DatabaseAccessor
 {

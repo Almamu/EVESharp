@@ -4,6 +4,7 @@ using EVESharp.Common.Database;
 using EVESharp.EVE.Client.Exceptions.corpRegistry;
 using EVESharp.EVE.Client.Messages;
 using EVESharp.EVE.Corporations;
+using EVESharp.EVE.Market;
 using EVESharp.EVE.Packets.Complex;
 using EVESharp.EVE.Services;
 using EVESharp.EVE.StaticData.Corporation;
@@ -11,8 +12,7 @@ using EVESharp.EVE.StaticData.Inventory;
 using EVESharp.Node.Cache;
 using EVESharp.Node.Database;
 using EVESharp.Node.Inventory;
-using EVESharp.Node.Market;
-using EVESharp.Node.Network;
+using EVESharp.Node.Notifications;
 using EVESharp.Node.Notifications.Client.Wallet;
 using EVESharp.PythonTypes.Types.Primitives;
 
@@ -20,17 +20,17 @@ namespace EVESharp.Node.Services.Account;
 
 public class billMgr : Service
 {
-    public override AccessLevel         AccessLevel         => AccessLevel.None;
-    private         CacheStorage        CacheStorage        { get; }
-    private         BillsDB             DB                  { get; }
-    private         CorporationDB       CorporationDB       { get; }
-    private         ItemFactory         ItemFactory         { get; }
-    private         NotificationManager NotificationManager { get; }
-    private         DatabaseConnection  Database            { get; }
+    public override AccessLevel                 AccessLevel         => AccessLevel.None;
+    private         CacheStorage                CacheStorage        { get; }
+    private         BillsDB                     DB                  { get; }
+    private         CorporationDB               CorporationDB       { get; }
+    private         ItemFactory                 ItemFactory         { get; }
+    private         Notifications.Notifications Notifications { get; }
+    private         DatabaseConnection          Database            { get; }
 
     public billMgr (
-        CacheStorage        cacheStorage, DatabaseConnection databaseConnection, BillsDB db, CorporationDB corporationDb, ItemFactory itemFactory,
-        NotificationManager notificationManager
+        CacheStorage                cacheStorage, DatabaseConnection databaseConnection, BillsDB db, CorporationDB corporationDb, ItemFactory itemFactory,
+        Notifications.Notifications notifications
     )
     {
         CacheStorage        = cacheStorage;
@@ -38,7 +38,7 @@ public class billMgr : Service
         DB                  = db;
         CorporationDB       = corporationDb;
         ItemFactory         = itemFactory;
-        NotificationManager = notificationManager;
+        Notifications = notifications;
 
         // TODO: RE-IMPLEMENT ON CLUSTER TIMER
         // machoNet.OnClusterTimer += this.PerformTimedEvents;
@@ -104,7 +104,7 @@ public class billMgr : Service
             CorporationDB.SetNextBillID (office.CorporationID, office.OfficeID, billID);
 
             // notify characters about the new bill
-            NotificationManager.NotifyCorporation (office.CorporationID, new OnBillReceived ());
+            Notifications.NotifyCorporation (office.CorporationID, new OnBillReceived ());
         }
     }
 }

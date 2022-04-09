@@ -36,7 +36,7 @@ public class AttributeManager
 
     public Dictionary <int, Dictionary <int, Attribute>> DefaultAttributes { get; private set; }
 
-    public AttributeType this [int        id] => this.mAttributes [id];
+    public AttributeType this [int            id] => this.mAttributes [id];
     public AttributeType this [AttributeTypes id] => this [(int) id];
 
     public AttributeManager (ItemDB itemDB)

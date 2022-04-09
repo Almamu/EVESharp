@@ -10,12 +10,13 @@ using EVESharp.Node.Dogma;
 using EVESharp.Node.Inventory;
 using EVESharp.Node.Inventory.Items;
 using EVESharp.Node.Inventory.Items.Types;
-using EVESharp.Node.Network;
+using EVESharp.Node.Notifications;
 using EVESharp.Node.Notifications.Client.Station;
 using EVESharp.Node.Sessions;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Database;
 using EVESharp.PythonTypes.Types.Primitives;
+using Groups = EVESharp.EVE.StaticData.Inventory.Groups;
 
 namespace EVESharp.Node.Services.Dogma;
 
@@ -23,29 +24,29 @@ public class dogmaIM : ClientBoundService
 {
     public override AccessLevel AccessLevel => AccessLevel.None;
 
-    private ItemFactory         ItemFactory         { get; }
-    private AttributeManager    AttributeManager    => ItemFactory.AttributeManager;
-    private SystemManager       SystemManager       => ItemFactory.SystemManager;
-    private NotificationManager NotificationManager { get; }
-    private EffectsManager      EffectsManager      { get; }
+    private ItemFactory                 ItemFactory         { get; }
+    private AttributeManager            AttributeManager    => ItemFactory.AttributeManager;
+    private SystemManager               SystemManager       => ItemFactory.SystemManager;
+    private Notifications.Notifications Notifications { get; }
+    private EffectsManager              EffectsManager      { get; }
 
     public dogmaIM (
-        EffectsManager effectsManager, ItemFactory itemFactory, NotificationManager notificationManager, BoundServiceManager manager
+        EffectsManager effectsManager, ItemFactory itemFactory, Notifications.Notifications notifications, BoundServiceManager manager
     ) : base (manager)
     {
         EffectsManager      = effectsManager;
         ItemFactory         = itemFactory;
-        NotificationManager = notificationManager;
+        Notifications = notifications;
     }
 
     protected dogmaIM (
-        int     locationID, EffectsManager effectsManager, ItemFactory itemFactory, NotificationManager notificationManager, BoundServiceManager manager,
+        int     locationID, EffectsManager effectsManager, ItemFactory itemFactory, Notifications.Notifications notifications, BoundServiceManager manager,
         Session session
     ) : base (manager, session, locationID)
     {
         EffectsManager      = effectsManager;
         ItemFactory         = itemFactory;
-        NotificationManager = notificationManager;
+        Notifications = notifications;
     }
 
     public PyDataType ShipGetInfo (CallInformation call)
@@ -267,10 +268,10 @@ public class dogmaIM : ClientBoundService
             ItemFactory.GetStaticStation (bindParams.ObjectID).Guests [characterID] = character;
 
             // notify all station guests
-            NotificationManager.NotifyStation (bindParams.ObjectID, new OnCharNowInStation (call.Session));
+            Notifications.NotifyStation (bindParams.ObjectID, new OnCharNowInStation (call.Session));
         }
 
-        return new dogmaIM (bindParams.ObjectID, EffectsManager, ItemFactory, NotificationManager, BoundServiceManager, call.Session);
+        return new dogmaIM (bindParams.ObjectID, EffectsManager, ItemFactory, Notifications, BoundServiceManager, call.Session);
     }
 
     protected override void OnClientDisconnected ()
@@ -284,7 +285,7 @@ public class dogmaIM : ClientBoundService
             ItemFactory.GetStaticStation (ObjectID).Guests.Remove (characterID);
 
             // notify all station guests
-            NotificationManager.NotifyStation (ObjectID, new OnCharNoLongerInStation (Session));
+            Notifications.NotifyStation (ObjectID, new OnCharNoLongerInStation (Session));
 
             // check if the character is loaded or their ship is loaded and unload it
             // TODO: THIS MIGHT REQUIRE CHANGES WHEN DESTINY WORK IS STARTED

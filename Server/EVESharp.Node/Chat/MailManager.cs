@@ -1,6 +1,6 @@
 ﻿using System;
 using EVESharp.Node.Database;
-using EVESharp.Node.Network;
+using EVESharp.Node.Notifications;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Primitives;
 
@@ -8,13 +8,13 @@ namespace EVESharp.Node.Chat;
 
 public class MailManager
 {
-    private MessagesDB          DB                  { get; }
-    private NotificationManager NotificationManager { get; }
+    private MessagesDB                  DB                  { get; }
+    private Notifications.Notifications Notifications { get; }
 
-    public MailManager (MessagesDB db, NotificationManager notificationManager)
+    public MailManager (MessagesDB db, Notifications.Notifications notifications)
     {
-        DB                  = db;
-        NotificationManager = notificationManager;
+        DB            = db;
+        Notifications = notifications;
     }
 
     public void SendMail (int fromID, int destinationID, string subject, string message)
@@ -45,7 +45,7 @@ public class MailManager
 
             // the list of id's on a *multicastID would be a PyTuple with the type and the id in it, instead of just a list of integers
             // TODO: IMPLEMENT MULTICASTING IN THE CLUSTER
-            NotificationManager.SendNotification ("OnMessage", mailboxType, destinationID, notification);
+            Notifications.SendNotification ("OnMessage", mailboxType, destinationID, notification);
         }
     }
 }

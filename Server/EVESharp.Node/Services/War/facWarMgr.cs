@@ -4,17 +4,17 @@ using EVESharp.EVE.Client.Messages;
 using EVESharp.EVE.Packets.Complex;
 using EVESharp.EVE.Services;
 using EVESharp.EVE.Sessions;
-using EVESharp.EVE.StaticData.Inventory;
 using EVESharp.Node.Cache;
 using EVESharp.Node.Database;
 using EVESharp.Node.Inventory;
 using EVESharp.Node.Inventory.Items.Types;
-using EVESharp.Node.Network;
+using EVESharp.Node.Notifications;
 using EVESharp.Node.Notifications.Client.Corporations;
 using EVESharp.Node.Sessions;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Database;
 using EVESharp.PythonTypes.Types.Primitives;
+using Groups = EVESharp.EVE.StaticData.Inventory.Groups;
 using SessionManager = EVESharp.Node.Sessions.SessionManager;
 
 namespace EVESharp.Node.Services.War;
@@ -28,16 +28,16 @@ internal enum FactionWarStatus
 
 public class facWarMgr : Service
 {
-    public override AccessLevel         AccessLevel         => AccessLevel.None;
-    private         ChatDB              ChatDB              { get; }
-    private         CharacterDB         CharacterDB         { get; }
-    private         CacheStorage        CacheStorage        { get; }
-    private         ItemFactory         ItemFactory         { get; }
-    private         NotificationManager NotificationManager { get; }
-    private         SessionManager      SessionManager      { get; }
+    public override AccessLevel                 AccessLevel         => AccessLevel.None;
+    private         ChatDB                      ChatDB              { get; }
+    private         CharacterDB                 CharacterDB         { get; }
+    private         CacheStorage                CacheStorage        { get; }
+    private         ItemFactory                 ItemFactory         { get; }
+    private         Notifications.Notifications Notifications { get; }
+    private         SessionManager              SessionManager      { get; }
 
     public facWarMgr (
-        ChatDB         chatDB, CharacterDB characterDB, CacheStorage cacheStorage, ItemFactory itemFactory, NotificationManager notificationManager,
+        ChatDB         chatDB, CharacterDB characterDB, CacheStorage cacheStorage, ItemFactory itemFactory, Notifications.Notifications notifications,
         SessionManager sessionManager
     )
     {
@@ -45,7 +45,7 @@ public class facWarMgr : Service
         CharacterDB         = characterDB;
         CacheStorage        = cacheStorage;
         ItemFactory         = itemFactory;
-        NotificationManager = notificationManager;
+        Notifications = notifications;
         SessionManager      = sessionManager;
     }
 
@@ -156,8 +156,8 @@ public class facWarMgr : Service
         // create employment record
         CharacterDB.CreateEmploymentRecord (character.ID, faction.MilitiaCorporationId, character.CorporationDateTime);
         // notify cluster about the corporation changes
-        NotificationManager.NotifyCorporation (change.OldCorporationID, change);
-        NotificationManager.NotifyCorporation (change.NewCorporationID, change);
+        Notifications.NotifyCorporation (change.OldCorporationID, change);
+        Notifications.NotifyCorporation (change.NewCorporationID, change);
         // save the character
         character.Persist ();
 

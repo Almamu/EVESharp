@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using EVESharp.EVE.Client.Exceptions.contractMgr;
+using EVESharp.EVE.Market;
 using EVESharp.EVE.Packets.Exceptions;
 using EVESharp.EVE.Services;
 using EVESharp.EVE.Sessions;
@@ -11,7 +12,7 @@ using EVESharp.Node.Inventory;
 using EVESharp.Node.Inventory.Items;
 using EVESharp.Node.Inventory.Items.Types;
 using EVESharp.Node.Market;
-using EVESharp.Node.Network;
+using EVESharp.Node.Notifications;
 using EVESharp.Node.Notifications.Client.Contracts;
 using EVESharp.Node.Notifications.Nodes.Inventory;
 using EVESharp.Node.Sessions;
@@ -28,19 +29,19 @@ public class contractMgr : Service
     public override AccessLevel AccessLevel => AccessLevel.Station;
 
     // TODO: THE TYPEID FOR THE BOX IS 24445
-    private ContractDB          DB                  { get; }
-    private ItemDB              ItemDB              { get; }
-    private MarketDB            MarketDB            { get; }
-    private CharacterDB         CharacterDB         { get; }
-    private ItemFactory         ItemFactory         { get; }
-    private TypeManager         TypeManager         => ItemFactory.TypeManager;
-    private SystemManager       SystemManager       => ItemFactory.SystemManager;
-    private NotificationManager NotificationManager { get; }
-    private WalletManager       WalletManager       { get; }
-    private Node.Dogma.Dogma    Dogma               { get; }
+    private ContractDB                  DB                  { get; }
+    private ItemDB                      ItemDB              { get; }
+    private MarketDB                    MarketDB            { get; }
+    private CharacterDB                 CharacterDB         { get; }
+    private ItemFactory                 ItemFactory         { get; }
+    private TypeManager                 TypeManager         => ItemFactory.TypeManager;
+    private SystemManager               SystemManager       => ItemFactory.SystemManager;
+    private Notifications.Notifications Notifications { get; }
+    private WalletManager               WalletManager       { get; }
+    private Node.Dogma.Dogma            Dogma               { get; }
 
     public contractMgr (
-        ContractDB    db, ItemDB itemDB, MarketDB marketDB, CharacterDB characterDB, ItemFactory itemFactory, NotificationManager notificationManager,
+        ContractDB    db, ItemDB itemDB, MarketDB marketDB, CharacterDB characterDB, ItemFactory itemFactory, Notifications.Notifications notifications,
         WalletManager walletManager, Node.Dogma.Dogma dogma
     )
     {
@@ -49,7 +50,7 @@ public class contractMgr : Service
         MarketDB            = marketDB;
         CharacterDB         = characterDB;
         ItemFactory         = itemFactory;
-        NotificationManager = notificationManager;
+        Notifications = notifications;
         WalletManager       = walletManager;
         Dogma               = dogma;
     }
@@ -155,7 +156,7 @@ public class contractMgr : Service
                 entity.Persist ();
 
                 // notify the character
-                NotificationManager.NotifyCharacter (ownerID, Notifications.Client.Inventory.OnItemChange.BuildLocationChange (entity, station.ID));
+                Notifications.NotifyCharacter (ownerID, Node.Notifications.Client.Inventory.OnItemChange.BuildLocationChange (entity, station.ID));
             }
             else
             {
@@ -169,7 +170,7 @@ public class contractMgr : Service
 
         // notify the proper node if needed
         if (changes.Updates.Count > 0)
-            NotificationManager.NotifyNode (stationNode, changes);
+            Notifications.NotifyNode (stationNode, changes);
 
         // update the contract with the crate and the new volume
         DB.UpdateContractCrateAndVolume (ref connection, contractID, container.ID, volume);
@@ -181,7 +182,7 @@ public class contractMgr : Service
         PyInteger reward,       PyInteger collateralOrBuyoutPrice, PyString  title,          PyString  description,  CallInformation call
     )
     {
-        if (assigneeID != null && (ItemFactory.IsNPC (assigneeID) || ItemFactory.IsNPCCorporationID (assigneeID)))
+        if (assigneeID != null && (ItemRanges.IsNPC (assigneeID) || ItemRanges.IsNPCCorporationID (assigneeID)))
             throw new ConNPCNotAllowed ();
 
         // check for limits on contract creation
@@ -504,11 +505,11 @@ public class contractMgr : Service
 
             foreach (int corporationID in corporationIDs)
                 if (corporationID != bidderID)
-                    NotificationManager.NotifyCorporation (corporationID, notification);
+                    Notifications.NotifyCorporation (corporationID, notification);
 
             foreach (int characterID in characterIDs)
                 if (characterID != bidderID)
-                    NotificationManager.NotifyCharacter (characterID, notification);
+                    Notifications.NotifyCharacter (characterID, notification);
 
             // finally place the bid
             ulong bidID = DB.PlaceBid (connection, contractID, quantity, bidderID, forCorp);
@@ -553,13 +554,13 @@ public class contractMgr : Service
                     // temporarily move the item to the recycler, let the current owner know
                     item.LocationID = ItemFactory.LocationRecycler.ID;
                     Dogma.QueueMultiEvent (
-                        session.EnsureCharacterIsSelected (), Notifications.Client.Inventory.OnItemChange.BuildLocationChange (item, station.ID)
+                        session.EnsureCharacterIsSelected (), Node.Notifications.Client.Inventory.OnItemChange.BuildLocationChange (item, station.ID)
                     );
                     // now set the item to the correct owner and place and notify it's new owner
                     // TODO: TAKE forCorp INTO ACCOUNT
                     item.LocationID = station.ID;
                     item.OwnerID    = contract.IssuerID;
-                    NotificationManager.NotifyCharacter (contract.IssuerID, Notifications.Client.Inventory.OnItemChange.BuildNewItemChange (item));
+                    Notifications.NotifyCharacter (contract.IssuerID, Node.Notifications.Client.Inventory.OnItemChange.BuildNewItemChange (item));
                     // add the item back to meta inventories if required
                     ItemFactory.MetaInventoryManager.OnItemLoaded (item);
                 }
@@ -568,7 +569,7 @@ public class contractMgr : Service
                     int oldQuantity = item.Quantity;
                     item.Quantity = change.Quantity;
                     Dogma.QueueMultiEvent (
-                        session.EnsureCharacterIsSelected (), Notifications.Client.Inventory.OnItemChange.BuildQuantityChange (item, oldQuantity)
+                        session.EnsureCharacterIsSelected (), Node.Notifications.Client.Inventory.OnItemChange.BuildQuantityChange (item, oldQuantity)
                     );
 
                     item.Persist ();
@@ -587,7 +588,7 @@ public class contractMgr : Service
                 item.OwnerID    = ownerID;
 
                 Dogma.QueueMultiEvent (
-                    session.EnsureCharacterIsSelected (), Notifications.Client.Inventory.OnItemChange.BuildLocationChange (item, contract.CrateID)
+                    session.EnsureCharacterIsSelected (), Node.Notifications.Client.Inventory.OnItemChange.BuildLocationChange (item, contract.CrateID)
                 );
 
                 item.Persist ();
@@ -636,9 +637,9 @@ public class contractMgr : Service
         DB.UpdateCompletedDate (ref connection, contract.ID);
         // notify the contract as being accepted
         if (contract.ForCorp == false)
-            NotificationManager.NotifyCharacter (contract.IssuerID, new OnContractAccepted (contract.ID));
+            Notifications.NotifyCharacter (contract.IssuerID, new OnContractAccepted (contract.ID));
         else
-            NotificationManager.NotifyCorporation (contract.IssuerCorpID, new OnContractAccepted (contract.ID));
+            Notifications.NotifyCorporation (contract.IssuerCorpID, new OnContractAccepted (contract.ID));
     }
 
     public PyDataType AcceptContract (PyInteger contractID, PyBool forCorp, CallInformation call)

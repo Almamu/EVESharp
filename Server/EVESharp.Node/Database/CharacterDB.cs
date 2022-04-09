@@ -202,7 +202,7 @@ public class CharacterDB : DatabaseAccessor
     /// </summary>
     /// <param name="bloodlines">Loaded bloodlines used to store the ancestry information into</param>
     /// <returns></returns>
-    public Dictionary <int, Ancestry> GetAncestryInformation (Dictionary <int, Bloodline> bloodlines)
+    public Dictionary <int, Ancestry> GetAncestryInformation (Bloodlines bloodlines)
     {
         Dictionary <int, Ancestry> result     = new Dictionary <int, Ancestry> ();
         MySqlConnection            connection = null;

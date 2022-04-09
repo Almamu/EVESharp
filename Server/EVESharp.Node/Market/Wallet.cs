@@ -3,10 +3,10 @@ using System.Collections.Generic;
 using EVESharp.Common.Database;
 using EVESharp.Database;
 using EVESharp.EVE.Client.Exceptions;
+using EVESharp.EVE.Market;
 using EVESharp.EVE.StaticData.Corporation;
 using EVESharp.EVE.Wallet;
-using EVESharp.Node.Database;
-using EVESharp.Node.Network;
+using EVESharp.Node.Notifications;
 using EVESharp.Node.Notifications.Client.Wallet;
 using MySql.Data.MySqlClient;
 
@@ -14,15 +14,15 @@ namespace EVESharp.Node.Market;
 
 public class Wallet : IDisposable
 {
-    public MySqlConnection     Connection;
-    public int                 OwnerID             { get; init; }
-    public int                 WalletKey           { get; init; }
-    public double              Balance             { get; set; }
-    public double              OriginalBalance     { get; init; }
-    public DatabaseConnection  Database            { get; init; }
-    public NotificationManager NotificationManager { get; init; }
-    public bool                ForCorporation      { get; init; }
-    public WalletManager       WalletManager       { get; init; }
+    public MySqlConnection             Connection;
+    public int                         OwnerID             { get; init; }
+    public int                         WalletKey           { get; init; }
+    public double                      Balance             { get; set; }
+    public double                      OriginalBalance     { get; init; }
+    public DatabaseConnection          Database            { get; init; }
+    public Notifications.Notifications Notifications { get; init; }
+    public bool                        ForCorporation      { get; init; }
+    public WalletManager               WalletManager       { get; init; }
 
     public void Dispose ()
     {
@@ -43,7 +43,7 @@ public class Wallet : IDisposable
             if (ForCorporation == false)
             {
                 // send notification to the client
-                NotificationManager.NotifyOwner (
+                Notifications.NotifyOwner (
                     OwnerID,
                     new OnAccountChange (WalletKey, OwnerID, Balance)
                 );
@@ -64,7 +64,7 @@ public class Wallet : IDisposable
                     _            => CorporationRole.JuniorAccountant
                 });
 
-                NotificationManager.NotifyCorporationByRole (
+                Notifications.NotifyCorporationByRole (
                     OwnerID, corpRoles,
                     new OnAccountChange (WalletKey, OwnerID, Balance)
                 );

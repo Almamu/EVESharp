@@ -35,8 +35,8 @@ public class OpcodeRIM : OpcodeRunnable
 
     public override void Execute ()
     {
-        ItemEntity item      = Change.RightSide.ItemToAffect.GetItem ();
-        ItemEntity target    = Interpreter.Environment.Self;
+        ItemEntity     item      = Change.RightSide.ItemToAffect.GetItem ();
+        ItemEntity     target    = Interpreter.Environment.Self;
         AttributeTypes attribute = Change.RightSide.AttributeToAffect.Attribute;
 
         // add the modifier to the attribute
