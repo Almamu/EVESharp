@@ -1475,7 +1475,7 @@ public class CorporationDB : DatabaseAccessor
                 {"@corporationID", corporationID},
                 {"@applicationText", text},
                 {"@applicationDateTime", DateTime.UtcNow.ToFileTimeUtc ()},
-                {"@state", (int) AllianceApplicationStatus.New}
+                {"@state", (int) ApplicationStatus.New}
             }
         );
     }

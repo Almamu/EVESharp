@@ -10,7 +10,6 @@
     </ItemGroup>
 
     <ItemGroup>
-        <Folder Include="Account" />
         <Folder Include="Inventory" />
     </ItemGroup>
 

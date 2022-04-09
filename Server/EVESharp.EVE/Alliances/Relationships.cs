@@ -1,6 +1,6 @@
 ﻿namespace EVESharp.EVE.Alliances;
 
-public enum AllianceRelationships
+public enum Relationships
 {
     NonAgressionPact = 1,
     Friend           = 2,

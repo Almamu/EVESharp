@@ -1828,7 +1828,7 @@ public class corpRegistry : MultiClientBoundService
                 .AddChange ("corporationID",       null, ObjectID)
                 .AddChange ("applicationText",     null, applicationText)
                 .AddChange ("applicationDateTime", null, DateTime.UtcNow.ToFileTimeUtc ())
-                .AddChange ("state",               null, (int) AllianceApplicationStatus.New);
+                .AddChange ("state",               null, (int) ApplicationStatus.New);
 
         // TODO: WRITE A CUSTOM NOTIFICATION FOR ALLIANCE AND ROLE BASED
         Notifications.NotifyAlliance (allianceID, newChange);

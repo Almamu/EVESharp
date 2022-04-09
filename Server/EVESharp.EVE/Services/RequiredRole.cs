@@ -1,4 +1,5 @@
 ﻿using System;
+using EVESharp.EVE.Account;
 
 namespace EVESharp.EVE.Services;
 

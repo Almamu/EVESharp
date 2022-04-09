@@ -69,7 +69,7 @@ public class allianceRegistry : MultiClientBoundService
         MySqlConnection connection = null;
         MySqlDataReader reader = Database.Select (
             ref connection,
-            $"SELECT corporationID, allianceID, executorCorpID FROM crpApplications LEFT JOIN crpAlliances USING(allianceID) WHERE `state` = {(int) AllianceApplicationStatus.Accepted} AND applicationUpdateTime < @limit",
+            $"SELECT corporationID, allianceID, executorCorpID FROM crpApplications LEFT JOIN crpAlliances USING(allianceID) WHERE `state` = {(int) ApplicationStatus.Accepted} AND applicationUpdateTime < @limit",
             new Dictionary <string, object> {{"@limit", minimumTime}}
         );
 
@@ -338,8 +338,8 @@ public class allianceRegistry : MultiClientBoundService
 
         switch ((int) newStatus)
         {
-            case (int) AllianceApplicationStatus.Accepted:
-            case (int) AllianceApplicationStatus.Rejected:
+            case (int) ApplicationStatus.Accepted:
+            case (int) ApplicationStatus.Rejected:
                 Database.Procedure (
                     "CrpAlliancesUpdateApplication",
                     new Dictionary <string, object>
@@ -361,7 +361,7 @@ public class allianceRegistry : MultiClientBoundService
             new OnAllianceApplicationChanged (ObjectID, corporationID)
                 .AddChange ("allianceID",    ObjectID,                            ObjectID)
                 .AddChange ("corporationID", corporationID,                       corporationID)
-                .AddChange ("state",         (int) AllianceApplicationStatus.New, newStatus);
+                .AddChange ("state",         (int) ApplicationStatus.New, newStatus);
 
         Notifications.NotifyAlliance (ObjectID, change);
         Notifications.NotifyCorporationByRole (corporationID, CorporationRole.Director, change);

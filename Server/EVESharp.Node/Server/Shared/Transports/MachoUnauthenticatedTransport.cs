@@ -6,6 +6,7 @@ using System.Text.Json.Nodes;
 using System.Threading.Tasks;
 using EVESharp.Common.Network;
 using EVESharp.EVE;
+using EVESharp.EVE.Account;
 using EVESharp.EVE.Client;
 using EVESharp.EVE.Packets;
 using EVESharp.Node.Accounts;

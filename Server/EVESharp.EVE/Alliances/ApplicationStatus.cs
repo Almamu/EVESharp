@@ -1,6 +1,6 @@
 ﻿namespace EVESharp.EVE.Alliances;
 
-public enum AllianceApplicationStatus
+public enum ApplicationStatus
 {
     New       = 1,
     Accepted  = 2,

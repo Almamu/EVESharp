@@ -1,4 +1,4 @@
-﻿namespace EVESharp.EVE;
+﻿namespace EVESharp.EVE.Account;
 
 public static class AccountType
 {

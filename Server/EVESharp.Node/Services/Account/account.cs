@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using EVESharp.Common.Database;
 using EVESharp.Database;
 using EVESharp.EVE;
+using EVESharp.EVE.Account;
 using EVESharp.EVE.Client.Exceptions.corpRegistry;
 using EVESharp.EVE.Client.Messages;
 using EVESharp.EVE.Market;

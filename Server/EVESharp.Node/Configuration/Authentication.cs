@@ -1,5 +1,6 @@
 using System;
 using EVESharp.EVE;
+using EVESharp.EVE.Account;
 using IniParser.Model;
 
 namespace EVESharp.Node.Configuration;

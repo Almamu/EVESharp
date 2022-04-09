@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using EVESharp.EVE;
+using EVESharp.EVE.Account;
 using EVESharp.EVE.Client.Exceptions.slash;
 using EVESharp.EVE.Market;
 using EVESharp.EVE.Services;

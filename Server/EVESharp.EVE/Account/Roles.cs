@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace EVESharp.EVE;
+namespace EVESharp.EVE.Account;
 
 [Flags]
 public enum Roles : ulong
@@ -50,7 +50,7 @@ public enum Roles : ulong
     ROLE_CM                   = 2199023255552L,
     ROLE_MARKET               = 4398046511104L,
     ROLE_MARKETH              = 8796093022208L,
-    ROLE_ANY                  = (18446744073709551615L & ~ROLE_IGB),
-    ROLEMASK_ELEVATEDPLAYER   = (ROLE_ANY & ~((((ROLE_LOGIN | ROLE_PLAYER) | ROLE_N00BIE) | ROLE_NEWSREPORTER) | ROLE_VIPLOGIN)),
-    ROLEMASK_VIEW             = (((((ROLE_GML | ROLE_ADMIN) | ROLE_GDL) | ROLE_HOSTING) | ROLE_QA) | ROLE_MARKET), 
+    ROLE_ANY                  = 18446744073709551615L & ~ROLE_IGB,
+    ROLEMASK_ELEVATEDPLAYER   = ROLE_ANY & ~(ROLE_LOGIN | ROLE_PLAYER | ROLE_N00BIE | ROLE_NEWSREPORTER | ROLE_VIPLOGIN),
+    ROLEMASK_VIEW             = ROLE_GML | ROLE_ADMIN | ROLE_GDL | ROLE_HOSTING | ROLE_QA | ROLE_MARKET
 }

@@ -1,5 +1,6 @@
 using System;
 using EVESharp.EVE;
+using EVESharp.EVE.Account;
 using EVESharp.EVE.Client.Exceptions.inventory;
 using EVESharp.EVE.Packets.Complex;
 using EVESharp.EVE.Packets.Exceptions;
