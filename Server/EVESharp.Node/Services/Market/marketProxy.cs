@@ -13,14 +13,16 @@ using EVESharp.EVE.StaticData.Corporation;
 using EVESharp.EVE.StaticData.Inventory;
 using EVESharp.EVE.Wallet;
 using EVESharp.Node.Cache;
+using EVESharp.Node.Client.Notifications.Inventory;
+using EVESharp.Node.Client.Notifications.Market;
 using EVESharp.Node.Configuration;
 using EVESharp.Node.Database;
+using EVESharp.Node.Dogma;
 using EVESharp.Node.Inventory;
 using EVESharp.Node.Inventory.Items;
 using EVESharp.Node.Inventory.Items.Types;
 using EVESharp.Node.Market;
-using EVESharp.Node.Notifications.Client.Inventory;
-using EVESharp.Node.Notifications.Client.Market;
+using EVESharp.Node.Notifications;
 using EVESharp.Node.Sessions;
 using EVESharp.PythonTypes.Types.Primitives;
 using MySql.Data.MySqlClient;
@@ -33,22 +35,22 @@ public class marketProxy : Service
     private static readonly int []      JumpsPerSkillLevel = {-1, 0, 5, 10, 20, 50};
     public override         AccessLevel AccessLevel => AccessLevel.None;
 
-    private MarketDB                    DB            { get; }
-    private CharacterDB                 CharacterDB   { get; }
-    private ItemDB                      ItemDB        { get; }
-    private CacheStorage                CacheStorage  { get; }
-    private ItemFactory                 ItemFactory   { get; }
-    private TypeManager                 TypeManager   => ItemFactory.TypeManager;
-    private SolarSystemDB               SolarSystemDB { get; }
-    private Constants                   Constants     { get; }
-    private SystemManager               SystemManager => ItemFactory.SystemManager;
-    private Notifications.Notifications Notifications { get; }
-    private WalletManager               WalletManager { get; }
-    private Node.Dogma.Dogma            Dogma         { get; }
+    private MarketDB           DB            { get; }
+    private CharacterDB        CharacterDB   { get; }
+    private ItemDB             ItemDB        { get; }
+    private CacheStorage       CacheStorage  { get; }
+    private ItemFactory        ItemFactory   { get; }
+    private TypeManager        TypeManager   => ItemFactory.TypeManager;
+    private SolarSystemDB      SolarSystemDB { get; }
+    private Constants          Constants     { get; }
+    private SystemManager      SystemManager => ItemFactory.SystemManager;
+    private NotificationSender Notifications { get; }
+    private WalletManager      WalletManager { get; }
+    private DogmaUtils         DogmaUtils    { get; }
 
     public marketProxy (
-        MarketDB      db,            CharacterDB characterDB, ItemDB itemDB, SolarSystemDB solarSystemDB, ItemFactory itemFactory, CacheStorage cacheStorage,
-        Constants constants, Notifications.Notifications notifications, WalletManager walletManager, Node.Dogma.Dogma dogma
+        MarketDB  db,        CharacterDB        characterDB, ItemDB itemDB, SolarSystemDB solarSystemDB, ItemFactory itemFactory, CacheStorage cacheStorage,
+        Constants constants, NotificationSender notificationSender, WalletManager walletManager, DogmaUtils dogmaUtils
     )
     {
         DB            = db;
@@ -58,9 +60,9 @@ public class marketProxy : Service
         CacheStorage  = cacheStorage;
         ItemFactory   = itemFactory;
         Constants     = constants;
-        Notifications = notifications;
+        Notifications = notificationSender;
         WalletManager = walletManager;
-        Dogma         = dogma;
+        DogmaUtils    = dogmaUtils;
 
         // TODO: RE-IMPLEMENT ON CLUSTER TIMER
         // machoNet.OnClusterTimer += this.PerformTimedEvents;
@@ -420,14 +422,14 @@ public class marketProxy : Service
                     // item has to be destroyed
                     ItemFactory.DestroyItem (item);
                     // notify item destroyal
-                    Dogma.QueueMultiEvent (callerCharacterID, OnItemChange.BuildLocationChange (item, entry.LocationID));
+                    DogmaUtils.QueueMultiEvent (callerCharacterID, OnItemChange.BuildLocationChange (item, entry.LocationID));
                 }
                 else
                 {
                     // just a quantity change
                     item.Quantity = entry.Quantity;
                     // notify the client
-                    Dogma.QueueMultiEvent (callerCharacterID, OnItemChange.BuildQuantityChange (item, entry.OriginalQuantity));
+                    DogmaUtils.QueueMultiEvent (callerCharacterID, OnItemChange.BuildQuantityChange (item, entry.OriginalQuantity));
                     // unload the item if it's not needed
                     ItemFactory.UnloadItem (item);
                 }
@@ -498,7 +500,7 @@ public class marketProxy : Service
             }
 
             // send a OnOwnOrderChange notification
-            Dogma.QueueMultiEvent (callerCharacterID, new OnOwnOrderChanged (typeID, "Add"));
+            DogmaUtils.QueueMultiEvent (callerCharacterID, new OnOwnOrderChanged (typeID, "Add"));
         }
         finally
         {
@@ -648,7 +650,7 @@ public class marketProxy : Service
             }
 
             // send a OnOwnOrderChange notification
-            Dogma.QueueMultiEvent (character.ID, new OnOwnOrderChanged (typeID, "Add"));
+            DogmaUtils.QueueMultiEvent (character.ID, new OnOwnOrderChanged (typeID, "Add"));
         }
         finally
         {
@@ -779,7 +781,8 @@ public class marketProxy : Service
                     Notifications.NotifyCharacter (character.ID, OnItemChange.BuildLocationChange (item, ItemFactory.LocationMarket.ID));
                 else
                     Notifications.NotifyNode (
-                        stationNode, Node.Notifications.Nodes.Inventory.OnItemChange.BuildLocationChange (item.ID, ItemFactory.LocationMarket.ID, order.LocationID)
+                        stationNode,
+                        Node.Notifications.Nodes.Inventory.OnItemChange.BuildLocationChange (item.ID, ItemFactory.LocationMarket.ID, order.LocationID)
                     );
             }
 
@@ -793,7 +796,7 @@ public class marketProxy : Service
                 Notifications.NotifyCorporationByRole (call.Session.CorporationID, CorporationRole.Trader, notification);
             else
                 // send a OnOwnOrderChange notification
-                Dogma.QueueMultiEvent (callerCharacterID, notification);
+                DogmaUtils.QueueMultiEvent (callerCharacterID, notification);
         }
         finally
         {
@@ -872,7 +875,7 @@ public class marketProxy : Service
                 Notifications.NotifyCorporationByRole (call.Session.CorporationID, CorporationRole.Trader, notification);
             else
                 // send a OnOwnOrderChange notification
-                Dogma.QueueMultiEvent (callerCharacterID, notification);
+                DogmaUtils.QueueMultiEvent (callerCharacterID, notification);
         }
         finally
         {

@@ -6,12 +6,12 @@ using EVESharp.EVE.Packets.Exceptions;
 using EVESharp.EVE.Services;
 using EVESharp.EVE.Sessions;
 using EVESharp.EVE.StaticData.Inventory;
+using EVESharp.Node.Client.Notifications.Station;
 using EVESharp.Node.Dogma;
 using EVESharp.Node.Inventory;
 using EVESharp.Node.Inventory.Items;
 using EVESharp.Node.Inventory.Items.Types;
 using EVESharp.Node.Notifications;
-using EVESharp.Node.Notifications.Client.Station;
 using EVESharp.Node.Sessions;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Database;
@@ -24,29 +24,27 @@ public class dogmaIM : ClientBoundService
 {
     public override AccessLevel AccessLevel => AccessLevel.None;
 
-    private ItemFactory                 ItemFactory         { get; }
-    private AttributeManager            AttributeManager    => ItemFactory.AttributeManager;
-    private SystemManager               SystemManager       => ItemFactory.SystemManager;
-    private Notifications.Notifications Notifications { get; }
-    private EffectsManager              EffectsManager      { get; }
+    private ItemFactory        ItemFactory      { get; }
+    private AttributeManager   AttributeManager => ItemFactory.AttributeManager;
+    private SystemManager      SystemManager    => ItemFactory.SystemManager;
+    private NotificationSender Notifications    { get; }
+    private EffectsManager     EffectsManager   { get; }
 
-    public dogmaIM (
-        EffectsManager effectsManager, ItemFactory itemFactory, Notifications.Notifications notifications, BoundServiceManager manager
-    ) : base (manager)
+    public dogmaIM (EffectsManager effectsManager, ItemFactory itemFactory, NotificationSender notificationSender, BoundServiceManager manager) : base (manager)
     {
-        EffectsManager      = effectsManager;
-        ItemFactory         = itemFactory;
-        Notifications = notifications;
+        EffectsManager = effectsManager;
+        ItemFactory    = itemFactory;
+        Notifications  = notificationSender;
     }
 
     protected dogmaIM (
-        int     locationID, EffectsManager effectsManager, ItemFactory itemFactory, Notifications.Notifications notifications, BoundServiceManager manager,
+        int     locationID, EffectsManager effectsManager, ItemFactory itemFactory, NotificationSender notificationSender, BoundServiceManager manager,
         Session session
     ) : base (manager, session, locationID)
     {
-        EffectsManager      = effectsManager;
-        ItemFactory         = itemFactory;
-        Notifications = notifications;
+        EffectsManager = effectsManager;
+        ItemFactory    = itemFactory;
+        Notifications  = notificationSender;
     }
 
     public PyDataType ShipGetInfo (CallInformation call)

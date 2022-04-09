@@ -6,23 +6,23 @@ using EVESharp.EVE.Client.Exceptions;
 using EVESharp.EVE.Market;
 using EVESharp.EVE.StaticData.Corporation;
 using EVESharp.EVE.Wallet;
+using EVESharp.Node.Client.Notifications.Wallet;
 using EVESharp.Node.Notifications;
-using EVESharp.Node.Notifications.Client.Wallet;
 using MySql.Data.MySqlClient;
 
 namespace EVESharp.Node.Market;
 
 public class Wallet : IDisposable
 {
-    public MySqlConnection             Connection;
-    public int                         OwnerID             { get; init; }
-    public int                         WalletKey           { get; init; }
-    public double                      Balance             { get; set; }
-    public double                      OriginalBalance     { get; init; }
-    public DatabaseConnection          Database            { get; init; }
-    public Notifications.Notifications Notifications { get; init; }
-    public bool                        ForCorporation      { get; init; }
-    public WalletManager               WalletManager       { get; init; }
+    public MySqlConnection    Connection;
+    public int                OwnerID         { get; init; }
+    public int                WalletKey       { get; init; }
+    public double             Balance         { get; set; }
+    public double             OriginalBalance { get; init; }
+    public DatabaseConnection Database        { get; init; }
+    public NotificationSender Notifications   { get; init; }
+    public bool               ForCorporation  { get; init; }
+    public WalletManager      WalletManager   { get; init; }
 
     public void Dispose ()
     {

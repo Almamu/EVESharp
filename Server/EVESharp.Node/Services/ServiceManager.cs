@@ -105,7 +105,7 @@ public class ServiceManager : IServiceManager <string>
     public           allianceRegistry             allianceRegistry { get; }
 
     public ServiceManager (
-        CacheStorage storage, ILogger logger, TimerManager timerManager,
+        CacheStorage     storage, ILogger logger, TimerManager timerManager,
         machoNet         machoNet,
         objectCaching    objectCaching,
         alert            alert,

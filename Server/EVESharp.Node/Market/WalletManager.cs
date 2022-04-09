@@ -13,13 +13,13 @@ namespace EVESharp.Node.Market;
 
 public class WalletManager
 {
-    private Notifications.Notifications Notifications { get; }
-    private DatabaseConnection          Database            { get; }
+    private NotificationSender Notifications { get; }
+    private DatabaseConnection Database      { get; }
 
-    public WalletManager (DatabaseConnection database, Notifications.Notifications notifications)
+    public WalletManager (DatabaseConnection database, NotificationSender notificationSender)
     {
-        Database            = database;
-        Notifications = notifications;
+        Database      = database;
+        Notifications = notificationSender;
     }
 
     public Wallet AcquireWallet (int ownerID, int walletKey, bool isCorporation = false)
@@ -27,15 +27,15 @@ public class WalletManager
         // TODO: CHECK PERMISSIONS
         return new Wallet
         {
-            Connection          = this.AcquireLock (ownerID, walletKey, out double balance),
-            OwnerID             = ownerID,
-            WalletKey           = walletKey,
-            Balance             = balance,
-            OriginalBalance     = balance,
-            Database            = Database,
-            Notifications = Notifications,
-            ForCorporation      = isCorporation,
-            WalletManager       = this
+            Connection      = this.AcquireLock (ownerID, walletKey, out double balance),
+            OwnerID         = ownerID,
+            WalletKey       = walletKey,
+            Balance         = balance,
+            OriginalBalance = balance,
+            Database        = Database,
+            Notifications   = Notifications,
+            ForCorporation  = isCorporation,
+            WalletManager   = this
         };
     }
 

@@ -6,13 +6,13 @@ using EVESharp.EVE.Services;
 using EVESharp.EVE.Sessions;
 using EVESharp.EVE.StaticData.Corporation;
 using EVESharp.EVE.StaticData.Inventory;
+using EVESharp.Node.Client.Notifications.Inventory;
 using EVESharp.Node.Database;
 using EVESharp.Node.Dogma;
 using EVESharp.Node.Inventory;
 using EVESharp.Node.Inventory.Items;
 using EVESharp.Node.Inventory.Items.Types;
 using EVESharp.Node.Notifications;
-using EVESharp.Node.Notifications.Client.Inventory;
 using EVESharp.Node.Sessions;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Primitives;
@@ -26,36 +26,36 @@ public class invbroker : ClientBoundService
     private readonly int         mObjectID;
     public override  AccessLevel AccessLevel => AccessLevel.None;
 
-    private ItemFactory                 ItemFactory         { get; }
-    private ItemDB                      ItemDB              { get; }
-    private SystemManager               SystemManager       => ItemFactory.SystemManager;
-    private Notifications.Notifications Notifications { get; }
-    private Node.Dogma.Dogma            Dogma               { get; }
-    private EffectsManager              EffectsManager      { get; }
+    private ItemFactory        ItemFactory    { get; }
+    private ItemDB             ItemDB         { get; }
+    private SystemManager      SystemManager  => ItemFactory.SystemManager;
+    private NotificationSender Notifications  { get; }
+    private DogmaUtils         DogmaUtils     { get; }
+    private EffectsManager     EffectsManager { get; }
 
     public invbroker (
-        ItemDB           itemDB, EffectsManager effectsManager, ItemFactory itemFactory, Notifications.Notifications notifications,
-        Node.Dogma.Dogma dogma,  BoundServiceManager manager
+        ItemDB     itemDB,     EffectsManager      effectsManager, ItemFactory itemFactory, NotificationSender notificationSender,
+        DogmaUtils dogmaUtils, BoundServiceManager manager
     ) : base (manager)
     {
         EffectsManager = effectsManager;
         ItemFactory    = itemFactory;
         ItemDB         = itemDB;
-        Notifications  = notifications;
-        Dogma          = dogma;
+        Notifications  = notificationSender;
+        DogmaUtils     = dogmaUtils;
     }
 
     private invbroker (
-        ItemDB           itemDB, EffectsManager effectsManager, ItemFactory itemFactory, Notifications.Notifications notifications,
-        Node.Dogma.Dogma dogma,  BoundServiceManager manager, int objectID, Session session
+        ItemDB     itemDB,     EffectsManager      effectsManager, ItemFactory itemFactory, NotificationSender notificationSender,
+        DogmaUtils dogmaUtils, BoundServiceManager manager,        int         objectID,    Session            session
     ) : base (manager, session, objectID)
     {
         EffectsManager = effectsManager;
         ItemFactory    = itemFactory;
         ItemDB         = itemDB;
         this.mObjectID = objectID;
-        Notifications  = notifications;
-        Dogma          = dogma;
+        Notifications  = notificationSender;
+        DogmaUtils     = dogmaUtils;
     }
 
     private ItemInventory CheckInventoryBeforeLoading (ItemEntity inventoryItem)
@@ -81,7 +81,7 @@ public class invbroker : ClientBoundService
 
         // create an instance of the inventory service and bind it to the item data
         return BoundInventory.BindInventory (
-            ItemDB, EffectsManager, inventory, flag, ItemFactory, Notifications, Dogma,
+            ItemDB, EffectsManager, inventory, flag, ItemFactory, Notifications, DogmaUtils,
             BoundServiceManager, session
         );
     }
@@ -181,7 +181,7 @@ public class invbroker : ClientBoundService
             // remove the item off the ItemManager
             ItemFactory.DestroyItem (item);
             // notify the client of the change
-            Dogma.QueueMultiEvent (callerCharacterID, OnItemChange.BuildLocationChange (item, oldFlag, oldLocation));
+            DogmaUtils.QueueMultiEvent (callerCharacterID, OnItemChange.BuildLocationChange (item, oldFlag, oldLocation));
             // TODO: CHECK IF THE ITEM HAS ANY META INVENTORY AND/OR BOUND SERVICE
             // TODO: AND FREE THOSE TOO SO THE ITEMS CAN BE REMOVED OFF THE DATABASE
         }
@@ -240,7 +240,7 @@ public class invbroker : ClientBoundService
         item.Persist ();
 
         // notify the client
-        Dogma.QueueMultiEvent (item.OwnerID, OnItemChange.BuildSingletonChange (item, oldSingleton));
+        DogmaUtils.QueueMultiEvent (item.OwnerID, OnItemChange.BuildSingletonChange (item, oldSingleton));
 
         return null;
     }
@@ -281,7 +281,7 @@ public class invbroker : ClientBoundService
             throw new CustomError ("Trying to bind an object that does not belong to us!");
 
         return new invbroker (
-            ItemDB, EffectsManager, ItemFactory, Notifications, Dogma, BoundServiceManager, bindParams.ObjectID,
+            ItemDB, EffectsManager, ItemFactory, Notifications, DogmaUtils, BoundServiceManager, bindParams.ObjectID,
             call.Session
         );
     }

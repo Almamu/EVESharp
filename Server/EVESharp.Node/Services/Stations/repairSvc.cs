@@ -8,12 +8,14 @@ using EVESharp.EVE.Services;
 using EVESharp.EVE.Sessions;
 using EVESharp.EVE.StaticData.Inventory;
 using EVESharp.EVE.Wallet;
+using EVESharp.Node.Client.Notifications.Inventory;
 using EVESharp.Node.Database;
+using EVESharp.Node.Dogma;
 using EVESharp.Node.Inventory;
 using EVESharp.Node.Inventory.Items;
 using EVESharp.Node.Inventory.Items.Types;
 using EVESharp.Node.Market;
-using EVESharp.Node.Notifications.Client.Inventory;
+using EVESharp.Node.Notifications;
 using EVESharp.Node.Sessions;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Database;
@@ -24,47 +26,47 @@ namespace EVESharp.Node.Services.Stations;
 
 public class repairSvc : ClientBoundService
 {
-    private const    double                      BASEPRICE_MULTIPLIER_MODULE = 0.0125;
-    private const    double                      BASEPRICE_MULTIPLIER_SHIP   = 0.000088;
-    private readonly ItemInventory               mInventory;
-    public override  AccessLevel                 AccessLevel         => AccessLevel.None;
-    private          ItemFactory                 ItemFactory         { get; }
-    private          SystemManager               SystemManager       => ItemFactory.SystemManager;
-    private          TypeManager                 TypeManager         => ItemFactory.TypeManager;
-    private          MarketDB                    MarketDB            { get; }
-    private          RepairDB                    RepairDB            { get; }
-    private          InsuranceDB                 InsuranceDB         { get; }
-    private          Notifications.Notifications Notifications { get; }
-    private          WalletManager               WalletManager       { get; }
-    private          Node.Dogma.Dogma            Dogma               { get; }
+    private const    double             BASEPRICE_MULTIPLIER_MODULE = 0.0125;
+    private const    double             BASEPRICE_MULTIPLIER_SHIP   = 0.000088;
+    private readonly ItemInventory      mInventory;
+    public override  AccessLevel        AccessLevel   => AccessLevel.None;
+    private          ItemFactory        ItemFactory   { get; }
+    private          SystemManager      SystemManager => ItemFactory.SystemManager;
+    private          TypeManager        TypeManager   => ItemFactory.TypeManager;
+    private          MarketDB           MarketDB      { get; }
+    private          RepairDB           RepairDB      { get; }
+    private          InsuranceDB        InsuranceDB   { get; }
+    private          NotificationSender Notifications { get; }
+    private          WalletManager      WalletManager { get; }
+    private          DogmaUtils         DogmaUtils    { get; }
 
     public repairSvc (
-        RepairDB    repairDb,    MarketDB            marketDb, InsuranceDB   insuranceDb, Notifications.Notifications notifications,
-        ItemFactory itemFactory, BoundServiceManager manager,  WalletManager walletManager, Node.Dogma.Dogma dogma
+        RepairDB    repairDb,    MarketDB            marketDb, InsuranceDB   insuranceDb,   NotificationSender notificationSender,
+        ItemFactory itemFactory, BoundServiceManager manager,  WalletManager walletManager, DogmaUtils         dogmaUtils
     ) : base (manager)
     {
         ItemFactory   = itemFactory;
         MarketDB      = marketDb;
         RepairDB      = repairDb;
         InsuranceDB   = insuranceDb;
-        Notifications = notifications;
+        Notifications = notificationSender;
         WalletManager = walletManager;
-        Dogma         = dogma;
+        DogmaUtils    = dogmaUtils;
     }
 
     protected repairSvc (
-        RepairDB      repairDb,  MarketDB    marketDb,    InsuranceDB         insuranceDb, Notifications.Notifications notifications,
-        ItemInventory inventory, ItemFactory itemFactory, BoundServiceManager manager,     WalletManager walletManager, Node.Dogma.Dogma dogma, Session session
+        RepairDB      repairDb,  MarketDB    marketDb,    InsuranceDB         insuranceDb, NotificationSender notificationSender,
+        ItemInventory inventory, ItemFactory itemFactory, BoundServiceManager manager,     WalletManager walletManager, DogmaUtils dogmaUtils, Session session
     ) : base (manager, session, inventory.ID)
     {
-        this.mInventory     = inventory;
-        ItemFactory         = itemFactory;
-        MarketDB            = marketDb;
-        RepairDB            = repairDb;
-        InsuranceDB         = insuranceDb;
-        Notifications = notifications;
-        WalletManager       = walletManager;
-        Dogma               = dogma;
+        this.mInventory = inventory;
+        ItemFactory     = itemFactory;
+        MarketDB        = marketDb;
+        RepairDB        = repairDb;
+        InsuranceDB     = insuranceDb;
+        Notifications   = notificationSender;
+        WalletManager   = walletManager;
+        DogmaUtils      = dogmaUtils;
     }
 
     public PyDataType GetDamageReports (PyList itemIDs, CallInformation call)
@@ -285,7 +287,7 @@ public class repairSvc : ClientBoundService
                             Flags oldFlag = itemInInventory.Flag;
                             ItemFactory.DestroyItem (itemInInventory);
                             // notify the client about the change
-                            Dogma.QueueMultiEvent (characterID, OnItemChange.BuildLocationChange (itemInInventory, oldFlag, entry.ItemID));
+                            DogmaUtils.QueueMultiEvent (characterID, OnItemChange.BuildLocationChange (itemInInventory, oldFlag, entry.ItemID));
                         }
                         else
                         {
@@ -295,14 +297,14 @@ public class repairSvc : ClientBoundService
                             itemInInventory.Flag       = Flags.Hangar;
 
                             // notify the client about the change
-                            Dogma.QueueMultiEvent (characterID, OnItemChange.BuildLocationChange (itemInInventory, oldFlag, entry.ItemID));
+                            DogmaUtils.QueueMultiEvent (characterID, OnItemChange.BuildLocationChange (itemInInventory, oldFlag, entry.ItemID));
                             // save the item
                             itemInInventory.Persist ();
                         }
 
                 // update the singleton flag too
                 item.Singleton = false;
-                Dogma.QueueMultiEvent (characterID, OnItemChange.BuildSingletonChange (item, true));
+                DogmaUtils.QueueMultiEvent (characterID, OnItemChange.BuildSingletonChange (item, true));
 
                 // load was required, the item is not needed anymore
                 if (loadRequired)
@@ -358,7 +360,7 @@ public class repairSvc : ClientBoundService
 
         return new repairSvc (
             RepairDB, MarketDB, InsuranceDB, Notifications, inventory, ItemFactory, BoundServiceManager,
-            WalletManager, Dogma, call.Session
+            WalletManager, DogmaUtils, call.Session
         );
     }
 }

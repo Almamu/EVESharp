@@ -2,11 +2,11 @@
 using System.Text.RegularExpressions;
 using EVESharp.EVE.Packets;
 using EVESharp.EVE.Sessions;
+using EVESharp.Node.Client.Notifications.Inventory;
 using EVESharp.Node.Inventory;
 using EVESharp.Node.Inventory.Items;
 using EVESharp.Node.Inventory.Items.Types;
 using EVESharp.Node.Notifications;
-using EVESharp.Node.Notifications.Client.Inventory;
 using EVESharp.Node.Notifications.Nodes.Corps;
 using EVESharp.Node.Server.Shared;
 using EVESharp.Node.Server.Shared.Messages;
@@ -22,18 +22,18 @@ namespace EVESharp.Node.Server.Node.Messages;
 
 public class MessageProcessor : Shared.Messages.MessageProcessor
 {
-    public Notifications.Notifications Notifications { get; }
-    public ItemFactory                 ItemFactory         { get; }
-    public SystemManager               SystemManager       { get; }
+    public NotificationSender Notifications { get; }
+    public ItemFactory        ItemFactory   { get; }
+    public SystemManager      SystemManager { get; }
 
     public MessageProcessor (
-        IMachoNet      machoNet,       ILogger logger, Notifications.Notifications notifications, ItemFactory itemFactory, SystemManager systemManager,
+        IMachoNet      machoNet,       ILogger             logger, NotificationSender notificationSender, ItemFactory itemFactory, SystemManager systemManager,
         ServiceManager serviceManager, BoundServiceManager boundServiceManager
     ) : base (machoNet, logger, serviceManager, boundServiceManager, 100)
     {
-        Notifications = notifications;
-        ItemFactory         = itemFactory;
-        SystemManager       = systemManager;
+        Notifications = notificationSender;
+        ItemFactory   = itemFactory;
+        SystemManager = systemManager;
     }
 
     protected override void HandleMessage (MachoMessage machoMessage)
@@ -255,7 +255,7 @@ public class MessageProcessor : Shared.Messages.MessageProcessor
                 }
             }
 
-            Notifications.Client.Inventory.OnItemChange itemChange = new Notifications.Client.Inventory.OnItemChange (item);
+            Client.Notifications.Inventory.OnItemChange itemChange = new Client.Notifications.Inventory.OnItemChange (item);
 
             // update item and build change notification
             if (changes.TryGetValue ("locationID", out PyTuple locationChange))

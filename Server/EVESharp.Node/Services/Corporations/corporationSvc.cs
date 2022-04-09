@@ -6,40 +6,40 @@ using EVESharp.EVE.Client.Messages;
 using EVESharp.EVE.Market;
 using EVESharp.EVE.Services;
 using EVESharp.EVE.StaticData.Corporation;
+using EVESharp.Node.Client.Notifications.Corporations;
 using EVESharp.Node.Configuration;
 using EVESharp.Node.Database;
 using EVESharp.Node.Inventory;
 using EVESharp.Node.Market;
-using EVESharp.Node.Notifications.Client.Corporations;
+using EVESharp.Node.Notifications;
 using EVESharp.Node.Sessions;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Database;
 using EVESharp.PythonTypes.Types.Primitives;
-using SimpleInjector;
 
 namespace EVESharp.Node.Services.Corporations;
 
 public class corporationSvc : Service
 {
-    public override AccessLevel                 AccessLevel   => AccessLevel.None;
-    private         DatabaseConnection          Database      { get; }
-    private         CorporationDB               DB            { get; }
-    private         WalletManager               WalletManager { get; }
-    private         Constants                   Constants     { get; }
-    private         ItemFactory                 ItemFactory   { get; }
-    private         Notifications.Notifications Notifications { get; }
+    public override AccessLevel        AccessLevel   => AccessLevel.None;
+    private         DatabaseConnection Database      { get; }
+    private         CorporationDB      DB            { get; }
+    private         WalletManager      WalletManager { get; }
+    private         Constants          Constants     { get; }
+    private         ItemFactory        ItemFactory   { get; }
+    private         NotificationSender Notifications { get; }
 
     public corporationSvc (
-        DatabaseConnection          databaseConnection, CorporationDB db, Constants constants, WalletManager walletManager, ItemFactory itemFactory,
-        Notifications.Notifications notifications
+        DatabaseConnection databaseConnection, CorporationDB db, Constants constants, WalletManager walletManager, ItemFactory itemFactory,
+        NotificationSender notificationSender
     )
     {
-        Database            = databaseConnection;
-        DB                  = db;
-        Constants           = constants;
-        WalletManager       = walletManager;
-        ItemFactory         = itemFactory;
-        Notifications = notifications;
+        Database      = databaseConnection;
+        DB            = db;
+        Constants     = constants;
+        WalletManager = walletManager;
+        ItemFactory   = itemFactory;
+        Notifications = notificationSender;
     }
 
     public PyTuple GetFactionInfo (CallInformation call)
@@ -164,9 +164,7 @@ public class corporationSvc : Service
         using (Wallet wallet = WalletManager.AcquireWallet (call.Session.CorporationID, call.Session.CorpAccountKey, true))
         {
             wallet.EnsureEnoughBalance (Constants.MedalCost);
-            wallet.CreateJournalRecord (
-                MarketReference.MedalCreation, Constants.MedalTaxCorporation, null, -Constants.MedalCost
-            );
+            wallet.CreateJournalRecord (MarketReference.MedalCreation, Constants.MedalTaxCorporation, null, -Constants.MedalCost);
         }
 
         DB.CreateMedal (call.Session.CorporationID, characterID, title, description, parts.GetEnumerable <PyList> ());
@@ -243,9 +241,7 @@ public class corporationSvc : Service
         using (Wallet wallet = WalletManager.AcquireWallet (call.Session.CorporationID, call.Session.CorpAccountKey, true))
         {
             wallet.EnsureEnoughBalance (Constants.MedalCost);
-            wallet.CreateJournalRecord (
-                MarketReference.MedalIssuing, Constants.MedalTaxCorporation, null, -Constants.MedalCost
-            );
+            wallet.CreateJournalRecord (MarketReference.MedalIssuing, Constants.MedalTaxCorporation, null, -Constants.MedalCost);
         }
 
         // create the records for all the characters that have that medal

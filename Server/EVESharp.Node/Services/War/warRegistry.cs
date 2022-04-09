@@ -8,9 +8,9 @@ namespace EVESharp.Node.Services.War;
 
 public class warRegistry : ClientBoundService
 {
-    private         int           mObjectID;
-    public override AccessLevel   AccessLevel => AccessLevel.None;
-    private         Constants Constants   { get; }
+    private         int         mObjectID;
+    public override AccessLevel AccessLevel => AccessLevel.None;
+    private         Constants   Constants   { get; }
 
     public warRegistry (Constants constants, BoundServiceManager manager) : base (manager)
     {

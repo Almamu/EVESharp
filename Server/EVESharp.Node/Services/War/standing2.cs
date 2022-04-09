@@ -3,11 +3,11 @@ using EVESharp.EVE.Packets.Exceptions;
 using EVESharp.EVE.Services;
 using EVESharp.EVE.StaticData.Standings;
 using EVESharp.Node.Cache;
+using EVESharp.Node.Client.Notifications.Character;
 using EVESharp.Node.Database;
 using EVESharp.Node.Inventory;
 using EVESharp.Node.Inventory.Items.Types;
 using EVESharp.Node.Notifications;
-using EVESharp.Node.Notifications.Client.Character;
 using EVESharp.Node.Sessions;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Primitives;
@@ -16,18 +16,18 @@ namespace EVESharp.Node.Services.War;
 
 public class standing2 : Service
 {
-    public override AccessLevel                 AccessLevel         => AccessLevel.None;
-    private         StandingDB                  DB                  { get; }
-    private         CacheStorage                CacheStorage        { get; }
-    private         ItemFactory                 ItemFactory         { get; }
-    private         Notifications.Notifications Notifications { get; }
+    public override AccessLevel        AccessLevel   => AccessLevel.None;
+    private         StandingDB         DB            { get; }
+    private         CacheStorage       CacheStorage  { get; }
+    private         ItemFactory        ItemFactory   { get; }
+    private         NotificationSender Notifications { get; }
 
-    public standing2 (CacheStorage cacheStorage, StandingDB db, ItemFactory itemFactory, Notifications.Notifications notifications)
+    public standing2 (CacheStorage cacheStorage, StandingDB db, ItemFactory itemFactory, NotificationSender notificationSender)
     {
-        CacheStorage        = cacheStorage;
-        DB                  = db;
-        ItemFactory         = itemFactory;
-        Notifications = notifications;
+        CacheStorage  = cacheStorage;
+        DB            = db;
+        ItemFactory   = itemFactory;
+        Notifications = notificationSender;
     }
 
     public PyTuple GetMyKillRights (CallInformation call)

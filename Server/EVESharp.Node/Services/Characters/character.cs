@@ -34,13 +34,13 @@ using EVESharp.EVE.StaticData;
 using EVESharp.EVE.StaticData.Inventory;
 using EVESharp.EVE.Wallet;
 using EVESharp.Node.Cache;
+using EVESharp.Node.Client.Notifications.Chat;
 using EVESharp.Node.Database;
 using EVESharp.Node.Inventory;
 using EVESharp.Node.Inventory.Items;
 using EVESharp.Node.Inventory.Items.Types;
 using EVESharp.Node.Market;
 using EVESharp.Node.Notifications;
-using EVESharp.Node.Notifications.Client.Chat;
 using EVESharp.Node.Sessions;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Database;
@@ -57,24 +57,24 @@ public class character : Service
     private readonly Character   mConfiguration;
     public override  AccessLevel AccessLevel => AccessLevel.LocationPreferred;
 
-    private CharacterDB                 DB                  { get; }
-    private CorporationDB               CorporationDB       { get; }
-    private ChatDB                      ChatDB              { get; }
-    private ItemFactory                 ItemFactory         { get; }
-    private TypeManager                 TypeManager         => ItemFactory.TypeManager;
-    private CacheStorage                CacheStorage        { get; }
-    private Notifications.Notifications Notifications { get; }
-    private WalletManager               WalletManager       { get; }
-    private Ancestries                  Ancestries          { get; }
-    private Bloodlines                  Bloodlines          { get; }
-    private SessionManager              SessionManager      { get; }
-    private ILogger                     Log                 { get; }
+    private CharacterDB        DB             { get; }
+    private CorporationDB      CorporationDB  { get; }
+    private ChatDB             ChatDB         { get; }
+    private ItemFactory        ItemFactory    { get; }
+    private TypeManager        TypeManager    => ItemFactory.TypeManager;
+    private CacheStorage       CacheStorage   { get; }
+    private NotificationSender Notifications  { get; }
+    private WalletManager      WalletManager  { get; }
+    private Ancestries         Ancestries     { get; }
+    private Bloodlines         Bloodlines     { get; }
+    private SessionManager     SessionManager { get; }
+    private ILogger            Log            { get; }
 
     public character (
-        CacheStorage                cacheStorage,        CharacterDB   db,            ChatDB     chatDB,        CorporationDB corporationDB,
-        ItemFactory                 itemFactory,         ILogger       logger,        Character  configuration,
-        Notifications.Notifications notifications, WalletManager walletManager, Ancestries ancestries,    Bloodlines    bloodlines,
-        SessionManager              sessionManager
+        CacheStorage       cacheStorage,       CharacterDB   db,            ChatDB     chatDB, CorporationDB corporationDB,
+        ItemFactory        itemFactory,        ILogger       logger,        Character  configuration,
+        NotificationSender notificationSender, WalletManager walletManager, Ancestries ancestries, Bloodlines bloodlines,
+        SessionManager     sessionManager
     )
     {
         Log                 = logger;
@@ -84,7 +84,7 @@ public class character : Service
         CorporationDB       = corporationDB;
         ItemFactory         = itemFactory;
         CacheStorage        = cacheStorage;
-        Notifications = notifications;
+        Notifications       = notificationSender;
         WalletManager       = walletManager;
         Ancestries          = ancestries;
         Bloodlines          = bloodlines;

@@ -5,11 +5,11 @@ using EVESharp.EVE.Packets.Exceptions;
 using EVESharp.EVE.Services;
 using EVESharp.EVE.StaticData.Inventory;
 using EVESharp.Node.Chat;
+using EVESharp.Node.Client.Notifications.Chat;
 using EVESharp.Node.Database;
 using EVESharp.Node.Inventory;
 using EVESharp.Node.Inventory.Items.Types;
 using EVESharp.Node.Notifications;
-using EVESharp.Node.Notifications.Client.Chat;
 using EVESharp.Node.Sessions;
 using EVESharp.PythonTypes;
 using EVESharp.PythonTypes.Types.Collections;
@@ -28,25 +28,25 @@ public class LSC : Service
     private         ILogger     Log         { get; }
     public override AccessLevel AccessLevel => AccessLevel.Location;
 
-    private MessagesDB                  MessagesDB          { get; }
-    private ChatDB                      DB                  { get; }
-    private CharacterDB                 CharacterDB         { get; }
-    private ItemFactory                 ItemFactory         { get; }
-    private Notifications.Notifications Notifications { get; }
-    private MailManager                 MailManager         { get; }
+    private MessagesDB         MessagesDB    { get; }
+    private ChatDB             DB            { get; }
+    private CharacterDB        CharacterDB   { get; }
+    private ItemFactory        ItemFactory   { get; }
+    private NotificationSender Notifications { get; }
+    private MailManager        MailManager   { get; }
 
     public LSC (
-        ChatDB                      db, MessagesDB messagesDB, CharacterDB characterDB, ItemFactory itemFactory, ILogger logger,
-        Notifications.Notifications notifications, MailManager mailManager
+        ChatDB             db,                 MessagesDB  messagesDB, CharacterDB characterDB, ItemFactory itemFactory, ILogger logger,
+        NotificationSender notificationSender, MailManager mailManager
     )
     {
-        DB                  = db;
-        MessagesDB          = messagesDB;
-        CharacterDB         = characterDB;
-        ItemFactory         = itemFactory;
-        Notifications = notifications;
-        MailManager         = mailManager;
-        Log                 = logger;
+        DB            = db;
+        MessagesDB    = messagesDB;
+        CharacterDB   = characterDB;
+        ItemFactory   = itemFactory;
+        Notifications = notificationSender;
+        MailManager   = mailManager;
+        Log           = logger;
     }
 
     private void ParseTupleChannelIdentifier (PyTuple tuple, out int channelID, out string channelType, out int? entityID)

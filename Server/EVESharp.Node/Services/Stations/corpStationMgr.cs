@@ -8,6 +8,8 @@ using EVESharp.EVE.Sessions;
 using EVESharp.EVE.StaticData.Corporation;
 using EVESharp.EVE.StaticData.Inventory;
 using EVESharp.EVE.Wallet;
+using EVESharp.Node.Client.Notifications.Corporations;
+using EVESharp.Node.Client.Notifications.Wallet;
 using EVESharp.Node.Configuration;
 using EVESharp.Node.Database;
 using EVESharp.Node.Inventory;
@@ -15,8 +17,6 @@ using EVESharp.Node.Inventory.Items;
 using EVESharp.Node.Inventory.Items.Types;
 using EVESharp.Node.Market;
 using EVESharp.Node.Notifications;
-using EVESharp.Node.Notifications.Client.Corporations;
-using EVESharp.Node.Notifications.Client.Wallet;
 using EVESharp.Node.Sessions;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Database;
@@ -29,27 +29,27 @@ namespace EVESharp.Node.Services.Stations;
 
 public class corpStationMgr : ClientBoundService
 {
-    public override AccessLevel                 AccessLevel   => AccessLevel.None;
-    private         ItemFactory                 ItemFactory   { get; }
-    private         ItemDB                      ItemDB        => ItemFactory.ItemDB;
-    private         MarketDB                    MarketDB      { get; }
-    private         StationDB                   StationDB     { get; }
-    private         BillsDB                     BillsDB       { get; }
-    private         TypeManager                 TypeManager   => ItemFactory.TypeManager;
-    private         SystemManager               SystemManager => ItemFactory.SystemManager;
-    private         WalletManager               WalletManager { get; }
-    private         Constants     Constants     { get; }
-    private         Notifications.Notifications Notifications { get; }
+    public override AccessLevel        AccessLevel   => AccessLevel.None;
+    private         ItemFactory        ItemFactory   { get; }
+    private         ItemDB             ItemDB        => ItemFactory.ItemDB;
+    private         MarketDB           MarketDB      { get; }
+    private         StationDB          StationDB     { get; }
+    private         BillsDB            BillsDB       { get; }
+    private         TypeManager        TypeManager   => ItemFactory.TypeManager;
+    private         SystemManager      SystemManager => ItemFactory.SystemManager;
+    private         WalletManager      WalletManager { get; }
+    private         Constants          Constants     { get; }
+    private         NotificationSender Notifications { get; }
 
     public corpStationMgr (
-        MarketDB marketDB, StationDB stationDb, BillsDB billsDb, Notifications.Notifications notifications, ItemFactory itemFactory, Constants constants,
-        BoundServiceManager manager, WalletManager walletManager
+        MarketDB            marketDB, StationDB stationDb, BillsDB billsDb, NotificationSender notificationSender, ItemFactory itemFactory, Constants constants,
+        BoundServiceManager manager,  WalletManager walletManager
     ) : base (manager)
     {
         MarketDB      = marketDB;
         StationDB     = stationDb;
         BillsDB       = billsDb;
-        Notifications = notifications;
+        Notifications = notificationSender;
         ItemFactory   = itemFactory;
         Constants     = constants;
         WalletManager = walletManager;
@@ -57,14 +57,14 @@ public class corpStationMgr : ClientBoundService
 
     // TODO: PROVIDE OBJECTID PROPERLY
     protected corpStationMgr (
-        MarketDB marketDB, StationDB stationDb, BillsDB billsDb, Notifications.Notifications notifications, ItemFactory itemFactory, Constants constants,
-        BoundServiceManager manager, WalletManager walletManager, Session session
+        MarketDB            marketDB, StationDB stationDb, BillsDB billsDb, NotificationSender notificationSender, ItemFactory itemFactory, Constants constants,
+        BoundServiceManager manager,  WalletManager walletManager, Session session
     ) : base (manager, session, 0)
     {
         MarketDB      = marketDB;
         StationDB     = stationDb;
         BillsDB       = billsDb;
-        Notifications = notifications;
+        Notifications = notificationSender;
         ItemFactory   = itemFactory;
         Constants     = constants;
         WalletManager = walletManager;

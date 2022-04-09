@@ -17,7 +17,7 @@ public class Constants
     {
         this.mConstants = generalDB.LoadConstants ();
     }
-    
+
 #region Easy accessors for constants
 
     public Constant CostCloneContract => this [EVE.StaticData.Constants.costCloneContract];

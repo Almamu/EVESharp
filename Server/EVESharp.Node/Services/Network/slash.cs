@@ -7,14 +7,15 @@ using EVESharp.EVE.Market;
 using EVESharp.EVE.Services;
 using EVESharp.EVE.StaticData.Inventory;
 using EVESharp.EVE.Wallet;
+using EVESharp.Node.Client.Notifications.Inventory;
+using EVESharp.Node.Client.Notifications.Skills;
 using EVESharp.Node.Database;
+using EVESharp.Node.Dogma;
 using EVESharp.Node.Inventory;
 using EVESharp.Node.Inventory.Items;
 using EVESharp.Node.Inventory.Items.Types;
 using EVESharp.Node.Market;
 using EVESharp.Node.Notifications;
-using EVESharp.Node.Notifications.Client.Inventory;
-using EVESharp.Node.Notifications.Client.Skills;
 using EVESharp.Node.Sessions;
 using EVESharp.PythonTypes.Types.Primitives;
 using Serilog;
@@ -27,26 +28,26 @@ public class slash : Service
 {
     private readonly Dictionary <string, Action <string [], CallInformation>> mCommands =
         new Dictionary <string, Action <string [], CallInformation>> ();
-    public override AccessLevel                 AccessLevel         => AccessLevel.None;
-    private         TypeManager                 TypeManager         => ItemFactory.TypeManager;
-    private         ItemFactory                 ItemFactory         { get; }
-    private         ILogger                     Log                 { get; }
-    private         CharacterDB                 CharacterDB         { get; }
-    private         Notifications.Notifications Notifications { get; }
-    private         WalletManager               WalletManager       { get; }
-    private         Node.Dogma.Dogma            Dogma               { get; }
+    public override AccessLevel        AccessLevel   => AccessLevel.None;
+    private         TypeManager        TypeManager   => ItemFactory.TypeManager;
+    private         ItemFactory        ItemFactory   { get; }
+    private         ILogger            Log           { get; }
+    private         CharacterDB        CharacterDB   { get; }
+    private         NotificationSender Notifications { get; }
+    private         WalletManager      WalletManager { get; }
+    private         DogmaUtils         DogmaUtils    { get; }
 
     public slash (
-        ILogger          logger, ItemFactory itemFactory, CharacterDB characterDB, Notifications.Notifications notifications, WalletManager walletManager,
-        Node.Dogma.Dogma dogma
+        ILogger    logger, ItemFactory itemFactory, CharacterDB characterDB, NotificationSender notificationSender, WalletManager walletManager,
+        DogmaUtils dogmaUtils
     )
     {
-        Log                 = logger;
-        ItemFactory         = itemFactory;
-        CharacterDB         = characterDB;
-        Notifications = notifications;
-        WalletManager       = walletManager;
-        Dogma               = dogma;
+        Log           = logger;
+        ItemFactory   = itemFactory;
+        CharacterDB   = characterDB;
+        Notifications = notificationSender;
+        WalletManager = walletManager;
+        DogmaUtils    = dogmaUtils;
 
         // register commands
         this.mCommands ["create"]     = this.CreateCmd;
@@ -168,7 +169,7 @@ public class slash : Service
         item.Persist ();
 
         // send client a notification so they can display the item in the hangar
-        Dogma.QueueMultiEvent (call.Session.EnsureCharacterIsSelected (), OnItemChange.BuildNewItemChange (item));
+        DogmaUtils.QueueMultiEvent (call.Session.EnsureCharacterIsSelected (), OnItemChange.BuildNewItemChange (item));
     }
 
     private static int ParseIntegerThatMightBeDecimal (string value)
@@ -214,7 +215,7 @@ public class slash : Service
 
                     skill.Level = level;
                     skill.Persist ();
-                    Dogma.QueueMultiEvent (character.ID, new OnSkillTrained (skill));
+                    DogmaUtils.QueueMultiEvent (character.ID, new OnSkillTrained (skill));
                 }
                 else
                 {
@@ -224,8 +225,8 @@ public class slash : Service
                         SkillHistoryReason.GMGiveSkill
                     );
 
-                    Dogma.QueueMultiEvent (character.ID, OnItemChange.BuildNewItemChange (skill));
-                    Dogma.QueueMultiEvent (character.ID, new OnSkillInjected ());
+                    DogmaUtils.QueueMultiEvent (character.ID, OnItemChange.BuildNewItemChange (skill));
+                    DogmaUtils.QueueMultiEvent (character.ID, new OnSkillInjected ());
                 }
         }
         else
@@ -240,9 +241,9 @@ public class slash : Service
 
                 skill.Level = level;
                 skill.Persist ();
-                Dogma.QueueMultiEvent (character.ID, new OnSkillStartTraining (skill));
-                Dogma.NotifyAttributeChange (character.ID, new [] {AttributeTypes.skillPoints, AttributeTypes.skillLevel}, skill);
-                Dogma.QueueMultiEvent (character.ID, new OnSkillTrained (skill));
+                DogmaUtils.QueueMultiEvent (character.ID, new OnSkillStartTraining (skill));
+                DogmaUtils.NotifyAttributeChange (character.ID, new [] {AttributeTypes.skillPoints, AttributeTypes.skillLevel}, skill);
+                DogmaUtils.QueueMultiEvent (character.ID, new OnSkillTrained (skill));
             }
             else
             {
@@ -252,8 +253,8 @@ public class slash : Service
                     SkillHistoryReason.GMGiveSkill
                 );
 
-                Dogma.QueueMultiEvent (character.ID, OnItemChange.BuildNewItemChange (skill));
-                Dogma.QueueMultiEvent (character.ID, new OnSkillInjected ());
+                DogmaUtils.QueueMultiEvent (character.ID, OnItemChange.BuildNewItemChange (skill));
+                DogmaUtils.QueueMultiEvent (character.ID, new OnSkillInjected ());
             }
         }
     }

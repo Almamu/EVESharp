@@ -3,10 +3,11 @@ using EVESharp.EVE.Packets.Exceptions;
 using EVESharp.EVE.Services;
 using EVESharp.EVE.Sessions;
 using EVESharp.EVE.StaticData.Inventory;
+using EVESharp.Node.Client.Notifications.Inventory;
+using EVESharp.Node.Dogma;
 using EVESharp.Node.Inventory;
 using EVESharp.Node.Inventory.Items;
 using EVESharp.Node.Inventory.Items.Types;
-using EVESharp.Node.Notifications.Client.Inventory;
 using EVESharp.Node.Sessions;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Primitives;
@@ -17,29 +18,29 @@ namespace EVESharp.Node.Services.Inventory;
 
 public class ship : ClientBoundService
 {
-    public override AccessLevel      AccessLevel    => AccessLevel.None;
-    private         ItemEntity       Location       { get; }
-    private         ItemFactory      ItemFactory    { get; }
-    private         TypeManager      TypeManager    => ItemFactory.TypeManager;
-    private         SystemManager    SystemManager  => ItemFactory.SystemManager;
-    private         SessionManager   SessionManager { get; }
-    private         Node.Dogma.Dogma Dogma          { get; }
+    public override AccessLevel    AccessLevel    => AccessLevel.None;
+    private         ItemEntity     Location       { get; }
+    private         ItemFactory    ItemFactory    { get; }
+    private         TypeManager    TypeManager    => ItemFactory.TypeManager;
+    private         SystemManager  SystemManager  => ItemFactory.SystemManager;
+    private         SessionManager SessionManager { get; }
+    private         DogmaUtils     DogmaUtils     { get; }
 
-    public ship (ItemFactory itemFactory, BoundServiceManager manager, SessionManager sessionManager, Node.Dogma.Dogma dogma) : base (manager)
+    public ship (ItemFactory itemFactory, BoundServiceManager manager, SessionManager sessionManager, DogmaUtils dogmaUtils) : base (manager)
     {
         ItemFactory    = itemFactory;
         SessionManager = sessionManager;
-        Dogma          = dogma;
+        DogmaUtils     = dogmaUtils;
     }
 
     protected ship (
-        ItemEntity location, ItemFactory itemFactory, BoundServiceManager manager, SessionManager sessionManager, Node.Dogma.Dogma dogma, Session session
+        ItemEntity location, ItemFactory itemFactory, BoundServiceManager manager, SessionManager sessionManager, DogmaUtils dogmaUtils, Session session
     ) : base (manager, session, location.ID)
     {
         Location       = location;
         ItemFactory    = itemFactory;
         SessionManager = sessionManager;
-        Dogma          = dogma;
+        DogmaUtils     = dogmaUtils;
     }
 
     public PyInteger LeaveShip (CallInformation call)
@@ -56,8 +57,8 @@ public class ship : ClientBoundService
         // change character's location to the pod
         character.LocationID = capsule.ID;
         // notify the client about the item changes
-        Dogma.QueueMultiEvent (callerCharacterID, OnItemChange.BuildLocationChange (capsule,   Flags.Capsule, ItemFactory.LocationRecycler.ID));
-        Dogma.QueueMultiEvent (callerCharacterID, OnItemChange.BuildLocationChange (character, Flags.Pilot,   call.Session.ShipID));
+        DogmaUtils.QueueMultiEvent (callerCharacterID, OnItemChange.BuildLocationChange (capsule,   Flags.Capsule, ItemFactory.LocationRecycler.ID));
+        DogmaUtils.QueueMultiEvent (callerCharacterID, OnItemChange.BuildLocationChange (character, Flags.Pilot,   call.Session.ShipID));
         // notify the client
         SessionManager.PerformSessionUpdate (Session.CHAR_ID, callerCharacterID, new Session {ShipID = capsule.ID});
 
@@ -97,7 +98,7 @@ public class ship : ClientBoundService
         // finally update the session
         SessionManager.PerformSessionUpdate (Session.CHAR_ID, callerCharacterID, new Session {ShipID = newShip.ID});
         // notify the client about the change in location
-        Dogma.QueueMultiEvent (callerCharacterID, OnItemChange.BuildLocationChange (character, Flags.Pilot, currentShip.ID));
+        DogmaUtils.QueueMultiEvent (callerCharacterID, OnItemChange.BuildLocationChange (character, Flags.Pilot, currentShip.ID));
 
         character.Persist ();
 
@@ -109,7 +110,7 @@ public class ship : ClientBoundService
             // destroy the pod from the database
             ItemFactory.DestroyItem (currentShip);
             // notify the player of the item change
-            Dogma.QueueMultiEvent (callerCharacterID, OnItemChange.BuildLocationChange (currentShip, Location.ID));
+            DogmaUtils.QueueMultiEvent (callerCharacterID, OnItemChange.BuildLocationChange (currentShip, Location.ID));
         }
 
         return null;
@@ -141,19 +142,19 @@ public class ship : ClientBoundService
             ship.Quantity -= 1;
             ship.Persist ();
             // notify the quantity change
-            Dogma.QueueMultiEvent (callerCharacterID, OnItemChange.BuildQuantityChange (ship, ship.Quantity + 1));
+            DogmaUtils.QueueMultiEvent (callerCharacterID, OnItemChange.BuildQuantityChange (ship, ship.Quantity + 1));
 
             // create the new item in the database
             Station station = ItemFactory.GetStaticStation (stationID);
             ship = ItemFactory.CreateShip (ship.Type, station, character);
             // notify the new item
-            Dogma.QueueMultiEvent (callerCharacterID, OnItemChange.BuildNewItemChange (ship));
+            DogmaUtils.QueueMultiEvent (callerCharacterID, OnItemChange.BuildNewItemChange (ship));
         }
         else
         {
             // stack of one, simple as changing the singleton flag
             ship.Singleton = true;
-            Dogma.QueueMultiEvent (callerCharacterID, OnItemChange.BuildSingletonChange (ship, false));
+            DogmaUtils.QueueMultiEvent (callerCharacterID, OnItemChange.BuildSingletonChange (ship, false));
         }
 
         // save the ship
@@ -197,6 +198,6 @@ public class ship : ClientBoundService
         if (location.Type.Group.ID != bindParams.ExtraValue)
             throw new CustomError ("Location and group do not match");
 
-        return new ship (location, ItemFactory, BoundServiceManager, SessionManager, Dogma, call.Session);
+        return new ship (location, ItemFactory, BoundServiceManager, SessionManager, DogmaUtils, call.Session);
     }
 }

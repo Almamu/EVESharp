@@ -8,13 +8,13 @@ namespace EVESharp.Node.Chat;
 
 public class MailManager
 {
-    private MessagesDB                  DB                  { get; }
-    private Notifications.Notifications Notifications { get; }
+    private MessagesDB         DB            { get; }
+    private NotificationSender Notifications { get; }
 
-    public MailManager (MessagesDB db, Notifications.Notifications notifications)
+    public MailManager (MessagesDB db, NotificationSender notificationSender)
     {
         DB            = db;
-        Notifications = notifications;
+        Notifications = notificationSender;
     }
 
     public void SendMail (int fromID, int destinationID, string subject, string message)

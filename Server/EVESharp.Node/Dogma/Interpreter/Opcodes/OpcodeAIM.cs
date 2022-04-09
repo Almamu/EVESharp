@@ -43,7 +43,7 @@ public class OpcodeAIM : OpcodeRunnable
         item.Attributes [attribute].AddModifier (Change.LeftSide.Association, target.Attributes [Attribute.Attribute]);
 
         // notify the character
-        Interpreter.Environment.ItemFactory.Dogma.NotifyAttributeChange (
+        Interpreter.Environment.ItemFactory.DogmaUtils.NotifyAttributeChange (
             Interpreter.Environment.Session.EnsureCharacterIsSelected (),
             attribute,
             item

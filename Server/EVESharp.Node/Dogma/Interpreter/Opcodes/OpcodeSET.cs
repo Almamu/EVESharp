@@ -33,7 +33,7 @@ public class OpcodeSET : OpcodeRunnable
                 item.Attributes [att.AttributeToAffect.Attribute].Integer = defint.Value;
 
                 // notify the character
-                Interpreter.Environment.ItemFactory.Dogma.NotifyAttributeChange (
+                Interpreter.Environment.ItemFactory.DogmaUtils.NotifyAttributeChange (
                     Interpreter.Environment.Session.EnsureCharacterIsSelected (),
                     attribute,
                     item

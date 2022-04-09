@@ -13,7 +13,6 @@ using EVESharp.EVE.Wallet;
 using EVESharp.Node.Cache;
 using EVESharp.Node.Database;
 using EVESharp.Node.Market;
-using EVESharp.Node.Notifications;
 using EVESharp.Node.Sessions;
 using EVESharp.PythonTypes.Types.Primitives;
 
@@ -21,23 +20,18 @@ namespace EVESharp.Node.Services.Account;
 
 public class account : Service
 {
-    public override AccessLevel                 AccessLevel         => AccessLevel.None;
-    private         CharacterDB                 DB                  { get; }
-    private         WalletManager               WalletManager       { get; }
-    private         CacheStorage                CacheStorage        { get; }
-    private         Notifications.Notifications Notifications { get; }
-    private         DatabaseConnection          Database            { get; }
+    public override AccessLevel        AccessLevel   => AccessLevel.None;
+    private         CharacterDB        DB            { get; }
+    private         WalletManager      WalletManager { get; }
+    private         CacheStorage       CacheStorage  { get; }
+    private         DatabaseConnection Database      { get; }
 
-    public account (
-        DatabaseConnection          databaseConnection, CharacterDB db, WalletManager walletManager, CacheStorage cacheStorage,
-        Notifications.Notifications notifications
-    )
+    public account (DatabaseConnection databaseConnection, CharacterDB db, WalletManager walletManager, CacheStorage cacheStorage)
     {
-        Database            = databaseConnection;
-        DB                  = db;
-        WalletManager       = walletManager;
-        CacheStorage        = cacheStorage;
-        Notifications = notifications;
+        Database      = databaseConnection;
+        DB            = db;
+        WalletManager = walletManager;
+        CacheStorage  = cacheStorage;
     }
 
     [RequiredRole (Roles.ROLE_PLAYER)]

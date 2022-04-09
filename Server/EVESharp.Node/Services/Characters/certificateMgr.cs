@@ -4,10 +4,11 @@ using EVESharp.EVE.Packets.Complex;
 using EVESharp.EVE.Services;
 using EVESharp.EVE.StaticData.Certificates;
 using EVESharp.Node.Cache;
+using EVESharp.Node.Client.Notifications.Certificates;
 using EVESharp.Node.Database;
+using EVESharp.Node.Dogma;
 using EVESharp.Node.Inventory;
 using EVESharp.Node.Inventory.Items.Types;
-using EVESharp.Node.Notifications.Client.Certificates;
 using EVESharp.Node.Sessions;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Primitives;
@@ -21,14 +22,14 @@ public class certificateMgr : Service
     private         ItemFactory                           ItemFactory              { get; }
     private         CacheStorage                          CacheStorage             { get; }
     private         Dictionary <int, List <Relationship>> CertificateRelationships { get; }
-    private         Node.Dogma.Dogma                      Dogma                    { get; }
+    private         DogmaUtils                            DogmaUtils               { get; }
 
-    public certificateMgr (CertificatesDB db, ItemFactory itemFactory, CacheStorage cacheStorage, Node.Dogma.Dogma dogma)
+    public certificateMgr (CertificatesDB db, ItemFactory itemFactory, CacheStorage cacheStorage, DogmaUtils dogmaUtils)
     {
         DB           = db;
         ItemFactory  = itemFactory;
         CacheStorage = cacheStorage;
-        Dogma        = dogma;
+        DogmaUtils   = dogmaUtils;
 
         // get the full list of requirements
         CertificateRelationships = DB.GetCertificateRelationships ();
@@ -100,7 +101,7 @@ public class certificateMgr : Service
         DB.GrantCertificate (callerCharacterID, certificateID);
 
         // notify the character about the granting of the certificate
-        Dogma.QueueMultiEvent (callerCharacterID, new OnCertificateIssued (certificateID));
+        DogmaUtils.QueueMultiEvent (callerCharacterID, new OnCertificateIssued (certificateID));
 
         return null;
     }
@@ -142,7 +143,7 @@ public class certificateMgr : Service
         }
 
         // notify the client about the granting of certificates
-        Dogma.QueueMultiEvent (callerCharacterID, new OnCertificateIssued ());
+        DogmaUtils.QueueMultiEvent (callerCharacterID, new OnCertificateIssued ());
 
         return result;
     }

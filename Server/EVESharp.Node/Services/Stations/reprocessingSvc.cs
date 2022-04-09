@@ -7,11 +7,12 @@ using EVESharp.EVE.Packets.Exceptions;
 using EVESharp.EVE.Services;
 using EVESharp.EVE.Sessions;
 using EVESharp.EVE.StaticData.Inventory;
+using EVESharp.Node.Client.Notifications.Inventory;
 using EVESharp.Node.Database;
+using EVESharp.Node.Dogma;
 using EVESharp.Node.Inventory;
 using EVESharp.Node.Inventory.Items;
 using EVESharp.Node.Inventory.Items.Types;
-using EVESharp.Node.Notifications.Client.Inventory;
 using EVESharp.Node.Sessions;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Database;
@@ -46,26 +47,26 @@ public class reprocessingSvc : ClientBoundService
     private readonly Station       mStation;
     public override  AccessLevel   AccessLevel => AccessLevel.None;
 
-    private ItemFactory      ItemFactory    { get; }
-    private SystemManager    SystemManager  => ItemFactory.SystemManager;
-    private TypeManager      TypeManager    => ItemFactory.TypeManager;
-    private StandingDB       StandingDB     { get; }
-    private ReprocessingDB   ReprocessingDB { get; }
-    private Node.Dogma.Dogma Dogma          { get; }
+    private ItemFactory    ItemFactory    { get; }
+    private SystemManager  SystemManager  => ItemFactory.SystemManager;
+    private TypeManager    TypeManager    => ItemFactory.TypeManager;
+    private StandingDB     StandingDB     { get; }
+    private ReprocessingDB ReprocessingDB { get; }
+    private DogmaUtils     DogmaUtils     { get; }
 
     public reprocessingSvc (
-        ReprocessingDB reprocessingDb, StandingDB standingDb, ItemFactory itemFactory, BoundServiceManager manager, Node.Dogma.Dogma dogma
+        ReprocessingDB reprocessingDb, StandingDB standingDb, ItemFactory itemFactory, BoundServiceManager manager, DogmaUtils dogmaUtils
     ) : base (manager)
     {
         ReprocessingDB = reprocessingDb;
         StandingDB     = standingDb;
         ItemFactory    = itemFactory;
-        Dogma          = dogma;
+        DogmaUtils     = dogmaUtils;
     }
 
     protected reprocessingSvc (
         ReprocessingDB      reprocessingDb, StandingDB standingDb, Corporation corporation, Station station, ItemInventory inventory, ItemFactory itemFactory,
-        BoundServiceManager manager,        Node.Dogma.Dogma dogma, Session session
+        BoundServiceManager manager,        DogmaUtils dogmaUtils, Session     session
     ) : base (manager, session, inventory.ID)
     {
         ReprocessingDB    = reprocessingDb;
@@ -74,7 +75,7 @@ public class reprocessingSvc : ClientBoundService
         this.mStation     = station;
         this.mInventory   = inventory;
         ItemFactory       = itemFactory;
-        Dogma             = dogma;
+        DogmaUtils        = dogmaUtils;
     }
 
     private double CalculateCombinedYield (Character character)
@@ -242,7 +243,7 @@ public class reprocessingSvc : ClientBoundService
                 Flags.Hangar, quantityForClient
             );
             // notify the client about the new item
-            Dogma.QueueMultiEvent (session.EnsureCharacterIsSelected (), OnItemChange.BuildNewItemChange (newItem));
+            DogmaUtils.QueueMultiEvent (session.EnsureCharacterIsSelected (), OnItemChange.BuildNewItemChange (newItem));
         }
     }
 
@@ -262,7 +263,7 @@ public class reprocessingSvc : ClientBoundService
             // finally remove the item from the inventories
             ItemFactory.DestroyItem (item);
             // notify the client about the item being destroyed
-            Dogma.QueueMultiEvent (character.ID, OnItemChange.BuildLocationChange (item, oldLocationID));
+            DogmaUtils.QueueMultiEvent (character.ID, OnItemChange.BuildLocationChange (item, oldLocationID));
         }
 
         return null;
@@ -293,7 +294,7 @@ public class reprocessingSvc : ClientBoundService
             ItemFactory.MetaInventoryManager.RegisterMetaInventoryForOwnerID (station, call.Session.EnsureCharacterIsSelected (), Flags.Hangar);
 
         return new reprocessingSvc (
-            ReprocessingDB, StandingDB, corporation, station, inventory, ItemFactory, BoundServiceManager, Dogma,
+            ReprocessingDB, StandingDB, corporation, station, inventory, ItemFactory, BoundServiceManager, DogmaUtils,
             call.Session
         );
     }

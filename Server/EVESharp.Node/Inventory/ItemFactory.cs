@@ -46,7 +46,7 @@ namespace EVESharp.Node.Inventory;
 
 public class ItemFactory
 {
-    private readonly Dictionary <int, ItemEntity> mItemList              = new Dictionary <int, ItemEntity> ();
+    private readonly Dictionary <int, ItemEntity> mItemList = new Dictionary <int, ItemEntity> ();
 
     public  AttributeManager AttributeManager    { get; private set; }
     public  Categories       Categories          { get; private set; }
@@ -56,7 +56,7 @@ public class ItemFactory
     public  SystemManager    SystemManager       { get; private set; }
     public  Ancestries       Ancestries          { get; private set; }
     public  Bloodlines       Bloodlines          { get; private set; }
-    public  Dogma.Dogma      Dogma               { get; private set; }
+    public  DogmaUtils       DogmaUtils          { get; private set; }
     public  ItemDB           ItemDB              { get; private set; }
     public  CharacterDB      CharacterDB         { get; private set; }
     public  CorporationDB    CorporationDB       { get; private set; }
@@ -84,7 +84,7 @@ public class ItemFactory
     protected DatabaseConnection Database { get; }
 
     public ItemFactory (
-        ILogger logger, IMachoNet machoNet, DatabaseConnection databaseConnection, Constants constants, MetaInventoryManager metaInventoryManager,
+        ILogger           logger, IMachoNet machoNet, DatabaseConnection databaseConnection, Constants constants, MetaInventoryManager metaInventoryManager,
         ExpressionManager expressionManager, Container dependencyInjection
     )
     {
@@ -125,7 +125,7 @@ public class ItemFactory
         Bloodlines = DependencyInjection.GetInstance <Bloodlines> ();
         // the ancestry manager is also needed
         Ancestries = DependencyInjection.GetInstance <Ancestries> ();
-        Dogma      = DependencyInjection.GetInstance <Dogma.Dogma> ();
+        DogmaUtils = DependencyInjection.GetInstance <DogmaUtils> ();
 
         AttributeManager.Load ();
         Categories.Load ();
@@ -272,6 +272,7 @@ public class ItemFactory
     {
         return this.GetItem (itemID) as T;
     }
+
     /// <summary>
     /// Gets the <see cref="ItemEntity"/> of the given faction
     /// </summary>

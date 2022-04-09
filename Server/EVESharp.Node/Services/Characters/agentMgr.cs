@@ -8,17 +8,15 @@ namespace EVESharp.Node.Services.Characters;
 
 public class agentMgr : ClientBoundService
 {
-    public override AccessLevel   AccessLevel  => AccessLevel.None;
-    private         AgentManager  AgentManager { get; }
+    public override AccessLevel  AccessLevel  => AccessLevel.None;
+    private         AgentManager AgentManager { get; }
 
     public agentMgr (AgentManager agentManager, BoundServiceManager manager) : base (manager)
     {
         AgentManager = agentManager;
     }
 
-    protected agentMgr (int agentID, AgentManager agentManager, BoundServiceManager manager, Session session) : base (
-        manager, session, agentID
-    )
+    protected agentMgr (int agentID, AgentManager agentManager, BoundServiceManager manager, Session session) : base (manager, session, agentID)
     {
         AgentManager = agentManager;
     }

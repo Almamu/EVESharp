@@ -216,15 +216,15 @@ internal class Program
                 dependencies.Register <SystemManager> (Lifestyle.Singleton);
                 dependencies.Register <ServiceManager> (Lifestyle.Singleton);
                 dependencies.Register <BoundServiceManager> (Lifestyle.Singleton);
-                dependencies.Register <Notifications.Notifications> (Lifestyle.Singleton);
+                dependencies.Register <NotificationSender> (Lifestyle.Singleton);
                 dependencies.Register <ExpressionManager> (Lifestyle.Singleton);
                 dependencies.Register <WalletManager> (Lifestyle.Singleton);
                 dependencies.Register <MailManager> (Lifestyle.Singleton);
                 dependencies.Register <AgentManager> (Lifestyle.Singleton);
                 dependencies.Register <Ancestries> (Lifestyle.Singleton);
                 dependencies.Register <Bloodlines> (Lifestyle.Singleton);
-                dependencies.Register <Constants>(Lifestyle.Singleton);
-                dependencies.Register <Dogma.Dogma> (Lifestyle.Singleton);
+                dependencies.Register <Constants> (Lifestyle.Singleton);
+                dependencies.Register <DogmaUtils> (Lifestyle.Singleton);
 
                 // register the database accessors dependencies
                 dependencies.Register <AccountDB> (Lifestyle.Singleton);

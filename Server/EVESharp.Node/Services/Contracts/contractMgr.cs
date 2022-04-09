@@ -7,13 +7,14 @@ using EVESharp.EVE.Services;
 using EVESharp.EVE.Sessions;
 using EVESharp.EVE.StaticData.Inventory;
 using EVESharp.EVE.Wallet;
+using EVESharp.Node.Client.Notifications.Contracts;
 using EVESharp.Node.Database;
+using EVESharp.Node.Dogma;
 using EVESharp.Node.Inventory;
 using EVESharp.Node.Inventory.Items;
 using EVESharp.Node.Inventory.Items.Types;
 using EVESharp.Node.Market;
 using EVESharp.Node.Notifications;
-using EVESharp.Node.Notifications.Client.Contracts;
 using EVESharp.Node.Notifications.Nodes.Inventory;
 using EVESharp.Node.Sessions;
 using EVESharp.PythonTypes.Types.Collections;
@@ -29,30 +30,30 @@ public class contractMgr : Service
     public override AccessLevel AccessLevel => AccessLevel.Station;
 
     // TODO: THE TYPEID FOR THE BOX IS 24445
-    private ContractDB                  DB                  { get; }
-    private ItemDB                      ItemDB              { get; }
-    private MarketDB                    MarketDB            { get; }
-    private CharacterDB                 CharacterDB         { get; }
-    private ItemFactory                 ItemFactory         { get; }
-    private TypeManager                 TypeManager         => ItemFactory.TypeManager;
-    private SystemManager               SystemManager       => ItemFactory.SystemManager;
-    private Notifications.Notifications Notifications { get; }
-    private WalletManager               WalletManager       { get; }
-    private Node.Dogma.Dogma            Dogma               { get; }
+    private ContractDB         DB            { get; }
+    private ItemDB             ItemDB        { get; }
+    private MarketDB           MarketDB      { get; }
+    private CharacterDB        CharacterDB   { get; }
+    private ItemFactory        ItemFactory   { get; }
+    private TypeManager        TypeManager   => ItemFactory.TypeManager;
+    private SystemManager      SystemManager => ItemFactory.SystemManager;
+    private NotificationSender Notifications { get; }
+    private WalletManager      WalletManager { get; }
+    private DogmaUtils         DogmaUtils    { get; }
 
     public contractMgr (
-        ContractDB    db, ItemDB itemDB, MarketDB marketDB, CharacterDB characterDB, ItemFactory itemFactory, Notifications.Notifications notifications,
-        WalletManager walletManager, Node.Dogma.Dogma dogma
+        ContractDB    db,            ItemDB itemDB, MarketDB marketDB, CharacterDB characterDB, ItemFactory itemFactory, NotificationSender notificationSender,
+        WalletManager walletManager, DogmaUtils dogmaUtils
     )
     {
-        DB                  = db;
-        ItemDB              = itemDB;
-        MarketDB            = marketDB;
-        CharacterDB         = characterDB;
-        ItemFactory         = itemFactory;
-        Notifications = notifications;
-        WalletManager       = walletManager;
-        Dogma               = dogma;
+        DB            = db;
+        ItemDB        = itemDB;
+        MarketDB      = marketDB;
+        CharacterDB   = characterDB;
+        ItemFactory   = itemFactory;
+        Notifications = notificationSender;
+        WalletManager = walletManager;
+        DogmaUtils    = dogmaUtils;
     }
 
     public PyDataType NumRequiringAttention (CallInformation call)
@@ -65,9 +66,9 @@ public class contractMgr : Service
         List <int> assignedContracts = DB.FetchLoginCharacterContractAssigned (callerCharacterID);
 
         foreach (int contractID in outbidContracts)
-            Dogma.QueueMultiEvent (callerCharacterID, new OnContractOutbid (contractID));
+            DogmaUtils.QueueMultiEvent (callerCharacterID, new OnContractOutbid (contractID));
         foreach (int contractID in assignedContracts)
-            Dogma.QueueMultiEvent (callerCharacterID, new OnContractAssigned (contractID));
+            DogmaUtils.QueueMultiEvent (callerCharacterID, new OnContractAssigned (contractID));
 
         return DB.NumRequiringAttention (callerCharacterID, call.Session.CorporationID);
     }
@@ -156,7 +157,7 @@ public class contractMgr : Service
                 entity.Persist ();
 
                 // notify the character
-                Notifications.NotifyCharacter (ownerID, Node.Notifications.Client.Inventory.OnItemChange.BuildLocationChange (entity, station.ID));
+                Notifications.NotifyCharacter (ownerID, Client.Notifications.Inventory.OnItemChange.BuildLocationChange (entity, station.ID));
             }
             else
             {
@@ -553,14 +554,14 @@ public class contractMgr : Service
                     ItemFactory.MetaInventoryManager.OnItemDestroyed (item);
                     // temporarily move the item to the recycler, let the current owner know
                     item.LocationID = ItemFactory.LocationRecycler.ID;
-                    Dogma.QueueMultiEvent (
-                        session.EnsureCharacterIsSelected (), Node.Notifications.Client.Inventory.OnItemChange.BuildLocationChange (item, station.ID)
+                    DogmaUtils.QueueMultiEvent (
+                        session.EnsureCharacterIsSelected (), Client.Notifications.Inventory.OnItemChange.BuildLocationChange (item, station.ID)
                     );
                     // now set the item to the correct owner and place and notify it's new owner
                     // TODO: TAKE forCorp INTO ACCOUNT
                     item.LocationID = station.ID;
                     item.OwnerID    = contract.IssuerID;
-                    Notifications.NotifyCharacter (contract.IssuerID, Node.Notifications.Client.Inventory.OnItemChange.BuildNewItemChange (item));
+                    Notifications.NotifyCharacter (contract.IssuerID, Client.Notifications.Inventory.OnItemChange.BuildNewItemChange (item));
                     // add the item back to meta inventories if required
                     ItemFactory.MetaInventoryManager.OnItemLoaded (item);
                 }
@@ -568,8 +569,8 @@ public class contractMgr : Service
                 {
                     int oldQuantity = item.Quantity;
                     item.Quantity = change.Quantity;
-                    Dogma.QueueMultiEvent (
-                        session.EnsureCharacterIsSelected (), Node.Notifications.Client.Inventory.OnItemChange.BuildQuantityChange (item, oldQuantity)
+                    DogmaUtils.QueueMultiEvent (
+                        session.EnsureCharacterIsSelected (), Client.Notifications.Inventory.OnItemChange.BuildQuantityChange (item, oldQuantity)
                     );
 
                     item.Persist ();
@@ -587,8 +588,8 @@ public class contractMgr : Service
                 item.LocationID = station.ID;
                 item.OwnerID    = ownerID;
 
-                Dogma.QueueMultiEvent (
-                    session.EnsureCharacterIsSelected (), Node.Notifications.Client.Inventory.OnItemChange.BuildLocationChange (item, contract.CrateID)
+                DogmaUtils.QueueMultiEvent (
+                    session.EnsureCharacterIsSelected (), Client.Notifications.Inventory.OnItemChange.BuildLocationChange (item, contract.CrateID)
                 );
 
                 item.Persist ();

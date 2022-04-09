@@ -17,23 +17,24 @@ using EVESharp.EVE.StaticData.Corporation;
 using EVESharp.EVE.StaticData.Inventory;
 using EVESharp.EVE.Wallet;
 using EVESharp.Node.Chat;
+using EVESharp.Node.Client.Notifications.Alliances;
+using EVESharp.Node.Client.Notifications.Corporations;
+using EVESharp.Node.Client.Notifications.Wallet;
 using EVESharp.Node.Configuration;
 using EVESharp.Node.Database;
 using EVESharp.Node.Inventory;
 using EVESharp.Node.Inventory.Items;
 using EVESharp.Node.Inventory.Items.Types;
 using EVESharp.Node.Market;
-using EVESharp.Node.Notifications.Client.Alliances;
-using EVESharp.Node.Notifications.Client.Corporations;
-using EVESharp.Node.Notifications.Client.Wallet;
+using EVESharp.Node.Notifications;
 using EVESharp.Node.Notifications.Nodes.Corps;
 using EVESharp.Node.Sessions;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Database;
 using EVESharp.PythonTypes.Types.Primitives;
 using Character = EVESharp.Node.Inventory.Items.Types.Character;
-using OnCorporationChanged = EVESharp.Node.Notifications.Client.Corporations.OnCorporationChanged;
-using OnCorporationMemberChanged = EVESharp.Node.Notifications.Client.Corporations.OnCorporationMemberChanged;
+using OnCorporationChanged = EVESharp.Node.Client.Notifications.Corporations.OnCorporationChanged;
+using OnCorporationMemberChanged = EVESharp.Node.Client.Notifications.Corporations.OnCorporationMemberChanged;
 using SessionManager = EVESharp.Node.Sessions.SessionManager;
 
 namespace EVESharp.Node.Services.Corporations;
@@ -46,27 +47,27 @@ public class corpRegistry : MultiClientBoundService
     public Corporation Corporation { get; }
     public int         IsMaster    { get; }
 
-    private CorporationDB               DB                  { get; }
-    private ChatDB                      ChatDB              { get; }
-    private CharacterDB                 CharacterDB         { get; }
-    private DatabaseConnection          Database            { get; }
-    private ItemFactory                 ItemFactory         { get; }
-    private WalletManager               WalletManager       { get; }
-    private Notifications.Notifications Notifications       { get; }
-    private MailManager                 MailManager         { get; }
-    public  MembersSparseRowsetService  MembersSparseRowset { get; private set; }
-    private OfficesSparseRowsetService  OfficesSparseRowset { get; set; }
-    private Ancestries                  Ancestries          { get; }
-    private Constants                   Constants           { get; }
-    private SessionManager              SessionManager      { get; }
+    private CorporationDB              DB                  { get; }
+    private ChatDB                     ChatDB              { get; }
+    private CharacterDB                CharacterDB         { get; }
+    private DatabaseConnection         Database            { get; }
+    private ItemFactory                ItemFactory         { get; }
+    private WalletManager              WalletManager       { get; }
+    private NotificationSender         Notifications       { get; }
+    private MailManager                MailManager         { get; }
+    public  MembersSparseRowsetService MembersSparseRowset { get; private set; }
+    private OfficesSparseRowsetService OfficesSparseRowset { get; set; }
+    private Ancestries                 Ancestries          { get; }
+    private Constants                  Constants           { get; }
+    private SessionManager             SessionManager      { get; }
 
     // constants
     private long CorporationAdvertisementFlatFee   { get; }
     private long CorporationAdvertisementDailyRate { get; }
 
     public corpRegistry (
-        CorporationDB db,          DatabaseConnection databaseConnection, ChatDB chatDB, CharacterDB characterDB, Notifications.Notifications notifications,
-        MailManager   mailManager, WalletManager      walletManager, ItemFactory itemFactory, Constants constants, BoundServiceManager manager,
+        CorporationDB db,          DatabaseConnection databaseConnection, ChatDB      chatDB, CharacterDB characterDB, NotificationSender notificationSender,
+        MailManager   mailManager, WalletManager      walletManager,      ItemFactory itemFactory, Constants constants, BoundServiceManager manager,
         Ancestries    ancestries,  SessionManager     sessionManager
     ) : base (manager)
     {
@@ -74,7 +75,7 @@ public class corpRegistry : MultiClientBoundService
         Database       = databaseConnection;
         ChatDB         = chatDB;
         CharacterDB    = characterDB;
-        Notifications  = notifications;
+        Notifications  = notificationSender;
         Constants      = constants;
         MailManager    = mailManager;
         WalletManager  = walletManager;
@@ -87,16 +88,16 @@ public class corpRegistry : MultiClientBoundService
     }
 
     protected corpRegistry (
-        CorporationDB  db,             DatabaseConnection databaseConnection, ChatDB chatDB, CharacterDB characterDB, Notifications.Notifications notifications,
+        CorporationDB  db,             DatabaseConnection databaseConnection, ChatDB    chatDB, CharacterDB characterDB, NotificationSender notificationSender,
         MailManager    mailManager,    WalletManager      walletManager,      Constants constants, ItemFactory itemFactory, Ancestries ancestries,
-        SessionManager sessionManager, Corporation        corp,               int isMaster, corpRegistry parent
+        SessionManager sessionManager, Corporation        corp,               int       isMaster, corpRegistry parent
     ) : base (parent, corp.ID)
     {
         DB                                = db;
         Database                          = databaseConnection;
         ChatDB                            = chatDB;
         CharacterDB                       = characterDB;
-        Notifications                     = notifications;
+        Notifications                     = notificationSender;
         Constants                         = constants;
         MailManager                       = mailManager;
         WalletManager                     = walletManager;

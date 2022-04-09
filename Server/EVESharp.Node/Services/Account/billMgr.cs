@@ -10,35 +10,35 @@ using EVESharp.EVE.Services;
 using EVESharp.EVE.StaticData.Corporation;
 using EVESharp.EVE.StaticData.Inventory;
 using EVESharp.Node.Cache;
+using EVESharp.Node.Client.Notifications.Wallet;
 using EVESharp.Node.Database;
 using EVESharp.Node.Inventory;
 using EVESharp.Node.Notifications;
-using EVESharp.Node.Notifications.Client.Wallet;
 using EVESharp.PythonTypes.Types.Primitives;
 
 namespace EVESharp.Node.Services.Account;
 
 public class billMgr : Service
 {
-    public override AccessLevel                 AccessLevel         => AccessLevel.None;
-    private         CacheStorage                CacheStorage        { get; }
-    private         BillsDB                     DB                  { get; }
-    private         CorporationDB               CorporationDB       { get; }
-    private         ItemFactory                 ItemFactory         { get; }
-    private         Notifications.Notifications Notifications { get; }
-    private         DatabaseConnection          Database            { get; }
+    public override AccessLevel        AccessLevel   => AccessLevel.None;
+    private         CacheStorage       CacheStorage  { get; }
+    private         BillsDB            DB            { get; }
+    private         CorporationDB      CorporationDB { get; }
+    private         ItemFactory        ItemFactory   { get; }
+    private         NotificationSender Notifications { get; }
+    private         DatabaseConnection Database      { get; }
 
     public billMgr (
-        CacheStorage                cacheStorage, DatabaseConnection databaseConnection, BillsDB db, CorporationDB corporationDb, ItemFactory itemFactory,
-        Notifications.Notifications notifications
+        CacheStorage       cacheStorage, DatabaseConnection databaseConnection, BillsDB db, CorporationDB corporationDb, ItemFactory itemFactory,
+        NotificationSender notificationSender
     )
     {
-        CacheStorage        = cacheStorage;
-        Database            = databaseConnection;
-        DB                  = db;
-        CorporationDB       = corporationDb;
-        ItemFactory         = itemFactory;
-        Notifications = notifications;
+        CacheStorage  = cacheStorage;
+        Database      = databaseConnection;
+        DB            = db;
+        CorporationDB = corporationDb;
+        ItemFactory   = itemFactory;
+        Notifications = notificationSender;
 
         // TODO: RE-IMPLEMENT ON CLUSTER TIMER
         // machoNet.OnClusterTimer += this.PerformTimedEvents;

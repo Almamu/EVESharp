@@ -3,10 +3,10 @@ using System.Collections.Generic;
 using System.Linq;
 using EVESharp.EVE.Services;
 using EVESharp.EVE.Sessions;
+using EVESharp.Node.Client.Notifications.Database;
 using EVESharp.Node.Database;
 using EVESharp.Node.Inventory.Items.Types;
 using EVESharp.Node.Notifications;
-using EVESharp.Node.Notifications.Client.Database;
 using EVESharp.Node.Services.Database;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Database;
@@ -17,13 +17,13 @@ namespace EVESharp.Node.Services.Corporations;
 public class MembersSparseRowsetService : SparseRowsetDatabaseService
 {
     private         Dictionary <PyDataType, int> RowsIndex = new Dictionary <PyDataType, int> ();
-    public override AccessLevel                  AccessLevel         => AccessLevel.None;
-    private         Corporation                  Corporation         { get; }
-    private         CorporationDB                DB                  { get; }
-    private         Notifications.Notifications  Notifications { get; }
+    public override AccessLevel                  AccessLevel   => AccessLevel.None;
+    private         Corporation                  Corporation   { get; }
+    private         CorporationDB                DB            { get; }
+    private         NotificationSender           Notifications { get; }
 
     public MembersSparseRowsetService (
-        Corporation corporation, CorporationDB db, SparseRowsetHeader rowsetHeader, Notifications.Notifications notifications, BoundServiceManager manager,
+        Corporation corporation, CorporationDB db, SparseRowsetHeader rowsetHeader, NotificationSender notificationSender, BoundServiceManager manager,
         Session     session
     ) : base (rowsetHeader, manager, session, true)
     {
@@ -31,8 +31,8 @@ public class MembersSparseRowsetService : SparseRowsetDatabaseService
         Corporation = corporation;
 
         // get all the indexes based on the key
-        this.RowsIndex      = DB.GetMembers (corporation.ID);
-        Notifications = notifications;
+        this.RowsIndex = DB.GetMembers (corporation.ID);
+        Notifications  = notificationSender;
     }
 
     public override PyDataType Fetch (PyInteger startPos, PyInteger fetchSize, CallInformation call)

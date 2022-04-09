@@ -5,13 +5,13 @@ namespace EVESharp.Node.Dogma;
 
 public class EffectsManager
 {
-    private Dogma       Dogma       { get; }
+    private DogmaUtils  DogmaUtils  { get; }
     private ItemFactory ItemFactory { get; }
 
-    public EffectsManager (ItemFactory itemFactory, Dogma dogma)
+    public EffectsManager (ItemFactory itemFactory, DogmaUtils dogmaUtils)
     {
         ItemFactory = itemFactory;
-        Dogma       = dogma;
+        DogmaUtils  = dogmaUtils;
     }
 
     /// <summary>

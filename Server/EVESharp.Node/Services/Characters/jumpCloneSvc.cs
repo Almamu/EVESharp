@@ -5,13 +5,13 @@ using EVESharp.EVE.Services;
 using EVESharp.EVE.Sessions;
 using EVESharp.EVE.StaticData.Inventory;
 using EVESharp.EVE.Wallet;
+using EVESharp.Node.Client.Notifications.Clones;
 using EVESharp.Node.Database;
 using EVESharp.Node.Inventory;
 using EVESharp.Node.Inventory.Items;
 using EVESharp.Node.Inventory.Items.Types;
 using EVESharp.Node.Market;
 using EVESharp.Node.Notifications;
-using EVESharp.Node.Notifications.Client.Clones;
 using EVESharp.Node.Sessions;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Database;
@@ -24,38 +24,38 @@ public class jumpCloneSvc : ClientBoundService
 {
     public override AccessLevel AccessLevel => AccessLevel.None;
 
-    private ItemDB                      ItemDB              { get; }
-    private MarketDB                    MarketDB            { get; }
-    private ItemFactory                 ItemFactory         { get; }
-    private TypeManager                 TypeManager         => ItemFactory.TypeManager;
-    private SystemManager               SystemManager       { get; }
-    private Notifications.Notifications Notifications { get; }
-    private WalletManager               WalletManager       { get; }
+    private ItemDB             ItemDB        { get; }
+    private MarketDB           MarketDB      { get; }
+    private ItemFactory        ItemFactory   { get; }
+    private TypeManager        TypeManager   => ItemFactory.TypeManager;
+    private SystemManager      SystemManager { get; }
+    private NotificationSender Notifications { get; }
+    private WalletManager      WalletManager { get; }
 
     public jumpCloneSvc (
-        ItemDB        itemDB,        MarketDB      marketDB,      ItemFactory itemFactory,
-        SystemManager systemManager, WalletManager walletManager, Notifications.Notifications notifications, BoundServiceManager manager
+        ItemDB        itemDB,        MarketDB      marketDB,      ItemFactory        itemFactory,
+        SystemManager systemManager, WalletManager walletManager, NotificationSender notificationSender, BoundServiceManager manager
     ) : base (manager)
     {
-        ItemDB              = itemDB;
-        MarketDB            = marketDB;
-        ItemFactory         = itemFactory;
-        SystemManager       = systemManager;
-        WalletManager       = walletManager;
-        Notifications = notifications;
+        ItemDB        = itemDB;
+        MarketDB      = marketDB;
+        ItemFactory   = itemFactory;
+        SystemManager = systemManager;
+        WalletManager = walletManager;
+        Notifications = notificationSender;
     }
 
     protected jumpCloneSvc (
-        int           locationID,    ItemDB              itemDB,  MarketDB      marketDB,      ItemFactory itemFactory,
-        SystemManager systemManager, BoundServiceManager manager, WalletManager walletManager, Notifications.Notifications notifications, Session session
+        int           locationID,    ItemDB              itemDB,  MarketDB      marketDB,      ItemFactory        itemFactory,
+        SystemManager systemManager, BoundServiceManager manager, WalletManager walletManager, NotificationSender notificationSender, Session session
     ) : base (manager, session, locationID)
     {
-        ItemDB              = itemDB;
-        MarketDB            = marketDB;
-        ItemFactory         = itemFactory;
-        SystemManager       = systemManager;
-        WalletManager       = walletManager;
-        Notifications = notifications;
+        ItemDB        = itemDB;
+        MarketDB      = marketDB;
+        ItemFactory   = itemFactory;
+        SystemManager = systemManager;
+        WalletManager = walletManager;
+        Notifications = notificationSender;
     }
 
     /// <summary>

@@ -10,11 +10,11 @@ using EVESharp.EVE.Packets.Exceptions;
 using EVESharp.EVE.Services;
 using EVESharp.EVE.Sessions;
 using EVESharp.EVE.StaticData.Corporation;
+using EVESharp.Node.Client.Notifications.Alliances;
 using EVESharp.Node.Database;
 using EVESharp.Node.Inventory;
 using EVESharp.Node.Inventory.Items.Types;
 using EVESharp.Node.Notifications;
-using EVESharp.Node.Notifications.Client.Alliances;
 using EVESharp.Node.Notifications.Nodes.Corps;
 using EVESharp.PythonTypes.Types.Primitives;
 using MySql.Data.MySqlClient;
@@ -26,41 +26,41 @@ public class allianceRegistry : MultiClientBoundService
 {
     public override AccessLevel AccessLevel => AccessLevel.None;
 
-    private DatabaseConnection          Database            { get; }
-    private CorporationDB               CorporationDB       { get; }
-    private ChatDB                      ChatDB              { get; }
-    private Notifications.Notifications Notifications { get; }
-    private ItemFactory                 ItemFactory         { get; }
-    private Alliance                    Alliance            { get; }
-    private SessionManager              SessionManager      { get; }
+    private DatabaseConnection Database       { get; }
+    private CorporationDB      CorporationDB  { get; }
+    private ChatDB             ChatDB         { get; }
+    private NotificationSender Notifications  { get; }
+    private ItemFactory        ItemFactory    { get; }
+    private Alliance           Alliance       { get; }
+    private SessionManager     SessionManager { get; }
 
     public allianceRegistry (
-        DatabaseConnection  databaseConnection, CorporationDB  corporationDB, ChatDB chatDB, ItemFactory itemFactory, Notifications.Notifications notifications,
+        DatabaseConnection  databaseConnection, CorporationDB  corporationDB, ChatDB chatDB, ItemFactory itemFactory, NotificationSender notificationSender,
         BoundServiceManager manager,            SessionManager sessionManager
     ) : base (manager)
     {
-        Database            = databaseConnection;
-        CorporationDB       = corporationDB;
-        ChatDB              = chatDB;
-        Notifications = notifications;
-        ItemFactory         = itemFactory;
-        SessionManager      = sessionManager;
+        Database       = databaseConnection;
+        CorporationDB  = corporationDB;
+        ChatDB         = chatDB;
+        Notifications  = notificationSender;
+        ItemFactory    = itemFactory;
+        SessionManager = sessionManager;
 
         // TODO: RE-IMPLEMENT ON CLUSTER TIMER
         // machoNet.OnClusterTimer += PerformTimedEvents;
     }
 
     private allianceRegistry (
-        Alliance alliance, DatabaseConnection databaseConnection, CorporationDB corporationDB, ItemFactory itemFactory, Notifications.Notifications notifications,
+        Alliance alliance, DatabaseConnection databaseConnection, CorporationDB corporationDB, ItemFactory itemFactory, NotificationSender notificationSender,
         SessionManager sessionManager, MultiClientBoundService parent
     ) : base (parent, alliance.ID)
     {
-        Database            = databaseConnection;
-        CorporationDB       = corporationDB;
-        Notifications = notifications;
-        ItemFactory         = itemFactory;
-        Alliance            = alliance;
-        SessionManager      = sessionManager;
+        Database       = databaseConnection;
+        CorporationDB  = corporationDB;
+        Notifications  = notificationSender;
+        ItemFactory    = itemFactory;
+        Alliance       = alliance;
+        SessionManager = sessionManager;
     }
 
     private IEnumerable <ApplicationEntry> GetAcceptedAlliances (long minimumTime)

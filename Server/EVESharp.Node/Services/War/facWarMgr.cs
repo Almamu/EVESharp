@@ -5,11 +5,11 @@ using EVESharp.EVE.Packets.Complex;
 using EVESharp.EVE.Services;
 using EVESharp.EVE.Sessions;
 using EVESharp.Node.Cache;
+using EVESharp.Node.Client.Notifications.Corporations;
 using EVESharp.Node.Database;
 using EVESharp.Node.Inventory;
 using EVESharp.Node.Inventory.Items.Types;
 using EVESharp.Node.Notifications;
-using EVESharp.Node.Notifications.Client.Corporations;
 using EVESharp.Node.Sessions;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Database;
@@ -28,25 +28,25 @@ internal enum FactionWarStatus
 
 public class facWarMgr : Service
 {
-    public override AccessLevel                 AccessLevel         => AccessLevel.None;
-    private         ChatDB                      ChatDB              { get; }
-    private         CharacterDB                 CharacterDB         { get; }
-    private         CacheStorage                CacheStorage        { get; }
-    private         ItemFactory                 ItemFactory         { get; }
-    private         Notifications.Notifications Notifications { get; }
-    private         SessionManager              SessionManager      { get; }
+    public override AccessLevel        AccessLevel    => AccessLevel.None;
+    private         ChatDB             ChatDB         { get; }
+    private         CharacterDB        CharacterDB    { get; }
+    private         CacheStorage       CacheStorage   { get; }
+    private         ItemFactory        ItemFactory    { get; }
+    private         NotificationSender Notifications  { get; }
+    private         SessionManager     SessionManager { get; }
 
     public facWarMgr (
-        ChatDB         chatDB, CharacterDB characterDB, CacheStorage cacheStorage, ItemFactory itemFactory, Notifications.Notifications notifications,
+        ChatDB         chatDB, CharacterDB characterDB, CacheStorage cacheStorage, ItemFactory itemFactory, NotificationSender notificationSender,
         SessionManager sessionManager
     )
     {
-        ChatDB              = chatDB;
-        CharacterDB         = characterDB;
-        CacheStorage        = cacheStorage;
-        ItemFactory         = itemFactory;
-        Notifications = notifications;
-        SessionManager      = sessionManager;
+        ChatDB         = chatDB;
+        CharacterDB    = characterDB;
+        CacheStorage   = cacheStorage;
+        ItemFactory    = itemFactory;
+        Notifications  = notificationSender;
+        SessionManager = sessionManager;
     }
 
     public PyDataType GetWarFactions (CallInformation call)

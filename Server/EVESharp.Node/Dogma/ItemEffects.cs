@@ -4,11 +4,11 @@ using EVESharp.EVE.Packets.Exceptions;
 using EVESharp.EVE.Sessions;
 using EVESharp.EVE.StaticData.Dogma;
 using EVESharp.EVE.StaticData.Inventory;
+using EVESharp.Node.Client.Notifications.Inventory;
 using EVESharp.Node.Dogma.Interpreter.Opcodes;
 using EVESharp.Node.Inventory;
 using EVESharp.Node.Inventory.Items.Dogma;
 using EVESharp.Node.Inventory.Items.Types;
-using EVESharp.Node.Notifications.Client.Inventory;
 using EVESharp.Node.Sessions;
 using EVESharp.PythonTypes.Types.Primitives;
 using Environment = EVESharp.Node.Dogma.Interpreter.Environment;
@@ -98,7 +98,7 @@ public class ItemEffects
         {
             // notify the client about it
             // TODO: THIS MIGHT NEED MORE NOTIFICATIONS
-            ItemFactory.Dogma.QueueMultiEvent (session.EnsureCharacterIsSelected (), new OnGodmaShipEffect (godmaEffect));
+            ItemFactory.DogmaUtils.QueueMultiEvent (session.EnsureCharacterIsSelected (), new OnGodmaShipEffect (godmaEffect));
 
             throw;
         }
@@ -119,7 +119,7 @@ public class ItemEffects
         // notify the client about it
         // TODO: THIS MIGHT NEED MORE NOTIFICATIONS
         // TODO: CHECK IF THIS MULTIEVENT IS RIGHT OR NOT
-        ItemFactory.Dogma.QueueMultiEvent (Module.OwnerID, new OnGodmaShipEffect (godmaEffect));
+        ItemFactory.DogmaUtils.QueueMultiEvent (Module.OwnerID, new OnGodmaShipEffect (godmaEffect));
 
         if (effect.EffectID == (int) EffectsEnum.Online)
             this.ApplyOnlineEffects (session);
@@ -175,7 +175,7 @@ public class ItemEffects
 
         // notify the client about it
         // TODO: THIS MIGHT NEED MORE NOTIFICATIONS
-        ItemFactory.Dogma.QueueMultiEvent (session.EnsureCharacterIsSelected (), new OnGodmaShipEffect (godmaEffect));
+        ItemFactory.DogmaUtils.QueueMultiEvent (session.EnsureCharacterIsSelected (), new OnGodmaShipEffect (godmaEffect));
 
         // online effect, this requires some special processing as all the passive effects should also be applied
         if (effect.EffectID == (int) EffectsEnum.Online)
