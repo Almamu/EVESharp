@@ -8,13 +8,12 @@ using EVESharp.Common.Network;
 using EVESharp.EVE;
 using EVESharp.EVE.Packets;
 using EVESharp.Node.Accounts;
-using EVESharp.Node.Server.Shared;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Network;
 using EVESharp.PythonTypes.Types.Primitives;
 using Serilog;
 
-namespace EVESharp.Node.Network;
+namespace EVESharp.Node.Server.Shared.Network;
 
 public class MachoUnauthenticatedTransport : MachoTransport
 {

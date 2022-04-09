@@ -1,6 +1,7 @@
 ﻿using System;
 using EVESharp.EVE.Packets.Complex;
 using EVESharp.EVE.Services;
+using EVESharp.Node.Cache;
 using EVESharp.Node.Inventory;
 using EVESharp.Node.Network;
 using EVESharp.PythonTypes.Types.Primitives;

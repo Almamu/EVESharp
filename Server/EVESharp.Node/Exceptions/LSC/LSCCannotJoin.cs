@@ -1,4 +1,4 @@
-﻿namespace EVESharp.Node.Exceptions;
+﻿namespace EVESharp.Node.Exceptions.LSC;
 
 public class LSCCannotJoin : LSCStandardException
 {

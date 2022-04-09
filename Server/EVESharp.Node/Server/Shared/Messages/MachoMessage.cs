@@ -1,5 +1,6 @@
 ﻿using EVESharp.Common.Network.Messages;
 using EVESharp.Node.Network;
+using EVESharp.Node.Server.Shared.Network;
 using EVESharp.PythonTypes.Types.Network;
 
 namespace EVESharp.Node.Server.Shared.Messages;

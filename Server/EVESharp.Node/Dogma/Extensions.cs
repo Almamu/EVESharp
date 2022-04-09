@@ -1,5 +1,6 @@
 ﻿using System.IO;
 using EVESharp.Node.Inventory.Items.Attributes;
+using EVESharp.Node.Inventory.Items.Dogma;
 
 namespace EVESharp.Node.Dogma;
 

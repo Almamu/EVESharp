@@ -4,6 +4,7 @@ using System.IO;
 using EVESharp.Node.Dogma.Exception;
 using EVESharp.Node.Dogma.Interpreter.Opcodes;
 using EVESharp.Node.Inventory.Items.Attributes;
+using EVESharp.Node.Inventory.Items.Dogma;
 
 namespace EVESharp.Node.Dogma.Interpreter;
 

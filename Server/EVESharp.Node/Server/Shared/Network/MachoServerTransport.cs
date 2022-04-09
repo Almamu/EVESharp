@@ -2,10 +2,9 @@ using System;
 using System.Net.Http;
 using EVESharp.Common.Logging;
 using EVESharp.Common.Network;
-using EVESharp.Node.Server.Shared;
 using Serilog;
 
-namespace EVESharp.Node.Network;
+namespace EVESharp.Node.Server.Shared.Network;
 
 public class MachoServerTransport : EVEServerSocket
 {

@@ -5,6 +5,7 @@ using EVESharp.EVE.Services;
 using EVESharp.EVE.Services.Exceptions;
 using EVESharp.EVE.Sessions;
 using EVESharp.Node.Server.Shared;
+using EVESharp.Node.Server.Shared.Network;
 using EVESharp.PythonTypes.Types.Primitives;
 using Serilog;
 

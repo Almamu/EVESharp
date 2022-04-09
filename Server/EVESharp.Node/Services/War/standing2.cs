@@ -1,6 +1,7 @@
 using EVESharp.EVE.Packets.Complex;
 using EVESharp.EVE.Packets.Exceptions;
 using EVESharp.EVE.Services;
+using EVESharp.Node.Cache;
 using EVESharp.Node.Database;
 using EVESharp.Node.Inventory;
 using EVESharp.Node.Inventory.Items.Types;

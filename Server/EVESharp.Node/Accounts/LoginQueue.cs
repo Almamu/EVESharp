@@ -29,6 +29,7 @@ using EVESharp.EVE.Packets;
 using EVESharp.Node.Configuration;
 using EVESharp.Node.Database;
 using EVESharp.Node.Network;
+using EVESharp.Node.Server.Shared.Network;
 using Serilog;
 
 namespace EVESharp.Node.Accounts;

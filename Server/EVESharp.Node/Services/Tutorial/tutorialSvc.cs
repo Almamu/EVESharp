@@ -1,5 +1,6 @@
 using EVESharp.EVE.Packets.Complex;
 using EVESharp.EVE.Services;
+using EVESharp.Node.Cache;
 using EVESharp.Node.Database;
 using EVESharp.Node.Network;
 using EVESharp.PythonTypes.Types.Collections;

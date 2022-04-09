@@ -1,11 +1,10 @@
 ﻿using System.Collections.Generic;
 using EVESharp.Common.Network;
 using EVESharp.EVE.Sessions;
-using EVESharp.Node.Server.Shared;
 using EVESharp.PythonTypes.Types.Primitives;
 using Serilog;
 
-namespace EVESharp.Node.Network;
+namespace EVESharp.Node.Server.Shared.Network;
 
 public class MachoTransport
 {

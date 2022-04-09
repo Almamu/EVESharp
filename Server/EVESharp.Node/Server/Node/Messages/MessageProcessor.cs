@@ -7,7 +7,6 @@ using EVESharp.Node.Inventory.Items;
 using EVESharp.Node.Inventory.Items.Types;
 using EVESharp.Node.Network;
 using EVESharp.Node.Notifications.Client.Inventory;
-using EVESharp.Node.Notifications.Nodes.Corporations;
 using EVESharp.Node.Notifications.Nodes.Corps;
 using EVESharp.Node.Server.Shared;
 using EVESharp.Node.Server.Shared.Messages;

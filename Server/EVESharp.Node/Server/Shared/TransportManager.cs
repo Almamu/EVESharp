@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using EVESharp.Node.Network;
+using EVESharp.Node.Server.Shared.Network;
 using Serilog;
 
 namespace EVESharp.Node.Server.Shared;

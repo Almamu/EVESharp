@@ -1,7 +1,7 @@
 ﻿using EVESharp.PythonTypes.Types.Network;
 using EVESharp.PythonTypes.Types.Primitives;
 
-namespace EVESharp.Node.Network;
+namespace EVESharp.Node.Server.Shared.Network;
 
 public class MachoNodeTransport : MachoTransport
 {

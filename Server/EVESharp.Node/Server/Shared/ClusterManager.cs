@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using EVESharp.Common.Logging;
 using EVESharp.EVE.Packets;
 using EVESharp.Node.Network;
+using EVESharp.Node.Server.Shared.Network;
 using Serilog;
 
 namespace EVESharp.Node.Server.Shared;

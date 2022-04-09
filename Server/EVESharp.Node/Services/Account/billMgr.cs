@@ -4,6 +4,7 @@ using EVESharp.Common.Database;
 using EVESharp.EVE;
 using EVESharp.EVE.Packets.Complex;
 using EVESharp.EVE.Services;
+using EVESharp.Node.Cache;
 using EVESharp.Node.Corporations;
 using EVESharp.Node.Database;
 using EVESharp.Node.Exceptions.corpRegistry;

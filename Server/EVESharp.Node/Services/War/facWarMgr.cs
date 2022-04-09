@@ -3,6 +3,7 @@ using EVESharp.EVE;
 using EVESharp.EVE.Packets.Complex;
 using EVESharp.EVE.Services;
 using EVESharp.EVE.Sessions;
+using EVESharp.Node.Cache;
 using EVESharp.Node.Database;
 using EVESharp.Node.Exceptions.facWarMgr;
 using EVESharp.Node.Inventory;

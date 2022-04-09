@@ -1,4 +1,4 @@
-﻿namespace EVESharp.Node.Inventory.Items.Attributes;
+﻿namespace EVESharp.Node.Inventory.Items.Dogma;
 
 public enum EffectOperand
 {

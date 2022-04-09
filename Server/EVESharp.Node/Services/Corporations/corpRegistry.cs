@@ -22,7 +22,7 @@ using EVESharp.Node.Network;
 using EVESharp.Node.Notifications.Client.Alliances;
 using EVESharp.Node.Notifications.Client.Corporations;
 using EVESharp.Node.Notifications.Client.Wallet;
-using EVESharp.Node.Notifications.Nodes.Corporations;
+using EVESharp.Node.Notifications.Nodes.Corps;
 using EVESharp.Node.Sessions;
 using EVESharp.Node.StaticData;
 using EVESharp.Node.StaticData.Corporation;
@@ -30,6 +30,8 @@ using EVESharp.Node.StaticData.Inventory;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Database;
 using EVESharp.PythonTypes.Types.Primitives;
+using OnCorporationChanged = EVESharp.Node.Notifications.Client.Corporations.OnCorporationChanged;
+using OnCorporationMemberChanged = EVESharp.Node.Notifications.Client.Corporations.OnCorporationMemberChanged;
 using SessionManager = EVESharp.Node.Sessions.SessionManager;
 
 namespace EVESharp.Node.Services.Corporations;

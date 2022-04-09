@@ -5,6 +5,7 @@ using EVESharp.EVE.Services;
 using EVESharp.Node.Chat;
 using EVESharp.Node.Database;
 using EVESharp.Node.Exceptions;
+using EVESharp.Node.Exceptions.LSC;
 using EVESharp.Node.Inventory;
 using EVESharp.Node.Inventory.Items.Types;
 using EVESharp.Node.Network;

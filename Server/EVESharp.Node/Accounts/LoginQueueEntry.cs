@@ -25,6 +25,7 @@
 using EVESharp.Common.Network.Messages;
 using EVESharp.EVE.Packets;
 using EVESharp.Node.Network;
+using EVESharp.Node.Server.Shared.Network;
 
 namespace EVESharp.Node.Accounts;
 

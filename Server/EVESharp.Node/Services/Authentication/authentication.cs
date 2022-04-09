@@ -29,14 +29,14 @@ using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Database;
 using EVESharp.PythonTypes.Types.Primitives;
 
-namespace EVESharp.Node.Services.Network;
+namespace EVESharp.Node.Services.Authentication;
 
 public class authentication : Service
 {
-    private readonly Authentication mConfiguration;
-    public override  AccessLevel    AccessLevel => AccessLevel.None;
+    private readonly Configuration.Authentication mConfiguration;
+    public override  AccessLevel                  AccessLevel => AccessLevel.None;
 
-    public authentication (Authentication configuration)
+    public authentication (Configuration.Authentication configuration)
     {
         this.mConfiguration = configuration;
     }

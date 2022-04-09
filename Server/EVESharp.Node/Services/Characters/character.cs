@@ -29,6 +29,7 @@ using EVESharp.EVE;
 using EVESharp.EVE.Packets.Exceptions;
 using EVESharp.EVE.Services;
 using EVESharp.EVE.Sessions;
+using EVESharp.Node.Cache;
 using EVESharp.Node.Database;
 using EVESharp.Node.Exceptions.character;
 using EVESharp.Node.Inventory;

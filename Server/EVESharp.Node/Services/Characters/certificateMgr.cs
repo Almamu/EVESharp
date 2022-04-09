@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using EVESharp.EVE.Packets.Complex;
 using EVESharp.EVE.Services;
+using EVESharp.Node.Cache;
 using EVESharp.Node.Database;
 using EVESharp.Node.Exceptions.certificateMgr;
 using EVESharp.Node.Inventory;

@@ -1,7 +1,7 @@
 ﻿using EVESharp.EVE.Packets.Exceptions;
 using EVESharp.PythonTypes.Types.Collections;
 
-namespace EVESharp.Node.Exceptions;
+namespace EVESharp.Node.Exceptions.LSC;
 
 public class ChatCustomChannelNameTooLong : UserError
 {
