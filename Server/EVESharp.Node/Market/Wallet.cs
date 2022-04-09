@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using EVESharp.Common.Database;
 using EVESharp.Database;
-using EVESharp.EVE;
 using EVESharp.EVE.Client.Exceptions;
 using EVESharp.EVE.StaticData.Corporation;
 using EVESharp.EVE.Wallet;
@@ -62,7 +61,7 @@ public class Wallet : IDisposable
                     Keys.FIFTH   => CorporationRole.AccountCanQuery5,
                     Keys.SIXTH   => CorporationRole.AccountCanQuery6,
                     Keys.SEVENTH => CorporationRole.AccountCanQuery7,
-                    _                         => CorporationRole.JuniorAccountant
+                    _            => CorporationRole.JuniorAccountant
                 });
 
                 NotificationManager.NotifyCorporationByRole (

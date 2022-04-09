@@ -3,10 +3,10 @@ using System.Linq;
 using EVESharp.EVE.Client.Exceptions;
 using EVESharp.EVE.Client.Exceptions.character;
 using EVESharp.EVE.Client.Exceptions.Internal;
+using EVESharp.EVE.Inventory.Attributes;
 using EVESharp.EVE.StaticData.Inventory;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Primitives;
-using Attribute = EVESharp.EVE.Inventory.Attributes.Attribute;
 
 namespace EVESharp.Node.Inventory.Items.Types;
 
@@ -270,32 +270,32 @@ public class Character : ItemInventory
 
     public long Charisma
     {
-        get => Attributes [EVE.StaticData.Inventory.Attributes.charisma].Integer;
-        set => Attributes [EVE.StaticData.Inventory.Attributes.charisma].Integer = value;
+        get => Attributes [AttributeTypes.charisma].Integer;
+        set => Attributes [AttributeTypes.charisma].Integer = value;
     }
 
     public long Willpower
     {
-        get => Attributes [EVE.StaticData.Inventory.Attributes.willpower].Integer;
-        set => Attributes [EVE.StaticData.Inventory.Attributes.willpower].Integer = value;
+        get => Attributes [AttributeTypes.willpower].Integer;
+        set => Attributes [AttributeTypes.willpower].Integer = value;
     }
 
     public long Intelligence
     {
-        get => Attributes [EVE.StaticData.Inventory.Attributes.intelligence].Integer;
-        set => Attributes [EVE.StaticData.Inventory.Attributes.intelligence].Integer = value;
+        get => Attributes [AttributeTypes.intelligence].Integer;
+        set => Attributes [AttributeTypes.intelligence].Integer = value;
     }
 
     public long Perception
     {
-        get => Attributes [EVE.StaticData.Inventory.Attributes.perception].Integer;
-        set => Attributes [EVE.StaticData.Inventory.Attributes.perception].Integer = value;
+        get => Attributes [AttributeTypes.perception].Integer;
+        set => Attributes [AttributeTypes.perception].Integer = value;
     }
 
     public long Memory
     {
-        get => Attributes [EVE.StaticData.Inventory.Attributes.memory].Integer;
-        set => Attributes [EVE.StaticData.Inventory.Attributes.memory].Integer = value;
+        get => Attributes [AttributeTypes.memory].Integer;
+        set => Attributes [AttributeTypes.memory].Integer = value;
     }
 
     public List <SkillQueueEntry> SkillQueue
@@ -411,15 +411,15 @@ public class Character : ItemInventory
 
     public void EnsureFreeImplantSlot (ItemEntity newImplant)
     {
-        int implantSlot = (int) newImplant.Attributes [EVE.StaticData.Inventory.Attributes.implantness].Integer;
+        int implantSlot = (int) newImplant.Attributes [AttributeTypes.implantness].Integer;
 
         foreach ((int _, Implant implant) in PluggedInImplants)
         {
             // the implant does not use any slot, here for sanity checking
-            if (implant.Attributes.AttributeExists (EVE.StaticData.Inventory.Attributes.implantness) == false)
+            if (implant.Attributes.AttributeExists (AttributeTypes.implantness) == false)
                 continue;
 
-            if (implant.Attributes [EVE.StaticData.Inventory.Attributes.implantness].Integer == implantSlot)
+            if (implant.Attributes [AttributeTypes.implantness].Integer == implantSlot)
                 throw new OnlyOneImplantActive (newImplant.Type);
         }
     }

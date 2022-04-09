@@ -4,7 +4,6 @@ using EVESharp.EVE.Services;
 using EVESharp.EVE.Sessions;
 using EVESharp.Node.Database;
 using EVESharp.Node.Inventory.Items.Types;
-using EVESharp.Node.Network;
 using EVESharp.Node.Services.Database;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Database;

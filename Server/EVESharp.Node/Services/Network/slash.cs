@@ -107,8 +107,8 @@ public class slash : Service
         if (double.TryParse (argv [2], out double iskQuantity) == false)
             throw new SlashError ("giveisk second argument must be the ISK quantity to give");
 
-        int    targetCharacterID = 0;
-        int    originCharacterID = call.Session.EnsureCharacterIsSelected ();
+        int targetCharacterID = 0;
+        int originCharacterID = call.Session.EnsureCharacterIsSelected ();
 
         if (targetCharacter == "me")
         {
@@ -239,7 +239,7 @@ public class slash : Service
                 skill.Level = level;
                 skill.Persist ();
                 Dogma.QueueMultiEvent (character.ID, new OnSkillStartTraining (skill));
-                Dogma.NotifyAttributeChange (character.ID, new [] {Attributes.skillPoints, Attributes.skillLevel}, skill);
+                Dogma.NotifyAttributeChange (character.ID, new [] {AttributeTypes.skillPoints, AttributeTypes.skillLevel}, skill);
                 Dogma.QueueMultiEvent (character.ID, new OnSkillTrained (skill));
             }
             else

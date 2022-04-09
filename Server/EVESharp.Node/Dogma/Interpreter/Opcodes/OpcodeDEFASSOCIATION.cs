@@ -2,7 +2,6 @@
 using System.IO;
 using EVESharp.EVE.Dogma.Exception;
 using EVESharp.EVE.StaticData.Dogma;
-using EVESharp.Node.Inventory.Items.Dogma;
 
 namespace EVESharp.Node.Dogma.Interpreter.Opcodes;
 

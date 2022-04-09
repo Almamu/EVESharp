@@ -27,7 +27,7 @@ public class SessionInitialStateNotification
 
         return new SessionInitialStateNotification()
         {
-            Session = Sessions.Session.FromPyDictionary(origin[0] as PyDictionary)
+            Session = Session.FromPyDictionary(origin[0] as PyDictionary)
         };
     }
 }

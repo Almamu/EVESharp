@@ -3,7 +3,6 @@ using System.Text.RegularExpressions;
 using EVESharp.EVE;
 using EVESharp.EVE.Packets.Exceptions;
 using EVESharp.EVE.Sessions;
-using EVESharp.Node.Network;
 using EVESharp.Node.Server.Shared.Messages;
 using EVESharp.Node.Services;
 using EVESharp.PythonTypes.Types.Collections;

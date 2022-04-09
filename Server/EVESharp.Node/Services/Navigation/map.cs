@@ -4,7 +4,6 @@ using EVESharp.EVE.StaticData.Inventory.Station;
 using EVESharp.Node.Cache;
 using EVESharp.Node.Inventory;
 using EVESharp.Node.Inventory.Items.Types;
-using EVESharp.Node.Network;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Database;
 using EVESharp.PythonTypes.Types.Primitives;

@@ -2,14 +2,14 @@
 
 namespace EVESharp.Destiny;
 
-[StructLayout(LayoutKind.Sequential, Pack = 1)]
+[StructLayout (LayoutKind.Sequential, Pack = 1)]
 public class BallHeader
 {
-    public long ItemId;
+    public BallFlag Flags;
+    public long     ItemId;
+    public Vector3  Location;
 
     public BallMode Mode;
 
-    public float    Radius;
-    public Vector3  Location;
-    public BallFlag Flags;
+    public float Radius;
 }

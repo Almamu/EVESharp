@@ -1,6 +1,5 @@
 ﻿using EVESharp.EVE.Packets;
 using EVESharp.EVE.Sessions;
-using EVESharp.Node.Network;
 using EVESharp.Node.Server.Shared;
 using EVESharp.Node.Server.Shared.Transports;
 using EVESharp.PythonTypes.Types.Collections;

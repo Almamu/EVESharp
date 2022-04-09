@@ -424,7 +424,7 @@ public class MarketDB : DatabaseAccessor
                     {"@ownerID2", corporationID},
                     {"@typeID", typeID},
                     {"@corporationID", corporationID},
-                    {"@damageAttributeID", (int) Attributes.damage}
+                    {"@damageAttributeID", (int) AttributeTypes.damage}
                 }
             );
         else
@@ -438,7 +438,7 @@ public class MarketDB : DatabaseAccessor
                     {"@ownerID1", ownerID1},
                     {"@ownerID2", corporationID},
                     {"@typeID", typeID},
-                    {"@damageAttributeID", (int) Attributes.damage}
+                    {"@damageAttributeID", (int) AttributeTypes.damage}
                 }
             );
 

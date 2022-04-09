@@ -262,9 +262,7 @@ public abstract class ItemEntity : IDisposable
         return new PyDictionary ();
     }
 
-    protected void CheckSkillRequirement (
-        EVE.StaticData.Inventory.Attributes skillTypeIDRequirement, EVE.StaticData.Inventory.Attributes skillLevelRequirement, Dictionary <int, Skill> skills
-    )
+    protected void CheckSkillRequirement (AttributeTypes skillTypeIDRequirement, AttributeTypes skillLevelRequirement, Dictionary <int, Skill> skills)
     {
         if (Attributes.AttributeExists (skillLevelRequirement) == false ||
             Attributes.AttributeExists (skillTypeIDRequirement) == false)
@@ -284,23 +282,23 @@ public abstract class ItemEntity : IDisposable
     {
         Dictionary <int, Skill> skills        = character.InjectedSkillsByTypeID;
         PyList <PyInteger>      missingSkills = new PyList <PyInteger> ();
-        EVE.StaticData.Inventory.Attributes [] attributes =
+        AttributeTypes [] attributes =
         {
-            EVE.StaticData.Inventory.Attributes.requiredSkill1,
-            EVE.StaticData.Inventory.Attributes.requiredSkill2,
-            EVE.StaticData.Inventory.Attributes.requiredSkill3,
-            EVE.StaticData.Inventory.Attributes.requiredSkill4,
-            EVE.StaticData.Inventory.Attributes.requiredSkill5,
-            EVE.StaticData.Inventory.Attributes.requiredSkill6
+            AttributeTypes.requiredSkill1,
+            AttributeTypes.requiredSkill2,
+            AttributeTypes.requiredSkill3,
+            AttributeTypes.requiredSkill4,
+            AttributeTypes.requiredSkill5,
+            AttributeTypes.requiredSkill6
         };
-        EVE.StaticData.Inventory.Attributes [] levelAttributes =
+        AttributeTypes [] levelAttributes =
         {
-            EVE.StaticData.Inventory.Attributes.requiredSkill1Level,
-            EVE.StaticData.Inventory.Attributes.requiredSkill2Level,
-            EVE.StaticData.Inventory.Attributes.requiredSkill3Level,
-            EVE.StaticData.Inventory.Attributes.requiredSkill4Level,
-            EVE.StaticData.Inventory.Attributes.requiredSkill5Level,
-            EVE.StaticData.Inventory.Attributes.requiredSkill6Level
+            AttributeTypes.requiredSkill1Level,
+            AttributeTypes.requiredSkill2Level,
+            AttributeTypes.requiredSkill3Level,
+            AttributeTypes.requiredSkill4Level,
+            AttributeTypes.requiredSkill5Level,
+            AttributeTypes.requiredSkill6Level
         };
 
         for (int i = 0; i < attributes.Length; i++)

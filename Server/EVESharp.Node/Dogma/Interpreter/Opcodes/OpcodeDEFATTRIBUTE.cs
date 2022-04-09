@@ -5,13 +5,13 @@ namespace EVESharp.Node.Dogma.Interpreter.Opcodes;
 
 public class OpcodeDEFATTRIBUTE : Opcode
 {
-    public Attributes Attribute { get; private set; }
+    public AttributeTypes Attribute { get; private set; }
 
     public OpcodeDEFATTRIBUTE (Interpreter interpreter) : base (interpreter) { }
 
     public override Opcode LoadOpcode (BinaryReader reader)
     {
-        Attribute = (Attributes) reader.ReadInt32 ();
+        Attribute = (AttributeTypes) reader.ReadInt32 ();
 
         return this;
     }

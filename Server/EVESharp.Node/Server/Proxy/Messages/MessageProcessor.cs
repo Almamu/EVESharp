@@ -1,6 +1,5 @@
 ﻿using System;
 using EVESharp.EVE.Sessions;
-using EVESharp.Node.Network;
 using EVESharp.Node.Server.Shared;
 using EVESharp.Node.Server.Shared.Messages;
 using EVESharp.Node.Server.Shared.Transports;

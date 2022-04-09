@@ -1,5 +1,4 @@
 using System;
-using EVESharp.EVE;
 using EVESharp.EVE.Client.Exceptions.facWarMgr;
 using EVESharp.EVE.Client.Messages;
 using EVESharp.EVE.Packets.Complex;

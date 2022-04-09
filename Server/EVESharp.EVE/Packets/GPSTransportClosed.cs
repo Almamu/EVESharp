@@ -12,13 +12,13 @@ public class GPSTransportClosed : PyException
 
     public GPSTransportClosed(string type) : base(TYPE_NAME, type, null, new PyDictionary())
     {
-        this.Clock        = DateTime.UtcNow.ToFileTimeUtc();
-        this.Region       = VersionInfo.REGION;
-        this.Reason       = type;
-        this.Version      = VersionInfo.VERSION;
-        this.Build        = VersionInfo.BUILD;
-        this.Codename     = VersionInfo.CODENAME;
-        this.MachoVersion = VersionInfo.MACHO_VERSION;
+        Clock        = DateTime.UtcNow.ToFileTimeUtc();
+        Region       = VersionInfo.REGION;
+        Reason       = type;
+        Version      = VersionInfo.VERSION;
+        Build        = VersionInfo.BUILD;
+        Codename     = VersionInfo.CODENAME;
+        MachoVersion = VersionInfo.MACHO_VERSION;
     }
 
     public static implicit operator PyDataType(GPSTransportClosed exception)

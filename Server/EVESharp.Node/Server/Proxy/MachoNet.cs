@@ -5,7 +5,6 @@ using EVESharp.Common.Network.Messages;
 using EVESharp.Node.Accounts;
 using EVESharp.Node.Configuration;
 using EVESharp.Node.Database;
-using EVESharp.Node.Network;
 using EVESharp.Node.Server.Shared;
 using EVESharp.Node.Server.Shared.Messages;
 using EVESharp.Node.Server.Shared.Transports;

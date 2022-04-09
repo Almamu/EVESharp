@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using EVESharp.EVE;
 using EVESharp.EVE.Client.Exceptions;
 using EVESharp.EVE.Client.Exceptions.repairSvc;
 using EVESharp.EVE.Packets.Exceptions;
@@ -106,8 +105,8 @@ public class repairSvc : ClientBoundService
                             module.ID,
                             module.Type.ID,
                             module.Type.Group.ID,
-                            module.Attributes [Attributes.damage],
-                            module.Attributes [Attributes.hp],
+                            module.Attributes [AttributeTypes.damage],
+                            module.Attributes [AttributeTypes.hp],
                             // modules should calculate this value differently, but for now this will suffice
                             module.Type.BasePrice * BASEPRICE_MULTIPLIER_MODULE
                         }
@@ -121,8 +120,8 @@ public class repairSvc : ClientBoundService
                         item.ID,
                         item.Type.ID,
                         item.Type.Group.ID,
-                        item.Attributes [Attributes.damage],
-                        item.Attributes [Attributes.hp],
+                        item.Attributes [AttributeTypes.damage],
+                        item.Attributes [AttributeTypes.hp],
                         item.Type.BasePrice * BASEPRICE_MULTIPLIER_SHIP
                     }
                 );
@@ -135,8 +134,8 @@ public class repairSvc : ClientBoundService
                         item.ID,
                         item.Type.ID,
                         item.Type.Group.ID,
-                        item.Attributes [Attributes.damage],
-                        item.Attributes [Attributes.hp],
+                        item.Attributes [AttributeTypes.damage],
+                        item.Attributes [AttributeTypes.hp],
                         item.Type.BasePrice * BASEPRICE_MULTIPLIER_MODULE
                     }
                 );
@@ -176,9 +175,9 @@ public class repairSvc : ClientBoundService
 
                 // calculate how much to fix it
                 if (item is Ship)
-                    quantityLeft -= Math.Min (item.Attributes [Attributes.damage] * (item.Type.BasePrice * BASEPRICE_MULTIPLIER_SHIP), quantityLeft);
+                    quantityLeft -= Math.Min (item.Attributes [AttributeTypes.damage] * (item.Type.BasePrice * BASEPRICE_MULTIPLIER_SHIP), quantityLeft);
                 else
-                    quantityLeft -= Math.Min (item.Attributes [Attributes.damage] * (item.Type.BasePrice * BASEPRICE_MULTIPLIER_MODULE), quantityLeft);
+                    quantityLeft -= Math.Min (item.Attributes [AttributeTypes.damage] * (item.Type.BasePrice * BASEPRICE_MULTIPLIER_MODULE), quantityLeft);
 
                 // add the item to the list
                 items.Add (item);
@@ -196,14 +195,14 @@ public class repairSvc : ClientBoundService
                 double repairPrice = 0.0f;
 
                 if (item is Ship)
-                    repairPrice = item.Attributes [Attributes.damage] * (item.Type.BasePrice * BASEPRICE_MULTIPLIER_SHIP);
+                    repairPrice = item.Attributes [AttributeTypes.damage] * (item.Type.BasePrice * BASEPRICE_MULTIPLIER_SHIP);
                 else
-                    repairPrice = item.Attributes [Attributes.damage] * (item.Type.BasePrice * BASEPRICE_MULTIPLIER_MODULE);
+                    repairPrice = item.Attributes [AttributeTypes.damage] * (item.Type.BasePrice * BASEPRICE_MULTIPLIER_MODULE);
 
                 // full item can be repaired!
                 if (repairPrice <= quantityLeft)
                 {
-                    item.Attributes [Attributes.damage].Integer = 0;
+                    item.Attributes [AttributeTypes.damage].Integer = 0;
                 }
                 else
                 {
@@ -223,7 +222,7 @@ public class repairSvc : ClientBoundService
 
                     // only perform changes on the damage if there's units we can pay for repair
                     if (repairUnits > 0)
-                        item.Attributes [Attributes.damage] -= repairUnits;
+                        item.Attributes [AttributeTypes.damage] -= repairUnits;
                 }
 
                 quantityLeft -= repairPrice;

@@ -4,7 +4,6 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using EVESharp.Common.Database;
 using EVESharp.Database;
-using EVESharp.EVE;
 using EVESharp.EVE.Alliances;
 using EVESharp.EVE.Client.Exceptions;
 using EVESharp.EVE.Client.Exceptions.corpRegistry;

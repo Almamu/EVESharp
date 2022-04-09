@@ -17,7 +17,7 @@ public class Tests
     public void Setup()
     {
         // build a attributeinfo so the arithmetics can be tested
-        mAttribute = new AttributeType(
+        this.mAttribute = new AttributeType(
             0, "Test", 0, "Test attribute", null, 0, 0, 0, 0.0, 1, "Test", 0, 1, 1, 0
         );
     }
@@ -26,8 +26,8 @@ public class Tests
     public void ItemAttributeArithmetic_Integer()
     {
         // build two attributes with integer values only
-        Attribute first  = new Attribute(mAttribute, FIRST_VALUE_INT);
-        Attribute second = new Attribute(mAttribute, SECOND_VALUE_INT);
+        Attribute first  = new Attribute(this.mAttribute, FIRST_VALUE_INT);
+        Attribute second = new Attribute(this.mAttribute,    SECOND_VALUE_INT);
             
         // do some calculations
         Attribute addResult = first + second;
@@ -54,8 +54,8 @@ public class Tests
     public void ItemAttributeArithmetic_Double()
     {
         // build two attributes with double values only
-        Attribute first  = new Attribute(mAttribute, FIRST_VALUE_DOUBLE);
-        Attribute second = new Attribute(mAttribute, SECOND_VALUE_DOUBLE);
+        Attribute first  = new Attribute(this.mAttribute, FIRST_VALUE_DOUBLE);
+        Attribute second = new Attribute(this.mAttribute,    SECOND_VALUE_DOUBLE);
             
         // do some calculations
         Attribute addResult = first + second;
@@ -82,8 +82,8 @@ public class Tests
     public void ItemAttributeArithmetic_DoubleInteger()
     {
         // build two attributes with double values only
-        Attribute first  = new Attribute(mAttribute, FIRST_VALUE_DOUBLE);
-        Attribute second = new Attribute(mAttribute, SECOND_VALUE_INT);
+        Attribute first  = new Attribute(this.mAttribute, FIRST_VALUE_DOUBLE);
+        Attribute second = new Attribute(this.mAttribute,    SECOND_VALUE_INT);
             
         // do some calculations
         Attribute addResult = first + second;
@@ -110,8 +110,8 @@ public class Tests
     public void ItemAttributeArithmetic_IntegerDouble()
     {
         // build two attributes with double values only
-        Attribute first  = new Attribute(mAttribute, FIRST_VALUE_INT);
-        Attribute second = new Attribute(mAttribute, SECOND_VALUE_DOUBLE);
+        Attribute first  = new Attribute(this.mAttribute, FIRST_VALUE_INT);
+        Attribute second = new Attribute(this.mAttribute,    SECOND_VALUE_DOUBLE);
             
         // do some calculations
         Attribute addResult = first + second;

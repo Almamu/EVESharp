@@ -11,7 +11,6 @@ using EVESharp.Node.Database;
 using EVESharp.Node.Inventory;
 using EVESharp.Node.Inventory.Items;
 using EVESharp.Node.Inventory.Items.Types;
-using EVESharp.Node.Network;
 using EVESharp.Node.Notifications.Client.Inventory;
 using EVESharp.Node.Notifications.Client.Skills;
 using EVESharp.Node.Sessions;
@@ -108,7 +107,7 @@ public class skillMgr : ClientBoundService
                 // update it's location in the client if needed
                 Dogma.QueueMultiEvent (Character.ID, OnItemChange.BuildLocationChange (entry.Skill, Flags.SkillInTraining));
                 // also notify attribute changes
-                Dogma.NotifyAttributeChange (Character.ID, new [] {Attributes.skillPoints, Attributes.skillLevel}, entry.Skill);
+                Dogma.NotifyAttributeChange (Character.ID, new [] {AttributeTypes.skillPoints, AttributeTypes.skillLevel}, entry.Skill);
             }
 
         // remove skills that already expired
@@ -172,7 +171,7 @@ public class skillMgr : ClientBoundService
         // make sure the client is aware of the new item's status
         Dogma.QueueMultiEvent (Character.ID, OnItemChange.BuildLocationChange (skill, Flags.SkillInTraining));
         // also notify attribute changes
-        Dogma.NotifyAttributeChange (Character.ID, new [] {Attributes.skillPoints, Attributes.skillLevel}, skill);
+        Dogma.NotifyAttributeChange (Character.ID, new [] {AttributeTypes.skillPoints, AttributeTypes.skillLevel}, skill);
         Dogma.QueueMultiEvent (Character.ID, new OnSkillTrained (skill));
 
         skill.Persist ();
@@ -565,28 +564,28 @@ public class skillMgr : ClientBoundService
 
     public PyDataType GetCharacterAttributeModifiers (PyInteger attributeID, CallInformation call)
     {
-        Attributes attribute;
+        AttributeTypes attribute;
 
         switch ((int) attributeID)
         {
-            case (int) Attributes.willpower:
-                attribute = Attributes.willpowerBonus;
+            case (int) AttributeTypes.willpower:
+                attribute = AttributeTypes.willpowerBonus;
 
                 break;
-            case (int) Attributes.charisma:
-                attribute = Attributes.charismaBonus;
+            case (int) AttributeTypes.charisma:
+                attribute = AttributeTypes.charismaBonus;
 
                 break;
-            case (int) Attributes.memory:
-                attribute = Attributes.memoryBonus;
+            case (int) AttributeTypes.memory:
+                attribute = AttributeTypes.memoryBonus;
 
                 break;
-            case (int) Attributes.intelligence:
-                attribute = Attributes.intelligenceBonus;
+            case (int) AttributeTypes.intelligence:
+                attribute = AttributeTypes.intelligenceBonus;
 
                 break;
-            case (int) Attributes.perception:
-                attribute = Attributes.perceptionBonus;
+            case (int) AttributeTypes.perception:
+                attribute = AttributeTypes.perceptionBonus;
 
                 break;
             default:
@@ -665,11 +664,11 @@ public class skillMgr : ClientBoundService
             Character.ID,
             new []
             {
-                Character.Attributes [Attributes.charisma],
-                Character.Attributes [Attributes.perception],
-                Character.Attributes [Attributes.intelligence],
-                Character.Attributes [Attributes.memory],
-                Character.Attributes [Attributes.willpower]
+                Character.Attributes [AttributeTypes.charisma],
+                Character.Attributes [AttributeTypes.perception],
+                Character.Attributes [AttributeTypes.intelligence],
+                Character.Attributes [AttributeTypes.memory],
+                Character.Attributes [AttributeTypes.willpower]
             },
             Character
         );

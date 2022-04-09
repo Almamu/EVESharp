@@ -37,7 +37,7 @@ public class OpcodeAIM : OpcodeRunnable
     {
         ItemEntity item      = Change.RightSide.ItemToAffect.GetItem ();
         ItemEntity target    = Interpreter.Environment.Self;
-        Attributes attribute = Change.RightSide.AttributeToAffect.Attribute;
+        AttributeTypes attribute = Change.RightSide.AttributeToAffect.Attribute;
 
         // add the modifier to the attribute
         item.Attributes [attribute].AddModifier (Change.LeftSide.Association, target.Attributes [Attribute.Attribute]);

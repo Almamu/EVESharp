@@ -12,7 +12,7 @@ public abstract class InterNodeNotification
 
     public InterNodeNotification(string name)
     {
-        this.NotificationName = name;
+        NotificationName = name;
     }
 
     protected abstract PyDataType GetNotification();

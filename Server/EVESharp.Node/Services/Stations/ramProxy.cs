@@ -4,7 +4,6 @@ using EVESharp.EVE.StaticData.Inventory;
 using EVESharp.Node.Database;
 using EVESharp.Node.Inventory;
 using EVESharp.Node.Inventory.Items.Types;
-using EVESharp.Node.Network;
 using EVESharp.Node.Sessions;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Primitives;
@@ -40,9 +39,9 @@ public class ramProxy : Service
             // used to calculate the maximum manufacturing job count and the maximum research job count the character can have
             [1] = new PyDictionary <PyInteger, PyInteger>
             {
-                [(int) Attributes.manufactureSlotLimit] =
+                [(int) AttributeTypes.manufactureSlotLimit] =
                     1 + character.GetSkillLevel (Types.MassProduction) + character.GetSkillLevel (Types.AdvancedMassProduction),
-                [(int) Attributes.maxLaborotorySlots] = 1 + character.GetSkillLevel (Types.LaboratoryOperation) +
+                [(int) AttributeTypes.maxLaborotorySlots] = 1 + character.GetSkillLevel (Types.LaboratoryOperation) +
                                                         character.GetSkillLevel (Types.AdvancedLaboratoryOperation)
             }
         };

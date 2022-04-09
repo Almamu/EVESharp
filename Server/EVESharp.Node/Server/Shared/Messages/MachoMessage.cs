@@ -1,5 +1,4 @@
 ﻿using EVESharp.Common.Network.Messages;
-using EVESharp.Node.Network;
 using EVESharp.Node.Server.Shared.Transports;
 using EVESharp.PythonTypes.Types.Network;
 

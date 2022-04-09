@@ -10,8 +10,8 @@
     </ItemGroup>
 
     <ItemGroup>
-      <Folder Include="Account" />
-      <Folder Include="Inventory" />
+        <Folder Include="Account" />
+        <Folder Include="Inventory" />
     </ItemGroup>
 
 </Project>

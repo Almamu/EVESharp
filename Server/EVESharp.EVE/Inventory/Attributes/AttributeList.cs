@@ -32,7 +32,7 @@ public class AttributeList : IEnumerable
         set => this [(int) index] = value;
     }
 
-    public Attribute this [EVE.StaticData.Inventory.Attributes index]
+    public Attribute this [EVE.StaticData.Inventory.AttributeTypes index]
     {
         get => this [(int) index];
         set => this [(int) index] = value;
@@ -51,7 +51,7 @@ public class AttributeList : IEnumerable
         return this.mItemAttributes.GetEnumerator ();
     }
 
-    public bool TryGetAttribute (EVE.StaticData.Inventory.Attributes index, out Attribute attrib)
+    public bool TryGetAttribute (EVE.StaticData.Inventory.AttributeTypes index, out Attribute attrib)
     {
         return this.mItemAttributes.TryGetValue ((int) index, out attrib) || this.mDefaultAttributes.TryGetValue ((int) index, out attrib);
     }
@@ -66,7 +66,7 @@ public class AttributeList : IEnumerable
         return this.mItemAttributes.ContainsKey (attributeID) || this.mDefaultAttributes.ContainsKey (attributeID);
     }
 
-    public bool AttributeExists (EVE.StaticData.Inventory.Attributes attributeID)
+    public bool AttributeExists (EVE.StaticData.Inventory.AttributeTypes attributeID)
     {
         return this.AttributeExists ((int) attributeID);
     }

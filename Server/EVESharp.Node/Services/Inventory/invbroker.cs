@@ -1,4 +1,3 @@
-using EVESharp.EVE;
 using EVESharp.EVE.Client.Exceptions.corpRegistry;
 using EVESharp.EVE.Client.Exceptions.inventory;
 using EVESharp.EVE.Client.Messages;

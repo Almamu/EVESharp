@@ -6,7 +6,6 @@ using EVESharp.EVE.Packets.Exceptions;
 using EVESharp.EVE.Services;
 using EVESharp.Node.Inventory;
 using EVESharp.Node.Inventory.Items;
-using EVESharp.Node.Network;
 using EVESharp.Node.Sessions;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Database;

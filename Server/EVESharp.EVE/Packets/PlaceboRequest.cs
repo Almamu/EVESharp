@@ -11,8 +11,8 @@ public class PlaceboRequest
 
     public PlaceboRequest(PyString command, PyDictionary arguments)
     {
-        this.Command   = command;
-        this.Arguments = arguments;
+        Command   = command;
+        Arguments = arguments;
     }
 
     public static implicit operator PlaceboRequest(PyDataType request)

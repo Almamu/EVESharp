@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using EVESharp.Common.Database;
 using EVESharp.Database;
-using EVESharp.EVE;
 using EVESharp.EVE.Sessions;
 using EVESharp.EVE.StaticData.Corporation;
 using EVESharp.EVE.Wallet;

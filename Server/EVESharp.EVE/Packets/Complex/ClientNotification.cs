@@ -16,7 +16,7 @@ public abstract class ClientNotification
         
     protected ClientNotification(string notificationName)
     {
-        this.NotificationName = notificationName;
+        NotificationName = notificationName;
     }
 
     /// <summary>

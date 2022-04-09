@@ -9,11 +9,11 @@ public class RequiredRole : Attribute
 
     public RequiredRole(ulong role)
     {
-        this.Role = role;
+        Role = role;
     }
 
     public RequiredRole(Roles role)
     {
-        this.Role = (ulong) role;
+        Role = (ulong) role;
     }
 }

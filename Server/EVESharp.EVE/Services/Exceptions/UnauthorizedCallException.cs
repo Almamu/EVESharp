@@ -10,7 +10,7 @@ public class UnauthorizedCallException<T> : Exception
 
     public UnauthorizedCallException(T service, string call, ulong roles)
     {
-        this.Service = service;
-        this.Call = call;
+        Service = service;
+        Call = call;
     }
 }

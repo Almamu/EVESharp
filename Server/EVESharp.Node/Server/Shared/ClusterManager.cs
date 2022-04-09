@@ -6,7 +6,6 @@ using System.Text.Json.Nodes;
 using System.Threading.Tasks;
 using EVESharp.Common.Logging;
 using EVESharp.EVE.Packets;
-using EVESharp.Node.Network;
 using EVESharp.Node.Server.Shared.Transports;
 using Serilog;
 
@@ -42,7 +41,7 @@ public class ClusterManager
                     {
                         RunMode.Proxy  => "proxy",
                         RunMode.Server => "server",
-                        _ => "single"
+                        _              => "single"
                     }
                 }
             }
@@ -142,7 +141,7 @@ public class ClusterManager
                 {
                     RunMode.Proxy  => "proxy",
                     RunMode.Server => "server",
-                    _ => "single"
+                    _              => "single"
                 }
             }
         );

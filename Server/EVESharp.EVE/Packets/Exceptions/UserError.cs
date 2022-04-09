@@ -63,11 +63,11 @@ public class UserError : PyException
         
     public UserError(string type, PyDictionary extra = null) : base("ccp_exceptions.UserError", type, extra, new PyDictionary())
     {
-        this.Keywords["msg"]  = this.Reason;
-        this.Keywords["dict"] = this.Dictionary;
+        Keywords["msg"]  = Reason;
+        Keywords["dict"] = Dictionary;
     }
 
-    public PyDictionary Dictionary => this.Extra as PyDictionary;
+    public PyDictionary Dictionary => Extra as PyDictionary;
 
     /// <summary>
     /// Used to format messages' arguments so we can send things like type ids, group ids, etc without actually
@@ -98,7 +98,7 @@ public class UserError : PyException
     /// <returns>Python representation of the argument</returns>
     protected static PyTuple FormatOwnerID(int ownerID)
     {
-        return UserError.FormatArgument(ArgumentType.OWNERID, ownerID);
+        return FormatArgument(ArgumentType.OWNERID, ownerID);
     }
 
     /// <summary>
@@ -108,7 +108,7 @@ public class UserError : PyException
     /// <returns>Python representation of the argument</returns>
     protected static PyTuple FormatLocationID(int locationID)
     {
-        return UserError.FormatArgument(ArgumentType.LOCID, locationID);
+        return FormatArgument(ArgumentType.LOCID, locationID);
     }
 
     /// <summary>
@@ -118,7 +118,7 @@ public class UserError : PyException
     /// <returns>Python representation of the argument</returns>
     protected static PyTuple FormatTypeIDAsName(int typeID)
     {
-        return UserError.FormatArgument(ArgumentType.TYPEID, typeID);
+        return FormatArgument(ArgumentType.TYPEID, typeID);
     }
 
     /// <summary>
@@ -128,7 +128,7 @@ public class UserError : PyException
     /// <returns>Python representation of the argument</returns>
     protected static PyTuple FormatTypeIDAsDescription(int typeID)
     {
-        return UserError.FormatArgument(ArgumentType.TYPEID2, typeID);
+        return FormatArgument(ArgumentType.TYPEID2, typeID);
     }
 
     /// <summary>
@@ -138,7 +138,7 @@ public class UserError : PyException
     /// <returns>Python representation of the argument</returns>
     protected static PyTuple FormatBlueprintTypeID(int bptypeID)
     {
-        return UserError.FormatArgument(ArgumentType.BPTYPEID, bptypeID);
+        return FormatArgument(ArgumentType.BPTYPEID, bptypeID);
     }
 
     /// <summary>
@@ -148,7 +148,7 @@ public class UserError : PyException
     /// <returns>Python representation of the argument</returns>
     protected static PyTuple FormatGroupIDAsName(int groupID)
     {
-        return UserError.FormatArgument(ArgumentType.GROUPID, groupID);
+        return FormatArgument(ArgumentType.GROUPID, groupID);
     }
 
     /// <summary>
@@ -158,7 +158,7 @@ public class UserError : PyException
     /// <returns>Python representation of the argument</returns>
     protected static PyTuple FormatGroupIDAsDescription(int groupID)
     {
-        return UserError.FormatArgument(ArgumentType.GROUPID2, groupID);
+        return FormatArgument(ArgumentType.GROUPID2, groupID);
     }
 
     /// <summary>
@@ -168,7 +168,7 @@ public class UserError : PyException
     /// <returns>Python representation of the argument</returns>
     protected static PyTuple FormatCategoryIDAsName(int categoryID)
     {
-        return UserError.FormatArgument(ArgumentType.CATID, categoryID);
+        return FormatArgument(ArgumentType.CATID, categoryID);
     }
 
     /// <summary>
@@ -178,7 +178,7 @@ public class UserError : PyException
     /// <returns>Python representation of the argument</returns>
     protected static PyTuple FormatCategoryIDAsDescription(int categoryID)
     {
-        return UserError.FormatArgument(ArgumentType.CATID2, categoryID);
+        return FormatArgument(ArgumentType.CATID2, categoryID);
     }
 
     /// <summary>
@@ -188,7 +188,7 @@ public class UserError : PyException
     /// <returns>Python representation of the argument</returns>
     protected static PyTuple FormatAmount(double amount)
     {
-        return UserError.FormatArgument(ArgumentType.AMT, amount);
+        return FormatArgument(ArgumentType.AMT, amount);
     }
 
     /// <summary>
@@ -198,7 +198,7 @@ public class UserError : PyException
     /// <returns>Python representation of the argument</returns>
     protected static PyTuple FormatAmount(int amount)
     {
-        return UserError.FormatArgument(ArgumentType.AMT, amount);
+        return FormatArgument(ArgumentType.AMT, amount);
     }
 
     /// <summary>
@@ -208,7 +208,7 @@ public class UserError : PyException
     /// <returns>Python representation of the argument</returns>
     protected static PyTuple FormatDateTime(long dateTime)
     {
-        return UserError.FormatArgument(ArgumentType.DATETIME, dateTime);
+        return FormatArgument(ArgumentType.DATETIME, dateTime);
     }
 
     /// <summary>
@@ -218,7 +218,7 @@ public class UserError : PyException
     /// <returns>Python representation of the argument</returns>
     protected static PyTuple FormatDate(long dateTime)
     {
-        return UserError.FormatArgument(ArgumentType.DATE, dateTime);
+        return FormatArgument(ArgumentType.DATE, dateTime);
     }
 
     /// <summary>
@@ -228,7 +228,7 @@ public class UserError : PyException
     /// <returns>Python representation of the argument</returns>
     protected static PyTuple FormatTime(long dateTime)
     {
-        return UserError.FormatArgument(ArgumentType.TIME, dateTime);
+        return FormatArgument(ArgumentType.TIME, dateTime);
     }
 
     /// <summary>
@@ -238,7 +238,7 @@ public class UserError : PyException
     /// <returns>Python representation of the argument</returns>
     protected static PyTuple FormatShortTime(long dateTime)
     {
-        return UserError.FormatArgument(ArgumentType.TIMESHRT, dateTime);
+        return FormatArgument(ArgumentType.TIMESHRT, dateTime);
     }
 
     /// <summary>
@@ -248,7 +248,7 @@ public class UserError : PyException
     /// <returns>Python representation of the argument</returns>
     protected static PyTuple FormatDistance(double distance)
     {
-        return UserError.FormatArgument(ArgumentType.DIST, distance);
+        return FormatArgument(ArgumentType.DIST, distance);
     }
 
     /// <summary>
@@ -258,7 +258,7 @@ public class UserError : PyException
     /// <returns>Python representation of the argument</returns>
     protected static PyTuple FormatAddThe(string toText)
     {
-        return UserError.FormatArgument(ArgumentType.ADD_THE, toText);
+        return FormatArgument(ArgumentType.ADD_THE, toText);
     }
 
     /// <summary>
@@ -268,7 +268,7 @@ public class UserError : PyException
     /// <returns>Python representation of the argument</returns>
     protected static PyTuple FormatAddA(string toText)
     {
-        return UserError.FormatArgument(ArgumentType.ADD_A, toText);
+        return FormatArgument(ArgumentType.ADD_A, toText);
     }
 
     /// <summary>
@@ -279,7 +279,7 @@ public class UserError : PyException
     /// <returns>Python representation of the argument</returns>
     protected static PyTuple FormatTypeIDAndQuantity(int typeID, int quantity)
     {
-        return UserError.FormatArgument(ArgumentType.TYPEIDANDQUANTITY, typeID, quantity);
+        return FormatArgument(ArgumentType.TYPEIDANDQUANTITY, typeID, quantity);
     }
 
     /// <summary>
@@ -289,7 +289,7 @@ public class UserError : PyException
     /// <returns>Python representation of the argument</returns>
     protected static PyTuple FormatOwnerIDNick(int ownerID)
     {
-        return UserError.FormatArgument(ArgumentType.OWNERIDNICK, ownerID);
+        return FormatArgument(ArgumentType.OWNERIDNICK, ownerID);
     }
 
     /// <summary>
@@ -300,7 +300,7 @@ public class UserError : PyException
     /// <returns>Python representation of the argument</returns>
     protected static PyTuple FormatSessionSensitiveStationID(int stationID, int solarSystemID)
     {
-        return UserError.FormatArgument(ArgumentType.SESSIONSENSITIVESTATIONID, stationID, solarSystemID);
+        return FormatArgument(ArgumentType.SESSIONSENSITIVESTATIONID, stationID, solarSystemID);
     }
 
     /// <summary>
@@ -311,7 +311,7 @@ public class UserError : PyException
     /// <returns>Python representation of the argument</returns>
     protected static PyTuple FormatSessionSensitiveLocationID(int locationID)
     {
-        return UserError.FormatArgument(ArgumentType.SESSIONSENSITIVELOCID, locationID);
+        return FormatArgument(ArgumentType.SESSIONSENSITIVELOCID, locationID);
     }
 
     /// <summary>
@@ -321,7 +321,7 @@ public class UserError : PyException
     /// <returns>Python representation of the argument</returns>
     protected static PyTuple FormatISK(double isk)
     {
-        return UserError.FormatArgument(ArgumentType.ISK, isk);
+        return FormatArgument(ArgumentType.ISK, isk);
     }
 
     /// <summary>
@@ -338,7 +338,7 @@ public class UserError : PyException
         foreach (int typeID in typeList)
             list[i++] = typeID;
 
-        return UserError.FormatArgument(ArgumentType.TYPEIDL, list);
+        return FormatArgument(ArgumentType.TYPEIDL, list);
     }
 
     /// <summary>
@@ -348,6 +348,6 @@ public class UserError : PyException
     /// <returns>Python representation of the argument</returns>
     protected static PyTuple FormatItemTypeList(PyList<PyInteger> typeList)
     {
-        return UserError.FormatArgument(ArgumentType.TYPEIDL, typeList);
+        return FormatArgument(ArgumentType.TYPEIDL, typeList);
     }
 }

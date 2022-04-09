@@ -1,5 +1,4 @@
 ﻿using System;
-using EVESharp.EVE;
 using EVESharp.EVE.Client.Exceptions.insuranceSvc;
 using EVESharp.EVE.Client.Exceptions.jumpCloneSvc;
 using EVESharp.EVE.Packets.Exceptions;
@@ -11,7 +10,6 @@ using EVESharp.Node.Database;
 using EVESharp.Node.Inventory;
 using EVESharp.Node.Inventory.Items.Types;
 using EVESharp.Node.Market;
-using EVESharp.Node.Network;
 using EVESharp.Node.Sessions;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Database;

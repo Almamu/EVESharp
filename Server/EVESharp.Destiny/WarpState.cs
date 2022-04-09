@@ -2,7 +2,7 @@
 
 namespace EVESharp.Destiny;
 
-[StructLayout(LayoutKind.Sequential, Pack = 1)]
+[StructLayout (LayoutKind.Sequential, Pack = 1)]
 public struct WarpState
 {
     public Vector3 Location;

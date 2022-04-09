@@ -1,5 +1,4 @@
 using EVESharp.EVE.Services;
-using EVESharp.Node.Network;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Primitives;
 

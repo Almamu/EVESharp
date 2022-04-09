@@ -2,7 +2,7 @@
 
 namespace EVESharp.Destiny;
 
-[StructLayout(LayoutKind.Sequential, Pack = 1)]
+[StructLayout (LayoutKind.Sequential, Pack = 1)]
 public struct Header
 {
     /// <summary>
@@ -10,7 +10,7 @@ public struct Header
     /// affects incrementally updating the ballpark or something
     /// </summary>
     public byte PacketType;
-        
+
     /// <summary>
     /// also occours in the marshal destiny updates, unk
     /// </summary>

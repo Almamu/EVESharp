@@ -9,7 +9,7 @@ public class MissingCallException : Exception
 
     public MissingCallException(string service, string call)
     {
-        this.Service = service;
-        this.Call = call;
+        Service = service;
+        Call = call;
     }
 }

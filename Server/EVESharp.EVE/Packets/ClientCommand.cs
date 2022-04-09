@@ -10,7 +10,7 @@ public class ClientCommand
 
     public ClientCommand(string command)
     {
-        this.Command = command;
+        Command = command;
     }
 
     public static implicit operator ClientCommand(PyDataType data)

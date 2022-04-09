@@ -48,7 +48,7 @@ public class ItemEffects
             this.ApplyPassiveEffects ();
 
             // special case, check for the isOnline attribute and put the module online if so
-            if (Module.Attributes [Attributes.isOnline] == 1)
+            if (Module.Attributes [AttributeTypes.isOnline] == 1)
                 this.ApplyEffect ("online");
         }
     }
@@ -94,7 +94,7 @@ public class ItemEffects
             else if (opcode is OpcodeWithDoubleOutput doubleOutput)
                 doubleOutput.Execute ();
         }
-        catch (System.Exception)
+        catch (Exception)
         {
             // notify the client about it
             // TODO: THIS MIGHT NEED MORE NOTIFICATIONS

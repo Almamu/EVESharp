@@ -1,6 +1,5 @@
 ﻿using EVESharp.EVE.Services;
 using EVESharp.Node.Database;
-using EVESharp.Node.Network;
 using EVESharp.Node.Sessions;
 using EVESharp.PythonTypes.Types.Primitives;
 

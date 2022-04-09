@@ -6,59 +6,66 @@ namespace EVESharp.Destiny;
 
 public class UpdateReader
 {
-    public Header     Header { get; private set; }
-    public List<Ball> Balls  { get; private set; }
+    public Header      Header { get; private set; }
+    public List <Ball> Balls  { get; private set; }
 
-    public void Read(Stream str)
+    public void Read (Stream str)
     {
-        ReadHeader(str);
-        Balls = new List<Ball>(5);
+        this.ReadHeader (str);
+        Balls = new List <Ball> (5);
         while (str.Position < str.Length)
-            Balls.Add(ReadBallFromStream(str));
+            Balls.Add (ReadBallFromStream (str));
     }
 
-    private static Ball ReadBallFromStream(Stream str)
+    private static Ball ReadBallFromStream (Stream str)
     {
-        Ball ret = new Ball {Header = str.ReadStruct<BallHeader>()};
+        Ball ret = new Ball {Header = str.ReadStruct <BallHeader> ()};
 
         if (ret.Header.Mode != BallMode.Rigid)
-            ret.ExtraHeader = str.ReadStruct<ExtraBallHeader>();
+            ret.ExtraHeader = str.ReadStruct <ExtraBallHeader> ();
 
-        if (ret.Header.Flags.HasFlag(BallFlag.IsFree))
-            ret.Data = str.ReadStruct<BallData>();
+        if (ret.Header.Flags.HasFlag (BallFlag.IsFree))
+            ret.Data = str.ReadStruct <BallData> ();
 
-        BinaryReader reader = new BinaryReader(str);
-        ret.FormationId = reader.ReadByte();
+        BinaryReader reader = new BinaryReader (str);
+        ret.FormationId = reader.ReadByte ();
 
         switch (ret.Header.Mode)
         {
             case BallMode.Follow:
             case BallMode.Orbit:
-                ret.FollowState = str.ReadStruct<FollowState>();
+                ret.FollowState = str.ReadStruct <FollowState> ();
+
                 break;
 
             case BallMode.Formation:
-                ret.FormationState = str.ReadStruct<FormationState>();
+                ret.FormationState = str.ReadStruct <FormationState> ();
+
                 break;
 
             case BallMode.Troll:
-                ret.TrollState = str.ReadStruct<TrollState>();
+                ret.TrollState = str.ReadStruct <TrollState> ();
+
                 break;
 
             case BallMode.Missile:
-                ret.MissileState = str.ReadStruct<MissileState>();
+                ret.MissileState = str.ReadStruct <MissileState> ();
+
                 break;
 
             case BallMode.Goto:
-                ret.GotoState = str.ReadStruct<GotoState>();
+                ret.GotoState = str.ReadStruct <GotoState> ();
+
                 break;
 
             case BallMode.Warp:
-                ret.WarpState = str.ReadStruct<WarpState>();
+                ret.WarpState = str.ReadStruct <WarpState> ();
+
                 break;
 
             case BallMode.Mushroom:
-                ret.MushroomState = str.ReadStruct<MushroomState>();
+                ret.MushroomState = str.ReadStruct <MushroomState> ();
+
                 break;
 
             case BallMode.Stop:
@@ -68,8 +75,8 @@ public class UpdateReader
                 break;
         }
 
-        if (ret.Header.Flags.HasFlag(BallFlag.HasMiniBalls))
-            ret.MiniBalls = ReadMiniBalls(reader);
+        if (ret.Header.Flags.HasFlag (BallFlag.HasMiniBalls))
+            ret.MiniBalls = ReadMiniBalls (reader);
 
         // Crucible:
         // no more names in destiny data
@@ -79,33 +86,36 @@ public class UpdateReader
         return ret;
     }
 
-    private static string ReadString(BinaryReader reader)
+    private static string ReadString (BinaryReader reader)
     {
-        byte nameWords = reader.ReadByte();
+        byte nameWords = reader.ReadByte ();
+
         if (nameWords > 0)
         {
-            byte[] rawName = reader.ReadBytes(nameWords * 2);
-            return Encoding.Unicode.GetString(rawName);
+            byte [] rawName = reader.ReadBytes (nameWords * 2);
+
+            return Encoding.Unicode.GetString (rawName);
         }
+
         return null;
     }
 
-    private void ReadHeader(Stream str)
+    private void ReadHeader (Stream str)
     {
-        Header = str.ReadStruct<Header>();
+        Header = str.ReadStruct <Header> ();
+
         if (Header.PacketType != 0 && Header.PacketType != 1)
-            throw new InvalidDataException("Unknown packet type; expected 0 or 1, got " + Header.PacketType);
+            throw new InvalidDataException ("Unknown packet type; expected 0 or 1, got " + Header.PacketType);
     }
 
-    private static MiniBall[] ReadMiniBalls(BinaryReader reader)
+    private static MiniBall [] ReadMiniBalls (BinaryReader reader)
     {
-        int        extraCount = reader.ReadInt16();
-        MiniBall[] ret        = new MiniBall[extraCount];
+        int         extraCount = reader.ReadInt16 ();
+        MiniBall [] ret        = new MiniBall[extraCount];
         if (extraCount > 0)
-        {
             for (int i = 0; i < extraCount; i++)
-                ret[i] = reader.ReadStruct<MiniBall>();
-        }
+                ret [i] = reader.ReadStruct <MiniBall> ();
+
         return ret;
     }
 }

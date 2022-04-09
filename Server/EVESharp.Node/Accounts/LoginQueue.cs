@@ -28,7 +28,6 @@ using EVESharp.Common.Network.Messages;
 using EVESharp.EVE.Packets;
 using EVESharp.Node.Configuration;
 using EVESharp.Node.Database;
-using EVESharp.Node.Network;
 using EVESharp.Node.Server.Shared.Transports;
 using Serilog;
 

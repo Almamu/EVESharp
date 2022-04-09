@@ -28,7 +28,7 @@ public class OpcodeSET : OpcodeRunnable
             if (Value is OpcodeDEFINT defint)
             {
                 ItemEntity item      = att.ItemToAffect.GetItem ();
-                Attributes attribute = att.AttributeToAffect.Attribute;
+                AttributeTypes attribute = att.AttributeToAffect.Attribute;
 
                 item.Attributes [att.AttributeToAffect.Attribute].Integer = defint.Value;
 

@@ -19,7 +19,7 @@ public abstract class Service
     /// <summary>
     /// Returns the service name
     /// </summary>
-    public string Name => GetType().Name;
+    public string Name => this.GetType().Name;
 
     /// <summary>
     /// Searches for all the methods available with the given name

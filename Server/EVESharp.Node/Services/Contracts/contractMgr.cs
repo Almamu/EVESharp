@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using EVESharp.EVE;
 using EVESharp.EVE.Client.Exceptions.contractMgr;
 using EVESharp.EVE.Packets.Exceptions;
 using EVESharp.EVE.Services;

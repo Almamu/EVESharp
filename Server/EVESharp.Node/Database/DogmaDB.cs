@@ -101,7 +101,7 @@ public class DogmaDB : DatabaseAccessor
             ExpressionValue = expressionToLoad.ExpressionValue,
             FirstArgument   = firstArgument,
             SecondArgument  = secondArgument,
-            AttributeID     = expressionToLoad.AttributeID is null ? null : (Attributes) expressionToLoad.AttributeID
+            AttributeID     = expressionToLoad.AttributeID is null ? null : (AttributeTypes) expressionToLoad.AttributeID
         };
     }
 

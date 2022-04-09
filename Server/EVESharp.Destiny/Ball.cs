@@ -7,7 +7,7 @@ public class Ball
     public BallData        Data        { get; set; }
     public byte            FormationId { get; set; }
     public string          Name        { get; set; }
-    public MiniBall[]      MiniBalls   { get; set; }
+    public MiniBall []     MiniBalls   { get; set; }
 
     public FollowState    FollowState    { get; set; }
     public FormationState FormationState { get; set; }
@@ -17,21 +17,21 @@ public class Ball
     public WarpState      WarpState      { get; set; }
     public MushroomState  MushroomState  { get; set; }
 
-    public override string ToString()
+    public override string ToString ()
     {
-        return "(" + Header.ItemId + ((Name == null || Name == "A") ? ")" : " " + Name + ")");
+        return "(" + Header.ItemId + (Name == null || Name == "A" ? ")" : " " + Name + ")");
     }
 
-    public override bool Equals(object obj)
+    public override bool Equals (object obj)
     {
-        if (obj == null || GetType() != obj.GetType())
+        if (obj == null || this.GetType () != obj.GetType ())
             return false;
 
-        return ((Ball)obj).Header.ItemId == Header.ItemId;
+        return ((Ball) obj).Header.ItemId == Header.ItemId;
     }
 
-    public override int GetHashCode()
+    public override int GetHashCode ()
     {
-        return Header.ItemId.GetHashCode();
+        return Header.ItemId.GetHashCode ();
     }
 }

@@ -31,11 +31,9 @@ using EVESharp.Node.Dogma;
 using EVESharp.Node.Inventory;
 using EVESharp.Node.Inventory.Exceptions;
 using EVESharp.Node.Inventory.Items;
-using EVESharp.Node.Inventory.Items.Dogma;
 using EVESharp.Node.Inventory.Items.Types.Information;
 using EVESharp.PythonTypes.Types.Database;
 using MySql.Data.MySqlClient;
-using Attribute = EVESharp.EVE.Inventory.Attributes.Attribute;
 
 namespace EVESharp.Node.Database;
 

@@ -28,5 +28,5 @@ public enum BallFlag : byte
     /// <summary>
     /// if set, the reader tries to read extra mini balls
     /// </summary>
-    HasMiniBalls = 1 << 6,
+    HasMiniBalls = 1 << 6
 }

@@ -118,13 +118,13 @@ public class BoundInventory : ClientBoundService
         {
             // check destination cargo
             double currentVolume =
-                ship.Items.Sum (x => x.Value.Flag != flag ? 0.0 : x.Value.Quantity * x.Value.Attributes [Attributes.volume]);
+                ship.Items.Sum (x => x.Value.Flag != flag ? 0.0 : x.Value.Quantity * x.Value.Attributes [AttributeTypes.volume]);
 
-            double newVolume = item.Attributes [Attributes.volume] * quantityToMove + currentVolume;
-            double maxVolume = this.mInventory.Attributes [Attributes.capacity];
+            double newVolume = item.Attributes [AttributeTypes.volume] * quantityToMove + currentVolume;
+            double maxVolume = this.mInventory.Attributes [AttributeTypes.capacity];
 
             if (newVolume > maxVolume)
-                throw new NotEnoughCargoSpace (currentVolume, this.mInventory.Attributes [Attributes.capacity] - currentVolume);
+                throw new NotEnoughCargoSpace (currentVolume, this.mInventory.Attributes [AttributeTypes.capacity] - currentVolume);
         }
     }
 
@@ -133,7 +133,7 @@ public class BoundInventory : ClientBoundService
         Dictionary <Flags, ItemEntity> modules = ship.HighSlotModules;
 
         // ensure there's a free slot
-        if (modules.Count >= ship.Attributes [Attributes.hiSlots])
+        if (modules.Count >= ship.Attributes [AttributeTypes.hiSlots])
             throw new NoFreeShipSlots ();
 
         if (modules.ContainsKey (Flags.HiSlot0) == false)
@@ -161,7 +161,7 @@ public class BoundInventory : ClientBoundService
         Dictionary <Flags, ItemEntity> modules = ship.MediumSlotModules;
 
         // ensure there's a free slot
-        if (modules.Count >= ship.Attributes [Attributes.medSlots])
+        if (modules.Count >= ship.Attributes [AttributeTypes.medSlots])
             throw new NoFreeShipSlots ();
 
         if (modules.ContainsKey (Flags.MedSlot0) == false)
@@ -189,7 +189,7 @@ public class BoundInventory : ClientBoundService
         Dictionary <Flags, ItemEntity> modules = ship.LowSlotModules;
 
         // ensure there's a free slot
-        if (modules.Count >= ship.Attributes [Attributes.lowSlots])
+        if (modules.Count >= ship.Attributes [AttributeTypes.lowSlots])
             throw new NoFreeShipSlots ();
 
         if (modules.ContainsKey (Flags.LoSlot0) == false)
@@ -217,7 +217,7 @@ public class BoundInventory : ClientBoundService
         Dictionary <Flags, ItemEntity> modules = ship.RigSlots;
 
         // ensure there's a free slot
-        if (modules.Count >= ship.Attributes [Attributes.rigSlots])
+        if (modules.Count >= ship.Attributes [AttributeTypes.rigSlots])
             throw new NoFreeShipSlots ();
 
         if (modules.ContainsKey (Flags.RigSlot0) == false)
@@ -257,7 +257,7 @@ public class BoundInventory : ClientBoundService
             {
                 ItemEffects effects = EffectsManager.GetForItem (module);
 
-                if (module.Attributes [Attributes.isOnline] == 1)
+                if (module.Attributes [AttributeTypes.isOnline] == 1)
                     effects.StopApplyingEffect ("online", session);
 
                 // disable passive effects too

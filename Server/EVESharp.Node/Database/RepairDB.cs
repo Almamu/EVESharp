@@ -20,7 +20,7 @@ public class RepairDB : DatabaseAccessor
                 {"@locationID", locationID},
                 {"@ownerID", ownerID},
                 {"@itemID", itemID},
-                {"@damageAttributeID", (int) Attributes.damage}
+                {"@damageAttributeID", (int) AttributeTypes.damage}
             }
         );
 

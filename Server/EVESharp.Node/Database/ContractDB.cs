@@ -277,8 +277,8 @@ public class ContractDB : DatabaseAccessor
                     {"@locationID", station.ID},
                     {"@ownerID", ownerID},
                     {"@itemID", itemID},
-                    {"@damage", (int) Attributes.damage},
-                    {"@volume", (int) Attributes.volume}
+                    {"@damage", (int) AttributeTypes.damage},
+                    {"@volume", (int) AttributeTypes.volume}
                 }
             );
 
@@ -906,7 +906,7 @@ public class ContractDB : DatabaseAccessor
             {
                 {"@locationID", station.ID},
                 {"@ownerID", ownerID},
-                {"@damage", (int) Attributes.damage},
+                {"@damage", (int) AttributeTypes.damage},
                 {"@flag", (int) flag}
             }
         );

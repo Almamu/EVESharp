@@ -1,6 +1,6 @@
 namespace EVESharp.EVE.StaticData.Inventory;
 
-public enum Attributes
+public enum AttributeTypes
 {
     isOnline                                     = 2,
     damage                                       = 3,

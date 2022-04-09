@@ -181,11 +181,11 @@ public class dogmaIM : ClientBoundService
 
         return new PyDictionary
         {
-            [(int) Attributes.willpower]    = character.Willpower,
-            [(int) Attributes.charisma]     = character.Charisma,
-            [(int) Attributes.intelligence] = character.Intelligence,
-            [(int) Attributes.perception]   = character.Perception,
-            [(int) Attributes.memory]       = character.Memory
+            [(int) AttributeTypes.willpower]    = character.Willpower,
+            [(int) AttributeTypes.charisma]     = character.Charisma,
+            [(int) AttributeTypes.intelligence] = character.Intelligence,
+            [(int) AttributeTypes.perception]   = character.Perception,
+            [(int) AttributeTypes.memory]       = character.Memory
         };
     }
 

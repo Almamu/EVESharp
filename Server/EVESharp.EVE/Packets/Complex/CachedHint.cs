@@ -109,6 +109,6 @@ public class CachedHint
     /// <returns></returns>
     public static CachedHint FromPyObject(PyDataType objectID, PyDataType data, long timestamp, long nodeID)
     {
-        return FromBuffer(objectID, EVESharp.PythonTypes.Marshal.Marshal.ToByteArray(data), timestamp, nodeID);
+        return FromBuffer(objectID, PythonTypes.Marshal.Marshal.ToByteArray(data), timestamp, nodeID);
     }
 }

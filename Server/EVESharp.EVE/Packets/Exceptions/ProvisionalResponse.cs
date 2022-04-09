@@ -25,8 +25,8 @@ public class ProvisionalResponse : Exception
 
     public ProvisionalResponse(PyString eventID, PyTuple arguments, int timeout = DEFAULT_TIMEOUT)
     {
-        this.EventID   = eventID;
-        this.Arguments = arguments;
-        this.Timeout   = timeout;
+        EventID   = eventID;
+        Arguments = arguments;
+        Timeout   = timeout;
     }
 }

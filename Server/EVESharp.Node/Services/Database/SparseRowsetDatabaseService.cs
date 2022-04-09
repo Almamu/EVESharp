@@ -1,6 +1,5 @@
 ﻿using System;
 using EVESharp.EVE.Sessions;
-using EVESharp.Node.Network;
 using EVESharp.Node.Sessions;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Database;

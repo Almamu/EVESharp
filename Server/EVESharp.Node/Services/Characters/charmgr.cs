@@ -1,11 +1,9 @@
-using EVESharp.EVE;
 using EVESharp.EVE.Services;
 using EVESharp.EVE.Wallet;
 using EVESharp.Node.Database;
 using EVESharp.Node.Inventory;
 using EVESharp.Node.Inventory.Items.Types;
 using EVESharp.Node.Market;
-using EVESharp.Node.Network;
 using EVESharp.Node.Sessions;
 using EVESharp.PythonTypes.Types.Primitives;
 

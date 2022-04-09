@@ -2,7 +2,6 @@ using EVESharp.EVE.Packets.Exceptions;
 using EVESharp.EVE.Services;
 using EVESharp.Node.Database;
 using EVESharp.Node.Inventory;
-using EVESharp.Node.Network;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Primitives;
 using Serilog;

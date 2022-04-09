@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using EVESharp.EVE;
 using EVESharp.EVE.Packets.Complex;
 using EVESharp.EVE.Wallet;
 using EVESharp.PythonTypes.Types.Primitives;
@@ -30,7 +29,7 @@ public class OnAccountChange : ClientNotification
             Keys.FIFTH   => "cash5",
             Keys.SIXTH   => "cash6",
             Keys.SEVENTH => "cash7",
-            _                         => ""
+            _            => ""
         };
     }
 

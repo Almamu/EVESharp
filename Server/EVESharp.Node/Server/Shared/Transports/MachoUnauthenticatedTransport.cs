@@ -120,7 +120,7 @@ public class MachoUnauthenticatedTransport : MachoTransport
                 {
                     RunMode.Proxy  => "proxy",
                     RunMode.Server => "server",
-                    _ => "single"
+                    _              => "single"
                 }
             }
         );
