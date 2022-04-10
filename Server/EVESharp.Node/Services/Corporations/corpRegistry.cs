@@ -12,6 +12,7 @@ using EVESharp.EVE.Market;
 using EVESharp.EVE.Packets.Complex;
 using EVESharp.EVE.Packets.Exceptions;
 using EVESharp.EVE.Services;
+using EVESharp.EVE.Services.Validators;
 using EVESharp.EVE.Sessions;
 using EVESharp.EVE.StaticData.Corporation;
 using EVESharp.EVE.StaticData.Inventory;
@@ -149,12 +150,9 @@ public class corpRegistry : MultiClientBoundService
         return DB.GetShareholders (corporationID);
     }
 
+    [RequiredCorporationRole(CorporationRole.Director, MLS.UI_CORP_DO_NOT_HAVE_ROLE_DIRECTOR)]
     public PyDataType MoveCompanyShares (PyInteger corporationID, PyInteger to, PyInteger quantity, CallInformation call)
     {
-        // check that we're allowed to do that
-        if (CorporationRole.Director.Is (call.Session.CorporationRole) == false)
-            throw new CrpAccessDenied (MLS.UI_CORP_DO_NOT_HAVE_ROLE_DIRECTOR);
-
         // TODO: the WALLETKEY SHOULD BE SOMETHING ELSE?
         using (Wallet corporationWallet = WalletManager.AcquireWallet (call.Session.CorporationID, 2000))
         using (Wallet shareholderWallet = WalletManager.AcquireWallet (to, 2000))
@@ -314,12 +312,9 @@ public class corpRegistry : MultiClientBoundService
         return DB.GetStations (call.Session.CorporationID);
     }
 
+    [RequiredCorporationRole(CorporationRole.Director)]
     public PyDataType GetMemberTrackingInfo (PyInteger characterID, CallInformation call)
     {
-        // only directors can call this function
-        if (CorporationRole.Director.Is (call.Session.CorporationRole) == false)
-            return null;
-
         return DB.GetMemberTrackingInfo (call.Session.CorporationID, characterID);
     }
 
@@ -377,7 +372,7 @@ public class corpRegistry : MultiClientBoundService
         if (this.CanBeKickedOut (characterID, call) == false)
             return null;
 
-        // 
+        // TODO: IMPLEMENT THIS
 
         return null;
     }
@@ -414,6 +409,7 @@ public class corpRegistry : MultiClientBoundService
             throw new AllianceNameInvalidBannedWord ();
     }
 
+    [RequiredSessionMissing(Session.ALLIANCE_ID, typeof(AllianceCreateFailCorpInAlliance))]
     public PyDataType CreateAlliance (PyString name, PyString shortName, PyString description, PyString url, CallInformation call)
     {
         int callerCharacterID = call.Session.EnsureCharacterIsSelected ();
@@ -422,9 +418,6 @@ public class corpRegistry : MultiClientBoundService
             throw new OnlyActiveCEOCanCreateAlliance ();
 
         // TODO: CHECK FOR ACTIVE WARS AND THROW A CUSTOMERROR WITH THIS TEXT: UI_CORP_HINT7
-
-        if (call.Session.AllianceID != null)
-            throw new AllianceCreateFailCorpInAlliance ();
 
         this.ValidateAllianceName (name, shortName);
         // delete any existant application to alliances
@@ -525,18 +518,14 @@ public class corpRegistry : MultiClientBoundService
             throw new CorpNameInvalidBannedWord ();
     }
 
+    [RequiredSession(Session.STATION_ID, typeof(CanOnlyCreateCorpInStation))]
+    [RequiredCorporationRole(CorporationRole.Director, typeof(CEOCannotCreateCorporation))]
     public PyDataType AddCorporation (
         PyString  corporationName, PyString  tickerName, PyString   description,
         PyString  url,             PyDecimal taxRate,    PyInteger  shape1,   PyInteger       shape2, PyInteger shape3, PyInteger color1,
         PyInteger color2,          PyInteger color3,     PyDataType typeface, CallInformation call
     )
     {
-        // do some basic checks on what the player can do
-        if (CorporationRole.Director.Is (call.Session.CorporationRole))
-            throw new CEOCannotCreateCorporation ();
-        if (call.Session.StationID == null)
-            throw new CanOnlyCreateCorpInStation ();
-
         // TODO: CHECK FOR POS AS ITS NOT POSSIBLE TO CREATE CORPORATIONS THERE
         this.ValidateCorporationName (corporationName, tickerName);
 
@@ -661,6 +650,7 @@ public class corpRegistry : MultiClientBoundService
             throw new UserError ("CorpDiv" + divisionNumber + "NameInvalidBannedWord");
     }
 
+    [RequiredCorporationRole(CorporationRole.Director)]
     public PyDataType UpdateDivisionNames (
         PyString        division1, PyString division2, PyString division3,
         PyString        division4, PyString division5, PyString division6, PyString division7, PyString wallet1,
@@ -668,7 +658,7 @@ public class corpRegistry : MultiClientBoundService
         CallInformation call
     )
     {
-        if (CorporationRole.Director.Is (call.Session.CorporationRole) == false || call.Session.CorporationID != Corporation.ID)
+        if (call.Session.CorporationID != Corporation.ID)
             return null;
 
         // validate division names
@@ -741,9 +731,10 @@ public class corpRegistry : MultiClientBoundService
         return null;
     }
 
+    [RequiredCorporationRole(CorporationRole.Director)]
     public PyDataType UpdateCorporation (PyString newDescription, PyString newUrl, PyDecimal newTax, CallInformation call)
     {
-        if (CorporationRole.Director.Is (call.Session.CorporationRole) == false || call.Session.CorporationID != Corporation.ID)
+        if (call.Session.CorporationID != Corporation.ID)
             return null;
 
         // update information in the database
@@ -766,12 +757,9 @@ public class corpRegistry : MultiClientBoundService
         return null;
     }
 
+    [RequiredCorporationRole(CorporationRole.Director)]
     public PyDataType GetMemberTrackingInfo (CallInformation call)
     {
-        // only directors can call this function
-        if (CorporationRole.Director.Is (call.Session.CorporationRole) == false)
-            return null;
-
         return DB.GetMemberTrackingInfo (call.Session.CorporationID);
     }
 
@@ -1350,12 +1338,9 @@ public class corpRegistry : MultiClientBoundService
         return null;
     }
 
+    [RequiredCorporationRole(CorporationRole.Director, MLS.UI_CORP_DO_NOT_HAVE_ROLE_DIRECTOR)]
     public PyDataType UpdateTitles (PyObjectData rowset, CallInformation call)
     {
-        // ensure the character has the director role
-        if (CorporationRole.Director.Is (call.Session.CorporationRole) == false)
-            throw new CrpAccessDenied (MLS.UI_CORP_DO_NOT_HAVE_ROLE_DIRECTOR);
-
         Rowset list = rowset;
 
         // update the changed titles first
@@ -1463,11 +1448,9 @@ public class corpRegistry : MultiClientBoundService
         return Corporation.ID == session.CorporationID;
     }
 
+    [RequiredCorporationRole(CorporationRole.PersonnelManager, MLS.UI_CORP_NEED_ROLE_PERS_MAN_TO_MANAGE_ADS)]
     public PyDataType DeleteRecruitmentAd (PyInteger advertID, CallInformation call)
     {
-        if (CorporationRole.PersonnelManager.Is (call.Session.CorporationRole) == false)
-            throw new CrpAccessDenied (MLS.UI_CORP_NEED_ROLE_PERS_MAN_TO_MANAGE_ADS);
-
         if (DB.DeleteRecruitmentAd (advertID, call.Session.CorporationID))
             // TODO: MAYBE NOTIFY CHARACTERS IN THE STATION?
             // send notification
@@ -1480,13 +1463,11 @@ public class corpRegistry : MultiClientBoundService
         return null;
     }
 
+    [RequiredCorporationRole(CorporationRole.PersonnelManager, MLS.UI_CORP_NEED_ROLE_PERS_MAN_TO_MANAGE_ADS)]
     public PyDataType UpdateRecruitmentAd (
         PyInteger adID, PyInteger typeMask, PyInteger raceMask, PyInteger skillPoints, PyString description, CallInformation call
     )
     {
-        if (CorporationRole.PersonnelManager.Is (call.Session.CorporationRole) == false)
-            throw new CrpAccessDenied (MLS.UI_CORP_NEED_ROLE_PERS_MAN_TO_MANAGE_ADS);
-
         if (DB.UpdateRecruitmentAd (adID, call.Session.CorporationID, typeMask, raceMask, description, skillPoints))
         {
             OnCorporationRecruitmentAdChanged changes = new OnCorporationRecruitmentAdChanged (call.Session.CorporationID, adID);
@@ -1504,12 +1485,9 @@ public class corpRegistry : MultiClientBoundService
         return null;
     }
 
+    [RequiredCorporationRole(CorporationRole.PersonnelManager, MLS.UI_CORP_NEED_ROLE_PERS_MAN_TO_MANAGE_APPLICATIONS)]
     public PyDataType GetApplications (CallInformation call)
     {
-        if (CorporationRole.PersonnelManager.Is (call.Session.CorporationRole) == false)
-            throw new CrpAccessDenied (MLS.UI_CORP_NEED_ROLE_PERS_MAN_TO_MANAGE_APPLICATIONS);
-
-
         return Database.DictRowList (
             CorporationDB.LIST_APPLICATIONS,
             new Dictionary <string, object> {{"_corporationID", call.Session.CorporationID}}
@@ -1561,11 +1539,9 @@ public class corpRegistry : MultiClientBoundService
         return null;
     }
 
+    [RequiredCorporationRole(CorporationRole.PersonnelManager, MLS.UI_CORP_NEED_ROLE_PERS_MAN_TO_MANAGE_APPLICATIONS)]
     public PyDataType UpdateApplicationOffer (PyInteger characterID, PyString text, PyInteger newStatus, PyInteger applicationDateTime, CallInformation call)
     {
-        if (CorporationRole.PersonnelManager.Is (call.Session.CorporationRole) == false)
-            throw new CrpAccessDenied (MLS.UI_CORP_NEED_ROLE_PERS_MAN_TO_MANAGE_APPLICATIONS);
-
         // TODO: CHECK THAT THE APPLICATION EXISTS TO PREVENT A CHARACTER FROM BEING FORCE TO JOIN A CORPORATION!!
 
         string characterName = CharacterDB.GetCharacterName (characterID);
@@ -1602,18 +1578,19 @@ public class corpRegistry : MultiClientBoundService
 
             if (characterNodeID > 0)
             {
-                Session update = new Session ();
-                // update character's session
-                update.CorporationID   = corporationID;
-                update.RolesAtAll      = 0;
-                update.CorporationRole = 0;
-                update.RolesAtBase     = 0;
-                update.RolesAtOther    = 0;
-                update.RolesAtHQ       = 0;
+                Session update = new Session {
+                    // update character's session
+                    CorporationID   = corporationID,
+                    RolesAtAll      = 0,
+                    CorporationRole = 0,
+                    RolesAtBase     = 0,
+                    RolesAtOther    = 0,
+                    RolesAtHQ       = 0
+                };
                 // finally send the session change
                 SessionManager.PerformSessionUpdate (Session.CHAR_ID, characterID, update);
 
-                // player is conected, notify the node that owns it to make the changes required
+                // player is connected, notify the node that owns it to make the changes required
                 Notifications.Nodes.Corps.OnCorporationMemberChanged nodeNotification =
                     new Notifications.Nodes.Corps.OnCorporationMemberChanged (characterID, oldCorporationID, corporationID);
 
@@ -1678,14 +1655,12 @@ public class corpRegistry : MultiClientBoundService
                DB.GetSharesForOwner (corporationID, call.Session.EnsureCharacterIsSelected ()) > 0;
     }
 
+    [RequiredCorporationRole(CorporationRole.Director, typeof(CrpOnlyDirectorsCanProposeVotes))]
     public PyDataType InsertVoteCase (
         PyString text, PyString description, PyInteger corporationID, PyInteger type, PyDataType rowsetOptions, PyInteger startDateTime, PyInteger endDateTime,
         CallInformation call
     )
     {
-        if (CorporationRole.Director.Is (call.Session.CorporationRole) == false)
-            throw new CrpOnlyDirectorsCanProposeVotes ();
-
         // TODO: current CEO seems to loose control if the vote is for a new CEO, this might complicate things a little on the permissions side of things
         /*                'MAIL_TEMPLATE_CEO_ROLES_REVOKED_BODY': (2424454,
                                                      u'%(candidateName)s is running for CEO in %(corporationName)s. Your roles as CEO have been revoked for the duration of the voting period.'),

@@ -5,6 +5,7 @@ using EVESharp.EVE.Client.Exceptions.corpRegistry;
 using EVESharp.EVE.Client.Messages;
 using EVESharp.EVE.Market;
 using EVESharp.EVE.Services;
+using EVESharp.EVE.Services.Validators;
 using EVESharp.EVE.StaticData.Corporation;
 using EVESharp.Node.Client.Notifications.Corporations;
 using EVESharp.Node.Configuration;
@@ -149,12 +150,10 @@ public class corporationSvc : Service
         // TODO: VALIDATE PART NAMES TO ENSURE THEY'RE VALID
     }
 
+    [RequiredCorporationRole(MLS.UI_CORP_NEED_ROLE_PERS_MAN_OR_DIRECT, CorporationRole.PersonnelManager, CorporationRole.Director)]
     public PyDataType CreateMedal (PyString title, PyString description, PyList parts, PyBool pay, CallInformation call)
     {
         int characterID = call.Session.EnsureCharacterIsSelected ();
-
-        if (CorporationRole.PersonnelManager.Is (call.Session.CorporationRole) == false && CorporationRole.Director.Is (call.Session.CorporationRole) == false)
-            throw new CrpAccessDenied (MLS.UI_CORP_NEED_ROLE_PERS_MAN_OR_DIRECT);
 
         this.ValidateMedal (title, description, parts);
 
@@ -172,11 +171,9 @@ public class corporationSvc : Service
         return null;
     }
 
+    [RequiredCorporationRole(MLS.UI_CORP_NEED_ROLE_PERS_MAN_OR_DIRECT, CorporationRole.PersonnelManager, CorporationRole.Director)]
     public PyDataType CreateMedal (PyString title, PyString description, PyList parts, CallInformation call)
     {
-        if (CorporationRole.PersonnelManager.Is (call.Session.CorporationRole) == false && CorporationRole.Director.Is (call.Session.CorporationRole) == false)
-            throw new CrpAccessDenied (MLS.UI_CORP_NEED_ROLE_PERS_MAN_OR_DIRECT);
-
         this.ValidateMedal (title, description, parts);
 
         throw new ConfirmCreatingMedal (Constants.MedalCost);
@@ -218,23 +215,19 @@ public class corporationSvc : Service
         );
     }
 
+    [RequiredCorporationRole(MLS.UI_CORP_NEED_ROLE_PERS_MAN_OR_DIRECT, CorporationRole.PersonnelManager, CorporationRole.Director)]
     public PyDataType GiveMedalToCharacters (PyInteger medalID, PyList characterIDs, PyString reason, CallInformation call)
     {
         int callerCharacterID = call.Session.EnsureCharacterIsSelected ();
-
-        if (CorporationRole.PersonnelManager.Is (call.Session.CorporationRole) == false && CorporationRole.Director.Is (call.Session.CorporationRole) == false)
-            throw new CrpAccessDenied (MLS.UI_CORP_NEED_ROLE_PERS_MAN_OR_DIRECT);
-
+        
         throw new ConfirmCreatingMedal (Constants.MedalCost);
     }
 
+    [RequiredCorporationRole(MLS.UI_CORP_NEED_ROLE_PERS_MAN_OR_DIRECT, CorporationRole.PersonnelManager, CorporationRole.Director)]
     public PyDataType GiveMedalToCharacters (PyInteger medalID, PyList characterIDs, PyString reason, PyBool pay, CallInformation call)
     {
         int callerCharacterID = call.Session.EnsureCharacterIsSelected ();
-
-        if (CorporationRole.PersonnelManager.Is (call.Session.CorporationRole) == false && CorporationRole.Director.Is (call.Session.CorporationRole) == false)
-            throw new CrpAccessDenied (MLS.UI_CORP_NEED_ROLE_PERS_MAN_OR_DIRECT);
-
+        
         if (pay == false)
             throw new ConfirmGivingMedal (Constants.MedalCost);
 

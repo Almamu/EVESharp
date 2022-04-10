@@ -7,6 +7,7 @@ using EVESharp.Node.Database;
 using EVESharp.Node.Sessions;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Primitives;
+using Serilog;
 
 namespace EVESharp.Node.Services.Corporations;
 
@@ -58,6 +59,10 @@ public class corpmgr : Service
             PyDataType cacheHint = CacheStorage.GetHint ("corpmgr", "GetAssetInventoryForLocation_" + which + "_" + corporationID);
 
             return CachedMethodCallResult.FromCacheHint (cacheHint);
+        }
+        else
+        {
+            throw new Exception ("This asset inventory is not supported yet!");
         }
 
         return new PyList ();

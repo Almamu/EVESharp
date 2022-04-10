@@ -4,6 +4,7 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.ExceptionServices;
 using EVESharp.EVE.Services.Exceptions;
+using EVESharp.EVE.Services.Validators;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Primitives;
 
@@ -100,24 +101,21 @@ public abstract class Service
             throw new MissingCallException(Name, method);
             
         // ensure that the caller has the required roles
-        List<RequiredRole> attributes = methodInfo.GetCustomAttributes<RequiredRole>().ToList();
+        List <CallValidator> requirements = methodInfo.GetCustomAttributes <CallValidator> ().ToList ();
 
-        if (attributes.Any() == true)
+        if (requirements.Any () == true)
         {
-            bool allowed = false;
-                
-            foreach (RequiredRole requirement in attributes)
+            foreach (CallValidator validator in requirements)
             {
-                if ((requirement.Role & extraInformation.Session.Role) == requirement.Role)
+                if (validator.Validate (extraInformation.Session) == false)
                 {
-                    // at least ONE of the roles match, so mark it as allowed and break the loop
-                    allowed = true;
-                    break;
+                    if (validator.Exception is not null)
+                        // throw that exception
+                        throw (Exception) Activator.CreateInstance (validator.Exception, validator.ExceptionParameters);
+
+                    return null;
                 }
             }
-
-            if (allowed == false)
-                throw new UnauthorizedCallException<string>(Name, method, extraInformation.Session.Role);
         }
 
         try
