@@ -6,6 +6,7 @@ using EVESharp.EVE.Client.Exceptions.corpRegistry;
 using EVESharp.EVE.Client.Messages;
 using EVESharp.EVE.Packets.Exceptions;
 using EVESharp.EVE.Services;
+using EVESharp.EVE.Services.Exceptions;
 using EVESharp.EVE.Sessions;
 using EVESharp.EVE.StaticData.Corporation;
 using EVESharp.Node.Services;
@@ -96,6 +97,34 @@ public class ServiceManagerTests
     public void ValidServiceCalls_Test (Session session, string method, PyInteger expected)
     {
         AssertResult (ServiceManager.ServiceCall (RESVC, method, GenerateServiceCall (session)), expected);
+    }
+
+    [Test]
+    public void ValidServiceCalls_AccessType ()
+    {
+        AssertResult <PyInteger> (ServiceManager.ServiceCall ("LocationService",    "Call", GenerateServiceCall (new Session() {LocationID    = 10})), 0);
+        AssertResult <PyInteger> (ServiceManager.ServiceCall ("StationService",     "Call", GenerateServiceCall (new Session() {StationID     = 10})), 0);
+        AssertResult <PyInteger> (ServiceManager.ServiceCall ("SolarSystemService", "Call", GenerateServiceCall (new Session() {SolarSystemID = 10})), 0);
+    }
+
+    [Test]
+    public void InvalidServiceCalls_AccessType ()
+    {
+        Assert.Throws <UnauthorizedCallException <string>> (() =>
+        {
+            ServiceManager.ServiceCall ("LocationService", "Call", GenerateServiceCall (new Session ()));
+            
+        });
+        Assert.Throws <UnauthorizedCallException <string>> (() =>
+        {
+            ServiceManager.ServiceCall ("StationService", "Call", GenerateServiceCall (new Session ()));
+            
+        });
+        Assert.Throws <UnauthorizedCallException <string>> (() =>
+        {
+            ServiceManager.ServiceCall ("SolarSystemService", "Call", GenerateServiceCall (new Session ()));
+            
+        });
     }
 
     private static IEnumerable InvalidCallsGenerator_CrpAccessDenied ()
