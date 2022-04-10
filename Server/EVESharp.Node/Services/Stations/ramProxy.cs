@@ -1,5 +1,6 @@
 ﻿using EVESharp.EVE.Packets.Exceptions;
 using EVESharp.EVE.Services;
+using EVESharp.EVE.Services.Validators;
 using EVESharp.EVE.StaticData.Inventory;
 using EVESharp.Node.Database;
 using EVESharp.Node.Inventory;
@@ -10,6 +11,7 @@ using EVESharp.PythonTypes.Types.Primitives;
 
 namespace EVESharp.Node.Services.Stations;
 
+[MustBeCharacter]
 public class ramProxy : Service
 {
     public override AccessLevel AccessLevel => AccessLevel.None;
@@ -24,7 +26,7 @@ public class ramProxy : Service
 
     public PyDataType GetRelevantCharSkills (CallInformation call)
     {
-        Character character = ItemFactory.GetItem <Character> (call.Session.EnsureCharacterIsSelected ());
+        Character character = ItemFactory.GetItem <Character> (call.Session.CharacterID);
 
         // i guess this call fetches skills that affect maximumManufacturingJobCount and maximumResearchJobCount
         return new PyTuple (2)
@@ -52,7 +54,7 @@ public class ramProxy : Service
         if (typeFlag == "region")
             return DB.GetRegionDetails (call.Session.RegionID);
         if (typeFlag == "char")
-            return DB.GetPersonalDetails (call.Session.EnsureCharacterIsSelected ());
+            return DB.GetPersonalDetails (call.Session.CharacterID);
 
         // TODO: HANDLE CORP AND ALLIANCE!
 
@@ -66,7 +68,7 @@ public class ramProxy : Service
 
     public PyDataType GetJobs2 (PyInteger ownerID, PyBool completed, PyInteger fromDate, PyInteger toDate, CallInformation call)
     {
-        if (ownerID != call.Session.EnsureCharacterIsSelected ())
+        if (ownerID != call.Session.CharacterID)
             throw new CustomError ("Corporation and/or alliance stuff not implemented yet!");
 
         return DB.GetJobs2 (ownerID, completed, fromDate ?? long.MinValue, toDate ?? long.MaxValue);

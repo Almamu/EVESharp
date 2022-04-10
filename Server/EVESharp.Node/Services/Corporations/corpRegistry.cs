@@ -40,6 +40,7 @@ using SessionManager = EVESharp.Node.Sessions.SessionManager;
 
 namespace EVESharp.Node.Services.Corporations;
 
+[MustBeCharacter]
 // TODO: REWRITE THE USAGE OF THE CHARACTER CLASS HERE TO FETCH THE DATA OFF THE DATABASE TO PREVENT ISSUES ON MULTI-NODE INSTALLATIONS
 public class corpRegistry : MultiClientBoundService
 {
@@ -137,7 +138,7 @@ public class corpRegistry : MultiClientBoundService
 
     public PyDataType GetSharesByShareholder (PyBool corpShares, CallInformation call)
     {
-        int entityID = call.Session.EnsureCharacterIsSelected ();
+        int entityID = call.Session.CharacterID;
 
         if (corpShares == true)
             entityID = call.Session.CorporationID;
@@ -150,7 +151,7 @@ public class corpRegistry : MultiClientBoundService
         return DB.GetShareholders (corporationID);
     }
 
-    [RequiredCorporationRole(CorporationRole.Director, MLS.UI_CORP_DO_NOT_HAVE_ROLE_DIRECTOR)]
+    [MustHaveCorporationRole(CorporationRole.Director, MLS.UI_CORP_DO_NOT_HAVE_ROLE_DIRECTOR)]
     public PyDataType MoveCompanyShares (PyInteger corporationID, PyInteger to, PyInteger quantity, CallInformation call)
     {
         // TODO: the WALLETKEY SHOULD BE SOMETHING ELSE?
@@ -190,7 +191,7 @@ public class corpRegistry : MultiClientBoundService
 
     public PyDataType MovePrivateShares (PyInteger corporationID, PyInteger toShareholderID, PyInteger quantity, CallInformation call)
     {
-        int callerCharacterID = call.Session.EnsureCharacterIsSelected ();
+        int callerCharacterID = call.Session.CharacterID;
 
         // TODO: the WALLETKEY SHOULD BE SOMETHING ELSE?
         using (Wallet corporationWallet = WalletManager.AcquireWallet (callerCharacterID, 2000))
@@ -312,7 +313,7 @@ public class corpRegistry : MultiClientBoundService
         return DB.GetStations (call.Session.CorporationID);
     }
 
-    [RequiredCorporationRole(CorporationRole.Director)]
+    [MustHaveCorporationRole(CorporationRole.Director)]
     public PyDataType GetMemberTrackingInfo (PyInteger characterID, CallInformation call)
     {
         return DB.GetMemberTrackingInfo (call.Session.CorporationID, characterID);
@@ -347,7 +348,7 @@ public class corpRegistry : MultiClientBoundService
 
     public PyDataType GetMyApplications (CallInformation call)
     {
-        return DB.GetCharacterApplications (call.Session.EnsureCharacterIsSelected ());
+        return DB.GetCharacterApplications (call.Session.CharacterID);
     }
 
     public PyDataType GetLockedItemLocations (CallInformation call)
@@ -359,7 +360,7 @@ public class corpRegistry : MultiClientBoundService
 
     public PyBool CanBeKickedOut (PyInteger characterID, CallInformation call)
     {
-        int callerCharacterID = call.Session.EnsureCharacterIsSelected ();
+        int callerCharacterID = call.Session.CharacterID;
 
         // check for corporation stasis for this character
 
@@ -409,10 +410,10 @@ public class corpRegistry : MultiClientBoundService
             throw new AllianceNameInvalidBannedWord ();
     }
 
-    [RequiredSessionMissing(Session.ALLIANCE_ID, typeof(AllianceCreateFailCorpInAlliance))]
+    [MustNotHaveSessionValue(Session.ALLIANCE_ID, typeof(AllianceCreateFailCorpInAlliance))]
     public PyDataType CreateAlliance (PyString name, PyString shortName, PyString description, PyString url, CallInformation call)
     {
-        int callerCharacterID = call.Session.EnsureCharacterIsSelected ();
+        int callerCharacterID = call.Session.CharacterID;
 
         if (Corporation.CeoID != callerCharacterID)
             throw new OnlyActiveCEOCanCreateAlliance ();
@@ -518,8 +519,9 @@ public class corpRegistry : MultiClientBoundService
             throw new CorpNameInvalidBannedWord ();
     }
 
-    [RequiredSession(Session.STATION_ID, typeof(CanOnlyCreateCorpInStation))]
-    [RequiredCorporationRole(CorporationRole.Director, typeof(CEOCannotCreateCorporation))]
+    [MustHaveSessionValue(Session.STATION_ID, typeof(CanOnlyCreateCorpInStation))]
+    [MustHaveCorporationRole(CorporationRole.Director, typeof(CEOCannotCreateCorporation))]
+    [MustBeInStation]
     public PyDataType AddCorporation (
         PyString  corporationName, PyString  tickerName, PyString   description,
         PyString  url,             PyDecimal taxRate,    PyInteger  shape1,   PyInteger       shape2, PyInteger shape3, PyInteger color1,
@@ -529,9 +531,9 @@ public class corpRegistry : MultiClientBoundService
         // TODO: CHECK FOR POS AS ITS NOT POSSIBLE TO CREATE CORPORATIONS THERE
         this.ValidateCorporationName (corporationName, tickerName);
 
-        int stationID              = call.Session.EnsureCharacterIsInStation ();
+        int stationID              = call.Session.StationID;
         int corporationStartupCost = -Constants.CorporationStartupCost;
-        int callerCharacterID      = call.Session.EnsureCharacterIsSelected ();
+        int callerCharacterID      = call.Session.CharacterID;
 
         // TODO: PROPERLY IMPLEMENT THIS CHECK, RIGHT NOW THE CHARACTER AND THE CORPREGISTRY INSTANCES DO NOT HAVE TO BE LOADED ON THE SAME NODE
         // TODO: SWITCH UP THE CORPORATION CHANGE MECHANISM TO NOT RELY ON THE CHARACTER OBJECT SO THIS CAN BE DONE THROUGH THE DATABASE
@@ -650,7 +652,7 @@ public class corpRegistry : MultiClientBoundService
             throw new UserError ("CorpDiv" + divisionNumber + "NameInvalidBannedWord");
     }
 
-    [RequiredCorporationRole(CorporationRole.Director)]
+    [MustHaveCorporationRole(CorporationRole.Director)]
     public PyDataType UpdateDivisionNames (
         PyString        division1, PyString division2, PyString division3,
         PyString        division4, PyString division5, PyString division6, PyString division7, PyString wallet1,
@@ -731,7 +733,7 @@ public class corpRegistry : MultiClientBoundService
         return null;
     }
 
-    [RequiredCorporationRole(CorporationRole.Director)]
+    [MustHaveCorporationRole(CorporationRole.Director)]
     public PyDataType UpdateCorporation (PyString newDescription, PyString newUrl, PyDecimal newTax, CallInformation call)
     {
         if (call.Session.CorporationID != Corporation.ID)
@@ -757,7 +759,7 @@ public class corpRegistry : MultiClientBoundService
         return null;
     }
 
-    [RequiredCorporationRole(CorporationRole.Director)]
+    [MustHaveCorporationRole(CorporationRole.Director)]
     public PyDataType GetMemberTrackingInfo (CallInformation call)
     {
         return DB.GetMemberTrackingInfo (call.Session.CorporationID);
@@ -767,7 +769,7 @@ public class corpRegistry : MultiClientBoundService
     {
         if (WalletManager.IsTakeAllowed (call.Session, accountKey, call.Session.CorporationID))
             SessionManager.PerformSessionUpdate (
-                Session.CHAR_ID, call.Session.EnsureCharacterIsSelected (), new Session {[Session.CORP_ACCOUNT_KEY] = accountKey}
+                Session.CHAR_ID, call.Session.CharacterID, new Session {[Session.CORP_ACCOUNT_KEY] = accountKey}
             );
 
         return null;
@@ -858,7 +860,7 @@ public class corpRegistry : MultiClientBoundService
         if (Corporation.CeoID != call.Session.CharacterID)
             throw new CrpAccessDenied (MLS.UI_CORP_ACCESSDENIED12);
 
-        Character character = ItemFactory.GetItem <Character> (call.Session.EnsureCharacterIsSelected ());
+        Character character = ItemFactory.GetItem <Character> (call.Session.CharacterID);
 
         this.CalculateCorporationLimits (character, out int maximumMembers, out int allowedMemberRaceIDs);
 
@@ -945,7 +947,7 @@ public class corpRegistry : MultiClientBoundService
     )
     {
         // TODO: HANDLE DIVISION AND SQUADRON CHANGES
-        int       callerCharacterID = call.Session.EnsureCharacterIsSelected ();
+        int       callerCharacterID = call.Session.CharacterID;
         Character character         = ItemFactory.GetItem <Character> (callerCharacterID);
         Session   update            = new Session ();
 
@@ -1239,7 +1241,7 @@ public class corpRegistry : MultiClientBoundService
 
     public PyDataType CanLeaveCurrentCorporation (CallInformation call)
     {
-        int   characterID = call.Session.EnsureCharacterIsSelected ();
+        int   characterID = call.Session.CharacterID;
         long? stasisTimer = CharacterDB.GetCharacterStasisTimer (characterID);
 
         try
@@ -1299,7 +1301,7 @@ public class corpRegistry : MultiClientBoundService
     )
     {
         Station station           = ItemFactory.GetStaticStation (stationID);
-        int     callerCharacterID = call.Session.EnsureCharacterIsSelected ();
+        int     callerCharacterID = call.Session.CharacterID;
         long    price             = CorporationAdvertisementFlatFee + CorporationAdvertisementDailyRate * days;
 
         // TODO: ENSURE stationID MATCHES ONE OF OUR OFFICES FOR THE ADVERT TO BE CREATED
@@ -1338,7 +1340,7 @@ public class corpRegistry : MultiClientBoundService
         return null;
     }
 
-    [RequiredCorporationRole(CorporationRole.Director, MLS.UI_CORP_DO_NOT_HAVE_ROLE_DIRECTOR)]
+    [MustHaveCorporationRole(CorporationRole.Director, MLS.UI_CORP_DO_NOT_HAVE_ROLE_DIRECTOR)]
     public PyDataType UpdateTitles (PyObjectData rowset, CallInformation call)
     {
         Rowset list = rowset;
@@ -1390,7 +1392,7 @@ public class corpRegistry : MultiClientBoundService
 
         foreach ((long _, Session session) in Sessions)
         {
-            int characterID = session.EnsureCharacterIsSelected ();
+            int characterID = session.CharacterID;
             // characterID should never be null here
             long titleMask = DB.GetTitleMaskForCharacter (characterID);
 
@@ -1448,7 +1450,7 @@ public class corpRegistry : MultiClientBoundService
         return Corporation.ID == session.CorporationID;
     }
 
-    [RequiredCorporationRole(CorporationRole.PersonnelManager, MLS.UI_CORP_NEED_ROLE_PERS_MAN_TO_MANAGE_ADS)]
+    [MustHaveCorporationRole(CorporationRole.PersonnelManager, MLS.UI_CORP_NEED_ROLE_PERS_MAN_TO_MANAGE_ADS)]
     public PyDataType DeleteRecruitmentAd (PyInteger advertID, CallInformation call)
     {
         if (DB.DeleteRecruitmentAd (advertID, call.Session.CorporationID))
@@ -1463,7 +1465,7 @@ public class corpRegistry : MultiClientBoundService
         return null;
     }
 
-    [RequiredCorporationRole(CorporationRole.PersonnelManager, MLS.UI_CORP_NEED_ROLE_PERS_MAN_TO_MANAGE_ADS)]
+    [MustHaveCorporationRole(CorporationRole.PersonnelManager, MLS.UI_CORP_NEED_ROLE_PERS_MAN_TO_MANAGE_ADS)]
     public PyDataType UpdateRecruitmentAd (
         PyInteger adID, PyInteger typeMask, PyInteger raceMask, PyInteger skillPoints, PyString description, CallInformation call
     )
@@ -1485,7 +1487,7 @@ public class corpRegistry : MultiClientBoundService
         return null;
     }
 
-    [RequiredCorporationRole(CorporationRole.PersonnelManager, MLS.UI_CORP_NEED_ROLE_PERS_MAN_TO_MANAGE_APPLICATIONS)]
+    [MustHaveCorporationRole(CorporationRole.PersonnelManager, MLS.UI_CORP_NEED_ROLE_PERS_MAN_TO_MANAGE_APPLICATIONS)]
     public PyDataType GetApplications (CallInformation call)
     {
         return Database.DictRowList (
@@ -1497,7 +1499,7 @@ public class corpRegistry : MultiClientBoundService
     public PyDataType InsertApplication (PyInteger corporationID, PyString text, CallInformation call)
     {
         // TODO: CHECK IF THE CHARACTER IS A CEO AND DENY THE APPLICATION CREATION
-        int characterID = call.Session.EnsureCharacterIsSelected ();
+        int characterID = call.Session.CharacterID;
 
         // create the application in the database
         DB.CreateApplication (characterID, corporationID, text);
@@ -1518,7 +1520,7 @@ public class corpRegistry : MultiClientBoundService
 
     public PyDataType DeleteApplication (PyInteger corporationID, PyInteger characterID, CallInformation call)
     {
-        int currentCharacterID = call.Session.EnsureCharacterIsSelected ();
+        int currentCharacterID = call.Session.CharacterID;
 
         if (characterID != currentCharacterID)
             throw new CrpAccessDenied ("This application does not belong to you");
@@ -1539,7 +1541,7 @@ public class corpRegistry : MultiClientBoundService
         return null;
     }
 
-    [RequiredCorporationRole(CorporationRole.PersonnelManager, MLS.UI_CORP_NEED_ROLE_PERS_MAN_TO_MANAGE_APPLICATIONS)]
+    [MustHaveCorporationRole(CorporationRole.PersonnelManager, MLS.UI_CORP_NEED_ROLE_PERS_MAN_TO_MANAGE_APPLICATIONS)]
     public PyDataType UpdateApplicationOffer (PyInteger characterID, PyString text, PyInteger newStatus, PyInteger applicationDateTime, CallInformation call)
     {
         // TODO: CHECK THAT THE APPLICATION EXISTS TO PREVENT A CHARACTER FROM BEING FORCE TO JOIN A CORPORATION!!
@@ -1652,10 +1654,10 @@ public class corpRegistry : MultiClientBoundService
     public PyBool CanViewVotes (PyInteger corporationID, CallInformation call)
     {
         return (call.Session.CorporationID == corporationID && CorporationRole.Director.Is (call.Session.CorporationRole)) ||
-               DB.GetSharesForOwner (corporationID, call.Session.EnsureCharacterIsSelected ()) > 0;
+               DB.GetSharesForOwner (corporationID, call.Session.CharacterID) > 0;
     }
 
-    [RequiredCorporationRole(CorporationRole.Director, typeof(CrpOnlyDirectorsCanProposeVotes))]
+    [MustHaveCorporationRole(CorporationRole.Director, typeof(CrpOnlyDirectorsCanProposeVotes))]
     public PyDataType InsertVoteCase (
         PyString text, PyString description, PyInteger corporationID, PyInteger type, PyDataType rowsetOptions, PyInteger startDateTime, PyInteger endDateTime,
         CallInformation call
@@ -1672,7 +1674,7 @@ public class corpRegistry : MultiClientBoundService
             throw new CantRunForCEOAtTheMoment ();
         // TODO: CHECK CORPORATION MANAGEMENT SKILL
 
-        int characterID = call.Session.EnsureCharacterIsSelected ();
+        int characterID = call.Session.CharacterID;
 
         // parse rowset options
         Rowset options = rowsetOptions;
@@ -1758,12 +1760,12 @@ public class corpRegistry : MultiClientBoundService
         if (this.CanViewVotes (corporationID, call) == false)
             throw new CrpAccessDenied (MLS.UI_SHARED_WALLETHINT12);
 
-        return DB.GetVotes (corporationID, voteCaseID, call.Session.EnsureCharacterIsSelected ());
+        return DB.GetVotes (corporationID, voteCaseID, call.Session.CharacterID);
     }
 
     public PyDataType InsertVote (PyInteger corporationID, PyInteger voteCaseID, PyInteger optionID, CallInformation call)
     {
-        int characterID = call.Session.EnsureCharacterIsSelected ();
+        int characterID = call.Session.CharacterID;
 
         if (this.CanViewVotes (corporationID, call) == false)
             throw new CrpAccessDenied (MLS.UI_SHARED_WALLETHINT12);

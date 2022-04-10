@@ -85,6 +85,6 @@ public abstract class SparseRowsetDatabaseService : MultiClientBoundService
     /// <param name="session">Session to register</param>
     public void BindToSession (Session session)
     {
-        Sessions.TryAdd (session.EnsureCharacterIsSelected (), session);
+        Sessions.TryAdd (session.CharacterID, session);
     }
 }

@@ -3,6 +3,7 @@ using EVESharp.EVE.Client.Exceptions.facWarMgr;
 using EVESharp.EVE.Client.Messages;
 using EVESharp.EVE.Packets.Complex;
 using EVESharp.EVE.Services;
+using EVESharp.EVE.Services.Validators;
 using EVESharp.EVE.Sessions;
 using EVESharp.Node.Cache;
 using EVESharp.Node.Client.Notifications.Corporations;
@@ -26,6 +27,7 @@ internal enum FactionWarStatus
     CorporationLeaving = 2
 }
 
+[MustBeCharacter]
 public class facWarMgr : Service
 {
     public override AccessLevel        AccessLevel    => AccessLevel.None;
@@ -119,7 +121,7 @@ public class facWarMgr : Service
 
     public PyDataType JoinFactionAsCharacter (PyInteger factionID, CallInformation call)
     {
-        int callerCharacterID = call.Session.EnsureCharacterIsSelected ();
+        int callerCharacterID = call.Session.CharacterID;
 
         // TODO: CHECK FOR PERMISSIONS, TO JOIN TO SOME FACTIONS THE CHARACTER REQUIRES AN INVITATION
 

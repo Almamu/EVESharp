@@ -4,6 +4,7 @@ using EVESharp.EVE.Client.Exceptions.corpStationMgr;
 using EVESharp.EVE.Market;
 using EVESharp.EVE.Packets.Exceptions;
 using EVESharp.EVE.Services;
+using EVESharp.EVE.Services.Validators;
 using EVESharp.EVE.Sessions;
 using EVESharp.EVE.StaticData.Corporation;
 using EVESharp.EVE.StaticData.Inventory;
@@ -27,6 +28,7 @@ using Type = EVESharp.EVE.StaticData.Inventory.Type;
 
 namespace EVESharp.Node.Services.Stations;
 
+[MustBeCharacter]
 public class corpStationMgr : ClientBoundService
 {
     public override AccessLevel        AccessLevel   => AccessLevel.None;
@@ -70,17 +72,16 @@ public class corpStationMgr : ClientBoundService
         WalletManager = walletManager;
     }
 
+    [MustBeInStation]
     public PyList GetCorporateStationOffice (CallInformation call)
     {
         // TODO: IMPLEMENT WHEN CORPORATION SUPPORT IS IN PLACE
         return new PyList ();
     }
 
+    [MustBeInStation]
     public PyDataType DoStandingCheckForStationService (PyInteger stationServiceID, CallInformation call)
     {
-        call.Session.EnsureCharacterIsSelected ();
-        call.Session.EnsureCharacterIsInStation ();
-
         // TODO: CHECK ACTUAL STANDING VALUE
 
         return null;
@@ -88,10 +89,8 @@ public class corpStationMgr : ClientBoundService
 
     private List <Station> GetPotentialHomeStations (Session session)
     {
-        int stationID = session.EnsureCharacterIsInStation ();
-
-        Character character = ItemFactory.GetItem <Character> (session.EnsureCharacterIsSelected ());
-
+        int stationID = session.StationID;
+        
         // TODO: CHECK STANDINGS TO ENSURE THIS STATION CAN BE USED
         // TODO: ADD CURRENT CORPORATION'S STATION BACK TO THE LIST
         List <Station> availableStations = new List <Station>
@@ -103,6 +102,7 @@ public class corpStationMgr : ClientBoundService
         return availableStations;
     }
 
+    [MustBeInStation]
     public PyDataType GetPotentialHomeStations (CallInformation call)
     {
         List <Station> availableStations = this.GetPotentialHomeStations (call.Session);
@@ -131,8 +131,7 @@ public class corpStationMgr : ClientBoundService
 
     public PyDataType SetHomeStation (PyInteger stationID, CallInformation call)
     {
-        int callerCharacterID = call.Session.EnsureCharacterIsSelected ();
-        call.Session.EnsureCharacterIsInStation ();
+        int callerCharacterID = call.Session.CharacterID;
 
         Character character = ItemFactory.GetItem <Character> (callerCharacterID);
 
@@ -182,6 +181,7 @@ public class corpStationMgr : ClientBoundService
         return null;
     }
 
+    [MustBeInStation]
     public PyBool DoesPlayersCorpHaveJunkAtStation (CallInformation call)
     {
         if (ItemRanges.IsNPCCorporationID (call.Session.CorporationID))
@@ -191,9 +191,10 @@ public class corpStationMgr : ClientBoundService
         return false;
     }
 
+    [MustBeInStation]
     public PyTuple GetCorporateStationInfo (CallInformation call)
     {
-        int stationID = call.Session.EnsureCharacterIsInStation ();
+        int stationID = call.Session.StationID;
 
         return new PyTuple (3)
         {
@@ -203,9 +204,10 @@ public class corpStationMgr : ClientBoundService
         };
     }
 
+    [MustBeInStation]
     public PyInteger GetNumberOfUnrentedOffices (CallInformation call)
     {
-        int stationID = call.Session.EnsureCharacterIsInStation ();
+        int stationID = call.Session.StationID;
 
         // if no amount of office slots are indicated in the station type return 24 as a default value
         int maximumOffices = ItemFactory.GetItem <Station> (stationID).StationType.OfficeSlots ?? 24;
@@ -213,10 +215,11 @@ public class corpStationMgr : ClientBoundService
         return maximumOffices - StationDB.CountRentedOffices (stationID);
     }
 
+    [MustBeInStation]
     public PyDataType SetCloneTypeID (PyInteger cloneTypeID, CallInformation call)
     {
-        int callerCharacterID = call.Session.EnsureCharacterIsSelected ();
-        int stationID         = call.Session.EnsureCharacterIsInStation ();
+        int callerCharacterID = call.Session.CharacterID;
+        int stationID         = call.Session.StationID;
 
         Character character    = ItemFactory.GetItem <Character> (callerCharacterID);
         Type      newCloneType = TypeManager [cloneTypeID];
@@ -247,9 +250,10 @@ public class corpStationMgr : ClientBoundService
         return null;
     }
 
+    [MustBeInStation]
     public PyInteger GetQuoteForRentingAnOffice (CallInformation call)
     {
-        int stationID = call.Session.EnsureCharacterIsInStation ();
+        int stationID = call.Session.StationID;
 
         // make sure the user is director or allowed to rent
         if (CorporationRole.Director.Is (call.Session.CorporationRole) == false && CorporationRole.CanRentOffice.Is (call.Session.CorporationRole) == false)
@@ -258,11 +262,12 @@ public class corpStationMgr : ClientBoundService
         return ItemFactory.Stations [stationID].OfficeRentalCost;
     }
 
+    [MustBeInStation]
     public PyDataType RentOffice (PyInteger cost, CallInformation call)
     {
         int rentalCost  = this.GetQuoteForRentingAnOffice (call);
-        int stationID   = call.Session.EnsureCharacterIsInStation ();
-        int characterID = call.Session.EnsureCharacterIsSelected ();
+        int stationID   = call.Session.StationID;
+        int characterID = call.Session.CharacterID;
 
         // double check to ensure the amout we're paying is what we require now
         if (rentalCost != cost)
@@ -313,6 +318,7 @@ public class corpStationMgr : ClientBoundService
         // TODO: NOTIFY THE CORPREGISTRY SERVICE TO UPDATE THIS LIST OF OFFICES
     }
 
+    [MustBeInStation]
     public PyDataType MoveCorpHQHere (CallInformation call)
     {
         // TODO: IMPLEMENT THIS!

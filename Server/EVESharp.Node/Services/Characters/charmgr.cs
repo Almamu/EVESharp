@@ -1,5 +1,6 @@
 using EVESharp.EVE.Market;
 using EVESharp.EVE.Services;
+using EVESharp.EVE.Services.Validators;
 using EVESharp.EVE.Wallet;
 using EVESharp.Node.Database;
 using EVESharp.Node.Inventory;
@@ -10,6 +11,7 @@ using EVESharp.PythonTypes.Types.Primitives;
 
 namespace EVESharp.Node.Services.Characters;
 
+[MustBeCharacter]
 public class charmgr : Service
 {
     public override AccessLevel   AccessLevel   => AccessLevel.None;
@@ -44,7 +46,7 @@ public class charmgr : Service
     public PyDataType AddToBounty (PyInteger characterID, PyInteger bounty, CallInformation call)
     {
         // get character's object
-        Character character = ItemFactory.GetItem <Character> (call.Session.EnsureCharacterIsSelected ());
+        Character character = ItemFactory.GetItem <Character> (call.Session.CharacterID);
 
         // access the wallet and do the required changes
         using Wallet wallet = WalletManager.AcquireWallet (character.ID, Keys.MAIN);

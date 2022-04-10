@@ -5,6 +5,7 @@ using EVESharp.EVE.Client.Exceptions.repairSvc;
 using EVESharp.EVE.Market;
 using EVESharp.EVE.Packets.Exceptions;
 using EVESharp.EVE.Services;
+using EVESharp.EVE.Services.Validators;
 using EVESharp.EVE.Sessions;
 using EVESharp.EVE.StaticData.Inventory;
 using EVESharp.EVE.Wallet;
@@ -24,6 +25,7 @@ using Service = EVESharp.EVE.StaticData.Inventory.Station.Service;
 
 namespace EVESharp.Node.Services.Stations;
 
+[MustBeCharacter]
 public class repairSvc : ClientBoundService
 {
     private const    double             BASEPRICE_MULTIPLIER_MODULE = 0.0125;
@@ -152,13 +154,14 @@ public class repairSvc : ClientBoundService
         return response;
     }
 
+    [MustBeInStation]
     public PyDataType RepairItems (PyList itemIDs, PyDecimal iskRepairValue, CallInformation call)
     {
         // ensure the player has enough balance to do the fixing
-        Station station = ItemFactory.GetStaticStation (call.Session.EnsureCharacterIsInStation ());
+        Station station = ItemFactory.GetStaticStation (call.Session.StationID);
 
         // take the wallet lock and ensure the character has enough balance
-        using Wallet wallet = WalletManager.AcquireWallet (call.Session.EnsureCharacterIsSelected (), Keys.MAIN);
+        using Wallet wallet = WalletManager.AcquireWallet (call.Session.CharacterID, Keys.MAIN);
         {
             wallet.EnsureEnoughBalance (iskRepairValue);
             // build a list of items to be fixed
@@ -237,7 +240,7 @@ public class repairSvc : ClientBoundService
 
     public PyDataType UnasembleItems (PyDictionary validIDsByStationID, PyList skipChecks, CallInformation call)
     {
-        int                                characterID = call.Session.EnsureCharacterIsSelected ();
+        int                                characterID = call.Session.CharacterID;
         List <RepairDB.ItemRepackageEntry> entries     = new List <RepairDB.ItemRepackageEntry> ();
 
         bool ignoreContractVoiding       = false;
@@ -356,7 +359,7 @@ public class repairSvc : ClientBoundService
             throw new CanOnlyDoInStations ();
 
         ItemInventory inventory =
-            ItemFactory.MetaInventoryManager.RegisterMetaInventoryForOwnerID (station, call.Session.EnsureCharacterIsSelected (), Flags.Hangar);
+            ItemFactory.MetaInventoryManager.RegisterMetaInventoryForOwnerID (station, call.Session.CharacterID, Flags.Hangar);
 
         return new repairSvc (
             RepairDB, MarketDB, InsuranceDB, Notifications, inventory, ItemFactory, BoundServiceManager,

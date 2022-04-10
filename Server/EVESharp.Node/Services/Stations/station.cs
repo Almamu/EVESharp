@@ -1,4 +1,5 @@
 using EVESharp.EVE.Services;
+using EVESharp.EVE.Services.Validators;
 using EVESharp.Node.Inventory;
 using EVESharp.Node.Inventory.Items.Types;
 using EVESharp.Node.Sessions;
@@ -16,9 +17,10 @@ public class station : Service
         ItemFactory = itemFactory;
     }
 
+    [MustBeInStation]
     public PyTuple GetStationItemBits (CallInformation call)
     {
-        int stationID = call.Session.EnsureCharacterIsInStation ();
+        int stationID = call.Session.StationID;
 
         Station station = ItemFactory.GetStaticStation (stationID);
 
@@ -32,9 +34,10 @@ public class station : Service
         };
     }
 
+    [MustBeInStation]
     public PyList <PyTuple> GetGuests (CallInformation call)
     {
-        int stationID = call.Session.EnsureCharacterIsInStation ();
+        int stationID = call.Session.StationID;
 
         Station          station = ItemFactory.GetStaticStation (stationID);
         PyList <PyTuple> result  = new PyList <PyTuple> ();

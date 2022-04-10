@@ -114,7 +114,7 @@ public class Session : PyDictionary <PyString, PyDataType>
     }
     public ulong Role
     {
-        get => this [ROLE] as PyInteger;
+        get => this [ROLE] as PyInteger ?? 0;
         set => this [ROLE] = value;
     }
     public string Address
@@ -122,9 +122,9 @@ public class Session : PyDictionary <PyString, PyDataType>
         get => this [ADDRESS] as PyString;
         set => this [ADDRESS] = value;
     }
-    public int? CharacterID
+    public int CharacterID
     {
-        get => this [CHAR_ID] as PyInteger;
+        get => this [CHAR_ID] as PyInteger ?? 0;
         set => this [CHAR_ID] = value;
     }
     public int CorporationID
@@ -159,27 +159,27 @@ public class Session : PyDictionary <PyString, PyDataType>
     }
     public long CorporationRole
     {
-        get => this [CORP_ROLE] as PyInteger;
+        get => this [CORP_ROLE] as PyInteger ?? 0;
         set => this [CORP_ROLE] = value;
     }
     public long RolesAtAll
     {
-        get => this [ROLES_AT_ALL] as PyInteger;
+        get => this [ROLES_AT_ALL] as PyInteger ?? 0;
         set => this [ROLES_AT_ALL] = value;
     }
     public long RolesAtBase
     {
-        get => this [ROLES_AT_BASE] as PyInteger;
+        get => this [ROLES_AT_BASE] as PyInteger ?? 0;
         set => this [ROLES_AT_BASE] = value;
     }
     public long RolesAtHQ
     {
-        get => this [ROLES_AT_HQ] as PyInteger;
+        get => this [ROLES_AT_HQ] as PyInteger ?? 0;
         set => this [ROLES_AT_HQ] = value;
     }
     public long RolesAtOther
     {
-        get => this [ROLES_AT_OTHER] as PyInteger;
+        get => this [ROLES_AT_OTHER] as PyInteger ?? 0;
         set => this [ROLES_AT_OTHER] = value;
     }
     public int? ShipID
@@ -188,9 +188,9 @@ public class Session : PyDictionary <PyString, PyDataType>
         set => this [SHIP_ID] = value;
     }
 
-    public int? StationID
+    public int StationID
     {
-        get => this [STATION_ID] as PyInteger;
+        get => this [STATION_ID] as PyInteger ?? 0;
         set
         {
             this [STATION_ID]      = value;

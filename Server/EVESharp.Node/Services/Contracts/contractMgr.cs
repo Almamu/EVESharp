@@ -4,6 +4,7 @@ using EVESharp.EVE.Client.Exceptions.contractMgr;
 using EVESharp.EVE.Market;
 using EVESharp.EVE.Packets.Exceptions;
 using EVESharp.EVE.Services;
+using EVESharp.EVE.Services.Validators;
 using EVESharp.EVE.Sessions;
 using EVESharp.EVE.StaticData.Inventory;
 using EVESharp.EVE.Wallet;
@@ -25,6 +26,7 @@ using Container = EVESharp.Node.Inventory.Items.Types.Container;
 
 namespace EVESharp.Node.Services.Contracts;
 
+[MustBeCharacter]
 public class contractMgr : Service
 {
     public override AccessLevel AccessLevel => AccessLevel.Station;
@@ -60,7 +62,7 @@ public class contractMgr : Service
     {
         // check for contracts that we've been outbid at and send notifications
         // TODO: HANDLE CORPORATION CONTRACTS TOO!
-        int callerCharacterID = call.Session.EnsureCharacterIsSelected ();
+        int callerCharacterID = call.Session.CharacterID;
 
         List <int> outbidContracts   = DB.FetchLoginCharacterContractBids (callerCharacterID);
         List <int> assignedContracts = DB.FetchLoginCharacterContractAssigned (callerCharacterID);
@@ -75,14 +77,14 @@ public class contractMgr : Service
 
     public PyDataType NumOutstandingContracts (CallInformation call)
     {
-        return DB.NumOutstandingContracts (call.Session.EnsureCharacterIsSelected (), call.Session.CorporationID);
+        return DB.NumOutstandingContracts (call.Session.CharacterID, call.Session.CorporationID);
     }
 
     public PyDataType CollectMyPageInfo (PyDataType ignoreList, CallInformation call)
     {
         // TODO: TAKE INTO ACCOUNT THE IGNORE LIST
 
-        return DB.CollectMyPageInfo (call.Session.EnsureCharacterIsSelected (), call.Session.CorporationID);
+        return DB.CollectMyPageInfo (call.Session.CharacterID, call.Session.CorporationID);
     }
 
     public PyDataType GetContractListForOwner (PyInteger ownerID, PyInteger contractStatus, PyInteger contractType, PyBool issuedToUs, CallInformation call)
@@ -102,7 +104,7 @@ public class contractMgr : Service
         List <int> contractList = DB.GetContractList (
             startContractID, resultsPerPage, null, null, issuedByIDs, issuedToUs == true ? ownerID : null,
             null, null, null, 0, 0, contractType, null,
-            call.Session.EnsureCharacterIsSelected (), call.Session.CorporationID, ownerID,
+            call.Session.CharacterID, call.Session.CorporationID, ownerID,
             contractStatus, true
         );
 
@@ -122,7 +124,7 @@ public class contractMgr : Service
         if (forCorp == 1)
             throw new CustomError ("This call doesn't support forCorp parameter yet!");
 
-        return DB.GetItemsInStationForPlayer (call.Session.EnsureCharacterIsSelected (), stationID);
+        return DB.GetItemsInStationForPlayer (call.Session.CharacterID, stationID);
     }
 
     private void PrepareItemsForCourierOrAuctionContract (
@@ -187,7 +189,7 @@ public class contractMgr : Service
             throw new ConNPCNotAllowed ();
 
         // check for limits on contract creation
-        int callerCharacterID = call.Session.EnsureCharacterIsSelected ();
+        int callerCharacterID = call.Session.CharacterID;
 
         if (expireTime < 1440 || (courierContractDuration < 1 && contractType == (int) ContractTypes.Courier))
             throw new ConDurationZero ();
@@ -230,7 +232,7 @@ public class contractMgr : Service
 
             // named payload contains itemList, flag, requestItemTypeList and forCorp
             ulong contractID = DB.CreateContract (
-                connection, call.Session.EnsureCharacterIsSelected (),
+                connection, call.Session.CharacterID,
                 call.Session.CorporationID, call.Session.AllianceID, (ContractTypes) (int) contractType, availability,
                 assigneeID ?? 0, expireTime, courierContractDuration, startStationID, endStationID, priceOrStartingBid,
                 reward, collateralOrBuyoutPrice, title, description, Keys.MAIN
@@ -315,7 +317,7 @@ public class contractMgr : Service
         List <int> contractList = DB.GetContractList (
             startContractID, resultsPerPage, itemTypeID, notIssuedByIDs, issuedByIDs, assigneeID,
             locationID, itemGroupID, itemCategoryID, priceMax ?? 0, priceMin ?? 0, type, description,
-            call.Session.EnsureCharacterIsSelected (), call.Session.CorporationID
+            call.Session.CharacterID, call.Session.CorporationID
         );
 
         return KeyVal.FromDictionary (
@@ -330,7 +332,7 @@ public class contractMgr : Service
 
     public PyDataType GetContract (PyInteger contractID, CallInformation call)
     {
-        int callerCharacterID = call.Session.EnsureCharacterIsSelected ();
+        int callerCharacterID = call.Session.CharacterID;
 
         // TODO: Check for regionID ConWrongRegion
 
@@ -377,7 +379,7 @@ public class contractMgr : Service
         PyInteger flag,       CallInformation call
     )
     {
-        return DB.GetItemsInContainer (call.Session.EnsureCharacterIsSelected (), containerID);
+        return DB.GetItemsInContainer (call.Session.CharacterID, containerID);
     }
 
     public PyDataType GetMyExpiredContractList (PyBool isCorp, CallInformation call)
@@ -387,12 +389,12 @@ public class contractMgr : Service
         if (isCorp == true)
             ownerID = call.Session.CorporationID;
         else
-            ownerID = call.Session.EnsureCharacterIsSelected ();
+            ownerID = call.Session.CharacterID;
 
         List <int> contractList = DB.GetContractList (
             null, 0, null, null, null, null, null, null,
             null, 0, 0,
-            null, null, call.Session.EnsureCharacterIsSelected (), call.Session.CorporationID, ownerID, null, true, true
+            null, null, call.Session.CharacterID, call.Session.CorporationID, ownerID, null, true, true
         );
 
         return KeyVal.FromDictionary (
@@ -417,7 +419,7 @@ public class contractMgr : Service
         if (isCorp == true)
             ownerID = call.Session.CorporationID;
         else
-            ownerID = call.Session.EnsureCharacterIsSelected ();
+            ownerID = call.Session.CharacterID;
 
         List <int> contractList = DB.GetContractListByOwnerBids (ownerID);
 
@@ -438,7 +440,7 @@ public class contractMgr : Service
         if (isCorp == true)
             ownerID = call.Session.CorporationID;
         else
-            ownerID = call.Session.EnsureCharacterIsSelected ();
+            ownerID = call.Session.CharacterID;
 
         List <int> contractList = null;
 
@@ -448,7 +450,7 @@ public class contractMgr : Service
             contractList = DB.GetContractList (
                 null, 0, null, null, new PyList <PyInteger> (1) {[0] = ownerID},
                 null, null, null, null, 0, 0, null,
-                null, call.Session.EnsureCharacterIsSelected (), call.Session.CorporationID,
+                null, call.Session.CharacterID, call.Session.CorporationID,
                 ownerID, (int) ContractStatus.InProgress, true, true
             );
 
@@ -469,7 +471,7 @@ public class contractMgr : Service
         try
         {
             // TODO: SUPPORT PROPER CORP WALLET
-            int bidderID = call.Session.EnsureCharacterIsSelected ();
+            int bidderID = call.Session.CharacterID;
 
             if (forCorp == true)
             {
@@ -555,7 +557,7 @@ public class contractMgr : Service
                     // temporarily move the item to the recycler, let the current owner know
                     item.LocationID = ItemFactory.LocationRecycler.ID;
                     DogmaUtils.QueueMultiEvent (
-                        session.EnsureCharacterIsSelected (), Client.Notifications.Inventory.OnItemChange.BuildLocationChange (item, station.ID)
+                        session.CharacterID, Client.Notifications.Inventory.OnItemChange.BuildLocationChange (item, station.ID)
                     );
                     // now set the item to the correct owner and place and notify it's new owner
                     // TODO: TAKE forCorp INTO ACCOUNT
@@ -570,7 +572,7 @@ public class contractMgr : Service
                     int oldQuantity = item.Quantity;
                     item.Quantity = change.Quantity;
                     DogmaUtils.QueueMultiEvent (
-                        session.EnsureCharacterIsSelected (), Client.Notifications.Inventory.OnItemChange.BuildQuantityChange (item, oldQuantity)
+                        session.CharacterID, Client.Notifications.Inventory.OnItemChange.BuildQuantityChange (item, oldQuantity)
                     );
 
                     item.Persist ();
@@ -589,7 +591,7 @@ public class contractMgr : Service
                 item.OwnerID    = ownerID;
 
                 DogmaUtils.QueueMultiEvent (
-                    session.EnsureCharacterIsSelected (), Client.Notifications.Inventory.OnItemChange.BuildLocationChange (item, contract.CrateID)
+                    session.CharacterID, Client.Notifications.Inventory.OnItemChange.BuildLocationChange (item, contract.CrateID)
                 );
 
                 item.Persist ();
@@ -652,7 +654,7 @@ public class contractMgr : Service
 
         try
         {
-            int callerCharacterID = call.Session.EnsureCharacterIsSelected ();
+            int callerCharacterID = call.Session.CharacterID;
 
             // TODO: SUPPORT forCorp
             ContractDB.Contract contract = DB.GetContract (connection, contractID);

@@ -36,10 +36,10 @@ public class account : Service
         CacheStorage  = cacheStorage;
     }
 
-    [RequiredRole (Roles.ROLE_PLAYER)]
+    [MustBeCharacter]
     private PyDataType GetCashBalance (Session session)
     {
-        return WalletManager.GetWalletBalance (session.EnsureCharacterIsSelected ());
+        return WalletManager.GetWalletBalance (session.CharacterID);
     }
 
     public PyDataType GetCashBalance (PyBool isCorpWallet, CallInformation call)
@@ -82,6 +82,7 @@ public class account : Service
         return CachedMethodCallResult.FromCacheHint (cacheHint);
     }
 
+    [MustBeCharacter]
     public PyDataType GetJournal (
         PyInteger accountKey,   PyInteger fromDate,      PyInteger entryTypeID,
         PyBool    isCorpWallet, PyInteger transactionID, PyInteger rev, CallInformation call
@@ -92,7 +93,7 @@ public class account : Service
         if (transactionID != null)
             transactionIDint = transactionID;
 
-        int entityID = call.Session.EnsureCharacterIsSelected ();
+        int entityID = call.Session.CharacterID;
 
         if (isCorpWallet == true)
             entityID = call.Session.CorporationID;
@@ -138,6 +139,7 @@ public class account : Service
         );
     }
 
+    [MustBeCharacter]
     public PyDataType GiveCash (PyInteger destinationID, PyDecimal quantity, PyString reason, CallInformation call)
     {
         int accountKey = Keys.MAIN;
@@ -145,7 +147,7 @@ public class account : Service
         if (call.NamedPayload.TryGetValue ("toAccountKey", out PyInteger namedAccountKey))
             accountKey = namedAccountKey;
 
-        int callerCharacterID = call.Session.EnsureCharacterIsSelected ();
+        int callerCharacterID = call.Session.CharacterID;
 
         // acquire the origin wallet, subtract quantity
         // TODO: CHECK IF THE WALLETKEY IS INDICATED IN SOME WAY

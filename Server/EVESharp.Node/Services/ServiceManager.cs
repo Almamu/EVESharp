@@ -104,6 +104,14 @@ public class ServiceManager : IServiceManager <string>
     public           petitioner                   petitioner       { get; }
     public           allianceRegistry             allianceRegistry { get; }
 
+    /// <summary>
+    /// Constructor created mainly for testing, should not be used anywhere else
+    /// </summary>
+    protected ServiceManager ()
+    {
+        
+    }
+    
     public ServiceManager (
         CacheStorage     storage, ILogger logger, TimerManager timerManager,
         machoNet         machoNet,
@@ -219,17 +227,14 @@ public class ServiceManager : IServiceManager <string>
             case AccessLevel.Location:
                 if (call.Session.ContainsKey (Session.LOCATION_ID) == false)
                     throw new UnauthorizedCallException <string> (service, method, call.Session.Role);
-
                 break;
             case AccessLevel.Station:
                 if (call.Session.ContainsKey (Session.STATION_ID) == false)
                     throw new UnauthorizedCallException <string> (service, method, call.Session.Role);
-
                 break;
             case AccessLevel.SolarSystem:
                 if (call.Session.ContainsKey (Session.SOLAR_SYSTEM_ID) == false)
                     throw new UnauthorizedCallException <string> (service, method, call.Session.Role);
-
                 break;
         }
 

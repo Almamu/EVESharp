@@ -2,6 +2,7 @@
 using EVESharp.EVE.Client.Exceptions.corpRegistry;
 using EVESharp.EVE.Packets.Complex;
 using EVESharp.EVE.Services;
+using EVESharp.EVE.Services.Validators;
 using EVESharp.Node.Cache;
 using EVESharp.Node.Database;
 using EVESharp.Node.Sessions;
@@ -11,6 +12,7 @@ using Serilog;
 
 namespace EVESharp.Node.Services.Corporations;
 
+[MustBeCharacter]
 public class corpmgr : Service
 {
     public override AccessLevel   AccessLevel  => AccessLevel.None;
@@ -46,8 +48,6 @@ public class corpmgr : Service
 
         if (which == "offices")
         {
-            call.Session.EnsureCharacterIsSelected ();
-
             // dirty little hack, but should do the trick
             CacheStorage.StoreCall (
                 "corpmgr",
@@ -76,8 +76,6 @@ public class corpmgr : Service
 
         if (which == "offices")
         {
-            call.Session.EnsureCharacterIsSelected ();
-
             // dirty little hack, but should do the trick
             CacheStorage.StoreCall (
                 "corpmgr",

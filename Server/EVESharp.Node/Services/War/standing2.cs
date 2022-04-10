@@ -1,6 +1,7 @@
 using EVESharp.EVE.Packets.Complex;
 using EVESharp.EVE.Packets.Exceptions;
 using EVESharp.EVE.Services;
+using EVESharp.EVE.Services.Validators;
 using EVESharp.EVE.StaticData.Standings;
 using EVESharp.Node.Cache;
 using EVESharp.Node.Client.Notifications.Character;
@@ -14,6 +15,7 @@ using EVESharp.PythonTypes.Types.Primitives;
 
 namespace EVESharp.Node.Services.War;
 
+[MustBeCharacter]
 public class standing2 : Service
 {
     public override AccessLevel        AccessLevel   => AccessLevel.None;
@@ -56,7 +58,7 @@ public class standing2 : Service
 
     public PyTuple GetCharStandings (CallInformation call)
     {
-        int callerCharacterID = call.Session.EnsureCharacterIsSelected ();
+        int callerCharacterID = call.Session.CharacterID;
 
         return new PyTuple (3)
         {
@@ -83,7 +85,7 @@ public class standing2 : Service
         PyInteger eventTypeID, PyInteger eventDateTime, CallInformation call
     )
     {
-        int callerCharacterID = call.Session.EnsureCharacterIsSelected ();
+        int callerCharacterID = call.Session.CharacterID;
 
         if (from != call.Session.CorporationID && from != callerCharacterID && to != call.Session.CorporationID &&
             to != callerCharacterID)
@@ -107,7 +109,7 @@ public class standing2 : Service
 
     public PyDataType SetPlayerStanding (PyInteger entityID, PyDecimal standing, PyString reason, CallInformation call)
     {
-        int callerCharacterID = call.Session.EnsureCharacterIsSelected ();
+        int callerCharacterID = call.Session.CharacterID;
 
         DB.CreateStandingTransaction ((int) EventType.StandingPlayerSetStanding, callerCharacterID, entityID, standing, reason);
         DB.SetPlayerStanding (callerCharacterID, entityID, standing);

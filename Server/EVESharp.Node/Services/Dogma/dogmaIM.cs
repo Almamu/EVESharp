@@ -5,6 +5,7 @@ using EVESharp.EVE.Client.Exceptions.inventory;
 using EVESharp.EVE.Packets.Complex;
 using EVESharp.EVE.Packets.Exceptions;
 using EVESharp.EVE.Services;
+using EVESharp.EVE.Services.Validators;
 using EVESharp.EVE.Sessions;
 using EVESharp.EVE.StaticData.Inventory;
 using EVESharp.Node.Client.Notifications.Station;
@@ -21,6 +22,7 @@ using Groups = EVESharp.EVE.StaticData.Inventory.Groups;
 
 namespace EVESharp.Node.Services.Dogma;
 
+[MustBeCharacter]
 public class dogmaIM : ClientBoundService
 {
     public override AccessLevel AccessLevel => AccessLevel.None;
@@ -50,7 +52,7 @@ public class dogmaIM : ClientBoundService
 
     public PyDataType ShipGetInfo (CallInformation call)
     {
-        int  callerCharacterID = call.Session.EnsureCharacterIsSelected ();
+        int  callerCharacterID = call.Session.CharacterID;
         int? shipID            = call.Session.ShipID;
 
         if (shipID is null)
@@ -101,7 +103,7 @@ public class dogmaIM : ClientBoundService
 
     public PyDataType CharGetInfo (CallInformation call)
     {
-        int callerCharacterID = call.Session.EnsureCharacterIsSelected ();
+        int callerCharacterID = call.Session.CharacterID;
 
         Character character = ItemFactory.GetItem <Character> (callerCharacterID);
 
@@ -135,7 +137,7 @@ public class dogmaIM : ClientBoundService
 
     public PyDataType ItemGetInfo (PyInteger itemID, CallInformation call)
     {
-        int callerCharacterID = call.Session.EnsureCharacterIsSelected ();
+        int callerCharacterID = call.Session.CharacterID;
 
         ItemEntity item = ItemFactory.LoadItem (itemID);
 
@@ -172,7 +174,7 @@ public class dogmaIM : ClientBoundService
 
     public PyDataType GetCharacterBaseAttributes (CallInformation call)
     {
-        int callerCharacterID = call.Session.EnsureCharacterIsSelected ();
+        int callerCharacterID = call.Session.CharacterID;
 
         Character character = ItemFactory.GetItem <Character> (callerCharacterID);
 
@@ -253,7 +255,7 @@ public class dogmaIM : ClientBoundService
 
     protected override BoundService CreateBoundInstance (ServiceBindParams bindParams, CallInformation call)
     {
-        int characterID = call.Session.EnsureCharacterIsSelected ();
+        int characterID = call.Session.CharacterID;
 
         if (this.MachoResolveObject (bindParams, call) != BoundServiceManager.MachoNet.NodeID)
             throw new CustomError ("Trying to bind an object that does not belong to us!");
@@ -275,7 +277,7 @@ public class dogmaIM : ClientBoundService
 
     protected override void OnClientDisconnected ()
     {
-        int characterID = Session.EnsureCharacterIsSelected ();
+        int characterID = Session.CharacterID;
 
         // notify station about the player disconnecting from the object
         if (Session.StationID == ObjectID)

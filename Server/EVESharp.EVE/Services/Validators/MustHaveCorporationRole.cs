@@ -7,65 +7,79 @@ using EVESharp.EVE.StaticData.Corporation;
 
 namespace EVESharp.EVE.Services.Validators;
 
-[AttributeUsage(AttributeTargets.Method, AllowMultiple = true)]
-public class RequiredCorporationRole : CallValidator
+[AttributeUsage(AttributeTargets.Method | AttributeTargets.Class, AllowMultiple = true)]
+public class MustHaveCorporationRole : CallValidator
 {
     public long[] Roles { get; init; }
     
-    public RequiredCorporationRole(long role)
+    public MustHaveCorporationRole(long role)
     {
-        Roles = new long [] {role};
+        Roles               = new long [] {role};
+        Exception           = typeof (CrpAccessDenied);
+        ExceptionParameters = new object [] {MLS.UI_GENERIC_ACCESSDENIED};
     }
 
-    public RequiredCorporationRole (CorporationRole role)
+    public MustHaveCorporationRole (CorporationRole role)
+        : this ((long) role)
     {
-        Roles = new long [] {(long) role};
+    }
+
+    public MustHaveCorporationRole (params long [] roles)
+    {
+        Roles               = roles;
+        Exception           = typeof (CrpAccessDenied);
+        ExceptionParameters = new object [] {MLS.UI_GENERIC_ACCESSDENIED};
+    }
+
+    public MustHaveCorporationRole (params CorporationRole [] roles)
+        : this (roles.Select (x => (long) x).ToArray ())
+    {
     }
     
-    public RequiredCorporationRole(long role, Type exception)
+    public MustHaveCorporationRole(long role, Type exception)
     {
         Roles               = new long [] {role};
         Exception           = exception;
         ExceptionParameters = new object [] { };
     }
 
-    public RequiredCorporationRole(CorporationRole role, Type exception)
+    public MustHaveCorporationRole(CorporationRole role, Type exception)
         : this((long) role, exception)
     {
     }
 
-    public RequiredCorporationRole (long role, string message)
+    public MustHaveCorporationRole (long role, string message)
     {
         Roles               = new long [] {role};
         Exception           = typeof (CrpAccessDenied);
         ExceptionParameters = new object [] {message};
     }
 
-    public RequiredCorporationRole (CorporationRole role, string message)
+    public MustHaveCorporationRole (CorporationRole role, string message)
         : this((long) role, message)
     {
     }
 
-    public RequiredCorporationRole (string message, params long[] roles)
+    public MustHaveCorporationRole (string message, params long[] roles)
     {
         Roles               = roles;
         Exception           = typeof (CrpAccessDenied);
         ExceptionParameters = new object [] {message};
     }
 
-    public RequiredCorporationRole (string message, params CorporationRole [] roles)
+    public MustHaveCorporationRole (string message, params CorporationRole [] roles)
         : this (message, roles.Select (x => (long) x).ToArray ())
     {
     }
 
-    public RequiredCorporationRole (Type exception, params long [] roles)
+    public MustHaveCorporationRole (Type exception, params long [] roles)
     {
         Roles               = roles;
         Exception           = exception;
         ExceptionParameters = new object [] { };
     }
 
-    public RequiredCorporationRole (Type exception, params CorporationRole [] roles)
+    public MustHaveCorporationRole (Type exception, params CorporationRole [] roles)
         : this (exception, roles.Select (x => (long) x).ToArray ())
     {
     }

@@ -4,6 +4,7 @@ using EVESharp.EVE.Client.Exceptions.jumpCloneSvc;
 using EVESharp.EVE.Market;
 using EVESharp.EVE.Packets.Exceptions;
 using EVESharp.EVE.Services;
+using EVESharp.EVE.Services.Validators;
 using EVESharp.EVE.Sessions;
 using EVESharp.EVE.Wallet;
 using EVESharp.Node.Chat;
@@ -18,6 +19,7 @@ using EVESharp.PythonTypes.Types.Primitives;
 
 namespace EVESharp.Node.Services.Inventory;
 
+[MustBeCharacter]
 public class insuranceSvc : ClientBoundService
 {
     private readonly int           mStationID;
@@ -65,28 +67,28 @@ public class insuranceSvc : ClientBoundService
             if (shipID is null)
                 throw new CustomError ("The character is not onboard any ship");
 
-            return new PyList <PyPackedRow> (1) {[0] = DB.GetContractForShip (call.Session.EnsureCharacterIsSelected (), (int) shipID)};
+            return new PyList <PyPackedRow> (1) {[0] = DB.GetContractForShip (call.Session.CharacterID, (int) shipID)};
         }
 
-        return DB.GetContractsForShipsOnStation (call.Session.EnsureCharacterIsSelected (), this.mStationID);
+        return DB.GetContractsForShipsOnStation (call.Session.CharacterID, this.mStationID);
     }
 
     public PyPackedRow GetContractForShip (PyInteger itemID, CallInformation call)
     {
-        return DB.GetContractForShip (call.Session.EnsureCharacterIsSelected (), itemID);
+        return DB.GetContractForShip (call.Session.CharacterID, itemID);
     }
 
     public PyList <PyPackedRow> GetContracts (PyInteger includeCorp, CallInformation call)
     {
         if (includeCorp == 0)
-            return DB.GetContractsForShipsOnStation (call.Session.EnsureCharacterIsSelected (), this.mStationID);
+            return DB.GetContractsForShipsOnStation (call.Session.CharacterID, this.mStationID);
 
-        return DB.GetContractsForShipsOnStationIncludingCorp (call.Session.EnsureCharacterIsSelected (), call.Session.CorporationID, this.mStationID);
+        return DB.GetContractsForShipsOnStationIncludingCorp (call.Session.CharacterID, call.Session.CorporationID, this.mStationID);
     }
 
     public PyBool InsureShip (PyInteger itemID, PyDecimal insuranceCost, PyInteger isCorpItem, CallInformation call)
     {
-        int callerCharacterID = call.Session.EnsureCharacterIsSelected ();
+        int callerCharacterID = call.Session.CharacterID;
 
         if (ItemFactory.TryGetItem (itemID, out Ship item) == false)
             throw new CustomError ("Ships not loaded for player and hangar!");
@@ -143,12 +145,10 @@ public class insuranceSvc : ClientBoundService
 
     public PyDataType UnInsureShip (PyInteger itemID, CallInformation call)
     {
-        int callerCharacterID = call.Session.EnsureCharacterIsSelected ();
+        int callerCharacterID = call.Session.CharacterID;
 
         if (ItemFactory.TryGetItem (itemID, out Ship item) == false)
             throw new CustomError ("Ships not loaded for player and hangar!");
-
-        Character character = ItemFactory.GetItem <Character> (callerCharacterID);
 
         if (item.OwnerID != call.Session.CorporationID && item.OwnerID != callerCharacterID)
             throw new MktNotOwner ();

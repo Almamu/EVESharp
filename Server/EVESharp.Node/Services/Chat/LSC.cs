@@ -3,6 +3,7 @@ using System.IO;
 using EVESharp.EVE.Client.Exceptions.LSC;
 using EVESharp.EVE.Packets.Exceptions;
 using EVESharp.EVE.Services;
+using EVESharp.EVE.Services.Validators;
 using EVESharp.EVE.StaticData.Inventory;
 using EVESharp.Node.Chat;
 using EVESharp.Node.Client.Notifications.Chat;
@@ -19,6 +20,7 @@ using Serilog;
 
 namespace EVESharp.Node.Services.Chat;
 
+[MustBeCharacter]
 public class LSC : Service
 {
     /// <summary>
@@ -105,7 +107,7 @@ public class LSC : Service
 
     public PyDataType GetChannels (CallInformation call)
     {
-        return DB.GetChannelsForCharacter (call.Session.EnsureCharacterIsSelected (), call.Session.CorporationID);
+        return DB.GetChannelsForCharacter (call.Session.CharacterID, call.Session.CorporationID);
     }
 
     public PyDataType GetChannels (PyInteger reload, CallInformation call)
@@ -115,7 +117,7 @@ public class LSC : Service
 
     public PyDataType GetMembers (PyDataType channel, CallInformation call)
     {
-        int callerCharacterID = call.Session.EnsureCharacterIsSelected ();
+        int callerCharacterID = call.Session.CharacterID;
 
         int    channelID;
         string channelType;
@@ -207,7 +209,7 @@ public class LSC : Service
 
     public PyList <PyTuple> JoinChannels (PyList channels, PyInteger role, CallInformation call)
     {
-        int callerCharacterID = call.Session.EnsureCharacterIsSelected ();
+        int callerCharacterID = call.Session.CharacterID;
 
         PyList <PyTuple> result = new PyList <PyTuple> ();
 
@@ -286,7 +288,7 @@ public class LSC : Service
 
     public PyDataType GetMyMessages (CallInformation call)
     {
-        return MessagesDB.GetMailHeaders (call.Session.EnsureCharacterIsSelected ());
+        return MessagesDB.GetMailHeaders (call.Session.CharacterID);
     }
 
     public PyDataType GetRookieHelpChannel (CallInformation call)
@@ -296,7 +298,7 @@ public class LSC : Service
 
     public PyDataType SendMessage (PyDataType channel, PyString message, CallInformation call)
     {
-        int callerCharacterID = call.Session.EnsureCharacterIsSelected ();
+        int callerCharacterID = call.Session.CharacterID;
 
         int    channelID;
         int?   entityID;
@@ -378,7 +380,7 @@ public class LSC : Service
 
     public PyDataType LeaveChannel (PyDataType channel, PyInteger announce, CallInformation call)
     {
-        int callerCharacterID = call.Session.EnsureCharacterIsSelected ();
+        int callerCharacterID = call.Session.CharacterID;
 
         int    channelID;
         string channelType;
@@ -418,7 +420,7 @@ public class LSC : Service
 
     public PyDataType CreateChannel (PyString name, CallInformation call)
     {
-        int callerCharacterID = call.Session.EnsureCharacterIsSelected ();
+        int callerCharacterID = call.Session.CharacterID;
 
         if (name.Length > 60)
             throw new ChatCustomChannelNameTooLong (60);
@@ -457,7 +459,7 @@ public class LSC : Service
 
     public PyDataType DestroyChannel (PyInteger channelID, CallInformation call)
     {
-        int callerCharacterID = call.Session.EnsureCharacterIsSelected ();
+        int callerCharacterID = call.Session.CharacterID;
 
         // ensure the character has enough permissions
         if (DB.IsCharacterAdminOfChannel (channelID, callerCharacterID) == false)
@@ -477,7 +479,7 @@ public class LSC : Service
 
     public PyDataType AccessControl (PyInteger channelID, PyInteger characterID, PyInteger accessLevel, CallInformation call)
     {
-        int callerCharacterID = call.Session.EnsureCharacterIsSelected ();
+        int callerCharacterID = call.Session.CharacterID;
 
         if (DB.IsCharacterOperatorOrAdminOfChannel (channelID, callerCharacterID) == false)
             throw new LSCCannotAccessControl ("Insufficient permissions");
@@ -508,7 +510,7 @@ public class LSC : Service
 
     public PyDataType ForgetChannel (PyInteger channelID, CallInformation call)
     {
-        int callerCharacterID = call.Session.EnsureCharacterIsSelected ();
+        int callerCharacterID = call.Session.CharacterID;
 
         // announce leaving, important in private channels
         Notifications.NotifyCharacters (
@@ -578,7 +580,7 @@ public class LSC : Service
 
     public PyDataType Invite (PyInteger characterID, PyInteger channelID, PyString channelTitle, PyBool addAllowed, CallInformation call)
     {
-        int callerCharacterID = call.Session.EnsureCharacterIsSelected ();
+        int callerCharacterID = call.Session.CharacterID;
 
         try
         {
@@ -641,7 +643,7 @@ public class LSC : Service
 
     public PyDataType Page (PyList destinationMailboxes, PyString subject, PyString message, CallInformation call)
     {
-        int callerCharacterID = call.Session.EnsureCharacterIsSelected ();
+        int callerCharacterID = call.Session.CharacterID;
 
         // TODO: AS IT IS RIGHT NOW THE USER CAN INJECT HTML IF THE CALL IS DONE MANUALL (THROUGH CUSTOM CODE OR IMPLEMENTING THE FULL GAME PROTOCOL)
         // TODO: THE HTML IT SUPPORTS IS NOT THAT BIG, BUT BETTER BE SAFE AND DO SOME DETECTIONS HERE TO PREVENT HTML FROM BEING USED!
@@ -654,7 +656,7 @@ public class LSC : Service
     public PyDataType GetMessageDetails (PyInteger channelID, PyInteger messageID, CallInformation call)
     {
         // ensure the player is allowed to read messages off this mail list
-        if (DB.IsPlayerAllowedToRead (channelID, call.Session.EnsureCharacterIsSelected ()) == false)
+        if (DB.IsPlayerAllowedToRead (channelID, call.Session.CharacterID) == false)
             return null;
 
         return MessagesDB.GetMessageDetails (channelID, messageID);
@@ -662,7 +664,7 @@ public class LSC : Service
 
     public PyDataType MarkMessagesRead (PyList messageIDs, CallInformation call)
     {
-        int callerCharacterID = call.Session.EnsureCharacterIsSelected ();
+        int callerCharacterID = call.Session.CharacterID;
 
         MessagesDB.MarkMessagesRead (callerCharacterID, messageIDs.GetEnumerable <PyInteger> ());
 
@@ -671,7 +673,7 @@ public class LSC : Service
 
     public PyDataType DeleteMessages (PyInteger mailboxID, PyList messageIDs, CallInformation call)
     {
-        int callerCharacterID = call.Session.EnsureCharacterIsSelected ();
+        int callerCharacterID = call.Session.CharacterID;
 
         MessagesDB.DeleteMessages (callerCharacterID, mailboxID, messageIDs.GetEnumerable <PyInteger> ());
 

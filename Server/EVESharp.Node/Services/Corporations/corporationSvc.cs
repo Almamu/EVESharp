@@ -20,6 +20,7 @@ using EVESharp.PythonTypes.Types.Primitives;
 
 namespace EVESharp.Node.Services.Corporations;
 
+[MustBeCharacter]
 public class corporationSvc : Service
 {
     public override AccessLevel        AccessLevel   => AccessLevel.None;
@@ -66,7 +67,7 @@ public class corporationSvc : Service
     public PyTuple GetMedalsReceived (PyInteger characterID, CallInformation call)
     {
         // TODO: CACHE THIS ANSWER TOO
-        int callerCharacterID = call.Session.EnsureCharacterIsSelected ();
+        int callerCharacterID = call.Session.CharacterID;
 
         bool publicOnly = callerCharacterID != characterID;
 
@@ -150,10 +151,10 @@ public class corporationSvc : Service
         // TODO: VALIDATE PART NAMES TO ENSURE THEY'RE VALID
     }
 
-    [RequiredCorporationRole(MLS.UI_CORP_NEED_ROLE_PERS_MAN_OR_DIRECT, CorporationRole.PersonnelManager, CorporationRole.Director)]
+    [MustHaveCorporationRole(MLS.UI_CORP_NEED_ROLE_PERS_MAN_OR_DIRECT, CorporationRole.PersonnelManager, CorporationRole.Director)]
     public PyDataType CreateMedal (PyString title, PyString description, PyList parts, PyBool pay, CallInformation call)
     {
-        int characterID = call.Session.EnsureCharacterIsSelected ();
+        int characterID = call.Session.CharacterID;
 
         this.ValidateMedal (title, description, parts);
 
@@ -171,7 +172,7 @@ public class corporationSvc : Service
         return null;
     }
 
-    [RequiredCorporationRole(MLS.UI_CORP_NEED_ROLE_PERS_MAN_OR_DIRECT, CorporationRole.PersonnelManager, CorporationRole.Director)]
+    [MustHaveCorporationRole(MLS.UI_CORP_NEED_ROLE_PERS_MAN_OR_DIRECT, CorporationRole.PersonnelManager, CorporationRole.Director)]
     public PyDataType CreateMedal (PyString title, PyString description, PyList parts, CallInformation call)
     {
         this.ValidateMedal (title, description, parts);
@@ -215,18 +216,18 @@ public class corporationSvc : Service
         );
     }
 
-    [RequiredCorporationRole(MLS.UI_CORP_NEED_ROLE_PERS_MAN_OR_DIRECT, CorporationRole.PersonnelManager, CorporationRole.Director)]
+    [MustHaveCorporationRole(MLS.UI_CORP_NEED_ROLE_PERS_MAN_OR_DIRECT, CorporationRole.PersonnelManager, CorporationRole.Director)]
     public PyDataType GiveMedalToCharacters (PyInteger medalID, PyList characterIDs, PyString reason, CallInformation call)
     {
-        int callerCharacterID = call.Session.EnsureCharacterIsSelected ();
+        int callerCharacterID = call.Session.CharacterID;
         
         throw new ConfirmCreatingMedal (Constants.MedalCost);
     }
 
-    [RequiredCorporationRole(MLS.UI_CORP_NEED_ROLE_PERS_MAN_OR_DIRECT, CorporationRole.PersonnelManager, CorporationRole.Director)]
+    [MustHaveCorporationRole(MLS.UI_CORP_NEED_ROLE_PERS_MAN_OR_DIRECT, CorporationRole.PersonnelManager, CorporationRole.Director)]
     public PyDataType GiveMedalToCharacters (PyInteger medalID, PyList characterIDs, PyString reason, PyBool pay, CallInformation call)
     {
-        int callerCharacterID = call.Session.EnsureCharacterIsSelected ();
+        int callerCharacterID = call.Session.CharacterID;
         
         if (pay == false)
             throw new ConfirmGivingMedal (Constants.MedalCost);
@@ -253,7 +254,7 @@ public class corporationSvc : Service
 
     public PyDataType SetMedalStatus (PyDictionary newStatuses, CallInformation call)
     {
-        int characterID = call.Session.EnsureCharacterIsSelected ();
+        int characterID = call.Session.CharacterID;
 
         PyDictionary <PyInteger, PyInteger> newStatus = newStatuses.GetEnumerable <PyInteger, PyInteger> ();
 

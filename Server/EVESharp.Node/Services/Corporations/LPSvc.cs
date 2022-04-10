@@ -1,10 +1,12 @@
 ﻿using EVESharp.EVE.Services;
+using EVESharp.EVE.Services.Validators;
 using EVESharp.Node.Database;
 using EVESharp.Node.Sessions;
 using EVESharp.PythonTypes.Types.Primitives;
 
 namespace EVESharp.Node.Services.Corporations;
 
+[MustBeCharacter]
 public class LPSvc : Service
 {
     public override AccessLevel   AccessLevel => AccessLevel.None;
@@ -17,6 +19,6 @@ public class LPSvc : Service
 
     public PyDecimal GetLPForCharacterCorp (PyInteger corporationID, CallInformation call)
     {
-        return DB.GetLPForCharacterCorp (corporationID, call.Session.EnsureCharacterIsSelected ());
+        return DB.GetLPForCharacterCorp (corporationID, call.Session.CharacterID);
     }
 }

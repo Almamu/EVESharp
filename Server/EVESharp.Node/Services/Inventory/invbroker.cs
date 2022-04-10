@@ -3,6 +3,7 @@ using EVESharp.EVE.Client.Exceptions.inventory;
 using EVESharp.EVE.Client.Messages;
 using EVESharp.EVE.Packets.Exceptions;
 using EVESharp.EVE.Services;
+using EVESharp.EVE.Services.Validators;
 using EVESharp.EVE.Sessions;
 using EVESharp.EVE.StaticData.Corporation;
 using EVESharp.EVE.StaticData.Inventory;
@@ -21,6 +22,7 @@ using Groups = EVESharp.EVE.StaticData.Inventory.Groups;
 
 namespace EVESharp.Node.Services.Inventory;
 
+[MustBeCharacter]
 public class invbroker : ClientBoundService
 {
     private readonly int         mObjectID;
@@ -88,7 +90,7 @@ public class invbroker : ClientBoundService
 
     public PySubStruct GetInventoryFromId (PyInteger itemID, PyInteger one, CallInformation call)
     {
-        int        ownerID       = call.Session.EnsureCharacterIsSelected ();
+        int        ownerID       = call.Session.CharacterID;
         ItemEntity inventoryItem = ItemFactory.LoadItem (itemID);
 
         if (inventoryItem is not Station)
@@ -103,7 +105,7 @@ public class invbroker : ClientBoundService
 
     public PySubStruct GetInventory (PyInteger containerID, PyInteger origOwnerID, CallInformation call)
     {
-        int ownerID = call.Session.EnsureCharacterIsSelected ();
+        int ownerID = call.Session.CharacterID;
 
         Flags flag = Flags.None;
 
@@ -166,7 +168,7 @@ public class invbroker : ClientBoundService
 
     public PyDataType TrashItems (PyList itemIDs, PyInteger stationID, CallInformation call)
     {
-        int callerCharacterID = call.Session.EnsureCharacterIsSelected ();
+        int callerCharacterID = call.Session.CharacterID;
 
         foreach (PyInteger itemID in itemIDs.GetEnumerable <PyInteger> ())
         {
@@ -194,7 +196,7 @@ public class invbroker : ClientBoundService
         ItemEntity item = ItemFactory.GetItem (itemID);
 
         // ensure the itemID is owned by the client's character
-        if (item.OwnerID != call.Session.EnsureCharacterIsSelected ())
+        if (item.OwnerID != call.Session.CharacterID)
             throw new TheItemIsNotYoursToTake (itemID);
 
         item.Name = newLabel;
@@ -216,7 +218,7 @@ public class invbroker : ClientBoundService
     {
         ItemEntity item = ItemFactory.GetItem (containerID);
 
-        if (item.OwnerID != call.Session.EnsureCharacterIsSelected ())
+        if (item.OwnerID != call.Session.CharacterID)
             throw new TheItemIsNotYoursToTake (containerID);
 
         // ensure the item is a cargo container

@@ -2,6 +2,7 @@
 using EVESharp.EVE.Market;
 using EVESharp.EVE.Packets.Exceptions;
 using EVESharp.EVE.Services;
+using EVESharp.EVE.Services.Validators;
 using EVESharp.EVE.Sessions;
 using EVESharp.EVE.StaticData.Inventory;
 using EVESharp.EVE.Wallet;
@@ -20,6 +21,7 @@ using Groups = EVESharp.EVE.StaticData.Inventory.Groups;
 
 namespace EVESharp.Node.Services.Characters;
 
+[MustBeCharacter]
 public class jumpCloneSvc : ClientBoundService
 {
     public override AccessLevel AccessLevel => AccessLevel.None;
@@ -70,7 +72,7 @@ public class jumpCloneSvc : ClientBoundService
 
     public PyDataType GetCloneState (CallInformation call)
     {
-        int callerCharacterID = call.Session.EnsureCharacterIsSelected ();
+        int callerCharacterID = call.Session.CharacterID;
 
         Character character = ItemFactory.GetItem <Character> (callerCharacterID);
 
@@ -87,7 +89,7 @@ public class jumpCloneSvc : ClientBoundService
     public PyDataType DestroyInstalledClone (PyInteger jumpCloneID, CallInformation call)
     {
         // if the clone is not loaded the clone cannot be removed, players can only remove clones from where they're at
-        int callerCharacterID = call.Session.EnsureCharacterIsSelected ();
+        int callerCharacterID = call.Session.CharacterID;
 
         if (ItemFactory.TryGetItem (jumpCloneID, out ItemEntity clone) == false)
             throw new JumpCantDestroyNonLocalClone ();
@@ -107,7 +109,7 @@ public class jumpCloneSvc : ClientBoundService
 
     public PyDataType GetShipCloneState (CallInformation call)
     {
-        return ItemDB.GetClonesInShipForCharacter (call.Session.EnsureCharacterIsSelected ());
+        return ItemDB.GetClonesInShipForCharacter (call.Session.CharacterID);
     }
 
     public PyDataType CloneJump (PyInteger locationID, PyBool unknown, CallInformation call)
@@ -125,10 +127,11 @@ public class jumpCloneSvc : ClientBoundService
         return 100000;
     }
 
+    [MustBeInStation]
     public PyDataType InstallCloneInStation (CallInformation call)
     {
-        int callerCharacterID = call.Session.EnsureCharacterIsSelected ();
-        int stationID         = call.Session.EnsureCharacterIsInStation ();
+        int callerCharacterID = call.Session.CharacterID;
+        int stationID         = call.Session.StationID;
 
         Character character = ItemFactory.GetItem <Character> (callerCharacterID);
 

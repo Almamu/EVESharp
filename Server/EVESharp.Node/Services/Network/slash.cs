@@ -6,6 +6,7 @@ using EVESharp.EVE.Account;
 using EVESharp.EVE.Client.Exceptions.slash;
 using EVESharp.EVE.Market;
 using EVESharp.EVE.Services;
+using EVESharp.EVE.Services.Validators;
 using EVESharp.EVE.StaticData.Inventory;
 using EVESharp.EVE.Wallet;
 using EVESharp.Node.Client.Notifications.Inventory;
@@ -25,6 +26,8 @@ using Type = EVESharp.EVE.StaticData.Inventory.Type;
 
 namespace EVESharp.Node.Services.Network;
 
+[MustBeCharacter]
+[MustHaveRole(Roles.ROLEMASK_ELEVATEDPLAYER)]
 public class slash : Service
 {
     private readonly Dictionary <string, Action <string [], CallInformation>> mCommands =
@@ -112,7 +115,7 @@ public class slash : Service
             throw new SlashError ("giveisk second argument must be the ISK quantity to give");
 
         int targetCharacterID = 0;
-        int originCharacterID = call.Session.EnsureCharacterIsSelected ();
+        int originCharacterID = call.Session.CharacterID;
 
         if (targetCharacter == "me")
         {
@@ -153,8 +156,7 @@ public class slash : Service
         if (argv.Length > 2)
             quantity = int.Parse (argv [2]);
 
-        if (call.Session.StationID == null)
-            throw new SlashError ("Creating items can only be done at station");
+        call.Session.EnsureCharacterIsInStation ();
 
         // ensure the typeID exists
         if (TypeManager.ContainsKey (typeID) == false)
@@ -162,7 +164,7 @@ public class slash : Service
 
         // create a new item with the correct locationID
         Station   location  = ItemFactory.GetStaticStation ((int) call.Session.StationID);
-        Character character = ItemFactory.GetItem <Character> (call.Session.EnsureCharacterIsSelected ());
+        Character character = ItemFactory.GetItem <Character> (call.Session.CharacterID);
 
         Type       itemType = TypeManager [typeID];
         ItemEntity item     = ItemFactory.CreateSimpleItem (itemType, character, location, Flags.Hangar, quantity);
@@ -170,7 +172,7 @@ public class slash : Service
         item.Persist ();
 
         // send client a notification so they can display the item in the hangar
-        DogmaUtils.QueueMultiEvent (call.Session.EnsureCharacterIsSelected (), OnItemChange.BuildNewItemChange (item));
+        DogmaUtils.QueueMultiEvent (call.Session.CharacterID, OnItemChange.BuildNewItemChange (item));
     }
 
     private static int ParseIntegerThatMightBeDecimal (string value)
@@ -189,7 +191,7 @@ public class slash : Service
         if (argv.Length != 4)
             throw new SlashError ("GiveSkill must have 4 arguments");
 
-        int characterID = call.Session.EnsureCharacterIsSelected ();
+        int characterID = call.Session.CharacterID;
 
         string target    = argv [1].Trim ('"', ' ');
         string skillType = argv [2];

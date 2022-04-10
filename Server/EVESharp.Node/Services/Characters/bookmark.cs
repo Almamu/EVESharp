@@ -4,6 +4,7 @@ using EVESharp.Common.Database;
 using EVESharp.Database;
 using EVESharp.EVE.Packets.Exceptions;
 using EVESharp.EVE.Services;
+using EVESharp.EVE.Services.Validators;
 using EVESharp.EVE.StaticData.Inventory;
 using EVESharp.Node.Inventory;
 using EVESharp.Node.Inventory.Items;
@@ -14,6 +15,7 @@ using EVESharp.PythonTypes.Types.Primitives;
 
 namespace EVESharp.Node.Services.Characters;
 
+[MustBeCharacter]
 public class bookmark : Service
 {
     public override AccessLevel        AccessLevel => AccessLevel.None;
@@ -30,7 +32,7 @@ public class bookmark : Service
     {
         return Database.Rowset (
             BookmarkDB.GET,
-            new Dictionary <string, object> {{"_ownerID", call.Session.EnsureCharacterIsSelected ()}}
+            new Dictionary <string, object> {{"_ownerID", call.Session.CharacterID}}
         );
     }
 
@@ -48,7 +50,7 @@ public class bookmark : Service
             BookmarkDB.CREATE,
             new Dictionary <string, object>
             {
-                {"_ownerID", call.Session.EnsureCharacterIsSelected ()},
+                {"_ownerID", call.Session.CharacterID},
                 {"_itemID", itemID},
                 {"_typeID", item.Type.ID},
                 {"_memo", name},
@@ -106,7 +108,7 @@ public class bookmark : Service
             BookmarkDB.DELETE,
             new Dictionary <string, object>
             {
-                {"_ownerID", call.Session.EnsureCharacterIsSelected ()},
+                {"_ownerID", call.Session.CharacterID},
                 {"_bookmarkIDs", PyString.Join (',', bookmarkIDs.GetEnumerable <PyInteger> ()).Value}
             }
         );

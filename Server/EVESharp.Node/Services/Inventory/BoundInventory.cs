@@ -75,14 +75,14 @@ public class BoundInventory : ClientBoundService
 
     public PyDataType ListStations (PyInteger blueprintsOnly, PyInteger forCorp, CallInformation call)
     {
-        int callerCharacterID = call.Session.EnsureCharacterIsSelected ();
+        int callerCharacterID = call.Session.CharacterID;
 
         return ItemDB.ListStations (forCorp == 1 ? call.Session.CorporationID : callerCharacterID, blueprintsOnly);
     }
 
     public PyDataType ListStationItems (PyInteger stationID, CallInformation call)
     {
-        return ItemDB.ListStationItems (stationID, call.Session.EnsureCharacterIsSelected ());
+        return ItemDB.ListStationItems (stationID, call.Session.CharacterID);
     }
 
     public PyDataType ListStationBlueprintItems (PyInteger locationID, PyInteger _, PyInteger isCorp, CallInformation call)
@@ -90,7 +90,7 @@ public class BoundInventory : ClientBoundService
         if (isCorp == 1)
             return ItemDB.ListStationBlueprintItems (locationID, call.Session.CorporationID);
 
-        return ItemDB.ListStationBlueprintItems (locationID, call.Session.EnsureCharacterIsSelected ());
+        return ItemDB.ListStationBlueprintItems (locationID, call.Session.CharacterID);
     }
 
     public PyDataType GetItem (CallInformation call)
@@ -101,7 +101,7 @@ public class BoundInventory : ClientBoundService
     private void PreMoveItemCheck (ItemEntity item, Flags flag, double quantityToMove, Session session)
     {
         // check that where the item comes from we have permissions
-        item.EnsureOwnership (session.EnsureCharacterIsSelected (), session.CorporationID, session.CorporationRole, true);
+        item.EnsureOwnership (session.CharacterID, session.CorporationID, session.CorporationRole, true);
 
         if (this.mInventory.Type.ID == (int) Types.Capsule)
             throw new CantTakeInSpaceCapsule ();
@@ -568,7 +568,7 @@ public class BoundInventory : ClientBoundService
 
     public PyDataType MultiMerge (PyList merges, CallInformation call)
     {
-        int callerCharacterID = call.Session.EnsureCharacterIsSelected ();
+        int callerCharacterID = call.Session.CharacterID;
 
         foreach (PyTuple merge in merges.GetEnumerable <PyTuple> ())
         {
@@ -625,7 +625,7 @@ public class BoundInventory : ClientBoundService
 
     private void StackAll (Flags locationFlag, CallInformation call)
     {
-        int callerCharacterID = call.Session.EnsureCharacterIsSelected ();
+        int callerCharacterID = call.Session.CharacterID;
 
         // TODO: ADD CONSTRAINTS CHECKS FOR THE LOCATIONFLAG
         foreach ((int firstItemID, ItemEntity firstItem) in this.mInventory.Items)
@@ -736,7 +736,7 @@ public class BoundInventory : ClientBoundService
         ItemFactory.DestroyItem (item);
 
         // notify the client about the change
-        DogmaUtils.QueueMultiEvent (call.Session.EnsureCharacterIsSelected (), OnItemChange.BuildLocationChange (item, oldFlag, oldLocationID));
+        DogmaUtils.QueueMultiEvent (call.Session.CharacterID, OnItemChange.BuildLocationChange (item, oldFlag, oldLocationID));
 
         return null;
     }

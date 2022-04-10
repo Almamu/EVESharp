@@ -25,10 +25,12 @@
 using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
+using EVESharp.EVE.Account;
 using EVESharp.EVE.Client.Exceptions.character;
 using EVESharp.EVE.Market;
 using EVESharp.EVE.Packets.Exceptions;
 using EVESharp.EVE.Services;
+using EVESharp.EVE.Services.Validators;
 using EVESharp.EVE.Sessions;
 using EVESharp.EVE.StaticData;
 using EVESharp.EVE.StaticData.Inventory;
@@ -91,11 +93,13 @@ public class character : Service
         SessionManager      = sessionManager;
     }
 
+    [MustNotBeCharacter]
     public PyDataType GetCharactersToSelect (CallInformation call)
     {
         return DB.GetCharacterList (call.Session.UserID);
     }
 
+    [MustNotBeCharacter]
     public PyDataType LogStartOfCharacterCreation (CallInformation call)
     {
         return null;
@@ -116,6 +120,7 @@ public class character : Service
         return new PyDictionary ();
     }
 
+    [MustNotBeCharacter]
     public PyInteger ValidateNameEx (PyString name, CallInformation call)
     {
         string characterName = name;
@@ -284,6 +289,7 @@ public class character : Service
         return ItemFactory.LoadItem (itemID) as Node.Inventory.Items.Types.Character;
     }
 
+    [MustNotBeCharacter]
     public PyDataType CreateCharacter2 (
         PyString     characterName, PyInteger       bloodlineID, PyInteger genderID, PyInteger ancestryID,
         PyDictionary appearance,    CallInformation call
@@ -410,11 +416,13 @@ public class character : Service
         return character.ID;
     }
 
+    [MustNotBeCharacter]
     public PyDataType GetCharacterToSelect (PyInteger characterID, CallInformation call)
     {
         return DB.GetCharacterSelectionInfo (characterID, call.Session.UserID);
     }
 
+    [MustNotBeCharacter]
     public PyDataType SelectCharacterID (
         PyInteger       characterID, PyBool loadDungeon, PyDataType secondChoiceID,
         CallInformation call
@@ -423,6 +431,7 @@ public class character : Service
         return this.SelectCharacterID (characterID, loadDungeon == true ? 1 : 0, secondChoiceID, call);
     }
 
+    [MustNotBeCharacter]
     public PyDataType SelectCharacterID (PyInteger characterID, CallInformation call)
     {
         return this.SelectCharacterID (characterID, 0, 0, call);
@@ -430,6 +439,7 @@ public class character : Service
 
     // TODO: THIS PyNone SHOULD REALLY BE AN INTEGER, ALTHOUGH THIS FUNCTIONALITY IS NOT USED
     // TODO: IT REVEALS AN IMPORTANT ISSUE, WE CAN'T HAVE A WILDCARD PARAMETER PyDataType
+    [MustNotBeCharacter]
     public PyDataType SelectCharacterID (
         PyInteger       characterID, PyInteger loadDungeon, PyDataType secondChoiceID,
         CallInformation call
@@ -511,15 +521,17 @@ public class character : Service
     {
         return call.Session.UserID;
     }
-
+    
+    [MustBeCharacter]
     public PyDataType GetOwnerNoteLabels (CallInformation call)
     {
-        return DB.GetOwnerNoteLabels (call.Session.EnsureCharacterIsSelected ());
+        return DB.GetOwnerNoteLabels (call.Session.CharacterID);
     }
 
+    [MustBeCharacter]
     public PyDataType GetCloneTypeID (CallInformation call)
     {
-        Node.Inventory.Items.Types.Character character = ItemFactory.GetItem <Node.Inventory.Items.Types.Character> (call.Session.EnsureCharacterIsSelected ());
+        Node.Inventory.Items.Types.Character character = ItemFactory.GetItem <Node.Inventory.Items.Types.Character> (call.Session.CharacterID);
 
         if (character.ActiveCloneID is null)
             throw new CustomError ("You do not have any medical clone...");
@@ -529,9 +541,10 @@ public class character : Service
         return (int) Types.CloneGradeAlpha;
     }
 
+    [MustBeCharacter]
     public PyDataType GetHomeStation (CallInformation call)
     {
-        Node.Inventory.Items.Types.Character character = ItemFactory.GetItem <Node.Inventory.Items.Types.Character> (call.Session.EnsureCharacterIsSelected ());
+        Node.Inventory.Items.Types.Character character = ItemFactory.GetItem <Node.Inventory.Items.Types.Character> (call.Session.CharacterID);
 
         if (character.ActiveCloneID is null)
             throw new CustomError ("You do not have any medical clone...");
@@ -541,16 +554,18 @@ public class character : Service
         return call.Session.StationID;
     }
 
+    [MustBeCharacter]
     public PyDataType GetCharacterDescription (PyInteger characterID, CallInformation call)
     {
-        Node.Inventory.Items.Types.Character character = ItemFactory.GetItem <Node.Inventory.Items.Types.Character> (call.Session.EnsureCharacterIsSelected ());
+        Node.Inventory.Items.Types.Character character = ItemFactory.GetItem <Node.Inventory.Items.Types.Character> (call.Session.CharacterID);
 
         return character.Description;
     }
 
+    [MustBeCharacter]
     public PyDataType SetCharacterDescription (PyString newBio, CallInformation call)
     {
-        Node.Inventory.Items.Types.Character character = ItemFactory.GetItem <Node.Inventory.Items.Types.Character> (call.Session.EnsureCharacterIsSelected ());
+        Node.Inventory.Items.Types.Character character = ItemFactory.GetItem <Node.Inventory.Items.Types.Character> (call.Session.CharacterID);
 
         character.Description = newBio;
         character.Persist ();
@@ -558,13 +573,14 @@ public class character : Service
         return null;
     }
 
+    [MustBeCharacter]
     public PyDataType GetRecentShipKillsAndLosses (PyInteger count, PyInteger startIndex, CallInformation call)
     {
         // limit number of records to 100 at maximum
         if (count > 100)
             count = 100;
 
-        return DB.GetRecentShipKillsAndLosses (call.Session.EnsureCharacterIsSelected (), count, startIndex);
+        return DB.GetRecentShipKillsAndLosses (call.Session.CharacterID, count, startIndex);
     }
 
     public PyDataType GetCharacterAppearanceList (PyList ids, CallInformation call)
@@ -586,14 +602,16 @@ public class character : Service
         return result;
     }
 
+    [MustBeCharacter]
     public PyDataType GetNote (PyInteger characterID, CallInformation call)
     {
-        return DB.GetNote (characterID, call.Session.EnsureCharacterIsSelected ());
+        return DB.GetNote (characterID, call.Session.CharacterID);
     }
 
+    [MustBeCharacter]
     public PyDataType SetNote (PyInteger characterID, PyString note, CallInformation call)
     {
-        DB.SetNote (characterID, call.Session.EnsureCharacterIsSelected (), note);
+        DB.SetNote (characterID, call.Session.CharacterID, note);
 
         return null;
     }

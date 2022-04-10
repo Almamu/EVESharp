@@ -8,6 +8,7 @@ using EVESharp.EVE.Market;
 using EVESharp.EVE.Packets.Complex;
 using EVESharp.EVE.Packets.Exceptions;
 using EVESharp.EVE.Services;
+using EVESharp.EVE.Services.Validators;
 using EVESharp.EVE.Sessions;
 using EVESharp.EVE.StaticData.Corporation;
 using EVESharp.EVE.StaticData.Inventory;
@@ -30,6 +31,7 @@ using Character = EVESharp.Node.Inventory.Items.Types.Character;
 
 namespace EVESharp.Node.Services.Market;
 
+[MustBeCharacter]
 public class marketProxy : Service
 {
     private static readonly int []      JumpsPerSkillLevel = {-1, 0, 5, 10, 20, 50};
@@ -96,7 +98,7 @@ public class marketProxy : Service
         PyInteger quantity, PyDataType fromDate, PyDataType maxPrice, PyInteger minPrice, CallInformation call
     )
     {
-        int callerCharacterID = call.Session.EnsureCharacterIsSelected ();
+        int callerCharacterID = call.Session.CharacterID;
 
         return this.GetNewTransactions (
             callerCharacterID, sellBuy, typeID, clientID, quantity, fromDate, maxPrice, minPrice,
@@ -141,32 +143,27 @@ public class marketProxy : Service
 
     public PyDataType GetCharOrders (CallInformation call)
     {
-        return DB.GetOrdersForOwner (call.Session.EnsureCharacterIsSelected ());
+        return DB.GetOrdersForOwner (call.Session.CharacterID);
     }
 
+    [MustBeInStation]
     public PyDataType GetStationAsks (CallInformation call)
     {
-        return DB.GetStationAsks (call.Session.EnsureCharacterIsInStation ());
+        return DB.GetStationAsks (call.Session.StationID);
     }
 
     public PyDataType GetSystemAsks (CallInformation call)
     {
-        call.Session.EnsureCharacterIsSelected ();
-
         return DB.GetSystemAsks (call.Session.SolarSystemID2);
     }
 
     public PyDataType GetRegionBest (CallInformation call)
     {
-        call.Session.EnsureCharacterIsSelected ();
-
         return DB.GetRegionBest (call.Session.RegionID);
     }
 
     public PyDataType GetOrders (PyInteger typeID, CallInformation call)
     {
-        call.Session.EnsureCharacterIsSelected ();
-
         // dirty little hack, but should do the trick
         CacheStorage.StoreCall (
             "marketProxy",
@@ -393,7 +390,7 @@ public class marketProxy : Service
     private void PlaceSellOrderCharUpdateItems (MySqlConnection connection, Session session, int stationID, int typeID, int quantity)
     {
         Dictionary <int, MarketDB.ItemQuantityEntry> items             = null;
-        int                                          callerCharacterID = session.EnsureCharacterIsSelected ();
+        int                                          callerCharacterID = session.CharacterID;
 
         // depending on where the character that is placing the order, the way to detect the items should be different
         if (stationID == session.StationID)
@@ -453,7 +450,7 @@ public class marketProxy : Service
         int range,  double    brokerCost, int ownerID,   int accountKey, CallInformation call
     )
     {
-        int callerCharacterID = call.Session.EnsureCharacterIsSelected ();
+        int callerCharacterID = call.Session.CharacterID;
         // check distance for the order
         this.CheckSellOrderDistancePermissions (character, stationID);
 
@@ -679,7 +676,7 @@ public class marketProxy : Service
     )
     {
         // get solarSystem for the station
-        Character character  = ItemFactory.GetItem <Character> (call.Session.EnsureCharacterIsSelected ());
+        Character character  = ItemFactory.GetItem <Character> (call.Session.CharacterID);
         double    brokerCost = 0.0;
 
         // if the order is not immediate check the amount of orders the character has
@@ -735,7 +732,7 @@ public class marketProxy : Service
 
     public PyDataType CancelCharOrder (PyInteger orderID, PyInteger regionID, CallInformation call)
     {
-        int callerCharacterID = call.Session.EnsureCharacterIsSelected ();
+        int callerCharacterID = call.Session.CharacterID;
 
         Character character = ItemFactory.GetItem <Character> (callerCharacterID);
 
@@ -811,7 +808,7 @@ public class marketProxy : Service
         PyInteger issued,  CallInformation call
     )
     {
-        int callerCharacterID = call.Session.EnsureCharacterIsSelected ();
+        int callerCharacterID = call.Session.CharacterID;
 
         Character character = ItemFactory.GetItem <Character> (callerCharacterID);
 

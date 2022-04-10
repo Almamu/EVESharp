@@ -5,6 +5,7 @@ using EVESharp.EVE.Client.Exceptions.jumpCloneSvc;
 using EVESharp.EVE.Client.Exceptions.reprocessingSvc;
 using EVESharp.EVE.Packets.Exceptions;
 using EVESharp.EVE.Services;
+using EVESharp.EVE.Services.Validators;
 using EVESharp.EVE.Sessions;
 using EVESharp.EVE.StaticData.Inventory;
 using EVESharp.Node.Client.Notifications.Inventory;
@@ -21,6 +22,7 @@ using Service = EVESharp.EVE.StaticData.Inventory.Station.Service;
 
 namespace EVESharp.Node.Services.Stations;
 
+[MustBeCharacter]
 public class reprocessingSvc : ClientBoundService
 {
     private static readonly Dictionary <Types, Types> sOreTypeIDtoProcessingSkillTypeID = new Dictionary <Types, Types>
@@ -129,10 +131,11 @@ public class reprocessingSvc : ClientBoundService
         return standing;
     }
 
+    [MustBeInStation]
     public PyDataType GetReprocessingInfo (CallInformation call)
     {
-        int       stationID = call.Session.EnsureCharacterIsInStation ();
-        Character character = ItemFactory.GetItem <Character> (call.Session.EnsureCharacterIsSelected ());
+        int       stationID = call.Session.StationID;
+        Character character = ItemFactory.GetItem <Character> (call.Session.CharacterID);
 
         double standing = this.GetStanding (character);
 
@@ -204,7 +207,7 @@ public class reprocessingSvc : ClientBoundService
 
     public PyDataType GetQuotes (PyList itemIDs, CallInformation call)
     {
-        Character character = ItemFactory.GetItem <Character> (call.Session.EnsureCharacterIsSelected ());
+        Character character = ItemFactory.GetItem <Character> (call.Session.CharacterID);
 
         PyDictionary <PyInteger, PyDataType> result = new PyDictionary <PyInteger, PyDataType> ();
 
@@ -243,13 +246,13 @@ public class reprocessingSvc : ClientBoundService
                 Flags.Hangar, quantityForClient
             );
             // notify the client about the new item
-            DogmaUtils.QueueMultiEvent (session.EnsureCharacterIsSelected (), OnItemChange.BuildNewItemChange (newItem));
+            DogmaUtils.QueueMultiEvent (session.CharacterID, OnItemChange.BuildNewItemChange (newItem));
         }
     }
 
     public PyDataType Reprocess (PyList itemIDs, PyInteger ownerID, PyInteger flag, PyBool unknown, PyList skipChecks, CallInformation call)
     {
-        Character character = ItemFactory.GetItem <Character> (call.Session.EnsureCharacterIsSelected ());
+        Character character = ItemFactory.GetItem <Character> (call.Session.CharacterID);
 
         // TODO: TAKE INTO ACCOUNT OWNERID AND FLAG, THESE MOST LIKELY WILL BE USED BY CORP STUFF
         foreach (PyInteger itemID in itemIDs.GetEnumerable <PyInteger> ())
@@ -291,7 +294,7 @@ public class reprocessingSvc : ClientBoundService
 
         Corporation corporation = ItemFactory.GetItem <Corporation> (station.OwnerID);
         ItemInventory inventory =
-            ItemFactory.MetaInventoryManager.RegisterMetaInventoryForOwnerID (station, call.Session.EnsureCharacterIsSelected (), Flags.Hangar);
+            ItemFactory.MetaInventoryManager.RegisterMetaInventoryForOwnerID (station, call.Session.CharacterID, Flags.Hangar);
 
         return new reprocessingSvc (
             ReprocessingDB, StandingDB, corporation, station, inventory, ItemFactory, BoundServiceManager, DogmaUtils,

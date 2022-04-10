@@ -1,6 +1,7 @@
 ﻿using EVESharp.EVE.Client.Exceptions.ship;
 using EVESharp.EVE.Packets.Exceptions;
 using EVESharp.EVE.Services;
+using EVESharp.EVE.Services.Validators;
 using EVESharp.EVE.Sessions;
 using EVESharp.EVE.StaticData.Inventory;
 using EVESharp.Node.Client.Notifications.Inventory;
@@ -16,6 +17,7 @@ using SessionManager = EVESharp.Node.Sessions.SessionManager;
 
 namespace EVESharp.Node.Services.Inventory;
 
+[MustBeCharacter]
 public class ship : ClientBoundService
 {
     public override AccessLevel    AccessLevel    => AccessLevel.None;
@@ -45,7 +47,7 @@ public class ship : ClientBoundService
 
     public PyInteger LeaveShip (CallInformation call)
     {
-        int callerCharacterID = call.Session.EnsureCharacterIsSelected ();
+        int callerCharacterID = call.Session.CharacterID;
 
         Character character = ItemFactory.GetItem <Character> (callerCharacterID);
         // get the item type
@@ -73,7 +75,7 @@ public class ship : ClientBoundService
 
     public PyDataType Board (PyInteger itemID, CallInformation call)
     {
-        int callerCharacterID = call.Session.EnsureCharacterIsSelected ();
+        int callerCharacterID = call.Session.CharacterID;
 
         // ensure the item is loaded somewhere in this node
         // this will usually be taken care by the EVE Client
@@ -116,10 +118,11 @@ public class ship : ClientBoundService
         return null;
     }
 
+    [MustBeInStation]
     public PyDataType AssembleShip (PyInteger itemID, CallInformation call)
     {
-        int callerCharacterID = call.Session.EnsureCharacterIsSelected ();
-        int stationID         = call.Session.EnsureCharacterIsInStation ();
+        int callerCharacterID = call.Session.CharacterID;
+        int stationID         = call.Session.StationID;
 
         // ensure the item is loaded somewhere in this node
         // this will usually be taken care by the EVE Client

@@ -1,4 +1,5 @@
 using EVESharp.EVE.Services;
+using EVESharp.EVE.Services.Validators;
 using EVESharp.Node.Database;
 using EVESharp.Node.Inventory;
 using EVESharp.Node.Sessions;
@@ -6,6 +7,7 @@ using EVESharp.PythonTypes.Types.Primitives;
 
 namespace EVESharp.Node.Services.Characters;
 
+[MustBeCharacter]
 public class onlineStatus : Service
 {
     public override AccessLevel AccessLevel => AccessLevel.Location;
@@ -23,7 +25,7 @@ public class onlineStatus : Service
     public PyDataType GetInitialState (CallInformation call)
     {
         // TODO: CHECK IF THE OTHER CHARACTER HAS US IN THEIR ADDRESSBOOK
-        return ChatDB.GetAddressBookMembers (call.Session.EnsureCharacterIsSelected ());
+        return ChatDB.GetAddressBookMembers (call.Session.CharacterID);
     }
 
     public PyDataType GetOnlineStatus (PyInteger characterID, CallInformation call)

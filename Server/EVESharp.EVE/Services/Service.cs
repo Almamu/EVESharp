@@ -33,19 +33,25 @@ public abstract class Service
         IEnumerable<MethodInfo> methods = this
                                           .GetType()
                                           .GetMethods(BindingFlags.Public | BindingFlags.Instance)
-                                          .Where(x => x.Name == methodName);
+                                          .Where(x => x.Name == methodName)
+                                          .OrderBy (x => x.GetParameters ().Length);
 
-        parameters     = new object[arguments.Count + 1];
-        parameters[^1] = extra;
         matchingMethod = null;
+        parameters     = null;
             
         foreach (MethodInfo method in methods)
         {
             ParameterInfo[] methodParameters = method.GetParameters();
                 
             // ignore calls that have less parameters available that the ones provided
-            if (methodParameters.Length < parameters.Length)
+            // remember that last parameter is the service call information that isn't
+            // provided by the call
+            if (methodParameters.Length <= arguments.Count)
                 continue;
+            
+            // this one should hold the real parameter count here
+            parameters     = new object[methodParameters.Length];
+            parameters[^1] = extra;
 
             bool match = true;
 
@@ -59,7 +65,8 @@ public abstract class Service
                         break;
                     }
 
-                    parameters[i] = null;
+                    // set the default value for the call
+                    parameters[i] = methodParameters[i].DefaultValue;
                 }
                 else
                 {
@@ -99,9 +106,11 @@ public abstract class Service
     {
         if (this.FindSuitableMethod(method, extraInformation, out object[] parameters, out MethodInfo methodInfo) == false)
             throw new MissingCallException(Name, method);
-            
+        
+        // TODO: SUPPORT NAMED PAYLOAD ARGUMENTS AS FUNCTION ARGUMENTS
+        
         // ensure that the caller has the required roles
-        List <CallValidator> requirements = methodInfo.GetCustomAttributes <CallValidator> ().ToList ();
+        List <CallValidator> requirements = this.GetType ().GetCustomAttributes <CallValidator> ().Concat (methodInfo.GetCustomAttributes <CallValidator> ()).ToList ();
 
         if (requirements.Any () == true)
         {

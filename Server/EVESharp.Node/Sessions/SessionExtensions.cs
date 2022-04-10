@@ -1,6 +1,7 @@
 ﻿using EVESharp.EVE.Client.Exceptions;
 using EVESharp.EVE.Packets.Exceptions;
 using EVESharp.EVE.Sessions;
+using Org.BouncyCastle.Crypto.Tls;
 
 namespace EVESharp.Node.Sessions;
 
@@ -12,12 +13,10 @@ public static class SessionExtensions
     /// <returns>CharacterID for the client</returns>
     public static int EnsureCharacterIsSelected (this Session session)
     {
-        int? characterID = session.CharacterID;
-
-        if (characterID is null)
+        if (session.ContainsKey (Session.CHAR_ID) == false)
             throw new CustomError ("NoCharacterSelected");
 
-        return (int) characterID;
+        return session.CharacterID;
     }
 
     /// <summary>
@@ -27,11 +26,9 @@ public static class SessionExtensions
     /// <exception cref="CanOnlyDoInStations"></exception>
     public static int EnsureCharacterIsInStation (this Session session)
     {
-        int? stationID = session.StationID;
-
-        if (stationID is null)
+        if (session.ContainsKey (Session.STATION_ID) == false)
             throw new CanOnlyDoInStations ();
 
-        return (int) stationID;
+        return session.StationID;
     }
 }

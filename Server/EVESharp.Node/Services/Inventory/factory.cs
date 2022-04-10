@@ -1,10 +1,12 @@
 ﻿using EVESharp.EVE.Services;
+using EVESharp.EVE.Services.Validators;
 using EVESharp.Node.Database;
 using EVESharp.Node.Sessions;
 using EVESharp.PythonTypes.Types.Primitives;
 
 namespace EVESharp.Node.Services.Inventory;
 
+[MustBeCharacter]
 public class factory : Service
 {
     public override AccessLevel AccessLevel => AccessLevel.None;
@@ -17,7 +19,7 @@ public class factory : Service
 
     public PyDataType GetBlueprintAttributes (PyInteger blueprintID, CallInformation call)
     {
-        return DB.GetBlueprintAttributes (blueprintID, call.Session.EnsureCharacterIsSelected ());
+        return DB.GetBlueprintAttributes (blueprintID, call.Session.CharacterID);
     }
 
     public PyDataType GetMaterialsForTypeWithActivity (PyInteger blueprintTypeID, PyInteger _, CallInformation call)

@@ -4,13 +4,13 @@ using EVESharp.PythonTypes.Types.Primitives;
 
 namespace EVESharp.EVE.Services.Validators;
 
-[AttributeUsage(AttributeTargets.Method, AllowMultiple = true)]
-public class RequiredSessionMissing : CallValidator
+[AttributeUsage(AttributeTargets.Method | AttributeTargets.Class, AllowMultiple = true)]
+public class MustNotHaveSessionValue : CallValidator
 {
     public string Key { get; }
 
 
-    public RequiredSessionMissing (string key, Type exception = null)
+    public MustNotHaveSessionValue (string key, Type exception = null)
     {
         Key       = key;
         Exception = exception;

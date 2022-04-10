@@ -2,6 +2,7 @@
 using EVESharp.EVE.Client.Exceptions.certificateMgr;
 using EVESharp.EVE.Packets.Complex;
 using EVESharp.EVE.Services;
+using EVESharp.EVE.Services.Validators;
 using EVESharp.EVE.StaticData.Certificates;
 using EVESharp.Node.Cache;
 using EVESharp.Node.Client.Notifications.Certificates;
@@ -15,6 +16,7 @@ using EVESharp.PythonTypes.Types.Primitives;
 
 namespace EVESharp.Node.Services.Characters;
 
+[MustBeCharacter]
 public class certificateMgr : Service
 {
     public override AccessLevel                           AccessLevel              => AccessLevel.None;
@@ -73,12 +75,12 @@ public class certificateMgr : Service
 
     public PyDataType GetMyCertificates (CallInformation call)
     {
-        return DB.GetMyCertificates (call.Session.EnsureCharacterIsSelected ());
+        return DB.GetMyCertificates (call.Session.CharacterID);
     }
 
     public PyBool GrantCertificate (PyInteger certificateID, CallInformation call)
     {
-        int       callerCharacterID = call.Session.EnsureCharacterIsSelected ();
+        int       callerCharacterID = call.Session.CharacterID;
         Character character         = ItemFactory.GetItem <Character> (callerCharacterID);
 
         Dictionary <int, Skill> skills              = character.InjectedSkillsByTypeID;
@@ -108,7 +110,7 @@ public class certificateMgr : Service
 
     public PyDataType BatchCertificateGrant (PyList certificateList, CallInformation call)
     {
-        int       callerCharacterID = call.Session.EnsureCharacterIsSelected ();
+        int       callerCharacterID = call.Session.CharacterID;
         Character character         = ItemFactory.GetItem <Character> (callerCharacterID);
 
         PyList <PyInteger>      result              = new PyList <PyInteger> ();
@@ -150,15 +152,13 @@ public class certificateMgr : Service
 
     public PyDataType UpdateCertificateFlags (PyInteger certificateID, PyInteger visibilityFlags, CallInformation call)
     {
-        DB.UpdateVisibilityFlags (certificateID, call.Session.EnsureCharacterIsSelected (), visibilityFlags);
+        DB.UpdateVisibilityFlags (certificateID, call.Session.CharacterID, visibilityFlags);
 
         return null;
     }
 
     public PyDataType BatchCertificateUpdate (PyDictionary updates, CallInformation call)
     {
-        call.Session.EnsureCharacterIsSelected ();
-
         foreach ((PyInteger key, PyInteger value) in updates.GetEnumerable <PyInteger, PyInteger> ())
             this.UpdateCertificateFlags (key, value, call);
 

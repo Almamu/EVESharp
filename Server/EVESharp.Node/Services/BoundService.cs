@@ -1,4 +1,5 @@
 using EVESharp.EVE.Services;
+using EVESharp.EVE.Services.Validators;
 using EVESharp.EVE.Sessions;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Primitives;
@@ -54,6 +55,7 @@ public abstract class BoundService : Service
     /// <param name="zero">Allways zero?</param>
     /// <param name="call"></param>
     /// <returns>The node where this object is stored</returns>
+    [MustBeCharacter]
     public PyInteger MachoResolveObject (PyDataType bindParams, PyInteger zero, CallInformation call)
     {
         return this.MachoResolveObject (bindParams, call);
@@ -78,6 +80,7 @@ public abstract class BoundService : Service
     /// <param name="callInfo">The information on the call</param>
     /// <param name="call">The call object with extra information</param>
     /// <returns></returns>
+    [MustBeCharacter]
     public PyDataType MachoBindObject (PyDataType bindParams, PyDataType callInfo, CallInformation call)
     {
         return this.MachoBindObject ((ServiceBindParams) bindParams, callInfo, call);
