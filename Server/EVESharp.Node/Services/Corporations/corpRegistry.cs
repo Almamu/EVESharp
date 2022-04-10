@@ -151,7 +151,7 @@ public class corpRegistry : MultiClientBoundService
         return DB.GetShareholders (corporationID);
     }
 
-    [MustHaveCorporationRole(CorporationRole.Director, MLS.UI_CORP_DO_NOT_HAVE_ROLE_DIRECTOR)]
+    [MustHaveCorporationRole(MLS.UI_CORP_DO_NOT_HAVE_ROLE_DIRECTOR, CorporationRole.Director)]
     public PyDataType MoveCompanyShares (PyInteger corporationID, PyInteger to, PyInteger quantity, CallInformation call)
     {
         // TODO: the WALLETKEY SHOULD BE SOMETHING ELSE?
@@ -1340,7 +1340,7 @@ public class corpRegistry : MultiClientBoundService
         return null;
     }
 
-    [MustHaveCorporationRole(CorporationRole.Director, MLS.UI_CORP_DO_NOT_HAVE_ROLE_DIRECTOR)]
+    [MustHaveCorporationRole(MLS.UI_CORP_DO_NOT_HAVE_ROLE_DIRECTOR, CorporationRole.Director)]
     public PyDataType UpdateTitles (PyObjectData rowset, CallInformation call)
     {
         Rowset list = rowset;
@@ -1450,7 +1450,7 @@ public class corpRegistry : MultiClientBoundService
         return Corporation.ID == session.CorporationID;
     }
 
-    [MustHaveCorporationRole(CorporationRole.PersonnelManager, MLS.UI_CORP_NEED_ROLE_PERS_MAN_TO_MANAGE_ADS)]
+    [MustHaveCorporationRole(MLS.UI_CORP_NEED_ROLE_PERS_MAN_TO_MANAGE_ADS, CorporationRole.PersonnelManager)]
     public PyDataType DeleteRecruitmentAd (PyInteger advertID, CallInformation call)
     {
         if (DB.DeleteRecruitmentAd (advertID, call.Session.CorporationID))
@@ -1465,7 +1465,7 @@ public class corpRegistry : MultiClientBoundService
         return null;
     }
 
-    [MustHaveCorporationRole(CorporationRole.PersonnelManager, MLS.UI_CORP_NEED_ROLE_PERS_MAN_TO_MANAGE_ADS)]
+    [MustHaveCorporationRole(MLS.UI_CORP_NEED_ROLE_PERS_MAN_TO_MANAGE_ADS, CorporationRole.PersonnelManager)]
     public PyDataType UpdateRecruitmentAd (
         PyInteger adID, PyInteger typeMask, PyInteger raceMask, PyInteger skillPoints, PyString description, CallInformation call
     )
@@ -1487,7 +1487,7 @@ public class corpRegistry : MultiClientBoundService
         return null;
     }
 
-    [MustHaveCorporationRole(CorporationRole.PersonnelManager, MLS.UI_CORP_NEED_ROLE_PERS_MAN_TO_MANAGE_APPLICATIONS)]
+    [MustHaveCorporationRole(MLS.UI_CORP_NEED_ROLE_PERS_MAN_TO_MANAGE_APPLICATIONS, CorporationRole.PersonnelManager)]
     public PyDataType GetApplications (CallInformation call)
     {
         return Database.DictRowList (
@@ -1541,7 +1541,7 @@ public class corpRegistry : MultiClientBoundService
         return null;
     }
 
-    [MustHaveCorporationRole(CorporationRole.PersonnelManager, MLS.UI_CORP_NEED_ROLE_PERS_MAN_TO_MANAGE_APPLICATIONS)]
+    [MustHaveCorporationRole(MLS.UI_CORP_NEED_ROLE_PERS_MAN_TO_MANAGE_APPLICATIONS, CorporationRole.PersonnelManager)]
     public PyDataType UpdateApplicationOffer (PyInteger characterID, PyString text, PyInteger newStatus, PyInteger applicationDateTime, CallInformation call)
     {
         // TODO: CHECK THAT THE APPLICATION EXISTS TO PREVENT A CHARACTER FROM BEING FORCE TO JOIN A CORPORATION!!

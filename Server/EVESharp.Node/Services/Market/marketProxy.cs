@@ -106,6 +106,7 @@ public class marketProxy : Service
         );
     }
 
+    [MustHaveCorporationRole(MLS.UI_SHARED_WALLETHINT8, CorporationRole.Accountant, CorporationRole.JuniorAccountant)]
     public PyDataType CorpGetNewTransactions (
         PyInteger       sellBuy,  PyInteger  typeID,   PyDataType clientID,
         PyInteger       quantity, PyDataType fromDate, PyDataType maxPrice, PyInteger minPrice, PyInteger accountKey, PyInteger who,
@@ -113,16 +114,8 @@ public class marketProxy : Service
     )
     {
         // TODO: SUPPORT THE "who" PARAMETER
-        int corporationID = call.Session.CorporationID;
-
-        // transactions requires accountant roles for corporation
-        if (corporationID != call.Session.CorporationID ||
-            CorporationRole.Accountant.Is (call.Session.CorporationRole) == false ||
-            CorporationRole.JuniorAccountant.Is (call.Session.CorporationRole) == false)
-            throw new CrpAccessDenied (MLS.UI_SHARED_WALLETHINT8);
-
         return this.GetNewTransactions (
-            corporationID, sellBuy, typeID, clientID, quantity, fromDate, maxPrice, minPrice,
+            call.Session.CorporationID, sellBuy, typeID, clientID, quantity, fromDate, maxPrice, minPrice,
             accountKey
         );
     }
@@ -985,11 +978,9 @@ public class marketProxy : Service
         }
     }
 
+    [MustHaveCorporationRole(MLS.UI_SHARED_WALLETHINT1, CorporationRole.Accountant)]
     public PyDataType GetCorporationOrders (CallInformation call)
     {
-        if (CorporationRole.Accountant.Is (call.Session.CorporationRole) == false)
-            throw new CrpAccessDenied (MLS.UI_SHARED_WALLETHINT11);
-
         return DB.GetOrdersForOwner (call.Session.CorporationID, true);
     }
 

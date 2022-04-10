@@ -7,6 +7,7 @@ using EVESharp.EVE.Corporations;
 using EVESharp.EVE.Market;
 using EVESharp.EVE.Packets.Complex;
 using EVESharp.EVE.Services;
+using EVESharp.EVE.Services.Validators;
 using EVESharp.EVE.StaticData.Corporation;
 using EVESharp.EVE.StaticData.Inventory;
 using EVESharp.Node.Cache;
@@ -58,26 +59,18 @@ public class billMgr : Service
         return CachedMethodCallResult.FromCacheHint (cacheHint);
     }
 
+    [MustHaveCorporationRole(MLS.UI_CORP_ACCESSDENIED3, CorporationRole.Accountant, CorporationRole.JuniorAccountant)]
     public PyDataType GetCorporationBillsReceivable (CallInformation call)
     {
-        // make sure the player has the accountant role
-        if (CorporationRole.Accountant.Is (call.Session.CorporationRole) == false &&
-            CorporationRole.JuniorAccountant.Is (call.Session.CorporationRole) == false)
-            throw new CrpAccessDenied (MLS.UI_CORP_ACCESSDENIED3);
-
         return Database.CRowset (
             BillsDB.GET_RECEIVABLE,
             new Dictionary <string, object> {{"_creditorID", call.Session.CorporationID}}
         );
     }
 
+    [MustHaveCorporationRole(MLS.UI_CORP_ACCESSDENIED3, CorporationRole.Accountant, CorporationRole.JuniorAccountant)]
     public PyDataType GetCorporationBills (CallInformation call)
     {
-        // make sure the player has the accountant role
-        if (CorporationRole.Accountant.Is (call.Session.CorporationRole) == false &&
-            CorporationRole.JuniorAccountant.Is (call.Session.CorporationRole) == false)
-            throw new CrpAccessDenied (MLS.UI_CORP_ACCESSDENIED3);
-
         return Database.CRowset (
             BillsDB.GET_PAYABLE,
             new Dictionary <string, object> {{"_debtorID", call.Session.CorporationID}}

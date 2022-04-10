@@ -219,16 +219,12 @@ public class corporationSvc : Service
     [MustHaveCorporationRole(MLS.UI_CORP_NEED_ROLE_PERS_MAN_OR_DIRECT, CorporationRole.PersonnelManager, CorporationRole.Director)]
     public PyDataType GiveMedalToCharacters (PyInteger medalID, PyList characterIDs, PyString reason, CallInformation call)
     {
-        int callerCharacterID = call.Session.CharacterID;
-        
         throw new ConfirmCreatingMedal (Constants.MedalCost);
     }
 
     [MustHaveCorporationRole(MLS.UI_CORP_NEED_ROLE_PERS_MAN_OR_DIRECT, CorporationRole.PersonnelManager, CorporationRole.Director)]
     public PyDataType GiveMedalToCharacters (PyInteger medalID, PyList characterIDs, PyString reason, PyBool pay, CallInformation call)
     {
-        int callerCharacterID = call.Session.CharacterID;
-        
         if (pay == false)
             throw new ConfirmGivingMedal (Constants.MedalCost);
 
@@ -240,7 +236,7 @@ public class corporationSvc : Service
 
         // create the records for all the characters that have that medal
         foreach (PyInteger characterID in characterIDs.GetEnumerable <PyInteger> ())
-            DB.GrantMedal (medalID, characterID, callerCharacterID, reason, 2);
+            DB.GrantMedal (medalID, characterID, call.Session.CharacterID, reason, 2);
 
         // notify all the characters
         Notifications.NotifyCharacters (characterIDs.GetEnumerable <PyInteger> (), new OnMedalIssued ());

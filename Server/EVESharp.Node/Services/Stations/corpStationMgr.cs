@@ -251,18 +251,14 @@ public class corpStationMgr : ClientBoundService
     }
 
     [MustBeInStation]
+    [MustHaveCorporationRole(typeof (RentingOfficeQuotesOnlyGivenToActiveCEOsOrEquivale), CorporationRole.Director, CorporationRole.CanRentOffice)]
     public PyInteger GetQuoteForRentingAnOffice (CallInformation call)
     {
-        int stationID = call.Session.StationID;
-
-        // make sure the user is director or allowed to rent
-        if (CorporationRole.Director.Is (call.Session.CorporationRole) == false && CorporationRole.CanRentOffice.Is (call.Session.CorporationRole) == false)
-            throw new RentingOfficeQuotesOnlyGivenToActiveCEOsOrEquivale ();
-
-        return ItemFactory.Stations [stationID].OfficeRentalCost;
+        return ItemFactory.Stations [call.Session.StationID].OfficeRentalCost;
     }
 
     [MustBeInStation]
+    [MustHaveCorporationRole(typeof (RentingOfficeQuotesOnlyGivenToActiveCEOsOrEquivale), CorporationRole.Director, CorporationRole.CanRentOffice)]
     public PyDataType RentOffice (PyInteger cost, CallInformation call)
     {
         int rentalCost  = this.GetQuoteForRentingAnOffice (call);

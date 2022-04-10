@@ -8,6 +8,7 @@ using EVESharp.EVE.Client.Exceptions.corpRegistry;
 using EVESharp.EVE.Client.Messages;
 using EVESharp.EVE.Packets.Exceptions;
 using EVESharp.EVE.Services;
+using EVESharp.EVE.Services.Validators;
 using EVESharp.EVE.Sessions;
 using EVESharp.EVE.StaticData.Corporation;
 using EVESharp.Node.Client.Notifications.Alliances;
@@ -161,12 +162,11 @@ public class allianceRegistry : MultiClientBoundService
         );
     }
 
+    [MustHaveCorporationRole(MLS.UI_CORP_UPDATE_ALLIANCE_NOT_DIRECTOR, CorporationRole.Director)]
     public PyDataType UpdateAlliance (PyString description, PyString url, CallInformation call)
     {
         if (Alliance.ExecutorCorpID != call.Session.CorporationID)
             throw new CrpAccessDenied (MLS.UI_CORP_UPDATE_ALLIANCE_NOT_EXECUTOR);
-        if (CorporationRole.Director.Is (call.Session.CorporationRole) == false)
-            throw new CrpAccessDenied (MLS.UI_CORP_UPDATE_ALLIANCE_NOT_DIRECTOR);
 
         Alliance.Description = description;
         Alliance.Url         = url;
@@ -212,12 +212,11 @@ public class allianceRegistry : MultiClientBoundService
         );
     }
 
+    [MustHaveCorporationRole(MLS.UI_CORP_SET_RELATIONSHIP_DIRECTOR_ONLY, CorporationRole.Director)]
     public PyDataType SetRelationship (PyInteger relationship, PyInteger toID, CallInformation call)
     {
         if (Alliance.ExecutorCorpID != call.Session.CorporationID)
             throw new CrpAccessDenied (MLS.UI_CORP_SET_RELATIONSHIP_EXECUTOR_ONLY);
-        if (CorporationRole.Director.Is (call.Session.CorporationRole) == false)
-            throw new CrpAccessDenied (MLS.UI_CORP_SET_RELATIONSHIP_DIRECTOR_ONLY);
 
         Database.Procedure (
             AlliancesDB.UPDATE_RELATIONSHIP,
@@ -239,11 +238,9 @@ public class allianceRegistry : MultiClientBoundService
         return null;
     }
 
+    [MustHaveCorporationRole(MLS.UI_CORP_DECLARE_EXEC_SUPPORT_DIRECTOR_ONLY, CorporationRole.Director)]
     public PyDataType DeclareExecutorSupport (PyInteger executorID, CallInformation call)
     {
-        if (CorporationRole.Director.Is (call.Session.CorporationRole) == false)
-            throw new CrpAccessDenied (MLS.UI_CORP_DECLARE_EXEC_SUPPORT_DIRECTOR_ONLY);
-
         // get corporation's join date
         long minimumJoinDate     = DateTime.UtcNow.AddDays (-7).ToFileTimeUtc ();
         long corporationJoinDate = CorporationDB.GetAllianceJoinDate (call.Session.CorporationID);
@@ -301,12 +298,11 @@ public class allianceRegistry : MultiClientBoundService
         );
     }
 
+    [MustHaveCorporationRole(MLS.UI_CORP_DELETE_RELATIONSHIP_DIRECTOR_ONLY, CorporationRole.Director)]
     public PyDataType DeleteRelationship (PyInteger toID, CallInformation call)
     {
         if (Alliance.ExecutorCorpID != call.Session.CorporationID)
             throw new CrpAccessDenied (MLS.UI_CORP_DELETE_RELATIONSHIP_EXECUTOR_ONLY);
-        if (CorporationRole.Director.Is (call.Session.CorporationRole) == false)
-            throw new CrpAccessDenied (MLS.UI_CORP_DELETE_RELATIONSHIP_DIRECTOR_ONLY);
 
         Database.Procedure (
             AlliancesDB.REMOVE_RELATIONSHIP,
@@ -329,12 +325,11 @@ public class allianceRegistry : MultiClientBoundService
         return Database.Rowset (AlliancesDB.LIST);
     }
 
+    [MustHaveCorporationRole(MLS.UI_CORP_DELETE_RELATIONSHIP_DIRECTOR_ONLY, CorporationRole.Director)]
     public PyDataType UpdateApplication (PyInteger corporationID, PyString message, PyInteger newStatus, CallInformation call)
     {
         if (Alliance.ExecutorCorpID != call.Session.CorporationID)
             throw new CrpAccessDenied (MLS.UI_CORP_DELETE_RELATIONSHIP_EXECUTOR_ONLY);
-        if (CorporationRole.Director.Is (call.Session.CorporationRole) == false)
-            throw new CrpAccessDenied (MLS.UI_CORP_DELETE_RELATIONSHIP_DIRECTOR_ONLY);
 
         switch ((int) newStatus)
         {
