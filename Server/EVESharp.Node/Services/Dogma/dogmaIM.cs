@@ -223,7 +223,7 @@ public class dogmaIM : ClientBoundService
     {
         ShipModule module = ItemFactory.GetItem <ShipModule> (itemID);
 
-        EffectsManager.GetForItem (module).ApplyEffect (effectName, call.Session);
+        EffectsManager.GetForItem (module, call.Session).ApplyEffect (effectName, call.Session);
 
         return null;
     }
@@ -232,7 +232,7 @@ public class dogmaIM : ClientBoundService
     {
         ShipModule module = ItemFactory.GetItem <ShipModule> (itemID);
 
-        EffectsManager.GetForItem (module).StopApplyingEffect (effectName, call.Session);
+        EffectsManager.GetForItem (module, call.Session).StopApplyingEffect (effectName, call.Session);
 
         return null;
     }

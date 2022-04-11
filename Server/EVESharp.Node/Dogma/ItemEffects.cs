@@ -22,14 +22,19 @@ public class ItemEffects
     /// </summary>
     public ShipModule Module { get; }
     /// <summary>
+    /// The session attached to this item effects
+    /// </summary>
+    public Session Session { get; }
+    /// <summary>
     /// The item factory to handle the item
     /// </summary>
     private ItemFactory ItemFactory { get; }
 
-    public ItemEffects (ShipModule item, ItemFactory itemFactory)
+    public ItemEffects (ShipModule item, ItemFactory itemFactory, Session session)
     {
         Module      = item;
         ItemFactory = itemFactory;
+        Session     = session;
 
         foreach ((int effectID, Effect effect) in Module.Type.Effects)
             // create effects entry in the list
@@ -45,11 +50,11 @@ public class ItemEffects
         if (Module.IsInModuleSlot () || Module.IsInRigSlot ())
         {
             // apply passive effects
-            this.ApplyPassiveEffects ();
+            this.ApplyPassiveEffects (session);
 
             // special case, check for the isOnline attribute and put the module online if so
             if (Module.Attributes [AttributeTypes.isOnline] == 1)
-                this.ApplyEffect ("online");
+                this.ApplyEffect ("online", session);
         }
     }
 

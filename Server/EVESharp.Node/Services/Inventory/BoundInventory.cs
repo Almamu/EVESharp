@@ -252,7 +252,7 @@ public class BoundInventory : ClientBoundService
         if (item.IsInModuleSlot ())
             if (item is ShipModule module)
             {
-                ItemEffects effects = EffectsManager.GetForItem (module);
+                ItemEffects effects = EffectsManager.GetForItem (module, session);
 
                 if (module.Attributes [AttributeTypes.isOnline] == 1)
                     effects.StopApplyingEffect ("online", session);
@@ -387,7 +387,7 @@ public class BoundInventory : ClientBoundService
                     module = shipModule2;
             }
 
-            ItemEffects effects = EffectsManager.GetForItem (module);
+            ItemEffects effects = EffectsManager.GetForItem (module, session);
 
             try
             {
@@ -727,7 +727,7 @@ public class BoundInventory : ClientBoundService
 
         if (item is ShipModule module)
             // disable passive effects
-            EffectsManager.GetForItem (module).StopApplyingPassiveEffects (call.Session);
+            EffectsManager.GetForItem (module, call.Session).StopApplyingPassiveEffects (call.Session);
 
         int   oldLocationID = item.LocationID;
         Flags oldFlag       = item.Flag;
