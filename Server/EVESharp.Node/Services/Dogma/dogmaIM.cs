@@ -76,7 +76,7 @@ public class dogmaIM : ClientBoundService
 
             foreach ((int _, ItemEntity item) in ship.Items)
             {
-                if (item.IsInModuleSlot () == false && item.IsInRigSlot ())
+                if (item.IsInModuleSlot () == false && item.IsInRigSlot () == false)
                     continue;
 
                 itemInfo.AddRow (
@@ -86,8 +86,6 @@ public class dogmaIM : ClientBoundService
                     item.Attributes,
                     DateTime.UtcNow.ToFileTime ()
                 );
-
-                break;
             }
 
             return itemInfo;
