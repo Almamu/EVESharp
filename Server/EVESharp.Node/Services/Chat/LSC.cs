@@ -562,11 +562,31 @@ public class LSC : Service
         // you should only be able to invite to global channels as of now
         // TODO: CORP CHANNELS SHOULD BE SUPPORTED TOO
         if (channelType == ChatDB.CHANNEL_TYPE_NORMAL)
+        {
             // notify all the characters in the channel
             Notifications.NotifyCharacters (
                 DB.GetOnlineCharsOnChannel (call.ChannelID),
                 new OnLSC (callInfo.Session, "JoinChannel", call.ChannelID, new PyTuple (0))
             );
+            // TODO: CHECK IF WE HAVE TO NOTIFY THE NEW CHARACTER ABOUT ALL THE ONES THAT ARE IN THERE ALREADY SOMEWAY OR ANOTHER?
+            
+            // TODO: FETCH THIS
+            PyTuple args = new PyTuple (6)
+            {
+                [0] = call.ToCharacterID,
+                [1] = ChatDB.CHATROLE_SPEAKER,
+                [2] = null,
+                [3] = ChatDB.CHATROLE_SPEAKER,
+                [4] = "",
+                [5] = false
+            };
+
+            // get users in the channel that are online now
+            Notifications.NotifyCharacters (
+                DB.GetOnlineCharsOnChannel (call.ChannelID),
+                new OnLSC (call.OriginalCall.Session, "AccessControl", call.ChannelID, args)
+            );
+        }
     }
 
     public void InviteTimeoutCallback (RemoteCall callInfo)
