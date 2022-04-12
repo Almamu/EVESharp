@@ -45,6 +45,7 @@ public class DatabaseConnection : IDatabaseConnection
         MySqlConnectionStringBuilder stringBuilder = new MySqlConnectionStringBuilder
         {
             Server          = configuration.Hostname,
+            Port            = configuration.Port,
             Database        = configuration.Name,
             UserID          = configuration.Username,
             Password        = configuration.Password,
@@ -145,6 +146,7 @@ public class DatabaseConnection : IDatabaseConnection
         MySqlConnectionStringBuilder stringBuilder = new MySqlConnectionStringBuilder
         {
             Server          = configuration.Hostname,
+            Port            = configuration.Port,
             Database        = "information_schema",
             UserID          = configuration.Username,
             Password        = configuration.Password,

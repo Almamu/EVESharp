@@ -8,6 +8,7 @@ public class Database
     public string Password { get; private set; }
     public string Hostname { get; private set; }
     public string Name     { get; private set; }
+    public string Port     { get; private set; }
 
     public void Load (KeyDataCollection section)
     {
@@ -15,5 +16,6 @@ public class Database
         Password = section ["password"];
         Hostname = section ["hostname"];
         Name     = section ["name"];
+        Port     = uint.Parse (section ["port"] ?? "3306");
     }
 }
