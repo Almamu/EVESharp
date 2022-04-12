@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
@@ -9,287 +8,298 @@ using EVESharp.PythonTypes;
 using EVESharp.PythonTypes.Compression;
 using EVESharp.PythonTypes.Marshal;
 using EVESharp.PythonTypes.Types.Primitives;
+using Serilog;
 
-namespace EVESharp.Common.Network
+namespace EVESharp.Common.Network;
+
+public class EVEClientSocket : EVESocket
 {
-    public class EVEClientSocket : EVESocket
+    private readonly Queue <byte []>     mOutputQueue        = new Queue <byte []> ();
+    private readonly StreamPacketizer    mPacketizer         = new StreamPacketizer ();
+    private readonly Semaphore           mReceivingSemaphore = new Semaphore (1, 1);
+    private readonly Semaphore           mSendingSemaphore   = new Semaphore (1, 1);
+    private          Action <PyDataType> mPacketReceiveCallback;
+    private          AsyncCallback       mReceiveCallback;
+    private          AsyncCallback       mSendCallback;
+    public           ILogger             Log { get; }
+#if DEBUG
+    public ILogger PacketLog { get; }
+#endif
+
+    public EVEClientSocket (Socket socket, ILogger logChannel) : base (socket)
     {
-        private readonly Semaphore mSendingSemaphore = new Semaphore(1, 1);
-        private readonly Semaphore mReceivingSemaphore = new Semaphore(1, 1);
-        private AsyncCallback mSendCallback = null;
-        private AsyncCallback mReceiveCallback = null;
-        private readonly Queue<byte[]> mOutputQueue = new Queue<byte[]>();
-        private readonly StreamPacketizer mPacketizer = new StreamPacketizer();
-        private Action<PyDataType> mPacketReceiveCallback = null;
+        Log = logChannel;
 #if DEBUG
-        private readonly Channel mPacketLog = null;
+        PacketLog = logChannel.ForContext <EVEClientSocket> ("NetworkDebug", true);
 #endif
-        public Channel Log { get; set; }
+        // setup async callback handlers
+        this.SetupCallbacks ();
+        // start the receiving callbacks
+        this.BeginReceive (new byte[64 * 1024], this.mReceiveCallback);
+    }
 
-        public EVEClientSocket(Socket socket, Channel logChannel) : base(socket)
-        {
-            this.Log = logChannel;
-
-            // take into account network debugging for developers
+    public EVEClientSocket (ILogger logChannel) : base (new Socket (AddressFamily.InterNetworkV6, SocketType.Stream, ProtocolType.Tcp))
+    {
+        // ensure we support both ipv4 and ipv6
+        Log = logChannel;
 #if DEBUG
-            this.mPacketLog = this.Log.Logger.CreateLogChannel("NetworkDebug", true);
+        PacketLog = logChannel.ForContext <EVEClientSocket> ("NetworkDebug", true);
 #endif
 
-            // setup async callback handlers
-            this.SetupCallbacks();
-            // start the receiving callbacks
-            this.BeginReceive(new byte[64 * 1024], this.mReceiveCallback);
-        }
+        this.SetupCallbacks ();
+    }
 
-        public EVEClientSocket(Channel logChannel) : base(new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp))
+    private void SetupCallbacks ()
+    {
+        // setup async callback handlers
+        this.mSendCallback    = this.SendCallback;
+        this.mReceiveCallback = this.ReceiveCallback;
+    }
+
+    public void Connect (string address, int port)
+    {
+        IPAddress ip;
+
+        // check if the address is an IP, if not, query the DNS servers to resolve it
+        if (IPAddress.TryParse (address, out ip) == false)
         {
-            this.Log = logChannel;
+            IPHostEntry entry = Dns.GetHostEntry (address);
+            int         i     = 0;
 
-            // take into account network debugging for developers
-#if DEBUG
-            this.mPacketLog = this.Log.Logger.CreateLogChannel("NetworkDebug", true);
-#endif
-
-            this.SetupCallbacks();
-        }
-
-        private void SetupCallbacks()
-        {
-            // setup async callback handlers
-            this.mSendCallback = new AsyncCallback(SendCallback);
-            this.mReceiveCallback = new AsyncCallback(ReceiveCallback);
-        }
-
-        public void Connect(string address, int port)
-        {
-            IPAddress ip;
-
-            // check if the address is an IP, if not, query the DNS servers to resolve it
-            if (IPAddress.TryParse(address, out ip) == false)
+            do
             {
-                IPHostEntry entry = Dns.GetHostEntry(address);
-                int i = 0;
-
-                do
-                {
-                    ip = entry.AddressList[i++];
-                } while (ip.AddressFamily != AddressFamily.InterNetwork && i < entry.AddressList.Length);
+                ip = entry.AddressList [i++];
             }
-
-            // connect to the server
-            this.Socket.Connect(new IPEndPoint(ip, port));
-            // start the receiving callbacks
-            this.BeginReceive(new byte[64 * 1024], this.mReceiveCallback);
+            while (ip.AddressFamily != AddressFamily.InterNetwork && i < entry.AddressList.Length);
         }
 
-        public void SetReceiveCallback(Action<PyDataType> callback)
-        {
-            bool shouldFlush = this.mPacketReceiveCallback == null;
+        // connect to the server
+        Socket.Connect (new IPEndPoint (ip, port));
+        // start the receiving callbacks
+        this.BeginReceive (new byte[64 * 1024], this.mReceiveCallback);
+    }
 
-            this.mPacketReceiveCallback = callback;
-            // check if there is any packet queued and not handled
-            if (shouldFlush)
-                this.FlushReceivingQueue();
-        }
+    public void SetReceiveCallback (Action <PyDataType> callback)
+    {
+        bool shouldFlush = this.mPacketReceiveCallback == null;
 
-        private void FlushReceivingQueue()
+        this.mPacketReceiveCallback = callback;
+        // check if there is any packet queued and not handled
+        if (shouldFlush)
+            this.FlushReceivingQueue ();
+    }
+
+    private void FlushReceivingQueue ()
+    {
+        if (this.mReceivingSemaphore.WaitOne (0))
         {
-            if (this.mReceivingSemaphore.WaitOne(0) == true)
-            {
-                // handle required packets
-                while (this.mPacketizer.PacketCount > 0 && this.mPacketReceiveCallback != null)
+            // handle required packets
+            while (this.mPacketizer.PacketCount > 0 && this.mPacketReceiveCallback != null)
+                try
                 {
-                    try
-                    {
-                        // unmarshal the packet
-                        PyDataType packet = Unmarshal.ReadFromByteArray(this.mPacketizer.PopItem());
+                    // unmarshal the packet
+                    PyDataType packet = Unmarshal.ReadFromByteArray (this.mPacketizer.PopItem ());
 #if DEBUG
-                        this.mPacketLog.Trace(PrettyPrinter.FromDataType(packet));
+                    PacketLog.Verbose (PrettyPrinter.FromDataType (packet));
 #endif
-                        // and invoke the callback for the packet handling if it is present
-                        this.mPacketReceiveCallback.Invoke(packet);
-                    }
-                    catch (Exception e)
-                    {
-                        this.HandleException(e);
-                    }
+                    // and invoke the callback for the packet handling if it is present
+                    this.mPacketReceiveCallback.Invoke (packet);
+                }
+                catch (Exception e)
+                {
+                    this.HandleException (e);
                 }
 
-                // finally free the receiving semaphore
-                this.mReceivingSemaphore.Release();
-            }
-
-            // semaphore not acquired, there's something already sending data, so we're sure the data will get there eventually
+            // finally free the receiving semaphore
+            this.mReceivingSemaphore.Release ();
         }
 
-        private void BeginReceive(byte[] buffer, AsyncCallback callback)
-        {
-            this.Socket.BeginReceive(buffer, 0, buffer.Length, SocketFlags.None, callback, new ReceiveCallbackState(buffer));
-        }
+        // semaphore not acquired, there's something already sending data, so we're sure the data will get there eventually
+    }
 
-        private int EndReceive(IAsyncResult asyncResult)
-        {
-            return this.Socket.EndReceive(asyncResult);
-        }
+    private void BeginReceive (byte [] buffer, AsyncCallback callback)
+    {
+        Socket.BeginReceive (buffer, 0, buffer.Length, SocketFlags.None, callback, new ReceiveCallbackState (buffer));
+    }
 
-        private void ReceiveCallback(IAsyncResult asyncResult)
-        {
-            ReceiveCallbackState state = asyncResult.AsyncState as ReceiveCallbackState;
+    private int EndReceive (IAsyncResult asyncResult)
+    {
+        return Socket.EndReceive (asyncResult);
+    }
 
-            try
-            {
-                state.Received = this.EndReceive(asyncResult);
-            }
-            catch (Exception e)
-            {
-                // an exception here means the connection closed
-                this.HandleException(e);
-                return;
-            }
+    private void ReceiveCallback (IAsyncResult asyncResult)
+    {
+        ReceiveCallbackState state = asyncResult.AsyncState as ReceiveCallbackState;
+
+        try
+        {
+            state.Received = this.EndReceive (asyncResult);
 
             // receiving 0 bytes means the socket has to be closed
             if (state.Received == 0)
             {
-                this.ForcefullyDisconnect();
-                this.FireOnConnectionLostHandler();
+                this.ForcefullyDisconnect ();
+                this.FireOnConnectionLostHandler ();
+
+                return;
+            }
+        }
+        catch (Exception e)
+        {
+            // an exception here means the connection closed
+            this.HandleException (e);
+
+            return;
+        }
+
+        // queue the packets and process them
+        this.mPacketizer.QueuePackets (state.Buffer, state.Received);
+        this.mPacketizer.ProcessPackets ();
+
+        // if there is any pending to be processed pop it and call the receive callback
+        this.FlushReceivingQueue ();
+
+        // begin receiving again
+        this.BeginReceive (state.Buffer, this.mReceiveCallback);
+    }
+
+    /// <summary>
+    /// Sends a PyObject through this socket
+    /// </summary>
+    /// <param name="packet">The packet data to send</param>
+    public void Send (PyDataType packet)
+    {
+#if DEBUG
+        PacketLog.Verbose (PrettyPrinter.FromDataType (packet));
+#endif
+        // marshal the packet first
+        byte [] encodedPacket = Marshal.ToByteArray (packet);
+
+        // compress the packet if it exceeds the maximum size
+        if (encodedPacket.Length > Constants.Network.MAX_PACKET_SIZE)
+            encodedPacket = ZlibHelper.Compress (encodedPacket);
+
+        // generate the final buffer
+        byte [] packetBuffer = new byte[encodedPacket.Length + sizeof (int)];
+
+        // write the packet size and the buffer to the new buffer
+        Buffer.BlockCopy (BitConverter.GetBytes (encodedPacket.Length), 0, packetBuffer, 0,            sizeof (int));
+        Buffer.BlockCopy (encodedPacket,                                0, packetBuffer, sizeof (int), encodedPacket.Length);
+
+        // after processing the whole packet queue the actual data
+        this.Send (packetBuffer);
+    }
+
+    /// <summary>
+    /// Sends raw bytes through this socket
+    /// </summary>
+    /// <param name="buffer">The bytes to send</param>
+    public void Send (byte [] buffer)
+    {
+        // add the buffer to the output queue when the queue is not in use
+        lock (this.mOutputQueue)
+        {
+            this.mOutputQueue.Enqueue (buffer);
+        }
+
+        this.FlushSendingQueue ();
+    }
+
+    private void FlushSendingQueue (bool shouldCheckForSemaphore = true)
+    {
+        if (shouldCheckForSemaphore == false || this.mSendingSemaphore.WaitOne (0))
+            // semaphore acquired, start the send callback
+            this.BeginSend ();
+
+        // semaphore not acquired, the send callbacks are already running
+    }
+
+    private void BeginSend ()
+    {
+        byte [] output;
+
+        // get oldest packet
+        lock (this.mOutputQueue)
+        {
+            if (this.mOutputQueue.Count == 0)
+            {
+                // no packet to send, release the semaphore
+                this.mSendingSemaphore.Release ();
+
                 return;
             }
 
-            // queue the packets and process them
-            this.mPacketizer.QueuePackets(state.Buffer, state.Received);
-            this.mPacketizer.ProcessPackets();
-
-            // if there is any pending to be processed pop it and call the receive callback
-            this.FlushReceivingQueue();
-
-            // begin receiving again
-            this.BeginReceive(state.Buffer, this.mReceiveCallback);
+            output = this.mOutputQueue.Dequeue ();
         }
 
-        /// <summary>
-        /// Sends a PyObject through this socket
-        /// </summary>
-        /// <param name="packet">The packet data to send</param>
-        public void Send(PyDataType packet)
+        try
         {
-#if DEBUG
-            this.mPacketLog.Trace(PrettyPrinter.FromDataType(packet));
-#endif
-            // marshal the packet first
-            byte[] encodedPacket = EVESharp.PythonTypes.Marshal.Marshal.ToByteArray(packet);
-
-            // compress the packet if it exceeds the maximum size
-            if (encodedPacket.Length > Constants.Network.MAX_PACKET_SIZE)
-                encodedPacket = ZlibHelper.Compress(encodedPacket);
-
-            // generate the final buffer
-            byte[] packetBuffer = new byte[encodedPacket.Length + sizeof(int)];
-            
-            // write the packet size and the buffer to the new buffer
-            Buffer.BlockCopy(BitConverter.GetBytes(encodedPacket.Length), 0, packetBuffer, 0, sizeof(int));
-            Buffer.BlockCopy(encodedPacket, 0, packetBuffer, sizeof(int), encodedPacket.Length);
-            
-            // after processing the whole packet queue the actual data
-            this.Send(packetBuffer);
+            // begin the sending callback
+            Socket.BeginSend (
+                output, 0, output.Length, SocketFlags.None, this.mSendCallback,
+                new SendCallbackState (output)
+            );
         }
-
-        /// <summary>
-        /// Sends raw bytes through this socket
-        /// </summary>
-        /// <param name="buffer">The bytes to send</param>
-        public void Send(byte[] buffer)
+        catch (Exception e)
         {
-            // add the buffer to the output queue when the queue is not in use
-            lock (this.mOutputQueue)
-                this.mOutputQueue.Enqueue(buffer);
-
-            this.FlushSendingQueue();
+            this.HandleException (e);
         }
+    }
 
-        private void FlushSendingQueue(bool shouldCheckForSemaphore = true)
+    private void SendCallback (IAsyncResult ar)
+    {
+        SendCallbackState state = ar.AsyncState as SendCallbackState;
+        state.Sent += Socket.EndSend (ar);
+
+        // make sure the packet was sent completely
+        if (state.Sent != state.Buffer.Length)
         {
-            if (shouldCheckForSemaphore == false || this.mSendingSemaphore.WaitOne(0) == true)
-                // semaphore acquired, start the send callback
-                this.BeginSend();
-
-            // semaphore not acquired, the send callbacks are already running
-        }
-
-        private void BeginSend()
-        {
-            byte[] output;
-
-            // get oldest packet
-            lock (this.mOutputQueue)
-            {
-                if (this.mOutputQueue.Count == 0)
-                {
-                    // no packet to send, release the semaphore
-                    this.mSendingSemaphore.Release();
-                    return;
-                }
-
-                output = this.mOutputQueue.Dequeue();
-            }
-
             try
             {
-                // begin the sending callback
-                this.Socket.BeginSend(output, 0, output.Length, SocketFlags.None, mSendCallback,
-                    new SendCallbackState(output));
+                Socket.BeginSend (
+                    state.Buffer, state.Sent, state.Buffer.Length - state.Sent,
+                    SocketFlags.None, this.mSendCallback, state
+                );
             }
             catch (Exception e)
             {
-                this.HandleException(e);
+                this.HandleException (e);
             }
+
+            return;
         }
 
-        private void SendCallback(IAsyncResult ar)
+        // packet was completely sent, free the semaphore and try to send the next packet (if any)
+        this.FlushSendingQueue (false);
+    }
+
+    public override void GracefulDisconnect ()
+    {
+        // wait for semaphore to end sending data
+        this.mSendingSemaphore.WaitOne ();
+
+        // there shouldn't be anything left
+        // keep the semaphore active so no one can send any more data
+        // finally disconnect the socket
+        try
         {
-            SendCallbackState state = ar.AsyncState as SendCallbackState;
-            state.Sent += this.Socket.EndSend(ar);
-
-            // make sure the packet was sent completely
-            if (state.Sent != state.Buffer.Length)
-            {
-                try
-                {
-                    this.Socket.BeginSend(state.Buffer, state.Sent, state.Buffer.Length - state.Sent,
-                        SocketFlags.None, mSendCallback, state);
-                }
-                catch (Exception e)
-                {
-                    this.HandleException(e);
-                }
-
-                return;
-            }
-
-            // packet was completely sent, free the semaphore and try to send the next packet (if any)
-            this.FlushSendingQueue(false);
+            this.ForcefullyDisconnect ();
         }
-
-        public override void GracefulDisconnect()
+        catch (Exception ex)
         {
-            // wait for semaphore to end sending data
-            this.mSendingSemaphore.WaitOne();
-            // there shouldn't be anything left
-            // keep the semaphore active so no one can send any more data
-            // finally disconnect the socket
-            try
-            {
-                this.ForcefullyDisconnect();
-            }
-            catch (Exception ex)
-            {
-                this.DefaultExceptionHandler(ex);
-            }
+            this.DefaultExceptionHandler (ex);
         }
+    }
 
-        protected override void DefaultExceptionHandler(Exception ex)
+    protected override void DefaultExceptionHandler (Exception ex)
+    {
+        Log.Error ("Unhandled exception on the underlying socket:");
+
+        do
         {
-            Log.Error("Unhandled exception on underlying socket:");
-            Log.Error(ex.Message);
+            Log.Error (ex.Message);
+            Log.Error (ex.StackTrace);
         }
+        while ((ex = ex.InnerException) != null);
     }
 }

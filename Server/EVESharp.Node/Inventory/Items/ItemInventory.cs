@@ -22,136 +22,113 @@
     Creator: Almamu
 */
 
-using System.Collections.Generic;
-using System.Runtime.CompilerServices;
-using EVESharp.Common.Configuration;
-using EVESharp.Node.StaticData.Inventory;
+using System.Collections.Concurrent;
+using EVESharp.EVE.StaticData.Inventory;
+using EVESharp.Node.Inventory.Items.Types.Information;
 
-namespace EVESharp.Node.Inventory.Items
+namespace EVESharp.Node.Inventory.Items;
+
+public abstract class ItemInventory : ItemEntity
 {
-    public abstract class ItemInventory : ItemEntity
+    public delegate ConcurrentDictionary <int, ItemEntity> InventoryLoadEventHandler (ItemInventory inventory, Flags ignoreFlags);
+
+    public delegate void InventoryUnloadEventHandler (ItemInventory inventory);
+
+    protected ConcurrentDictionary <int, ItemEntity> mItems;
+
+    /// <summary>
+    /// Event called by the item to request the inventory contents
+    /// </summary>
+    public InventoryLoadEventHandler OnInventoryLoad;
+    /// <summary>
+    /// Event called by the item to request the inventory to be unloaded
+    /// </summary>
+    public InventoryUnloadEventHandler OnInventoryUnload;
+
+    public bool ContentsLoaded { get; set; }
+
+    public new bool Singleton
     {
-        public ItemInventory(ItemEntity from) : base(from.Database, from.HasName ? from.Name : null, from.ID, from.Type, from.OwnerID, from.LocationID,
-            from.Flag, from.Contraband, from.Singleton, from.Quantity, from.X, from.Y, from.Z, from.CustomInfo,
-            from.Attributes, from.ItemFactory)
+        get => base.Singleton;
+        set
         {
+            base.Singleton = value;
+
+            // non-singleton inventories cannot be manipulated, so the items inside can be free'd
+            if (base.Singleton == false)
+                this.UnloadContents ();
+        }
+    }
+
+    public ConcurrentDictionary <int, ItemEntity> Items
+    {
+        get
+        {
+            if (ContentsLoaded == false)
+                this.LoadContents ();
+
+            return this.mItems;
         }
 
-        protected virtual void LoadContents(Flags ignoreFlags = Flags.None)
-        {
-            lock (this)
-            {
-                this.mItems = this.ItemFactory.LoadItemsLocatedAt(this, ignoreFlags);
-                this.mContentsLoaded = true;
-            }
-        }
+        protected set => this.mItems = value;
+    }
 
-        protected virtual void UnloadContents()
-        {
-            lock (this)
-            {
-                if (this.mContentsLoaded == false)
-                    return;
-                
-                // unload all the items that are in the inventory
-                foreach((int _, ItemEntity item) in this.mItems)
-                    this.ItemFactory.UnloadItem(item);
-            }
-        }
+    protected ItemInventory (Item info) : base (info) { }
 
-        public bool ContentsLoaded
-        {
-            get => this.mContentsLoaded;
-            set => this.mContentsLoaded = value;
-        }
+    public ItemInventory (ItemEntity from) : base (from) { }
 
-        public new bool Singleton
+    protected virtual void LoadContents (Flags ignoreFlags = Flags.None)
+    {
+        lock (this)
         {
-            get => base.Singleton;
-            set
-            {
-                base.Singleton = value;
-    
-                // non-singleton inventories cannot be manipulated, so the items inside can be free'd
-                if (base.Singleton == false)
-                    this.UnloadContents();
-            }
+            // ensure the list exists if no handler is there yet
+            Items          = this.OnInventoryLoad?.Invoke (this, ignoreFlags) ?? new ConcurrentDictionary <int, ItemEntity> ();
+            ContentsLoaded = true;
         }
-        
-        public Dictionary<int, ItemEntity> Items
-        {
-            get
-            {
-                if (this.mContentsLoaded == false)
-                    this.LoadContents();
+    }
 
-                return this.mItems;
-            }
-            
-            protected set => this.mItems = value;
-        }
-
-        public virtual void AddItem(ItemEntity item)
+    protected virtual void UnloadContents ()
+    {
+        lock (this)
         {
-            // do not add anything if the inventory is not loaded
-            // this prevents loading the full inventory for operations
-            // that don't really need it
-            if (this.mContentsLoaded == false)
-                return;
-            
-            lock (this.Items)
-                this.Items[item.ID] = item;
-        }
-
-        public void RemoveItem(ItemEntity item)
-        {
-            if (this.mContentsLoaded == false)
+            if (ContentsLoaded == false)
                 return;
 
-            lock (this.Items)
-                this.Items.Remove(item.ID);
+            this.OnInventoryUnload?.Invoke (this);
         }
+    }
 
-        protected override void SaveToDB()
+    public virtual void AddItem (ItemEntity item)
+    {
+        // do not add anything if the inventory is not loaded
+        // this prevents loading the full inventory for operations
+        // that don't really need it
+        if (ContentsLoaded == false)
+            return;
+
+        lock (Items)
         {
-            base.SaveToDB();
-            
-            if (this.mContentsLoaded == true)
-            {
-                // persist all the items
-                lock(this.Items)
-                    foreach ((int _, ItemEntity item) in this.Items)
-                        item.Persist();
-            }
+            Items [item.ID] = item;
         }
+    }
 
-        public override void Destroy()
+    public void RemoveItem (ItemEntity item)
+    {
+        if (ContentsLoaded == false)
+            return;
+
+        lock (Items)
         {
-            // first destroy all the items inside this inventory
-            // this might trigger the item loading mechanism but it's needed to ensure
-            // that all the childs are removed off the database too
-            this.ItemFactory.DestroyItems(this.Items);
-
-            // finally call our base destroy method as this will get rid of the item from the database
-            // for good
-            base.Destroy();
+            Items.TryRemove (item.ID, out _);
         }
+    }
 
-        public override void Dispose()
-        {
-            base.Dispose();
-            
-            // unload all the items loaded in this inventory if they're loaded
-            if (this.ContentsLoaded == true)
-            {
-                this.ContentsLoaded = false;
-                
-                // set the item list to null again
-                this.mItems = null;
-            }
-        }
+    public override void Dispose ()
+    {
+        // trigger the unload of the contents of the inventory
+        if (ContentsLoaded)
+            this.UnloadContents ();
 
-        protected Dictionary<int, ItemEntity> mItems;
-        private bool mContentsLoaded = false;
+        base.Dispose ();
     }
 }

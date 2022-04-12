@@ -1,102 +1,74 @@
 using System;
 using System.Collections.Generic;
-using EVESharp.Node.StaticData.Inventory.Station;
-using EVESharp.Node.StaticData;
+using EVESharp.EVE.StaticData.Inventory.Station;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Database;
 using EVESharp.PythonTypes.Types.Primitives;
-using Type = EVESharp.Node.StaticData.Inventory.Station.Type;
+using Type = EVESharp.EVE.StaticData.Inventory.Station.Type;
 
-namespace EVESharp.Node.Inventory.Items.Types
+namespace EVESharp.Node.Inventory.Items.Types;
+
+public class Station : ItemInventory
 {
-    public class Station : ItemInventory
+    public Information.Station StationInformation { get; }
+
+    public Operation                   Operations               => StationInformation.Operations;
+    public Type                        StationType              => StationInformation.Type;
+    public Dictionary <int, Character> Guests                   { get; } = new Dictionary <int, Character> ();
+    public int                         Security                 => StationInformation.Security;
+    public double                      DockingCostPerVolume     => StationInformation.DockingCostPerVolume;
+    public double                      MaxShipVolumeDockable    => StationInformation.MaxShipVolumeDockable;
+    public int                         OfficeRentalCost         => StationInformation.OfficeRentalCost;
+    public int                         SolarSystemID            => LocationID;
+    public int                         ConstellationID          => StationInformation.ConstellationID;
+    public int                         RegionID                 => StationInformation.RegionID;
+    public double                      ReprocessingEfficiency   => StationInformation.ReprocessingEfficiency;
+    public double                      ReprocessingStationsTake => StationInformation.ReprocessingStationsTake;
+    public int                         ReprocessingHangarFlag   => StationInformation.ReprocessingHangarFlag;
+
+    public Station (Information.Station info) : base (info.Information)
     {
-        private StaticData.Inventory.Station.Type mStationType;
-        private Operation mOperations;
-        private Dictionary<int, Character> mGuests;
-        
-        private int mSecurity;
-        private double mDockingCostPerVolume;
-        private double mMaxShipVolumeDockable;
-        private int mOfficeRentalCost;
-        private int mConstellationID;
-        private int mRegionID;
-        private double mReprocessingEfficiency;
-        private double mReprocessingStationsTake;
-        private int mReprocessingHangarFlag;
-        
-        public Station(StaticData.Inventory.Station.Type stationType, Operation operations, int security,
-            double dockingCostPerVolume, double maxShipVolumeDockable, int officeRentalCost, int constellationId,
-            int regionId, double reprocessingEfficiency, double reprocessingStationsTake, int reprocessingHangarFlag,
-            ItemEntity from) : base(from)
+        StationInformation = info;
+    }
+
+    public PyDataType GetStationInfo ()
+    {
+        PyDictionary data = new PyDictionary
         {
-            this.mStationType = stationType;
-            this.mOperations = operations;
-            this.mSecurity = security;
-            this.mDockingCostPerVolume = dockingCostPerVolume;
-            this.mMaxShipVolumeDockable = maxShipVolumeDockable;
-            this.mOfficeRentalCost = officeRentalCost;
-            this.mConstellationID = constellationId;
-            this.mRegionID = regionId;
-            this.mReprocessingEfficiency = reprocessingEfficiency;
-            this.mReprocessingStationsTake = reprocessingStationsTake;
-            this.mReprocessingHangarFlag = reprocessingHangarFlag;
-            this.mGuests = new Dictionary<int, Character>();
-        }
+            ["stationID"]                = ID,
+            ["security"]                 = Security,
+            ["dockingCostPerVolume"]     = DockingCostPerVolume,
+            ["maxShipVolumeDockable"]    = MaxShipVolumeDockable,
+            ["officeRentalCost"]         = OfficeRentalCost,
+            ["operationID"]              = Operations.OperationID,
+            ["stationTypeID"]            = Type.ID,
+            ["ownerID"]                  = OwnerID,
+            ["solarSystemID"]            = SolarSystemID,
+            ["constellationID"]          = ConstellationID,
+            ["regionID"]                 = RegionID,
+            ["stationName"]              = Name,
+            ["x"]                        = X,
+            ["y"]                        = Y,
+            ["z"]                        = Z,
+            ["reprocessingEfficiency"]   = ReprocessingEfficiency,
+            ["reprocessingStationsTake"] = ReprocessingStationsTake,
+            ["reprocessingHangarFlag"]   = ReprocessingHangarFlag,
+            ["description"]              = Operations.Description,
+            ["serviceMask"]              = Operations.ServiceMask
+        };
 
-        public Operation Operations => this.mOperations;
-        public StaticData.Inventory.Station.Type StationType => this.mStationType;
-        public Dictionary<int, Character> Guests => this.mGuests;
-        public int Security => mSecurity;
-        public double DockingCostPerVolume => mDockingCostPerVolume;
-        public double MaxShipVolumeDockable => mMaxShipVolumeDockable;
-        public int OfficeRentalCost => mOfficeRentalCost;
-        public int SolarSystemID => this.LocationID;
-        public int ConstellationID => mConstellationID;
-        public int RegionID => mRegionID;
-        public double ReprocessingEfficiency => mReprocessingEfficiency;
-        public double ReprocessingStationsTake => mReprocessingStationsTake;
-        public int ReprocessingHangarFlag => mReprocessingHangarFlag;
+        // TODO: CREATE OBJECTS FOR CONSTELLATION AND REGION ID SO THESE CAN BE FETCHED FROM MEMORY INSTEAD OF DATABASE
 
-        public PyDataType GetStationInfo()
-        {
-            PyDictionary data = new PyDictionary
-            {
-                ["stationID"] = this.ID,
-                ["security"] = this.Security,
-                ["dockingCostPerVolume"] = this.DockingCostPerVolume,
-                ["maxShipVolumeDockable"] = this.MaxShipVolumeDockable,
-                ["officeRentalCost"] = this.OfficeRentalCost,
-                ["operationID"] = this.Operations.OperationID,
-                ["stationTypeID"] = this.Type.ID,
-                ["ownerID"] = this.OwnerID,
-                ["solarSystemID"] = this.SolarSystemID,
-                ["constellationID"] = this.ConstellationID,
-                ["regionID"] = this.RegionID,
-                ["stationName"] = this.Name,
-                ["x"] = this.X,
-                ["y"] = this.Y,
-                ["z"] = this.Z,
-                ["reprocessingEfficiency"] = this.ReprocessingEfficiency,
-                ["reprocessingStationsTake"] = this.ReprocessingStationsTake,
-                ["reprocessingHangarFlag"] = this.ReprocessingHangarFlag,
-                ["description"] = this.Operations.Description,
-                ["serviceMask"] = this.Operations.ServiceMask
-            };
+        return KeyVal.FromDictionary (data);
+    }
 
-            // TODO: CREATE OBJECTS FOR CONSTELLATION AND REGION ID SO THESE CAN BE FETCHED FROM MEMORY INSTEAD OF DATABASE
+    public bool HasService (Service service)
+    {
+        return (Operations.ServiceMask & (int) service) == (int) service;
+    }
 
-            return KeyVal.FromDictionary(data);
-        }
-
-        public bool HasService(StaticData.Inventory.Station.Service service)
-        {
-            return (this.Operations.ServiceMask & (int) service) == (int) service;
-        }
-
-        public override void Destroy()
-        {
-            throw new NotImplementedException("Stations cannot be destroyed as they're regarded as static data!");
-        }
+    public override void Destroy ()
+    {
+        throw new NotImplementedException ("Stations cannot be destroyed as they're regarded as static data!");
     }
 }

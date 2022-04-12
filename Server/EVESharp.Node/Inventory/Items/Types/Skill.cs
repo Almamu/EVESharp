@@ -1,61 +1,51 @@
 using System;
-using EVESharp.Node.Inventory.Items.Attributes;
-using Attribute = EVESharp.Node.Inventory.Items.Attributes.Attribute;
+using EVESharp.EVE.StaticData.Inventory;
+using Attribute = EVESharp.EVE.Inventory.Attributes.Attribute;
 
-namespace EVESharp.Node.Inventory.Items.Types
+namespace EVESharp.Node.Inventory.Items.Types;
+
+public class Skill : ItemEntity
 {
-    public class Skill : ItemEntity
+    private readonly double mSkillPointMultiplier;
+
+    public long Level
     {
-        private readonly double mSkillPointMultiplier;
-        
-        public Skill(ItemEntity from, double skillPointMultiplier) : base(from)
+        get => Attributes [AttributeTypes.skillLevel].Integer;
+        set
         {
-            this.mSkillPointMultiplier = skillPointMultiplier;
+            Attributes [AttributeTypes.skillLevel].Integer = value;
+            Points                                         = this.GetSkillPointsForLevel (value);
         }
+    }
 
-        public long Level
-        {
-            get => this.Attributes[StaticData.Inventory.Attributes.skillLevel].Integer;
-            set
-            {
-                this.Attributes[StaticData.Inventory.Attributes.skillLevel].Integer = value;
-                this.Points = this.GetSkillPointsForLevel(value);
-            }
-        }
+    public double Points
+    {
+        get => Attributes [AttributeTypes.skillPoints].Float;
+        set => Attributes [AttributeTypes.skillPoints].Float = value;
+    }
 
-        public double Points
-        {
-            get => this.Attributes[StaticData.Inventory.Attributes.skillPoints].Float;
-            set => this.Attributes[StaticData.Inventory.Attributes.skillPoints].Float = value;
-        }
+    public Attribute TimeConstant => Attributes [AttributeTypes.skillTimeConstant];
 
-        public Attributes.Attribute TimeConstant
-        {
-            get => this.Attributes[StaticData.Inventory.Attributes.skillTimeConstant];
-        }
+    public Attribute PrimaryAttribute => Attributes [AttributeTypes.primaryAttribute];
 
-        public Attributes.Attribute PrimaryAttribute
-        {
-            get => this.Attributes[StaticData.Inventory.Attributes.primaryAttribute];
-        }
+    public Attribute SecondaryAttribute => Attributes [AttributeTypes.secondaryAttribute];
 
-        public Attributes.Attribute SecondaryAttribute
-        {
-            get => this.Attributes[StaticData.Inventory.Attributes.secondaryAttribute];
-        }
+    public long ExpiryTime
+    {
+        get => Attributes [AttributeTypes.expiryTime].Integer;
+        set => Attributes [AttributeTypes.expiryTime].Integer = value;
+    }
 
-        public long ExpiryTime
-        {
-            get => this.Attributes[StaticData.Inventory.Attributes.expiryTime].Integer;
-            set => this.Attributes[StaticData.Inventory.Attributes.expiryTime].Integer = value;
-        }
+    public Skill (Information.Item info, double skillPointMultiplier) : base (info)
+    {
+        this.mSkillPointMultiplier = skillPointMultiplier;
+    }
 
-        public double GetSkillPointsForLevel(long level)
-        {
-            if (level > 5 || level == 0)
-                return 0;
+    public double GetSkillPointsForLevel (long level)
+    {
+        if (level > 5 || level == 0)
+            return 0;
 
-            return Math.Ceiling (TimeConstant * this.mSkillPointMultiplier * Math.Pow(2, 2.5 * (level - 1)));
-        }
+        return Math.Ceiling (TimeConstant * this.mSkillPointMultiplier * Math.Pow (2, 2.5 * (level - 1)));
     }
 }

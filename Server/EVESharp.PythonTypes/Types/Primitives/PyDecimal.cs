@@ -1,144 +1,107 @@
 using System.Globalization;
 
-namespace EVESharp.PythonTypes.Types.Primitives
+namespace EVESharp.PythonTypes.Types.Primitives;
+
+public class PyDecimal : PyDataType
 {
-    public class PyDecimal : PyDataType
+    public enum DecimalTypeEnum
     {
-        public enum DecimalTypeEnum
-        {
-            Double,
-            Float
-        }
+        Double,
+        Float
+    }
 
-        protected bool Equals(PyDecimal other)
-        {
-            return Value.Equals(other.Value);
-        }
+    public double          Value       { get; }
+    public DecimalTypeEnum DecimalType { get; }
 
-        public override bool Equals(object obj)
-        {
-            if (ReferenceEquals(null, obj)) return false;
-            if (ReferenceEquals(this, obj)) return true;
-            if (obj.GetType() != this.GetType()) return false;
-            return Equals((PyDecimal) obj);
-        }
+    public PyDecimal (double value)
+    {
+        Value       = value;
+        DecimalType = DecimalTypeEnum.Double;
+    }
 
-        public override int GetHashCode()
-        {
-            return Value.GetHashCode();
-        }
+    public PyDecimal (float value)
+    {
+        Value       = value;
+        DecimalType = DecimalTypeEnum.Float;
+    }
 
-        public double Value { get; }
-        public DecimalTypeEnum DecimalType { get; }
+    private bool Equals (PyDecimal other)
+    {
+        if (ReferenceEquals (null, other)) return false;
 
-        public PyDecimal(double value)
-        {
-            this.Value = value;
-            this.DecimalType = DecimalTypeEnum.Double;
-        }
+        return Value.Equals (other.Value);
+    }
 
-        public PyDecimal(float value)
-        {
-            this.Value = value;
-            this.DecimalType = DecimalTypeEnum.Float;
-        }
+    public override int GetHashCode ()
+    {
+        return Value.GetHashCode ();
+    }
 
-        public static bool operator ==(PyDecimal obj1, PyDecimal obj2)
-        {
-            if (ReferenceEquals(obj1, obj2)) return true;
-            if (ReferenceEquals(null, obj1)) return false;
-            if (ReferenceEquals(null, obj2)) return false;
+    public static bool operator > (PyDecimal obj, PyDecimal value)
+    {
+        return obj.Value > value.Value;
+    }
 
-            return obj1.Value.Equals(obj2.Value);
-        }
+    public static bool operator >= (PyDecimal obj, PyDecimal value)
+    {
+        return obj.Value >= value.Value;
+    }
 
-        public static bool operator !=(PyDecimal obj1, PyDecimal obj2)
-        {
-            return !(obj1 == obj2);
-        }
-        
-        public static bool operator >(PyDecimal obj, double value)
-        {
-            return obj.Value > value;
-        }
-        
-        public static bool operator >=(PyDecimal obj, double value)
-        {
-            return obj.Value >= value;
-        }
+    public static bool operator < (PyDecimal obj, PyDecimal value)
+    {
+        return obj.Value < value.Value;
+    }
 
-        public static bool operator <(PyDecimal obj, double value)
-        {
-            return obj.Value < value;
-        }
+    public static bool operator <= (PyDecimal obj, PyDecimal value)
+    {
+        return obj.Value <= value.Value;
+    }
 
-        public static bool operator <=(PyDecimal obj, double value)
-        {
-            return obj.Value <= value;
-        }
+    public static bool operator == (PyDecimal left, PyDecimal right)
+    {
+        if (ReferenceEquals (left, right)) return true;
+        if (ReferenceEquals (null, left)) return false;
 
-        public static bool operator ==(PyDecimal obj, double value)
-        {
-            if (ReferenceEquals(null, obj)) return false;
+        return left.Equals (right);
+    }
 
-            return obj.Value.Equals(value);
-        }
+    public static bool operator != (PyDecimal obj, PyDecimal value)
+    {
+        return !(obj == value);
+    }
 
-        public static bool operator !=(PyDecimal obj, double value)
-        {
-            return !(obj == value);
-        }
+    public static implicit operator double (PyDecimal obj)
+    {
+        return obj.Value;
+    }
 
-        public static bool operator >(PyDecimal obj, float value)
-        {
-            return obj.Value > value;
-        }
+    public static implicit operator double? (PyDecimal obj)
+    {
+        return obj?.Value;
+    }
 
-        public static bool operator <(PyDecimal obj, float value)
-        {
-            return obj.Value < value;
-        }
+    public static explicit operator float (PyDecimal obj)
+    {
+        return (float) obj.Value;
+    }
 
-        public static bool operator ==(PyDecimal obj, float value)
-        {
-            if (ReferenceEquals(null, obj)) return false;
+    public static explicit operator float? (PyDecimal obj)
+    {
+        return (float?) obj?.Value;
+    }
 
-            return obj.Value.Equals(value);
-        }
+    public static implicit operator PyDecimal (double value)
+    {
+        return new PyDecimal (value);
+    }
 
-        public static bool operator !=(PyDecimal obj, float value)
-        {
-            return !(obj == value);
-        }
+    public static explicit operator PyDecimal (float value)
+    {
+        return new PyDecimal (value);
+    }
 
-        public static implicit operator double(PyDecimal obj)
-        {
-            return obj.Value;
-        }
-
-        public static implicit operator double?(PyDecimal obj)
-        {
-            return obj?.Value;
-        }
-
-        public static explicit operator float(PyDecimal obj)
-        {
-            return (float) obj.Value;
-        }
-
-        public static implicit operator PyDecimal(double value)
-        {
-            return new PyDecimal(value);
-        }
-
-        public static explicit operator PyDecimal(float value)
-        {
-            return new PyDecimal(value);
-        }
-
-        public override string ToString()
-        {
-            return this.Value.ToString(CultureInfo.InvariantCulture);
-        }
+    public override string ToString ()
+    {
+        return Value.ToString (CultureInfo.InvariantCulture);
     }
 }

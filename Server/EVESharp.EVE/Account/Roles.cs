@@ -1,0 +1,56 @@
+﻿using System;
+
+namespace EVESharp.EVE.Account;
+
+[Flags]
+public enum Roles : ulong
+{
+    // Completely ported from Apocrypha game code
+    ROLE_LOGIN                = 1L,
+    ROLE_PLAYER               = 2L,
+    ROLE_GDNPC                = 4L,
+    ROLE_GML                  = 8L,
+    ROLE_GMH                  = 16L,
+    ROLE_ADMIN                = 32L,
+    ROLE_SERVICE              = 64L,
+    ROLE_HTTP                 = 128L,
+    ROLE_PETITIONEE           = 256L,
+    ROLE_GDL                  = 512L,
+    ROLE_GDH                  = 1024L,
+    ROLE_CENTURION            = 2048L,
+    ROLE_WORLDMOD             = 4096L,
+    ROLE_QA                   = 8192L,
+    ROLE_EBS                  = 16384L,
+    ROLE_ROLEADMIN            = 32768L,
+    ROLE_PROGRAMMER           = 65536L,
+    ROLE_REMOTESERVICE        = 131072L,
+    ROLE_LEGIONEER            = 262144L,
+    ROLE_TRANSLATION          = 524288L,
+    ROLE_CHTINVISIBLE         = 1048576L,
+    ROLE_CHTADMINISTRATOR     = 2097152L,
+    ROLE_HEALSELF             = 4194304L,
+    ROLE_HEALOTHERS           = 8388608L,
+    ROLE_NEWSREPORTER         = 16777216L,
+    ROLE_HOSTING              = 33554432L,
+    ROLE_BROADCAST            = 67108864L,
+    ROLE_TRANSLATIONADMIN     = 134217728L,
+    ROLE_N00BIE               = 268435456L,
+    ROLE_ACCOUNTMANAGEMENT    = 536870912L,
+    ROLE_DUNGEONMASTER        = 1073741824L,
+    ROLE_IGB                  = 2147483648L,
+    ROLE_TRANSLATIONEDITOR    = 4294967296L,
+    ROLE_SPAWN                = 8589934592L,
+    ROLE_VIPLOGIN             = 17179869184L,
+    ROLE_TRANSLATIONTESTER    = 34359738368L,
+    ROLE_REACTIVATIONCAMPAIGN = 68719476736L,
+    ROLE_TRANSFER             = 137438953472L,
+    ROLE_GMS                  = 274877906944L,
+    ROLE_EVEONLINE            = 549755813888L,
+    ROLE_CR                   = 1099511627776L,
+    ROLE_CM                   = 2199023255552L,
+    ROLE_MARKET               = 4398046511104L,
+    ROLE_MARKETH              = 8796093022208L,
+    ROLE_ANY                  = 18446744073709551615L & ~ROLE_IGB,
+    ROLEMASK_ELEVATEDPLAYER   = ROLE_ANY & ~(ROLE_LOGIN | ROLE_PLAYER | ROLE_N00BIE | ROLE_NEWSREPORTER | ROLE_VIPLOGIN),
+    ROLEMASK_VIEW             = ROLE_GML | ROLE_ADMIN | ROLE_GDL | ROLE_HOSTING | ROLE_QA | ROLE_MARKET
+}

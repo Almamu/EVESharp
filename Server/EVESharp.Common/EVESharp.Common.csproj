@@ -2,17 +2,18 @@
 
     <PropertyGroup>
         <TargetFramework>net6.0</TargetFramework>
-        <Company />
+        <Company/>
         <Product>eveCommon</Product>
         <LangVersion>10</LangVersion>
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="ini-parser-netstandard" Version="2.5.2" />
+        <PackageReference Include="ini-parser-netstandard" Version="2.5.2"/>
+        <PackageReference Include="Serilog" Version="2.11.0-dev-01380"/>
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\EVESharp.PythonTypes\EVESharp.PythonTypes.csproj" />
+        <ProjectReference Include="..\EVESharp.PythonTypes\EVESharp.PythonTypes.csproj"/>
     </ItemGroup>
 
 </Project>

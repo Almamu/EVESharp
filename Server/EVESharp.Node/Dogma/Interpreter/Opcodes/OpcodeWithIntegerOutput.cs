@@ -1,11 +1,8 @@
-﻿namespace EVESharp.Node.Dogma.Interpreter.Opcodes
-{
-    public abstract class OpcodeWithIntegerOutput : Opcode
-    {
-        protected OpcodeWithIntegerOutput(Interpreter interpreter) : base(interpreter)
-        {
-        }
+﻿namespace EVESharp.Node.Dogma.Interpreter.Opcodes;
 
-        public abstract int Execute();
-    }
+public abstract class OpcodeWithIntegerOutput : Opcode
+{
+    protected OpcodeWithIntegerOutput (Interpreter interpreter) : base (interpreter) { }
+
+    public abstract int Execute ();
 }

@@ -1,9 +1,8 @@
-﻿namespace EVESharp.Destiny
+﻿namespace EVESharp.Destiny;
+
+public enum CloakMode : byte
 {
-    public enum CloakMode : byte
-    {
-        Normal = 1,
-        Restore,
-        GM
-    }
+    Normal = 1,
+    Restore,
+    GM
 }

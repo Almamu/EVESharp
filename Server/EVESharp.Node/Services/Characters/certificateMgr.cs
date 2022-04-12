@@ -1,175 +1,172 @@
 ﻿using System.Collections.Generic;
-using EVESharp.Common.Services;
+using EVESharp.EVE.Client.Exceptions.certificateMgr;
 using EVESharp.EVE.Packets.Complex;
+using EVESharp.EVE.Services;
+using EVESharp.EVE.Services.Validators;
+using EVESharp.EVE.StaticData.Certificates;
+using EVESharp.Node.Cache;
+using EVESharp.Node.Client.Notifications.Certificates;
 using EVESharp.Node.Database;
-using EVESharp.Node.Exceptions.certificateMgr;
+using EVESharp.Node.Dogma;
 using EVESharp.Node.Inventory;
 using EVESharp.Node.Inventory.Items.Types;
-using EVESharp.Node.Network;
-using EVESharp.Node.Notifications.Client.Certificates;
-using EVESharp.Node.StaticData.Certificates;
-using EVESharp.Node.StaticData;
+using EVESharp.Node.Sessions;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Primitives;
 
-namespace EVESharp.Node.Services.Characters
+namespace EVESharp.Node.Services.Characters;
+
+[MustBeCharacter]
+public class certificateMgr : Service
 {
-    public class certificateMgr : IService
+    public override AccessLevel                           AccessLevel              => AccessLevel.None;
+    private         CertificatesDB                        DB                       { get; }
+    private         ItemFactory                           ItemFactory              { get; }
+    private         CacheStorage                          CacheStorage             { get; }
+    private         Dictionary <int, List <Relationship>> CertificateRelationships { get; }
+    private         DogmaUtils                            DogmaUtils               { get; }
+
+    public certificateMgr (CertificatesDB db, ItemFactory itemFactory, CacheStorage cacheStorage, DogmaUtils dogmaUtils)
     {
-        private CertificatesDB DB { get; }
-        private ItemFactory ItemFactory { get; }
-        private CacheStorage CacheStorage { get; }
-        private Dictionary<int, List<Relationship>> CertificateRelationships { get; }
-        
-        public certificateMgr(CertificatesDB db, ItemFactory itemFactory, CacheStorage cacheStorage)
-        {
-            this.DB = db;
-            this.ItemFactory = itemFactory;
-            this.CacheStorage = cacheStorage;
+        DB           = db;
+        ItemFactory  = itemFactory;
+        CacheStorage = cacheStorage;
+        DogmaUtils   = dogmaUtils;
 
-            // get the full list of requirements
-            this.CertificateRelationships = this.DB.GetCertificateRelationships();
-        }
+        // get the full list of requirements
+        CertificateRelationships = DB.GetCertificateRelationships ();
+    }
 
-        public PyDataType GetAllShipCertificateRecommendations(CallInformation call)
-        {
-            this.CacheStorage.Load(
-                "certificateMgr",
-                "GetAllShipCertificateRecommendations",
-                "SELECT shipTypeID, certificateID, recommendationLevel, recommendationID FROM crtRecommendations",
-                CacheStorage.CacheObjectType.Rowset
-            );
+    public PyDataType GetAllShipCertificateRecommendations (CallInformation call)
+    {
+        CacheStorage.Load (
+            "certificateMgr",
+            "GetAllShipCertificateRecommendations",
+            "SELECT shipTypeID, certificateID, recommendationLevel, recommendationID FROM crtRecommendations",
+            CacheStorage.CacheObjectType.Rowset
+        );
 
-            return CachedMethodCallResult.FromCacheHint(
-                this.CacheStorage.GetHint("certificateMgr", "GetAllShipCertificateRecommendations")
-            );
-        }
+        return CachedMethodCallResult.FromCacheHint (CacheStorage.GetHint ("certificateMgr", "GetAllShipCertificateRecommendations"));
+    }
 
-        public PyDataType GetCertificateCategories(CallInformation call)
-        {
-            this.CacheStorage.Load(
-                "certificateMgr",
-                "GetCertificateCategories",
-                "SELECT categoryID, categoryName, description, 0 AS dataID FROM crtCategories",
-                CacheStorage.CacheObjectType.IndexRowset
-            );
+    public PyDataType GetCertificateCategories (CallInformation call)
+    {
+        CacheStorage.Load (
+            "certificateMgr",
+            "GetCertificateCategories",
+            "SELECT categoryID, categoryName, description, 0 AS dataID FROM crtCategories",
+            CacheStorage.CacheObjectType.IndexRowset
+        );
 
-            return CachedMethodCallResult.FromCacheHint(
-                this.CacheStorage.GetHint("certificateMgr", "GetCertificateCategories")
-            );
-        }
+        return CachedMethodCallResult.FromCacheHint (CacheStorage.GetHint ("certificateMgr", "GetCertificateCategories"));
+    }
 
-        public PyDataType GetCertificateClasses(CallInformation call)
-        {
-            this.CacheStorage.Load(
-                "certificateMgr",
-                "GetCertificateClasses",
-                "SELECT classID, className, description, 0 AS dataID FROM crtClasses",
-                CacheStorage.CacheObjectType.IndexRowset
-            );
+    public PyDataType GetCertificateClasses (CallInformation call)
+    {
+        CacheStorage.Load (
+            "certificateMgr",
+            "GetCertificateClasses",
+            "SELECT classID, className, description, 0 AS dataID FROM crtClasses",
+            CacheStorage.CacheObjectType.IndexRowset
+        );
 
-            return CachedMethodCallResult.FromCacheHint(
-                this.CacheStorage.GetHint("certificateMgr", "GetCertificateClasses")
-            );
-        }
+        return CachedMethodCallResult.FromCacheHint (CacheStorage.GetHint ("certificateMgr", "GetCertificateClasses"));
+    }
 
-        public PyDataType GetMyCertificates(CallInformation call)
-        {
-            return this.DB.GetMyCertificates(call.Client.EnsureCharacterIsSelected());
-        }
+    public PyDataType GetMyCertificates (CallInformation call)
+    {
+        return DB.GetMyCertificates (call.Session.CharacterID);
+    }
 
-        public PyBool GrantCertificate(PyInteger certificateID, CallInformation call)
-        {
-            int callerCharacterID = call.Client.EnsureCharacterIsSelected();
-            Character character = this.ItemFactory.GetItem<Character>(callerCharacterID);
+    public PyBool GrantCertificate (PyInteger certificateID, CallInformation call)
+    {
+        int       callerCharacterID = call.Session.CharacterID;
+        Character character         = ItemFactory.GetItem <Character> (callerCharacterID);
 
-            Dictionary<int, Skill> skills = character.InjectedSkillsByTypeID;
-            List<int> grantedCertificates = this.DB.GetCertificateListForCharacter(callerCharacterID);
+        Dictionary <int, Skill> skills              = character.InjectedSkillsByTypeID;
+        List <int>              grantedCertificates = DB.GetCertificateListForCharacter (callerCharacterID);
 
-            if (grantedCertificates.Contains(certificateID) == true)
-                throw new CertificateAlreadyGranted();
+        if (grantedCertificates.Contains (certificateID))
+            throw new CertificateAlreadyGranted ();
 
-            if (this.CertificateRelationships.TryGetValue(certificateID, out List<Relationship> requirements) == true)
+        if (CertificateRelationships.TryGetValue (certificateID, out List <Relationship> requirements))
+            foreach (Relationship relationship in requirements)
             {
-                foreach (Relationship relationship in requirements)
-                {
-                    if (relationship.ParentTypeID != 0 && (skills.TryGetValue(relationship.ParentTypeID, out Skill skill) == false || skill.Level < relationship.ParentLevel))
-                        throw new CertificateSkillPrerequisitesNotMet();
-                    if (relationship.ParentID != 0 && grantedCertificates.Contains(relationship.ParentID) == false)
-                        throw new CertificateCertPrerequisitesNotMet();
-                }
+                if (relationship.ParentTypeID != 0 &&
+                    (skills.TryGetValue (relationship.ParentTypeID, out Skill skill) == false || skill.Level < relationship.ParentLevel))
+                    throw new CertificateSkillPrerequisitesNotMet ();
+                if (relationship.ParentID != 0 && grantedCertificates.Contains (relationship.ParentID) == false)
+                    throw new CertificateCertPrerequisitesNotMet ();
             }
-            
-            // if this line is reached, the character has all the requirements for this cert
-            this.DB.GrantCertificate(callerCharacterID, certificateID);
-            
-            // notify the character about the granting of the certificate
-            call.Client.NotifyMultiEvent(new OnCertificateIssued(certificateID));
-            
-            return null;
-        }
 
-        public PyDataType BatchCertificateGrant(PyList certificateList, CallInformation call)
+        // if this line is reached, the character has all the requirements for this cert
+        DB.GrantCertificate (callerCharacterID, certificateID);
+
+        // notify the character about the granting of the certificate
+        DogmaUtils.QueueMultiEvent (callerCharacterID, new OnCertificateIssued (certificateID));
+
+        return null;
+    }
+
+    public PyDataType BatchCertificateGrant (PyList certificateList, CallInformation call)
+    {
+        int       callerCharacterID = call.Session.CharacterID;
+        Character character         = ItemFactory.GetItem <Character> (callerCharacterID);
+
+        PyList <PyInteger>      result              = new PyList <PyInteger> ();
+        Dictionary <int, Skill> skills              = character.InjectedSkillsByTypeID;
+        List <int>              grantedCertificates = DB.GetCertificateListForCharacter (callerCharacterID);
+
+        foreach (PyInteger certificateID in certificateList.GetEnumerable <PyInteger> ())
         {
-            int callerCharacterID = call.Client.EnsureCharacterIsSelected();
-            Character character = this.ItemFactory.GetItem<Character>(callerCharacterID);
-
-            PyList<PyInteger> result = new PyList<PyInteger>();
-            Dictionary<int, Skill> skills = character.InjectedSkillsByTypeID;
-            List<int> grantedCertificates = this.DB.GetCertificateListForCharacter(callerCharacterID);
-
-            foreach (PyInteger certificateID in certificateList.GetEnumerable<PyInteger>())
+            if (CertificateRelationships.TryGetValue (certificateID, out List <Relationship> relationships))
             {
-                if (this.CertificateRelationships.TryGetValue(certificateID, out List<Relationship> relationships) == true)
+                bool requirementsMet = true;
+
+                foreach (Relationship relationship in relationships)
                 {
-                    bool requirementsMet = true;
-                
-                    foreach (Relationship relationship in relationships)
-                    {
-                        if (relationship.ParentTypeID != 0 && (skills.TryGetValue(relationship.ParentTypeID, out Skill skill) == false || skill.Level < relationship.ParentLevel))
-                            requirementsMet = false;
-                        if (relationship.ParentID != 0 && grantedCertificates.Contains(relationship.ParentID) == false)
-                            requirementsMet = false;
-                    }
-
-                    if (requirementsMet == false)
-                        continue;
+                    if (relationship.ParentTypeID != 0 &&
+                        (skills.TryGetValue (relationship.ParentTypeID, out Skill skill) == false || skill.Level < relationship.ParentLevel))
+                        requirementsMet = false;
+                    if (relationship.ParentID != 0 && grantedCertificates.Contains (relationship.ParentID) == false)
+                        requirementsMet = false;
                 }
-                
-                // grant the certificate and add it to the list of granted certs
-                this.DB.GrantCertificate(callerCharacterID, certificateID);
-                // ensure the result includes that certificate list
-                result.Add(certificateID);
-                // add the cert to the list so certs that depend on others are properly granted
-                grantedCertificates.Add(certificateID);
+
+                if (requirementsMet == false)
+                    continue;
             }
-            
-            // notify the client about the granting of certificates
-            call.Client.NotifyMultiEvent(new OnCertificateIssued());
 
-            return result;
+            // grant the certificate and add it to the list of granted certs
+            DB.GrantCertificate (callerCharacterID, certificateID);
+            // ensure the result includes that certificate list
+            result.Add (certificateID);
+            // add the cert to the list so certs that depend on others are properly granted
+            grantedCertificates.Add (certificateID);
         }
 
-        public PyDataType UpdateCertificateFlags(PyInteger certificateID, PyInteger visibilityFlags, CallInformation call)
-        {
-            this.DB.UpdateVisibilityFlags(certificateID, call.Client.EnsureCharacterIsSelected(), visibilityFlags);
-            
-            return null;
-        }
+        // notify the client about the granting of certificates
+        DogmaUtils.QueueMultiEvent (callerCharacterID, new OnCertificateIssued ());
 
-        public PyDataType BatchCertificateUpdate(PyDictionary updates, CallInformation call)
-        {
-            call.Client.EnsureCharacterIsSelected();
-            
-            foreach ((PyInteger key, PyInteger value) in updates.GetEnumerable<PyInteger,PyInteger>())
-                this.UpdateCertificateFlags(key, value, call);
+        return result;
+    }
 
-            return null;
-        }
+    public PyDataType UpdateCertificateFlags (PyInteger certificateID, PyInteger visibilityFlags, CallInformation call)
+    {
+        DB.UpdateVisibilityFlags (certificateID, call.Session.CharacterID, visibilityFlags);
 
-        public PyDataType GetCertificatesByCharacter(PyInteger characterID, CallInformation call)
-        {
-            return this.DB.GetCertificatesByCharacter(characterID);
-        }
+        return null;
+    }
+
+    public PyDataType BatchCertificateUpdate (PyDictionary updates, CallInformation call)
+    {
+        foreach ((PyInteger key, PyInteger value) in updates.GetEnumerable <PyInteger, PyInteger> ())
+            this.UpdateCertificateFlags (key, value, call);
+
+        return null;
+    }
+
+    public PyDataType GetCertificatesByCharacter (PyInteger characterID, CallInformation call)
+    {
+        return DB.GetCertificatesByCharacter (characterID);
     }
 }

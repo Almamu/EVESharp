@@ -22,52 +22,52 @@
     Creator: Almamu
 */
 
-using EVESharp.Common.Logging;
-using EVESharp.Common.Services;
 using EVESharp.EVE.Packets.Exceptions;
-using EVESharp.Node.Network;
+using EVESharp.EVE.Services;
+using EVESharp.Node.Cache;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Primitives;
+using Serilog;
 
-namespace EVESharp.Node.Services.CacheSvc
+namespace EVESharp.Node.Services.CacheSvc;
+
+public class objectCaching : Service
 {
-    public class objectCaching : IService
+    public override AccessLevel  AccessLevel  => AccessLevel.None;
+    private         ILogger      Log          { get; }
+    private         CacheStorage CacheStorage { get; }
+
+    public objectCaching (CacheStorage cacheStorage, ILogger logger)
     {
-        private Channel Log { get; }
-        private CacheStorage CacheStorage { get; }
+        Log          = logger;
+        CacheStorage = cacheStorage;
+    }
 
-        public objectCaching(CacheStorage cacheStorage, Logger logger)
-        {
-            this.Log = logger.CreateLogChannel("objectCaching");
-            this.CacheStorage = cacheStorage;
-        }
-        
-        public PyDataType GetCachableObject(PyInteger shared, PyTuple objectID, PyTuple objectVersion, PyInteger nodeID, CallInformation call)
-        {
-            // TODO: CHECK CACHEOK EXCEPTION ON CLIENT
-            Log.Debug($"Received cache request for a tuple objectID");
-            
-            if (objectID.Count != 3 || objectID [2] is PyTuple == false)
-                throw new CustomError("Requesting cache with an unknown objectID");
+    public PyDataType GetCachableObject (PyInteger shared, PyTuple objectID, PyTuple objectVersion, PyInteger nodeID, CallInformation call)
+    {
+        // TODO: CHECK CACHEOK EXCEPTION ON CLIENT
+        Log.Debug ("Received cache request for a tuple objectID");
 
-            PyTuple callInformation = objectID[2] as PyTuple;
+        if (objectID.Count != 3 || objectID [2] is PyTuple == false)
+            throw new CustomError ("Requesting cache with an unknown objectID");
 
-            if (callInformation.Count != 2 || callInformation[0] is PyString == false ||
-                callInformation[1] is PyString == false)
-                throw new CustomError("Requesting cache with an unknown objectID");
+        PyTuple callInformation = objectID [2] as PyTuple;
 
-            string service = callInformation[0] as PyString;
-            string method = callInformation[1] as PyString;
-            
-            return this.CacheStorage.Get(service, method);
-        }
+        if (callInformation.Count != 2 || callInformation [0] is PyString == false ||
+            callInformation [1] is PyString == false)
+            throw new CustomError ("Requesting cache with an unknown objectID");
 
-        public PyDataType GetCachableObject(PyInteger shared, PyString objectID, PyTuple objectVersion, PyInteger nodeID, CallInformation call)
-        {
-            // TODO: CHECK CACHEOK EXCEPTION ON CLIENT
-            Log.Debug($"Received cache request for {objectID.Value}");
+        string service = callInformation [0] as PyString;
+        string method  = callInformation [1] as PyString;
 
-            return this.CacheStorage.Get(objectID);
-        }
+        return CacheStorage.Get (service, method);
+    }
+
+    public PyDataType GetCachableObject (PyInteger shared, PyString objectID, PyTuple objectVersion, PyInteger nodeID, CallInformation call)
+    {
+        // TODO: CHECK CACHEOK EXCEPTION ON CLIENT
+        Log.Debug ($"Received cache request for {objectID.Value}");
+
+        return CacheStorage.Get (objectID);
     }
 }

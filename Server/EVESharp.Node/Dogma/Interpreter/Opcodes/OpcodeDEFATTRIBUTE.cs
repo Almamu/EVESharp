@@ -1,22 +1,18 @@
 ﻿using System.IO;
-using EVESharp.Node.StaticData.Inventory;
-using EVESharp.Node.Inventory.Items.Attributes;
+using EVESharp.EVE.StaticData.Inventory;
 
-namespace EVESharp.Node.Dogma.Interpreter.Opcodes
+namespace EVESharp.Node.Dogma.Interpreter.Opcodes;
+
+public class OpcodeDEFATTRIBUTE : Opcode
 {
-    public class OpcodeDEFATTRIBUTE : Opcode
+    public AttributeTypes Attribute { get; private set; }
+
+    public OpcodeDEFATTRIBUTE (Interpreter interpreter) : base (interpreter) { }
+
+    public override Opcode LoadOpcode (BinaryReader reader)
     {
-        public Attributes Attribute { get; private set; }
-        
-        public OpcodeDEFATTRIBUTE(Interpreter interpreter) : base(interpreter)
-        {
-        }
+        Attribute = (AttributeTypes) reader.ReadInt32 ();
 
-        public override Opcode LoadOpcode(BinaryReader reader)
-        {
-            this.Attribute = (Attributes) reader.ReadInt32();
-
-            return this;
-        }
+        return this;
     }
 }

@@ -1,17 +1,16 @@
 using System;
-using EVESharp.Node.StaticData.Inventory;
+using EVESharp.EVE.StaticData.Inventory;
 
-namespace EVESharp.Node.Inventory.Items.Types
+namespace EVESharp.Node.Inventory.Items.Types;
+
+public class EVESystem : ItemInventory
 {
-    public class EVESystem : ItemInventory
-    {
-        public EVESystem(ItemEntity @from) : base(@from)
-        {
-        }
+    public EVESystem (Information.Item info) : base (info) { }
 
-        protected override void LoadContents(Flags ignoreFlags = Flags.None)
-        {
-            throw new NotSupportedException("EVE System Items cannot load any content in them");
-        }
+    public EVESystem (ItemEntity from) : base (from) { }
+
+    protected override void LoadContents (Flags ignoreFlags = Flags.None)
+    {
+        throw new NotSupportedException ("EVE System Items cannot load any content in them");
     }
 }

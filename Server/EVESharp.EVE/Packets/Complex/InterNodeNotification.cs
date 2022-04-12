@@ -1,29 +1,28 @@
 ﻿using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Primitives;
 
-namespace EVESharp.EVE.Packets.Complex
+namespace EVESharp.EVE.Packets.Complex;
+
+/// <summary>
+/// Special class that handles node notifications only
+/// </summary>
+public abstract class InterNodeNotification
 {
-    /// <summary>
-    /// Special class that handles node notifications only
-    /// </summary>
-    public abstract class InterNodeNotification
+    public string NotificationName { get; init; }
+
+    public InterNodeNotification(string name)
     {
-        public string NotificationName { get; init; }
+        NotificationName = name;
+    }
 
-        public InterNodeNotification(string name)
-        {
-            this.NotificationName = name;
-        }
-
-        protected abstract PyDataType GetNotification();
+    protected abstract PyDataType GetNotification();
         
-        public static implicit operator PyTuple(InterNodeNotification notif)
+    public static implicit operator PyTuple(InterNodeNotification notif)
+    {
+        return new PyTuple(2)
         {
-            return new PyTuple(2)
-            {
-                [0] = notif.NotificationName,
-                [1] = notif.GetNotification()
-            };
-        }
+            [0] = notif.NotificationName,
+            [1] = notif.GetNotification()
+        };
     }
 }

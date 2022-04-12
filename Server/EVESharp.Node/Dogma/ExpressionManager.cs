@@ -1,25 +1,24 @@
 ﻿using System.Collections.Generic;
-using EVESharp.Common.Logging;
+using EVESharp.EVE.StaticData.Dogma;
 using EVESharp.Node.Database;
-using EVESharp.Node.Inventory.Items.Dogma;
+using Serilog;
 
-namespace EVESharp.Node.Dogma
+namespace EVESharp.Node.Dogma;
+
+public class ExpressionManager
 {
-    public class ExpressionManager
+    private ILogger                      Log         { get; }
+    private DogmaDB                      DB          { get; }
+    private Dictionary <int, Expression> Expressions { get; }
+
+    public Expression this [int index] => Expressions [index];
+
+    public ExpressionManager (DogmaDB db, ILogger logger)
     {
-        private Channel Log { get; }
-        private DogmaDB DB { get; }
-        private Dictionary<int, Expression> Expressions { get; }
-        
-        public ExpressionManager(DogmaDB db, Logger logger)
-        {
-            this.DB = db;
-            this.Log = logger.CreateLogChannel("DogmaExpressionManager");
-            this.Expressions = this.DB.LoadDogmaExpressions();
+        DB          = db;
+        Log         = logger;
+        Expressions = DB.LoadDogmaExpressions ();
 
-            Log.Debug($"Loaded {this.Expressions.Count} expressions for Dogma");
-        }
-
-        public Expression this[int index] => this.Expressions[index];
+        Log.Debug ($"Loaded {Expressions.Count} expressions for Dogma");
     }
 }

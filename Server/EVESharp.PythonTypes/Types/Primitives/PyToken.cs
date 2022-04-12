@@ -1,59 +1,47 @@
-namespace EVESharp.PythonTypes.Types.Primitives
+namespace EVESharp.PythonTypes.Types.Primitives;
+
+public class PyToken : PyDataType
 {
-    public class PyToken : PyDataType
+    public string Token  { get; }
+    public int    Length => Token.Length;
+
+    public PyToken (string token)
     {
-        protected bool Equals(PyToken other)
-        {
-            return Token == other.Token;
-        }
+        Token = token;
+    }
 
-        public override bool Equals(object obj)
-        {
-            if (ReferenceEquals(null, obj)) return false;
-            if (ReferenceEquals(this, obj)) return true;
-            if (obj.GetType() != this.GetType()) return false;
-            return Equals((PyToken) obj);
-        }
+    private bool Equals (PyToken other)
+    {
+        if (ReferenceEquals (null, other)) return false;
 
-        public override int GetHashCode()
-        {
-            return (Token is not null ? Token.GetHashCode() : 0);
-        }
+        return Token.Equals (other.Token);
+    }
 
-        public string Token { get; }
-        public int Length => this.Token.Length;
+    public override int GetHashCode ()
+    {
+        return Token is not null ? Token.GetHashCode () : 0;
+    }
 
-        public PyToken(string token)
-        {
-            this.Token = token;
-        }
+    public static implicit operator PyToken (string value)
+    {
+        return new PyToken (value);
+    }
 
-        public static implicit operator PyToken(string value)
-        {
-            return new PyToken(value);
-        }
+    public static implicit operator string (PyToken value)
+    {
+        return value.Token;
+    }
 
-        public static implicit operator string(PyToken value)
-        {
-            return value.Token;
-        }
+    public static bool operator == (PyToken left, PyToken right)
+    {
+        if (ReferenceEquals (left, right)) return true;
+        if (ReferenceEquals (null, left)) return false;
 
-        public static bool operator ==(PyToken obj, string value)
-        {
-            if (ReferenceEquals(null, obj) == true)
-            {
-                if (value is null)
-                    return true;
+        return left.Equals (right);
+    }
 
-                return false;
-            }
-
-            return obj.Token == value;
-        }
-
-        public static bool operator !=(PyToken obj, string value)
-        {
-            return !(obj == value);
-        }
+    public static bool operator != (PyToken left, PyToken right)
+    {
+        return !(left == right);
     }
 }

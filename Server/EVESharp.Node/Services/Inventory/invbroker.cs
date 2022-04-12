@@ -1,255 +1,290 @@
-using EVESharp.EVE;
+using EVESharp.EVE.Client.Exceptions.corpRegistry;
+using EVESharp.EVE.Client.Exceptions.inventory;
+using EVESharp.EVE.Client.Messages;
 using EVESharp.EVE.Packets.Exceptions;
+using EVESharp.EVE.Services;
+using EVESharp.EVE.Services.Validators;
+using EVESharp.EVE.Sessions;
+using EVESharp.EVE.StaticData.Corporation;
+using EVESharp.EVE.StaticData.Inventory;
+using EVESharp.Node.Client.Notifications.Inventory;
 using EVESharp.Node.Database;
-using EVESharp.Node.Exceptions.corpRegistry;
-using EVESharp.Node.Exceptions.inventory;
+using EVESharp.Node.Dogma;
 using EVESharp.Node.Inventory;
 using EVESharp.Node.Inventory.Items;
 using EVESharp.Node.Inventory.Items.Types;
-using EVESharp.Node.Network;
-using EVESharp.Node.Notifications.Client.Inventory;
-using EVESharp.Node.StaticData.Corporation;
-using EVESharp.Node.StaticData.Inventory;
-using EVESharp.Node.Exceptions;
-using EVESharp.Node.Exceptions.ship;
+using EVESharp.Node.Notifications;
+using EVESharp.Node.Sessions;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Primitives;
-using Container = EVESharp.Node.StaticData.Inventory.Container;
+using Container = EVESharp.EVE.StaticData.Inventory.Container;
+using Groups = EVESharp.EVE.StaticData.Inventory.Groups;
 
-namespace EVESharp.Node.Services.Inventory
+namespace EVESharp.Node.Services.Inventory;
+
+[MustBeCharacter]
+public class invbroker : ClientBoundService
 {
-    public class invbroker : ClientBoundService
+    private readonly int         mObjectID;
+    public override  AccessLevel AccessLevel => AccessLevel.None;
+
+    private ItemFactory        ItemFactory    { get; }
+    private ItemDB             ItemDB         { get; }
+    private SystemManager      SystemManager  => ItemFactory.SystemManager;
+    private NotificationSender Notifications  { get; }
+    private DogmaUtils         DogmaUtils     { get; }
+    private EffectsManager     EffectsManager { get; }
+
+    public invbroker (
+        ItemDB     itemDB,     EffectsManager      effectsManager, ItemFactory itemFactory, NotificationSender notificationSender,
+        DogmaUtils dogmaUtils, BoundServiceManager manager
+    ) : base (manager)
     {
-        private int mObjectID;
-        
-        private ItemFactory ItemFactory { get; }
-        private ItemDB ItemDB { get; }
-        private NodeContainer NodeContainer { get; }
-        private SystemManager SystemManager => this.ItemFactory.SystemManager;
-        private NotificationManager NotificationManager { get; init; }
+        EffectsManager = effectsManager;
+        ItemFactory    = itemFactory;
+        ItemDB         = itemDB;
+        Notifications  = notificationSender;
+        DogmaUtils     = dogmaUtils;
+    }
 
-        public invbroker(ItemDB itemDB, ItemFactory itemFactory, NodeContainer nodeContainer, NotificationManager notificationManager, BoundServiceManager manager) : base(manager)
+    private invbroker (
+        ItemDB     itemDB,     EffectsManager      effectsManager, ItemFactory itemFactory, NotificationSender notificationSender,
+        DogmaUtils dogmaUtils, BoundServiceManager manager,        int         objectID,    Session            session
+    ) : base (manager, session, objectID)
+    {
+        EffectsManager = effectsManager;
+        ItemFactory    = itemFactory;
+        ItemDB         = itemDB;
+        this.mObjectID = objectID;
+        Notifications  = notificationSender;
+        DogmaUtils     = dogmaUtils;
+    }
+
+    private ItemInventory CheckInventoryBeforeLoading (ItemEntity inventoryItem)
+    {
+        // also make sure it's a container
+        if (inventoryItem is ItemInventory == false)
+            throw new ItemNotContainer (inventoryItem.ID);
+
+        // extra check, ensure it's a singleton if not a station
+        if (inventoryItem.Type.Group.ID != (int) Groups.Station && inventoryItem.Singleton == false)
+            throw new AssembleCCFirst ();
+
+        return (ItemInventory) inventoryItem;
+    }
+
+    private PySubStruct BindInventory (ItemInventory inventoryItem, int ownerID, Session session, Flags flag)
+    {
+        ItemInventory inventory = inventoryItem;
+
+        // create a meta inventory only if required
+        if (inventoryItem is not Ship && inventoryItem is not Character)
+            inventory = ItemFactory.MetaInventoryManager.RegisterMetaInventoryForOwnerID (inventoryItem, ownerID, flag);
+
+        // create an instance of the inventory service and bind it to the item data
+        return BoundInventory.BindInventory (
+            ItemDB, EffectsManager, inventory, flag, ItemFactory, Notifications, DogmaUtils,
+            BoundServiceManager, session
+        );
+    }
+
+    public PySubStruct GetInventoryFromId (PyInteger itemID, PyInteger one, CallInformation call)
+    {
+        int        ownerID       = call.Session.CharacterID;
+        ItemEntity inventoryItem = ItemFactory.LoadItem (itemID);
+
+        if (inventoryItem is not Station)
+            ownerID = inventoryItem.OwnerID;
+
+        return this.BindInventory (
+            this.CheckInventoryBeforeLoading (inventoryItem),
+            ownerID,
+            call.Session, Flags.None
+        );
+    }
+
+    public PySubStruct GetInventory (PyInteger containerID, PyInteger origOwnerID, CallInformation call)
+    {
+        int ownerID = call.Session.CharacterID;
+
+        Flags flag = Flags.None;
+
+        switch ((int) containerID)
         {
-            this.ItemFactory = itemFactory;
-            this.ItemDB = itemDB;
-            this.NodeContainer = nodeContainer;
-            this.NotificationManager = notificationManager;
+            case (int) Container.Wallet:
+                flag = Flags.Wallet;
+
+                break;
+            case (int) Container.Hangar:
+                flag = Flags.Hangar;
+
+                if (origOwnerID is not null)
+                    ownerID = origOwnerID;
+
+                if (ownerID != call.Session.CharacterID && ownerID != call.Session.CorporationID)
+                    throw new CrpAccessDenied (MLS.UI_CORP_ACCESSDENIED13);
+                if (ownerID == call.Session.CorporationID && CorporationRole.SecurityOfficer.Is (call.Session.CorporationRole) == false)
+                    throw new CrpAccessDenied (MLS.UI_CORP_ACCESSDENIED13);
+
+                break;
+            case (int) Container.Character:
+                flag = Flags.Skill;
+
+                break;
+            case (int) Container.Global:
+                flag = Flags.None;
+
+                break;
+            case (int) Container.CorpMarket:
+                flag    = Flags.CorpMarket;
+                ownerID = call.Session.CorporationID;
+
+                // check permissions
+                if (CorporationRole.Accountant.Is (call.Session.CorporationRole) == false &&
+                    CorporationRole.JuniorAccountant.Is (call.Session.CorporationRole) == false &&
+                    CorporationRole.Trader.Is (call.Session.CorporationRole) == false)
+                    throw new CrpAccessDenied (MLS.UI_CORP_ACCESSDENIED14);
+
+                break;
+
+            default:
+                throw new CustomError ($"Trying to open container ID ({containerID.Value}) is not supported");
         }
 
-        private invbroker(ItemDB itemDB, ItemFactory itemFactory, NodeContainer nodeContainer, NotificationManager notificationManager, BoundServiceManager manager, int objectID, Client client) : base(manager, client, objectID)
+        // these inventories are usually meta
+
+        // get the inventory item first
+        ItemInventory inventoryItem = ItemFactory.LoadItem <ItemInventory> (this.mObjectID);
+
+        // create a metainventory for it
+        ItemInventory metaInventory = ItemFactory.MetaInventoryManager.RegisterMetaInventoryForOwnerID (inventoryItem, ownerID, flag);
+
+        return this.BindInventory (
+            this.CheckInventoryBeforeLoading (metaInventory),
+            ownerID,
+            call.Session, flag
+        );
+    }
+
+    public PyDataType TrashItems (PyList itemIDs, PyInteger stationID, CallInformation call)
+    {
+        int callerCharacterID = call.Session.CharacterID;
+
+        foreach (PyInteger itemID in itemIDs.GetEnumerable <PyInteger> ())
         {
-            this.ItemFactory = itemFactory;
-            this.ItemDB = itemDB;
-            this.mObjectID = objectID;
-            this.NodeContainer = nodeContainer;
-            this.NotificationManager = notificationManager;
+            // do not trash the active ship
+            if (itemID == call.Session.ShipID)
+                throw new CantMoveActiveShip ();
+
+            ItemEntity item = ItemFactory.GetItem (itemID);
+            // store it's location id
+            int   oldLocation = item.LocationID;
+            Flags oldFlag     = item.Flag;
+            // remove the item off the ItemManager
+            ItemFactory.DestroyItem (item);
+            // notify the client of the change
+            DogmaUtils.QueueMultiEvent (callerCharacterID, OnItemChange.BuildLocationChange (item, oldFlag, oldLocation));
+            // TODO: CHECK IF THE ITEM HAS ANY META INVENTORY AND/OR BOUND SERVICE
+            // TODO: AND FREE THOSE TOO SO THE ITEMS CAN BE REMOVED OFF THE DATABASE
         }
 
-        private ItemInventory CheckInventoryBeforeLoading(ItemEntity inventoryItem)
+        return null;
+    }
+
+    public PyDataType SetLabel (PyInteger itemID, PyString newLabel, CallInformation call)
+    {
+        ItemEntity item = ItemFactory.GetItem (itemID);
+
+        // ensure the itemID is owned by the client's character
+        if (item.OwnerID != call.Session.CharacterID)
+            throw new TheItemIsNotYoursToTake (itemID);
+
+        item.Name = newLabel;
+
+        // ensure the item is saved into the database first
+        item.Persist ();
+
+        // notify the owner of the item
+        Notifications.NotifyOwner (item.OwnerID, OnCfgDataChanged.BuildItemLabelChange (item));
+
+        // TODO: CHECK IF ITEM BELONGS TO CORP AND NOTIFY CHARACTERS IN THIS NODE?
+        return null;
+    }
+
+    public PyDataType AssembleCargoContainer (
+        PyInteger       containerID, PyDataType ignored, PyDecimal ignored2,
+        CallInformation call
+    )
+    {
+        ItemEntity item = ItemFactory.GetItem (containerID);
+
+        if (item.OwnerID != call.Session.CharacterID)
+            throw new TheItemIsNotYoursToTake (containerID);
+
+        // ensure the item is a cargo container
+        switch (item.Type.Group.ID)
         {
-            // also make sure it's a container
-            if (inventoryItem is ItemInventory == false)
-                throw new ItemNotContainer(inventoryItem.ID);
-            
-            // extra check, ensure it's a singleton if not a station
-            if (inventoryItem is Station == false && inventoryItem.Singleton == false)
-                throw new AssembleCCFirst();
-            
-            return inventoryItem as ItemInventory;
+            case (int) Groups.CargoContainer:
+            case (int) Groups.SecureCargoContainer:
+            case (int) Groups.AuditLogSecureContainer:
+            case (int) Groups.FreightContainer:
+            case (int) Groups.Tool:
+            case (int) Groups.MobileWarpDisruptor:
+                break;
+            default:
+                throw new ItemNotContainer (containerID);
         }
 
-        private PySubStruct BindInventory(ItemInventory inventoryItem, int ownerID, Client client, Flags flag)
-        {
-            ItemInventory inventory = inventoryItem;
-            
-            // create a meta inventory only if required
-            if (inventoryItem is not Ship && inventoryItem is not Character)
-                inventory = this.ItemFactory.MetaInventoryManager.RegisterMetaInventoryForOwnerID(inventoryItem, ownerID, flag);
-            
-            // create an instance of the inventory service and bind it to the item data
-            return BoundInventory.BindInventory(this.ItemDB, inventory, flag, this.ItemFactory, this.NodeContainer, this.NotificationManager, this.BoundServiceManager, client);
-        }
+        bool oldSingleton = item.Singleton;
 
-        public PySubStruct GetInventoryFromId(PyInteger itemID, PyInteger one, CallInformation call)
-        {
-            int ownerID = call.Client.EnsureCharacterIsSelected();
-            ItemEntity inventoryItem = this.ItemFactory.LoadItem(itemID);
+        // update singleton
+        item.Singleton = true;
+        item.Persist ();
 
-            if (inventoryItem is not Station)
-                ownerID = inventoryItem.OwnerID;
+        // notify the client
+        DogmaUtils.QueueMultiEvent (item.OwnerID, OnItemChange.BuildSingletonChange (item, oldSingleton));
 
-            return this.BindInventory(
-                this.CheckInventoryBeforeLoading(inventoryItem),
-                ownerID,
-                call.Client, Flags.None
-            );
-        }
+        return null;
+    }
 
-        public PySubStruct GetInventory(PyInteger containerID, PyInteger origOwnerID, CallInformation call)
-        {
-            int ownerID = call.Client.EnsureCharacterIsSelected();
-            
-            Flags flag = Flags.None;
-            
-            switch ((int) containerID)
-            {
-                case (int) Container.Wallet:
-                    flag = Flags.Wallet;
-                    break;
-                case (int) Container.Hangar:
-                    flag = Flags.Hangar;
+    public PyDataType DeliverToCorpHangar (
+        PyInteger stationID, PyList itemIDs, PyDataType quantity, PyInteger ownerID, PyInteger deliverToFlag, CallInformation call
+    )
+    {
+        // TODO: DETERMINE IF THIS FUNCTION HAS TO BE IMPLEMENTED
+        // LIVE CCP SERVER DOES NOT SUPPORT IT, EVEN THO THE MENU OPTION IS SHOWN TO THE USER
+        return null;
+    }
 
-                    if (origOwnerID is not null)
-                        ownerID = origOwnerID;
+    public PyDataType DeliverToCorpMember (
+        PyInteger memberID, PyInteger stationID, PyList itemIDs, PyDataType quantity, PyInteger ownerID, CallInformation call
+    )
+    {
+        return null;
+    }
 
-                    if (ownerID != call.Client.CharacterID && CorporationRole.SecurityOfficer.Is(call.Client.CorporationRole) == false)
-                        throw new CrpAccessDenied(MLS.UI_CORP_ACCESSDENIED13);
-                    
-                    break;
-                case (int) Container.Character:
-                    flag = Flags.Skill;
-                    break;
-                case (int) Container.Global:
-                    flag = Flags.None;
-                    break;
-                case (int) Container.CorpMarket:
-                    flag = Flags.CorpMarket;
-                    ownerID = call.Client.CorporationID;
-                    
-                    // check permissions
-                    if (CorporationRole.Accountant.Is(call.Client.CorporationRole) == false &&
-                        CorporationRole.JuniorAccountant.Is(call.Client.CorporationRole) == false &&
-                        CorporationRole.Trader.Is(call.Client.CorporationRole) == false)
-                        throw new CrpAccessDenied(MLS.UI_CORP_ACCESSDENIED14);
-                    break;
-                
-                default:
-                    throw new CustomError($"Trying to open container ID ({containerID.Value}) is not supported");
-            }
-            
-            // get the inventory item first
-            ItemEntity inventoryItem = this.ItemFactory.LoadItem(this.mObjectID);
+    protected override long MachoResolveObject (ServiceBindParams parameters, CallInformation call)
+    {
+        int solarSystemID = 0;
 
-            return this.BindInventory(
-                this.CheckInventoryBeforeLoading(inventoryItem),
-                ownerID,
-                call.Client, flag
-            );
-        }
+        if (parameters.ExtraValue == (int) Groups.SolarSystem)
+            solarSystemID = ItemFactory.GetStaticSolarSystem (parameters.ObjectID).ID;
+        else if (parameters.ExtraValue == (int) Groups.Station)
+            solarSystemID = ItemFactory.GetStaticStation (parameters.ObjectID).SolarSystemID;
+        else
+            throw new CustomError ("Unknown item's groupID");
 
-        public PyDataType TrashItems(PyList itemIDs, PyInteger stationID, CallInformation call)
-        {
-            foreach (PyInteger itemID in itemIDs.GetEnumerable<PyInteger>())
-            {
-                // do not trash the active ship
-                if (itemID == call.Client.ShipID)
-                    throw new CantMoveActiveShip();
+        return SystemManager.LoadSolarSystemOnCluster (solarSystemID);
+    }
 
-                ItemEntity item = this.ItemFactory.GetItem(itemID);
-                // store it's location id
-                int oldLocation = item.LocationID;
-                Flags oldFlag = item.Flag;
-                // remove the item off the ItemManager
-                this.ItemFactory.DestroyItem(item);
-                // notify the client of the change
-                call.Client.NotifyMultiEvent(OnItemChange.BuildLocationChange(item, oldFlag, oldLocation));
-                // TODO: CHECK IF THE ITEM HAS ANY META INVENTORY AND/OR BOUND SERVICE
-                // TODO: AND FREE THOSE TOO SO THE ITEMS CAN BE REMOVED OFF THE DATABASE
-            }
-            
-            return null;
-        }
-        
-        public PyDataType SetLabel(PyInteger itemID, PyString newLabel, CallInformation call)
-        {
-            ItemEntity item = this.ItemFactory.GetItem(itemID);
+    protected override BoundService CreateBoundInstance (ServiceBindParams bindParams, CallInformation call)
+    {
+        if (this.MachoResolveObject (bindParams, call) != call.MachoNet.NodeID)
+            throw new CustomError ("Trying to bind an object that does not belong to us!");
 
-            // ensure the itemID is owned by the client's character
-            if (item.OwnerID != call.Client.EnsureCharacterIsSelected())
-                throw new TheItemIsNotYoursToTake(itemID);
-
-            item.Name = newLabel;
-            
-            // ensure the item is saved into the database first
-            item.Persist();
-            
-            // notify the owner of the item
-            this.NotificationManager.NotifyOwner(item.OwnerID, OnCfgDataChanged.BuildItemLabelChange(item));
-
-            // TODO: CHECK IF ITEM BELONGS TO CORP AND NOTIFY CHARACTERS IN THIS NODE?
-            return null;
-        }
-
-        public PyDataType AssembleCargoContainer(PyInteger containerID, PyDataType ignored, PyDecimal ignored2,
-            CallInformation call)
-        {
-            ItemEntity item = this.ItemFactory.GetItem(containerID);
-
-            if (item.OwnerID != call.Client.EnsureCharacterIsSelected())
-                throw new TheItemIsNotYoursToTake(containerID);
-            
-            // ensure the item is a cargo container
-            switch (item.Type.Group.ID)
-            {
-                case (int) Groups.CargoContainer:
-                case (int) Groups.SecureCargoContainer:
-                case (int) Groups.AuditLogSecureContainer:
-                case (int) Groups.FreightContainer:
-                case (int) Groups.Tool:
-                case (int) Groups.MobileWarpDisruptor:
-                    break;
-                default:
-                    throw new ItemNotContainer(containerID);
-            }
-
-            bool oldSingleton = item.Singleton;
-            
-            // update singleton
-            item.Singleton = true;
-            item.Persist();
-
-            // notify the client
-            call.Client.NotifyMultiEvent(OnItemChange.BuildSingletonChange(item, oldSingleton));
-
-            return null;
-        }
-
-        public PyDataType DeliverToCorpHangar(PyInteger stationID, PyList itemIDs, PyDataType quantity, PyInteger ownerID, PyInteger deliverToFlag, CallInformation call)
-        {
-            // TODO: DETERMINE IF THIS FUNCTION HAS TO BE IMPLEMENTED
-            // LIVE CCP SERVER DOES NOT SUPPORT IT, EVEN THO THE MENU OPTION IS SHOWN TO THE USER
-            return null;
-        }
-
-        public PyDataType DeliverToCorpMember(PyInteger memberID, PyInteger stationID, PyList itemIDs, PyDataType quantity, PyInteger ownerID, CallInformation call)
-        {
-            return null;
-        }
-        
-        protected override long MachoResolveObject(ServiceBindParams parameters, CallInformation call)
-        {
-            int solarSystemID = 0;
-
-            if (parameters.ExtraValue == (int) Groups.SolarSystem)
-                solarSystemID = this.ItemFactory.GetStaticSolarSystem(parameters.ObjectID).ID;
-            else if (parameters.ExtraValue == (int) Groups.Station)
-                solarSystemID = this.ItemFactory.GetStaticStation(parameters.ObjectID).SolarSystemID;
-            else
-                throw new CustomError("Unknown item's groupID");
-
-            if (this.SystemManager.SolarSystemBelongsToUs(solarSystemID) == true)
-                return this.BoundServiceManager.Container.NodeID;
-
-            return this.SystemManager.GetNodeSolarSystemBelongsTo(solarSystemID);
-        }
-
-        protected override BoundService CreateBoundInstance(ServiceBindParams bindParams, CallInformation call)
-        {
-            
-            if (this.MachoResolveObject(bindParams, call) != this.NodeContainer.NodeID)
-                throw new CustomError("Trying to bind an object that does not belong to us!");
-            
-            return new invbroker(this.ItemDB, this.ItemFactory, this.NodeContainer, this.NotificationManager, this.BoundServiceManager, bindParams.ObjectID, call.Client);
-        }
+        return new invbroker (
+            ItemDB, EffectsManager, ItemFactory, Notifications, DogmaUtils, BoundServiceManager, bindParams.ObjectID,
+            call.Session
+        );
     }
 }

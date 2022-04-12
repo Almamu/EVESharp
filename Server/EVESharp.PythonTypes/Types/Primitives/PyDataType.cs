@@ -2,203 +2,193 @@ using System;
 using System.Collections.Generic;
 using EVESharp.PythonTypes.Types.Collections;
 
-namespace EVESharp.PythonTypes.Types.Primitives
+namespace EVESharp.PythonTypes.Types.Primitives;
+
+/// <summary>
+/// Base class for all the python data types that EVE supports
+/// </summary>
+public abstract class PyDataType
 {
-    public class PyDataType
+    public override bool Equals (object obj)
     {
-        protected bool Equals(PyDataType other)
-        {
-            return this == other;
-        }
+        // first check references to make things quick under some situations
+        if (ReferenceEquals (this, obj)) return true;
+        if (ReferenceEquals (null, obj)) return false;
 
-        public override bool Equals(object obj)
-        {
-            if (ReferenceEquals(null, obj)) return false;
-            if (ReferenceEquals(this, obj)) return true;
-            if (obj.GetType() != this.GetType()) return false;
-            return Equals((PyDataType) obj);
-        }
+        // last but not least, check types
+        if (this.GetType () != obj.GetType ()) return false;
 
-        public override int GetHashCode()
-        {
-            throw new NotImplementedException();
-        }
+        return obj is PyDataType && this.GetHashCode () == obj.GetHashCode ();
+    }
 
-        protected PyDataType()
-        {
-        }
+    public override int GetHashCode ()
+    {
+        throw new NotImplementedException ();
+    }
 
-        public static implicit operator PyDataType(string str)
-        {
-            if (str is null)
-                return null;
+    public static implicit operator PyDataType (string str)
+    {
+        if (str is null)
+            return null;
 
-            return new PyString(str);
-        }
-        
-        public static implicit operator PyDataType(ulong value)
-        {
-            return new PyInteger((long) value);
-        }
-        
-        public static implicit operator PyDataType(long value)
-        {
-            return new PyInteger(value);
-        }
-        
-        public static implicit operator PyDataType(uint value)
-        {
-            return new PyInteger(value);
-        }
+        return new PyString (str);
+    }
 
-        public static implicit operator PyDataType(int value)
-        {
-            return new PyInteger(value);
-        }
+    public static implicit operator PyDataType (ulong value)
+    {
+        return new PyInteger ((long) value);
+    }
 
-        public static implicit operator PyDataType(ushort value)
-        {
-            return new PyInteger(value);
-        }
+    public static implicit operator PyDataType (long value)
+    {
+        return new PyInteger (value);
+    }
 
-        public static implicit operator PyDataType(short value)
-        {
-            return new PyInteger(value);
-        }
+    public static implicit operator PyDataType (uint value)
+    {
+        return new PyInteger (value);
+    }
 
-        public static implicit operator PyDataType(byte value)
-        {
-            return new PyInteger(value);
-        }
+    public static implicit operator PyDataType (int value)
+    {
+        return new PyInteger (value);
+    }
 
-        public static implicit operator PyDataType(sbyte value)
-        {
-            return new PyInteger(value);
-        }
+    public static implicit operator PyDataType (ushort value)
+    {
+        return new PyInteger (value);
+    }
 
-        public static implicit operator PyDataType(long? value)
-        {
-            if (value is null)
-                return null;
+    public static implicit operator PyDataType (short value)
+    {
+        return new PyInteger (value);
+    }
 
-            return new PyInteger((long) value);
-        }
+    public static implicit operator PyDataType (byte value)
+    {
+        return new PyInteger (value);
+    }
 
-        public static implicit operator PyDataType(int? value)
-        {
-            if (value is null)
-                return null;
+    public static implicit operator PyDataType (sbyte value)
+    {
+        return new PyInteger (value);
+    }
 
-            return new PyInteger((int) value);
-        }
+    public static implicit operator PyDataType (long? value)
+    {
+        if (value is null)
+            return null;
 
-        public static implicit operator PyDataType(short? value)
-        {
-            if (value is null)
-                return null;
+        return new PyInteger ((long) value);
+    }
 
-            return new PyInteger((short) value);
-        }
+    public static implicit operator PyDataType (int? value)
+    {
+        if (value is null)
+            return null;
 
-        public static implicit operator PyDataType(byte? value)
-        {
-            if (value is null)
-                return null;
+        return new PyInteger ((int) value);
+    }
 
-            return new PyInteger((byte) value);
-        }
+    public static implicit operator PyDataType (short? value)
+    {
+        if (value is null)
+            return null;
 
-        public static implicit operator PyDataType(sbyte? value)
-        {
-            if (value is null)
-                return null;
+        return new PyInteger ((short) value);
+    }
 
-            return new PyInteger((sbyte) value);
-        }
+    public static implicit operator PyDataType (byte? value)
+    {
+        if (value is null)
+            return null;
 
-        public static implicit operator PyDataType(byte[] value)
-        {
-            if (value is null)
-                return null;
+        return new PyInteger ((byte) value);
+    }
 
-            return new PyBuffer(value);
-        }
+    public static implicit operator PyDataType (sbyte? value)
+    {
+        if (value is null)
+            return null;
 
-        public static implicit operator PyDataType(float value)
-        {
-            return new PyDecimal(value);
-        }
+        return new PyInteger ((sbyte) value);
+    }
 
-        public static implicit operator PyDataType(double value)
-        {
-            return new PyDecimal(value);
-        }
+    public static implicit operator PyDataType (byte [] value)
+    {
+        if (value is null)
+            return null;
 
-        public static implicit operator PyDataType(bool value)
-        {
-            return new PyBool(value);
-        }
+        return new PyBuffer (value);
+    }
 
-        public static implicit operator PyDataType(float? value)
-        {
-            if (value is null)
-                return null;
+    public static implicit operator PyDataType (float value)
+    {
+        return new PyDecimal (value);
+    }
 
-            return new PyDecimal((float) value);
-        }
+    public static implicit operator PyDataType (double value)
+    {
+        return new PyDecimal (value);
+    }
 
-        public static implicit operator PyDataType(double? value)
-        {
-            if (value is null)
-                return null;
+    public static implicit operator PyDataType (bool value)
+    {
+        return new PyBool (value);
+    }
 
-            return new PyDecimal((double) value);
-        }
+    public static implicit operator PyDataType (float? value)
+    {
+        if (value is null)
+            return null;
 
-        public static implicit operator PyDataType(bool? value)
-        {
-            if (value is null)
-                return null;
+        return new PyDecimal ((float) value);
+    }
 
-            return new PyBool((bool) value);
-        }
-        
-        public static implicit operator PyDataType(Dictionary<PyDataType, PyDataType> value)
-        {
-            return new PyDictionary(value);
-        }
+    public static implicit operator PyDataType (double? value)
+    {
+        if (value is null)
+            return null;
 
-        public static implicit operator PyDataType(List<PyDataType> value)
-        {
-            return new PyList(value);
-        }
-        
-        public static bool operator ==(PyDataType left, PyDataType right)
-        {
-            // check references first
-            if (ReferenceEquals(left, right)) return true;
-            // if references are not the same, ensure they are not nulls
-            if (ReferenceEquals(left, null)) return false;
-            if (ReferenceEquals(right, null)) return false;
-            if (left.GetType() != right.GetType()) return false;
-            
-            // they're the same type and have some value, cast and call the proper equals method
-            return left switch
-            {
-                PyInteger integer => integer == (PyInteger) right,
-                PyDecimal @decimal => @decimal == (PyDecimal) right,
-                PyString @string => @string == (PyString) right,
-                PyNone => true,
-                PyBool @bool => @bool == (PyBool) right,
-                PyBuffer @buffer => @buffer == (PyBuffer) right,
-                PyToken @token => @token == (PyToken) right,
-                _ => false
-            };
-        }
+        return new PyDecimal ((double) value);
+    }
 
-        public static bool operator !=(PyDataType left, PyDataType right)
-        {
-            return !(left == right);
-        }
+    public static implicit operator PyDataType (bool? value)
+    {
+        if (value is null)
+            return null;
+
+        return new PyBool ((bool) value);
+    }
+
+    public static implicit operator PyDataType (Dictionary <PyDataType, PyDataType> value)
+    {
+        return new PyDictionary (value);
+    }
+
+    public static implicit operator PyDataType (List <PyDataType> value)
+    {
+        return new PyList (value);
+    }
+
+    public static bool operator == (PyDataType left, PyDataType right)
+    {
+        // ensure the left side is not null so it can be used for comparison
+        if (ReferenceEquals (left, right)) return true;
+
+        // do extra checks for PyNones just in case
+        if (left is PyNone && ReferenceEquals (null,  right)) return true;
+        if (right is PyNone && ReferenceEquals (null, left)) return true;
+
+        // normal checks for other types
+        if (ReferenceEquals (null, left)) return false;
+
+        // call the Equals method to perform the actual comparison
+        return left.Equals (right);
+    }
+
+    public static bool operator != (PyDataType left, PyDataType right)
+    {
+        return !(left == right);
     }
 }

@@ -26,175 +26,164 @@ using System;
 using System.Collections.Generic;
 using EVESharp.Common.Database;
 using EVESharp.Node.Inventory;
-using MySql.Data.MySqlClient;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Database;
-using EVESharp.PythonTypes.Types.Primitives;
-using Type = EVESharp.Node.StaticData.Inventory.Type;
+using MySql.Data.MySqlClient;
+using Type = EVESharp.EVE.StaticData.Inventory.Type;
 
-namespace EVESharp.Node.Database
+namespace EVESharp.Node.Database;
+
+public class InsuranceDB : DatabaseAccessor
 {
-    public class InsuranceDB : DatabaseAccessor
+    private TypeManager TypeManager { get; }
+
+    public InsuranceDB (TypeManager typeManager, DatabaseConnection db) : base (db)
     {
-        private TypeManager TypeManager { get; init; }
-        
-        public PyList<PyPackedRow> GetContractsForShipsOnStation(int characterID, int stationID)
-        {
-            return Database.PreparePackedRowListQuery(
-                "SELECT chrShipInsurances.ownerID, shipID, fraction, startDate, endDate FROM chrShipInsurances LEFT JOIN invItems ON invItems.itemID = shipID WHERE chrShipInsurances.ownerID = @characterID AND invItems.locationID = @stationID",
-                new Dictionary<string, object>()
-                {
-                    {"@characterID", characterID},
-                    {"@stationID", stationID}
-                }
-            );
-        }
-        public PyList<PyPackedRow> GetContractsForShipsOnStationIncludingCorp(int characterID, int corporationID, int stationID)
-        {
-            return Database.PreparePackedRowListQuery(
-                "SELECT chrShipInsurances.ownerID, shipID, fraction, startDate, endDate FROM chrShipInsurances LEFT JOIN invItems ON invItems.itemID = shipID WHERE (chrShipInsurances.ownerID = @characterID OR chrShipInsurances.ownerID = @corporationID) AND invItems.locationID = @stationID",
-                new Dictionary<string, object>()
-                {
-                    {"@characterID", characterID},
-                    {"@corporationID", corporationID},
-                    {"@stationID", stationID}
-                }
-            );
-        }
+        TypeManager = typeManager;
+    }
 
-        public PyPackedRow GetContractForShip(int characterID, int shipID)
-        {
-            return Database.PreparePackedRowQuery(
-                "SELECT ownerID, shipID, fraction, startDate, endDate FROM chrShipInsurances WHERE ownerID = @characterID AND shipID = @shipID",
-                new Dictionary<string, object>()
-                {
-                    {"@characterID", characterID},
-                    {"@shipID", shipID}
-                }
-            );
-        }
-
-        public bool IsShipInsured(int shipID, out int ownerID, out int numberOfInsurances)
-        {
-            ownerID = 0;
-            numberOfInsurances = 0;
-            
-            MySqlConnection connection = null;
-            MySqlDataReader reader = Database.Select(ref connection,
-                "SELECT COUNT(*) AS insuranceCount, ownerID FROM chrShipInsurances WHERE shipID = @shipID",
-                new Dictionary<string, object>()
-                {
-                    {"@shipID", shipID}
-                }
-            );
-            
-            using (connection)
-            using (reader)
+    public PyList <PyPackedRow> GetContractsForShipsOnStation (int characterID, int stationID)
+    {
+        return Database.PreparePackedRowListQuery (
+            "SELECT chrShipInsurances.ownerID, shipID, fraction, startDate, endDate FROM chrShipInsurances LEFT JOIN invItems ON invItems.itemID = shipID WHERE chrShipInsurances.ownerID = @characterID AND invItems.locationID = @stationID",
+            new Dictionary <string, object>
             {
-                if (reader.Read() == false)
-                    return false;
+                {"@characterID", characterID},
+                {"@stationID", stationID}
+            }
+        );
+    }
 
-                numberOfInsurances = reader.GetInt32(0);
-                
-                if (numberOfInsurances > 0)
-                    ownerID = reader.GetInt32(1);
+    public PyList <PyPackedRow> GetContractsForShipsOnStationIncludingCorp (int characterID, int corporationID, int stationID)
+    {
+        return Database.PreparePackedRowListQuery (
+            "SELECT chrShipInsurances.ownerID, shipID, fraction, startDate, endDate FROM chrShipInsurances LEFT JOIN invItems ON invItems.itemID = shipID WHERE (chrShipInsurances.ownerID = @characterID OR chrShipInsurances.ownerID = @corporationID) AND invItems.locationID = @stationID",
+            new Dictionary <string, object>
+            {
+                {"@characterID", characterID},
+                {"@corporationID", corporationID},
+                {"@stationID", stationID}
+            }
+        );
+    }
 
-                return numberOfInsurances > 0;
+    public PyPackedRow GetContractForShip (int characterID, int shipID)
+    {
+        return Database.PreparePackedRowQuery (
+            "SELECT ownerID, shipID, fraction, startDate, endDate FROM chrShipInsurances WHERE ownerID = @characterID AND shipID = @shipID",
+            new Dictionary <string, object>
+            {
+                {"@characterID", characterID},
+                {"@shipID", shipID}
+            }
+        );
+    }
+
+    public bool IsShipInsured (int shipID, out int ownerID, out int numberOfInsurances)
+    {
+        ownerID            = 0;
+        numberOfInsurances = 0;
+
+        MySqlConnection connection = null;
+        MySqlDataReader reader = Database.Select (
+            ref connection,
+            "SELECT COUNT(*) AS insuranceCount, ownerID FROM chrShipInsurances WHERE shipID = @shipID",
+            new Dictionary <string, object> {{"@shipID", shipID}}
+        );
+
+        using (connection)
+        using (reader)
+        {
+            if (reader.Read () == false)
+                return false;
+
+            numberOfInsurances = reader.GetInt32 (0);
+
+            if (numberOfInsurances > 0)
+                ownerID = reader.GetInt32 (1);
+
+            return numberOfInsurances > 0;
+        }
+    }
+
+    public int InsureShip (int shipID, int characterID, double fraction, DateTime expirationDate)
+    {
+        // calculate the expiration date based on the game's UI, 12 weeks
+        long endDate = expirationDate.ToFileTimeUtc ();
+
+        return (int) Database.PrepareQueryLID (
+            "INSERT INTO chrShipInsurances(ownerID, shipID, fraction, startDate, endDate)VALUES(@characterID, @shipID, @fraction, @startDate, @endDate)",
+            new Dictionary <string, object>
+            {
+                {"@characterID", characterID},
+                {"@shipID", shipID},
+                {"@fraction", fraction},
+                {"@startDate", DateTime.UtcNow.ToFileTimeUtc ()},
+                {"@endDate", endDate}
+            }
+        );
+    }
+
+    public void UnInsureShip (int shipID)
+    {
+        Database.PrepareQuery (
+            "DELETE FROM chrShipInsurances WHERE shipID = @shipID",
+            new Dictionary <string, object> {{"@shipID", shipID}}
+        );
+    }
+
+    /// <summary>
+    /// WARNING: SIDE EFFECTS, CHANGES THE NOTIFICATION FLAG OF THE EXPIRED CONTRACTS FOUND
+    /// </summary>
+    /// <returns>All the expired contracts not notified yet to their owners</returns>
+    public IEnumerable <ExpiredContract> GetExpiredContracts ()
+    {
+        long currentDate = DateTime.UtcNow.ToFileTimeUtc ();
+
+        MySqlConnection connection = null;
+        MySqlDataReader reader = Database.Select (
+            ref connection,
+            "SELECT insuranceID, chrShipInsurances.ownerID, shipID, ship.itemName AS shipName, invItems.typeID AS shipTypeID, eveNames.typeID AS ownerTypeID, startDate FROM chrShipInsurances LEFT JOIN eveNames ON eveNames.itemID = chrShipInsurances.ownerID LEFT JOIN invItems ON invItems.itemID = chrShipInsurances.shipID LEFT JOIN eveNames ship ON eveNames.itemID = shipID WHERE endDate < @currentDate",
+            new Dictionary <string, object> {{"@currentDate", currentDate}}
+        );
+
+        using (connection)
+        using (reader)
+        {
+            List <ExpiredContract> result = new List <ExpiredContract> ();
+
+            while (reader.Read ())
+            {
+                Type shipType = TypeManager [reader.GetInt32 (4)];
+
+                yield return new ExpiredContract
+                {
+                    InsuranceID = reader.GetInt32 (0),
+                    OwnerID     = reader.GetInt32 (1),
+                    ShipID      = reader.GetInt32 (2),
+                    ShipName    = reader.GetStringOrDefault (3, shipType.Name),
+                    ShipType    = shipType,
+                    OwnerTypeID = TypeManager [reader.GetInt32 (5)],
+                    StartDate   = reader.GetInt64 (6)
+                };
             }
         }
 
-        public int InsureShip(int shipID, int characterID, double fraction, DateTime expirationDate)
-        {
-            // calculate the expiration date based on the game's UI, 12 weeks
-            long endDate = expirationDate.ToFileTimeUtc();
-            
-            return (int) Database.PrepareQueryLID(
-                "INSERT INTO chrShipInsurances(ownerID, shipID, fraction, startDate, endDate)VALUES(@characterID, @shipID, @fraction, @startDate, @endDate)",
-                new Dictionary<string, object>()
-                {
-                    {"@characterID", characterID},
-                    {"@shipID", shipID},
-                    {"@fraction", fraction},
-                    {"@startDate", DateTime.UtcNow.ToFileTimeUtc()},
-                    {"@endDate", endDate}
-                }
-            );
-        }
+        // remove all the insurances from the database
+        Database.PrepareQuery (
+            "DELETE FROM chrShipInsurances WHERE insuranceID < @currentDate",
+            new Dictionary <string, object> {{"@currentDate", currentDate}}
+        );
+    }
 
-        public void UnInsureShip(int shipID)
-        {
-            Database.PrepareQuery(
-                "DELETE FROM chrShipInsurances WHERE shipID = @shipID",
-                new Dictionary<string, object>()
-                {
-                    {"@shipID", shipID}
-                }
-            );
-        }
-
-        public class ExpiredContract
-        {
-            public int InsuranceID { get; init; }
-            public int OwnerID { get; init; }
-            public StaticData.Inventory.Type OwnerTypeID { get; init; }
-            public int ShipID { get; init; }
-            public StaticData.Inventory.Type ShipType { get; init; }
-            public string ShipName { get; init; }
-            public long StartDate { get; init; }
-        }
-        
-        /// <summary>
-        /// WARNING: SIDE EFFECTS, CHANGES THE NOTIFICATION FLAG OF THE EXPIRED CONTRACTS FOUND
-        /// </summary>
-        /// <returns>All the expired contracts not notified yet to their owners</returns>
-        public IEnumerable<ExpiredContract> GetExpiredContracts()
-        {
-            long currentDate = DateTime.UtcNow.ToFileTimeUtc();
-            
-            MySqlConnection connection = null;
-            MySqlDataReader reader = Database.Select(ref connection,
-                "SELECT insuranceID, chrShipInsurances.ownerID, shipID, ship.itemName AS shipName, invItems.typeID AS shipTypeID, eveNames.typeID AS ownerTypeID, startDate FROM chrShipInsurances LEFT JOIN eveNames ON eveNames.itemID = chrShipInsurances.ownerID LEFT JOIN invItems ON invItems.itemID = chrShipInsurances.shipID LEFT JOIN eveNames ship ON eveNames.itemID = shipID WHERE endDate < @currentDate",
-                new Dictionary<string, object>()
-                {
-                    {"@currentDate", currentDate}
-                }
-            );
-            
-            using (connection)
-            using (reader)
-            {
-                List<ExpiredContract> result = new List<ExpiredContract>();
-                
-                while (reader.Read() == true)
-                {
-                    StaticData.Inventory.Type shipType = this.TypeManager[reader.GetInt32(4)];
-                    
-                    yield return new ExpiredContract
-                    {
-                        InsuranceID = reader.GetInt32(0),
-                        OwnerID = reader.GetInt32(1),
-                        ShipID = reader.GetInt32(2),
-                        ShipName = reader.GetStringOrDefault(3, shipType.Name),
-                        ShipType = shipType,
-                        OwnerTypeID = this.TypeManager[reader.GetInt32(5)],
-                        StartDate = reader.GetInt64(6)
-                    };
-                }
-            }
-
-            // remove all the insurances from the database
-            Database.PrepareQuery(
-                "DELETE FROM chrShipInsurances WHERE insuranceID < @currentDate",
-                new Dictionary<string, object>()
-                {
-                    {"@currentDate", currentDate}
-                }
-            );
-        }
-        
-        public InsuranceDB(TypeManager typeManager, DatabaseConnection db) : base(db)
-        {
-            this.TypeManager = typeManager;
-        }
+    public class ExpiredContract
+    {
+        public int    InsuranceID { get; init; }
+        public int    OwnerID     { get; init; }
+        public Type   OwnerTypeID { get; init; }
+        public int    ShipID      { get; init; }
+        public Type   ShipType    { get; init; }
+        public string ShipName    { get; init; }
+        public long   StartDate   { get; init; }
     }
 }

@@ -1,9 +1,8 @@
-namespace EVESharp.PythonTypes.Types.Network
+namespace EVESharp.PythonTypes.Types.Network;
+
+public enum MachoErrorType
 {
-    public enum MachoErrorType
-    {
-        UnMachoDestination = 0,
-        UnMachoChannel = 1,
-        WrappedException = 2
-    }
+    UnMachoDestination = 0,
+    UnMachoChannel     = 1,
+    WrappedException   = 2
 }

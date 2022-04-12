@@ -1,81 +1,46 @@
-﻿using System.Collections.Generic;
-using EVESharp.Database;
-using EVESharp.Node.Database;
-using EVESharp.Node.Exceptions.corpRegistry;
+﻿namespace EVESharp.Node.Inventory.Items.Types;
 
-namespace EVESharp.Node.Inventory.Items.Types
+public class Alliance : ItemEntity
 {
-    public class Alliance : ItemEntity
+    private Information.Alliance AllianceInformation { get; }
+
+    public string ShortName => AllianceInformation.ShortName;
+    public string Description
     {
-        public Alliance(ItemEntity @from, string shortName, string description, string url, int? executorCorpID, int creatorCorpID, int creatorCharID, int dictatorial) : base(@from)
+        get => AllianceInformation.Description;
+        set
         {
-            this.mShortName = shortName;
-            this.mDescription = description;
-            this.mUrl = url;
-            this.mExecutorCorpID = executorCorpID;
-            this.mCreatorCorpID = creatorCorpID;
-            this.mCreatorCharID = creatorCharID;
-            this.mDictatorial = dictatorial;
+            Information.Dirty               = true;
+            AllianceInformation.Description = value;
         }
+    }
 
-        string mShortName;
-        string mDescription;
-        string mUrl;
-        int? mExecutorCorpID;
-        int mCreatorCorpID;
-        int mCreatorCharID;
-        int mDictatorial;
-
-        public string ShortName => mShortName;
-        public string Description
+    public string Url
+    {
+        get => AllianceInformation.URL;
+        set
         {
-            get => this.mDescription;
-            set
-            {
-                this.Dirty = true;
-                this.mDescription = value;
-            }
+            Information.Dirty       = true;
+            AllianceInformation.URL = value;
         }
+    }
 
-        public string Url
+    public int? ExecutorCorpID
+    {
+        get => AllianceInformation.ExecutorCorpID;
+        set
         {
-            get => this.mUrl;
-            set
-            {
-                this.Dirty = true;
-                this.mUrl = value;
-            }
+            Information.Dirty                  = true;
+            AllianceInformation.ExecutorCorpID = value;
         }
+    }
 
-        public int? ExecutorCorpID
-        {
-            get => this.mExecutorCorpID;
-            set
-            {
-                this.Dirty = true;
-                this.mExecutorCorpID = value;
-            }
-        }
-        
-        public int CreatorCorpID => mCreatorCorpID;
-        public int CreatorCharID => mCreatorCharID;
-        public int Dictatorial => mDictatorial;
-        
-        protected override void SaveToDB()
-        {
-            base.SaveToDB();
+    public int  CreatorCorpID => AllianceInformation.CreatorCorpID;
+    public int  CreatorCharID => AllianceInformation.CreatorCharID;
+    public bool Dictatorial   => AllianceInformation.Dictatorial;
 
-            // update the alliance information
-            Database.Procedure(
-                AlliancesDB.UPDATE,
-                new Dictionary<string, object>()
-                {
-                    {"_description", this.Description},
-                    {"_url", this.Url},
-                    {"_allianceID", this.ID},
-                    {"_executorCorpID", this.ExecutorCorpID}
-                }
-            );
-        }
+    public Alliance (Information.Alliance allianceInformation) : base (allianceInformation.Information)
+    {
+        AllianceInformation = allianceInformation;
     }
 }

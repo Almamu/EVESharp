@@ -1,9 +1,6 @@
-namespace EVESharp.Node.Inventory.Items.Types
+namespace EVESharp.Node.Inventory.Items.Types;
+
+public class Clone : ItemInventory
 {
-    public class Clone : ItemInventory
-    {
-        public Clone(ItemEntity from) : base(from)
-        {
-        }
-    }
+    public Clone (Information.Item info) : base (info) { }
 }

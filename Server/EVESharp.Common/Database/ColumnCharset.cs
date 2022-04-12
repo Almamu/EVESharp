@@ -1,8 +1,7 @@
-﻿namespace EVESharp.Common.Database
+﻿namespace EVESharp.Common.Database;
+
+public enum ColumnCharset
 {
-    public enum ColumnCharset
-    {
-        Wide = 0,
-        Byte = 1
-    }
+    Wide = 0,
+    Byte = 1
 }

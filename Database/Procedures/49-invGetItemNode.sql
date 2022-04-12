@@ -1,0 +1,12 @@
+DROP PROCEDURE IF EXISTS `InvGetItemNode`;
+
+DELIMITER //
+
+CREATE PROCEDURE `InvGetItemNode`(IN _itemID INT(10))
+SQL SECURITY INVOKER
+COMMENT 'Gets the nodeID for the given itemID'
+BEGIN
+	SELECT nodeID FROM invItems WHERE itemID = _itemID;
+END//
+
+DELIMITER ;

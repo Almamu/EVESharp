@@ -1,10 +1,9 @@
-﻿namespace EVESharp.PythonTypes.Types.Primitives
+﻿namespace EVESharp.PythonTypes.Types.Primitives;
+
+public class PyNone : PyDataType
 {
-    public class PyNone : PyDataType
+    public override int GetHashCode ()
     {
-        public override int GetHashCode()
-        {
-            return 0;
-        }
+        return 0;
     }
 }

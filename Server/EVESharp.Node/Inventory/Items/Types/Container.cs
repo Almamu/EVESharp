@@ -1,9 +1,6 @@
-﻿namespace EVESharp.Node.Inventory.Items.Types
+﻿namespace EVESharp.Node.Inventory.Items.Types;
+
+public class Container : ItemInventory
 {
-    public class Container : ItemInventory
-    {
-        public Container(ItemEntity @from) : base(@from)
-        {
-        }
-    }
+    public Container (Information.Item item) : base (item) { }
 }

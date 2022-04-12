@@ -1,53 +1,52 @@
-﻿using System;
-using System.IO;
-using EVESharp.Node.Dogma.Exception;
+﻿using System.IO;
+using EVESharp.EVE.Dogma.Exception;
+using EVESharp.EVE.StaticData.Inventory;
 using EVESharp.Node.Inventory.Items;
-using EVESharp.Node.StaticData.Inventory;
-using EVESharp.Node.Inventory.Items.Attributes;
-using EVESharp.Node.Inventory.Items.Dogma;
+using EVESharp.Node.Sessions;
 
-namespace EVESharp.Node.Dogma.Interpreter.Opcodes
+namespace EVESharp.Node.Dogma.Interpreter.Opcodes;
+
+/// <summary>
+/// RIM stands for RemoveItemModifier
+/// </summary>
+public class OpcodeRIM : OpcodeRunnable
 {
-    /// <summary>
-    /// RIM stands for RemoveItemModifier
-    /// </summary>
-    public class OpcodeRIM : OpcodeRunnable
+    public OpcodeEFF          Change    { get; private set; }
+    public OpcodeDEFATTRIBUTE Attribute { get; private set; }
+
+    public OpcodeRIM (Interpreter interpreter) : base (interpreter) { }
+
+    public override Opcode LoadOpcode (BinaryReader reader)
     {
-        public OpcodeEFF Change { get; private set; }
-        public OpcodeDEFATTRIBUTE Attribute { get; private set; }
-        
-        public OpcodeRIM(Interpreter interpreter) : base(interpreter)
-        {
-        }
+        Opcode leftSide  = Interpreter.Step (reader);
+        Opcode rightSide = Interpreter.Step (reader);
 
-        public override Opcode LoadOpcode(BinaryReader reader)
-        {
-            Opcode leftSide = this.Interpreter.Step(reader);
-            Opcode rightSide = this.Interpreter.Step(reader);
-            
-            // ensure that both sides can return a value
-            if (leftSide is not OpcodeEFF left)
-                throw new DogmaMachineException("The left side of a RIM operand must be EFF");
-            if (rightSide is not OpcodeDEFATTRIBUTE right)
-                throw new DogmaMachineException("The right side of a RIM operand must be DEFATTRIBUTE");
-            
-            this.Change = left;
-            this.Attribute = right;
-            
-            return this;
-        }
+        // ensure that both sides can return a value
+        if (leftSide is not OpcodeEFF left)
+            throw new DogmaMachineException ("The left side of a RIM operand must be EFF");
+        if (rightSide is not OpcodeDEFATTRIBUTE right)
+            throw new DogmaMachineException ("The right side of a RIM operand must be DEFATTRIBUTE");
 
-        public override void Execute()
-        {
-            ItemEntity item = this.Change.RightSide.ItemToAffect.GetItem();
-            ItemEntity target = this.Interpreter.Environment.Self;
-            Attributes attribute = this.Change.RightSide.AttributeToAffect.Attribute;
-            
-            // add the modifier to the attribute
-            item.Attributes[attribute].RemoveModifier(this.Change.LeftSide.Association, target.Attributes[this.Attribute.Attribute]);
-            
-            // notify the character
-            this.Interpreter.Environment.Client?.NotifyAttributeChange(attribute, item);
-        }
+        Change    = left;
+        Attribute = right;
+
+        return this;
+    }
+
+    public override void Execute ()
+    {
+        ItemEntity     item      = Change.RightSide.ItemToAffect.GetItem ();
+        ItemEntity     target    = Interpreter.Environment.Self;
+        AttributeTypes attribute = Change.RightSide.AttributeToAffect.Attribute;
+
+        // add the modifier to the attribute
+        item.Attributes [attribute].RemoveModifier (Change.LeftSide.Association, target.Attributes [Attribute.Attribute]);
+
+        // notify the character
+        Interpreter.Environment.ItemFactory.DogmaUtils.NotifyAttributeChange (
+            Interpreter.Environment.Session.EnsureCharacterIsSelected (),
+            attribute,
+            item
+        );
     }
 }

@@ -23,35 +23,30 @@
 */
 
 using System.Collections.Generic;
+using EVESharp.EVE.Inventory.Attributes;
+using EVESharp.EVE.StaticData.Inventory;
 using EVESharp.Node.Database;
-using EVESharp.Node.StaticData.Inventory;
-using AttributeInfo = EVESharp.Node.Inventory.Items.Attributes.Attribute;
 
-namespace EVESharp.Node.Inventory
+namespace EVESharp.Node.Inventory;
+
+public class AttributeManager
 {
-    public class AttributeManager
+    private Dictionary <int, AttributeType> mAttributes;
+    private ItemDB                          ItemDB { get; }
+
+    public Dictionary <int, Dictionary <int, Attribute>> DefaultAttributes { get; private set; }
+
+    public AttributeType this [int            id] => this.mAttributes [id];
+    public AttributeType this [AttributeTypes id] => this [(int) id];
+
+    public AttributeManager (ItemDB itemDB)
     {
-        private ItemDB ItemDB { get; }
-        private Dictionary<int, Attribute> mAttributes = null;
-        private Dictionary<int, Dictionary<int, Items.Attributes.Attribute>> mDefaultAttributes = null;
+        ItemDB = itemDB;
+    }
 
-        public Dictionary<int, Dictionary<int, Items.Attributes.Attribute>> DefaultAttributes
-        {
-            get => this.mDefaultAttributes;
-        }
-        
-        public AttributeManager(ItemDB itemDB)
-        {
-            this.ItemDB = itemDB;
-        }
-        
-        public Attribute this[int id] => this.mAttributes[id];
-        public Attribute this[Attributes id] => this[(int) id];
-
-        public void Load()
-        {
-            this.mAttributes = this.ItemDB.LoadAttributesInformation();
-            this.mDefaultAttributes = this.ItemDB.LoadDefaultAttributes();
-        }
+    public void Load ()
+    {
+        this.mAttributes  = ItemDB.LoadAttributesInformation ();
+        DefaultAttributes = ItemDB.LoadDefaultAttributes ();
     }
 }

@@ -1,43 +1,36 @@
-using System;
-using EVESharp.Common.Services;
+using EVESharp.EVE.Services;
+using EVESharp.EVE.Services.Validators;
 using EVESharp.Node.Database;
 using EVESharp.Node.Inventory;
-using EVESharp.Node.Inventory.Items.Types;
-using EVESharp.Node.Network;
+using EVESharp.Node.Sessions;
 using EVESharp.PythonTypes.Types.Primitives;
 
-namespace EVESharp.Node.Services.Characters
+namespace EVESharp.Node.Services.Characters;
+
+[MustBeCharacter]
+public class onlineStatus : Service
 {
-    public class onlineStatus : IService
+    public override AccessLevel AccessLevel => AccessLevel.Location;
+    private         ChatDB      ChatDB      { get; }
+    private         CharacterDB CharacterDB { get; }
+    private         ItemFactory ItemFactory { get; }
+
+    public onlineStatus (ChatDB chatDB, CharacterDB characterDB, ItemFactory itemFactory)
     {
-        private ChatDB ChatDB { get; }
-        private CharacterDB CharacterDB { get; }
-        private ItemFactory ItemFactory { get; }
-        
-        public onlineStatus(ChatDB chatDB, CharacterDB characterDB, ItemFactory itemFactory)
-        {
-            this.ChatDB = chatDB;
-            this.CharacterDB = characterDB;
-            this.ItemFactory = itemFactory;
-        }
+        ChatDB      = chatDB;
+        CharacterDB = characterDB;
+        ItemFactory = itemFactory;
+    }
 
-        public PyDataType GetInitialState(CallInformation call)
-        {
-            // TODO: CHECK IF THE OTHER CHARACTER HAS US IN THEIR ADDRESSBOOK
-            return this.ChatDB.GetAddressBookMembers(call.Client.EnsureCharacterIsSelected());
-        }
+    public PyDataType GetInitialState (CallInformation call)
+    {
+        // TODO: CHECK IF THE OTHER CHARACTER HAS US IN THEIR ADDRESSBOOK
+        return ChatDB.GetAddressBookMembers (call.Session.CharacterID);
+    }
 
-        public PyDataType GetOnlineStatus(PyInteger characterID, CallInformation call)
-        {
-            // TODO: CHECK IF THE OTHER CHARACTER HAS US IN THEIR ADDRESSBOOK?
-            try
-            {
-                return this.ItemFactory.GetItem<Character>(characterID).Online;
-            }
-            catch (Exception)
-            {
-                return this.CharacterDB.IsOnline(characterID);
-            }
-        }
+    public PyDataType GetOnlineStatus (PyInteger characterID, CallInformation call)
+    {
+        // TODO: CHECK IF THE OTHER CHARACTER HAS US IN THEIR ADDRESSBOOK?
+        return CharacterDB.IsOnline (characterID);
     }
 }

@@ -1,189 +1,192 @@
-using System;
 using System.Collections.Generic;
 using EVESharp.Common.Database;
-using EVESharp.Common.Services;
 using EVESharp.Database;
 using EVESharp.EVE;
+using EVESharp.EVE.Account;
+using EVESharp.EVE.Client.Exceptions.corpRegistry;
+using EVESharp.EVE.Client.Messages;
+using EVESharp.EVE.Market;
 using EVESharp.EVE.Packets.Complex;
-using EVESharp.EVE.Packets.Exceptions;
+using EVESharp.EVE.Services;
+using EVESharp.EVE.Services.Validators;
+using EVESharp.EVE.Sessions;
+using EVESharp.EVE.StaticData.Corporation;
+using EVESharp.EVE.Wallet;
+using EVESharp.Node.Cache;
 using EVESharp.Node.Database;
-using EVESharp.Node.Exceptions.corpRegistry;
-using EVESharp.Node.Inventory;
 using EVESharp.Node.Market;
-using EVESharp.Node.Network;
-using EVESharp.Node.StaticData.Corporation;
-using MySql.Data.MySqlClient;
-using EVESharp.Node.Exceptions;
-using EVESharp.Node.Exceptions.corpStationMgr;
-using EVESharp.Node.Notifications.Client.Character;
-using EVESharp.Node.Services.Characters;
+using EVESharp.Node.Sessions;
 using EVESharp.PythonTypes.Types.Primitives;
 
-namespace EVESharp.Node.Services.Account
+namespace EVESharp.Node.Services.Account;
+
+public class account : Service
 {
-    public class account : IService
+    public override AccessLevel        AccessLevel   => AccessLevel.None;
+    private         CharacterDB        DB            { get; }
+    private         WalletManager      WalletManager { get; }
+    private         CacheStorage       CacheStorage  { get; }
+    private         DatabaseConnection Database      { get; }
+
+    public account (DatabaseConnection databaseConnection, CharacterDB db, WalletManager walletManager, CacheStorage cacheStorage)
     {
-        private CharacterDB DB { get; }
-        private WalletManager WalletManager { get; init; }
-        private ItemManager ItemManager { get; }
-        private CacheStorage CacheStorage { get; }
-        private NotificationManager NotificationManager { get; }
-        private DatabaseConnection Database { get; init; }
-        
-        public account(DatabaseConnection databaseConnection, CharacterDB db, WalletManager walletManager, ItemManager itemManager, CacheStorage cacheStorage, NotificationManager notificationManager)
-        {
-            this.Database = databaseConnection;
-            this.DB = db;
-            this.WalletManager = walletManager;
-            this.ItemManager = itemManager;
-            this.CacheStorage = cacheStorage;
-            this.NotificationManager = notificationManager;
-        }
+        Database      = databaseConnection;
+        DB            = db;
+        WalletManager = walletManager;
+        CacheStorage  = cacheStorage;
+    }
 
-        private PyDataType GetCashBalance(Client client)
-        {
-            return this.WalletManager.GetWalletBalance(client.EnsureCharacterIsSelected());
-        }
+    [MustBeCharacter]
+    private PyDataType GetCashBalance (Session session)
+    {
+        return WalletManager.GetWalletBalance (session.CharacterID);
+    }
 
-        public PyDataType GetCashBalance(PyBool isCorpWallet, CallInformation call)
-        {
-            return this.GetCashBalance(isCorpWallet ? 1 : 0, call.Client.CorpAccountKey, call);
-        }
-        
-        public PyDataType GetCashBalance(PyInteger isCorpWallet, CallInformation call)
-        {
-            return this.GetCashBalance(isCorpWallet, call.Client.CorpAccountKey, call);
-        }
+    public PyDataType GetCashBalance (PyBool isCorpWallet, CallInformation call)
+    {
+        return this.GetCashBalance (isCorpWallet ? 1 : 0, call.Session.CorpAccountKey, call);
+    }
 
-        public PyDataType GetCashBalance(PyInteger isCorpWallet, PyInteger walletKey, CallInformation call)
-        {
-            if (isCorpWallet == 0)
-                return this.GetCashBalance(call.Client);
+    public PyDataType GetCashBalance (PyInteger isCorpWallet, CallInformation call)
+    {
+        return this.GetCashBalance (isCorpWallet, call.Session.CorpAccountKey, call);
+    }
 
-            if (this.WalletManager.IsAccessAllowed(call.Client, walletKey, call.Client.CorporationID) == false)
-                throw new CrpAccessDenied(MLS.UI_CORP_ACCESSTOWALLETDIVISIONDENIED);
+    public PyDataType GetCashBalance (PyInteger isCorpWallet, PyInteger walletKey, CallInformation call)
+    {
+        if (isCorpWallet == 0)
+            return this.GetCashBalance (call.Session);
 
-            return this.WalletManager.GetWalletBalance(call.Client.CorporationID, walletKey);
-        }
+        if (WalletManager.IsAccessAllowed (call.Session, walletKey, call.Session.CorporationID) == false)
+            throw new CrpAccessDenied (MLS.UI_CORP_ACCESSTOWALLETDIVISIONDENIED);
 
-        public PyDataType GetKeyMap(CallInformation call)
-        {
-            return this.DB.GetKeyMap();
-        }
+        return WalletManager.GetWalletBalance (call.Session.CorporationID, walletKey);
+    }
 
-        public PyDataType GetEntryTypes(CallInformation call)
-        {
-            this.CacheStorage.Load(
-                "account",
-                "GetEntryTypes",
-                "SELECT refTypeID AS entryTypeID, refTypeText AS entryTypeName, description FROM mktRefTypes",
-                CacheStorage.CacheObjectType.Rowset
-            );
+    public PyDataType GetKeyMap (CallInformation call)
+    {
+        return DB.GetKeyMap ();
+    }
 
-            PyDataType cacheHint = this.CacheStorage.GetHint("account", "GetEntryTypes");
+    public PyDataType GetEntryTypes (CallInformation call)
+    {
+        CacheStorage.Load (
+            "account",
+            "GetEntryTypes",
+            "SELECT refTypeID AS entryTypeID, refTypeText AS entryTypeName, description FROM mktRefTypes",
+            CacheStorage.CacheObjectType.Rowset
+        );
 
-            return CachedMethodCallResult.FromCacheHint(cacheHint);
-        }
+        PyDataType cacheHint = CacheStorage.GetHint ("account", "GetEntryTypes");
 
-        public PyDataType GetJournal(PyInteger accountKey, PyInteger fromDate, PyInteger entryTypeID,
-            PyBool isCorpWallet, PyInteger transactionID, PyInteger rev, CallInformation call)
-        {
-            int? transactionIDint = null;
+        return CachedMethodCallResult.FromCacheHint (cacheHint);
+    }
 
-            if (transactionID != null)
-                transactionIDint = transactionID;
+    [MustBeCharacter]
+    public PyDataType GetJournal (
+        PyInteger accountKey,   PyInteger fromDate,      PyInteger entryTypeID,
+        PyBool    isCorpWallet, PyInteger transactionID, PyInteger rev, CallInformation call
+    )
+    {
+        int? transactionIDint = null;
 
-            int entityID = call.Client.EnsureCharacterIsSelected();
+        if (transactionID != null)
+            transactionIDint = transactionID;
 
-            if (isCorpWallet == true)
-                entityID = call.Client.CorporationID;
+        int entityID = call.Session.CharacterID;
 
-            if (this.WalletManager.IsAccessAllowed(call.Client, accountKey, entityID) == false)
-                throw new CrpAccessDenied(MLS.UI_CORP_ACCESSTOWALLETDIVISIONDENIED);
-            
-            // journal requires accountant roles for corporation
-            if (entityID == call.Client.CorporationID && (CorporationRole.Accountant.Is(call.Client.CorporationRole) == false || CorporationRole.JuniorAccountant.Is(call.Client.CorporationRole) == false))
-                throw new CrpAccessDenied(MLS.UI_SHARED_WALLETHINT8);
+        if (isCorpWallet == true)
+            entityID = call.Session.CorporationID;
 
-            return this.DB.GetJournal(entityID, entryTypeID, accountKey, fromDate, transactionIDint);
-        }
+        if (WalletManager.IsAccessAllowed (call.Session, accountKey, entityID) == false)
+            throw new CrpAccessDenied (MLS.UI_CORP_ACCESSTOWALLETDIVISIONDENIED);
 
-        public PyDataType GetWalletDivisionsInfo(CallInformation call)
-        {
-            // build a list of divisions the user can access
-            List<int> walletKeys = new List<int>();
+        // journal requires accountant roles for corporation
+        if (entityID == call.Session.CorporationID && (CorporationRole.Accountant.Is (call.Session.CorporationRole) == false ||
+                                                       CorporationRole.JuniorAccountant.Is (call.Session.CorporationRole) == false))
+            throw new CrpAccessDenied (MLS.UI_SHARED_WALLETHINT8);
 
-            if (this.WalletManager.IsAccessAllowed(call.Client, WalletKeys.MAIN_WALLET, call.Client.CorporationID) == true)
-                walletKeys.Add(WalletKeys.MAIN_WALLET);
-            if (this.WalletManager.IsAccessAllowed(call.Client, WalletKeys.SECOND_WALLET, call.Client.CorporationID) == true)
-                walletKeys.Add(WalletKeys.SECOND_WALLET);
-            if (this.WalletManager.IsAccessAllowed(call.Client, WalletKeys.THIRD_WALLET, call.Client.CorporationID) == true)
-                walletKeys.Add(WalletKeys.THIRD_WALLET);
-            if (this.WalletManager.IsAccessAllowed(call.Client, WalletKeys.FOURTH_WALLET, call.Client.CorporationID) == true)
-                walletKeys.Add(WalletKeys.FOURTH_WALLET);
-            if (this.WalletManager.IsAccessAllowed(call.Client, WalletKeys.FIFTH_WALLET, call.Client.CorporationID) == true)
-                walletKeys.Add(WalletKeys.FIFTH_WALLET);
-            if (this.WalletManager.IsAccessAllowed(call.Client, WalletKeys.SIXTH_WALLET, call.Client.CorporationID) == true)
-                walletKeys.Add(WalletKeys.SIXTH_WALLET);
-            if (this.WalletManager.IsAccessAllowed(call.Client, WalletKeys.SEVENTH_WALLET, call.Client.CorporationID) == true)
-                walletKeys.Add(WalletKeys.SEVENTH_WALLET);
-            
-            return Database.PackedRowList(
-                WalletDB.GET_WALLETS,
-                new Dictionary<string, object>()
-                {
-                    {"_ownerID", call.Client.CorporationID},
-                    {"_walletKeyKeys", string.Join(',', walletKeys)}
-                }
-            );
-        }
+        return DB.GetJournal (entityID, entryTypeID, accountKey, fromDate, transactionIDint);
+    }
 
-        public PyDataType GiveCash(PyInteger destinationID, PyDecimal quantity, PyString reason, CallInformation call)
-        {
-            int accountKey = WalletKeys.MAIN_WALLET;
+    public PyDataType GetWalletDivisionsInfo (CallInformation call)
+    {
+        // build a list of divisions the user can access
+        List <int> walletKeys = new List <int> ();
 
-            if (call.NamedPayload.TryGetValue("toAccountKey", out PyInteger namedAccountKey) == true)
-                accountKey = namedAccountKey;
-            
-            // acquire the origin wallet, subtract quantity
-            // TODO: CHECK IF THE WALLETKEY IS INDICATED IN SOME WAY
-            using (Wallet originWallet = this.WalletManager.AcquireWallet(call.Client.EnsureCharacterIsSelected(), WalletKeys.MAIN_WALLET))
+        if (WalletManager.IsAccessAllowed (call.Session, Keys.MAIN, call.Session.CorporationID))
+            walletKeys.Add (Keys.MAIN);
+        if (WalletManager.IsAccessAllowed (call.Session, Keys.SECOND, call.Session.CorporationID))
+            walletKeys.Add (Keys.SECOND);
+        if (WalletManager.IsAccessAllowed (call.Session, Keys.THIRD, call.Session.CorporationID))
+            walletKeys.Add (Keys.THIRD);
+        if (WalletManager.IsAccessAllowed (call.Session, Keys.FOURTH, call.Session.CorporationID))
+            walletKeys.Add (Keys.FOURTH);
+        if (WalletManager.IsAccessAllowed (call.Session, Keys.FIFTH, call.Session.CorporationID))
+            walletKeys.Add (Keys.FIFTH);
+        if (WalletManager.IsAccessAllowed (call.Session, Keys.SIXTH, call.Session.CorporationID))
+            walletKeys.Add (Keys.SIXTH);
+        if (WalletManager.IsAccessAllowed (call.Session, Keys.SEVENTH, call.Session.CorporationID))
+            walletKeys.Add (Keys.SEVENTH);
+
+        return Database.PackedRowList (
+            WalletDB.GET_WALLETS,
+            new Dictionary <string, object>
             {
-                originWallet.EnsureEnoughBalance(quantity);
-                originWallet.CreateJournalRecord(MarketReference.CorporationPayment, destinationID, null, -quantity, reason);
+                {"_ownerID", call.Session.CorporationID},
+                {"_walletKeyKeys", string.Join (',', walletKeys)}
             }
-            
-            // acquire the destination wallet, add quantity
-            using (Wallet destinationWallet = this.WalletManager.AcquireWallet(destinationID, accountKey, true))
-            {
-                destinationWallet.CreateJournalRecord(MarketReference.CorporationPayment, (int) call.Client.CharacterID, destinationID, -1, quantity, reason);
-            }
-            
-            return null;
-        }
+        );
+    }
 
-        public PyDataType GiveCashFromCorpAccount(PyInteger destinationID, PyDecimal quantity, PyInteger accountKey, CallInformation call)
+    [MustBeCharacter]
+    public PyDataType GiveCash (PyInteger destinationID, PyDecimal quantity, PyString reason, CallInformation call)
+    {
+        int accountKey = Keys.MAIN;
+
+        if (call.NamedPayload.TryGetValue ("toAccountKey", out PyInteger namedAccountKey))
+            accountKey = namedAccountKey;
+
+        int callerCharacterID = call.Session.CharacterID;
+
+        // acquire the origin wallet, subtract quantity
+        // TODO: CHECK IF THE WALLETKEY IS INDICATED IN SOME WAY
+        using (Wallet originWallet = WalletManager.AcquireWallet (callerCharacterID, Keys.MAIN))
         {
-            // ensure the character can take from the account in question
-            if (this.WalletManager.IsTakeAllowed(call.Client, accountKey, call.Client.CorporationID) == false)
-                throw new CrpAccessDenied(MLS.UI_CORP_ACCESSTOWALLETDIVISIONDENIED);
-            
-            // acquire the origin wallet, subtract quantity
-            // TODO: CHECK IF THE WALLETKEY IS INDICATED IN SOME WAY
-            using (Wallet originWallet = this.WalletManager.AcquireWallet(call.Client.CorporationID, accountKey, true))
-            {
-                originWallet.EnsureEnoughBalance(quantity);
-                originWallet.CreateJournalRecord(MarketReference.CorporationPayment, destinationID, call.Client.CharacterID, -quantity);
-            }
-            
-            // TODO: CHECK IF THE DESTINATION IS A CORPORATION OR NOT
-            // acquire the destination wallet, add quantity
-            using (Wallet destinationWallet = this.WalletManager.AcquireWallet(destinationID, WalletKeys.MAIN_WALLET))
-            {
-                destinationWallet.CreateJournalRecord(MarketReference.CorporationPayment, call.Client.CorporationID, destinationID, -1, quantity);
-            }
-
-            return null;
+            originWallet.EnsureEnoughBalance (quantity);
+            originWallet.CreateJournalRecord (MarketReference.CorporationPayment, destinationID, null, -quantity, reason);
         }
+
+        // acquire the destination wallet, add quantity
+        using (Wallet destinationWallet = WalletManager.AcquireWallet (destinationID, accountKey, true))
+        {
+            destinationWallet.CreateJournalRecord (MarketReference.CorporationPayment, callerCharacterID, destinationID, -1, quantity, reason);
+        }
+
+        return null;
+    }
+
+    public PyDataType GiveCashFromCorpAccount (PyInteger destinationID, PyDecimal quantity, PyInteger accountKey, CallInformation call)
+    {
+        // ensure the character can take from the account in question
+        if (WalletManager.IsTakeAllowed (call.Session, accountKey, call.Session.CorporationID) == false)
+            throw new CrpAccessDenied (MLS.UI_CORP_ACCESSTOWALLETDIVISIONDENIED);
+
+        // acquire the origin wallet, subtract quantity
+        // TODO: CHECK IF THE WALLETKEY IS INDICATED IN SOME WAY
+        using (Wallet originWallet = WalletManager.AcquireWallet (call.Session.CorporationID, accountKey, true))
+        {
+            originWallet.EnsureEnoughBalance (quantity);
+            originWallet.CreateJournalRecord (MarketReference.CorporationPayment, destinationID, call.Session.CharacterID, -quantity);
+        }
+
+        // TODO: CHECK IF THE DESTINATION IS A CORPORATION OR NOT
+        // acquire the destination wallet, add quantity
+        using (Wallet destinationWallet = WalletManager.AcquireWallet (destinationID, Keys.MAIN))
+        {
+            destinationWallet.CreateJournalRecord (MarketReference.CorporationPayment, call.Session.CorporationID, destinationID, -1, quantity);
+        }
+
+        return null;
     }
 }

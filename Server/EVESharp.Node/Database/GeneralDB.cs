@@ -24,58 +24,112 @@
 
 using System;
 using System.Collections.Generic;
-using System.Data;
 using EVESharp.Common.Database;
-using EVESharp.Node.StaticData;
+using EVESharp.EVE.StaticData;
+using EVESharp.PythonTypes.Types.Collections;
+using EVESharp.PythonTypes.Types.Database;
+using EVESharp.PythonTypes.Types.Primitives;
 using MySql.Data.MySqlClient;
-using EVESharp.Node.Inventory.SystemEntities;
 
-namespace EVESharp.Node.Database
+namespace EVESharp.Node.Database;
+
+public class GeneralDB : DatabaseAccessor
 {
-    public class GeneralDB : DatabaseAccessor
-    {
-        public long GetNodeWhereSolarSystemIsLoaded(int solarSystemID)
-        {
-            MySqlConnection connection = null;
-            MySqlDataReader reader = Database.Select(ref connection,
-                "SELECT nodeID FROM invItems WHERE itemID = @solarSystemID",
-                new Dictionary<string, object>()
-                {
-                    {"@solarSystemID", solarSystemID}
-                }
-            );
-            
-            using(connection)
-            using (reader)
-            {
-                if (reader.Read() == false)
-                    return 0;
+    public GeneralDB (DatabaseConnection db) : base (db) { }
 
-                return reader.GetInt64(0);
-            }
+    public long GetNodeWhereSolarSystemIsLoaded (int solarSystemID)
+    {
+        MySqlConnection connection = null;
+        MySqlDataReader reader = Database.Select (
+            ref connection,
+            "SELECT nodeID FROM invItems WHERE itemID = @solarSystemID",
+            new Dictionary <string, object> {{"@solarSystemID", solarSystemID}}
+        );
+
+        using (connection)
+        using (reader)
+        {
+            if (reader.Read () == false)
+                return 0;
+
+            return reader.GetInt64 (0);
         }
-        
-        public Dictionary<string, Constant> LoadConstants()
+    }
+
+    public Dictionary <string, Constant> LoadConstants ()
+    {
+        MySqlConnection connection = null;
+        MySqlDataReader reader     = Database.Select (ref connection, "SELECT constantID, constantValue FROM eveConstants");
+
+        using (connection)
+        using (reader)
+        {
+            Dictionary <string, Constant> result = new Dictionary <string, Constant> ();
+
+            while (reader.Read ())
+                result [reader.GetString (0)] = new Constant (reader.GetString (0), reader.GetInt64 (1));
+
+            return result;
+        }
+    }
+
+    public PyList <PyObjectData> FetchLiveUpdates ()
+    {
+        try
         {
             MySqlConnection connection = null;
-            MySqlDataReader reader = Database.Select(
-                ref connection, "SELECT constantID, constantValue FROM eveConstants"
+            MySqlDataReader reader = Database.Select (
+                ref connection,
+                "SELECT updateID, updateName, description, machoVersionMin, machoVersionMax, buildNumberMin, buildNumberMax, methodName, objectID, codeType, code, OCTET_LENGTH(code) as codeLength FROM eveLiveUpdates"
             );
 
             using (connection)
             using (reader)
             {
-                Dictionary<string, Constant> result = new Dictionary<string, Constant>();
+                PyList <PyObjectData> result = new PyList <PyObjectData> ();
 
-                while (reader.Read() == true)
-                    result[reader.GetString(0)] = new Constant(reader.GetString(0), reader.GetInt64(1));
+                while (reader.Read ())
+                {
+                    PyDictionary entry = new PyDictionary ();
+                    PyDictionary code  = new PyDictionary ();
+
+                    // read the blob for the liveupdate
+                    byte [] buffer = new byte[reader.GetUInt32 (11)];
+                    reader.GetBytes (10, 0, buffer, 0, buffer.Length);
+
+                    code ["code"]       = buffer;
+                    code ["codeType"]   = reader.GetString (9);
+                    code ["methodName"] = reader.GetString (7);
+                    code ["objectID"]   = reader.GetString (8);
+
+                    entry ["code"] = KeyVal.FromDictionary (code);
+
+                    result.Add (KeyVal.FromDictionary (entry));
+                }
 
                 return result;
             }
         }
-
-        public GeneralDB(DatabaseConnection db) : base(db)
+        catch (Exception)
         {
+            throw new Exception ("Cannot prepare live-updates information for client");
         }
+    }
+
+    public void UpdateCharacterLogoffDateTime (int characterID)
+    {
+        Database.PrepareQuery (
+            "UPDATE chrInformation SET logoffDateTime = @date, online = 0 WHERE characterID = @characterID",
+            new Dictionary <string, object>
+            {
+                {"@characterID", characterID},
+                {"@date", DateTime.UtcNow.ToFileTimeUtc ()}
+            }
+        );
+    }
+
+    public void ResetCharacterOnlineStatus ()
+    {
+        Database.Query ("UPDATE chrInformation SET online = 0");
     }
 }

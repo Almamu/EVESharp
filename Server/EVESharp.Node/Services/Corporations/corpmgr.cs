@@ -1,95 +1,99 @@
 ﻿using System;
-using EVESharp.Common.Services;
+using EVESharp.EVE.Client.Exceptions.corpRegistry;
 using EVESharp.EVE.Packets.Complex;
+using EVESharp.EVE.Services;
+using EVESharp.EVE.Services.Validators;
+using EVESharp.Node.Cache;
 using EVESharp.Node.Database;
-using EVESharp.Node.Exceptions.corpRegistry;
-using EVESharp.Node.Network;
+using EVESharp.Node.Sessions;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Primitives;
+using Serilog;
 
-namespace EVESharp.Node.Services.Corporations
+namespace EVESharp.Node.Services.Corporations;
+
+[MustBeCharacter]
+public class corpmgr : Service
 {
-    public class corpmgr : IService
+    public override AccessLevel   AccessLevel  => AccessLevel.None;
+    private         CorporationDB DB           { get; }
+    private         CacheStorage  CacheStorage { get; }
+
+    public corpmgr (CorporationDB db, CacheStorage cacheStorage)
     {
-        private CorporationDB DB { get; }
-        private CacheStorage CacheStorage { get; }
-        
-        public corpmgr(CorporationDB db, CacheStorage cacheStorage)
+        DB           = db;
+        CacheStorage = cacheStorage;
+    }
+
+    public PyDataType GetPublicInfo (PyInteger corporationID, CallInformation call)
+    {
+        return DB.GetPublicInfo (corporationID);
+    }
+
+    public PyDataType GetCorporationIDForCharacter (PyInteger characterID, CallInformation call)
+    {
+        return DB.GetCorporationIDForCharacter (characterID);
+    }
+
+    public PyDataType GetCorporations (PyInteger corporationID, CallInformation call)
+    {
+        return DB.GetCorporationRow (corporationID);
+    }
+
+    public PyDataType GetAssetInventory (PyInteger corporationID, PyString which, CallInformation call)
+    {
+        // TODO: CHECK PROPER PERMISSIONS TOO!
+        if (call.Session.CorporationID != corporationID)
+            throw new CrpAccessDenied ("You must belong to this corporation");
+
+        if (which == "offices")
         {
-            this.DB = db;
-            this.CacheStorage = cacheStorage;
+            // dirty little hack, but should do the trick
+            CacheStorage.StoreCall (
+                "corpmgr",
+                "GetAssetInventoryForLocation_" + which + "_" + corporationID,
+                DB.GetOfficesLocation (corporationID),
+                DateTime.UtcNow.ToFileTimeUtc ()
+            );
+
+            PyDataType cacheHint = CacheStorage.GetHint ("corpmgr", "GetAssetInventoryForLocation_" + which + "_" + corporationID);
+
+            return CachedMethodCallResult.FromCacheHint (cacheHint);
         }
-        
-        public PyDataType GetPublicInfo(PyInteger corporationID, CallInformation call)
+        else
         {
-            return this.DB.GetPublicInfo(corporationID);
-        }
-
-        public PyDataType GetCorporationIDForCharacter(PyInteger characterID, CallInformation call)
-        {
-            return this.DB.GetCorporationIDForCharacter(characterID);
-        }
-
-        public PyDataType GetCorporations(PyInteger corporationID, CallInformation call)
-        {
-            return this.DB.GetCorporationRow(corporationID);
-        }
-        
-        public PyDataType GetAssetInventory(PyInteger corporationID, PyString which, CallInformation call)
-        {
-            // TODO: CHECK PROPER PERMISSIONS TOO!
-            if (call.Client.CorporationID != corporationID)
-                throw new CrpAccessDenied("You must belong to this corporation");
-
-            if (which == "offices")
-            {
-                call.Client.EnsureCharacterIsSelected();
-         
-                // dirty little hack, but should do the trick
-                this.CacheStorage.StoreCall(
-                    "corpmgr",
-                    "GetAssetInventoryForLocation_" + which + "_" + corporationID,
-                    this.DB.GetOfficesLocation(corporationID),
-                    DateTime.UtcNow.ToFileTimeUtc()
-                );
-
-                PyDataType cacheHint = this.CacheStorage.GetHint("corpmgr", "GetAssetInventoryForLocation_" + which + "_" + corporationID);
-
-                return CachedMethodCallResult.FromCacheHint(cacheHint);
-            }
-
-            return new PyList();
+            throw new Exception ("This asset inventory is not supported yet!");
         }
 
-        public PyDataType GetAssetInventoryForLocation(PyInteger corporationID, PyInteger location, PyString which, CallInformation call)
+        return new PyList ();
+    }
+
+    public PyDataType GetAssetInventoryForLocation (PyInteger corporationID, PyInteger location, PyString which, CallInformation call)
+    {
+        // TODO: CHECK PROPER PERMISSIONS TOO!
+        if (call.Session.CorporationID != corporationID)
+            throw new CrpAccessDenied ("You must belong to this corporation");
+
+        if (which == "offices")
         {
-            // TODO: CHECK PROPER PERMISSIONS TOO!
-            if (call.Client.CorporationID != corporationID)
-                throw new CrpAccessDenied("You must belong to this corporation");
+            // dirty little hack, but should do the trick
+            CacheStorage.StoreCall (
+                "corpmgr",
+                "GetAssetInventoryForLocation_" + location + "_" + which + "_" + corporationID,
+                DB.GetAssetsInOfficesAtStation (corporationID, location),
+                DateTime.UtcNow.ToFileTimeUtc ()
+            );
 
-            if (which == "offices")
-            {
-                call.Client.EnsureCharacterIsSelected();
-         
-                // dirty little hack, but should do the trick
-                this.CacheStorage.StoreCall(
-                    "corpmgr",
-                    "GetAssetInventoryForLocation_" + location + "_" + which + "_" + corporationID,
-                    this.DB.GetAssetsInOfficesAtStation(corporationID, location),
-                    DateTime.UtcNow.ToFileTimeUtc()
-                );
+            PyDataType cacheHint = CacheStorage.GetHint ("corpmgr", "GetAssetInventoryForLocation_" + location + "_" + which + "_" + corporationID);
 
-                PyDataType cacheHint = this.CacheStorage.GetHint("corpmgr", "GetAssetInventoryForLocation_" + location + "_" + which + "_" + corporationID);
-
-                return CachedMethodCallResult.FromCacheHint(cacheHint);
-            }
-
-            return new PyList();
+            return CachedMethodCallResult.FromCacheHint (cacheHint);
         }
 
-        public PyDataType GetItemsRented(CallInformation call)
-        {
-            return this.DB.GetItemsRented(call.Client.CorporationID);
-        }
+        return new PyList ();
+    }
+
+    public PyDataType GetItemsRented (CallInformation call)
+    {
+        return DB.GetItemsRented (call.Session.CorporationID);
     }
 }

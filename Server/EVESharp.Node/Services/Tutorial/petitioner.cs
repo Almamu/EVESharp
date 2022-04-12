@@ -1,20 +1,20 @@
-﻿using EVESharp.Common.Services;
-using EVESharp.EVE.Packets.Exceptions;
-using EVESharp.Node.Network;
+﻿using EVESharp.EVE.Packets.Exceptions;
+using EVESharp.EVE.Services;
 using EVESharp.PythonTypes.Types.Primitives;
 
-namespace EVESharp.Node.Services.Tutorial
-{
-    public class petitioner : IService
-    {
-        public PyDataType GetCategoryHierarchicalInfo(CallInformation call)
-        {
-            throw new CustomError("Petitions are disabled");
-        }
+namespace EVESharp.Node.Services.Tutorial;
 
-        public PyDataType GetMyPetitionsEx(CallInformation call)
-        {
-            throw new CustomError("Petitions are disabled");
-        }
+public class petitioner : Service
+{
+    public override AccessLevel AccessLevel => AccessLevel.None;
+
+    public PyDataType GetCategoryHierarchicalInfo (CallInformation call)
+    {
+        throw new CustomError ("Petitions are disabled");
+    }
+
+    public PyDataType GetMyPetitionsEx (CallInformation call)
+    {
+        throw new CustomError ("Petitions are disabled");
     }
 }

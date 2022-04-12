@@ -1,82 +1,61 @@
-namespace EVESharp.PythonTypes.Types.Primitives
+namespace EVESharp.PythonTypes.Types.Primitives;
+
+public class PyBool : PyDataType
 {
-    public class PyBool : PyDataType
+    public bool Value { get; }
+
+    public PyBool (bool value)
     {
-        protected bool Equals(PyBool other)
-        {
-            return Value == other.Value;
-        }
+        Value = value;
+    }
 
-        public override bool Equals(object obj)
-        {
-            if (ReferenceEquals(null, obj)) return false;
-            if (ReferenceEquals(this, obj)) return true;
-            if (obj.GetType() != this.GetType()) return false;
+    private bool Equals (PyBool other)
+    {
+        if (ReferenceEquals (null, other)) return false;
 
-            return Equals((PyBool) obj);
-        }
+        return Value == other.Value;
+    }
 
-        public override int GetHashCode()
-        {
-            return Value.GetHashCode();
-        }
+    public override int GetHashCode ()
+    {
+        return Value.GetHashCode ();
+    }
 
-        public bool Value { get; }
+    public static bool operator == (PyBool left, PyBool right)
+    {
+        if (ReferenceEquals (left, right)) return true;
+        if (ReferenceEquals (null, left)) return false;
 
-        public PyBool(bool value)
-        {
-            this.Value = value;
-        }
+        return left.Equals (right);
+    }
 
-        public static bool operator ==(PyBool obj, bool value)
-        {
-            if (ReferenceEquals(null, obj) == true) return false;
+    public static bool operator != (PyBool left, PyBool right)
+    {
+        return !(left == right);
+    }
 
-            return obj.Value == value;
-        }
+    public static bool operator true (PyBool obj)
+    {
+        return obj.Value;
+    }
 
-        public static bool operator ==(PyBool obj, PyBool value)
-        {
-            if (ReferenceEquals(obj, value)) return true;
-            if (ReferenceEquals(null, obj)) return false;
-            if (ReferenceEquals(null, value)) return false;
+    public static bool operator false (PyBool obj)
+    {
+        return !obj.Value;
+    }
 
-            return obj.Equals(value);
-        }
+    public static implicit operator bool (PyBool obj)
+    {
+        return obj.Value;
+    }
 
-        public static bool operator !=(PyBool obj, PyBool value)
-        {
-            return !(obj == value);
-        }
+    public static implicit operator PyBool (bool value)
+    {
+        return new PyBool (value);
+    }
 
-        public static bool operator !=(PyBool obj, bool value)
-        {
-            return !(obj == value);
-        }
-
-        public static bool operator true(PyBool obj)
-        {
-            return obj.Value;
-        }
-
-        public static bool operator false(PyBool obj)
-        {
-            return !obj.Value;
-        }
-
-        public static implicit operator bool(PyBool obj)
-        {
-            return obj.Value;
-        }
-
-        public static implicit operator PyBool(bool value)
-        {
-            return new PyBool(value);
-        }
-
-        public static implicit operator PyInteger(PyBool obj)
-        {
-            return new PyInteger(obj.Value == true ? 1 : 0);
-        }
+    public static implicit operator PyInteger (PyBool obj)
+    {
+        return new PyInteger (obj.Value ? 1 : 0);
     }
 }

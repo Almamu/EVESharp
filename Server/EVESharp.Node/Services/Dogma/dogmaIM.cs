@@ -1,247 +1,297 @@
 using System;
-using System.Collections.Generic;
-using EVESharp.Common.Constants;
 using EVESharp.EVE;
+using EVESharp.EVE.Account;
+using EVESharp.EVE.Client.Exceptions.inventory;
 using EVESharp.EVE.Packets.Complex;
 using EVESharp.EVE.Packets.Exceptions;
-using EVESharp.Node.Exceptions.inventory;
+using EVESharp.EVE.Services;
+using EVESharp.EVE.Services.Validators;
+using EVESharp.EVE.Sessions;
+using EVESharp.EVE.StaticData.Inventory;
+using EVESharp.Node.Client.Notifications.Station;
+using EVESharp.Node.Dogma;
 using EVESharp.Node.Inventory;
 using EVESharp.Node.Inventory.Items;
 using EVESharp.Node.Inventory.Items.Types;
-using EVESharp.Node.Network;
-using EVESharp.Node.StaticData.Inventory;
-using EVESharp.Node.Dogma;
-using EVESharp.Node.Dogma.Interpreter;
-using EVESharp.Node.Dogma.Interpreter.Opcodes;
-using EVESharp.Node.Exceptions;
-using EVESharp.Node.Exceptions.dogma;
-using EVESharp.Node.Inventory.Items.Attributes;
-using EVESharp.Node.Inventory.Items.Dogma;
+using EVESharp.Node.Notifications;
+using EVESharp.Node.Sessions;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Database;
 using EVESharp.PythonTypes.Types.Primitives;
-using Environment = EVESharp.Node.Inventory.Items.Dogma.Environment;
+using Groups = EVESharp.EVE.StaticData.Inventory.Groups;
 
-namespace EVESharp.Node.Services.Dogma
+namespace EVESharp.Node.Services.Dogma;
+
+[MustBeCharacter]
+public class dogmaIM : ClientBoundService
 {
-    public class dogmaIM : ClientBoundService
+    public override AccessLevel AccessLevel => AccessLevel.None;
+
+    private ItemFactory        ItemFactory      { get; }
+    private AttributeManager   AttributeManager => ItemFactory.AttributeManager;
+    private SystemManager      SystemManager    => ItemFactory.SystemManager;
+    private NotificationSender Notifications    { get; }
+    private EffectsManager     EffectsManager   { get; }
+
+    public dogmaIM (EffectsManager effectsManager, ItemFactory itemFactory, NotificationSender notificationSender, BoundServiceManager manager) : base (manager)
     {
-        private ItemFactory ItemFactory { get; }
-        private AttributeManager AttributeManager => this.ItemFactory.AttributeManager;
-        private SystemManager SystemManager => this.ItemFactory.SystemManager;
-        
-        public dogmaIM(ItemFactory itemFactory, BoundServiceManager manager) : base(manager)
-        {
-            this.ItemFactory = itemFactory;
-        }
+        EffectsManager = effectsManager;
+        ItemFactory    = itemFactory;
+        Notifications  = notificationSender;
+    }
 
-        protected dogmaIM(int locationID, ItemFactory itemFactory, BoundServiceManager manager, Client client) : base(manager, client, locationID)
-        {
-            this.ItemFactory = itemFactory;
-        }
+    protected dogmaIM (
+        int     locationID, EffectsManager effectsManager, ItemFactory itemFactory, NotificationSender notificationSender, BoundServiceManager manager,
+        Session session
+    ) : base (manager, session, locationID)
+    {
+        EffectsManager = effectsManager;
+        ItemFactory    = itemFactory;
+        Notifications  = notificationSender;
+    }
 
-        public PyDataType ShipGetInfo(CallInformation call)
-        {
-            int callerCharacterID = call.Client.EnsureCharacterIsSelected();
-            int? shipID = call.Client.ShipID;
-            
-            if (shipID is null)
-                throw new CustomError($"The character is not aboard any ship");
-            
-            // TODO: RE-EVALUATE WHERE THE SHIP LOADING IS PERFORMED, SHIPGETINFO DOESN'T LOOK LIKE A GOOD PLACE TO DO IT
-            Ship ship = this.ItemFactory.LoadItem<Ship>((int) shipID);
+    public PyDataType ShipGetInfo (CallInformation call)
+    {
+        int  callerCharacterID = call.Session.CharacterID;
+        int? shipID            = call.Session.ShipID;
 
-            if (ship is null)
-                throw new CustomError($"Cannot get information for ship {call.Client.ShipID}");
-            
+        if (shipID is null)
+            throw new CustomError ("The character is not aboard any ship");
+
+        // TODO: RE-EVALUATE WHERE THE SHIP LOADING IS PERFORMED, SHIPGETINFO DOESN'T LOOK LIKE A GOOD PLACE TO DO IT
+        Ship ship = ItemFactory.LoadItem <Ship> ((int) shipID);
+
+        if (ship is null)
+            throw new CustomError ($"Cannot get information for ship {call.Session.ShipID}");
+
+        try
+        {
             // ensure the player can use this ship
-            ship.EnsureOwnership(callerCharacterID, call.Client.CorporationID, call.Client.CorporationRole, true);
+            ship.EnsureOwnership (callerCharacterID, call.Session.CorporationID, call.Session.CorporationRole, true);
 
-            ItemInfo itemInfo = new ItemInfo();
-            
+            ItemInfo itemInfo = new ItemInfo ();
+
             // TODO: find all the items inside this ship that are not characters
-            itemInfo.AddRow(
-	            ship.ID, ship.GetEntityRow(), ship.GetEffects (), ship.Attributes, DateTime.UtcNow.ToFileTime()
-	        );
+            itemInfo.AddRow (ship.ID, ship.GetEntityRow (), ship.GetEffects (), ship.Attributes, DateTime.UtcNow.ToFileTime ());
 
             foreach ((int _, ItemEntity item) in ship.Items)
             {
-                if (item.IsInModuleSlot() == false && item.IsInRigSlot() == true)
+                if (item.IsInModuleSlot () == false && item.IsInRigSlot () == false)
                     continue;
-        
-                itemInfo.AddRow(
+
+                itemInfo.AddRow (
                     item.ID,
-                    item.GetEntityRow(),
+                    item.GetEntityRow (),
                     item.GetEffects (),
                     item.Attributes,
-                    DateTime.UtcNow.ToFileTime()
+                    DateTime.UtcNow.ToFileTime ()
                 );
-                break;
             }
 
             return itemInfo;
         }
-
-        public PyDataType CharGetInfo(CallInformation call)
+        catch (Exception)
         {
-            int callerCharacterID = call.Client.EnsureCharacterIsSelected();
+            // there was an exception, the ship has to be unloaded as it's not going to be used anymore
+            ItemFactory.UnloadItem (ship);
 
-            Character character = this.ItemFactory.GetItem<Character>(callerCharacterID);
+            throw;
+        }
+    }
 
-            if (character is null)
-                throw new CustomError($"Cannot get information for character {callerCharacterID}");
+    public PyDataType CharGetInfo (CallInformation call)
+    {
+        int callerCharacterID = call.Session.CharacterID;
 
-            ItemInfo itemInfo = new ItemInfo();
+        Character character = ItemFactory.GetItem <Character> (callerCharacterID);
 
-            itemInfo.AddRow(
-                character.ID, character.GetEntityRow(), character.GetEffects(), character.Attributes, DateTime.UtcNow.ToFileTime()
-            );
+        if (character is null)
+            throw new CustomError ($"Cannot get information for character {callerCharacterID}");
 
-            foreach ((int _, ItemEntity item) in character.Items)
+        ItemInfo itemInfo = new ItemInfo ();
+
+        itemInfo.AddRow (character.ID, character.GetEntityRow (), character.GetEffects (), character.Attributes, DateTime.UtcNow.ToFileTime ());
+
+        foreach ((int _, ItemEntity item) in character.Items)
+            switch (item.Flag)
             {
-                switch (item.Flag)
-                {
-                    case Flags.Booster:
-                    case Flags.Implant:
-                    case Flags.Skill:
-                    case Flags.SkillInTraining:
-                        itemInfo.AddRow(
-                            item.ID,
-                            item.GetEntityRow(),
-                            item.GetEffects (),
-                            item.Attributes,
-                            DateTime.UtcNow.ToFileTime()
-                        );
-                        break;
-                }
+                case Flags.Booster:
+                case Flags.Implant:
+                case Flags.Skill:
+                case Flags.SkillInTraining:
+                    itemInfo.AddRow (
+                        item.ID,
+                        item.GetEntityRow (),
+                        item.GetEffects (),
+                        item.Attributes,
+                        DateTime.UtcNow.ToFileTime ()
+                    );
+
+                    break;
             }
 
-            return itemInfo;
-        }
+        return itemInfo;
+    }
 
-        public PyDataType ItemGetInfo(PyInteger itemID, CallInformation call)
-        {
-            int callerCharacterID = call.Client.EnsureCharacterIsSelected();
+    public PyDataType ItemGetInfo (PyInteger itemID, CallInformation call)
+    {
+        int callerCharacterID = call.Session.CharacterID;
 
-            ItemEntity item = this.ItemFactory.LoadItem(itemID);
+        ItemEntity item = ItemFactory.LoadItem (itemID);
 
-            if (item.OwnerID != callerCharacterID && item.OwnerID != call.Client.CorporationID)
-                throw new TheItemIsNotYoursToTake(itemID);
-            
-            return new Row(
-                new PyList<PyString>(5)
-                {
-                    [0] = "itemID",
-                    [1] = "invItem",
-                    [2] = "activeEffects",
-                    [3] = "attributes",
-                    [4] = "time"
-                },
-                new PyList(5)
-                {
-                    [0] = item.ID,
-                    [1] = item.GetEntityRow(),
-                    [2] = item.GetEffects(),
-                    [3] = item.Attributes,
-                    [4] = DateTime.UtcNow.ToFileTimeUtc()
-                }
-            );
-        }
+        if (item.ID != callerCharacterID && item.OwnerID != callerCharacterID && item.OwnerID != call.Session.CorporationID)
+            throw new TheItemIsNotYoursToTake (itemID);
 
-        public PyDataType GetWeaponBankInfoForShip(CallInformation call)
-        {
-            // this function seems to indicate the client when modules are grouped
-            // so it can display them on the UI and I guess act on them too
-            // for now there's no support for this functionality, so it can be stubbed out
-            return new PyDictionary();
-        }
-
-        public PyDataType GetCharacterBaseAttributes(CallInformation call)
-        {
-            int callerCharacterID = call.Client.EnsureCharacterIsSelected();
-            
-            Character character = this.ItemFactory.GetItem<Character>(callerCharacterID);
-
-            if (character is null)
-                throw new CustomError($"Cannot get information for character {callerCharacterID}");
-
-            return new PyDictionary
+        return new Row (
+            new PyList <PyString> (5)
             {
-                [(int) Attributes.willpower] = character.Willpower,
-                [(int) Attributes.charisma] = character.Charisma,
-                [(int) Attributes.intelligence] = character.Intelligence,
-                [(int) Attributes.perception] = character.Perception,
-                [(int) Attributes.memory] = character.Memory
-            };
-        }
-
-        public PyDataType LogAttribute(PyInteger itemID, PyInteger attributeID, CallInformation call)
-        {
-            return this.LogAttribute(itemID, attributeID, "", call);
-        }
-
-        public PyList<PyString> LogAttribute(PyInteger itemID, PyInteger attributeID, PyString reason, CallInformation call)
-        {
-            int role = call.Client.Role;
-            int roleMask = (int) (Roles.ROLE_GDH | Roles.ROLE_QA | Roles.ROLE_PROGRAMMER | Roles.ROLE_GMH);
-
-            if ((role & roleMask) == 0)
-                throw new CustomError("Not allowed!");
-
-            ItemEntity item = this.ItemFactory.GetItem(itemID);
-
-            if (item.Attributes.AttributeExists(attributeID) == false)
-                throw new CustomError("The given attribute doesn't exists in the item");
-            
-            // we don't know the actual values of the returned function
-            // but it should be enough to fill the required data by the client
-            return new PyList<PyString>(5)
+                [0] = "itemID",
+                [1] = "invItem",
+                [2] = "activeEffects",
+                [3] = "attributes",
+                [4] = "time"
+            },
+            new PyList (5)
             {
-                [0] = null,
-                [1] = null,
-                [2] = $"Server value: {item.Attributes[attributeID]}",
-                [3] = $"Base value: {AttributeManager.DefaultAttributes[item.Type.ID][attributeID]}",
-                [4] = $"Reason: {reason}"
-            };
+                [0] = item.ID,
+                [1] = item.GetEntityRow (),
+                [2] = item.GetEffects (),
+                [3] = item.Attributes,
+                [4] = DateTime.UtcNow.ToFileTimeUtc ()
+            }
+        );
+    }
+
+    public PyDataType GetWeaponBankInfoForShip (CallInformation call)
+    {
+        // this function seems to indicate the client when modules are grouped
+        // so it can display them on the UI and I guess act on them too
+        // for now there's no support for this functionality, so it can be stubbed out
+        return new PyDictionary ();
+    }
+
+    public PyDataType GetCharacterBaseAttributes (CallInformation call)
+    {
+        int callerCharacterID = call.Session.CharacterID;
+
+        Character character = ItemFactory.GetItem <Character> (callerCharacterID);
+
+        if (character is null)
+            throw new CustomError ($"Cannot get information for character {callerCharacterID}");
+
+        return new PyDictionary
+        {
+            [(int) AttributeTypes.willpower]    = character.Willpower,
+            [(int) AttributeTypes.charisma]     = character.Charisma,
+            [(int) AttributeTypes.intelligence] = character.Intelligence,
+            [(int) AttributeTypes.perception]   = character.Perception,
+            [(int) AttributeTypes.memory]       = character.Memory
+        };
+    }
+
+    public PyDataType LogAttribute (PyInteger itemID, PyInteger attributeID, CallInformation call)
+    {
+        return this.LogAttribute (itemID, attributeID, "", call);
+    }
+
+    public PyList <PyString> LogAttribute (PyInteger itemID, PyInteger attributeID, PyString reason, CallInformation call)
+    {
+        ulong role     = call.Session.Role;
+        ulong roleMask = (ulong) (Roles.ROLE_GDH | Roles.ROLE_QA | Roles.ROLE_PROGRAMMER | Roles.ROLE_GMH);
+
+        if ((role & roleMask) == 0)
+            throw new CustomError ("Not allowed!");
+
+        ItemEntity item = ItemFactory.GetItem (itemID);
+
+        if (item.Attributes.AttributeExists (attributeID) == false)
+            throw new CustomError ("The given attribute doesn't exists in the item");
+
+        // we don't know the actual values of the returned function
+        // but it should be enough to fill the required data by the client
+        return new PyList <PyString> (5)
+        {
+            [0] = null,
+            [1] = null,
+            [2] = $"Server value: {item.Attributes [attributeID]}",
+            [3] = $"Base value: {AttributeManager.DefaultAttributes [item.Type.ID] [attributeID]}",
+            [4] = $"Reason: {reason}"
+        };
+    }
+
+    public PyDataType Activate (PyInteger itemID, PyString effectName, PyDataType target, PyDataType repeat, CallInformation call)
+    {
+        ShipModule module = ItemFactory.GetItem <ShipModule> (itemID);
+
+        EffectsManager.GetForItem (module, call.Session).ApplyEffect (effectName, call.Session);
+
+        return null;
+    }
+
+    public PyDataType Deactivate (PyInteger itemID, PyString effectName, CallInformation call)
+    {
+        ShipModule module = ItemFactory.GetItem <ShipModule> (itemID);
+
+        EffectsManager.GetForItem (module, call.Session).StopApplyingEffect (effectName, call.Session);
+
+        return null;
+    }
+
+    protected override long MachoResolveObject (ServiceBindParams parameters, CallInformation call)
+    {
+        int solarSystemID = 0;
+
+        if (parameters.ExtraValue == (int) Groups.SolarSystem)
+            solarSystemID = ItemFactory.GetStaticSolarSystem (parameters.ObjectID).ID;
+        else if (parameters.ExtraValue == (int) Groups.Station)
+            solarSystemID = ItemFactory.GetStaticStation (parameters.ObjectID).SolarSystemID;
+        else
+            throw new CustomError ("Unknown item's groupID");
+
+        return SystemManager.LoadSolarSystemOnCluster (solarSystemID);
+    }
+
+    protected override BoundService CreateBoundInstance (ServiceBindParams bindParams, CallInformation call)
+    {
+        int characterID = call.Session.CharacterID;
+
+        if (this.MachoResolveObject (bindParams, call) != BoundServiceManager.MachoNet.NodeID)
+            throw new CustomError ("Trying to bind an object that does not belong to us!");
+
+        // make sure the character is loaded
+        Character character = ItemFactory.LoadItem <Character> (characterID);
+
+        // depending on the type of binding we're doing it means the player might be entering a station
+        if (bindParams.ExtraValue == (int) Groups.Station && call.Session.StationID == bindParams.ObjectID)
+        {
+            ItemFactory.GetStaticStation (bindParams.ObjectID).Guests [characterID] = character;
+
+            // notify all station guests
+            Notifications.NotifyStation (bindParams.ObjectID, new OnCharNowInStation (call.Session));
         }
 
-        public PyDataType Activate(PyInteger itemID, PyString effectName, PyDataType target, PyDataType repeat, CallInformation call)
+        return new dogmaIM (bindParams.ObjectID, EffectsManager, ItemFactory, Notifications, BoundServiceManager, call.Session);
+    }
+
+    protected override void OnClientDisconnected ()
+    {
+        int characterID = Session.CharacterID;
+
+        // notify station about the player disconnecting from the object
+        if (Session.StationID == ObjectID)
         {
-            this.ItemFactory.GetItem<ShipModule>(itemID).ApplyEffect(effectName, call.Client);
-            
-            return null;
-        }
+            // remove the character from the list
+            ItemFactory.GetStaticStation (ObjectID).Guests.Remove (characterID);
 
-        public PyDataType Deactivate(PyInteger itemID, PyString effectName, CallInformation call)
-        {
-            this.ItemFactory.GetItem<ShipModule>(itemID).StopApplyingEffect(effectName, call.Client);
-            
-            return null;
-        }
+            // notify all station guests
+            Notifications.NotifyStation (ObjectID, new OnCharNoLongerInStation (Session));
 
-        protected override long MachoResolveObject(ServiceBindParams parameters, CallInformation call)
-        {
-            int solarSystemID = 0;
+            // check if the character is loaded or their ship is loaded and unload it
+            // TODO: THIS MIGHT REQUIRE CHANGES WHEN DESTINY WORK IS STARTED
+            ItemFactory.UnloadItem (characterID);
 
-            if (parameters.ExtraValue == (int) Groups.SolarSystem)
-                solarSystemID = this.ItemFactory.GetStaticSolarSystem(parameters.ObjectID).ID;
-            else if (parameters.ExtraValue == (int) Groups.Station)
-                solarSystemID = this.ItemFactory.GetStaticStation(parameters.ObjectID).SolarSystemID;
-            else
-                throw new CustomError("Unknown item's groupID");
-
-            if (this.SystemManager.SolarSystemBelongsToUs(solarSystemID) == true)
-                return this.BoundServiceManager.Container.NodeID;
-
-            return this.SystemManager.GetNodeSolarSystemBelongsTo(solarSystemID);
-        }
-
-        protected override BoundService CreateBoundInstance(ServiceBindParams bindParams, CallInformation call)
-        {
-            if (this.MachoResolveObject(bindParams, call) != this.BoundServiceManager.Container.NodeID)
-                throw new CustomError("Trying to bind an object that does not belong to us!");
-
-            return new dogmaIM(bindParams.ObjectID, this.ItemFactory, this.BoundServiceManager, call.Client);
+            if (Session.ShipID is not null)
+                ItemFactory.UnloadItem ((int) Session.ShipID);
         }
     }
 }

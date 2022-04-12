@@ -1,111 +1,103 @@
 using System;
 using System.Collections.Generic;
 using EVESharp.Common.Database;
-using EVESharp.Common.Services;
-using EVESharp.EVE;
+using EVESharp.EVE.Client.Exceptions.corpRegistry;
+using EVESharp.EVE.Client.Messages;
+using EVESharp.EVE.Corporations;
+using EVESharp.EVE.Market;
 using EVESharp.EVE.Packets.Complex;
-using EVESharp.Node.Corporations;
+using EVESharp.EVE.Services;
+using EVESharp.EVE.Services.Validators;
+using EVESharp.EVE.StaticData.Corporation;
+using EVESharp.EVE.StaticData.Inventory;
+using EVESharp.Node.Cache;
+using EVESharp.Node.Client.Notifications.Wallet;
 using EVESharp.Node.Database;
-using EVESharp.Node.Exceptions.corpRegistry;
 using EVESharp.Node.Inventory;
-using EVESharp.Node.Market;
-using EVESharp.Node.Network;
-using EVESharp.Node.Notifications.Client.Wallet;
-using EVESharp.Node.StaticData.Corporation;
-using EVESharp.Node.StaticData.Inventory;
+using EVESharp.Node.Notifications;
 using EVESharp.PythonTypes.Types.Primitives;
 
-namespace EVESharp.Node.Services.Account
+namespace EVESharp.Node.Services.Account;
+
+public class billMgr : Service
 {
-    public class billMgr : IService
+    public override AccessLevel        AccessLevel   => AccessLevel.None;
+    private         CacheStorage       CacheStorage  { get; }
+    private         BillsDB            DB            { get; }
+    private         CorporationDB      CorporationDB { get; }
+    private         ItemFactory        ItemFactory   { get; }
+    private         NotificationSender Notifications { get; }
+    private         DatabaseConnection Database      { get; }
+
+    public billMgr (
+        CacheStorage       cacheStorage, DatabaseConnection databaseConnection, BillsDB db, CorporationDB corporationDb, ItemFactory itemFactory,
+        NotificationSender notificationSender
+    )
     {
-        private CacheStorage CacheStorage { get; }
-        private BillsDB DB { get; init; }
-        private CorporationDB CorporationDB { get; init; }
-        private ItemFactory ItemFactory { get; init; }
-        private NotificationManager NotificationManager { get; init; }
-        private DatabaseConnection Database { get; init; }
+        CacheStorage  = cacheStorage;
+        Database      = databaseConnection;
+        DB            = db;
+        CorporationDB = corporationDb;
+        ItemFactory   = itemFactory;
+        Notifications = notificationSender;
 
-        public billMgr(CacheStorage cacheStorage, DatabaseConnection databaseConnection, BillsDB db, CorporationDB corporationDb, MachoNet machoNet, ItemFactory itemFactory, NotificationManager notificationManager)
+        // TODO: RE-IMPLEMENT ON CLUSTER TIMER
+        // machoNet.OnClusterTimer += this.PerformTimedEvents;
+    }
+
+    public PyDataType GetBillTypes (CallInformation call)
+    {
+        CacheStorage.Load (
+            "billMgr",
+            "GetBillTypes",
+            "SELECT billTypeID, billTypeName, description FROM billTypes",
+            CacheStorage.CacheObjectType.Rowset
+        );
+
+        PyDataType cacheHint = CacheStorage.GetHint ("billMgr", "GetBillTypes");
+
+        return CachedMethodCallResult.FromCacheHint (cacheHint);
+    }
+
+    [MustHaveCorporationRole(MLS.UI_CORP_ACCESSDENIED3, CorporationRole.Accountant, CorporationRole.JuniorAccountant)]
+    public PyDataType GetCorporationBillsReceivable (CallInformation call)
+    {
+        return Database.CRowset (
+            BillsDB.GET_RECEIVABLE,
+            new Dictionary <string, object> {{"_creditorID", call.Session.CorporationID}}
+        );
+    }
+
+    [MustHaveCorporationRole(MLS.UI_CORP_ACCESSDENIED3, CorporationRole.Accountant, CorporationRole.JuniorAccountant)]
+    public PyDataType GetCorporationBills (CallInformation call)
+    {
+        return Database.CRowset (
+            BillsDB.GET_PAYABLE,
+            new Dictionary <string, object> {{"_debtorID", call.Session.CorporationID}}
+        );
+    }
+
+    public PyDataType PayCorporationBill (PyInteger billID, CallInformation call)
+    {
+        return null;
+    }
+
+    public void PerformTimedEvents (object sender, EventArgs args)
+    {
+        List <CorporationOffice> offices = CorporationDB.FindOfficesCloseToRenewal ();
+
+        foreach (CorporationOffice office in offices)
         {
-            this.CacheStorage = cacheStorage;
-            this.Database = databaseConnection;
-            this.DB = db;
-            this.CorporationDB = corporationDb;
-            this.ItemFactory = itemFactory;
-            this.NotificationManager = notificationManager;
-
-            machoNet.OnClusterTimer += this.PerformTimedEvents;
-        }
-
-        public PyDataType GetBillTypes(CallInformation call)
-        {
-            this.CacheStorage.Load(
-                "billMgr",
-                "GetBillTypes",
-                "SELECT billTypeID, billTypeName, description FROM billTypes",
-                CacheStorage.CacheObjectType.Rowset
+            long dueDate = office.DueDate;
+            int  ownerID = ItemFactory.Stations [office.StationID].OwnerID;
+            int billID = (int) DB.CreateBill (
+                BillTypes.RentalBill, office.CorporationID, ownerID,
+                office.PeriodCost, dueDate, 0, (int) Types.OfficeFolder, office.StationID
             );
+            CorporationDB.SetNextBillID (office.CorporationID, office.OfficeID, billID);
 
-            PyDataType cacheHint = this.CacheStorage.GetHint("billMgr", "GetBillTypes");
-
-            return CachedMethodCallResult.FromCacheHint(cacheHint);
-        }
-
-        public PyDataType GetCorporationBillsReceivable(CallInformation call)
-        {
-            // make sure the player has the accountant role
-            if (CorporationRole.Accountant.Is(call.Client.CorporationRole) == false &&
-                CorporationRole.JuniorAccountant.Is(call.Client.CorporationRole) == false)
-                throw new CrpAccessDenied(MLS.UI_CORP_ACCESSDENIED3);
-            
-            return Database.CRowset(
-                BillsDB.GET_RECEIVABLE,
-                new Dictionary<string, object>()
-                {
-                    {"_creditorID", call.Client.CorporationID}
-                }
-            );
-        }
-
-        public PyDataType GetCorporationBills(CallInformation call)
-        {
-            // make sure the player has the accountant role
-            if (CorporationRole.Accountant.Is(call.Client.CorporationRole) == false &&
-                CorporationRole.JuniorAccountant.Is(call.Client.CorporationRole) == false)
-                throw new CrpAccessDenied(MLS.UI_CORP_ACCESSDENIED3);
-            
-            return Database.CRowset(
-                BillsDB.GET_PAYABLE,
-                new Dictionary<string, object>()
-                {
-                    {"_debtorID", call.Client.CorporationID}
-                }
-            );
-        }
-
-        public PyDataType PayCorporationBill(PyInteger billID, CallInformation call)
-        {
-            return null;
-        }
-
-        public void PerformTimedEvents(object? sender, EventArgs args)
-        {
-            List<CorporationOffice> offices = this.CorporationDB.FindOfficesCloseToRenewal();
-
-            foreach (CorporationOffice office in offices)
-            {
-                long dueDate = office.DueDate;
-                int ownerID = this.ItemFactory.Stations[office.StationID].OwnerID;
-                int billID = (int) this.DB.CreateBill(
-                    BillTypes.RentalBill, office.CorporationID, ownerID,
-                    office.PeriodCost, dueDate, 0, (int) Types.OfficeFolder, office.StationID
-                );
-                this.CorporationDB.SetNextBillID(office.CorporationID, office.OfficeID, billID);
-                
-                // notify characters about the new bill
-                this.NotificationManager.NotifyCorporation(office.CorporationID, new OnBillReceived());
-            }
+            // notify characters about the new bill
+            Notifications.NotifyCorporation (office.CorporationID, new OnBillReceived ());
         }
     }
 }

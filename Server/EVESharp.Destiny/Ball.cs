@@ -1,38 +1,37 @@
-﻿namespace EVESharp.Destiny
+﻿namespace EVESharp.Destiny;
+
+public class Ball
 {
-    public class Ball
+    public BallHeader      Header      { get; set; }
+    public ExtraBallHeader ExtraHeader { get; set; }
+    public BallData        Data        { get; set; }
+    public byte            FormationId { get; set; }
+    public string          Name        { get; set; }
+    public MiniBall []     MiniBalls   { get; set; }
+
+    public FollowState    FollowState    { get; set; }
+    public FormationState FormationState { get; set; }
+    public TrollState     TrollState     { get; set; }
+    public MissileState   MissileState   { get; set; }
+    public GotoState      GotoState      { get; set; }
+    public WarpState      WarpState      { get; set; }
+    public MushroomState  MushroomState  { get; set; }
+
+    public override string ToString ()
     {
-        public BallHeader Header { get; set; }
-        public ExtraBallHeader ExtraHeader { get; set; }
-        public BallData Data { get; set; }
-        public byte FormationId { get; set; }
-        public string Name { get; set; }
-        public MiniBall[] MiniBalls { get; set; }
+        return "(" + Header.ItemId + (Name == null || Name == "A" ? ")" : " " + Name + ")");
+    }
 
-        public FollowState FollowState { get; set; }
-        public FormationState FormationState { get; set; }
-        public TrollState TrollState { get; set; }
-        public MissileState MissileState { get; set; }
-        public GotoState GotoState { get; set; }
-        public WarpState WarpState { get; set; }
-        public MushroomState MushroomState { get; set; }
+    public override bool Equals (object obj)
+    {
+        if (obj == null || this.GetType () != obj.GetType ())
+            return false;
 
-        public override string ToString()
-        {
-            return "(" + Header.ItemId + ((Name == null || Name == "A") ? ")" : " " + Name + ")");
-        }
+        return ((Ball) obj).Header.ItemId == Header.ItemId;
+    }
 
-        public override bool Equals(object obj)
-        {
-            if (obj == null || GetType() != obj.GetType())
-                return false;
-
-            return ((Ball)obj).Header.ItemId == Header.ItemId;
-        }
-
-        public override int GetHashCode()
-        {
-            return Header.ItemId.GetHashCode();
-        }
+    public override int GetHashCode ()
+    {
+        return Header.ItemId.GetHashCode ();
     }
 }

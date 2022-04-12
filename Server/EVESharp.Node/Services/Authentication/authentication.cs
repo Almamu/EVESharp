@@ -22,39 +22,32 @@
     Creator: Almamu
 */
 
-using EVESharp.Common.Services;
+using EVESharp.EVE.Services;
 using EVESharp.Node.Configuration;
-using EVESharp.Node.Network;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Database;
 using EVESharp.PythonTypes.Types.Primitives;
 
-namespace EVESharp.Node.Services.Network
+namespace EVESharp.Node.Services.Authentication;
+
+public class authentication : Service
 {
-    public class authentication : IService
+    private readonly Configuration.Authentication mConfiguration;
+    public override  AccessLevel                  AccessLevel => AccessLevel.None;
+
+    public authentication (Configuration.Authentication configuration)
     {
-        private readonly Authentication mConfiguration = null;
+        this.mConfiguration = configuration;
+    }
 
-        public authentication(Authentication configuration)
-        {
-            this.mConfiguration = configuration;
-        }
-
-        public PyDataType GetPostAuthenticationMessage(CallInformation call)
-        {
-            if (this.mConfiguration.MessageType == AuthenticationMessageType.NoMessage)
-                return null;
-
-            if (this.mConfiguration.MessageType == AuthenticationMessageType.HTMLMessage)
-            {
-                return KeyVal.FromDictionary(new PyDictionary
-                    {
-                        ["message"] = this.mConfiguration.Message
-                    }
-                );
-            }
-
+    public PyDataType GetPostAuthenticationMessage (CallInformation call)
+    {
+        if (this.mConfiguration.MessageType == AuthenticationMessageType.NoMessage)
             return null;
-        }
+
+        if (this.mConfiguration.MessageType == AuthenticationMessageType.HTMLMessage)
+            return KeyVal.FromDictionary (new PyDictionary {["message"] = this.mConfiguration.Message});
+
+        return null;
     }
 }

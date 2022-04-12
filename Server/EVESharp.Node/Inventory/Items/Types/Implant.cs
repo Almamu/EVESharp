@@ -1,28 +1,24 @@
-using EVESharp.Node.Exceptions.character;
-using EVESharp.Node.StaticData.Inventory;
+using EVESharp.EVE.Client.Exceptions.character;
+using EVESharp.EVE.StaticData.Inventory;
 
-namespace EVESharp.Node.Inventory.Items.Types
+namespace EVESharp.Node.Inventory.Items.Types;
+
+public class Implant : ItemEntity
 {
-    public class Implant : ItemEntity
+    public Implant (Information.Item info) : base (info) { }
+
+    // check prerequirements for this item
+    public override void CheckPrerequisites (Character character)
     {
-        public Implant(ItemEntity from) : base(from)
-        {
-        }
-        
-        // check prerequirements for this item
-        public override void CheckPrerequisites(Character character)
-        {
-            base.CheckPrerequisites(character);
+        base.CheckPrerequisites (character);
 
-            // check if the implant requires other implant used
-            if (this.Attributes.AttributeExists(StaticData.Inventory.Attributes.prereqimplant) == false)
-                return;
+        // check if the implant requires other implant used
+        if (Attributes.AttributeExists (AttributeTypes.prereqimplant) == false)
+            return;
 
-            int typeID = (int) this.Attributes[StaticData.Inventory.Attributes.prereqimplant].Integer;
-            Type type = this.ItemFactory.TypeManager[typeID];
+        int typeID = (int) Attributes [AttributeTypes.prereqimplant].Integer;
 
-            if (character.PluggedInImplantsByTypeID.ContainsKey(typeID) == false)
-                throw new PrereqImplantMissing(type);
-        }
+        if (character.PluggedInImplantsByTypeID.ContainsKey (typeID) == false)
+            throw new PrereqImplantMissing (typeID);
     }
 }
