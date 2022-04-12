@@ -57,8 +57,6 @@ public class Station : ItemInventory
             ["serviceMask"]              = Operations.ServiceMask
         };
 
-        // TODO: CREATE OBJECTS FOR CONSTELLATION AND REGION ID SO THESE CAN BE FETCHED FROM MEMORY INSTEAD OF DATABASE
-
         return KeyVal.FromDictionary (data);
     }
 

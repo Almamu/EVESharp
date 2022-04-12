@@ -472,8 +472,8 @@ public class character : Service
         CorporationDB.GetTitleInformation (
             character.CorporationID, character.TitleMask,
             out long roles, out long rolesAtHQ, out long rolesAtBase, out long rolesAtOther,
-            out long grantableRoles, out long grantableRolesAtHQ, out long grantableRolesAtBase,
-            out long grantableRolesAtOther, out _
+            out long _, out long _, out long _,
+            out long _, out _
         );
 
         updates.CorporationRole = character.Roles | roles;

@@ -112,7 +112,6 @@ public class lookupSvc : Service
 
     public PyDataType LookupCorporationsOrAlliances (PyString criteria, PyDataType exactMatch, PyDataType warableEntitysOnly, CallInformation call)
     {
-        // TODO: warableEntitysOnly
         bool exact = false;
 
         if (exactMatch is PyBool exactBool)

@@ -28,35 +28,37 @@ public class skillMgr : ClientBoundService
     private const   int           MAXIMUM_ATTRIBUTE_POINTS       = 15;
     private const   int           MINIMUM_ATTRIBUTE_POINTS       = 5;
     private const   int           MAXIMUM_TOTAL_ATTRIBUTE_POINTS = 39;
-    public override AccessLevel   AccessLevel   => AccessLevel.None;
-    private         SkillDB       DB            { get; }
-    private         ItemFactory   ItemFactory   { get; }
-    private         TimerManager  TimerManager  { get; }
-    private         SystemManager SystemManager => ItemFactory.SystemManager;
-    private         ILogger       Log           { get; }
-    private         Character     Character     { get; }
-    private         DogmaUtils    DogmaUtils    { get; }
+    public override AccessLevel   AccessLevel    => AccessLevel.None;
+    private         SkillDB       DB             { get; }
+    private         ItemFactory   ItemFactory    { get; }
+    private         Timers        Timers         { get; }
+    private         SystemManager SystemManager  => ItemFactory.SystemManager;
+    private         ILogger       Log            { get; }
+    private         Character     Character      { get; }
+    private         DogmaUtils    DogmaUtils     { get; }
+    private         Timer         NextSkillTimer { get; set; }
+    private         Timer         ReSpecTimer    { get; set; }
 
     public skillMgr (
-        SkillDB             db,      ItemFactory itemFactory, TimerManager timerManager, DogmaUtils dogmaUtils,
+        SkillDB             db,      ItemFactory itemFactory, Timers timers, DogmaUtils dogmaUtils,
         BoundServiceManager manager, ILogger     logger
     ) : base (manager)
     {
         DB           = db;
         ItemFactory  = itemFactory;
-        TimerManager = timerManager;
+        Timers = timers;
         DogmaUtils   = dogmaUtils;
         Log          = logger;
     }
 
     protected skillMgr (
-        SkillDB             db,      ItemFactory itemFactory, TimerManager timerManager, DogmaUtils dogmaUtils,
+        SkillDB             db,      ItemFactory itemFactory, Timers timers, DogmaUtils dogmaUtils,
         BoundServiceManager manager, ILogger     logger,      Session      session
     ) : base (manager, session, session.CharacterID)
     {
         DB           = db;
         ItemFactory  = itemFactory;
-        TimerManager = timerManager;
+        Timers = timers;
         DogmaUtils   = dogmaUtils;
         Character    = ItemFactory.GetItem <Character> (ObjectID);
         Log          = logger;
@@ -77,13 +79,13 @@ public class skillMgr : ClientBoundService
         // send notification of skill training started
         DogmaUtils.QueueMultiEvent (Session.CharacterID, new OnSkillStartTraining (entry.Skill));
 
-        TimerManager.EnqueueItemTimer (entry.Skill.ExpiryTime, this.OnSkillTrainingCompleted, entry.Skill.ID);
+        NextSkillTimer = Timers.EnqueueTimer (entry.Skill.ExpiryTime, this.OnSkillTrainingCompleted, entry.Skill.ID);
     }
 
     private void SetupReSpecTimers ()
     {
         if (Character.FreeReSpecs == 0 && Character.NextReSpecTime > 0)
-            TimerManager.EnqueueItemTimer (Character.NextReSpecTime, this.OnNextReSpecAvailable, Character.ID);
+            ReSpecTimer = Timers.EnqueueTimer (Character.NextReSpecTime, this.OnNextReSpecAvailable, Character.ID);
     }
 
     private void InitializeCharacter ()
@@ -137,7 +139,10 @@ public class skillMgr : ClientBoundService
         if (entry.Skill.ExpiryTime == 0)
             return;
 
-        TimerManager.DequeueItemTimer (entry.Skill.ID, entry.Skill.ExpiryTime);
+        if (NextSkillTimer is not null)
+            Timers.DequeueTimer (NextSkillTimer);
+
+        NextSkillTimer = null;
     }
 
     private void FreeReSpecTimers ()
@@ -145,7 +150,10 @@ public class skillMgr : ClientBoundService
         if (Character.NextReSpecTime == 0)
             return;
 
-        TimerManager.DequeueItemTimer (Character.ID, Character.NextReSpecTime);
+        if (ReSpecTimer is not null)
+            Timers.DequeueTimer (ReSpecTimer);
+
+        ReSpecTimer = null;
     }
 
     protected override void OnClientDisconnected ()
@@ -763,6 +771,6 @@ public class skillMgr : ClientBoundService
         if (this.MachoResolveObject (bindParams, call) != BoundServiceManager.MachoNet.NodeID)
             throw new CustomError ("Trying to bind an object that does not belong to us!");
 
-        return new skillMgr (DB, ItemFactory, TimerManager, DogmaUtils, BoundServiceManager, Log, call.Session);
+        return new skillMgr (DB, ItemFactory, Timers, DogmaUtils, BoundServiceManager, Log, call.Session);
     }
 }

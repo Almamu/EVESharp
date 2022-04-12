@@ -131,7 +131,6 @@ public class BoundServiceManager : IServiceManager <int>
 
     public void OnClientDisconnected (Session session)
     {
-        // TODO: IMPLEMENT THIS LIKE AN EVENT
         foreach ((int _, BoundService service) in BoundServices)
         {
             if (service.IsClientAllowedToCall (session) == false)

@@ -19,7 +19,7 @@ public class PyToken : PyDataType
 
     public override int GetHashCode ()
     {
-        return Token is not null ? Token.GetHashCode () : 0;
+        return Token is not null ? Token.GetHashCode () : PyNone.HASH_VALUE;
     }
 
     public static implicit operator PyToken (string value)

@@ -324,7 +324,7 @@ public class ItemDB : DatabaseAccessor
                         reader.GetDouble (3)
                     );
 
-                attributes [typeID] [attribute.Info.ID] = attribute;
+                attributes [typeID] [attribute.ID] = attribute;
             }
 
             return attributes;
@@ -1022,7 +1022,7 @@ public class ItemDB : DatabaseAccessor
                         reader.GetInt64 (1)
                     );
 
-                result [attribute.Info.ID] = attribute;
+                result [attribute.ID] = attribute;
             }
 
             return result;
@@ -1090,7 +1090,7 @@ public class ItemDB : DatabaseAccessor
                 command.Parameters.Clear ();
 
                 command.Parameters.AddWithValue ("@itemID",      item.ID);
-                command.Parameters.AddWithValue ("@attributeID", pair.Value.Info.ID);
+                command.Parameters.AddWithValue ("@attributeID", pair.Value.ID);
 
                 if (pair.Value.ValueType == Attribute.ItemAttributeValueType.Integer)
                     command.Parameters.AddWithValue ("@valueInt", pair.Value.Integer);

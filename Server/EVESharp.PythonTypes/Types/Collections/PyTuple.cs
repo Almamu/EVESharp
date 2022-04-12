@@ -46,7 +46,7 @@ public class PyTuple : PyDataType, IEnumerable <PyDataType>
 
         foreach (PyDataType data in this.mList)
         {
-            int elementHash = data?.GetHashCode () ?? 0;
+            int elementHash = data?.GetHashCode () ?? PyNone.HASH_VALUE;
             currentHash =  (currentHash ^ elementHash) * mult;
             mult        += 82520 + length + length; // shift the multiplier
         }

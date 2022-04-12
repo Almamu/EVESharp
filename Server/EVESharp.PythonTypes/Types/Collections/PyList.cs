@@ -116,7 +116,7 @@ public class PyList : PyDataType, IPyListEnumerable <PyDataType>
 
         foreach (PyDataType data in this.mList)
         {
-            value |=  data?.GetHashCode () ?? 0;
+            value |=  data?.GetHashCode () ?? PyNone.HASH_VALUE;
             value <<= 3;
         }
 

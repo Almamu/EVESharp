@@ -20,7 +20,8 @@ public class AttributeList : IEnumerable
             if (this.mDefaultAttributes.TryGetValue (index, out Attribute defAttrib))
                 return this.mItemAttributes [index] = defAttrib;
 
-            throw new Exception ($"Trying to get attribute {index} which is not assigned to the item yet");
+            // TODO: GET A GOOD DEFAULT VALUE FOR IT, ALTHOUGH ON MOST SITUATIONS THIS MEANS THE ATTRIBUTE IS GOING TO BE UPDATED MANUALLY EITHER WAY
+            return this.mItemAttributes [index] = new Attribute (index, 0);
         }
 
         set => this.mItemAttributes [index] = value;
@@ -58,7 +59,7 @@ public class AttributeList : IEnumerable
 
     public bool AttributeExists (Attribute attribute)
     {
-        return this.AttributeExists (attribute.Info.ID);
+        return this.AttributeExists (attribute.ID);
     }
 
     public bool AttributeExists (int attributeID)
@@ -74,13 +75,13 @@ public class AttributeList : IEnumerable
     public void MergeFrom (AttributeList list)
     {
         foreach (Attribute attrib in list)
-            this [attrib.Info.ID] = attrib.Clone ();
+            this [attrib.ID] = attrib.Clone ();
     }
 
     public void MergeInto (AttributeList list)
     {
         foreach (Attribute attrib in this)
-            list [attrib.Info.ID] = attrib.Clone ();
+            list [attrib.ID] = attrib.Clone ();
     }
 
     public static implicit operator PyDictionary (AttributeList list)

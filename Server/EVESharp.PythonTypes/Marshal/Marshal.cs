@@ -118,7 +118,11 @@ public class Marshal
     /// <returns></returns>
     private static bool CanBeSaved (PyDataType data)
     {
+        if (data is null || data is PyNone)
+            return false;
         if (data is PyString {IsStringTableEntry: false} pyString && pyString.Value.Length > 1 && pyString.IsUTF8 == false)
+            return true;
+        if (data is PyTuple {Count: > 0})
             return true;
 
         switch (data)
@@ -126,7 +130,6 @@ public class Marshal
             case PyObject:
             case PyObjectData:
             case PyDictionary:
-            case PyTuple:
             case PySubStruct:
             case PyBuffer:
                 return true;
@@ -146,7 +149,7 @@ public class Marshal
     private void Process (BinaryWriter writer, PyDataType data)
     {
         long opcodePosition = writer.BaseStream.Position;
-        int  hash           = data?.GetHashCode () ?? 0;
+        int  hash           = data?.GetHashCode () ?? PyNone.HASH_VALUE;
         bool canBeSaved     = CanBeSaved (data);
 
         // ignore specific values as they're not really worth it
@@ -578,8 +581,6 @@ public class Marshal
     /// by an extended size indicator. This is commonly used by EVE as the request body of a CallReq packet, and
     /// after some investigation looks like it might not be decoded by the proxy at all, just forwarded as is to the
     /// node the packet is destinated to, thus saving processing power on the node.
-    ///
-    /// TODO: CHECK IF THIS HYPOTHETICAL SITUATION IS REALLY WHAT'S GOING ON OR NOT (AND IF THE WHOLE PACKET IS ACTUALLY SENT OR JUST THE SUBSTREAM
     ///
     /// The following opcodes are supported
     /// <seealso cref="Opcode.SubStream" /> 2 bytes minimum, extended size indicator, data is encoded as a normal Marshal

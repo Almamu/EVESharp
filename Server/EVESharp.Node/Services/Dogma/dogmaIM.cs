@@ -71,7 +71,6 @@ public class dogmaIM : ClientBoundService
 
             ItemInfo itemInfo = new ItemInfo ();
 
-            // TODO: find all the items inside this ship that are not characters
             itemInfo.AddRow (ship.ID, ship.GetEntityRow (), ship.GetEffects (), ship.Attributes, DateTime.UtcNow.ToFileTime ());
 
             foreach ((int _, ItemEntity item) in ship.Items)

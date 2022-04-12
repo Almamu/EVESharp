@@ -11,10 +11,12 @@ using EVESharp.Node.Database;
 using EVESharp.Node.Inventory;
 using EVESharp.Node.Inventory.Items.Types;
 using EVESharp.Node.Notifications;
+using EVESharp.Node.Server.Shared.Helpers;
 using EVESharp.Node.Sessions;
 using EVESharp.PythonTypes;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Database;
+using EVESharp.PythonTypes.Types.Network;
 using EVESharp.PythonTypes.Types.Primitives;
 using Serilog;
 
@@ -30,25 +32,29 @@ public class LSC : Service
     private         ILogger     Log         { get; }
     public override AccessLevel AccessLevel => AccessLevel.Location;
 
-    private MessagesDB         MessagesDB    { get; }
-    private ChatDB             DB            { get; }
-    private CharacterDB        CharacterDB   { get; }
-    private ItemFactory        ItemFactory   { get; }
-    private NotificationSender Notifications { get; }
-    private MailManager        MailManager   { get; }
+    private MessagesDB           MessagesDB           { get; }
+    private ChatDB               DB                   { get; }
+    private CharacterDB          CharacterDB          { get; }
+    private ItemFactory          ItemFactory          { get; }
+    private NotificationSender   Notifications        { get; }
+    private MailManager          MailManager          { get; }
+    private RemoteServiceManager RemoteServiceManager { get; }
+    private PacketCallHelper     PacketCallHelper     { get; }
 
     public LSC (
-        ChatDB             db,                 MessagesDB  messagesDB, CharacterDB characterDB, ItemFactory itemFactory, ILogger logger,
-        NotificationSender notificationSender, MailManager mailManager
+        ChatDB             db,                 MessagesDB  messagesDB,  CharacterDB          characterDB,          ItemFactory itemFactory, ILogger logger,
+        NotificationSender notificationSender, MailManager mailManager, RemoteServiceManager remoteServiceManager,  PacketCallHelper packetCallHelper
     )
     {
-        DB            = db;
-        MessagesDB    = messagesDB;
-        CharacterDB   = characterDB;
-        ItemFactory   = itemFactory;
-        Notifications = notificationSender;
-        MailManager   = mailManager;
-        Log           = logger;
+        DB                   = db;
+        MessagesDB           = messagesDB;
+        CharacterDB          = characterDB;
+        ItemFactory          = itemFactory;
+        Notifications        = notificationSender;
+        MailManager          = mailManager;
+        Log                  = logger;
+        RemoteServiceManager = remoteServiceManager;
+        PacketCallHelper     = packetCallHelper;
     }
 
     private void ParseTupleChannelIdentifier (PyTuple tuple, out int channelID, out string channelType, out int? entityID)
@@ -531,10 +537,9 @@ public class LSC : Service
         {
             // this user's character might not be in the service
             // so fetch the name from the database
-            // TODO: SUPPORT REMOTE SERVICE CALLS AGAIN
-            /*
-            call.OriginalCall.Client.SendException(
+            PacketCallHelper.SendException (
                 call.OriginalCall,
+                PyPacket.PacketType.CALL_REQ,
                 new UserError(
                     answer,
                     new PyDictionary
@@ -544,12 +549,12 @@ public class LSC : Service
                     }
                 )
             );
-            */
+
+            return;
         }
 
         // return an empty response to the original calling client, this should get mechanism going for the JoinChannel notification
-        // TODO: SUPPORT REMOTE SERVICE CALLS AGAIN
-        // callInfo.Client.Transport.SendCallResult(call.OriginalCall, null);
+        PacketCallHelper.SendCallResult (call.OriginalCall, null);
 
         // character has accepted, notify all users of the channel
         string channelType = DB.GetChannelType (call.ChannelID);
@@ -569,13 +574,7 @@ public class LSC : Service
         // if the call timed out the character is not connected
         InviteExtraInfo call = callInfo.ExtraInfo as InviteExtraInfo;
 
-        // TODO: SUPPORT REMOTE SERVICE CALLS AGAIN
-        /*
-        call.OriginalCall.Client.SendException(
-            call.OriginalCall,
-            new ChtCharNotReachable(call.ToCharacterID)
-        );
-        */
+        this.PacketCallHelper.SendException (call.OriginalCall, PyPacket.PacketType.CALL_REQ, new ChtCharNotReachable (call.ToCharacterID));
     }
 
     public PyDataType Invite (PyInteger characterID, PyInteger channelID, PyString channelTitle, PyBool addAllowed, CallInformation call)
@@ -618,15 +617,11 @@ public class LSC : Service
                 FromCharacterID = callerCharacterID
             };
 
-            // no timeout for this call
-            // TODO: SUPPORT REMOTE SERVICE CALLS AGAIN
-            /*
-            call.Client.Transport.SendServiceCall(
-                "LSC", "ChatInvite", args, new PyDictionary(),
-                InviteAnswerCallback, InviteTimeoutCallback,
+            RemoteServiceManager.SendServiceCall (
+                characterID, "LSC", "ChatInvite", args, new PyDictionary (),
+                this.InviteAnswerCallback, this.InviteTimeoutCallback,
                 info, ProvisionalResponse.DEFAULT_TIMEOUT - 5
             );
-            */
 
             // subscribe the user to the chat
             DB.JoinChannel (channelID, characterID);

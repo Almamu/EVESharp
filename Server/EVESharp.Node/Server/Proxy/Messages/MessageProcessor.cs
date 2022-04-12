@@ -1,6 +1,7 @@
 ﻿using System;
 using EVESharp.EVE.Sessions;
 using EVESharp.Node.Server.Shared;
+using EVESharp.Node.Server.Shared.Helpers;
 using EVESharp.Node.Server.Shared.Messages;
 using EVESharp.Node.Server.Shared.Transports;
 using EVESharp.Node.Services;
@@ -17,9 +18,9 @@ public class MessageProcessor : Shared.Messages.MessageProcessor
     public SessionManager SessionManager { get; }
 
     public MessageProcessor (
-        IMachoNet machoNet, ILogger logger, ServiceManager serviceManager, BoundServiceManager boundServiceManager, SessionManager sessionManager
+        IMachoNet machoNet, ILogger logger, ServiceManager serviceManager, BoundServiceManager boundServiceManager, SessionManager sessionManager, RemoteServiceManager remoteServiceManager, PacketCallHelper packetCallHelper
     ) :
-        base (machoNet, logger, serviceManager, boundServiceManager, 100)
+        base (machoNet, logger, serviceManager, boundServiceManager, 100, remoteServiceManager, packetCallHelper)
     {
         SessionManager = sessionManager;
     }

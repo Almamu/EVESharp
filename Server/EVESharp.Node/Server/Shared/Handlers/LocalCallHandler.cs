@@ -4,7 +4,9 @@ using EVESharp.EVE;
 using EVESharp.EVE.Account;
 using EVESharp.EVE.Packets.Exceptions;
 using EVESharp.EVE.Sessions;
+using EVESharp.Node.Server.Shared.Helpers;
 using EVESharp.Node.Server.Shared.Messages;
+using EVESharp.Node.Server.Shared.Transports;
 using EVESharp.Node.Services;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Network;
@@ -15,22 +17,26 @@ namespace EVESharp.Node.Server.Shared.Handlers;
 
 public class LocalCallHandler
 {
-    private int                 ErrorID             { get; set; }
-    public  IMachoNet           MachoNet            { get; }
-    public  MessageProcessor    MessageProcessor    { get; }
-    public  ServiceManager      ServiceManager      { get; }
-    public  BoundServiceManager BoundServiceManager { get; }
-    public  ILogger             Log                 { get; }
+    private int                  ErrorID              { get; set; }
+    public  IMachoNet            MachoNet             { get; }
+    public  MessageProcessor     MessageProcessor     { get; }
+    public  ServiceManager       ServiceManager       { get; }
+    public  BoundServiceManager  BoundServiceManager  { get; }
+    public  RemoteServiceManager RemoteServiceManager { get; }
+    public  ILogger              Log                  { get; }
+    public  PacketCallHelper     PacketCallHelper     { get; }
 
     public LocalCallHandler (
-        IMachoNet machoNet, MessageProcessor processor, ILogger logger, ServiceManager serviceManager, BoundServiceManager boundServiceManager
+        IMachoNet machoNet, MessageProcessor processor, ILogger logger, ServiceManager serviceManager, BoundServiceManager boundServiceManager, RemoteServiceManager remoteServiceManager, PacketCallHelper packetCallHelper
     )
     {
-        MachoNet            = machoNet;
-        MessageProcessor    = processor;
-        ServiceManager      = serviceManager;
-        BoundServiceManager = boundServiceManager;
-        Log                 = logger;
+        MachoNet             = machoNet;
+        MessageProcessor     = processor;
+        ServiceManager       = serviceManager;
+        BoundServiceManager  = boundServiceManager;
+        RemoteServiceManager = remoteServiceManager;
+        Log                  = logger;
+        PacketCallHelper     = packetCallHelper;
     }
 
     private PyDataType HandleNormalCallReq (PyTuple information, string service, string method, CallInformation call)
@@ -113,15 +119,15 @@ public class LocalCallHandler
             else
                 callResult = this.HandleNormalCallReq (info, service, call, callInformation);
 
-            this.SendCallResult (callInformation, callResult, callInformation.ResultOutOfBounds);
+            PacketCallHelper.SendCallResult (callInformation, callResult, callInformation.ResultOutOfBounds);
         }
         catch (PyException e)
         {
-            this.SendException (callInformation, packet.Type, e);
+            PacketCallHelper.SendException (callInformation, packet.Type, e);
         }
         catch (ProvisionalResponse provisional)
         {
-            this.SendProvisionalResponse (callInformation, provisional);
+            PacketCallHelper.SendProvisionalResponse (callInformation, provisional);
         }
         catch (Exception ex)
         {
@@ -134,14 +140,14 @@ public class LocalCallHandler
 
             // send client a proper notification about the error based on the roles
             if ((callInformation.Session.Role & (int) Roles.ROLE_PROGRAMMER) == (int) Roles.ROLE_PROGRAMMER)
-                this.SendException (
+                PacketCallHelper.SendException (
                     callInformation, packet.Type,
                     new CustomError (
                         $"An internal server error occurred.<br><b>Reference</b>: {errorID}<br><b>Message</b>: {ex.Message}<br><b>Stack trace</b>:<br>{ex.StackTrace.Replace ("\n", "<br>")}"
                     )
                 );
             else
-                this.SendException (callInformation, packet.Type, new CustomError ($"An internal server error occurred. <b>Reference</b>: {errorID}"));
+                PacketCallHelper.SendException (callInformation, packet.Type, new CustomError ($"An internal server error occurred. <b>Reference</b>: {errorID}"));
         }
     }
 
@@ -160,126 +166,13 @@ public class LocalCallHandler
 
         PySubStream subStream = machoMessage.Packet.Payload [0] as PySubStream;
 
-        ServiceManager.ReceivedRemoteCallAnswer (dest.CallID, subStream.Stream);
-    }
+        Session playerSession = null;
 
-    /// <summary>
-    /// Sends a provisional response to the given call
-    /// </summary>
-    /// <param name="answerTo"></param>
-    /// <param name="response"></param>
-    private void SendProvisionalResponse (CallInformation answerTo, ProvisionalResponse response)
-    {
-        // ensure destination has clientID in it
-        PyAddressClient source = answerTo.Source as PyAddressClient;
-
-        source.ClientID = answerTo.Session.UserID;
-
-        PyPacket result = new PyPacket (PyPacket.PacketType.CALL_RSP)
-        {
-            // switch source and dest
-            Source      = answerTo.Destination,
-            Destination = source,
-            UserID      = source.ClientID,
-            Payload     = new PyTuple (0),
-            OutOfBounds = new PyDictionary
-            {
-                ["provisional"] = new PyTuple (3)
-                {
-                    [0] = response.Timeout, // macho timeout in seconds
-                    [1] = response.EventID,
-                    [2] = response.Arguments
-                }
-            }
-        };
-
-        MachoNet.QueueOutputPacket (null, result);
-    }
-
-    /// <summary>
-    /// Sends a call result to the given call
-    /// </summary>
-    /// <param name="answerTo"></param>
-    /// <param name="content"></param>
-    /// <param name="outOfBounds"></param>
-    private void SendCallResult (CallInformation answerTo, PyDataType content, PyDictionary outOfBounds)
-    {
-        // ensure destination has clientID in it
-        PyAddressClient originalSource = answerTo.Source as PyAddressClient;
-        originalSource.ClientID = answerTo.Session.UserID;
-
-        MachoNet.QueueOutputPacket (
-            answerTo.Transport,
-            new PyPacket (PyPacket.PacketType.CALL_RSP)
-            {
-                // switch source and dest
-                Source      = answerTo.Destination,
-                Destination = originalSource,
-                UserID      = originalSource.ClientID,
-                Payload     = new PyTuple (1) {[0] = new PySubStream (content)},
-                OutOfBounds = outOfBounds
-            }
-        );
-    }
-
-    /// <summary>
-    /// Sends an exception as answer to the given call
-    /// </summary>
-    /// <param name="answerTo"></param>
-    /// <param name="packetType"></param>
-    /// <param name="content"></param>
-    private void SendException (CallInformation answerTo, PyPacket.PacketType packetType, PyDataType content)
-    {
-        // ensure destination has clientID in it
-        PyAddressClient source = answerTo.Source as PyAddressClient;
-
-        source.ClientID = answerTo.Session.UserID;
-
-        // build a new packet with the correct information
-        PyPacket result = new PyPacket (PyPacket.PacketType.ERRORRESPONSE)
-        {
-            // switch source and dest
-            Source      = answerTo.Destination,
-            Destination = source,
-            UserID      = source.ClientID,
-            Payload = new PyTuple (3)
-            {
-                [0] = (int) packetType,
-                [1] = (int) MachoErrorType.WrappedException,
-                [2] = new PyTuple (1) {[0] = new PySubStream (content)}
-            }
-        };
-
-        MachoNet.QueueOutputPacket (null, result);
-    }
-
-    /// <summary>
-    /// Sends an exception as answer to the given call
-    /// </summary>
-    /// <param name="destination"></param>
-    /// <param name="packetType"></param>
-    /// <param name="content"></param>
-    /// <param name="source"></param>
-    private void SendException (PyAddress source, PyAddress destination, PyPacket.PacketType packetType, PyDataType content)
-    {
-        int userID = 0;
-
-        if (destination is PyAddressClient client)
-            userID = client.ClientID;
-
-        PyPacket result = new PyPacket (PyPacket.PacketType.ERRORRESPONSE)
-        {
-            Source      = source,
-            Destination = destination,
-            UserID      = userID,
-            Payload = new PyTuple (3)
-            {
-                [0] = (int) packetType,
-                [1] = (int) MachoErrorType.WrappedException,
-                [2] = new PyTuple (1) {[0] = new PySubStream (content)}
-            }
-        };
-
-        MachoNet.QueueOutputPacket (null, result);
+        if (machoMessage.Transport is MachoClientTransport clientTransport)
+            playerSession = clientTransport.Session;
+        if (machoMessage.Packet.OutOfBounds?.TryGetValue ("Session", out PyDictionary session) == true)
+            playerSession = Session.FromPyDictionary (session);
+        
+        RemoteServiceManager.ReceivedRemoteCallAnswer (dest.CallID, subStream.Stream, playerSession);
     }
 }

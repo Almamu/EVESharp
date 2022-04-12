@@ -2,8 +2,10 @@
 
 public class PyNone : PyDataType
 {
+    public const int HASH_VALUE = -1;
+    
     public override int GetHashCode ()
     {
-        return 0;
+        return HASH_VALUE;
     }
 }

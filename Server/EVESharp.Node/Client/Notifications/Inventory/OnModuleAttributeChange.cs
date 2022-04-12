@@ -26,7 +26,7 @@ public class OnModuleAttributeChange : ClientNotification
         {
             Item.OwnerID,
             Item.ID,
-            Attribute.Info.ID,
+            Attribute.ID,
             DateTime.UtcNow.ToFileTimeUtc (),
             Attribute, // newValue
             Attribute // this should be oldValue, but the client doesn't check, so who cares

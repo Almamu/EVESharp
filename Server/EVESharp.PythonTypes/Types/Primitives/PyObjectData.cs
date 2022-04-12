@@ -13,6 +13,6 @@ public class PyObjectData : PyDataType
 
     public override int GetHashCode ()
     {
-        return (Name?.GetHashCode () ?? 0) ^ (Arguments?.GetHashCode () ?? 0) ^ 0x69548514;
+        return (Name?.GetHashCode () ?? PyNone.HASH_VALUE) ^ (Arguments?.GetHashCode () ?? PyNone.HASH_VALUE) ^ 0x69548514;
     }
 }

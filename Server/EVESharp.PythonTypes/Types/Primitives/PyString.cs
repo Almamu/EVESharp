@@ -35,7 +35,7 @@ public class PyString : PyDataType
 
     public override int GetHashCode ()
     {
-        return Value is not null ? Value.GetHashCode () : 0;
+        return Value is not null ? Value.GetHashCode () : PyNone.HASH_VALUE;
     }
 
     public static bool operator == (PyString obj, string value)

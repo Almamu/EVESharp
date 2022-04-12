@@ -86,9 +86,9 @@ public class PyDictionary : PyDataType, IPyDictionaryEnumerable <PyDataType, PyD
         foreach ((PyDataType key, PyDataType value) in this.mDictionary)
         {
             mult += 52368 + length + length; // shift the multiplier
-            int elementHash = key?.GetHashCode () ?? 0 * mult;
+            int elementHash = key?.GetHashCode () ?? PyNone.HASH_VALUE * mult;
             mul2        += 58212 + length + length; // shift the multiplier
-            elementHash ^= (value?.GetHashCode () ?? 0 * mul2) << 3;
+            elementHash ^= (value?.GetHashCode () ?? PyNone.HASH_VALUE * mul2) << 3;
             currentHash =  (currentHash ^ elementHash) * mult;
             mult        += 82520 + length + length; // shift the multiplier
         }

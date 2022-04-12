@@ -121,21 +121,26 @@ public class DatabaseConnection : IDatabaseConnection
 
             return charset == ColumnCharset.Byte ? FieldType.Str : FieldType.WStr;
         }
+        
+        if (type == typeof (byte []))
+            return FieldType.Bytes;
 
-        if (type == typeof (ulong)) return FieldType.UI8;
-        if (type == typeof (long)) return FieldType.I8;
-        if (type == typeof (uint)) return FieldType.UI4;
-        if (type == typeof (int)) return FieldType.I4;
-        if (type == typeof (ushort)) return FieldType.UI2;
-        if (type == typeof (short)) return FieldType.I2;
-        if (type == typeof (sbyte)) return FieldType.I1;
-        if (type == typeof (byte)) return FieldType.UI1;
-        if (type == typeof (byte [])) return FieldType.Bytes;
-        if (type == typeof (double) || type == typeof (decimal)) return FieldType.R8;
-        if (type == typeof (float)) return FieldType.R4;
-        if (type == typeof (bool)) return FieldType.Bool;
-
-        throw new InvalidDataException ($"Unknown field type {type}");
+        return Type.GetTypeCode (type) switch
+        {
+            TypeCode.Boolean => FieldType.Bool,
+            TypeCode.Byte => FieldType.UI1,
+            TypeCode.SByte => FieldType.I1,
+            TypeCode.Int16 => FieldType.I2,
+            TypeCode.UInt16 => FieldType.UI2,
+            TypeCode.Int32 => FieldType.I4,
+            TypeCode.UInt32 => FieldType.UI4,
+            TypeCode.Int64 => FieldType.I8,
+            TypeCode.UInt64 => FieldType.UI8,
+            TypeCode.Single => FieldType.R4,
+            TypeCode.Decimal => FieldType.R8,
+            TypeCode.Double => FieldType.R8,
+            _ => throw new InvalidDataException ($"Unknown field type {type}")
+        };
     }
 
     private void FetchDatabaseColumnCharsets (Configuration.Database configuration)

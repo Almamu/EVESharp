@@ -9,6 +9,7 @@ using EVESharp.Node.Inventory.Items.Types;
 using EVESharp.Node.Notifications;
 using EVESharp.Node.Notifications.Nodes.Corps;
 using EVESharp.Node.Server.Shared;
+using EVESharp.Node.Server.Shared.Helpers;
 using EVESharp.Node.Server.Shared.Messages;
 using EVESharp.Node.Services;
 using EVESharp.Node.Services.Corporations;
@@ -28,8 +29,8 @@ public class MessageProcessor : Shared.Messages.MessageProcessor
 
     public MessageProcessor (
         IMachoNet      machoNet,       ILogger             logger, NotificationSender notificationSender, ItemFactory itemFactory, SystemManager systemManager,
-        ServiceManager serviceManager, BoundServiceManager boundServiceManager
-    ) : base (machoNet, logger, serviceManager, boundServiceManager, 100)
+        ServiceManager serviceManager, BoundServiceManager boundServiceManager, RemoteServiceManager remoteServiceManager, PacketCallHelper packetCallHelper
+    ) : base (machoNet, logger, serviceManager, boundServiceManager, 100, remoteServiceManager, packetCallHelper)
     {
         Notifications = notificationSender;
         ItemFactory   = itemFactory;

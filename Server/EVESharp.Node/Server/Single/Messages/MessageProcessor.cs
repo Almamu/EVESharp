@@ -1,5 +1,6 @@
 ﻿using System;
 using EVESharp.Node.Server.Shared;
+using EVESharp.Node.Server.Shared.Helpers;
 using EVESharp.Node.Server.Shared.Messages;
 using EVESharp.Node.Services;
 using EVESharp.PythonTypes.Types.Collections;
@@ -11,8 +12,8 @@ namespace EVESharp.Node.Server.Single.Messages;
 
 public class MessageProcessor : Shared.Messages.MessageProcessor
 {
-    public MessageProcessor (IMachoNet machoNet, ILogger logger, ServiceManager serviceManager, BoundServiceManager boundServiceManager) :
-        base (machoNet, logger, serviceManager, boundServiceManager, 100) { }
+    public MessageProcessor (IMachoNet machoNet, ILogger logger, ServiceManager serviceManager, BoundServiceManager boundServiceManager, RemoteServiceManager remoteServiceManager, PacketCallHelper packetCallHelper) :
+        base (machoNet, logger, serviceManager, boundServiceManager, 100, remoteServiceManager, packetCallHelper) { }
 
     protected override void HandleMessage (MachoMessage machoMessage)
     {

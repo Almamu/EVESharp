@@ -40,6 +40,7 @@ using EVESharp.Node.Inventory;
 using EVESharp.Node.Market;
 using EVESharp.Node.Notifications;
 using EVESharp.Node.Server.Shared;
+using EVESharp.Node.Server.Shared.Helpers;
 using EVESharp.Node.Server.Shared.Messages;
 using EVESharp.Node.Server.Shared.Transports;
 using EVESharp.Node.Services;
@@ -212,10 +213,12 @@ internal class Program
                 dependencies.Register <Groups> (Lifestyle.Singleton);
                 dependencies.Register <StationManager> (Lifestyle.Singleton);
                 dependencies.Register <ItemFactory> (Lifestyle.Singleton);
-                dependencies.Register <TimerManager> (Lifestyle.Singleton);
+                dependencies.Register <Timers> (Lifestyle.Singleton);
                 dependencies.Register <SystemManager> (Lifestyle.Singleton);
                 dependencies.Register <ServiceManager> (Lifestyle.Singleton);
                 dependencies.Register <BoundServiceManager> (Lifestyle.Singleton);
+                dependencies.Register <RemoteServiceManager>(Lifestyle.Singleton);
+                dependencies.Register <PacketCallHelper>(Lifestyle.Singleton);
                 dependencies.Register <NotificationSender> (Lifestyle.Singleton);
                 dependencies.Register <ExpressionManager> (Lifestyle.Singleton);
                 dependencies.Register <WalletManager> (Lifestyle.Singleton);
@@ -341,7 +344,7 @@ internal class Program
                 dependencies.GetInstance <MessageProcessor <MachoMessage>> ();
 
                 log.Information ("Initializing timer manager");
-                dependencies.GetInstance <TimerManager> ().Start ();
+                dependencies.GetInstance <Timers> ().Start ();
                 log.Debug ("Done");
 
                 // do some parallel initialization, cache priming and static item loading can be performed in parallel

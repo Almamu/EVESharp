@@ -18,14 +18,16 @@ namespace EVESharp.Node.Services.Characters;
 [MustBeCharacter]
 public class bookmark : Service
 {
-    public override AccessLevel        AccessLevel => AccessLevel.None;
-    private         DatabaseConnection Database    { get; }
-    private         ItemFactory        ItemFactory { get; }
+    public override AccessLevel          AccessLevel          => AccessLevel.None;
+    private         DatabaseConnection   Database             { get; }
+    private         ItemFactory          ItemFactory          { get; }
+    private         RemoteServiceManager RemoteServiceManager { get; }
 
-    public bookmark (DatabaseConnection connection, ItemFactory itemFactory)
+    public bookmark (DatabaseConnection connection, ItemFactory itemFactory, RemoteServiceManager remoteServiceManager)
     {
-        Database    = connection;
-        ItemFactory = itemFactory;
+        Database             = connection;
+        ItemFactory          = itemFactory;
+        RemoteServiceManager = remoteServiceManager;
     }
 
     public PyDataType GetBookmarks (CallInformation call)
@@ -80,12 +82,10 @@ public class bookmark : Service
         );
 
         // send a request to the client to update the bookmarks
-        // TODO: SUPPORT REMOTE SERVICE CALLS AGAIN
-        /*
-        call.Client.Transport.SendServiceCall("addressbook", "OnBookmarkAdd",
-            new PyTuple(1) {[0] = bookmark}, new PyDictionary(), null);
-        */
-
+        RemoteServiceManager.SendServiceCall (
+            call.Session, "addressbook", "OnBookmarkAdd", new PyTuple (1) {[0] = bookmark}, new PyDictionary ()
+        );
+        
         return new PyTuple (7)
         {
             [0] = bookmarkID, // bookmarkID

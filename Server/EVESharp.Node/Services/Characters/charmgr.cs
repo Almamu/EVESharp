@@ -11,7 +11,6 @@ using EVESharp.PythonTypes.Types.Primitives;
 
 namespace EVESharp.Node.Services.Characters;
 
-[MustBeCharacter]
 public class charmgr : Service
 {
     public override AccessLevel   AccessLevel   => AccessLevel.None;
@@ -33,16 +32,19 @@ public class charmgr : Service
         return DB.GetPublicInfo (characterID);
     }
 
+    [MustBeCharacter]
     public PyDataType GetPublicInfo3 (PyInteger characterID, CallInformation call)
     {
         return DB.GetPublicInfo3 (characterID);
     }
 
+    [MustBeCharacter]
     public PyDataType GetTopBounties (CallInformation call)
     {
         return DB.GetTopBounties ();
     }
 
+    [MustBeCharacter]
     public PyDataType AddToBounty (PyInteger characterID, PyInteger bounty, CallInformation call)
     {
         // get character's object
@@ -63,6 +65,7 @@ public class charmgr : Service
         return null;
     }
 
+    [MustBeCharacter]
     public PyDataType GetPrivateInfo (PyInteger characterID, CallInformation call)
     {
         return DB.GetPrivateInfo (characterID);

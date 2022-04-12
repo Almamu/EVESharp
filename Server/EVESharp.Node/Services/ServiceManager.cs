@@ -53,10 +53,8 @@ namespace EVESharp.Node.Services;
 
 public class ServiceManager : IServiceManager <string>
 {
-    private readonly Dictionary <int, RemoteCall> mCallCallbacks = new Dictionary <int, RemoteCall> ();
-    private          int                          mNextCallID;
     public           CacheStorage                 CacheStorage     { get; }
-    public           TimerManager                 TimerManager     { get; }
+    public           Timers                 Timers     { get; }
     private          ILogger                      Log              { get; }
     public           objectCaching                objectCaching    { get; }
     public           machoNet                     machoNet         { get; }
@@ -113,7 +111,7 @@ public class ServiceManager : IServiceManager <string>
     }
     
     public ServiceManager (
-        CacheStorage     storage, ILogger logger, TimerManager timerManager,
+        CacheStorage     storage, ILogger logger, Timers timers,
         machoNet         machoNet,
         objectCaching    objectCaching,
         alert            alert,
@@ -162,7 +160,7 @@ public class ServiceManager : IServiceManager <string>
     )
     {
         CacheStorage = storage;
-        TimerManager = timerManager;
+        Timers = timers;
         Log          = logger;
 
         // store all the services
@@ -239,126 +237,5 @@ public class ServiceManager : IServiceManager <string>
         }
 
         return svcInstance.ExecuteCall (method, call);
-    }
-
-    /// <summary>
-    /// Callback fired by the <seealso cref="TimerManager"/> when a call timeout has been reached
-    /// </summary>
-    /// <param name="callID">The callID that expired</param>
-    public void CallTimeoutExpired (int callID)
-    {
-        Log.Warning ($"Timeout for call {callID} expired before getting an answer.");
-
-        // get call id and call the timeout callback
-        RemoteCall call = this.mCallCallbacks [callID];
-
-        // call the callback if available
-        call.TimeoutCallback?.Invoke (call);
-
-        // finally remove from the list
-        this.mCallCallbacks.Remove (callID);
-    }
-
-    /// <summary>
-    /// Tells the ServiceManager that a call was completed successfully and invokes the success callback
-    /// so the server can continue processing further
-    /// </summary>
-    /// <param name="callID">The callID that completed</param>
-    /// <param name="result">The result of the call</param>
-    public void ReceivedRemoteCallAnswer (int callID, PyDataType result)
-    {
-        if (this.mCallCallbacks.ContainsKey (callID) == false)
-        {
-            Log.Warning ($"Received an answer for call {callID} after the timeout expired, ignoring answer...");
-
-            return;
-        }
-
-        // remove the timer from the list
-        TimerManager.DequeueCallTimer (callID);
-
-        // get the callback information
-        RemoteCall call = this.mCallCallbacks [callID];
-
-        // invoke the handler
-        call.Callback?.Invoke (call, result);
-
-        // remove the call from the list
-        this.mCallCallbacks.Remove (callID);
-    }
-
-    /// <summary>
-    /// Reserves a slot in the call list and prepares timeout timers in case the call wait time expires 
-    /// </summary>
-    /// <param name="entry">The RemoteCall entry to associate with this call</param>
-    /// <param name="timeoutSeconds">The amount of seconds to wait until timing out</param>
-    /// <returns>The callID to be notified to the client</returns>
-    private int ExpectRemoteServiceResult (RemoteCall entry, int timeoutSeconds = 0)
-    {
-        // get the new callID
-        int callID = ++this.mNextCallID;
-
-        // add the callback to the list
-        this.mCallCallbacks [callID] = entry;
-
-        // create the timer (if needed)
-        if (timeoutSeconds > 0)
-            TimerManager.EnqueueCallTimer (
-                DateTime.UtcNow.AddSeconds (timeoutSeconds).ToFileTimeUtc (), this.CallTimeoutExpired,
-                callID
-            );
-
-        return callID;
-    }
-
-    /// <summary>
-    /// Reserves a slot in the call list and prepares timeout timers in case the call wait time expires 
-    /// </summary>
-    /// <param name="callback">The function to call when the answer is received</param>
-    /// <param name="session">The session that is getting the call</param>
-    /// <param name="extraInfo">Any extra information to store for later usage</param>
-    /// <param name="timeoutCallback">The function to call if the call timeout expires</param>
-    /// <param name="timeoutSeconds">The amount of seconds to wait until timing out</param>
-    /// <returns>The callID to be notified to the client</returns>
-    public int ExpectRemoteServiceResult (
-        Action <RemoteCall, PyDataType> callback,               Session session, object extraInfo = null,
-        Action <RemoteCall>             timeoutCallback = null, int     timeoutSeconds = 0
-    )
-    {
-        RemoteCall entry = new RemoteCall
-        {
-            Callback        = callback,
-            ExtraInfo       = extraInfo,
-            TimeoutCallback = timeoutCallback,
-            Session         = session
-        };
-
-        return this.ExpectRemoteServiceResult (entry, timeoutSeconds);
-    }
-
-    /// <summary>
-    /// Reserves a slot in the call list and prepares timeout timers in case the call wait time expires 
-    /// </summary>
-    /// <param name="callback">The function to call when the answer is received</param>
-    /// <param name="nodeID">The node that is getting the call</param>
-    /// <param name="extraInfo">Any extra information to store for later usage</param>
-    /// <param name="timeoutCallback">The function to call if the call timeout expires</param>
-    /// <param name="timeoutSeconds">The amount of seconds to wait until timing out</param>
-    /// <returns>The callID to be notified to the client</returns>
-    public int ExpectRemoteServiceResult (
-        Action <RemoteCall, PyDataType> callback,               int nodeID, object extraInfo = null,
-        Action <RemoteCall>             timeoutCallback = null, int timeoutSeconds = 0
-    )
-    {
-        RemoteCall entry = new RemoteCall
-        {
-            Callback        = callback,
-            ExtraInfo       = extraInfo,
-            TimeoutCallback = timeoutCallback,
-            Session         = null,
-            NodeID          = nodeID
-        };
-
-        return this.ExpectRemoteServiceResult (entry, timeoutSeconds);
     }
 }

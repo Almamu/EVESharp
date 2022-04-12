@@ -12,7 +12,7 @@ public class RemoteCall
     /// <summary>
     /// Related client
     /// </summary>
-    public Session Session { get; init; }
+    public Session Session { get; set; }
     /// <summary>
     /// Any extra information for this call, this can store anything useful
     /// </summary>
@@ -26,7 +26,7 @@ public class RemoteCall
     /// </summary>
     public Action <RemoteCall> TimeoutCallback { get; init; }
     /// <summary>
-    /// Related node
+    /// The timer used for the expiration of this callback
     /// </summary>
-    public int NodeID { get; set; }
+    public Timer Timer { get; set; }
 }

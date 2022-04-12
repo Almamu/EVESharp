@@ -49,7 +49,7 @@ public class Attribute
     public  bool Dirty { get; set; }
     public  bool New   { get; set; }
 
-    public AttributeType          Info      { get; }
+    public int                    ID        { get; }
     public ItemAttributeValueType ValueType { get; protected set; }
 
     public long Integer
@@ -78,28 +78,40 @@ public class Attribute
         }
     }
 
-    public Attribute (AttributeType attribute, double value, bool newEntity = false, List <Modifier> modifiers = null)
+    public Attribute (int id, double value, bool newEntity = false, List <Modifier> modifiers = null)
     {
-        Info            = attribute;
+        ID              = id;
         Float           = value;
         New             = newEntity;
         this.mModifiers = modifiers ?? new List <Modifier> ();
     }
 
-    public Attribute (AttributeType attribute, long value, bool newEntity = false, List <Modifier> modifiers = null)
+    public Attribute (int id, long value, bool newEntity = false, List <Modifier> modifiers = null)
     {
-        Info            = attribute;
+        ID              = id;
         Integer         = value;
         New             = newEntity;
         this.mModifiers = modifiers ?? new List <Modifier> ();
     }
 
-    public Attribute (AttributeType attribute, bool newEntity = false, List <Modifier> modifiers = null)
+    public Attribute (AttributeType attribute, double value, bool newEntity = false, List <Modifier> modifiers = null)
+        : this (attribute.ID, value, newEntity, modifiers)
     {
-        Info            = attribute;
-        Float           = Info.DefaultValue;
-        New             = newEntity;
-        this.mModifiers = modifiers ?? new List <Modifier> ();
+    }
+
+    public Attribute (AttributeType attribute, long value, bool newEntity = false, List <Modifier> modifiers = null)
+        : this (attribute.ID, value, newEntity, modifiers)
+    {
+    }
+
+    public Attribute (AttributeType attribute, bool newEntity = false, List <Modifier> modifiers = null)
+        : this (attribute.ID, attribute.DefaultValue, newEntity, modifiers)
+    {
+    }
+
+    public Attribute (AttributeTypes attribute, double value, bool newEntity = false, List <Modifier> modifiers = null)
+        : this((int) attribute, value, newEntity, modifiers)
+    {
     }
     
     protected bool Equals (Attribute other)
@@ -217,9 +229,9 @@ public class Attribute
         switch (ValueType)
         {
             case ItemAttributeValueType.Double:
-                return new Attribute (Info, Float, true, this.mModifiers);
+                return new Attribute (ID, Float, true, this.mModifiers);
             case ItemAttributeValueType.Integer:
-                return new Attribute (Info, Integer, true, this.mModifiers);
+                return new Attribute (ID, Integer, true, this.mModifiers);
             default:
                 throw new InvalidDataException ();
         }
@@ -640,6 +652,6 @@ public class Attribute
 
     public override int GetHashCode ()
     {
-        return Info.ID;
+        return ID;
     }
 }
