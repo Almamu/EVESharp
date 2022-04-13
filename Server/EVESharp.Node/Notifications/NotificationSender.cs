@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using EVESharp.EVE.Packets.Complex;
+using EVESharp.EVE.Sessions;
 using EVESharp.EVE.StaticData.Corporation;
 using EVESharp.Node.Server.Shared;
 using EVESharp.PythonTypes.Types.Collections;
@@ -10,15 +11,26 @@ namespace EVESharp.Node.Notifications;
 
 public class NotificationSender
 {
+    /// <summary>
+    /// Translates the NotificationIdType enumeration to their string values
+    /// </summary>
     public static readonly Dictionary <NotificationIdType, string> NotificationTypeTranslation = new Dictionary <NotificationIdType, string>
     {
-        [NotificationIdType.Character]          = "charid",
-        [NotificationIdType.Corporation]        = "corpid",
-        [NotificationIdType.Station]            = "stationid",
+        [NotificationIdType.Character]          = Session.CHAR_ID,
+        [NotificationIdType.Corporation]        = Session.CORP_ID,
+        [NotificationIdType.Station]            = Session.STATION_ID,
         [NotificationIdType.Owner]              = "ownerid",
-        [NotificationIdType.OwnerAndLocation]   = "ownerid&locationid",
-        [NotificationIdType.CorporationAndRole] = "corpid&corprole",
-        [NotificationIdType.Alliance]           = "allianceid"
+        [NotificationIdType.OwnerAndLocation]   = "ownerid&" + Session.LOCATION_ID,
+        [NotificationIdType.CorporationAndRole] = Session.CORP_ID + "&" + Session.CORP_ROLE,
+        [NotificationIdType.Alliance]           = Session.ALLIANCE_ID
+    };
+
+    /// <summary>
+    /// Translates the session key name into how it has to be compared for notifications
+    /// </summary>
+    public static readonly Dictionary <string, ComparisonType> NotificationComparison = new Dictionary <string, ComparisonType> ()
+    {
+        [Session.CORP_ROLE] = ComparisonType.Bitmask,
     };
 
     /// <summary>

@@ -27,7 +27,7 @@ using Type = EVESharp.EVE.StaticData.Inventory.Type;
 namespace EVESharp.Node.Services.Network;
 
 [MustBeCharacter]
-[MustHaveRole(Roles.ROLEMASK_ELEVATEDPLAYER)]
+[MustHaveRole(Roles.ROLE_ADMIN)]
 public class slash : Service
 {
     private readonly Dictionary <string, Action <string [], CallInformation>> mCommands =
@@ -73,9 +73,6 @@ public class slash : Service
 
     public PyDataType SlashCmd (PyString line, CallInformation call)
     {
-        if ((call.Session.Role & (int) Roles.ROLE_ADMIN) != (int) Roles.ROLE_ADMIN)
-            throw new SlashError ("Only admins can run slash commands!");
-
         try
         {
             string [] parts = line.Value.Split (' ');

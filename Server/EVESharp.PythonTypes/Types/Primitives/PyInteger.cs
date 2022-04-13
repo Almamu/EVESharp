@@ -67,6 +67,21 @@ public class PyInteger : PyDataType
         return left.Equals (right);
     }
 
+    public static PyInteger operator & (PyInteger obj, PyInteger other)
+    {
+        return obj.Value & other.Value;
+    }
+
+    public static PyInteger operator | (PyInteger obj, PyInteger other)
+    {
+        return obj.Value | other.Value;
+    }
+
+    public static PyInteger operator ^ (PyInteger obj, PyInteger other)
+    {
+        return obj.Value ^ other.Value;
+    }
+
     public static bool operator != (PyInteger obj, PyInteger other)
     {
         return !(obj == other);

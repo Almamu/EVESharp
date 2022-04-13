@@ -626,7 +626,7 @@ public class DatabaseConnection : IDatabaseConnection
         try
         {
             MySqlConnection connection = null;
-            MySqlDataReader reader     = this.Select (ref connection, query);
+            MySqlDataReader reader     = this.Select (ref connection, query, values);
 
             using (connection)
             using (reader)

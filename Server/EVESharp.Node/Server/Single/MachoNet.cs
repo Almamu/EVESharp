@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Net.Http;
 using EVESharp.Common.Constants;
 using EVESharp.Common.Database;
@@ -7,6 +8,7 @@ using EVESharp.Common.Network.Messages;
 using EVESharp.Node.Accounts;
 using EVESharp.Node.Configuration;
 using EVESharp.Node.Database;
+using EVESharp.Node.Notifications;
 using EVESharp.Node.Server.Shared;
 using EVESharp.Node.Server.Shared.Messages;
 using EVESharp.Node.Server.Shared.Transports;
@@ -151,21 +153,37 @@ public class MachoNet : IMachoNet
         PyAddressBroadcast dest      = packet.Destination as PyAddressBroadcast;
         bool               isOwnerID = dest.IDType == "ownerid";
 
+        // determine how the values have to be checked
+        if (NotificationSender.NotificationComparison.TryGetValue (dest.IDType, out ComparisonType comparison) == false)
+            comparison = ComparisonType.Equality;
+
         foreach (PyInteger id in dest.IDsOfInterest.GetEnumerable <PyInteger> ())
         {
             // loop all transports, search for the idtype given and send it
             foreach (MachoTransport transport in TransportManager.TransportList)
-                if (isOwnerID)
+            {
+                switch (comparison)
                 {
-                    if (transport.Session.AllianceID == id ||
-                        transport.Session.CharacterID == id ||
-                        transport.Session.CorporationID == id)
-                        transport.Socket.Send (packet);
+                    case ComparisonType.Bitmask:
+                        // bitmask cannot be owner ids
+                        if (transport.Session [dest.IDType] is not PyInteger val)
+                            continue;
+                        if ((val & id) != id)
+                            continue;
+                        break;
+                    case ComparisonType.Equality:
+                        if (!isOwnerID && transport.Session [dest.IDType] != id)
+                            continue;
+                        else
+                            if (transport.Session.AllianceID != id &&
+                                transport.Session.CharacterID != id &&
+                                transport.Session.CorporationID != id)
+                                continue;
+                        break;
                 }
-                else if (transport.Session [dest.IDType] == id)
-                {
-                    transport.Socket.Send (packet);
-                }
+
+                transport.Socket.Send (packet);
+            }
         }
     }
 
@@ -175,6 +193,16 @@ public class MachoNet : IMachoNet
 
         // extract the actual ids used to identify the destination
         string [] criteria = dest.IDType.Value.Split ('&');
+        // detect how the comparisons have to be performed
+        ComparisonType [] comparison = criteria.Select (
+            x =>
+            {
+                if (NotificationSender.NotificationComparison.TryGetValue (x, out ComparisonType result) == false)
+                    result = ComparisonType.Equality;
+
+                return result;
+            }
+        ).ToArray ();
         // determine if any of those IDs is an ownerID so we can take it into account
         bool [] isOwnerID = Array.ConvertAll (criteria, x => x == "ownerid");
 
@@ -190,23 +218,32 @@ public class MachoNet : IMachoNet
 
                 // validate all the values
                 for (int i = 0; i < criteria.Length; i++)
-                    if (isOwnerID [i])
+                {
+                    switch (comparison[i])
                     {
-                        if (transport.Session.AllianceID != id [i] &&
-                            transport.Session.CharacterID != id [i] &&
-                            transport.Session.CorporationID != id [i])
-                        {
-                            found = false;
-
-                            break;
-                        }
+                        case ComparisonType.Bitmask:
+                            // bitmask cannot be owner ids
+                            if (transport.Session [criteria [i]] is not PyInteger val)
+                                break;
+                            if (id [i] is not PyInteger val2)
+                                break;
+                            if ((val & val2) != val2)
+                                break;
+                            continue;
+                        case ComparisonType.Equality:
+                            if (!isOwnerID[i] && transport.Session [criteria[i]] != id [i])
+                                break;
+                            else if (transport.Session.AllianceID != id [i] &&
+                                transport.Session.CharacterID != id [i] &&
+                                transport.Session.CorporationID != id [i])
+                                break;
+                            continue;
                     }
-                    else if (transport.Session [criteria [i]] != id [i])
-                    {
-                        found = false;
 
-                        break;
-                    }
+                    // if nothing matches we'll fall through to this one
+                    found = false;
+                    break;
+                }
 
                 // notify the transport if all the rules matched
                 if (found)
