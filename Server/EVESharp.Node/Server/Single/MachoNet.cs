@@ -174,10 +174,9 @@ public class MachoNet : IMachoNet
                     case ComparisonType.Equality:
                         if (!isOwnerID && transport.Session [dest.IDType] != id)
                             continue;
-                        else
-                            if (transport.Session.AllianceID != id &&
-                                transport.Session.CharacterID != id &&
-                                transport.Session.CorporationID != id)
+                        else if (isOwnerID && transport.Session.AllianceID != id &&
+                                 transport.Session.CharacterID != id &&
+                                 transport.Session.CorporationID != id)
                                 continue;
                         break;
                 }
@@ -233,9 +232,10 @@ public class MachoNet : IMachoNet
                         case ComparisonType.Equality:
                             if (!isOwnerID[i] && transport.Session [criteria[i]] != id [i])
                                 break;
-                            else if (transport.Session.AllianceID != id [i] &&
-                                transport.Session.CharacterID != id [i] &&
-                                transport.Session.CorporationID != id [i])
+                            else if (isOwnerID[i] && 
+                                     transport.Session.AllianceID != id [i] &&
+                                     transport.Session.CharacterID != id [i] &&
+                                     transport.Session.CorporationID != id [i])
                                 break;
                             continue;
                     }
