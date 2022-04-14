@@ -5,6 +5,7 @@ using EVESharp.EVE.Services;
 using EVESharp.EVE.Services.Validators;
 using EVESharp.EVE.Sessions;
 using EVESharp.EVE.StaticData.Corporation;
+using EVESharp.Node.Inventory.Items.Types;
 using EVESharp.PythonTypes.Types.Primitives;
 
 namespace EVESharp.Node.Unit.ServiceManagerTests;
@@ -14,24 +15,28 @@ public class RestrictedService : Service
     public override AccessLevel AccessLevel => AccessLevel.None;
 
     [MustHaveCorporationRole(CorporationRole.Director)]
+    [MustNotHaveCorporationRole(CorporationRole.Accountant)]
     public PyDataType CorporationRoleCall (ServiceCall extra)
     {
         return 0;
     }
 
     [MustHaveCorporationRole(CorporationRole.Director, CorporationRole.PersonnelManager)]
+    [MustNotHaveCorporationRole(CorporationRole.Accountant, CorporationRole.JuniorAccountant)]
     public PyDataType ExtraCorporationRoleCall (ServiceCall extra)
     {
         return 0;
     }
 
     [MustHaveCorporationRole (MLS.UI_CORP_ACCESSDENIED1, CorporationRole.Director)]
+    [MustNotHaveCorporationRole (MLS.UI_CORP_ACCESSDENIED2, CorporationRole.Accountant)]
     public PyDataType AnotherCorporationRoleCall (ServiceCall extra)
     {
         return 0;
     }
 
     [MustHaveCorporationRole (typeof (CrpOnlyDirectorsCanProposeVotes), CorporationRole.Director)]
+    [MustNotHaveCorporationRole (typeof (CrpCantQuitDefaultCorporation), CorporationRole.Accountant)]
     public PyDataType VotesCorporationRoleCall (ServiceCall extra)
     {
         return 0;

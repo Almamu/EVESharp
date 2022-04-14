@@ -58,7 +58,7 @@ public class corpRegistry : MultiClientBoundService
     private NotificationSender         Notifications       { get; }
     private MailManager                MailManager         { get; }
     public  MembersSparseRowsetService MembersSparseRowset { get; private set; }
-    private OfficesSparseRowsetService OfficesSparseRowset { get; set; }
+    public OfficesSparseRowsetService OfficesSparseRowset { get; private set; }
     private Ancestries                 Ancestries          { get; }
     private Constants                  Constants           { get; }
     private SessionManager             SessionManager      { get; }
@@ -267,7 +267,7 @@ public class corpRegistry : MultiClientBoundService
 
             // create a service for handling it's calls
             OfficesSparseRowset =
-                new OfficesSparseRowsetService (Corporation, DB, rowsetHeader, BoundServiceManager, call.Session);
+                new OfficesSparseRowsetService (Corporation, DB, rowsetHeader, BoundServiceManager, call.Session, Notifications);
 
             rowsetHeader.BoundObjectIdentifier = OfficesSparseRowset.MachoBindObject (dict, call.Session);
         }
@@ -520,7 +520,7 @@ public class corpRegistry : MultiClientBoundService
     }
 
     [MustHaveSessionValue(Session.STATION_ID, typeof(CanOnlyCreateCorpInStation))]
-    [MustHaveCorporationRole(CorporationRole.Director, typeof(CEOCannotCreateCorporation))]
+    [MustNotHaveCorporationRole(CorporationRole.Director, typeof(CEOCannotCreateCorporation))]
     [MustBeInStation]
     public PyDataType AddCorporation (
         PyString  corporationName, PyString  tickerName, PyString   description,

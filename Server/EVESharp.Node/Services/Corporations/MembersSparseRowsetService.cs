@@ -27,12 +27,12 @@ public class MembersSparseRowsetService : SparseRowsetDatabaseService
         Session     session
     ) : base (rowsetHeader, manager, session, true)
     {
-        DB          = db;
-        Corporation = corporation;
+        DB            = db;
+        Corporation   = corporation;
+        Notifications = notificationSender;
 
         // get all the indexes based on the key
         this.RowsIndex = DB.GetMembers (corporation.ID);
-        Notifications  = notificationSender;
     }
 
     public override PyDataType Fetch (PyInteger startPos, PyInteger fetchSize, CallInformation call)
@@ -66,6 +66,8 @@ public class MembersSparseRowsetService : SparseRowsetDatabaseService
     {
         // fetch the new ids list
         this.RowsIndex = DB.GetMembers (Corporation.ID);
+        // update the header count
+        this.RowsetHeader.Count++;
 
         // notify the clients
         this.SendOnObjectChanged (primaryKey, changes);
@@ -80,6 +82,8 @@ public class MembersSparseRowsetService : SparseRowsetDatabaseService
     {
         // fetch the new ids list
         this.RowsIndex = DB.GetMembers (Corporation.ID);
+        // update the header count
+        this.RowsetHeader.Count--;
 
         PyDictionary <PyString, PyTuple> changes = new PyDictionary <PyString, PyTuple>
         {

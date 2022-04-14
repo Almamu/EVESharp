@@ -18,7 +18,7 @@ public class SparseRowsetHeader
     /// <summary>
     /// The number of records found
     /// </summary>
-    public int Count { get; }
+    public int Count { get; set; }
     /// <summary>
     /// The columns of the result
     /// </summary>

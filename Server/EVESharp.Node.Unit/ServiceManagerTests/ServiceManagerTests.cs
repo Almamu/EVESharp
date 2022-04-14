@@ -131,10 +131,13 @@ public class ServiceManagerTests
     {
         yield return new object [] {new Session () { }, "CorporationRoleCall", MLS.UI_GENERIC_ACCESSDENIED};
         yield return new object [] {new Session () {CorporationRole = (long) CorporationRole.Accountant}, "CorporationRoleCall", MLS.UI_GENERIC_ACCESSDENIED};
+        yield return new object [] {new Session () {CorporationRole = (long) CorporationRole.Trader}, "CorporationRoleCall", MLS.UI_GENERIC_ACCESSDENIED};
         yield return new object [] {new Session () { }, "ExtraCorporationRoleCall", MLS.UI_GENERIC_ACCESSDENIED};
         yield return new object [] {new Session () {CorporationRole = (long) CorporationRole.Accountant}, "ExtraCorporationRoleCall", MLS.UI_GENERIC_ACCESSDENIED};
+        yield return new object [] {new Session () {CorporationRole = (long) CorporationRole.Trader}, "ExtraCorporationRoleCall", MLS.UI_GENERIC_ACCESSDENIED};
         yield return new object [] {new Session () { }, "AnotherCorporationRoleCall", MLS.UI_CORP_ACCESSDENIED1};
-        yield return new object [] {new Session () {CorporationRole = (long) CorporationRole.Accountant}, "AnotherCorporationRoleCall", MLS.UI_CORP_ACCESSDENIED1};
+        yield return new object [] {new Session () {CorporationRole = (long) CorporationRole.Accountant | (long) CorporationRole.Director}, "AnotherCorporationRoleCall", MLS.UI_CORP_ACCESSDENIED2};
+        yield return new object [] {new Session () {CorporationRole = (long) CorporationRole.JuniorAccountant}, "AnotherCorporationRoleCall", MLS.UI_CORP_ACCESSDENIED1};
     }
 
     [TestCaseSource (nameof (InvalidCallsGenerator_CrpAccessDenied))]
@@ -153,6 +156,7 @@ public class ServiceManagerTests
     private static IEnumerable InvalidCallsGenerator_OtherExceptions ()
     {
         yield return new object [] {new Session (), typeof (CrpOnlyDirectorsCanProposeVotes), "VotesCorporationRoleCall"};
+        yield return new object [] {new Session () { CorporationRole = (long) CorporationRole.Director | (long) CorporationRole.Accountant}, typeof (CrpCantQuitDefaultCorporation), "VotesCorporationRoleCall"};
         yield return new object [] {new Session (), typeof (CrpOnlyDirectorsCanProposeVotes), "AccountRoleEx"};
         yield return new object [] {new Session (), typeof (CrpOnlyDirectorsCanProposeVotes), "SessionDataEx"};
         yield return new object [] {new Session () {AllianceID = 1}, typeof (CrpOnlyDirectorsCanProposeVotes), "SessionDataMissingEx"};

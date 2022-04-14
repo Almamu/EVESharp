@@ -1,5 +1,7 @@
 ﻿using System;
 using EVESharp.EVE.Sessions;
+using EVESharp.Node.Inventory;
+using EVESharp.Node.Notifications;
 using EVESharp.Node.Server.Shared;
 using EVESharp.Node.Server.Shared.Helpers;
 using EVESharp.Node.Server.Shared.Messages;
@@ -18,9 +20,9 @@ public class MessageProcessor : Shared.Messages.MessageProcessor
     public SessionManager SessionManager { get; }
 
     public MessageProcessor (
-        IMachoNet machoNet, ILogger logger, ServiceManager serviceManager, BoundServiceManager boundServiceManager, SessionManager sessionManager, RemoteServiceManager remoteServiceManager, PacketCallHelper packetCallHelper
+        IMachoNet machoNet, ILogger logger, ServiceManager serviceManager, BoundServiceManager boundServiceManager, SessionManager sessionManager, RemoteServiceManager remoteServiceManager, PacketCallHelper packetCallHelper, NotificationSender notificationSender, ItemFactory itemFactory, SystemManager systemManager
     ) :
-        base (machoNet, logger, serviceManager, boundServiceManager, 100, remoteServiceManager, packetCallHelper)
+        base (machoNet, logger, serviceManager, boundServiceManager, remoteServiceManager, packetCallHelper, itemFactory, systemManager, notificationSender, sessionManager, 100)
     {
         SessionManager = sessionManager;
     }
@@ -113,64 +115,9 @@ public class MessageProcessor : Shared.Messages.MessageProcessor
 
                 break;
             case PyPacket.PacketType.NOTIFICATION:
-                this.HandleNotification (machoMessage);
+                LocalNotificationHandler.HandleNotification (machoMessage);
 
                 break;
         }
-    }
-
-    private void HandleNotification (MachoMessage machoMessage)
-    {
-        PyPacket packet = machoMessage.Packet;
-
-        // ensure the notification packet is valid
-        // this packet is an internal one
-        if (packet.Payload.Count != 2)
-        {
-            Log.Error ("Received ClusterController notification with the wrong format");
-
-            return;
-        }
-
-        if (packet.Payload [0] is not PyString notification)
-        {
-            Log.Error ("Received ClusterController notification with the wrong format");
-
-            return;
-        }
-
-        Log.Debug ($"Received a notification from ClusterController of type {notification.Value}");
-
-        switch (notification)
-        {
-            case "UpdateSessionAttributes":
-                this.HandleUpdateSessionAttributes (packet.Payload [1] as PyTuple);
-
-                break;
-            case "ClientHasDisconnected":
-                this.HandleClientHasDisconnected (packet.Payload [1] as PyTuple, packet.OutOfBounds);
-
-                break;
-            default:
-                Log.Fatal ("Received notification with the wrong format");
-
-                break;
-        }
-    }
-
-    private void HandleUpdateSessionAttributes (PyTuple payload)
-    {
-        // very simple version for now, should properly handle these sometime in the future
-        PyString     idType    = payload [0] as PyString;
-        PyInteger    id        = payload [1] as PyInteger;
-        PyDictionary newValues = payload [2] as PyDictionary;
-
-        SessionManager.PerformSessionUpdate (idType, id, Session.FromPyDictionary (newValues));
-    }
-
-    private void HandleClientHasDisconnected (PyTuple data, PyDictionary oob)
-    {
-        // unbind the player from all the services
-        BoundServiceManager.OnClientDisconnected (Session.FromPyDictionary (oob ["Session"] as PyDictionary));
     }
 }

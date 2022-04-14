@@ -18,6 +18,7 @@ using EVESharp.Node.Inventory.Items;
 using EVESharp.Node.Inventory.Items.Types;
 using EVESharp.Node.Market;
 using EVESharp.Node.Notifications;
+using EVESharp.Node.Notifications.Nodes.Corps;
 using EVESharp.Node.Sessions;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Database;
@@ -265,7 +266,7 @@ public class corpStationMgr : ClientBoundService
         int stationID   = call.Session.StationID;
         int characterID = call.Session.CharacterID;
 
-        // double check to ensure the amout we're paying is what we require now
+        // double check to ensure the amount we're paying is what we require now
         if (rentalCost != cost)
             throw new RentingAnOfficeCostsMore (rentalCost);
 
@@ -276,8 +277,6 @@ public class corpStationMgr : ClientBoundService
         // check if there's any office rented by us already
         if (StationDB.CorporationHasOfficeRentedAt (call.Session.CorporationID, stationID))
             throw new RentingYouHaveAnOfficeHere ();
-        if (CorporationRole.CanRentOffice.Is (call.Session.CorporationRole) == false && CorporationRole.Director.Is (call.Session.CorporationRole) == false)
-            throw new RentingOfficeQuotesOnlyGivenToActiveCEOsOrEquivale ();
 
         // ensure the character has the required skill to manage offices
         ItemFactory.GetItem <Character> (characterID).EnsureSkillLevel (Types.PublicRelations);
@@ -304,11 +303,16 @@ public class corpStationMgr : ClientBoundService
         );
         // create the record in the database
         StationDB.RentOffice (call.Session.CorporationID, stationID, item.ID, dueDate, rentalCost, billID);
-        // notify all characters in the station about the office change
-        Notifications.NotifyStation (stationID, new OnOfficeRentalChanged (call.Session.CorporationID, item.ID, item.ID));
+        // notify all characters of the corporation in the station about the office change
+        Notifications.NotifyOwnerAtLocation (call.Session.CorporationID, stationID, new OnOfficeRentalChanged (call.Session.CorporationID, item.ID, item.ID));
         // notify all the characters about the bill received
         Notifications.NotifyCorporation (call.Session.CorporationID, new OnBillReceived ());
-
+        // notify the node with the new office
+        int nodeID = ItemFactory.ItemDB.GetItemNode (call.Session.CorporationID);
+        
+        if (nodeID > 0)
+            Notifications.NotifyNode (nodeID, new OnCorporationOfficeRented () {CorporationID = call.Session.CorporationID, StationID = stationID, OfficeFolderID = item.ID, TypeID = (int) Types.OfficeFolder});
+        
         // return the new officeID
         return item.ID;
         // TODO: NOTIFY THE CORPREGISTRY SERVICE TO UPDATE THIS LIST OF OFFICES

@@ -140,7 +140,7 @@ public class NotificationSender
         PyPacket packet = new PyPacket (PyPacket.PacketType.NOTIFICATION)
         {
             Source      = new PyAddressAny (0),
-            Destination = new PyAddressBroadcast (new PyList (1) {[0] = nodeID}, "nodeid"),
+            Destination = new PyAddressNode (nodeID),
             Payload     = notification,
             OutOfBounds = new PyDictionary (),
 

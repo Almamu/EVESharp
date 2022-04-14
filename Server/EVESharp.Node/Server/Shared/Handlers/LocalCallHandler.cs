@@ -19,7 +19,6 @@ public class LocalCallHandler
 {
     private int                  ErrorID              { get; set; }
     public  IMachoNet            MachoNet             { get; }
-    public  MessageProcessor     MessageProcessor     { get; }
     public  ServiceManager       ServiceManager       { get; }
     public  BoundServiceManager  BoundServiceManager  { get; }
     public  RemoteServiceManager RemoteServiceManager { get; }
@@ -27,11 +26,10 @@ public class LocalCallHandler
     public  PacketCallHelper     PacketCallHelper     { get; }
 
     public LocalCallHandler (
-        IMachoNet machoNet, MessageProcessor processor, ILogger logger, ServiceManager serviceManager, BoundServiceManager boundServiceManager, RemoteServiceManager remoteServiceManager, PacketCallHelper packetCallHelper
+        IMachoNet machoNet, ILogger logger, ServiceManager serviceManager, BoundServiceManager boundServiceManager, RemoteServiceManager remoteServiceManager, PacketCallHelper packetCallHelper
     )
     {
         MachoNet             = machoNet;
-        MessageProcessor     = processor;
         ServiceManager       = serviceManager;
         BoundServiceManager  = boundServiceManager;
         RemoteServiceManager = remoteServiceManager;

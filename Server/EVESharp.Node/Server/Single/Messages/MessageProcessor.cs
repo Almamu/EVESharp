@@ -1,8 +1,11 @@
 ﻿using System;
+using EVESharp.Node.Inventory;
+using EVESharp.Node.Notifications;
 using EVESharp.Node.Server.Shared;
 using EVESharp.Node.Server.Shared.Helpers;
 using EVESharp.Node.Server.Shared.Messages;
 using EVESharp.Node.Services;
+using EVESharp.Node.Sessions;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Network;
 using EVESharp.PythonTypes.Types.Primitives;
@@ -12,8 +15,8 @@ namespace EVESharp.Node.Server.Single.Messages;
 
 public class MessageProcessor : Shared.Messages.MessageProcessor
 {
-    public MessageProcessor (IMachoNet machoNet, ILogger logger, ServiceManager serviceManager, BoundServiceManager boundServiceManager, RemoteServiceManager remoteServiceManager, PacketCallHelper packetCallHelper) :
-        base (machoNet, logger, serviceManager, boundServiceManager, 100, remoteServiceManager, packetCallHelper) { }
+    public MessageProcessor (IMachoNet machoNet, ILogger logger, ServiceManager serviceManager, BoundServiceManager boundServiceManager, RemoteServiceManager remoteServiceManager, PacketCallHelper packetCallHelper, NotificationSender notificationSender, ItemFactory itemFactory, SystemManager systemManager, SessionManager sessionManager) :
+        base (machoNet, logger, serviceManager, boundServiceManager, remoteServiceManager, packetCallHelper, itemFactory, systemManager, notificationSender, sessionManager, 100) { }
 
     protected override void HandleMessage (MachoMessage machoMessage)
     {
@@ -51,36 +54,12 @@ public class MessageProcessor : Shared.Messages.MessageProcessor
                 break;
 
             case PyPacket.PacketType.NOTIFICATION:
-                this.HandleNotification (machoMessage);
+                LocalNotificationHandler.HandleNotification (machoMessage);
 
                 break;
 
             default:
                 throw new NotImplementedException ("Only CallReq and PingReq packets can be handled in single-instance nodes");
         }
-    }
-
-    private void HandleNotification (MachoMessage machoMessage)
-    {
-        // check if there's any OOB useful data and remove the related objects
-        if (machoMessage.Packet.OutOfBounds.TryGetValue ("OID-", out PyDictionary data) == false)
-            return;
-
-        foreach ((PyString guid, PyInteger refID) in data.GetEnumerable <PyString, PyInteger> ())
-        {
-            BoundServiceManager.ParseBoundServiceString (guid, out int nodeID, out int boundID);
-            // cleanup the association if any
-            machoMessage.Transport.Session.BoundObjects.Remove (boundID);
-            // if the bound service is local, do it too
-            BoundServiceManager.ClientHasReleasedThisObject (boundID, machoMessage.Transport.Session);
-        }
-
-        // update the nodes of interest list
-        // TODO: FIND A BETTER WAY OF DOING THIS
-        machoMessage.Transport.Session.NodesOfInterest.Clear ();
-
-        foreach ((int boundID, long nodeID) in machoMessage.Transport.Session.BoundObjects)
-            if (machoMessage.Transport.Session.NodesOfInterest.Contains (nodeID) == false)
-                machoMessage.Transport.Session.NodesOfInterest.Add (nodeID);
     }
 }
