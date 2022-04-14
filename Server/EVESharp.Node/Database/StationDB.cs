@@ -134,13 +134,12 @@ public class StationDB : DatabaseAccessor
     public void RentOffice (int corporationID, int stationID, int officeFolderID, long dueDate, double periodCost, int nextBillID)
     {
         Database.PrepareQuery (
-            "INSERT INTO crpOffices(corporationID, stationID, officeID, typeID, officeFolderID, startDate, rentPeriodInDays, periodCost, balanceDueDate, nextBillID)VALUES(@corporationID, @stationID, @officeFolderID, @typeID, @officeFolderID, @startDate, @rentPeriodInDays, @periodCost, @dueDate, @nextBillID)",
+            "INSERT INTO crpOffices(corporationID, stationID, officeID, officeFolderID, startDate, rentPeriodInDays, periodCost, balanceDueDate, nextBillID)VALUES(@corporationID, @stationID, @officeFolderID, @officeFolderID, @startDate, @rentPeriodInDays, @periodCost, @dueDate, @nextBillID)",
             new Dictionary <string, object>
             {
                 {"@corporationID", corporationID},
                 {"@stationID", stationID},
                 {"@officeFolderID", officeFolderID},
-                {"@typeID", (int) Types.OfficeFolder},
                 {"@startDate", DateTime.UtcNow.ToFileTimeUtc ()},
                 {"@rentPeriodInDays", (DateTime.FromFileTimeUtc (dueDate) - DateTime.UtcNow).TotalDays},
                 {"@periodCost", periodCost},

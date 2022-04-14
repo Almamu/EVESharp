@@ -253,8 +253,8 @@ public class CorporationDB : DatabaseAccessor
 
         string query = "SELECT" +
                        " officeID, stationID, typeID, officeFolderID " +
-                       "FROM chrInformation " +
-                       "LEFT JOIN invItems ON invItems.itemID = chrInformation.activeCloneID " +
+                       "FROM crpOffices " +
+                       "LEFT JOIN invItems ON itemID = stationID " +
                        "WHERE corporationID=@corporationID AND itemID IN (";
 
         foreach (PyInteger id in itemIDs)
@@ -288,7 +288,7 @@ public class CorporationDB : DatabaseAccessor
         Dictionary <string, object> parameters = new Dictionary <string, object> ();
 
         string query =
-            $"SELECT officeID, stationID, typeID, officeFolderID FROM crpOffices WHERE corporationID = @corporationID AND {columnName} IN ({PyString.Join (',', itemIDs)}) ";
+            $"SELECT officeID, stationID, typeID, officeFolderID FROM crpOffices LEFT JOIN invItems ON itemID = stationID WHERE crpOffices.corporationID = @corporationID AND {columnName} IN ({PyString.Join (',', itemIDs)}) ";
 
         parameters ["@corporationID"] = corporationID;
 
@@ -310,7 +310,7 @@ public class CorporationDB : DatabaseAccessor
         MySqlConnection connection = null;
         MySqlDataReader reader = Database.Select (
             ref connection,
-            "SELECT officeID, stationID, typeID, officeFolderID FROM crpOffices WHERE corporationID = @corporationID LIMIT @startPos,@limit",
+            "SELECT officeID, stationID, typeID, officeFolderID FROM crpOffices LEFT JOIN invItems ON itemID = stationID WHERE corporationID = @corporationID LIMIT @startPos,@limit",
             new Dictionary <string, object>
             {
                 {"@corporationID", corporationID},
