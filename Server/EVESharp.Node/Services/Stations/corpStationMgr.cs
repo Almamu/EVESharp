@@ -77,7 +77,7 @@ public class corpStationMgr : ClientBoundService
     public PyList GetCorporateStationOffice (CallInformation call)
     {
         // TODO: IMPLEMENT WHEN CORPORATION SUPPORT IS IN PLACE
-        return new PyList ();
+        return StationDB.GetOfficesList (call.Session.StationID);
     }
 
     [MustBeInStation]

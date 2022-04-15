@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using EVESharp.Common.Database;
 using EVESharp.EVE.StaticData.Inventory;
 using EVESharp.EVE.StaticData.Inventory.Station;
+using EVESharp.PythonTypes.Types.Collections;
+using EVESharp.PythonTypes.Types.Database;
 using EVESharp.PythonTypes.Types.Primitives;
 using MySql.Data.MySqlClient;
 using Type = EVESharp.EVE.StaticData.Inventory.Station.Type;
@@ -149,7 +151,7 @@ public class StationDB : DatabaseAccessor
         );
     }
 
-    public PyDataType GetOfficesList (int stationID)
+    public PyList<PyPackedRow> GetOfficesList (int stationID)
     {
         return Database.PreparePackedRowListQuery (
             "SELECT corporationID, officeID AS itemID, officeFolderID FROM crpOffices WHERE stationID = @stationID",
