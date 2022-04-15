@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using EVESharp.Common.Database;
 using EVESharp.Database;
 using EVESharp.EVE.Alliances;
@@ -59,10 +60,11 @@ public class corpRegistry : MultiClientBoundService
     private NotificationSender         Notifications       { get; }
     private MailManager                MailManager         { get; }
     public  MembersSparseRowsetService MembersSparseRowset { get; private set; }
-    public OfficesSparseRowsetService OfficesSparseRowset { get; private set; }
+    public  OfficesSparseRowsetService OfficesSparseRowset { get; private set; }
     private Ancestries                 Ancestries          { get; }
     private Constants                  Constants           { get; }
     private SessionManager             SessionManager      { get; }
+    private ClusterManager             ClusterManager      { get; }
 
     // constants
     private long CorporationAdvertisementFlatFee   { get; }
@@ -85,8 +87,9 @@ public class corpRegistry : MultiClientBoundService
         ItemFactory    = itemFactory;
         Ancestries     = ancestries;
         SessionManager = sessionManager;
+        ClusterManager = clusterManager;
 
-        clusterManager.OnClusterTimer += this.PerformTimedEvents;
+        ClusterManager.OnClusterTimer += this.PerformTimedEvents;
     }
 
     protected corpRegistry (
@@ -1427,15 +1430,24 @@ public class corpRegistry : MultiClientBoundService
 
     protected override long MachoResolveObject (ServiceBindParams parameters, CallInformation call)
     {
-        // TODO: CHECK IF ANY NODE HAS THIS CORPORATION LOADED
-        // TODO: IF NOT, LOAD IT HERE AND RETURN OUR ID
-        return BoundServiceManager.MachoNet.NodeID;
+        long nodeID = ItemFactory.ItemDB.GetItemNode (parameters.ObjectID);
+
+        if (nodeID != 0)
+            return nodeID;
+
+        Task <long> task = ClusterManager.GetLessLoadedNode ();
+
+        task.Wait ();
+        
+        return task.Result;
     }
 
     protected override MultiClientBoundService CreateBoundInstance (ServiceBindParams bindParams, CallInformation call)
     {
-        if (this.MachoResolveObject (bindParams, call) != BoundServiceManager.MachoNet.NodeID)
-            throw new CustomError ("Trying to bind an object that does not belong to us!");
+        // TODO: RE-IMPLEMENT THIS CHECK AS THE CLIENT IS THE ONE PERFORMING THE ACTUAL BINDING
+        // TODO: MAYBE THE PROXY SHOULD TELL THE NODE TO ACQUIRE OWNERSHIP OF THE OBJECTID BEFORE THE CLIENT ACTUALLY TRIES TO ACCESS IT
+        // if (this.MachoResolveObject (bindParams, call) != BoundServiceManager.MachoNet.NodeID)
+        //     throw new CustomError ("Trying to bind an object that does not belong to us!");
 
         Corporation corp = ItemFactory.LoadItem <Corporation> (bindParams.ObjectID);
 

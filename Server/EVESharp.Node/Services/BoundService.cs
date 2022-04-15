@@ -52,11 +52,11 @@ public abstract class BoundService : Service
     /// Called by the EVE Client to know which node is storing the object's information
     /// </summary>
     /// <param name="bindParams">The parameters to resolve the object</param>
-    /// <param name="zero">Allways zero?</param>
+    /// <param name="justQuery">Indicates if the client is just querying the thing or if it will bind to it</param>
     /// <param name="call"></param>
     /// <returns>The node where this object is stored</returns>
     [MustBeCharacter]
-    public PyInteger MachoResolveObject (PyDataType bindParams, PyInteger zero, CallInformation call)
+    public PyInteger MachoResolveObject (PyDataType bindParams, PyInteger justQuery, CallInformation call)
     {
         return this.MachoResolveObject (bindParams, call);
     }

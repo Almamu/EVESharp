@@ -40,17 +40,19 @@ namespace EVESharp.Node.Inventory;
 public class SystemManager
 {
     private readonly Dictionary <int, long> mSolarsystemToNodeID = new Dictionary <int, long> ();
-    private          DatabaseConnection     Database    { get; }
-    private          ItemFactory            ItemFactory { get; }
-    private          IMachoNet              MachoNet    { get; }
-    private          HttpClient             HttpClient  { get; }
+    private          DatabaseConnection     Database       { get; }
+    private          ItemFactory            ItemFactory    { get; }
+    private          IMachoNet              MachoNet       { get; }
+    private          HttpClient             HttpClient     { get; }
+    private          ClusterManager         ClusterManager { get; }
 
-    public SystemManager (HttpClient httpClient, ItemFactory itemFactory, DatabaseConnection databaseConnection, IMachoNet machoNet)
+    public SystemManager (HttpClient httpClient, ItemFactory itemFactory, ClusterManager clusterManager, DatabaseConnection databaseConnection, IMachoNet machoNet)
     {
-        HttpClient  = httpClient;
-        MachoNet    = machoNet;
-        Database    = databaseConnection;
-        ItemFactory = itemFactory;
+        HttpClient     = httpClient;
+        MachoNet       = machoNet;
+        Database       = databaseConnection;
+        ItemFactory    = itemFactory;
+        ClusterManager = clusterManager;
     }
 
     private void LoadSolarSystemOnNode (int solarSystemID, long nodeID)
@@ -103,17 +105,12 @@ public class SystemManager
         if (MachoNet.Mode == RunMode.Proxy)
         {
             // determine what node is going to load it and let it know
-            Task <HttpResponseMessage> task = HttpClient.GetAsync ($"{MachoNet.OrchestratorURL}/Nodes/next");
+            Task <long> task = ClusterManager.GetLessLoadedNode ();
 
             task.Wait ();
-            task.Result.EnsureSuccessStatusCode ();
-            // read the json and extract the required information
-            Stream inputStream = task.Result.Content.ReadAsStream ();
-
-            nodeID = JsonSerializer.Deserialize <long> (inputStream);
 
             // mark the solar system to load on the given node
-            this.LoadSolarSystemOnNode (solarSystemID, nodeID);
+            this.LoadSolarSystemOnNode (solarSystemID, task.Result);
 
             return nodeID;
         }

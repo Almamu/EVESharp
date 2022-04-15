@@ -42,6 +42,7 @@ public abstract class ClientBoundService : BoundService
     /// <returns></returns>
     protected override PyDataType MachoBindObject (ServiceBindParams bindParams, PyDataType callInfo, CallInformation call)
     {
+        // TODO: ensure that the request is at the right node and throw an util.UpdateMoniker if it's not right
         // create the bound instance and register it in the bound services
         BoundService instance = this.CreateBoundInstance (bindParams, call);
 

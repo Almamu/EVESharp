@@ -86,6 +86,7 @@ public abstract class MultiClientBoundService : BoundService
             // check if this object is already registered in our list
             if (this.mRegisteredServices.TryGetValue (bindParams.ObjectID, out instance) == false)
             {
+                // TODO: ensure that the request is at the right node and throw an util.UpdateMoniker if it's not right
                 // create the bound instance and register it in the bound services
                 instance = this.CreateBoundInstance (bindParams, call);
                 // store the new service in the list of services

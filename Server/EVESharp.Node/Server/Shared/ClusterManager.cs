@@ -194,6 +194,22 @@ public class ClusterManager
         }
     }
 
+    /// <summary>
+    /// Contacts the orchestrator and gets the node with less load
+    /// </summary>
+    /// <returns></returns>
+    public async Task<long> GetLessLoadedNode ()
+    {
+        // determine what node is going to load it and let it know
+        HttpResponseMessage response = await HttpClient.GetAsync ($"{MachoNet.OrchestratorURL}/Nodes/next");
+        
+        response.EnsureSuccessStatusCode ();
+        // read the json and extract the required information
+        Stream inputStream = await response.Content.ReadAsStreamAsync ();
+
+        return JsonSerializer.Deserialize <long> (inputStream);
+    }
+
     private void RunClusterTimerThread ()
     {
         while (true)
