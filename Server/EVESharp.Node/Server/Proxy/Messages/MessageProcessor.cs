@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using EVESharp.EVE.Sessions;
 using EVESharp.Node.Inventory;
 using EVESharp.Node.Notifications;
@@ -33,6 +35,10 @@ public class MessageProcessor : Shared.Messages.MessageProcessor
             machoMessage.Packet.Destination is PyAddressAny)
         {
             this.HandleAnyPacket (machoMessage);
+        }
+        else if (machoMessage.Packet.Type == PyPacket.PacketType.PING_RSP && machoMessage.Transport is MachoNodeTransport)
+        {
+            this.HandlePingRsp (machoMessage);            
         }
         else
         {
@@ -110,8 +116,11 @@ public class MessageProcessor : Shared.Messages.MessageProcessor
 
                 break;
             case PyPacket.PacketType.PING_REQ:
-                // TODO: SEND THIS TO A RANDOM NODEID INSTEAD OF HANDLING IT LOCALLY
-                LocalPingHandler.HandlePingReq (machoMessage);
+                this.HandlePingReq (machoMessage);
+
+                break;
+            case PyPacket.PacketType.PING_RSP:
+                this.HandlePingRsp (machoMessage);
 
                 break;
             case PyPacket.PacketType.NOTIFICATION:
@@ -119,5 +128,70 @@ public class MessageProcessor : Shared.Messages.MessageProcessor
 
                 break;
         }
+    }
+
+    private void HandlePingReq (MachoMessage machoMessage)
+    {
+        if (MachoNet.TransportManager.NodeTransports.Count == 0)
+        {
+            LocalPingHandler.HandlePingReq (machoMessage);
+
+            return;
+        }
+
+        // TODO: CHECK THIS FOR PERFORMANCE?!
+        List <MachoNodeTransport> nodeTransports = MachoNet.TransportManager.NodeTransports.Values.ToList ();
+
+        int index = Random.Shared.Next(0, nodeTransports.Count);
+        
+
+        // this time should come from the stream packetizer or the socket itself
+        // but there's no way we're adding time tracking for all the goddamned packets
+        // so this should be sufficient
+        PyTuple handleMessage = new PyTuple (3)
+        {
+            [0] = DateTime.UtcNow.ToFileTime (),
+            [1] = DateTime.UtcNow.ToFileTime (),
+            [2] = "proxy::handle_message"
+        };
+
+        PyTuple writing = new PyTuple (3)
+        {
+            [0] = DateTime.UtcNow.ToFileTime (),
+            [1] = DateTime.UtcNow.ToFileTime (),
+            [2] = "proxy::writing"
+        };
+        
+        (machoMessage.Packet.Payload [0] as PyList)?.Add (handleMessage);
+        (machoMessage.Packet.Payload [0] as PyList)?.Add (writing);
+        
+        // relay it to the node
+        nodeTransports [index].Socket.Send (machoMessage.Packet);
+    }
+
+    private void HandlePingRsp (MachoMessage machoMessage)
+    {
+        // this time should come from the stream packetizer or the socket itself
+        // but there's no way we're adding time tracking for all the goddamned packets
+        // so this should be sufficient
+        PyTuple handleMessage = new PyTuple (3)
+        {
+            [0] = DateTime.UtcNow.ToFileTime (),
+            [1] = DateTime.UtcNow.ToFileTime (),
+            [2] = "proxy::handle_message"
+        };
+
+        PyTuple writing = new PyTuple (3)
+        {
+            [0] = DateTime.UtcNow.ToFileTime (),
+            [1] = DateTime.UtcNow.ToFileTime (),
+            [2] = "proxy::writing"
+        };
+        
+        (machoMessage.Packet.Payload [0] as PyList)?.Add (handleMessage);
+        (machoMessage.Packet.Payload [0] as PyList)?.Add (writing);
+        
+        // queue it back so it now goes into the proper destination
+        MachoNet.QueueOutputPacket (machoMessage.Packet);
     }
 }

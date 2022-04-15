@@ -11,10 +11,10 @@ public class NodesController : ControllerBase
 {
     private Database                  DB                  { get; }
     private ILogger <NodesController> Logger              { get; }
-    private ConfigurationManager      Configuration       { get; }
+    private IConfiguration            Configuration       { get; }
     private IStartupInfoProvider      StartupInfoProvider { get; }
 
-    public NodesController (Database db, ILogger <NodesController> logger, IStartupInfoProvider startupInfoProvider, ConfigurationManager configuration)
+    public NodesController (Database db, ILogger <NodesController> logger, IStartupInfoProvider startupInfoProvider, IConfiguration configuration)
     {
         DB                  = db;
         Logger              = logger;
@@ -206,7 +206,7 @@ public class NodesController : ControllerBase
             {
                 NodeId  = nodeId,
                 Address = address.ToString (),
-                TimeInterval = Configuration.GetSection ("Cluster") ["TimedEventsInterval"],
+                TimeInterval = int.Parse (Configuration.GetSection ("Cluster") ["TimedEventsInterval"]),
                 StartupTime = StartupInfoProvider.Time.ToFileTimeUtc ()
             };
         }

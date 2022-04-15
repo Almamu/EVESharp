@@ -54,8 +54,9 @@ public class MessageProcessor : Shared.Messages.MessageProcessor
 
                 break;
             case PyPacket.PacketType.PING_REQ:
-                throw new Exception ("PingReq not supported on nodes yet!");
+                this.HandlePingReq (machoMessage);
 
+                break;
             case PyPacket.PacketType.NOTIFICATION:
                 LocalNotificationHandler.HandleNotification (machoMessage);
 
@@ -76,5 +77,41 @@ public class MessageProcessor : Shared.Messages.MessageProcessor
 
         foreach ((int _, BoundService service) in BoundServiceManager.BoundServices)
             service.ApplySessionChange (characterID, scn.Changes);
+    }
+
+    private void HandlePingReq (MachoMessage machoMessage)
+    {
+        // alter package to include the times the data
+        PyAddressClient source = machoMessage.Packet.Source as PyAddressClient;
+        
+        // this time should come from the stream packetizer or the socket itself
+        // but there's no way we're adding time tracking for all the goddamned packets
+        // so this should be sufficient
+        PyTuple serverHandleMessage = new PyTuple (3)
+        {
+            [0] = DateTime.UtcNow.ToFileTime (),
+            [1] = DateTime.UtcNow.ToFileTime (),
+            [2] = "server::handle_message"
+        };
+
+        PyTuple serverTurnaround = new PyTuple (3)
+        {
+            [0] = DateTime.UtcNow.ToFileTime (),
+            [1] = DateTime.UtcNow.ToFileTime (),
+            [2] = "server::turnaround"
+        };
+        
+        (machoMessage.Packet.Payload [0] as PyList)?.Add (serverHandleMessage);
+        (machoMessage.Packet.Payload [0] as PyList)?.Add (serverTurnaround);
+
+        // change to a response
+        machoMessage.Packet.Type = PyPacket.PacketType.PING_RSP;
+
+        // switch source and destination
+        machoMessage.Packet.Source      = machoMessage.Packet.Destination;
+        machoMessage.Packet.Destination = source;
+
+        // queue the packet back
+        MachoNet.QueueOutputPacket (machoMessage.Transport, machoMessage.Packet);
     }
 }

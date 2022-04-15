@@ -129,7 +129,7 @@ public class Session : PyDictionary <PyString, PyDataType>
     }
     public int CorporationID
     {
-        get => this [CORP_ID] as PyInteger;
+        get => this [CORP_ID] as PyInteger ?? 0;
         set => this [CORP_ID] = value;
     }
     public int CorpAccountKey
@@ -215,9 +215,9 @@ public class Session : PyDictionary <PyString, PyDataType>
         get => this [LOCATION_ID] as PyInteger;
         set => this [LOCATION_ID] = value;
     }
-    public int? AllianceID
+    public int AllianceID
     {
-        get => this [ALLIANCE_ID] as PyInteger;
+        get => this [ALLIANCE_ID] as PyInteger ?? 0;
         set => this [ALLIANCE_ID] = value;
     }
     public int? WarFactionID
