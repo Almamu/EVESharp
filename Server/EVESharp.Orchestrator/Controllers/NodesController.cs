@@ -1,4 +1,5 @@
 using EVESharp.Orchestator.Models;
+using EVESharp.Orchestator.Providers;
 using Microsoft.AspNetCore.Mvc;
 using MySql.Data.MySqlClient;
 
@@ -8,13 +9,17 @@ namespace EVESharp.Orchestator.Controllers;
 [Route ("[controller]")]
 public class NodesController : ControllerBase
 {
-    private Database                  DB     { get; }
-    private ILogger <NodesController> Logger { get; }
+    private Database                  DB                  { get; }
+    private ILogger <NodesController> Logger              { get; }
+    private ConfigurationManager      Configuration       { get; }
+    private IStartupInfoProvider      StartupInfoProvider { get; }
 
-    public NodesController (Database db, ILogger <NodesController> logger)
+    public NodesController (Database db, ILogger <NodesController> logger, IStartupInfoProvider startupInfoProvider, ConfigurationManager configuration)
     {
-        DB     = db;
-        Logger = logger;
+        DB                  = db;
+        Logger              = logger;
+        Configuration       = configuration;
+        StartupInfoProvider = startupInfoProvider;
     }
 
     [HttpGet (Name = "GetNodeList")]
@@ -200,7 +205,9 @@ public class NodesController : ControllerBase
             return new
             {
                 NodeId  = nodeId,
-                Address = address.ToString ()
+                Address = address.ToString (),
+                TimeInterval = Configuration.GetSection ("Cluster") ["TimedEventsInterval"],
+                StartupTime = StartupInfoProvider.Time.ToFileTimeUtc ()
             };
         }
     }

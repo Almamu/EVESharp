@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Net.Http;
 using EVESharp.Common.Database;
 using EVESharp.Common.Logging;

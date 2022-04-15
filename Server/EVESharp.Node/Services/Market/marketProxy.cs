@@ -24,6 +24,7 @@ using EVESharp.Node.Inventory.Items;
 using EVESharp.Node.Inventory.Items.Types;
 using EVESharp.Node.Market;
 using EVESharp.Node.Notifications;
+using EVESharp.Node.Server.Shared;
 using EVESharp.Node.Sessions;
 using EVESharp.PythonTypes.Types.Primitives;
 using MySql.Data.MySqlClient;
@@ -52,7 +53,7 @@ public class marketProxy : Service
 
     public marketProxy (
         MarketDB  db,        CharacterDB        characterDB, ItemDB itemDB, SolarSystemDB solarSystemDB, ItemFactory itemFactory, CacheStorage cacheStorage,
-        Constants constants, NotificationSender notificationSender, WalletManager walletManager, DogmaUtils dogmaUtils
+        Constants constants, NotificationSender notificationSender, WalletManager walletManager, DogmaUtils dogmaUtils, ClusterManager clusterManager
     )
     {
         DB            = db;
@@ -66,8 +67,7 @@ public class marketProxy : Service
         WalletManager = walletManager;
         DogmaUtils    = dogmaUtils;
 
-        // TODO: RE-IMPLEMENT ON CLUSTER TIMER
-        // machoNet.OnClusterTimer += this.PerformTimedEvents;
+        clusterManager.OnClusterTimer += this.PerformTimedEvents;
     }
 
     private PyDataType GetNewTransactions (

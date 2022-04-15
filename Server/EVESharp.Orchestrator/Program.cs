@@ -1,4 +1,5 @@
 using EVESharp.Orchestator.Models;
+using EVESharp.Orchestator.Providers;
 using MySql.Data.MySqlClient;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder (args);
@@ -12,6 +13,7 @@ builder.Services.AddControllers ();
 builder.Services.AddEndpointsApiExplorer ();
 builder.Services.AddSwaggerGen ();
 builder.Services.AddSingleton (db);
+builder.Services.AddSingleton (new StartupInfoProvider () {Time = DateTime.Now});
 
 // check for the settings and restart things if needed
 bool restartOnStartup = bool.Parse (builder.Configuration.GetSection ("Cluster") ["ResetOnStartup"]);

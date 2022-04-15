@@ -15,6 +15,7 @@ using EVESharp.Node.Client.Notifications.Wallet;
 using EVESharp.Node.Database;
 using EVESharp.Node.Inventory;
 using EVESharp.Node.Notifications;
+using EVESharp.Node.Server.Shared;
 using EVESharp.PythonTypes.Types.Primitives;
 
 namespace EVESharp.Node.Services.Account;
@@ -31,7 +32,7 @@ public class billMgr : Service
 
     public billMgr (
         CacheStorage       cacheStorage, DatabaseConnection databaseConnection, BillsDB db, CorporationDB corporationDb, ItemFactory itemFactory,
-        NotificationSender notificationSender
+        NotificationSender notificationSender, ClusterManager clusterManager
     )
     {
         CacheStorage  = cacheStorage;
@@ -41,8 +42,7 @@ public class billMgr : Service
         ItemFactory   = itemFactory;
         Notifications = notificationSender;
 
-        // TODO: RE-IMPLEMENT ON CLUSTER TIMER
-        // machoNet.OnClusterTimer += this.PerformTimedEvents;
+        clusterManager.OnClusterTimer += this.PerformTimedEvents;
     }
 
     public PyDataType GetBillTypes (CallInformation call)

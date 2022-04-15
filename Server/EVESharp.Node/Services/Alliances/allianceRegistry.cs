@@ -17,6 +17,7 @@ using EVESharp.Node.Inventory;
 using EVESharp.Node.Inventory.Items.Types;
 using EVESharp.Node.Notifications;
 using EVESharp.Node.Notifications.Nodes.Corps;
+using EVESharp.Node.Server.Shared;
 using EVESharp.PythonTypes.Types.Primitives;
 using MySql.Data.MySqlClient;
 using SessionManager = EVESharp.Node.Sessions.SessionManager;
@@ -37,7 +38,7 @@ public class allianceRegistry : MultiClientBoundService
 
     public allianceRegistry (
         DatabaseConnection  databaseConnection, CorporationDB  corporationDB, ChatDB chatDB, ItemFactory itemFactory, NotificationSender notificationSender,
-        BoundServiceManager manager,            SessionManager sessionManager
+        BoundServiceManager manager,            SessionManager sessionManager, ClusterManager clusterManager
     ) : base (manager)
     {
         Database       = databaseConnection;
@@ -47,8 +48,7 @@ public class allianceRegistry : MultiClientBoundService
         ItemFactory    = itemFactory;
         SessionManager = sessionManager;
 
-        // TODO: RE-IMPLEMENT ON CLUSTER TIMER
-        // machoNet.OnClusterTimer += PerformTimedEvents;
+        clusterManager.OnClusterTimer += PerformTimedEvents;
     }
 
     private allianceRegistry (

@@ -1,4 +1,5 @@
-﻿using EVESharp.Common.Network.Messages;
+﻿using System;
+using EVESharp.Common.Network.Messages;
 using EVESharp.Node.Accounts;
 using EVESharp.Node.Database;
 using EVESharp.Node.Server.Shared.Messages;

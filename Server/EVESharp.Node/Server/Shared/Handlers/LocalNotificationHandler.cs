@@ -136,10 +136,6 @@ public class LocalNotificationHandler
                 this.HandleOnItemUpdate (packet.Payload);
 
                 break;
-            case "OnClusterTimer":
-                this.HandleOnClusterTimer (packet.Payload [1] as PyTuple);
-
-                break;
             case OnCorporationMemberChanged.NOTIFICATION_NAME:
                 this.HandleOnCorporationMemberChanged (packet.Payload);
 
@@ -299,13 +295,6 @@ public class LocalNotificationHandler
                 // save the item if the new location is not removal
                 item.Persist ();
         }
-    }
-
-    private void HandleOnClusterTimer (PyTuple data)
-    {
-        Log.Information ("Received a cluster request to run timed events on services...");
-
-        // this.OnClusterTimer?.Invoke(this, null);
     }
 
     private void HandleOnCorporationMemberChanged (OnCorporationMemberChanged change)

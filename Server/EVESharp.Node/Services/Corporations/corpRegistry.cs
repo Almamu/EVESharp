@@ -29,6 +29,7 @@ using EVESharp.Node.Inventory.Items.Types;
 using EVESharp.Node.Market;
 using EVESharp.Node.Notifications;
 using EVESharp.Node.Notifications.Nodes.Corps;
+using EVESharp.Node.Server.Shared;
 using EVESharp.Node.Sessions;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Database;
@@ -70,7 +71,7 @@ public class corpRegistry : MultiClientBoundService
     public corpRegistry (
         CorporationDB db,          DatabaseConnection databaseConnection, ChatDB      chatDB, CharacterDB characterDB, NotificationSender notificationSender,
         MailManager   mailManager, WalletManager      walletManager,      ItemFactory itemFactory, Constants constants, BoundServiceManager manager,
-        Ancestries    ancestries,  SessionManager     sessionManager
+        Ancestries    ancestries,  SessionManager     sessionManager, ClusterManager clusterManager
     ) : base (manager)
     {
         DB             = db;
@@ -85,8 +86,7 @@ public class corpRegistry : MultiClientBoundService
         Ancestries     = ancestries;
         SessionManager = sessionManager;
 
-        // TODO: RE-IMPLEMENT ON CLUSTER TIMER
-        // machoNet.OnClusterTimer += this.PerformTimedEvents;
+        clusterManager.OnClusterTimer += this.PerformTimedEvents;
     }
 
     protected corpRegistry (

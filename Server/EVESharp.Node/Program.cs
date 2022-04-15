@@ -384,11 +384,14 @@ internal class Program
 
                 while (true)
                 {
+                    if (machoNet.Mode == RunMode.Single)
+                        continue;
+
                     // wait 45 seconds to send a heartbeat
                     Thread.Sleep (45 * 1000);
 
-                    if (machoNet.Mode != RunMode.Single)
-                        dependencies.GetInstance <ClusterManager> ().PerformHeartbeat ();
+                    // send the heartbeat
+                    dependencies.GetInstance <ClusterManager> ().PerformHeartbeat ();
                 }
             }
             catch (Exception e)

@@ -1,8 +1,10 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Net.Http;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using System.Threading;
 using System.Threading.Tasks;
 using EVESharp.Common.Logging;
 using EVESharp.EVE.Packets;
@@ -13,17 +15,34 @@ namespace EVESharp.Node.Server.Shared;
 
 public class ClusterManager
 {
-    public IMachoNet        MachoNet         { get; }
-    public ILogger          Log              { get; }
-    public TransportManager TransportManager { get; }
-    public HttpClient       HttpClient       { get; }
+    public  IMachoNet        MachoNet         { get; }
+    public  ILogger          Log              { get; }
+    public  TransportManager TransportManager { get; }
+    public  HttpClient       HttpClient       { get; }
+    private DateTime         IntervalStart    { get; set; }
+    private int              IntervalDuration { get; set; }
+    private Thread           mClusterTimer;
+    /// <summary>
+    /// The event used when a timed event has to happen cluster-wide
+    /// </summary>
+    public EventHandler OnClusterTimer { get; set; }
 
     public ClusterManager (IMachoNet machoNet, TransportManager transportManager, HttpClient httpClient, ILogger logger)
     {
-        MachoNet         = machoNet;
-        Log              = logger;
-        TransportManager = transportManager;
-        HttpClient       = httpClient;
+        MachoNet           = machoNet;
+        Log                = logger;
+        TransportManager   = transportManager;
+        HttpClient         = httpClient;
+        this.mClusterTimer = new Thread (this.RunClusterTimerThread);
+
+        if (machoNet.Mode == RunMode.Single)
+        {
+            IntervalStart    = DateTime.Now;
+            IntervalDuration = 5;
+            
+            // start up the thread
+            this.mClusterTimer.Start ();            
+        }
     }
 
     /// <summary>
@@ -57,8 +76,15 @@ public class ClusterManager
 
         MachoNet.Address = result ["address"].ToString ();
         MachoNet.NodeID  = (long) result ["nodeId"];
+        IntervalStart    = DateTime.FromFileTimeUtc((long) result ["startupTime"]);
+        IntervalDuration = (int) result ["timeInterval"];
 
         MachoNet.Log.Information ($"Orchestrator assigned node id {MachoNet.NodeID} with address {MachoNet.Address}");
+    
+        // TODO: PROPERLY SELECT THIS AS THIS PREVENTS MULTIPLE PROXIES ACTUALLY WORKING AT ONCE
+        if (MachoNet.Mode == RunMode.Proxy)
+            // start the cluster timer thread
+            this.mClusterTimer.Start ();
     }
 
     /// <summary>
@@ -165,6 +191,26 @@ public class ClusterManager
             long nodeID = (long) proxy ["nodeID"];
 
             await this.OpenNodeConnection (nodeID);
+        }
+    }
+
+    private void RunClusterTimerThread ()
+    {
+        while (true)
+        {
+            TimeSpan minutesTimespan = TimeSpan.FromMinutes (IntervalDuration);
+            long     startTime       = IntervalStart.Ticks;
+            long     currentTime     = DateTime.Now.Ticks;
+            long     diff            = currentTime - startTime;
+            long     timesCluster    = diff / minutesTimespan.Ticks;
+            long     startNextTime   = startTime + (timesCluster + 1) * minutesTimespan.Ticks;
+
+            // wait for the required time until the next timer fires
+            Thread.Sleep (TimeSpan.FromTicks (startNextTime - currentTime));
+
+            Log.Debug ("Running periodic cluster timed events");
+            
+            this.OnClusterTimer?.Invoke (this, null);
         }
     }
 }
