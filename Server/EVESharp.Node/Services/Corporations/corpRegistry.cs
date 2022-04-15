@@ -421,8 +421,6 @@ public class corpRegistry : MultiClientBoundService
         // TODO: CHECK FOR ACTIVE WARS AND THROW A CUSTOMERROR WITH THIS TEXT: UI_CORP_HINT7
 
         this.ValidateAllianceName (name, shortName);
-        // delete any existant application to alliances
-        this.DeleteAllianceApplicationIfExists ();
 
         // TODO: PROPERLY IMPLEMENT THIS CHECK, RIGHT NOW THE CHARACTER AND THE CORPREGISTRY INSTANCES DO NOT HAVE TO BE LOADED ON THE SAME NODE
         // TODO: SWITCH UP THE CORPORATION CHANGE MECHANISM TO NOT RELY ON THE CHARACTER OBJECT SO THIS CAN BE DONE THROUGH THE DATABASE
@@ -469,7 +467,8 @@ public class corpRegistry : MultiClientBoundService
                 }
             );
 
-            // TODO: REMOVE ANY PENDING APPLICATIONS THE CORPORATION HAS
+            // delete any existant application to alliances
+            this.DeleteAllianceApplicationIfExists ();
 
             Corporation.AllianceID     = allianceID;
             Corporation.ExecutorCorpID = Corporation.ID;
@@ -860,6 +859,7 @@ public class corpRegistry : MultiClientBoundService
         if (Corporation.CeoID != call.Session.CharacterID)
             throw new CrpAccessDenied (MLS.UI_CORP_ACCESSDENIED12);
 
+        // TODO: CHANGE THIS UP SO IT DOESN'T REQUIRE THE OBJECT IN MEMORY AS CORPREGISTRY MIGHT NOT BE ON THE SAME NODE AS OUR CHARACTER
         Character character = ItemFactory.GetItem <Character> (call.Session.CharacterID);
 
         this.CalculateCorporationLimits (character, out int maximumMembers, out int allowedMemberRaceIDs);

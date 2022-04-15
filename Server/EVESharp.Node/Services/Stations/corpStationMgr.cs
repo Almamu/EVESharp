@@ -76,7 +76,6 @@ public class corpStationMgr : ClientBoundService
     [MustBeInStation]
     public PyList GetCorporateStationOffice (CallInformation call)
     {
-        // TODO: IMPLEMENT WHEN CORPORATION SUPPORT IS IN PLACE
         return StationDB.GetOfficesList (call.Session.StationID);
     }
 
@@ -315,7 +314,6 @@ public class corpStationMgr : ClientBoundService
         
         // return the new officeID
         return item.ID;
-        // TODO: NOTIFY THE CORPREGISTRY SERVICE TO UPDATE THIS LIST OF OFFICES
     }
 
     [MustBeInStation]
