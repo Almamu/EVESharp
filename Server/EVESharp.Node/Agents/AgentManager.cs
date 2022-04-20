@@ -18,15 +18,12 @@ public class AgentManager
 
     public CRowset GetAgents ()
     {
-        return DB.CRowset (AgentDB.GET_AGENTS);
+        return DB.AgtGetAgents ();
     }
 
     public PyDataType GetInfo (int agentID)
     {
-        PyDictionary <PyString, PyDataType> information = DB.Dictionary (
-            AgentDB.GET_INFO,
-            new Dictionary <string, object> {{"@agentID", agentID}}
-        );
+        PyDictionary <PyString, PyDataType> information = DB.AgtGetInfo (agentID);
 
         information ["services"] = new PyList ();
 

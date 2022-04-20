@@ -1,3 +1,5 @@
+using EVESharp.Common.Database;
+using EVESharp.Database;
 using EVESharp.EVE.Client.Exceptions.corpRegistry;
 using EVESharp.EVE.Client.Exceptions.inventory;
 using EVESharp.EVE.Client.Messages;
@@ -19,6 +21,7 @@ using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Primitives;
 using Container = EVESharp.EVE.StaticData.Inventory.Container;
 using Groups = EVESharp.EVE.StaticData.Inventory.Groups;
+using ItemDB = EVESharp.Node.Database.ItemDB;
 
 namespace EVESharp.Node.Services.Inventory;
 
@@ -34,10 +37,11 @@ public class invbroker : ClientBoundService
     private NotificationSender Notifications  { get; }
     private DogmaUtils         DogmaUtils     { get; }
     private EffectsManager     EffectsManager { get; }
+    private DatabaseConnection Database       { get; }
 
     public invbroker (
         ItemDB     itemDB,     EffectsManager      effectsManager, ItemFactory itemFactory, NotificationSender notificationSender,
-        DogmaUtils dogmaUtils, BoundServiceManager manager
+        DogmaUtils dogmaUtils, BoundServiceManager manager, DatabaseConnection database
     ) : base (manager)
     {
         EffectsManager = effectsManager;
@@ -45,6 +49,7 @@ public class invbroker : ClientBoundService
         ItemDB         = itemDB;
         Notifications  = notificationSender;
         DogmaUtils     = dogmaUtils;
+        Database       = database;
     }
 
     private invbroker (
@@ -265,16 +270,12 @@ public class invbroker : ClientBoundService
 
     protected override long MachoResolveObject (ServiceBindParams parameters, CallInformation call)
     {
-        int solarSystemID = 0;
-
-        if (parameters.ExtraValue == (int) Groups.SolarSystem)
-            solarSystemID = ItemFactory.GetStaticSolarSystem (parameters.ObjectID).ID;
-        else if (parameters.ExtraValue == (int) Groups.Station)
-            solarSystemID = ItemFactory.GetStaticStation (parameters.ObjectID).SolarSystemID;
-        else
-            throw new CustomError ("Unknown item's groupID");
-
-        return SystemManager.LoadSolarSystemOnCluster (solarSystemID);
+        return parameters.ExtraValue switch
+        {
+            (int) Groups.SolarSystem => Database.CluResolveAddress ("solarsystem", parameters.ObjectID),
+            (int) Groups.Station     => Database.CluResolveAddress ("station",     parameters.ObjectID),
+            _                        => throw new CustomError ("Unknown item's groupID")
+        };
     }
 
     protected override BoundService CreateBoundInstance (ServiceBindParams bindParams, CallInformation call)

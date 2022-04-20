@@ -50,15 +50,7 @@ public class WalletManager
         Database.GetLock (ref connection, $"wallet_{ownerID}_{walletKey}");
 
         // get the current owner's balance
-        balance = Database.Scalar <double> (
-            ref connection,
-            WalletDB.GET_WALLET_BALANCE,
-            new Dictionary <string, object>
-            {
-                {"_walletKey", walletKey},
-                {"_ownerID", ownerID}
-            }
-        );
+        balance = Database.MktWalletGetBalance (ref connection, walletKey, ownerID);
 
         return connection;
     }
@@ -86,54 +78,23 @@ public class WalletManager
     /// <param name="quantity">The amount of items</param>
     /// <param name="amount">The amount of ISK</param>
     /// <param name="stationID">The place where the transaction was recorded</param>
-    /// <param name="accountKey">The account key where the transaction was recorded</param>
+    /// <param name="walletKey">The account key where the transaction was recorded</param>
     public void CreateTransactionRecord (
         int ownerID,   TransactionType type, int characterID, int otherID, int typeID, int quantity, double amount,
-        int stationID, int             accountKey
+        int stationID, int             walletKey
     )
     {
-        // market transactions do not affect the wallet value because these are paid either when placing the sell/buy order
-        // or when fullfiling it
-        Database.Procedure (
-            WalletDB.RECORD_TRANSACTION,
-            new Dictionary <string, object>
-            {
-                {"_transactionDateTime", DateTime.UtcNow.ToFileTimeUtc ()},
-                {"_typeID", typeID},
-                {"_quantity", quantity},
-                {"_price", amount},
-                {"_transactionType", (int) type},
-                {"_characterID", characterID},
-                {"_clientID", otherID},
-                {"_stationID", stationID},
-                {"_accountKey", accountKey},
-                {"_entityID", ownerID}
-            }
-        );
+        Database.MktRecordTransaction (ownerID, type, characterID, otherID, typeID, quantity, amount, stationID, walletKey);
     }
 
     public void CreateJournalForOwner (
         MarketReference reference, int  characterID, int    ownerID1,
-        int?            ownerID2,  int? referenceID, double amount, double finalBalance, string reason, int accountKey
+        int?            ownerID2,  int? referenceID, double amount, double finalBalance, string reason, int walletKey
     )
     {
-        reason = reason.Substring (0, Math.Min (reason.Length, 43));
-
-        Database.Procedure (
-            WalletDB.CREATE_JOURNAL_ENTRY,
-            new Dictionary <string, object>
-            {
-                {"_transactionDate", DateTime.UtcNow.ToFileTimeUtc ()},
-                {"_entryTypeID", (int) reference},
-                {"_charID", characterID},
-                {"_ownerID1", ownerID1},
-                {"_ownerID2", ownerID2},
-                {"_referenceID", referenceID},
-                {"_amount", amount},
-                {"_balance", finalBalance},
-                {"_description", reason},
-                {"_accountKey", accountKey}
-            }
+        Database.MktCreateJournalEntry (
+            reference, characterID, ownerID1, ownerID2, referenceID, amount, finalBalance, reason,
+            walletKey
         );
     }
 
@@ -141,19 +102,11 @@ public class WalletManager
     /// Creates a new wallet for the given owner with the specified walletKey
     /// </summary>
     /// <param name="ownerID">The ownerID</param>
-    /// <param name="accountKey">The accountKey</param>
+    /// <param name="walletKey">The walletKey</param>
     /// <param name="startingBalance">The starting balance of the wallet</param>
-    public void CreateWallet (int ownerID, int accountKey, double startingBalance)
+    public void CreateWallet (int ownerID, int walletKey, double startingBalance)
     {
-        Database.Procedure (
-            WalletDB.CREATE_WALLET,
-            new Dictionary <string, object>
-            {
-                {"_walletKey", accountKey},
-                {"_ownerID", ownerID},
-                {"_balance", startingBalance}
-            }
-        );
+        Database.MktWalletCreate (startingBalance, ownerID, walletKey);
     }
 
     public bool IsAccessAllowed (Session session, int accountKey, int ownerID)
@@ -228,13 +181,6 @@ public class WalletManager
     /// <returns>The wallet's balance</returns>
     public double GetWalletBalance (int ownerID, int walletKey = Keys.MAIN)
     {
-        return Database.Scalar <double> (
-            WalletDB.GET_WALLET_BALANCE,
-            new Dictionary <string, object>
-            {
-                {"_ownerID", ownerID},
-                {"_walletKey", walletKey}
-            }
-        );
+        return Database.MktWalletGetBalance (walletKey, ownerID);
     }
 }

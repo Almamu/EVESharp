@@ -4,4 +4,9 @@
         <TargetFramework>net6.0</TargetFramework>
     </PropertyGroup>
 
+    <ItemGroup>
+      <ProjectReference Include="..\EVESharp.Common\EVESharp.Common.csproj" />
+      <ProjectReference Include="..\EVESharp.EVE\EVESharp.EVE.csproj" />
+    </ItemGroup>
+
 </Project>

@@ -1,4 +1,6 @@
 ﻿using System;
+using EVESharp.Common.Database;
+using EVESharp.Database;
 using EVESharp.EVE.Client.Exceptions.insuranceSvc;
 using EVESharp.EVE.Client.Exceptions.jumpCloneSvc;
 using EVESharp.EVE.Market;
@@ -12,6 +14,7 @@ using EVESharp.Node.Database;
 using EVESharp.Node.Inventory;
 using EVESharp.Node.Inventory.Items.Types;
 using EVESharp.Node.Market;
+using EVESharp.Node.Server.Shared;
 using EVESharp.Node.Sessions;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Database;
@@ -22,17 +25,18 @@ namespace EVESharp.Node.Services.Inventory;
 [MustBeCharacter]
 public class insuranceSvc : ClientBoundService
 {
-    private readonly int           mStationID;
-    public override  AccessLevel   AccessLevel   => AccessLevel.None;
-    private          InsuranceDB   DB            { get; }
-    private          ItemFactory   ItemFactory   { get; }
-    private          MarketDB      MarketDB      { get; }
-    private          SystemManager SystemManager => ItemFactory.SystemManager;
-    private          WalletManager WalletManager { get; }
-    private          MailManager   MailManager   { get; }
+    private readonly int                mStationID;
+    public override  AccessLevel        AccessLevel   => AccessLevel.None;
+    private          InsuranceDB        DB            { get; }
+    private          ItemFactory        ItemFactory   { get; }
+    private          MarketDB           MarketDB      { get; }
+    private          SystemManager      SystemManager => ItemFactory.SystemManager;
+    private          WalletManager      WalletManager { get; }
+    private          MailManager        MailManager   { get; }
+    private          DatabaseConnection Database      { get; }
 
     public insuranceSvc (
-        ItemFactory itemFactory, InsuranceDB db, MarketDB marketDB, WalletManager walletManager, MailManager mailManager, BoundServiceManager manager
+        ClusterManager clusterManager, ItemFactory itemFactory, InsuranceDB db, MarketDB marketDB, WalletManager walletManager, MailManager mailManager, BoundServiceManager manager, DatabaseConnection database
     ) : base (manager)
     {
         DB            = db;
@@ -40,9 +44,9 @@ public class insuranceSvc : ClientBoundService
         MarketDB      = marketDB;
         WalletManager = walletManager;
         MailManager   = mailManager;
-
-        // TODO: RE-IMPLEMENT ON CLUSTER TIMER
-        // machoNet.OnClusterTimer += PerformTimedEvents;
+        Database      = database;
+        
+        clusterManager.OnClusterTimer += PerformTimedEvents;
     }
 
     protected insuranceSvc (
@@ -181,12 +185,7 @@ public class insuranceSvc : ClientBoundService
 
     protected override long MachoResolveObject (ServiceBindParams parameters, CallInformation call)
     {
-        int solarSystemID = ItemFactory.GetStaticStation (parameters.ObjectID).SolarSystemID;
-
-        if (SystemManager.SolarSystemBelongsToUs (solarSystemID))
-            return BoundServiceManager.MachoNet.NodeID;
-
-        return SystemManager.GetNodeSolarSystemBelongsTo (solarSystemID);
+        return Database.CluResolveAddress ("solarsystem", parameters.ObjectID);
     }
 
     protected override BoundService CreateBoundInstance (ServiceBindParams bindParams, CallInformation call)

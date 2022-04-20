@@ -4,6 +4,7 @@ using System.Net.Http;
 using EVESharp.Common.Database;
 using EVESharp.Common.Logging;
 using EVESharp.Common.Network.Messages;
+using EVESharp.Database;
 using EVESharp.Node.Accounts;
 using EVESharp.Node.Configuration;
 using EVESharp.Node.Database;
@@ -83,10 +84,7 @@ public class MachoNet : IMachoNet
         {
             // packet for a client means lookup
             // TODO: OPTIMIZE THIS WITH SOME KIND OF CACHE?
-            long proxyNodeID = Database.Scalar <long> (
-                AccountDB.RESOLVE_CLIENT_ADDRESS,
-                new Dictionary <string, object> {{"_clientID", client.ClientID}}
-            );
+            long proxyNodeID = Database.CluResolveClientAddress (client.ClientID);
 
             if (TransportManager.ProxyTransports.TryGetValue (proxyNodeID, out MachoProxyTransport proxy) == false)
             {

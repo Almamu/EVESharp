@@ -455,20 +455,7 @@ public class corpRegistry : MultiClientBoundService
             ItemFactory.UnloadItem (allianceItem);
 
             // now record the alliance into the database
-            Database.Procedure (
-                AlliancesDB.CREATE,
-                new Dictionary <string, object>
-                {
-                    {"_allianceID", allianceID},
-                    {"_shortName", shortName},
-                    {"_description", description},
-                    {"_url", url},
-                    {"_creatorID", call.Session.CorporationID},
-                    {"_creatorCharacterID", callerCharacterID},
-                    {"_dictatorial", false},
-                    {"_startDate", DateTime.UtcNow.ToFileTimeUtc ()}
-                }
-            );
+            Database.CrpAlliancesCreate (allianceID, shortName, description, url, call.Session.CorporationID, callerCharacterID);
 
             // delete any existant application to alliances
             this.DeleteAllianceApplicationIfExists ();
@@ -1430,24 +1417,13 @@ public class corpRegistry : MultiClientBoundService
 
     protected override long MachoResolveObject (ServiceBindParams parameters, CallInformation call)
     {
-        long nodeID = ItemFactory.ItemDB.GetItemNode (parameters.ObjectID);
-
-        if (nodeID != 0)
-            return nodeID;
-
-        Task <long> task = ClusterManager.GetLessLoadedNode ();
-
-        task.Wait ();
-        
-        return task.Result;
+        return Database.CluResolveAddress ("corpRegistry", parameters.ObjectID);
     }
 
     protected override MultiClientBoundService CreateBoundInstance (ServiceBindParams bindParams, CallInformation call)
     {
-        // TODO: RE-IMPLEMENT THIS CHECK AS THE CLIENT IS THE ONE PERFORMING THE ACTUAL BINDING
-        // TODO: MAYBE THE PROXY SHOULD TELL THE NODE TO ACQUIRE OWNERSHIP OF THE OBJECTID BEFORE THE CLIENT ACTUALLY TRIES TO ACCESS IT
-        // if (this.MachoResolveObject (bindParams, call) != BoundServiceManager.MachoNet.NodeID)
-        //     throw new CustomError ("Trying to bind an object that does not belong to us!");
+        if (this.MachoResolveObject (bindParams, call) != BoundServiceManager.MachoNet.NodeID)
+             throw new CustomError ("Trying to bind an object that does not belong to us!");
 
         Corporation corp = ItemFactory.LoadItem <Corporation> (bindParams.ObjectID);
 

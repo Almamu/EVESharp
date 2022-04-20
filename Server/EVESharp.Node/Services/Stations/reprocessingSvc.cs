@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using EVESharp.Common.Database;
+using EVESharp.Database;
 using EVESharp.EVE.Client.Exceptions;
 using EVESharp.EVE.Client.Exceptions.jumpCloneSvc;
 using EVESharp.EVE.Client.Exceptions.reprocessingSvc;
@@ -49,21 +51,23 @@ public class reprocessingSvc : ClientBoundService
     private readonly Station       mStation;
     public override  AccessLevel   AccessLevel => AccessLevel.None;
 
-    private ItemFactory    ItemFactory    { get; }
-    private SystemManager  SystemManager  => ItemFactory.SystemManager;
-    private TypeManager    TypeManager    => ItemFactory.TypeManager;
-    private StandingDB     StandingDB     { get; }
-    private ReprocessingDB ReprocessingDB { get; }
-    private DogmaUtils     DogmaUtils     { get; }
+    private ItemFactory        ItemFactory    { get; }
+    private SystemManager      SystemManager  => ItemFactory.SystemManager;
+    private TypeManager        TypeManager    => ItemFactory.TypeManager;
+    private StandingDB         StandingDB     { get; }
+    private ReprocessingDB     ReprocessingDB { get; }
+    private DogmaUtils         DogmaUtils     { get; }
+    private DatabaseConnection Database       { get; }
 
     public reprocessingSvc (
-        ReprocessingDB reprocessingDb, StandingDB standingDb, ItemFactory itemFactory, BoundServiceManager manager, DogmaUtils dogmaUtils
+        ReprocessingDB reprocessingDb, StandingDB standingDb, ItemFactory itemFactory, BoundServiceManager manager, DogmaUtils dogmaUtils, DatabaseConnection database
     ) : base (manager)
     {
         ReprocessingDB = reprocessingDb;
         StandingDB     = standingDb;
         ItemFactory    = itemFactory;
         DogmaUtils     = dogmaUtils;
+        Database       = database;
     }
 
     protected reprocessingSvc (
@@ -274,10 +278,7 @@ public class reprocessingSvc : ClientBoundService
 
     protected override long MachoResolveObject (ServiceBindParams parameters, CallInformation call)
     {
-        if (SystemManager.StationBelongsToUs (parameters.ObjectID))
-            return BoundServiceManager.MachoNet.NodeID;
-
-        return SystemManager.GetNodeStationBelongsTo (parameters.ObjectID);
+        return Database.CluResolveAddress ("station", parameters.ObjectID);
     }
 
     protected override BoundService CreateBoundInstance (ServiceBindParams bindParams, CallInformation call)

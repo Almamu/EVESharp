@@ -24,6 +24,7 @@
 
 using System.Collections.Generic;
 using EVESharp.Common.Database;
+using EVESharp.Database;
 using EVESharp.EVE.Inventory.Attributes;
 using EVESharp.EVE.StaticData.Dogma;
 using EVESharp.EVE.StaticData.Inventory;
@@ -395,14 +396,7 @@ public class ItemDB : DatabaseAccessor
                 throw new ItemNotLoadedException (itemID, "Trying to load an item that is loaded on another node!");
 
             // Update the database information
-            Database.Procedure (
-                EVESharp.Database.ItemDB.SET_ITEM_NODE,
-                new Dictionary <string, object>
-                {
-                    {"_nodeID", nodeID},
-                    {"_itemID", itemID}
-                }
-            );
+            Database.InvSetItemNode (itemID, nodeID);
 
             return newItem;
         }

@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using EVESharp.Common.Database;
+using EVESharp.Database;
 using EVESharp.EVE.Client.Exceptions.corpStationMgr;
 using EVESharp.EVE.Market;
 using EVESharp.EVE.Packets.Exceptions;
@@ -25,6 +27,7 @@ using EVESharp.PythonTypes.Types.Database;
 using EVESharp.PythonTypes.Types.Primitives;
 using Character = EVESharp.Node.Inventory.Items.Types.Character;
 using Groups = EVESharp.EVE.StaticData.Inventory.Groups;
+using ItemDB = EVESharp.Node.Database.ItemDB;
 using Type = EVESharp.EVE.StaticData.Inventory.Type;
 
 namespace EVESharp.Node.Services.Stations;
@@ -43,10 +46,11 @@ public class corpStationMgr : ClientBoundService
     private         WalletManager      WalletManager { get; }
     private         Constants          Constants     { get; }
     private         NotificationSender Notifications { get; }
+    private         DatabaseConnection Database      { get; }
 
     public corpStationMgr (
         MarketDB            marketDB, StationDB stationDb, BillsDB billsDb, NotificationSender notificationSender, ItemFactory itemFactory, Constants constants,
-        BoundServiceManager manager,  WalletManager walletManager
+        BoundServiceManager manager,  WalletManager walletManager, DatabaseConnection database
     ) : base (manager)
     {
         MarketDB      = marketDB;
@@ -56,6 +60,7 @@ public class corpStationMgr : ClientBoundService
         ItemFactory   = itemFactory;
         Constants     = constants;
         WalletManager = walletManager;
+        Database      = database;
     }
 
     // TODO: PROVIDE OBJECTID PROPERLY
@@ -325,12 +330,7 @@ public class corpStationMgr : ClientBoundService
 
     protected override long MachoResolveObject (ServiceBindParams parameters, CallInformation call)
     {
-        int solarSystemID = ItemFactory.GetStaticStation (parameters.ObjectID).SolarSystemID;
-
-        if (SystemManager.SolarSystemBelongsToUs (solarSystemID))
-            return BoundServiceManager.MachoNet.NodeID;
-
-        return SystemManager.LoadSolarSystemOnCluster (solarSystemID);
+        return Database.CluResolveAddress ("station", parameters.ObjectID);
     }
 
     protected override BoundService CreateBoundInstance (ServiceBindParams bindParams, CallInformation call)

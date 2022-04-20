@@ -1,4 +1,6 @@
 using System;
+using EVESharp.Common.Database;
+using EVESharp.Database;
 using EVESharp.EVE;
 using EVESharp.EVE.Account;
 using EVESharp.EVE.Client.Exceptions.inventory;
@@ -32,12 +34,14 @@ public class dogmaIM : ClientBoundService
     private SystemManager      SystemManager    => ItemFactory.SystemManager;
     private NotificationSender Notifications    { get; }
     private EffectsManager     EffectsManager   { get; }
+    private DatabaseConnection Database         { get; }
 
-    public dogmaIM (EffectsManager effectsManager, ItemFactory itemFactory, NotificationSender notificationSender, BoundServiceManager manager) : base (manager)
+    public dogmaIM (EffectsManager effectsManager, ItemFactory itemFactory, NotificationSender notificationSender, BoundServiceManager manager, DatabaseConnection database) : base (manager)
     {
         EffectsManager = effectsManager;
         ItemFactory    = itemFactory;
         Notifications  = notificationSender;
+        Database       = database;
     }
 
     protected dogmaIM (
@@ -238,16 +242,12 @@ public class dogmaIM : ClientBoundService
 
     protected override long MachoResolveObject (ServiceBindParams parameters, CallInformation call)
     {
-        int solarSystemID = 0;
-
-        if (parameters.ExtraValue == (int) Groups.SolarSystem)
-            solarSystemID = ItemFactory.GetStaticSolarSystem (parameters.ObjectID).ID;
-        else if (parameters.ExtraValue == (int) Groups.Station)
-            solarSystemID = ItemFactory.GetStaticStation (parameters.ObjectID).SolarSystemID;
-        else
-            throw new CustomError ("Unknown item's groupID");
-
-        return SystemManager.LoadSolarSystemOnCluster (solarSystemID);
+        return parameters.ExtraValue switch
+        {
+            (int) Groups.SolarSystem => Database.CluResolveAddress ("solarsystem", parameters.ObjectID),
+            (int) Groups.Station     => Database.CluResolveAddress ("station",     parameters.ObjectID),
+            _                        => throw new CustomError ("Unknown item's groupID")
+        };
     }
 
     protected override BoundService CreateBoundInstance (ServiceBindParams bindParams, CallInformation call)

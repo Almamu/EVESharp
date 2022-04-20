@@ -32,10 +32,7 @@ public class bookmark : Service
 
     public PyDataType GetBookmarks (CallInformation call)
     {
-        return Database.Rowset (
-            BookmarkDB.GET,
-            new Dictionary <string, object> {{"_ownerID", call.Session.CharacterID}}
-        );
+        return Database.ChrBookmarksGet (call.Session.CharacterID);
     }
 
     public PyDataType BookmarkLocation (PyInteger itemID, PyDataType unk, PyString name, PyString comment, CallInformation call)
@@ -48,21 +45,9 @@ public class bookmark : Service
         if (item.HasPosition == false)
             throw new CustomError ("Cannot bookmark a non-location item");
 
-        ulong bookmarkID = Database.Scalar <ulong> (
-            BookmarkDB.CREATE,
-            new Dictionary <string, object>
-            {
-                {"_ownerID", call.Session.CharacterID},
-                {"_itemID", itemID},
-                {"_typeID", item.Type.ID},
-                {"_memo", name},
-                {"_comment", comment},
-                {"_date", DateTime.UtcNow.ToFileTimeUtc ()},
-                {"_x", (double) item.X},
-                {"_y", (double) item.Y},
-                {"_z", (double) item.Z},
-                {"_locationID", item.LocationID}
-            }
+        ulong bookmarkID = Database.ChrBookmarksCreate (
+            call.Session.CharacterID, itemID, item.Type.ID, name, comment, item.X ?? 0.0, item.Y ?? 0.0, item.Z ?? 0.0,
+            item.LocationID
         );
 
         PyDataType bookmark = KeyVal.FromDictionary (
@@ -104,15 +89,8 @@ public class bookmark : Service
         if (bookmarkIDs.Count == 0)
             return null;
 
-        Database.Procedure (
-            BookmarkDB.DELETE,
-            new Dictionary <string, object>
-            {
-                {"_ownerID", call.Session.CharacterID},
-                {"_bookmarkIDs", PyString.Join (',', bookmarkIDs.GetEnumerable <PyInteger> ()).Value}
-            }
-        );
-
+        Database.ChrBookmarksDelete (call.Session.CharacterID, bookmarkIDs.GetEnumerable<PyInteger> ());
+        
         return null;
     }
 }

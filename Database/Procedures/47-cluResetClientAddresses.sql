@@ -1,8 +1,8 @@
-DROP PROCEDURE IF EXISTS `CluResetClientAddress`;
+DROP PROCEDURE IF EXISTS `CluResetClientAddresses`;
 
 DELIMITER //
 
-CREATE PROCEDURE `CluResetClientAddress`()
+CREATE PROCEDURE `CluResetClientAddresses`()
 SQL SECURITY INVOKER
 COMMENT 'Clears any account associated with any node'
 BEGIN

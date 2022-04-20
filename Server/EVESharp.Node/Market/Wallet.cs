@@ -29,16 +29,7 @@ public class Wallet : IDisposable
         // if the balance changed, update the record in the database
         if (Math.Abs (Balance - OriginalBalance) > 0.01)
         {
-            Database.Procedure (
-                ref this.Connection,
-                WalletDB.SET_WALLET_BALANCE,
-                new Dictionary <string, object>
-                {
-                    {"_balance", Balance},
-                    {"_ownerID", OwnerID},
-                    {"_walletKey", WalletKey}
-                }
-            );
+            Database.MktWalletSetBalance (ref this.Connection, Balance, OwnerID, WalletKey);
 
             if (ForCorporation == false)
             {

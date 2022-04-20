@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using EVESharp.Common.Database;
+using EVESharp.Database;
 using EVESharp.EVE.Client.Exceptions.character;
 using EVESharp.EVE.Client.Exceptions.skillMgr;
 using EVESharp.EVE.Packets.Exceptions;
@@ -25,30 +27,32 @@ namespace EVESharp.Node.Services.Characters;
 [MustBeCharacter]
 public class skillMgr : ClientBoundService
 {
-    private const   int           MAXIMUM_ATTRIBUTE_POINTS       = 15;
-    private const   int           MINIMUM_ATTRIBUTE_POINTS       = 5;
-    private const   int           MAXIMUM_TOTAL_ATTRIBUTE_POINTS = 39;
-    public override AccessLevel   AccessLevel    => AccessLevel.None;
-    private         SkillDB       DB             { get; }
-    private         ItemFactory   ItemFactory    { get; }
-    private         Timers        Timers         { get; }
-    private         SystemManager SystemManager  => ItemFactory.SystemManager;
-    private         ILogger       Log            { get; }
-    private         Character     Character      { get; }
-    private         DogmaUtils    DogmaUtils     { get; }
-    private         Timer         NextSkillTimer { get; set; }
-    private         Timer         ReSpecTimer    { get; set; }
+    private const   int                MAXIMUM_ATTRIBUTE_POINTS       = 15;
+    private const   int                MINIMUM_ATTRIBUTE_POINTS       = 5;
+    private const   int                MAXIMUM_TOTAL_ATTRIBUTE_POINTS = 39;
+    public override AccessLevel        AccessLevel    => AccessLevel.None;
+    private         SkillDB            DB             { get; }
+    private         ItemFactory        ItemFactory    { get; }
+    private         Timers             Timers         { get; }
+    private         SystemManager      SystemManager  => ItemFactory.SystemManager;
+    private         ILogger            Log            { get; }
+    private         Character          Character      { get; }
+    private         DogmaUtils         DogmaUtils     { get; }
+    private         Timer              NextSkillTimer { get; set; }
+    private         Timer              ReSpecTimer    { get; set; }
+    private         DatabaseConnection Database       { get; }
 
     public skillMgr (
         SkillDB             db,      ItemFactory itemFactory, Timers timers, DogmaUtils dogmaUtils,
-        BoundServiceManager manager, ILogger     logger
+        BoundServiceManager manager, ILogger     logger, DatabaseConnection database
     ) : base (manager)
     {
-        DB           = db;
-        ItemFactory  = itemFactory;
-        Timers = timers;
-        DogmaUtils   = dogmaUtils;
-        Log          = logger;
+        DB          = db;
+        ItemFactory = itemFactory;
+        Timers      = timers;
+        DogmaUtils  = dogmaUtils;
+        Log         = logger;
+        Database    = database;
     }
 
     protected skillMgr (
@@ -758,12 +762,7 @@ public class skillMgr : ClientBoundService
 
     protected override long MachoResolveObject (ServiceBindParams parameters, CallInformation call)
     {
-        int solarSystemID = call.Session.SolarSystemID2;
-
-        if (SystemManager.SolarSystemBelongsToUs (solarSystemID))
-            return BoundServiceManager.MachoNet.NodeID;
-
-        return SystemManager.GetNodeSolarSystemBelongsTo (solarSystemID);
+        return Database.CluResolveAddress ("solarsystem", parameters.ObjectID);
     }
 
     protected override BoundService CreateBoundInstance (ServiceBindParams bindParams, CallInformation call)

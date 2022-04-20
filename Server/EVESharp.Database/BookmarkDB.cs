@@ -22,11 +22,57 @@
     Creator: Almamu
 */
 
+using System;
+using System.Collections.Generic;
+using EVESharp.Common.Database;
+using EVESharp.PythonTypes.Types.Collections;
+using EVESharp.PythonTypes.Types.Database;
+using EVESharp.PythonTypes.Types.Primitives;
+
 namespace EVESharp.Database;
 
-public class BookmarkDB
+public static class BookmarkDB
 {
-    public const string GET    = "ChrBookmarksGet";
-    public const string DELETE = "ChrBookmarksDelete";
-    public const string CREATE = "ChrBookmarksCreate";
+    public static Rowset ChrBookmarksGet (this DatabaseConnection Database, int ownerID)
+    {
+        return Database.Rowset (
+            "ChrBookmarksGet",
+            new Dictionary <string, object> {{"_ownerID", ownerID}}
+        );
+    }
+
+    public static void ChrBookmarksDelete (this DatabaseConnection Database, int ownerID, PyList <PyInteger> bookmarkIDs)
+    {
+        Database.Procedure (
+            "ChrBookmarksDelete",
+            new Dictionary <string, object>
+            {
+                {"_ownerID", ownerID},
+                {"_bookmarkIDs", PyString.Join (',', bookmarkIDs).Value}
+            }
+        );
+    }
+
+    public static ulong ChrBookmarksCreate (
+        this DatabaseConnection Database, int    ownerID, int itemID, int typeID, string memo, string comment, double x,
+        double                  y,        double z,           int locationID
+    )
+    {
+        return Database.Scalar <ulong> (
+            "ChrBookmarksCreate",
+            new Dictionary <string, object>
+            {
+                {"_ownerID", ownerID},
+                {"_itemID", itemID},
+                {"_typeID", typeID},
+                {"_memo", memo},
+                {"_comment", comment},
+                {"_date", DateTime.UtcNow.ToFileTimeUtc ()},
+                {"_x", x},
+                {"_y", y},
+                {"_z", z},
+                {"_locationID", locationID}
+            }
+        );
+    }
 }

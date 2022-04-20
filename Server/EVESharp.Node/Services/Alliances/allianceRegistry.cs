@@ -123,25 +123,13 @@ public class allianceRegistry : MultiClientBoundService
         }
 
         // finally remove all the applications
-        Database.Procedure (
-            AlliancesDB.HOUSEKEEP_APPLICATIONS,
-            new Dictionary <string, object> {{"_limit", minimumTime}}
-        );
+        Database.CrpAlliancesHousekeepApplications (minimumTime);
     }
 
 
     protected override long MachoResolveObject (ServiceBindParams parameters, CallInformation call)
     {
-        long nodeID = ItemFactory.ItemDB.GetItemNode (parameters.ObjectID);
-
-        if (nodeID != 0)
-            return nodeID;
-
-        Task <long> task = ClusterManager.GetLessLoadedNode ();
-
-        task.Wait ();
-        
-        return task.Result;
+        return Database.CluResolveAddress ("allianceRegistry", parameters.ObjectID);
     }
 
     public override bool IsClientAllowedToCall (Session session)
@@ -151,10 +139,8 @@ public class allianceRegistry : MultiClientBoundService
 
     protected override MultiClientBoundService CreateBoundInstance (ServiceBindParams bindParams, CallInformation call)
     {
-        // TODO: RE-IMPLEMENT THIS CHECK AS THE CLIENT IS THE ONE PERFORMING THE ACTUAL BINDING
-        // TODO: MAYBE THE PROXY SHOULD TELL THE NODE TO ACQUIRE OWNERSHIP OF THE OBJECTID BEFORE THE CLIENT ACTUALLY TRIES TO ACCESS IT
-        // if (this.MachoResolveObject (bindParams, call) != BoundServiceManager.MachoNet.NodeID)
-        //     throw new CustomError ("Trying to bind an object that does not belong to us!");
+         if (this.MachoResolveObject (bindParams, call) != BoundServiceManager.MachoNet.NodeID)
+             throw new CustomError ("Trying to bind an object that does not belong to us!");
 
         Alliance alliance = ItemFactory.LoadItem <Alliance> (bindParams.ObjectID);
 
@@ -168,10 +154,7 @@ public class allianceRegistry : MultiClientBoundService
 
     public PyDataType GetAlliance (PyInteger allianceID, CallInformation call)
     {
-        return Database.Row (
-            AlliancesDB.GET,
-            new Dictionary <string, object> {{"_allianceID", allianceID}}
-        );
+        return Database.CrpAlliancesGet (allianceID);
     }
 
     [MustHaveCorporationRole(MLS.UI_CORP_UPDATE_ALLIANCE_NOT_DIRECTOR, CorporationRole.Director)]
@@ -202,26 +185,17 @@ public class allianceRegistry : MultiClientBoundService
 
     public PyDataType GetRelationships (CallInformation call)
     {
-        return Database.IndexRowset (
-            0, AlliancesDB.GET_RELATIONSHIPS,
-            new Dictionary <string, object> {{"_allianceID", ObjectID}}
-        );
+        return Database.CrpAlliancesGetRelationships (this.ObjectID);
     }
 
     public PyDataType GetAllianceMembers (PyInteger allianceID, CallInformation call)
     {
-        return Database.Rowset (
-            AlliancesDB.GET_MEMBERS_PUBLIC,
-            new Dictionary <string, object> {{"_allianceID", allianceID}}
-        );
+        return Database.CrpAlliancesGetMembersPublic (allianceID);
     }
 
     public PyDataType GetMembers (CallInformation call)
     {
-        return Database.IndexRowset (
-            0, AlliancesDB.GET_MEMBERS_PRIVATE,
-            new Dictionary <string, object> {{"_allianceID", ObjectID}}
-        );
+        return Database.CrpAlliancesGetMembersPrivate (this.ObjectID);
     }
 
     [MustHaveCorporationRole(MLS.UI_CORP_SET_RELATIONSHIP_DIRECTOR_ONLY, CorporationRole.Director)]
@@ -230,15 +204,7 @@ public class allianceRegistry : MultiClientBoundService
         if (Alliance.ExecutorCorpID != call.Session.CorporationID)
             throw new CrpAccessDenied (MLS.UI_CORP_SET_RELATIONSHIP_EXECUTOR_ONLY);
 
-        Database.Procedure (
-            AlliancesDB.UPDATE_RELATIONSHIP,
-            new Dictionary <string, object>
-            {
-                {"_fromID", ObjectID},
-                {"_toID", toID},
-                {"_relationship", relationship}
-            }
-        );
+        Database.CrpAlliancesUpdateRelationship (this.ObjectID, toID, relationship);
 
         OnAllianceRelationshipChanged change =
             new OnAllianceRelationshipChanged (ObjectID, toID)
@@ -261,15 +227,7 @@ public class allianceRegistry : MultiClientBoundService
             throw new CanNotDeclareExecutorInFirstWeek ();
 
         // update corporation's supported executor and get the new alliance's executor id back (if any)
-        int? executorCorpID = Database.Scalar <int?> (
-            AlliancesDB.UPDATE_SUPPORTED_EXECUTOR,
-            new Dictionary <string, object>
-            {
-                {"_corporationID", call.Session.CorporationID},
-                {"_chosenExecutorID", executorID},
-                {"_allianceID", ObjectID}
-            }
-        );
+        int? executorCorpID = Database.CrpAlliancesUpdateSupportedExecutor (call.Session.CorporationID, executorID, this.ObjectID);
 
         OnAllianceMemberChanged change =
             new OnAllianceMemberChanged (ObjectID, call.Session.CorporationID)
@@ -296,10 +254,7 @@ public class allianceRegistry : MultiClientBoundService
 
     public PyDataType GetApplications (CallInformation call)
     {
-        return Database.IndexRowset (
-            1, AlliancesDB.LIST_APPLICATIONS,
-            new Dictionary <string, object> {{"_allianceID", ObjectID}}
-        );
+        return Database.CrpAlliancesListApplications (this.ObjectID);
     }
 
     public PyDataType GetBills (CallInformation call)
@@ -315,15 +270,8 @@ public class allianceRegistry : MultiClientBoundService
     {
         if (Alliance.ExecutorCorpID != call.Session.CorporationID)
             throw new CrpAccessDenied (MLS.UI_CORP_DELETE_RELATIONSHIP_EXECUTOR_ONLY);
-
-        Database.Procedure (
-            AlliancesDB.REMOVE_RELATIONSHIP,
-            new Dictionary <string, object>
-            {
-                {"_fromID", ObjectID},
-                {"_toID", toID}
-            }
-        );
+        
+        Database.CrpAlliancesRemoveRelationship (this.ObjectID, toID);
 
         OnAllianceRelationshipChanged change =
             new OnAllianceRelationshipChanged (ObjectID, toID)
@@ -334,7 +282,7 @@ public class allianceRegistry : MultiClientBoundService
 
     public PyDataType GetRankedAlliances (CallInformation call)
     {
-        return Database.Rowset (AlliancesDB.LIST);
+        return Database.CrpAlliancesList ();
     }
 
     [MustHaveCorporationRole(MLS.UI_CORP_DELETE_RELATIONSHIP_DIRECTOR_ONLY, CorporationRole.Director)]

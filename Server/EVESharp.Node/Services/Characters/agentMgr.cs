@@ -47,6 +47,7 @@ public class agentMgr : ClientBoundService
 
     protected override long MachoResolveObject (ServiceBindParams parameters, CallInformation call)
     {
+        // TODO: PROPERLY IMPLEMENT THIS ONE
         return call.MachoNet.NodeID;
     }
 

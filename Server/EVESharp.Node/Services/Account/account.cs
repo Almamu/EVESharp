@@ -129,14 +129,7 @@ public class account : Service
         if (WalletManager.IsAccessAllowed (call.Session, Keys.SEVENTH, call.Session.CorporationID))
             walletKeys.Add (Keys.SEVENTH);
 
-        return Database.PackedRowList (
-            WalletDB.GET_WALLETS,
-            new Dictionary <string, object>
-            {
-                {"_ownerID", call.Session.CorporationID},
-                {"_walletKeyKeys", string.Join (',', walletKeys)}
-            }
-        );
+        return Database.MktWalletGet (call.Session.CorporationID, walletKeys);
     }
 
     [MustBeCharacter]

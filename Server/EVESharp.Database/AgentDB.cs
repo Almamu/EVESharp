@@ -1,7 +1,21 @@
-﻿namespace EVESharp.Database;
+﻿using System.Collections.Generic;
+using EVESharp.Common.Database;
+using EVESharp.PythonTypes.Types.Collections;
+using EVESharp.PythonTypes.Types.Database;
+using EVESharp.PythonTypes.Types.Primitives;
 
-public class AgentDB
+namespace EVESharp.Database;
+
+public static class AgentDB
 {
-    public const string GET_AGENTS = "AgtGetAgents";
-    public const string GET_INFO   = "AgtGetInfo";
+    public static CRowset AgtGetAgents (this DatabaseConnection Database)
+    {
+        return Database.CRowset ("AgtGetAgents");
+    }
+
+    public static PyDictionary <PyString, PyDataType> AgtGetInfo (this DatabaseConnection Database, int agentID)
+    {
+        // TODO: SUPPORT MULTIPLE ANSWERS FROM THE PROCEDURE TO GET THE SERVICES INFORMATION REQUIRED FOR THIS QUERY
+        return Database.Dictionary ("AgtGetInfo", new Dictionary <string, object> () {{"_agentID", agentID}});
+    }
 }

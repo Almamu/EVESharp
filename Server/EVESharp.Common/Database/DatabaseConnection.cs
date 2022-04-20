@@ -1245,7 +1245,7 @@ public class DatabaseConnection : IDatabaseConnection
 
             // setup the command in the correct mode to perform the stored procedure call
             MySqlCommand command = new MySqlCommand (procedureName, connection);
-
+            
             command.CommandType = CommandType.StoredProcedure;
 
             return command;
@@ -1996,6 +1996,50 @@ public class DatabaseConnection : IDatabaseConnection
             using (command)
             {
                 return (T) command.ExecuteScalar ();
+            }
+        }
+        catch (Exception e)
+        {
+            Log.Error ($"MySQL error: {e.Message}");
+
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// Calls the given function and returns it's value casting it to the given type. If the result returns more than one row, only the topmost value is returned
+    /// </summary>
+    /// <param name="functionName">The MySQL function to call</param>
+    /// <param name="values">The values to supply the MySQL function</param>
+    /// <typeparam name="T1">The type to cast the first column's return value to</typeparam>
+    /// <typeparam name="T2">The type to cast the second column's return value to</typeparam>
+    /// <typeparam name="T3">The type to cast the third column's return value to</typeparam>
+    /// <returns>The functions result</returns>
+    public (T1, T2, T3) Scalar <T1, T2, T3> (string functionName, Dictionary <string, object> values)
+    {
+        try
+        {
+            MySqlConnection connection = null;
+            MySqlCommand    command    = this.PrepareProcedureCall (ref connection, functionName, values);
+
+            using (connection)
+            using (command)
+            {
+                MySqlDataReader reader = command.ExecuteReader ();
+
+                using (reader)
+                {
+                    if (reader.Read () == false || reader.HasRows == false)
+                        throw new Exception ("Expected at least one row back, but couldn't get any");
+                    if (reader.FieldCount != 3)
+                        throw new Exception ($"Expected three columns but returned {reader.FieldCount}");
+
+                    return (
+                        (T1) reader.GetValue (0),
+                        (T2) reader.GetValue (1),
+                        (T3) reader.GetValue (2)
+                    );
+                }
             }
         }
         catch (Exception e)

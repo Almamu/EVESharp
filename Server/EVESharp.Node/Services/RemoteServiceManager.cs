@@ -161,7 +161,7 @@ public class RemoteServiceManager
     )
     {
         // resolve the characterID to a clientID
-        int clientID = (int) Database.Scalar <uint> (AccountDB.RESOLVE_CHARACTER, new Dictionary <string, object> () {["_characterID"] = characterID});
+        int clientID = Database.CluResolveCharacter (characterID);
         // queue the call in the service manager and get the callID
         int callID = this.ExpectRemoteServiceResult(callback, extraInfo, timeoutCallback, timeoutSeconds);
 

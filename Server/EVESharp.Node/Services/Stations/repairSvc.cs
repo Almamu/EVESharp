@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using EVESharp.Common.Database;
+using EVESharp.Database;
 using EVESharp.EVE.Client.Exceptions;
 using EVESharp.EVE.Client.Exceptions.repairSvc;
 using EVESharp.EVE.Market;
@@ -41,10 +43,12 @@ public class repairSvc : ClientBoundService
     private          NotificationSender Notifications { get; }
     private          WalletManager      WalletManager { get; }
     private          DogmaUtils         DogmaUtils    { get; }
+    private          DatabaseConnection Database      { get; }
 
     public repairSvc (
         RepairDB    repairDb,    MarketDB            marketDb, InsuranceDB   insuranceDb,   NotificationSender notificationSender,
-        ItemFactory itemFactory, BoundServiceManager manager,  WalletManager walletManager, DogmaUtils         dogmaUtils
+        ItemFactory itemFactory, BoundServiceManager manager,  WalletManager walletManager, DogmaUtils         dogmaUtils,
+        DatabaseConnection database
     ) : base (manager)
     {
         ItemFactory   = itemFactory;
@@ -54,6 +58,7 @@ public class repairSvc : ClientBoundService
         Notifications = notificationSender;
         WalletManager = walletManager;
         DogmaUtils    = dogmaUtils;
+        Database      = database;
     }
 
     protected repairSvc (
@@ -338,10 +343,7 @@ public class repairSvc : ClientBoundService
 
     protected override long MachoResolveObject (ServiceBindParams parameters, CallInformation call)
     {
-        if (SystemManager.StationBelongsToUs (parameters.ObjectID))
-            return BoundServiceManager.MachoNet.NodeID;
-
-        return SystemManager.GetNodeStationBelongsTo (parameters.ObjectID);
+        return Database.CluResolveAddress ("station", parameters.ObjectID);
     }
 
     protected override BoundService CreateBoundInstance (ServiceBindParams bindParams, CallInformation call)

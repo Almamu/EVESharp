@@ -1,4 +1,6 @@
-﻿using EVESharp.EVE.Client.Exceptions.jumpCloneSvc;
+﻿using EVESharp.Common.Database;
+using EVESharp.Database;
+using EVESharp.EVE.Client.Exceptions.jumpCloneSvc;
 using EVESharp.EVE.Market;
 using EVESharp.EVE.Packets.Exceptions;
 using EVESharp.EVE.Services;
@@ -18,6 +20,7 @@ using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Database;
 using EVESharp.PythonTypes.Types.Primitives;
 using Groups = EVESharp.EVE.StaticData.Inventory.Groups;
+using ItemDB = EVESharp.Node.Database.ItemDB;
 
 namespace EVESharp.Node.Services.Characters;
 
@@ -33,10 +36,11 @@ public class jumpCloneSvc : ClientBoundService
     private SystemManager      SystemManager { get; }
     private NotificationSender Notifications { get; }
     private WalletManager      WalletManager { get; }
+    private DatabaseConnection Database      { get; }
 
     public jumpCloneSvc (
         ItemDB        itemDB,        MarketDB      marketDB,      ItemFactory        itemFactory,
-        SystemManager systemManager, WalletManager walletManager, NotificationSender notificationSender, BoundServiceManager manager
+        SystemManager systemManager, WalletManager walletManager, NotificationSender notificationSender, BoundServiceManager manager, DatabaseConnection database
     ) : base (manager)
     {
         ItemDB        = itemDB;
@@ -45,6 +49,7 @@ public class jumpCloneSvc : ClientBoundService
         SystemManager = systemManager;
         WalletManager = walletManager;
         Notifications = notificationSender;
+        Database      = database;
     }
 
     protected jumpCloneSvc (
@@ -178,27 +183,17 @@ public class jumpCloneSvc : ClientBoundService
 
     protected override long MachoResolveObject (ServiceBindParams parameters, CallInformation call)
     {
-        int solarSystemID = 0;
-
-        if (parameters.ExtraValue == (int) Groups.SolarSystem)
-            solarSystemID = ItemFactory.GetStaticSolarSystem (parameters.ObjectID).ID;
-        else if (parameters.ExtraValue == (int) Groups.Station)
-            solarSystemID = ItemFactory.GetStaticStation (parameters.ObjectID).SolarSystemID;
-        else
-            throw new CustomError ("Unknown item's groupID");
-
-        if (SystemManager.SolarSystemBelongsToUs (solarSystemID))
-            return BoundServiceManager.MachoNet.NodeID;
-
-        return SystemManager.GetNodeSolarSystemBelongsTo (solarSystemID);
+        return parameters.ExtraValue switch
+        {
+            (int) Groups.SolarSystem => Database.CluResolveAddress ("solarsystem", parameters.ObjectID),
+            (int) Groups.Station     => Database.CluResolveAddress ("station",     parameters.ObjectID),
+            _                        => throw new CustomError ("Unknown item's groupID")
+        };
     }
 
     protected override BoundService CreateBoundInstance (ServiceBindParams bindParams, CallInformation call)
     {
-        // ensure this node will take care of the instance
-        long nodeID = this.MachoResolveObject (bindParams, call);
-
-        if (nodeID != BoundServiceManager.MachoNet.NodeID)
+        if (this.MachoResolveObject (bindParams, call) != BoundServiceManager.MachoNet.NodeID)
             throw new CustomError ("Trying to bind an object that does not belong to us!");
 
         return new jumpCloneSvc (

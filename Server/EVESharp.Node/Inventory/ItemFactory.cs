@@ -784,15 +784,6 @@ public class ItemFactory
     private void PersistAlliance (Alliance alliance)
     {
         // update the alliance information
-        Database.Procedure (
-            AlliancesDB.UPDATE,
-            new Dictionary <string, object>
-            {
-                {"_description", alliance.Description},
-                {"_url", alliance.Url},
-                {"_allianceID", alliance.ID},
-                {"_executorCorpID", alliance.ExecutorCorpID}
-            }
-        );
+        Database.CrpAlliancesUpdate (alliance.Description, alliance.Url, alliance.ID, alliance.ExecutorCorpID);
     }
 }

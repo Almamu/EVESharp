@@ -126,15 +126,8 @@ public class SystemManager
     private void SignalSolarSystemLoaded (int solarSystemID, long nodeID)
     {
         // mark the item as loaded by that node
-        Database.Procedure (
-            ItemDB.SET_ITEM_NODE,
-            new Dictionary <string, object>
-            {
-                {"_itemID", solarSystemID},
-                {"_nodeID", nodeID}
-            }
-        );
-
+        Database.InvSetItemNode (solarSystemID, nodeID);
+        
         this.mSolarsystemToNodeID [solarSystemID] = nodeID;
     }
 
@@ -163,9 +156,6 @@ public class SystemManager
         if (this.mSolarsystemToNodeID.TryGetValue (solarSystemID, out long nodeID))
             return nodeID;
 
-        return Database.Scalar <long> (
-            ItemDB.GET_ITEM_NODE,
-            new Dictionary <string, object> {{"_itemID", solarSystemID}}
-        );
+        return Database.InvGetItemNode (solarSystemID);
     }
 }

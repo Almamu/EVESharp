@@ -5,6 +5,7 @@ using EVESharp.Common.Constants;
 using EVESharp.Common.Database;
 using EVESharp.Common.Logging;
 using EVESharp.Common.Network.Messages;
+using EVESharp.Database;
 using EVESharp.Node.Accounts;
 using EVESharp.Node.Configuration;
 using EVESharp.Node.Database;
@@ -62,8 +63,10 @@ public class MachoNet : IMachoNet
         Log.Verbose ("Starting MachoNet in single mode");
         Log.Debug ("Starting MachoNet in single mode");
 
-        Database.Procedure (ItemDB.CLEAR_NODE_ASSOCIATION);
-        Database.Procedure (AccountDB.RESET_CLIENT_ADDRESSES);
+        Database.InvClearNodeAssociation ();
+        Database.CluResetClientAddresses ();
+        Database.CluCleanup ();
+        Database.CluRegisterSingleNode (NodeID);
 
         // start the server socket
         Transport = new MachoServerTransport (Configuration.MachoNet.Port, HttpClient, this, Log.ForContext <MachoServerTransport> ("Listener"));

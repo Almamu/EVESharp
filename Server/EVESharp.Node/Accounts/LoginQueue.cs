@@ -25,9 +25,9 @@
 using System.Collections.Generic;
 using EVESharp.Common.Database;
 using EVESharp.Common.Network.Messages;
+using EVESharp.Database;
 using EVESharp.EVE.Packets;
 using EVESharp.Node.Configuration;
-using EVESharp.Node.Database;
 using EVESharp.Node.Server.Shared.Transports;
 using Serilog;
 
@@ -35,17 +35,15 @@ namespace EVESharp.Node.Accounts;
 
 public class LoginQueue : MessageProcessor <LoginQueueEntry>
 {
-    private AccountDB          AccountDB     { get; }
     private Authentication     Configuration { get; }
     private DatabaseConnection Database      { get; }
 
-    public LoginQueue (DatabaseConnection databaseConnection, Authentication configuration, AccountDB db, ILogger logger)
+    public LoginQueue (DatabaseConnection databaseConnection, Authentication configuration, ILogger logger)
         : base (logger, 5)
     {
         // login should not be using too many processes
         Database      = databaseConnection;
         Configuration = configuration;
-        AccountDB     = db;
     }
 
     public void Enqueue (MachoUnauthenticatedTransport transport, AuthenticationReq req)
@@ -63,22 +61,17 @@ public class LoginQueue : MessageProcessor <LoginQueueEntry>
     {
         Log.Debug ("Processing login for " + entry.Request.user_name);
         LoginStatus status = LoginStatus.Waiting;
+        
+        // make some accommodations for the auto-account mechanism
+        if (Database.ActExists (entry.Request.user_name) == false && Configuration.Autoaccount == true)
+        {
+            Log.Information ($"Auto account enabled, creating account for user {entry.Request.user_name}");
 
-        int   accountID = 0;
-        bool  banned    = false;
-        ulong role      = 0;
+            // create the account
+            Database.ActCreate (entry.Request.user_name, entry.Request.user_password, (ulong) Configuration.Role);
+        }
 
-        // First check if the account exists
-        if (AccountDB.AccountExists (entry.Request.user_name) == false)
-            if (Configuration.Autoaccount)
-            {
-                Log.Information ($"Auto account enabled, creating account for user {entry.Request.user_name}");
-
-                // Create the account
-                AccountDB.CreateAccount (entry.Request.user_name, entry.Request.user_password, (ulong) Configuration.Role);
-            }
-
-        if (AccountDB.LoginPlayer (entry.Request.user_name, entry.Request.user_password, ref accountID, ref banned, ref role) == false || banned)
+        if (Database.ActLogin (entry.Request.user_name, entry.Request.user_password, out int? accountID, out ulong? role, out bool? banned) == false || banned == true)
         {
             Log.Verbose (": Rejected by database");
 
@@ -91,16 +84,9 @@ public class LoginQueue : MessageProcessor <LoginQueueEntry>
             status = LoginStatus.Success;
 
             // register player to the new address
-            Database.Procedure (
-                EVESharp.Database.AccountDB.REGISTER_CLIENT_ADDRESS,
-                new Dictionary <string, object>
-                {
-                    {"_clientID", accountID},
-                    {"_proxyNodeID", entry.Connection.MachoNet.NodeID}
-                }
-            );
+            Database.CluRegisterClientAddress ((int) accountID, entry.Connection.MachoNet.NodeID);
         }
 
-        entry.Connection.SendLoginNotification (status, accountID, role);
+        entry.Connection.SendLoginNotification (status, (int) accountID, (ulong) role);
     }
 }

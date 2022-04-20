@@ -1,4 +1,6 @@
-﻿using EVESharp.EVE.Client.Exceptions.ship;
+﻿using EVESharp.Common.Database;
+using EVESharp.Database;
+using EVESharp.EVE.Client.Exceptions.ship;
 using EVESharp.EVE.Packets.Exceptions;
 using EVESharp.EVE.Services;
 using EVESharp.EVE.Services.Validators;
@@ -20,19 +22,21 @@ namespace EVESharp.Node.Services.Inventory;
 [MustBeCharacter]
 public class ship : ClientBoundService
 {
-    public override AccessLevel    AccessLevel    => AccessLevel.None;
-    private         ItemEntity     Location       { get; }
-    private         ItemFactory    ItemFactory    { get; }
-    private         TypeManager    TypeManager    => ItemFactory.TypeManager;
-    private         SystemManager  SystemManager  => ItemFactory.SystemManager;
-    private         SessionManager SessionManager { get; }
-    private         DogmaUtils     DogmaUtils     { get; }
+    public override AccessLevel        AccessLevel    => AccessLevel.None;
+    private         ItemEntity         Location       { get; }
+    private         ItemFactory        ItemFactory    { get; }
+    private         TypeManager        TypeManager    => ItemFactory.TypeManager;
+    private         SystemManager      SystemManager  => ItemFactory.SystemManager;
+    private         SessionManager     SessionManager { get; }
+    private         DogmaUtils         DogmaUtils     { get; }
+    private         DatabaseConnection Database       { get; }
 
-    public ship (ItemFactory itemFactory, BoundServiceManager manager, SessionManager sessionManager, DogmaUtils dogmaUtils) : base (manager)
+    public ship (ItemFactory itemFactory, BoundServiceManager manager, SessionManager sessionManager, DogmaUtils dogmaUtils, DatabaseConnection database) : base (manager)
     {
         ItemFactory    = itemFactory;
         SessionManager = sessionManager;
         DogmaUtils     = dogmaUtils;
+        Database       = database;
     }
 
     protected ship (
@@ -176,16 +180,12 @@ public class ship : ClientBoundService
 
     protected override long MachoResolveObject (ServiceBindParams parameters, CallInformation call)
     {
-        int solarSystemID = 0;
-
-        if (parameters.ExtraValue == (int) Groups.SolarSystem)
-            solarSystemID = ItemFactory.GetStaticSolarSystem (parameters.ObjectID).ID;
-        else if (parameters.ExtraValue == (int) Groups.Station)
-            solarSystemID = ItemFactory.GetStaticStation (parameters.ObjectID).SolarSystemID;
-        else
-            throw new CustomError ("Unknown item's groupID");
-
-        return SystemManager.LoadSolarSystemOnCluster (solarSystemID);
+        return parameters.ExtraValue switch
+        {
+            (int) Groups.SolarSystem => Database.CluResolveAddress ("solarsystem", parameters.ObjectID),
+            (int) Groups.Station     => Database.CluResolveAddress ("station",     parameters.ObjectID),
+            _                        => throw new CustomError ("Unknown item's groupID")
+        };
     }
 
     protected override BoundService CreateBoundInstance (ServiceBindParams bindParams, CallInformation call)
