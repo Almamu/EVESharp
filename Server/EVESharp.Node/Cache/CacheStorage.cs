@@ -488,7 +488,7 @@ public class CacheStorage : DatabaseAccessor
             {
                 CacheObjectType.Rowset        => Rowset.FromDataReader (Database, reader),
                 CacheObjectType.CRowset       => CRowset.FromDataReader (Database, reader),
-                CacheObjectType.TupleSet      => TupleSet.FromMySqlDataReader (Database, reader),
+                CacheObjectType.TupleSet      => TupleSet.FromDataReader (Database, reader),
                 CacheObjectType.PackedRowList => PyPackedRowList.FromDataReader (Database, reader),
                 CacheObjectType.IntIntDict    => IntIntDictionary.FromDataReader (reader),
                 CacheObjectType.IndexRowset   => IndexRowset.FromDataReader (Database, reader, 0),

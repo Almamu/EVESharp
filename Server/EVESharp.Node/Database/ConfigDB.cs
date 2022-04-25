@@ -35,7 +35,7 @@ public class ConfigDB : DatabaseAccessor
         using (connection)
         using (reader)
         {
-            return TupleSet.FromMySqlDataReader (Database, reader);
+            return TupleSet.FromDataReader (Database, reader);
         }
     }
 
@@ -55,7 +55,7 @@ public class ConfigDB : DatabaseAccessor
         using (connection)
         using (reader)
         {
-            return TupleSet.FromMySqlDataReader (Database, reader);
+            return TupleSet.FromDataReader (Database, reader);
         }
     }
 
@@ -75,7 +75,7 @@ public class ConfigDB : DatabaseAccessor
         using (connection)
         using (reader)
         {
-            return TupleSet.FromMySqlDataReader (Database, reader);
+            return TupleSet.FromDataReader (Database, reader);
         }
     }
 
@@ -95,7 +95,7 @@ public class ConfigDB : DatabaseAccessor
         using (connection)
         using (reader)
         {
-            return TupleSet.FromMySqlDataReader (Database, reader);
+            return TupleSet.FromDataReader (Database, reader);
         }
     }
 
@@ -115,7 +115,7 @@ public class ConfigDB : DatabaseAccessor
         using (connection)
         using (reader)
         {
-            return TupleSet.FromMySqlDataReader (Database, reader);
+            return TupleSet.FromDataReader (Database, reader);
         }
     }
 
@@ -217,7 +217,7 @@ public class ConfigDB : DatabaseAccessor
         using (connection)
         using (reader)
         {
-            return RowList.FromMySqlDataReader (Database, reader);
+            return RowList.FromDataReader (Database, reader);
         }
     }
 

@@ -83,7 +83,6 @@ public interface IDatabaseConnection
         IDbConnection con = null; return this.PrepareQuery (ref con, query, values).ExecuteNonQuery ();
     }
 
-
     /// <summary>
     /// Runs one prepared query with the given values as parameters and returns a CRowset representing the result
     /// </summary>
@@ -96,7 +95,6 @@ public interface IDatabaseConnection
     {
         IDbConnection con = null; return this.PrepareCRowsetQuery (ref con, query, values);
     }
-
 
     /// <summary>
     /// Runs one prepared query with the given values as parameters and returns an IndexRowset representing the result
