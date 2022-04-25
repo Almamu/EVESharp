@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data;
 using EVESharp.Common.Database;
 using EVESharp.EVE.Market;
 using EVESharp.PythonTypes.Types.Collections;
@@ -10,7 +11,7 @@ namespace EVESharp.Database;
 
 public static class WalletDB
 {
-    public static double MktWalletGetBalance (this DatabaseConnection Database, ref MySqlConnection connection, int walletKey, int ownerID)
+    public static double MktWalletGetBalance (this IDatabaseConnection Database, ref IDbConnection connection, int walletKey, int ownerID)
     {
         return Database.Scalar <double> (
             ref connection,
@@ -23,7 +24,7 @@ public static class WalletDB
         );
     }
 
-    public static double MktWalletGetBalance (this DatabaseConnection Database, int walletKey, int ownerID)
+    public static double MktWalletGetBalance (this IDatabaseConnection Database, int walletKey, int ownerID)
     {
         return Database.Scalar <double> (
             "MktWalletGetBalance",
@@ -35,7 +36,7 @@ public static class WalletDB
         );
     }
 
-    public static void MktWalletSetBalance (this DatabaseConnection Database, ref MySqlConnection connection, double balance, int ownerID, int walletKey)
+    public static void MktWalletSetBalance (this IDatabaseConnection Database, ref IDbConnection connection, double balance, int ownerID, int walletKey)
     {
         Database.Procedure (
             ref connection,
@@ -49,7 +50,7 @@ public static class WalletDB
         );
     }
 
-    public static PyList <PyPackedRow> MktWalletGet (this DatabaseConnection Database, int ownerID, List <int> walletKeys)
+    public static PyList <PyPackedRow> MktWalletGet (this IDatabaseConnection Database, int ownerID, List <int> walletKeys)
     {
         return Database.PackedRowList (
             "MktWalletGet",
@@ -61,7 +62,7 @@ public static class WalletDB
         );
     }
 
-    public static void MktWalletCreate (this DatabaseConnection Database, double balance, int ownerID, int walletKey)
+    public static void MktWalletCreate (this IDatabaseConnection Database, double balance, int ownerID, int walletKey)
     {
         Database.Procedure (
             "MktWalletCreate",
@@ -74,7 +75,7 @@ public static class WalletDB
         );
     }
     
-    public static void MktCreateJournalEntry (this DatabaseConnection Database, MarketReference reference, int characterID, int ownerID1, int? ownerID2, int? referenceID, double amount, double finalBalance, string reason, int walletKey)
+    public static void MktCreateJournalEntry (this IDatabaseConnection Database, MarketReference reference, int characterID, int ownerID1, int? ownerID2, int? referenceID, double amount, double finalBalance, string reason, int walletKey)
     {
         reason = reason.Substring (0, Math.Min (reason.Length, 43));
 
@@ -96,7 +97,7 @@ public static class WalletDB
         );
     }
     
-    public static void MktRecordTransaction(this DatabaseConnection Database, int ownerID, TransactionType type, int characterID, int otherID, int typeID, int quantity, double amount, int stationID, int walletKey)
+    public static void MktRecordTransaction(this IDatabaseConnection Database, int ownerID, TransactionType type, int characterID, int otherID, int typeID, int quantity, double amount, int stationID, int walletKey)
     {
         // market transactions do not affect the wallet value because these are paid either when placing the sell/buy order
         // or when fullfiling it

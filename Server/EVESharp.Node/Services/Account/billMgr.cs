@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using EVESharp.Common.Database;
+using EVESharp.Database;
 using EVESharp.EVE.Client.Exceptions.corpRegistry;
 using EVESharp.EVE.Client.Messages;
 using EVESharp.EVE.Corporations;
@@ -24,20 +25,18 @@ public class billMgr : Service
 {
     public override AccessLevel        AccessLevel   => AccessLevel.None;
     private         CacheStorage       CacheStorage  { get; }
-    private         BillsDB            DB            { get; }
     private         CorporationDB      CorporationDB { get; }
     private         ItemFactory        ItemFactory   { get; }
     private         NotificationSender Notifications { get; }
     private         DatabaseConnection Database      { get; }
 
     public billMgr (
-        CacheStorage       cacheStorage, DatabaseConnection databaseConnection, BillsDB db, CorporationDB corporationDb, ItemFactory itemFactory,
+        CacheStorage       cacheStorage, DatabaseConnection databaseConnection, CorporationDB corporationDb, ItemFactory itemFactory,
         NotificationSender notificationSender, ClusterManager clusterManager
     )
     {
         CacheStorage  = cacheStorage;
         Database      = databaseConnection;
-        DB            = db;
         CorporationDB = corporationDb;
         ItemFactory   = itemFactory;
         Notifications = notificationSender;
@@ -62,19 +61,13 @@ public class billMgr : Service
     [MustHaveCorporationRole(MLS.UI_CORP_ACCESSDENIED3, CorporationRole.Accountant, CorporationRole.JuniorAccountant)]
     public PyDataType GetCorporationBillsReceivable (CallInformation call)
     {
-        return Database.CRowset (
-            BillsDB.GET_RECEIVABLE,
-            new Dictionary <string, object> {{"_creditorID", call.Session.CorporationID}}
-        );
+        return Database.MktBillsGetReceivable (call.Session.CorporationID);
     }
 
     [MustHaveCorporationRole(MLS.UI_CORP_ACCESSDENIED3, CorporationRole.Accountant, CorporationRole.JuniorAccountant)]
     public PyDataType GetCorporationBills (CallInformation call)
     {
-        return Database.CRowset (
-            BillsDB.GET_PAYABLE,
-            new Dictionary <string, object> {{"_debtorID", call.Session.CorporationID}}
-        );
+        return Database.MktBillsGetPayable (call.Session.CorporationID);
     }
 
     public PyDataType PayCorporationBill (PyInteger billID, CallInformation call)
@@ -90,7 +83,7 @@ public class billMgr : Service
         {
             long dueDate = office.DueDate;
             int  ownerID = ItemFactory.Stations [office.StationID].OwnerID;
-            int billID = (int) DB.CreateBill (
+            int billID = (int) Database.MktBillsCreate (
                 BillTypes.RentalBill, office.CorporationID, ownerID,
                 office.PeriodCost, dueDate, 0, (int) Types.OfficeFolder, office.StationID
             );

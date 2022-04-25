@@ -33,7 +33,7 @@ namespace EVESharp.Database;
 
 public static class BookmarkDB
 {
-    public static Rowset ChrBookmarksGet (this DatabaseConnection Database, int ownerID)
+    public static Rowset ChrBookmarksGet (this IDatabaseConnection Database, int ownerID)
     {
         return Database.Rowset (
             "ChrBookmarksGet",
@@ -41,7 +41,7 @@ public static class BookmarkDB
         );
     }
 
-    public static void ChrBookmarksDelete (this DatabaseConnection Database, int ownerID, PyList <PyInteger> bookmarkIDs)
+    public static void ChrBookmarksDelete (this IDatabaseConnection Database, int ownerID, PyList <PyInteger> bookmarkIDs)
     {
         Database.Procedure (
             "ChrBookmarksDelete",
@@ -54,8 +54,8 @@ public static class BookmarkDB
     }
 
     public static ulong ChrBookmarksCreate (
-        this DatabaseConnection Database, int    ownerID, int itemID, int typeID, string memo, string comment, double x,
-        double                  y,        double z,           int locationID
+        this IDatabaseConnection Database, int    ownerID, int itemID, int typeID, string memo, string comment, double x,
+        double                   y,        double z,       int locationID
     )
     {
         return Database.Scalar <ulong> (

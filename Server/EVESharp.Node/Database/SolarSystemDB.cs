@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data;
 using EVESharp.Common.Database;
 using MySql.Data.MySqlClient;
 
@@ -14,7 +15,7 @@ public class SolarSystemDB : DatabaseAccessor
         if (fromSolarSystemID == toSolarSystemID)
             return 0;
 
-        MySqlConnection connection = null;
+        IDbConnection connection = null;
         MySqlDataReader reader = Database.Select (
             ref connection,
             "SELECT jumps FROM mapPrecalculatedSolarSystemJumps WHERE fromSolarSystemID = @fromSolarSystemID AND toSolarSystemID = @toSolarSystemID",

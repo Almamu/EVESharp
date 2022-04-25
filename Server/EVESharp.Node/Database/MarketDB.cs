@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data;
 using EVESharp.Common.Database;
 using EVESharp.EVE.Client.Exceptions.marketProxy;
 using EVESharp.EVE.Market;
@@ -174,8 +175,8 @@ public class MarketDB : DatabaseAccessor
         Dictionary <int, List <int>> parentToMarket   = new Dictionary <int, List <int>> ();
         Dictionary <int, List <int>> marketTypeIDsMap = new Dictionary <int, List <int>> ();
 
-        MySqlConnection connection = null;
-        MySqlDataReader reader     = null;
+        IDbConnection connection = null;
+        IDataReader   reader     = null;
 
         reader = Database.Select (ref connection, "SELECT marketGroupID, parentGroupID FROM invMarketGroups");
 
@@ -281,7 +282,7 @@ public class MarketDB : DatabaseAccessor
 
     public int CountCharsOrders (int characterID)
     {
-        MySqlConnection connection = null;
+        IDbConnection connection = null;
         MySqlDataReader reader = Database.Select (
             ref connection,
             "SELECT COUNT(*) FROM mktOrders WHERE charID = @characterID",
@@ -305,15 +306,15 @@ public class MarketDB : DatabaseAccessor
     /// This allows to take exclusive control over it and perform any actions required
     /// </summary>
     /// <returns></returns>
-    public MySqlConnection AcquireMarketLock ()
+    public IDbConnection AcquireMarketLock ()
     {
-        MySqlConnection connection = null;
+        IDbConnection connection = null;
         Database.GetLock (ref connection, "market");
 
         return connection;
     }
 
-    public MarketOrder [] FindMatchingOrders (MySqlConnection connection, double price, int typeID, int characterID, int solarSystemID, TransactionType type)
+    public MarketOrder [] FindMatchingOrders (IDbConnection connection, double price, int typeID, int characterID, int solarSystemID, TransactionType type)
     {
         MySqlDataReader reader = Database.Select (
             ref connection,
@@ -358,7 +359,7 @@ public class MarketDB : DatabaseAccessor
         }
     }
 
-    public void UpdateOrderRemainingQuantity (MySqlConnection connection, int orderID, int newQuantityRemaining, double escrowCost)
+    public void UpdateOrderRemainingQuantity (IDbConnection connection, int orderID, int newQuantityRemaining, double escrowCost)
     {
         Database.Query (
             ref connection, "UPDATE mktOrders SET volRemaining = @quantity, escrow = escrow - @escrowCost WHERE orderID = @orderID",
@@ -371,7 +372,7 @@ public class MarketDB : DatabaseAccessor
         );
     }
 
-    public void UpdatePrice (MySqlConnection connection, int orderID, double newPrice, double newEscrow)
+    public void UpdatePrice (IDbConnection connection, int orderID, double newPrice, double newEscrow)
     {
         Database.Query (
             ref connection, "UPDATE mktOrders SET price = @price, escrow = @escrowCost WHERE orderID = @orderID",
@@ -384,7 +385,7 @@ public class MarketDB : DatabaseAccessor
         );
     }
 
-    public void RemoveOrder (MySqlConnection connection, int orderID)
+    public void RemoveOrder (IDbConnection connection, int orderID)
     {
         Database.Query (
             ref connection, "DELETE FROM mktOrders WHERE orderID = @orderID",
@@ -393,7 +394,7 @@ public class MarketDB : DatabaseAccessor
     }
 
     public Dictionary <int, ItemQuantityEntry> PrepareItemForOrder (
-        MySqlConnection connection, int typeID, int stationID, int locationID2, int quantity, int ownerID1, int corporationID,
+        IDbConnection connection, int typeID, int stationID, int locationID2, int quantity, int ownerID1, int corporationID,
         long            corporationRoles
     )
     {
@@ -521,7 +522,7 @@ public class MarketDB : DatabaseAccessor
         return itemIDToQuantityLeft;
     }
 
-    public void CheckRepackagedItem (MySqlConnection connection, int itemID, out bool singleton)
+    public void CheckRepackagedItem (IDbConnection connection, int itemID, out bool singleton)
     {
         MySqlDataReader reader = Database.Select (
             ref connection,
@@ -544,8 +545,8 @@ public class MarketDB : DatabaseAccessor
     }
 
     public void PlaceSellOrder (
-        MySqlConnection connection, int typeID,    int  characterID, int  corporationID, int stationID, int range, double price,
-        int             volEntered, int accountID, long duration,    bool isCorp
+        IDbConnection connection, int typeID,    int  characterID, int  corporationID, int stationID, int range, double price,
+        int           volEntered, int accountID, long duration,    bool isCorp
     )
     {
         Database.Query (
@@ -573,8 +574,8 @@ public class MarketDB : DatabaseAccessor
     }
 
     public void PlaceBuyOrder (
-        MySqlConnection connection, int typeID,    int characterID, int  corporationID, int  stationID, int range, double price,
-        int             volEntered, int minVolume, int accountID,   long duration,      bool isCorp
+        IDbConnection connection, int typeID,    int characterID, int  corporationID, int  stationID, int range, double price,
+        int           volEntered, int minVolume, int accountID,   long duration,      bool isCorp
     )
     {
         Database.Query (
@@ -608,12 +609,12 @@ public class MarketDB : DatabaseAccessor
     /// This allows to take exclusive control over it and perform any actions required
     /// </summary>
     /// <param name="connection"></param>
-    public void ReleaseMarketLock (MySqlConnection connection)
+    public void ReleaseMarketLock (IDbConnection connection)
     {
         Database.ReleaseLock (connection, "market");
     }
 
-    public MarketOrder GetOrderById (MySqlConnection connection, int orderID)
+    public MarketOrder GetOrderById (IDbConnection connection, int orderID)
     {
         MySqlDataReader reader = Database.Select (
             ref connection,
@@ -646,7 +647,7 @@ public class MarketDB : DatabaseAccessor
         }
     }
 
-    public List <MarketOrder> GetExpiredOrders (MySqlConnection connection)
+    public List <MarketOrder> GetExpiredOrders (IDbConnection connection)
     {
         MySqlDataReader reader = Database.Select (
             ref connection,

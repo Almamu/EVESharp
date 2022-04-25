@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Data;
 using EVESharp.Common.Database;
 using MySql.Data.MySqlClient;
 
@@ -10,7 +11,7 @@ public class ReprocessingDB : DatabaseAccessor
 
     public List <Recoverables> GetRecoverables (int typeID)
     {
-        MySqlConnection connection = null;
+        IDbConnection connection = null;
         MySqlDataReader reader = Database.Select (
             ref connection,
             "SELECT requiredTypeID, MIN(quantity) FROM typeActivityMaterials LEFT JOIN invBlueprintTypes ON typeID = blueprintTypeID WHERE damagePerJob = 1 AND ((activityID = 6 AND typeID = @typeID) OR (activityID = 1 AND productTypeID = @typeID)) GROUP BY requiredTypeID",

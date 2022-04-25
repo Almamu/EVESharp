@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Data;
 using EVESharp.Common.Database;
 using EVESharp.EVE.StaticData.Inventory;
 using EVESharp.EVE.StaticData.Inventory.Station;
@@ -17,7 +18,7 @@ public class StationDB : DatabaseAccessor
 
     public Dictionary <int, Operation> LoadOperations ()
     {
-        MySqlConnection connection = null;
+        IDbConnection   connection = null;
         MySqlDataReader reader     = Database.Select (ref connection, "SELECT operationID, operationName, description FROM staOperations");
 
         using (connection)
@@ -27,8 +28,8 @@ public class StationDB : DatabaseAccessor
 
             while (reader.Read ())
             {
-                List <int>      services           = new List <int> ();
-                MySqlConnection connectionServices = null;
+                List <int>    services           = new List <int> ();
+                IDbConnection connectionServices = null;
                 MySqlDataReader readerServices = Database.Select (
                     ref connectionServices,
                     "SELECT serviceID FROM staOperationServices WHERE operationID = @operationID",
@@ -58,7 +59,7 @@ public class StationDB : DatabaseAccessor
 
     public Dictionary <int, Type> LoadStationTypes ()
     {
-        MySqlConnection connection = null;
+        IDbConnection connection = null;
         MySqlDataReader reader = Database.Select (
             ref connection,
             "SELECT stationTypeID, hangarGraphicID, dockEntryX," +
@@ -98,7 +99,7 @@ public class StationDB : DatabaseAccessor
 
     public Dictionary <int, string> LoadServices ()
     {
-        MySqlConnection connection = null;
+        IDbConnection connection = null;
         MySqlDataReader reader =
             Database.Select (ref connection, "SELECT serviceID, serviceName FROM staServices");
 
@@ -116,7 +117,7 @@ public class StationDB : DatabaseAccessor
 
     public int CountRentedOffices (int stationID)
     {
-        MySqlConnection connection = null;
+        IDbConnection connection = null;
         MySqlDataReader reader = Database.Select (
             ref connection,
             "SELECT COUNT(*) FROM crpOffices WHERE stationID = @stationID",
@@ -178,7 +179,7 @@ public class StationDB : DatabaseAccessor
 
     public bool CorporationHasOfficeRentedAt (int corporationID, int stationID)
     {
-        MySqlConnection connection = null;
+        IDbConnection connection = null;
         MySqlDataReader reader = Database.Select (
             ref connection,
             "SELECT corporationID FROM crpOffices WHERE stationID = @stationID AND corporationID = @corporationID",

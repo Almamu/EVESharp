@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Threading.Tasks;
 using EVESharp.Common.Database;
 using EVESharp.Database;
@@ -70,7 +71,7 @@ public class allianceRegistry : MultiClientBoundService
     private IEnumerable <ApplicationEntry> GetAcceptedAlliances (long minimumTime)
     {
         // TODO: THIS ONE MIGHT HAVE A BETTER PLACE SOMEWHERE, BUT FOR NOW IT'LL LIVE HERE
-        MySqlConnection connection = null;
+        IDbConnection connection = null;
         MySqlDataReader reader = Database.Select (
             ref connection,
             $"SELECT corporationID, allianceID, executorCorpID FROM crpApplications LEFT JOIN crpAlliances USING(allianceID) WHERE `state` = {(int) ApplicationStatus.Accepted} AND applicationUpdateTime < @limit",
@@ -259,10 +260,7 @@ public class allianceRegistry : MultiClientBoundService
 
     public PyDataType GetBills (CallInformation call)
     {
-        return Database.CRowset (
-            BillsDB.GET_PAYABLE,
-            new Dictionary <string, object> {{"_debtorID", ObjectID}}
-        );
+        return Database.MktBillsGetPayable (this.ObjectID);
     }
 
     [MustHaveCorporationRole(MLS.UI_CORP_DELETE_RELATIONSHIP_DIRECTOR_ONLY, CorporationRole.Director)]
@@ -295,17 +293,7 @@ public class allianceRegistry : MultiClientBoundService
         {
             case (int) ApplicationStatus.Accepted:
             case (int) ApplicationStatus.Rejected:
-                Database.Procedure (
-                    "CrpAlliancesUpdateApplication",
-                    new Dictionary <string, object>
-                    {
-                        {"_corporationID", corporationID},
-                        {"_allianceID", ObjectID},
-                        {"_newStatus", newStatus},
-                        {"_currentTime", DateTime.UtcNow.ToFileTimeUtc ()}
-                    }
-                );
-
+                Database.CrpAlliancesUpdateApplication (corporationID, this.ObjectID, newStatus);
                 break;
 
             default:

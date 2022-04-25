@@ -1,11 +1,12 @@
 ﻿using System.Collections.Generic;
 using EVESharp.Common.Database;
+using EVESharp.PythonTypes.Types.Database;
 
 namespace EVESharp.Database;
 
 public static class ItemDB
 {
-    public static void InvSetItemNode (this DatabaseConnection Database, int itemID, long nodeID)
+    public static void InvSetItemNode (this IDatabaseConnection Database, int itemID, long nodeID)
     {
         Database.Procedure (
             "InvSetItemNode",
@@ -17,7 +18,7 @@ public static class ItemDB
         );
     }
 
-    public static long InvGetItemNode (this DatabaseConnection Database, int itemID)
+    public static long InvGetItemNode (this IDatabaseConnection Database, int itemID)
     {
         return Database.Scalar <long> (
             "InvGetItemNode",
@@ -25,7 +26,7 @@ public static class ItemDB
         );
     }
 
-    public static void InvClearNodeAssociation (this DatabaseConnection Database)
+    public static void InvClearNodeAssociation (this IDatabaseConnection Database)
     {
         Database.Procedure ("InvClearNodeAssociation");
     }

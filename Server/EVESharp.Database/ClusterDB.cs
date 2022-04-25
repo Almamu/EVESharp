@@ -7,7 +7,7 @@ namespace EVESharp.Database;
 
 public static class ClusterDB
 {
-    public static long CluResolveAddress (this DatabaseConnection Database, string type, int objectID)
+    public static long CluResolveAddress (this IDatabaseConnection Database, string type, int objectID)
     {
         return Database.Scalar <long> (
             "CluResolveAddress", new Dictionary <string, object> ()
@@ -18,17 +18,17 @@ public static class ClusterDB
         );
     }
 
-    public static void CluRegisterSingleNode (this DatabaseConnection Database, long nodeID)
+    public static void CluRegisterSingleNode (this IDatabaseConnection Database, long nodeID)
     {
         Database.Procedure ("CluRegisterSingleNode", new Dictionary <string, object> () {{"_nodeID", nodeID}});
     }
 
-    public static void CluCleanup (this DatabaseConnection Database)
+    public static void CluCleanup (this IDatabaseConnection Database)
     {
         Database.Procedure ("CluCleanup");
     }
 
-    public static int CluResolveCharacter (this DatabaseConnection Database, int characterID)
+    public static int CluResolveCharacter (this IDatabaseConnection Database, int characterID)
     {
         return (int) Database.Scalar <uint> ("CluResolveCharacter", new Dictionary <string, object> () {{"_characterID", characterID}});
     }

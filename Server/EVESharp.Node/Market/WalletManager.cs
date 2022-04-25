@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data;
 using EVESharp.Common.Database;
 using EVESharp.Database;
 using EVESharp.EVE.Market;
@@ -43,9 +44,9 @@ public class WalletManager
     /// Acquires a lock for modifying wallets on the database
     /// </summary>
     /// <returns></returns>
-    private MySqlConnection AcquireLock (int ownerID, int walletKey, out double balance)
+    private IDbConnection AcquireLock (int ownerID, int walletKey, out double balance)
     {
-        MySqlConnection connection = null;
+        IDbConnection connection = null;
         // acquire the lock
         Database.GetLock (ref connection, $"wallet_{ownerID}_{walletKey}");
 
@@ -62,7 +63,7 @@ public class WalletManager
     /// This allows to take exclusive control over it and perform any actions required
     /// </summary>
     /// <param name="connection"></param>
-    public void ReleaseLock (MySqlConnection connection, int ownerID, int walletKey)
+    public void ReleaseLock (IDbConnection connection, int ownerID, int walletKey)
     {
         Database.ReleaseLock (connection, $"wallet_{ownerID}_{walletKey}");
     }

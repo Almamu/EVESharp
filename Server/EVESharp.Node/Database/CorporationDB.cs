@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Data;
 using EVESharp.Common.Database;
 using EVESharp.EVE.Alliances;
 using EVESharp.EVE.Client.Exceptions.corpRegistry;
@@ -67,7 +68,7 @@ public class CorporationDB : DatabaseAccessor
 
     public Dictionary <int, int> GetShareholdersList (int corporationID)
     {
-        MySqlConnection connection = null;
+        IDbConnection connection = null;
         MySqlDataReader reader = Database.Select (
             ref connection,
             "SELECT ownerID, shares FROM crpShares WHERE corporationID = @corporationID",
@@ -88,7 +89,7 @@ public class CorporationDB : DatabaseAccessor
 
     public int GetSharesForOwner (int corporationID, int ownerID)
     {
-        MySqlConnection connection = null;
+        IDbConnection connection = null;
         MySqlDataReader reader = Database.Select (
             ref connection,
             "SELECT shares FROM crpShares WHERE ownerID = @ownerID AND corporationID = @corporationID",
@@ -156,7 +157,7 @@ public class CorporationDB : DatabaseAccessor
 
     public double GetLPForCharacterCorp (int corporationID, int characterID)
     {
-        MySqlConnection connection = null;
+        IDbConnection connection = null;
         MySqlDataReader reader = Database.Select (
             ref connection,
             "SELECT balance FROM chrLPbalance WHERE characterID=@characterID AND corporationID=@corporationID",
@@ -202,7 +203,7 @@ public class CorporationDB : DatabaseAccessor
 
     public Dictionary <PyDataType, int> GetOffices (int corporationID)
     {
-        MySqlConnection connection = null;
+        IDbConnection connection = null;
         MySqlDataReader reader = Database.Select (
             ref connection,
             "SELECT officeID FROM crpOffices WHERE corporationID = @corporationID",
@@ -268,7 +269,7 @@ public class CorporationDB : DatabaseAccessor
         // TODO: GENERATE PROPER FIELDS FOR THE FOLLOWING FIELDS
         // TODO: divisionID, squadronID
         // TODO: CHECK IF THIS startDateTime IS THE CORP'S MEMBERSHIP OR CHARACTER'S MEMBERSHIP
-        MySqlConnection connection = null;
+        IDbConnection connection = null;
         MySqlDataReader reader     = Database.Select (ref connection, query, parameters);
 
         using (connection)
@@ -295,7 +296,7 @@ public class CorporationDB : DatabaseAccessor
         // TODO: GENERATE PROPER FIELDS FOR THE FOLLOWING FIELDS
         // TODO: divisionID, squadronID
         // TODO: CHECK IF THIS startDateTime IS THE CORP'S MEMBERSHIP OR CHARACTER'S MEMBERSHIP
-        MySqlConnection connection = null;
+        IDbConnection connection = null;
         MySqlDataReader reader     = Database.Select (ref connection, query, parameters);
 
         using (connection)
@@ -307,7 +308,7 @@ public class CorporationDB : DatabaseAccessor
 
     public PyList <PyTuple> GetOffices (int corporationID, int startPos, int limit, SparseRowsetHeader header)
     {
-        MySqlConnection connection = null;
+        IDbConnection connection = null;
         MySqlDataReader reader = Database.Select (
             ref connection,
             "SELECT officeID, stationID, typeID, officeFolderID FROM crpOffices LEFT JOIN invItems ON itemID = stationID WHERE corporationID = @corporationID LIMIT @startPos,@limit",
@@ -328,7 +329,7 @@ public class CorporationDB : DatabaseAccessor
 
     public SparseRowsetHeader GetOfficesSparseRowset (int corporationID)
     {
-        MySqlConnection connection = null;
+        IDbConnection connection = null;
         MySqlDataReader reader =
             Database.Select (
                 ref connection,
@@ -358,7 +359,7 @@ public class CorporationDB : DatabaseAccessor
 
     public Dictionary <PyDataType, int> GetMembers (int corporationID)
     {
-        MySqlConnection connection = null;
+        IDbConnection connection = null;
         MySqlDataReader reader = Database.Select (
             ref connection,
             "SELECT characterID FROM chrInformation WHERE corporationID = @corporationID",
@@ -401,7 +402,7 @@ public class CorporationDB : DatabaseAccessor
         query += string.Join (',', parameters.Keys) + ")";
 
         parameters ["@corporationID"] = corporationID;
-        MySqlConnection connection = null;
+        IDbConnection connection = null;
         MySqlDataReader reader     = Database.Select (ref connection, query, parameters);
 
         using (connection)
@@ -416,7 +417,7 @@ public class CorporationDB : DatabaseAccessor
         // TODO: GENERATE PROPER FIELDS FOR THE FOLLOWING FIELDS
         // TODO: divisionID, squadronID
         // TODO: CHECK IF THIS startDateTime IS THE CORP'S MEMBERSHIP OR CHARACTER'S MEMBERSHIP
-        MySqlConnection connection = null;
+        IDbConnection connection = null;
         MySqlDataReader reader = Database.Select (
             ref connection,
             "SELECT" +
@@ -447,7 +448,7 @@ public class CorporationDB : DatabaseAccessor
         // TODO: GENERATE PROPER FIELDS FOR THE FOLLOWING FIELDS
         // TODO: divisionID, squadronID
         // TODO: CHECK IF THIS startDateTime IS THE CORP'S MEMBERSHIP OR CHARACTER'S MEMBERSHIP
-        MySqlConnection connection = null;
+        IDbConnection connection = null;
         MySqlDataReader reader = Database.Select (
             ref connection,
             "SELECT" +
@@ -475,7 +476,7 @@ public class CorporationDB : DatabaseAccessor
 
     public SparseRowsetHeader GetMembersSparseRowset (int corporationID)
     {
-        MySqlConnection connection = null;
+        IDbConnection connection = null;
         MySqlDataReader reader =
             Database.Select (
                 ref connection,
@@ -576,7 +577,7 @@ public class CorporationDB : DatabaseAccessor
 
     public int GetTitleMaskForCharacter (int characterID)
     {
-        MySqlConnection connection = null;
+        IDbConnection connection = null;
         MySqlDataReader reader = Database.Select (
             ref connection,
             "SELECT titleMask FROM chrInformation WHERE characterID = @characterID",
@@ -595,7 +596,7 @@ public class CorporationDB : DatabaseAccessor
 
     public void GetCorporationInformationForCharacter (int characterID, out string title, out int titleMask, out int corporationID, out int? allianceID)
     {
-        MySqlConnection connection = null;
+        IDbConnection connection = null;
         MySqlDataReader reader = Database.Select (
             ref connection,
             "SELECT title, titleMask, corporationID, allianceID FROM chrInformation LEFT JOIN corporation USING(corporationID) WHERE characterID = @characterID",
@@ -622,7 +623,7 @@ public class CorporationDB : DatabaseAccessor
 
     public Dictionary <int, string> GetTitlesNames (int corporationID)
     {
-        MySqlConnection connection = null;
+        IDbConnection connection = null;
         MySqlDataReader reader = Database.Select (
             ref connection,
             "SELECT titleID, titleName FROM crpTitles WHERE corporationID = @corporationID",
@@ -729,7 +730,7 @@ public class CorporationDB : DatabaseAccessor
 
     public int GetCorporationIDForCharacter (int characterID)
     {
-        MySqlConnection connection = null;
+        IDbConnection connection = null;
         MySqlDataReader reader = Database.Select (
             ref connection,
             "SELECT corporationID FROM chrInformation WHERE characterID = @characterID",
@@ -801,7 +802,7 @@ public class CorporationDB : DatabaseAccessor
 
     public bool IsCorporationNameTaken (string corporationName)
     {
-        MySqlConnection connection = null;
+        IDbConnection connection = null;
         MySqlDataReader reader = Database.Select (
             ref connection,
             $"SELECT COUNT(*) FROM eveNames WHERE groupID = {(int) Groups.Corporation} AND itemName LIKE @corporationName",
@@ -819,7 +820,7 @@ public class CorporationDB : DatabaseAccessor
 
     public bool IsTickerNameTaken (string tickerName)
     {
-        MySqlConnection connection = null;
+        IDbConnection connection = null;
         MySqlDataReader reader = Database.Select (
             ref connection,
             "SELECT COUNT(*) FROM corporation WHERE tickerName LIKE @tickerName",
@@ -837,7 +838,7 @@ public class CorporationDB : DatabaseAccessor
 
     public bool IsAllianceNameTaken (string corporationName)
     {
-        MySqlConnection connection = null;
+        IDbConnection connection = null;
         MySqlDataReader reader = Database.Select (
             ref connection,
             $"SELECT COUNT(*) FROM eveNames WHERE groupID = {(int) Groups.Alliance} AND itemName LIKE @corporationName",
@@ -855,7 +856,7 @@ public class CorporationDB : DatabaseAccessor
 
     public bool IsShortNameTaken (string shortName)
     {
-        MySqlConnection connection = null;
+        IDbConnection connection = null;
         MySqlDataReader reader = Database.Select (
             ref connection,
             "SELECT COUNT(*) FROM crpAlliances WHERE shortName LIKE @shortName",
@@ -916,7 +917,7 @@ public class CorporationDB : DatabaseAccessor
 
     public IEnumerable <int> GetMembersForCorp (int corporationID)
     {
-        MySqlConnection connection = null;
+        IDbConnection connection = null;
         MySqlDataReader reader = Database.Select (
             ref connection,
             "SELECT characterID FROM chrInformation WHERE corporationID = @corporationID",
@@ -1037,7 +1038,7 @@ public class CorporationDB : DatabaseAccessor
         out long grantableRolesAtHQ, out long grantableRolesAtBase, out long grantableRolesAtOther, out string titleName
     )
     {
-        MySqlConnection connection = null;
+        IDbConnection connection = null;
         MySqlDataReader reader = Database.Select (
             ref connection,
             "SELECT roles, grantableRoles, rolesAtHQ, grantableRolesAtHQ, rolesAtBase, grantableRolesAtBase, rolesAtOther, grantableRolesAtOther, titleName FROM crpTitles WHERE corporationID = @corporationID AND titleID & @titleMask > 0",
@@ -1081,7 +1082,7 @@ public class CorporationDB : DatabaseAccessor
     {
         long expirationDate = DateTime.Now.AddDays (30).ToFileTimeUtc ();
 
-        MySqlConnection connection = null;
+        IDbConnection connection = null;
         MySqlDataReader reader = Database.Select (
             ref connection,
             "SELECT corporationID, officeID, periodCost, stationID, balanceDueDate FROM crpOffices WHERE nextBillID IS NULL AND balanceDueDate < @expirationDate",
@@ -1179,7 +1180,7 @@ public class CorporationDB : DatabaseAccessor
 
         int index = 0;
 
-        MySqlConnection connection = null;
+        IDbConnection connection = null;
         MySqlCommand command = Database.PrepareQuery (
             ref connection,
             "INSERT INTO crpMedalParts(medalID, `index`, part, graphic, color)VALUE(@medalID, @index, @part, @graphic, @color)"
@@ -1429,7 +1430,7 @@ public class CorporationDB : DatabaseAccessor
 
     public int? GetAllianceIDForCorporation (int corporationID)
     {
-        MySqlConnection connection = null;
+        IDbConnection connection = null;
         MySqlDataReader reader = Database.Select (
             ref connection,
             "SELECT allianceID FROM corporation WHERE corporationID = @corporationID",
@@ -1448,7 +1449,7 @@ public class CorporationDB : DatabaseAccessor
 
     public int? GetCurrentAllianceApplication (int corporationID)
     {
-        MySqlConnection connection = null;
+        IDbConnection connection = null;
         MySqlDataReader reader = Database.Select (
             ref connection,
             "SELECT allianceID FROM crpApplications WHERE corporationID = @corporationID",
@@ -1482,7 +1483,7 @@ public class CorporationDB : DatabaseAccessor
 
     public long GetAllianceJoinDate (int corporationID)
     {
-        MySqlConnection connection = null;
+        IDbConnection connection = null;
         MySqlDataReader reader = Database.Select (
             ref connection,
             "SELECT startDate FROM corporation WHERE corporationID = @corporationID",

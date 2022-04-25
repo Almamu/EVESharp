@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Data;
 using EVESharp.Common.Database;
 using EVESharp.EVE.StaticData.Dogma;
 using EVESharp.EVE.StaticData.Inventory;
@@ -18,7 +19,7 @@ public class DogmaDB : DatabaseAccessor
 
     public Dictionary <int, Expression> LoadDogmaExpressions ()
     {
-        MySqlConnection connection = null;
+        IDbConnection connection = null;
         MySqlDataReader reader = Database.Select (
             ref connection,
             "SELECT expressionID, operandID, arg1, arg2, expressionValue, expressionName, expressionAttributeID FROM dgmExpressions ORDER BY arg1, arg2, expressionID"

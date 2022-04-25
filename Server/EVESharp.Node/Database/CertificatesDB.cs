@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data;
 using EVESharp.Common.Database;
 using EVESharp.EVE.StaticData.Certificates;
 using EVESharp.PythonTypes.Types.Database;
@@ -30,7 +31,7 @@ public class CertificatesDB : DatabaseAccessor
     /// <returns></returns>
     public Dictionary <int, List <Relationship>> GetCertificateRelationships ()
     {
-        MySqlConnection connection = null;
+        IDbConnection connection = null;
         MySqlDataReader reader = Database.Select (
             ref connection, "SELECT relationshipID, parentID, parentTypeID, parentLevel, childID, childTypeID FROM crtRelationships"
         );
@@ -119,7 +120,7 @@ public class CertificatesDB : DatabaseAccessor
     /// <returns></returns>
     public List <int> GetCertificateListForCharacter (int characterID)
     {
-        MySqlConnection connection = null;
+        IDbConnection connection = null;
         MySqlDataReader reader = Database.Select (
             ref connection,
             "SELECT certificateID FROM chrCertificates WHERE characterID = @characterID",

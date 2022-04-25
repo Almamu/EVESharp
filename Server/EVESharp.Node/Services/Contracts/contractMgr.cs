@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Data;
 using EVESharp.EVE.Client.Exceptions.contractMgr;
 using EVESharp.EVE.Market;
 using EVESharp.EVE.Packets.Exceptions;
@@ -128,7 +129,7 @@ public class contractMgr : Service
     }
 
     private void PrepareItemsForCourierOrAuctionContract (
-        MySqlConnection connection, ulong   contractID,
+        IDbConnection   connection, ulong   contractID,
         PyList <PyList> itemList,   Station station, int ownerID, int shipID
     )
     {
@@ -216,7 +217,7 @@ public class contractMgr : Service
 
         Station station = ItemFactory.GetStaticStation (startStationID);
 
-        using MySqlConnection connection = MarketDB.AcquireMarketLock ();
+        using IDbConnection connection = MarketDB.AcquireMarketLock ();
 
         try
         {
@@ -348,7 +349,7 @@ public class contractMgr : Service
 
     public PyDataType DeleteContract (PyInteger contractID, PyObjectData keyVal, CallInformation call)
     {
-        using MySqlConnection connection = MarketDB.AcquireMarketLock ();
+        using IDbConnection connection = MarketDB.AcquireMarketLock ();
 
         try
         {
@@ -466,7 +467,7 @@ public class contractMgr : Service
 
     public PyDataType PlaceBid (PyInteger contractID, PyInteger quantity, PyBool forCorp, PyObjectData locationData, CallInformation call)
     {
-        using MySqlConnection connection = MarketDB.AcquireMarketLock ();
+        using IDbConnection connection = MarketDB.AcquireMarketLock ();
 
         try
         {
@@ -532,7 +533,7 @@ public class contractMgr : Service
     }
 
     private void AcceptItemExchangeContract (
-        MySqlConnection connection, Session session, ContractDB.Contract contract, Station station, int ownerID, Flags flag = Flags.Hangar
+        IDbConnection connection, Session session, ContractDB.Contract contract, Station station, int ownerID, Flags flag = Flags.Hangar
     )
     {
         List <ContractDB.ItemQuantityEntry> offeredItems = DB.GetOfferedItems (connection, contract.ID);
@@ -650,7 +651,7 @@ public class contractMgr : Service
         if (forCorp == true)
             throw new UserError ("Cannot accept contracts for corporation yet");
 
-        using MySqlConnection connection = MarketDB.AcquireMarketLock ();
+        using IDbConnection connection = MarketDB.AcquireMarketLock ();
 
         try
         {

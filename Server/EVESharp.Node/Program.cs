@@ -252,7 +252,6 @@ internal class Program
                 dependencies.Register <RAMDB> (Lifestyle.Singleton);
                 dependencies.Register <FactoryDB> (Lifestyle.Singleton);
                 dependencies.Register <TutorialsDB> (Lifestyle.Singleton);
-                dependencies.Register <BillsDB> (Lifestyle.Singleton);
 
                 // register all the services
                 dependencies.Register <account> (Lifestyle.Singleton);

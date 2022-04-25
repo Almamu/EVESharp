@@ -54,7 +54,7 @@ public class corpRegistry : MultiClientBoundService
     private CorporationDB              DB                  { get; }
     private ChatDB                     ChatDB              { get; }
     private CharacterDB                CharacterDB         { get; }
-    private DatabaseConnection         Database            { get; }
+    private IDatabaseConnection        Database            { get; }
     private ItemFactory                ItemFactory         { get; }
     private WalletManager              WalletManager       { get; }
     private NotificationSender         Notifications       { get; }
@@ -93,9 +93,9 @@ public class corpRegistry : MultiClientBoundService
     }
 
     protected corpRegistry (
-        CorporationDB  db,             DatabaseConnection databaseConnection, ChatDB    chatDB, CharacterDB characterDB, NotificationSender notificationSender,
-        MailManager    mailManager,    WalletManager      walletManager,      Constants constants, ItemFactory itemFactory, Ancestries ancestries,
-        SessionManager sessionManager, Corporation        corp,               int       isMaster, corpRegistry parent
+        CorporationDB  db,             IDatabaseConnection databaseConnection, ChatDB    chatDB, CharacterDB characterDB, NotificationSender notificationSender,
+        MailManager    mailManager,    WalletManager      walletManager,       Constants constants, ItemFactory itemFactory, Ancestries ancestries,
+        SessionManager sessionManager, Corporation        corp,                int       isMaster, corpRegistry parent
     ) : base (parent, corp.ID)
     {
         DB                                = db;

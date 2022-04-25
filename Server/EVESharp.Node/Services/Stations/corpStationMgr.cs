@@ -40,7 +40,6 @@ public class corpStationMgr : ClientBoundService
     private         ItemDB             ItemDB        => ItemFactory.ItemDB;
     private         MarketDB           MarketDB      { get; }
     private         StationDB          StationDB     { get; }
-    private         BillsDB            BillsDB       { get; }
     private         TypeManager        TypeManager   => ItemFactory.TypeManager;
     private         SystemManager      SystemManager => ItemFactory.SystemManager;
     private         WalletManager      WalletManager { get; }
@@ -49,13 +48,12 @@ public class corpStationMgr : ClientBoundService
     private         DatabaseConnection Database      { get; }
 
     public corpStationMgr (
-        MarketDB            marketDB, StationDB stationDb, BillsDB billsDb, NotificationSender notificationSender, ItemFactory itemFactory, Constants constants,
+        MarketDB            marketDB, StationDB stationDb, NotificationSender notificationSender, ItemFactory itemFactory, Constants constants,
         BoundServiceManager manager,  WalletManager walletManager, DatabaseConnection database
     ) : base (manager)
     {
         MarketDB      = marketDB;
         StationDB     = stationDb;
-        BillsDB       = billsDb;
         Notifications = notificationSender;
         ItemFactory   = itemFactory;
         Constants     = constants;
@@ -65,13 +63,12 @@ public class corpStationMgr : ClientBoundService
 
     // TODO: PROVIDE OBJECTID PROPERLY
     protected corpStationMgr (
-        MarketDB            marketDB, StationDB stationDb, BillsDB billsDb, NotificationSender notificationSender, ItemFactory itemFactory, Constants constants,
+        MarketDB            marketDB, StationDB stationDb, NotificationSender notificationSender, ItemFactory itemFactory, Constants constants,
         BoundServiceManager manager,  WalletManager walletManager, Session session
     ) : base (manager, session, 0)
     {
         MarketDB      = marketDB;
         StationDB     = stationDb;
-        BillsDB       = billsDb;
         Notifications = notificationSender;
         ItemFactory   = itemFactory;
         Constants     = constants;
@@ -301,7 +298,7 @@ public class corpStationMgr : ClientBoundService
         );
         long dueDate = DateTime.UtcNow.AddDays (30).ToFileTimeUtc ();
         // create the bill record for the renewal
-        int billID = (int) BillsDB.CreateBill (
+        int billID = (int) Database.MktBillsCreate (
             BillTypes.RentalBill, call.Session.CorporationID, ownerCorporationID,
             rentalCost, dueDate, 0, (int) Types.OfficeFolder, stationID
         );
@@ -339,7 +336,7 @@ public class corpStationMgr : ClientBoundService
             throw new CustomError ("Trying to bind an object that does not belong to us!");
 
         return new corpStationMgr (
-            MarketDB, StationDB, BillsDB, Notifications, ItemFactory, Constants, BoundServiceManager, WalletManager,
+            MarketDB, StationDB, Notifications, ItemFactory, Constants, BoundServiceManager, WalletManager,
             call.Session
         );
     }

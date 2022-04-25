@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Data;
 using EVESharp.Common.Database;
 using EVESharp.Node.Inventory.Items;
 using EVESharp.PythonTypes.Types.Collections;
@@ -300,7 +301,7 @@ public class ChatDB : DatabaseAccessor
                 " LEFT JOIN lscChannelPermissions USING (channelID)" +
                 " WHERE lscChannelPermissions.accessor = @characterID AND channelID = @channelID";
 
-        MySqlConnection connection = null;
+        IDbConnection connection = null;
         MySqlDataReader reader = Database.Select (
             ref connection, query,
             new Dictionary <string, object>
@@ -330,7 +331,7 @@ public class ChatDB : DatabaseAccessor
     /// <exception cref="Exception"></exception>
     public Row GetChannelInfoByRelatedEntity (int relatedEntityID, int characterID, bool maillist = false)
     {
-        MySqlConnection connection = null;
+        IDbConnection connection = null;
         MySqlDataReader reader = Database.Select (
             ref connection,
             "SELECT" +
@@ -415,7 +416,7 @@ public class ChatDB : DatabaseAccessor
     /// <returns></returns>
     public Row GetExtraInfo (int characterID)
     {
-        MySqlConnection connection = null;
+        IDbConnection connection = null;
         MySqlDataReader reader = Database.Select (
             ref connection,
             "SELECT itemID AS ownerID, itemName AS ownerName, typeID FROM eveNames WHERE itemID = @characterID",
@@ -439,7 +440,7 @@ public class ChatDB : DatabaseAccessor
     /// <returns></returns>
     public PyList <PyInteger> GetOnlineCharsOnChannel (int channelID)
     {
-        MySqlConnection connection = null;
+        IDbConnection connection = null;
         MySqlDataReader reader = Database.Select (
             ref connection,
             "SELECT accessor FROM lscChannelPermissions LEFT JOIN chrInformation ON accessor = characterID WHERE channelID = @channelID AND online = 1 AND `mode` > 0",
@@ -466,7 +467,7 @@ public class ChatDB : DatabaseAccessor
     /// <returns></returns>
     public bool IsPlayerAllowedToChat (int channelID, int characterID)
     {
-        MySqlConnection connection = null;
+        IDbConnection connection = null;
         MySqlDataReader reader = Database.Select (
             ref connection,
             "SELECT `mode` FROM lscChannelPermissions WHERE channelID = @channelID AND accessor = @characterID",
@@ -495,7 +496,7 @@ public class ChatDB : DatabaseAccessor
     /// <returns></returns>
     public bool IsPlayerAllowedToRead (int channelID, int characterID)
     {
-        MySqlConnection connection = null;
+        IDbConnection connection = null;
         MySqlDataReader reader = Database.Select (
             ref connection,
             "SELECT `mode` FROM lscChannelPermissions WHERE channelID = @channelID AND accessor = @characterID",
@@ -524,7 +525,7 @@ public class ChatDB : DatabaseAccessor
     /// <returns></returns>
     public bool IsPlayerAllowedToChatOnRelatedEntity (int relatedEntityID, int characterID)
     {
-        MySqlConnection connection = null;
+        IDbConnection connection = null;
         MySqlDataReader reader = Database.Select (
             ref connection,
             "SELECT `mode` FROM lscChannelPermissions, lscGeneralChannels WHERE lscGeneralChannels.channelID = lscChannelPermissions.channelID AND lscGeneralChannels.relatedEntityID = @relatedEntityID AND accessor = @characterID",
@@ -553,7 +554,7 @@ public class ChatDB : DatabaseAccessor
     /// <returns></returns>
     public int GetChannelIDFromRelatedEntity (int relatedEntityID, bool isMailingList = false)
     {
-        MySqlConnection connection = null;
+        IDbConnection connection = null;
         MySqlDataReader reader = Database.Select (
             ref connection,
             "SELECT channelID FROM lscGeneralChannels WHERE relatedEntityID = @itemID AND mailingList = @mailingList",
@@ -584,7 +585,7 @@ public class ChatDB : DatabaseAccessor
         if (channelID < 0)
             return CHANNEL_TYPE_NORMAL;
 
-        MySqlConnection connection = null;
+        IDbConnection connection = null;
         MySqlDataReader reader = Database.Select (
             ref connection,
             "SELECT displayName FROM lscGeneralChannels WHERE channelID = @channelID",
@@ -615,7 +616,7 @@ public class ChatDB : DatabaseAccessor
         else
             query = "SELECT displayName FROM lscGeneralChannels WHERE channelID = @channelID";
 
-        MySqlConnection connection = null;
+        IDbConnection connection = null;
         MySqlDataReader reader = Database.Select (
             ref connection, query,
             new Dictionary <string, object> {{"@channelID", channelID}}
@@ -670,7 +671,7 @@ public class ChatDB : DatabaseAccessor
     /// <returns></returns>
     public bool IsCharacterMemberOfChannel (int channelID, int characterID)
     {
-        MySqlConnection connection = null;
+        IDbConnection connection = null;
         MySqlDataReader reader = Database.Select (
             ref connection,
             "SELECT 0 AS extra FROM lscChannelPermissions WHERE channelID = @channelID AND accessor = @characterID",
@@ -696,7 +697,7 @@ public class ChatDB : DatabaseAccessor
     /// <returns></returns>
     public bool IsCharacterAdminOfChannel (int channelID, int characterID)
     {
-        MySqlConnection connection = null;
+        IDbConnection connection = null;
         MySqlDataReader reader = Database.Select (
             ref connection,
             "SELECT `mode` FROM lscChannelPermissions WHERE channelID = @channelID AND accessor = @characterID",
@@ -725,7 +726,7 @@ public class ChatDB : DatabaseAccessor
     /// <returns></returns>
     public bool IsCharacterOperatorOrAdminOfChannel (int channelID, int characterID)
     {
-        MySqlConnection connection = null;
+        IDbConnection connection = null;
         MySqlDataReader reader = Database.Select (
             ref connection,
             "SELECT `mode` FROM lscChannelPermissions WHERE channelID = @channelID AND accessor = @characterID",

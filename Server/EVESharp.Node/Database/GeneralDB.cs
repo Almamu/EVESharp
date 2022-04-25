@@ -24,6 +24,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Data;
 using EVESharp.Common.Database;
 using EVESharp.EVE.StaticData;
 using EVESharp.PythonTypes.Types.Collections;
@@ -39,7 +40,7 @@ public class GeneralDB : DatabaseAccessor
 
     public long GetNodeWhereSolarSystemIsLoaded (int solarSystemID)
     {
-        MySqlConnection connection = null;
+        IDbConnection connection = null;
         MySqlDataReader reader = Database.Select (
             ref connection,
             "SELECT nodeID FROM invItems WHERE itemID = @solarSystemID",
@@ -58,7 +59,7 @@ public class GeneralDB : DatabaseAccessor
 
     public Dictionary <string, Constant> LoadConstants ()
     {
-        MySqlConnection connection = null;
+        IDbConnection   connection = null;
         MySqlDataReader reader     = Database.Select (ref connection, "SELECT constantID, constantValue FROM eveConstants");
 
         using (connection)
@@ -77,7 +78,7 @@ public class GeneralDB : DatabaseAccessor
     {
         try
         {
-            MySqlConnection connection = null;
+            IDbConnection connection = null;
             MySqlDataReader reader = Database.Select (
                 ref connection,
                 "SELECT updateID, updateName, description, machoVersionMin, machoVersionMax, buildNumberMin, buildNumberMax, methodName, objectID, codeType, code, OCTET_LENGTH(code) as codeLength FROM eveLiveUpdates"

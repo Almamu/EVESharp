@@ -24,6 +24,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Data;
 using EVESharp.Common.Database;
 using EVESharp.EVE.Packets.Complex;
 using EVESharp.EVE.StaticData.Inventory;
@@ -476,7 +477,7 @@ public class CacheStorage : DatabaseAccessor
     /// <returns>The final object to be used by the cache</returns>
     private PyDataType QueryCacheObject (string query, CacheObjectType type)
     {
-        MySqlConnection connection = null;
+        IDbConnection   connection = null;
         MySqlDataReader reader     = Database.Select (ref connection, query);
 
         using (connection)

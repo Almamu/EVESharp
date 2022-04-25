@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Data;
 using EVESharp.Common.Database;
 using EVESharp.EVE.StaticData;
 using EVESharp.EVE.StaticData.Inventory;
@@ -32,7 +33,7 @@ public class CharacterDB : DatabaseAccessor
     /// <returns></returns>
     public Rowset GetCharacterList (int accountID)
     {
-        MySqlConnection connection = null;
+        IDbConnection connection = null;
         MySqlDataReader reader = Database.Select (
             ref connection,
             "SELECT" +
@@ -65,7 +66,7 @@ public class CharacterDB : DatabaseAccessor
     /// <returns></returns>
     public Rowset GetCharacterSelectionInfo (int characterID, int accountID)
     {
-        MySqlConnection connection = null;
+        IDbConnection connection = null;
         MySqlDataReader reader = Database.Select (
             ref connection,
             "SELECT " +
@@ -130,7 +131,7 @@ public class CharacterDB : DatabaseAccessor
     /// <returns></returns>
     public bool IsCharacterNameTaken (string characterName)
     {
-        MySqlConnection connection = null;
+        IDbConnection connection = null;
         MySqlDataReader reader = Database.Select (
             ref connection,
             "SELECT COUNT(*) FROM eveNames WHERE groupID = 1 AND itemName LIKE @characterName",
@@ -153,7 +154,7 @@ public class CharacterDB : DatabaseAccessor
     public Dictionary <int, Bloodline> GetBloodlineInformation ()
     {
         Dictionary <int, Bloodline> result     = new Dictionary <int, Bloodline> ();
-        MySqlConnection             connection = null;
+        IDbConnection               connection = null;
         MySqlDataReader reader = Database.Select (
             ref connection,
             "SELECT " +
@@ -205,7 +206,7 @@ public class CharacterDB : DatabaseAccessor
     public Dictionary <int, Ancestry> GetAncestryInformation (Bloodlines bloodlines)
     {
         Dictionary <int, Ancestry> result     = new Dictionary <int, Ancestry> ();
-        MySqlConnection            connection = null;
+        IDbConnection              connection = null;
         MySqlDataReader reader = Database.Select (
             ref connection,
             "SELECT " +
@@ -451,7 +452,7 @@ public class CharacterDB : DatabaseAccessor
     /// <returns>Whether the information was found or not</returns>
     public bool GetRandomCareerForRace (int raceID, out int careerID, out int schoolID, out int careerSpecialityID, out int corporationID)
     {
-        MySqlConnection connection = null;
+        IDbConnection connection = null;
         MySqlDataReader reader = Database.Select (
             ref connection,
             "SELECT careerID, corporationID, schoolID FROM chrSchools WHERE raceID = @raceID ORDER BY RAND();",
@@ -495,7 +496,7 @@ public class CharacterDB : DatabaseAccessor
         out int constellationID, out int regionID
     )
     {
-        MySqlConnection connection = null;
+        IDbConnection connection = null;
         MySqlDataReader reader = Database.Select (
             ref connection,
             "SELECT staStations.stationID, solarSystemID, constellationID, regionID" +
@@ -535,7 +536,7 @@ public class CharacterDB : DatabaseAccessor
     {
         Dictionary <int, int> skills = new Dictionary <int, int> ();
 
-        MySqlConnection connection = null;
+        IDbConnection connection = null;
         MySqlDataReader reader = Database.Select (
             ref connection,
             "SELECT skillTypeID, levels FROM chrRaceSkills WHERE raceID = @raceID",
@@ -558,7 +559,7 @@ public class CharacterDB : DatabaseAccessor
     /// <returns></returns>
     public Rowset GetKeyMap ()
     {
-        MySqlConnection connection = null;
+        IDbConnection connection = null;
         MySqlDataReader reader = Database.Select (
             ref connection,
             "SELECT accountKey as keyID, accountType as keyType, accountName as keyName, description FROM market_keyMap"
@@ -579,7 +580,7 @@ public class CharacterDB : DatabaseAccessor
     /// <returns></returns>
     public List <Character.SkillQueueEntry> LoadSkillQueue (Character character, Dictionary <int, Skill> skillsInTraining)
     {
-        MySqlConnection connection = null;
+        IDbConnection connection = null;
         MySqlDataReader reader = Database.Select (
             ref connection,
             "SELECT skillItemID, level FROM chrSkillQueue WHERE characterID = @characterID ORDER BY orderIndex",
@@ -624,7 +625,7 @@ public class CharacterDB : DatabaseAccessor
     /// <returns></returns>
     public bool IsOnline (int characterID)
     {
-        MySqlConnection connection = null;
+        IDbConnection connection = null;
         MySqlDataReader reader = Database.Select (
             ref connection,
             "SELECT online FROM chrInformation WHERE characterID = @characterID",
@@ -648,7 +649,7 @@ public class CharacterDB : DatabaseAccessor
     /// <returns></returns>
     public PyList <PyInteger> GetOnlineFriendList (Character character)
     {
-        MySqlConnection connection = null;
+        IDbConnection connection = null;
         MySqlDataReader reader = Database.Select (
             ref connection,
             "SELECT accessor AS characterID FROM lscChannelPermissions, chrInformation WHERE lscChannelPermissions.channelID = @characterID AND chrInformation.characterID = lscChannelPermissions.accessor and chrInformation.online = 1",
@@ -715,7 +716,7 @@ public class CharacterDB : DatabaseAccessor
             );
 
             // re-create the whole skill queue
-            MySqlConnection connection = null;
+            IDbConnection connection = null;
 
             MySqlCommand create = Database.PrepareQuery (
                 ref connection,
@@ -896,7 +897,7 @@ public class CharacterDB : DatabaseAccessor
     /// <returns></returns>
     public string GetNote (int itemID, int ownerID)
     {
-        MySqlConnection connection = null;
+        IDbConnection connection = null;
         MySqlDataReader reader = Database.Select (
             ref connection,
             "SELECT note FROM chrNotes WHERE itemID = @itemID AND ownerID = @ownerID",
@@ -955,7 +956,7 @@ public class CharacterDB : DatabaseAccessor
     /// <returns></returns>
     public string GetCharacterName (int characterID)
     {
-        MySqlConnection connection = null;
+        IDbConnection connection = null;
         MySqlDataReader reader = Database.Select (
             ref connection,
             "SELECT itemName FROM eveNames WHERE itemID = @characterID",
@@ -980,7 +981,7 @@ public class CharacterDB : DatabaseAccessor
     /// <returns></returns>
     public int GetSkillLevelForCharacter (Types skill, int characterID)
     {
-        MySqlConnection connection = null;
+        IDbConnection connection = null;
         MySqlDataReader reader = Database.Select (
             ref connection,
             "SELECT valueInt FROM invItemsAttributes LEFT JOIN invItems USING(itemID) WHERE typeID = @skillTypeID AND ownerID = @characterID",
@@ -1008,7 +1009,7 @@ public class CharacterDB : DatabaseAccessor
     /// <returns></returns>
     public List <int> FindCharacters (string namePart)
     {
-        MySqlConnection connection = null;
+        IDbConnection connection = null;
         MySqlDataReader reader = Database.Select (
             ref connection,
             "SELECT itemID FROM eveNames WHERE groupID = 1 AND itemName LIKE @name",
@@ -1034,7 +1035,7 @@ public class CharacterDB : DatabaseAccessor
     /// <returns></returns>
     public long GetLastFactionJoinDate (int characterID)
     {
-        MySqlConnection connection = null;
+        IDbConnection connection = null;
         MySqlDataReader reader = Database.Select (
             ref connection,
             "SELECT startDate FROM chrEmployment WHERE corporationID IN (SELECT militiaCorporationID FROM chrFactions) AND characterID = @characterID",
@@ -1058,7 +1059,7 @@ public class CharacterDB : DatabaseAccessor
     /// <returns></returns>
     public long? GetCharacterStasisTimer (int characterID)
     {
-        MySqlConnection connection = null;
+        IDbConnection connection = null;
         MySqlDataReader reader = Database.Select (
             ref connection,
             "SELECT corpStasisTime FROM chrInformation WHERE characterID = @characterID",
@@ -1113,7 +1114,7 @@ public class CharacterDB : DatabaseAccessor
         out long grantableRolesAtOther, out int? blockRoles,     out int? baseID,               out int  titleMask
     )
     {
-        MySqlConnection connection = null;
+        IDbConnection connection = null;
         MySqlDataReader reader = Database.Select (
             ref connection,
             "SELECT roles, rolesAtBase, rolesAtHQ, rolesAtOther, grantableRoles, grantableRolesAtBase, grantableRolesAtHQ, grantableRolesAtOther, blockRoles, baseID, titleMask FROM chrInformation WHERE characterID = @characterID",
@@ -1200,7 +1201,7 @@ public class CharacterDB : DatabaseAccessor
     /// <returns></returns>
     public int GetCharacterCorporationID (int characterID)
     {
-        MySqlConnection connection = null;
+        IDbConnection connection = null;
         MySqlDataReader reader = Database.Select (
             ref connection,
             "SELECT corporationID FROM chrInformation WHERE characterID = @characterID",

@@ -24,6 +24,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Data;
 using EVESharp.Common.Database;
 using EVESharp.EVE.Client.Exceptions.contractMgr;
 using EVESharp.EVE.StaticData.Inventory;
@@ -50,7 +51,7 @@ public class ContractDB : DatabaseAccessor
 
     public int GetOutstandingContractsCountForPlayer (int characterID)
     {
-        MySqlConnection connection = null;
+        IDbConnection connection = null;
         MySqlDataReader reader = Database.Select (
             ref connection,
             "SELECT COUNT(*) AS contractCount FROM conContracts WHERE issuerID = @characterID and forCorp = @forCorp AND status = @outstandingStatus AND dateExpired > @currentTime",
@@ -153,7 +154,7 @@ public class ContractDB : DatabaseAccessor
     }
 
     public ulong CreateContract (
-        MySqlConnection connection, int    characterID, int    corporationID, int?   allianceID,     ContractTypes type,         int    availability,
+        IDbConnection  connection, int    characterID, int    corporationID, int?   allianceID,     ContractTypes type,         int    availability,
         int             assigneeID, int    expireTime,  int    duration,      int    startStationID, int?          endStationID, double price,
         double          reward,     double collateral,  string title,         string description,    int           issuerWalletID
     )
@@ -233,7 +234,7 @@ public class ContractDB : DatabaseAccessor
 
     public ContractStatus GetContractStatus (int contractID, int characterID, int corporationID)
     {
-        MySqlConnection connection = null;
+        IDbConnection connection = null;
         MySqlDataReader reader = Database.Select (
             ref connection,
             "SELECT status FROM conContracts WHERE ((availability = 1 AND (issuerID = @characterID OR issuerCorpID = @corporationID OR assigneeID = @characterID OR assigneeID = @corporationID OR acceptorID = @characterID OR acceptorID = @corporationID)) OR availability = 0) AND contractID = @contractID",
@@ -256,7 +257,7 @@ public class ContractDB : DatabaseAccessor
     }
 
     public Dictionary <int, ItemQuantityEntry> PrepareItemsForContract (
-        MySqlConnection connection, ulong contractID, PyList <PyList> itemList, Station station, int ownerID, int crateID, int shipID
+        IDbConnection connection, ulong contractID, PyList <PyList> itemList, Station station, int ownerID, int crateID, int shipID
     )
     {
         Dictionary <int, ItemQuantityEntry> items = new Dictionary <int, ItemQuantityEntry> ();
@@ -362,7 +363,7 @@ public class ContractDB : DatabaseAccessor
         return items;
     }
 
-    public void UpdateContractCrateAndVolume (ref MySqlConnection connection, ulong contractID, int crateID, double volume)
+    public void UpdateContractCrateAndVolume (ref IDbConnection connection, ulong contractID, int crateID, double volume)
     {
         Database.Query (
             ref connection,
@@ -376,7 +377,7 @@ public class ContractDB : DatabaseAccessor
         );
     }
 
-    public void UpdateContractStatus (ref MySqlConnection connection, int contractID, ContractStatus newStatus)
+    public void UpdateContractStatus (ref IDbConnection connection, int contractID, ContractStatus newStatus)
     {
         Database.Query (
             ref connection,
@@ -389,7 +390,7 @@ public class ContractDB : DatabaseAccessor
         );
     }
 
-    public void UpdateAcceptorID (ref MySqlConnection connection, int contractID, int newAcceptorID)
+    public void UpdateAcceptorID (ref IDbConnection connection, int contractID, int newAcceptorID)
     {
         Database.Query (
             ref connection,
@@ -402,7 +403,7 @@ public class ContractDB : DatabaseAccessor
         );
     }
 
-    public void UpdateAcceptedDate (ref MySqlConnection connection, int contractID)
+    public void UpdateAcceptedDate (ref IDbConnection connection, int contractID)
     {
         Database.Query (
             ref connection,
@@ -415,7 +416,7 @@ public class ContractDB : DatabaseAccessor
         );
     }
 
-    public void UpdateCompletedDate (ref MySqlConnection connection, int contractID)
+    public void UpdateCompletedDate (ref IDbConnection connection, int contractID)
     {
         Database.Query (
             ref connection,
@@ -436,7 +437,7 @@ public class ContractDB : DatabaseAccessor
         );
     }
 
-    public void PrepareRequestedItems (MySqlConnection connection, ulong contractID, PyList <PyList> requestItemTypeList)
+    public void PrepareRequestedItems (IDbConnection connection, ulong contractID, PyList <PyList> requestItemTypeList)
     {
         string query = "INSERT INTO conItems(contractID, itemTypeID, quantity, inCrate)VALUES";
         Dictionary <string, object> values = new Dictionary <string, object>
@@ -587,7 +588,7 @@ public class ContractDB : DatabaseAccessor
         if (limit > 0)
             contractQuery += $" LIMIT {limit}";
 
-        MySqlConnection connection = null;
+        IDbConnection   connection = null;
         MySqlDataReader reader     = Database.Select (ref connection, contractQuery, values);
 
         using (connection)
@@ -608,7 +609,7 @@ public class ContractDB : DatabaseAccessor
 
     public List <int> GetContractListByOwnerBids (int ownerID)
     {
-        MySqlConnection connection = null;
+        IDbConnection connection = null;
         MySqlDataReader reader = Database.Select (
             ref connection,
             "SELECT contractID FROM conBids WHERE bidderID = @ownerID",
@@ -633,7 +634,7 @@ public class ContractDB : DatabaseAccessor
 
     public List <int> GetContractListByAcceptor (int acceptorID)
     {
-        MySqlConnection connection = null;
+        IDbConnection connection = null;
         MySqlDataReader reader = Database.Select (
             ref connection,
             "SELECT contractID FROM conContracts WHERE acceptorID = @acceptorID AND status = @status",
@@ -683,7 +684,7 @@ public class ContractDB : DatabaseAccessor
         );
     }
 
-    public ulong PlaceBid (MySqlConnection connection, int contractID, int amount, int bidderID, bool forCorp)
+    public ulong PlaceBid (IDbConnection connection, int contractID, int amount, int bidderID, bool forCorp)
     {
         return Database.PrepareQueryLID (
             ref connection,
@@ -698,7 +699,7 @@ public class ContractDB : DatabaseAccessor
         );
     }
 
-    public void GetOutbids (MySqlConnection connection, int contractID, int amount, out List <int> characterIDs, out List <int> corporationIDs)
+    public void GetOutbids (IDbConnection connection, int contractID, int amount, out List <int> characterIDs, out List <int> corporationIDs)
     {
         MySqlDataReader reader = Database.Select (
             ref connection,
@@ -723,7 +724,7 @@ public class ContractDB : DatabaseAccessor
         }
     }
 
-    public void GetMaximumBid (MySqlConnection connection, int contractID, out int bidderID, out int amount)
+    public void GetMaximumBid (IDbConnection connection, int contractID, out int bidderID, out int amount)
     {
         MySqlDataReader reader = Database.Select (
             ref connection,
@@ -746,7 +747,7 @@ public class ContractDB : DatabaseAccessor
         }
     }
 
-    public Contract GetContract (MySqlConnection connection, int contractID)
+    public Contract GetContract (IDbConnection connection, int contractID)
     {
         MySqlDataReader reader = Database.Select (
             ref connection,
@@ -779,7 +780,7 @@ public class ContractDB : DatabaseAccessor
 
     public List <int> FetchLoginCharacterContractBids (int bidderID)
     {
-        MySqlConnection connection = null;
+        IDbConnection connection = null;
         MySqlDataReader reader = Database.Select (
             ref connection,
             "SELECT contractID, MAX(amount), (SELECT MAX(amount) FROM conBids b WHERE b.contractID = contractID) AS maximum FROM conBids LEFT JOIN conContracts USING(contractID) WHERE bidderID = @bidderID AND status = @outstandingStatus AND dateExpired < @currentTime GROUP BY contractID",
@@ -806,7 +807,7 @@ public class ContractDB : DatabaseAccessor
 
     public List <int> FetchLoginCharacterContractAssigned (int assigneeID)
     {
-        MySqlConnection connection = null;
+        IDbConnection connection = null;
         MySqlDataReader reader = Database.Select (
             ref connection,
             "SELECT contractID FROM conContracts WHERE assigneeID = @assigneeID AND status = @outstandingStatus AND dateExpired < @currentTime",
@@ -830,7 +831,7 @@ public class ContractDB : DatabaseAccessor
         }
     }
 
-    public Dictionary <int, int> GetRequiredItemTypeIDs (MySqlConnection connection, int contractID)
+    public Dictionary <int, int> GetRequiredItemTypeIDs (IDbConnection connection, int contractID)
     {
         MySqlDataReader reader = Database.Select (
             ref connection,
@@ -849,7 +850,7 @@ public class ContractDB : DatabaseAccessor
         }
     }
 
-    public List <ItemQuantityEntry> GetOfferedItems (MySqlConnection connection, int contractID)
+    public List <ItemQuantityEntry> GetOfferedItems (IDbConnection connection, int contractID)
     {
         MySqlDataReader reader = Database.Select (
             ref connection,
@@ -875,7 +876,7 @@ public class ContractDB : DatabaseAccessor
         }
     }
 
-    public void ExtractCrate (MySqlConnection connection, int crateID, int newLocationID, int newOwnerID)
+    public void ExtractCrate (IDbConnection connection, int crateID, int newLocationID, int newOwnerID)
     {
         // take all the items out
         Database.Query (
@@ -897,7 +898,7 @@ public class ContractDB : DatabaseAccessor
     }
 
     public List <ItemQuantityEntry> CheckRequiredItemsAtStation (
-        MySqlConnection connection, Station station, int ownerID, int newOwnerID, Flags flag, Dictionary <int, int> requiredItemTypes
+        IDbConnection connection, Station station, int ownerID, int newOwnerID, Flags flag, Dictionary <int, int> requiredItemTypes
     )
     {
         MySqlDataReader reader = Database.Select (
@@ -1008,7 +1009,7 @@ public class ContractDB : DatabaseAccessor
         return modifiedItems;
     }
 
-    public List <ItemQuantityEntry> GetCrateItems (MySqlConnection connection, int crateID)
+    public List <ItemQuantityEntry> GetCrateItems (IDbConnection connection, int crateID)
     {
         MySqlDataReader reader = Database.Select (
             ref connection,

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data;
 using EVESharp.Common.Database;
 using EVESharp.Database;
 using EVESharp.EVE.Client.Exceptions;
@@ -14,7 +15,7 @@ namespace EVESharp.Node.Market;
 
 public class Wallet : IDisposable
 {
-    public MySqlConnection    Connection;
+    public IDbConnection      Connection;
     public int                OwnerID         { get; init; }
     public int                WalletKey       { get; init; }
     public double             Balance         { get; set; }

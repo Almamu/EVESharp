@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data;
 using EVESharp.EVE.Client.Exceptions.corpRegistry;
 using EVESharp.EVE.Client.Exceptions.inventory;
 using EVESharp.EVE.Client.Exceptions.marketProxy;
@@ -279,8 +280,8 @@ public class marketProxy : Service
     }
 
     private void PlaceImmediateSellOrderChar (
-        MySqlConnection connection, Wallet  wallet, Character character, int itemID, int typeID, int stationID, int quantity,
-        double          price,      Session session
+        IDbConnection connection, Wallet  wallet, Character character, int itemID, int typeID, int stationID, int quantity,
+        double        price,      Session session
     )
     {
         int solarSystemID = ItemFactory.GetStaticStation (stationID).SolarSystemID;
@@ -380,7 +381,7 @@ public class marketProxy : Service
         }
     }
 
-    private void PlaceSellOrderCharUpdateItems (MySqlConnection connection, Session session, int stationID, int typeID, int quantity)
+    private void PlaceSellOrderCharUpdateItems (IDbConnection connection, Session session, int stationID, int typeID, int quantity)
     {
         Dictionary <int, MarketDB.ItemQuantityEntry> items             = null;
         int                                          callerCharacterID = session.CharacterID;
@@ -450,7 +451,7 @@ public class marketProxy : Service
         // obtain wallet lock too
         // everything is checked already, perform table locking and do all the job here
         using Wallet          wallet     = WalletManager.AcquireWallet (ownerID, accountKey, ownerID == call.Session.CorporationID);
-        using MySqlConnection connection = DB.AcquireMarketLock ();
+        using IDbConnection connection = DB.AcquireMarketLock ();
 
         try
         {
@@ -518,8 +519,8 @@ public class marketProxy : Service
     }
 
     private void PlaceImmediateBuyOrderChar (
-        MySqlConnection connection, Wallet          wallet, int typeID, Character character, int stationID, int quantity, double price,
-        int             range,      CallInformation call
+        IDbConnection connection, Wallet          wallet, int typeID, Character character, int stationID, int quantity, double price,
+        int           range,      CallInformation call
     )
     {
         int solarSystemID = ItemFactory.GetStaticStation (stationID).SolarSystemID;
@@ -611,8 +612,8 @@ public class marketProxy : Service
         // ensure the character can place the order where he's trying to
         this.CheckBuyOrderDistancePermissions (character, stationID, duration);
 
-        using Wallet          wallet     = WalletManager.AcquireWallet (ownerID, accountKey, ownerID == call.Session.CorporationID);
-        using MySqlConnection connection = DB.AcquireMarketLock ();
+        using Wallet        wallet     = WalletManager.AcquireWallet (ownerID, accountKey, ownerID == call.Session.CorporationID);
+        using IDbConnection connection = DB.AcquireMarketLock ();
 
         try
         {
@@ -729,7 +730,7 @@ public class marketProxy : Service
 
         Character character = ItemFactory.GetItem <Character> (callerCharacterID);
 
-        using MySqlConnection connection = DB.AcquireMarketLock ();
+        using IDbConnection connection = DB.AcquireMarketLock ();
 
         try
         {
@@ -805,7 +806,7 @@ public class marketProxy : Service
 
         Character character = ItemFactory.GetItem <Character> (callerCharacterID);
 
-        using MySqlConnection connection = DB.AcquireMarketLock ();
+        using IDbConnection connection = DB.AcquireMarketLock ();
 
         try
         {
@@ -899,7 +900,7 @@ public class marketProxy : Service
     /// </summary>
     /// <param name="connection">The database connection that acquired the lock</param>
     /// <param name="order">The order to mark as expired</param>
-    private void BuyOrderExpired (MySqlConnection connection, MarketOrder order)
+    private void BuyOrderExpired (IDbConnection connection, MarketOrder order)
     {
         // remove order
         DB.RemoveOrder (connection, order.OrderID);
@@ -919,7 +920,7 @@ public class marketProxy : Service
     /// </summary>
     /// <param name="connection">The database connection that acquired the lock</param>
     /// <param name="order">The order to mark as expired</param>
-    private void SellOrderExpired (MySqlConnection connection, MarketOrder order)
+    private void SellOrderExpired (IDbConnection connection, MarketOrder order)
     {
         // remove order
         DB.RemoveOrder (connection, order.OrderID);
@@ -951,7 +952,7 @@ public class marketProxy : Service
     /// </summary>
     public void PerformTimedEvents (object sender, EventArgs args)
     {
-        using MySqlConnection connection = DB.AcquireMarketLock ();
+        using IDbConnection connection = DB.AcquireMarketLock ();
 
         try
         {

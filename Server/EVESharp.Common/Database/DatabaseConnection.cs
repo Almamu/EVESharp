@@ -63,7 +63,7 @@ public class DatabaseConnection : IDatabaseConnection
     /// <param name="reader">The reader to use</param>
     /// <param name="headers">Where to put the headers</param>
     /// <param name="fieldTypes">Where to put the field types</param>
-    public void GetDatabaseHeaders (MySqlDataReader reader, out PyList <PyString> headers, out FieldType [] fieldTypes)
+    public void GetDatabaseHeaders (IDataReader reader, out PyList <PyString> headers, out FieldType [] fieldTypes)
     {
         headers    = new PyList <PyString> (reader.FieldCount);
         fieldTypes = new FieldType[reader.FieldCount];
@@ -80,7 +80,7 @@ public class DatabaseConnection : IDatabaseConnection
     /// </summary>
     /// <param name="reader">The reader to use</param>
     /// <returns></returns>
-    public FieldType [] GetFieldTypes (MySqlDataReader reader)
+    public FieldType [] GetFieldTypes (IDataReader reader)
     {
         FieldType [] result = new FieldType[reader.FieldCount];
 
@@ -97,7 +97,7 @@ public class DatabaseConnection : IDatabaseConnection
     /// <param name="index">The column to get the type from</param>
     /// <returns></returns>
     /// <exception cref="InvalidDataException">If the type is not supported</exception>
-    public FieldType GetFieldType (MySqlDataReader reader, int index)
+    public FieldType GetFieldType (IDataReader reader, int index)
     {
         Type type = reader.GetFieldType (index);
 
@@ -212,8 +212,8 @@ public class DatabaseConnection : IDatabaseConnection
     {
         try
         {
-            MySqlConnection connection = null;
-            MySqlCommand    command    = this.PrepareQuery (ref connection, query, values);
+            IDbConnection connection = null;
+            MySqlCommand  command    = this.PrepareQuery (ref connection, query, values);
 
             using (connection)
             using (command)
@@ -231,7 +231,7 @@ public class DatabaseConnection : IDatabaseConnection
         }
     }
 
-    public ulong PrepareQueryLID (ref MySqlConnection connection, string query, Dictionary <string, object> values)
+    public ulong PrepareQueryLID (ref IDbConnection connection, string query, Dictionary <string, object> values)
     {
         try
         {
@@ -256,8 +256,8 @@ public class DatabaseConnection : IDatabaseConnection
     {
         try
         {
-            MySqlConnection connection = null;
-            MySqlCommand    command    = this.PrepareQuery (ref connection, query);
+            IDbConnection connection = null;
+            MySqlCommand  command    = this.PrepareQuery (ref connection, query);
 
             using (connection)
             using (command)
@@ -277,8 +277,8 @@ public class DatabaseConnection : IDatabaseConnection
     {
         try
         {
-            MySqlConnection connection = null;
-            MySqlCommand    command    = this.PrepareQuery (ref connection, query, values);
+            IDbConnection connection = null;
+            MySqlCommand  command    = this.PrepareQuery (ref connection, query, values);
 
             using (connection)
             using (command)
@@ -320,7 +320,7 @@ public class DatabaseConnection : IDatabaseConnection
         }
     }
 
-    public void Query (ref MySqlConnection connection, string query, Dictionary <string, object> values)
+    public void Query (ref IDbConnection connection, string query, Dictionary <string, object> values)
     {
         try
         {
@@ -339,7 +339,7 @@ public class DatabaseConnection : IDatabaseConnection
         }
     }
 
-    public MySqlDataReader Select (ref MySqlConnection connection, string query)
+    public MySqlDataReader Select (ref IDbConnection connection, string query)
     {
         try
         {
@@ -355,7 +355,7 @@ public class DatabaseConnection : IDatabaseConnection
         }
     }
 
-    public MySqlDataReader Select (ref MySqlConnection connection, string query, Dictionary <string, object> values)
+    public MySqlDataReader Select (ref IDbConnection connection, string query, Dictionary <string, object> values)
     {
         try
         {
@@ -383,7 +383,7 @@ public class DatabaseConnection : IDatabaseConnection
     /// <param name="connection">where to store the MySql connection (has to be closed manually)</param>
     /// <param name="query">The prepared query</param>
     /// <returns>The generated command to perform the queries agains the database</returns>
-    public MySqlCommand PrepareQuery (ref MySqlConnection connection, string query)
+    public MySqlCommand PrepareQuery (ref IDbConnection connection, string query)
     {
         try
         {
@@ -394,7 +394,7 @@ public class DatabaseConnection : IDatabaseConnection
                 connection.Open ();
             }
 
-            MySqlCommand command = new MySqlCommand (query, connection);
+            MySqlCommand command = new MySqlCommand (query, (MySqlConnection) connection);
 
             return command;
         }
@@ -413,7 +413,7 @@ public class DatabaseConnection : IDatabaseConnection
     /// <param name="query">The prepared query</param>
     /// <param name="values">The key-value pair of values to use when running the query</param>
     /// <returns>The reader with the results of the query</returns>
-    public MySqlCommand PrepareQuery (ref MySqlConnection connection, string query, Dictionary <string, object> values)
+    public MySqlCommand PrepareQuery (ref IDbConnection connection, string query, Dictionary <string, object> values)
     {
         try
         {
@@ -424,7 +424,7 @@ public class DatabaseConnection : IDatabaseConnection
                 connection.Open ();
             }
 
-            MySqlCommand command = new MySqlCommand (query, connection);
+            MySqlCommand command = new MySqlCommand (query, (MySqlConnection) connection);
 
             // add values
             this.AddNamedParameters (values, command);
@@ -452,7 +452,7 @@ public class DatabaseConnection : IDatabaseConnection
     {
         try
         {
-            MySqlConnection connection = null;
+            IDbConnection connection = null;
 
             // create the correct command
             MySqlCommand command = this.PrepareQuery (ref connection, query, values);
@@ -482,7 +482,7 @@ public class DatabaseConnection : IDatabaseConnection
     {
         try
         {
-            MySqlConnection connection = null;
+            IDbConnection connection = null;
             MySqlDataReader reader     = this.Select (ref connection, query, values);
 
             using (connection)
@@ -509,7 +509,7 @@ public class DatabaseConnection : IDatabaseConnection
     {
         try
         {
-            MySqlConnection connection = null;
+            IDbConnection connection = null;
             MySqlDataReader reader     = this.Select (ref connection, query);
 
             using (connection)
@@ -538,7 +538,7 @@ public class DatabaseConnection : IDatabaseConnection
     {
         try
         {
-            MySqlConnection connection = null;
+            IDbConnection connection = null;
             MySqlDataReader reader     = this.Select (ref connection, query, values);
 
             using (connection)
@@ -566,7 +566,7 @@ public class DatabaseConnection : IDatabaseConnection
     {
         try
         {
-            MySqlConnection connection = null;
+            IDbConnection   connection = null;
             MySqlDataReader reader     = this.Select (ref connection, query);
 
             using (connection)
@@ -594,7 +594,7 @@ public class DatabaseConnection : IDatabaseConnection
     {
         try
         {
-            MySqlConnection connection = null;
+            IDbConnection   connection = null;
             MySqlDataReader reader     = this.Select (ref connection, query, values);
 
             using (connection)
@@ -625,7 +625,7 @@ public class DatabaseConnection : IDatabaseConnection
     {
         try
         {
-            MySqlConnection connection = null;
+            IDbConnection   connection = null;
             MySqlDataReader reader     = this.Select (ref connection, query, values);
 
             using (connection)
@@ -652,7 +652,7 @@ public class DatabaseConnection : IDatabaseConnection
     {
         try
         {
-            MySqlConnection connection = null;
+            IDbConnection   connection = null;
             MySqlDataReader reader     = this.Select (ref connection, query);
 
             using (connection)
@@ -680,7 +680,7 @@ public class DatabaseConnection : IDatabaseConnection
     {
         try
         {
-            MySqlConnection connection = null;
+            IDbConnection   connection = null;
             MySqlDataReader reader     = this.Select (ref connection, query, values);
 
             using (connection)
@@ -707,7 +707,7 @@ public class DatabaseConnection : IDatabaseConnection
     {
         try
         {
-            MySqlConnection connection = null;
+            IDbConnection   connection = null;
             MySqlDataReader reader     = this.Select (ref connection, query);
 
             using (connection)
@@ -734,7 +734,7 @@ public class DatabaseConnection : IDatabaseConnection
     {
         try
         {
-            MySqlConnection connection = null;
+            IDbConnection   connection = null;
             MySqlDataReader reader     = this.Select (ref connection, query);
 
             using (connection)
@@ -764,7 +764,7 @@ public class DatabaseConnection : IDatabaseConnection
     {
         try
         {
-            MySqlConnection connection = null;
+            IDbConnection   connection = null;
             MySqlDataReader reader     = this.Select (ref connection, query);
 
             using (connection)
@@ -793,7 +793,7 @@ public class DatabaseConnection : IDatabaseConnection
     {
         try
         {
-            MySqlConnection connection = null;
+            IDbConnection   connection = null;
             MySqlDataReader reader     = this.Select (ref connection, query);
 
             using (connection)
@@ -823,7 +823,7 @@ public class DatabaseConnection : IDatabaseConnection
     {
         try
         {
-            MySqlConnection connection = null;
+            IDbConnection   connection = null;
             MySqlDataReader reader     = this.Select (ref connection, query, values);
 
             using (connection)
@@ -852,7 +852,7 @@ public class DatabaseConnection : IDatabaseConnection
     {
         try
         {
-            MySqlConnection connection = null;
+            IDbConnection   connection = null;
             MySqlDataReader reader     = this.Select (ref connection, query);
 
             using (connection)
@@ -882,7 +882,7 @@ public class DatabaseConnection : IDatabaseConnection
     {
         try
         {
-            MySqlConnection connection = null;
+            IDbConnection   connection = null;
             MySqlDataReader reader     = this.Select (ref connection, query, values);
 
             using (connection)
@@ -910,7 +910,7 @@ public class DatabaseConnection : IDatabaseConnection
     {
         try
         {
-            MySqlConnection connection = null;
+            IDbConnection   connection = null;
             MySqlDataReader reader     = this.Select (ref connection, query);
 
             using (connection)
@@ -939,7 +939,7 @@ public class DatabaseConnection : IDatabaseConnection
     {
         try
         {
-            MySqlConnection connection = null;
+            IDbConnection   connection = null;
             MySqlDataReader reader     = this.Select (ref connection, query, values);
 
             using (connection)
@@ -967,7 +967,7 @@ public class DatabaseConnection : IDatabaseConnection
     {
         try
         {
-            MySqlConnection connection = null;
+            IDbConnection   connection = null;
             MySqlDataReader reader     = this.Select (ref connection, query);
 
             using (connection)
@@ -999,7 +999,7 @@ public class DatabaseConnection : IDatabaseConnection
     {
         try
         {
-            MySqlConnection connection = null;
+            IDbConnection   connection = null;
             MySqlDataReader reader     = this.Select (ref connection, query, values);
 
             using (connection)
@@ -1030,7 +1030,7 @@ public class DatabaseConnection : IDatabaseConnection
     {
         try
         {
-            MySqlConnection connection = null;
+            IDbConnection   connection = null;
             MySqlDataReader reader     = this.Select (ref connection, query);
 
             using (connection)
@@ -1062,7 +1062,7 @@ public class DatabaseConnection : IDatabaseConnection
     {
         try
         {
-            MySqlConnection connection = null;
+            IDbConnection   connection = null;
             MySqlDataReader reader     = this.Select (ref connection, query, values);
 
             using (connection)
@@ -1093,7 +1093,7 @@ public class DatabaseConnection : IDatabaseConnection
     {
         try
         {
-            MySqlConnection connection = null;
+            IDbConnection   connection = null;
             MySqlDataReader reader     = this.Select (ref connection, query);
 
             using (connection)
@@ -1125,7 +1125,7 @@ public class DatabaseConnection : IDatabaseConnection
     {
         try
         {
-            MySqlConnection connection = null;
+            IDbConnection   connection = null;
             MySqlDataReader reader     = this.Select (ref connection, query, values);
 
             using (connection)
@@ -1157,7 +1157,7 @@ public class DatabaseConnection : IDatabaseConnection
     {
         try
         {
-            MySqlConnection connection = null;
+            IDbConnection   connection = null;
             MySqlDataReader reader     = this.Select (ref connection, query, values);
 
             using (connection)
@@ -1175,7 +1175,7 @@ public class DatabaseConnection : IDatabaseConnection
         }
     }
 
-    public void GetLock (ref MySqlConnection connection, string lockName)
+    public void GetLock (ref IDbConnection connection, string lockName)
     {
         try
         {
@@ -1185,7 +1185,7 @@ public class DatabaseConnection : IDatabaseConnection
                 connection.Open ();
             }
 
-            MySqlCommand command = new MySqlCommand ("SELECT GET_LOCK (@lockName, 0xFFFFFFFF);", connection);
+            MySqlCommand command = new MySqlCommand ("SELECT GET_LOCK (@lockName, 0xFFFFFFFF);", (MySqlConnection) connection);
 
             using (command)
             {
@@ -1202,14 +1202,14 @@ public class DatabaseConnection : IDatabaseConnection
         }
     }
 
-    public void ReleaseLock (MySqlConnection connection, string lockName)
+    public void ReleaseLock (IDbConnection connection, string lockName)
     {
         try
         {
             if (connection == null)
                 throw new ArgumentNullException (nameof (connection), "A valid connection is required");
 
-            MySqlCommand command = new MySqlCommand ("SELECT RELEASE_LOCK (@lockName);", connection);
+            MySqlCommand command = new MySqlCommand ("SELECT RELEASE_LOCK (@lockName);", (MySqlConnection) connection);
 
             using (command)
             {
@@ -1232,7 +1232,7 @@ public class DatabaseConnection : IDatabaseConnection
     /// <param name="connection">The connection to use (the function will create a new one if null)</param>
     /// <param name="procedureName">The procedure to call</param>
     /// <returns>A command ready to perform the call</returns>
-    protected MySqlCommand PrepareProcedureCall (ref MySqlConnection connection, string procedureName)
+    private MySqlCommand PrepareProcedureCall (ref IDbConnection connection, string procedureName, Dictionary <string, object> values = null)
     {
         try
         {
@@ -1244,27 +1244,12 @@ public class DatabaseConnection : IDatabaseConnection
             }
 
             // setup the command in the correct mode to perform the stored procedure call
-            MySqlCommand command = new MySqlCommand (procedureName, connection);
+            MySqlCommand command = new MySqlCommand (procedureName, (MySqlConnection) connection);
             
             command.CommandType = CommandType.StoredProcedure;
-
-            return command;
-        }
-        catch (Exception e)
-        {
-            Log.Error ($"MySQL error: {e.Message}");
-
-            throw;
-        }
-    }
-
-    protected MySqlCommand PrepareProcedureCall (ref MySqlConnection connection, string procedureName, Dictionary <string, object> values)
-    {
-        try
-        {
-            MySqlCommand command = this.PrepareProcedureCall (ref connection, procedureName);
-
-            this.AddNamedParameters (values, command);
+            
+            if (values is not null)
+                this.AddNamedParameters (values, command);
 
             return command;
         }
@@ -1280,34 +1265,11 @@ public class DatabaseConnection : IDatabaseConnection
     /// Calls the given procedure
     /// </summary>
     /// <param name="procedureName">The procedure name</param>
-    public void Procedure (ref MySqlConnection connection, string procedureName, Dictionary <string, object> values)
+    /// <param name="values">The key-value pair of values to use when running the query</param>
+    public void Procedure (ref IDbConnection connection, string procedureName, Dictionary <string, object> values = null)
     {
         try
         {
-            MySqlCommand command = this.PrepareProcedureCall (ref connection, procedureName, values);
-
-            using (command)
-            {
-                command.ExecuteNonQuery ();
-            }
-        }
-        catch (Exception e)
-        {
-            Log.Error ($"MySQL error: {e.Message}");
-
-            throw;
-        }
-    }
-
-    /// <summary>
-    /// Calls the given procedure
-    /// </summary>
-    /// <param name="procedureName">The procedure name</param>
-    public void Procedure (string procedureName, Dictionary <string, object> values)
-    {
-        try
-        {
-            MySqlConnection connection = null;
             MySqlCommand    command    = this.PrepareProcedureCall (ref connection, procedureName, values);
 
             using (connection)
@@ -1324,36 +1286,16 @@ public class DatabaseConnection : IDatabaseConnection
         }
     }
 
-    public void Procedure (string procedureName)
-    {
-        try
-        {
-            MySqlConnection connection = null;
-            MySqlCommand    command    = this.PrepareProcedureCall (ref connection, procedureName);
-
-            using (connection)
-            using (command)
-            {
-                command.ExecuteNonQuery ();
-            }
-        }
-        catch (Exception e)
-        {
-            Log.Error ($"MySQL errors: {e.Message}");
-
-            throw;
-        }
-    }
-
     /// <summary>
     /// Calls the given procedure
     /// </summary>
     /// <param name="procedureName">The procedure name</param>
-    public ulong ProcedureLID (string procedureName, Dictionary <string, object> values)
+    /// <param name="values">The key-value pair of values to use when running the query</param>
+    /// <returns>The last inserted if of the procedure call</returns>
+    public ulong ProcedureLID (ref IDbConnection connection, string procedureName, Dictionary <string, object> values = null)
     {
         try
         {
-            MySqlConnection connection = null;
             MySqlCommand    command    = this.PrepareProcedureCall (ref connection, procedureName, values);
 
             using (connection)
@@ -1376,44 +1318,13 @@ public class DatabaseConnection : IDatabaseConnection
     /// Calls the given procedure and returns it's data as a normal CRowset
     /// </summary>
     /// <param name="procedureName">The procedure name</param>
-    /// <returns>The CRowset object representing the result</returns>
-    public CRowset CRowset (string procedureName)
-    {
-        try
-        {
-            // initialize a command and a connection for this procedure call
-            MySqlConnection connection = null;
-            MySqlCommand    command    = this.PrepareProcedureCall (ref connection, procedureName);
-
-            using (connection)
-            using (command)
-            {
-                using (MySqlDataReader reader = command.ExecuteReader ())
-                {
-                    return PythonTypes.Types.Database.CRowset.FromMySqlDataReader (this, reader);
-                }
-            }
-        }
-        catch (Exception e)
-        {
-            Log.Error ($"MySQL error: {e.Message}");
-
-            throw;
-        }
-    }
-
-    /// <summary>
-    /// Calls the given procedure and returns it's data as a normal CRowset
-    /// </summary>
-    /// <param name="procedureName">The procedure name</param>
     /// <param name="values">The values to add to the call</param>
     /// <returns>The CRowset object representing the result</returns>
-    public CRowset CRowset (string procedureName, Dictionary <string, object> values)
+    public CRowset CRowset (ref IDbConnection connection, string procedureName, Dictionary <string, object> values = null)
     {
         try
         {
             // initialize a command and a connection for this procedure call
-            MySqlConnection connection = null;
             MySqlCommand    command    = this.PrepareProcedureCall (ref connection, procedureName, values);
 
             using (connection)
@@ -1437,44 +1348,13 @@ public class DatabaseConnection : IDatabaseConnection
     /// Calls the given procedure and returns it's data as a normal CRowset
     /// </summary>
     /// <param name="procedureName">The procedure name</param>
-    /// <returns>The CRowset object representing the result</returns>
-    public Rowset Rowset (string procedureName)
-    {
-        try
-        {
-            // initialize a command and a connection for this procedure call
-            MySqlConnection connection = null;
-            MySqlCommand    command    = this.PrepareProcedureCall (ref connection, procedureName);
-
-            using (connection)
-            using (command)
-            {
-                using (MySqlDataReader reader = command.ExecuteReader ())
-                {
-                    return PythonTypes.Types.Database.Rowset.FromMySqlDataReader (this, reader);
-                }
-            }
-        }
-        catch (Exception e)
-        {
-            Log.Error ($"MySQL error: {e.Message}");
-
-            throw;
-        }
-    }
-
-    /// <summary>
-    /// Calls the given procedure and returns it's data as a normal CRowset
-    /// </summary>
-    /// <param name="procedureName">The procedure name</param>
     /// <param name="values">The values to add to the call</param>
-    /// <returns>The CRowset object representing the result</returns>
-    public Rowset Rowset (string procedureName, Dictionary <string, object> values)
+    /// <returns>The Rowset object representing the result</returns>
+    public Rowset Rowset (ref IDbConnection connection, string procedureName, Dictionary <string, object> values = null)
     {
         try
         {
             // initialize a command and a connection for this procedure call
-            MySqlConnection connection = null;
             MySqlCommand    command    = this.PrepareProcedureCall (ref connection, procedureName, values);
 
             using (connection)
@@ -1483,37 +1363,6 @@ public class DatabaseConnection : IDatabaseConnection
                 using (MySqlDataReader reader = command.ExecuteReader ())
                 {
                     return PythonTypes.Types.Database.Rowset.FromMySqlDataReader (this, reader);
-                }
-            }
-        }
-        catch (Exception e)
-        {
-            Log.Error ($"MySQL error: {e.Message}");
-
-            throw;
-        }
-    }
-
-    /// <summary>
-    /// Calls the given procedure and returns it's data as a normal CRowset
-    /// </summary>
-    /// <param name="indexField">The column of the index</param>
-    /// <param name="procedureName">The procedure name</param>
-    /// <returns>The CRowset object representing the result</returns>
-    public IndexRowset IndexRowset (int indexField, string procedureName)
-    {
-        try
-        {
-            // initialize a command and a connection for this procedure call
-            MySqlConnection connection = null;
-            MySqlCommand    command    = this.PrepareProcedureCall (ref connection, procedureName);
-
-            using (connection)
-            using (command)
-            {
-                using (MySqlDataReader reader = command.ExecuteReader ())
-                {
-                    return PythonTypes.Types.Database.IndexRowset.FromMySqlDataReader (this, reader, indexField);
                 }
             }
         }
@@ -1532,12 +1381,11 @@ public class DatabaseConnection : IDatabaseConnection
     /// <param name="procedureName">The procedure name</param>
     /// <param name="values">The values to add to the call</param>
     /// <returns>The IndexRowset object representing the result</returns>
-    public IndexRowset IndexRowset (int indexField, string procedureName, Dictionary <string, object> values)
+    public IndexRowset IndexRowset (ref IDbConnection connection, int indexField, string procedureName, Dictionary <string, object> values = null)
     {
         try
         {
             // initialize a command and a connection for this procedure call
-            MySqlConnection connection = null;
             MySqlCommand    command    = this.PrepareProcedureCall (ref connection, procedureName, values);
 
             using (connection)
@@ -1561,45 +1409,13 @@ public class DatabaseConnection : IDatabaseConnection
     /// Calls a procedure and returns a Row representing the result.
     /// </summary>
     /// <param name="procedureName">The procedure to call</param>
-    /// <returns>The PyDataType object representing the result</returns>
-    public Row Row (string procedureName)
-    {
-        try
-        {
-            // initialize a command and a connection for this procedure call
-            MySqlConnection connection = null;
-            MySqlCommand    command    = this.PrepareProcedureCall (ref connection, procedureName);
-
-            using (connection)
-            using (command)
-            using (MySqlDataReader reader = command.ExecuteReader ())
-            {
-                if (reader.Read () == false)
-                    return null;
-
-                return PythonTypes.Types.Database.Row.FromMySqlDataReader (this, reader);
-            }
-        }
-        catch (Exception e)
-        {
-            Log.Error ($"MySQL error: {e.Message}");
-
-            throw;
-        }
-    }
-
-    /// <summary>
-    /// Calls a procedure and returns a Row representing the result.
-    /// </summary>
-    /// <param name="procedureName">The procedure to call</param>
     /// <param name="values">The key-value pair of values to use when running the query</param>
     /// <returns>The PyDataType object representing the result</returns>
-    public Row Row (string procedureName, Dictionary <string, object> values)
+    public Row Row (ref IDbConnection connection, string procedureName, Dictionary <string, object> values = null)
     {
         try
         {
             // initialize a command and a connection for this procedure call
-            MySqlConnection connection = null;
             MySqlCommand    command    = this.PrepareProcedureCall (ref connection, procedureName, values);
 
             using (connection)
@@ -1620,47 +1436,17 @@ public class DatabaseConnection : IDatabaseConnection
         }
     }
 
-
     /// <summary>
     /// Calls the given procedure and returns it's data as a normal CRowset
     /// </summary>
     /// <param name="procedureName">The procedure name</param>
+    /// <param name="values">The key-value pair of values to use when running the query</param>
     /// <returns>The PackedRowList object representing the result</returns>
-    public PyList <PyPackedRow> PackedRowList (string procedureName)
+    public PyList <PyPackedRow> PackedRowList (ref IDbConnection connection, string procedureName, Dictionary <string, object> values = null)
     {
         try
         {
             // initialize a command and a connection for this procedure call
-            MySqlConnection connection = null;
-            MySqlCommand    command    = this.PrepareProcedureCall (ref connection, procedureName);
-
-            using (connection)
-            using (command)
-            using (MySqlDataReader reader = command.ExecuteReader ())
-            {
-                // run the prepared statement
-                return PyPackedRowList.FromMySqlDataReader (this, reader);
-            }
-        }
-        catch (Exception e)
-        {
-            Log.Error ($"MySQL error: {e.Message}");
-
-            throw;
-        }
-    }
-
-    /// <summary>
-    /// Calls the given procedure and returns it's data as a normal CRowset
-    /// </summary>
-    /// <param name="procedureName">The procedure name</param>
-    /// <returns>The PackedRowList object representing the result</returns>
-    public PyList <PyPackedRow> PackedRowList (string procedureName, Dictionary <string, object> values)
-    {
-        try
-        {
-            // initialize a command and a connection for this procedure call
-            MySqlConnection connection = null;
             MySqlCommand    command    = this.PrepareProcedureCall (ref connection, procedureName, values);
 
             using (connection)
@@ -1683,13 +1469,13 @@ public class DatabaseConnection : IDatabaseConnection
     /// Runs one procedure and returns an IntIntDictionary representing the result
     /// </summary>
     /// <param name="procedureName">The procedure to call</param>
+    /// <param name="values">The key-value pair of values to use when running the query</param>
     /// <returns>The IntIntDictionary object representing the result</returns>
-    public PyDictionary <PyInteger, PyInteger> IntIntDictionary (string procedureName)
+    public PyDictionary <PyInteger, PyInteger> IntIntDictionary (ref IDbConnection connection, string procedureName, Dictionary <string, object> values = null)
     {
         try
         {
             // initialize a command and a connection for this procedure call
-            MySqlConnection connection = null;
             MySqlCommand    command    = this.PrepareProcedureCall (ref connection, procedureName);
 
             using (connection)
@@ -1715,14 +1501,14 @@ public class DatabaseConnection : IDatabaseConnection
     /// IMPORTANT: The first column must be ordered (direction doesn't matter) for this to properly work
     /// </summary>
     /// <param name="procedureName">The procedure to run</param>
+    /// <param name="values">The key-value pair of values to use when running the query</param>
     /// <returns>The IntIntListDictionary object representing the result</returns>
-    public PyDictionary <PyInteger, PyList <PyInteger>> IntIntListDictionary (string procedureName)
+    public PyDictionary <PyInteger, PyList <PyInteger>> IntIntListDictionary (ref IDbConnection connection, string procedureName, Dictionary<string, object> values = null)
     {
         try
         {
             // initialize a command and a connection for this procedure call
-            MySqlConnection connection = null;
-            MySqlCommand    command    = this.PrepareProcedureCall (ref connection, procedureName);
+            MySqlCommand    command    = this.PrepareProcedureCall (ref connection, procedureName, values);
 
             using (connection)
             using (command)
@@ -1746,45 +1532,13 @@ public class DatabaseConnection : IDatabaseConnection
     /// </summary>
     /// <param name="keyColumnIndex">The column to use as index for the IntRowDictionary</param>
     /// <param name="procedureName">The procedure to run</param>
-    /// <returns>The IntRowDictionary object representing the result</returns>
-    public PyDictionary IntRowDictionary (int keyColumnIndex, string procedureName)
-    {
-        try
-        {
-            // initialize a command and a connection for this procedure call
-            MySqlConnection connection = null;
-            MySqlCommand    command    = this.PrepareProcedureCall (ref connection, procedureName);
-
-            using (connection)
-            using (command)
-            using (MySqlDataReader reader = command.ExecuteReader ())
-            {
-                // run the prepared statement
-                return PythonTypes.Types.Database.IntRowDictionary.FromMySqlDataReader (this, reader, keyColumnIndex);
-            }
-        }
-        catch (Exception e)
-        {
-            Log.Error ($"MySQL error: {e.Message}");
-
-            throw;
-        }
-    }
-
-    /// <summary>
-    /// Runs one procedure with the given values as parameters and returns a IntRowDictionary representing
-    /// the result
-    /// </summary>
-    /// <param name="keyColumnIndex">The column to use as index for the IntRowDictionary</param>
-    /// <param name="procedureName">The procedure to run</param>
     /// <param name="values">The key-value pair of values to use when running the query</param>
     /// <returns>The IntRowDictionary object representing the result</returns>
-    public PyDictionary IntRowDictionary (int keyColumnIndex, string procedureName, Dictionary <string, object> values)
+    public PyDictionary IntRowDictionary (ref IDbConnection connection, int keyColumnIndex, string procedureName, Dictionary <string, object> values = null)
     {
         try
         {
             // initialize a command and a connection for this procedure call
-            MySqlConnection connection = null;
             MySqlCommand    command    = this.PrepareProcedureCall (ref connection, procedureName, values);
 
             using (connection)
@@ -1808,44 +1562,13 @@ public class DatabaseConnection : IDatabaseConnection
     /// the result
     /// </summary>
     /// <param name="procedureName">The procedure to call</param>
+    /// <param name="values">The key-value pair of values to use when running the query</param>
     /// <returns>The DictRowList object representing the result</returns>
-    public PyDataType DictRowList (string procedureName)
+    public PyDataType DictRowList (ref IDbConnection connection, string procedureName, Dictionary <string, object> values = null)
     {
         try
         {
             // initialize a command and a connection for this procedure call
-            MySqlConnection connection = null;
-            MySqlCommand    command    = this.PrepareProcedureCall (ref connection, procedureName);
-
-            using (connection)
-            using (command)
-            using (MySqlDataReader reader = command.ExecuteReader ())
-            {
-                // run the prepared statement
-                return DictRowlist.FromMySqlDataReader (this, reader);
-            }
-        }
-        catch (Exception e)
-        {
-            Log.Error ($"MySQL error: {e.Message}");
-
-            throw;
-        }
-    }
-
-    /// <summary>
-    /// Runs one procedure with the given values as parameters and returns a DictRowList representing
-    /// the result
-    /// </summary>
-    /// <param name="procedureName">The procedure to call</param>
-    /// <param name="values">The key-value pair of values to use when running the query</param>
-    /// <returns>The RowList object representing the result</returns>
-    public PyDataType DictRowList (string procedureName, Dictionary <string, object> values)
-    {
-        try
-        {
-            // initialize a command and a connection for this procedure call
-            MySqlConnection connection = null;
             MySqlCommand    command    = this.PrepareProcedureCall (ref connection, procedureName, values);
 
             using (connection)
@@ -1864,11 +1587,10 @@ public class DatabaseConnection : IDatabaseConnection
         }
     }
 
-    public PyDictionary <PyString, PyDataType> Dictionary (string procedureName, Dictionary <string, object> values)
+    public PyDictionary <PyString, PyDataType> Dictionary (ref IDbConnection connection, string procedureName, Dictionary <string, object> values = null)
     {
         try
         {
-            MySqlConnection connection = null;
             MySqlCommand    command    = this.PrepareProcedureCall (ref connection, procedureName, values);
 
             using (connection)
@@ -1896,11 +1618,10 @@ public class DatabaseConnection : IDatabaseConnection
     /// <param name="procedureName">The procedure to call</param>
     /// <param name="values">The key-value pair of values to use when running the query</param>
     /// <returns>The PyDataType object representing the result</returns>
-    public PyList <T> List <T> (string procedureName, Dictionary <string, object> values) where T : PyDataType
+    public PyList <T> List <T> (ref IDbConnection connection, string procedureName, Dictionary <string, object> values = null) where T : PyDataType
     {
         try
         {
-            MySqlConnection connection = null;
             MySqlCommand    command    = this.PrepareProcedureCall (ref connection, procedureName, values);
 
             using (connection)
@@ -1920,64 +1641,6 @@ public class DatabaseConnection : IDatabaseConnection
     }
 
     /// <summary>
-    /// Runs one procedure with the given values as parameters and returns a PyList representing the result.
-    /// this only holds ONE row
-    /// </summary>
-    /// <param name="procedureName">The procedure to call</param>
-    /// <param name="values">The key-value pair of values to use when running the query</param>
-    /// <returns>The PyDataType object representing the result</returns>
-    public PyList <PyDataType> List (string procedureName, Dictionary <string, object> values)
-    {
-        try
-        {
-            MySqlConnection connection = null;
-            MySqlCommand    command    = this.PrepareProcedureCall (ref connection, procedureName, values);
-
-            using (connection)
-            using (command)
-            using (MySqlDataReader reader = command.ExecuteReader ())
-            {
-                // run the prepared statement
-                return PyList <PyDataType>.FromMySqlDataReader (this, reader);
-            }
-        }
-        catch (Exception e)
-        {
-            Log.Error ($"MySQL error: {e.Message}");
-
-            throw;
-        }
-    }
-
-    /// <summary>
-    /// Calls the given function and returns it's value casting it to the given type. If the result returns more than
-    /// one column or row, only the topmost, leftmost value is returned
-    /// </summary>
-    /// <param name="connection">The MySqlConnection to use</param>
-    /// <param name="functionName">The MySQL function to call</param>
-    /// <param name="values">The values to supply the MySQL function</param>
-    /// <typeparam name="T">The type to cast the return value to</typeparam>
-    /// <returns>The functions result</returns>
-    public T Scalar <T> (ref MySqlConnection connection, string functionName, Dictionary <string, object> values)
-    {
-        try
-        {
-            MySqlCommand command = this.PrepareProcedureCall (ref connection, functionName, values);
-
-            using (command)
-            {
-                return (T) command.ExecuteScalar ();
-            }
-        }
-        catch (Exception e)
-        {
-            Log.Error ($"MySQL error: {e.Message}");
-
-            throw;
-        }
-    }
-
-    /// <summary>
     /// Calls the given function and returns it's value casting it to the given type. If the result returns more than
     /// one column or row, only the topmost, leftmost value is returned
     /// </summary>
@@ -1985,11 +1648,10 @@ public class DatabaseConnection : IDatabaseConnection
     /// <param name="values">The values to supply the MySQL function</param>
     /// <typeparam name="T">The type to cast the return value to</typeparam>
     /// <returns>The functions result</returns>
-    public T Scalar <T> (string functionName, Dictionary <string, object> values)
+    public T Scalar <T> (ref IDbConnection connection, string functionName, Dictionary <string, object> values = null)
     {
         try
         {
-            MySqlConnection connection = null;
             MySqlCommand    command    = this.PrepareProcedureCall (ref connection, functionName, values);
 
             using (connection)
@@ -2015,11 +1677,52 @@ public class DatabaseConnection : IDatabaseConnection
     /// <typeparam name="T2">The type to cast the second column's return value to</typeparam>
     /// <typeparam name="T3">The type to cast the third column's return value to</typeparam>
     /// <returns>The functions result</returns>
-    public (T1, T2, T3) Scalar <T1, T2, T3> (string functionName, Dictionary <string, object> values)
+    public (T1, T2) Scalar <T1, T2> (ref IDbConnection connection, string functionName, Dictionary <string, object> values = null)
     {
         try
         {
-            MySqlConnection connection = null;
+            MySqlCommand    command    = this.PrepareProcedureCall (ref connection, functionName, values);
+
+            using (connection)
+            using (command)
+            {
+                MySqlDataReader reader = command.ExecuteReader ();
+
+                using (reader)
+                {
+                    if (reader.Read () == false || reader.HasRows == false)
+                        throw new Exception ("Expected at least one row back, but couldn't get any");
+                    if (reader.FieldCount != 2)
+                        throw new Exception ($"Expected two columns but returned {reader.FieldCount}");
+
+                    return (
+                        (T1) reader.GetValue (0),
+                        (T2) reader.GetValue (1)
+                    );
+                }
+            }
+        }
+        catch (Exception e)
+        {
+            Log.Error ($"MySQL error: {e.Message}");
+
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// Calls the given function and returns it's value casting it to the given type. If the result returns more than one row, only the topmost value is returned
+    /// </summary>
+    /// <param name="functionName">The MySQL function to call</param>
+    /// <param name="values">The values to supply the MySQL function</param>
+    /// <typeparam name="T1">The type to cast the first column's return value to</typeparam>
+    /// <typeparam name="T2">The type to cast the second column's return value to</typeparam>
+    /// <typeparam name="T3">The type to cast the third column's return value to</typeparam>
+    /// <returns>The functions result</returns>
+    public (T1, T2, T3) Scalar <T1, T2, T3> (ref IDbConnection connection, string functionName, Dictionary <string, object> values = null)
+    {
+        try
+        {
             MySqlCommand    command    = this.PrepareProcedureCall (ref connection, functionName, values);
 
             using (connection)

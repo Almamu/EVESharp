@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using EVESharp.Common.Database;
 using EVESharp.EVE.Client.Exceptions.corporationSvc;
-using EVESharp.EVE.Client.Exceptions.corpRegistry;
 using EVESharp.EVE.Client.Messages;
 using EVESharp.EVE.Market;
 using EVESharp.EVE.Services;
@@ -13,7 +12,6 @@ using EVESharp.Node.Database;
 using EVESharp.Node.Inventory;
 using EVESharp.Node.Market;
 using EVESharp.Node.Notifications;
-using EVESharp.Node.Sessions;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Database;
 using EVESharp.PythonTypes.Types.Primitives;
@@ -24,7 +22,7 @@ namespace EVESharp.Node.Services.Corporations;
 public class corporationSvc : Service
 {
     public override AccessLevel        AccessLevel   => AccessLevel.None;
-    private         DatabaseConnection Database      { get; }
+    private         IDatabaseConnection Database      { get; }
     private         CorporationDB      DB            { get; }
     private         WalletManager      WalletManager { get; }
     private         Constants          Constants     { get; }
