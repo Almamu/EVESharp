@@ -1,4 +1,6 @@
 using System;
+using System.Data;
+using System.Data.Common;
 using System.IO;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Primitives;
@@ -19,9 +21,9 @@ public static class IntPackedRowListDictionary
     /// <param name="reader">The MySqlDataReader to read the data from</param>
     /// <param name="keyColumnIndex">The column to use as index for the IntPackedRowListDictionary</param>
     /// <returns></returns>
-    public static PyDataType FromMySqlDataReader (IDatabaseConnection connection, MySqlDataReader reader, int keyColumnIndex)
+    public static PyDataType FromDataReader (IDatabaseConnection connection, DbDataReader reader, int keyColumnIndex)
     {
-        DBRowDescriptor descriptor = DBRowDescriptor.FromMySqlReader (connection, reader);
+        DBRowDescriptor descriptor = DBRowDescriptor.FromDataReader (connection, reader);
         PyDictionary    result     = new PyDictionary ();
 
         Type keyType = reader.GetFieldType (keyColumnIndex);
@@ -56,7 +58,7 @@ public static class IntPackedRowListDictionary
             }
 
             // add the current value to the list
-            currentList.Add (PyPackedRow.FromMySqlDataReader (reader, descriptor));
+            currentList.Add (PyPackedRow.FromDataReader (reader, descriptor));
         }
 
         // ensure the last key is saved to the list

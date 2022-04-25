@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Data;
+using System.Data.Common;
 using System.IO;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Primitives;
@@ -40,7 +41,7 @@ public interface IDatabaseConnection
     /// <param name="index">Column of the current result read in the MySqlDataReader to create the PyDataType</param>
     /// <returns></returns>
     /// <exception cref="InvalidDataException">If any error was found during the creation of the PyDataType</exception>
-    public static PyDataType ObjectFromColumn (IDataRecord reader, FieldType type, int index)
+    public static PyDataType ObjectFromColumn (IDataReader reader, FieldType type, int index)
     {
         // TODO: CHANGE INTO STATIC WHEN NET 7.0 AND C#11 IS RELEASED
         // null values should be null
@@ -66,6 +67,238 @@ public interface IDatabaseConnection
             default:
                 throw new InvalidDataException ($"Unknown data type {type}");
         }
+    }
+
+    #region Prepared statements
+    /// <summary>
+    /// Runs one prepared query with the given value as parameters, ignoring the result data
+    /// </summary>
+    /// <param name="query">The prepared query</param>
+    /// <param name="values">The key-value pair of values to use when running the query</param>
+    /// <returns>The number of rows affected</returns>
+    public DbCommand PrepareQuery (ref IDbConnection connection, string query, Dictionary <string, object> values = null);
+
+    public int PrepareQuery (string query, Dictionary <string, object> values = null)
+    {
+        IDbConnection con = null; return this.PrepareQuery (ref con, query, values).ExecuteNonQuery ();
+    }
+
+
+    /// <summary>
+    /// Runs one prepared query with the given values as parameters and returns a CRowset representing the result
+    /// </summary>
+    /// <param name="query">The prepared query</param>
+    /// <param name="values">The key-value pair of values to use when running the query</param>
+    /// <returns>The Rowset object representing the result</returns>
+    public CRowset PrepareCRowsetQuery (ref IDbConnection connection, string query, Dictionary <string, object> values = null);
+
+    public CRowset PrepareCRowsetQuery (string query, Dictionary <string, object> values = null)
+    {
+        IDbConnection con = null; return this.PrepareCRowsetQuery (ref con, query, values);
+    }
+
+
+    /// <summary>
+    /// Runs one prepared query with the given values as parameters and returns an IndexRowset representing the result
+    /// </summary>
+    /// <param name="indexField">The position of the index field in the result</param>
+    /// <param name="query">The prepared query</param>
+    /// <param name="values">The key-value pair of values to use when running the query</param>
+    /// <returns>The Rowset object representing the result</returns>
+    public IndexRowset PrepareIndexRowsetQuery (ref IDbConnection connection, int indexField, string query, Dictionary <string, object> values = null);
+
+    public IndexRowset PrepareIndexRowsetQuery (int indexField, string query, Dictionary <string, object> values = null)
+    {
+        IDbConnection con = null; return this.PrepareIndexRowsetQuery (ref con, indexField, query, values);
+    }
+
+    /// <summary>
+    /// Runs one prepared query with the given values as parameters and returns a PyPackedRow representing the first result
+    /// </summary>
+    /// <param name="query">The prepared query</param>
+    /// <param name="values">The key-value pair of values to use when running the query</param>
+    /// <returns>The Rowset object representing the result</returns>
+    public PyPackedRow PreparePackedRowQuery (ref IDbConnection connection, string query, Dictionary <string, object> values = null);
+
+    public PyPackedRow PreparePackedRowQuery (string query, Dictionary <string, object> values = null)
+    {
+        IDbConnection con = null; return this.PreparePackedRowQuery (ref con, query, values);
+    }
+
+    /// <summary>
+    /// Runs one prepared query with the given values as parameters and returns a Rowset representing the result
+    /// </summary>
+    /// <param name="query">The prepared query</param>
+    /// <param name="values">The key-value pair of values to use when running the query</param>
+    /// <returns>The Rowset object representing the result</returns>
+    public PyList <PyPackedRow> PreparePackedRowListQuery (ref IDbConnection connection, string query, Dictionary <string, object> values = null);
+
+    public PyList <PyPackedRow> PreparePackedRowListQuery (string query, Dictionary <string, object> values = null)
+    {
+        IDbConnection con = null; return this.PreparePackedRowListQuery (ref con, query, values);
+    }
+
+    /// <summary>
+    /// Runs one prepared query with the given values as parameters and returns a Rowset representing the result
+    /// </summary>
+    /// <param name="query">The prepared query</param>
+    /// <param name="values">The key-value pair of values to use when running the query</param>
+    /// <returns>The Rowset object representing the result</returns>
+    public Rowset PrepareRowsetQuery (ref IDbConnection connection, string query, Dictionary <string, object> values = null);
+
+    public Rowset PrepareRowsetQuery (string query, Dictionary <string, object> values = null)
+    {
+        IDbConnection con = null; return this.PrepareRowsetQuery (ref con, query, values);
+    }
+
+    /// <summary>
+    /// Runs one prepared query with the given values as parameters and returns a PyDictionary representing the result.
+    /// this only holds ONE row
+    /// </summary>
+    /// <param name="query">The prepared query</param>
+    /// <param name="values">The key-value pair of values to use when running the query</param>
+    /// <returns>The PyDataType object representing the result</returns>
+    public PyList <PyInteger> PrepareList (ref IDbConnection connection, string query, Dictionary <string, object> values = null);
+
+    public PyList <PyInteger> PrepareList (string query, Dictionary <string, object> values = null)
+    {
+        IDbConnection con = null; return this.PrepareList (ref con, query, values);
+    }
+
+    /// <summary>
+    /// Runs one prepared query with the given values as parameters and returns a PyDictionary representing the result.
+    /// this only holds ONE row
+    /// </summary>
+    /// <param name="query">The prepared query</param>
+    /// <param name="values">The key-value pair of values to use when running the query</param>
+    /// <returns>The PyDataType object representing the result</returns>
+    public PyDictionary <PyString, PyDataType> PrepareDictionaryQuery (ref IDbConnection connection, string query, Dictionary <string, object> values = null);
+
+    public PyDictionary <PyString, PyDataType> PrepareDictionaryQuery (string query, Dictionary <string, object> values = null)
+    {
+        IDbConnection con = null; return this.PrepareDictionaryQuery (ref con, query, values);
+    }
+
+    /// <summary>
+    /// Runs one prepared query with the given values as parameters and returns a Row representing the result.
+    /// this only holds ONE row
+    /// </summary>
+    /// <param name="query">The prepared query</param>
+    /// <param name="values">The key-value pair of values to use when running the query</param>
+    /// <returns>The PyDataType object representing the result</returns>
+    public Row PrepareRowQuery (ref IDbConnection connection, string query, Dictionary <string, object> values = null);
+
+    public Row PrepareRowQuery (string query, Dictionary <string, object> values = null)
+    {
+        IDbConnection con = null; return this.PrepareRowQuery (ref con, query, values);
+    }
+
+    /// <summary>
+    /// Runs one prepared query with the given values as parameters and returns a KeyVal representing the result.
+    /// KeyVals only hold ONE row
+    /// </summary>
+    /// <param name="query">The prepared query</param>
+    /// <param name="values">The key-value pair of values to use when running the query</param>
+    /// <returns>The PyDataType object representing the result</returns>
+    public PyDataType PrepareKeyValQuery (ref IDbConnection connection, string query, Dictionary <string, object> values = null);
+
+    public PyDataType PrepareKeyValQuery (string query, Dictionary <string, object> values = null)
+    {
+        IDbConnection con = null; return this.PrepareKeyValQuery (ref con, query, values);
+    }
+
+
+    /// <summary>
+    /// Runs one prepared query with the given values as parameters and returns a RowList representing
+    /// the result
+    /// </summary>
+    /// <param name="query">The prepared query</param>
+    /// <param name="values">The key-value pair of values to use when running the query</param>
+    /// <returns>The RowList object representing the result</returns>
+    public PyDataType PrepareDictRowListQuery (ref IDbConnection connection, string query, Dictionary <string, object> values = null);
+
+    public PyDataType PrepareDictRowListQuery (string query, Dictionary <string, object> values = null)
+    {
+        IDbConnection con = null; return this.PrepareDictRowListQuery (ref con, query, values);
+    }
+
+    /// <summary>
+    /// Runs one prepared query with the given values as parameters and returns an IntPackedRowListDictionary representing
+    /// the result
+    /// </summary>
+    /// <param name="query">The prepared query</param>
+    /// <param name="keyColumnIndex">The column to use as key for the IntPackedRowListDictionary</param>
+    /// <param name="values">The key-value pair of values to use when running the query</param>
+    /// <returns>The IntRowDictionary object representing the result</returns>
+    public PyDataType PrepareIntPackedRowListDictionary (ref IDbConnection connection, string query, int keyColumnIndex, Dictionary <string, object> values = null);
+
+    public PyDataType PrepareIntPackedRowListDictionary (string query, int keyColumnIndex, Dictionary <string, object> values = null)
+    {
+        IDbConnection con = null; return this.PrepareIntPackedRowListDictionary (ref con, query, keyColumnIndex, values);
+    }
+
+
+    /// <summary>
+    /// Runs one prepared query with the given values as parameters and returns a IntRowDictionary representing
+    /// the result
+    /// </summary>
+    /// <param name="query">The prepared query</param>
+    /// <param name="keyColumnIndex">The column to use as key for the IntRowDictionary</param>
+    /// <param name="values">The key-value pair of values to use when running the query</param>
+    /// <returns>The IntRowDictionary object representing the result</returns>
+    public PyDictionary PrepareIntRowDictionary (ref IDbConnection connection, string query, int keyColumnIndex, Dictionary <string, object> values = null);
+
+    public PyDictionary PrepareIntRowDictionary (string query, int keyColumnIndex, Dictionary <string, object> values = null)
+    {
+        IDbConnection con = null; return this.PrepareIntRowDictionary (ref con, query, keyColumnIndex, values);
+    }
+
+    /// <summary>
+    /// Runs one prepared query with the given values as parameters and returns a IntIntListDictionary representing
+    /// the result
+    ///
+    /// IMPORTANT: The first column must be ordered (direction doesn't matter) for this to properly work
+    /// </summary>
+    /// <param name="query">The prepared query</param>
+    /// <returns>The Rowset object representing the result</returns>
+    public PyDictionary <PyInteger, PyList <PyInteger>> PrepareIntIntListDictionary (ref IDbConnection connection, string query, Dictionary<string, object> values = null);
+
+    public PyDictionary <PyInteger, PyList <PyInteger>> PrepareIntIntListDictionary (string query, Dictionary <string, object> values = null)
+    {
+        IDbConnection con = null; return this.PrepareIntIntListDictionary (ref con, query, values);
+    }
+
+    /// <summary>
+    /// Runs one prepared query with the given values as parameters and returns a IntIntDictionary representing the result
+    /// </summary>
+    /// <param name="query">The prepared query</param>
+    /// <returns>The Rowset object representing the result</returns>
+    public PyDictionary <PyInteger, PyInteger> PrepareIntIntDictionary (ref IDbConnection connection, string query, Dictionary <string, object> values = null);
+
+    public PyDictionary <PyInteger, PyInteger> PrepareIntIntDictionary (string query, Dictionary <string, object> values = null)
+    {
+        IDbConnection con = null; return this.PrepareIntIntDictionary (ref con, query, values);
+    }
+
+    public ulong PrepareQueryLID (ref IDbConnection connection, string query, Dictionary <string, object> values = null);
+
+    public ulong PrepareQueryLID (string query, Dictionary <string, object> values = null)
+    {
+        IDbConnection con = null; return this.PrepareQueryLID (ref con, query, values);
+    }
+#endregion
+    public void Query (ref IDbConnection connection, string query, Dictionary <string, object> values = null);
+
+    public void Query (string query, Dictionary <string, object> values = null)
+    {
+        IDbConnection con = null; this.Query (ref con, query, values);
+    }
+        
+    public DbDataReader Select (ref IDbConnection connection, string query, Dictionary <string, object> values = null);
+
+    public DbDataReader Select (string query, Dictionary <string, object> values = null)
+    {
+        IDbConnection con = null; return this.Select (ref con, query, values);
     }
 
     /// <summary>

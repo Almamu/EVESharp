@@ -25,6 +25,7 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Data.Common;
 using System.IO;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Database;
@@ -169,7 +170,7 @@ public class DatabaseConnection : IDatabaseConnection
                 $"SELECT TABLE_NAME, COLUMN_NAME, CHARACTER_SET_NAME FROM COLUMNS WHERE TABLE_SCHEMA LIKE '{configuration.Name}' AND CHARACTER_SET_NAME IS NOT NULL",
                 connection
             );
-            MySqlDataReader reader = command.ExecuteReader ();
+            IDataReader reader = command.ExecuteReader ();
 
             using (reader)
             {
@@ -208,37 +209,11 @@ public class DatabaseConnection : IDatabaseConnection
         Log.Debug ("Column information populated properly");
     }
 
-    public ulong PrepareQueryLID (string query, Dictionary <string, object> values)
+    public ulong PrepareQueryLID (ref IDbConnection connection, string query, Dictionary <string, object> values = null)
     {
         try
         {
-            IDbConnection connection = null;
-            MySqlCommand  command    = this.PrepareQuery (ref connection, query, values);
-
-            using (connection)
-            using (command)
-            {
-                command.ExecuteNonQuery ();
-
-                return (ulong) command.LastInsertedId;
-            }
-        }
-        catch (Exception e)
-        {
-            Log.Error ($"MySQL error: {e.Message}");
-
-            throw;
-        }
-    }
-
-    public ulong PrepareQueryLID (ref IDbConnection connection, string query, Dictionary <string, object> values)
-    {
-        try
-        {
-            MySqlCommand command = this.PrepareQuery (ref connection, query);
-
-            // add values
-            this.AddNamedParameters (values, command);
+            MySqlCommand command = (MySqlCommand) this.PrepareQuery (ref connection, query, values);
 
             command.ExecuteNonQuery ();
 
@@ -252,12 +227,11 @@ public class DatabaseConnection : IDatabaseConnection
         }
     }
 
-    public void Query (string query)
+    public void Query (ref IDbConnection connection, string query, Dictionary <string, object> values = null)
     {
         try
         {
-            IDbConnection connection = null;
-            MySqlCommand  command    = this.PrepareQuery (ref connection, query);
+            DbCommand command = this.PrepareQuery (ref connection, query, values);
 
             using (connection)
             using (command)
@@ -272,96 +246,12 @@ public class DatabaseConnection : IDatabaseConnection
             throw;
         }
     }
-
-    public void Query (string query, Dictionary <string, object> values)
+    
+    public DbDataReader Select (ref IDbConnection connection, string query, Dictionary <string, object> values = null)
     {
         try
         {
-            IDbConnection connection = null;
-            MySqlCommand  command    = this.PrepareQuery (ref connection, query, values);
-
-            using (connection)
-            using (command)
-            {
-                command.ExecuteNonQuery ();
-            }
-        }
-        catch (Exception e)
-        {
-            Log.Error ($"MySQL error: {e.Message}");
-
-            throw;
-        }
-    }
-
-    public void Query (ref MySqlConnection connection, string query)
-    {
-        try
-        {
-            // only open a connection if it's really needed
-            if (connection == null)
-            {
-                connection = new MySqlConnection (this.mConnectionString);
-                connection.Open ();
-            }
-
-            MySqlCommand command = new MySqlCommand (query, connection);
-
-            using (command)
-            {
-                command.ExecuteNonQuery ();
-            }
-        }
-        catch (Exception e)
-        {
-            Log.Error ($"MySQL error: {e.Message}");
-
-            throw;
-        }
-    }
-
-    public void Query (ref IDbConnection connection, string query, Dictionary <string, object> values)
-    {
-        try
-        {
-            MySqlCommand command = this.PrepareQuery (ref connection, query, values);
-
-            using (command)
-            {
-                command.ExecuteNonQuery ();
-            }
-        }
-        catch (Exception e)
-        {
-            Log.Error ($"MySQL error: {e.Message}");
-
-            throw;
-        }
-    }
-
-    public MySqlDataReader Select (ref IDbConnection connection, string query)
-    {
-        try
-        {
-            MySqlCommand command = this.PrepareQuery (ref connection, query);
-
-            return command.ExecuteReader ();
-        }
-        catch (Exception e)
-        {
-            Log.Error ($"MySQL error: {e.Message}");
-
-            throw;
-        }
-    }
-
-    public MySqlDataReader Select (ref IDbConnection connection, string query, Dictionary <string, object> values)
-    {
-        try
-        {
-            MySqlCommand command = this.PrepareQuery (ref connection, query, values);
-
-            return command.ExecuteReader ();
+            return this.PrepareQuery (ref connection, query, values).ExecuteReader ();
         }
         catch (Exception e)
         {
@@ -378,42 +268,13 @@ public class DatabaseConnection : IDatabaseConnection
     }
 
     /// <summary>
-    /// Creates a MySqlCommand with the given query to execute prepared queries
-    /// </summary>
-    /// <param name="connection">where to store the MySql connection (has to be closed manually)</param>
-    /// <param name="query">The prepared query</param>
-    /// <returns>The generated command to perform the queries agains the database</returns>
-    public MySqlCommand PrepareQuery (ref IDbConnection connection, string query)
-    {
-        try
-        {
-            // only open a connection if it's really needed
-            if (connection == null)
-            {
-                connection = new MySqlConnection (this.mConnectionString);
-                connection.Open ();
-            }
-
-            MySqlCommand command = new MySqlCommand (query, (MySqlConnection) connection);
-
-            return command;
-        }
-        catch (Exception e)
-        {
-            Log.Error ($"MySQL error: {e.Message}");
-
-            throw;
-        }
-    }
-
-    /// <summary>
     /// Runs one prepared query with the given values as parameters
     /// </summary>
     /// <param name="connection">where to store the MySql connection (has to be closed manually)</param>
     /// <param name="query">The prepared query</param>
     /// <param name="values">The key-value pair of values to use when running the query</param>
     /// <returns>The reader with the results of the query</returns>
-    public MySqlCommand PrepareQuery (ref IDbConnection connection, string query, Dictionary <string, object> values)
+    public DbCommand PrepareQuery (ref IDbConnection connection, string query, Dictionary <string, object> values = null)
     {
         try
         {
@@ -427,9 +288,8 @@ public class DatabaseConnection : IDatabaseConnection
             MySqlCommand command = new MySqlCommand (query, (MySqlConnection) connection);
 
             // add values
-            this.AddNamedParameters (values, command);
-            // prepare the command
-            command.Prepare ();
+            if (values is not null)
+                this.AddNamedParameters (values, command);
 
             // run the prepared statement
             return command;
@@ -443,80 +303,22 @@ public class DatabaseConnection : IDatabaseConnection
     }
 
     /// <summary>
-    /// Runs one prepared query with the given value as parameters, ignoring the result data
-    /// </summary>
-    /// <param name="query">The prepared query</param>
-    /// <param name="values">The key-value pair of values to use when running the query</param>
-    /// <returns>The number of rows affected</returns>
-    public int PrepareQuery (string query, Dictionary <string, object> values)
-    {
-        try
-        {
-            IDbConnection connection = null;
-
-            // create the correct command
-            MySqlCommand command = this.PrepareQuery (ref connection, query, values);
-
-            using (connection)
-            using (command)
-            {
-                // run the command
-                return command.ExecuteNonQuery ();
-            }
-        }
-        catch (Exception e)
-        {
-            Log.Error ($"MySQL error: {e.Message}");
-
-            throw;
-        }
-    }
-
-    /// <summary>
     /// Runs one prepared query with the given values as parameters and returns a CRowset representing the result
     /// </summary>
     /// <param name="query">The prepared query</param>
     /// <param name="values">The key-value pair of values to use when running the query</param>
     /// <returns>The Rowset object representing the result</returns>
-    public CRowset PrepareCRowsetQuery (string query, Dictionary <string, object> values)
+    public CRowset PrepareCRowsetQuery (ref IDbConnection connection, string query, Dictionary <string, object> values = null)
     {
         try
         {
-            IDbConnection connection = null;
-            MySqlDataReader reader     = this.Select (ref connection, query, values);
+            DbDataReader  reader     = this.Select (ref connection, query, values);
 
             using (connection)
             using (reader)
             {
                 // run the prepared statement
-                return PythonTypes.Types.Database.CRowset.FromMySqlDataReader (this, reader);
-            }
-        }
-        catch (Exception e)
-        {
-            Log.Error ($"MySQL error: {e.Message}");
-
-            throw;
-        }
-    }
-
-    /// <summary>
-    /// Runs one prepared query with the given values as parameters and returns a CRowset representing the result
-    /// </summary>
-    /// <param name="query">The prepared query</param>
-    /// <returns>The Rowset object representing the result</returns>
-    public CRowset PrepareCRowsetQuery (string query)
-    {
-        try
-        {
-            IDbConnection connection = null;
-            MySqlDataReader reader     = this.Select (ref connection, query);
-
-            using (connection)
-            using (reader)
-            {
-                // run the prepared statement
-                return PythonTypes.Types.Database.CRowset.FromMySqlDataReader (this, reader);
+                return PythonTypes.Types.Database.CRowset.FromDataReader (this, reader);
             }
         }
         catch (Exception e)
@@ -534,18 +336,17 @@ public class DatabaseConnection : IDatabaseConnection
     /// <param name="query">The prepared query</param>
     /// <param name="values">The key-value pair of values to use when running the query</param>
     /// <returns>The Rowset object representing the result</returns>
-    public IndexRowset PrepareIndexRowsetQuery (int indexField, string query, Dictionary <string, object> values)
+    public IndexRowset PrepareIndexRowsetQuery (ref IDbConnection connection, int indexField, string query, Dictionary <string, object> values = null)
     {
         try
         {
-            IDbConnection connection = null;
-            MySqlDataReader reader     = this.Select (ref connection, query, values);
+            DbDataReader  reader     = this.Select (ref connection, query, values);
 
             using (connection)
             using (reader)
             {
                 // run the prepared statement
-                return PythonTypes.Types.Database.IndexRowset.FromMySqlDataReader (this, reader, indexField);
+                return PythonTypes.Types.Database.IndexRowset.FromDataReader (this, reader, indexField);
             }
         }
         catch (Exception e)
@@ -555,47 +356,18 @@ public class DatabaseConnection : IDatabaseConnection
             throw;
         }
     }
-
-    /// <summary>
-    /// Runs one prepared query with the given values as parameters and returns an IndexRowset representing the result
-    /// </summary>
-    /// <param name="indexField">The position of the index field in the result</param>
-    /// <param name="query">The prepared query</param>
-    /// <returns>The Rowset object representing the result</returns>
-    public IndexRowset PrepareIndexRowsetQuery (int indexField, string query)
-    {
-        try
-        {
-            IDbConnection   connection = null;
-            MySqlDataReader reader     = this.Select (ref connection, query);
-
-            using (connection)
-            using (reader)
-            {
-                // run the prepared statement
-                return PythonTypes.Types.Database.IndexRowset.FromMySqlDataReader (this, reader, indexField);
-            }
-        }
-        catch (Exception e)
-        {
-            Log.Error ($"MySQL error: {e.Message}");
-
-            throw;
-        }
-    }
-
+    
     /// <summary>
     /// Runs one prepared query with the given values as parameters and returns a PyPackedRow representing the first result
     /// </summary>
     /// <param name="query">The prepared query</param>
     /// <param name="values">The key-value pair of values to use when running the query</param>
     /// <returns>The Rowset object representing the result</returns>
-    public PyPackedRow PreparePackedRowQuery (string query, Dictionary <string, object> values)
+    public PyPackedRow PreparePackedRowQuery (ref IDbConnection connection, string query, Dictionary <string, object> values = null)
     {
         try
         {
-            IDbConnection   connection = null;
-            MySqlDataReader reader     = this.Select (ref connection, query, values);
+            DbDataReader  reader     = this.Select (ref connection, query, values);
 
             using (connection)
             using (reader)
@@ -604,7 +376,7 @@ public class DatabaseConnection : IDatabaseConnection
                     return null;
 
                 // run the prepared statement
-                return PyPackedRow.FromMySqlDataReader (reader, DBRowDescriptor.FromMySqlReader (this, reader));
+                return PyPackedRow.FromDataReader (reader, DBRowDescriptor.FromDataReader (this, reader));
             }
         }
         catch (Exception e)
@@ -621,18 +393,17 @@ public class DatabaseConnection : IDatabaseConnection
     /// <param name="query">The prepared query</param>
     /// <param name="values">The key-value pair of values to use when running the query</param>
     /// <returns>The Rowset object representing the result</returns>
-    public PyList <PyPackedRow> PreparePackedRowListQuery (string query, Dictionary <string, object> values)
+    public PyList <PyPackedRow> PreparePackedRowListQuery (ref IDbConnection connection, string query, Dictionary <string, object> values = null)
     {
         try
         {
-            IDbConnection   connection = null;
-            MySqlDataReader reader     = this.Select (ref connection, query, values);
+            DbDataReader  reader     = this.Select (ref connection, query, values);
 
             using (connection)
             using (reader)
             {
                 // run the prepared statement
-                return PyPackedRowList.FromMySqlDataReader (this, reader);
+                return PyPackedRowList.FromDataReader (this, reader);
             }
         }
         catch (Exception e)
@@ -642,52 +413,24 @@ public class DatabaseConnection : IDatabaseConnection
             throw;
         }
     }
-
-    /// <summary>
-    /// Runs one prepared query with the given values as parameters and returns a CRowset representing the result
-    /// </summary>
-    /// <param name="query">The prepared query</param>
-    /// <returns>The Rowset object representing the result</returns>
-    public PyDataType PreparePackedRowListQuery (string query)
-    {
-        try
-        {
-            IDbConnection   connection = null;
-            MySqlDataReader reader     = this.Select (ref connection, query);
-
-            using (connection)
-            using (reader)
-            {
-                // run the prepared statement
-                return PyPackedRowList.FromMySqlDataReader (this, reader);
-            }
-        }
-        catch (Exception e)
-        {
-            Log.Error ($"MySQL error: {e.Message}");
-
-            throw;
-        }
-    }
-
+    
     /// <summary>
     /// Runs one prepared query with the given values as parameters and returns a Rowset representing the result
     /// </summary>
     /// <param name="query">The prepared query</param>
     /// <param name="values">The key-value pair of values to use when running the query</param>
     /// <returns>The Rowset object representing the result</returns>
-    public Rowset PrepareRowsetQuery (string query, Dictionary <string, object> values)
+    public Rowset PrepareRowsetQuery (ref IDbConnection connection, string query, Dictionary <string, object> values = null)
     {
         try
         {
-            IDbConnection   connection = null;
-            MySqlDataReader reader     = this.Select (ref connection, query, values);
+            DbDataReader  reader     = this.Select (ref connection, query, values);
 
             using (connection)
             using (reader)
             {
                 // run the prepared statement
-                return PythonTypes.Types.Database.Rowset.FromMySqlDataReader (this, reader);
+                return PythonTypes.Types.Database.Rowset.FromDataReader (this, reader);
             }
         }
         catch (Exception e)
@@ -697,51 +440,23 @@ public class DatabaseConnection : IDatabaseConnection
             throw;
         }
     }
-
-    /// <summary>
-    /// Runs one prepared query with the given values as parameters and returns a CRowset representing the result
-    /// </summary>
-    /// <param name="query">The prepared query</param>
-    /// <returns>The Rowset object representing the result</returns>
-    public Rowset PrepareRowsetQuery (string query)
-    {
-        try
-        {
-            IDbConnection   connection = null;
-            MySqlDataReader reader     = this.Select (ref connection, query);
-
-            using (connection)
-            using (reader)
-            {
-                // run the prepared statement
-                return PythonTypes.Types.Database.Rowset.FromMySqlDataReader (this, reader);
-            }
-        }
-        catch (Exception e)
-        {
-            Log.Error ($"MySQL error: {e.Message}");
-
-            throw;
-        }
-    }
-
+    
     /// <summary>
     /// Runs one prepared query with the given values as parameters and returns a IntIntDictionary representing the result
     /// </summary>
     /// <param name="query">The prepared query</param>
     /// <returns>The Rowset object representing the result</returns>
-    public PyDictionary <PyInteger, PyInteger> PrepareIntIntDictionary (string query)
+    public PyDictionary <PyInteger, PyInteger> PrepareIntIntDictionary (ref IDbConnection connection, string query, Dictionary<string, object> values = null)
     {
         try
         {
-            IDbConnection   connection = null;
-            MySqlDataReader reader     = this.Select (ref connection, query);
+            DbDataReader  reader     = this.Select (ref connection, query, values);
 
             using (connection)
             using (reader)
             {
                 // run the prepared statement
-                return PythonTypes.Types.Database.IntIntDictionary.FromMySqlDataReader (reader);
+                return PythonTypes.Types.Database.IntIntDictionary.FromDataReader (reader);
             }
         }
         catch (Exception e)
@@ -760,47 +475,17 @@ public class DatabaseConnection : IDatabaseConnection
     /// </summary>
     /// <param name="query">The prepared query</param>
     /// <returns>The Rowset object representing the result</returns>
-    public PyDictionary <PyInteger, PyList <PyInteger>> PrepareIntIntListDictionary (string query)
+    public PyDictionary <PyInteger, PyList <PyInteger>> PrepareIntIntListDictionary (ref IDbConnection connection, string query, Dictionary<string, object> values = null)
     {
         try
         {
-            IDbConnection   connection = null;
-            MySqlDataReader reader     = this.Select (ref connection, query);
+            DbDataReader  reader     = this.Select (ref connection, query, values);
 
             using (connection)
             using (reader)
             {
                 // run the prepared statement
-                return PythonTypes.Types.Database.IntIntListDictionary.FromMySqlDataReader (reader);
-            }
-        }
-        catch (Exception e)
-        {
-            Log.Error ($"MySQL error: {e.Message}");
-
-            throw;
-        }
-    }
-
-    /// <summary>
-    /// Runs one prepared query with the given values as parameters and returns a IntRowDictionary representing
-    /// the result
-    /// </summary>
-    /// <param name="query">The prepared query</param>
-    /// <param name="keyColumnIndex">The column to use as index for the IntRowDictionary</param>
-    /// <returns>The IntRowDictionary object representing the result</returns>
-    public PyDictionary PrepareIntRowDictionary (string query, int keyColumnIndex)
-    {
-        try
-        {
-            IDbConnection   connection = null;
-            MySqlDataReader reader     = this.Select (ref connection, query);
-
-            using (connection)
-            using (reader)
-            {
-                // run the prepared statement
-                return PythonTypes.Types.Database.IntRowDictionary.FromMySqlDataReader (this, reader, keyColumnIndex);
+                return PythonTypes.Types.Database.IntIntListDictionary.FromDataReader (reader);
             }
         }
         catch (Exception e)
@@ -819,47 +504,17 @@ public class DatabaseConnection : IDatabaseConnection
     /// <param name="keyColumnIndex">The column to use as key for the IntRowDictionary</param>
     /// <param name="values">The key-value pair of values to use when running the query</param>
     /// <returns>The IntRowDictionary object representing the result</returns>
-    public PyDictionary PrepareIntRowDictionary (string query, int keyColumnIndex, Dictionary <string, object> values)
+    public PyDictionary PrepareIntRowDictionary (ref IDbConnection connection, string query, int keyColumnIndex, Dictionary <string, object> values = null)
     {
         try
         {
-            IDbConnection   connection = null;
-            MySqlDataReader reader     = this.Select (ref connection, query, values);
+            DbDataReader  reader     = this.Select (ref connection, query, values);
 
             using (connection)
             using (reader)
             {
                 // run the prepared statement
-                return PythonTypes.Types.Database.IntRowDictionary.FromMySqlDataReader (this, reader, keyColumnIndex);
-            }
-        }
-        catch (Exception e)
-        {
-            Log.Error ($"MySQL error: {e.Message}");
-
-            throw;
-        }
-    }
-
-    /// <summary>
-    /// Runs one prepared query with the given values as parameters and returns an IntPackedRowListDictionary representing
-    /// the result
-    /// </summary>
-    /// <param name="query">The prepared query</param>
-    /// <param name="keyColumnIndex">The column to use as key for the IntPackedRowListDictionary</param>
-    /// <returns>The IntRowDictionary object representing the result</returns>
-    public PyDataType PrepareIntPackedRowListDictionary (string query, int keyColumnIndex)
-    {
-        try
-        {
-            IDbConnection   connection = null;
-            MySqlDataReader reader     = this.Select (ref connection, query);
-
-            using (connection)
-            using (reader)
-            {
-                // run the prepared statement
-                return IntPackedRowListDictionary.FromMySqlDataReader (this, reader, keyColumnIndex);
+                return PythonTypes.Types.Database.IntRowDictionary.FromDataReader (this, reader, keyColumnIndex);
             }
         }
         catch (Exception e)
@@ -878,46 +533,17 @@ public class DatabaseConnection : IDatabaseConnection
     /// <param name="keyColumnIndex">The column to use as key for the IntPackedRowListDictionary</param>
     /// <param name="values">The key-value pair of values to use when running the query</param>
     /// <returns>The IntRowDictionary object representing the result</returns>
-    public PyDataType PrepareIntPackedRowListDictionary (string query, int keyColumnIndex, Dictionary <string, object> values)
+    public PyDataType PrepareIntPackedRowListDictionary (ref IDbConnection connection, string query, int keyColumnIndex, Dictionary <string, object> values = null)
     {
         try
         {
-            IDbConnection   connection = null;
-            MySqlDataReader reader     = this.Select (ref connection, query, values);
+            DbDataReader  reader     = this.Select (ref connection, query, values);
 
             using (connection)
             using (reader)
             {
                 // run the prepared statement
-                return IntPackedRowListDictionary.FromMySqlDataReader (this, reader, keyColumnIndex);
-            }
-        }
-        catch (Exception e)
-        {
-            Log.Error ($"MySQL error: {e.Message}");
-
-            throw;
-        }
-    }
-
-    /// <summary>
-    /// Runs one prepared query with the given values as parameters and returns a RowList representing
-    /// the result
-    /// </summary>
-    /// <param name="query">The prepared query</param>
-    /// <returns>The RowList object representing the result</returns>
-    public PyDataType PrepareDictRowListQuery (string query)
-    {
-        try
-        {
-            IDbConnection   connection = null;
-            MySqlDataReader reader     = this.Select (ref connection, query);
-
-            using (connection)
-            using (reader)
-            {
-                // run the prepared statement
-                return DictRowlist.FromMySqlDataReader (this, reader);
+                return IntPackedRowListDictionary.FromDataReader (this, reader, keyColumnIndex);
             }
         }
         catch (Exception e)
@@ -935,49 +561,17 @@ public class DatabaseConnection : IDatabaseConnection
     /// <param name="query">The prepared query</param>
     /// <param name="values">The key-value pair of values to use when running the query</param>
     /// <returns>The RowList object representing the result</returns>
-    public PyDataType PrepareDictRowListQuery (string query, Dictionary <string, object> values)
+    public PyDataType PrepareDictRowListQuery (ref IDbConnection connection, string query, Dictionary <string, object> values = null)
     {
         try
         {
-            IDbConnection   connection = null;
-            MySqlDataReader reader     = this.Select (ref connection, query, values);
+            DbDataReader  reader     = this.Select (ref connection, query, values);
 
             using (connection)
             using (reader)
             {
                 // run the prepared statement
-                return DictRowlist.FromMySqlDataReader (this, reader);
-            }
-        }
-        catch (Exception e)
-        {
-            Log.Error ($"MySQL error: {e.Message}");
-
-            throw;
-        }
-    }
-
-    /// <summary>
-    /// Runs one prepared query with the given values as parameters and returns a KeyVal representing the result.
-    /// KeyVals only hold ONE row
-    /// </summary>
-    /// <param name="query">The prepared query</param>
-    /// <returns>The PyDataType object representing the result</returns>
-    public PyDataType PrepareKeyValQuery (string query)
-    {
-        try
-        {
-            IDbConnection   connection = null;
-            MySqlDataReader reader     = this.Select (ref connection, query);
-
-            using (connection)
-            using (reader)
-            {
-                if (reader.Read () == false)
-                    return null;
-
-                // run the prepared statement
-                return KeyVal.FromMySqlDataReader (this, reader);
+                return DictRowlist.FromDataReader (this, reader);
             }
         }
         catch (Exception e)
@@ -995,12 +589,11 @@ public class DatabaseConnection : IDatabaseConnection
     /// <param name="query">The prepared query</param>
     /// <param name="values">The key-value pair of values to use when running the query</param>
     /// <returns>The PyDataType object representing the result</returns>
-    public PyDataType PrepareKeyValQuery (string query, Dictionary <string, object> values)
+    public PyDataType PrepareKeyValQuery (ref IDbConnection connection, string query, Dictionary <string, object> values = null)
     {
         try
         {
-            IDbConnection   connection = null;
-            MySqlDataReader reader     = this.Select (ref connection, query, values);
+            DbDataReader  reader     = this.Select (ref connection, query, values);
 
             using (connection)
             using (reader)
@@ -1009,38 +602,7 @@ public class DatabaseConnection : IDatabaseConnection
                     return null;
 
                 // run the prepared statement
-                return KeyVal.FromMySqlDataReader (this, reader);
-            }
-        }
-        catch (Exception e)
-        {
-            Log.Error ($"MySQL error: {e.Message}");
-
-            throw;
-        }
-    }
-
-    /// <summary>
-    /// Runs one prepared query with the given values as parameters and returns a Row representing the result.
-    /// this only holds ONE row
-    /// </summary>
-    /// <param name="query">The prepared query</param>
-    /// <returns>The PyDataType object representing the result</returns>
-    public Row PrepareRowQuery (string query)
-    {
-        try
-        {
-            IDbConnection   connection = null;
-            MySqlDataReader reader     = this.Select (ref connection, query);
-
-            using (connection)
-            using (reader)
-            {
-                if (reader.Read () == false)
-                    return null;
-
-                // run the prepared statement
-                return PythonTypes.Types.Database.Row.FromMySqlDataReader (this, reader);
+                return KeyVal.FromDataReader (this, reader);
             }
         }
         catch (Exception e)
@@ -1058,12 +620,11 @@ public class DatabaseConnection : IDatabaseConnection
     /// <param name="query">The prepared query</param>
     /// <param name="values">The key-value pair of values to use when running the query</param>
     /// <returns>The PyDataType object representing the result</returns>
-    public Row PrepareRowQuery (string query, Dictionary <string, object> values)
+    public Row PrepareRowQuery (ref IDbConnection connection, string query, Dictionary <string, object> values = null)
     {
         try
         {
-            IDbConnection   connection = null;
-            MySqlDataReader reader     = this.Select (ref connection, query, values);
+            DbDataReader  reader     = this.Select (ref connection, query, values);
 
             using (connection)
             using (reader)
@@ -1072,38 +633,7 @@ public class DatabaseConnection : IDatabaseConnection
                     return null;
 
                 // run the prepared statement
-                return PythonTypes.Types.Database.Row.FromMySqlDataReader (this, reader);
-            }
-        }
-        catch (Exception e)
-        {
-            Log.Error ($"MySQL error: {e.Message}");
-
-            throw;
-        }
-    }
-
-    /// <summary>
-    /// Runs one prepared query with the given values as parameters and returns a PyDictionary representing the result.
-    /// this only holds ONE row
-    /// </summary>
-    /// <param name="query">The prepared query</param>
-    /// <returns>The PyDataType object representing the result</returns>
-    public PyDictionary <PyString, PyDataType> PrepareDictionaryQuery (string query)
-    {
-        try
-        {
-            IDbConnection   connection = null;
-            MySqlDataReader reader     = this.Select (ref connection, query);
-
-            using (connection)
-            using (reader)
-            {
-                if (reader.Read () == false)
-                    return null;
-
-                // run the prepared statement
-                return PyDictionary <PyString, PyDataType>.FromMySqlDataReader (this, reader);
+                return PythonTypes.Types.Database.Row.FromDataReader (this, reader);
             }
         }
         catch (Exception e)
@@ -1121,12 +651,11 @@ public class DatabaseConnection : IDatabaseConnection
     /// <param name="query">The prepared query</param>
     /// <param name="values">The key-value pair of values to use when running the query</param>
     /// <returns>The PyDataType object representing the result</returns>
-    public PyDictionary <PyString, PyDataType> PrepareDictionaryQuery (string query, Dictionary <string, object> values)
+    public PyDictionary <PyString, PyDataType> PrepareDictionaryQuery (ref IDbConnection connection, string query, Dictionary <string, object> values = null)
     {
         try
         {
-            IDbConnection   connection = null;
-            MySqlDataReader reader     = this.Select (ref connection, query, values);
+            DbDataReader  reader     = this.Select (ref connection, query, values);
 
             using (connection)
             using (reader)
@@ -1135,7 +664,7 @@ public class DatabaseConnection : IDatabaseConnection
                     return null;
 
                 // run the prepared statement
-                return PyDictionary <PyString, PyDataType>.FromMySqlDataReader (this, reader);
+                return PyDictionary <PyString, PyDataType>.FromDataReader (this, reader);
             }
         }
         catch (Exception e)
@@ -1153,18 +682,17 @@ public class DatabaseConnection : IDatabaseConnection
     /// <param name="query">The prepared query</param>
     /// <param name="values">The key-value pair of values to use when running the query</param>
     /// <returns>The PyDataType object representing the result</returns>
-    public PyList <PyInteger> PrepareList (string query, Dictionary <string, object> values)
+    public PyList <PyInteger> PrepareList (ref IDbConnection connection, string query, Dictionary <string, object> values = null)
     {
         try
         {
-            IDbConnection   connection = null;
-            MySqlDataReader reader     = this.Select (ref connection, query, values);
+            DbDataReader  reader     = this.Select (ref connection, query, values);
 
             using (connection)
             using (reader)
             {
                 // run the prepared statement
-                return PyList <PyInteger>.FromMySqlDataReader (this, reader);
+                return PyList <PyInteger>.FromDataReader (this, reader);
             }
         }
         catch (Exception e)
@@ -1330,9 +858,9 @@ public class DatabaseConnection : IDatabaseConnection
             using (connection)
             using (command)
             {
-                using (MySqlDataReader reader = command.ExecuteReader ())
+                using (DbDataReader reader = command.ExecuteReader ())
                 {
-                    return PythonTypes.Types.Database.CRowset.FromMySqlDataReader (this, reader);
+                    return PythonTypes.Types.Database.CRowset.FromDataReader (this, reader);
                 }
             }
         }
@@ -1360,9 +888,9 @@ public class DatabaseConnection : IDatabaseConnection
             using (connection)
             using (command)
             {
-                using (MySqlDataReader reader = command.ExecuteReader ())
+                using (DbDataReader reader = command.ExecuteReader ())
                 {
-                    return PythonTypes.Types.Database.Rowset.FromMySqlDataReader (this, reader);
+                    return PythonTypes.Types.Database.Rowset.FromDataReader (this, reader);
                 }
             }
         }
@@ -1391,9 +919,9 @@ public class DatabaseConnection : IDatabaseConnection
             using (connection)
             using (command)
             {
-                using (MySqlDataReader reader = command.ExecuteReader ())
+                using (DbDataReader reader = command.ExecuteReader ())
                 {
-                    return PythonTypes.Types.Database.IndexRowset.FromMySqlDataReader (this, reader, indexField);
+                    return PythonTypes.Types.Database.IndexRowset.FromDataReader (this, reader, indexField);
                 }
             }
         }
@@ -1420,12 +948,12 @@ public class DatabaseConnection : IDatabaseConnection
 
             using (connection)
             using (command)
-            using (MySqlDataReader reader = command.ExecuteReader ())
+            using (DbDataReader reader = command.ExecuteReader ())
             {
                 if (reader.Read () == false)
                     return null;
 
-                return PythonTypes.Types.Database.Row.FromMySqlDataReader (this, reader);
+                return PythonTypes.Types.Database.Row.FromDataReader (this, reader);
             }
         }
         catch (Exception e)
@@ -1451,10 +979,10 @@ public class DatabaseConnection : IDatabaseConnection
 
             using (connection)
             using (command)
-            using (MySqlDataReader reader = command.ExecuteReader ())
+            using (DbDataReader reader = command.ExecuteReader ())
             {
                 // run the prepared statement
-                return PyPackedRowList.FromMySqlDataReader (this, reader);
+                return PyPackedRowList.FromDataReader (this, reader);
             }
         }
         catch (Exception e)
@@ -1480,10 +1008,10 @@ public class DatabaseConnection : IDatabaseConnection
 
             using (connection)
             using (command)
-            using (MySqlDataReader reader = command.ExecuteReader ())
+            using (DbDataReader reader = command.ExecuteReader ())
             {
                 // run the prepared statement
-                return PythonTypes.Types.Database.IntIntDictionary.FromMySqlDataReader (reader);
+                return PythonTypes.Types.Database.IntIntDictionary.FromDataReader (reader);
             }
         }
         catch (Exception e)
@@ -1512,10 +1040,10 @@ public class DatabaseConnection : IDatabaseConnection
 
             using (connection)
             using (command)
-            using (MySqlDataReader reader = command.ExecuteReader ())
+            using (DbDataReader reader = command.ExecuteReader ())
             {
                 // run the prepared statement
-                return PythonTypes.Types.Database.IntIntListDictionary.FromMySqlDataReader (reader);
+                return PythonTypes.Types.Database.IntIntListDictionary.FromDataReader (reader);
             }
         }
         catch (Exception e)
@@ -1543,10 +1071,10 @@ public class DatabaseConnection : IDatabaseConnection
 
             using (connection)
             using (command)
-            using (MySqlDataReader reader = command.ExecuteReader ())
+            using (DbDataReader reader = command.ExecuteReader ())
             {
                 // run the prepared statement
-                return PythonTypes.Types.Database.IntRowDictionary.FromMySqlDataReader (this, reader, keyColumnIndex);
+                return PythonTypes.Types.Database.IntRowDictionary.FromDataReader (this, reader, keyColumnIndex);
             }
         }
         catch (Exception e)
@@ -1573,10 +1101,10 @@ public class DatabaseConnection : IDatabaseConnection
 
             using (connection)
             using (command)
-            using (MySqlDataReader reader = command.ExecuteReader ())
+            using (DbDataReader reader = command.ExecuteReader ())
             {
                 // run the prepared statement
-                return DictRowlist.FromMySqlDataReader (this, reader);
+                return DictRowlist.FromDataReader (this, reader);
             }
         }
         catch (Exception e)
@@ -1595,12 +1123,12 @@ public class DatabaseConnection : IDatabaseConnection
 
             using (connection)
             using (command)
-            using (MySqlDataReader reader = command.ExecuteReader ())
+            using (DbDataReader reader = command.ExecuteReader ())
             {
                 if (reader.Read () == false)
                     return null;
 
-                return PyDictionary <PyString, PyDataType>.FromMySqlDataReader (this, reader);
+                return PyDictionary <PyString, PyDataType>.FromDataReader (this, reader);
             }
         }
         catch (Exception e)
@@ -1626,10 +1154,10 @@ public class DatabaseConnection : IDatabaseConnection
 
             using (connection)
             using (command)
-            using (MySqlDataReader reader = command.ExecuteReader ())
+            using (DbDataReader reader = command.ExecuteReader ())
             {
                 // run the prepared statement
-                return PyList <T>.FromMySqlDataReader (this, reader);
+                return PyList <T>.FromDataReader (this, reader);
             }
         }
         catch (Exception e)
@@ -1686,7 +1214,7 @@ public class DatabaseConnection : IDatabaseConnection
             using (connection)
             using (command)
             {
-                MySqlDataReader reader = command.ExecuteReader ();
+                DbDataReader reader = command.ExecuteReader ();
 
                 using (reader)
                 {
@@ -1728,7 +1256,7 @@ public class DatabaseConnection : IDatabaseConnection
             using (connection)
             using (command)
             {
-                MySqlDataReader reader = command.ExecuteReader ();
+                DbDataReader reader = command.ExecuteReader ();
 
                 using (reader)
                 {

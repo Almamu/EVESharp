@@ -25,18 +25,18 @@ namespace EVESharp.Node.Services.Inventory;
 [MustBeCharacter]
 public class insuranceSvc : ClientBoundService
 {
-    private readonly int                mStationID;
-    public override  AccessLevel        AccessLevel   => AccessLevel.None;
-    private          InsuranceDB        DB            { get; }
-    private          ItemFactory        ItemFactory   { get; }
-    private          MarketDB           MarketDB      { get; }
-    private          SystemManager      SystemManager => ItemFactory.SystemManager;
-    private          WalletManager      WalletManager { get; }
-    private          MailManager        MailManager   { get; }
-    private          DatabaseConnection Database      { get; }
+    private readonly int                 mStationID;
+    public override  AccessLevel         AccessLevel   => AccessLevel.None;
+    private          InsuranceDB         DB            { get; }
+    private          ItemFactory         ItemFactory   { get; }
+    private          MarketDB            MarketDB      { get; }
+    private          SystemManager       SystemManager => ItemFactory.SystemManager;
+    private          WalletManager       WalletManager { get; }
+    private          MailManager         MailManager   { get; }
+    private          IDatabaseConnection Database      { get; }
 
     public insuranceSvc (
-        ClusterManager clusterManager, ItemFactory itemFactory, InsuranceDB db, MarketDB marketDB, WalletManager walletManager, MailManager mailManager, BoundServiceManager manager, DatabaseConnection database
+        ClusterManager clusterManager, ItemFactory itemFactory, InsuranceDB db, MarketDB marketDB, WalletManager walletManager, MailManager mailManager, BoundServiceManager manager, IDatabaseConnection database
     ) : base (manager)
     {
         DB            = db;

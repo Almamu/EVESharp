@@ -17,22 +17,23 @@ using EVESharp.Node.Database;
 using EVESharp.Node.Inventory;
 using EVESharp.Node.Notifications;
 using EVESharp.Node.Server.Shared;
+using EVESharp.PythonTypes.Types.Database;
 using EVESharp.PythonTypes.Types.Primitives;
 
 namespace EVESharp.Node.Services.Account;
 
 public class billMgr : Service
 {
-    public override AccessLevel        AccessLevel   => AccessLevel.None;
-    private         CacheStorage       CacheStorage  { get; }
-    private         CorporationDB      CorporationDB { get; }
-    private         ItemFactory        ItemFactory   { get; }
-    private         NotificationSender Notifications { get; }
-    private         DatabaseConnection Database      { get; }
+    public override AccessLevel         AccessLevel   => AccessLevel.None;
+    private         CacheStorage        CacheStorage  { get; }
+    private         CorporationDB       CorporationDB { get; }
+    private         ItemFactory         ItemFactory   { get; }
+    private         NotificationSender  Notifications { get; }
+    private         IDatabaseConnection Database      { get; }
 
     public billMgr (
-        CacheStorage       cacheStorage, DatabaseConnection databaseConnection, CorporationDB corporationDb, ItemFactory itemFactory,
-        NotificationSender notificationSender, ClusterManager clusterManager
+        CacheStorage       cacheStorage,       IDatabaseConnection databaseConnection, CorporationDB corporationDb, ItemFactory itemFactory,
+        NotificationSender notificationSender, ClusterManager      clusterManager
     )
     {
         CacheStorage  = cacheStorage;

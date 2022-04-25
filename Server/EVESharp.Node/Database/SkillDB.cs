@@ -23,7 +23,7 @@ public class SkillDB : DatabaseAccessor
 {
     private ItemDB ItemDB { get; }
 
-    public SkillDB (DatabaseConnection db, ItemDB itemDB) : base (db)
+    public SkillDB (IDatabaseConnection db, ItemDB itemDB) : base (db)
     {
         ItemDB = itemDB;
     }

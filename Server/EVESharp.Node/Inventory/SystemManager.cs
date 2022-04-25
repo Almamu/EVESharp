@@ -33,6 +33,7 @@ using EVESharp.Database;
 using EVESharp.Node.Inventory.Items.Types;
 using EVESharp.Node.Server.Shared;
 using EVESharp.PythonTypes.Types.Collections;
+using EVESharp.PythonTypes.Types.Database;
 using EVESharp.PythonTypes.Types.Network;
 
 namespace EVESharp.Node.Inventory;
@@ -40,13 +41,13 @@ namespace EVESharp.Node.Inventory;
 public class SystemManager
 {
     private readonly Dictionary <int, long> mSolarsystemToNodeID = new Dictionary <int, long> ();
-    private          DatabaseConnection     Database       { get; }
+    private          IDatabaseConnection    Database       { get; }
     private          ItemFactory            ItemFactory    { get; }
     private          IMachoNet              MachoNet       { get; }
     private          HttpClient             HttpClient     { get; }
     private          ClusterManager         ClusterManager { get; }
 
-    public SystemManager (HttpClient httpClient, ItemFactory itemFactory, ClusterManager clusterManager, DatabaseConnection databaseConnection, IMachoNet machoNet)
+    public SystemManager (HttpClient httpClient, ItemFactory itemFactory, ClusterManager clusterManager, IDatabaseConnection databaseConnection, IMachoNet machoNet)
     {
         HttpClient     = httpClient;
         MachoNet       = machoNet;

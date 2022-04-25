@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Data.Common;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Primitives;
 using MySql.Data.MySqlClient;
@@ -58,7 +59,7 @@ public class SparseRowsetHeader
     /// <param name="reader">The reader to read data from the database</param>
     /// <param name="rowsIndex">The indexed rows</param>
     /// <returns></returns>
-    public PyList <PyTuple> FetchByKey (int pkFieldIndex, MySqlDataReader reader, Dictionary <PyDataType, int> rowsIndex)
+    public PyList <PyTuple> FetchByKey (int pkFieldIndex, DbDataReader reader, Dictionary <PyDataType, int> rowsIndex)
     {
         PyList <PyTuple> result = new PyList <PyTuple> ();
 
@@ -71,7 +72,7 @@ public class SparseRowsetHeader
                 {
                     [0] = keyValue,
                     [1] = rowsIndex [keyValue],
-                    [2] = Row.FromMySqlDataReader (reader, Headers, FieldTypes)
+                    [2] = Row.FromDataReader (reader, Headers, FieldTypes)
                 }
             );
         }
@@ -85,7 +86,7 @@ public class SparseRowsetHeader
     /// <param name="pkFieldIndex">The field to use as primary key</param>
     /// <param name="reader">The reader to read data from the database</param>
     /// <returns></returns>
-    public PyList <PyTuple> Fetch (int pkFieldIndex, MySqlDataReader reader)
+    public PyList <PyTuple> Fetch (int pkFieldIndex, DbDataReader reader)
     {
         PyList <PyTuple> result = new PyList <PyTuple> ();
 
@@ -97,7 +98,7 @@ public class SparseRowsetHeader
                 new PyTuple (2)
                 {
                     [0] = keyValue,
-                    [1] = Row.FromMySqlDataReader (reader, Headers, FieldTypes)
+                    [1] = Row.FromDataReader (reader, Headers, FieldTypes)
                 }
             );
         }

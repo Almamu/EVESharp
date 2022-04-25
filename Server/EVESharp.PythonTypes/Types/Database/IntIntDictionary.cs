@@ -1,4 +1,6 @@
 using System;
+using System.Data;
+using System.Data.Common;
 using System.IO;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Primitives;
@@ -14,7 +16,7 @@ public static class IntIntDictionary
     /// </summary>
     /// <param name="reader">The MySqlDataReader to read the data from</param>
     /// <returns></returns>
-    public static PyDictionary <PyInteger, PyInteger> FromMySqlDataReader (MySqlDataReader reader)
+    public static PyDictionary <PyInteger, PyInteger> FromDataReader (DbDataReader reader)
     {
         PyDictionary <PyInteger, PyInteger> result = new PyDictionary <PyInteger, PyInteger> ();
 

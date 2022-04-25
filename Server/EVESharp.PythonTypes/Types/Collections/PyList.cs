@@ -1,6 +1,8 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Data;
+using System.Data.Common;
 using EVESharp.PythonTypes.Types.Database;
 using EVESharp.PythonTypes.Types.Primitives;
 using MySql.Data.MySqlClient;
@@ -50,7 +52,7 @@ public class PyList <T> : PyList, IPyListEnumerable <T> where T : PyDataType
         );
     }
 
-    public static PyList <T> FromMySqlDataReader (IDatabaseConnection connection, MySqlDataReader reader)
+    public static PyList <T> FromDataReader (IDatabaseConnection connection, DbDataReader reader)
     {
         PyList <T> result = new PyList <T> ();
         FieldType  type   = connection.GetFieldType (reader, 0);

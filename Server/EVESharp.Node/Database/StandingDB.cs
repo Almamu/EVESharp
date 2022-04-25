@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Data.Common;
 using EVESharp.Common.Database;
 using EVESharp.PythonTypes.Types.Database;
 using MySql.Data.MySqlClient;
@@ -9,7 +10,7 @@ namespace EVESharp.Node.Database;
 
 public class StandingDB : DatabaseAccessor
 {
-    public StandingDB (DatabaseConnection db) : base (db) { }
+    public StandingDB (IDatabaseConnection db) : base (db) { }
 
     public Rowset GetStandings (int characterID)
     {
@@ -90,7 +91,7 @@ public class StandingDB : DatabaseAccessor
     public double? GetSecurityRating (int characterID)
     {
         IDbConnection connection = null;
-        MySqlDataReader reader = Database.Select (
+        DbDataReader reader = Database.Select (
             ref connection,
             "SELECT securityRating FROM chrInformation WHERE characterID = @characterID",
             new Dictionary <string, object> {{"@characterID", characterID}}
@@ -145,7 +146,7 @@ public class StandingDB : DatabaseAccessor
     public double GetStanding (int from, int to)
     {
         IDbConnection connection = null;
-        MySqlDataReader reader = Database.Select (
+        DbDataReader reader = Database.Select (
             ref connection,
             "SELECT standing FROM chrStandings WHERE characterID = @fromID AND toID = @toID",
             new Dictionary <string, object>

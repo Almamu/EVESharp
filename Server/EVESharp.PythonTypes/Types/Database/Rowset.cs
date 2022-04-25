@@ -1,4 +1,6 @@
 using System;
+using System.Data;
+using System.Data.Common;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Primitives;
 using MySql.Data.MySqlClient;
@@ -53,7 +55,7 @@ public class Rowset
     /// <param name="connection">The connection used</param>
     /// <param name="reader"></param>
     /// <returns></returns>
-    public static Rowset FromMySqlDataReader (IDatabaseConnection connection, MySqlDataReader reader)
+    public static Rowset FromDataReader (IDatabaseConnection connection, DbDataReader reader)
     {
         connection.GetDatabaseHeaders (reader, out PyList <PyString> headers, out FieldType [] fieldTypes);
         Rowset result = new Rowset (headers);

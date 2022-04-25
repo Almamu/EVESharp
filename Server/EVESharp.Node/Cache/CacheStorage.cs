@@ -25,6 +25,7 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Data.Common;
 using EVESharp.Common.Database;
 using EVESharp.EVE.Packets.Complex;
 using EVESharp.EVE.StaticData.Inventory;
@@ -328,7 +329,7 @@ public class CacheStorage : DatabaseAccessor
     private IMachoNet MachoNet { get; }
     private ILogger   Log      { get; }
 
-    public CacheStorage (IMachoNet machoNet, DatabaseConnection db, ILogger logger) : base (db)
+    public CacheStorage (IMachoNet machoNet, IDatabaseConnection db, ILogger logger) : base (db)
     {
         Log      = logger;
         MachoNet = machoNet;
@@ -477,20 +478,20 @@ public class CacheStorage : DatabaseAccessor
     /// <returns>The final object to be used by the cache</returns>
     private PyDataType QueryCacheObject (string query, CacheObjectType type)
     {
-        IDbConnection   connection = null;
-        MySqlDataReader reader     = Database.Select (ref connection, query);
+        IDbConnection connection = null;
+        DbDataReader  reader     = Database.Select (ref connection, query);
 
         using (connection)
         using (reader)
         {
             return type switch
             {
-                CacheObjectType.Rowset        => Rowset.FromMySqlDataReader (Database, reader),
-                CacheObjectType.CRowset       => CRowset.FromMySqlDataReader (Database, reader),
+                CacheObjectType.Rowset        => Rowset.FromDataReader (Database, reader),
+                CacheObjectType.CRowset       => CRowset.FromDataReader (Database, reader),
                 CacheObjectType.TupleSet      => TupleSet.FromMySqlDataReader (Database, reader),
-                CacheObjectType.PackedRowList => PyPackedRowList.FromMySqlDataReader (Database, reader),
-                CacheObjectType.IntIntDict    => IntIntDictionary.FromMySqlDataReader (reader),
-                CacheObjectType.IndexRowset   => IndexRowset.FromMySqlDataReader (Database, reader, 0),
+                CacheObjectType.PackedRowList => PyPackedRowList.FromDataReader (Database, reader),
+                CacheObjectType.IntIntDict    => IntIntDictionary.FromDataReader (reader),
+                CacheObjectType.IndexRowset   => IndexRowset.FromDataReader (Database, reader, 0),
                 _                             => null
             };
         }

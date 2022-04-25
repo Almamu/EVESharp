@@ -1,3 +1,5 @@
+using System.Data;
+using System.Data.Common;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Primitives;
 using MySql.Data.MySqlClient;
@@ -43,7 +45,7 @@ public class Row
     /// <param name="header"></param>
     /// <param name="fieldTypes"></param>
     /// <returns></returns>
-    public static Row FromMySqlDataReader (MySqlDataReader reader, PyList <PyString> header, FieldType [] fieldTypes)
+    public static Row FromDataReader (DbDataReader reader, PyList <PyString> header, FieldType [] fieldTypes)
     {
         PyList row = new PyList (reader.FieldCount);
 
@@ -60,7 +62,7 @@ public class Row
     /// <param name="connection">The connection used</param>
     /// <param name="reader"></param>
     /// <returns></returns>
-    public static Row FromMySqlDataReader (IDatabaseConnection connection, MySqlDataReader reader)
+    public static Row FromDataReader (IDatabaseConnection connection, DbDataReader reader)
     {
         PyList <PyString> header = new PyList <PyString> (reader.FieldCount);
         PyList            row    = new PyList (reader.FieldCount);

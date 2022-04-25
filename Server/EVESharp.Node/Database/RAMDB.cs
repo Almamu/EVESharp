@@ -6,7 +6,7 @@ namespace EVESharp.Node.Database;
 
 public class RAMDB : DatabaseAccessor
 {
-    public RAMDB (DatabaseConnection db) : base (db) { }
+    public RAMDB (IDatabaseConnection db) : base (db) { }
 
     public Rowset GetRegionDetails (int regionID)
     {

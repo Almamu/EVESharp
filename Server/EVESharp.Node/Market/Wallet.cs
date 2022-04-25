@@ -9,21 +9,22 @@ using EVESharp.EVE.StaticData.Corporation;
 using EVESharp.EVE.Wallet;
 using EVESharp.Node.Client.Notifications.Wallet;
 using EVESharp.Node.Notifications;
+using EVESharp.PythonTypes.Types.Database;
 using MySql.Data.MySqlClient;
 
 namespace EVESharp.Node.Market;
 
 public class Wallet : IDisposable
 {
-    public IDbConnection      Connection;
-    public int                OwnerID         { get; init; }
-    public int                WalletKey       { get; init; }
-    public double             Balance         { get; set; }
-    public double             OriginalBalance { get; init; }
-    public DatabaseConnection Database        { get; init; }
-    public NotificationSender Notifications   { get; init; }
-    public bool               ForCorporation  { get; init; }
-    public WalletManager      WalletManager   { get; init; }
+    public IDbConnection       Connection;
+    public int                 OwnerID         { get; init; }
+    public int                 WalletKey       { get; init; }
+    public double              Balance         { get; set; }
+    public double              OriginalBalance { get; init; }
+    public IDatabaseConnection Database        { get; init; }
+    public NotificationSender  Notifications   { get; init; }
+    public bool                ForCorporation  { get; init; }
+    public WalletManager       WalletManager   { get; init; }
 
     public void Dispose ()
     {

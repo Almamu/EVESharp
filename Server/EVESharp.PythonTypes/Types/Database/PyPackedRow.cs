@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Data;
+using System.Data.Common;
 using System.Linq;
 using EVESharp.PythonTypes.Types.Primitives;
 using MySql.Data.MySqlClient;
@@ -72,7 +74,7 @@ public class PyPackedRow : PyDataType
     /// <param name="reader"></param>
     /// <param name="descriptor"></param>
     /// <returns></returns>
-    public static PyPackedRow FromMySqlDataReader (MySqlDataReader reader, DBRowDescriptor descriptor)
+    public static PyPackedRow FromDataReader (DbDataReader reader, DBRowDescriptor descriptor)
     {
         PyPackedRow row = new PyPackedRow (descriptor);
 
@@ -84,8 +86,8 @@ public class PyPackedRow : PyDataType
         return row;
     }
 
-    public static PyPackedRow FromMySqlDataReader (MySqlDataReader reader, CRowset rowset)
+    public static PyPackedRow FromDataReader (DbDataReader reader, CRowset rowset)
     {
-        return FromMySqlDataReader (reader, rowset.Header);
+        return FromDataReader (reader, rowset.Header);
     }
 }

@@ -1,3 +1,5 @@
+using System.Data;
+using System.Data.Common;
 using EVESharp.PythonTypes.Types.Collections;
 using MySql.Data.MySqlClient;
 
@@ -14,13 +16,13 @@ public static class PyPackedRowList
     /// </summary>
     /// <param name="connection">The connection used</param>
     /// <param name="reader"></param>
-    public static PyList <PyPackedRow> FromMySqlDataReader (IDatabaseConnection connection, MySqlDataReader reader)
+    public static PyList <PyPackedRow> FromDataReader (IDatabaseConnection connection, DbDataReader reader)
     {
-        DBRowDescriptor      descriptor = DBRowDescriptor.FromMySqlReader (connection, reader);
+        DBRowDescriptor      descriptor = DBRowDescriptor.FromDataReader (connection, reader);
         PyList <PyPackedRow> list       = new PyList <PyPackedRow> ();
 
         while (reader.Read ())
-            list.Add (PyPackedRow.FromMySqlDataReader (reader, descriptor));
+            list.Add (PyPackedRow.FromDataReader (reader, descriptor));
 
         return list;
     }

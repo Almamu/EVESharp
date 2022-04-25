@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Data.Common;
 using EVESharp.Common.Database;
 using EVESharp.EVE.StaticData.Inventory;
 using EVESharp.PythonTypes.Types.Collections;
@@ -12,7 +13,7 @@ namespace EVESharp.Node.Database;
 
 public class MessagesDB : DatabaseAccessor
 {
-    public MessagesDB (DatabaseConnection db) : base (db) { }
+    public MessagesDB (IDatabaseConnection db) : base (db) { }
 
     public Rowset GetMailHeaders (int characterID)
     {
@@ -26,7 +27,7 @@ public class MessagesDB : DatabaseAccessor
     {
         // TODO: SIMPLIFY TABLE STRUCTURE, ATTACHMENTS ARE NOT SUPPORTED
         IDbConnection connection = null;
-        MySqlDataReader reader = Database.Select (
+        DbDataReader reader = Database.Select (
             ref connection,
             "SELECT channelID, messageID, senderID, subject, body, mimeTypeID, mimeType, `binary`, created FROM eveMail LEFT JOIN eveMailMimeType USING(mimeTypeID) WHERE messageID = @messageID AND channelID = @channelID",
             new Dictionary <string, object>
@@ -122,7 +123,7 @@ public class MessagesDB : DatabaseAccessor
 
         // check mailbox type
         IDbConnection connection = null;
-        MySqlDataReader reader = Database.Select (
+        DbDataReader reader = Database.Select (
             ref connection,
             "SELECT groupID FROM invItems LEFT JOIN invTypes USING(typeID) WHERE itemID = @itemID",
             new Dictionary <string, object> {{"@itemID", channelID}}

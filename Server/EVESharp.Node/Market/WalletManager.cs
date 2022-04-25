@@ -8,16 +8,17 @@ using EVESharp.EVE.Sessions;
 using EVESharp.EVE.StaticData.Corporation;
 using EVESharp.EVE.Wallet;
 using EVESharp.Node.Notifications;
+using EVESharp.PythonTypes.Types.Database;
 using MySql.Data.MySqlClient;
 
 namespace EVESharp.Node.Market;
 
 public class WalletManager
 {
-    private NotificationSender Notifications { get; }
-    private DatabaseConnection Database      { get; }
+    private NotificationSender  Notifications { get; }
+    private IDatabaseConnection Database      { get; }
 
-    public WalletManager (DatabaseConnection database, NotificationSender notificationSender)
+    public WalletManager (IDatabaseConnection database, NotificationSender notificationSender)
     {
         Database      = database;
         Notifications = notificationSender;

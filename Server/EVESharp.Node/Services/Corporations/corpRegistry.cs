@@ -71,9 +71,9 @@ public class corpRegistry : MultiClientBoundService
     private long CorporationAdvertisementDailyRate { get; }
 
     public corpRegistry (
-        CorporationDB db,          DatabaseConnection databaseConnection, ChatDB      chatDB, CharacterDB characterDB, NotificationSender notificationSender,
-        MailManager   mailManager, WalletManager      walletManager,      ItemFactory itemFactory, Constants constants, BoundServiceManager manager,
-        Ancestries    ancestries,  SessionManager     sessionManager, ClusterManager clusterManager
+        CorporationDB db,          IDatabaseConnection databaseConnection, ChatDB      chatDB, CharacterDB characterDB, NotificationSender notificationSender,
+        MailManager   mailManager, WalletManager       walletManager,      ItemFactory itemFactory, Constants constants, BoundServiceManager manager,
+        Ancestries    ancestries,  SessionManager      sessionManager,     ClusterManager clusterManager
     ) : base (manager)
     {
         DB             = db;

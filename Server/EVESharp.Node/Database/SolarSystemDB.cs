@@ -1,14 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Data.Common;
 using EVESharp.Common.Database;
+using EVESharp.PythonTypes.Types.Database;
 using MySql.Data.MySqlClient;
 
 namespace EVESharp.Node.Database;
 
 public class SolarSystemDB : DatabaseAccessor
 {
-    public SolarSystemDB (DatabaseConnection db) : base (db) { }
+    public SolarSystemDB (IDatabaseConnection db) : base (db) { }
 
     public int GetJumpsBetweenSolarSystems (int fromSolarSystemID, int toSolarSystemID)
     {
@@ -16,7 +18,7 @@ public class SolarSystemDB : DatabaseAccessor
             return 0;
 
         IDbConnection connection = null;
-        MySqlDataReader reader = Database.Select (
+        DbDataReader reader = Database.Select (
             ref connection,
             "SELECT jumps FROM mapPrecalculatedSolarSystemJumps WHERE fromSolarSystemID = @fromSolarSystemID AND toSolarSystemID = @toSolarSystemID",
             new Dictionary <string, object>

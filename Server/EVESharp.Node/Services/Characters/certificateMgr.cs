@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using EVESharp.Database;
 using EVESharp.EVE.Client.Exceptions.certificateMgr;
 using EVESharp.EVE.Packets.Complex;
 using EVESharp.EVE.Services;
@@ -10,8 +11,8 @@ using EVESharp.Node.Database;
 using EVESharp.Node.Dogma;
 using EVESharp.Node.Inventory;
 using EVESharp.Node.Inventory.Items.Types;
-using EVESharp.Node.Sessions;
 using EVESharp.PythonTypes.Types.Collections;
+using EVESharp.PythonTypes.Types.Database;
 using EVESharp.PythonTypes.Types.Primitives;
 
 namespace EVESharp.Node.Services.Characters;
@@ -20,15 +21,17 @@ namespace EVESharp.Node.Services.Characters;
 public class certificateMgr : Service
 {
     public override AccessLevel                           AccessLevel              => AccessLevel.None;
-    private         CertificatesDB                        DB                       { get; }
+    private         OldCertificatesDB                        DB                       { get; }
     private         ItemFactory                           ItemFactory              { get; }
     private         CacheStorage                          CacheStorage             { get; }
     private         Dictionary <int, List <Relationship>> CertificateRelationships { get; }
     private         DogmaUtils                            DogmaUtils               { get; }
+    private         IDatabaseConnection                   Database                 { get; }
 
-    public certificateMgr (CertificatesDB db, ItemFactory itemFactory, CacheStorage cacheStorage, DogmaUtils dogmaUtils)
+    public certificateMgr (OldCertificatesDB db, ItemFactory itemFactory, CacheStorage cacheStorage, DogmaUtils dogmaUtils, IDatabaseConnection database)
     {
         DB           = db;
+        Database     = database;
         ItemFactory  = itemFactory;
         CacheStorage = cacheStorage;
         DogmaUtils   = dogmaUtils;
@@ -75,7 +78,7 @@ public class certificateMgr : Service
 
     public PyDataType GetMyCertificates (CallInformation call)
     {
-        return DB.GetMyCertificates (call.Session.CharacterID);
+        return Database.CrtGetMyCertificates (call.Session.CharacterID);
     }
 
     public PyBool GrantCertificate (PyInteger certificateID, CallInformation call)

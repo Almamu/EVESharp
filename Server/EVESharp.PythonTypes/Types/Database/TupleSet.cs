@@ -1,3 +1,4 @@
+using System.Data.Common;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Primitives;
 using MySql.Data.MySqlClient;
@@ -16,7 +17,7 @@ public static class TupleSet
     /// <param name="connection">The connection used</param>
     /// <param name="reader">The MySqlDataReader to read the data from</param>
     /// <returns></returns>
-    public static PyDataType FromMySqlDataReader (IDatabaseConnection connection, MySqlDataReader reader)
+    public static PyDataType FromMySqlDataReader (IDatabaseConnection connection, DbDataReader reader)
     {
         connection.GetDatabaseHeaders (reader, out PyList <PyString> columns, out FieldType [] fieldTypes);
         PyList rows = new PyList ();

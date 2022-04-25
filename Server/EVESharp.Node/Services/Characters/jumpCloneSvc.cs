@@ -29,18 +29,18 @@ public class jumpCloneSvc : ClientBoundService
 {
     public override AccessLevel AccessLevel => AccessLevel.None;
 
-    private ItemDB             ItemDB        { get; }
-    private MarketDB           MarketDB      { get; }
-    private ItemFactory        ItemFactory   { get; }
-    private TypeManager        TypeManager   => ItemFactory.TypeManager;
-    private SystemManager      SystemManager { get; }
-    private NotificationSender Notifications { get; }
-    private WalletManager      WalletManager { get; }
-    private DatabaseConnection Database      { get; }
+    private ItemDB              ItemDB        { get; }
+    private MarketDB            MarketDB      { get; }
+    private ItemFactory         ItemFactory   { get; }
+    private TypeManager         TypeManager   => ItemFactory.TypeManager;
+    private SystemManager       SystemManager { get; }
+    private NotificationSender  Notifications { get; }
+    private WalletManager       WalletManager { get; }
+    private IDatabaseConnection Database      { get; }
 
     public jumpCloneSvc (
         ItemDB        itemDB,        MarketDB      marketDB,      ItemFactory        itemFactory,
-        SystemManager systemManager, WalletManager walletManager, NotificationSender notificationSender, BoundServiceManager manager, DatabaseConnection database
+        SystemManager systemManager, WalletManager walletManager, NotificationSender notificationSender, BoundServiceManager manager, IDatabaseConnection database
     ) : base (manager)
     {
         ItemDB        = itemDB;

@@ -25,6 +25,7 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Data.Common;
 using EVESharp.Common.Database;
 using EVESharp.EVE.StaticData;
 using EVESharp.PythonTypes.Types.Collections;
@@ -34,14 +35,19 @@ using MySql.Data.MySqlClient;
 
 namespace EVESharp.Node.Database;
 
-public class GeneralDB : DatabaseAccessor
+public class GeneralDB
 {
-    public GeneralDB (DatabaseConnection db) : base (db) { }
+    private IDatabaseConnection Database { get; }
+
+    public GeneralDB (IDatabaseConnection database)
+    {
+        Database = database;
+    }
 
     public long GetNodeWhereSolarSystemIsLoaded (int solarSystemID)
     {
         IDbConnection connection = null;
-        MySqlDataReader reader = Database.Select (
+        DbDataReader reader = Database.Select (
             ref connection,
             "SELECT nodeID FROM invItems WHERE itemID = @solarSystemID",
             new Dictionary <string, object> {{"@solarSystemID", solarSystemID}}
@@ -60,7 +66,7 @@ public class GeneralDB : DatabaseAccessor
     public Dictionary <string, Constant> LoadConstants ()
     {
         IDbConnection   connection = null;
-        MySqlDataReader reader     = Database.Select (ref connection, "SELECT constantID, constantValue FROM eveConstants");
+        DbDataReader reader     = Database.Select (ref connection, "SELECT constantID, constantValue FROM eveConstants");
 
         using (connection)
         using (reader)
@@ -79,7 +85,7 @@ public class GeneralDB : DatabaseAccessor
         try
         {
             IDbConnection connection = null;
-            MySqlDataReader reader = Database.Select (
+            DbDataReader reader = Database.Select (
                 ref connection,
                 "SELECT updateID, updateName, description, machoVersionMin, machoVersionMax, buildNumberMin, buildNumberMax, methodName, objectID, codeType, code, OCTET_LENGTH(code) as codeLength FROM eveLiveUpdates"
             );
@@ -95,7 +101,7 @@ public class GeneralDB : DatabaseAccessor
                     PyDictionary code  = new PyDictionary ();
 
                     // read the blob for the liveupdate
-                    byte [] buffer = new byte[reader.GetUInt32 (11)];
+                    byte [] buffer = new byte[reader.GetInt32 (11)];
                     reader.GetBytes (10, 0, buffer, 0, buffer.Length);
 
                     code ["code"]       = buffer;

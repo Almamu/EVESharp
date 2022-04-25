@@ -8,7 +8,7 @@ namespace EVESharp.Node.Database;
 
 public class TutorialsDB : DatabaseAccessor
 {
-    public TutorialsDB (DatabaseConnection db) : base (db) { }
+    public TutorialsDB (IDatabaseConnection db) : base (db) { }
 
     private PyDataType GetTutorialPages (int tutorialID)
     {

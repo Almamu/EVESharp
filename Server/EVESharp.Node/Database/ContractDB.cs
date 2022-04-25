@@ -25,6 +25,7 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Data.Common;
 using EVESharp.Common.Database;
 using EVESharp.EVE.Client.Exceptions.contractMgr;
 using EVESharp.EVE.StaticData.Inventory;
@@ -44,7 +45,7 @@ public class ContractDB : DatabaseAccessor
 {
     private TypeManager TypeManager { get; }
 
-    public ContractDB (TypeManager typeManager, DatabaseConnection db) : base (db)
+    public ContractDB (TypeManager typeManager, IDatabaseConnection db) : base (db)
     {
         TypeManager = typeManager;
     }
@@ -52,7 +53,7 @@ public class ContractDB : DatabaseAccessor
     public int GetOutstandingContractsCountForPlayer (int characterID)
     {
         IDbConnection connection = null;
-        MySqlDataReader reader = Database.Select (
+        DbDataReader reader = Database.Select (
             ref connection,
             "SELECT COUNT(*) AS contractCount FROM conContracts WHERE issuerID = @characterID and forCorp = @forCorp AND status = @outstandingStatus AND dateExpired > @currentTime",
             new Dictionary <string, object>
@@ -235,7 +236,7 @@ public class ContractDB : DatabaseAccessor
     public ContractStatus GetContractStatus (int contractID, int characterID, int corporationID)
     {
         IDbConnection connection = null;
-        MySqlDataReader reader = Database.Select (
+        DbDataReader reader = Database.Select (
             ref connection,
             "SELECT status FROM conContracts WHERE ((availability = 1 AND (issuerID = @characterID OR issuerCorpID = @corporationID OR assigneeID = @characterID OR assigneeID = @corporationID OR acceptorID = @characterID OR acceptorID = @corporationID)) OR availability = 0) AND contractID = @contractID",
             new Dictionary <string, object>
@@ -271,7 +272,7 @@ public class ContractDB : DatabaseAccessor
             if (itemID == shipID)
                 throw new ConCannotTradeCurrentShip ();
 
-            MySqlDataReader reader = Database.Select (
+            DbDataReader reader = Database.Select (
                 ref connection,
                 "SELECT quantity, nodeID, IF(dmg.valueFloat IS NULL, dmg.valueInt, dmg.valueFloat) AS damage, invItems.typeID, categoryID, singleton, contraband, IF(vol.attributeID IS NULL, IF(vold.valueFloat IS NULL, vold.valueInt, vold.valueFloat), IF(vol.valueFloat IS NULL, vol.valueInt, vol.valueFloat)) AS volume FROM invItems LEFT JOIN invTypes USING(typeID) LEFT JOIN invGroups USING(groupID) LEFT JOIN invItemsAttributes dmg ON invItems.itemID = dmg.itemID AND dmg.attributeID = @damage LEFT JOIN invItemsAttributes vol ON vol.itemID = invItems.itemID AND vol.attributeID = @volume LEFT JOIN dgmTypeAttributes vold ON vold.typeID = invItems.typeID AND vold.attributeID = @volume WHERE invItems.itemID = @itemID AND locationID = @locationID AND ownerID = @ownerID",
                 new Dictionary <string, object>
@@ -589,7 +590,7 @@ public class ContractDB : DatabaseAccessor
             contractQuery += $" LIMIT {limit}";
 
         IDbConnection   connection = null;
-        MySqlDataReader reader     = Database.Select (ref connection, contractQuery, values);
+        DbDataReader reader     = Database.Select (ref connection, contractQuery, values);
 
         using (connection)
         using (reader)
@@ -610,7 +611,7 @@ public class ContractDB : DatabaseAccessor
     public List <int> GetContractListByOwnerBids (int ownerID)
     {
         IDbConnection connection = null;
-        MySqlDataReader reader = Database.Select (
+        DbDataReader reader = Database.Select (
             ref connection,
             "SELECT contractID FROM conBids WHERE bidderID = @ownerID",
             new Dictionary <string, object> {{"@ownerID", ownerID}}
@@ -635,7 +636,7 @@ public class ContractDB : DatabaseAccessor
     public List <int> GetContractListByAcceptor (int acceptorID)
     {
         IDbConnection connection = null;
-        MySqlDataReader reader = Database.Select (
+        DbDataReader reader = Database.Select (
             ref connection,
             "SELECT contractID FROM conContracts WHERE acceptorID = @acceptorID AND status = @status",
             new Dictionary <string, object>
@@ -701,7 +702,7 @@ public class ContractDB : DatabaseAccessor
 
     public void GetOutbids (IDbConnection connection, int contractID, int amount, out List <int> characterIDs, out List <int> corporationIDs)
     {
-        MySqlDataReader reader = Database.Select (
+        DbDataReader reader = Database.Select (
             ref connection,
             "SELECT bidderID, forCorp FROM conBids WHERE contractID = @contractID GROUP BY bidderID",
             new Dictionary <string, object>
@@ -726,7 +727,7 @@ public class ContractDB : DatabaseAccessor
 
     public void GetMaximumBid (IDbConnection connection, int contractID, out int bidderID, out int amount)
     {
-        MySqlDataReader reader = Database.Select (
+        DbDataReader reader = Database.Select (
             ref connection,
             "SELECT amount, bidderID FROM conBids WHERE contractID = @contractID ORDER BY amount DESC LIMIT 1",
             new Dictionary <string, object> {{"@contractID", contractID}}
@@ -749,7 +750,7 @@ public class ContractDB : DatabaseAccessor
 
     public Contract GetContract (IDbConnection connection, int contractID)
     {
-        MySqlDataReader reader = Database.Select (
+        DbDataReader reader = Database.Select (
             ref connection,
             "SELECT price, collateral, status, type, dateExpired, crateID, startStationID, issuerID, issuerCorpID, forCorp, reward FROM conContracts WHERE contractID = @contractID",
             new Dictionary <string, object> {{"@contractID", contractID}}
@@ -781,7 +782,7 @@ public class ContractDB : DatabaseAccessor
     public List <int> FetchLoginCharacterContractBids (int bidderID)
     {
         IDbConnection connection = null;
-        MySqlDataReader reader = Database.Select (
+        DbDataReader reader = Database.Select (
             ref connection,
             "SELECT contractID, MAX(amount), (SELECT MAX(amount) FROM conBids b WHERE b.contractID = contractID) AS maximum FROM conBids LEFT JOIN conContracts USING(contractID) WHERE bidderID = @bidderID AND status = @outstandingStatus AND dateExpired < @currentTime GROUP BY contractID",
             new Dictionary <string, object>
@@ -808,7 +809,7 @@ public class ContractDB : DatabaseAccessor
     public List <int> FetchLoginCharacterContractAssigned (int assigneeID)
     {
         IDbConnection connection = null;
-        MySqlDataReader reader = Database.Select (
+        DbDataReader reader = Database.Select (
             ref connection,
             "SELECT contractID FROM conContracts WHERE assigneeID = @assigneeID AND status = @outstandingStatus AND dateExpired < @currentTime",
             new Dictionary <string, object>
@@ -833,7 +834,7 @@ public class ContractDB : DatabaseAccessor
 
     public Dictionary <int, int> GetRequiredItemTypeIDs (IDbConnection connection, int contractID)
     {
-        MySqlDataReader reader = Database.Select (
+        DbDataReader reader = Database.Select (
             ref connection,
             "SELECT itemTypeID, SUM(quantity) AS quantity FROM conItems WHERE contractID = @contractID AND inCrate = 0 GROUP BY itemTypeID",
             new Dictionary <string, object> {{"@contractID", contractID}}
@@ -852,7 +853,7 @@ public class ContractDB : DatabaseAccessor
 
     public List <ItemQuantityEntry> GetOfferedItems (IDbConnection connection, int contractID)
     {
-        MySqlDataReader reader = Database.Select (
+        DbDataReader reader = Database.Select (
             ref connection,
             "SELECT itemID, itemTypeID, conItems.quantity, nodeID FROM conItems LEFT JOIN invItems USING(itemID) WHERE contractID = @contractID AND inCrate = 1",
             new Dictionary <string, object> {{"@contractID", contractID}}
@@ -901,7 +902,7 @@ public class ContractDB : DatabaseAccessor
         IDbConnection connection, Station station, int ownerID, int newOwnerID, Flags flag, Dictionary <int, int> requiredItemTypes
     )
     {
-        MySqlDataReader reader = Database.Select (
+        DbDataReader reader = Database.Select (
             ref connection,
             $"SELECT invItems.itemID, quantity, typeID, nodeID, IF(dmg.valueFloat IS NULL, dmg.valueInt, dmg.valueFloat) AS damage, categoryID, singleton, contraband FROM invItems LEFT JOIN invTypes USING(typeID) LEFT JOIN invGroups USING(groupID) LEFT JOIN invItemsAttributes dmg ON invItems.itemID = dmg.itemID AND dmg.attributeID = @damage WHERE typeID IN ({string.Join (',', requiredItemTypes.Keys)}) AND locationID = @locationID AND ownerID = @ownerID AND flag = @flag",
             new Dictionary <string, object>
@@ -1011,7 +1012,7 @@ public class ContractDB : DatabaseAccessor
 
     public List <ItemQuantityEntry> GetCrateItems (IDbConnection connection, int crateID)
     {
-        MySqlDataReader reader = Database.Select (
+        DbDataReader reader = Database.Select (
             ref connection,
             "SELECT itemID, nodeID FROM conItems LEFT JOIN conContracts USING(contractID) LEFT JOIN invItems USING(itemID) WHERE crateID = @createID AND inCrate = 1",
             new Dictionary <string, object> {{"@crateID", crateID}}

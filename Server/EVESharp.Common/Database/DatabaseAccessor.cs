@@ -1,10 +1,12 @@
+using EVESharp.PythonTypes.Types.Database;
+
 namespace EVESharp.Common.Database;
 
 public abstract class DatabaseAccessor
 {
-    protected DatabaseConnection Database { get; init; }
+    protected IDatabaseConnection Database { get; init; }
 
-    protected DatabaseAccessor (DatabaseConnection db)
+    protected DatabaseAccessor (IDatabaseConnection db)
     {
         Database = db;
     }

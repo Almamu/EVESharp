@@ -1,3 +1,5 @@
+using System.Data;
+using System.Data.Common;
 using System.IO;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Primitives;
@@ -94,13 +96,13 @@ public class CRowset
     /// <param name="connection">The connection used</param>
     /// <param name="reader">The reader to use as source of the information</param>
     /// <returns>The CRowset object ready to be used</returns>
-    public static CRowset FromMySqlDataReader (IDatabaseConnection connection, MySqlDataReader reader)
+    public static CRowset FromDataReader (IDatabaseConnection connection, DbDataReader reader)
     {
-        DBRowDescriptor descriptor = DBRowDescriptor.FromMySqlReader (connection, reader);
+        DBRowDescriptor descriptor = DBRowDescriptor.FromDataReader (connection, reader);
         CRowset         rowset     = new CRowset (descriptor);
 
         while (reader.Read ())
-            rowset.Add (PyPackedRow.FromMySqlDataReader (reader, descriptor));
+            rowset.Add (PyPackedRow.FromDataReader (reader, descriptor));
 
         return rowset;
     }

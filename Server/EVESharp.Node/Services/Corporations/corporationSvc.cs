@@ -30,8 +30,8 @@ public class corporationSvc : Service
     private         NotificationSender Notifications { get; }
 
     public corporationSvc (
-        DatabaseConnection databaseConnection, CorporationDB db, Constants constants, WalletManager walletManager, ItemFactory itemFactory,
-        NotificationSender notificationSender
+        IDatabaseConnection databaseConnection, CorporationDB db, Constants constants, WalletManager walletManager, ItemFactory itemFactory,
+        NotificationSender  notificationSender
     )
     {
         Database      = databaseConnection;

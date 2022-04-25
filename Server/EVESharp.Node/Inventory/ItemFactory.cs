@@ -35,6 +35,7 @@ using EVESharp.Node.Inventory.Exceptions;
 using EVESharp.Node.Inventory.Items;
 using EVESharp.Node.Inventory.Items.Types;
 using EVESharp.Node.Server.Shared;
+using EVESharp.PythonTypes.Types.Database;
 using Serilog;
 using Character = EVESharp.Node.Inventory.Items.Types.Character;
 using Container = SimpleInjector.Container;
@@ -81,10 +82,10 @@ public class ItemFactory
     public ItemEntity                    OwnerSCC          { get; private set; }
     public ExpressionManager             ExpressionManager { get; }
 
-    protected DatabaseConnection Database { get; }
+    protected IDatabaseConnection Database { get; }
 
     public ItemFactory (
-        ILogger           logger, IMachoNet machoNet, DatabaseConnection databaseConnection, Constants constants, MetaInventoryManager metaInventoryManager,
+        ILogger           logger, IMachoNet machoNet, IDatabaseConnection databaseConnection, Constants constants, MetaInventoryManager metaInventoryManager,
         ExpressionManager expressionManager, Container dependencyInjection
     )
     {

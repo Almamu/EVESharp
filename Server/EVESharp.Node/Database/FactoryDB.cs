@@ -7,7 +7,7 @@ namespace EVESharp.Node.Database;
 
 public class FactoryDB : DatabaseAccessor
 {
-    public FactoryDB (DatabaseConnection db) : base (db) { }
+    public FactoryDB (IDatabaseConnection db) : base (db) { }
 
     public PyDictionary GetBlueprintAttributes (int blueprintID, int characterID)
     {

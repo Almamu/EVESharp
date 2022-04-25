@@ -19,11 +19,11 @@ namespace EVESharp.Node.Services.Characters;
 public class bookmark : Service
 {
     public override AccessLevel          AccessLevel          => AccessLevel.None;
-    private         DatabaseConnection   Database             { get; }
+    private         IDatabaseConnection  Database             { get; }
     private         ItemFactory          ItemFactory          { get; }
     private         RemoteServiceManager RemoteServiceManager { get; }
 
-    public bookmark (DatabaseConnection connection, ItemFactory itemFactory, RemoteServiceManager remoteServiceManager)
+    public bookmark (IDatabaseConnection connection, ItemFactory itemFactory, RemoteServiceManager remoteServiceManager)
     {
         Database             = connection;
         ItemFactory          = itemFactory;

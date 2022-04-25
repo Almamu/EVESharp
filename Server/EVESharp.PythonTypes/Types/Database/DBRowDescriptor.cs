@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Data;
+using System.Data.Common;
 using System.IO;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Primitives;
@@ -93,7 +95,7 @@ public class DBRowDescriptor
     /// <param name="reader">The MySqlDataReader to use when creating the DBRowDescriptor</param>
     /// <returns>Instance of a new DBRowDescriptor</returns>
     /// <exception cref="InvalidDataException">If any error was found on the creation</exception>
-    public static DBRowDescriptor FromMySqlReader (IDatabaseConnection connection, MySqlDataReader reader)
+    public static DBRowDescriptor FromDataReader (IDatabaseConnection connection, DbDataReader reader)
     {
         DBRowDescriptor descriptor = new DBRowDescriptor ();
 

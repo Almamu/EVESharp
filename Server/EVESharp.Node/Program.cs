@@ -64,6 +64,7 @@ using EVESharp.Node.Services.Tutorial;
 using EVESharp.Node.Services.War;
 using EVESharp.Node.Sessions;
 using EVESharp.Node.SimpleInject;
+using EVESharp.PythonTypes.Types.Database;
 using Serilog;
 using Serilog.Core;
 using Serilog.Events;
@@ -203,7 +204,7 @@ internal class Program
                 // register basic dependencies first
                 dependencies.RegisterInstance (new HttpClient ());
                 dependencies.RegisterInstance (log);
-                dependencies.Register <DatabaseConnection> (Lifestyle.Singleton);
+                dependencies.Register <IDatabaseConnection, DatabaseConnection> (Lifestyle.Singleton);
                 dependencies.Register <SessionManager> (Lifestyle.Singleton);
                 dependencies.Register <CacheStorage> (Lifestyle.Singleton);
                 dependencies.Register <MetaInventoryManager> (Lifestyle.Singleton);
@@ -230,7 +231,7 @@ internal class Program
                 dependencies.Register <DogmaUtils> (Lifestyle.Singleton);
 
                 // register the database accessors dependencies
-                dependencies.Register <CertificatesDB> (Lifestyle.Singleton);
+                dependencies.Register <OldCertificatesDB> (Lifestyle.Singleton);
                 dependencies.Register <CharacterDB> (Lifestyle.Singleton);
                 dependencies.Register <ChatDB> (Lifestyle.Singleton);
                 dependencies.Register <ConfigDB> (Lifestyle.Singleton);
@@ -335,7 +336,7 @@ internal class Program
                 log.Verbose ("Initializing EVESharp Node");
 
                 // connect to the database
-                dependencies.GetInstance <DatabaseConnection> ();
+                dependencies.GetInstance <IDatabaseConnection> ();
                 // sDatabase.Query("SET global max_allowed_packet=1073741824");
 
                 // ensure the message processor is created

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Data.Common;
 using EVESharp.Common.Database;
 using EVESharp.EVE.StaticData.Certificates;
 using EVESharp.PythonTypes.Types.Database;
@@ -8,9 +9,9 @@ using MySql.Data.MySqlClient;
 
 namespace EVESharp.Node.Database;
 
-public class CertificatesDB : DatabaseAccessor
+public class OldCertificatesDB : DatabaseAccessor
 {
-    public CertificatesDB (DatabaseConnection db) : base (db) { }
+    public OldCertificatesDB (IDatabaseConnection db) : base (db) { }
 
     /// <summary>
     /// Get list of certificates granted to the given character, ready for the EVE Client
@@ -32,7 +33,7 @@ public class CertificatesDB : DatabaseAccessor
     public Dictionary <int, List <Relationship>> GetCertificateRelationships ()
     {
         IDbConnection connection = null;
-        MySqlDataReader reader = Database.Select (
+        DbDataReader reader = Database.Select (
             ref connection, "SELECT relationshipID, parentID, parentTypeID, parentLevel, childID, childTypeID FROM crtRelationships"
         );
 
@@ -121,7 +122,7 @@ public class CertificatesDB : DatabaseAccessor
     public List <int> GetCertificateListForCharacter (int characterID)
     {
         IDbConnection connection = null;
-        MySqlDataReader reader = Database.Select (
+        DbDataReader reader = Database.Select (
             ref connection,
             "SELECT certificateID FROM chrCertificates WHERE characterID = @characterID",
             new Dictionary <string, object> {{"@characterID", characterID}}

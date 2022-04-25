@@ -7,7 +7,7 @@ namespace EVESharp.Node.Database;
 
 public class LookupDB : DatabaseAccessor
 {
-    public LookupDB (DatabaseConnection db) : base (db) { }
+    public LookupDB (IDatabaseConnection db) : base (db) { }
 
     public Rowset LookupStations (string namePart, bool exact)
     {

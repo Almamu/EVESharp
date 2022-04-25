@@ -25,6 +25,7 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Data.Common;
 using EVESharp.Common.Database;
 using EVESharp.Node.Inventory;
 using EVESharp.PythonTypes.Types.Collections;
@@ -38,7 +39,7 @@ public class InsuranceDB : DatabaseAccessor
 {
     private TypeManager TypeManager { get; }
 
-    public InsuranceDB (TypeManager typeManager, DatabaseConnection db) : base (db)
+    public InsuranceDB (TypeManager typeManager, IDatabaseConnection db) : base (db)
     {
         TypeManager = typeManager;
     }
@@ -86,7 +87,7 @@ public class InsuranceDB : DatabaseAccessor
         numberOfInsurances = 0;
 
         IDbConnection connection = null;
-        MySqlDataReader reader = Database.Select (
+        DbDataReader reader = Database.Select (
             ref connection,
             "SELECT COUNT(*) AS insuranceCount, ownerID FROM chrShipInsurances WHERE shipID = @shipID",
             new Dictionary <string, object> {{"@shipID", shipID}}
@@ -142,7 +143,7 @@ public class InsuranceDB : DatabaseAccessor
         long currentDate = DateTime.UtcNow.ToFileTimeUtc ();
 
         IDbConnection connection = null;
-        MySqlDataReader reader = Database.Select (
+        DbDataReader reader = Database.Select (
             ref connection,
             "SELECT insuranceID, chrShipInsurances.ownerID, shipID, ship.itemName AS shipName, invItems.typeID AS shipTypeID, eveNames.typeID AS ownerTypeID, startDate FROM chrShipInsurances LEFT JOIN eveNames ON eveNames.itemID = chrShipInsurances.ownerID LEFT JOIN invItems ON invItems.itemID = chrShipInsurances.shipID LEFT JOIN eveNames ship ON eveNames.itemID = shipID WHERE endDate < @currentDate",
             new Dictionary <string, object> {{"@currentDate", currentDate}}

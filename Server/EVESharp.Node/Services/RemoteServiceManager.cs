@@ -6,6 +6,7 @@ using EVESharp.EVE.Account;
 using EVESharp.EVE.Sessions;
 using EVESharp.Node.Server.Shared;
 using EVESharp.PythonTypes.Types.Collections;
+using EVESharp.PythonTypes.Types.Database;
 using EVESharp.PythonTypes.Types.Network;
 using EVESharp.PythonTypes.Types.Primitives;
 using Serilog;
@@ -17,11 +18,11 @@ public class RemoteServiceManager
     private readonly Dictionary <int, RemoteCall> mCallCallbacks = new Dictionary <int, RemoteCall> ();
     private          int                          mNextCallID;
 
-    private Timers             Timers   { get; }
-    private IMachoNet          MachoNet { get; }
-    private DatabaseConnection Database { get; }
+    private Timers              Timers   { get; }
+    private IMachoNet           MachoNet { get; }
+    private IDatabaseConnection Database { get; }
     
-    public RemoteServiceManager (IMachoNet machoNet, Timers timers, DatabaseConnection databaseConnection)
+    public RemoteServiceManager (IMachoNet machoNet, Timers timers, IDatabaseConnection databaseConnection)
     {
         Timers   = timers;
         MachoNet = machoNet;

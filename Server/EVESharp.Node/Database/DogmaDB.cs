@@ -1,8 +1,10 @@
 ﻿using System.Collections.Generic;
 using System.Data;
+using System.Data.Common;
 using EVESharp.Common.Database;
 using EVESharp.EVE.StaticData.Dogma;
 using EVESharp.EVE.StaticData.Inventory;
+using EVESharp.PythonTypes.Types.Database;
 using MySql.Data.MySqlClient;
 using Serilog;
 
@@ -12,7 +14,7 @@ public class DogmaDB : DatabaseAccessor
 {
     private ILogger Log { get; }
 
-    public DogmaDB (ILogger logger, DatabaseConnection db) : base (db)
+    public DogmaDB (ILogger logger, IDatabaseConnection db) : base (db)
     {
         Log = logger;
     }
@@ -20,7 +22,7 @@ public class DogmaDB : DatabaseAccessor
     public Dictionary <int, Expression> LoadDogmaExpressions ()
     {
         IDbConnection connection = null;
-        MySqlDataReader reader = Database.Select (
+        DbDataReader reader = Database.Select (
             ref connection,
             "SELECT expressionID, operandID, arg1, arg2, expressionValue, expressionName, expressionAttributeID FROM dgmExpressions ORDER BY arg1, arg2, expressionID"
         );

@@ -1,4 +1,6 @@
 using System;
+using System.Data;
+using System.Data.Common;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Primitives;
 using MySql.Data.MySqlClient;
@@ -16,7 +18,7 @@ public class KeyVal
     /// <param name="connection">The connection used</param>
     /// <param name="reader"></param>
     /// <returns></returns>
-    public static PyDataType FromMySqlDataReader (IDatabaseConnection connection, MySqlDataReader reader)
+    public static PyDataType FromDataReader (IDatabaseConnection connection, DbDataReader reader)
     {
         PyDictionary data = new PyDictionary ();
 

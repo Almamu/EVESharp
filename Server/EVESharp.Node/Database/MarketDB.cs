@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Data.Common;
 using EVESharp.Common.Database;
 using EVESharp.EVE.Client.Exceptions.marketProxy;
 using EVESharp.EVE.Market;
@@ -18,7 +19,7 @@ public class MarketDB : DatabaseAccessor
 {
     private TypeManager TypeManager { get; }
 
-    public MarketDB (TypeManager typeManager, DatabaseConnection db) : base (db)
+    public MarketDB (TypeManager typeManager, IDatabaseConnection db) : base (db)
     {
         TypeManager = typeManager;
     }
@@ -283,7 +284,7 @@ public class MarketDB : DatabaseAccessor
     public int CountCharsOrders (int characterID)
     {
         IDbConnection connection = null;
-        MySqlDataReader reader = Database.Select (
+        DbDataReader reader = Database.Select (
             ref connection,
             "SELECT COUNT(*) FROM mktOrders WHERE charID = @characterID",
             new Dictionary <string, object> {{"@characterID", characterID}}
@@ -316,7 +317,7 @@ public class MarketDB : DatabaseAccessor
 
     public MarketOrder [] FindMatchingOrders (IDbConnection connection, double price, int typeID, int characterID, int solarSystemID, TransactionType type)
     {
-        MySqlDataReader reader = Database.Select (
+        DbDataReader reader = Database.Select (
             ref connection,
             "SELECT orderID, typeID, charID, mktOrders.stationID AS locationID, price, mktOrders.accountID, volRemaining, minVolume, `range`, jumps, escrow, issued, chrInformation.corporationID, isCorp FROM mktOrders LEFT JOIN chrInformation ON charID = characterID LEFT JOIN staStations ON staStations.stationID = mktOrders.stationID LEFT JOIN mapPrecalculatedSolarSystemJumps ON staStations.solarSystemID = fromSolarSystemID AND toSolarsystemID = @solarSystemID WHERE bid = @transactionType AND price >= @price AND typeID = @typeID AND charID != @characterID AND `range` >= jumps ORDER BY price",
             new Dictionary <string, object>
@@ -398,7 +399,7 @@ public class MarketDB : DatabaseAccessor
         long            corporationRoles
     )
     {
-        MySqlDataReader reader = null;
+        DbDataReader reader = null;
 
         if (CorporationRole.HangarCanTake1.Is (corporationRoles) ||
             CorporationRole.HangarCanTake2.Is (corporationRoles) ||
@@ -524,7 +525,7 @@ public class MarketDB : DatabaseAccessor
 
     public void CheckRepackagedItem (IDbConnection connection, int itemID, out bool singleton)
     {
-        MySqlDataReader reader = Database.Select (
+        DbDataReader reader = Database.Select (
             ref connection,
             "SELECT singleton FROM invItems WHERE itemID = @itemID",
             new Dictionary <string, object> {{"@itemID", itemID}}
@@ -616,7 +617,7 @@ public class MarketDB : DatabaseAccessor
 
     public MarketOrder GetOrderById (IDbConnection connection, int orderID)
     {
-        MySqlDataReader reader = Database.Select (
+        DbDataReader reader = Database.Select (
             ref connection,
             "SELECT orderID, typeID, charID, mktOrders.stationID AS locationID, price, mktOrders.accountID, volRemaining, minVolume, `range`, escrow, bid, issued, corporationID, isCorp FROM mktOrders LEFT JOIN chrInformation ON charID = characterID WHERE orderID = @orderID",
             new Dictionary <string, object> {{"@orderID", orderID}}
@@ -649,7 +650,7 @@ public class MarketDB : DatabaseAccessor
 
     public List <MarketOrder> GetExpiredOrders (IDbConnection connection)
     {
-        MySqlDataReader reader = Database.Select (
+        DbDataReader reader = Database.Select (
             ref connection,
             "SELECT orderID, typeID, charID, mktOrders.stationID AS locationID, price, mktOrders.accountID, volRemaining, minVolume, `range`, escrow, bid, issued, corporationID, isCorp FROM mktOrders LEFT JOIN chrInformation ON charID = characterID WHERE (issued + (duration * @ticksPerHour)) < @currentTime",
             new Dictionary <string, object>

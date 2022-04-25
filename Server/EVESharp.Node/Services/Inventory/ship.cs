@@ -13,6 +13,7 @@ using EVESharp.Node.Inventory.Items;
 using EVESharp.Node.Inventory.Items.Types;
 using EVESharp.Node.Sessions;
 using EVESharp.PythonTypes.Types.Collections;
+using EVESharp.PythonTypes.Types.Database;
 using EVESharp.PythonTypes.Types.Primitives;
 using Groups = EVESharp.EVE.StaticData.Inventory.Groups;
 using SessionManager = EVESharp.Node.Sessions.SessionManager;
@@ -22,16 +23,16 @@ namespace EVESharp.Node.Services.Inventory;
 [MustBeCharacter]
 public class ship : ClientBoundService
 {
-    public override AccessLevel        AccessLevel    => AccessLevel.None;
-    private         ItemEntity         Location       { get; }
-    private         ItemFactory        ItemFactory    { get; }
-    private         TypeManager        TypeManager    => ItemFactory.TypeManager;
-    private         SystemManager      SystemManager  => ItemFactory.SystemManager;
-    private         SessionManager     SessionManager { get; }
-    private         DogmaUtils         DogmaUtils     { get; }
-    private         DatabaseConnection Database       { get; }
+    public override AccessLevel         AccessLevel    => AccessLevel.None;
+    private         ItemEntity          Location       { get; }
+    private         ItemFactory         ItemFactory    { get; }
+    private         TypeManager         TypeManager    => ItemFactory.TypeManager;
+    private         SystemManager       SystemManager  => ItemFactory.SystemManager;
+    private         SessionManager      SessionManager { get; }
+    private         DogmaUtils          DogmaUtils     { get; }
+    private         IDatabaseConnection Database       { get; }
 
-    public ship (ItemFactory itemFactory, BoundServiceManager manager, SessionManager sessionManager, DogmaUtils dogmaUtils, DatabaseConnection database) : base (manager)
+    public ship (ItemFactory itemFactory, BoundServiceManager manager, SessionManager sessionManager, DogmaUtils dogmaUtils, IDatabaseConnection database) : base (manager)
     {
         ItemFactory    = itemFactory;
         SessionManager = sessionManager;

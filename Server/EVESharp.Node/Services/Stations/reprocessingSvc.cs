@@ -51,16 +51,16 @@ public class reprocessingSvc : ClientBoundService
     private readonly Station       mStation;
     public override  AccessLevel   AccessLevel => AccessLevel.None;
 
-    private ItemFactory        ItemFactory    { get; }
-    private SystemManager      SystemManager  => ItemFactory.SystemManager;
-    private TypeManager        TypeManager    => ItemFactory.TypeManager;
-    private StandingDB         StandingDB     { get; }
-    private ReprocessingDB     ReprocessingDB { get; }
-    private DogmaUtils         DogmaUtils     { get; }
-    private DatabaseConnection Database       { get; }
+    private ItemFactory         ItemFactory    { get; }
+    private SystemManager       SystemManager  => ItemFactory.SystemManager;
+    private TypeManager         TypeManager    => ItemFactory.TypeManager;
+    private StandingDB          StandingDB     { get; }
+    private ReprocessingDB      ReprocessingDB { get; }
+    private DogmaUtils          DogmaUtils     { get; }
+    private IDatabaseConnection Database       { get; }
 
     public reprocessingSvc (
-        ReprocessingDB reprocessingDb, StandingDB standingDb, ItemFactory itemFactory, BoundServiceManager manager, DogmaUtils dogmaUtils, DatabaseConnection database
+        ReprocessingDB reprocessingDb, StandingDB standingDb, ItemFactory itemFactory, BoundServiceManager manager, DogmaUtils dogmaUtils, IDatabaseConnection database
     ) : base (manager)
     {
         ReprocessingDB = reprocessingDb;

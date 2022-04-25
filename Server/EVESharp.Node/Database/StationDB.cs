@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Data.Common;
 using EVESharp.Common.Database;
 using EVESharp.EVE.StaticData.Inventory;
 using EVESharp.EVE.StaticData.Inventory.Station;
@@ -14,12 +15,12 @@ namespace EVESharp.Node.Database;
 
 public class StationDB : DatabaseAccessor
 {
-    public StationDB (DatabaseConnection db) : base (db) { }
+    public StationDB (IDatabaseConnection db) : base (db) { }
 
     public Dictionary <int, Operation> LoadOperations ()
     {
-        IDbConnection   connection = null;
-        MySqlDataReader reader     = Database.Select (ref connection, "SELECT operationID, operationName, description FROM staOperations");
+        IDbConnection connection = null;
+        DbDataReader  reader     = Database.Select (ref connection, "SELECT operationID, operationName, description FROM staOperations");
 
         using (connection)
         using (reader)
@@ -30,10 +31,10 @@ public class StationDB : DatabaseAccessor
             {
                 List <int>    services           = new List <int> ();
                 IDbConnection connectionServices = null;
-                MySqlDataReader readerServices = Database.Select (
+                DbDataReader readerServices = Database.Select (
                     ref connectionServices,
                     "SELECT serviceID FROM staOperationServices WHERE operationID = @operationID",
-                    new Dictionary <string, object> {{"@operationID", reader.GetUInt32 (0)}}
+                    new Dictionary <string, object> {{"@operationID", reader.GetInt32 (0)}}
                 );
 
                 using (connectionServices)
@@ -60,7 +61,7 @@ public class StationDB : DatabaseAccessor
     public Dictionary <int, Type> LoadStationTypes ()
     {
         IDbConnection connection = null;
-        MySqlDataReader reader = Database.Select (
+        DbDataReader reader = Database.Select (
             ref connection,
             "SELECT stationTypeID, hangarGraphicID, dockEntryX," +
             " dockEntryY, dockEntryZ, dockOrientationX, dockOrientationY," +
@@ -100,7 +101,7 @@ public class StationDB : DatabaseAccessor
     public Dictionary <int, string> LoadServices ()
     {
         IDbConnection connection = null;
-        MySqlDataReader reader =
+        DbDataReader reader =
             Database.Select (ref connection, "SELECT serviceID, serviceName FROM staServices");
 
         using (connection)
@@ -118,7 +119,7 @@ public class StationDB : DatabaseAccessor
     public int CountRentedOffices (int stationID)
     {
         IDbConnection connection = null;
-        MySqlDataReader reader = Database.Select (
+        DbDataReader reader = Database.Select (
             ref connection,
             "SELECT COUNT(*) FROM crpOffices WHERE stationID = @stationID",
             new Dictionary <string, object> {{"@stationID", stationID}}
@@ -180,7 +181,7 @@ public class StationDB : DatabaseAccessor
     public bool CorporationHasOfficeRentedAt (int corporationID, int stationID)
     {
         IDbConnection connection = null;
-        MySqlDataReader reader = Database.Select (
+        DbDataReader reader = Database.Select (
             ref connection,
             "SELECT corporationID FROM crpOffices WHERE stationID = @stationID AND corporationID = @corporationID",
             new Dictionary <string, object>

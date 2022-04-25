@@ -11,6 +11,7 @@ using EVESharp.Node.Database;
 using EVESharp.Node.Server.Shared;
 using EVESharp.Node.Server.Shared.Messages;
 using EVESharp.Node.Server.Shared.Transports;
+using EVESharp.PythonTypes.Types.Database;
 using EVESharp.PythonTypes.Types.Network;
 using Serilog;
 using AccountDB = EVESharp.Database.AccountDB;
@@ -22,11 +23,11 @@ public class MachoNet : IMachoNet
     private General              Configuration { get; }
     private MachoServerTransport Transport     { get; set; }
     private HttpClient           HttpClient    { get; }
-    private DatabaseConnection   Database      { get; }
+    private IDatabaseConnection  Database      { get; }
 
     public MachoNet (
-        DatabaseConnection databaseConnection, GeneralDB generalDb, HttpClient httpClient, TransportManager transportManager, LoginQueue loginQueue,
-        General            configuration,      ILogger   logger
+        IDatabaseConnection databaseConnection, GeneralDB generalDb, HttpClient httpClient, TransportManager transportManager, LoginQueue loginQueue,
+        General             configuration,      ILogger   logger
     )
     {
         Database         = databaseConnection;

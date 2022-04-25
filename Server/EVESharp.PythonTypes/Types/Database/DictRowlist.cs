@@ -1,3 +1,5 @@
+using System.Data;
+using System.Data.Common;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Primitives;
 using MySql.Data.MySqlClient;
@@ -14,7 +16,7 @@ public class DictRowlist
     /// <param name="connection">The connection used</param>
     /// <param name="reader">The MySqlDataReader to read the data from</param>
     /// <returns></returns>
-    public static PyDataType FromMySqlDataReader (IDatabaseConnection connection, MySqlDataReader reader)
+    public static PyDataType FromDataReader (IDatabaseConnection connection, DbDataReader reader)
     {
         PyDictionary result = new PyDictionary ();
 
@@ -23,7 +25,7 @@ public class DictRowlist
         int index = 0;
 
         while (reader.Read ())
-            result [index++] = Row.FromMySqlDataReader (reader, header, fieldTypes);
+            result [index++] = Row.FromDataReader (reader, header, fieldTypes);
 
         return result;
     }

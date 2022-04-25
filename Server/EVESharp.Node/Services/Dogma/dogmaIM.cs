@@ -29,14 +29,14 @@ public class dogmaIM : ClientBoundService
 {
     public override AccessLevel AccessLevel => AccessLevel.None;
 
-    private ItemFactory        ItemFactory      { get; }
-    private AttributeManager   AttributeManager => ItemFactory.AttributeManager;
-    private SystemManager      SystemManager    => ItemFactory.SystemManager;
-    private NotificationSender Notifications    { get; }
-    private EffectsManager     EffectsManager   { get; }
-    private DatabaseConnection Database         { get; }
+    private ItemFactory         ItemFactory      { get; }
+    private AttributeManager    AttributeManager => ItemFactory.AttributeManager;
+    private SystemManager       SystemManager    => ItemFactory.SystemManager;
+    private NotificationSender  Notifications    { get; }
+    private EffectsManager      EffectsManager   { get; }
+    private IDatabaseConnection Database         { get; }
 
-    public dogmaIM (EffectsManager effectsManager, ItemFactory itemFactory, NotificationSender notificationSender, BoundServiceManager manager, DatabaseConnection database) : base (manager)
+    public dogmaIM (EffectsManager effectsManager, ItemFactory itemFactory, NotificationSender notificationSender, BoundServiceManager manager, IDatabaseConnection database) : base (manager)
     {
         EffectsManager = effectsManager;
         ItemFactory    = itemFactory;

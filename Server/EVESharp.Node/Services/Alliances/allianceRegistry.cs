@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Data.Common;
 using System.Threading.Tasks;
 using EVESharp.Common.Database;
 using EVESharp.Database;
@@ -20,6 +21,7 @@ using EVESharp.Node.Inventory.Items.Types;
 using EVESharp.Node.Notifications;
 using EVESharp.Node.Notifications.Nodes.Corps;
 using EVESharp.Node.Server.Shared;
+using EVESharp.PythonTypes.Types.Database;
 using EVESharp.PythonTypes.Types.Primitives;
 using MySql.Data.MySqlClient;
 using SessionManager = EVESharp.Node.Sessions.SessionManager;
@@ -30,17 +32,17 @@ public class allianceRegistry : MultiClientBoundService
 {
     public override AccessLevel AccessLevel => AccessLevel.None;
 
-    private DatabaseConnection Database       { get; }
-    private CorporationDB      CorporationDB  { get; }
-    private ChatDB             ChatDB         { get; }
-    private NotificationSender Notifications  { get; }
-    private ItemFactory        ItemFactory    { get; }
-    private Alliance           Alliance       { get; }
-    private SessionManager     SessionManager { get; }
-    private ClusterManager     ClusterManager { get; }
+    private IDatabaseConnection Database       { get; }
+    private CorporationDB       CorporationDB  { get; }
+    private ChatDB              ChatDB         { get; }
+    private NotificationSender  Notifications  { get; }
+    private ItemFactory         ItemFactory    { get; }
+    private Alliance            Alliance       { get; }
+    private SessionManager      SessionManager { get; }
+    private ClusterManager      ClusterManager { get; }
 
     public allianceRegistry (
-        DatabaseConnection  databaseConnection, CorporationDB  corporationDB, ChatDB chatDB, ItemFactory itemFactory, NotificationSender notificationSender,
+        IDatabaseConnection databaseConnection, CorporationDB  corporationDB,  ChatDB chatDB, ItemFactory itemFactory, NotificationSender notificationSender,
         BoundServiceManager manager,            SessionManager sessionManager, ClusterManager clusterManager
     ) : base (manager)
     {
@@ -56,7 +58,7 @@ public class allianceRegistry : MultiClientBoundService
     }
 
     private allianceRegistry (
-        Alliance alliance, DatabaseConnection databaseConnection, CorporationDB corporationDB, ItemFactory itemFactory, NotificationSender notificationSender,
+        Alliance alliance, IDatabaseConnection databaseConnection, CorporationDB corporationDB, ItemFactory itemFactory, NotificationSender notificationSender,
         SessionManager sessionManager, MultiClientBoundService parent
     ) : base (parent, alliance.ID)
     {
@@ -72,7 +74,7 @@ public class allianceRegistry : MultiClientBoundService
     {
         // TODO: THIS ONE MIGHT HAVE A BETTER PLACE SOMEWHERE, BUT FOR NOW IT'LL LIVE HERE
         IDbConnection connection = null;
-        MySqlDataReader reader = Database.Select (
+        DbDataReader reader = Database.Select (
             ref connection,
             $"SELECT corporationID, allianceID, executorCorpID FROM crpApplications LEFT JOIN crpAlliances USING(allianceID) WHERE `state` = {(int) ApplicationStatus.Accepted} AND applicationUpdateTime < @limit",
             new Dictionary <string, object> {{"@limit", minimumTime}}

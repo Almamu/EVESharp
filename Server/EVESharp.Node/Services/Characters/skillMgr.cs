@@ -19,6 +19,7 @@ using EVESharp.Node.Inventory.Items;
 using EVESharp.Node.Inventory.Items.Types;
 using EVESharp.Node.Sessions;
 using EVESharp.PythonTypes.Types.Collections;
+using EVESharp.PythonTypes.Types.Database;
 using EVESharp.PythonTypes.Types.Primitives;
 using Serilog;
 
@@ -27,24 +28,24 @@ namespace EVESharp.Node.Services.Characters;
 [MustBeCharacter]
 public class skillMgr : ClientBoundService
 {
-    private const   int                MAXIMUM_ATTRIBUTE_POINTS       = 15;
-    private const   int                MINIMUM_ATTRIBUTE_POINTS       = 5;
-    private const   int                MAXIMUM_TOTAL_ATTRIBUTE_POINTS = 39;
-    public override AccessLevel        AccessLevel    => AccessLevel.None;
-    private         SkillDB            DB             { get; }
-    private         ItemFactory        ItemFactory    { get; }
-    private         Timers             Timers         { get; }
-    private         SystemManager      SystemManager  => ItemFactory.SystemManager;
-    private         ILogger            Log            { get; }
-    private         Character          Character      { get; }
-    private         DogmaUtils         DogmaUtils     { get; }
-    private         Timer              NextSkillTimer { get; set; }
-    private         Timer              ReSpecTimer    { get; set; }
-    private         DatabaseConnection Database       { get; }
+    private const   int                 MAXIMUM_ATTRIBUTE_POINTS       = 15;
+    private const   int                 MINIMUM_ATTRIBUTE_POINTS       = 5;
+    private const   int                 MAXIMUM_TOTAL_ATTRIBUTE_POINTS = 39;
+    public override AccessLevel         AccessLevel    => AccessLevel.None;
+    private         SkillDB             DB             { get; }
+    private         ItemFactory         ItemFactory    { get; }
+    private         Timers              Timers         { get; }
+    private         SystemManager       SystemManager  => ItemFactory.SystemManager;
+    private         ILogger             Log            { get; }
+    private         Character           Character      { get; }
+    private         DogmaUtils          DogmaUtils     { get; }
+    private         Timer               NextSkillTimer { get; set; }
+    private         Timer               ReSpecTimer    { get; set; }
+    private         IDatabaseConnection Database       { get; }
 
     public skillMgr (
-        SkillDB             db,      ItemFactory itemFactory, Timers timers, DogmaUtils dogmaUtils,
-        BoundServiceManager manager, ILogger     logger, DatabaseConnection database
+        SkillDB             db,      ItemFactory itemFactory, Timers              timers, DogmaUtils dogmaUtils,
+        BoundServiceManager manager, ILogger     logger,      IDatabaseConnection database
     ) : base (manager)
     {
         DB          = db;

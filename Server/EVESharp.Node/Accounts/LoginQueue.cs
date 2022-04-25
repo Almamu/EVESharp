@@ -29,6 +29,7 @@ using EVESharp.Database;
 using EVESharp.EVE.Packets;
 using EVESharp.Node.Configuration;
 using EVESharp.Node.Server.Shared.Transports;
+using EVESharp.PythonTypes.Types.Database;
 using Serilog;
 
 namespace EVESharp.Node.Accounts;
@@ -36,9 +37,9 @@ namespace EVESharp.Node.Accounts;
 public class LoginQueue : MessageProcessor <LoginQueueEntry>
 {
     private Authentication     Configuration { get; }
-    private DatabaseConnection Database      { get; }
+    private IDatabaseConnection Database      { get; }
 
-    public LoginQueue (DatabaseConnection databaseConnection, Authentication configuration, ILogger logger)
+    public LoginQueue (IDatabaseConnection databaseConnection, Authentication configuration, ILogger logger)
         : base (logger, 5)
     {
         // login should not be using too many processes

@@ -1,5 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Data;
+using System.Data.Common;
 using EVESharp.PythonTypes.Types.Database;
 using EVESharp.PythonTypes.Types.Primitives;
 using MySql.Data.MySqlClient;
@@ -28,7 +30,7 @@ public class PyDictionary <TKey, TValue> : PyDictionary, IPyDictionaryEnumerable
         return new PyDictionaryEnumerator <TKey, TValue> (this.mDictionary.GetEnumerator ());
     }
 
-    public static PyDictionary <TKey, TValue> FromMySqlDataReader (IDatabaseConnection connection, MySqlDataReader reader)
+    public static PyDictionary <TKey, TValue> FromDataReader (IDatabaseConnection connection, DbDataReader reader)
     {
         PyDictionary <TKey, TValue> result = new PyDictionary <TKey, TValue> ();
 

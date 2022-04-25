@@ -35,21 +35,21 @@ namespace EVESharp.Node.Services.Stations;
 [MustBeCharacter]
 public class corpStationMgr : ClientBoundService
 {
-    public override AccessLevel        AccessLevel   => AccessLevel.None;
-    private         ItemFactory        ItemFactory   { get; }
-    private         ItemDB             ItemDB        => ItemFactory.ItemDB;
-    private         MarketDB           MarketDB      { get; }
-    private         StationDB          StationDB     { get; }
-    private         TypeManager        TypeManager   => ItemFactory.TypeManager;
-    private         SystemManager      SystemManager => ItemFactory.SystemManager;
-    private         WalletManager      WalletManager { get; }
-    private         Constants          Constants     { get; }
-    private         NotificationSender Notifications { get; }
-    private         DatabaseConnection Database      { get; }
+    public override AccessLevel         AccessLevel   => AccessLevel.None;
+    private         ItemFactory         ItemFactory   { get; }
+    private         ItemDB              ItemDB        => ItemFactory.ItemDB;
+    private         MarketDB            MarketDB      { get; }
+    private         StationDB           StationDB     { get; }
+    private         TypeManager         TypeManager   => ItemFactory.TypeManager;
+    private         SystemManager       SystemManager => ItemFactory.SystemManager;
+    private         WalletManager       WalletManager { get; }
+    private         Constants           Constants     { get; }
+    private         NotificationSender  Notifications { get; }
+    private         IDatabaseConnection Database      { get; }
 
     public corpStationMgr (
-        MarketDB            marketDB, StationDB stationDb, NotificationSender notificationSender, ItemFactory itemFactory, Constants constants,
-        BoundServiceManager manager,  WalletManager walletManager, DatabaseConnection database
+        MarketDB            marketDB, StationDB     stationDb,     NotificationSender  notificationSender, ItemFactory itemFactory, Constants constants,
+        BoundServiceManager manager,  WalletManager walletManager, IDatabaseConnection database
     ) : base (manager)
     {
         MarketDB      = marketDB;

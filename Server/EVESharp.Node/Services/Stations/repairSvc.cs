@@ -30,25 +30,25 @@ namespace EVESharp.Node.Services.Stations;
 [MustBeCharacter]
 public class repairSvc : ClientBoundService
 {
-    private const    double             BASEPRICE_MULTIPLIER_MODULE = 0.0125;
-    private const    double             BASEPRICE_MULTIPLIER_SHIP   = 0.000088;
-    private readonly ItemInventory      mInventory;
-    public override  AccessLevel        AccessLevel   => AccessLevel.None;
-    private          ItemFactory        ItemFactory   { get; }
-    private          SystemManager      SystemManager => ItemFactory.SystemManager;
-    private          TypeManager        TypeManager   => ItemFactory.TypeManager;
-    private          MarketDB           MarketDB      { get; }
-    private          RepairDB           RepairDB      { get; }
-    private          InsuranceDB        InsuranceDB   { get; }
-    private          NotificationSender Notifications { get; }
-    private          WalletManager      WalletManager { get; }
-    private          DogmaUtils         DogmaUtils    { get; }
-    private          DatabaseConnection Database      { get; }
+    private const    double              BASEPRICE_MULTIPLIER_MODULE = 0.0125;
+    private const    double              BASEPRICE_MULTIPLIER_SHIP   = 0.000088;
+    private readonly ItemInventory       mInventory;
+    public override  AccessLevel         AccessLevel   => AccessLevel.None;
+    private          ItemFactory         ItemFactory   { get; }
+    private          SystemManager       SystemManager => ItemFactory.SystemManager;
+    private          TypeManager         TypeManager   => ItemFactory.TypeManager;
+    private          MarketDB            MarketDB      { get; }
+    private          RepairDB            RepairDB      { get; }
+    private          InsuranceDB         InsuranceDB   { get; }
+    private          NotificationSender  Notifications { get; }
+    private          WalletManager       WalletManager { get; }
+    private          DogmaUtils          DogmaUtils    { get; }
+    private          IDatabaseConnection Database      { get; }
 
     public repairSvc (
-        RepairDB    repairDb,    MarketDB            marketDb, InsuranceDB   insuranceDb,   NotificationSender notificationSender,
-        ItemFactory itemFactory, BoundServiceManager manager,  WalletManager walletManager, DogmaUtils         dogmaUtils,
-        DatabaseConnection database
+        RepairDB            repairDb,    MarketDB            marketDb, InsuranceDB   insuranceDb,   NotificationSender notificationSender,
+        ItemFactory         itemFactory, BoundServiceManager manager,  WalletManager walletManager, DogmaUtils         dogmaUtils,
+        IDatabaseConnection database
     ) : base (manager)
     {
         ItemFactory   = itemFactory;

@@ -1,3 +1,5 @@
+using System.Data;
+using System.Data.Common;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Primitives;
 using MySql.Data.MySqlClient;
@@ -63,7 +65,7 @@ public class IndexRowset
     /// <param name="reader">The MySqlDataReader to read the data from</param>
     /// <param name="indexField">The field to use as index for the rowset</param>
     /// <returns></returns>
-    public static IndexRowset FromMySqlDataReader (IDatabaseConnection connection, MySqlDataReader reader, int indexField)
+    public static IndexRowset FromDataReader (IDatabaseConnection connection, DbDataReader reader, int indexField)
     {
         string indexFieldName = reader.GetName (indexField);
 

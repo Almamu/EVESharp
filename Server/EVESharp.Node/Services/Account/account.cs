@@ -16,19 +16,20 @@ using EVESharp.Node.Cache;
 using EVESharp.Node.Database;
 using EVESharp.Node.Market;
 using EVESharp.Node.Sessions;
+using EVESharp.PythonTypes.Types.Database;
 using EVESharp.PythonTypes.Types.Primitives;
 
 namespace EVESharp.Node.Services.Account;
 
 public class account : Service
 {
-    public override AccessLevel        AccessLevel   => AccessLevel.None;
-    private         CharacterDB        DB            { get; }
-    private         WalletManager      WalletManager { get; }
-    private         CacheStorage       CacheStorage  { get; }
-    private         DatabaseConnection Database      { get; }
+    public override AccessLevel         AccessLevel   => AccessLevel.None;
+    private         CharacterDB         DB            { get; }
+    private         WalletManager       WalletManager { get; }
+    private         CacheStorage        CacheStorage  { get; }
+    private         IDatabaseConnection Database      { get; }
 
-    public account (DatabaseConnection databaseConnection, CharacterDB db, WalletManager walletManager, CacheStorage cacheStorage)
+    public account (IDatabaseConnection databaseConnection, CharacterDB db, WalletManager walletManager, CacheStorage cacheStorage)
     {
         Database      = databaseConnection;
         DB            = db;

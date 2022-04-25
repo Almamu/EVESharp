@@ -18,6 +18,7 @@ using EVESharp.Node.Inventory.Items.Types;
 using EVESharp.Node.Notifications;
 using EVESharp.Node.Sessions;
 using EVESharp.PythonTypes.Types.Collections;
+using EVESharp.PythonTypes.Types.Database;
 using EVESharp.PythonTypes.Types.Primitives;
 using Container = EVESharp.EVE.StaticData.Inventory.Container;
 using Groups = EVESharp.EVE.StaticData.Inventory.Groups;
@@ -31,17 +32,17 @@ public class invbroker : ClientBoundService
     private readonly int         mObjectID;
     public override  AccessLevel AccessLevel => AccessLevel.None;
 
-    private ItemFactory        ItemFactory    { get; }
-    private ItemDB             ItemDB         { get; }
-    private SystemManager      SystemManager  => ItemFactory.SystemManager;
-    private NotificationSender Notifications  { get; }
-    private DogmaUtils         DogmaUtils     { get; }
-    private EffectsManager     EffectsManager { get; }
-    private DatabaseConnection Database       { get; }
+    private ItemFactory         ItemFactory    { get; }
+    private ItemDB              ItemDB         { get; }
+    private SystemManager       SystemManager  => ItemFactory.SystemManager;
+    private NotificationSender  Notifications  { get; }
+    private DogmaUtils          DogmaUtils     { get; }
+    private EffectsManager      EffectsManager { get; }
+    private IDatabaseConnection Database       { get; }
 
     public invbroker (
-        ItemDB     itemDB,     EffectsManager      effectsManager, ItemFactory itemFactory, NotificationSender notificationSender,
-        DogmaUtils dogmaUtils, BoundServiceManager manager, DatabaseConnection database
+        ItemDB     itemDB,     EffectsManager      effectsManager, ItemFactory         itemFactory, NotificationSender notificationSender,
+        DogmaUtils dogmaUtils, BoundServiceManager manager,        IDatabaseConnection database
     ) : base (manager)
     {
         EffectsManager = effectsManager;

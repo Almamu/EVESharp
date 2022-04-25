@@ -9,9 +9,9 @@ namespace EVESharp.Node.Agents;
 
 public class AgentManager
 {
-    private DatabaseConnection DB { get; }
+    private IDatabaseConnection DB { get; }
 
-    public AgentManager (DatabaseConnection db)
+    public AgentManager (IDatabaseConnection db)
     {
         DB = db;
     }
