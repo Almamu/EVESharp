@@ -17,7 +17,7 @@ public class MessagesDB : DatabaseAccessor
 
     public Rowset GetMailHeaders (int characterID)
     {
-        return Database.PrepareRowsetQuery (
+        return Database.PrepareRowset (
             "SELECT channelID, messageID, senderID, subject, created, `read` FROM eveMail LEFT JOIN lscChannelPermissions USING(channelID) WHERE accessor = @characterID",
             new Dictionary <string, object> {{"@characterID", characterID}}
         );
@@ -99,7 +99,7 @@ public class MessagesDB : DatabaseAccessor
     public void DeleteMessages (int characterID, int mailboxID, PyList <PyInteger> messageIDs)
     {
         // TODO: CHECK PERMISSIONS
-        Database.PrepareQuery (
+        Database.Prepare (
             $"DELETE FROM eveMail WHERE messageID IN ({PyString.Join (',', messageIDs)} AND channelID = @mailboxID",
             new Dictionary <string, object> {{"@mailboxID", mailboxID}}
         );
@@ -107,7 +107,7 @@ public class MessagesDB : DatabaseAccessor
 
     public ulong StoreMail (int channelID, int senderID, string subject, string message, out string mailboxType)
     {
-        ulong messageID = Database.PrepareQueryLID (
+        ulong messageID = Database.PrepareLID (
             "INSERT INTO eveMail (channelID, senderID, subject, body, mimeTypeID, created, `read`)VALUES(@channelID, @senderID, @subject, @body, 2, @created, 0)",
             new Dictionary <string, object>
             {

@@ -60,13 +60,13 @@ public class MarketDB : DatabaseAccessor
             parameters ["@accountKey"] =  (int) accountKey;
         }
 
-        return Database.PrepareRowsetQuery (query, parameters);
+        return Database.PrepareRowset (query, parameters);
     }
 
     public Rowset GetOrdersForOwner (int ownerID, bool isCorp = false)
     {
         if (isCorp == false)
-            return Database.PrepareRowsetQuery (
+            return Database.PrepareRowset (
                 "SELECT orderID, typeID, charID, regionID, stationID, `range`, bid, price, volEntered, volRemaining, issued, minVolume, accountID AS keyID, duration, isCorp, solarSystemID, escrow FROM mktOrders LEFT JOIN staStations USING (stationID) WHERE charID = @ownerID AND isCorp = @isCorp",
                 new Dictionary <string, object>
                 {
@@ -75,7 +75,7 @@ public class MarketDB : DatabaseAccessor
                 }
             );
 
-        return Database.PrepareRowsetQuery (
+        return Database.PrepareRowset (
             "SELECT orderID, typeID, charID, regionID, stationID, `range`, bid, price, volEntered, volRemaining, issued, minVolume, accountID AS keyID, duration, isCorp, solarSystemID, escrow FROM mktOrders LEFT JOIN staStations USING (stationID) WHERE corpID = @ownerID AND isCorp = @isCorp",
             new Dictionary <string, object>
             {
@@ -115,7 +115,7 @@ public class MarketDB : DatabaseAccessor
     {
         return new PyList (2)
         {
-            [0] = Database.PrepareCRowsetQuery (
+            [0] = Database.PrepareCRowset (
                 "SELECT price, volRemaining, typeID, `range`, orderID, volEntered, minVolume, bid, issued, duration, stationID, regionID, solarSystemID, jumps FROM mktOrders LEFT JOIN staStations USING (stationID) LEFT JOIN mapPrecalculatedSolarSystemJumps ON mapPrecalculatedSolarSystemJumps.fromSolarSystemID = solarSystemID WHERE mapPrecalculatedSolarSystemJumps.toSolarSystemID = @currentSolarSystem AND regionID = @regionID AND typeID = @typeID AND bid = @bid",
                 new Dictionary <string, object>
                 {
@@ -125,7 +125,7 @@ public class MarketDB : DatabaseAccessor
                     {"@currentSolarSystem", currentSolarSystem}
                 }
             ),
-            [1] = Database.PrepareCRowsetQuery (
+            [1] = Database.PrepareCRowset (
                 "SELECT price, volRemaining, typeID, `range`, orderID, volEntered, minVolume, bid, issued, duration, stationID, regionID, solarSystemID, jumps FROM mktOrders LEFT JOIN staStations USING (stationID) LEFT JOIN mapPrecalculatedSolarSystemJumps ON mapPrecalculatedSolarSystemJumps.fromSolarSystemID = solarSystemID WHERE mapPrecalculatedSolarSystemJumps.toSolarSystemID = @currentSolarSystem AND regionID = @regionID AND typeID = @typeID AND bid = @bid",
                 new Dictionary <string, object>
                 {
@@ -166,7 +166,7 @@ public class MarketDB : DatabaseAccessor
     {
         // this one is a messy boy, there is a util.FilterRowset which is just used here presumably
         // due to this being an exclusive case, better build it manually and call it a day
-        Rowset result = Database.PrepareRowsetQuery (
+        Rowset result = Database.PrepareRowset (
             "SELECT marketGroupID, parentGroupID, marketGroupName, description, graphicID, hasTypes, 0 AS types, 0 AS dataID FROM invMarketGroups ORDER BY parentGroupID"
         );
 
@@ -257,7 +257,7 @@ public class MarketDB : DatabaseAccessor
 
     public CRowset GetOldPriceHistory (int regionID, int typeID)
     {
-        return Database.PrepareCRowsetQuery (
+        return Database.PrepareCRowset (
             "SELECT historyDate, lowPrice, highPrice, avgPrice, volume, orders FROM mktHistoryOld WHERE regionID = @regionID AND typeID = @typeID",
             new Dictionary <string, object>
             {
@@ -269,7 +269,7 @@ public class MarketDB : DatabaseAccessor
 
     public CRowset GetNewPriceHistory (int regionID, int typeID)
     {
-        return Database.PrepareCRowsetQuery (
+        return Database.PrepareCRowset (
             "SELECT transactionDateTime - (transactionDateTime % @dayLength) AS historyDate, MIN(price) AS lowPrice, MAX(price) AS highPrice, AVG(price) AS avgPrice, SUM(quantity) AS volume, COUNT(*) AS orders FROM mktTransactions LEFT JOIN staStations USING (stationID) WHERE regionID = @regionID AND typeID = @typeID AND transactionType = @transactionType GROUP BY historyDate",
             new Dictionary <string, object>
             {

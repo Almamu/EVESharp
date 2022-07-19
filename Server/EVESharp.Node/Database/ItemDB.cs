@@ -723,7 +723,7 @@ public class ItemDB : DatabaseAccessor
     private void SaveItemName (ulong itemID, Type type, string itemName)
     {
         // save item name if exists
-        Database.PrepareQuery (
+        Database.Prepare (
             "REPLACE INTO eveNames (itemID, itemName, categoryID, groupID, typeID)VALUES(@itemID, @itemName, @categoryID, @groupID, @typeID)",
             new Dictionary <string, object>
             {
@@ -738,7 +738,7 @@ public class ItemDB : DatabaseAccessor
 
     private void SaveItemPosition (ulong itemID, double? x, double? y, double? z)
     {
-        Database.PrepareQuery (
+        Database.Prepare (
             "REPLACE INTO invPositions (itemID, x, y, z)VALUES(@itemID, @x, @y, @z)",
             new Dictionary <string, object>
             {
@@ -765,7 +765,7 @@ public class ItemDB : DatabaseAccessor
         bool   contraband, bool singleton, int        quantity, double?    x,        double? y, double? z, string customInfo
     )
     {
-        ulong newItemID = Database.PrepareQueryLID (
+        ulong newItemID = Database.PrepareLID (
             "INSERT INTO invItems(itemID, typeID, ownerID, locationID, flag, contraband, singleton, quantity, customInfo)VALUES(NULL, @typeID, @ownerID, @locationID, @flag, @contraband, @singleton, @quantity, @customInfo)",
             new Dictionary <string, object>
             {
@@ -796,7 +796,7 @@ public class ItemDB : DatabaseAccessor
         bool   singleton, int quantity, double? x,     double? y,        double? z,    string customInfo
     )
     {
-        ulong newItemID = Database.PrepareQueryLID (
+        ulong newItemID = Database.PrepareLID (
             "INSERT INTO invItems(itemID, typeID, ownerID, locationID, flag, contraband, singleton, quantity, customInfo)VALUES(NULL, @typeID, @ownerID, @locationID, @flag, @contraband, @singleton, @quantity, @customInfo)",
             new Dictionary <string, object>
             {
@@ -986,7 +986,7 @@ public class ItemDB : DatabaseAccessor
         if (itemID < ItemRanges.USERGENERATED_ID_MIN)
             return;
 
-        Database.PrepareQuery ("UPDATE invItems SET nodeID = 0 WHERE itemID = @itemID", new Dictionary <string, object> {{"@itemID", itemID}});
+        Database.Prepare ("UPDATE invItems SET nodeID = 0 WHERE itemID = @itemID", new Dictionary <string, object> {{"@itemID", itemID}});
     }
 
     private Dictionary <int, Attribute> LoadAttributesForItem (int itemID)
@@ -1031,7 +1031,7 @@ public class ItemDB : DatabaseAccessor
     /// <param name="item"></param>
     public void PersistEntity (ItemEntity item)
     {
-        Database.PrepareQuery (
+        Database.Prepare (
             "UPDATE invItems SET typeID = @typeID, ownerID = @ownerID, locationID = @locationID, flag = @flag, contraband = @contraband, singleton = @singleton, quantity = @quantity, customInfo = @customInfo WHERE itemID = @itemID",
             new Dictionary <string, object>
             {
@@ -1052,7 +1052,7 @@ public class ItemDB : DatabaseAccessor
         if (item.HasName)
             this.SaveItemName (item);
         else if (item.HadName)
-            Database.PrepareQuery (
+            Database.Prepare (
                 "DELETE FROM eveNames WHERE itemID = @itemID",
                 new Dictionary <string, object> {{"@itemID", item.ID}}
             );
@@ -1060,7 +1060,7 @@ public class ItemDB : DatabaseAccessor
         if (item.HasPosition)
             this.SaveItemPosition (item);
         else if (item.HadPosition)
-            Database.PrepareQuery (
+            Database.Prepare (
                 "DELETE FROM invPositions WHERE itemID = @itemID",
                 new Dictionary <string, object> {{"@itemID", item.ID}}
             );
@@ -1069,7 +1069,7 @@ public class ItemDB : DatabaseAccessor
     public void PersistAttributeList (ItemEntity item, AttributeList list)
     {
         IDbConnection connection = null;
-        MySqlCommand command = (MySqlCommand) Database.PrepareQuery (
+        MySqlCommand command = (MySqlCommand) Database.Prepare (
             ref connection,
             "REPLACE INTO invItemsAttributes(itemID, attributeID, valueInt, valueFloat) VALUE (@itemID, @attributeID, @valueInt, @valueFloat)"
         );
@@ -1108,7 +1108,7 @@ public class ItemDB : DatabaseAccessor
 
     public void PersistBlueprint (Blueprint information)
     {
-        Database.PrepareQuery (
+        Database.Prepare (
             "UPDATE invBlueprints SET copy = @copy, materialLevel = @materialLevel, productivityLevel = @productivityLevel, licensedProductionRunsRemaining = @licensedProductionRunsRemaining WHERE itemID = @itemID",
             new Dictionary <string, object>
             {
@@ -1123,7 +1123,7 @@ public class ItemDB : DatabaseAccessor
 
     public CRowset ListStations (int ownerID, int blueprintsOnly)
     {
-        return Database.PrepareCRowsetQuery (
+        return Database.PrepareCRowset (
             "SELECT stationID, COUNT(itemID) AS itemCount, COUNT(invBlueprints.itemID) AS blueprintCount " +
             "FROM staStations " +
             "LEFT JOIN invItems ON locationID = stationID " +
@@ -1142,7 +1142,7 @@ public class ItemDB : DatabaseAccessor
 
     public CRowset ListStationItems (int locationID, int ownerID)
     {
-        return Database.PrepareCRowsetQuery (
+        return Database.PrepareCRowset (
             "SELECT itemID, typeID, locationID, ownerID, flag, contraband, singleton, quantity, groupID, categoryID " +
             "FROM invItems " +
             "LEFT JOIN invTypes USING(typeID) " +
@@ -1159,7 +1159,7 @@ public class ItemDB : DatabaseAccessor
 
     public Rowset ListStationBlueprintItems (int locationID, int ownerID)
     {
-        return Database.PrepareRowsetQuery (
+        return Database.PrepareRowset (
             "SELECT itemID, typeID, locationID, ownerID, flag, contraband, singleton, quantity, groupID, categoryID, copy, productivityLevel, materialLevel, licensedProductionRunsRemaining FROM invItems LEFT JOIN invTypes USING (typeID) LEFT JOIN invGroups USING (groupID) LEFT JOIN invBlueprints USING (itemID) WHERE ownerID = @ownerID AND locationID = @locationID AND categoryID = @blueprintCategoryID",
             new Dictionary <string, object>
             {
@@ -1173,7 +1173,7 @@ public class ItemDB : DatabaseAccessor
     public Rowset GetClonesForCharacter (int characterID, int activeCloneID)
     {
         // TODO: CACHE THIS IN A INTERMEDIATE TABLE TO MAKE THINGS EASIER TO QUERY
-        return Database.PrepareRowsetQuery (
+        return Database.PrepareRowset (
             "SELECT itemID AS jumpCloneID, typeID, locationID FROM invItems WHERE flag = @cloneFlag AND ownerID = @characterID AND itemID != @activeCloneID AND locationID IN(SELECT stationID FROM staStations)",
             new Dictionary <string, object>
             {
@@ -1186,7 +1186,7 @@ public class ItemDB : DatabaseAccessor
 
     public Rowset GetClonesInShipForCharacter (int characterID)
     {
-        return Database.PrepareRowsetQuery (
+        return Database.PrepareRowset (
             "SELECT itemID AS jumpCloneID, typeID, locationID FROM invItems WHERE flag = @cloneFlag AND ownerID = @characterID AND locationID NOT IN(SELECT stationID FROM staStations)",
             new Dictionary <string, object>
             {
@@ -1198,7 +1198,7 @@ public class ItemDB : DatabaseAccessor
 
     public Rowset GetImplantsForCharacterClones (int characterID)
     {
-        return Database.PrepareRowsetQuery (
+        return Database.PrepareRowset (
             "SELECT invItems.itemID, invItems.typeID, invItems.locationID as jumpCloneID FROM invItems LEFT JOIN invItems second ON invItems.locationID = second.itemID  WHERE invItems.flag = @implantFlag AND second.flag = @cloneFlag AND second.ownerID = @characterID",
             new Dictionary <string, object>
             {
@@ -1211,15 +1211,15 @@ public class ItemDB : DatabaseAccessor
 
     public void DestroyItem (ItemEntity item)
     {
-        Database.PrepareQuery (
+        Database.Prepare (
             "DELETE FROM invItems WHERE itemID = @itemID",
             new Dictionary <string, object> {{"@itemID", item.ID}}
         );
-        Database.PrepareQuery (
+        Database.Prepare (
             "DELETE FROM eveNames WHERE itemID = @itemID",
             new Dictionary <string, object> {{"@itemID", item.ID}}
         );
-        Database.PrepareQuery (
+        Database.Prepare (
             "DELETE FROM invItemsAttributes WHERE itemID = @itemID",
             new Dictionary <string, object> {{"@itemID", item.ID}}
         );
@@ -1227,7 +1227,7 @@ public class ItemDB : DatabaseAccessor
 
     public void UpdateItemLocation (int itemID, int newLocationID)
     {
-        Database.PrepareQuery (
+        Database.Prepare (
             "UPDATE invItems SET locationID = @locationID WHERE itemID = @itemID",
             new Dictionary <string, object>
             {
@@ -1239,7 +1239,7 @@ public class ItemDB : DatabaseAccessor
 
     public void UpdateItemOwner (int itemID, int newOwnerID)
     {
-        Database.PrepareQuery (
+        Database.Prepare (
             "UPDATE invItems SET ownerID = @ownerID WHERE itemID = @itemID",
             new Dictionary <string, object>
             {
@@ -1251,7 +1251,7 @@ public class ItemDB : DatabaseAccessor
 
     public void UpdateItemQuantity (int itemID, int newQuantity)
     {
-        Database.PrepareQuery (
+        Database.Prepare (
             "UPDATE invItems SET quantity = @quantity WHERE itemID = @itemID",
             new Dictionary <string, object>
             {

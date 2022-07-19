@@ -13,7 +13,7 @@ public class TutorialsDB : DatabaseAccessor
     private PyDataType GetTutorialPages (int tutorialID)
     {
         // TODO: SUPPORT PAGEACTIONID FIELD, IT'S ONLY USED TO OPEN THE CAREER AGENTS PAGE, BUT WE MIGHT WANT TO DO THAT FOR COMPLETENESS SAKE
-        return Database.PrepareCRowsetQuery (
+        return Database.PrepareCRowset (
             "SELECT pageID, pageNumber, pageName, text, imagePath, audioPath, 0 AS dataID, NULL AS pageActionID, NULL AS uiPointerID, NULL AS uiPointerText FROM tutorial_pages WHERE tutorialID = @tutorialID ORDER BY pageNumber",
             new Dictionary <string, object> {{"@tutorialID", tutorialID}}
         );
@@ -21,7 +21,7 @@ public class TutorialsDB : DatabaseAccessor
 
     private PyDataType GetTutorial (int tutorialID)
     {
-        return Database.PrepareCRowsetQuery (
+        return Database.PrepareCRowset (
             "SELECT tutorialID, tutorialName, nextTutorialID, categoryID, 0 AS dataID FROM tutorials WHERE tutorialID = @tutorialID",
             new Dictionary <string, object> {{"@tutorialID", tutorialID}}
         );
@@ -29,7 +29,7 @@ public class TutorialsDB : DatabaseAccessor
 
     private PyDataType GetTutorialPageCriterias (int tutorialID)
     {
-        return Database.PrepareRowsetQuery (
+        return Database.PrepareRowset (
             "SELECT pageID, criteriaID FROM tutorial_page_criteria LEFT JOIN tutorial_pages USING (pageID) WHERE tutorialID = @tutorialID",
             new Dictionary <string, object> {{"@tutorialID", tutorialID}}
         );
@@ -37,7 +37,7 @@ public class TutorialsDB : DatabaseAccessor
 
     private PyDataType GetTutorialCriterias (int tutorialID)
     {
-        return Database.PrepareRowsetQuery (
+        return Database.PrepareRowset (
             "SELECT criteriaID, criteriaName, messageText, tutorial_criteria.audioPath FROM tutorial_criteria LEFT JOIN tutorial_page_criteria USING (criteriaID) LEFT JOIN tutorial_pages USING (pageID) WHERE tutorialID = @tutorialID",
             new Dictionary <string, object> {{"@tutorialID", tutorialID}}
         );
@@ -58,7 +58,7 @@ public class TutorialsDB : DatabaseAccessor
 
     public PyDataType GetTutorialAgents (PyList <PyInteger> agentIDs)
     {
-        return Database.PrepareCRowsetQuery (
+        return Database.PrepareCRowset (
             "SELECT agentID, agentTypeID, divisionID, level, agtAgents.stationID, quality," +
             " agtAgents.corporationID, bloodlineTypes.bloodlineID, chrInformation.gender" +
             " FROM agtAgents" +

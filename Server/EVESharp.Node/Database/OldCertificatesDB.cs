@@ -20,7 +20,7 @@ public class OldCertificatesDB : DatabaseAccessor
     /// <returns></returns>
     public Rowset GetMyCertificates (int characterID)
     {
-        return Database.PrepareRowsetQuery (
+        return Database.PrepareRowset (
             "SELECT certificateID, grantDate, visibilityFlags FROM chrCertificates WHERE characterID = @characterID",
             new Dictionary <string, object> {{"@characterID", characterID}}
         );
@@ -71,7 +71,7 @@ public class OldCertificatesDB : DatabaseAccessor
     /// <param name="certificateID">The certificate to grant the player</param>
     public void GrantCertificate (int characterID, int certificateID)
     {
-        Database.PrepareQuery (
+        Database.Prepare (
             "REPLACE INTO chrCertificates(characterID, certificateID, grantDate, visibilityFlags)VALUES(@characterID, @certificateID, @grantDate, 0)",
             new Dictionary <string, object>
             {
@@ -90,7 +90,7 @@ public class OldCertificatesDB : DatabaseAccessor
     /// <param name="visibilityFlags">The new visibility settings</param>
     public void UpdateVisibilityFlags (int certificateID, int characterID, int visibilityFlags)
     {
-        Database.PrepareQuery (
+        Database.Prepare (
             "UPDATE chrCertificates SET visibilityFlags=@visibilityFlags WHERE characterID=@characterID AND certificateID=@certificateID",
             new Dictionary <string, object>
             {
@@ -108,7 +108,7 @@ public class OldCertificatesDB : DatabaseAccessor
     /// <returns></returns>
     public Rowset GetCertificatesByCharacter (int characterID)
     {
-        return Database.PrepareRowsetQuery (
+        return Database.PrepareRowset (
             "SELECT certificateID, grantDate, visibilityFlags FROM chrCertificates WHERE characterID = @characterID AND visibilityFlags = 1",
             new Dictionary <string, object> {{"@characterID", characterID}}
         );

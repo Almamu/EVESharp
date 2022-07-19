@@ -209,11 +209,11 @@ public class DatabaseConnection : IDatabaseConnection
         Log.Debug ("Column information populated properly");
     }
 
-    public ulong PrepareQueryLID (ref IDbConnection connection, string query, Dictionary <string, object> values = null)
+    public ulong PrepareLID (ref IDbConnection connection, string query, Dictionary <string, object> values = null)
     {
         try
         {
-            MySqlCommand command = (MySqlCommand) this.PrepareQuery (ref connection, query, values);
+            MySqlCommand command = (MySqlCommand) this.Prepare (ref connection, query, values);
 
             command.ExecuteNonQuery ();
 
@@ -231,7 +231,7 @@ public class DatabaseConnection : IDatabaseConnection
     {
         try
         {
-            DbCommand command = this.PrepareQuery (ref connection, query, values);
+            DbCommand command = this.Prepare (ref connection, query, values);
 
             using (connection)
             using (command)
@@ -251,7 +251,7 @@ public class DatabaseConnection : IDatabaseConnection
     {
         try
         {
-            return this.PrepareQuery (ref connection, query, values).ExecuteReader ();
+            return this.Prepare (ref connection, query, values).ExecuteReader ();
         }
         catch (Exception e)
         {
@@ -274,7 +274,7 @@ public class DatabaseConnection : IDatabaseConnection
     /// <param name="query">The prepared query</param>
     /// <param name="values">The key-value pair of values to use when running the query</param>
     /// <returns>The reader with the results of the query</returns>
-    public DbCommand PrepareQuery (ref IDbConnection connection, string query, Dictionary <string, object> values = null)
+    public DbCommand Prepare (ref IDbConnection connection, string query, Dictionary <string, object> values = null)
     {
         try
         {
@@ -308,7 +308,7 @@ public class DatabaseConnection : IDatabaseConnection
     /// <param name="query">The prepared query</param>
     /// <param name="values">The key-value pair of values to use when running the query</param>
     /// <returns>The Rowset object representing the result</returns>
-    public CRowset PrepareCRowsetQuery (ref IDbConnection connection, string query, Dictionary <string, object> values = null)
+    public CRowset PrepareCRowset (ref IDbConnection connection, string query, Dictionary <string, object> values = null)
     {
         try
         {
@@ -336,7 +336,7 @@ public class DatabaseConnection : IDatabaseConnection
     /// <param name="query">The prepared query</param>
     /// <param name="values">The key-value pair of values to use when running the query</param>
     /// <returns>The Rowset object representing the result</returns>
-    public IndexRowset PrepareIndexRowsetQuery (ref IDbConnection connection, int indexField, string query, Dictionary <string, object> values = null)
+    public IndexRowset PrepareIndexRowset (ref IDbConnection connection, int indexField, string query, Dictionary <string, object> values = null)
     {
         try
         {
@@ -363,7 +363,7 @@ public class DatabaseConnection : IDatabaseConnection
     /// <param name="query">The prepared query</param>
     /// <param name="values">The key-value pair of values to use when running the query</param>
     /// <returns>The Rowset object representing the result</returns>
-    public PyPackedRow PreparePackedRowQuery (ref IDbConnection connection, string query, Dictionary <string, object> values = null)
+    public PyPackedRow PreparePackedRow (ref IDbConnection connection, string query, Dictionary <string, object> values = null)
     {
         try
         {
@@ -393,7 +393,7 @@ public class DatabaseConnection : IDatabaseConnection
     /// <param name="query">The prepared query</param>
     /// <param name="values">The key-value pair of values to use when running the query</param>
     /// <returns>The Rowset object representing the result</returns>
-    public PyList <PyPackedRow> PreparePackedRowListQuery (ref IDbConnection connection, string query, Dictionary <string, object> values = null)
+    public PyList <PyPackedRow> PreparePackedRowList (ref IDbConnection connection, string query, Dictionary <string, object> values = null)
     {
         try
         {
@@ -420,7 +420,7 @@ public class DatabaseConnection : IDatabaseConnection
     /// <param name="query">The prepared query</param>
     /// <param name="values">The key-value pair of values to use when running the query</param>
     /// <returns>The Rowset object representing the result</returns>
-    public Rowset PrepareRowsetQuery (ref IDbConnection connection, string query, Dictionary <string, object> values = null)
+    public Rowset PrepareRowset (ref IDbConnection connection, string query, Dictionary <string, object> values = null)
     {
         try
         {
@@ -561,7 +561,7 @@ public class DatabaseConnection : IDatabaseConnection
     /// <param name="query">The prepared query</param>
     /// <param name="values">The key-value pair of values to use when running the query</param>
     /// <returns>The RowList object representing the result</returns>
-    public PyDataType PrepareDictRowListQuery (ref IDbConnection connection, string query, Dictionary <string, object> values = null)
+    public PyDataType PrepareDictRowList (ref IDbConnection connection, string query, Dictionary <string, object> values = null)
     {
         try
         {
@@ -589,7 +589,7 @@ public class DatabaseConnection : IDatabaseConnection
     /// <param name="query">The prepared query</param>
     /// <param name="values">The key-value pair of values to use when running the query</param>
     /// <returns>The PyDataType object representing the result</returns>
-    public PyDataType PrepareKeyValQuery (ref IDbConnection connection, string query, Dictionary <string, object> values = null)
+    public PyDataType PrepareKeyVal (ref IDbConnection connection, string query, Dictionary <string, object> values = null)
     {
         try
         {
@@ -620,7 +620,7 @@ public class DatabaseConnection : IDatabaseConnection
     /// <param name="query">The prepared query</param>
     /// <param name="values">The key-value pair of values to use when running the query</param>
     /// <returns>The PyDataType object representing the result</returns>
-    public Row PrepareRowQuery (ref IDbConnection connection, string query, Dictionary <string, object> values = null)
+    public Row PrepareRow (ref IDbConnection connection, string query, Dictionary <string, object> values = null)
     {
         try
         {
@@ -651,7 +651,7 @@ public class DatabaseConnection : IDatabaseConnection
     /// <param name="query">The prepared query</param>
     /// <param name="values">The key-value pair of values to use when running the query</param>
     /// <returns>The PyDataType object representing the result</returns>
-    public PyDictionary <PyString, PyDataType> PrepareDictionaryQuery (ref IDbConnection connection, string query, Dictionary <string, object> values = null)
+    public PyDictionary <PyString, PyDataType> PrepareDictionary (ref IDbConnection connection, string query, Dictionary <string, object> values = null)
     {
         try
         {

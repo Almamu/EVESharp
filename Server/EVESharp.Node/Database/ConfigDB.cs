@@ -126,7 +126,7 @@ public class ConfigDB : DatabaseAccessor
     /// <returns></returns>
     public Rowset GetMap (int solarSystemID)
     {
-        Rowset result = Database.PrepareRowsetQuery (
+        Rowset result = Database.PrepareRowset (
             "SELECT IF(groupID = 10, (SELECT GROUP_CONCAT(celestialID SEPARATOR ',') FROM mapJumps WHERE stargateID = itemID), NULL) AS destinations, itemID, itemName, typeID, mapDenormalize.x, mapDenormalize.y, mapDenormalize.z, xMin, yMin, zMin, xMax, yMax, zMax, orbitID, luminosity, mapDenormalize.solarSystemID AS locationID FROM mapDenormalize LEFT JOIN mapSolarSystems ON mapSolarSystems.solarSystemID = mapDenormalize.itemID WHERE mapDenormalize.solarSystemID = @solarSystemID",
             new Dictionary <string, object> {{"@solarSystemID", solarSystemID}}
         );
@@ -170,11 +170,11 @@ public class ConfigDB : DatabaseAccessor
     public CRowset GetMapObjects (int itemID)
     {
         if (itemID == Constants.LocationUniverse)
-            return Database.PrepareCRowsetQuery (
+            return Database.PrepareCRowset (
                 $"SELECT groupID, typeID, itemID, itemName, {itemID} as locationID, orbitID, 0 AS connection, x, y, z FROM mapDenormalize WHERE typeID = 3"
             );
 
-        return Database.PrepareCRowsetQuery (
+        return Database.PrepareCRowset (
             "SELECT groupID, typeID, itemID, itemName, solarSystemID AS locationID, orbitID, 0 AS connection, x, y, z FROM mapDenormalize WHERE solarSystemID = @solarSystemID",
             new Dictionary <string, object> {{"@solarSystemID", itemID}}
         );
@@ -187,7 +187,7 @@ public class ConfigDB : DatabaseAccessor
     /// <returns></returns>
     public Rowset GetMapOffices (int solarSystemID)
     {
-        return Database.PrepareRowsetQuery (
+        return Database.PrepareRowset (
             "SELECT crpOffices.corporationID, crpOffices.stationID FROM crpOffices, staStations WHERE crpOffices.stationID = staStations.stationID AND staStations.solarSystemID = @solarSystemID",
             new Dictionary <string, object> {{"@solarSystemID", solarSystemID}}
         );
@@ -200,7 +200,7 @@ public class ConfigDB : DatabaseAccessor
     /// <returns></returns>
     public CRowset GetCelestialStatistic (int celestialID)
     {
-        return Database.PrepareCRowsetQuery (
+        return Database.PrepareCRowset (
             "SELECT temperature, spectralClass, luminosity, age, life, orbitRadius, eccentricity, massDust, massGas, fragmented, density, surfaceGravity, escapeVelocity, orbitPeriod, rotationRate, locked, pressure, radius, mass FROM mapCelestialStatistics WHERE celestialID = @celestialID",
             new Dictionary <string, object> {{"@celestialID", celestialID}}
         );
@@ -223,7 +223,7 @@ public class ConfigDB : DatabaseAccessor
 
     public Rowset GetStationSolarSystemsByOwner (int ownerID)
     {
-        return Database.PrepareRowsetQuery (
+        return Database.PrepareRowset (
             "SELECT corporationID, solarSystemID FROM staStations WHERE corporationID = @corporationID",
             new Dictionary <string, object> {{"@corporationID", ownerID}}
         );

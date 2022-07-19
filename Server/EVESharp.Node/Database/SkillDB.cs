@@ -38,7 +38,7 @@ public class SkillDB : DatabaseAccessor
 
     public void CreateSkillHistoryRecord (Type skill, Character character, SkillHistoryReason reason, double skillPoints)
     {
-        Database.PrepareQuery (
+        Database.Prepare (
             "INSERT INTO chrSkillHistory(characterID, skillTypeID, eventID, logDateTime, absolutePoints)VALUES(@characterID, @skillTypeID, @eventID, @logDateTime, @skillPoints)",
             new Dictionary <string, object>
             {
@@ -53,7 +53,7 @@ public class SkillDB : DatabaseAccessor
 
     public Rowset GetSkillHistory (int characterID)
     {
-        return Database.PrepareRowsetQuery (
+        return Database.PrepareRowset (
             "SELECT skillTypeID, eventID, logDateTime, absolutePoints FROM chrSkillHistory WHERE characterID=@characterID",
             new Dictionary <string, object> {{"@characterID", characterID}}
         );

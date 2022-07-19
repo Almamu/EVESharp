@@ -50,13 +50,13 @@ public class RepairDB : DatabaseAccessor
     public void RepackageItem (int itemID, int stationID)
     {
         // remove any rigs inside the item (if any)
-        Database.PrepareQuery (
+        Database.Prepare (
             $"DELETE FROM invItems WHERE locationID = @itemID AND flag >= {(int) Flags.RigSlot0} AND flag <= {(int) Flags.RigSlot7}",
             new Dictionary <string, object> {{"@itemID", itemID}}
         );
 
         // move the rest of the items inside the ship to the station the ship is at
-        Database.PrepareQuery (
+        Database.Prepare (
             "UPDATE invItems SET locationID = @stationID, flag = @flag WHERE locationID = @itemID",
             new Dictionary <string, object>
             {
@@ -67,7 +67,7 @@ public class RepairDB : DatabaseAccessor
         );
 
         // change singleton
-        Database.PrepareQuery (
+        Database.Prepare (
             "UPDATE invItems SET singleton = 0 WHERE itemID = @itemID",
             new Dictionary <string, object> {{"@itemID", itemID}}
         );

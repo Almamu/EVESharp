@@ -42,7 +42,7 @@ public class ChatDB : DatabaseAccessor
     /// <param name="characterID"></param>
     public void GrantAccessToStandardChannels (int characterID)
     {
-        Database.PrepareQuery (
+        Database.Prepare (
             $"INSERT INTO lscChannelPermissions(channelID, accessor, mode) SELECT channelID, @characterID AS accessor, @mode AS `mode` FROM lscGeneralChannels WHERE channelID < {MIN_CHANNEL_ENTITY_ID}",
             new Dictionary <string, object>
             {
@@ -76,7 +76,7 @@ public class ChatDB : DatabaseAccessor
     public long CreateChannel (int owner, int? relatedEntity, string name, bool maillist)
     {
         if (relatedEntity == null)
-            return -(long) Database.PrepareQueryLID (
+            return -(long) Database.PrepareLID (
                 "INSERT INTO lscPrivateChannels(channelID, ownerID, displayName, motd, comparisonKey, memberless, password, mailingList, cspa, temporary, estimatedMemberCount)VALUES(NULL, @ownerID, @displayName, '', NULL, 0, NULL, @mailinglist, 0, 0, 0)",
                 new Dictionary <string, object>
                 {
@@ -89,7 +89,7 @@ public class ChatDB : DatabaseAccessor
         // maillist 
         if (maillist)
         {
-            Database.PrepareQuery (
+            Database.Prepare (
                 "INSERT INTO lscGeneralChannels(channelID, ownerID, relatedEntityID, displayName, motd, comparisonKey, memberless, password, mailingList, cspa, temporary, estimatedMemberCount)VALUES(@channelID, @ownerID, @relatedEntityID, @displayName, '', NULL, 0, NULL, 1, 0, 0, 0)",
                 new Dictionary <string, object>
                 {
@@ -103,7 +103,7 @@ public class ChatDB : DatabaseAccessor
             return (long) relatedEntity;
         }
 
-        return (long) Database.PrepareQueryLID (
+        return (long) Database.PrepareLID (
             "INSERT INTO lscGeneralChannels(channelID, ownerID, relatedEntityID, displayName, motd, comparisonKey, memberless, password, mailingList, cspa, temporary, estimatedMemberCount)VALUES(NULL, @ownerID, @relatedEntityID, @displayName, '', NULL, 0, NULL, 0, 0, 0, 0)",
             new Dictionary <string, object>
             {
@@ -149,7 +149,7 @@ public class ChatDB : DatabaseAccessor
     /// <param name="role">Role for the player</param>
     public void JoinChannel (int channelID, int characterID, int role = CHATROLE_CONVERSATIONALIST)
     {
-        Database.PrepareQuery (
+        Database.Prepare (
             "REPLACE INTO lscChannelPermissions(channelID, accessor, `mode`, untilWhen, originalMode, admin, reason)VALUES(@channelID, @characterID, @role, NULL, @role, @admin, '')",
             new Dictionary <string, object>
             {
@@ -168,17 +168,17 @@ public class ChatDB : DatabaseAccessor
     public void DestroyChannel (int channelID)
     {
         if (channelID < 0)
-            Database.PrepareQuery (
+            Database.Prepare (
                 "DELETE FROM lscPrivateChannels WHERE channelID = @channelID",
                 new Dictionary <string, object> {{"@channelID", -channelID}}
             );
         else
-            Database.PrepareQuery (
+            Database.Prepare (
                 "DELETE FROM lscGeneralChannels WHERE channelID = @channelID",
                 new Dictionary <string, object> {{"@channelID", channelID}}
             );
 
-        Database.PrepareQuery (
+        Database.Prepare (
             "DELETE FROM lscChannelPermissions WHERE channelID = @channelID",
             new Dictionary <string, object> {{"@channelID", channelID}}
         );
@@ -191,7 +191,7 @@ public class ChatDB : DatabaseAccessor
     /// <param name="characterID"></param>
     public void LeaveChannel (int channelID, int characterID)
     {
-        Database.PrepareQuery (
+        Database.Prepare (
             "DELETE FROM lscChannelPermissions WHERE accessor = @characterID AND channelID = @channelID",
             new Dictionary <string, object>
             {
@@ -221,7 +221,7 @@ public class ChatDB : DatabaseAccessor
     /// <returns></returns>
     public Rowset GetChannelsForCharacter (int characterID, int corporationID)
     {
-        Rowset firstQuery = Database.PrepareRowsetQuery (
+        Rowset firstQuery = Database.PrepareRowset (
             "SELECT" +
             " lscChannelPermissions.channelID, ownerID, displayName, motd, comparisonKey, memberless, !ISNULL(password) AS password," +
             " mailingList, cspa, temporary, 1 AS subscribed, estimatedMemberCount " +
@@ -231,7 +231,7 @@ public class ChatDB : DatabaseAccessor
             new Dictionary <string, object> {{"@characterID", characterID}}
         );
 
-        Rowset secondQuery = Database.PrepareRowsetQuery (
+        Rowset secondQuery = Database.PrepareRowset (
             "SELECT" +
             " lscChannelPermissions.channelID, ownerID, displayName, motd, comparisonKey, memberless, !ISNULL(password) AS password," +
             " mailingList, cspa, temporary, 1 AS subscribed, estimatedMemberCount " +
@@ -366,7 +366,7 @@ public class ChatDB : DatabaseAccessor
     /// <returns></returns>
     public CRowset GetAddressBookMembers (int characterID)
     {
-        return Database.PrepareCRowsetQuery (
+        return Database.PrepareCRowset (
             "SELECT accessor AS characterID, online FROM lscChannelPermissions, chrInformation WHERE channelID = @characterID AND chrInformation.characterID = lscChannelPermissions.accessor",
             new Dictionary <string, object> {{"@characterID", characterID}}
         );
@@ -382,7 +382,7 @@ public class ChatDB : DatabaseAccessor
     {
         // TODO: SEEMS THAT CHANNELS ARE USED FOR ADDRESSBOOK TOO?! WTF CCP?! TAKE THAT INTO ACCOUNT
         if (channelID == characterID)
-            return Database.PrepareRowsetQuery (
+            return Database.PrepareRowset (
                 "SELECT accessor AS charID, corporationID AS corpID, allianceID, 0 AS warFactionID, account.role AS role, 0 AS extra FROM lscChannelPermissions LEFT JOIN chrInformation ON accessor = characterID LEFT JOIN corporation USING(corporationID) LEFT JOIN account ON account.accountID = chrInformation.accountID WHERE channelID = @channelID AND accessor != @characterID",
                 new Dictionary <string, object>
                 {
@@ -391,7 +391,7 @@ public class ChatDB : DatabaseAccessor
                 }
             );
 
-        return Database.PrepareRowsetQuery (
+        return Database.PrepareRowset (
             "SELECT accessor AS charID, corporationID AS corpID, allianceID, 0 AS warFactionID, account.role AS role, 0 AS extra FROM lscChannelPermissions LEFT JOIN chrInformation ON accessor = characterID LEFT JOIN corporation USING(corporationID) LEFT JOIN account ON account.accountID = chrInformation.accountID WHERE channelID = @channelID AND account.online = 1",
             new Dictionary <string, object> {{"@channelID", channelID}}
         );
@@ -404,7 +404,7 @@ public class ChatDB : DatabaseAccessor
     /// <returns></returns>
     public Rowset GetChannelMods (int channelID)
     {
-        return Database.PrepareRowsetQuery (
+        return Database.PrepareRowset (
             "SELECT accessor, `mode`, untilWhen, originalMode, admin, reason FROM lscChannelPermissions WHERE channelID = @channelID",
             new Dictionary <string, object> {{"@channelID", channelID}}
         );
@@ -756,7 +756,7 @@ public class ChatDB : DatabaseAccessor
     /// <param name="permissions">The new permissions for that character</param>
     public void UpdatePermissionsForCharacterOnChannel (int channelID, int characterID, sbyte permissions)
     {
-        Database.PrepareQuery (
+        Database.Prepare (
             "REPLACE INTO lscChannelPermissions(channelID, accessor, mode, untilWhen, originalMode, admin, reason)VALUES(@channelID, @characterID, @mode, NULL, @mode, @admin, '')",
             new Dictionary <string, object>
             {

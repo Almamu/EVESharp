@@ -11,7 +11,7 @@ public class RAMDB : DatabaseAccessor
     public Rowset GetRegionDetails (int regionID)
     {
         // TODO: IS THIS REALLY FETCHED FROM THE STATIONS TABLE?
-        return Database.PrepareRowsetQuery (
+        return Database.PrepareRowset (
             "SELECT" +
             " stationID AS containerID," +
             " stationTypeID AS containerTypeID," +
@@ -30,7 +30,7 @@ public class RAMDB : DatabaseAccessor
 
     public Rowset GetPersonalDetails (int characterID)
     {
-        return Database.PrepareRowsetQuery (
+        return Database.PrepareRowset (
             "SELECT" +
             " station.stationID AS containerID," +
             " station.stationTypeID AS containerTypeID," +
@@ -49,7 +49,7 @@ public class RAMDB : DatabaseAccessor
     public Rowset AssemblyLinesGet (int containerID)
     {
         // TODO: CHECK FOR PERMISSIONS FIRST!
-        return Database.PrepareRowsetQuery (
+        return Database.PrepareRowset (
             "SELECT assemblyLineID, assemblyLineTypeID, containerID, nextFreeTime, costInstall, costPerHour, restrictionMask, discountPerGoodStandingPoint, surchargePerBadStandingPoint, minimumStanding, minimumCharSecurity, minimumCorpSecurity, maximumCharSecurity, maximumCorpSecurity FROM ramAssemblyLines WHERE containerID = @containerID",
             new Dictionary <string, object> {{"@containerID", containerID}}
         );
@@ -57,7 +57,7 @@ public class RAMDB : DatabaseAccessor
 
     public Rowset GetJobs2 (int ownerID, bool completed, long fromDate, long toDate)
     {
-        return Database.PrepareRowsetQuery (
+        return Database.PrepareRowset (
             "SELECT" +
             " job.jobID," +
             " job.assemblyLineID," +

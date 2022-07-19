@@ -77,7 +77,7 @@ public class ContractDB : DatabaseAccessor
 
     public PyDataType NumRequiringAttention (int characterID, int corporationID)
     {
-        return Database.PrepareKeyValQuery (
+        return Database.PrepareKeyVal (
             "SELECT" +
             " (SELECT COUNT(*) FROM conContracts WHERE forCorp = @notForCorp AND ((issuerID = @characterID AND dateExpired < @currentTime) OR (acceptorID = @characterID AND dateCompleted <= @currentTime))) AS n," +
             " (SELECT COUNT(*) FROM conContracts WHERE forCorp = @forCorp AND ((issuerCorpID = @corporationID AND dateExpired < @currentTime) OR (acceptorID = @corporationID AND dateCompleted <= @currentTime))) AS ncorp",
@@ -94,7 +94,7 @@ public class ContractDB : DatabaseAccessor
 
     public PyDataType NumOutstandingContracts (int characterID, int corporationID)
     {
-        return Database.PrepareKeyValQuery (
+        return Database.PrepareKeyVal (
             "SELECT" +
             " (SELECT COUNT(*) FROM conContracts WHERE issuerID = @corporationID AND forCorp = @forCorp AND status = @outstandingStatus AND dateExpired > @currentTime) AS myCorpTotal," +
             " (SELECT COUNT(*) FROM conContracts WHERE issuerID = @characterID AND forCorp = @notForCorp AND status = @outstandingStatus AND dateExpired > @currentTime) AS myCharTotal," +
@@ -115,7 +115,7 @@ public class ContractDB : DatabaseAccessor
     public PyDataType CollectMyPageInfo (int characterID, int corporationID)
     {
         // TODO: PROPERLY IMPLEMENT THIS
-        return Database.PrepareKeyValQuery (
+        return Database.PrepareKeyVal (
             "SELECT" +
             " (SELECT COUNT(*) FROM conContracts WHERE status = @outstandingStatus AND issuerID = @characterID AND forCorp = @notForCorp AND dateExpired > @currentTime) AS numOutstandingContractsNonCorp," +
             " (SELECT COUNT(*) FROM conContracts WHERE status = @outstandingStatus AND issuerCorpID = @corporationID AND forCorp = @forCorp AND dateExpired > @currentTime) AS numOutstandingContractsForCorp," +
@@ -143,7 +143,7 @@ public class ContractDB : DatabaseAccessor
 
     public Rowset GetItemsInStationForPlayer (int characterID, int stationID)
     {
-        return Database.PrepareRowsetQuery (
+        return Database.PrepareRowset (
             "SELECT itemID, typeID, categoryID, groupID, singleton, quantity, flag, contraband FROM invItems LEFT JOIN invTypes USING (typeID) LEFT JOIN invGroups USING (groupID) WHERE ownerID = @characterID AND locationID = @stationID AND flag = @flagHangar",
             new Dictionary <string, object>
             {
@@ -160,7 +160,7 @@ public class ContractDB : DatabaseAccessor
         double          reward,     double collateral,  string title,         string description,    int           issuerWalletID
     )
     {
-        return Database.PrepareQueryLID (
+        return Database.PrepareLID (
             ref connection,
             "INSERT INTO conContracts(issuerID, issuerCorpID, type, availability, assigneeID, expiretime, numDays, startStationID, endStationID, price, reward, collateral, title, description, forCorp, status, isAccepted, acceptorID, dateIssued, dateExpired, dateAccepted, dateCompleted, issuerWalletKey, issuerAllianceID, acceptorWalletKey)VALUES(@issuerID, @issuerCorpID, @type, @availability, @assigneeID, @expiretime, @numDays, @startStationID, @endStationID, @price, @reward, @collateral, @title, @description, @forCorp, @status, @isAccepted, @acceptorID, @dateIssued, @dateExpired, @dateAccepted, @dateCompleted, @issuerWalletKey, @issuerAllianceID, @acceptorWalletKey)",
             new Dictionary <string, object>
@@ -196,7 +196,7 @@ public class ContractDB : DatabaseAccessor
 
     public PyPackedRow GetContractInformation (int contractID, int characterID, int corporationID)
     {
-        return Database.PreparePackedRowQuery (
+        return Database.PreparePackedRow (
             "SELECT contractID, issuerID, issuerCorpID, type, availability, assigneeID, expiretime, numDays, startStationID, start.solarSystemID AS startSolarSystemID, start.regionID AS startRegionID, endStationID, end.solarSystemID AS endSolarSystemID, end.regionID AS endRegionID, price, reward, collateral, title, description, forCorp, status, isAccepted, acceptorID, dateIssued, dateExpired, dateAccepted, dateCompleted, volume, crateID, issuerWalletKey, issuerAllianceID, acceptorWalletKey FROM conContracts LEFT JOIN staStations AS start ON start.stationID = startStationID LEFT JOIN staStations AS end ON end.stationID = endStationID WHERE ((availability = 1 AND (issuerID = @characterID OR issuerCorpID = @corporationID OR assigneeID = @characterID OR assigneeID = @corporationID OR acceptorID = @characterID OR acceptorID = @corporationID)) OR availability = 0) AND contractID = @contractID",
             new Dictionary <string, object>
             {
@@ -209,7 +209,7 @@ public class ContractDB : DatabaseAccessor
 
     public Rowset GetContractBids (int contractID, int characterID, int corporationID)
     {
-        return Database.PrepareRowsetQuery (
+        return Database.PrepareRowset (
             "SELECT bidID, bidderID, amount FROM conBids WHERE contractID = @contractID ORDER BY amount DESC",
             new Dictionary <string, object>
             {
@@ -222,7 +222,7 @@ public class ContractDB : DatabaseAccessor
 
     public Rowset GetContractItems (int contractID, int characterID, int corporationID)
     {
-        return Database.PrepareRowsetQuery (
+        return Database.PrepareRowset (
             "SELECT itemTypeID AS typeID, quantity, inCrate, itemID, materialLevel, productivityLevel, licensedProductionRunsRemaining AS bpRuns FROM conItems LEFT JOIN invBlueprints USING(itemID) WHERE contractID = @contractID",
             new Dictionary <string, object>
             {
@@ -432,7 +432,7 @@ public class ContractDB : DatabaseAccessor
 
     public PyList <PyPackedRow> GetItemsInContainer (int characterID, int containerID)
     {
-        return Database.PreparePackedRowListQuery (
+        return Database.PreparePackedRowList (
             "SELECT itemID, typeID, quantity FROM invItems WHERE locationID = @containerID",
             new Dictionary <string, object> {{"@containerID", containerID}}
         );
@@ -664,7 +664,7 @@ public class ContractDB : DatabaseAccessor
 
     public PyDataType GetInformationForContractList (List <int> contractList)
     {
-        return Database.PrepareCRowsetQuery (
+        return Database.PrepareCRowset (
             $"SELECT contractID, issuerID, issuerCorpID, type, availability, assigneeID, expiretime, numDays, startStationID, start.solarSystemID AS startSolarSystemID, start.regionID AS startRegionID, endStationID, end.solarSystemID AS endSolarSystemID, end.regionID AS endRegionID, price, reward, collateral, title, description, forCorp, status, isAccepted, acceptorID, dateIssued, dateExpired, dateAccepted, dateCompleted, volume, crateID, issuerWalletKey, issuerAllianceID, acceptorWalletKey FROM conContracts LEFT JOIN staStations AS start ON start.stationID = startStationID LEFT JOIN staStations AS end ON end.stationID = endStationID WHERE contractID IN ({string.Join (',', contractList)})"
         );
     }
@@ -687,7 +687,7 @@ public class ContractDB : DatabaseAccessor
 
     public ulong PlaceBid (IDbConnection connection, int contractID, int amount, int bidderID, bool forCorp)
     {
-        return Database.PrepareQueryLID (
+        return Database.PrepareLID (
             ref connection,
             "INSERT INTO conBids(contractID, bidderID, forCorp, amount)VALUES(@contractID, @bidderID, @forCorp, @amount)",
             new Dictionary <string, object>

@@ -76,11 +76,11 @@ public interface IDatabaseConnection
     /// <param name="query">The prepared query</param>
     /// <param name="values">The key-value pair of values to use when running the query</param>
     /// <returns>The number of rows affected</returns>
-    public DbCommand PrepareQuery (ref IDbConnection connection, string query, Dictionary <string, object> values = null);
+    public DbCommand Prepare (ref IDbConnection connection, string query, Dictionary <string, object> values = null);
 
-    public int PrepareQuery (string query, Dictionary <string, object> values = null)
+    public int Prepare (string query, Dictionary <string, object> values = null)
     {
-        IDbConnection con = null; return this.PrepareQuery (ref con, query, values).ExecuteNonQuery ();
+        IDbConnection con = null; return this.Prepare (ref con, query, values).ExecuteNonQuery ();
     }
 
     /// <summary>
@@ -89,11 +89,11 @@ public interface IDatabaseConnection
     /// <param name="query">The prepared query</param>
     /// <param name="values">The key-value pair of values to use when running the query</param>
     /// <returns>The Rowset object representing the result</returns>
-    public CRowset PrepareCRowsetQuery (ref IDbConnection connection, string query, Dictionary <string, object> values = null);
+    public CRowset PrepareCRowset (ref IDbConnection connection, string query, Dictionary <string, object> values = null);
 
-    public CRowset PrepareCRowsetQuery (string query, Dictionary <string, object> values = null)
+    public CRowset PrepareCRowset (string query, Dictionary <string, object> values = null)
     {
-        IDbConnection con = null; return this.PrepareCRowsetQuery (ref con, query, values);
+        IDbConnection con = null; return this.PrepareCRowset (ref con, query, values);
     }
 
     /// <summary>
@@ -103,11 +103,11 @@ public interface IDatabaseConnection
     /// <param name="query">The prepared query</param>
     /// <param name="values">The key-value pair of values to use when running the query</param>
     /// <returns>The Rowset object representing the result</returns>
-    public IndexRowset PrepareIndexRowsetQuery (ref IDbConnection connection, int indexField, string query, Dictionary <string, object> values = null);
+    public IndexRowset PrepareIndexRowset (ref IDbConnection connection, int indexField, string query, Dictionary <string, object> values = null);
 
-    public IndexRowset PrepareIndexRowsetQuery (int indexField, string query, Dictionary <string, object> values = null)
+    public IndexRowset PrepareIndexRowset (int indexField, string query, Dictionary <string, object> values = null)
     {
-        IDbConnection con = null; return this.PrepareIndexRowsetQuery (ref con, indexField, query, values);
+        IDbConnection con = null; return this.PrepareIndexRowset (ref con, indexField, query, values);
     }
 
     /// <summary>
@@ -116,11 +116,11 @@ public interface IDatabaseConnection
     /// <param name="query">The prepared query</param>
     /// <param name="values">The key-value pair of values to use when running the query</param>
     /// <returns>The Rowset object representing the result</returns>
-    public PyPackedRow PreparePackedRowQuery (ref IDbConnection connection, string query, Dictionary <string, object> values = null);
+    public PyPackedRow PreparePackedRow (ref IDbConnection connection, string query, Dictionary <string, object> values = null);
 
-    public PyPackedRow PreparePackedRowQuery (string query, Dictionary <string, object> values = null)
+    public PyPackedRow PreparePackedRow (string query, Dictionary <string, object> values = null)
     {
-        IDbConnection con = null; return this.PreparePackedRowQuery (ref con, query, values);
+        IDbConnection con = null; return this.PreparePackedRow (ref con, query, values);
     }
 
     /// <summary>
@@ -129,11 +129,11 @@ public interface IDatabaseConnection
     /// <param name="query">The prepared query</param>
     /// <param name="values">The key-value pair of values to use when running the query</param>
     /// <returns>The Rowset object representing the result</returns>
-    public PyList <PyPackedRow> PreparePackedRowListQuery (ref IDbConnection connection, string query, Dictionary <string, object> values = null);
+    public PyList <PyPackedRow> PreparePackedRowList (ref IDbConnection connection, string query, Dictionary <string, object> values = null);
 
-    public PyList <PyPackedRow> PreparePackedRowListQuery (string query, Dictionary <string, object> values = null)
+    public PyList <PyPackedRow> PreparePackedRowList (string query, Dictionary <string, object> values = null)
     {
-        IDbConnection con = null; return this.PreparePackedRowListQuery (ref con, query, values);
+        IDbConnection con = null; return this.PreparePackedRowList (ref con, query, values);
     }
 
     /// <summary>
@@ -142,11 +142,11 @@ public interface IDatabaseConnection
     /// <param name="query">The prepared query</param>
     /// <param name="values">The key-value pair of values to use when running the query</param>
     /// <returns>The Rowset object representing the result</returns>
-    public Rowset PrepareRowsetQuery (ref IDbConnection connection, string query, Dictionary <string, object> values = null);
+    public Rowset PrepareRowset (ref IDbConnection connection, string query, Dictionary <string, object> values = null);
 
-    public Rowset PrepareRowsetQuery (string query, Dictionary <string, object> values = null)
+    public Rowset PrepareRowset (string query, Dictionary <string, object> values = null)
     {
-        IDbConnection con = null; return this.PrepareRowsetQuery (ref con, query, values);
+        IDbConnection con = null; return this.PrepareRowset (ref con, query, values);
     }
 
     /// <summary>
@@ -170,11 +170,11 @@ public interface IDatabaseConnection
     /// <param name="query">The prepared query</param>
     /// <param name="values">The key-value pair of values to use when running the query</param>
     /// <returns>The PyDataType object representing the result</returns>
-    public PyDictionary <PyString, PyDataType> PrepareDictionaryQuery (ref IDbConnection connection, string query, Dictionary <string, object> values = null);
+    public PyDictionary <PyString, PyDataType> PrepareDictionary (ref IDbConnection connection, string query, Dictionary <string, object> values = null);
 
-    public PyDictionary <PyString, PyDataType> PrepareDictionaryQuery (string query, Dictionary <string, object> values = null)
+    public PyDictionary <PyString, PyDataType> PrepareDictionary (string query, Dictionary <string, object> values = null)
     {
-        IDbConnection con = null; return this.PrepareDictionaryQuery (ref con, query, values);
+        IDbConnection con = null; return this.PrepareDictionary (ref con, query, values);
     }
 
     /// <summary>
@@ -184,11 +184,11 @@ public interface IDatabaseConnection
     /// <param name="query">The prepared query</param>
     /// <param name="values">The key-value pair of values to use when running the query</param>
     /// <returns>The PyDataType object representing the result</returns>
-    public Row PrepareRowQuery (ref IDbConnection connection, string query, Dictionary <string, object> values = null);
+    public Row PrepareRow (ref IDbConnection connection, string query, Dictionary <string, object> values = null);
 
-    public Row PrepareRowQuery (string query, Dictionary <string, object> values = null)
+    public Row PrepareRow (string query, Dictionary <string, object> values = null)
     {
-        IDbConnection con = null; return this.PrepareRowQuery (ref con, query, values);
+        IDbConnection con = null; return this.PrepareRow (ref con, query, values);
     }
 
     /// <summary>
@@ -198,11 +198,11 @@ public interface IDatabaseConnection
     /// <param name="query">The prepared query</param>
     /// <param name="values">The key-value pair of values to use when running the query</param>
     /// <returns>The PyDataType object representing the result</returns>
-    public PyDataType PrepareKeyValQuery (ref IDbConnection connection, string query, Dictionary <string, object> values = null);
+    public PyDataType PrepareKeyVal (ref IDbConnection connection, string query, Dictionary <string, object> values = null);
 
-    public PyDataType PrepareKeyValQuery (string query, Dictionary <string, object> values = null)
+    public PyDataType PrepareKeyVal (string query, Dictionary <string, object> values = null)
     {
-        IDbConnection con = null; return this.PrepareKeyValQuery (ref con, query, values);
+        IDbConnection con = null; return this.PrepareKeyVal (ref con, query, values);
     }
 
 
@@ -213,11 +213,11 @@ public interface IDatabaseConnection
     /// <param name="query">The prepared query</param>
     /// <param name="values">The key-value pair of values to use when running the query</param>
     /// <returns>The RowList object representing the result</returns>
-    public PyDataType PrepareDictRowListQuery (ref IDbConnection connection, string query, Dictionary <string, object> values = null);
+    public PyDataType PrepareDictRowList (ref IDbConnection connection, string query, Dictionary <string, object> values = null);
 
-    public PyDataType PrepareDictRowListQuery (string query, Dictionary <string, object> values = null)
+    public PyDataType PrepareDictRowList (string query, Dictionary <string, object> values = null)
     {
-        IDbConnection con = null; return this.PrepareDictRowListQuery (ref con, query, values);
+        IDbConnection con = null; return this.PrepareDictRowList (ref con, query, values);
     }
 
     /// <summary>
@@ -278,13 +278,14 @@ public interface IDatabaseConnection
         IDbConnection con = null; return this.PrepareIntIntDictionary (ref con, query, values);
     }
 
-    public ulong PrepareQueryLID (ref IDbConnection connection, string query, Dictionary <string, object> values = null);
+    public ulong PrepareLID (ref IDbConnection connection, string query, Dictionary <string, object> values = null);
 
-    public ulong PrepareQueryLID (string query, Dictionary <string, object> values = null)
+    public ulong PrepareLID (string query, Dictionary <string, object> values = null)
     {
-        IDbConnection con = null; return this.PrepareQueryLID (ref con, query, values);
+        IDbConnection con = null; return this.PrepareLID (ref con, query, values);
     }
-#endregion
+    #endregion
+    
     public void Query (ref IDbConnection connection, string query, Dictionary <string, object> values = null);
 
     public void Query (string query, Dictionary <string, object> values = null)
@@ -299,6 +300,7 @@ public interface IDatabaseConnection
         IDbConnection con = null; return this.Select (ref con, query, values);
     }
 
+    #region Datbase procedures
     /// <summary>
     /// Calls the given procedure
     /// </summary>
@@ -516,7 +518,9 @@ public interface IDatabaseConnection
     {
         IDbConnection con = null; return this.Scalar <T1, T2, T3> (ref con, procedureName, values);
     }
-
+    #endregion
+    
+    #region Database locking
     /// <summary>
     /// Acquires the specified lock on this (or a new) connection
     /// </summary>
@@ -530,4 +534,5 @@ public interface IDatabaseConnection
     /// <param name="connection"></param>
     /// <param name="lockName"></param>
     public void ReleaseLock (IDbConnection connection, string lockName);
+    #endregion Database locking
 }

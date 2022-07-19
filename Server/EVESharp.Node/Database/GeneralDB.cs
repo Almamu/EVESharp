@@ -125,7 +125,7 @@ public class GeneralDB
 
     public void UpdateCharacterLogoffDateTime (int characterID)
     {
-        Database.PrepareQuery (
+        Database.Prepare (
             "UPDATE chrInformation SET logoffDateTime = @date, online = 0 WHERE characterID = @characterID",
             new Dictionary <string, object>
             {
