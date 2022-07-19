@@ -531,11 +531,6 @@ public class character : Service
     [MustBeCharacter]
     public PyDataType GetCloneTypeID (CallInformation call)
     {
-        Node.Inventory.Items.Types.Character character = ItemFactory.GetItem <Node.Inventory.Items.Types.Character> (call.Session.CharacterID);
-
-        if (character.ActiveCloneID is null)
-            throw new CustomError ("You do not have any medical clone...");
-
         // TODO: FETCH THIS FROM THE DATABASE INSTEAD
         // return character.ActiveClone.Type.ID;
         return (int) Types.CloneGradeAlpha;

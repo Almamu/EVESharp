@@ -43,7 +43,10 @@ public class DatabaseConnection : IDatabaseConnection
 
     public DatabaseConnection (Configuration.Database configuration, ILogger logger)
     {
-        MySqlConnectionStringBuilder stringBuilder = new MySqlConnectionStringBuilder
+        Log = logger;
+        Log.Debug ("Initializing database connection...");
+        
+        this.mConnectionString = new MySqlConnectionStringBuilder
         {
             Server          = configuration.Hostname,
             Port            = configuration.Port,
@@ -51,11 +54,11 @@ public class DatabaseConnection : IDatabaseConnection
             UserID          = configuration.Username,
             Password        = configuration.Password,
             MinimumPoolSize = 10
-        };
+        }.ToString ();
 
-        this.mConnectionString = stringBuilder.ToString ();
-        Log                    = logger;
         this.FetchDatabaseColumnCharsets (configuration);
+        
+        Log.Information ("Database connection initialized successfully");
     }
 
     /// <summary>
@@ -187,17 +190,16 @@ public class DatabaseConnection : IDatabaseConnection
                         default:
                             Log.Warning ($"Unknown encoding {charset} for column {columnName} on table {tableName}, defaulting to utf8");
                             value = ColumnCharset.Wide;
-
                             break;
+                        
                         case "utf8":
                         case "utf8mb3":
                             value = ColumnCharset.Wide;
-
                             break;
+                        
                         case "ascii":
                         case "latin1":
                             value = ColumnCharset.Byte;
-
                             break;
                     }
 

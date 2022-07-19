@@ -168,7 +168,113 @@ internal class Program
         // change how dependencies are resolved to ensure serilog instances are properly provided
         container.Options.DependencyInjectionBehavior =
             new SerilogContextualLoggerInjectionBehavior (container.Options, baseLogger);
+        
+        // disable auto-verification on the container as it triggers creation of instances before they're needed
+        container.Options.EnableAutoVerification = false;
+        
+        // register all the dependencies we have available
+        container.RegisterInstance (new HttpClient ());
+        container.Register <IDatabaseConnection, DatabaseConnection> (Lifestyle.Singleton);
+        container.Register <SessionManager> (Lifestyle.Singleton);
+        container.Register <CacheStorage> (Lifestyle.Singleton);
+        container.Register <MetaInventoryManager> (Lifestyle.Singleton);
+        container.Register <AttributeManager> (Lifestyle.Singleton);
+        container.Register <TypeManager> (Lifestyle.Singleton);
+        container.Register <Categories> (Lifestyle.Singleton);
+        container.Register <Groups> (Lifestyle.Singleton);
+        container.Register <StationManager> (Lifestyle.Singleton);
+        container.Register <ItemFactory> (Lifestyle.Singleton);
+        container.Register <Timers> (Lifestyle.Singleton);
+        container.Register <SystemManager> (Lifestyle.Singleton);
+        container.Register <ServiceManager> (Lifestyle.Singleton);
+        container.Register <BoundServiceManager> (Lifestyle.Singleton);
+        container.Register <RemoteServiceManager>(Lifestyle.Singleton);
+        container.Register <PacketCallHelper>(Lifestyle.Singleton);
+        container.Register <NotificationSender> (Lifestyle.Singleton);
+        container.Register <ExpressionManager> (Lifestyle.Singleton);
+        container.Register <WalletManager> (Lifestyle.Singleton);
+        container.Register <MailManager> (Lifestyle.Singleton);
+        container.Register <AgentManager> (Lifestyle.Singleton);
+        container.Register <Ancestries> (Lifestyle.Singleton);
+        container.Register <Bloodlines> (Lifestyle.Singleton);
+        container.Register <Constants> (Lifestyle.Singleton);
+        container.Register <DogmaUtils> (Lifestyle.Singleton);
 
+        // register the database accessors dependencies
+        container.Register <OldCertificatesDB> (Lifestyle.Singleton);
+        container.Register <CharacterDB> (Lifestyle.Singleton);
+        container.Register <ChatDB> (Lifestyle.Singleton);
+        container.Register <ConfigDB> (Lifestyle.Singleton);
+        container.Register <ContractDB> (Lifestyle.Singleton);
+        container.Register <CorporationDB> (Lifestyle.Singleton);
+        container.Register <GeneralDB> (Lifestyle.Singleton);
+        container.Register <ItemDB> (Lifestyle.Singleton);
+        container.Register <MarketDB> (Lifestyle.Singleton);
+        container.Register <MessagesDB> (Lifestyle.Singleton);
+        container.Register <SkillDB> (Lifestyle.Singleton);
+        container.Register <StandingDB> (Lifestyle.Singleton);
+        container.Register <StationDB> (Lifestyle.Singleton);
+        container.Register <LookupDB> (Lifestyle.Singleton);
+        container.Register <InsuranceDB> (Lifestyle.Singleton);
+        container.Register <SolarSystemDB> (Lifestyle.Singleton);
+        container.Register <DogmaDB> (Lifestyle.Singleton);
+        container.Register <RepairDB> (Lifestyle.Singleton);
+        container.Register <ReprocessingDB> (Lifestyle.Singleton);
+        container.Register <RAMDB> (Lifestyle.Singleton);
+        container.Register <FactoryDB> (Lifestyle.Singleton);
+        container.Register <TutorialsDB> (Lifestyle.Singleton);
+
+        // register all the services
+        container.Register <account> (Lifestyle.Singleton);
+        container.Register <machoNet> (Lifestyle.Singleton);
+        container.Register <objectCaching> (Lifestyle.Singleton);
+        container.Register <alert> (Lifestyle.Singleton);
+        container.Register <authentication> (Lifestyle.Singleton);
+        container.Register <character> (Lifestyle.Singleton);
+        container.Register <userSvc> (Lifestyle.Singleton);
+        container.Register <charmgr> (Lifestyle.Singleton);
+        container.Register <config> (Lifestyle.Singleton);
+        container.Register <dogmaIM> (Lifestyle.Singleton);
+        container.Register <invbroker> (Lifestyle.Singleton);
+        container.Register <warRegistry> (Lifestyle.Singleton);
+        container.Register <station> (Lifestyle.Singleton);
+        container.Register <map> (Lifestyle.Singleton);
+        container.Register <skillMgr> (Lifestyle.Singleton);
+        container.Register <contractMgr> (Lifestyle.Singleton);
+        container.Register <corpStationMgr> (Lifestyle.Singleton);
+        container.Register <bookmark> (Lifestyle.Singleton);
+        container.Register <LSC> (Lifestyle.Singleton);
+        container.Register <onlineStatus> (Lifestyle.Singleton);
+        container.Register <billMgr> (Lifestyle.Singleton);
+        container.Register <facWarMgr> (Lifestyle.Singleton);
+        container.Register <corporationSvc> (Lifestyle.Singleton);
+        container.Register <clientStatsMgr> (Lifestyle.Singleton);
+        container.Register <voiceMgr> (Lifestyle.Singleton);
+        container.Register <standing2> (Lifestyle.Singleton);
+        container.Register <tutorialSvc> (Lifestyle.Singleton);
+        container.Register <agentMgr> (Lifestyle.Singleton);
+        container.Register <corpRegistry> (Lifestyle.Singleton);
+        container.Register <marketProxy> (Lifestyle.Singleton);
+        container.Register <stationSvc> (Lifestyle.Singleton);
+        container.Register <certificateMgr> (Lifestyle.Singleton);
+        container.Register <jumpCloneSvc> (Lifestyle.Singleton);
+        container.Register <LPSvc> (Lifestyle.Singleton);
+        container.Register <lookupSvc> (Lifestyle.Singleton);
+        container.Register <insuranceSvc> (Lifestyle.Singleton);
+        container.Register <slash> (Lifestyle.Singleton);
+        container.Register <ship> (Lifestyle.Singleton);
+        container.Register <corpmgr> (Lifestyle.Singleton);
+        container.Register <repairSvc> (Lifestyle.Singleton);
+        container.Register <reprocessingSvc> (Lifestyle.Singleton);
+        container.Register <ramProxy> (Lifestyle.Singleton);
+        container.Register <factory> (Lifestyle.Singleton);
+        container.Register <petitioner> (Lifestyle.Singleton);
+        container.Register <allianceRegistry> (Lifestyle.Singleton);
+        container.Register <LoginQueue> (Lifestyle.Singleton);
+        container.Register <ClusterManager> (Lifestyle.Singleton);
+        container.Register <TransportManager> (Lifestyle.Singleton);
+        container.Register <EffectsManager> (Lifestyle.Singleton);
+        
         return container;
     }
 
@@ -191,7 +297,7 @@ internal class Program
         {
             try
             {
-                // register configuration dependencies first
+                // register configuration instances
                 dependencies.RegisterInstance (configuration);
                 dependencies.RegisterInstance (configuration.Database);
                 dependencies.RegisterInstance (configuration.MachoNet);
@@ -201,109 +307,8 @@ internal class Program
                 dependencies.RegisterInstance (configuration.Logging);
                 dependencies.RegisterInstance (configuration.Character);
 
-                // register basic dependencies first
-                dependencies.RegisterInstance (new HttpClient ());
+                // register logging system
                 dependencies.RegisterInstance (log);
-                dependencies.Register <IDatabaseConnection, DatabaseConnection> (Lifestyle.Singleton);
-                dependencies.Register <SessionManager> (Lifestyle.Singleton);
-                dependencies.Register <CacheStorage> (Lifestyle.Singleton);
-                dependencies.Register <MetaInventoryManager> (Lifestyle.Singleton);
-                dependencies.Register <AttributeManager> (Lifestyle.Singleton);
-                dependencies.Register <TypeManager> (Lifestyle.Singleton);
-                dependencies.Register <Categories> (Lifestyle.Singleton);
-                dependencies.Register <Groups> (Lifestyle.Singleton);
-                dependencies.Register <StationManager> (Lifestyle.Singleton);
-                dependencies.Register <ItemFactory> (Lifestyle.Singleton);
-                dependencies.Register <Timers> (Lifestyle.Singleton);
-                dependencies.Register <SystemManager> (Lifestyle.Singleton);
-                dependencies.Register <ServiceManager> (Lifestyle.Singleton);
-                dependencies.Register <BoundServiceManager> (Lifestyle.Singleton);
-                dependencies.Register <RemoteServiceManager>(Lifestyle.Singleton);
-                dependencies.Register <PacketCallHelper>(Lifestyle.Singleton);
-                dependencies.Register <NotificationSender> (Lifestyle.Singleton);
-                dependencies.Register <ExpressionManager> (Lifestyle.Singleton);
-                dependencies.Register <WalletManager> (Lifestyle.Singleton);
-                dependencies.Register <MailManager> (Lifestyle.Singleton);
-                dependencies.Register <AgentManager> (Lifestyle.Singleton);
-                dependencies.Register <Ancestries> (Lifestyle.Singleton);
-                dependencies.Register <Bloodlines> (Lifestyle.Singleton);
-                dependencies.Register <Constants> (Lifestyle.Singleton);
-                dependencies.Register <DogmaUtils> (Lifestyle.Singleton);
-
-                // register the database accessors dependencies
-                dependencies.Register <OldCertificatesDB> (Lifestyle.Singleton);
-                dependencies.Register <CharacterDB> (Lifestyle.Singleton);
-                dependencies.Register <ChatDB> (Lifestyle.Singleton);
-                dependencies.Register <ConfigDB> (Lifestyle.Singleton);
-                dependencies.Register <ContractDB> (Lifestyle.Singleton);
-                dependencies.Register <CorporationDB> (Lifestyle.Singleton);
-                dependencies.Register <GeneralDB> (Lifestyle.Singleton);
-                dependencies.Register <ItemDB> (Lifestyle.Singleton);
-                dependencies.Register <MarketDB> (Lifestyle.Singleton);
-                dependencies.Register <MessagesDB> (Lifestyle.Singleton);
-                dependencies.Register <SkillDB> (Lifestyle.Singleton);
-                dependencies.Register <StandingDB> (Lifestyle.Singleton);
-                dependencies.Register <StationDB> (Lifestyle.Singleton);
-                dependencies.Register <LookupDB> (Lifestyle.Singleton);
-                dependencies.Register <InsuranceDB> (Lifestyle.Singleton);
-                dependencies.Register <SolarSystemDB> (Lifestyle.Singleton);
-                dependencies.Register <DogmaDB> (Lifestyle.Singleton);
-                dependencies.Register <RepairDB> (Lifestyle.Singleton);
-                dependencies.Register <ReprocessingDB> (Lifestyle.Singleton);
-                dependencies.Register <RAMDB> (Lifestyle.Singleton);
-                dependencies.Register <FactoryDB> (Lifestyle.Singleton);
-                dependencies.Register <TutorialsDB> (Lifestyle.Singleton);
-
-                // register all the services
-                dependencies.Register <account> (Lifestyle.Singleton);
-                dependencies.Register <machoNet> (Lifestyle.Singleton);
-                dependencies.Register <objectCaching> (Lifestyle.Singleton);
-                dependencies.Register <alert> (Lifestyle.Singleton);
-                dependencies.Register <authentication> (Lifestyle.Singleton);
-                dependencies.Register <character> (Lifestyle.Singleton);
-                dependencies.Register <userSvc> (Lifestyle.Singleton);
-                dependencies.Register <charmgr> (Lifestyle.Singleton);
-                dependencies.Register <config> (Lifestyle.Singleton);
-                dependencies.Register <dogmaIM> (Lifestyle.Singleton);
-                dependencies.Register <invbroker> (Lifestyle.Singleton);
-                dependencies.Register <warRegistry> (Lifestyle.Singleton);
-                dependencies.Register <station> (Lifestyle.Singleton);
-                dependencies.Register <map> (Lifestyle.Singleton);
-                dependencies.Register <skillMgr> (Lifestyle.Singleton);
-                dependencies.Register <contractMgr> (Lifestyle.Singleton);
-                dependencies.Register <corpStationMgr> (Lifestyle.Singleton);
-                dependencies.Register <bookmark> (Lifestyle.Singleton);
-                dependencies.Register <LSC> (Lifestyle.Singleton);
-                dependencies.Register <onlineStatus> (Lifestyle.Singleton);
-                dependencies.Register <billMgr> (Lifestyle.Singleton);
-                dependencies.Register <facWarMgr> (Lifestyle.Singleton);
-                dependencies.Register <corporationSvc> (Lifestyle.Singleton);
-                dependencies.Register <clientStatsMgr> (Lifestyle.Singleton);
-                dependencies.Register <voiceMgr> (Lifestyle.Singleton);
-                dependencies.Register <standing2> (Lifestyle.Singleton);
-                dependencies.Register <tutorialSvc> (Lifestyle.Singleton);
-                dependencies.Register <agentMgr> (Lifestyle.Singleton);
-                dependencies.Register <corpRegistry> (Lifestyle.Singleton);
-                dependencies.Register <marketProxy> (Lifestyle.Singleton);
-                dependencies.Register <stationSvc> (Lifestyle.Singleton);
-                dependencies.Register <certificateMgr> (Lifestyle.Singleton);
-                dependencies.Register <jumpCloneSvc> (Lifestyle.Singleton);
-                dependencies.Register <LPSvc> (Lifestyle.Singleton);
-                dependencies.Register <lookupSvc> (Lifestyle.Singleton);
-                dependencies.Register <insuranceSvc> (Lifestyle.Singleton);
-                dependencies.Register <slash> (Lifestyle.Singleton);
-                dependencies.Register <ship> (Lifestyle.Singleton);
-                dependencies.Register <corpmgr> (Lifestyle.Singleton);
-                dependencies.Register <repairSvc> (Lifestyle.Singleton);
-                dependencies.Register <reprocessingSvc> (Lifestyle.Singleton);
-                dependencies.Register <ramProxy> (Lifestyle.Singleton);
-                dependencies.Register <factory> (Lifestyle.Singleton);
-                dependencies.Register <petitioner> (Lifestyle.Singleton);
-                dependencies.Register <allianceRegistry> (Lifestyle.Singleton);
-                dependencies.Register <LoginQueue> (Lifestyle.Singleton);
-                dependencies.Register <ClusterManager> (Lifestyle.Singleton);
-                dependencies.Register <TransportManager> (Lifestyle.Singleton);
-                dependencies.Register <EffectsManager> (Lifestyle.Singleton);
 
                 // depending on the server mode initialize a different macho instance
                 switch (configuration.MachoNet.Mode)
@@ -311,22 +316,18 @@ internal class Program
                     case MachoNetMode.Single:
                         dependencies.Register <IMachoNet, MachoNet> (Lifestyle.Singleton);
                         dependencies.Register <MessageProcessor <MachoMessage>, MessageProcessor> (Lifestyle.Singleton);
-
                         break;
+                    
                     case MachoNetMode.Proxy:
                         dependencies.Register <IMachoNet, Server.Proxy.MachoNet> (Lifestyle.Singleton);
                         dependencies.Register <MessageProcessor <MachoMessage>, Server.Proxy.Messages.MessageProcessor> (Lifestyle.Singleton);
-
                         break;
+                    
                     case MachoNetMode.Server:
                         dependencies.Register <IMachoNet, Server.Node.MachoNet> (Lifestyle.Singleton);
                         dependencies.Register <MessageProcessor <MachoMessage>, Server.Node.Messages.MessageProcessor> (Lifestyle.Singleton);
-
                         break;
                 }
-
-                // disable auto-verification on the container as it triggers creation of instances before they're needed
-                dependencies.Options.EnableAutoVerification = false;
 
                 log.Information ("Initializing EVESharp Node");
                 log.Fatal ("Initializing EVESharp Node");
@@ -335,17 +336,9 @@ internal class Program
                 log.Debug ("Initializing EVESharp Node");
                 log.Verbose ("Initializing EVESharp Node");
 
-                // connect to the database
-                dependencies.GetInstance <IDatabaseConnection> ();
-                // sDatabase.Query("SET global max_allowed_packet=1073741824");
-
                 // ensure the message processor is created
                 dependencies.GetInstance <MessageProcessor <MachoMessage>> ();
-
-                log.Information ("Initializing timer manager");
-                dependencies.GetInstance <Timers> ();
-                log.Debug ("Done");
-
+                
                 // do some parallel initialization, cache priming and static item loading can be performed in parallel
                 // this makes the changes quicker
                 Task cacheStorage = InitializeCache (log, dependencies);
@@ -353,10 +346,6 @@ internal class Program
 
                 // wait for all the tasks to be done
                 Task.WaitAll (itemFactory, cacheStorage);
-
-                log.Information ("Initializing solar system manager");
-                dependencies.GetInstance <SystemManager> ();
-                log.Debug ("Done");
 
                 // register the current machonet handler
                 IMachoNet machoNet = dependencies.GetInstance <IMachoNet> ();
