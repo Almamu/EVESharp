@@ -52,12 +52,12 @@ public class MachoNet : IMachoNet
 
     public void Initialize ()
     {
-        Log.Fatal ("Starting MachoNet in proxy mode");
-        Log.Error ("Starting MachoNet in proxy mode");
-        Log.Warning ("Starting MachoNet in proxy mode");
-        Log.Information ("Starting MachoNet in proxy mode");
-        Log.Verbose ("Starting MachoNet in proxy mode");
-        Log.Debug ("Starting MachoNet in proxy mode");
+        Log.Fatal ("Starting MachoNet in node mode");
+        Log.Error ("Starting MachoNet in node mode");
+        Log.Warning ("Starting MachoNet in node mode");
+        Log.Information ("Starting MachoNet in node mode");
+        Log.Verbose ("Starting MachoNet in node mode");
+        Log.Debug ("Starting MachoNet in node mode");
 
         // start the server socket
         Transport = new MachoServerTransport (Configuration.MachoNet.Port, HttpClient, this, Log.ForContext <MachoServerTransport> ("Listener"));

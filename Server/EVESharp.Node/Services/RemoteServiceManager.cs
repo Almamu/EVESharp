@@ -71,9 +71,8 @@ public class RemoteServiceManager
             // ensure the session data is there now
             call.Session ??= answerSession;
 
-            // remove the timer from the list if required
-            if (call.Timer is not null)
-                Timers.DequeueTimer (call.Timer);
+            // stop the timer
+            call.Timer?.Dispose ();
 
             // invoke the handler
             call.Callback?.Invoke (call, result);
@@ -101,8 +100,8 @@ public class RemoteServiceManager
 
             // create the timeout timer if needed
             if (timeoutSeconds > 0)
-                entry.Timer = Timers.EnqueueTimer (
-                    DateTime.UtcNow.AddSeconds (timeoutSeconds).ToFileTimeUtc (),
+                entry.Timer = Timers.EnqueueTimer<int> (
+                    DateTime.UtcNow.AddSeconds (timeoutSeconds),
                     this.CallTimeoutExpired,
                     callID
                 );

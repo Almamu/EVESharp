@@ -343,7 +343,7 @@ internal class Program
                 dependencies.GetInstance <MessageProcessor <MachoMessage>> ();
 
                 log.Information ("Initializing timer manager");
-                dependencies.GetInstance <Timers> ().Start ();
+                dependencies.GetInstance <Timers> ();
                 log.Debug ("Done");
 
                 // do some parallel initialization, cache priming and static item loading can be performed in parallel
@@ -380,18 +380,11 @@ internal class Program
                 }
 
                 log.Verbose ("Node startup done");
-
-                while (true)
-                {
-                    if (machoNet.Mode == RunMode.Single)
-                        continue;
-
-                    // wait 45 seconds to send a heartbeat
-                    Thread.Sleep (45 * 1000);
-
-                    // send the heartbeat
-                    dependencies.GetInstance <ClusterManager> ().PerformHeartbeat ();
-                }
+                
+                // idle for infinity
+                // yes, i know this is not ideal, but there's actual work that needs to happen
+                // before this can be properly rewritten
+                Thread.Sleep (Timeout.Infinite);
             }
             catch (Exception e)
             {

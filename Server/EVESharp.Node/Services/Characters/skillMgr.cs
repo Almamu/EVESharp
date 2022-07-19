@@ -39,8 +39,8 @@ public class skillMgr : ClientBoundService
     private         ILogger             Log            { get; }
     private         Character           Character      { get; }
     private         DogmaUtils          DogmaUtils     { get; }
-    private         Timer               NextSkillTimer { get; set; }
-    private         Timer               ReSpecTimer    { get; set; }
+    private         Timer <int>         NextSkillTimer { get; set; }
+    private         Timer <int>         ReSpecTimer    { get; set; }
     private         IDatabaseConnection Database       { get; }
 
     public skillMgr (
@@ -84,13 +84,13 @@ public class skillMgr : ClientBoundService
         // send notification of skill training started
         DogmaUtils.QueueMultiEvent (Session.CharacterID, new OnSkillStartTraining (entry.Skill));
 
-        NextSkillTimer = Timers.EnqueueTimer (entry.Skill.ExpiryTime, this.OnSkillTrainingCompleted, entry.Skill.ID);
+        NextSkillTimer = Timers.EnqueueTimer (DateTime.FromFileTimeUtc (entry.Skill.ExpiryTime), this.OnSkillTrainingCompleted, entry.Skill.ID);
     }
 
     private void SetupReSpecTimers ()
     {
         if (Character.FreeReSpecs == 0 && Character.NextReSpecTime > 0)
-            ReSpecTimer = Timers.EnqueueTimer (Character.NextReSpecTime, this.OnNextReSpecAvailable, Character.ID);
+            ReSpecTimer = Timers.EnqueueTimer (DateTime.FromFileTimeUtc (Character.NextReSpecTime), this.OnNextReSpecAvailable, Character.ID);
     }
 
     private void InitializeCharacter ()
@@ -144,9 +144,7 @@ public class skillMgr : ClientBoundService
         if (entry.Skill.ExpiryTime == 0)
             return;
 
-        if (NextSkillTimer is not null)
-            Timers.DequeueTimer (NextSkillTimer);
-
+        NextSkillTimer?.Dispose ();
         NextSkillTimer = null;
     }
 
@@ -155,9 +153,7 @@ public class skillMgr : ClientBoundService
         if (Character.NextReSpecTime == 0)
             return;
 
-        if (ReSpecTimer is not null)
-            Timers.DequeueTimer (ReSpecTimer);
-
+        ReSpecTimer?.Dispose ();
         ReSpecTimer = null;
     }
 

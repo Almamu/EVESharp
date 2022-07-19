@@ -28,5 +28,5 @@ public class RemoteCall
     /// <summary>
     /// The timer used for the expiration of this callback
     /// </summary>
-    public Timer Timer { get; set; }
+    public Timer<int> Timer { get; set; }
 }

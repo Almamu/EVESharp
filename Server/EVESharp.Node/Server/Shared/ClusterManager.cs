@@ -6,6 +6,7 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Timers;
 using EVESharp.Common.Logging;
 using EVESharp.EVE.Packets;
 using EVESharp.Node.Server.Shared.Transports;
@@ -21,28 +22,36 @@ public class ClusterManager
     public  HttpClient       HttpClient       { get; }
     private DateTime         IntervalStart    { get; set; }
     private int              IntervalDuration { get; set; }
-    private Thread           mClusterTimer;
+    private Timers           Timers           { get; }
+    public  Timer <object?>  HeartbeatTimer   { get; }
+    private Timer <object?>  ClusterTimer     { get; set; }
     /// <summary>
     /// The event used when a timed event has to happen cluster-wide
     /// </summary>
     public EventHandler OnClusterTimer { get; set; }
 
-    public ClusterManager (IMachoNet machoNet, TransportManager transportManager, HttpClient httpClient, ILogger logger)
+    public ClusterManager (IMachoNet machoNet, TransportManager transportManager, HttpClient httpClient, Timers timers, ILogger logger)
     {
-        MachoNet           = machoNet;
-        Log                = logger;
-        TransportManager   = transportManager;
-        HttpClient         = httpClient;
-        this.mClusterTimer = new Thread (this.RunClusterTimerThread);
+        MachoNet         = machoNet;
+        Log              = logger;
+        TransportManager = transportManager;
+        HttpClient       = httpClient;
+        Timers           = timers;
 
         if (machoNet.Mode == RunMode.Single)
         {
-            IntervalStart    = DateTime.Now;
-            IntervalDuration = 5;
-            
-            // start up the thread
-            this.mClusterTimer.Start ();            
+            this.StartClusterTimer ();
         }
+        else
+        {
+            // non-single instances need to perform heartbeats instead
+            this.HeartbeatTimer = this.Timers.EnqueueTimer <object?> (TimeSpan.FromSeconds (45), this.OnClusterHeartbeatTimer, null);
+        }
+    }
+
+    private void StartClusterTimer ()
+    {
+        this.ClusterTimer = this.Timers.EnqueueTimer<object?> (TimeSpan.FromMinutes (5), this.RunClusterTimerThread, null);
     }
 
     /// <summary>
@@ -84,7 +93,7 @@ public class ClusterManager
         // TODO: PROPERLY SELECT THIS AS THIS PREVENTS MULTIPLE PROXIES ACTUALLY WORKING AT ONCE
         if (MachoNet.Mode == RunMode.Proxy)
             // start the cluster timer thread
-            this.mClusterTimer.Start ();
+            this.StartClusterTimer ();
     }
 
     /// <summary>
@@ -210,23 +219,15 @@ public class ClusterManager
         return JsonSerializer.Deserialize <long> (inputStream);
     }
 
-    private void RunClusterTimerThread ()
+    private void RunClusterTimerThread (object? state)
     {
-        while (true)
-        {
-            TimeSpan minutesTimespan = TimeSpan.FromMinutes (IntervalDuration);
-            long     startTime       = IntervalStart.Ticks;
-            long     currentTime     = DateTime.Now.Ticks;
-            long     diff            = currentTime - startTime;
-            long     timesCluster    = diff / minutesTimespan.Ticks;
-            long     startNextTime   = startTime + (timesCluster + 1) * minutesTimespan.Ticks;
+        Log.Debug ("Running periodic cluster timed events");
+        
+        this.OnClusterTimer?.Invoke (this, null);
+    }
 
-            // wait for the required time until the next timer fires
-            Thread.Sleep (TimeSpan.FromTicks (startNextTime - currentTime));
-
-            Log.Debug ("Running periodic cluster timed events");
-            
-            this.OnClusterTimer?.Invoke (this, null);
-        }
+    private void OnClusterHeartbeatTimer (object? source)
+    {
+        this.PerformHeartbeat ();
     }
 }
