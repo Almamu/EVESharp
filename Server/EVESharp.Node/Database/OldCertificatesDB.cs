@@ -14,19 +14,6 @@ public class OldCertificatesDB : DatabaseAccessor
     public OldCertificatesDB (IDatabaseConnection db) : base (db) { }
 
     /// <summary>
-    /// Get list of certificates granted to the given character, ready for the EVE Client
-    /// </summary>
-    /// <param name="characterID"></param>
-    /// <returns></returns>
-    public Rowset GetMyCertificates (int characterID)
-    {
-        return Database.PrepareRowset (
-            "SELECT certificateID, grantDate, visibilityFlags FROM chrCertificates WHERE characterID = @characterID",
-            new Dictionary <string, object> {{"@characterID", characterID}}
-        );
-    }
-
-    /// <summary>
     /// Loads the full list of relationships for the certificates
     /// </summary>
     /// <returns></returns>
@@ -62,56 +49,6 @@ public class OldCertificatesDB : DatabaseAccessor
 
             return result;
         }
-    }
-
-    /// <summary>
-    /// Creates a new record granting a certificate to the player
-    /// </summary>
-    /// <param name="characterID">The player to grant the certificate to</param>
-    /// <param name="certificateID">The certificate to grant the player</param>
-    public void GrantCertificate (int characterID, int certificateID)
-    {
-        Database.Prepare (
-            "REPLACE INTO chrCertificates(characterID, certificateID, grantDate, visibilityFlags)VALUES(@characterID, @certificateID, @grantDate, 0)",
-            new Dictionary <string, object>
-            {
-                {"@characterID", characterID},
-                {"@certificateID", certificateID},
-                {"@grantDate", DateTime.UtcNow.ToFileTimeUtc ()}
-            }
-        );
-    }
-
-    /// <summary>
-    /// Updates the visibility flags of the given certificate
-    /// </summary>
-    /// <param name="certificateID">The certificate to update</param>
-    /// <param name="characterID">The character to update the cert for</param>
-    /// <param name="visibilityFlags">The new visibility settings</param>
-    public void UpdateVisibilityFlags (int certificateID, int characterID, int visibilityFlags)
-    {
-        Database.Prepare (
-            "UPDATE chrCertificates SET visibilityFlags=@visibilityFlags WHERE characterID=@characterID AND certificateID=@certificateID",
-            new Dictionary <string, object>
-            {
-                {"@visibilityFlags", visibilityFlags},
-                {"@characterID", characterID},
-                {"@certificateID", certificateID}
-            }
-        );
-    }
-
-    /// <summary>
-    /// Obtains a list of all the certificates a character has ready to be sent to the EVE Client
-    /// </summary>
-    /// <param name="characterID"></param>
-    /// <returns></returns>
-    public Rowset GetCertificatesByCharacter (int characterID)
-    {
-        return Database.PrepareRowset (
-            "SELECT certificateID, grantDate, visibilityFlags FROM chrCertificates WHERE characterID = @characterID AND visibilityFlags = 1",
-            new Dictionary <string, object> {{"@characterID", characterID}}
-        );
     }
 
     /// <summary>

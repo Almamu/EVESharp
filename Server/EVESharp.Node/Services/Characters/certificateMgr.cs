@@ -78,7 +78,7 @@ public class certificateMgr : Service
 
     public PyDataType GetMyCertificates (CallInformation call)
     {
-        return Database.CrtGetMyCertificates (call.Session.CharacterID);
+        return Database.CrtGetCharacterCertificates (call.Session.CharacterID);
     }
 
     public PyBool GrantCertificate (PyInteger certificateID, CallInformation call)
@@ -103,7 +103,7 @@ public class certificateMgr : Service
             }
 
         // if this line is reached, the character has all the requirements for this cert
-        DB.GrantCertificate (callerCharacterID, certificateID);
+        Database.CrtGrantCertificate (callerCharacterID, certificateID);
 
         // notify the character about the granting of the certificate
         DogmaUtils.QueueMultiEvent (callerCharacterID, new OnCertificateIssued (certificateID));
@@ -140,7 +140,7 @@ public class certificateMgr : Service
             }
 
             // grant the certificate and add it to the list of granted certs
-            DB.GrantCertificate (callerCharacterID, certificateID);
+            Database.CrtGrantCertificate (callerCharacterID, certificateID);
             // ensure the result includes that certificate list
             result.Add (certificateID);
             // add the cert to the list so certs that depend on others are properly granted
@@ -155,7 +155,7 @@ public class certificateMgr : Service
 
     public PyDataType UpdateCertificateFlags (PyInteger certificateID, PyInteger visibilityFlags, CallInformation call)
     {
-        DB.UpdateVisibilityFlags (certificateID, call.Session.CharacterID, visibilityFlags);
+        Database.CrtUpdateVisibilityFlags (call.Session.CharacterID, certificateID, visibilityFlags);
 
         return null;
     }
@@ -170,6 +170,6 @@ public class certificateMgr : Service
 
     public PyDataType GetCertificatesByCharacter (PyInteger characterID, CallInformation call)
     {
-        return DB.GetCertificatesByCharacter (characterID);
+        return Database.CrtGetCharacterCertificates (characterID);
     }
 }

@@ -1,8 +1,8 @@
-DROP PROCEDURE IF EXISTS `CrtGetMyCertificates`;
+DROP PROCEDURE IF EXISTS `CrtGetCharacterCertificates`;
 
 DELIMITER //
 
-CREATE PROCEDURE `CrtGetMyCertificates`(IN `_characterID` int(10) unsigned)
+CREATE PROCEDURE `CrtGetCharacterCertificates`(IN `_characterID` int(10) unsigned)
 SQL SECURITY INVOKER
 COMMENT 'Gets all the certificates for the given characterID'
 BEGIN
