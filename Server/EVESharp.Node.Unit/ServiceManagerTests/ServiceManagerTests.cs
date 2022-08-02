@@ -78,6 +78,20 @@ public class ServiceManagerTests
         AssertResult <PyInteger> (ServiceManager.ServiceCall (SVC, "DefaultCall",   GenerateServiceCall (1, 2, 3)), 1);
     }
 
+    [Test]
+    public void NamedPayloadServiceCall ()
+    {
+        ServiceCall baseCall = GenerateServiceCall (0);
+
+        // ensure the default value is used
+        Assert.IsNull (ServiceManager.ServiceCall (SVC, "NamedPayload", baseCall));
+        // perform different changes and see what happens
+        baseCall.NamedPayload ["name"] = SVC;
+        AssertResult <PyString> (ServiceManager.ServiceCall (SVC, "NamedPayload", baseCall), SVC);
+        baseCall.NamedPayload ["ignored"] = 100;
+        AssertResult <PyInteger> (ServiceManager.ServiceCall (SVC, "NamedPayload", baseCall), 100);
+    }
+
     private static IEnumerable ValidCallsGenerator ()
     {
         yield return new object [] {new Session () {CorporationRole = (long) CorporationRole.Director}, "CorporationRoleCall", new PyInteger (0)};

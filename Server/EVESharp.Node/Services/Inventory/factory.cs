@@ -17,28 +17,28 @@ public class factory : Service
         DB = db;
     }
 
-    public PyDataType GetBlueprintAttributes (PyInteger blueprintID, CallInformation call)
+    public PyDataType GetBlueprintAttributes (CallInformation call, PyInteger blueprintID)
     {
         return DB.GetBlueprintAttributes (blueprintID, call.Session.CharacterID);
     }
 
-    public PyDataType GetMaterialsForTypeWithActivity (PyInteger blueprintTypeID, PyInteger _, CallInformation call)
+    public PyDataType GetMaterialsForTypeWithActivity (CallInformation call, PyInteger blueprintTypeID, PyInteger _)
     {
         return DB.GetMaterialsForTypeWithActivity (blueprintTypeID);
     }
 
-    public PyDataType GetMaterialCompositionOfItemType (PyInteger typeID, CallInformation call)
+    public PyDataType GetMaterialCompositionOfItemType (CallInformation call, PyInteger typeID)
     {
         return DB.GetMaterialCompositionOfItemType (typeID);
     }
 
-    public PyDataType GetBlueprintInformationAtLocation (PyInteger hangarID, PyInteger one, CallInformation call)
+    public PyDataType GetBlueprintInformationAtLocation (CallInformation call, PyInteger hangarID, PyInteger one)
     {
         // TODO: IMPLEMENT PROPER PERMISSION CHECKING
         return DB.GetBlueprintInformationAtLocation (hangarID);
     }
 
-    public PyDataType GetBlueprintInformationAtLocationWithFlag (PyInteger hangarID, PyInteger flag, PyInteger one, CallInformation call)
+    public PyDataType GetBlueprintInformationAtLocationWithFlag (CallInformation call, PyInteger hangarID, PyInteger flag, PyInteger one)
     {
         // TODO: IMPLEMENT PROPER PERMISSION CHECKING
         return DB.GetBlueprintInformationAtLocationWithFlag (hangarID, flag);

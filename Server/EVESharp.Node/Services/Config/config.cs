@@ -23,57 +23,57 @@ public class config : Service
         Log         = log;
     }
 
-    public PyDataType GetMultiOwnersEx (PyList ids, CallInformation call)
+    public PyDataType GetMultiOwnersEx (CallInformation call, PyList ids)
     {
         return DB.GetMultiOwnersEx (ids.GetEnumerable <PyInteger> ());
     }
 
-    public PyDataType GetMultiGraphicsEx (PyList ids, CallInformation call)
+    public PyDataType GetMultiGraphicsEx (CallInformation call, PyList ids)
     {
         return DB.GetMultiGraphicsEx (ids.GetEnumerable <PyInteger> ());
     }
 
-    public PyDataType GetMultiLocationsEx (PyList ids, CallInformation call)
+    public PyDataType GetMultiLocationsEx (CallInformation call, PyList ids)
     {
         return DB.GetMultiLocationsEx (ids.GetEnumerable <PyInteger> ());
     }
 
-    public PyDataType GetMultiAllianceShortNamesEx (PyList ids, CallInformation call)
+    public PyDataType GetMultiAllianceShortNamesEx (CallInformation call, PyList ids)
     {
         return DB.GetMultiAllianceShortNamesEx (ids.GetEnumerable <PyInteger> ());
     }
 
-    public PyDataType GetMultiCorpTickerNamesEx (PyList ids, CallInformation call)
+    public PyDataType GetMultiCorpTickerNamesEx (CallInformation call, PyList ids)
     {
         return DB.GetMultiCorpTickerNamesEx (ids.GetEnumerable <PyInteger> ());
     }
 
-    public PyDataType GetMap (PyInteger solarSystemID, CallInformation call)
+    public PyDataType GetMap (CallInformation call, PyInteger solarSystemID)
     {
         return DB.GetMap (solarSystemID);
     }
 
     // THESE PARAMETERS AREN'T REALLY USED ANYMORE, THIS FUNCTION IS USUALLY CALLED WITH LOCATIONID, 1
-    public PyDataType GetMapObjects (PyInteger locationID, PyInteger ignored1, CallInformation call)
+    public PyDataType GetMapObjects (CallInformation call, PyInteger locationID, PyInteger ignored1)
     {
         return DB.GetMapObjects (locationID);
     }
 
     // THESE PARAMETERS AREN'T REALLY USED ANYMORE THIS FUNCTION IS USUALLY CALLED WITH LOCATIONID, 0, 0, 0, 1, 0
     public PyDataType GetMapObjects (
-        PyInteger locationID,  PyInteger wantRegions, PyInteger wantConstellations,
-        PyInteger wantSystems, PyInteger wantItems,   PyInteger unknown, CallInformation call
+        CallInformation call, PyInteger locationID,  PyInteger wantRegions, PyInteger wantConstellations,
+        PyInteger wantSystems, PyInteger wantItems,   PyInteger unknown
     )
     {
         return DB.GetMapObjects (locationID);
     }
 
-    public PyDataType GetMapOffices (PyInteger solarSystemID, CallInformation call)
+    public PyDataType GetMapOffices (CallInformation call, PyInteger solarSystemID)
     {
         return DB.GetMapOffices (solarSystemID);
     }
 
-    public PyDataType GetCelestialStatistic (PyInteger celestialID, CallInformation call)
+    public PyDataType GetCelestialStatistic (CallInformation call, PyInteger celestialID)
     {
         if (ItemRanges.IsCelestialID (celestialID) == false)
             throw new CustomError ($"Unexpected celestialID {celestialID}");
@@ -82,19 +82,19 @@ public class config : Service
         return DB.GetCelestialStatistic (celestialID);
     }
 
-    public PyDataType GetMultiInvTypesEx (PyList typeIDs, CallInformation call)
+    public PyDataType GetMultiInvTypesEx (CallInformation call, PyList typeIDs)
     {
         return DB.GetMultiInvTypesEx (typeIDs.GetEnumerable <PyInteger> ());
     }
 
-    public PyDataType GetStationSolarSystemsByOwner (PyInteger ownerID, CallInformation call)
+    public PyDataType GetStationSolarSystemsByOwner (CallInformation call, PyInteger ownerID)
     {
         return DB.GetStationSolarSystemsByOwner (ownerID);
     }
 
     public PyDataType GetMapConnections (
-        PyInteger  itemID,        PyDataType isRegion,    PyDataType isConstellation,
-        PyDataType isSolarSystem, PyDataType isCelestial, PyInteger  unknown2 = null, CallInformation call = null
+        CallInformation call, PyInteger  itemID,        PyDataType isRegion,    PyDataType isConstellation,
+        PyDataType isSolarSystem, PyDataType isCelestial, PyInteger  unknown2 = null
     )
     {
         bool isRegionBool        = false;

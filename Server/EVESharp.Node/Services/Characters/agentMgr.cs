@@ -45,13 +45,13 @@ public class agentMgr : ClientBoundService
         return AgentManager.GetInfo (ObjectID);
     }
 
-    protected override long MachoResolveObject (ServiceBindParams parameters, CallInformation call)
+    protected override long MachoResolveObject (CallInformation call, ServiceBindParams parameters)
     {
         // TODO: PROPERLY IMPLEMENT THIS ONE
         return call.MachoNet.NodeID;
     }
 
-    protected override BoundService CreateBoundInstance (ServiceBindParams bindParams, CallInformation call)
+    protected override BoundService CreateBoundInstance (CallInformation call, ServiceBindParams bindParams)
     {
         return new agentMgr (bindParams.ObjectID, AgentManager, BoundServiceManager, call.Session);
     }

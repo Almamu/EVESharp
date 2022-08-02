@@ -49,7 +49,7 @@ public class ramProxy : Service
         };
     }
 
-    public PyDataType AssemblyLinesSelect (PyString typeFlag, CallInformation call)
+    public PyDataType AssemblyLinesSelect (CallInformation call, PyString typeFlag)
     {
         if (typeFlag == "region")
             return DB.GetRegionDetails (call.Session.RegionID);
@@ -61,12 +61,12 @@ public class ramProxy : Service
         throw new CustomError ("Unknown type flag for AssemblyLinesSelect");
     }
 
-    public PyDataType AssemblyLinesGet (PyInteger containerID, CallInformation call)
+    public PyDataType AssemblyLinesGet (CallInformation call, PyInteger containerID)
     {
         return DB.AssemblyLinesGet (containerID);
     }
 
-    public PyDataType GetJobs2 (PyInteger ownerID, PyBool completed, PyInteger fromDate, PyInteger toDate, CallInformation call)
+    public PyDataType GetJobs2 (CallInformation call, PyInteger ownerID, PyBool completed, PyInteger fromDate, PyInteger toDate)
     {
         if (ownerID != call.Session.CharacterID)
             throw new CustomError ("Corporation and/or alliance stuff not implemented yet!");

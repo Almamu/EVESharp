@@ -121,7 +121,7 @@ public class character : Service
     }
 
     [MustNotBeCharacter]
-    public PyInteger ValidateNameEx (PyString name, CallInformation call)
+    public PyInteger ValidateNameEx (CallInformation call, PyString name)
     {
         string characterName = name;
 
@@ -246,7 +246,7 @@ public class character : Service
     }
 
     private Node.Inventory.Items.Types.Character CreateCharacter (
-        string characterName, Ancestry ancestry, int genderID, PyDictionary appearance, long currentTime, CallInformation call
+        CallInformation call, string characterName, Ancestry ancestry, int genderID, PyDictionary appearance, long currentTime
     )
     {
         // load the item into memory
@@ -291,11 +291,11 @@ public class character : Service
 
     [MustNotBeCharacter]
     public PyDataType CreateCharacter2 (
-        PyString     characterName, PyInteger       bloodlineID, PyInteger genderID, PyInteger ancestryID,
-        PyDictionary appearance,    CallInformation call
+        CallInformation call, PyString     characterName, PyInteger       bloodlineID, PyInteger genderID, PyInteger ancestryID,
+        PyDictionary appearance
     )
     {
-        int validationError = this.ValidateNameEx (characterName, call);
+        int validationError = this.ValidateNameEx (call, characterName);
 
         // ensure the name is valid
         switch (validationError)
@@ -325,7 +325,7 @@ public class character : Service
         }
 
         Node.Inventory.Items.Types.Character character =
-            this.CreateCharacter (characterName, ancestry, genderID, appearance, currentTime, call);
+            this.CreateCharacter (call, characterName, ancestry, genderID, appearance, currentTime);
         Station station = ItemFactory.GetStaticStation (character.StationID);
 
         // TODO: CREATE DEFAULT STANDINGS FOR THE CHARACTER
@@ -417,32 +417,30 @@ public class character : Service
     }
 
     [MustNotBeCharacter]
-    public PyDataType GetCharacterToSelect (PyInteger characterID, CallInformation call)
+    public PyDataType GetCharacterToSelect (CallInformation call, PyInteger characterID)
     {
         return DB.GetCharacterSelectionInfo (characterID, call.Session.UserID);
     }
 
     [MustNotBeCharacter]
     public PyDataType SelectCharacterID (
-        PyInteger       characterID, PyBool loadDungeon, PyDataType secondChoiceID,
-        CallInformation call
+        CallInformation call, PyInteger       characterID, PyBool loadDungeon, PyDataType secondChoiceID
     )
     {
-        return this.SelectCharacterID (characterID, loadDungeon == true ? 1 : 0, secondChoiceID, call);
+        return this.SelectCharacterID (call, characterID, loadDungeon == true ? 1 : 0, secondChoiceID);
     }
 
     [MustNotBeCharacter]
-    public PyDataType SelectCharacterID (PyInteger characterID, CallInformation call)
+    public PyDataType SelectCharacterID (CallInformation call, PyInteger characterID)
     {
-        return this.SelectCharacterID (characterID, 0, 0, call);
+        return this.SelectCharacterID (call, characterID, 0, 0);
     }
 
     // TODO: THIS PyNone SHOULD REALLY BE AN INTEGER, ALTHOUGH THIS FUNCTIONALITY IS NOT USED
     // TODO: IT REVEALS AN IMPORTANT ISSUE, WE CAN'T HAVE A WILDCARD PARAMETER PyDataType
     [MustNotBeCharacter]
     public PyDataType SelectCharacterID (
-        PyInteger       characterID, PyInteger loadDungeon, PyDataType secondChoiceID,
-        CallInformation call
+        CallInformation call, PyInteger       characterID, PyInteger loadDungeon, PyDataType secondChoiceID
     )
     {
         // ensure the character belongs to the current account
@@ -550,7 +548,7 @@ public class character : Service
     }
 
     [MustBeCharacter]
-    public PyDataType GetCharacterDescription (PyInteger characterID, CallInformation call)
+    public PyDataType GetCharacterDescription (CallInformation call, PyInteger characterID)
     {
         Node.Inventory.Items.Types.Character character = ItemFactory.GetItem <Node.Inventory.Items.Types.Character> (call.Session.CharacterID);
 
@@ -558,7 +556,7 @@ public class character : Service
     }
 
     [MustBeCharacter]
-    public PyDataType SetCharacterDescription (PyString newBio, CallInformation call)
+    public PyDataType SetCharacterDescription (CallInformation call, PyString newBio)
     {
         Node.Inventory.Items.Types.Character character = ItemFactory.GetItem <Node.Inventory.Items.Types.Character> (call.Session.CharacterID);
 
@@ -569,7 +567,7 @@ public class character : Service
     }
 
     [MustBeCharacter]
-    public PyDataType GetRecentShipKillsAndLosses (PyInteger count, PyInteger startIndex, CallInformation call)
+    public PyDataType GetRecentShipKillsAndLosses (CallInformation call, PyInteger count, PyInteger startIndex)
     {
         // limit number of records to 100 at maximum
         if (count > 100)
@@ -578,7 +576,7 @@ public class character : Service
         return DB.GetRecentShipKillsAndLosses (call.Session.CharacterID, count, startIndex);
     }
 
-    public PyDataType GetCharacterAppearanceList (PyList ids, CallInformation call)
+    public PyDataType GetCharacterAppearanceList (CallInformation call, PyList ids)
     {
         PyList result = new PyList (ids.Count);
 
@@ -598,13 +596,13 @@ public class character : Service
     }
 
     [MustBeCharacter]
-    public PyDataType GetNote (PyInteger characterID, CallInformation call)
+    public PyDataType GetNote (CallInformation call, PyInteger characterID)
     {
         return DB.GetNote (characterID, call.Session.CharacterID);
     }
 
     [MustBeCharacter]
-    public PyDataType SetNote (PyInteger characterID, PyString note, CallInformation call)
+    public PyDataType SetNote (CallInformation call, PyInteger characterID, PyString note)
     {
         DB.SetNote (characterID, call.Session.CharacterID, note);
 

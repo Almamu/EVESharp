@@ -23,23 +23,23 @@ public class warRegistry : ClientBoundService
         this.mObjectID = objectID;
     }
 
-    public PyDataType GetWars (PyInteger ownerID, CallInformation call)
+    public PyDataType GetWars (CallInformation call, PyInteger ownerID)
     {
         return new WarInfo ();
     }
 
-    public PyDataType GetCostOfWarAgainst (PyInteger corporationID, CallInformation call)
+    public PyDataType GetCostOfWarAgainst (CallInformation call, PyInteger corporationID)
     {
         return Constants.WarDeclarationCost.Value;
     }
 
-    protected override long MachoResolveObject (ServiceBindParams parameters, CallInformation call)
+    protected override long MachoResolveObject (CallInformation call, ServiceBindParams parameters)
     {
         // TODO: PROPERLY HANDLE THIS
         return BoundServiceManager.MachoNet.NodeID;
     }
 
-    protected override BoundService CreateBoundInstance (ServiceBindParams bindParams, CallInformation call)
+    protected override BoundService CreateBoundInstance (CallInformation call, ServiceBindParams bindParams)
     {
         return new warRegistry (Constants, BoundServiceManager, bindParams.ObjectID, call.Session);
     }

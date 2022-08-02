@@ -82,7 +82,7 @@ public class corpStationMgr : ClientBoundService
     }
 
     [MustBeInStation]
-    public PyDataType DoStandingCheckForStationService (PyInteger stationServiceID, CallInformation call)
+    public PyDataType DoStandingCheckForStationService (CallInformation call, PyInteger stationServiceID)
     {
         // TODO: CHECK ACTUAL STANDING VALUE
 
@@ -131,7 +131,7 @@ public class corpStationMgr : ClientBoundService
         return result;
     }
 
-    public PyDataType SetHomeStation (PyInteger stationID, CallInformation call)
+    public PyDataType SetHomeStation (CallInformation call, PyInteger stationID)
     {
         int callerCharacterID = call.Session.CharacterID;
 
@@ -218,7 +218,7 @@ public class corpStationMgr : ClientBoundService
     }
 
     [MustBeInStation]
-    public PyDataType SetCloneTypeID (PyInteger cloneTypeID, CallInformation call)
+    public PyDataType SetCloneTypeID (CallInformation call, PyInteger cloneTypeID)
     {
         int callerCharacterID = call.Session.CharacterID;
         int stationID         = call.Session.StationID;
@@ -261,7 +261,7 @@ public class corpStationMgr : ClientBoundService
 
     [MustBeInStation]
     [MustHaveCorporationRole(typeof (RentingOfficeQuotesOnlyGivenToActiveCEOsOrEquivale), CorporationRole.Director, CorporationRole.CanRentOffice)]
-    public PyDataType RentOffice (PyInteger cost, CallInformation call)
+    public PyDataType RentOffice (CallInformation call, PyInteger cost)
     {
         int rentalCost  = this.GetQuoteForRentingAnOffice (call);
         int stationID   = call.Session.StationID;
@@ -325,14 +325,14 @@ public class corpStationMgr : ClientBoundService
         return null;
     }
 
-    protected override long MachoResolveObject (ServiceBindParams parameters, CallInformation call)
+    protected override long MachoResolveObject (CallInformation call, ServiceBindParams parameters)
     {
         return Database.CluResolveAddress ("station", parameters.ObjectID);
     }
 
-    protected override BoundService CreateBoundInstance (ServiceBindParams bindParams, CallInformation call)
+    protected override BoundService CreateBoundInstance (CallInformation call, ServiceBindParams bindParams)
     {
-        if (this.MachoResolveObject (bindParams, call) != BoundServiceManager.MachoNet.NodeID)
+        if (this.MachoResolveObject (call, bindParams) != BoundServiceManager.MachoNet.NodeID)
             throw new CustomError ("Trying to bind an object that does not belong to us!");
 
         return new corpStationMgr (

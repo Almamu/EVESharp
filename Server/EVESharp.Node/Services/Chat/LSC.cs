@@ -116,12 +116,12 @@ public class LSC : Service
         return DB.GetChannelsForCharacter (call.Session.CharacterID, call.Session.CorporationID);
     }
 
-    public PyDataType GetChannels (PyInteger reload, CallInformation call)
+    public PyDataType GetChannels (CallInformation call, PyInteger reload)
     {
         return this.GetChannels (call);
     }
 
-    public PyDataType GetMembers (PyDataType channel, CallInformation call)
+    public PyDataType GetMembers (CallInformation call, PyDataType channel)
     {
         int callerCharacterID = call.Session.CharacterID;
 
@@ -213,7 +213,7 @@ public class LSC : Service
         };
     }
 
-    public PyList <PyTuple> JoinChannels (PyList channels, PyInteger role, CallInformation call)
+    public PyList <PyTuple> JoinChannels (CallInformation call, PyList channels, PyInteger role)
     {
         int callerCharacterID = call.Session.CharacterID;
 
@@ -302,7 +302,7 @@ public class LSC : Service
         return ChatDB.CHANNEL_ROOKIECHANNELID;
     }
 
-    public PyDataType SendMessage (PyDataType channel, PyString message, CallInformation call)
+    public PyDataType SendMessage (CallInformation call, PyDataType channel, PyString message)
     {
         int callerCharacterID = call.Session.CharacterID;
 
@@ -355,7 +355,7 @@ public class LSC : Service
         return null;
     }
 
-    public PyDataType LeaveChannels (PyList channels, PyDataType boolUnsubscribe, PyInteger role, CallInformation call)
+    public PyDataType LeaveChannels (CallInformation call, PyList channels, PyDataType boolUnsubscribe, PyInteger role)
     {
         foreach (PyDataType channelInfo in channels)
         {
@@ -378,13 +378,13 @@ public class LSC : Service
             PyDataType channelID = tuple [0];
             PyBool     announce  = tuple [1] as PyBool;
 
-            this.LeaveChannel (channelID, announce, call);
+            this.LeaveChannel (call, channelID, announce);
         }
 
         return null;
     }
 
-    public PyDataType LeaveChannel (PyDataType channel, PyInteger announce, CallInformation call)
+    public PyDataType LeaveChannel (CallInformation call, PyDataType channel, PyInteger announce)
     {
         int callerCharacterID = call.Session.CharacterID;
 
@@ -424,7 +424,7 @@ public class LSC : Service
         return null;
     }
 
-    public PyDataType CreateChannel (PyString name, CallInformation call)
+    public PyDataType CreateChannel (CallInformation call, PyString name)
     {
         int callerCharacterID = call.Session.CharacterID;
 
@@ -463,7 +463,7 @@ public class LSC : Service
         };
     }
 
-    public PyDataType DestroyChannel (PyInteger channelID, CallInformation call)
+    public PyDataType DestroyChannel (CallInformation call, PyInteger channelID)
     {
         int callerCharacterID = call.Session.CharacterID;
 
@@ -483,7 +483,7 @@ public class LSC : Service
         return null;
     }
 
-    public PyDataType AccessControl (PyInteger channelID, PyInteger characterID, PyInteger accessLevel, CallInformation call)
+    public PyDataType AccessControl (CallInformation call, PyInteger channelID, PyInteger characterID, PyInteger accessLevel)
     {
         int callerCharacterID = call.Session.CharacterID;
 
@@ -514,7 +514,7 @@ public class LSC : Service
         return null;
     }
 
-    public PyDataType ForgetChannel (PyInteger channelID, CallInformation call)
+    public PyDataType ForgetChannel (CallInformation call, PyInteger channelID)
     {
         int callerCharacterID = call.Session.CharacterID;
 
@@ -597,7 +597,7 @@ public class LSC : Service
         this.PacketCallHelper.SendException (call.OriginalCall, PyPacket.PacketType.CALL_REQ, new ChtCharNotReachable (call.ToCharacterID));
     }
 
-    public PyDataType Invite (PyInteger characterID, PyInteger channelID, PyString channelTitle, PyBool addAllowed, CallInformation call)
+    public PyDataType Invite (CallInformation call, PyInteger characterID, PyInteger channelID, PyString channelTitle, PyBool addAllowed)
     {
         int callerCharacterID = call.Session.CharacterID;
 
@@ -656,7 +656,7 @@ public class LSC : Service
         throw new ProvisionalResponse (new PyString ("OnDummy"), new PyTuple (0));
     }
 
-    public PyDataType Page (PyList destinationMailboxes, PyString subject, PyString message, CallInformation call)
+    public PyDataType Page (CallInformation call, PyList destinationMailboxes, PyString subject, PyString message)
     {
         int callerCharacterID = call.Session.CharacterID;
 
@@ -668,7 +668,7 @@ public class LSC : Service
         return null;
     }
 
-    public PyDataType GetMessageDetails (PyInteger channelID, PyInteger messageID, CallInformation call)
+    public PyDataType GetMessageDetails (CallInformation call, PyInteger channelID, PyInteger messageID)
     {
         // ensure the player is allowed to read messages off this mail list
         if (DB.IsPlayerAllowedToRead (channelID, call.Session.CharacterID) == false)
@@ -677,7 +677,7 @@ public class LSC : Service
         return MessagesDB.GetMessageDetails (channelID, messageID);
     }
 
-    public PyDataType MarkMessagesRead (PyList messageIDs, CallInformation call)
+    public PyDataType MarkMessagesRead (CallInformation call, PyList messageIDs)
     {
         int callerCharacterID = call.Session.CharacterID;
 
@@ -686,7 +686,7 @@ public class LSC : Service
         return null;
     }
 
-    public PyDataType DeleteMessages (PyInteger mailboxID, PyList messageIDs, CallInformation call)
+    public PyDataType DeleteMessages (CallInformation call, PyInteger mailboxID, PyList messageIDs)
     {
         int callerCharacterID = call.Session.CharacterID;
 

@@ -23,13 +23,13 @@ public class userSvc : Service
         return new PyList ();
     }
 
-    public PyDataType ClaimRedeemTokens (PyList tokens, PyInteger characterID, CallInformation call)
+    public PyDataType ClaimRedeemTokens (CallInformation call, PyList tokens, PyInteger characterID)
     {
         // TODO: IMPLEMENT SUPPORT FOR USER REWARDS
         return null;
     }
 
-    public PyDataType ConvertETCToPilotLicence (PyString code, CallInformation call)
+    public PyDataType ConvertETCToPilotLicence (CallInformation call, PyString code)
     {
         return null;
     }

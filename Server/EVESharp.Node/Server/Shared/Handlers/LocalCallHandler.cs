@@ -37,14 +37,14 @@ public class LocalCallHandler
         PacketCallHelper     = packetCallHelper;
     }
 
-    private PyDataType HandleNormalCallReq (PyTuple information, string service, string method, CallInformation call)
+    private PyDataType HandleNormalCallReq (CallInformation call, PyTuple information, string service, string method)
     {
         MachoNet.Log.Verbose ($"Calling {service}::{method}");
 
         return ServiceManager.ServiceCall (service, method, call);
     }
 
-    private PyDataType HandleBoundCallReq (PyTuple information, string method, CallInformation call)
+    private PyDataType HandleBoundCallReq (CallInformation call, PyTuple information, string method)
     {
         if (information [0] is PyString == false)
             throw new Exception ("Expected bound call with bound string, but got something different");
@@ -113,9 +113,9 @@ public class LocalCallHandler
         try
         {
             if (service is null)
-                callResult = this.HandleBoundCallReq (info, call, callInformation);
+                callResult = this.HandleBoundCallReq (callInformation, info, call);
             else
-                callResult = this.HandleNormalCallReq (info, service, call, callInformation);
+                callResult = this.HandleNormalCallReq (callInformation, info, service, call);
 
             PacketCallHelper.SendCallResult (callInformation, callResult, callInformation.ResultOutOfBounds);
         }

@@ -27,13 +27,13 @@ public class charmgr : Service
         this.WalletManager = WalletManager;
     }
 
-    public PyDataType GetPublicInfo (PyInteger characterID, CallInformation call)
+    public PyDataType GetPublicInfo (CallInformation call, PyInteger characterID)
     {
         return DB.GetPublicInfo (characterID);
     }
 
     [MustBeCharacter]
-    public PyDataType GetPublicInfo3 (PyInteger characterID, CallInformation call)
+    public PyDataType GetPublicInfo3 (CallInformation call, PyInteger characterID)
     {
         return DB.GetPublicInfo3 (characterID);
     }
@@ -45,7 +45,7 @@ public class charmgr : Service
     }
 
     [MustBeCharacter]
-    public PyDataType AddToBounty (PyInteger characterID, PyInteger bounty, CallInformation call)
+    public PyDataType AddToBounty (CallInformation call, PyInteger characterID, PyInteger bounty)
     {
         // get character's object
         Character character = ItemFactory.GetItem <Character> (call.Session.CharacterID);
@@ -66,7 +66,7 @@ public class charmgr : Service
     }
 
     [MustBeCharacter]
-    public PyDataType GetPrivateInfo (PyInteger characterID, CallInformation call)
+    public PyDataType GetPrivateInfo (CallInformation call, PyInteger characterID)
     {
         return DB.GetPrivateInfo (characterID);
     }

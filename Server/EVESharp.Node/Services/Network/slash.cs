@@ -71,7 +71,7 @@ public class slash : Service
         return $"[{result}]";
     }
 
-    public PyDataType SlashCmd (PyString line, CallInformation call)
+    public PyDataType SlashCmd (CallInformation call, PyString line)
     {
         try
         {

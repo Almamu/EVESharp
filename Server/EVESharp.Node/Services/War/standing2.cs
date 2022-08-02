@@ -81,8 +81,8 @@ public class standing2 : Service
     }
 
     public PyDataType GetStandingTransactions (
-        PyInteger from,        PyInteger to,            PyInteger       direction, PyInteger eventID,
-        PyInteger eventTypeID, PyInteger eventDateTime, CallInformation call
+        CallInformation call, PyInteger from,        PyInteger to,            PyInteger       direction, PyInteger eventID,
+        PyInteger eventTypeID, PyInteger eventDateTime
     )
     {
         int callerCharacterID = call.Session.CharacterID;
@@ -94,7 +94,7 @@ public class standing2 : Service
         return DB.GetStandingTransactions (from, to, direction, eventID, eventTypeID, eventDateTime);
     }
 
-    public PyDecimal GetSecurityRating (PyInteger characterID, CallInformation call)
+    public PyDecimal GetSecurityRating (CallInformation call, PyInteger characterID)
     {
         if (ItemFactory.TryGetItem (characterID, out Character character))
             return character.SecurityRating;
@@ -102,12 +102,12 @@ public class standing2 : Service
         return DB.GetSecurityRating (characterID);
     }
 
-    public PyDataType GetNPCStandingsTo (PyInteger characterID, CallInformation call)
+    public PyDataType GetNPCStandingsTo (CallInformation call, PyInteger characterID)
     {
         return DB.GetNPCStandings (characterID);
     }
 
-    public PyDataType SetPlayerStanding (PyInteger entityID, PyDecimal standing, PyString reason, CallInformation call)
+    public PyDataType SetPlayerStanding (CallInformation call, PyInteger entityID, PyDecimal standing, PyString reason)
     {
         int callerCharacterID = call.Session.CharacterID;
 
@@ -127,7 +127,7 @@ public class standing2 : Service
         return null;
     }
 
-    public PyDataType SetCorpStanding (PyInteger entityID, PyDecimal standing, PyString reason, CallInformation call)
+    public PyDataType SetCorpStanding (CallInformation call, PyInteger entityID, PyDecimal standing, PyString reason)
     {
         // check for permissions
         DB.CreateStandingTransaction ((int) EventType.StandingPlayerCorpSetStanding, call.Session.CorporationID, entityID, standing, reason);

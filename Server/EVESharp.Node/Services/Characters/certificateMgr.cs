@@ -78,7 +78,7 @@ public class certificateMgr : Service
         return Database.CrtGetCharacterCertificates (call.Session.CharacterID);
     }
 
-    public PyBool GrantCertificate (PyInteger certificateID, CallInformation call)
+    public PyBool GrantCertificate (CallInformation call, PyInteger certificateID)
     {
         int       callerCharacterID = call.Session.CharacterID;
         Character character         = ItemFactory.GetItem <Character> (callerCharacterID);
@@ -108,7 +108,7 @@ public class certificateMgr : Service
         return null;
     }
 
-    public PyDataType BatchCertificateGrant (PyList certificateList, CallInformation call)
+    public PyDataType BatchCertificateGrant (CallInformation call, PyList certificateList)
     {
         int       callerCharacterID = call.Session.CharacterID;
         Character character         = ItemFactory.GetItem <Character> (callerCharacterID);
@@ -150,22 +150,22 @@ public class certificateMgr : Service
         return result;
     }
 
-    public PyDataType UpdateCertificateFlags (PyInteger certificateID, PyInteger visibilityFlags, CallInformation call)
+    public PyDataType UpdateCertificateFlags (CallInformation call, PyInteger certificateID, PyInteger visibilityFlags)
     {
         Database.CrtUpdateVisibilityFlags (call.Session.CharacterID, certificateID, visibilityFlags);
 
         return null;
     }
 
-    public PyDataType BatchCertificateUpdate (PyDictionary updates, CallInformation call)
+    public PyDataType BatchCertificateUpdate (CallInformation call, PyDictionary updates)
     {
         foreach ((PyInteger key, PyInteger value) in updates.GetEnumerable <PyInteger, PyInteger> ())
-            this.UpdateCertificateFlags (key, value, call);
+            this.UpdateCertificateFlags (call, key, value);
 
         return null;
     }
 
-    public PyDataType GetCertificatesByCharacter (PyInteger characterID, CallInformation call)
+    public PyDataType GetCertificatesByCharacter (CallInformation call, PyInteger characterID)
     {
         return Database.CrtGetCharacterCertificates (characterID);
     }

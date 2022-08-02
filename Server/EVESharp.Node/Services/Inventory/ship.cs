@@ -78,7 +78,7 @@ public class ship : ClientBoundService
         return capsule.ID;
     }
 
-    public PyDataType Board (PyInteger itemID, CallInformation call)
+    public PyDataType Board (CallInformation call, PyInteger itemID)
     {
         int callerCharacterID = call.Session.CharacterID;
 
@@ -124,7 +124,7 @@ public class ship : ClientBoundService
     }
 
     [MustBeInStation]
-    public PyDataType AssembleShip (PyInteger itemID, CallInformation call)
+    public PyDataType AssembleShip (CallInformation call, PyInteger itemID)
     {
         int callerCharacterID = call.Session.CharacterID;
         int stationID         = call.Session.StationID;
@@ -171,15 +171,15 @@ public class ship : ClientBoundService
         return null;
     }
 
-    public PyDataType AssembleShip (PyList itemIDs, CallInformation call)
+    public PyDataType AssembleShip (CallInformation call, PyList itemIDs)
     {
         foreach (PyInteger itemID in itemIDs.GetEnumerable <PyInteger> ())
-            this.AssembleShip (itemID, call);
+            this.AssembleShip (call, itemID);
 
         return null;
     }
 
-    protected override long MachoResolveObject (ServiceBindParams parameters, CallInformation call)
+    protected override long MachoResolveObject (CallInformation call, ServiceBindParams parameters)
     {
         return parameters.ExtraValue switch
         {
@@ -189,9 +189,9 @@ public class ship : ClientBoundService
         };
     }
 
-    protected override BoundService CreateBoundInstance (ServiceBindParams bindParams, CallInformation call)
+    protected override BoundService CreateBoundInstance (CallInformation call, ServiceBindParams bindParams)
     {
-        if (this.MachoResolveObject (bindParams, call) != BoundServiceManager.MachoNet.NodeID)
+        if (this.MachoResolveObject (call, bindParams) != BoundServiceManager.MachoNet.NodeID)
             throw new CustomError ("Trying to bind an object that does not belong to us!");
 
         if (bindParams.ExtraValue != (int) Groups.Station && bindParams.ExtraValue != (int) Groups.SolarSystem)

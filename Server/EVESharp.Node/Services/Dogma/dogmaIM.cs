@@ -136,7 +136,7 @@ public class dogmaIM : ClientBoundService
         return itemInfo;
     }
 
-    public PyDataType ItemGetInfo (PyInteger itemID, CallInformation call)
+    public PyDataType ItemGetInfo (CallInformation call, PyInteger itemID)
     {
         int callerCharacterID = call.Session.CharacterID;
 
@@ -192,12 +192,12 @@ public class dogmaIM : ClientBoundService
         };
     }
 
-    public PyDataType LogAttribute (PyInteger itemID, PyInteger attributeID, CallInformation call)
+    public PyDataType LogAttribute (CallInformation call, PyInteger itemID, PyInteger attributeID)
     {
-        return this.LogAttribute (itemID, attributeID, "", call);
+        return this.LogAttribute (call, itemID, attributeID, "");
     }
 
-    public PyList <PyString> LogAttribute (PyInteger itemID, PyInteger attributeID, PyString reason, CallInformation call)
+    public PyList <PyString> LogAttribute (CallInformation call, PyInteger itemID, PyInteger attributeID, PyString reason)
     {
         ulong role     = call.Session.Role;
         ulong roleMask = (ulong) (Roles.ROLE_GDH | Roles.ROLE_QA | Roles.ROLE_PROGRAMMER | Roles.ROLE_GMH);
@@ -222,7 +222,7 @@ public class dogmaIM : ClientBoundService
         };
     }
 
-    public PyDataType Activate (PyInteger itemID, PyString effectName, PyDataType target, PyDataType repeat, CallInformation call)
+    public PyDataType Activate (CallInformation call, PyInteger itemID, PyString effectName, PyDataType target, PyDataType repeat)
     {
         ShipModule module = ItemFactory.GetItem <ShipModule> (itemID);
 
@@ -231,7 +231,7 @@ public class dogmaIM : ClientBoundService
         return null;
     }
 
-    public PyDataType Deactivate (PyInteger itemID, PyString effectName, CallInformation call)
+    public PyDataType Deactivate (CallInformation call, PyInteger itemID, PyString effectName)
     {
         ShipModule module = ItemFactory.GetItem <ShipModule> (itemID);
 
@@ -240,7 +240,7 @@ public class dogmaIM : ClientBoundService
         return null;
     }
 
-    protected override long MachoResolveObject (ServiceBindParams parameters, CallInformation call)
+    protected override long MachoResolveObject (CallInformation call, ServiceBindParams parameters)
     {
         return parameters.ExtraValue switch
         {
@@ -250,11 +250,11 @@ public class dogmaIM : ClientBoundService
         };
     }
 
-    protected override BoundService CreateBoundInstance (ServiceBindParams bindParams, CallInformation call)
+    protected override BoundService CreateBoundInstance (CallInformation call, ServiceBindParams bindParams)
     {
         int characterID = call.Session.CharacterID;
 
-        if (this.MachoResolveObject (bindParams, call) != BoundServiceManager.MachoNet.NodeID)
+        if (this.MachoResolveObject (call, bindParams) != BoundServiceManager.MachoNet.NodeID)
             throw new CustomError ("Trying to bind an object that does not belong to us!");
 
         // make sure the character is loaded

@@ -43,7 +43,7 @@ public class objectCaching : Service
         CacheStorage = cacheStorage;
     }
 
-    public PyDataType GetCachableObject (PyInteger shared, PyTuple objectID, PyTuple objectVersion, PyInteger nodeID, CallInformation call)
+    public PyDataType GetCachableObject (CallInformation call, PyInteger shared, PyTuple objectID, PyTuple objectVersion, PyInteger nodeID)
     {
         // TODO: CHECK CACHEOK EXCEPTION ON CLIENT
         Log.Debug ("Received cache request for a tuple objectID");
@@ -63,7 +63,7 @@ public class objectCaching : Service
         return CacheStorage.Get (service, method);
     }
 
-    public PyDataType GetCachableObject (PyInteger shared, PyString objectID, PyTuple objectVersion, PyInteger nodeID, CallInformation call)
+    public PyDataType GetCachableObject (CallInformation call, PyInteger shared, PyString objectID, PyTuple objectVersion, PyInteger nodeID)
     {
         // TODO: CHECK CACHEOK EXCEPTION ON CLIENT
         Log.Debug ($"Received cache request for {objectID.Value}");

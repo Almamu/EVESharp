@@ -77,12 +77,12 @@ public class insuranceSvc : ClientBoundService
         return DB.GetContractsForShipsOnStation (call.Session.CharacterID, this.mStationID);
     }
 
-    public PyPackedRow GetContractForShip (PyInteger itemID, CallInformation call)
+    public PyPackedRow GetContractForShip (CallInformation call, PyInteger itemID)
     {
         return DB.GetContractForShip (call.Session.CharacterID, itemID);
     }
 
-    public PyList <PyPackedRow> GetContracts (PyInteger includeCorp, CallInformation call)
+    public PyList <PyPackedRow> GetContracts (CallInformation call, PyInteger includeCorp)
     {
         if (includeCorp == 0)
             return DB.GetContractsForShipsOnStation (call.Session.CharacterID, this.mStationID);
@@ -90,7 +90,7 @@ public class insuranceSvc : ClientBoundService
         return DB.GetContractsForShipsOnStationIncludingCorp (call.Session.CharacterID, call.Session.CorporationID, this.mStationID);
     }
 
-    public PyBool InsureShip (PyInteger itemID, PyDecimal insuranceCost, PyInteger isCorpItem, CallInformation call)
+    public PyBool InsureShip (CallInformation call, PyInteger itemID, PyDecimal insuranceCost, PyInteger isCorpItem)
     {
         int callerCharacterID = call.Session.CharacterID;
 
@@ -147,7 +147,7 @@ public class insuranceSvc : ClientBoundService
         return true;
     }
 
-    public PyDataType UnInsureShip (PyInteger itemID, CallInformation call)
+    public PyDataType UnInsureShip (CallInformation call, PyInteger itemID)
     {
         int callerCharacterID = call.Session.CharacterID;
 
@@ -183,14 +183,14 @@ public class insuranceSvc : ClientBoundService
         }
     }
 
-    protected override long MachoResolveObject (ServiceBindParams parameters, CallInformation call)
+    protected override long MachoResolveObject (CallInformation call, ServiceBindParams parameters)
     {
         return Database.CluResolveAddress ("solarsystem", parameters.ObjectID);
     }
 
-    protected override BoundService CreateBoundInstance (ServiceBindParams bindParams, CallInformation call)
+    protected override BoundService CreateBoundInstance (CallInformation call, ServiceBindParams bindParams)
     {
-        if (this.MachoResolveObject (bindParams, call) != BoundServiceManager.MachoNet.NodeID)
+        if (this.MachoResolveObject (call, bindParams) != BoundServiceManager.MachoNet.NodeID)
             throw new CustomError ("Trying to bind an object that does not belong to us!");
 
         return new insuranceSvc (ItemFactory, DB, MarketDB, WalletManager, MailManager, BoundServiceManager, bindParams.ObjectID, call.Session);

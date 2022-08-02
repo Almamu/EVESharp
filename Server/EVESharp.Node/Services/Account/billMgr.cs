@@ -71,7 +71,7 @@ public class billMgr : Service
         return Database.MktBillsGetPayable (call.Session.CorporationID);
     }
 
-    public PyDataType PayCorporationBill (PyInteger billID, CallInformation call)
+    public PyDataType PayCorporationBill (CallInformation call, PyInteger billID)
     {
         return null;
     }

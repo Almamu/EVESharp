@@ -94,7 +94,7 @@ public class invbroker : ClientBoundService
         );
     }
 
-    public PySubStruct GetInventoryFromId (PyInteger itemID, PyInteger one, CallInformation call)
+    public PySubStruct GetInventoryFromId (CallInformation call, PyInteger itemID, PyInteger one)
     {
         int        ownerID       = call.Session.CharacterID;
         ItemEntity inventoryItem = ItemFactory.LoadItem (itemID);
@@ -109,7 +109,7 @@ public class invbroker : ClientBoundService
         );
     }
 
-    public PySubStruct GetInventory (PyInteger containerID, PyInteger origOwnerID, CallInformation call)
+    public PySubStruct GetInventory (CallInformation call, PyInteger containerID, PyInteger origOwnerID)
     {
         int ownerID = call.Session.CharacterID;
 
@@ -172,7 +172,7 @@ public class invbroker : ClientBoundService
         );
     }
 
-    public PyDataType TrashItems (PyList itemIDs, PyInteger stationID, CallInformation call)
+    public PyDataType TrashItems (CallInformation call, PyList itemIDs, PyInteger stationID)
     {
         int callerCharacterID = call.Session.CharacterID;
 
@@ -197,7 +197,7 @@ public class invbroker : ClientBoundService
         return null;
     }
 
-    public PyDataType SetLabel (PyInteger itemID, PyString newLabel, CallInformation call)
+    public PyDataType SetLabel (CallInformation call, PyInteger itemID, PyString newLabel)
     {
         ItemEntity item = ItemFactory.GetItem (itemID);
 
@@ -218,8 +218,7 @@ public class invbroker : ClientBoundService
     }
 
     public PyDataType AssembleCargoContainer (
-        PyInteger       containerID, PyDataType ignored, PyDecimal ignored2,
-        CallInformation call
+        CallInformation call, PyInteger       containerID, PyDataType ignored, PyDecimal ignored2
     )
     {
         ItemEntity item = ItemFactory.GetItem (containerID);
@@ -254,7 +253,7 @@ public class invbroker : ClientBoundService
     }
 
     public PyDataType DeliverToCorpHangar (
-        PyInteger stationID, PyList itemIDs, PyDataType quantity, PyInteger ownerID, PyInteger deliverToFlag, CallInformation call
+        CallInformation call, PyInteger stationID, PyList itemIDs, PyDataType quantity, PyInteger ownerID, PyInteger deliverToFlag
     )
     {
         // TODO: DETERMINE IF THIS FUNCTION HAS TO BE IMPLEMENTED
@@ -263,13 +262,13 @@ public class invbroker : ClientBoundService
     }
 
     public PyDataType DeliverToCorpMember (
-        PyInteger memberID, PyInteger stationID, PyList itemIDs, PyDataType quantity, PyInteger ownerID, CallInformation call
+        CallInformation call, PyInteger memberID, PyInteger stationID, PyList itemIDs, PyDataType quantity, PyInteger ownerID
     )
     {
         return null;
     }
 
-    protected override long MachoResolveObject (ServiceBindParams parameters, CallInformation call)
+    protected override long MachoResolveObject (CallInformation call, ServiceBindParams parameters)
     {
         return parameters.ExtraValue switch
         {
@@ -279,9 +278,9 @@ public class invbroker : ClientBoundService
         };
     }
 
-    protected override BoundService CreateBoundInstance (ServiceBindParams bindParams, CallInformation call)
+    protected override BoundService CreateBoundInstance (CallInformation call, ServiceBindParams bindParams)
     {
-        if (this.MachoResolveObject (bindParams, call) != call.MachoNet.NodeID)
+        if (this.MachoResolveObject (call, bindParams) != call.MachoNet.NodeID)
             throw new CustomError ("Trying to bind an object that does not belong to us!");
 
         return new invbroker (

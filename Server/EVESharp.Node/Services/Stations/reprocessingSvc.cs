@@ -209,7 +209,7 @@ public class reprocessingSvc : ClientBoundService
         );
     }
 
-    public PyDataType GetQuotes (PyList itemIDs, CallInformation call)
+    public PyDataType GetQuotes (CallInformation call, PyList itemIDs)
     {
         Character character = ItemFactory.GetItem <Character> (call.Session.CharacterID);
 
@@ -254,7 +254,7 @@ public class reprocessingSvc : ClientBoundService
         }
     }
 
-    public PyDataType Reprocess (PyList itemIDs, PyInteger ownerID, PyInteger flag, PyBool unknown, PyList skipChecks, CallInformation call)
+    public PyDataType Reprocess (CallInformation call, PyList itemIDs, PyInteger ownerID, PyInteger flag, PyBool unknown, PyList skipChecks)
     {
         Character character = ItemFactory.GetItem <Character> (call.Session.CharacterID);
 
@@ -276,14 +276,14 @@ public class reprocessingSvc : ClientBoundService
         return null;
     }
 
-    protected override long MachoResolveObject (ServiceBindParams parameters, CallInformation call)
+    protected override long MachoResolveObject (CallInformation call, ServiceBindParams parameters)
     {
         return Database.CluResolveAddress ("station", parameters.ObjectID);
     }
 
-    protected override BoundService CreateBoundInstance (ServiceBindParams bindParams, CallInformation call)
+    protected override BoundService CreateBoundInstance (CallInformation call, ServiceBindParams bindParams)
     {
-        if (this.MachoResolveObject (bindParams, call) != BoundServiceManager.MachoNet.NodeID)
+        if (this.MachoResolveObject (call, bindParams) != BoundServiceManager.MachoNet.NodeID)
             throw new CustomError ("Trying to bind an object that does not belong to us!");
 
         Station station = ItemFactory.GetStaticStation (bindParams.ObjectID);

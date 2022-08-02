@@ -28,7 +28,7 @@ public class onlineStatus : Service
         return ChatDB.GetAddressBookMembers (call.Session.CharacterID);
     }
 
-    public PyDataType GetOnlineStatus (PyInteger characterID, CallInformation call)
+    public PyDataType GetOnlineStatus (CallInformation call, PyInteger characterID)
     {
         // TODO: CHECK IF THE OTHER CHARACTER HAS US IN THEIR ADDRESSBOOK?
         return CharacterDB.IsOnline (characterID);

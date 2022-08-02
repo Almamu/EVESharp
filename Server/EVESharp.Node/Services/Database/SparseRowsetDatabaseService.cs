@@ -18,9 +18,9 @@ public abstract class SparseRowsetDatabaseService : MultiClientBoundService
         RowsetHeader = rowsetHeader;
     }
 
-    public abstract PyDataType Fetch (PyInteger                     startPos,   PyInteger       fetchSize, CallInformation call);
-    public abstract PyDataType FetchByKey (PyList                   keyList,    CallInformation call);
-    public abstract PyDataType SelectByUniqueColumnValues (PyString columnName, PyList          values, CallInformation call);
+    public abstract PyDataType Fetch (CallInformation call, PyInteger                     startPos,   PyInteger       fetchSize);
+    public abstract PyDataType FetchByKey (CallInformation call, PyList                   keyList);
+    public abstract PyDataType SelectByUniqueColumnValues (CallInformation call, PyString columnName, PyList          values);
 
     /// <summary>
     /// Notifies consumers of this SparseRowset that something in the list has changed
@@ -49,17 +49,17 @@ public abstract class SparseRowsetDatabaseService : MultiClientBoundService
     /// <param name="primaryKey"></param>
     public abstract void RemoveRow (PyDataType primaryKey);
 
-    protected override long MachoResolveObject (ServiceBindParams parameters, CallInformation call)
+    protected override long MachoResolveObject (CallInformation call, ServiceBindParams parameters)
     {
         throw new NotImplementedException ();
     }
 
-    protected override PyDataType MachoBindObject (ServiceBindParams bindParams, PyDataType callInfo, CallInformation call)
+    protected override PyDataType MachoBindObject (CallInformation call, ServiceBindParams bindParams, PyDataType callInfo)
     {
         throw new NotImplementedException ();
     }
 
-    protected override MultiClientBoundService CreateBoundInstance (ServiceBindParams bindParams, CallInformation call)
+    protected override MultiClientBoundService CreateBoundInstance (CallInformation call, ServiceBindParams bindParams)
     {
         throw new NotImplementedException ();
     }

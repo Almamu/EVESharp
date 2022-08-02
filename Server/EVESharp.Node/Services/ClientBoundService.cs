@@ -40,11 +40,11 @@ public abstract class ClientBoundService : BoundService
     /// <param name="callInfo">The information on the call</param>
     /// <param name="call">The call object with extra information</param>
     /// <returns></returns>
-    protected override PyDataType MachoBindObject (ServiceBindParams bindParams, PyDataType callInfo, CallInformation call)
+    protected override PyDataType MachoBindObject (CallInformation call, ServiceBindParams bindParams, PyDataType callInfo)
     {
         // TODO: ensure that the request is at the right node and throw an util.UpdateMoniker if it's not right
         // create the bound instance and register it in the bound services
-        BoundService instance = this.CreateBoundInstance (bindParams, call);
+        BoundService instance = this.CreateBoundInstance (call, bindParams);
 
         // TODO: the expiration time is 1 day, might be better to properly support this?
         // TODO: investigate these a bit more closely in the future
@@ -97,7 +97,7 @@ public abstract class ClientBoundService : BoundService
     /// <param name="bindParams">The information required for the instantiation</param>
     /// <returns>The new boudn service</returns>
     /// <exception cref="NotImplementedException">If this has not been implemented by the class</exception>
-    protected abstract BoundService CreateBoundInstance (ServiceBindParams bindParams, CallInformation call);
+    protected abstract BoundService CreateBoundInstance (CallInformation call, ServiceBindParams bindParams);
 
     protected virtual void OnClientDisconnected () { }
 

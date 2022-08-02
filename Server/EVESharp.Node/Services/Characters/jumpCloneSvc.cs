@@ -91,7 +91,7 @@ public class jumpCloneSvc : ClientBoundService
         );
     }
 
-    public PyDataType DestroyInstalledClone (PyInteger jumpCloneID, CallInformation call)
+    public PyDataType DestroyInstalledClone (CallInformation call, PyInteger jumpCloneID)
     {
         // if the clone is not loaded the clone cannot be removed, players can only remove clones from where they're at
         int callerCharacterID = call.Session.CharacterID;
@@ -117,7 +117,7 @@ public class jumpCloneSvc : ClientBoundService
         return ItemDB.GetClonesInShipForCharacter (call.Session.CharacterID);
     }
 
-    public PyDataType CloneJump (PyInteger locationID, PyBool unknown, CallInformation call)
+    public PyDataType CloneJump (CallInformation call, PyInteger locationID, PyBool unknown)
     {
         // TODO: IMPLEMENT THIS CALL PROPERLY, INVOLVES SESSION CHANGES
         // TODO: AND SEND PROPER NOTIFICATION AFTER A JUMP CLONE OnJumpCloneTransitionCompleted
@@ -181,7 +181,7 @@ public class jumpCloneSvc : ClientBoundService
         return null;
     }
 
-    protected override long MachoResolveObject (ServiceBindParams parameters, CallInformation call)
+    protected override long MachoResolveObject (CallInformation call, ServiceBindParams parameters)
     {
         return parameters.ExtraValue switch
         {
@@ -191,9 +191,9 @@ public class jumpCloneSvc : ClientBoundService
         };
     }
 
-    protected override BoundService CreateBoundInstance (ServiceBindParams bindParams, CallInformation call)
+    protected override BoundService CreateBoundInstance (CallInformation call, ServiceBindParams bindParams)
     {
-        if (this.MachoResolveObject (bindParams, call) != BoundServiceManager.MachoNet.NodeID)
+        if (this.MachoResolveObject (call, bindParams) != BoundServiceManager.MachoNet.NodeID)
             throw new CustomError ("Trying to bind an object that does not belong to us!");
 
         return new jumpCloneSvc (

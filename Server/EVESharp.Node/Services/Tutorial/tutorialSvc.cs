@@ -66,7 +66,7 @@ public class tutorialSvc : Service
         return CachedMethodCallResult.FromCacheHint (cacheHint);
     }
 
-    public PyDataType GetTutorialInfo (PyInteger tutorialID, CallInformation call)
+    public PyDataType GetTutorialInfo (CallInformation call, PyInteger tutorialID)
     {
         return DB.GetTutorialInfo (tutorialID);
     }
@@ -85,15 +85,14 @@ public class tutorialSvc : Service
         return CachedMethodCallResult.FromCacheHint (cacheHint);
     }
 
-    public PyDataType GetTutorialGoodies (PyInteger tutorialID, PyInteger pageID, PyInteger pageNumber, CallInformation call)
+    public PyDataType GetTutorialGoodies (CallInformation call, PyInteger tutorialID, PyInteger pageID, PyInteger pageNumber)
     {
         // there's not tutorial goodies that we know of
         return new PyList ();
     }
 
     public PyDataType LogStarted (
-        PyInteger       tutorialID, PyInteger pageNumber, PyInteger secondsAfterOpeningTutorial,
-        CallInformation call
+        CallInformation call, PyInteger       tutorialID, PyInteger pageNumber, PyInteger secondsAfterOpeningTutorial
     )
     {
         // there's no need to log when the tutorial started
@@ -102,8 +101,8 @@ public class tutorialSvc : Service
     }
 
     public PyDataType LogCompleted (
-        PyInteger tutorialID,                  PyInteger       pageNumber,
-        PyInteger secondsAfterOpeningTutorial, CallInformation call
+        CallInformation call, PyInteger tutorialID,                  PyInteger       pageNumber,
+        PyInteger secondsAfterOpeningTutorial
     )
     {
         // there's no need to log when the tutorial was completed
@@ -112,8 +111,8 @@ public class tutorialSvc : Service
     }
 
     public PyDataType LogAborted (
-        PyInteger tutorialID,                  PyInteger       pageNumber,
-        PyInteger secondsAfterOpeningTutorial, CallInformation call
+        CallInformation call, PyInteger tutorialID,                  PyInteger       pageNumber,
+        PyInteger secondsAfterOpeningTutorial
     )
     {
         // there's no need to log when the tutorial was aborted
@@ -121,7 +120,7 @@ public class tutorialSvc : Service
         return null;
     }
 
-    public PyDataType GetTutorialAgents (PyList agentIDs, CallInformation call)
+    public PyDataType GetTutorialAgents (CallInformation call, PyList agentIDs)
     {
         return DB.GetTutorialAgents (agentIDs.GetEnumerable <PyInteger> ());
     }

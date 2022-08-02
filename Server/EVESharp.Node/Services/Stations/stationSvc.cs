@@ -19,7 +19,7 @@ public class stationSvc : Service
         CacheStorage = cacheStorage;
     }
 
-    public PyDataType GetStation (PyInteger stationID, CallInformation call)
+    public PyDataType GetStation (CallInformation call, PyInteger stationID)
     {
         // generate cache for this call, why is this being called for every item in the assets window
         // when a list is expanded?!
@@ -34,7 +34,7 @@ public class stationSvc : Service
         return CachedMethodCallResult.FromCacheHint (CacheStorage.GetHint ("stationSvc", $"GetStation_{stationID}"));
     }
 
-    public PyDataType GetSolarSystem (PyInteger solarSystemID, CallInformation call)
+    public PyDataType GetSolarSystem (CallInformation call, PyInteger solarSystemID)
     {
         return ItemFactory.SolarSystems [solarSystemID].GetSolarSystemInfo ();
     }

@@ -62,7 +62,7 @@ public class corporationSvc : Service
         return Database.Rowset (CorporationDB.LIST_NPC_DIVISIONS);
     }
 
-    public PyTuple GetMedalsReceived (PyInteger characterID, CallInformation call)
+    public PyTuple GetMedalsReceived (CallInformation call, PyInteger characterID)
     {
         // TODO: CACHE THIS ANSWER TOO
         int callerCharacterID = call.Session.CharacterID;
@@ -76,7 +76,7 @@ public class corporationSvc : Service
         };
     }
 
-    public PyDataType GetEmploymentRecord (PyInteger characterID, CallInformation call)
+    public PyDataType GetEmploymentRecord (CallInformation call, PyInteger characterID)
     {
         return DB.GetEmploymentRecord (characterID);
     }
@@ -87,25 +87,25 @@ public class corporationSvc : Service
     }
 
     public PyDataType GetRecruitmentAdsByCriteria (
-        PyInteger regionID, PyInteger skillPoints,  PyInteger typeMask,
-        PyInteger raceMask, PyInteger isInAlliance, PyInteger minMembers, PyInteger maxMembers, CallInformation call
+        CallInformation call, PyInteger regionID, PyInteger skillPoints,  PyInteger typeMask,
+        PyInteger raceMask, PyInteger isInAlliance, PyInteger minMembers, PyInteger maxMembers
     )
     {
         return this.GetRecruitmentAdsByCriteria (
-            regionID, skillPoints * 1.0, typeMask, raceMask, isInAlliance,
-            minMembers, maxMembers, call
+            call, regionID, skillPoints * 1.0, typeMask, raceMask, isInAlliance,
+            minMembers, maxMembers
         );
     }
 
     public PyDataType GetRecruitmentAdsByCriteria (
-        PyInteger regionID, PyDecimal skillPoints,  PyInteger typeMask,
-        PyInteger raceMask, PyInteger isInAlliance, PyInteger minMembers, PyInteger maxMembers, CallInformation call
+        CallInformation call, PyInteger regionID, PyDecimal skillPoints,  PyInteger typeMask,
+        PyInteger raceMask, PyInteger isInAlliance, PyInteger minMembers, PyInteger maxMembers
     )
     {
         return DB.GetRecruitmentAds (regionID, skillPoints, typeMask, raceMask, isInAlliance, minMembers, maxMembers);
     }
 
-    public PyTuple GetAllCorpMedals (PyInteger corporationID, CallInformation call)
+    public PyTuple GetAllCorpMedals (CallInformation call, PyInteger corporationID)
     {
         Dictionary <string, object> values = new Dictionary <string, object> {{"_corporationID", corporationID}};
 
@@ -119,7 +119,7 @@ public class corporationSvc : Service
         };
     }
 
-    public PyDataType GetCorpInfo (PyInteger corporationID, CallInformation call)
+    public PyDataType GetCorpInfo (CallInformation call, PyInteger corporationID)
     {
         DBRowDescriptor descriptor = new DBRowDescriptor ();
 
@@ -150,7 +150,7 @@ public class corporationSvc : Service
     }
 
     [MustHaveCorporationRole(MLS.UI_CORP_NEED_ROLE_PERS_MAN_OR_DIRECT, CorporationRole.PersonnelManager, CorporationRole.Director)]
-    public PyDataType CreateMedal (PyString title, PyString description, PyList parts, PyBool pay, CallInformation call)
+    public PyDataType CreateMedal (CallInformation call, PyString title, PyString description, PyList parts, PyBool pay)
     {
         int characterID = call.Session.CharacterID;
 
@@ -171,14 +171,14 @@ public class corporationSvc : Service
     }
 
     [MustHaveCorporationRole(MLS.UI_CORP_NEED_ROLE_PERS_MAN_OR_DIRECT, CorporationRole.PersonnelManager, CorporationRole.Director)]
-    public PyDataType CreateMedal (PyString title, PyString description, PyList parts, CallInformation call)
+    public PyDataType CreateMedal (CallInformation call, PyString title, PyString description, PyList parts)
     {
         this.ValidateMedal (title, description, parts);
 
         throw new ConfirmCreatingMedal (Constants.MedalCost);
     }
 
-    public PyDataType GetRecipientsOfMedal (PyInteger medalID, CallInformation call)
+    public PyDataType GetRecipientsOfMedal (CallInformation call, PyInteger medalID)
     {
         // TODO: CHECK IF THERE'S ANY KIND OF PERMISSION CHECK NEEDED (LIKE CORPORATION ID?)
         // TODO: CACHE THIS ANSWER TOO
@@ -215,13 +215,13 @@ public class corporationSvc : Service
     }
 
     [MustHaveCorporationRole(MLS.UI_CORP_NEED_ROLE_PERS_MAN_OR_DIRECT, CorporationRole.PersonnelManager, CorporationRole.Director)]
-    public PyDataType GiveMedalToCharacters (PyInteger medalID, PyList characterIDs, PyString reason, CallInformation call)
+    public PyDataType GiveMedalToCharacters (CallInformation call, PyInteger medalID, PyList characterIDs, PyString reason)
     {
         throw new ConfirmCreatingMedal (Constants.MedalCost);
     }
 
     [MustHaveCorporationRole(MLS.UI_CORP_NEED_ROLE_PERS_MAN_OR_DIRECT, CorporationRole.PersonnelManager, CorporationRole.Director)]
-    public PyDataType GiveMedalToCharacters (PyInteger medalID, PyList characterIDs, PyString reason, PyBool pay, CallInformation call)
+    public PyDataType GiveMedalToCharacters (CallInformation call, PyInteger medalID, PyList characterIDs, PyString reason, PyBool pay)
     {
         if (pay == false)
             throw new ConfirmGivingMedal (Constants.MedalCost);
@@ -246,7 +246,7 @@ public class corporationSvc : Service
         return null;
     }
 
-    public PyDataType SetMedalStatus (PyDictionary newStatuses, CallInformation call)
+    public PyDataType SetMedalStatus (CallInformation call, PyDictionary newStatuses)
     {
         int characterID = call.Session.CharacterID;
 
@@ -263,7 +263,7 @@ public class corporationSvc : Service
         return null;
     }
 
-    public PyDataType GetMedalDetails (PyInteger medalID, CallInformation call)
+    public PyDataType GetMedalDetails (CallInformation call, PyInteger medalID)
     {
         return KeyVal.FromDictionary (new PyDictionary {["info"] = new PyList {DB.GetMedalDetails (medalID)}});
     }

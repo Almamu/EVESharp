@@ -81,14 +81,14 @@ public class contractMgr : Service
         return DB.NumOutstandingContracts (call.Session.CharacterID, call.Session.CorporationID);
     }
 
-    public PyDataType CollectMyPageInfo (PyDataType ignoreList, CallInformation call)
+    public PyDataType CollectMyPageInfo (CallInformation call, PyDataType ignoreList)
     {
         // TODO: TAKE INTO ACCOUNT THE IGNORE LIST
 
         return DB.CollectMyPageInfo (call.Session.CharacterID, call.Session.CorporationID);
     }
 
-    public PyDataType GetContractListForOwner (PyInteger ownerID, PyInteger contractStatus, PyInteger contractType, PyBool issuedToUs, CallInformation call)
+    public PyDataType GetContractListForOwner (CallInformation call, PyInteger ownerID, PyInteger contractStatus, PyInteger contractType, PyBool issuedToUs)
     {
         call.NamedPayload.TryGetValue ("startContractID", out PyInteger startContractID);
         int resultsPerPage = call.NamedPayload ["num"] as PyInteger;
@@ -119,7 +119,7 @@ public class contractMgr : Service
         );
     }
 
-    public PyDataType GetItemsInStation (PyInteger stationID, PyInteger forCorp, CallInformation call)
+    public PyDataType GetItemsInStation (CallInformation call, PyInteger stationID, PyInteger forCorp)
     {
         // TODO: HANDLE CORPORATION!
         if (forCorp == 1)
@@ -181,9 +181,9 @@ public class contractMgr : Service
     }
 
     public PyDataType CreateContract (
-        PyInteger contractType, PyInteger availability,            PyInteger assigneeID,
+        CallInformation call, PyInteger contractType, PyInteger availability,            PyInteger assigneeID,
         PyInteger expireTime,   PyInteger courierContractDuration, PyInteger startStationID, PyInteger endStationID, PyInteger       priceOrStartingBid,
-        PyInteger reward,       PyInteger collateralOrBuyoutPrice, PyString  title,          PyString  description,  CallInformation call
+        PyInteger reward,       PyInteger collateralOrBuyoutPrice, PyString  title,          PyString  description
     )
     {
         if (assigneeID != null && (ItemRanges.IsNPC (assigneeID) || ItemRanges.IsNPCCorporationID (assigneeID)))
@@ -273,7 +273,7 @@ public class contractMgr : Service
         }
     }
 
-    public PyDataType GetContractList (PyObjectData filtersKeyval, CallInformation call)
+    public PyDataType GetContractList (CallInformation call, PyObjectData filtersKeyval)
     {
         PyDictionary <PyString, PyDataType> filters        = KeyVal.ToDictionary (filtersKeyval).GetEnumerable <PyString, PyDataType> ();
         PyList <PyInteger>                  notIssuedByIDs = null;
@@ -331,7 +331,7 @@ public class contractMgr : Service
         );
     }
 
-    public PyDataType GetContract (PyInteger contractID, CallInformation call)
+    public PyDataType GetContract (CallInformation call, PyInteger contractID)
     {
         int callerCharacterID = call.Session.CharacterID;
 
@@ -347,7 +347,7 @@ public class contractMgr : Service
         );
     }
 
-    public PyDataType DeleteContract (PyInteger contractID, PyObjectData keyVal, CallInformation call)
+    public PyDataType DeleteContract (CallInformation call, PyInteger contractID, PyObjectData keyVal)
     {
         using IDbConnection connection = MarketDB.AcquireMarketLock ();
 
@@ -368,22 +368,22 @@ public class contractMgr : Service
     }
 
     public PyDataType SplitStack (
-        PyInteger stationID, PyInteger       itemID, PyInteger newStack, PyInteger forCorp,
-        PyInteger flag,      CallInformation call
+        CallInformation call, PyInteger stationID, PyInteger       itemID, PyInteger newStack, PyInteger forCorp,
+        PyInteger flag
     )
     {
         return null;
     }
 
     public PyDataType GetItemsInContainer (
-        PyInteger locationID, PyInteger       containerID, PyInteger forCorp,
-        PyInteger flag,       CallInformation call
+        CallInformation call, PyInteger locationID, PyInteger       containerID, PyInteger forCorp,
+        PyInteger flag
     )
     {
         return DB.GetItemsInContainer (call.Session.CharacterID, containerID);
     }
 
-    public PyDataType GetMyExpiredContractList (PyBool isCorp, CallInformation call)
+    public PyDataType GetMyExpiredContractList (CallInformation call, PyBool isCorp)
     {
         int ownerID = 0;
 
@@ -408,12 +408,12 @@ public class contractMgr : Service
         );
     }
 
-    public PyDataType GetMyBids (PyInteger isCorp, CallInformation call)
+    public PyDataType GetMyBids (CallInformation call, PyInteger isCorp)
     {
-        return this.GetMyBids (isCorp == 1, call);
+        return this.GetMyBids (call, isCorp == 1);
     }
 
-    public PyDataType GetMyBids (PyBool isCorp, CallInformation call)
+    public PyDataType GetMyBids (CallInformation call, PyBool isCorp)
     {
         int ownerID = 0;
 
@@ -434,7 +434,7 @@ public class contractMgr : Service
         );
     }
 
-    public PyDataType GetMyCurrentContractList (PyBool acceptedByMe, PyBool isCorp, CallInformation call)
+    public PyDataType GetMyCurrentContractList (CallInformation call, PyBool acceptedByMe, PyBool isCorp)
     {
         int ownerID = 0;
 
@@ -465,7 +465,7 @@ public class contractMgr : Service
         );
     }
 
-    public PyDataType PlaceBid (PyInteger contractID, PyInteger quantity, PyBool forCorp, PyObjectData locationData, CallInformation call)
+    public PyDataType PlaceBid (CallInformation call, PyInteger contractID, PyInteger quantity, PyBool forCorp, PyObjectData locationData)
     {
         using IDbConnection connection = MarketDB.AcquireMarketLock ();
 
@@ -646,7 +646,7 @@ public class contractMgr : Service
             Notifications.NotifyCorporation (contract.IssuerCorpID, new OnContractAccepted (contract.ID));
     }
 
-    public PyDataType AcceptContract (PyInteger contractID, PyBool forCorp, CallInformation call)
+    public PyDataType AcceptContract (CallInformation call, PyInteger contractID, PyBool forCorp)
     {
         if (forCorp == true)
             throw new UserError ("Cannot accept contracts for corporation yet");
@@ -694,12 +694,12 @@ public class contractMgr : Service
         return null;
     }
 
-    public PyDataType FinishAuction (PyInteger contractID, PyBool forCorp, CallInformation call)
+    public PyDataType FinishAuction (CallInformation call, PyInteger contractID, PyBool forCorp)
     {
         return null;
     }
 
-    public PyDataType HasFittedCharges (PyInteger stationID, PyInteger itemID, PyInteger forCorp, PyInteger flag, CallInformation call)
+    public PyDataType HasFittedCharges (CallInformation call, PyInteger stationID, PyInteger itemID, PyInteger forCorp, PyInteger flag)
     {
         // TODO: IMPLEMENT THIS!
         return null;

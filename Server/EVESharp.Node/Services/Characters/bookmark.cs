@@ -35,7 +35,7 @@ public class bookmark : Service
         return Database.ChrBookmarksGet (call.Session.CharacterID);
     }
 
-    public PyDataType BookmarkLocation (PyInteger itemID, PyDataType unk, PyString name, PyString comment, CallInformation call)
+    public PyDataType BookmarkLocation (CallInformation call, PyInteger itemID, PyDataType unk, PyString name, PyString comment)
     {
         if (ItemRanges.IsStaticData (itemID) == false)
             throw new CustomError ("Bookmarks for non-static locations are not supported yet!");
@@ -83,7 +83,7 @@ public class bookmark : Service
         };
     }
 
-    public PyDataType DeleteBookmarks (PyList bookmarkIDs, CallInformation call)
+    public PyDataType DeleteBookmarks (CallInformation call, PyList bookmarkIDs)
     {
         // if no ids are specified, there's nothing to do
         if (bookmarkIDs.Count == 0)

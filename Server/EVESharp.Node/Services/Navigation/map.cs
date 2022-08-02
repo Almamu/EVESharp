@@ -122,7 +122,7 @@ public class map : Service
         return new PyDictionary ();
     }
 
-    public PyDataType GetHistory (PyInteger historyType, PyInteger maximumJumpDistance, CallInformation call)
+    public PyDataType GetHistory (CallInformation call, PyInteger historyType, PyInteger maximumJumpDistance)
     {
         // TODO: IMPLEMENT THIS
         // this should return list of keyvals with information about the closest systems within the maximumJumpDistance

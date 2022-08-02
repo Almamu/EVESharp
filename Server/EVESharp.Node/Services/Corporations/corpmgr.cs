@@ -25,22 +25,22 @@ public class corpmgr : Service
         CacheStorage = cacheStorage;
     }
 
-    public PyDataType GetPublicInfo (PyInteger corporationID, CallInformation call)
+    public PyDataType GetPublicInfo (CallInformation call, PyInteger corporationID)
     {
         return DB.GetPublicInfo (corporationID);
     }
 
-    public PyDataType GetCorporationIDForCharacter (PyInteger characterID, CallInformation call)
+    public PyDataType GetCorporationIDForCharacter (CallInformation call, PyInteger characterID)
     {
         return DB.GetCorporationIDForCharacter (characterID);
     }
 
-    public PyDataType GetCorporations (PyInteger corporationID, CallInformation call)
+    public PyDataType GetCorporations (CallInformation call, PyInteger corporationID)
     {
         return DB.GetCorporationRow (corporationID);
     }
 
-    public PyDataType GetAssetInventory (PyInteger corporationID, PyString which, CallInformation call)
+    public PyDataType GetAssetInventory (CallInformation call, PyInteger corporationID, PyString which)
     {
         // TODO: CHECK PROPER PERMISSIONS TOO!
         if (call.Session.CorporationID != corporationID)
@@ -68,7 +68,7 @@ public class corpmgr : Service
         return new PyList ();
     }
 
-    public PyDataType GetAssetInventoryForLocation (PyInteger corporationID, PyInteger location, PyString which, CallInformation call)
+    public PyDataType GetAssetInventoryForLocation (CallInformation call, PyInteger corporationID, PyInteger location, PyString which)
     {
         // TODO: CHECK PROPER PERMISSIONS TOO!
         if (call.Session.CorporationID != corporationID)

@@ -34,17 +34,17 @@ public class OfficesSparseRowsetService : SparseRowsetDatabaseService
         this.RowsIndex = DB.GetOffices (corporation.ID);
     }
 
-    public override PyDataType Fetch (PyInteger startPos, PyInteger fetchSize, CallInformation call)
+    public override PyDataType Fetch (CallInformation call, PyInteger startPos, PyInteger fetchSize)
     {
         return DB.GetOffices (Corporation.ID, startPos, fetchSize, RowsetHeader);
     }
 
-    public override PyDataType FetchByKey (PyList keyList, CallInformation call)
+    public override PyDataType FetchByKey (CallInformation call, PyList keyList)
     {
         return DB.GetOffices (keyList.GetEnumerable <PyInteger> (), Corporation.ID, RowsetHeader, this.RowsIndex);
     }
 
-    public override PyDataType SelectByUniqueColumnValues (PyString columnName, PyList values, CallInformation call)
+    public override PyDataType SelectByUniqueColumnValues (CallInformation call, PyString columnName, PyList values)
     {
         return DB.GetOffices (columnName, values.GetEnumerable <PyInteger> (), Corporation.ID, RowsetHeader, this.RowsIndex);
     }

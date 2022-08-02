@@ -81,7 +81,7 @@ public class facWarMgr : Service
         return CachedMethodCallResult.FromCacheHint (CacheStorage.GetHint ("facWarMgr", "GetFacWarSystems"));
     }
 
-    public PyDataType GetCharacterRankOverview (PyInteger characterID, CallInformation call)
+    public PyDataType GetCharacterRankOverview (CallInformation call, PyInteger characterID)
     {
         return new Rowset (
             new PyList <PyString> (4)
@@ -94,7 +94,7 @@ public class facWarMgr : Service
         );
     }
 
-    public PyInteger GetFactionMilitiaCorporation (PyInteger factionID, CallInformation call)
+    public PyInteger GetFactionMilitiaCorporation (CallInformation call, PyInteger factionID)
     {
         return ItemFactory.GetStaticFaction (factionID).MilitiaCorporationId;
     }
@@ -114,12 +114,12 @@ public class facWarMgr : Service
         );
     }
 
-    public PyDataType IsEnemyFaction (PyInteger factionID, PyInteger warFactionID, CallInformation call)
+    public PyDataType IsEnemyFaction (CallInformation call, PyInteger factionID, PyInteger warFactionID)
     {
         return false;
     }
 
-    public PyDataType JoinFactionAsCharacter (PyInteger factionID, CallInformation call)
+    public PyDataType JoinFactionAsCharacter (CallInformation call, PyInteger factionID)
     {
         int callerCharacterID = call.Session.CharacterID;
 
@@ -166,12 +166,12 @@ public class facWarMgr : Service
         return null;
     }
 
-    public PyDataType JoinFactionAsCorporation (PyInteger factionID, CallInformation call)
+    public PyDataType JoinFactionAsCorporation (CallInformation call, PyInteger factionID)
     {
         return null;
     }
 
-    public PyDataType GetCharacterRankInfo (PyInteger characterID, CallInformation call)
+    public PyDataType GetCharacterRankInfo (CallInformation call, PyInteger characterID)
     {
         // TODO: IMPLEMENT THIS
 
@@ -260,7 +260,7 @@ public class facWarMgr : Service
         };
     }
 
-    public PyDataType GetCorporationWarFactionID (PyInteger corporationID, CallInformation call)
+    public PyDataType GetCorporationWarFactionID (CallInformation call, PyInteger corporationID)
     {
         return null;
     }

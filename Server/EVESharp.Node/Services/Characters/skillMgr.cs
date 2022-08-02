@@ -235,7 +235,7 @@ public class skillMgr : ClientBoundService
         return DB.GetSkillHistory (call.Session.CharacterID);
     }
 
-    public PyDataType InjectSkillIntoBrain (PyList itemIDs, CallInformation call)
+    public PyDataType InjectSkillIntoBrain (CallInformation call, PyList itemIDs)
     {
         foreach (PyInteger item in itemIDs.GetEnumerable <PyInteger> ())
             try
@@ -303,7 +303,7 @@ public class skillMgr : ClientBoundService
         return null;
     }
 
-    public PyDataType SaveSkillQueue (PyList queue, CallInformation call)
+    public PyDataType SaveSkillQueue (CallInformation call, PyList queue)
     {
         if (Character.SkillQueue.Count > 0)
         {
@@ -418,7 +418,7 @@ public class skillMgr : ClientBoundService
         return null;
     }
 
-    public PyDataType CharStartTrainingSkillByTypeID (PyInteger typeID, CallInformation call)
+    public PyDataType CharStartTrainingSkillByTypeID (CallInformation call, PyInteger typeID)
     {
         // get the skill the player wants to train
         Skill skill = Character.InjectedSkills.First (x => x.Value.Type.ID == typeID).Value;
@@ -455,7 +455,7 @@ public class skillMgr : ClientBoundService
         }
 
         // save the new skill queue
-        return this.SaveSkillQueue (queue, call);
+        return this.SaveSkillQueue (call, queue);
     }
 
     public PyDataType GetEndOfTraining (CallInformation call)
@@ -510,7 +510,7 @@ public class skillMgr : ClientBoundService
         return null;
     }
 
-    public PyDataType AddToEndOfSkillQueue (PyInteger typeID, PyInteger level, CallInformation call)
+    public PyDataType AddToEndOfSkillQueue (CallInformation call, PyInteger typeID, PyInteger level)
     {
         // the skill queue must start only if it's empty OR there's something already in there
         bool shouldStart = true;
@@ -556,7 +556,7 @@ public class skillMgr : ClientBoundService
             );
 
         // save the new skill queue
-        this.SaveSkillQueue (queue, call);
+        this.SaveSkillQueue (call, queue);
 
         if (shouldStart == false)
             // stop the queue, there's nothing we should be training as the queue is currently paused
@@ -574,7 +574,7 @@ public class skillMgr : ClientBoundService
         };
     }
 
-    public PyDataType GetCharacterAttributeModifiers (PyInteger attributeID, CallInformation call)
+    public PyDataType GetCharacterAttributeModifiers (CallInformation call, PyInteger attributeID)
     {
         AttributeTypes attribute;
 
@@ -628,8 +628,8 @@ public class skillMgr : ClientBoundService
     }
 
     public PyDataType RespecCharacter (
-        PyInteger charisma,   PyInteger intelligence, PyInteger       memory,
-        PyInteger perception, PyInteger willpower,    CallInformation call
+        CallInformation call, PyInteger charisma,   PyInteger intelligence, PyInteger       memory,
+        PyInteger perception, PyInteger willpower
     )
     {
         if (charisma < MINIMUM_ATTRIBUTE_POINTS || intelligence < MINIMUM_ATTRIBUTE_POINTS ||
@@ -688,7 +688,7 @@ public class skillMgr : ClientBoundService
         return null;
     }
 
-    public PyDataType CharAddImplant (PyInteger itemID, CallInformation call)
+    public PyDataType CharAddImplant (CallInformation call, PyInteger itemID)
     {
         if (Character.SkillQueue.Count > 0)
             throw new FailedPlugInImplant ();
@@ -743,7 +743,7 @@ public class skillMgr : ClientBoundService
         return null;
     }
 
-    public PyDataType RemoveImplantFromCharacter (PyInteger itemID, CallInformation call)
+    public PyDataType RemoveImplantFromCharacter (CallInformation call, PyInteger itemID)
     {
         if (Character.Items.TryGetValue (itemID, out ItemEntity item) == false)
             throw new CustomError ("This implant is not in your brain!");
@@ -757,14 +757,14 @@ public class skillMgr : ClientBoundService
         return null;
     }
 
-    protected override long MachoResolveObject (ServiceBindParams parameters, CallInformation call)
+    protected override long MachoResolveObject (CallInformation call, ServiceBindParams parameters)
     {
         return Database.CluResolveAddress ("solarsystem", parameters.ObjectID);
     }
 
-    protected override BoundService CreateBoundInstance (ServiceBindParams bindParams, CallInformation call)
+    protected override BoundService CreateBoundInstance (CallInformation call, ServiceBindParams bindParams)
     {
-        if (this.MachoResolveObject (bindParams, call) != BoundServiceManager.MachoNet.NodeID)
+        if (this.MachoResolveObject (call, bindParams) != BoundServiceManager.MachoNet.NodeID)
             throw new CustomError ("Trying to bind an object that does not belong to us!");
 
         return new skillMgr (DB, ItemFactory, Timers, DogmaUtils, BoundServiceManager, Log, call.Session);

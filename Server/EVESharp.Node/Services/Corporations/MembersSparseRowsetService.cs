@@ -35,17 +35,17 @@ public class MembersSparseRowsetService : SparseRowsetDatabaseService
         this.RowsIndex = DB.GetMembers (corporation.ID);
     }
 
-    public override PyDataType Fetch (PyInteger startPos, PyInteger fetchSize, CallInformation call)
+    public override PyDataType Fetch (CallInformation call, PyInteger startPos, PyInteger fetchSize)
     {
         return DB.GetMembers (Corporation.ID, startPos, fetchSize, RowsetHeader);
     }
 
-    public override PyDataType FetchByKey (PyList keyList, CallInformation call)
+    public override PyDataType FetchByKey (CallInformation call, PyList keyList)
     {
         return DB.GetMembers (keyList.GetEnumerable <PyInteger> (), Corporation.ID, RowsetHeader, this.RowsIndex);
     }
 
-    public override PyDataType SelectByUniqueColumnValues (PyString columnName, PyList values, CallInformation call)
+    public override PyDataType SelectByUniqueColumnValues (CallInformation call, PyString columnName, PyList values)
     {
         throw new NotImplementedException ();
     }

@@ -17,7 +17,7 @@ public class LPSvc : Service
         DB = db;
     }
 
-    public PyDecimal GetLPForCharacterCorp (PyInteger corporationID, CallInformation call)
+    public PyDecimal GetLPForCharacterCorp (CallInformation call, PyInteger corporationID)
     {
         return DB.GetLPForCharacterCorp (corporationID, call.Session.CharacterID);
     }

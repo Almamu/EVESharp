@@ -56,9 +56,9 @@ public abstract class BoundService : Service
     /// <param name="call"></param>
     /// <returns>The node where this object is stored</returns>
     [MustBeCharacter]
-    public PyInteger MachoResolveObject (PyDataType bindParams, PyInteger justQuery, CallInformation call)
+    public PyInteger MachoResolveObject (CallInformation call, PyDataType bindParams, PyInteger justQuery)
     {
-        return this.MachoResolveObject (bindParams, call);
+        return this.MachoResolveObject (call, bindParams);
     }
 
     /// <summary>
@@ -67,7 +67,7 @@ public abstract class BoundService : Service
     /// <param name="parameters">The parameters used for this resolve call</param>
     /// <param name="call">The caller information</param>
     /// <returns>The node where this object is stored</returns>
-    protected abstract long MachoResolveObject (ServiceBindParams parameters, CallInformation call);
+    protected abstract long MachoResolveObject (CallInformation call, ServiceBindParams parameters);
 
     /// <summary>
     /// Binds a new object of this type with the given objectData to provide a stateful
@@ -81,9 +81,9 @@ public abstract class BoundService : Service
     /// <param name="call">The call object with extra information</param>
     /// <returns></returns>
     [MustBeCharacter]
-    public PyDataType MachoBindObject (PyDataType bindParams, PyDataType callInfo, CallInformation call)
+    public PyDataType MachoBindObject (CallInformation call, PyDataType bindParams, PyDataType callInfo)
     {
-        return this.MachoBindObject ((ServiceBindParams) bindParams, callInfo, call);
+        return this.MachoBindObject (call, (ServiceBindParams) bindParams, callInfo);
     }
 
     /// <summary>
@@ -97,7 +97,7 @@ public abstract class BoundService : Service
     /// <param name="callInfo">The information on the call</param>
     /// <param name="call">The call object with extra information</param>
     /// <returns></returns>
-    protected abstract PyDataType MachoBindObject (ServiceBindParams bindParams, PyDataType callInfo, CallInformation call);
+    protected abstract PyDataType MachoBindObject (CallInformation call, ServiceBindParams bindParams, PyDataType callInfo);
 
     /// <summary>
     /// Checks if the caller has enough permissions to use this bound service

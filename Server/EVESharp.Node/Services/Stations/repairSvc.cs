@@ -76,7 +76,7 @@ public class repairSvc : ClientBoundService
         DogmaUtils      = dogmaUtils;
     }
 
-    public PyDataType GetDamageReports (PyList itemIDs, CallInformation call)
+    public PyDataType GetDamageReports (CallInformation call, PyList itemIDs)
     {
         PyDictionary <PyInteger, PyDataType> response = new PyDictionary <PyInteger, PyDataType> ();
 
@@ -160,7 +160,7 @@ public class repairSvc : ClientBoundService
     }
 
     [MustBeInStation]
-    public PyDataType RepairItems (PyList itemIDs, PyDecimal iskRepairValue, CallInformation call)
+    public PyDataType RepairItems (CallInformation call, PyList itemIDs, PyDecimal iskRepairValue)
     {
         // ensure the player has enough balance to do the fixing
         Station station = ItemFactory.GetStaticStation (call.Session.StationID);
@@ -243,7 +243,7 @@ public class repairSvc : ClientBoundService
         return null;
     }
 
-    public PyDataType UnasembleItems (PyDictionary validIDsByStationID, PyList skipChecks, CallInformation call)
+    public PyDataType UnasembleItems (CallInformation call, PyDictionary validIDsByStationID, PyList skipChecks)
     {
         int                                characterID = call.Session.CharacterID;
         List <RepairDB.ItemRepackageEntry> entries     = new List <RepairDB.ItemRepackageEntry> ();
@@ -341,14 +341,14 @@ public class repairSvc : ClientBoundService
         return null;
     }
 
-    protected override long MachoResolveObject (ServiceBindParams parameters, CallInformation call)
+    protected override long MachoResolveObject (CallInformation call, ServiceBindParams parameters)
     {
         return Database.CluResolveAddress ("station", parameters.ObjectID);
     }
 
-    protected override BoundService CreateBoundInstance (ServiceBindParams bindParams, CallInformation call)
+    protected override BoundService CreateBoundInstance (CallInformation call, ServiceBindParams bindParams)
     {
-        if (this.MachoResolveObject (bindParams, call) != BoundServiceManager.MachoNet.NodeID)
+        if (this.MachoResolveObject (call, bindParams) != BoundServiceManager.MachoNet.NodeID)
             throw new CustomError ("Trying to bind an object that does not belong to us!");
 
         Station station = ItemFactory.GetStaticStation (bindParams.ObjectID);

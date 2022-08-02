@@ -29,7 +29,8 @@ public abstract class Service
     /// <returns>The list of methods found</returns>
     private bool FindSuitableMethod(string methodName, ServiceCall extra, out object[] parameters, out MethodInfo matchingMethod)
     {
-        PyTuple arguments = extra.Payload;
+        PyTuple      arguments      = extra.Payload;
+        PyDictionary namedArguments = extra.NamedPayload;
         IEnumerable<MethodInfo> methods = this
                                           .GetType()
                                           .GetMethods(BindingFlags.Public | BindingFlags.Instance)
@@ -51,32 +52,39 @@ public abstract class Service
             
             // this one should hold the real parameter count here
             parameters     = new object[methodParameters.Length];
-            parameters[^1] = extra;
+            parameters[0]  = extra;
 
             bool match = true;
 
-            for (int i = 0; i < methodParameters.Length - 1; i++)
+            for (int parameterIndex = 1, argumentIndex = 0; parameterIndex < methodParameters.Length; parameterIndex ++, argumentIndex ++)
             {
-                if (i >= arguments.Count)
+                if (argumentIndex >= arguments.Count)
                 {
-                    if (methodParameters[i].IsOptional == false)
+                    // check if the parameter is in the named payload and set it, otherwise resort to the default value
+                    if (namedArguments.TryGetValue (methodParameters [parameterIndex].Name, out PyDataType value) == true)
+                    {
+                        parameters [parameterIndex] = value;
+                        match = true;
+                        break;
+                    }
+                    if (methodParameters[parameterIndex].IsOptional == false)
                     {
                         match = false;
                         break;
                     }
 
                     // set the default value for the call
-                    parameters[i] = methodParameters[i].DefaultValue;
+                    parameters[parameterIndex] = methodParameters[parameterIndex].DefaultValue;
                 }
                 else
                 {
-                    PyDataType element = arguments[i];
+                    PyDataType element = arguments[argumentIndex];
 
-                    if (element is null || methodParameters[i].IsOptional == true)
-                        parameters[i] = null;
-                    else if (methodParameters[i].ParameterType == element.GetType() ||
-                             methodParameters[i].ParameterType == element.GetType().BaseType)
-                        parameters[i] = element;
+                    if (element is null || methodParameters[parameterIndex].IsOptional == true)
+                        parameters[parameterIndex] = null;
+                    else if (methodParameters[parameterIndex].ParameterType == element.GetType() ||
+                             methodParameters[parameterIndex].ParameterType == element.GetType().BaseType)
+                        parameters[parameterIndex] = element;
                     else
                     {
                         match = false;
@@ -106,9 +114,7 @@ public abstract class Service
     {
         if (this.FindSuitableMethod(method, extraInformation, out object[] parameters, out MethodInfo methodInfo) == false)
             throw new MissingCallException(Name, method);
-        
-        // TODO: SUPPORT NAMED PAYLOAD ARGUMENTS AS FUNCTION ARGUMENTS
-        
+
         // ensure that the caller has the required roles
         List <CallValidator> requirements = this.GetType ().GetCustomAttributes <CallValidator> ().Concat (methodInfo.GetCustomAttributes <CallValidator> ()).ToList ();
 

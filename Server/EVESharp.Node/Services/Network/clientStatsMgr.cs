@@ -8,7 +8,7 @@ public class clientStatsMgr : Service
 {
     public override AccessLevel AccessLevel => AccessLevel.None;
 
-    public PyDataType SubmitStats (PyTuple stats, CallInformation call)
+    public PyDataType SubmitStats (CallInformation call, PyTuple stats)
     {
         // this data is useless as we don't develop the game
         // it seems to contain memory usage, OS information, ping, etc

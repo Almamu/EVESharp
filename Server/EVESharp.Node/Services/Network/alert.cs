@@ -40,7 +40,7 @@ public class alert : Service
         Log = logger;
     }
 
-    public PyTuple BeanCount (PyInteger stackID, CallInformation call)
+    public PyTuple BeanCount (CallInformation call, PyInteger stackID)
     {
         return new PyTuple (2)
         {
@@ -49,7 +49,7 @@ public class alert : Service
         };
     }
 
-    public PyDataType SendClientStackTraceAlert (PyTuple stackInfo, PyString stackTrace, PyString type, PyDataType extra = null, CallInformation call = null)
+    public PyDataType SendClientStackTraceAlert (CallInformation call, PyTuple stackInfo, PyString stackTrace, PyString type, PyDataType extra = null)
     {
         Log.Fatal (
             "Received the following client's stack trace:" + Environment.NewLine +
@@ -62,7 +62,7 @@ public class alert : Service
         return null;
     }
 
-    public PyDataType BeanDelivery (PyDictionary beanCounts, CallInformation call)
+    public PyDataType BeanDelivery (CallInformation call, PyDictionary beanCounts)
     {
         // I'm not joking, send me the stack trace NOW!!!
         // :P

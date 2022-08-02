@@ -77,7 +77,7 @@ public abstract class MultiClientBoundService : BoundService
     /// <param name="callInfo">The information on the call</param>
     /// <param name="call">The call object with extra information</param>
     /// <returns></returns>
-    protected override PyDataType MachoBindObject (ServiceBindParams bindParams, PyDataType callInfo, CallInformation call)
+    protected override PyDataType MachoBindObject (CallInformation call, ServiceBindParams bindParams, PyDataType callInfo)
     {
         MultiClientBoundService instance;
 
@@ -88,7 +88,7 @@ public abstract class MultiClientBoundService : BoundService
             {
                 // TODO: ensure that the request is at the right node and throw an util.UpdateMoniker if it's not right
                 // create the bound instance and register it in the bound services
-                instance = this.CreateBoundInstance (bindParams, call);
+                instance = this.CreateBoundInstance (call, bindParams);
                 // store the new service in the list of services
                 this.mRegisteredServices [instance.ObjectID] = instance;
             }
@@ -148,7 +148,7 @@ public abstract class MultiClientBoundService : BoundService
     /// <param name="bindParams">The information required for the instantiation</param>
     /// <returns>The new boudn service</returns>
     /// <exception cref="NotImplementedException">If this has not been implemented by the class</exception>
-    protected abstract MultiClientBoundService CreateBoundInstance (ServiceBindParams bindParams, CallInformation call);
+    protected abstract MultiClientBoundService CreateBoundInstance (CallInformation call, ServiceBindParams bindParams);
 
     protected virtual void OnClientDisconnected (Session session) { }
 
