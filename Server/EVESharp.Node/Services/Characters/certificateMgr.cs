@@ -7,7 +7,6 @@ using EVESharp.EVE.Services.Validators;
 using EVESharp.EVE.StaticData.Certificates;
 using EVESharp.Node.Cache;
 using EVESharp.Node.Client.Notifications.Certificates;
-using EVESharp.Node.Database;
 using EVESharp.Node.Dogma;
 using EVESharp.Node.Inventory;
 using EVESharp.Node.Inventory.Items.Types;
@@ -21,23 +20,21 @@ namespace EVESharp.Node.Services.Characters;
 public class certificateMgr : Service
 {
     public override AccessLevel                           AccessLevel              => AccessLevel.None;
-    private         OldCertificatesDB                        DB                       { get; }
     private         ItemFactory                           ItemFactory              { get; }
     private         CacheStorage                          CacheStorage             { get; }
     private         Dictionary <int, List <Relationship>> CertificateRelationships { get; }
     private         DogmaUtils                            DogmaUtils               { get; }
     private         IDatabaseConnection                   Database                 { get; }
 
-    public certificateMgr (OldCertificatesDB db, ItemFactory itemFactory, CacheStorage cacheStorage, DogmaUtils dogmaUtils, IDatabaseConnection database)
+    public certificateMgr (ItemFactory itemFactory, CacheStorage cacheStorage, DogmaUtils dogmaUtils, IDatabaseConnection database)
     {
-        DB           = db;
         Database     = database;
         ItemFactory  = itemFactory;
         CacheStorage = cacheStorage;
         DogmaUtils   = dogmaUtils;
 
         // get the full list of requirements
-        CertificateRelationships = DB.GetCertificateRelationships ();
+        CertificateRelationships = Database.GetCertificateRelationships ();
     }
 
     public PyDataType GetAllShipCertificateRecommendations (CallInformation call)
@@ -87,7 +84,7 @@ public class certificateMgr : Service
         Character character         = ItemFactory.GetItem <Character> (callerCharacterID);
 
         Dictionary <int, Skill> skills              = character.InjectedSkillsByTypeID;
-        List <int>              grantedCertificates = DB.GetCertificateListForCharacter (callerCharacterID);
+        List <int>              grantedCertificates = Database.GetCertificateListForCharacter (callerCharacterID);
 
         if (grantedCertificates.Contains (certificateID))
             throw new CertificateAlreadyGranted ();
@@ -118,7 +115,7 @@ public class certificateMgr : Service
 
         PyList <PyInteger>      result              = new PyList <PyInteger> ();
         Dictionary <int, Skill> skills              = character.InjectedSkillsByTypeID;
-        List <int>              grantedCertificates = DB.GetCertificateListForCharacter (callerCharacterID);
+        List <int>              grantedCertificates = Database.GetCertificateListForCharacter (callerCharacterID);
 
         foreach (PyInteger certificateID in certificateList.GetEnumerable <PyInteger> ())
         {

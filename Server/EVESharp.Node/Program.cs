@@ -201,7 +201,6 @@ internal class Program
         container.Register <DogmaUtils> (Lifestyle.Singleton);
 
         // register the database accessors dependencies
-        container.Register <OldCertificatesDB> (Lifestyle.Singleton);
         container.Register <CharacterDB> (Lifestyle.Singleton);
         container.Register <ChatDB> (Lifestyle.Singleton);
         container.Register <ConfigDB> (Lifestyle.Singleton);
