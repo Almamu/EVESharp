@@ -138,13 +138,13 @@ public class MessagesDB : DatabaseAccessor
                 {
                     case (int) Groups.Character:
                         mailboxType = "charid";
-
                         break;
+
 
                     case (int) Groups.Corporation:
                         mailboxType = "corpid";
-
                         break;
+
                 }
             else
                 mailboxType = "charid";

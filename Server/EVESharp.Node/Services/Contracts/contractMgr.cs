@@ -254,8 +254,8 @@ public class contractMgr : Service
                         callerCharacterID,
                         (int) call.Session.ShipID
                     );
-
                     break;
+
                 case (int) ContractTypes.Loan:
                     break;
                 default:
@@ -672,8 +672,8 @@ public class contractMgr : Service
             {
                 case ContractTypes.ItemExchange:
                     this.AcceptItemExchangeContract (connection, call.Session, contract, station, callerCharacterID);
-
                     break;
+
                 case ContractTypes.Auction:
                     throw new CustomError ("Auctions cannot be accepted!");
                 case ContractTypes.Courier:

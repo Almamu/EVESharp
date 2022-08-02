@@ -30,16 +30,16 @@ public class OpcodeDEFENVIDX : Opcode
         {
             case EVE.StaticData.Dogma.Environment.Self:
                 item = Interpreter.Environment.Self;
-
                 break;
+
             case EVE.StaticData.Dogma.Environment.Char:
                 item = Interpreter.Environment.Character;
-
                 break;
+
             case EVE.StaticData.Dogma.Environment.Ship:
                 item = Interpreter.Environment.Ship;
-
                 break;
+
             case EVE.StaticData.Dogma.Environment.Target:
             case EVE.StaticData.Dogma.Environment.Area:
             case EVE.StaticData.Dogma.Environment.Other:

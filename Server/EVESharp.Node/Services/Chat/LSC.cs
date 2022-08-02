@@ -88,12 +88,12 @@ public class LSC : Service
                     entityID = channelID;
                 // get the full channel identifier
                 channelType = ChatDB.CHANNEL_TYPE_NORMAL;
-
                 break;
+
             case PyTuple tuple:
                 this.ParseTupleChannelIdentifier (tuple, out channelID, out channelType, out entityID);
-
                 break;
+
             default:
                 throw new InvalidDataException ("LSC received a wrongly formatted channel identifier");
         }

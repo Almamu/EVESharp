@@ -81,24 +81,24 @@ public class MachoNet : IMachoNet
         {
             case PyAddressClient dest:
                 this.SendPacketToClient (dest.ClientID, packet);
-
                 break;
+
             case PyAddressBroadcast:
                 this.SendBroadcastPacket (packet);
-
                 break;
+
             case PyAddressNode dest:
                 if (dest.NodeID == NodeID)
                     this.QueueInputPacket (origin, packet);
                 else
                     this.SendPacketToNode (dest.NodeID, packet);
-
                 break;
+
             case PyAddressAny:
                 // a packet destinated to any node should be handled locally by us
                 this.QueueInputPacket (origin, packet);
-
                 break;
+
         }
     }
 

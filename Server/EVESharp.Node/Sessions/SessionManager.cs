@@ -53,12 +53,12 @@ public class SessionManager : EVE.Sessions.SessionManager
             case RunMode.Proxy:
             case RunMode.Single:
                 this.PerformSessionUpdateForProxy (idType, id, newValues);
-
                 break;
+
             case RunMode.Server:
                 this.PerformSessionUpdateForNode (idType, id, newValues);
-
                 break;
+
         }
     }
 

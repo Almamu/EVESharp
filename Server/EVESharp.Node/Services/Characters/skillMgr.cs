@@ -582,24 +582,24 @@ public class skillMgr : ClientBoundService
         {
             case (int) AttributeTypes.willpower:
                 attribute = AttributeTypes.willpowerBonus;
-
                 break;
+
             case (int) AttributeTypes.charisma:
                 attribute = AttributeTypes.charismaBonus;
-
                 break;
+
             case (int) AttributeTypes.memory:
                 attribute = AttributeTypes.memoryBonus;
-
                 break;
+
             case (int) AttributeTypes.intelligence:
                 attribute = AttributeTypes.intelligenceBonus;
-
                 break;
+
             case (int) AttributeTypes.perception:
                 attribute = AttributeTypes.perceptionBonus;
-
                 break;
+
             default:
                 return new PyList <PyTuple> ();
         }

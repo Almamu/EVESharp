@@ -535,46 +535,46 @@ public class Unmarshal
             {
                 case FieldType.UI8:
                     data [column.Name] = new PyInteger ((long) decompressedReader.ReadUInt64 ());
-
                     break;
+
                 case FieldType.I8:
                 case FieldType.CY:
                 case FieldType.FileTime:
                     data [column.Name] = new PyInteger (decompressedReader.ReadInt64 ());
-
                     break;
+
                 case FieldType.I4:
                     data [column.Name] = new PyInteger (decompressedReader.ReadInt32 ());
-
                     break;
+
                 case FieldType.UI4:
                     data [column.Name] = new PyInteger (decompressedReader.ReadUInt32 ());
-
                     break;
+
                 case FieldType.UI2:
                     data [column.Name] = new PyInteger (decompressedReader.ReadUInt16 ());
-
                     break;
+
                 case FieldType.I2:
                     data [column.Name] = new PyInteger (decompressedReader.ReadInt16 ());
-
                     break;
+
                 case FieldType.I1:
                     data [column.Name] = new PyInteger (decompressedReader.ReadSByte ());
-
                     break;
+
                 case FieldType.UI1:
                     data [column.Name] = new PyInteger (decompressedReader.ReadByte ());
-
                     break;
+
                 case FieldType.R8:
                     data [column.Name] = new PyDecimal (decompressedReader.ReadDouble ());
-
                     break;
+
                 case FieldType.R4:
                     data [column.Name] = new PyDecimal (decompressedReader.ReadSingle ());
-
                     break;
+
                 case FieldType.Bool:
                 {
                     int  boolBit = (wholeBytes << 3) + booleanColumns.IndexOf (column);
@@ -582,14 +582,14 @@ public class Unmarshal
 
                     data [column.Name] = new PyBool (isTrue);
                 }
-
                     break;
+
                 case FieldType.Bytes:
                 case FieldType.WStr:
                 case FieldType.Str:
                     data [column.Name] = this.Process (false);
-
                     break;
+
 
                 default:
                     throw new InvalidDataException ($"Unknown column type {column.Type}");

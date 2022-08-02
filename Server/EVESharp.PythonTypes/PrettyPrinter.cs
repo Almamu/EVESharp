@@ -74,72 +74,72 @@ public class PrettyPrinter
             case PyNone:
             case null:
                 this.ProcessNone ();
-
                 break;
+
             case PyString pyString:
                 this.ProcessString (pyString);
-
                 break;
+
             case PyToken pyToken:
                 this.ProcessToken (pyToken);
-
                 break;
+
             case PyInteger pyInteger:
                 this.ProcessInteger (pyInteger);
-
                 break;
+
             case PyDecimal pyDecimal:
                 this.ProcessDecimal (pyDecimal);
-
                 break;
+
             case PyBuffer pyBuffer:
                 this.ProcessBuffer (pyBuffer);
-
                 break;
+
             case PyBool pyBool:
                 this.ProcessBoolean (pyBool);
-
                 break;
+
             case PyTuple pyTuple:
                 this.ProcessTuple (pyTuple);
-
                 break;
+
             case PyList pyList:
                 this.ProcessList (pyList);
-
                 break;
+
             case PyDictionary pyDictionary:
                 this.ProcessDictionary (pyDictionary);
-
                 break;
+
             case PyChecksumedStream pyChecksumedStream:
                 this.ProcessChecksumedStream (pyChecksumedStream);
-
                 break;
+
             case PyObject pyObject:
                 this.ProcessObject (pyObject);
-
                 break;
+
             case PyObjectData pyObjectData:
                 this.ProcessObjectData (pyObjectData);
-
                 break;
+
             case PySubStream pySubStream:
                 this.ProcessSubStream (pySubStream);
-
                 break;
+
             case PySubStruct pySubStruct:
                 this.ProcessSubStruct (pySubStruct);
-
                 break;
+
             case PyPackedRow pyPackedRow:
                 this.ProcessPackedRow (pyPackedRow);
-
                 break;
+
             default:
                 this.mStringBuilder.AppendLine ("[--PyUnknown--]");
-
                 break;
+
         }
     }
 

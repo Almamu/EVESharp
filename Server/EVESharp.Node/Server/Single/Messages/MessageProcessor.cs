@@ -26,8 +26,8 @@ public class MessageProcessor : Shared.Messages.MessageProcessor
             case PyAddressNode node:
                 if (node.NodeID != MachoNet.NodeID)
                     throw new Exception ("Detected a packet to a node that is not us on a single-instance nodes");
-
                 break;
+
             case PyAddressAny:
                 break;
 
@@ -40,23 +40,23 @@ public class MessageProcessor : Shared.Messages.MessageProcessor
         {
             case PyPacket.PacketType.CALL_REQ:
                 LocalCallHandler.HandleCallReq (machoMessage);
-
                 break;
+
 
             case PyPacket.PacketType.CALL_RSP:
                 LocalCallHandler.HandleCallRsp (machoMessage);
-
                 break;
+
 
             case PyPacket.PacketType.PING_REQ:
                 LocalPingHandler.HandlePingReq (machoMessage);
-
                 break;
+
 
             case PyPacket.PacketType.NOTIFICATION:
                 LocalNotificationHandler.HandleNotification (machoMessage);
-
                 break;
+
 
             default:
                 throw new NotImplementedException ("Only CallReq and PingReq packets can be handled in single-instance nodes");

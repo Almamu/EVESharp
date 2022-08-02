@@ -119,8 +119,8 @@ public class invbroker : ClientBoundService
         {
             case (int) Container.Wallet:
                 flag = Flags.Wallet;
-
                 break;
+
             case (int) Container.Hangar:
                 flag = Flags.Hangar;
 
@@ -131,16 +131,16 @@ public class invbroker : ClientBoundService
                     throw new CrpAccessDenied (MLS.UI_CORP_ACCESSDENIED13);
                 if (ownerID == call.Session.CorporationID && CorporationRole.SecurityOfficer.Is (call.Session.CorporationRole) == false)
                     throw new CrpAccessDenied (MLS.UI_CORP_ACCESSDENIED13);
-
                 break;
+
             case (int) Container.Character:
                 flag = Flags.Skill;
-
                 break;
+
             case (int) Container.Global:
                 flag = Flags.None;
-
                 break;
+
             case (int) Container.CorpMarket:
                 flag    = Flags.CorpMarket;
                 ownerID = call.Session.CorporationID;
@@ -150,8 +150,8 @@ public class invbroker : ClientBoundService
                     CorporationRole.JuniorAccountant.Is (call.Session.CorporationRole) == false &&
                     CorporationRole.Trader.Is (call.Session.CorporationRole) == false)
                     throw new CrpAccessDenied (MLS.UI_CORP_ACCESSDENIED14);
-
                 break;
+
 
             default:
                 throw new CustomError ($"Trying to open container ID ({containerID.Value}) is not supported");

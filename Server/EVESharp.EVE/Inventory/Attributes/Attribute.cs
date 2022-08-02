@@ -163,27 +163,27 @@ public class Attribute
             {
                 case Association.PreAssignment:
                     attribute = modifier.Value;
-
                     break;
+
                 case Association.SkillCheck:
                     throw new DogmaMachineException ("SkillCheck not supported yet");
                 case Association.PreDiv:
                     if (attribute != 0)
                         attribute /= modifier.Value;
-
                     break;
+
                 case Association.PreMul:
                     attribute *= modifier.Value;
-
                     break;
+
                 case Association.ModAdd:
                     attribute += modifier.Value;
-
                     break;
+
                 case Association.ModSub:
                     attribute -= modifier.Value;
-
                     break;
+
                 case Association.AddRate:
                 case Association.SubRate:
                     throw new DogmaMachineException ("AddRate/SubRate not supported yet");
@@ -195,23 +195,23 @@ public class Attribute
             {
                 case Association.PostAssignment:
                     attribute = modifier.Value;
-
                     break;
+
                 case Association.SkillCheck:
                     throw new DogmaMachineException ("SkillCheck not supported yet");
                 case Association.PostDiv:
                     if (attribute != 0)
                         attribute /= modifier.Value;
-
                     break;
+
                 case Association.PostMul:
                     attribute *= modifier.Value;
-
                     break;
+
                 case Association.PostPercent:
                     attribute *= 1.0 + modifier.Value / 100.0;
-
                     break;
+
                 case Association.AddRate:
                 case Association.SubRate:
                     throw new DogmaMachineException ("AddRate/SubRate not supported yet");
@@ -262,12 +262,12 @@ public class Attribute
             // based on the types perform the appropiate operation
             case ItemAttributeValueType.Double:
                 clone.Float *= value;
-
                 break;
+
             case ItemAttributeValueType.Integer:
                 clone.Float = clone.Integer * value;
-
                 break;
+
         }
 
         return clone;
@@ -289,12 +289,12 @@ public class Attribute
             // based on the types perform the appropiate operation
             case ItemAttributeValueType.Integer:
                 clone.Integer *= value;
-
                 break;
+
             case ItemAttributeValueType.Double:
                 clone.Float *= value;
-
                 break;
+
         }
 
         return clone;
@@ -314,29 +314,29 @@ public class Attribute
                 {
                     case ItemAttributeValueType.Double:
                         clone.Float *= value.Integer;
-
                         break;
+
                     case ItemAttributeValueType.Integer:
                         clone.Integer *= value.Integer;
-
                         break;
-                }
 
+                }
                 break;
+
             case ItemAttributeValueType.Double:
                 switch (clone.ValueType)
                 {
                     case ItemAttributeValueType.Double:
                         clone.Float *= value.Float;
-
                         break;
+
                     case ItemAttributeValueType.Integer:
                         clone.Float = clone.Integer * value.Float;
-
                         break;
-                }
 
+                }
                 break;
+
         }
 
         return clone;
@@ -353,12 +353,12 @@ public class Attribute
             // based on the types perform the appropiate operation
             case ItemAttributeValueType.Integer:
                 clone.Float = clone.Integer / value;
-
                 break;
+
             case ItemAttributeValueType.Double:
                 clone.Float /= value;
-
                 break;
+
         }
 
         return clone;
@@ -375,12 +375,12 @@ public class Attribute
             // based on the types perform the appropiate operation
             case ItemAttributeValueType.Integer:
                 clone.Float = (double) clone.Integer / value;
-
                 break;
+
             case ItemAttributeValueType.Double:
                 clone.Float /= value;
-
                 break;
+
         }
 
         return clone;
@@ -400,29 +400,29 @@ public class Attribute
                 {
                     case ItemAttributeValueType.Double:
                         clone.Float /= value.Integer;
-
                         break;
+
                     case ItemAttributeValueType.Integer:
                         clone.Float = (double) clone.Integer / value.Integer;
-
                         break;
-                }
 
+                }
                 break;
+
             case ItemAttributeValueType.Double:
                 switch (clone.ValueType)
                 {
                     case ItemAttributeValueType.Double:
                         clone.Float /= value.Float;
-
                         break;
+
                     case ItemAttributeValueType.Integer:
                         clone.Float = clone.Integer / value.Float;
-
                         break;
-                }
 
+                }
                 break;
+
         }
 
         return clone;
@@ -439,12 +439,12 @@ public class Attribute
             // based on the types perform the appropiate operation
             case ItemAttributeValueType.Double:
                 clone.Float += value;
-
                 break;
+
             case ItemAttributeValueType.Integer:
                 clone.Float = clone.Integer + value;
-
                 break;
+
         }
 
         return clone;
@@ -461,12 +461,12 @@ public class Attribute
             // based on the types perform the appropiate operation
             case ItemAttributeValueType.Integer:
                 clone.Integer += value;
-
                 break;
+
             case ItemAttributeValueType.Double:
                 clone.Float += value;
-
                 break;
+
         }
 
         return clone;
@@ -486,29 +486,29 @@ public class Attribute
                 {
                     case ItemAttributeValueType.Double:
                         clone.Float += value.Integer;
-
                         break;
+
                     case ItemAttributeValueType.Integer:
                         clone.Integer += value.Integer;
-
                         break;
-                }
 
+                }
                 break;
+
             case ItemAttributeValueType.Double:
                 switch (clone.ValueType)
                 {
                     case ItemAttributeValueType.Double:
                         clone.Float += value.Float;
-
                         break;
+
                     case ItemAttributeValueType.Integer:
                         clone.Float = clone.Integer + value.Float;
-
                         break;
-                }
 
+                }
                 break;
+
         }
 
         return clone;
@@ -525,12 +525,12 @@ public class Attribute
             // based on the types perform the appropiate operation
             case ItemAttributeValueType.Double:
                 clone.Float -= value;
-
                 break;
+
             case ItemAttributeValueType.Integer:
                 clone.Float = clone.Integer - value;
-
                 break;
+
         }
 
         return clone;
@@ -547,12 +547,12 @@ public class Attribute
             // based on the types perform the appropiate operation
             case ItemAttributeValueType.Integer:
                 clone.Integer -= value;
-
                 break;
+
             case ItemAttributeValueType.Double:
                 clone.Float -= value;
-
                 break;
+
         }
 
         return clone;
@@ -572,29 +572,29 @@ public class Attribute
                 {
                     case ItemAttributeValueType.Double:
                         clone.Float -= value.Integer;
-
                         break;
+
                     case ItemAttributeValueType.Integer:
                         clone.Integer -= value.Integer;
-
                         break;
-                }
 
+                }
                 break;
+
             case ItemAttributeValueType.Double:
                 switch (clone.ValueType)
                 {
                     case ItemAttributeValueType.Double:
                         clone.Float -= value.Float;
-
                         break;
+
                     case ItemAttributeValueType.Integer:
                         clone.Float = clone.Integer - value.Float;
-
                         break;
-                }
 
+                }
                 break;
+
         }
 
         return clone;

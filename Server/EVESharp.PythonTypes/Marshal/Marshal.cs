@@ -193,68 +193,68 @@ public class Marshal
             case null:
             case PyNone _:
                 this.ProcessNone (writer);
-
                 break;
+
             case PyInteger pyInteger:
                 this.ProcessInteger (writer, pyInteger);
-
                 break;
+
             case PyDecimal pyDecimal:
                 this.ProcessDecimal (writer, pyDecimal);
-
                 break;
+
             case PyToken pyToken:
                 this.ProcessToken (writer, pyToken);
-
                 break;
+
             case PyBool pyBool:
                 this.ProcessBool (writer, pyBool);
-
                 break;
+
             case PyBuffer pyBuffer:
                 this.ProcessBuffer (writer, pyBuffer);
-
                 break;
+
             case PyDictionary pyDictionary:
                 this.ProcessDictionary (writer, pyDictionary);
-
                 break;
+
             case PyList pyList:
                 this.ProcessList (writer, pyList);
-
                 break;
+
             case PyObjectData pyObjectData:
                 this.ProcessObjectData (writer, pyObjectData);
-
                 break;
+
             case PyObject pyObject:
                 this.ProcessObject (writer, pyObject);
-
                 break;
+
             case PyString pyString:
                 this.ProcessString (writer, pyString);
-
                 break;
+
             case PySubStream pySubStream:
                 this.ProcessSubStream (writer, pySubStream);
-
                 break;
+
             case PyChecksumedStream pyChecksumedStream:
                 this.ProcessChecksumedStream (writer, pyChecksumedStream);
-
                 break;
+
             case PySubStruct pySubStruct:
                 this.ProcessSubStruct (writer, pySubStruct);
-
                 break;
+
             case PyTuple pyTuple:
                 this.ProcessTuple (writer, pyTuple);
-
                 break;
+
             case PyPackedRow pyPackedRow:
                 this.ProcessPackedRow (writer, pyPackedRow);
-
                 break;
+
             default:
                 throw new InvalidDataException ($"Unexpected type {data.GetType ()}");
         }
@@ -750,50 +750,50 @@ public class Marshal
             {
                 case FieldType.UI8:
                     wholeByteWriter.Write ((ulong) (value as PyInteger ?? 0));
-
                     break;
+
 
                 case FieldType.I8:
                 case FieldType.CY:
                 case FieldType.FileTime:
                     wholeByteWriter.Write ((long) (value as PyInteger ?? 0));
-
                     break;
+
 
                 case FieldType.I4:
                     wholeByteWriter.Write ((int) (value as PyInteger ?? 0));
-
                     break;
+
                 case FieldType.UI4:
                     wholeByteWriter.Write ((uint) (value as PyInteger ?? 0));
-
                     break;
+
                 case FieldType.I2:
                     wholeByteWriter.Write ((short) (value as PyInteger ?? 0));
-
                     break;
+
                 case FieldType.UI2:
                     wholeByteWriter.Write ((ushort) (value as PyInteger ?? 0));
-
                     break;
+
                 case FieldType.I1:
                     wholeByteWriter.Write ((sbyte) (value as PyInteger ?? 0));
-
                     break;
+
                 case FieldType.UI1:
                     wholeByteWriter.Write ((byte) (value as PyInteger ?? 0));
-
                     break;
+
 
                 case FieldType.R8:
                     wholeByteWriter.Write ((double) (value as PyDecimal ?? 0));
-
                     break;
+
 
                 case FieldType.R4:
                     wholeByteWriter.Write ((float) (value as PyDecimal ?? 0));
-
                     break;
+
 
                 // bools, bytes and str are handled differently
                 case FieldType.Bool:
@@ -803,8 +803,8 @@ public class Marshal
 
                         bitField [bit >> 3] |= (byte) (1 << (bit & 0x7));
                     }
-
                     break;
+
 
                 case FieldType.Bytes:
                 case FieldType.Str:

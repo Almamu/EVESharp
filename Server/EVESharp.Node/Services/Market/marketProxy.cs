@@ -83,12 +83,12 @@ public class marketProxy : Service
             {
                 case 0:
                     transactionType = TransactionType.Sell;
-
                     break;
+
                 case 1:
                     transactionType = TransactionType.Buy;
-
                     break;
+
             }
 
         return DB.GetNewTransactions (entityID, null, transactionType, typeID, quantity, minPrice, accountKey);
@@ -960,13 +960,13 @@ public class marketProxy : Service
                     case TransactionType.Buy:
                         // buy orders need to return the escrow
                         this.BuyOrderExpired (connection, order);
-
                         break;
+
                     case TransactionType.Sell:
                         // sell orders are a bit harder, the items have to go back to the player's hangar
                         this.SellOrderExpired (connection, order);
-
                         break;
+
                 }
         }
         finally

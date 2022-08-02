@@ -112,20 +112,20 @@ public class TransportManager
         {
             case MachoUnauthenticatedTransport:
                 UnauthenticatedTransports.Remove (transport);
-
                 break;
+
             case MachoClientTransport:
                 ClientTransports.Remove (transport.Session.UserID);
-
                 break;
+
             case MachoNodeTransport:
                 NodeTransports.Remove (transport.Session.NodeID);
-
                 break;
+
             case MachoProxyTransport:
                 ProxyTransports.Remove (transport.Session.NodeID);
-
                 break;
+
         }
 
         OnTransportRemoved?.Invoke (this, transport);

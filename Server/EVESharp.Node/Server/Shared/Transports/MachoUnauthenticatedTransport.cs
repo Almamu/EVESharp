@@ -102,13 +102,13 @@ public class MachoUnauthenticatedTransport : MachoTransport
             case "proxy":
                 // resolve the connection to a proxy transport
                 MachoNet.TransportManager.ResolveProxyTransport (this);
-
                 break;
+
             case "server":
                 // resolve the connection to a node transport
                 MachoNet.TransportManager.ResolveNodeTransport (this);
-
                 break;
+
         }
 
         // send our identification res so the destination knows what to do
@@ -137,13 +137,13 @@ public class MachoUnauthenticatedTransport : MachoTransport
             case "proxy":
                 // resolve the connection to a proxy transport
                 MachoNet.TransportManager.ResolveProxyTransport (this);
-
                 break;
+
             case "server":
                 // resolve the connection to a node transport
                 MachoNet.TransportManager.ResolveNodeTransport (this);
-
                 break;
+
         }
     }
 
@@ -153,12 +153,12 @@ public class MachoUnauthenticatedTransport : MachoTransport
         {
             case PyPacket.PacketType.IDENTIFICATION_REQ:
                 this.HandleIdentificationReq (packet);
-
                 break;
+
             case PyPacket.PacketType.IDENTIFICATION_RSP:
                 this.HandleIdentificationRsp (packet);
-
                 break;
+
         }
     }
 

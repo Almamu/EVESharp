@@ -37,13 +37,13 @@ public class Authentication
 
                 Message     = section ["loginMessage"];
                 MessageType = AuthenticationMessageType.HTMLMessage;
-
                 break;
+
             case "NONE":
             default:
                 MessageType = AuthenticationMessageType.NoMessage;
-
                 break;
+
         }
 
         if (section.ContainsKey ("autoaccount") == false)

@@ -109,24 +109,24 @@ public class MessageProcessor : Shared.Messages.MessageProcessor
         {
             case PyPacket.PacketType.CALL_REQ:
                 LocalCallHandler.HandleCallReq (machoMessage);
-
                 break;
+
             case PyPacket.PacketType.CALL_RSP:
                 LocalCallHandler.HandleCallRsp (machoMessage);
-
                 break;
+
             case PyPacket.PacketType.PING_REQ:
                 this.HandlePingReq (machoMessage);
-
                 break;
+
             case PyPacket.PacketType.PING_RSP:
                 this.HandlePingRsp (machoMessage);
-
                 break;
+
             case PyPacket.PacketType.NOTIFICATION:
                 LocalNotificationHandler.HandleNotification (machoMessage);
-
                 break;
+
         }
     }
 

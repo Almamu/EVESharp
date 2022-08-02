@@ -129,8 +129,8 @@ public class dogmaIM : ClientBoundService
                         item.Attributes,
                         DateTime.UtcNow.ToFileTime ()
                     );
-
                     break;
+
             }
 
         return itemInfo;

@@ -727,24 +727,24 @@ public class ItemFactory
             {
                 case Alliance alliance:
                     this.PersistAlliance (alliance);
-
                     break;
+
                 case Blueprint blueprint:
                     ItemDB.PersistBlueprint (blueprint.BlueprintInformation);
-
                     break;
+
                 case Ship ship:
                     InsuranceDB.UnInsureShip (ship.ID);
-
                     break;
+
                 case Corporation corporation:
                     CorporationDB.UpdateCorporationInformation (corporation);
-
                     break;
+
                 case Character character:
                     CharacterDB.UpdateCharacterInformation (character);
-
                     break;
+
             }
         }
 

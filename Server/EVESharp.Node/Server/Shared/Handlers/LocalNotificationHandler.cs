@@ -132,28 +132,28 @@ public class LocalNotificationHandler
         {
             case "UpdateSessionAttributes":
                 this.HandleUpdateSessionAttributes (packet.Payload[1] as PyTuple);
-
                 break;
+
             case "OnSolarSystemLoad":
                 this.HandleOnSolarSystemLoaded (packet.Payload [1] as PyTuple);
-
                 break;
+
             case OnItemChange.NOTIFICATION_NAME:
                 this.HandleOnItemUpdate (packet.Payload);
-
                 break;
+
             case OnCorporationMemberChanged.NOTIFICATION_NAME:
                 this.HandleOnCorporationMemberChanged (packet.Payload);
-
                 break;
+
             case OnCorporationMemberUpdated.NOTIFICATION_NAME:
                 this.HandleOnCorporationMemberUpdated (packet.Payload);
-
                 break;
+
             case OnCorporationChanged.NOTIFICATION_NAME:
                 this.HandleOnCorporationChanged (packet.Payload);
-
                 break;
+
             
             case OnCorporationOfficeRented.NOTIFICATION_NAME:
                 this.HandleOnCorporationOfficeRented (packet.Payload);
@@ -161,12 +161,12 @@ public class LocalNotificationHandler
             
             case "ClientHasDisconnected":
                 this.HandleClientHasDisconnected (packet.Payload [1] as PyTuple, packet.OutOfBounds);
-
                 break;
+
             default:
                 Log.Fatal ("Received ClusterController notification with the wrong format");
-
                 break;
+
         }
     }
 
@@ -228,12 +228,12 @@ public class LocalNotificationHandler
                 {
                     case Station _:
                         locationBelongsToUs = SystemManager.StationBelongsToUs (location.ID);
-
                         break;
+
                     case SolarSystem _:
                         locationBelongsToUs = SystemManager.SolarSystemBelongsToUs (location.ID);
-
                         break;
+
                 }
 
                 if (locationBelongsToUs == false)
