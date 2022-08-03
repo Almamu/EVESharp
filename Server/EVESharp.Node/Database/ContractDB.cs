@@ -35,7 +35,6 @@ using EVESharp.Node.Services.Contracts;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Database;
 using EVESharp.PythonTypes.Types.Primitives;
-using MySql.Data.MySqlClient;
 using Categories = EVESharp.EVE.StaticData.Inventory.Categories;
 using Type = System.Type;
 

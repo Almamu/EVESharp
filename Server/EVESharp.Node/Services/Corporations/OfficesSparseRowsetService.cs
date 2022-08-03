@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using EVESharp.EVE.Services;
 using EVESharp.EVE.Sessions;
@@ -81,7 +80,7 @@ public class OfficesSparseRowsetService : SparseRowsetDatabaseService
         // update the header count
         this.RowsetHeader.Count--;
         
-        PyDictionary<PyString, PyTuple> changes = new PyDictionary <PyString, PyTuple> ()
+        PyDictionary<PyString, PyTuple> changes = new PyDictionary <PyString, PyTuple>
         {
             ["officeID"] = new PyTuple (2)
             {

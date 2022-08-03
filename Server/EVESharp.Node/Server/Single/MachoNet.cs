@@ -2,7 +2,6 @@
 using System.Linq;
 using System.Net.Http;
 using EVESharp.Common.Constants;
-using EVESharp.Common.Database;
 using EVESharp.Common.Logging;
 using EVESharp.Common.Network.Messages;
 using EVESharp.Database;
@@ -18,8 +17,6 @@ using EVESharp.PythonTypes.Types.Database;
 using EVESharp.PythonTypes.Types.Network;
 using EVESharp.PythonTypes.Types.Primitives;
 using Serilog;
-using AccountDB = EVESharp.Database.AccountDB;
-using ItemDB = EVESharp.Database.ItemDB;
 
 namespace EVESharp.Node.Server.Single;
 
@@ -178,10 +175,10 @@ public class MachoNet : IMachoNet
                     case ComparisonType.Equality:
                         if (!isOwnerID && transport.Session [dest.IDType] != id)
                             continue;
-                        else if (isOwnerID && transport.Session.AllianceID != id &&
-                                 transport.Session.CharacterID != id &&
-                                 transport.Session.CorporationID != id)
-                                continue;
+                        if (isOwnerID && transport.Session.AllianceID != id &&
+                            transport.Session.CharacterID != id &&
+                            transport.Session.CorporationID != id)
+                            continue;
                         break;
                 }
 
@@ -236,10 +233,10 @@ public class MachoNet : IMachoNet
                         case ComparisonType.Equality:
                             if (!isOwnerID[i] && transport.Session [criteria[i]] != id [i])
                                 break;
-                            else if (isOwnerID[i] && 
-                                     transport.Session.AllianceID != id [i] &&
-                                     transport.Session.CharacterID != id [i] &&
-                                     transport.Session.CorporationID != id [i])
+                            if (isOwnerID[i] && 
+                                transport.Session.AllianceID != id [i] &&
+                                transport.Session.CharacterID != id [i] &&
+                                transport.Session.CorporationID != id [i])
                                 break;
                             continue;
                     }

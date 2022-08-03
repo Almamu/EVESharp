@@ -7,7 +7,6 @@ using EVESharp.Node.Inventory.Items;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Database;
 using EVESharp.PythonTypes.Types.Primitives;
-using MySql.Data.MySqlClient;
 
 namespace EVESharp.Node.Database;
 

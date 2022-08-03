@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using EVESharp.Common.Database;
 using EVESharp.Database;
 using EVESharp.EVE.Client.Exceptions.corpStationMgr;
 using EVESharp.EVE.Market;
@@ -21,7 +20,6 @@ using EVESharp.Node.Inventory.Items.Types;
 using EVESharp.Node.Market;
 using EVESharp.Node.Notifications;
 using EVESharp.Node.Notifications.Nodes.Corps;
-using EVESharp.Node.Sessions;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Database;
 using EVESharp.PythonTypes.Types.Primitives;
@@ -312,7 +310,7 @@ public class corpStationMgr : ClientBoundService
         int nodeID = ItemFactory.ItemDB.GetItemNode (call.Session.CorporationID);
         
         if (nodeID > 0)
-            Notifications.NotifyNode (nodeID, new OnCorporationOfficeRented () {CorporationID = call.Session.CorporationID, StationID = stationID, OfficeFolderID = item.ID, TypeID = (int) Types.OfficeFolder});
+            Notifications.NotifyNode (nodeID, new OnCorporationOfficeRented {CorporationID = call.Session.CorporationID, StationID = stationID, OfficeFolderID = item.ID, TypeID = (int) Types.OfficeFolder});
         
         // return the new officeID
         return item.ID;

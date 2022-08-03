@@ -24,11 +24,8 @@
 
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Net.Http;
-using System.Text.Json;
 using System.Threading.Tasks;
-using EVESharp.Common.Database;
 using EVESharp.Database;
 using EVESharp.Node.Inventory.Items.Types;
 using EVESharp.Node.Server.Shared;

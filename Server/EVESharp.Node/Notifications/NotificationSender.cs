@@ -28,7 +28,7 @@ public class NotificationSender
     /// <summary>
     /// Translates the session key name into how it has to be compared for notifications
     /// </summary>
-    public static readonly Dictionary <string, ComparisonType> NotificationComparison = new Dictionary <string, ComparisonType> ()
+    public static readonly Dictionary <string, ComparisonType> NotificationComparison = new Dictionary <string, ComparisonType>
     {
         [Session.CORP_ROLE] = ComparisonType.Bitmask,
     };

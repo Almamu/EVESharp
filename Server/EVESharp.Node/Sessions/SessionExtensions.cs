@@ -1,7 +1,6 @@
 ﻿using EVESharp.EVE.Client.Exceptions;
 using EVESharp.EVE.Packets.Exceptions;
 using EVESharp.EVE.Sessions;
-using Org.BouncyCastle.Crypto.Tls;
 
 namespace EVESharp.Node.Sessions;
 

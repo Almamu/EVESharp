@@ -1,23 +1,16 @@
 ﻿using System;
-using System.Text.RegularExpressions;
 using EVESharp.EVE.Packets;
-using EVESharp.Node.Sessions;
-using EVESharp.Node.Client.Notifications.Inventory;
 using EVESharp.Node.Inventory;
-using EVESharp.Node.Inventory.Items;
-using EVESharp.Node.Inventory.Items.Types;
 using EVESharp.Node.Notifications;
-using EVESharp.Node.Notifications.Nodes.Corps;
 using EVESharp.Node.Server.Shared;
 using EVESharp.Node.Server.Shared.Helpers;
 using EVESharp.Node.Server.Shared.Messages;
 using EVESharp.Node.Services;
-using EVESharp.Node.Services.Corporations;
+using EVESharp.Node.Sessions;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Network;
 using EVESharp.PythonTypes.Types.Primitives;
 using Serilog;
-using OnItemChange = EVESharp.Node.Notifications.Nodes.Inventory.OnItemChange;
 
 namespace EVESharp.Node.Server.Node.Messages;
 

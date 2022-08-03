@@ -22,8 +22,6 @@
     Creator: Almamu
 */
 
-using System.Collections.Generic;
-using EVESharp.Common.Database;
 using EVESharp.Common.Network.Messages;
 using EVESharp.Database;
 using EVESharp.EVE.Packets;
@@ -64,7 +62,7 @@ public class LoginQueue : MessageProcessor <LoginQueueEntry>
         LoginStatus status = LoginStatus.Waiting;
         
         // make some accommodations for the auto-account mechanism
-        if (Database.ActExists (entry.Request.user_name) == false && Configuration.Autoaccount == true)
+        if (Database.ActExists (entry.Request.user_name) == false && this.Configuration.Autoaccount)
         {
             Log.Information ($"Auto account enabled, creating account for user {entry.Request.user_name}");
 

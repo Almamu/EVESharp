@@ -1,7 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Data;
-using EVESharp.Common.Database;
 using EVESharp.Database;
 using EVESharp.EVE.Client.Exceptions;
 using EVESharp.EVE.Market;
@@ -10,7 +8,6 @@ using EVESharp.EVE.Wallet;
 using EVESharp.Node.Client.Notifications.Wallet;
 using EVESharp.Node.Notifications;
 using EVESharp.PythonTypes.Types.Database;
-using MySql.Data.MySqlClient;
 
 namespace EVESharp.Node.Market;
 

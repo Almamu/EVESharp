@@ -46,7 +46,7 @@ public class OnCorporationOfficeRented : InterNodeNotification
         if (data [3] is not PyInteger officeFolderID)
             throw new InvalidCastException ("expected integer as fourth element");
         
-        return new OnCorporationOfficeRented ()
+        return new OnCorporationOfficeRented
         {
             CorporationID = corporationID,
             StationID = stationID,

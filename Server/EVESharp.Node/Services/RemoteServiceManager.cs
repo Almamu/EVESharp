@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using EVESharp.Common.Database;
 using EVESharp.Database;
 using EVESharp.EVE.Account;
 using EVESharp.EVE.Sessions;
@@ -100,7 +99,7 @@ public class RemoteServiceManager
 
             // create the timeout timer if needed
             if (timeoutSeconds > 0)
-                entry.Timer = Timers.EnqueueTimer<int> (
+                entry.Timer = Timers.EnqueueTimer (
                     DateTime.UtcNow.AddSeconds (timeoutSeconds),
                     this.CallTimeoutExpired,
                     callID

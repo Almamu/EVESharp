@@ -25,7 +25,6 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using EVESharp.Common.Database;
 using EVESharp.Database;
 using EVESharp.EVE.StaticData.Inventory;
 using EVESharp.Node.Configuration;

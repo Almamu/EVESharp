@@ -18,11 +18,9 @@ using EVESharp.Node.Inventory.Items.Types;
 using EVESharp.Node.Market;
 using EVESharp.Node.Notifications;
 using EVESharp.Node.Notifications.Nodes.Inventory;
-using EVESharp.Node.Sessions;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Database;
 using EVESharp.PythonTypes.Types.Primitives;
-using MySql.Data.MySqlClient;
 using Container = EVESharp.Node.Inventory.Items.Types.Container;
 
 namespace EVESharp.Node.Services.Contracts;

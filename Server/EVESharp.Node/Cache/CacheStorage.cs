@@ -34,7 +34,6 @@ using EVESharp.PythonTypes.Marshal;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Database;
 using EVESharp.PythonTypes.Types.Primitives;
-using MySql.Data.MySqlClient;
 using Serilog;
 
 namespace EVESharp.Node.Cache;

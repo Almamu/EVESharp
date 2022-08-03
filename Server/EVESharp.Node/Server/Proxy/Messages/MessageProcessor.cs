@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using EVESharp.EVE.Sessions;
 using EVESharp.Node.Inventory;
 using EVESharp.Node.Notifications;
 using EVESharp.Node.Server.Shared;
@@ -9,11 +8,11 @@ using EVESharp.Node.Server.Shared.Helpers;
 using EVESharp.Node.Server.Shared.Messages;
 using EVESharp.Node.Server.Shared.Transports;
 using EVESharp.Node.Services;
+using EVESharp.Node.Sessions;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Network;
 using EVESharp.PythonTypes.Types.Primitives;
 using Serilog;
-using SessionManager = EVESharp.Node.Sessions.SessionManager;
 
 namespace EVESharp.Node.Server.Proxy.Messages;
 

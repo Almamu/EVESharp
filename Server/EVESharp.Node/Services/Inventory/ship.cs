@@ -1,5 +1,4 @@
-﻿using EVESharp.Common.Database;
-using EVESharp.Database;
+﻿using EVESharp.Database;
 using EVESharp.EVE.Client.Exceptions.ship;
 using EVESharp.EVE.Packets.Exceptions;
 using EVESharp.EVE.Services;
@@ -11,7 +10,6 @@ using EVESharp.Node.Dogma;
 using EVESharp.Node.Inventory;
 using EVESharp.Node.Inventory.Items;
 using EVESharp.Node.Inventory.Items.Types;
-using EVESharp.Node.Sessions;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Database;
 using EVESharp.PythonTypes.Types.Primitives;

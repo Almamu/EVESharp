@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using EVESharp.EVE;
 using EVESharp.EVE.Account;
 using EVESharp.EVE.Client.Exceptions.slash;
 using EVESharp.EVE.Market;
@@ -160,7 +159,7 @@ public class slash : Service
             throw new SlashError ("The specified typeID doesn't exist");
 
         // create a new item with the correct locationID
-        Station   location  = ItemFactory.GetStaticStation ((int) call.Session.StationID);
+        Station   location  = ItemFactory.GetStaticStation (call.Session.StationID);
         Character character = ItemFactory.GetItem <Character> (call.Session.CharacterID);
 
         Type       itemType = TypeManager [typeID];

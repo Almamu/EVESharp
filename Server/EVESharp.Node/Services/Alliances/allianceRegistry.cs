@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
-using System.Threading.Tasks;
 using EVESharp.Common.Database;
 using EVESharp.Database;
 using EVESharp.EVE.Alliances;
@@ -23,7 +22,6 @@ using EVESharp.Node.Notifications.Nodes.Corps;
 using EVESharp.Node.Server.Shared;
 using EVESharp.PythonTypes.Types.Database;
 using EVESharp.PythonTypes.Types.Primitives;
-using MySql.Data.MySqlClient;
 using SessionManager = EVESharp.Node.Sessions.SessionManager;
 
 namespace EVESharp.Node.Services.Alliances;

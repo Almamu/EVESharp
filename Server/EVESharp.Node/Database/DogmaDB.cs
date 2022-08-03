@@ -5,7 +5,6 @@ using EVESharp.Common.Database;
 using EVESharp.EVE.StaticData.Dogma;
 using EVESharp.EVE.StaticData.Inventory;
 using EVESharp.PythonTypes.Types.Database;
-using MySql.Data.MySqlClient;
 using Serilog;
 
 namespace EVESharp.Node.Database;

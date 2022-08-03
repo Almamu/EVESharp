@@ -1,5 +1,4 @@
-﻿using EVESharp.Common.Database;
-using EVESharp.Database;
+﻿using EVESharp.Database;
 using EVESharp.EVE.Client.Exceptions.jumpCloneSvc;
 using EVESharp.EVE.Market;
 using EVESharp.EVE.Packets.Exceptions;
@@ -15,7 +14,6 @@ using EVESharp.Node.Inventory.Items;
 using EVESharp.Node.Inventory.Items.Types;
 using EVESharp.Node.Market;
 using EVESharp.Node.Notifications;
-using EVESharp.Node.Sessions;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Database;
 using EVESharp.PythonTypes.Types.Primitives;

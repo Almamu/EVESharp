@@ -22,8 +22,6 @@
     Creator: Almamu
 */
 
-using System;
-using System.Collections.Generic;
 using EVESharp.EVE.Services;
 using EVESharp.EVE.Services.Exceptions;
 using EVESharp.EVE.Sessions;

@@ -5,10 +5,8 @@ using EVESharp.EVE.Services;
 using EVESharp.EVE.Services.Validators;
 using EVESharp.Node.Cache;
 using EVESharp.Node.Database;
-using EVESharp.Node.Sessions;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Primitives;
-using Serilog;
 
 namespace EVESharp.Node.Services.Corporations;
 
@@ -60,10 +58,8 @@ public class corpmgr : Service
 
             return CachedMethodCallResult.FromCacheHint (cacheHint);
         }
-        else
-        {
-            throw new Exception ("This asset inventory is not supported yet!");
-        }
+
+        throw new Exception ("This asset inventory is not supported yet!");
 
         return new PyList ();
     }

@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Net.Http;
-using EVESharp.Common.Database;
+﻿using System.Net.Http;
 using EVESharp.Common.Logging;
 using EVESharp.Common.Network.Messages;
 using EVESharp.Database;
@@ -14,7 +11,6 @@ using EVESharp.Node.Server.Shared.Transports;
 using EVESharp.PythonTypes.Types.Database;
 using EVESharp.PythonTypes.Types.Network;
 using Serilog;
-using AccountDB = EVESharp.Database.AccountDB;
 
 namespace EVESharp.Node.Server.Node;
 

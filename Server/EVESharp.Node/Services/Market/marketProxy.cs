@@ -26,9 +26,7 @@ using EVESharp.Node.Inventory.Items.Types;
 using EVESharp.Node.Market;
 using EVESharp.Node.Notifications;
 using EVESharp.Node.Server.Shared;
-using EVESharp.Node.Sessions;
 using EVESharp.PythonTypes.Types.Primitives;
-using MySql.Data.MySqlClient;
 using Character = EVESharp.Node.Inventory.Items.Types.Character;
 
 namespace EVESharp.Node.Services.Market;
@@ -388,11 +386,11 @@ public class marketProxy : Service
         // depending on where the character that is placing the order, the way to detect the items should be different
         if (stationID == session.StationID)
             items = DB.PrepareItemForOrder (
-                connection, typeID, stationID, session.ShipID ?? -1, quantity, (int) session.CharacterID, session.CorporationID, session.CorporationRole
+                connection, typeID, stationID, session.ShipID ?? -1, quantity, session.CharacterID, session.CorporationID, session.CorporationRole
             );
         else
             items = DB.PrepareItemForOrder (
-                connection, typeID, stationID, -1, quantity, (int) session.CharacterID, session.CorporationID, session.CorporationRole
+                connection, typeID, stationID, -1, quantity, session.CharacterID, session.CorporationID, session.CorporationRole
             );
 
         if (items is null)

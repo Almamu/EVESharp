@@ -6,9 +6,7 @@ using EVESharp.Node.Server.Shared.Helpers;
 using EVESharp.Node.Server.Shared.Messages;
 using EVESharp.Node.Services;
 using EVESharp.Node.Sessions;
-using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Network;
-using EVESharp.PythonTypes.Types.Primitives;
 using Serilog;
 
 namespace EVESharp.Node.Server.Single.Messages;

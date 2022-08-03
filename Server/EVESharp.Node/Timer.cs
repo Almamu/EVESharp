@@ -9,7 +9,7 @@ namespace EVESharp.Node;
 /// </summary>
 public class Timer<T> : IDisposable
 {
-    private Timer mTimer;
+    private readonly Timer mTimer;
     
     public Timer (DateTime time, T state, Action<T> callback, ILogger logger)
     {
@@ -70,8 +70,8 @@ public class Timer<T> : IDisposable
     /// <summary>
     /// Logger used to output logging messages on the timer
     /// </summary>
-    private ILogger Log { get;     init; }
-    private bool ShouldStop { get; init; }
+    private ILogger Log { get; }
+    private bool ShouldStop { get; }
     public void Dispose ()
     {
         this.mTimer?.Dispose ();

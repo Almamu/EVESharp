@@ -4,7 +4,6 @@ using System.Data.Common;
 using EVESharp.Common.Database;
 using EVESharp.EVE.StaticData.Inventory;
 using EVESharp.PythonTypes.Types.Database;
-using MySql.Data.MySqlClient;
 
 namespace EVESharp.Node.Database;
 
