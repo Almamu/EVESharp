@@ -199,7 +199,7 @@ internal class Program
         container.Register <RemoteServiceManager>(Lifestyle.Singleton);
         container.Register <PacketCallHelper>(Lifestyle.Singleton);
         container.Register <INotificationSender, NotificationSender> (Lifestyle.Singleton);
-        container.Register <IExpressions, ExpressionManager> (Lifestyle.Singleton);
+        container.Register <IExpressions, Expressions> (Lifestyle.Singleton);
         container.Register <IWallets, Wallets> (Lifestyle.Singleton);
         container.Register <MailManager> (Lifestyle.Singleton);
         container.Register <AgentManager> (Lifestyle.Singleton);
@@ -224,7 +224,6 @@ internal class Program
         container.Register <LookupDB> (Lifestyle.Singleton);
         container.Register <InsuranceDB> (Lifestyle.Singleton);
         container.Register <SolarSystemDB> (Lifestyle.Singleton);
-        container.Register <DogmaDB> (Lifestyle.Singleton);
         container.Register <RepairDB> (Lifestyle.Singleton);
         container.Register <ReprocessingDB> (Lifestyle.Singleton);
         container.Register <RAMDB> (Lifestyle.Singleton);

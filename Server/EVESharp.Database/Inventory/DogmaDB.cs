@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
 using EVESharp.Common.Database;
@@ -7,18 +7,11 @@ using EVESharp.EVE.Data.Inventory;
 using EVESharp.PythonTypes.Types.Database;
 using Serilog;
 
-namespace EVESharp.Node.Database;
+namespace EVESharp.Database.Inventory;
 
-public class DogmaDB : DatabaseAccessor
+public static class DogmaDB
 {
-    private ILogger Log { get; }
-
-    public DogmaDB (ILogger logger, IDatabaseConnection db) : base (db)
-    {
-        Log = logger;
-    }
-
-    public Dictionary <int, Expression> LoadDogmaExpressions ()
+    public static Dictionary <int, Expression> InvDgmLoadExpressions (this IDatabaseConnection Database, ILogger Log)
     {
         IDbConnection connection = null;
         DbDataReader reader = Database.Select (
@@ -46,7 +39,7 @@ public class DogmaDB : DatabaseAccessor
 
             // now that there's some kind of cache of dogma expressions start loading things one by one
             foreach ((int _, DogmaExpressionStruct expression) in databaseLoad)
-                this.LoadExpression (expressions, databaseLoad, expression);
+                Database.LoadExpression (expressions, databaseLoad, expression, Log);
 
             // compile all the expressions
             foreach ((int _, Expression expression) in expressions)
@@ -56,8 +49,12 @@ public class DogmaDB : DatabaseAccessor
         }
     }
 
-    private Expression LoadExpression (
-        Dictionary <int, Expression> dogmaExpressions, Dictionary <int, DogmaExpressionStruct> expressionList, DogmaExpressionStruct expressionToLoad
+    private static Expression LoadExpression (
+        this IDatabaseConnection                Database,
+        Dictionary <int, Expression>            dogmaExpressions,
+        Dictionary <int, DogmaExpressionStruct> expressionList,
+        DogmaExpressionStruct                   expressionToLoad,
+        ILogger                                 Log
     )
     {
         // ignore loaded expressions
@@ -77,7 +74,7 @@ public class DogmaDB : DatabaseAccessor
             }
             else
             {
-                firstArgument = this.LoadExpression (dogmaExpressions, expressionList, expressionList [(int) expressionToLoad.FirstArgument]);
+                firstArgument = Database.LoadExpression (dogmaExpressions, expressionList, expressionList [(int) expressionToLoad.FirstArgument], Log);
             }
         }
 
@@ -90,7 +87,7 @@ public class DogmaDB : DatabaseAccessor
             }
             else
             {
-                secondArgument = this.LoadExpression (dogmaExpressions, expressionList, expressionList [(int) expressionToLoad.SecondArgument]);
+                secondArgument = Database.LoadExpression (dogmaExpressions, expressionList, expressionList [(int) expressionToLoad.SecondArgument], Log);
             }
         }
 
