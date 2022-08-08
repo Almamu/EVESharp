@@ -1,4 +1,6 @@
 ﻿using System;
+using EVESharp.EVE.Network;
+using EVESharp.EVE.Network.Messages;
 using EVESharp.Node.Server.Shared.Messages;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Network;

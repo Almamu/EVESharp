@@ -1,15 +1,19 @@
 ﻿using System.Net.Http;
 using EVESharp.Common.Logging;
-using EVESharp.Common.Network.Messages;
 using EVESharp.Database;
-using EVESharp.Node.Accounts;
+using EVESharp.EVE.Accounts;
+using EVESharp.EVE.Network;
+using EVESharp.EVE.Network.Messages;
+using EVESharp.EVE.Network.Transports;
 using EVESharp.Node.Configuration;
 using EVESharp.Node.Database;
 using EVESharp.Node.Server.Shared;
 using EVESharp.Node.Server.Shared.Messages;
 using EVESharp.Node.Server.Shared.Transports;
+using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Database;
 using EVESharp.PythonTypes.Types.Network;
+using EVESharp.PythonTypes.Types.Primitives;
 using Serilog;
 
 namespace EVESharp.Node.Server.Node;
@@ -22,12 +26,11 @@ public class MachoNet : IMachoNet
     private IDatabaseConnection  Database      { get; }
 
     public MachoNet (
-        IDatabaseConnection databaseConnection, GeneralDB generalDb, HttpClient httpClient, TransportManager transportManager, LoginQueue loginQueue,
+        IDatabaseConnection databaseConnection, HttpClient httpClient, ITransportManager transportManager, LoginQueue loginQueue,
         General             configuration,      ILogger   logger
     )
     {
         Database         = databaseConnection;
-        GeneralDB        = generalDb;
         HttpClient       = httpClient;
         LoginQueue       = loginQueue;
         TransportManager = transportManager;
@@ -35,16 +38,16 @@ public class MachoNet : IMachoNet
         Log              = logger;
     }
 
-    public long                            NodeID           { get; set; }
-    public string                          Address          { get; set; }
-    public RunMode                         Mode             => RunMode.Server;
-    public ushort                          Port             => Configuration.MachoNet.Port;
-    public ILogger                         Log              { get; }
-    public string                          OrchestratorURL  => Configuration.Cluster.OrchestatorURL;
-    public LoginQueue                      LoginQueue       { get; }
-    public MessageProcessor <MachoMessage> MessageProcessor { get; set; }
-    public TransportManager                TransportManager { get; }
-    public GeneralDB                       GeneralDB        { get; }
+    public long                               NodeID           { get; set; }
+    public string                             Address          { get; set; }
+    public RunMode                            Mode             => RunMode.Server;
+    public ushort                             Port             => Configuration.MachoNet.Port;
+    public ILogger                            Log              { get; }
+    public string                             OrchestratorURL  => Configuration.Cluster.OrchestatorURL;
+    public MessageProcessor <LoginQueueEntry> LoginQueue       { get; }
+    public MessageProcessor <MachoMessage>    MessageProcessor { get; set; }
+    public ITransportManager                  TransportManager { get; }
+    public PyList <PyObjectData>              LiveUpdates      => Database.EveFetchLiveUpdates ();
 
     public void Initialize ()
     {

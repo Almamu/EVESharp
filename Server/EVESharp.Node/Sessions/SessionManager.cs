@@ -1,4 +1,6 @@
-﻿using EVESharp.EVE.Packets;
+﻿using EVESharp.EVE.Network;
+using EVESharp.EVE.Network.Transports;
+using EVESharp.EVE.Packets;
 using EVESharp.EVE.Sessions;
 using EVESharp.Node.Server.Shared;
 using EVESharp.Node.Server.Shared.Transports;
@@ -10,9 +12,9 @@ namespace EVESharp.Node.Sessions;
 public class SessionManager : EVE.Sessions.SessionManager
 {
     private IMachoNet        MachoNet         { get; }
-    private TransportManager TransportManager { get; }
+    private ITransportManager TransportManager { get; }
 
-    public SessionManager (TransportManager transportManager, IMachoNet machoNet)
+    public SessionManager (ITransportManager transportManager, IMachoNet machoNet)
     {
         TransportManager = transportManager;
         MachoNet         = machoNet;

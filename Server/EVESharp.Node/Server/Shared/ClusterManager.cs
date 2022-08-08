@@ -7,6 +7,8 @@ using System.Text.Json.Nodes;
 using System.Threading.Tasks;
 using EVESharp.Common.Logging;
 using EVESharp.EVE;
+using EVESharp.EVE.Network;
+using EVESharp.EVE.Network.Transports;
 using EVESharp.EVE.Packets;
 using EVESharp.Node.Server.Shared.Transports;
 using Serilog;
@@ -17,19 +19,19 @@ public class ClusterManager
 {
     public  IMachoNet        MachoNet         { get; }
     public  ILogger          Log              { get; }
-    public  TransportManager TransportManager { get; }
+    public  ITransportManager TransportManager { get; }
     public  HttpClient       HttpClient       { get; }
     private DateTime         IntervalStart    { get; set; }
     private int              IntervalDuration { get; set; }
     private ITimers          Timers           { get; }
-    public  Timer <object?>  HeartbeatTimer   { get; }
+    private  Timer <object?>  HeartbeatTimer   { get; }
     private Timer <object?>  ClusterTimer     { get; set; }
     /// <summary>
     /// The event used when a timed event has to happen cluster-wide
     /// </summary>
     public EventHandler OnClusterTimer { get; set; }
 
-    public ClusterManager (IMachoNet machoNet, TransportManager transportManager, HttpClient httpClient, ITimers timers, ILogger logger)
+    public ClusterManager (IMachoNet machoNet, ITransportManager transportManager, HttpClient httpClient, ITimers timers, ILogger logger)
     {
         MachoNet         = machoNet;
         Log              = logger;

@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using EVESharp.EVE.Data.Corporation;
+using EVESharp.EVE.Network;
 using EVESharp.EVE.Notifications;
 using EVESharp.EVE.Packets.Complex;
 using EVESharp.EVE.Sessions;

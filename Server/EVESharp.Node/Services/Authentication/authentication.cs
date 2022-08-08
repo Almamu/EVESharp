@@ -22,6 +22,7 @@
     Creator: Almamu
 */
 
+using EVESharp.EVE.Configuration;
 using EVESharp.EVE.Services;
 using EVESharp.Node.Configuration;
 using EVESharp.PythonTypes.Types.Collections;
@@ -32,10 +33,10 @@ namespace EVESharp.Node.Services.Authentication;
 
 public class authentication : Service
 {
-    private readonly Configuration.Authentication mConfiguration;
-    public override  AccessLevel                  AccessLevel => AccessLevel.None;
+    private readonly EVE.Configuration.Authentication mConfiguration;
+    public override  AccessLevel                      AccessLevel => AccessLevel.None;
 
-    public authentication (Configuration.Authentication configuration)
+    public authentication (EVE.Configuration.Authentication configuration)
     {
         this.mConfiguration = configuration;
     }

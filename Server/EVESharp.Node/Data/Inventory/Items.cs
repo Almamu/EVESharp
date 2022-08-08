@@ -30,6 +30,7 @@ using EVESharp.EVE.Data.Configuration;
 using EVESharp.EVE.Data.Inventory;
 using EVESharp.EVE.Data.Inventory.Items;
 using EVESharp.EVE.Data.Inventory.Items.Types;
+using EVESharp.EVE.Network;
 using EVESharp.EVE.Notifications;
 using EVESharp.Node.Configuration;
 using EVESharp.Node.Data.Inventory.Exceptions;

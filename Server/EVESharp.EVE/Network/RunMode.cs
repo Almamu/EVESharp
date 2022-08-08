@@ -1,4 +1,4 @@
-﻿namespace EVESharp.Node.Server.Shared;
+﻿namespace EVESharp.EVE.Network;
 
 /// <summary>
 /// Indicates the mode the MachoNet protocol is running right now

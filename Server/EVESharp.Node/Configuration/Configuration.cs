@@ -1,4 +1,5 @@
 using EVESharp.Common.Configuration;
+using EVESharp.EVE.Configuration;
 using IniParser;
 using IniParser.Model;
 

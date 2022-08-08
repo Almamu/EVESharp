@@ -1,5 +1,7 @@
 ﻿using System;
 using EVESharp.EVE.Data.Inventory;
+using EVESharp.EVE.Network;
+using EVESharp.EVE.Network.Messages;
 using EVESharp.EVE.Notifications;
 using EVESharp.EVE.Packets;
 using EVESharp.Node.Data.Inventory;

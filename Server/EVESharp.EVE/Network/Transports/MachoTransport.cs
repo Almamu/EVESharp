@@ -4,7 +4,7 @@ using EVESharp.EVE.Sessions;
 using EVESharp.PythonTypes.Types.Primitives;
 using Serilog;
 
-namespace EVESharp.Node.Server.Shared.Transports;
+namespace EVESharp.EVE.Network.Transports;
 
 public class MachoTransport
 {
@@ -28,18 +28,18 @@ public class MachoTransport
 
     public MachoTransport (IMachoNet machoNet, EVEClientSocket socket, ILogger logger)
     {
-        Session  = new Session ();
-        MachoNet = machoNet;
-        Socket   = socket;
-        Log      = logger;
+        this.Session  = new Session ();
+        this.MachoNet = machoNet;
+        this.Socket   = socket;
+        this.Log      = logger;
     }
 
     public MachoTransport (MachoTransport source)
     {
-        Session  = source.Session;
-        Log      = source.Log;
-        Socket   = source.Socket;
-        MachoNet = source.MachoNet;
+        this.Session  = source.Session;
+        this.Log      = source.Log;
+        this.Socket   = source.Socket;
+        this.MachoNet = source.MachoNet;
     }
 
     /// <summary>
@@ -48,7 +48,7 @@ public class MachoTransport
     /// <param name="data"></param>
     public void QueuePostAuthenticationPacket (PyDataType data)
     {
-        PostAuthenticationQueue.Enqueue (data);
+        this.PostAuthenticationQueue.Enqueue (data);
     }
 
     /// <summary>
@@ -56,15 +56,15 @@ public class MachoTransport
     /// </summary>
     protected void SendPostAuthenticationPackets ()
     {
-        foreach (PyDataType packet in PostAuthenticationQueue)
-            Socket.Send (packet);
+        foreach (PyDataType packet in this.PostAuthenticationQueue)
+            this.Socket.Send (packet);
     }
 
     public void AbortConnection ()
     {
-        Socket.GracefulDisconnect ();
+        this.Socket.GracefulDisconnect ();
 
         // remove the transport from the list
-        MachoNet.OnTransportTerminated (this);
+        this.MachoNet.OnTransportTerminated (this);
     }
 }

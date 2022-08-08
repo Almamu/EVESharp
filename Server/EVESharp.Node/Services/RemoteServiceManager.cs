@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using EVESharp.Database;
 using EVESharp.EVE;
 using EVESharp.EVE.Data.Account;
+using EVESharp.EVE.Network;
 using EVESharp.EVE.Sessions;
 using EVESharp.Node.Server.Shared;
 using EVESharp.PythonTypes.Types.Collections;

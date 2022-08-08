@@ -4,9 +4,9 @@ using System.Collections.Generic;
 using System.Threading;
 using Serilog;
 
-namespace EVESharp.Common.Network.Messages;
+namespace EVESharp.EVE.Network.Messages;
 
-public abstract class MessageProcessor <T> where T : IMessage
+public abstract class MessageProcessor <T> : IMessageProcessor <T> where T : IMessage
 {
     /// <summary>
     /// Messages to be processed
@@ -30,8 +30,8 @@ public abstract class MessageProcessor <T> where T : IMessage
 
     public MessageProcessor (ILogger logger, int numberOfThreads)
     {
-        NumberOfThreads = numberOfThreads;
-        Log             = logger;
+        this.NumberOfThreads = numberOfThreads;
+        this.Log             = logger;
 
         this.InitializeThreads ();
     }
@@ -56,9 +56,9 @@ public abstract class MessageProcessor <T> where T : IMessage
     /// </summary>
     private void InitializeThreads ()
     {
-        Token = new CancellationTokenSource ();
+        this.Token = new CancellationTokenSource ();
 
-        for (int i = 0; i < NumberOfThreads; i++)
+        for (int i = 0; i < this.NumberOfThreads; i++)
         {
             Thread thread = new Thread (this.Run);
             thread.Start ();
@@ -73,7 +73,7 @@ public abstract class MessageProcessor <T> where T : IMessage
     /// </summary>
     private void Run ()
     {
-        while (Token.IsCancellationRequested == false)
+        while (this.Token.IsCancellationRequested == false)
         {
             try
             {
@@ -83,7 +83,7 @@ public abstract class MessageProcessor <T> where T : IMessage
             }
             catch (Exception e)
             {
-                Log.Error ("Exception handling message on MessageProcessor: {e}", e);
+                this.Log.Error ("Exception handling message on MessageProcessor: {e}", e);
             }
 
             Thread.Sleep (1);
@@ -95,7 +95,7 @@ public abstract class MessageProcessor <T> where T : IMessage
     /// </summary>
     public void Stop ()
     {
-        Token.Cancel ();
+        this.Token.Cancel ();
     }
 
     /// <summary>

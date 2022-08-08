@@ -1,13 +1,13 @@
 ﻿using EVESharp.PythonTypes.Types.Network;
 using EVESharp.PythonTypes.Types.Primitives;
 
-namespace EVESharp.Node.Server.Shared.Transports;
+namespace EVESharp.EVE.Network.Transports;
 
 public class MachoProxyTransport : MachoTransport
 {
     public MachoProxyTransport (MachoTransport source) : base (source)
     {
-        Socket.SetReceiveCallback (this.HandleProxyPacket);
+        this.Socket.SetReceiveCallback (this.HandleProxyPacket);
         this.SendPostAuthenticationPackets ();
     }
 
@@ -16,6 +16,6 @@ public class MachoProxyTransport : MachoTransport
         // these should directly be PyPackets
         PyPacket packet = data;
 
-        MachoNet.QueueInputPacket (this, packet);
+        this.MachoNet.QueueInputPacket (this, packet);
     }
 }

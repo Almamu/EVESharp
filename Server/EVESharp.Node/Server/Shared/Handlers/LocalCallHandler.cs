@@ -2,6 +2,9 @@
 using System.Text.RegularExpressions;
 using EVESharp.EVE.Data.Account;
 using EVESharp.EVE.Exceptions;
+using EVESharp.EVE.Network;
+using EVESharp.EVE.Network.Messages;
+using EVESharp.EVE.Network.Transports;
 using EVESharp.EVE.Packets.Exceptions;
 using EVESharp.EVE.Sessions;
 using EVESharp.Node.Server.Shared.Helpers;

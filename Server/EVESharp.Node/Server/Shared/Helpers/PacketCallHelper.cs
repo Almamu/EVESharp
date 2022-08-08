@@ -1,3 +1,4 @@
+using EVESharp.EVE.Network;
 using EVESharp.EVE.Packets.Exceptions;
 using EVESharp.Node.Services;
 using EVESharp.PythonTypes.Types.Collections;

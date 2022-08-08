@@ -1,15 +1,15 @@
 ﻿using EVESharp.PythonTypes.Types.Network;
 using EVESharp.PythonTypes.Types.Primitives;
 
-namespace EVESharp.Node.Server.Shared.Transports;
+namespace EVESharp.EVE.Network.Transports;
 
 public class MachoNodeTransport : MachoTransport
 {
     public MachoNodeTransport (MachoTransport source) : base (source)
     {
         // add load status to the session
-        Session.LoadMetric = 0;
-        Socket.SetReceiveCallback (this.HandlePacket);
+        this.Session.LoadMetric = 0;
+        this.Socket.SetReceiveCallback (this.HandlePacket);
         this.SendPostAuthenticationPackets ();
     }
 
@@ -17,6 +17,6 @@ public class MachoNodeTransport : MachoTransport
     {
         PyPacket packet = data;
 
-        MachoNet.QueueInputPacket (this, data);
+        this.MachoNet.QueueInputPacket (this, data);
     }
 }

@@ -1,8 +1,7 @@
-﻿using EVESharp.Common.Network.Messages;
-using EVESharp.Node.Server.Shared.Transports;
+﻿using EVESharp.EVE.Network.Transports;
 using EVESharp.PythonTypes.Types.Network;
 
-namespace EVESharp.Node.Server.Shared.Messages;
+namespace EVESharp.EVE.Network.Messages;
 
 public class MachoMessage : IMessage
 {

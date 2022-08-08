@@ -3,10 +3,12 @@ using System.Linq;
 using System.Net.Http;
 using EVESharp.Common.Constants;
 using EVESharp.Common.Logging;
-using EVESharp.Common.Network.Messages;
 using EVESharp.Database;
+using EVESharp.EVE.Accounts;
+using EVESharp.EVE.Network;
+using EVESharp.EVE.Network.Messages;
+using EVESharp.EVE.Network.Transports;
 using EVESharp.EVE.Notifications;
-using EVESharp.Node.Accounts;
 using EVESharp.Node.Configuration;
 using EVESharp.Node.Database;
 using EVESharp.Node.Notifications;
@@ -29,11 +31,10 @@ public class MachoNet : IMachoNet
     private HttpClient           HttpClient    { get; }
 
     public MachoNet (
-        GeneralDB generalDb,     HttpClient httpClient, IDatabaseConnection databaseConnection, TransportManager transportManager, LoginQueue loginQueue,
+        HttpClient httpClient, IDatabaseConnection databaseConnection, ITransportManager transportManager, LoginQueue loginQueue,
         General   configuration, ILogger    logger
     )
     {
-        GeneralDB        = generalDb;
         HttpClient       = httpClient;
         Database         = databaseConnection;
         LoginQueue       = loginQueue;
@@ -42,16 +43,16 @@ public class MachoNet : IMachoNet
         Log              = logger;
     }
 
-    public long                            NodeID           { get; set; } = Network.PROXY_NODE_ID;
-    public string                          Address          { get; set; }
-    public RunMode                         Mode             => RunMode.Single;
-    public ushort                          Port             => Configuration.MachoNet.Port;
-    public ILogger                         Log              { get; }
-    public string                          OrchestratorURL  => Configuration.Cluster.OrchestatorURL;
-    public LoginQueue                      LoginQueue       { get; }
-    public MessageProcessor <MachoMessage> MessageProcessor { get; set; }
-    public TransportManager                TransportManager { get; }
-    public GeneralDB                       GeneralDB        { get; }
+    public long                               NodeID           { get; set; } = Network.PROXY_NODE_ID;
+    public string                             Address          { get; set; }
+    public RunMode                            Mode             => RunMode.Single;
+    public ushort                             Port             => Configuration.MachoNet.Port;
+    public ILogger                            Log              { get; }
+    public string                             OrchestratorURL  => Configuration.Cluster.OrchestatorURL;
+    public MessageProcessor <LoginQueueEntry> LoginQueue       { get; }
+    public MessageProcessor <MachoMessage>    MessageProcessor { get; set; }
+    public ITransportManager                  TransportManager { get; }
+    public PyList <PyObjectData>              LiveUpdates      => Database.EveFetchLiveUpdates ();
 
     public void Initialize ()
     {

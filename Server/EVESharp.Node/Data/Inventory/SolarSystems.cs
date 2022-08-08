@@ -30,6 +30,7 @@ using EVESharp.Database;
 using EVESharp.EVE.Data.Inventory;
 using EVESharp.EVE.Data.Inventory.Items.Types;
 using EVESharp.EVE.Exceptions.corpStationMgr;
+using EVESharp.EVE.Network;
 using EVESharp.Node.Server.Shared;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Database;

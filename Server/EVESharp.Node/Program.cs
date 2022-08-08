@@ -28,13 +28,15 @@ using System.Threading;
 using System.Threading.Tasks;
 using EVESharp.Common.Database;
 using EVESharp.Common.Logging;
-using EVESharp.Common.Network.Messages;
 using EVESharp.EVE;
+using EVESharp.EVE.Accounts;
 using EVESharp.EVE.Data.Configuration;
 using EVESharp.EVE.Data.Inventory;
 using EVESharp.EVE.Market;
+using EVESharp.EVE.Network;
+using EVESharp.EVE.Network.Messages;
+using EVESharp.EVE.Network.Transports;
 using EVESharp.EVE.Notifications;
-using EVESharp.Node.Accounts;
 using EVESharp.Node.Agents;
 using EVESharp.Node.Cache;
 using EVESharp.Node.Chat;
@@ -276,8 +278,10 @@ internal class Program
         container.Register <allianceRegistry> (Lifestyle.Singleton);
         container.Register <LoginQueue> (Lifestyle.Singleton);
         container.Register <ClusterManager> (Lifestyle.Singleton);
-        container.Register <TransportManager> (Lifestyle.Singleton);
+        container.Register <ITransportManager, TransportManager> (Lifestyle.Singleton);
         container.Register <EffectsManager> (Lifestyle.Singleton);
+        
+        container.Register <MessageProcessor <LoginQueueEntry>, LoginQueue> (Lifestyle.Singleton);
         
         return container;
     }

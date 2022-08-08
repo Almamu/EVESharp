@@ -1,12 +1,12 @@
-﻿using EVESharp.Common.Network.Messages;
-using EVESharp.Node.Accounts;
-using EVESharp.Node.Database;
-using EVESharp.Node.Server.Shared.Messages;
-using EVESharp.Node.Server.Shared.Transports;
+﻿using EVESharp.EVE.Accounts;
+using EVESharp.EVE.Network.Messages;
+using EVESharp.EVE.Network.Transports;
+using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Network;
+using EVESharp.PythonTypes.Types.Primitives;
 using Serilog;
 
-namespace EVESharp.Node.Server.Shared;
+namespace EVESharp.EVE.Network;
 
 public interface IMachoNet
 {
@@ -37,7 +37,7 @@ public interface IMachoNet
     /// <summary>
     /// The login queue used for processing logins
     /// </summary>
-    public LoginQueue LoginQueue { get; }
+    public MessageProcessor <LoginQueueEntry> LoginQueue { get; }
     /// <summary>
     /// The message processor to use for this IMachoNet instance
     /// </summary>
@@ -45,11 +45,8 @@ public interface IMachoNet
     /// <summary>
     /// The transport manager in use for this IMachoNet instance
     /// </summary>
-    public TransportManager TransportManager { get; }
-    /// <summary>
-    /// The general database
-    /// </summary>
-    public GeneralDB GeneralDB { get; }
+    public ITransportManager TransportManager { get; }
+    public PyList<PyObjectData> LiveUpdates { get; }
 
     /// <summary>
     /// Initializes this macho net instance

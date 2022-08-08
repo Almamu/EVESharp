@@ -2,7 +2,7 @@ using System;
 using EVESharp.EVE.Data.Account;
 using IniParser.Model;
 
-namespace EVESharp.Node.Configuration;
+namespace EVESharp.EVE.Configuration;
 
 public enum AuthenticationMessageType
 {
@@ -21,7 +21,7 @@ public class Authentication
     {
         if (section.ContainsKey ("loginMessageType") == false)
         {
-            MessageType = AuthenticationMessageType.NoMessage;
+            this.MessageType = AuthenticationMessageType.NoMessage;
 
             return;
         }
@@ -34,13 +34,13 @@ public class Authentication
                 if (section.ContainsKey ("loginMessage") == false)
                     throw new Exception ("Authentication service configuration must specify an HTML message");
 
-                Message     = section ["loginMessage"];
-                MessageType = AuthenticationMessageType.HTMLMessage;
+                this.Message     = section ["loginMessage"];
+                this.MessageType = AuthenticationMessageType.HTMLMessage;
                 break;
 
             case "NONE":
             default:
-                MessageType = AuthenticationMessageType.NoMessage;
+                this.MessageType = AuthenticationMessageType.NoMessage;
                 break;
 
         }
@@ -50,7 +50,7 @@ public class Authentication
 
         string enablestring = section ["autoaccount"].ToUpper ();
 
-        Autoaccount = enablestring == "YES" || enablestring == "1" || enablestring == "TRUE";
+        this.Autoaccount = enablestring == "YES" || enablestring == "1" || enablestring == "TRUE";
 
         if (section.ContainsKey ("role") == false)
             throw new Exception ("With autoaccount enabled you MUST specify a default role");
@@ -69,7 +69,7 @@ public class Authentication
             if (Enum.TryParse (trimedRole, out Roles roleValue) == false)
                 throw new Exception ($"Unknown role value {role.Trim ()}");
 
-            Role |= (long) roleValue;
+            this.Role |= (long) roleValue;
         }
     }
 }

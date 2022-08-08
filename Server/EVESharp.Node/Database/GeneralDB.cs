@@ -62,49 +62,6 @@ public class GeneralDB
         }
     }
 
-    public PyList <PyObjectData> FetchLiveUpdates ()
-    {
-        try
-        {
-            IDbConnection connection = null;
-            DbDataReader reader = Database.Select (
-                ref connection,
-                "SELECT updateID, updateName, description, machoVersionMin, machoVersionMax, buildNumberMin, buildNumberMax, methodName, objectID, codeType, code, OCTET_LENGTH(code) as codeLength FROM eveLiveUpdates"
-            );
-
-            using (connection)
-            using (reader)
-            {
-                PyList <PyObjectData> result = new PyList <PyObjectData> ();
-
-                while (reader.Read ())
-                {
-                    PyDictionary entry = new PyDictionary ();
-                    PyDictionary code  = new PyDictionary ();
-
-                    // read the blob for the liveupdate
-                    byte [] buffer = new byte[reader.GetInt32 (11)];
-                    reader.GetBytes (10, 0, buffer, 0, buffer.Length);
-
-                    code ["code"]       = buffer;
-                    code ["codeType"]   = reader.GetString (9);
-                    code ["methodName"] = reader.GetString (7);
-                    code ["objectID"]   = reader.GetString (8);
-
-                    entry ["code"] = KeyVal.FromDictionary (code);
-
-                    result.Add (KeyVal.FromDictionary (entry));
-                }
-
-                return result;
-            }
-        }
-        catch (Exception)
-        {
-            throw new Exception ("Cannot prepare live-updates information for client");
-        }
-    }
-
     public void UpdateCharacterLogoffDateTime (int characterID)
     {
         Database.Prepare (

@@ -22,19 +22,19 @@
     Creator: Almamu
 */
 
-using EVESharp.Common.Network.Messages;
 using EVESharp.Database;
+using EVESharp.EVE.Configuration;
+using EVESharp.EVE.Network.Messages;
+using EVESharp.EVE.Network.Transports;
 using EVESharp.EVE.Packets;
-using EVESharp.Node.Configuration;
-using EVESharp.Node.Server.Shared.Transports;
 using EVESharp.PythonTypes.Types.Database;
 using Serilog;
 
-namespace EVESharp.Node.Accounts;
+namespace EVESharp.EVE.Accounts;
 
 public class LoginQueue : MessageProcessor <LoginQueueEntry>
 {
-    private Authentication     Configuration { get; }
+    private Authentication      Configuration { get; }
     private IDatabaseConnection Database      { get; }
 
     public LoginQueue (IDatabaseConnection databaseConnection, Authentication configuration, ILogger logger)
@@ -58,7 +58,7 @@ public class LoginQueue : MessageProcessor <LoginQueueEntry>
 
     protected override void HandleMessage (LoginQueueEntry entry)
     {
-        Log.Debug ("Processing login for " + entry.Request.user_name);
+        this.Log.Debug ("Processing login for " + entry.Request.user_name);
         LoginStatus status = LoginStatus.Waiting;
         
         // make some accommodations for the auto-account mechanism
@@ -67,7 +67,7 @@ public class LoginQueue : MessageProcessor <LoginQueueEntry>
             Log.Information ($"Auto account enabled, creating account for user {entry.Request.user_name}");
 
             // create the account
-            Database.ActCreate (entry.Request.user_name, entry.Request.user_password, (ulong) Configuration.Role);
+            Database.ActCreate (entry.Request.user_name, entry.Request.user_password, (ulong) this.Configuration.Role);
         }
 
         if (Database.ActLogin (entry.Request.user_name, entry.Request.user_password, out int? accountID, out ulong? role, out bool? banned) == false || banned == true)
@@ -78,7 +78,7 @@ public class LoginQueue : MessageProcessor <LoginQueueEntry>
         }
         else
         {
-            Log.Verbose (": success");
+            this.Log.Verbose (": success");
 
             status = LoginStatus.Success;
 

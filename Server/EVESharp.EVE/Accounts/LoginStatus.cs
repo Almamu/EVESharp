@@ -22,14 +22,11 @@
     Creator: Almamu
 */
 
-using EVESharp.Common.Network.Messages;
-using EVESharp.EVE.Packets;
-using EVESharp.Node.Server.Shared.Transports;
+namespace EVESharp.EVE.Accounts;
 
-namespace EVESharp.Node.Accounts;
-
-public class LoginQueueEntry : IMessage
+public enum LoginStatus
 {
-    public AuthenticationReq             Request    { get; init; }
-    public MachoUnauthenticatedTransport Connection { get; init; }
+    Waiting = 0,
+    Success = 1,
+    Failed  = 2
 }

@@ -1,10 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using EVESharp.EVE.Network.Transports;
 using Serilog;
 
 namespace EVESharp.Node.Server.Shared.Transports;
 
-public class TransportManager
+public class TransportManager : ITransportManager
 {
     /// <summary>
     /// The unvalidated transports

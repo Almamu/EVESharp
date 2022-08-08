@@ -4,7 +4,7 @@ using EVESharp.Common.Logging;
 using EVESharp.Common.Network;
 using Serilog;
 
-namespace EVESharp.Node.Server.Shared.Transports;
+namespace EVESharp.EVE.Network.Transports;
 
 public class MachoServerTransport : EVEServerSocket
 {
@@ -13,8 +13,8 @@ public class MachoServerTransport : EVEServerSocket
 
     public MachoServerTransport (int port, HttpClient httpClient, IMachoNet machoNet, ILogger logger) : base (port, logger)
     {
-        HttpClient = httpClient;
-        MachoNet   = machoNet;
+        this.HttpClient = httpClient;
+        this.MachoNet   = machoNet;
     }
 
     public new void Listen ()
@@ -29,9 +29,9 @@ public class MachoServerTransport : EVEServerSocket
         EVEClientSocket clientSocket = serverSocket.EndAccept (ar);
 
         // got a new transport, register it
-        MachoNet.TransportManager.NewTransport (
+        this.MachoNet.TransportManager.NewTransport (
             new MachoUnauthenticatedTransport (
-                MachoNet, HttpClient, clientSocket, Log.ForContext <MachoUnauthenticatedTransport> (clientSocket.GetRemoteAddress ())
+                this.MachoNet, this.HttpClient, clientSocket, this.Log.ForContext <MachoUnauthenticatedTransport> (clientSocket.GetRemoteAddress ())
             )
         );
 
