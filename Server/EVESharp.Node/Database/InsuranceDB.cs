@@ -30,7 +30,7 @@ using EVESharp.Common.Database;
 using EVESharp.Node.Inventory;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Database;
-using Type = EVESharp.EVE.StaticData.Inventory.Type;
+using Type = EVESharp.EVE.Data.Inventory.Type;
 
 namespace EVESharp.Node.Database;
 

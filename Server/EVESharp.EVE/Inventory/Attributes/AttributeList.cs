@@ -1,8 +1,9 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using EVESharp.EVE.Data.Inventory;
 using EVESharp.PythonTypes.Types.Collections;
-using Type = EVESharp.EVE.StaticData.Inventory.Type;
+using Type = EVESharp.EVE.Data.Inventory.Type;
 
 namespace EVESharp.EVE.Inventory.Attributes;
 
@@ -33,7 +34,7 @@ public class AttributeList : IEnumerable
         set => this [(int) index] = value;
     }
 
-    public Attribute this [EVE.StaticData.Inventory.AttributeTypes index]
+    public Attribute this [AttributeTypes index]
     {
         get => this [(int) index];
         set => this [(int) index] = value;
@@ -52,7 +53,7 @@ public class AttributeList : IEnumerable
         return this.mItemAttributes.GetEnumerator ();
     }
 
-    public bool TryGetAttribute (EVE.StaticData.Inventory.AttributeTypes index, out Attribute attrib)
+    public bool TryGetAttribute (AttributeTypes index, out Attribute attrib)
     {
         return this.mItemAttributes.TryGetValue ((int) index, out attrib) || this.mDefaultAttributes.TryGetValue ((int) index, out attrib);
     }
@@ -67,7 +68,7 @@ public class AttributeList : IEnumerable
         return this.mItemAttributes.ContainsKey (attributeID) || this.mDefaultAttributes.ContainsKey (attributeID);
     }
 
-    public bool AttributeExists (EVE.StaticData.Inventory.AttributeTypes attributeID)
+    public bool AttributeExists (AttributeTypes attributeID)
     {
         return this.AttributeExists ((int) attributeID);
     }

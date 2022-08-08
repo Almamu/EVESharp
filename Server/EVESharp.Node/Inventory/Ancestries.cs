@@ -23,7 +23,7 @@
 */
 
 using System.Collections.Generic;
-using EVESharp.EVE.StaticData;
+using EVESharp.EVE.Data;
 using EVESharp.Node.Database;
 
 namespace EVESharp.Node.Inventory;

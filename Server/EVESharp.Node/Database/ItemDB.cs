@@ -27,9 +27,9 @@ using System.Data;
 using System.Data.Common;
 using EVESharp.Common.Database;
 using EVESharp.Database;
+using EVESharp.EVE.Data.Dogma;
+using EVESharp.EVE.Data.Inventory;
 using EVESharp.EVE.Inventory.Attributes;
-using EVESharp.EVE.StaticData.Dogma;
-using EVESharp.EVE.StaticData.Inventory;
 using EVESharp.Node.Dogma;
 using EVESharp.Node.Inventory;
 using EVESharp.Node.Inventory.Exceptions;
@@ -339,7 +339,7 @@ public class ItemDB : DatabaseAccessor
         IDbConnection connection = null;
         DbDataReader reader = Database.Select (
             ref connection,
-            $"SELECT itemID, eveNames.itemName, invItems.typeID, ownerID, locationID, flag, contraband, singleton, quantity, x, y, z, custominfo FROM invItems LEFT JOIN eveNames USING(itemID) LEFT JOIN invPositions USING (itemID) WHERE itemID < {ItemRanges.USERGENERATED_ID_MIN} AND (groupID = {(int) EVE.StaticData.Inventory.Groups.Station} OR groupID = {(int) EVE.StaticData.Inventory.Groups.Faction} OR groupID = {(int) EVE.StaticData.Inventory.Groups.SolarSystem} OR groupID = {(int) EVE.StaticData.Inventory.Groups.Corporation} OR groupID = {(int) EVE.StaticData.Inventory.Groups.System})"
+            $"SELECT itemID, eveNames.itemName, invItems.typeID, ownerID, locationID, flag, contraband, singleton, quantity, x, y, z, custominfo FROM invItems LEFT JOIN eveNames USING(itemID) LEFT JOIN invPositions USING (itemID) WHERE itemID < {ItemRanges.USERGENERATED_ID_MIN} AND (groupID = {(int) EVE.Data.Inventory.Groups.Station} OR groupID = {(int) EVE.Data.Inventory.Groups.Faction} OR groupID = {(int) EVE.Data.Inventory.Groups.SolarSystem} OR groupID = {(int) EVE.Data.Inventory.Groups.Corporation} OR groupID = {(int) EVE.Data.Inventory.Groups.System})"
         );
 
         using (connection)
@@ -1165,7 +1165,7 @@ public class ItemDB : DatabaseAccessor
             {
                 {"@ownerID", ownerID},
                 {"@locationID", locationID},
-                {"@blueprintCategoryID", EVE.StaticData.Inventory.Categories.Blueprint}
+                {"@blueprintCategoryID", EVE.Data.Inventory.Categories.Blueprint}
             }
         );
     }

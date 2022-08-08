@@ -192,7 +192,7 @@ internal class Program
         container.Register <PacketCallHelper>(Lifestyle.Singleton);
         container.Register <NotificationSender> (Lifestyle.Singleton);
         container.Register <ExpressionManager> (Lifestyle.Singleton);
-        container.Register <WalletManager> (Lifestyle.Singleton);
+        container.Register <IWalletManager, WalletManager> (Lifestyle.Singleton);
         container.Register <MailManager> (Lifestyle.Singleton);
         container.Register <AgentManager> (Lifestyle.Singleton);
         container.Register <Ancestries> (Lifestyle.Singleton);

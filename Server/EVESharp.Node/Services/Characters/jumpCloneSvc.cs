@@ -1,12 +1,13 @@
 ﻿using EVESharp.Database;
-using EVESharp.EVE.Client.Exceptions.jumpCloneSvc;
+using EVESharp.EVE.Data.Inventory;
+using EVESharp.EVE.Data.Market;
+using EVESharp.EVE.Exceptions;
+using EVESharp.EVE.Exceptions.jumpCloneSvc;
 using EVESharp.EVE.Market;
 using EVESharp.EVE.Packets.Exceptions;
 using EVESharp.EVE.Services;
 using EVESharp.EVE.Services.Validators;
 using EVESharp.EVE.Sessions;
-using EVESharp.EVE.StaticData.Inventory;
-using EVESharp.EVE.Wallet;
 using EVESharp.Node.Client.Notifications.Clones;
 using EVESharp.Node.Database;
 using EVESharp.Node.Inventory;
@@ -17,7 +18,7 @@ using EVESharp.Node.Notifications;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Database;
 using EVESharp.PythonTypes.Types.Primitives;
-using Groups = EVESharp.EVE.StaticData.Inventory.Groups;
+using Groups = EVESharp.EVE.Data.Inventory.Groups;
 using ItemDB = EVESharp.Node.Database.ItemDB;
 
 namespace EVESharp.Node.Services.Characters;
@@ -33,12 +34,12 @@ public class jumpCloneSvc : ClientBoundService
     private TypeManager         TypeManager   => ItemFactory.TypeManager;
     private SystemManager       SystemManager { get; }
     private NotificationSender  Notifications { get; }
-    private WalletManager       WalletManager { get; }
+    private IWalletManager      WalletManager { get; }
     private IDatabaseConnection Database      { get; }
 
     public jumpCloneSvc (
         ItemDB        itemDB,        MarketDB      marketDB,      ItemFactory        itemFactory,
-        SystemManager systemManager, WalletManager walletManager, NotificationSender notificationSender, BoundServiceManager manager, IDatabaseConnection database
+        SystemManager systemManager, IWalletManager walletManager, NotificationSender notificationSender, BoundServiceManager manager, IDatabaseConnection database
     ) : base (manager)
     {
         ItemDB        = itemDB;
@@ -52,7 +53,7 @@ public class jumpCloneSvc : ClientBoundService
 
     protected jumpCloneSvc (
         int           locationID,    ItemDB              itemDB,  MarketDB      marketDB,      ItemFactory        itemFactory,
-        SystemManager systemManager, BoundServiceManager manager, WalletManager walletManager, NotificationSender notificationSender, Session session
+        SystemManager systemManager, BoundServiceManager manager, IWalletManager walletManager, NotificationSender notificationSender, Session session
     ) : base (manager, session, locationID)
     {
         ItemDB        = itemDB;
@@ -158,7 +159,7 @@ public class jumpCloneSvc : ClientBoundService
         // get character's station
         Station station = ItemFactory.GetStaticStation (stationID);
 
-        using Wallet wallet = WalletManager.AcquireWallet (character.ID, Keys.MAIN);
+        using IWallet wallet = WalletManager.AcquireWallet (character.ID, WalletKeys.MAIN);
         {
             wallet.EnsureEnoughBalance (cost);
             wallet.CreateJournalRecord (MarketReference.JumpCloneInstallationFee, null, station.ID, -cost, $"Installed clone at {station.Name}");

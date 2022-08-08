@@ -1,4 +1,4 @@
-﻿using EVESharp.EVE.StaticData.Dogma;
+﻿using EVESharp.EVE.Data.Dogma;
 
 namespace EVESharp.EVE.Inventory.Attributes;
 

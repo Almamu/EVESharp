@@ -1,6 +1,6 @@
+using EVESharp.EVE.Data.Inventory.Station;
 using EVESharp.EVE.Packets.Complex;
 using EVESharp.EVE.Services;
-using EVESharp.EVE.StaticData.Inventory.Station;
 using EVESharp.Node.Cache;
 using EVESharp.Node.Inventory;
 using EVESharp.Node.Inventory.Items.Types;

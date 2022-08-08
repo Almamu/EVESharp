@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
+using EVESharp.EVE.Data.Inventory;
 using EVESharp.EVE.Packets.Complex;
-using EVESharp.EVE.StaticData.Inventory;
 using EVESharp.Node.Inventory.Items;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Primitives;

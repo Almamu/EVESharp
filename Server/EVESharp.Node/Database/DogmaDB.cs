@@ -2,8 +2,8 @@
 using System.Data;
 using System.Data.Common;
 using EVESharp.Common.Database;
-using EVESharp.EVE.StaticData.Dogma;
-using EVESharp.EVE.StaticData.Inventory;
+using EVESharp.EVE.Data.Dogma;
+using EVESharp.EVE.Data.Inventory;
 using EVESharp.PythonTypes.Types.Database;
 using Serilog;
 

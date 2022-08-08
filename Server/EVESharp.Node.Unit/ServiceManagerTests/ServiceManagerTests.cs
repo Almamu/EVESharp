@@ -1,14 +1,14 @@
 using System;
 using System.Collections;
 using EVESharp.EVE.Account;
-using EVESharp.EVE.Client.Exceptions;
-using EVESharp.EVE.Client.Exceptions.corpRegistry;
 using EVESharp.EVE.Client.Messages;
+using EVESharp.EVE.Data.Corporation;
+using EVESharp.EVE.Exceptions;
+using EVESharp.EVE.Exceptions.corpRegistry;
 using EVESharp.EVE.Packets.Exceptions;
 using EVESharp.EVE.Services;
 using EVESharp.EVE.Services.Exceptions;
 using EVESharp.EVE.Sessions;
-using EVESharp.EVE.StaticData.Corporation;
 using EVESharp.Node.Services;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Primitives;

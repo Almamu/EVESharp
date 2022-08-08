@@ -1,7 +1,7 @@
+using EVESharp.EVE.Data.Market;
 using EVESharp.EVE.Market;
 using EVESharp.EVE.Services;
 using EVESharp.EVE.Services.Validators;
-using EVESharp.EVE.Wallet;
 using EVESharp.Node.Database;
 using EVESharp.Node.Inventory;
 using EVESharp.Node.Inventory.Items.Types;
@@ -12,13 +12,13 @@ namespace EVESharp.Node.Services.Characters;
 
 public class charmgr : Service
 {
-    public override AccessLevel   AccessLevel   => AccessLevel.None;
-    private         CharacterDB   DB            { get; }
-    private         MarketDB      MarketDB      { get; }
-    private         ItemFactory   ItemFactory   { get; }
-    private         WalletManager WalletManager { get; }
+    public override AccessLevel    AccessLevel   => AccessLevel.None;
+    private         CharacterDB    DB            { get; }
+    private         MarketDB       MarketDB      { get; }
+    private         ItemFactory    ItemFactory   { get; }
+    private         IWalletManager WalletManager { get; }
 
-    public charmgr (CharacterDB db, MarketDB marketDB, ItemFactory itemFactory, WalletManager WalletManager)
+    public charmgr (CharacterDB db, MarketDB marketDB, ItemFactory itemFactory, IWalletManager WalletManager)
     {
         DB                 = db;
         MarketDB           = marketDB;
@@ -50,7 +50,7 @@ public class charmgr : Service
         Character character = ItemFactory.GetItem <Character> (call.Session.CharacterID);
 
         // access the wallet and do the required changes
-        using Wallet wallet = WalletManager.AcquireWallet (character.ID, Keys.MAIN);
+        using IWallet wallet = WalletManager.AcquireWallet (character.ID, WalletKeys.MAIN);
         {
             // ensure the character has enough balance
             wallet.EnsureEnoughBalance (bounty);

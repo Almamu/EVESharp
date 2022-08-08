@@ -1,10 +1,10 @@
 using EVESharp.EVE.Account;
-using EVESharp.EVE.Client.Exceptions.corpRegistry;
 using EVESharp.EVE.Client.Messages;
+using EVESharp.EVE.Data.Corporation;
+using EVESharp.EVE.Exceptions.corpRegistry;
 using EVESharp.EVE.Services;
 using EVESharp.EVE.Services.Validators;
 using EVESharp.EVE.Sessions;
-using EVESharp.EVE.StaticData.Corporation;
 using EVESharp.Node.Inventory.Items.Types;
 using EVESharp.PythonTypes.Types.Primitives;
 

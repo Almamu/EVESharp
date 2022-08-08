@@ -2,12 +2,12 @@
 using System.Collections.Generic;
 using System.Linq;
 using EVESharp.EVE.Account;
-using EVESharp.EVE.Client.Exceptions.slash;
+using EVESharp.EVE.Data.Inventory;
+using EVESharp.EVE.Data.Market;
+using EVESharp.EVE.Exceptions.slash;
 using EVESharp.EVE.Market;
 using EVESharp.EVE.Services;
 using EVESharp.EVE.Services.Validators;
-using EVESharp.EVE.StaticData.Inventory;
-using EVESharp.EVE.Wallet;
 using EVESharp.Node.Client.Notifications.Inventory;
 using EVESharp.Node.Client.Notifications.Skills;
 using EVESharp.Node.Database;
@@ -20,8 +20,8 @@ using EVESharp.Node.Notifications;
 using EVESharp.Node.Sessions;
 using EVESharp.PythonTypes.Types.Primitives;
 using Serilog;
-using Categories = EVESharp.EVE.StaticData.Inventory.Categories;
-using Type = EVESharp.EVE.StaticData.Inventory.Type;
+using Categories = EVESharp.EVE.Data.Inventory.Categories;
+using Type = EVESharp.EVE.Data.Inventory.Type;
 
 namespace EVESharp.Node.Services.Network;
 
@@ -37,11 +37,11 @@ public class slash : Service
     private         ILogger            Log           { get; }
     private         CharacterDB        CharacterDB   { get; }
     private         NotificationSender Notifications { get; }
-    private         WalletManager      WalletManager { get; }
+    private         IWalletManager     WalletManager { get; }
     private         DogmaUtils         DogmaUtils    { get; }
 
     public slash (
-        ILogger    logger, ItemFactory itemFactory, CharacterDB characterDB, NotificationSender notificationSender, WalletManager walletManager,
+        ILogger    logger, ItemFactory itemFactory, CharacterDB characterDB, NotificationSender notificationSender, IWalletManager walletManager,
         DogmaUtils dogmaUtils
     )
     {
@@ -127,7 +127,7 @@ public class slash : Service
             targetCharacterID = matches [0];
         }
 
-        using Wallet wallet = WalletManager.AcquireWallet (targetCharacterID, Keys.MAIN);
+        using IWallet wallet = WalletManager.AcquireWallet (targetCharacterID, WalletKeys.MAIN);
         {
             if (iskQuantity < 0)
             {

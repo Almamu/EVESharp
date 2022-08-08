@@ -1,9 +1,8 @@
 ﻿using System;
 using System.Linq;
-using EVESharp.EVE.Client.Exceptions.corpRegistry;
 using EVESharp.EVE.Client.Messages;
+using EVESharp.EVE.Data.Corporation;
 using EVESharp.EVE.Sessions;
-using EVESharp.EVE.StaticData.Corporation;
 
 namespace EVESharp.EVE.Services.Validators;
 

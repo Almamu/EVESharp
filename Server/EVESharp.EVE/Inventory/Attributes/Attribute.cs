@@ -26,9 +26,9 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
+using EVESharp.EVE.Data.Dogma;
+using EVESharp.EVE.Data.Inventory;
 using EVESharp.EVE.Dogma.Exception;
-using EVESharp.EVE.StaticData.Dogma;
-using EVESharp.EVE.StaticData.Inventory;
 using EVESharp.PythonTypes.Types.Primitives;
 
 namespace EVESharp.EVE.Inventory.Attributes;

@@ -1,10 +1,10 @@
 using System.Collections.Generic;
 using System.Linq;
-using EVESharp.EVE.Client.Exceptions;
-using EVESharp.EVE.Client.Exceptions.character;
-using EVESharp.EVE.Client.Exceptions.Internal;
+using EVESharp.EVE.Data.Inventory;
+using EVESharp.EVE.Exceptions;
+using EVESharp.EVE.Exceptions.character;
+using EVESharp.EVE.Exceptions.Internal;
 using EVESharp.EVE.Inventory.Attributes;
-using EVESharp.EVE.StaticData.Inventory;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Primitives;
 
@@ -372,7 +372,7 @@ public class Character : ItemInventory
 
         long skillLearningLevel = 0;
 
-        if (InjectedSkillsByTypeID.TryGetValue ((int) EVE.StaticData.Inventory.Types.Learning, out Skill learningSkill))
+        if (InjectedSkillsByTypeID.TryGetValue ((int) EVE.Data.Inventory.Types.Learning, out Skill learningSkill))
             skillLearningLevel = learningSkill.Level;
 
         double spPerMin = primarySpPerMin + secondarySpPerMin / 2.0f;
@@ -384,7 +384,7 @@ public class Character : ItemInventory
         return spPerMin;
     }
 
-    public long GetSkillLevel (EVE.StaticData.Inventory.Types skillTypeID)
+    public long GetSkillLevel (EVE.Data.Inventory.Types skillTypeID)
     {
         return this.GetSkillLevel ((int) skillTypeID);
     }
@@ -403,7 +403,7 @@ public class Character : ItemInventory
     /// <param name="skillTypeID">The skill to look for</param>
     /// <param name="level">The minimum level</param>
     /// <exception cref="SkillMissingException">If the skill requirement is not met</exception>
-    public void EnsureSkillLevel (EVE.StaticData.Inventory.Types skillTypeID, int level = 1)
+    public void EnsureSkillLevel (EVE.Data.Inventory.Types skillTypeID, int level = 1)
     {
         if (this.GetSkillLevel (skillTypeID) < level)
             throw new SkillRequired (skillTypeID);

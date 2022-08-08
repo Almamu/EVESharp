@@ -1,13 +1,14 @@
 using System;
 using EVESharp.Database;
 using EVESharp.EVE.Account;
-using EVESharp.EVE.Client.Exceptions.inventory;
+using EVESharp.EVE.Data.Inventory;
+using EVESharp.EVE.Exceptions;
+using EVESharp.EVE.Exceptions.inventory;
 using EVESharp.EVE.Packets.Complex;
 using EVESharp.EVE.Packets.Exceptions;
 using EVESharp.EVE.Services;
 using EVESharp.EVE.Services.Validators;
 using EVESharp.EVE.Sessions;
-using EVESharp.EVE.StaticData.Inventory;
 using EVESharp.Node.Client.Notifications.Station;
 using EVESharp.Node.Dogma;
 using EVESharp.Node.Inventory;
@@ -17,7 +18,7 @@ using EVESharp.Node.Notifications;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Database;
 using EVESharp.PythonTypes.Types.Primitives;
-using Groups = EVESharp.EVE.StaticData.Inventory.Groups;
+using Groups = EVESharp.EVE.Data.Inventory.Groups;
 
 namespace EVESharp.Node.Services.Dogma;
 

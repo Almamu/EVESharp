@@ -1,13 +1,14 @@
 ﻿using System;
 using EVESharp.Database;
-using EVESharp.EVE.Client.Exceptions.insuranceSvc;
-using EVESharp.EVE.Client.Exceptions.jumpCloneSvc;
+using EVESharp.EVE.Data.Market;
+using EVESharp.EVE.Exceptions;
+using EVESharp.EVE.Exceptions.insuranceSvc;
+using EVESharp.EVE.Exceptions.jumpCloneSvc;
 using EVESharp.EVE.Market;
 using EVESharp.EVE.Packets.Exceptions;
 using EVESharp.EVE.Services;
 using EVESharp.EVE.Services.Validators;
 using EVESharp.EVE.Sessions;
-using EVESharp.EVE.Wallet;
 using EVESharp.Node.Chat;
 using EVESharp.Node.Database;
 using EVESharp.Node.Inventory;
@@ -29,12 +30,12 @@ public class insuranceSvc : ClientBoundService
     private          ItemFactory         ItemFactory   { get; }
     private          MarketDB            MarketDB      { get; }
     private          SystemManager       SystemManager => ItemFactory.SystemManager;
-    private          WalletManager       WalletManager { get; }
+    private          IWalletManager      WalletManager { get; }
     private          MailManager         MailManager   { get; }
     private          IDatabaseConnection Database      { get; }
 
     public insuranceSvc (
-        ClusterManager clusterManager, ItemFactory itemFactory, InsuranceDB db, MarketDB marketDB, WalletManager walletManager, MailManager mailManager, BoundServiceManager manager, IDatabaseConnection database
+        ClusterManager clusterManager, ItemFactory itemFactory, InsuranceDB db, MarketDB marketDB, IWalletManager walletManager, MailManager mailManager, BoundServiceManager manager, IDatabaseConnection database
     ) : base (manager)
     {
         DB            = db;
@@ -48,7 +49,7 @@ public class insuranceSvc : ClientBoundService
     }
 
     protected insuranceSvc (
-        ItemFactory itemFactory, InsuranceDB db, MarketDB marketDB, WalletManager walletManager, MailManager mailManager, BoundServiceManager manager,
+        ItemFactory itemFactory, InsuranceDB db, MarketDB marketDB, IWalletManager walletManager, MailManager mailManager, BoundServiceManager manager,
         int         stationID,   Session     session
     ) : base (manager, session, stationID)
     {
@@ -113,7 +114,7 @@ public class insuranceSvc : ClientBoundService
             throw new InsureShipFailedSingleContract (oldOwnerID);
         }
 
-        using Wallet wallet = WalletManager.AcquireWallet (character.ID, Keys.MAIN);
+        using IWallet wallet = WalletManager.AcquireWallet (character.ID, WalletKeys.MAIN);
         {
             wallet.EnsureEnoughBalance (insuranceCost);
             wallet.CreateJournalRecord (MarketReference.Insurance, ItemFactory.OwnerSCC.ID, -item.ID, -insuranceCost, $"Insurance fee for {item.Name}");

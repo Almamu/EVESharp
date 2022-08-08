@@ -24,18 +24,18 @@
 
 using System;
 using System.Collections.Generic;
-using EVESharp.EVE.Client.Exceptions.Internal;
-using EVESharp.EVE.Client.Exceptions.jumpCloneSvc;
-using EVESharp.EVE.Client.Exceptions.ship;
+using EVESharp.EVE.Data.Corporation;
+using EVESharp.EVE.Data.Inventory;
+using EVESharp.EVE.Exceptions.Internal;
+using EVESharp.EVE.Exceptions.jumpCloneSvc;
+using EVESharp.EVE.Exceptions.ship;
 using EVESharp.EVE.Inventory.Attributes;
-using EVESharp.EVE.StaticData.Corporation;
-using EVESharp.EVE.StaticData.Inventory;
 using EVESharp.Node.Inventory.Items.Types;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Database;
 using EVESharp.PythonTypes.Types.Primitives;
 using Item = EVESharp.Node.Inventory.Items.Types.Information.Item;
-using Type = EVESharp.EVE.StaticData.Inventory.Type;
+using Type = EVESharp.EVE.Data.Inventory.Type;
 
 namespace EVESharp.Node.Inventory.Items;
 

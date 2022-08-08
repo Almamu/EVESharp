@@ -1,5 +1,5 @@
+using EVESharp.EVE.Data.Inventory;
 using EVESharp.EVE.Inventory.Attributes;
-using EVESharp.EVE.StaticData.Inventory;
 using NUnit.Framework;
 
 namespace EVESharp.Node.Unit;

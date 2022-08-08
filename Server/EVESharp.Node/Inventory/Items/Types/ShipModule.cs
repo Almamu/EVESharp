@@ -1,4 +1,4 @@
-﻿using EVESharp.EVE.StaticData.Dogma;
+﻿using EVESharp.EVE.Data.Dogma;
 using EVESharp.Node.Dogma;
 using EVESharp.Node.Inventory.Items.Dogma;
 using EVESharp.PythonTypes.Types.Collections;

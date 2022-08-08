@@ -1,6 +1,6 @@
 namespace EVESharp.Common.Constants;
 
-public class Network
+public static class Network
 {
     /// <summary>
     /// The maximum memory reserved for any kind of I/O buffer in sockets

@@ -30,6 +30,6 @@ namespace EVESharp.Node.Accounts;
 
 public class LoginQueueEntry : IMessage
 {
-    public AuthenticationReq             Request    { get; set; }
-    public MachoUnauthenticatedTransport Connection { get; set; }
+    public AuthenticationReq             Request    { get; init; }
+    public MachoUnauthenticatedTransport Connection { get; init; }
 }

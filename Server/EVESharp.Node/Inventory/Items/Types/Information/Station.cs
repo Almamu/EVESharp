@@ -1,4 +1,4 @@
-﻿using EVESharp.EVE.StaticData.Inventory.Station;
+﻿using EVESharp.EVE.Data.Inventory.Station;
 
 namespace EVESharp.Node.Inventory.Items.Types.Information;
 

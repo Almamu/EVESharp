@@ -1,27 +1,52 @@
 ﻿using System;
 using System.Data;
 using EVESharp.Database;
-using EVESharp.EVE.Client.Exceptions;
+using EVESharp.EVE.Data.Corporation;
+using EVESharp.EVE.Data.Market;
+using EVESharp.EVE.Exceptions;
 using EVESharp.EVE.Market;
-using EVESharp.EVE.StaticData.Corporation;
-using EVESharp.EVE.Wallet;
 using EVESharp.Node.Client.Notifications.Wallet;
 using EVESharp.Node.Notifications;
 using EVESharp.PythonTypes.Types.Database;
 
 namespace EVESharp.Node.Market;
 
-public class Wallet : IDisposable
+public class Wallet : IWallet
 {
-    public IDbConnection       Connection;
-    public int                 OwnerID         { get; init; }
-    public int                 WalletKey       { get; init; }
-    public double              Balance         { get; set; }
-    public double              OriginalBalance { get; init; }
-    public IDatabaseConnection Database        { get; init; }
-    public NotificationSender  Notifications   { get; init; }
-    public bool                ForCorporation  { get; init; }
-    public WalletManager       WalletManager   { get; init; }
+    private IDbConnection       Connection;
+    public  int                 OwnerID         { get; }
+    public  int                 WalletKey       { get; }
+    public  double              Balance         { get; set; }
+    public  double              OriginalBalance { get; }
+    public  IDatabaseConnection Database        { get; }
+    public  NotificationSender  Notifications   { get; }
+    public  bool                ForCorporation  { get; }
+    public  IWalletManager      WalletManager   { get; }
+
+    public Wallet (int ownerID, int walletKey, bool isCorporation, IDatabaseConnection database, NotificationSender notificationSender, IWalletManager walletManager)
+    {
+        // set some data first
+        this.OwnerID        = ownerID;
+        this.WalletKey      = walletKey;
+        this.ForCorporation = isCorporation;
+        this.Database       = database;
+        this.Notifications  = notificationSender;
+        this.WalletManager  = walletManager;
+        
+        // obtain exclusive control over the wallet
+        Database.GetLock (ref this.Connection, this.GenerateLockName ());
+        // also fetch the balance
+        this.Balance = this.OriginalBalance = Database.MktWalletGetBalance (ref this.Connection, WalletKey, OwnerID);
+    }
+
+    /// <summary>
+    /// Generates the lock name used by the database
+    /// </summary>
+    /// <returns></returns>
+    private string GenerateLockName ()
+    {
+        return $"wallet_{this.OwnerID}_{this.WalletKey}";
+    }
 
     public void Dispose ()
     {
@@ -44,13 +69,13 @@ public class Wallet : IDisposable
 
                 corpRoles |= (long) (WalletKey switch
                 {
-                    Keys.MAIN    => CorporationRole.AccountCanQuery1,
-                    Keys.SECOND  => CorporationRole.AccountCanQuery2,
-                    Keys.THIRD   => CorporationRole.AccountCanQuery3,
-                    Keys.FOURTH  => CorporationRole.AccountCanQuery4,
-                    Keys.FIFTH   => CorporationRole.AccountCanQuery5,
-                    Keys.SIXTH   => CorporationRole.AccountCanQuery6,
-                    Keys.SEVENTH => CorporationRole.AccountCanQuery7,
+                    WalletKeys.MAIN    => CorporationRole.AccountCanQuery1,
+                    WalletKeys.SECOND  => CorporationRole.AccountCanQuery2,
+                    WalletKeys.THIRD   => CorporationRole.AccountCanQuery3,
+                    WalletKeys.FOURTH  => CorporationRole.AccountCanQuery4,
+                    WalletKeys.FIFTH   => CorporationRole.AccountCanQuery5,
+                    WalletKeys.SIXTH   => CorporationRole.AccountCanQuery6,
+                    WalletKeys.SEVENTH => CorporationRole.AccountCanQuery7,
                     _            => CorporationRole.JuniorAccountant
                 });
 
@@ -61,7 +86,7 @@ public class Wallet : IDisposable
             }
         }
 
-        WalletManager.ReleaseLock (this.Connection, OwnerID, WalletKey);
+        Database.ReleaseLock (this.Connection, this.GenerateLockName ());
         this.Connection?.Dispose ();
     }
 

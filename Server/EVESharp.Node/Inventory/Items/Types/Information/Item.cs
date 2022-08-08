@@ -1,5 +1,5 @@
-﻿using EVESharp.EVE.Inventory.Attributes;
-using EVESharp.EVE.StaticData.Inventory;
+﻿using EVESharp.EVE.Data.Inventory;
+using EVESharp.EVE.Inventory.Attributes;
 
 namespace EVESharp.Node.Inventory.Items.Types.Information;
 

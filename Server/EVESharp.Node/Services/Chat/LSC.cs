@@ -1,10 +1,11 @@
 using System;
 using System.IO;
-using EVESharp.EVE.Client.Exceptions.LSC;
+using EVESharp.EVE.Data.Inventory;
+using EVESharp.EVE.Exceptions;
+using EVESharp.EVE.Exceptions.LSC;
 using EVESharp.EVE.Packets.Exceptions;
 using EVESharp.EVE.Services;
 using EVESharp.EVE.Services.Validators;
-using EVESharp.EVE.StaticData.Inventory;
 using EVESharp.Node.Chat;
 using EVESharp.Node.Client.Notifications.Chat;
 using EVESharp.Node.Database;

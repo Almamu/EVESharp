@@ -27,15 +27,15 @@ using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
 using EVESharp.Common.Database;
-using EVESharp.EVE.Client.Exceptions.contractMgr;
-using EVESharp.EVE.StaticData.Inventory;
+using EVESharp.EVE.Data.Inventory;
+using EVESharp.EVE.Exceptions.contractMgr;
 using EVESharp.Node.Inventory;
 using EVESharp.Node.Inventory.Items.Types;
 using EVESharp.Node.Services.Contracts;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Database;
 using EVESharp.PythonTypes.Types.Primitives;
-using Categories = EVESharp.EVE.StaticData.Inventory.Categories;
+using Categories = EVESharp.EVE.Data.Inventory.Categories;
 using Type = System.Type;
 
 namespace EVESharp.Node.Database;

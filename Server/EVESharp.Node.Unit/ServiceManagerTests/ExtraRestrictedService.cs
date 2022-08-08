@@ -1,6 +1,5 @@
 using EVESharp.EVE.Account;
-using EVESharp.EVE.Client.Exceptions;
-using EVESharp.EVE.Client.Exceptions.corpRegistry;
+using EVESharp.EVE.Exceptions.corpRegistry;
 using EVESharp.EVE.Services;
 using EVESharp.EVE.Services.Validators;
 using EVESharp.PythonTypes.Types.Primitives;

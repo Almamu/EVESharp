@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Text.RegularExpressions;
 using EVESharp.EVE.Account;
+using EVESharp.EVE.Exceptions;
 using EVESharp.EVE.Packets.Exceptions;
 using EVESharp.EVE.Sessions;
 using EVESharp.Node.Server.Shared.Helpers;

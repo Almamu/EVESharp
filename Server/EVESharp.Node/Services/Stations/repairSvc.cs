@@ -1,15 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
 using EVESharp.Database;
-using EVESharp.EVE.Client.Exceptions;
-using EVESharp.EVE.Client.Exceptions.repairSvc;
+using EVESharp.EVE.Data.Inventory;
+using EVESharp.EVE.Data.Market;
+using EVESharp.EVE.Exceptions;
+using EVESharp.EVE.Exceptions.repairSvc;
 using EVESharp.EVE.Market;
 using EVESharp.EVE.Packets.Exceptions;
 using EVESharp.EVE.Services;
 using EVESharp.EVE.Services.Validators;
 using EVESharp.EVE.Sessions;
-using EVESharp.EVE.StaticData.Inventory;
-using EVESharp.EVE.Wallet;
 using EVESharp.Node.Client.Notifications.Inventory;
 using EVESharp.Node.Database;
 using EVESharp.Node.Dogma;
@@ -21,7 +21,7 @@ using EVESharp.Node.Notifications;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Database;
 using EVESharp.PythonTypes.Types.Primitives;
-using Service = EVESharp.EVE.StaticData.Inventory.Station.Service;
+using Service = EVESharp.EVE.Data.Inventory.Station.Service;
 
 namespace EVESharp.Node.Services.Stations;
 
@@ -39,13 +39,13 @@ public class repairSvc : ClientBoundService
     private          RepairDB            RepairDB      { get; }
     private          InsuranceDB         InsuranceDB   { get; }
     private          NotificationSender  Notifications { get; }
-    private          WalletManager       WalletManager { get; }
+    private          IWalletManager      WalletManager { get; }
     private          DogmaUtils          DogmaUtils    { get; }
     private          IDatabaseConnection Database      { get; }
 
     public repairSvc (
         RepairDB            repairDb,    MarketDB            marketDb, InsuranceDB   insuranceDb,   NotificationSender notificationSender,
-        ItemFactory         itemFactory, BoundServiceManager manager,  WalletManager walletManager, DogmaUtils         dogmaUtils,
+        ItemFactory         itemFactory, BoundServiceManager manager,  IWalletManager walletManager, DogmaUtils         dogmaUtils,
         IDatabaseConnection database
     ) : base (manager)
     {
@@ -61,7 +61,7 @@ public class repairSvc : ClientBoundService
 
     protected repairSvc (
         RepairDB      repairDb,  MarketDB    marketDb,    InsuranceDB         insuranceDb, NotificationSender notificationSender,
-        ItemInventory inventory, ItemFactory itemFactory, BoundServiceManager manager,     WalletManager walletManager, DogmaUtils dogmaUtils, Session session
+        ItemInventory inventory, ItemFactory itemFactory, BoundServiceManager manager,     IWalletManager walletManager, DogmaUtils dogmaUtils, Session session
     ) : base (manager, session, inventory.ID)
     {
         this.mInventory = inventory;
@@ -164,7 +164,7 @@ public class repairSvc : ClientBoundService
         Station station = ItemFactory.GetStaticStation (call.Session.StationID);
 
         // take the wallet lock and ensure the character has enough balance
-        using Wallet wallet = WalletManager.AcquireWallet (call.Session.CharacterID, Keys.MAIN);
+        using IWallet wallet = WalletManager.AcquireWallet (call.Session.CharacterID, WalletKeys.MAIN);
         {
             wallet.EnsureEnoughBalance (iskRepairValue);
             // build a list of items to be fixed

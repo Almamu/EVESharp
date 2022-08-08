@@ -1,8 +1,9 @@
+using EVESharp.EVE.Data.Standings;
+using EVESharp.EVE.Exceptions;
 using EVESharp.EVE.Packets.Complex;
 using EVESharp.EVE.Packets.Exceptions;
 using EVESharp.EVE.Services;
 using EVESharp.EVE.Services.Validators;
-using EVESharp.EVE.StaticData.Standings;
 using EVESharp.Node.Cache;
 using EVESharp.Node.Client.Notifications.Character;
 using EVESharp.Node.Database;

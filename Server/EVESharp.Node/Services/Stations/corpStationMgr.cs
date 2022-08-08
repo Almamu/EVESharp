@@ -1,15 +1,16 @@
 using System;
 using System.Collections.Generic;
 using EVESharp.Database;
-using EVESharp.EVE.Client.Exceptions.corpStationMgr;
+using EVESharp.EVE.Data.Corporation;
+using EVESharp.EVE.Data.Inventory;
+using EVESharp.EVE.Data.Market;
+using EVESharp.EVE.Exceptions;
+using EVESharp.EVE.Exceptions.corpStationMgr;
 using EVESharp.EVE.Market;
 using EVESharp.EVE.Packets.Exceptions;
 using EVESharp.EVE.Services;
 using EVESharp.EVE.Services.Validators;
 using EVESharp.EVE.Sessions;
-using EVESharp.EVE.StaticData.Corporation;
-using EVESharp.EVE.StaticData.Inventory;
-using EVESharp.EVE.Wallet;
 using EVESharp.Node.Client.Notifications.Corporations;
 using EVESharp.Node.Client.Notifications.Wallet;
 using EVESharp.Node.Configuration;
@@ -24,9 +25,9 @@ using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Database;
 using EVESharp.PythonTypes.Types.Primitives;
 using Character = EVESharp.Node.Inventory.Items.Types.Character;
-using Groups = EVESharp.EVE.StaticData.Inventory.Groups;
+using Groups = EVESharp.EVE.Data.Inventory.Groups;
 using ItemDB = EVESharp.Node.Database.ItemDB;
-using Type = EVESharp.EVE.StaticData.Inventory.Type;
+using Type = EVESharp.EVE.Data.Inventory.Type;
 
 namespace EVESharp.Node.Services.Stations;
 
@@ -40,14 +41,14 @@ public class corpStationMgr : ClientBoundService
     private         StationDB           StationDB     { get; }
     private         TypeManager         TypeManager   => ItemFactory.TypeManager;
     private         SystemManager       SystemManager => ItemFactory.SystemManager;
-    private         WalletManager       WalletManager { get; }
+    private         IWalletManager      WalletManager { get; }
     private         Constants           Constants     { get; }
     private         NotificationSender  Notifications { get; }
     private         IDatabaseConnection Database      { get; }
 
     public corpStationMgr (
         MarketDB            marketDB, StationDB     stationDb,     NotificationSender  notificationSender, ItemFactory itemFactory, Constants constants,
-        BoundServiceManager manager,  WalletManager walletManager, IDatabaseConnection database
+        BoundServiceManager manager,  IWalletManager walletManager, IDatabaseConnection database
     ) : base (manager)
     {
         MarketDB      = marketDB;
@@ -62,7 +63,7 @@ public class corpStationMgr : ClientBoundService
     // TODO: PROVIDE OBJECTID PROPERLY
     protected corpStationMgr (
         MarketDB            marketDB, StationDB stationDb, NotificationSender notificationSender, ItemFactory itemFactory, Constants constants,
-        BoundServiceManager manager,  WalletManager walletManager, Session session
+        BoundServiceManager manager,  IWalletManager walletManager, Session session
     ) : base (manager, session, 0)
     {
         MarketDB      = marketDB;
@@ -158,7 +159,7 @@ public class corpStationMgr : ClientBoundService
                 throw new MedicalYouAlreadyHaveACloneContractAtThatStation ();
         }
 
-        using Wallet wallet = WalletManager.AcquireWallet (character.ID, Keys.MAIN);
+        using IWallet wallet = WalletManager.AcquireWallet (character.ID, WalletKeys.MAIN);
         {
             double contractCost = Constants.CostCloneContract;
 
@@ -232,7 +233,7 @@ public class corpStationMgr : ClientBoundService
 
         Station station = ItemFactory.GetStaticStation (stationID);
 
-        using Wallet wallet = WalletManager.AcquireWallet (character.ID, Keys.MAIN);
+        using IWallet wallet = WalletManager.AcquireWallet (character.ID, WalletKeys.MAIN);
         {
             wallet.EnsureEnoughBalance (newCloneType.BasePrice);
             wallet.CreateTransactionRecord (
@@ -283,7 +284,7 @@ public class corpStationMgr : ClientBoundService
         int ownerCorporationID = ItemFactory.Stations [stationID].OwnerID;
 
         // perform the transaction
-        using (Wallet corpWallet = WalletManager.AcquireWallet (call.Session.CorporationID, call.Session.CorpAccountKey, true))
+        using (IWallet corpWallet = WalletManager.AcquireWallet (call.Session.CorporationID, call.Session.CorpAccountKey, true))
         {
             corpWallet.EnsureEnoughBalance (rentalCost);
             corpWallet.CreateJournalRecord (MarketReference.OfficeRentalFee, ownerCorporationID, null, -rentalCost);

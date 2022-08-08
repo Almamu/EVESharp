@@ -1,5 +1,5 @@
-using EVESharp.EVE.Client.Exceptions.character;
-using EVESharp.EVE.StaticData.Inventory;
+using EVESharp.EVE.Data.Inventory;
+using EVESharp.EVE.Exceptions.character;
 
 namespace EVESharp.Node.Inventory.Items.Types;
 

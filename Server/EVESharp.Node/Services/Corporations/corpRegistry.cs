@@ -3,19 +3,19 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using EVESharp.Database;
-using EVESharp.EVE.Alliances;
-using EVESharp.EVE.Client.Exceptions;
-using EVESharp.EVE.Client.Exceptions.corpRegistry;
 using EVESharp.EVE.Client.Messages;
+using EVESharp.EVE.Data.Alliances;
+using EVESharp.EVE.Data.Corporation;
+using EVESharp.EVE.Data.Inventory;
+using EVESharp.EVE.Data.Market;
+using EVESharp.EVE.Exceptions;
+using EVESharp.EVE.Exceptions.corpRegistry;
 using EVESharp.EVE.Market;
 using EVESharp.EVE.Packets.Complex;
 using EVESharp.EVE.Packets.Exceptions;
 using EVESharp.EVE.Services;
 using EVESharp.EVE.Services.Validators;
 using EVESharp.EVE.Sessions;
-using EVESharp.EVE.StaticData.Corporation;
-using EVESharp.EVE.StaticData.Inventory;
-using EVESharp.EVE.Wallet;
 using EVESharp.Node.Chat;
 using EVESharp.Node.Client.Notifications.Alliances;
 using EVESharp.Node.Client.Notifications.Corporations;
@@ -53,7 +53,7 @@ public class corpRegistry : MultiClientBoundService
     private CharacterDB                CharacterDB         { get; }
     private IDatabaseConnection        Database            { get; }
     private ItemFactory                ItemFactory         { get; }
-    private WalletManager              WalletManager       { get; }
+    private IWalletManager             WalletManager       { get; }
     private NotificationSender         Notifications       { get; }
     private MailManager                MailManager         { get; }
     public  MembersSparseRowsetService MembersSparseRowset { get; private set; }
@@ -69,7 +69,7 @@ public class corpRegistry : MultiClientBoundService
 
     public corpRegistry (
         CorporationDB db,          IDatabaseConnection databaseConnection, ChatDB      chatDB, CharacterDB characterDB, NotificationSender notificationSender,
-        MailManager   mailManager, WalletManager       walletManager,      ItemFactory itemFactory, Constants constants, BoundServiceManager manager,
+        MailManager   mailManager, IWalletManager      walletManager,      ItemFactory itemFactory, Constants constants, BoundServiceManager manager,
         Ancestries    ancestries,  SessionManager      sessionManager,     ClusterManager clusterManager
     ) : base (manager)
     {
@@ -91,7 +91,7 @@ public class corpRegistry : MultiClientBoundService
 
     protected corpRegistry (
         CorporationDB  db,             IDatabaseConnection databaseConnection, ChatDB    chatDB, CharacterDB characterDB, NotificationSender notificationSender,
-        MailManager    mailManager,    WalletManager      walletManager,       Constants constants, ItemFactory itemFactory, Ancestries ancestries,
+        MailManager    mailManager,    IWalletManager     walletManager,       Constants constants, ItemFactory itemFactory, Ancestries ancestries,
         SessionManager sessionManager, Corporation        corp,                int       isMaster, corpRegistry parent
     ) : base (parent, corp.ID)
     {
@@ -155,8 +155,8 @@ public class corpRegistry : MultiClientBoundService
     public PyDataType MoveCompanyShares (CallInformation call, PyInteger corporationID, PyInteger to, PyInteger quantity)
     {
         // TODO: the WALLETKEY SHOULD BE SOMETHING ELSE?
-        using (Wallet corporationWallet = WalletManager.AcquireWallet (call.Session.CorporationID, 2000))
-        using (Wallet shareholderWallet = WalletManager.AcquireWallet (to, 2000))
+        using (IWallet corporationWallet = WalletManager.AcquireWallet (call.Session.CorporationID, 2000))
+        using (IWallet shareholderWallet = WalletManager.AcquireWallet (to, 2000))
         {
             // first make sure there's enough shares available
             int availableShares = DB.GetSharesForOwner (call.Session.CorporationID, call.Session.CorporationID);
@@ -194,8 +194,8 @@ public class corpRegistry : MultiClientBoundService
         int callerCharacterID = call.Session.CharacterID;
 
         // TODO: the WALLETKEY SHOULD BE SOMETHING ELSE?
-        using (Wallet corporationWallet = WalletManager.AcquireWallet (callerCharacterID, 2000))
-        using (Wallet shareholderWallet = WalletManager.AcquireWallet (toShareholderID, 2000))
+        using (IWallet corporationWallet = WalletManager.AcquireWallet (callerCharacterID, 2000))
+        using (IWallet shareholderWallet = WalletManager.AcquireWallet (toShareholderID, 2000))
         {
             // first make sure there's enough shares available
             int availableShares = DB.GetSharesForOwner (corporationID, callerCharacterID);
@@ -431,7 +431,7 @@ public class corpRegistry : MultiClientBoundService
         character.EnsureSkillLevel (Types.EmpireControl, 5);
 
         // the alliance costs 1b ISK to establish, and that's taken from the corporation's wallet
-        using (Wallet wallet = WalletManager.AcquireWallet (Corporation.ID, call.Session.CorpAccountKey, true))
+        using (IWallet wallet = WalletManager.AcquireWallet (Corporation.ID, call.Session.CorpAccountKey, true))
         {
             // ensure there's enough balance
             wallet.EnsureEnoughBalance (Constants.AllianceCreationCost);
@@ -537,7 +537,7 @@ public class corpRegistry : MultiClientBoundService
         try
         {
             // acquire the wallet for this character too
-            using (Wallet wallet = WalletManager.AcquireWallet (character.ID, Keys.MAIN))
+            using (IWallet wallet = WalletManager.AcquireWallet (character.ID, WalletKeys.MAIN))
             {
                 // ensure there's enough balance
                 wallet.EnsureEnoughBalance (-corporationStartupCost);
@@ -594,20 +594,20 @@ public class corpRegistry : MultiClientBoundService
                 Notifications.NotifyCorporation (change.OldCorporationID, change);
                 Notifications.NotifyCorporation (change.NewCorporationID, change);
                 // create default wallets
-                WalletManager.CreateWallet (corporationID, Keys.MAIN,    0.0);
-                WalletManager.CreateWallet (corporationID, Keys.SECOND,  0.0);
-                WalletManager.CreateWallet (corporationID, Keys.THIRD,   0.0);
-                WalletManager.CreateWallet (corporationID, Keys.FOURTH,  0.0);
-                WalletManager.CreateWallet (corporationID, Keys.FIFTH,   0.0);
-                WalletManager.CreateWallet (corporationID, Keys.SIXTH,   0.0);
-                WalletManager.CreateWallet (corporationID, Keys.SEVENTH, 0.0);
+                WalletManager.CreateWallet (corporationID, WalletKeys.MAIN,    0.0);
+                WalletManager.CreateWallet (corporationID, WalletKeys.SECOND,  0.0);
+                WalletManager.CreateWallet (corporationID, WalletKeys.THIRD,   0.0);
+                WalletManager.CreateWallet (corporationID, WalletKeys.FOURTH,  0.0);
+                WalletManager.CreateWallet (corporationID, WalletKeys.FIFTH,   0.0);
+                WalletManager.CreateWallet (corporationID, WalletKeys.SIXTH,   0.0);
+                WalletManager.CreateWallet (corporationID, WalletKeys.SEVENTH, 0.0);
                 // create the employment record for the character
                 CharacterDB.CreateEmploymentRecord (character.ID, corporationID, DateTime.UtcNow.ToFileTimeUtc ());
                 // create company shares too!
                 DB.UpdateShares (corporationID, corporationID, 1000);
 
                 // set the default wallet for the character
-                update.CorpAccountKey = Keys.MAIN;
+                update.CorpAccountKey = WalletKeys.MAIN;
 
                 // send the corporation update
                 SessionManager.PerformSessionUpdate (Session.CHAR_ID, callerCharacterID, update);
@@ -777,7 +777,7 @@ public class corpRegistry : MultiClientBoundService
 
             // TODO: INCLUDE WETHER THE SHAREHOLDER IS A CORPORATION OR NOT, MAYBE CREATE A CUSTOM OBJECT FOR THIS
             // calculate amount to give and acquire it's wallet
-            using (Wallet dest = WalletManager.AcquireWallet (ownerID, Keys.MAIN))
+            using (IWallet dest = WalletManager.AcquireWallet (ownerID, WalletKeys.MAIN))
             {
                 dest.CreateJournalRecord (MarketReference.CorporationDividendPayment, ownerID, Corporation.ID, pricePerShare * sharesCount);
             }
@@ -789,7 +789,7 @@ public class corpRegistry : MultiClientBoundService
         double pricePerMember = totalAmount / Corporation.MemberCount;
 
         foreach (int characterID in DB.GetMembersForCorp (Corporation.ID))
-            using (Wallet dest = WalletManager.AcquireWallet (characterID, Keys.MAIN))
+            using (IWallet dest = WalletManager.AcquireWallet (characterID, WalletKeys.MAIN))
             {
                 dest.CreateJournalRecord (MarketReference.CorporationDividendPayment, characterID, Corporation.ID, pricePerMember);
             }
@@ -809,7 +809,7 @@ public class corpRegistry : MultiClientBoundService
         if (Corporation.CeoID != call.Session.CharacterID)
             throw new OnlyCEOCanPayoutDividends ();
 
-        using (Wallet wallet = WalletManager.AcquireWallet (call.Session.CorporationID, call.Session.CorpAccountKey, true))
+        using (IWallet wallet = WalletManager.AcquireWallet (call.Session.CorporationID, call.Session.CorpAccountKey, true))
         {
             // check if there's enough cash left
             wallet.EnsureEnoughBalance (amount);
@@ -1291,7 +1291,7 @@ public class corpRegistry : MultiClientBoundService
 
         // TODO: ENSURE stationID MATCHES ONE OF OUR OFFICES FOR THE ADVERT TO BE CREATED
         // get the current wallet and check if there's enough money on it
-        using (Wallet wallet = WalletManager.AcquireWallet (call.Session.CorporationID, call.Session.CorpAccountKey, true))
+        using (IWallet wallet = WalletManager.AcquireWallet (call.Session.CorporationID, call.Session.CorpAccountKey, true))
         {
             wallet.EnsureEnoughBalance (price);
             wallet.CreateJournalRecord (MarketReference.CorporationAdvertisementFee, callerCharacterID, null, null, price);

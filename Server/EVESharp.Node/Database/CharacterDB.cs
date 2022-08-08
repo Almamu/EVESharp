@@ -3,8 +3,8 @@ using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
 using EVESharp.Common.Database;
-using EVESharp.EVE.StaticData;
-using EVESharp.EVE.StaticData.Inventory;
+using EVESharp.EVE.Data;
+using EVESharp.EVE.Data.Inventory;
 using EVESharp.Node.Inventory;
 using EVESharp.Node.Inventory.Items;
 using EVESharp.Node.Inventory.Items.Types;
@@ -12,7 +12,7 @@ using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Database;
 using EVESharp.PythonTypes.Types.Primitives;
 using MySql.Data.MySqlClient;
-using Type = EVESharp.EVE.StaticData.Inventory.Type;
+using Type = EVESharp.EVE.Data.Inventory.Type;
 
 namespace EVESharp.Node.Database;
 

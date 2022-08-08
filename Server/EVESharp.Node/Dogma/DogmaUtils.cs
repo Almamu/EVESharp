@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Threading;
-using EVESharp.EVE.StaticData.Inventory;
+using EVESharp.EVE.Data.Inventory;
 using EVESharp.Node.Client.Notifications.Inventory;
 using EVESharp.Node.Inventory.Items;
 using EVESharp.Node.Notifications;

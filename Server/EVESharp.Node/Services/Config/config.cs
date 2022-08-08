@@ -1,6 +1,7 @@
+using EVESharp.EVE.Data.Inventory;
+using EVESharp.EVE.Exceptions;
 using EVESharp.EVE.Packets.Exceptions;
 using EVESharp.EVE.Services;
-using EVESharp.EVE.StaticData.Inventory;
 using EVESharp.Node.Database;
 using EVESharp.Node.Inventory;
 using EVESharp.PythonTypes.Types.Collections;

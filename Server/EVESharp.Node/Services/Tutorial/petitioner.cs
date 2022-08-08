@@ -1,4 +1,5 @@
-﻿using EVESharp.EVE.Packets.Exceptions;
+﻿using EVESharp.EVE.Exceptions;
+using EVESharp.EVE.Packets.Exceptions;
 using EVESharp.EVE.Services;
 using EVESharp.PythonTypes.Types.Primitives;
 

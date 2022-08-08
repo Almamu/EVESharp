@@ -1,5 +1,5 @@
 ﻿using System;
-using EVESharp.EVE.Client.Exceptions.corpRegistry;
+using EVESharp.EVE.Exceptions.corpRegistry;
 using EVESharp.EVE.Packets.Complex;
 using EVESharp.EVE.Services;
 using EVESharp.EVE.Services.Validators;

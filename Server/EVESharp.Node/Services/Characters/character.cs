@@ -25,15 +25,16 @@
 using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
-using EVESharp.EVE.Client.Exceptions.character;
+using EVESharp.EVE.Data;
+using EVESharp.EVE.Data.Inventory;
+using EVESharp.EVE.Data.Market;
+using EVESharp.EVE.Exceptions;
+using EVESharp.EVE.Exceptions.character;
 using EVESharp.EVE.Market;
 using EVESharp.EVE.Packets.Exceptions;
 using EVESharp.EVE.Services;
 using EVESharp.EVE.Services.Validators;
 using EVESharp.EVE.Sessions;
-using EVESharp.EVE.StaticData;
-using EVESharp.EVE.StaticData.Inventory;
-using EVESharp.EVE.Wallet;
 using EVESharp.Node.Cache;
 using EVESharp.Node.Client.Notifications.Chat;
 using EVESharp.Node.Database;
@@ -48,7 +49,7 @@ using EVESharp.PythonTypes.Types.Primitives;
 using Serilog;
 using Character = EVESharp.Node.Configuration.Character;
 using SessionManager = EVESharp.Node.Sessions.SessionManager;
-using Type = EVESharp.EVE.StaticData.Inventory.Type;
+using Type = EVESharp.EVE.Data.Inventory.Type;
 
 namespace EVESharp.Node.Services.Characters;
 
@@ -64,7 +65,7 @@ public class character : Service
     private TypeManager        TypeManager    => ItemFactory.TypeManager;
     private CacheStorage       CacheStorage   { get; }
     private NotificationSender Notifications  { get; }
-    private WalletManager      WalletManager  { get; }
+    private IWalletManager     WalletManager  { get; }
     private Ancestries         Ancestries     { get; }
     private Bloodlines         Bloodlines     { get; }
     private SessionManager     SessionManager { get; }
@@ -73,7 +74,7 @@ public class character : Service
     public character (
         CacheStorage       cacheStorage,       CharacterDB   db,            ChatDB     chatDB, CorporationDB corporationDB,
         ItemFactory        itemFactory,        ILogger       logger,        Character  configuration,
-        NotificationSender notificationSender, WalletManager walletManager, Ancestries ancestries, Bloodlines bloodlines,
+        NotificationSender notificationSender, IWalletManager walletManager, Ancestries ancestries, Bloodlines bloodlines,
         SessionManager     sessionManager
     )
     {
@@ -282,7 +283,7 @@ public class character : Service
         );
 
         // create the wallet for the player
-        WalletManager.CreateWallet (itemID, Keys.MAIN, this.mConfiguration.Balance);
+        WalletManager.CreateWallet (itemID, WalletKeys.MAIN, this.mConfiguration.Balance);
 
         return ItemFactory.LoadItem (itemID) as Node.Inventory.Items.Types.Character;
     }
@@ -378,7 +379,7 @@ public class character : Service
         character.ActiveCloneID = clone.ID;
 
         // get the wallet for the player and give the money specified in the configuration
-        using Wallet wallet = WalletManager.AcquireWallet (character.ID, Keys.MAIN);
+        using IWallet wallet = WalletManager.AcquireWallet (character.ID, WalletKeys.MAIN);
         {
             wallet.CreateJournalRecord (MarketReference.Inheritance, null, null, this.mConfiguration.Balance);
         }

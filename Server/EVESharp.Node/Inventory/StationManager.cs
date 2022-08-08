@@ -1,5 +1,5 @@
 using System.Collections.Generic;
-using EVESharp.EVE.StaticData.Inventory.Station;
+using EVESharp.EVE.Data.Inventory.Station;
 using EVESharp.Node.Database;
 
 namespace EVESharp.Node.Inventory;

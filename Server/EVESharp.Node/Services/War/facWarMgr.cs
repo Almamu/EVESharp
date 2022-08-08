@@ -1,6 +1,6 @@
 using System;
-using EVESharp.EVE.Client.Exceptions.facWarMgr;
 using EVESharp.EVE.Client.Messages;
+using EVESharp.EVE.Exceptions.facWarMgr;
 using EVESharp.EVE.Packets.Complex;
 using EVESharp.EVE.Services;
 using EVESharp.EVE.Services.Validators;
@@ -14,7 +14,7 @@ using EVESharp.Node.Notifications;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Database;
 using EVESharp.PythonTypes.Types.Primitives;
-using Groups = EVESharp.EVE.StaticData.Inventory.Groups;
+using Groups = EVESharp.EVE.Data.Inventory.Groups;
 using SessionManager = EVESharp.Node.Sessions.SessionManager;
 
 namespace EVESharp.Node.Services.War;

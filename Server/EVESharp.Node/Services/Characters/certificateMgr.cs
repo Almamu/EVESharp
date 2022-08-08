@@ -1,10 +1,10 @@
 ﻿using System.Collections.Generic;
 using EVESharp.Database;
-using EVESharp.EVE.Client.Exceptions.certificateMgr;
+using EVESharp.EVE.Data.Certificates;
+using EVESharp.EVE.Exceptions.certificateMgr;
 using EVESharp.EVE.Packets.Complex;
 using EVESharp.EVE.Services;
 using EVESharp.EVE.Services.Validators;
-using EVESharp.EVE.StaticData.Certificates;
 using EVESharp.Node.Cache;
 using EVESharp.Node.Client.Notifications.Certificates;
 using EVESharp.Node.Dogma;

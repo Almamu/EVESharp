@@ -1,14 +1,14 @@
 using System.Collections.Generic;
 using EVESharp.Database;
-using EVESharp.EVE.Client.Exceptions.corpRegistry;
 using EVESharp.EVE.Client.Messages;
+using EVESharp.EVE.Data.Corporation;
+using EVESharp.EVE.Data.Market;
+using EVESharp.EVE.Exceptions.corpRegistry;
 using EVESharp.EVE.Market;
 using EVESharp.EVE.Packets.Complex;
 using EVESharp.EVE.Services;
 using EVESharp.EVE.Services.Validators;
 using EVESharp.EVE.Sessions;
-using EVESharp.EVE.StaticData.Corporation;
-using EVESharp.EVE.Wallet;
 using EVESharp.Node.Cache;
 using EVESharp.Node.Database;
 using EVESharp.Node.Market;
@@ -21,11 +21,11 @@ public class account : Service
 {
     public override AccessLevel         AccessLevel   => AccessLevel.None;
     private         CharacterDB         DB            { get; }
-    private         WalletManager       WalletManager { get; }
+    private         IWalletManager       WalletManager { get; }
     private         CacheStorage        CacheStorage  { get; }
     private         IDatabaseConnection Database      { get; }
 
-    public account (IDatabaseConnection databaseConnection, CharacterDB db, WalletManager walletManager, CacheStorage cacheStorage)
+    public account (IDatabaseConnection databaseConnection, CharacterDB db, IWalletManager walletManager, CacheStorage cacheStorage)
     {
         Database      = databaseConnection;
         DB            = db;
@@ -111,20 +111,20 @@ public class account : Service
         // build a list of divisions the user can access
         List <int> walletKeys = new List <int> ();
 
-        if (WalletManager.IsAccessAllowed (call.Session, Keys.MAIN, call.Session.CorporationID))
-            walletKeys.Add (Keys.MAIN);
-        if (WalletManager.IsAccessAllowed (call.Session, Keys.SECOND, call.Session.CorporationID))
-            walletKeys.Add (Keys.SECOND);
-        if (WalletManager.IsAccessAllowed (call.Session, Keys.THIRD, call.Session.CorporationID))
-            walletKeys.Add (Keys.THIRD);
-        if (WalletManager.IsAccessAllowed (call.Session, Keys.FOURTH, call.Session.CorporationID))
-            walletKeys.Add (Keys.FOURTH);
-        if (WalletManager.IsAccessAllowed (call.Session, Keys.FIFTH, call.Session.CorporationID))
-            walletKeys.Add (Keys.FIFTH);
-        if (WalletManager.IsAccessAllowed (call.Session, Keys.SIXTH, call.Session.CorporationID))
-            walletKeys.Add (Keys.SIXTH);
-        if (WalletManager.IsAccessAllowed (call.Session, Keys.SEVENTH, call.Session.CorporationID))
-            walletKeys.Add (Keys.SEVENTH);
+        if (WalletManager.IsAccessAllowed (call.Session, WalletKeys.MAIN, call.Session.CorporationID))
+            walletKeys.Add (WalletKeys.MAIN);
+        if (WalletManager.IsAccessAllowed (call.Session, WalletKeys.SECOND, call.Session.CorporationID))
+            walletKeys.Add (WalletKeys.SECOND);
+        if (WalletManager.IsAccessAllowed (call.Session, WalletKeys.THIRD, call.Session.CorporationID))
+            walletKeys.Add (WalletKeys.THIRD);
+        if (WalletManager.IsAccessAllowed (call.Session, WalletKeys.FOURTH, call.Session.CorporationID))
+            walletKeys.Add (WalletKeys.FOURTH);
+        if (WalletManager.IsAccessAllowed (call.Session, WalletKeys.FIFTH, call.Session.CorporationID))
+            walletKeys.Add (WalletKeys.FIFTH);
+        if (WalletManager.IsAccessAllowed (call.Session, WalletKeys.SIXTH, call.Session.CorporationID))
+            walletKeys.Add (WalletKeys.SIXTH);
+        if (WalletManager.IsAccessAllowed (call.Session, WalletKeys.SEVENTH, call.Session.CorporationID))
+            walletKeys.Add (WalletKeys.SEVENTH);
 
         return Database.MktWalletGet (call.Session.CorporationID, walletKeys);
     }
@@ -132,7 +132,7 @@ public class account : Service
     [MustBeCharacter]
     public PyDataType GiveCash (CallInformation call, PyInteger destinationID, PyDecimal quantity, PyString reason)
     {
-        int accountKey = Keys.MAIN;
+        int accountKey = WalletKeys.MAIN;
 
         if (call.NamedPayload.TryGetValue ("toAccountKey", out PyInteger namedAccountKey))
             accountKey = namedAccountKey;
@@ -141,14 +141,14 @@ public class account : Service
 
         // acquire the origin wallet, subtract quantity
         // TODO: CHECK IF THE WALLETKEY IS INDICATED IN SOME WAY
-        using (Wallet originWallet = WalletManager.AcquireWallet (callerCharacterID, Keys.MAIN))
+        using (IWallet originWallet = WalletManager.AcquireWallet (callerCharacterID, WalletKeys.MAIN))
         {
             originWallet.EnsureEnoughBalance (quantity);
             originWallet.CreateJournalRecord (MarketReference.CorporationPayment, destinationID, null, -quantity, reason);
         }
 
         // acquire the destination wallet, add quantity
-        using (Wallet destinationWallet = WalletManager.AcquireWallet (destinationID, accountKey, true))
+        using (IWallet destinationWallet = WalletManager.AcquireWallet (destinationID, accountKey, true))
         {
             destinationWallet.CreateJournalRecord (MarketReference.CorporationPayment, callerCharacterID, destinationID, -1, quantity, reason);
         }
@@ -164,7 +164,7 @@ public class account : Service
 
         // acquire the origin wallet, subtract quantity
         // TODO: CHECK IF THE WALLETKEY IS INDICATED IN SOME WAY
-        using (Wallet originWallet = WalletManager.AcquireWallet (call.Session.CorporationID, accountKey, true))
+        using (IWallet originWallet = WalletManager.AcquireWallet (call.Session.CorporationID, accountKey, true))
         {
             originWallet.EnsureEnoughBalance (quantity);
             originWallet.CreateJournalRecord (MarketReference.CorporationPayment, destinationID, call.Session.CharacterID, -quantity);
@@ -172,7 +172,7 @@ public class account : Service
 
         // TODO: CHECK IF THE DESTINATION IS A CORPORATION OR NOT
         // acquire the destination wallet, add quantity
-        using (Wallet destinationWallet = WalletManager.AcquireWallet (destinationID, Keys.MAIN))
+        using (IWallet destinationWallet = WalletManager.AcquireWallet (destinationID, WalletKeys.MAIN))
         {
             destinationWallet.CreateJournalRecord (MarketReference.CorporationPayment, call.Session.CorporationID, destinationID, -1, quantity);
         }

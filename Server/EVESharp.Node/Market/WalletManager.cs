@@ -1,15 +1,14 @@
 ﻿using System.Data;
 using EVESharp.Database;
+using EVESharp.EVE.Data.Market;
 using EVESharp.EVE.Market;
 using EVESharp.EVE.Sessions;
-using EVESharp.EVE.StaticData.Corporation;
-using EVESharp.EVE.Wallet;
 using EVESharp.Node.Notifications;
 using EVESharp.PythonTypes.Types.Database;
 
 namespace EVESharp.Node.Market;
 
-public class WalletManager
+public class WalletManager : IWalletManager
 {
     private NotificationSender  Notifications { get; }
     private IDatabaseConnection Database      { get; }
@@ -20,49 +19,12 @@ public class WalletManager
         Notifications = notificationSender;
     }
 
-    public Wallet AcquireWallet (int ownerID, int walletKey, bool isCorporation = false)
+    public IWallet AcquireWallet (int ownerID, int walletKey, bool isCorporation = false)
     {
         // TODO: CHECK PERMISSIONS
-        return new Wallet
-        {
-            Connection      = this.AcquireLock (ownerID, walletKey, out double balance),
-            OwnerID         = ownerID,
-            WalletKey       = walletKey,
-            Balance         = balance,
-            OriginalBalance = balance,
-            Database        = Database,
-            Notifications   = Notifications,
-            ForCorporation  = isCorporation,
-            WalletManager   = this
-        };
-    }
-
-    /// <summary>
-    /// Acquires a lock for modifying wallets on the database
-    /// </summary>
-    /// <returns></returns>
-    private IDbConnection AcquireLock (int ownerID, int walletKey, out double balance)
-    {
-        IDbConnection connection = null;
-        // acquire the lock
-        Database.GetLock (ref connection, $"wallet_{ownerID}_{walletKey}");
-
-        // get the current owner's balance
-        balance = Database.MktWalletGetBalance (ref connection, walletKey, ownerID);
-
-        return connection;
-    }
-
-    /// <summary>
-    /// Special situation for Market
-    ///
-    /// Frees the table lock for the orders table
-    /// This allows to take exclusive control over it and perform any actions required
-    /// </summary>
-    /// <param name="connection"></param>
-    public void ReleaseLock (IDbConnection connection, int ownerID, int walletKey)
-    {
-        Database.ReleaseLock (connection, $"wallet_{ownerID}_{walletKey}");
+        return new Wallet (
+            ownerID, walletKey, isCorporation, Database, Notifications, this
+        );
     }
 
     /// <summary>
@@ -106,78 +68,14 @@ public class WalletManager
     {
         Database.MktWalletCreate (startingBalance, ownerID, walletKey);
     }
-
-    public bool IsAccessAllowed (Session session, int accountKey, int ownerID)
-    {
-        if (ownerID == session.CharacterID)
-            return true;
-
-        if (ownerID == session.CorporationID)
-        {
-            // check for permissions
-            // check if the character has any accounting roles and set the correct accountKey based on the data
-            if (CorporationRole.AccountCanQuery1.Is (session.CorporationRole) && accountKey == Keys.MAIN)
-                return true;
-            if (CorporationRole.AccountCanQuery2.Is (session.CorporationRole) && accountKey == Keys.SECOND)
-                return true;
-            if (CorporationRole.AccountCanQuery3.Is (session.CorporationRole) && accountKey == Keys.THIRD)
-                return true;
-            if (CorporationRole.AccountCanQuery4.Is (session.CorporationRole) && accountKey == Keys.FOURTH)
-                return true;
-            if (CorporationRole.AccountCanQuery5.Is (session.CorporationRole) && accountKey == Keys.FIFTH)
-                return true;
-            if (CorporationRole.AccountCanQuery6.Is (session.CorporationRole) && accountKey == Keys.SIXTH)
-                return true;
-            if (CorporationRole.AccountCanQuery7.Is (session.CorporationRole) && accountKey == Keys.SEVENTH)
-                return true;
-
-            // last chance, accountant role
-            if (CorporationRole.Accountant.Is (session.CorporationRole))
-                return true;
-            if (CorporationRole.JuniorAccountant.Is (session.CorporationRole))
-                return true;
-        }
-
-        return false;
-    }
-
-    public bool IsTakeAllowed (Session session, int accountKey, int ownerID)
-    {
-        if (ownerID == session.CharacterID)
-            return true;
-
-        if (ownerID == session.CorporationID)
-        {
-            // check for permissions
-            // check if the character has any accounting roles and set the correct accountKey based on the data
-            if (CorporationRole.AccountCanTake1.Is (session.CorporationRole) && accountKey == Keys.MAIN)
-                return true;
-            if (CorporationRole.AccountCanTake2.Is (session.CorporationRole) && accountKey == Keys.SECOND)
-                return true;
-            if (CorporationRole.AccountCanTake3.Is (session.CorporationRole) && accountKey == Keys.THIRD)
-                return true;
-            if (CorporationRole.AccountCanTake4.Is (session.CorporationRole) && accountKey == Keys.FOURTH)
-                return true;
-            if (CorporationRole.AccountCanTake5.Is (session.CorporationRole) && accountKey == Keys.FIFTH)
-                return true;
-            if (CorporationRole.AccountCanTake6.Is (session.CorporationRole) && accountKey == Keys.SIXTH)
-                return true;
-            if (CorporationRole.AccountCanTake7.Is (session.CorporationRole) && accountKey == Keys.SEVENTH)
-                return true;
-            if (CorporationRole.Accountant.Is (session.CorporationRole))
-                return true;
-        }
-
-        return false;
-    }
-
+    
     /// <summary>
     /// Obtains the wallet balance for the given owner and wallet
     /// </summary>
     /// <param name="ownerID">The owner to get the wallet balance for</param>
     /// <param name="walletKey">The wallet to get balance for</param>
     /// <returns>The wallet's balance</returns>
-    public double GetWalletBalance (int ownerID, int walletKey = Keys.MAIN)
+    public double GetWalletBalance (int ownerID, int walletKey = WalletKeys.MAIN)
     {
         return Database.MktWalletGetBalance (walletKey, ownerID);
     }

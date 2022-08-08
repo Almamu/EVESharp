@@ -1,14 +1,15 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
-using EVESharp.EVE.Client.Exceptions.contractMgr;
+using EVESharp.EVE.Data.Inventory;
+using EVESharp.EVE.Data.Market;
+using EVESharp.EVE.Exceptions;
+using EVESharp.EVE.Exceptions.contractMgr;
 using EVESharp.EVE.Market;
 using EVESharp.EVE.Packets.Exceptions;
 using EVESharp.EVE.Services;
 using EVESharp.EVE.Services.Validators;
 using EVESharp.EVE.Sessions;
-using EVESharp.EVE.StaticData.Inventory;
-using EVESharp.EVE.Wallet;
 using EVESharp.Node.Client.Notifications.Contracts;
 using EVESharp.Node.Database;
 using EVESharp.Node.Dogma;
@@ -39,12 +40,12 @@ public class contractMgr : Service
     private TypeManager        TypeManager   => ItemFactory.TypeManager;
     private SystemManager      SystemManager => ItemFactory.SystemManager;
     private NotificationSender Notifications { get; }
-    private WalletManager      WalletManager { get; }
+    private IWalletManager     WalletManager { get; }
     private DogmaUtils         DogmaUtils    { get; }
 
     public contractMgr (
         ContractDB    db,            ItemDB itemDB, MarketDB marketDB, CharacterDB characterDB, ItemFactory itemFactory, NotificationSender notificationSender,
-        WalletManager walletManager, DogmaUtils dogmaUtils
+        IWalletManager walletManager, DogmaUtils dogmaUtils
     )
     {
         DB            = db;
@@ -222,7 +223,7 @@ public class contractMgr : Service
             // take reward from the character
             if (reward > 0)
             {
-                using Wallet wallet = WalletManager.AcquireWallet (callerCharacterID, Keys.MAIN);
+                using IWallet wallet = WalletManager.AcquireWallet (callerCharacterID, WalletKeys.MAIN);
                 {
                     wallet.EnsureEnoughBalance (reward);
                     wallet.CreateJournalRecord (MarketReference.ContractRewardAdded, null, null, -reward);
@@ -234,7 +235,7 @@ public class contractMgr : Service
                 connection, call.Session.CharacterID,
                 call.Session.CorporationID, call.Session.AllianceID, (ContractTypes) (int) contractType, availability,
                 assigneeID ?? 0, expireTime, courierContractDuration, startStationID, endStationID, priceOrStartingBid,
-                reward, collateralOrBuyoutPrice, title, description, Keys.MAIN
+                reward, collateralOrBuyoutPrice, title, description, WalletKeys.MAIN
             );
 
             // TODO: take broker's tax, deposit and sales tax
@@ -494,7 +495,7 @@ public class contractMgr : Service
                 throw new ConBidTooLow (quantity, nextMinimumBid);
 
             // take the bid's money off the wallet
-            using Wallet bidderWallet = WalletManager.AcquireWallet (bidderID, Keys.MAIN);
+            using IWallet bidderWallet = WalletManager.AcquireWallet (bidderID, WalletKeys.MAIN);
             {
                 bidderWallet.EnsureEnoughBalance (quantity);
                 bidderWallet.CreateJournalRecord (MarketReference.ContractAuctionBid, null, null, -quantity);
@@ -517,7 +518,7 @@ public class contractMgr : Service
             ulong bidID = DB.PlaceBid (connection, contractID, quantity, bidderID, forCorp);
 
             // return the money for the player that was the highest bidder
-            using Wallet maximumBidderWallet = WalletManager.AcquireWallet (maximumBidderID, Keys.MAIN);
+            using IWallet maximumBidderWallet = WalletManager.AcquireWallet (maximumBidderID, WalletKeys.MAIN);
             {
                 maximumBidderWallet.CreateJournalRecord (MarketReference.ContractAuctionBidRefund, null, null, maximumBid);
             }

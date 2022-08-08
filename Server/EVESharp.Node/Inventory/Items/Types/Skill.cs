@@ -1,5 +1,5 @@
 using System;
-using EVESharp.EVE.StaticData.Inventory;
+using EVESharp.EVE.Data.Inventory;
 using Attribute = EVESharp.EVE.Inventory.Attributes.Attribute;
 
 namespace EVESharp.Node.Inventory.Items.Types;

@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
-using EVESharp.EVE.StaticData.Inventory;
+using EVESharp.EVE.Data.Inventory;
 
 namespace EVESharp.Node.Inventory.Items.Types;
 

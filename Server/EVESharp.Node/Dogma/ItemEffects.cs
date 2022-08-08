@@ -1,9 +1,10 @@
 ﻿using System;
-using EVESharp.EVE.Client.Exceptions.dogma;
+using EVESharp.EVE.Data.Dogma;
+using EVESharp.EVE.Data.Inventory;
+using EVESharp.EVE.Exceptions;
+using EVESharp.EVE.Exceptions.dogma;
 using EVESharp.EVE.Packets.Exceptions;
 using EVESharp.EVE.Sessions;
-using EVESharp.EVE.StaticData.Dogma;
-using EVESharp.EVE.StaticData.Inventory;
 using EVESharp.Node.Client.Notifications.Inventory;
 using EVESharp.Node.Dogma.Interpreter.Opcodes;
 using EVESharp.Node.Inventory;

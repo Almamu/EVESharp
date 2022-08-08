@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using EVESharp.EVE.Data.Dogma;
 using EVESharp.EVE.Dogma.Exception;
-using EVESharp.EVE.StaticData.Dogma;
 using EVESharp.Node.Dogma.Interpreter.Opcodes;
 
 namespace EVESharp.Node.Dogma.Interpreter;

@@ -1,10 +1,11 @@
 ﻿using EVESharp.Database;
-using EVESharp.EVE.Client.Exceptions.ship;
+using EVESharp.EVE.Data.Inventory;
+using EVESharp.EVE.Exceptions;
+using EVESharp.EVE.Exceptions.ship;
 using EVESharp.EVE.Packets.Exceptions;
 using EVESharp.EVE.Services;
 using EVESharp.EVE.Services.Validators;
 using EVESharp.EVE.Sessions;
-using EVESharp.EVE.StaticData.Inventory;
 using EVESharp.Node.Client.Notifications.Inventory;
 using EVESharp.Node.Dogma;
 using EVESharp.Node.Inventory;
@@ -13,7 +14,7 @@ using EVESharp.Node.Inventory.Items.Types;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Database;
 using EVESharp.PythonTypes.Types.Primitives;
-using Groups = EVESharp.EVE.StaticData.Inventory.Groups;
+using Groups = EVESharp.EVE.Data.Inventory.Groups;
 using SessionManager = EVESharp.Node.Sessions.SessionManager;
 
 namespace EVESharp.Node.Services.Inventory;

@@ -1,5 +1,6 @@
 ﻿using System.IO;
 using EVESharp.EVE.Dogma.Exception;
+using EVESharp.EVE.Exceptions;
 using EVESharp.EVE.Packets.Exceptions;
 
 namespace EVESharp.Node.Dogma.Interpreter.Opcodes;
