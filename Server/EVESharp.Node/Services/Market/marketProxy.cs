@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data;
+using EVESharp.Database;
 using EVESharp.EVE.Data.Configuration;
 using EVESharp.EVE.Data.Corporation;
 using EVESharp.EVE.Data.Inventory;
@@ -23,7 +24,9 @@ using EVESharp.EVE.Services.Validators;
 using EVESharp.EVE.Sessions;
 using EVESharp.Node.Cache;
 using EVESharp.Node.Database;
+using EVESharp.PythonTypes.Types.Database;
 using EVESharp.PythonTypes.Types.Primitives;
+using ItemDB = EVESharp.Node.Database.ItemDB;
 
 namespace EVESharp.Node.Services.Market;
 
@@ -33,21 +36,21 @@ public class marketProxy : Service
     private static readonly int []      JumpsPerSkillLevel = {-1, 0, 5, 10, 20, 50};
     public override         AccessLevel AccessLevel => AccessLevel.None;
 
-    private MarketDB           DB                 { get; }
-    private CharacterDB        CharacterDB        { get; }
-    private ItemDB             ItemDB             { get; }
+    private MarketDB            DB                 { get; }
+    private CharacterDB         CharacterDB        { get; }
+    private ItemDB              ItemDB             { get; }
     private ICacheStorage       CacheStorage       { get; }
     private IItems              Items              { get; }
-    private ITypes             Types              => this.Items.Types;
-    private SolarSystemDB      SolarSystemDB      { get; }
+    private ITypes              Types              => this.Items.Types;
+    private IDatabaseConnection Database           { get; }
     private IConstants          Constants          { get; }
-    private ISolarSystems      SolarSystems       { get; }
+    private ISolarSystems       SolarSystems       { get; }
     private INotificationSender Notifications      { get; }
-    private IWallets     Wallets      { get; }
+    private IWallets            Wallets            { get; }
     private IDogmaNotifications DogmaNotifications { get; }
 
     public marketProxy (
-        MarketDB  db,        CharacterDB        characterDB, ItemDB itemDB, SolarSystemDB solarSystemDB, IItems items, ICacheStorage cacheStorage,
+        MarketDB  db,        CharacterDB        characterDB, ItemDB itemDB, IDatabaseConnection database, IItems items, ICacheStorage cacheStorage,
         IConstants constants, INotificationSender notificationSender, IWallets wallets, IDogmaNotifications dogmaNotifications, IClusterManager clusterManager,
         ISolarSystems solarSystems
     )
@@ -55,7 +58,7 @@ public class marketProxy : Service
         DB                 = db;
         CharacterDB        = characterDB;
         ItemDB             = itemDB;
-        SolarSystemDB      = solarSystemDB;
+        Database           = database;
         CacheStorage       = cacheStorage;
         Items              = items;
         Constants          = constants;
@@ -217,7 +220,7 @@ public class marketProxy : Service
         if (character.RegionID != station.RegionID)
             throw new MktInvalidRegion ();
 
-        int  jumps               = SolarSystemDB.GetJumpsBetweenSolarSystems (character.SolarSystemID, station.SolarSystemID);
+        int  jumps               = Database.MapCalculateJumps (character.SolarSystemID, station.SolarSystemID);
         long marketingSkillLevel = character.GetSkillLevel (TypeID.Marketing);
         long maximumDistance     = JumpsPerSkillLevel [marketingSkillLevel];
 
@@ -238,7 +241,7 @@ public class marketProxy : Service
         if (character.RegionID != station.RegionID)
             throw new MktInvalidRegion ();
 
-        int  jumps                 = SolarSystemDB.GetJumpsBetweenSolarSystems (character.SolarSystemID, station.SolarSystemID);
+        int  jumps                 = Database.MapCalculateJumps (character.SolarSystemID, station.SolarSystemID);
         long procurementSkillLevel = character.GetSkillLevel (TypeID.Procurement);
         long maximumDistance       = JumpsPerSkillLevel [procurementSkillLevel];
 

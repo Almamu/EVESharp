@@ -223,7 +223,6 @@ internal class Program
         container.Register <StationDB> (Lifestyle.Singleton);
         container.Register <LookupDB> (Lifestyle.Singleton);
         container.Register <InsuranceDB> (Lifestyle.Singleton);
-        container.Register <SolarSystemDB> (Lifestyle.Singleton);
         container.Register <RepairDB> (Lifestyle.Singleton);
         container.Register <ReprocessingDB> (Lifestyle.Singleton);
         container.Register <RAMDB> (Lifestyle.Singleton);
