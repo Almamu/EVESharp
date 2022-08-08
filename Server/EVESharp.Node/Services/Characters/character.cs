@@ -108,12 +108,12 @@ public class character : Service
 
     public PyDataType GetCharCreationInfo (CallInformation call)
     {
-        return CacheStorage.GetHints (CacheStorage.CreateCharacterCacheTable);
+        return CacheStorage.GetHints (EVE.Data.Cache.CreateCharacterCacheTable);
     }
 
     public PyDataType GetAppearanceInfo (CallInformation call)
     {
-        return CacheStorage.GetHints (CacheStorage.CharacterAppearanceCacheTable);
+        return CacheStorage.GetHints (EVE.Data.Cache.CharacterAppearanceCacheTable);
     }
 
     public PyDataType GetCharNewExtraCreationInfo (CallInformation call)

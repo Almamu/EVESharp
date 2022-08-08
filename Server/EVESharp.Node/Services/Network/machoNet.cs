@@ -74,7 +74,7 @@ public class machoNet : Service
         return new PyTuple (2)
         {
             [0] = CacheStorage.GetHint ("machoNet.serviceInfo"),
-            [1] = CacheStorage.GetHints (CacheStorage.LoginCacheTable)
+            [1] = CacheStorage.GetHints (EVE.Data.Cache.LoginCacheTable)
         };
     }
 

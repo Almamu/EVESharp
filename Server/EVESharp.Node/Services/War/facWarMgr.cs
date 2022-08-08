@@ -58,7 +58,7 @@ public class facWarMgr : Service
             "facWarMgr",
             "GetWarFactions",
             "SELECT factionID, militiaCorporationID FROM chrFactions WHERE militiaCorporationID IS NOT NULL",
-            CacheStorage.CacheObjectType.IntIntDict
+            CacheObjectType.IntIntDict
         );
 
         return CachedMethodCallResult.FromCacheHint (CacheStorage.GetHint ("facWarMgr", "GetWarFactions"));

@@ -71,7 +71,7 @@ public class account : Service
             "account",
             "GetEntryTypes",
             "SELECT refTypeID AS entryTypeID, refTypeText AS entryTypeName, description FROM mktRefTypes",
-            CacheStorage.CacheObjectType.Rowset
+            CacheObjectType.Rowset
         );
 
         PyDataType cacheHint = CacheStorage.GetHint ("account", "GetEntryTypes");

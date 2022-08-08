@@ -45,7 +45,7 @@ public class certificateMgr : Service
             "certificateMgr",
             "GetAllShipCertificateRecommendations",
             "SELECT shipTypeID, certificateID, recommendationLevel, recommendationID FROM crtRecommendations",
-            CacheStorage.CacheObjectType.Rowset
+            CacheObjectType.Rowset
         );
 
         return CachedMethodCallResult.FromCacheHint (CacheStorage.GetHint ("certificateMgr", "GetAllShipCertificateRecommendations"));
@@ -57,7 +57,7 @@ public class certificateMgr : Service
             "certificateMgr",
             "GetCertificateCategories",
             "SELECT categoryID, categoryName, description, 0 AS dataID FROM crtCategories",
-            CacheStorage.CacheObjectType.IndexRowset
+            CacheObjectType.IndexRowset
         );
 
         return CachedMethodCallResult.FromCacheHint (CacheStorage.GetHint ("certificateMgr", "GetCertificateCategories"));
@@ -69,7 +69,7 @@ public class certificateMgr : Service
             "certificateMgr",
             "GetCertificateClasses",
             "SELECT classID, className, description, 0 AS dataID FROM crtClasses",
-            CacheStorage.CacheObjectType.IndexRowset
+            CacheObjectType.IndexRowset
         );
 
         return CachedMethodCallResult.FromCacheHint (CacheStorage.GetHint ("certificateMgr", "GetCertificateClasses"));

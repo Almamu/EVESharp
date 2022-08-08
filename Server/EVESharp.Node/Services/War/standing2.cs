@@ -52,7 +52,7 @@ public class standing2 : Service
             "standing2",
             "GetNPCNPCStandings",
             "SELECT fromID, toID, standing FROM npcStandings",
-            CacheStorage.CacheObjectType.Rowset
+            CacheObjectType.Rowset
         );
 
         return CachedMethodCallResult.FromCacheHint (CacheStorage.GetHint ("standing2", "GetNPCNPCStandings"));

@@ -44,7 +44,7 @@ public class tutorialSvc : Service
             "tutorialSvc",
             "GetTutorials",
             "SELECT tutorialID, tutorialName, nextTutorialID, categoryID, 0 AS dataID FROM tutorials RIGHT JOIN tutorial_pages USING(tutorialID)",
-            CacheStorage.CacheObjectType.CRowset
+            CacheObjectType.CRowset
         );
 
         PyDataType cacheHint = CacheStorage.GetHint ("tutorialSvc", "GetTutorials");
@@ -58,7 +58,7 @@ public class tutorialSvc : Service
             "tutorialSvc",
             "GetCategories",
             "SELECT categoryID, categoryName, description, 0 AS dataID FROM tutorial_categories",
-            CacheStorage.CacheObjectType.CRowset
+            CacheObjectType.CRowset
         );
 
         PyDataType cacheHint = CacheStorage.GetHint ("tutorialSvc", "GetCategories");
@@ -77,7 +77,7 @@ public class tutorialSvc : Service
             "tutorialSvc",
             "GetCriterias",
             "SELECT criteriaID, criteriaName, messageText, audioPath, 0 AS dataID FROM tutorial_criteria",
-            CacheStorage.CacheObjectType.CRowset
+            CacheObjectType.CRowset
         );
 
         PyDataType cacheHint = CacheStorage.GetHint ("tutorialSvc", "GetCriterias");

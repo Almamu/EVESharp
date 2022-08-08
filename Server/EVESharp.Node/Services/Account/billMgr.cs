@@ -50,7 +50,7 @@ public class billMgr : Service
             "billMgr",
             "GetBillTypes",
             "SELECT billTypeID, billTypeName, description FROM billTypes",
-            CacheStorage.CacheObjectType.Rowset
+            CacheObjectType.Rowset
         );
 
         PyDataType cacheHint = CacheStorage.GetHint ("billMgr", "GetBillTypes");

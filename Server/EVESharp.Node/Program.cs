@@ -109,21 +109,21 @@ internal class Program
                 CacheStorage cacheStorage = dependencies.GetInstance <CacheStorage> ();
                 // prime bulk data
                 cacheStorage.Load (
-                    CacheStorage.LoginCacheTable,
-                    CacheStorage.LoginCacheQueries,
-                    CacheStorage.LoginCacheTypes
+                    EVE.Data.Cache.LoginCacheTable,
+                    EVE.Data.Cache.LoginCacheQueries,
+                    EVE.Data.Cache.LoginCacheTypes
                 );
                 // prime character creation cache
                 cacheStorage.Load (
-                    CacheStorage.CreateCharacterCacheTable,
-                    CacheStorage.CreateCharacterCacheQueries,
-                    CacheStorage.CreateCharacterCacheTypes
+                    EVE.Data.Cache.CreateCharacterCacheTable,
+                    EVE.Data.Cache.CreateCharacterCacheQueries,
+                    EVE.Data.Cache.CreateCharacterCacheTypes
                 );
                 // prime character appearance cache
                 cacheStorage.Load (
-                    CacheStorage.CharacterAppearanceCacheTable,
-                    CacheStorage.CharacterAppearanceCacheQueries,
-                    CacheStorage.CharacterAppearanceCacheTypes
+                    EVE.Data.Cache.CharacterAppearanceCacheTable,
+                    EVE.Data.Cache.CharacterAppearanceCacheQueries,
+                    EVE.Data.Cache.CharacterAppearanceCacheTypes
                 );
                 logChannel.Information ("Cache Initialized");
             }

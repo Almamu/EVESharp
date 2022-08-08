@@ -98,7 +98,7 @@ public class map : Service
             "map",
             "GetSolarSystemPseudoSecurities",
             "SELECT solarSystemID, security FROM mapSolarSystems",
-            CacheStorage.CacheObjectType.Rowset
+            CacheObjectType.Rowset
         );
 
         PyDataType cacheHint = CacheStorage.GetHint ("map", "GetSolarSystemPseudoSecurities");
