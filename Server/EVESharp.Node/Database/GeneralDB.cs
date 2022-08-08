@@ -39,25 +39,6 @@ public class GeneralDB
         Database = database;
     }
 
-    public long GetNodeWhereSolarSystemIsLoaded (int solarSystemID)
-    {
-        IDbConnection connection = null;
-        DbDataReader reader = Database.Select (
-            ref connection,
-            "SELECT nodeID FROM invItems WHERE itemID = @solarSystemID",
-            new Dictionary <string, object> {{"@solarSystemID", solarSystemID}}
-        );
-
-        using (connection)
-        using (reader)
-        {
-            if (reader.Read () == false)
-                return 0;
-
-            return reader.GetInt64 (0);
-        }
-    }
-
     public void UpdateCharacterLogoffDateTime (int characterID)
     {
         Database.Prepare (

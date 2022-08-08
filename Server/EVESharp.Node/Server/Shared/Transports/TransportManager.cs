@@ -1,12 +1,20 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Net.Http;
+using EVESharp.Common.Logging;
+using EVESharp.EVE.Network;
 using EVESharp.EVE.Network.Transports;
+using EVESharp.Node.Configuration;
 using Serilog;
 
 namespace EVESharp.Node.Server.Shared.Transports;
 
 public class TransportManager : ITransportManager
 {
+    /// <summary>
+    /// The current server transport in use
+    /// </summary>
+    public MachoServerTransport ServerTransport { get; private set; }
     /// <summary>
     /// The unvalidated transports
     /// </summary>
@@ -27,7 +35,8 @@ public class TransportManager : ITransportManager
     /// Full list of active transports for this node
     /// </summary>
     public List <MachoTransport> TransportList { get; } = new List <MachoTransport> ();
-    protected ILogger Log { get; init; }
+    protected ILogger    Log        { get; }
+    protected HttpClient HttpClient { get; }
 
     /// <summary>
     /// Event fired when a transport is removed
@@ -37,9 +46,15 @@ public class TransportManager : ITransportManager
     public EventHandler <MachoNodeTransport>   OnNodeResolved   { get; set; }
     public EventHandler <MachoProxyTransport>  OnProxyResolved  { get; set; }
 
-    public TransportManager (ILogger logger)
+    public TransportManager (HttpClient httpClient, ILogger logger)
     {
         Log = logger;
+        HttpClient = httpClient;
+    }
+
+    public MachoServerTransport OpenServerTransport (IMachoNet machoNet, MachoNet configuration)
+    {
+        return this.ServerTransport = new MachoServerTransport (configuration.Port, HttpClient, machoNet, Log.ForContext <MachoServerTransport> ("Listener"));
     }
 
     public void NewTransport (MachoUnauthenticatedTransport transport)

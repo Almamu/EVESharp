@@ -340,9 +340,6 @@ internal class Program
                 log.Warning ("Initializing EVESharp Node");
                 log.Debug ("Initializing EVESharp Node");
                 log.Verbose ("Initializing EVESharp Node");
-
-                // ensure the message processor is created
-                dependencies.GetInstance <MessageProcessor <MachoMessage>> ();
                 
                 // do some parallel initialization, cache priming and static item loading can be performed in parallel
                 // this makes the changes quicker

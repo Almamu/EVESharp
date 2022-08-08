@@ -22,15 +22,12 @@ public class MachoNet : IMachoNet
 {
     private General              Configuration { get; }
     private IDatabaseConnection  Database      { get; }
-    private MachoServerTransport Transport     { get; set; }
-    private HttpClient           HttpClient    { get; }
 
     public MachoNet (
-        HttpClient httpClient,    IDatabaseConnection databaseConnection, ITransportManager transportManager, MessageProcessor <LoginQueueEntry> loginQueue,
+        IDatabaseConnection databaseConnection, ITransportManager transportManager, MessageProcessor <LoginQueueEntry> loginQueue,
         General    configuration, ILogger             logger
     )
     {
-        HttpClient       = httpClient;
         Database         = databaseConnection;
         LoginQueue       = loginQueue;
         TransportManager = transportManager;
@@ -64,8 +61,7 @@ public class MachoNet : IMachoNet
         Database.CluRegisterSingleNode (NodeID);
 
         // start the server socket
-        Transport = new MachoServerTransport (Configuration.MachoNet.Port, HttpClient, this, Log.ForContext <MachoServerTransport> ("Listener"));
-        Transport.Listen ();
+        this.TransportManager.OpenServerTransport (this, Configuration.MachoNet).Listen ();
     }
 
     public void QueueOutputPacket (MachoTransport origin, PyPacket packet)

@@ -21,14 +21,12 @@ public class MachoNet : IMachoNet
 {
     private General              Configuration { get; }
     private MachoServerTransport Transport     { get; set; }
-    private HttpClient           HttpClient    { get; }
     private IDatabaseConnection  Database      { get; }
 
     public MachoNet (
-        HttpClient httpClient, ITransportManager transportManager, MessageProcessor <LoginQueueEntry> loginQueue, General configuration, ILogger logger, IDatabaseConnection databaseConnection
+        ITransportManager transportManager, MessageProcessor <LoginQueueEntry> loginQueue, General configuration, ILogger logger, IDatabaseConnection databaseConnection
     )
     {
-        HttpClient       = httpClient;
         LoginQueue       = loginQueue;
         TransportManager = transportManager;
         Configuration    = configuration;
@@ -57,8 +55,7 @@ public class MachoNet : IMachoNet
         Log.Debug ("Starting MachoNet in proxy mode");
 
         // start the server socket
-        Transport = new MachoServerTransport (Configuration.MachoNet.Port, HttpClient, this, Log.ForContext <MachoServerTransport> ("Listener"));
-        Transport.Listen ();
+        this.TransportManager.OpenServerTransport (this, Configuration.MachoNet).Listen ();
         // nothing else to do for now
     }
 

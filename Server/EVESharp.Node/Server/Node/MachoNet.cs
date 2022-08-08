@@ -17,17 +17,14 @@ namespace EVESharp.Node.Server.Node;
 public class MachoNet : IMachoNet
 {
     private General              Configuration { get; }
-    private MachoServerTransport Transport     { get; set; }
-    private HttpClient           HttpClient    { get; }
     private IDatabaseConnection  Database      { get; }
 
     public MachoNet (
-        IDatabaseConnection databaseConnection, HttpClient httpClient, ITransportManager transportManager, MessageProcessor <LoginQueueEntry> loginQueue,
+        IDatabaseConnection databaseConnection, ITransportManager transportManager, MessageProcessor <LoginQueueEntry> loginQueue,
         General             configuration,      ILogger    logger
     )
     {
         Database         = databaseConnection;
-        HttpClient       = httpClient;
         LoginQueue       = loginQueue;
         TransportManager = transportManager;
         Configuration    = configuration;
@@ -55,8 +52,7 @@ public class MachoNet : IMachoNet
         Log.Debug ("Starting MachoNet in node mode");
 
         // start the server socket
-        Transport = new MachoServerTransport (Configuration.MachoNet.Port, HttpClient, this, Log.ForContext <MachoServerTransport> ("Listener"));
-        Transport.Listen ();
+        this.TransportManager.OpenServerTransport (this, Configuration.MachoNet).Listen ();
     }
 
     public void QueueOutputPacket (MachoTransport origin, PyPacket packet)
