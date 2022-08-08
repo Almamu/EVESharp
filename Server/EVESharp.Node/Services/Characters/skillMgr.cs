@@ -31,19 +31,20 @@ public class skillMgr : ClientBoundService
     private const   int                 MAXIMUM_TOTAL_ATTRIBUTE_POINTS = 39;
     public override AccessLevel         AccessLevel        => AccessLevel.None;
     private         SkillDB             DB                 { get; }
-    private         IItems               Items              { get; }
-    private         ITimers              Timers             { get; }
+    private         IItems              Items              { get; }
+    private         ITimers             Timers             { get; }
     private         ISolarSystems       SolarSystems       { get; }
     private         ILogger             Log                { get; }
     private         Character           Character          { get; }
-    private         IDogmaNotifications  DogmaNotifications { get; }
+    private         IDogmaNotifications DogmaNotifications { get; }
     private         Timer <int>         NextSkillTimer     { get; set; }
     private         Timer <int>         ReSpecTimer        { get; set; }
     private         IDatabaseConnection Database           { get; }
 
-    public skillMgr (
-        SkillDB             db,      IItems items, ITimers              timers, IDogmaNotifications dogmaNotifications,
-        BoundServiceManager manager, ILogger     logger,      IDatabaseConnection database, ISolarSystems solarSystems
+    public skillMgr
+    (
+        SkillDB             db,      IItems  items,  ITimers             timers,   IDogmaNotifications dogmaNotifications,
+        BoundServiceManager manager, ILogger logger, IDatabaseConnection database, ISolarSystems       solarSystems
     ) : base (manager)
     {
         DB                 = db;
@@ -55,9 +56,10 @@ public class skillMgr : ClientBoundService
         SolarSystems       = solarSystems;
     }
 
-    protected skillMgr (
-        SkillDB             db,      IItems items, ITimers timers, IDogmaNotifications dogmaNotifications,
-        BoundServiceManager manager, ILogger     logger,      Session      session, ISolarSystems solarSystems
+    protected skillMgr
+    (
+        SkillDB             db,      IItems  items,  ITimers timers,  IDogmaNotifications dogmaNotifications,
+        BoundServiceManager manager, ILogger logger, Session session, ISolarSystems       solarSystems
     ) : base (manager, session, session.CharacterID)
     {
         DB                 = db;
@@ -436,7 +438,6 @@ public class skillMgr : ClientBoundService
             }
         };
 
-
         // build a list of skills to train based off the original queue
         // but with the new skill on top
         foreach (Character.SkillQueueEntry entry in Character.SkillQueue)
@@ -600,8 +601,7 @@ public class skillMgr : ClientBoundService
                 attribute = AttributeTypes.perceptionBonus;
                 break;
 
-            default:
-                return new PyList <PyTuple> ();
+            default: return new PyList <PyTuple> ();
         }
 
         PyList <PyTuple> modifiers = new PyList <PyTuple> ();
@@ -627,19 +627,22 @@ public class skillMgr : ClientBoundService
         return modifiers;
     }
 
-    public PyDataType RespecCharacter (
-        CallInformation call, PyInteger charisma,   PyInteger intelligence, PyInteger       memory,
-        PyInteger perception, PyInteger willpower
+    public PyDataType RespecCharacter
+    (
+        CallInformation call,       PyInteger charisma, PyInteger intelligence, PyInteger memory,
+        PyInteger       perception, PyInteger willpower
     )
     {
         if (charisma < MINIMUM_ATTRIBUTE_POINTS || intelligence < MINIMUM_ATTRIBUTE_POINTS ||
             memory < MINIMUM_ATTRIBUTE_POINTS || perception < MINIMUM_ATTRIBUTE_POINTS ||
             willpower < MINIMUM_ATTRIBUTE_POINTS)
             throw new RespecAttributesTooLow ();
+
         if (charisma >= MAXIMUM_ATTRIBUTE_POINTS || intelligence >= MAXIMUM_ATTRIBUTE_POINTS ||
             memory >= MAXIMUM_ATTRIBUTE_POINTS || perception >= MAXIMUM_ATTRIBUTE_POINTS ||
             willpower >= MAXIMUM_ATTRIBUTE_POINTS)
             throw new RespecAttributesTooHigh ();
+
         if (charisma + intelligence + memory + perception + willpower != MAXIMUM_TOTAL_ATTRIBUTE_POINTS)
             throw new RespecAttributesMisallocated ();
 

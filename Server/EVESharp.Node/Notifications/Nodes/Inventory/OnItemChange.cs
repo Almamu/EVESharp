@@ -57,6 +57,7 @@ public class OnItemChange : InterNodeNotification
 
         if (oldFlag != newFlag)
             change.AddChange (itemID, "flag", (int) oldFlag, (int) newFlag);
+
         if (oldLocation != newLocation)
             change.AddChange (itemID, "locationID", oldLocation, newLocation);
 
@@ -83,8 +84,10 @@ public class OnItemChange : InterNodeNotification
     {
         if (notification.Count != 2)
             throw new InvalidCastException ("Expected a tuple with one item");
+
         if (notification [0] is not PyString name || name != NOTIFICATION_NAME)
             throw new InvalidCastException ($"Expected a {NOTIFICATION_NAME}");
+
         if (notification [1] is not PyDictionary list)
             throw new InvalidCastException ("Expected a list as the first element");
 

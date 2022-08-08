@@ -17,12 +17,12 @@ public class map : Service
     public override AccessLevel AccessLevel => AccessLevel.None;
 
     private IItems        Items          { get; }
-    private IStations    StationManager => this.Items.Stations;
+    private IStations     StationManager => this.Items.Stations;
     private ICacheStorage CacheStorage   { get; }
 
     public map (IItems items, ICacheStorage cacheStorage)
     {
-        this.Items  = items;
+        this.Items   = items;
         CacheStorage = cacheStorage;
     }
 
@@ -38,6 +38,7 @@ public class map : Service
                 [4] = "ownerID"
             }
         );
+
         Rowset operationServices = new Rowset (
             new PyList <PyString> (2)
             {
@@ -45,6 +46,7 @@ public class map : Service
                 [1] = "serviceID"
             }
         );
+
         Rowset services = new Rowset (
             new PyList <PyString> (2)
             {
@@ -131,10 +133,8 @@ public class map : Service
 
         switch (historyType.Value)
         {
-            case (int) HistoryType.MostDangerous:
-                break;
-            case (int) HistoryType.PodKill:
-                break;
+            case (int) HistoryType.MostDangerous: break;
+            case (int) HistoryType.PodKill:       break;
         }
 
         return new PyList (0);

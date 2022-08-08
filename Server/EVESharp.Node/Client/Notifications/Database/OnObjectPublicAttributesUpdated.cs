@@ -17,7 +17,8 @@ public class OnObjectPublicAttributesUpdated : ClientNotification
     public       PyDictionary                     NotificationParams { get; init; }
     public       PyDataType                       PrimaryKey         { get; init; }
 
-    public OnObjectPublicAttributesUpdated (
+    public OnObjectPublicAttributesUpdated
+    (
         PyDataType primaryKey, SparseRowsetDatabaseService rowset, PyDictionary <PyString, PyTuple> changes, PyDictionary notificationParams = null
     ) : base (NOTIFICATION_NAME)
     {

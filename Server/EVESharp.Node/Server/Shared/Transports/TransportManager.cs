@@ -49,7 +49,7 @@ public class TransportManager : ITransportManager
 
     public TransportManager (HttpClient httpClient, ILogger logger)
     {
-        Log = logger;
+        Log        = logger;
         HttpClient = httpClient;
     }
 

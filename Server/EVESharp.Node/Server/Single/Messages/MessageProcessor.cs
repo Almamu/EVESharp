@@ -13,8 +13,15 @@ namespace EVESharp.Node.Server.Single.Messages;
 
 public class MessageProcessor : Shared.Messages.MessageProcessor
 {
-    public MessageProcessor (IMachoNet machoNet, ILogger logger, ServiceManager serviceManager, BoundServiceManager boundServiceManager, RemoteServiceManager remoteServiceManager, PacketCallHelper packetCallHelper, INotificationSender notificationSender, IItems items, ISolarSystems solarSystems, ISessionManager sessionManager) :
-        base (machoNet, logger, serviceManager, boundServiceManager, remoteServiceManager, packetCallHelper, items, solarSystems, notificationSender, sessionManager, 100) { }
+    public MessageProcessor
+    (
+        IMachoNet machoNet, ILogger logger, ServiceManager serviceManager, BoundServiceManager boundServiceManager, RemoteServiceManager remoteServiceManager,
+        PacketCallHelper packetCallHelper, INotificationSender notificationSender, IItems items, ISolarSystems solarSystems, ISessionManager sessionManager
+    ) :
+        base (
+            machoNet, logger, serviceManager, boundServiceManager, remoteServiceManager, packetCallHelper, items, solarSystems,
+            notificationSender, sessionManager, 100
+        ) { }
 
     protected override void HandleMessage (MachoMessage machoMessage)
     {
@@ -26,8 +33,7 @@ public class MessageProcessor : Shared.Messages.MessageProcessor
                     throw new Exception ("Detected a packet to a node that is not us on a single-instance nodes");
                 break;
 
-            case PyAddressAny:
-                break;
+            case PyAddressAny: break;
 
             case PyAddressBroadcast:
             case PyAddressClient:
@@ -40,24 +46,19 @@ public class MessageProcessor : Shared.Messages.MessageProcessor
                 LocalCallHandler.HandleCallReq (machoMessage);
                 break;
 
-
             case PyPacket.PacketType.CALL_RSP:
                 LocalCallHandler.HandleCallRsp (machoMessage);
                 break;
-
 
             case PyPacket.PacketType.PING_REQ:
                 LocalPingHandler.HandlePingReq (machoMessage);
                 break;
 
-
             case PyPacket.PacketType.NOTIFICATION:
                 LocalNotificationHandler.HandleNotification (machoMessage);
                 break;
 
-
-            default:
-                throw new NotImplementedException ("Only CallReq and PingReq packets can be handled in single-instance nodes");
+            default: throw new NotImplementedException ("Only CallReq and PingReq packets can be handled in single-instance nodes");
         }
     }
 }

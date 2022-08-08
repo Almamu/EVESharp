@@ -136,7 +136,8 @@ public class MarketDB : DatabaseAccessor
         };
     }
 
-    private void BuildItemTypeList (
+    private void BuildItemTypeList
+    (
         ref Dictionary <int, List <int>> map,            Dictionary <int, List <int>> marketToTypeID,
         Dictionary <int, List <int>>     parentToMarket, int                          groupID
     )
@@ -282,6 +283,7 @@ public class MarketDB : DatabaseAccessor
     public int CountCharsOrders (int characterID)
     {
         IDbConnection connection = null;
+
         DbDataReader reader = Database.Select (
             ref connection,
             "SELECT COUNT(*) FROM mktOrders WHERE charID = @characterID",
@@ -392,9 +394,10 @@ public class MarketDB : DatabaseAccessor
         );
     }
 
-    public Dictionary <int, ItemQuantityEntry> PrepareItemForOrder (
+    public Dictionary <int, ItemQuantityEntry> PrepareItemForOrder
+    (
         IDbConnection connection, int typeID, int stationID, int locationID2, int quantity, int ownerID1, int corporationID,
-        long            corporationRoles
+        long          corporationRoles
     )
     {
         DbDataReader reader = null;
@@ -543,7 +546,8 @@ public class MarketDB : DatabaseAccessor
         }
     }
 
-    public void PlaceSellOrder (
+    public void PlaceSellOrder
+    (
         IDbConnection connection, int typeID,    int  characterID, int  corporationID, int stationID, int range, double price,
         int           volEntered, int accountID, long duration,    bool isCorp
     )
@@ -572,7 +576,8 @@ public class MarketDB : DatabaseAccessor
         );
     }
 
-    public void PlaceBuyOrder (
+    public void PlaceBuyOrder
+    (
         IDbConnection connection, int typeID,    int characterID, int  corporationID, int  stationID, int range, double price,
         int           volEntered, int minVolume, int accountID,   long duration,      bool isCorp
     )

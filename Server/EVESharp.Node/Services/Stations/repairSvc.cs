@@ -35,13 +35,14 @@ public class repairSvc : ClientBoundService
     private          RepairDB            RepairDB           { get; }
     private          InsuranceDB         InsuranceDB        { get; }
     private          INotificationSender Notifications      { get; }
-    private          IWallets      Wallets      { get; }
+    private          IWallets            Wallets            { get; }
     private          IDogmaNotifications DogmaNotifications { get; }
     private          IDatabaseConnection Database           { get; }
 
-    public repairSvc (
-        RepairDB            repairDb,    MarketDB            marketDb, InsuranceDB   insuranceDb,   INotificationSender notificationSender,
-        IItems         items, BoundServiceManager manager,  IWallets wallets, IDogmaNotifications         dogmaNotifications,
+    public repairSvc
+    (
+        RepairDB      repairDb,     MarketDB            marketDb, InsuranceDB insuranceDb, INotificationSender notificationSender,
+        IItems        items,        BoundServiceManager manager,  IWallets    wallets,     IDogmaNotifications dogmaNotifications,
         ISolarSystems solarSystems, IDatabaseConnection database
     ) : base (manager)
     {
@@ -56,9 +57,10 @@ public class repairSvc : ClientBoundService
         SolarSystems       = solarSystems;
     }
 
-    protected repairSvc (
-        RepairDB      repairDb,  MarketDB    marketDb,    InsuranceDB         insuranceDb, INotificationSender notificationSender,
-        ItemInventory inventory, IItems items, BoundServiceManager manager,     IWallets wallets, IDogmaNotifications dogmaNotifications, Session session
+    protected repairSvc
+    (
+        RepairDB      repairDb,  MarketDB marketDb, InsuranceDB         insuranceDb, INotificationSender notificationSender,
+        ItemInventory inventory, IItems   items,    BoundServiceManager manager,     IWallets wallets, IDogmaNotifications dogmaNotifications, Session session
     ) : base (manager, session, inventory.ID)
     {
         this.mInventory         = inventory;
@@ -114,7 +116,6 @@ public class repairSvc : ClientBoundService
                     );
                 }
 
-
                 quote.Rows.Add (
                     new PyList
                     {
@@ -162,6 +163,7 @@ public class repairSvc : ClientBoundService
 
         // take the wallet lock and ensure the character has enough balance
         using IWallet wallet = this.Wallets.AcquireWallet (call.Session.CharacterID, WalletKeys.MAIN);
+
         {
             wallet.EnsureEnoughBalance (iskRepairValue);
             // build a list of items to be fixed
@@ -250,6 +252,7 @@ public class repairSvc : ClientBoundService
         {
             if (check == "RepairUnassembleVoidsContract")
                 ignoreContractVoiding = true;
+
             if (check == "ConfirmRepackageSomethingWithUpgrades")
                 ignoreRepackageWithUpgrades = true;
         }
@@ -262,8 +265,10 @@ public class repairSvc : ClientBoundService
 
                 if (entry.HasContract && ignoreContractVoiding == false)
                     throw new RepairUnassembleVoidsContract (itemID);
+
                 if (entry.HasUpgrades && ignoreRepackageWithUpgrades == false)
                     throw new ConfirmRepackageSomethingWithUpgrades ();
+
                 if (entry.Damage != 0.0)
                     throw new CantRepackageDamagedItem ();
 

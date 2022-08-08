@@ -13,7 +13,7 @@ public class config : Service
     public override AccessLevel AccessLevel => AccessLevel.LocationPreferred;
     private         ConfigDB    DB          { get; }
     private         ILogger     Log         { get; }
-    private         IItems Items { get; }
+    private         IItems      Items       { get; }
 
     public config (ConfigDB db, IItems items, ILogger log)
     {
@@ -59,9 +59,10 @@ public class config : Service
     }
 
     // THESE PARAMETERS AREN'T REALLY USED ANYMORE THIS FUNCTION IS USUALLY CALLED WITH LOCATIONID, 0, 0, 0, 1, 0
-    public PyDataType GetMapObjects (
-        CallInformation call, PyInteger locationID,  PyInteger wantRegions, PyInteger wantConstellations,
-        PyInteger wantSystems, PyInteger wantItems,   PyInteger unknown
+    public PyDataType GetMapObjects
+    (
+        CallInformation call,        PyInteger locationID, PyInteger wantRegions, PyInteger wantConstellations,
+        PyInteger       wantSystems, PyInteger wantItems,  PyInteger unknown
     )
     {
         return DB.GetMapObjects (locationID);
@@ -91,9 +92,10 @@ public class config : Service
         return DB.GetStationSolarSystemsByOwner (ownerID);
     }
 
-    public PyDataType GetMapConnections (
-        CallInformation call, PyInteger  itemID,        PyDataType isRegion,    PyDataType isConstellation,
-        PyDataType isSolarSystem, PyDataType isCelestial, PyInteger  unknown2 = null
+    public PyDataType GetMapConnections
+    (
+        CallInformation call,          PyInteger  itemID,      PyDataType isRegion, PyDataType isConstellation,
+        PyDataType      isSolarSystem, PyDataType isCelestial, PyInteger  unknown2 = null
     )
     {
         bool isRegionBool        = false;
@@ -103,25 +105,34 @@ public class config : Service
 
         if (isRegion is PyBool regionBool)
             isRegionBool = regionBool;
+
         if (isRegion is PyInteger regionInt)
             isRegionBool = regionInt.Value == 1;
+
         if (isConstellation is PyBool constellationBool)
             isConstellationBool = constellationBool;
+
         if (isConstellation is PyInteger constellationInt)
             isConstellationBool = constellationInt.Value == 1;
+
         if (isSolarSystem is PyBool solarSystemBool)
             isSolarSystemBool = solarSystemBool;
+
         if (isSolarSystem is PyInteger solarSystemInt)
             isSolarSystemBool = solarSystemInt.Value == 1;
+
         if (isCelestial is PyBool celestialBool)
             isCelestialBool = celestialBool;
+
         if (isCelestial is PyInteger celestialInt)
             isCelestialBool = celestialInt.Value == 1;
 
         if (isRegionBool)
             return DB.GetMapRegionConnection (itemID);
+
         if (isConstellationBool)
             return DB.GetMapConstellationConnection (itemID);
+
         if (isSolarSystemBool)
             return DB.GetMapSolarSystemConnection (itemID);
 

@@ -30,12 +30,13 @@ public class jumpCloneSvc : ClientBoundService
     private ITypes              Types         => this.Items.Types;
     private ISolarSystems       SolarSystems  { get; }
     private INotificationSender Notifications { get; }
-    private IWallets      Wallets { get; }
+    private IWallets            Wallets       { get; }
     private IDatabaseConnection Database      { get; }
 
-    public jumpCloneSvc (
-        ItemDB        itemDB,        MarketDB      marketDB,      IItems        items,
-        ISolarSystems solarSystems, IWallets wallets, INotificationSender notificationSender, BoundServiceManager manager, IDatabaseConnection database
+    public jumpCloneSvc
+    (
+        ItemDB        itemDB,       MarketDB marketDB, IItems              items,
+        ISolarSystems solarSystems, IWallets wallets,  INotificationSender notificationSender, BoundServiceManager manager, IDatabaseConnection database
     ) : base (manager)
     {
         ItemDB            = itemDB;
@@ -47,9 +48,10 @@ public class jumpCloneSvc : ClientBoundService
         Database          = database;
     }
 
-    protected jumpCloneSvc (
-        int           locationID,    ItemDB              itemDB,  MarketDB      marketDB,      IItems        items,
-        ISolarSystems solarSystems, BoundServiceManager manager, IWallets wallets, INotificationSender notificationSender, Session session
+    protected jumpCloneSvc
+    (
+        int           locationID,   ItemDB              itemDB,  MarketDB marketDB, IItems              items,
+        ISolarSystems solarSystems, BoundServiceManager manager, IWallets wallets,  INotificationSender notificationSender, Session session
     ) : base (manager, session, locationID)
     {
         ItemDB            = itemDB;
@@ -93,8 +95,10 @@ public class jumpCloneSvc : ClientBoundService
 
         if (this.Items.TryGetItem (jumpCloneID, out ItemEntity clone) == false)
             throw new JumpCantDestroyNonLocalClone ();
+
         if (clone.LocationID != call.Session.LocationID)
             throw new JumpCantDestroyNonLocalClone ();
+
         if (clone.OwnerID != callerCharacterID)
             throw new MktNotOwner ();
 
@@ -156,6 +160,7 @@ public class jumpCloneSvc : ClientBoundService
         Station station = this.Items.GetStaticStation (stationID);
 
         using IWallet wallet = this.Wallets.AcquireWallet (character.ID, WalletKeys.MAIN);
+
         {
             wallet.EnsureEnoughBalance (cost);
             wallet.CreateJournalRecord (MarketReference.JumpCloneInstallationFee, null, station.ID, -cost, $"Installed clone at {station.Name}");
@@ -182,7 +187,7 @@ public class jumpCloneSvc : ClientBoundService
         {
             (int) GroupID.SolarSystem => Database.CluResolveAddress ("solarsystem", parameters.ObjectID),
             (int) GroupID.Station     => Database.CluResolveAddress ("station",     parameters.ObjectID),
-            _                        => throw new CustomError ("Unknown item's groupID")
+            _                         => throw new CustomError ("Unknown item's groupID")
         };
     }
 

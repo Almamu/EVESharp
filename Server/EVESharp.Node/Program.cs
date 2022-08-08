@@ -108,24 +108,28 @@ internal class Program
             {
                 logChannel.Information ("Initializing cache");
                 ICacheStorage cacheStorage = dependencies.GetInstance <ICacheStorage> ();
+
                 // prime bulk data
                 cacheStorage.Load (
                     EVE.Data.Cache.LoginCacheTable,
                     EVE.Data.Cache.LoginCacheQueries,
                     EVE.Data.Cache.LoginCacheTypes
                 );
+
                 // prime character creation cache
                 cacheStorage.Load (
                     EVE.Data.Cache.CreateCharacterCacheTable,
                     EVE.Data.Cache.CreateCharacterCacheQueries,
                     EVE.Data.Cache.CreateCharacterCacheTypes
                 );
+
                 // prime character appearance cache
                 cacheStorage.Load (
                     EVE.Data.Cache.CharacterAppearanceCacheTable,
                     EVE.Data.Cache.CharacterAppearanceCacheQueries,
                     EVE.Data.Cache.CharacterAppearanceCacheTypes
                 );
+
                 logChannel.Information ("Cache Initialized");
             }
         );
@@ -161,6 +165,7 @@ internal class Program
                 return false;
             }
         );
+
         // log to console by default
         loggerConfiguration.WriteTo.Console (template);
 
@@ -198,8 +203,8 @@ internal class Program
         container.Register <ISolarSystems, SolarSystems> (Lifestyle.Singleton);
         container.Register <ServiceManager> (Lifestyle.Singleton);
         container.Register <BoundServiceManager> (Lifestyle.Singleton);
-        container.Register <RemoteServiceManager>(Lifestyle.Singleton);
-        container.Register <PacketCallHelper>(Lifestyle.Singleton);
+        container.Register <RemoteServiceManager> (Lifestyle.Singleton);
+        container.Register <PacketCallHelper> (Lifestyle.Singleton);
         container.Register <INotificationSender, NotificationSender> (Lifestyle.Singleton);
         container.Register <IExpressions, Expressions> (Lifestyle.Singleton);
         container.Register <IWallets, Wallets> (Lifestyle.Singleton);
@@ -324,12 +329,12 @@ internal class Program
                         dependencies.Register <IMachoNet, MachoNet> (Lifestyle.Singleton);
                         dependencies.Register <MessageProcessor <MachoMessage>, MessageProcessor> (Lifestyle.Singleton);
                         break;
-                    
+
                     case MachoNetMode.Proxy:
                         dependencies.Register <IMachoNet, Server.Proxy.MachoNet> (Lifestyle.Singleton);
                         dependencies.Register <MessageProcessor <MachoMessage>, Server.Proxy.Messages.MessageProcessor> (Lifestyle.Singleton);
                         break;
-                    
+
                     case MachoNetMode.Server:
                         dependencies.Register <IMachoNet, Server.Node.MachoNet> (Lifestyle.Singleton);
                         dependencies.Register <MessageProcessor <MachoMessage>, Server.Node.Messages.MessageProcessor> (Lifestyle.Singleton);
@@ -342,7 +347,7 @@ internal class Program
                 log.Warning ("Initializing EVESharp Node");
                 log.Debug ("Initializing EVESharp Node");
                 log.Verbose ("Initializing EVESharp Node");
-                
+
                 // do some parallel initialization, cache priming and static item loading can be performed in parallel
                 // this makes the changes quicker
                 Task cacheStorage = InitializeCache (log, dependencies);
@@ -373,7 +378,7 @@ internal class Program
                 }
 
                 log.Verbose ("Node startup done");
-                
+
                 // idle for infinity
                 // yes, i know this is not ideal, but there's actual work that needs to happen
                 // before this can be properly rewritten

@@ -13,6 +13,7 @@ public class ReprocessingDB : DatabaseAccessor
     public List <Recoverables> GetRecoverables (int typeID)
     {
         IDbConnection connection = null;
+
         DbDataReader reader = Database.Select (
             ref connection,
             "SELECT requiredTypeID, MIN(quantity) FROM typeActivityMaterials LEFT JOIN invBlueprintTypes ON typeID = blueprintTypeID WHERE damagePerJob = 1 AND ((activityID = 6 AND typeID = @typeID) OR (activityID = 1 AND productTypeID = @typeID)) GROUP BY requiredTypeID",

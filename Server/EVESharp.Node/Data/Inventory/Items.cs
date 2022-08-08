@@ -69,21 +69,22 @@ public class Items : IItems
     public IConstants          Constants          { get; }
     public IMachoNet           MachoNet           { get; }
 
-    public EVESystem    OwnerBank         { get; private set; }
-    public EVESystem    LocationSystem    { get; private set; }
-    public EVESystem    LocationRecycler  { get; private set; }
-    public EVESystem    LocationMarket    { get; private set; }
-    public EVESystem    LocationUniverse  { get; private set; }
-    public EVESystem    LocationTemp      { get; private set; }
-    public ItemEntity   OwnerSCC          { get; private set; }
+    public EVESystem  OwnerBank        { get; private set; }
+    public EVESystem  LocationSystem   { get; private set; }
+    public EVESystem  LocationRecycler { get; private set; }
+    public EVESystem  LocationMarket   { get; private set; }
+    public EVESystem  LocationUniverse { get; private set; }
+    public EVESystem  LocationTemp     { get; private set; }
+    public ItemEntity OwnerSCC         { get; private set; }
 
     protected IDatabaseConnection Database { get; }
 
-    public Items (
-        ILogger           logger, IMachoNet machoNet, IDatabaseConnection databaseConnection, IConstants constants, IMetaInventories metaInventories,
-        IExpressions expressions, ItemDB itemDB, CharacterDB characterDB, InsuranceDB insuranceDB, SkillDB skillDB, CorporationDB corporationDB,
-        IAttributes attributes, IGroups groups, ICategories categories, ITypes types, IAncestries ancestries, IBloodlines bloodlines,
-        IStations stations, ISolarSystems solarSystems, IFactions factions, IDefaultAttributes defaultAttributes, IDogmaNotifications dogmaNotifications
+    public Items
+    (
+        ILogger      logger,      IMachoNet     machoNet,     IDatabaseConnection databaseConnection, IConstants constants, IMetaInventories metaInventories,
+        IExpressions expressions, ItemDB        itemDB,       CharacterDB characterDB, InsuranceDB insuranceDB, SkillDB skillDB, CorporationDB corporationDB,
+        IAttributes  attributes,  IGroups       groups,       ICategories categories, ITypes types, IAncestries ancestries, IBloodlines bloodlines,
+        IStations    stations,    ISolarSystems solarSystems, IFactions factions, IDefaultAttributes defaultAttributes, IDogmaNotifications dogmaNotifications
     )
     {
         this.Log = logger;
@@ -103,14 +104,14 @@ public class Items : IItems
         this.Factions                               =  factions;
         this.DefaultAttributes                      =  defaultAttributes;
 
-        this.Attributes = attributes;
-        this.Groups           = groups;
-        this.Categories       = categories;
-        this.Types            = types;
-        this.Ancestries       = ancestries;
-        this.Bloodlines       = bloodlines;
-        this.Stations         = stations;
-        this.SolarSystems     = solarSystems;
+        this.Attributes   = attributes;
+        this.Groups       = groups;
+        this.Categories   = categories;
+        this.Types        = types;
+        this.Ancestries   = ancestries;
+        this.Bloodlines   = bloodlines;
+        this.Stations     = stations;
+        this.SolarSystems = solarSystems;
     }
 
     /// <summary>
@@ -318,7 +319,7 @@ public class Items : IItems
                 (int) CategoryID.Accessories => this.LoadAccessories (item),
                 (int) CategoryID.Implant     => this.LoadImplant (item),
                 (int) CategoryID.Module      => this.LoadModule (item),
-                _                                               => new EVE.Data.Inventory.Items.Types.Item (item)
+                _                            => new EVE.Data.Inventory.Items.Types.Item (item)
             };
 
             // check if there's an inventory loaded that should contain this item
@@ -374,14 +375,10 @@ public class Items : IItems
     {
         switch (item.Type.Group.ID)
         {
-            case (int) GroupID.SolarSystem:
-                return this.LoadSolarSystem (item);
-            case (int) GroupID.Station:
-                return this.LoadStation (item);
-            case (int) GroupID.Constellation:
-                return this.LoadConstellation (item);
-            case (int) GroupID.Region:
-                return this.LoadRegion (item);
+            case (int) GroupID.SolarSystem:   return this.LoadSolarSystem (item);
+            case (int) GroupID.Station:       return this.LoadStation (item);
+            case (int) GroupID.Constellation: return this.LoadConstellation (item);
+            case (int) GroupID.Region:        return this.LoadRegion (item);
             case (int) GroupID.CargoContainer:
             case (int) GroupID.SecureCargoContainer:
             case (int) GroupID.AuditLogSecureContainer:
@@ -404,14 +401,10 @@ public class Items : IItems
     {
         switch (item.Type.Group.ID)
         {
-            case (int) GroupID.Character:
-                return new Character (this.ItemDB.LoadCharacter (item));
-            case (int) GroupID.Corporation:
-                return new Corporation (this.ItemDB.LoadCorporation (item));
-            case (int) GroupID.Faction:
-                return this.LoadFaction (item);
-            case (int) GroupID.Alliance:
-                return new Alliance (this.ItemDB.LoadAlliance (item));
+            case (int) GroupID.Character:   return new Character (this.ItemDB.LoadCharacter (item));
+            case (int) GroupID.Corporation: return new Corporation (this.ItemDB.LoadCorporation (item));
+            case (int) GroupID.Faction:     return this.LoadFaction (item);
+            case (int) GroupID.Alliance:    return new Alliance (this.ItemDB.LoadAlliance (item));
             default:
                 this.Log.Warning ($"Loading owner {item.ID} from item group {item.Type.Group.ID} as normal item");
 
@@ -428,8 +421,7 @@ public class Items : IItems
     {
         switch (item.Type.Group.ID)
         {
-            case (int) GroupID.Clone:
-                return new Clone (item);
+            case (int) GroupID.Clone: return new Clone (item);
             default:
                 this.Log.Warning ($"Loading accessory {item.ID} from item group {item.Type.Group.ID} as normal item");
 
@@ -461,10 +453,8 @@ public class Items : IItems
     {
         switch (item.Type.Group.ID)
         {
-            case (int) GroupID.StationServices:
-                return this.LoadStationServices (item);
-            case (int) GroupID.Station:
-                return this.Stations [item.ID] = new Station (this.ItemDB.LoadStation (item));
+            case (int) GroupID.StationServices: return this.LoadStationServices (item);
+            case (int) GroupID.Station:         return this.Stations [item.ID] = new Station (this.ItemDB.LoadStation (item));
             default:
                 this.Log.Warning ($"Loading station item {item.ID} from item group {item.Type.Group.ID} as normal item");
 
@@ -476,8 +466,7 @@ public class Items : IItems
     {
         switch (item.Type.ID)
         {
-            case (int) TypeID.OfficeFolder:
-                return new OfficeFolder (item);
+            case (int) TypeID.OfficeFolder: return new OfficeFolder (item);
             default:
                 this.Log.Warning ($"Loading station service item {item.ID} as normal item");
 
@@ -505,7 +494,8 @@ public class Items : IItems
         return new ShipModule (item);
     }
 
-    public ItemEntity CreateSimpleItem (
+    public ItemEntity CreateSimpleItem
+    (
         Type type,               int  owner, int location, Flags flag, int quantity = 1,
         bool contraband = false, bool singleton = false
     )
@@ -513,7 +503,8 @@ public class Items : IItems
         return this.CreateSimpleItem (null, type.ID, owner, location, flag, quantity, contraband, singleton);
     }
 
-    public ItemEntity CreateSimpleItem (
+    public ItemEntity CreateSimpleItem
+    (
         string itemName,       int  typeID,             int  ownerID,           int    locationID, Flags  flag,
         int    quantity   = 1, bool contraband = false, bool singleton = false, double x = 0.0,    double y = 0.0, double z = 0.0,
         string customInfo = null
@@ -527,7 +518,8 @@ public class Items : IItems
         return this.LoadItem (itemID);
     }
 
-    public ItemEntity CreateSimpleItem (
+    public ItemEntity CreateSimpleItem
+    (
         string itemName,           Type type,              ItemEntity owner,        ItemEntity location, Flags flag,
         bool   contraband = false, bool singleton = false, int        quantity = 1, double     x = 0.0, double y = 0.0, double z = 0.0, string customInfo = null
     )
@@ -538,7 +530,8 @@ public class Items : IItems
         );
     }
 
-    public ItemEntity CreateSimpleItem (
+    public ItemEntity CreateSimpleItem
+    (
         Type type,         ItemEntity owner,              ItemEntity location, Flags flags,
         int  quantity = 1, bool       contraband = false, bool       singleton = false
     )
@@ -747,7 +740,7 @@ public class Items : IItems
         foreach (KeyValuePair <int, ItemEntity> pair in items)
             this.DestroyItem (pair.Value);
     }
-    
+
     public void DestroyItems (List <ItemEntity> items)
     {
         foreach (ItemEntity item in items)

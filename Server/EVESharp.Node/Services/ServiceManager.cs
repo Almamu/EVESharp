@@ -53,64 +53,63 @@ namespace EVESharp.Node.Services;
 
 public class ServiceManager : IServiceManager <string>
 {
-    public           ICacheStorage                 CacheStorage     { get; }
-    public           ITimers                 Timers     { get; }
-    private          ILogger                      Log              { get; }
-    public           objectCaching                objectCaching    { get; }
-    public           machoNet                     machoNet         { get; }
-    public           alert                        alert            { get; }
-    public           authentication               authentication   { get; }
-    public           character                    character        { get; }
-    public           userSvc                      userSvc          { get; }
-    public           charmgr                      charmgr          { get; }
-    public           config                       config           { get; }
-    public           dogmaIM                      dogmaIM          { get; }
-    public           invbroker                    invbroker        { get; }
-    public           warRegistry                  warRegistry      { get; }
-    public           station                      station          { get; }
-    public           map                          map              { get; }
-    public           account                      account          { get; }
-    public           skillMgr                     skillMgr         { get; }
-    public           contractMgr                  contractMgr      { get; }
-    public           corpStationMgr               corpStationMgr   { get; }
-    public           bookmark                     bookmark         { get; }
-    public           LSC                          LSC              { get; }
-    public           onlineStatus                 onlineStatus     { get; }
-    public           billMgr                      billMgr          { get; }
-    public           facWarMgr                    facWarMgr        { get; }
-    public           corporationSvc               corporationSvc   { get; }
-    public           clientStatsMgr               clientStatsMgr   { get; }
-    public           voiceMgr                     voiceMgr         { get; }
-    public           standing2                    standing2        { get; }
-    public           tutorialSvc                  tutorialSvc      { get; }
-    public           agentMgr                     agentMgr         { get; }
-    public           corpRegistry                 corpRegistry     { get; }
-    public           marketProxy                  marketProxy      { get; }
-    public           stationSvc                   stationSvc       { get; }
-    public           certificateMgr               certificateMgr   { get; }
-    public           jumpCloneSvc                 jumpCloneSvc     { get; }
-    public           LPSvc                        LPSvc            { get; }
-    public           lookupSvc                    lookupSvc        { get; }
-    public           insuranceSvc                 insuranceSvc     { get; }
-    public           slash                        slash            { get; }
-    public           ship                         ship             { get; }
-    public           corpmgr                      corpmgr          { get; }
-    public           repairSvc                    repairSvc        { get; }
-    public           reprocessingSvc              reprocessingSvc  { get; }
-    public           ramProxy                     ramProxy         { get; }
-    public           factory                      factory          { get; }
-    public           petitioner                   petitioner       { get; }
-    public           allianceRegistry             allianceRegistry { get; }
+    public  ICacheStorage    CacheStorage     { get; }
+    public  ITimers          Timers           { get; }
+    private ILogger          Log              { get; }
+    public  objectCaching    objectCaching    { get; }
+    public  machoNet         machoNet         { get; }
+    public  alert            alert            { get; }
+    public  authentication   authentication   { get; }
+    public  character        character        { get; }
+    public  userSvc          userSvc          { get; }
+    public  charmgr          charmgr          { get; }
+    public  config           config           { get; }
+    public  dogmaIM          dogmaIM          { get; }
+    public  invbroker        invbroker        { get; }
+    public  warRegistry      warRegistry      { get; }
+    public  station          station          { get; }
+    public  map              map              { get; }
+    public  account          account          { get; }
+    public  skillMgr         skillMgr         { get; }
+    public  contractMgr      contractMgr      { get; }
+    public  corpStationMgr   corpStationMgr   { get; }
+    public  bookmark         bookmark         { get; }
+    public  LSC              LSC              { get; }
+    public  onlineStatus     onlineStatus     { get; }
+    public  billMgr          billMgr          { get; }
+    public  facWarMgr        facWarMgr        { get; }
+    public  corporationSvc   corporationSvc   { get; }
+    public  clientStatsMgr   clientStatsMgr   { get; }
+    public  voiceMgr         voiceMgr         { get; }
+    public  standing2        standing2        { get; }
+    public  tutorialSvc      tutorialSvc      { get; }
+    public  agentMgr         agentMgr         { get; }
+    public  corpRegistry     corpRegistry     { get; }
+    public  marketProxy      marketProxy      { get; }
+    public  stationSvc       stationSvc       { get; }
+    public  certificateMgr   certificateMgr   { get; }
+    public  jumpCloneSvc     jumpCloneSvc     { get; }
+    public  LPSvc            LPSvc            { get; }
+    public  lookupSvc        lookupSvc        { get; }
+    public  insuranceSvc     insuranceSvc     { get; }
+    public  slash            slash            { get; }
+    public  ship             ship             { get; }
+    public  corpmgr          corpmgr          { get; }
+    public  repairSvc        repairSvc        { get; }
+    public  reprocessingSvc  reprocessingSvc  { get; }
+    public  ramProxy         ramProxy         { get; }
+    public  factory          factory          { get; }
+    public  petitioner       petitioner       { get; }
+    public  allianceRegistry allianceRegistry { get; }
 
     /// <summary>
     /// Constructor created mainly for testing, should not be used anywhere else
     /// </summary>
-    protected ServiceManager ()
-    {
-    }
-    
-    public ServiceManager (
-        ICacheStorage     storage, ILogger logger, ITimers timers,
+    protected ServiceManager () { }
+
+    public ServiceManager
+    (
+        ICacheStorage    storage, ILogger logger, ITimers timers,
         machoNet         machoNet,
         objectCaching    objectCaching,
         alert            alert,
@@ -159,7 +158,7 @@ public class ServiceManager : IServiceManager <string>
     )
     {
         CacheStorage = storage;
-        Timers = timers;
+        Timers       = timers;
         Log          = logger;
 
         // store all the services

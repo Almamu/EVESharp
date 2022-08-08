@@ -47,17 +47,19 @@ public class reprocessingSvc : ClientBoundService
     private readonly Station       mStation;
     public override  AccessLevel   AccessLevel => AccessLevel.None;
 
-    private IItems               Items              { get; }
+    private IItems              Items              { get; }
     private ISolarSystems       SolarSystems       { get; }
     private ITypes              Types              => this.Items.Types;
     private StandingDB          StandingDB         { get; }
     private ReprocessingDB      ReprocessingDB     { get; }
-    private IDogmaNotifications  DogmaNotifications { get; }
+    private IDogmaNotifications DogmaNotifications { get; }
     private IDatabaseConnection Database           { get; }
 
-    public reprocessingSvc (
-        ReprocessingDB reprocessingDb, StandingDB standingDb, IItems items, BoundServiceManager manager, IDogmaNotifications dogmaNotifications, IDatabaseConnection database,
-        ISolarSystems solarSystems
+    public reprocessingSvc
+    (
+        ReprocessingDB      reprocessingDb, StandingDB standingDb, IItems items, BoundServiceManager manager, IDogmaNotifications dogmaNotifications,
+        IDatabaseConnection database,
+        ISolarSystems       solarSystems
     ) : base (manager)
     {
         ReprocessingDB     = reprocessingDb;
@@ -68,9 +70,10 @@ public class reprocessingSvc : ClientBoundService
         SolarSystems       = solarSystems;
     }
 
-    protected reprocessingSvc (
-        ReprocessingDB      reprocessingDb, StandingDB standingDb, Corporation corporation, Station station, ItemInventory inventory, IItems items,
-        BoundServiceManager manager,        IDogmaNotifications dogmaNotifications, Session     session, ISolarSystems solarSystems
+    protected reprocessingSvc
+    (
+        ReprocessingDB      reprocessingDb, StandingDB          standingDb, Corporation corporation, Station station, ItemInventory inventory, IItems items,
+        BoundServiceManager manager,        IDogmaNotifications dogmaNotifications, Session session, ISolarSystems solarSystems
     ) : base (manager, session, inventory.ID)
     {
         ReprocessingDB     = reprocessingDb;
@@ -163,6 +166,7 @@ public class reprocessingSvc : ClientBoundService
         int quantityToProcess = item.Quantity - leftovers;
 
         List <ReprocessingDB.Recoverables> recoverablesList = ReprocessingDB.GetRecoverables (item.Type.ID);
+
         Rowset recoverables = new Rowset (
             new PyList <PyString> (4)
             {
@@ -248,6 +252,7 @@ public class reprocessingSvc : ClientBoundService
                 this.Types [recoverable.TypeID], character, this.mStation,
                 Flags.Hangar, quantityForClient
             );
+
             // notify the client about the new item
             this.DogmaNotifications.QueueMultiEvent (session.CharacterID, OnItemChange.BuildNewItemChange (newItem));
         }
@@ -289,10 +294,12 @@ public class reprocessingSvc : ClientBoundService
 
         if (station.HasService (Service.ReprocessingPlant) == false)
             throw new CustomError ("This station does not allow for reprocessing plant services");
+
         if (station.ID != call.Session.StationID)
             throw new CanOnlyDoInStations ();
 
         Corporation corporation = this.Items.GetItem <Corporation> (station.OwnerID);
+
         ItemInventory inventory =
             this.Items.MetaInventories.RegisterMetaInventoryForOwnerID (station, call.Session.CharacterID, Flags.Hangar);
 

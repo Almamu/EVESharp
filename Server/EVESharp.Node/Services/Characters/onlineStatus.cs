@@ -12,7 +12,7 @@ public class onlineStatus : Service
     public override AccessLevel AccessLevel => AccessLevel.Location;
     private         ChatDB      ChatDB      { get; }
     private         CharacterDB CharacterDB { get; }
-    private         IItems Items { get; }
+    private         IItems      Items       { get; }
 
     public onlineStatus (ChatDB chatDB, CharacterDB characterDB, IItems items)
     {

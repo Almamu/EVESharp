@@ -11,9 +11,9 @@ namespace EVESharp.Node.Services.Tutorial;
 
 public class tutorialSvc : Service
 {
-    public override AccessLevel  AccessLevel  => AccessLevel.Station;
+    public override AccessLevel   AccessLevel  => AccessLevel.Station;
     private         ICacheStorage CacheStorage { get; }
-    private         TutorialsDB  DB           { get; }
+    private         TutorialsDB   DB           { get; }
 
     public tutorialSvc (ICacheStorage cacheStorage, TutorialsDB db)
     {
@@ -92,8 +92,9 @@ public class tutorialSvc : Service
         return new PyList ();
     }
 
-    public PyDataType LogStarted (
-        CallInformation call, PyInteger       tutorialID, PyInteger pageNumber, PyInteger secondsAfterOpeningTutorial
+    public PyDataType LogStarted
+    (
+        CallInformation call, PyInteger tutorialID, PyInteger pageNumber, PyInteger secondsAfterOpeningTutorial
     )
     {
         // there's no need to log when the tutorial started
@@ -101,9 +102,10 @@ public class tutorialSvc : Service
         return null;
     }
 
-    public PyDataType LogCompleted (
-        CallInformation call, PyInteger tutorialID,                  PyInteger       pageNumber,
-        PyInteger secondsAfterOpeningTutorial
+    public PyDataType LogCompleted
+    (
+        CallInformation call, PyInteger tutorialID, PyInteger pageNumber,
+        PyInteger       secondsAfterOpeningTutorial
     )
     {
         // there's no need to log when the tutorial was completed
@@ -111,9 +113,10 @@ public class tutorialSvc : Service
         return null;
     }
 
-    public PyDataType LogAborted (
-        CallInformation call, PyInteger tutorialID,                  PyInteger       pageNumber,
-        PyInteger secondsAfterOpeningTutorial
+    public PyDataType LogAborted
+    (
+        CallInformation call, PyInteger tutorialID, PyInteger pageNumber,
+        PyInteger       secondsAfterOpeningTutorial
     )
     {
         // there's no need to log when the tutorial was aborted

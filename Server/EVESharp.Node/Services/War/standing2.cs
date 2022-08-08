@@ -18,10 +18,10 @@ namespace EVESharp.Node.Services.War;
 [MustBeCharacter]
 public class standing2 : Service
 {
-    public override AccessLevel        AccessLevel   => AccessLevel.None;
-    private         StandingDB         DB            { get; }
+    public override AccessLevel         AccessLevel   => AccessLevel.None;
+    private         StandingDB          DB            { get; }
     private         ICacheStorage       CacheStorage  { get; }
-    private         IItems        Items   { get; }
+    private         IItems              Items         { get; }
     private         INotificationSender Notifications { get; }
 
     public standing2 (ICacheStorage cacheStorage, StandingDB db, IItems items, INotificationSender notificationSender)
@@ -80,9 +80,10 @@ public class standing2 : Service
         };
     }
 
-    public PyDataType GetStandingTransactions (
-        CallInformation call, PyInteger from,        PyInteger to,            PyInteger       direction, PyInteger eventID,
-        PyInteger eventTypeID, PyInteger eventDateTime
+    public PyDataType GetStandingTransactions
+    (
+        CallInformation call,        PyInteger from, PyInteger to, PyInteger direction, PyInteger eventID,
+        PyInteger       eventTypeID, PyInteger eventDateTime
     )
     {
         int callerCharacterID = call.Session.CharacterID;

@@ -34,8 +34,8 @@ namespace EVESharp.Node.Services.CacheSvc;
 
 public class objectCaching : Service
 {
-    public override AccessLevel  AccessLevel  => AccessLevel.None;
-    private         ILogger      Log          { get; }
+    public override AccessLevel   AccessLevel  => AccessLevel.None;
+    private         ILogger       Log          { get; }
     private         ICacheStorage CacheStorage { get; }
 
     public objectCaching (ICacheStorage cacheStorage, ILogger logger)

@@ -26,12 +26,13 @@ public class LocalNotificationHandler
     public ILogger             Log                 { get; }
     public BoundServiceManager BoundServiceManager { get; }
     public ServiceManager      ServiceManager      { get; }
-    public IItems         Items         { get; }
-    public ISolarSystems       SolarSystems       { get; }
-    public INotificationSender  Notifications       { get; }
-    public ISessionManager      SessionManager      { get; }
+    public IItems              Items               { get; }
+    public ISolarSystems       SolarSystems        { get; }
+    public INotificationSender Notifications       { get; }
+    public ISessionManager     SessionManager      { get; }
 
-    public LocalNotificationHandler (
+    public LocalNotificationHandler
+    (
         IMachoNet machoNet, ILogger logger, ServiceManager serviceManager, BoundServiceManager boundServiceManager, IItems items, ISolarSystems solarSystems,
         INotificationSender notificationSender, ISessionManager sessionManager
     )
@@ -40,7 +41,7 @@ public class LocalNotificationHandler
         ServiceManager      = serviceManager;
         BoundServiceManager = boundServiceManager;
         this.Items          = items;
-        this.SolarSystems        = solarSystems;
+        this.SolarSystems   = solarSystems;
         Notifications       = notificationSender;
         SessionManager      = sessionManager;
         Log                 = logger;
@@ -131,7 +132,7 @@ public class LocalNotificationHandler
         switch (notification)
         {
             case "UpdateSessionAttributes":
-                this.HandleUpdateSessionAttributes (packet.Payload[1] as PyTuple);
+                this.HandleUpdateSessionAttributes (packet.Payload [1] as PyTuple);
                 break;
 
             case "OnSolarSystemLoad":
@@ -154,11 +155,10 @@ public class LocalNotificationHandler
                 this.HandleOnCorporationChanged (packet.Payload);
                 break;
 
-            
             case OnCorporationOfficeRented.NOTIFICATION_NAME:
                 this.HandleOnCorporationOfficeRented (packet.Payload);
                 break;
-            
+
             case "ClientHasDisconnected":
                 this.HandleClientHasDisconnected (packet.Payload [1] as PyTuple, packet.OutOfBounds);
                 break;
@@ -166,7 +166,6 @@ public class LocalNotificationHandler
             default:
                 Log.Fatal ("Received ClusterController notification with the wrong format");
                 break;
-
         }
     }
 
@@ -179,7 +178,7 @@ public class LocalNotificationHandler
 
         SessionManager.PerformSessionUpdate (idType, id, Session.FromPyDictionary (newValues));
     }
-    
+
     private void HandleOnSolarSystemLoaded (PyTuple data)
     {
         if (data.Count != 1)
@@ -233,7 +232,6 @@ public class LocalNotificationHandler
                     case SolarSystem _:
                         locationBelongsToUs = this.SolarSystems.SolarSystemBelongsToUs (location.ID);
                         break;
-
                 }
 
                 if (locationBelongsToUs == false)

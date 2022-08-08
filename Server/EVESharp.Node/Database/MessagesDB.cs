@@ -26,6 +26,7 @@ public class MessagesDB : DatabaseAccessor
     {
         // TODO: SIMPLIFY TABLE STRUCTURE, ATTACHMENTS ARE NOT SUPPORTED
         IDbConnection connection = null;
+
         DbDataReader reader = Database.Select (
             ref connection,
             "SELECT channelID, messageID, senderID, subject, body, mimeTypeID, mimeType, `binary`, created FROM eveMail LEFT JOIN eveMailMimeType USING(mimeTypeID) WHERE messageID = @messageID AND channelID = @channelID",
@@ -122,6 +123,7 @@ public class MessagesDB : DatabaseAccessor
 
         // check mailbox type
         IDbConnection connection = null;
+
         DbDataReader reader = Database.Select (
             ref connection,
             "SELECT groupID FROM invItems LEFT JOIN invTypes USING(typeID) WHERE itemID = @itemID",
@@ -139,11 +141,9 @@ public class MessagesDB : DatabaseAccessor
                         mailboxType = "charid";
                         break;
 
-
                     case (int) GroupID.Corporation:
                         mailboxType = "corpid";
                         break;
-
                 }
             else
                 mailboxType = "charid";

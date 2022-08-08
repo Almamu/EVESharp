@@ -19,9 +19,9 @@ public class Timers : ITimers
         Log = logger;
     }
 
-    public Timer<T> EnqueueTimer<T> (DateTime dateTime, Action <T> callback, T parameter)
+    public Timer <T> EnqueueTimer <T> (DateTime dateTime, Action <T> callback, T parameter)
     {
-        return new Timer<T> (dateTime, parameter, callback, this.Log);
+        return new Timer <T> (dateTime, parameter, callback, this.Log);
     }
 
     public Timer <T> EnqueueTimer <T> (TimeSpan timeSpan, Action <T> callback, T parameter)

@@ -34,16 +34,22 @@ public class OnCorporationMemberChanged : InterNodeNotification
     {
         if (notification.Count != 2)
             throw new InvalidCastException ("Expected a tuple with two items");
+
         if (notification [0] is not PyString name || name != NOTIFICATION_NAME)
             throw new InvalidCastException ($"Expected a {NOTIFICATION_NAME}");
+
         if (notification [1] is not PyTuple data)
             throw new InvalidCastException ("Expected a tuple as the first element");
+
         if (data.Count != 3)
             throw new InvalidCastException ("Expected a tuple with three items");
+
         if (data [0] is not PyInteger memberID)
             throw new InvalidCastException ("Expected a memberID");
+
         if (data [1] is not PyInteger oldCorporationID)
             throw new InvalidCastException ("Expected a corporationID as old ID");
+
         if (data [2] is not PyInteger newCorporationID)
             throw new InvalidCastException ("Expected a corporationID as new ID");
 

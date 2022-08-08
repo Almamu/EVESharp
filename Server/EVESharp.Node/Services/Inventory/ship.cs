@@ -20,15 +20,18 @@ public class ship : ClientBoundService
 {
     public override AccessLevel         AccessLevel        => AccessLevel.None;
     private         ItemEntity          Location           { get; }
-    private         IItems               Items              { get; }
+    private         IItems              Items              { get; }
     private         ITypes              Types              => this.Items.Types;
     private         ISolarSystems       SolarSystems       { get; }
-    private         ISessionManager      SessionManager     { get; }
-    private         IDogmaNotifications  DogmaNotifications { get; }
+    private         ISessionManager     SessionManager     { get; }
+    private         IDogmaNotifications DogmaNotifications { get; }
     private         IDatabaseConnection Database           { get; }
 
-    public ship (IItems items, BoundServiceManager manager, ISessionManager sessionManager, IDogmaNotifications dogmaNotifications, IDatabaseConnection database,
-                 ISolarSystems solarSystems) : base (manager)
+    public ship
+    (
+        IItems        items, BoundServiceManager manager, ISessionManager sessionManager, IDogmaNotifications dogmaNotifications, IDatabaseConnection database,
+        ISolarSystems solarSystems
+    ) : base (manager)
     {
         Items              = items;
         SessionManager     = sessionManager;
@@ -37,7 +40,8 @@ public class ship : ClientBoundService
         SolarSystems       = solarSystems;
     }
 
-    protected ship (
+    protected ship
+    (
         ItemEntity location, IItems items, BoundServiceManager manager, ISessionManager sessionManager, IDogmaNotifications dogmaNotifications, Session session,
         ISolarSystems solarSystems
     ) : base (manager, session, location.ID)
@@ -63,8 +67,8 @@ public class ship : ClientBoundService
         // change character's location to the pod
         character.LocationID = capsule.ID;
         // notify the client about the item changes
-        this.DogmaNotifications.QueueMultiEvent (callerCharacterID, OnItemChange.BuildLocationChange (capsule,   Flags.Capsule, this.Items.LocationRecycler.ID));
-        this.DogmaNotifications.QueueMultiEvent (callerCharacterID, OnItemChange.BuildLocationChange (character, Flags.Pilot,   call.Session.ShipID));
+        this.DogmaNotifications.QueueMultiEvent (callerCharacterID, OnItemChange.BuildLocationChange (capsule, Flags.Capsule, this.Items.LocationRecycler.ID));
+        this.DogmaNotifications.QueueMultiEvent (callerCharacterID, OnItemChange.BuildLocationChange (character, Flags.Pilot, call.Session.ShipID));
         // notify the client
         SessionManager.PerformSessionUpdate (Session.CHAR_ID, callerCharacterID, new Session {ShipID = capsule.ID});
 
@@ -184,7 +188,7 @@ public class ship : ClientBoundService
         {
             (int) GroupID.SolarSystem => Database.CluResolveAddress ("solarsystem", parameters.ObjectID),
             (int) GroupID.Station     => Database.CluResolveAddress ("station",     parameters.ObjectID),
-            _                        => throw new CustomError ("Unknown item's groupID")
+            _                         => throw new CustomError ("Unknown item's groupID")
         };
     }
 
@@ -195,6 +199,7 @@ public class ship : ClientBoundService
 
         if (bindParams.ExtraValue != (int) GroupID.Station && bindParams.ExtraValue != (int) GroupID.SolarSystem)
             throw new CustomError ("Cannot bind ship service to non-solarsystem and non-station locations");
+
         if (this.Items.TryGetItem (bindParams.ObjectID, out ItemEntity location) == false)
             throw new CustomError ("This bind request does not belong here");
 

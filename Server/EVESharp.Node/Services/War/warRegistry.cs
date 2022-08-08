@@ -10,7 +10,7 @@ public class warRegistry : ClientBoundService
 {
     private         int         mObjectID;
     public override AccessLevel AccessLevel => AccessLevel.None;
-    private         IConstants   Constants   { get; }
+    private         IConstants  Constants   { get; }
 
     public warRegistry (IConstants constants, BoundServiceManager manager) : base (manager)
     {

@@ -16,7 +16,7 @@ public class corpmgr : Service
 {
     public override AccessLevel   AccessLevel  => AccessLevel.None;
     private         CorporationDB DB           { get; }
-    private         ICacheStorage  CacheStorage { get; }
+    private         ICacheStorage CacheStorage { get; }
 
     public corpmgr (CorporationDB db, ICacheStorage cacheStorage)
     {

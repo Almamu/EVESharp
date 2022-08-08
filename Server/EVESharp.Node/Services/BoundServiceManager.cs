@@ -45,6 +45,7 @@ public class BoundServiceManager : IServiceManager <int>
     {
         if (BoundServices.TryGetValue (boundID, out BoundService service) == false)
             throw new MissingServiceException <int> (boundID, method);
+
         if (service.IsClientAllowedToCall (call.Session) == false)
             throw new UnauthorizedCallException <int> (boundID, method, call.Session.Role);
 

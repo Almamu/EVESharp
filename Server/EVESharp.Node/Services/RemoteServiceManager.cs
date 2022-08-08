@@ -18,17 +18,17 @@ public class RemoteServiceManager
     private readonly Dictionary <int, RemoteCall> mCallCallbacks = new Dictionary <int, RemoteCall> ();
     private          int                          mNextCallID;
 
-    private ITimers              Timers   { get; }
+    private ITimers             Timers   { get; }
     private IMachoNet           MachoNet { get; }
     private IDatabaseConnection Database { get; }
-    
+
     public RemoteServiceManager (IMachoNet machoNet, ITimers timers, IDatabaseConnection databaseConnection)
     {
         Timers   = timers;
         MachoNet = machoNet;
         Database = databaseConnection;
     }
-    
+
     /// <summary>
     /// Callback fired by the <seealso cref="Timers"/> when a call timeout has been reached
     /// </summary>
@@ -67,7 +67,7 @@ public class RemoteServiceManager
 
                 return;
             }
-            
+
             // ensure the session data is there now
             call.Session ??= answerSession;
 
@@ -105,7 +105,7 @@ public class RemoteServiceManager
                     this.CallTimeoutExpired,
                     callID
                 );
-        
+
             return callID;
         }
     }
@@ -118,7 +118,8 @@ public class RemoteServiceManager
     /// <param name="timeoutCallback">The function to call if the call timeout expires</param>
     /// <param name="timeoutSeconds">The amount of seconds to wait until timing out</param>
     /// <returns>The callID to be notified to the client</returns>
-    protected int ExpectRemoteServiceResult (Action <RemoteCall, PyDataType> callback, object extraInfo = null, Action <RemoteCall> timeoutCallback = null, int timeoutSeconds = 0)
+    protected int ExpectRemoteServiceResult
+        (Action <RemoteCall, PyDataType> callback, object extraInfo = null, Action <RemoteCall> timeoutCallback = null, int timeoutSeconds = 0)
     {
         RemoteCall entry = new RemoteCall
         {
@@ -132,38 +133,41 @@ public class RemoteServiceManager
 
     private PyPacket BuildCallRequestPacket (string service, string method, int clientID, PyTuple args, PyDictionary namedPayload, int callID)
     {
-        return new PyPacket(PyPacket.PacketType.CALL_REQ)
+        return new PyPacket (PyPacket.PacketType.CALL_REQ)
         {
-            Destination = new PyAddressClient(clientID, callID, service),
-            Source      = new PyAddressNode(MachoNet.NodeID, callID),
+            Destination = new PyAddressClient (clientID, callID, service),
+            Source      = new PyAddressNode (MachoNet.NodeID, callID),
             OutOfBounds = new PyDictionary {["role"] = (int) Roles.ROLE_SERVICE | (int) Roles.ROLE_REMOTESERVICE},
-            Payload = new PyTuple(2)
+            Payload = new PyTuple (2)
             {
                 [0] = new PyTuple (2)
                 {
                     [0] = 0,
-                    [1] = new PySubStream(new PyTuple(4)
-                    {
-                        [0] = 1,
-                        [1] = method,
-                        [2] = args,
-                        [3] = namedPayload
-                    })
+                    [1] = new PySubStream (
+                        new PyTuple (4)
+                        {
+                            [0] = 1,
+                            [1] = method,
+                            [2] = args,
+                            [3] = namedPayload
+                        }
+                    )
                 },
                 [1] = null
             }
         };
     }
-    
-    public void SendServiceCall(
-        int characterID, string service, string call, PyTuple args, PyDictionary namedPayload,
-        Action<RemoteCall, PyDataType> callback = null, Action<RemoteCall> timeoutCallback = null, object extraInfo = null, int timeoutSeconds = 0
+
+    public void SendServiceCall
+    (
+        int                             characterID,     string              service,                string call, PyTuple args, PyDictionary namedPayload,
+        Action <RemoteCall, PyDataType> callback = null, Action <RemoteCall> timeoutCallback = null, object extraInfo = null, int timeoutSeconds = 0
     )
     {
         // resolve the characterID to a clientID
         int clientID = Database.CluResolveCharacter (characterID);
         // queue the call in the service manager and get the callID
-        int callID = this.ExpectRemoteServiceResult(callback, extraInfo, timeoutCallback, timeoutSeconds);
+        int callID = this.ExpectRemoteServiceResult (callback, extraInfo, timeoutCallback, timeoutSeconds);
 
         // generate the actual packet and send it back
         PyPacket packet = BuildCallRequestPacket (service, call, clientID, args, namedPayload, callID);
@@ -172,11 +176,15 @@ public class RemoteServiceManager
         MachoNet.QueueOutputPacket (packet);
     }
 
-    public void SendServiceCall (
-        Session session, string              service,         string call,             PyTuple args, PyDictionary namedPayload,
-        Action <RemoteCall, PyDataType> callback = null,    Action <RemoteCall> timeoutCallback = null, object extraInfo = null, int     timeoutSeconds = 0
+    public void SendServiceCall
+    (
+        Session                         session,         string              service,                string call, PyTuple args, PyDictionary namedPayload,
+        Action <RemoteCall, PyDataType> callback = null, Action <RemoteCall> timeoutCallback = null, object extraInfo = null, int timeoutSeconds = 0
     )
     {
-        this.SendServiceCall (session.CharacterID, service, call, args, namedPayload, callback, timeoutCallback, extraInfo, timeoutSeconds);
+        this.SendServiceCall (
+            session.CharacterID, service, call, args, namedPayload, callback, timeoutCallback, extraInfo,
+            timeoutSeconds
+        );
     }
 }

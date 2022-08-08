@@ -11,17 +11,17 @@ namespace EVESharp.Node.Services.Characters;
 
 public class charmgr : Service
 {
-    public override AccessLevel    AccessLevel   => AccessLevel.None;
-    private         CharacterDB    DB            { get; }
-    private         MarketDB       MarketDB      { get; }
-    private         IItems    Items   { get; }
-    private         IWallets Wallets { get; }
+    public override AccessLevel AccessLevel => AccessLevel.None;
+    private         CharacterDB DB          { get; }
+    private         MarketDB    MarketDB    { get; }
+    private         IItems      Items       { get; }
+    private         IWallets    Wallets     { get; }
 
     public charmgr (CharacterDB db, MarketDB marketDB, IItems items, IWallets wallets)
     {
-        DB                 = db;
-        MarketDB           = marketDB;
-        this.Items         = items;
+        DB           = db;
+        MarketDB     = marketDB;
+        this.Items   = items;
         this.Wallets = wallets;
     }
 
@@ -50,6 +50,7 @@ public class charmgr : Service
 
         // access the wallet and do the required changes
         using IWallet wallet = this.Wallets.AcquireWallet (character.ID, WalletKeys.MAIN);
+
         {
             // ensure the character has enough balance
             wallet.EnsureEnoughBalance (bounty);

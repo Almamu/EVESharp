@@ -19,10 +19,12 @@ public class OfficesSparseRowsetService : SparseRowsetDatabaseService
     public override AccessLevel                  AccessLevel   => AccessLevel.None;
     private         Corporation                  Corporation   { get; }
     private         CorporationDB                DB            { get; }
-    private         INotificationSender           Notifications { get; }
+    private         INotificationSender          Notifications { get; }
 
-    public OfficesSparseRowsetService (
-        Corporation corporation, CorporationDB db, SparseRowsetHeader rowsetHeader, BoundServiceManager manager, Session session, INotificationSender notificationSender
+    public OfficesSparseRowsetService
+    (
+        Corporation         corporation, CorporationDB db, SparseRowsetHeader rowsetHeader, BoundServiceManager manager, Session session,
+        INotificationSender notificationSender
     ) : base (rowsetHeader, manager, session, true)
     {
         DB            = db;
@@ -65,7 +67,7 @@ public class OfficesSparseRowsetService : SparseRowsetDatabaseService
         this.RowsIndex = DB.GetOffices (Corporation.ID);
         // update the header count
         this.RowsetHeader.Count++;
-        
+
         this.SendOnObjectChanged (primaryKey, changes);
     }
 
@@ -79,15 +81,15 @@ public class OfficesSparseRowsetService : SparseRowsetDatabaseService
         this.RowsIndex = DB.GetOffices (Corporation.ID);
         // update the header count
         this.RowsetHeader.Count--;
-        
-        PyDictionary<PyString, PyTuple> changes = new PyDictionary <PyString, PyTuple>
+
+        PyDictionary <PyString, PyTuple> changes = new PyDictionary <PyString, PyTuple>
         {
             ["officeID"] = new PyTuple (2)
             {
                 [0] = primaryKey,
                 [1] = null
             },
-            ["typeID"] = new PyTuple(2)
+            ["typeID"] = new PyTuple (2)
             {
                 [0] = 0,
                 [1] = null
@@ -97,7 +99,7 @@ public class OfficesSparseRowsetService : SparseRowsetDatabaseService
                 [0] = 0,
                 [1] = null
             },
-            ["officeFolderID"] = new PyTuple(2)
+            ["officeFolderID"] = new PyTuple (2)
             {
                 [0] = primaryKey,
                 [1] = null

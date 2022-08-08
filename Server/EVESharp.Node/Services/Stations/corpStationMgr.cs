@@ -36,14 +36,15 @@ public class corpStationMgr : ClientBoundService
     private         StationDB           StationDB     { get; }
     private         ITypes              Types         => this.Items.Types;
     private         ISolarSystems       SolarSystems  { get; }
-    private         IWallets      Wallets { get; }
-    private         IConstants           Constants     { get; }
+    private         IWallets            Wallets       { get; }
+    private         IConstants          Constants     { get; }
     private         INotificationSender Notifications { get; }
     private         IDatabaseConnection Database      { get; }
 
-    public corpStationMgr (
-        MarketDB            marketDB, StationDB     stationDb,     INotificationSender  notificationSender, IItems items, IConstants constants,
-        BoundServiceManager manager, ISolarSystems solarSystems, IWallets wallets, IDatabaseConnection database, ItemDB itemDB
+    public corpStationMgr
+    (
+        MarketDB            marketDB, StationDB     stationDb,    INotificationSender notificationSender, IItems              items,    IConstants constants,
+        BoundServiceManager manager,  ISolarSystems solarSystems, IWallets            wallets,            IDatabaseConnection database, ItemDB     itemDB
     ) : base (manager)
     {
         MarketDB      = marketDB;
@@ -58,9 +59,10 @@ public class corpStationMgr : ClientBoundService
     }
 
     // TODO: PROVIDE OBJECTID PROPERLY
-    protected corpStationMgr (
+    protected corpStationMgr
+    (
         MarketDB            marketDB, StationDB stationDb, INotificationSender notificationSender, IItems items, IConstants constants,
-        BoundServiceManager manager,  IWallets wallets, Session session, ItemDB itemDB
+        BoundServiceManager manager,  IWallets  wallets,   Session             session,            ItemDB itemDB
     ) : base (manager, session, 0)
     {
         MarketDB      = marketDB;
@@ -89,7 +91,7 @@ public class corpStationMgr : ClientBoundService
     private List <Station> GetPotentialHomeStations (Session session)
     {
         int stationID = session.StationID;
-        
+
         // TODO: CHECK STANDINGS TO ENSURE THIS STATION CAN BE USED
         // TODO: ADD CURRENT CORPORATION'S STATION BACK TO THE LIST
         List <Station> availableStations = new List <Station>
@@ -105,6 +107,7 @@ public class corpStationMgr : ClientBoundService
     public PyDataType GetPotentialHomeStations (CallInformation call)
     {
         List <Station> availableStations = this.GetPotentialHomeStations (call.Session);
+
         Rowset result = new Rowset (
             new PyList <PyString> (3)
             {
@@ -158,6 +161,7 @@ public class corpStationMgr : ClientBoundService
         }
 
         using IWallet wallet = this.Wallets.AcquireWallet (character.ID, WalletKeys.MAIN);
+
         {
             double contractCost = Constants.CostCloneContract;
 
@@ -232,8 +236,10 @@ public class corpStationMgr : ClientBoundService
         Station station = this.Items.GetStaticStation (stationID);
 
         using IWallet wallet = this.Wallets.AcquireWallet (character.ID, WalletKeys.MAIN);
+
         {
             wallet.EnsureEnoughBalance (newCloneType.BasePrice);
+
             wallet.CreateTransactionRecord (
                 TransactionType.Buy, character.ID, this.Items.LocationSystem.ID, newCloneType.ID, 1, newCloneType.BasePrice, station.ID
             );
@@ -250,14 +256,14 @@ public class corpStationMgr : ClientBoundService
     }
 
     [MustBeInStation]
-    [MustHaveCorporationRole(typeof (RentingOfficeQuotesOnlyGivenToActiveCEOsOrEquivale), CorporationRole.Director, CorporationRole.CanRentOffice)]
+    [MustHaveCorporationRole (typeof (RentingOfficeQuotesOnlyGivenToActiveCEOsOrEquivale), CorporationRole.Director, CorporationRole.CanRentOffice)]
     public PyInteger GetQuoteForRentingAnOffice (CallInformation call)
     {
         return this.Items.Stations [call.Session.StationID].OfficeRentalCost;
     }
 
     [MustBeInStation]
-    [MustHaveCorporationRole(typeof (RentingOfficeQuotesOnlyGivenToActiveCEOsOrEquivale), CorporationRole.Director, CorporationRole.CanRentOffice)]
+    [MustHaveCorporationRole (typeof (RentingOfficeQuotesOnlyGivenToActiveCEOsOrEquivale), CorporationRole.Director, CorporationRole.CanRentOffice)]
     public PyDataType RentOffice (CallInformation call, PyInteger cost)
     {
         int rentalCost  = this.GetQuoteForRentingAnOffice (call);
@@ -293,12 +299,15 @@ public class corpStationMgr : ClientBoundService
             this.Types [TypeID.OfficeFolder], call.Session.CorporationID,
             stationID, Flags.Office, 1, false, true
         );
+
         long dueDate = DateTime.UtcNow.AddDays (30).ToFileTimeUtc ();
+
         // create the bill record for the renewal
         int billID = (int) Database.MktBillsCreate (
             BillTypes.RentalBill, call.Session.CorporationID, ownerCorporationID,
             rentalCost, dueDate, 0, (int) TypeID.OfficeFolder, stationID
         );
+
         // create the record in the database
         StationDB.RentOffice (call.Session.CorporationID, stationID, item.ID, dueDate, rentalCost, billID);
         // notify all characters of the corporation in the station about the office change
@@ -307,10 +316,18 @@ public class corpStationMgr : ClientBoundService
         Notifications.NotifyCorporation (call.Session.CorporationID, new OnBillReceived ());
         // notify the node with the new office
         long nodeID = Database.InvGetItemNode (call.Session.CorporationID);
-        
+
         if (nodeID > 0)
-            Notifications.NotifyNode (nodeID, new OnCorporationOfficeRented {CorporationID = call.Session.CorporationID, StationID = stationID, OfficeFolderID = item.ID, TypeID = (int) TypeID.OfficeFolder});
-        
+            Notifications.NotifyNode (
+                nodeID, new OnCorporationOfficeRented
+                {
+                    CorporationID  = call.Session.CorporationID,
+                    StationID      = stationID,
+                    OfficeFolderID = item.ID,
+                    TypeID         = (int) TypeID.OfficeFolder
+                }
+            );
+
         // return the new officeID
         return item.ID;
     }

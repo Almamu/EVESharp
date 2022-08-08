@@ -61,7 +61,7 @@ public class LoginQueue : MessageProcessor <LoginQueueEntry>
     {
         this.Log.Debug ("Processing login for " + entry.Request.user_name);
         LoginStatus status = LoginStatus.Waiting;
-        
+
         // make some accommodations for the auto-account mechanism
         if (this.Database.ActExists (entry.Request.user_name) == false && this.Configuration.Autoaccount)
         {
@@ -71,7 +71,8 @@ public class LoginQueue : MessageProcessor <LoginQueueEntry>
             this.Database.ActCreate (entry.Request.user_name, entry.Request.user_password, (ulong) this.Configuration.Role);
         }
 
-        if (this.Database.ActLogin (entry.Request.user_name, entry.Request.user_password, out int? accountID, out ulong? role, out bool? banned) == false || banned == true)
+        if (this.Database.ActLogin (entry.Request.user_name, entry.Request.user_password, out int? accountID, out ulong? role, out bool? banned) == false ||
+            banned == true)
         {
             this.Log.Verbose (": Rejected by database");
 

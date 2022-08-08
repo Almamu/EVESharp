@@ -16,6 +16,7 @@ public class StationDB : DatabaseAccessor
     public int CountRentedOffices (int stationID)
     {
         IDbConnection connection = null;
+
         DbDataReader reader = Database.Select (
             ref connection,
             "SELECT COUNT(*) FROM crpOffices WHERE stationID = @stationID",
@@ -50,7 +51,7 @@ public class StationDB : DatabaseAccessor
         );
     }
 
-    public PyList<PyPackedRow> GetOfficesList (int stationID)
+    public PyList <PyPackedRow> GetOfficesList (int stationID)
     {
         return Database.PreparePackedRowList (
             "SELECT corporationID, officeID AS itemID, officeFolderID FROM crpOffices WHERE stationID = @stationID",
@@ -78,6 +79,7 @@ public class StationDB : DatabaseAccessor
     public bool CorporationHasOfficeRentedAt (int corporationID, int stationID)
     {
         IDbConnection connection = null;
+
         DbDataReader reader = Database.Select (
             ref connection,
             "SELECT corporationID FROM crpOffices WHERE stationID = @stationID AND corporationID = @corporationID",

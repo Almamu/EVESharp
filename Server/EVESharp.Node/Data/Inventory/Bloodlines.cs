@@ -32,7 +32,7 @@ namespace EVESharp.Node.Data.Inventory;
 public class Bloodlines : IBloodlines
 {
     private readonly Dictionary <int, Bloodline> mBloodlines;
-    
+
     public Bloodline this [int id] => this.mBloodlines [id];
 
     public Bloodlines (IDatabaseConnection Database, ITypes types)

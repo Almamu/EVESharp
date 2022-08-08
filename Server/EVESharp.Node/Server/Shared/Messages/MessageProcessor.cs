@@ -21,24 +21,30 @@ public abstract class MessageProcessor : MessageProcessor <MachoMessage>
     protected LocalNotificationHandler LocalNotificationHandler { get; }
     protected ServiceManager           ServiceManager           { get; }
     protected BoundServiceManager      BoundServiceManager      { get; }
-    protected ISessionManager           SessionManager           { get; }
+    protected ISessionManager          SessionManager           { get; }
     protected RemoteServiceManager     RemoteServiceManager     { get; }
 
-    protected MessageProcessor (
-        IMachoNet machoNet, ILogger logger, ServiceManager serviceManager, BoundServiceManager boundServiceManager, RemoteServiceManager remoteServiceManager, PacketCallHelper packetCallHelper, IItems items, ISolarSystems solarSystems, INotificationSender notifications, ISessionManager sessionManager, int numberOfThreads
+    protected MessageProcessor
+    (
+        IMachoNet machoNet, ILogger logger, ServiceManager serviceManager, BoundServiceManager boundServiceManager, RemoteServiceManager remoteServiceManager,
+        PacketCallHelper packetCallHelper, IItems items, ISolarSystems solarSystems, INotificationSender notifications, ISessionManager sessionManager,
+        int numberOfThreads
     ) : base (logger, numberOfThreads)
     {
-        MachoNet                 = machoNet;
-        ServiceManager           = serviceManager;
-        BoundServiceManager      = boundServiceManager;
-        this.Items              = items;
-        this.SolarSystems            = solarSystems;
-        Notifications            = notifications;
-        RemoteServiceManager     = remoteServiceManager;
-        SessionManager           = sessionManager;
-        LocalCallHandler         = new LocalCallHandler (MachoNet, logger, ServiceManager, BoundServiceManager, RemoteServiceManager, packetCallHelper);
-        LocalPingHandler         = new LocalPingHandler (MachoNet);
-        LocalNotificationHandler = new LocalNotificationHandler (MachoNet, logger, ServiceManager, BoundServiceManager, this.Items, this.SolarSystems, Notifications, SessionManager);
+        MachoNet             = machoNet;
+        ServiceManager       = serviceManager;
+        BoundServiceManager  = boundServiceManager;
+        this.Items           = items;
+        this.SolarSystems    = solarSystems;
+        Notifications        = notifications;
+        RemoteServiceManager = remoteServiceManager;
+        SessionManager       = sessionManager;
+        LocalCallHandler     = new LocalCallHandler (MachoNet, logger, ServiceManager, BoundServiceManager, RemoteServiceManager, packetCallHelper);
+        LocalPingHandler     = new LocalPingHandler (MachoNet);
+
+        LocalNotificationHandler = new LocalNotificationHandler (
+            MachoNet, logger, ServiceManager, BoundServiceManager, this.Items, this.SolarSystems, Notifications, SessionManager
+        );
 
         // update the message processor for the macho net instance
         MachoNet.MessageProcessor = this;

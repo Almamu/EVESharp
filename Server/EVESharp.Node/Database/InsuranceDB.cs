@@ -86,6 +86,7 @@ public class InsuranceDB : DatabaseAccessor
         numberOfInsurances = 0;
 
         IDbConnection connection = null;
+
         DbDataReader reader = Database.Select (
             ref connection,
             "SELECT COUNT(*) AS insuranceCount, ownerID FROM chrShipInsurances WHERE shipID = @shipID",
@@ -142,6 +143,7 @@ public class InsuranceDB : DatabaseAccessor
         long currentDate = DateTime.UtcNow.ToFileTimeUtc ();
 
         IDbConnection connection = null;
+
         DbDataReader reader = Database.Select (
             ref connection,
             "SELECT insuranceID, chrShipInsurances.ownerID, shipID, ship.itemName AS shipName, invItems.typeID AS shipTypeID, eveNames.typeID AS ownerTypeID, startDate FROM chrShipInsurances LEFT JOIN eveNames ON eveNames.itemID = chrShipInsurances.ownerID LEFT JOIN invItems ON invItems.itemID = chrShipInsurances.shipID LEFT JOIN eveNames ship ON eveNames.itemID = shipID WHERE endDate < @currentDate",

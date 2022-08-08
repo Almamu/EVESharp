@@ -10,7 +10,7 @@ namespace EVESharp.Node.Server.Shared.Helpers;
 public class PacketCallHelper
 {
     private IMachoNet MachoNet { get; }
-    
+
     public PacketCallHelper (IMachoNet machoNet)
     {
         MachoNet = machoNet;
@@ -34,7 +34,7 @@ public class PacketCallHelper
             Source      = answerTo.Destination,
             Destination = source,
             UserID      = source.ClientID,
-            Payload     = new PyTuple (1){[0] = 0},
+            Payload     = new PyTuple (1) {[0] = 0},
             OutOfBounds = new PyDictionary
             {
                 ["provisional"] = new PyTuple (3)
@@ -70,7 +70,7 @@ public class PacketCallHelper
                 Destination = originalSource,
                 UserID      = originalSource.ClientID,
                 Payload     = new PyTuple (1) {[0] = new PySubStream (content)},
-                OutOfBounds = outOfBounds ?? new PyDictionary()
+                OutOfBounds = outOfBounds ?? new PyDictionary ()
             }
         );
     }

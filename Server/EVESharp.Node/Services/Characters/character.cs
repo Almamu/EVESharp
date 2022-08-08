@@ -54,23 +54,24 @@ public class character : Service
     private readonly Character   mConfiguration;
     public override  AccessLevel AccessLevel => AccessLevel.LocationPreferred;
 
-    private CharacterDB        DB             { get; }
-    private CorporationDB      CorporationDB  { get; }
-    private ChatDB             ChatDB         { get; }
+    private CharacterDB         DB             { get; }
+    private CorporationDB       CorporationDB  { get; }
+    private ChatDB              ChatDB         { get; }
     private IItems              Items          { get; }
-    private ITypes       Types    => this.Items.Types;
+    private ITypes              Types          => this.Items.Types;
     private ICacheStorage       CacheStorage   { get; }
     private INotificationSender Notifications  { get; }
-    private IWallets     Wallets  { get; }
+    private IWallets            Wallets        { get; }
     private IAncestries         Ancestries     { get; }
     private IBloodlines         Bloodlines     { get; }
     private ISessionManager     SessionManager { get; }
-    private ILogger            Log            { get; }
+    private ILogger             Log            { get; }
 
-    public character (
-        ICacheStorage       cacheStorage,       CharacterDB   db,            ChatDB     chatDB, CorporationDB corporationDB,
-        IItems        items,        ILogger       logger,        Character  configuration,
-        INotificationSender notificationSender, IWallets wallets, IAncestries ancestries, IBloodlines bloodlines,
+    public character
+    (
+        ICacheStorage       cacheStorage,       CharacterDB db,      ChatDB      chatDB, CorporationDB corporationDB,
+        IItems              items,              ILogger     logger,  Character   configuration,
+        INotificationSender notificationSender, IWallets    wallets, IAncestries ancestries, IBloodlines bloodlines,
         ISessionManager     sessionManager
     )
     {
@@ -143,7 +144,8 @@ public class character : Service
         return (int) NameValidationResults.Valid;
     }
 
-    private void GetRandomCareerForRace (
+    private void GetRandomCareerForRace
+    (
         int     raceID, out int careerID, out int schoolID, out int careerSpecialityID,
         out int corporationID
     )
@@ -163,7 +165,8 @@ public class character : Service
         throw new CustomError ($"Cannot find random career for race {raceID}");
     }
 
-    private void GetLocationForCorporation (
+    private void GetLocationForCorporation
+    (
         int     corporationID,   out int stationID, out int solarSystemID,
         out int constellationID, out int regionID
     )
@@ -182,7 +185,8 @@ public class character : Service
         throw new CustomError ($"Cannot find location for corporation {corporationID}");
     }
 
-    private void ExtractExtraCharacterAppearance (
+    private void ExtractExtraCharacterAppearance
+    (
         PyDictionary  data,    out PyInteger accessoryID,
         out PyInteger beardID, out PyInteger decoID,  out PyInteger lipstickID, out PyInteger makeupID,
         out PyDecimal morph1e, out PyDecimal morph1n, out PyDecimal morph1s,    out PyDecimal morph1w,
@@ -214,7 +218,8 @@ public class character : Service
         data.TryGetValue ("morph4w",     out morph4w);
     }
 
-    private void ExtractCharacterAppearance (
+    private void ExtractCharacterAppearance
+    (
         PyDictionary  data,          out PyInteger costumeID,     out PyInteger eyebrowsID,
         out PyInteger eyesID,        out PyInteger hairID,        out PyInteger skinID, out PyInteger backgroundID,
         out PyInteger lightID,       out PyDecimal headRotation1, out PyDecimal headRotation2,
@@ -240,7 +245,8 @@ public class character : Service
         data.SafeGetValue ("camPos3",       out camPos3);
     }
 
-    private EVE.Data.Inventory.Items.Types.Character CreateCharacter (
+    private EVE.Data.Inventory.Items.Types.Character CreateCharacter
+    (
         CallInformation call, string characterName, Ancestry ancestry, int genderID, PyDictionary appearance, long currentTime
     )
     {
@@ -249,6 +255,7 @@ public class character : Service
 
         this.GetRandomCareerForRace (ancestry.Bloodline.RaceID, out int careerID, out int schoolID, out int careerSpecialityID, out int corporationID);
         this.GetLocationForCorporation (corporationID, out int stationID, out int solarSystemID, out int constellationID, out int regionID);
+
         this.ExtractCharacterAppearance (
             appearance, out PyInteger costumeID, out PyInteger eyebrowsID,
             out PyInteger eyesID, out PyInteger hairID, out PyInteger skinID, out PyInteger backgroundID,
@@ -256,6 +263,7 @@ public class character : Service
             out PyDecimal headRotation3, out PyDecimal eyeRotation1, out PyDecimal eyeRotation2,
             out PyDecimal eyeRotation3, out PyDecimal camPos1, out PyDecimal camPos2, out PyDecimal camPos3
         );
+
         this.ExtractExtraCharacterAppearance (
             appearance, out PyInteger accessoryID, out PyInteger beardID,
             out PyInteger decoID, out PyInteger lipstickID, out PyInteger makeupID, out PyDecimal morph1e,
@@ -285,9 +293,10 @@ public class character : Service
     }
 
     [MustNotBeCharacter]
-    public PyDataType CreateCharacter2 (
-        CallInformation call, PyString     characterName, PyInteger       bloodlineID, PyInteger genderID, PyInteger ancestryID,
-        PyDictionary appearance
+    public PyDataType CreateCharacter2
+    (
+        CallInformation call, PyString characterName, PyInteger bloodlineID, PyInteger genderID, PyInteger ancestryID,
+        PyDictionary    appearance
     )
     {
         int validationError = this.ValidateNameEx (call, characterName);
@@ -321,6 +330,7 @@ public class character : Service
 
         EVE.Data.Inventory.Items.Types.Character character =
             this.CreateCharacter (call, characterName, ancestry, genderID, appearance, currentTime);
+
         Station station = this.Items.GetStaticStation (character.StationID);
 
         // TODO: CREATE DEFAULT STANDINGS FOR THE CHARACTER
@@ -376,6 +386,7 @@ public class character : Service
 
         // get the wallet for the player and give the money specified in the configuration
         using IWallet wallet = this.Wallets.AcquireWallet (character.ID, WalletKeys.MAIN);
+
         {
             wallet.CreateJournalRecord (MarketReference.Inheritance, null, null, this.mConfiguration.Balance);
         }
@@ -418,8 +429,9 @@ public class character : Service
     }
 
     [MustNotBeCharacter]
-    public PyDataType SelectCharacterID (
-        CallInformation call, PyInteger       characterID, PyBool loadDungeon, PyDataType secondChoiceID
+    public PyDataType SelectCharacterID
+    (
+        CallInformation call, PyInteger characterID, PyBool loadDungeon, PyDataType secondChoiceID
     )
     {
         return this.SelectCharacterID (call, characterID, loadDungeon == true ? 1 : 0, secondChoiceID);
@@ -434,8 +446,9 @@ public class character : Service
     // TODO: THIS PyNone SHOULD REALLY BE AN INTEGER, ALTHOUGH THIS FUNCTIONALITY IS NOT USED
     // TODO: IT REVEALS AN IMPORTANT ISSUE, WE CAN'T HAVE A WILDCARD PARAMETER PyDataType
     [MustNotBeCharacter]
-    public PyDataType SelectCharacterID (
-        CallInformation call, PyInteger       characterID, PyInteger loadDungeon, PyDataType secondChoiceID
+    public PyDataType SelectCharacterID
+    (
+        CallInformation call, PyInteger characterID, PyInteger loadDungeon, PyDataType secondChoiceID
     )
     {
         // ensure the character belongs to the current account
@@ -470,8 +483,10 @@ public class character : Service
         );
 
         updates.CorporationRole = character.Roles | roles;
+
         updates.RolesAtAll = character.Roles | character.RolesAtBase | character.RolesAtOther | character.RolesAtHq | roles | rolesAtHQ | rolesAtBase |
                              rolesAtOther;
+
         updates.RolesAtBase  = character.RolesAtBase | rolesAtBase;
         updates.RolesAtHQ    = character.RolesAtHq | rolesAtHQ;
         updates.RolesAtOther = character.RolesAtOther | rolesAtOther;
@@ -514,7 +529,7 @@ public class character : Service
     {
         return call.Session.UserID;
     }
-    
+
     [MustBeCharacter]
     public PyDataType GetOwnerNoteLabels (CallInformation call)
     {

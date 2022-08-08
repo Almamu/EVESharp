@@ -39,20 +39,21 @@ namespace EVESharp.Node.Database;
 
 public class ItemDB : DatabaseAccessor
 {
-    private IAttributes  AttributeManager { get; }
-    private ITypes Types      { get; }
-    private IStations    StationManager   { get; }
+    private IAttributes AttributeManager { get; }
+    private ITypes      Types            { get; }
+    private IStations   StationManager   { get; }
 
     public ItemDB (IDatabaseConnection db, IAttributes attributes, ITypes types, IStations stations) : base (db)
     {
         this.AttributeManager = attributes;
-        this.Types      = types;
+        this.Types            = types;
         this.StationManager   = stations;
     }
 
     public IEnumerable <Item> LoadStaticItems ()
     {
         IDbConnection connection = null;
+
         DbDataReader reader = Database.Select (
             ref connection,
             $"SELECT itemID, eveNames.itemName, invItems.typeID, ownerID, locationID, flag, contraband, singleton, quantity, x, y, z, custominfo FROM invItems LEFT JOIN eveNames USING(itemID) LEFT JOIN invPositions USING (itemID) WHERE itemID < {ItemRanges.USERGENERATED_ID_MIN} AND (groupID = {(int) GroupID.Station} OR groupID = {(int) GroupID.Faction} OR groupID = {(int) GroupID.SolarSystem} OR groupID = {(int) GroupID.Corporation} OR groupID = {(int) GroupID.System})"
@@ -92,6 +93,7 @@ public class ItemDB : DatabaseAccessor
     public Item LoadItem (int itemID, long nodeID)
     {
         IDbConnection connection = null;
+
         DbDataReader reader = Database.Select (
             ref connection,
             "SELECT itemID, eveNames.itemName, invItems.typeID, ownerID, locationID, flag, contraband, singleton, quantity, x, y, z, customInfo, nodeID FROM invItems LEFT JOIN eveNames USING (itemID) LEFT JOIN invPositions USING (itemID) WHERE itemID = @itemID",
@@ -123,6 +125,7 @@ public class ItemDB : DatabaseAccessor
     public List <int> GetInventoryItems (int inventoryID)
     {
         IDbConnection connection = null;
+
         DbDataReader reader = Database.Select (
             ref connection,
             "SELECT itemID FROM invItems WHERE locationID = @inventoryID",
@@ -134,7 +137,8 @@ public class ItemDB : DatabaseAccessor
         {
             List <int> itemList = new List <int> ();
 
-            while (reader.Read ()) itemList.Add (reader.GetInt32 (0));
+            while (reader.Read ())
+                itemList.Add (reader.GetInt32 (0));
 
             return itemList;
         }
@@ -143,6 +147,7 @@ public class ItemDB : DatabaseAccessor
     public Blueprint LoadBlueprint (Item item)
     {
         IDbConnection connection = null;
+
         DbDataReader reader = Database.Select (
             ref connection,
             "SELECT copy, materialLevel, productivityLevel, licensedProductionRunsRemaining FROM invBlueprints WHERE itemID = @itemID",
@@ -169,6 +174,7 @@ public class ItemDB : DatabaseAccessor
     public Corporation LoadCorporation (Item item)
     {
         IDbConnection connection = null;
+
         DbDataReader reader = Database.Select (
             ref connection,
             "SELECT description, tickerName, url, taxRate," +
@@ -240,6 +246,7 @@ public class ItemDB : DatabaseAccessor
     public Character LoadCharacter (Item item)
     {
         IDbConnection connection = null;
+
         DbDataReader reader = Database.Select (
             ref connection,
             "SELECT allianceID, accountID, activeCloneID, title, chrInformation.description, securityRating," +
@@ -345,6 +352,7 @@ public class ItemDB : DatabaseAccessor
     public Faction LoadFaction (Item item)
     {
         IDbConnection connection = null;
+
         DbDataReader reader = Database.Select (
             ref connection,
             "SELECT description, raceIDs, solarSystemID, corporationID, sizeFactor, stationCount," +
@@ -377,6 +385,7 @@ public class ItemDB : DatabaseAccessor
     public Alliance LoadAlliance (Item item)
     {
         IDbConnection connection = null;
+
         DbDataReader reader = Database.Select (
             ref connection,
             "SELECT shortName, description, url, executorCorpID, creatorCorpID, creatorCharID, dictatorial FROM crpAlliances WHERE allianceID = @itemID",
@@ -406,6 +415,7 @@ public class ItemDB : DatabaseAccessor
     public Station LoadStation (Item item)
     {
         IDbConnection connection = null;
+
         DbDataReader reader = Database.Select (
             ref connection,
             "SELECT operationID, security, dockingCostPerVolume, maxShipVolumeDockable, officeRentalCost, constellationID, regionID, reprocessingEfficiency, reprocessingStationsTake, reprocessingHangarFlag FROM staStations WHERE stationID = @stationID",
@@ -476,7 +486,8 @@ public class ItemDB : DatabaseAccessor
         this.SaveItemPosition ((ulong) item.ID, item.X, item.Y, item.Z);
     }
 
-    public ulong CreateItem (
+    public ulong CreateItem
+    (
         string itemName,   Type type,      ItemEntity owner,    ItemEntity location, Flags   flag,
         bool   contraband, bool singleton, int        quantity, double?    x,        double? y, double? z, string customInfo
     )
@@ -501,13 +512,15 @@ public class ItemDB : DatabaseAccessor
 
         if (itemName is not null)
             this.SaveItemName (newItemID, type, itemName);
+
         if (x is not null && y is not null && z is not null)
             this.SaveItemPosition (newItemID, x, y, z);
 
         return newItemID;
     }
 
-    public ulong CreateItem (
+    public ulong CreateItem
+    (
         string itemName,  int typeID,   int     owner, int?    location, Flags   flag, bool   contraband,
         bool   singleton, int quantity, double? x,     double? y,        double? z,    string customInfo
     )
@@ -529,6 +542,7 @@ public class ItemDB : DatabaseAccessor
 
         if (itemName is not null)
             this.SaveItemName (newItemID, this.Types [typeID], itemName);
+
         if (x is not null && y is not null && z is not null)
             this.SaveItemPosition (newItemID, x, y, z);
 
@@ -546,6 +560,7 @@ public class ItemDB : DatabaseAccessor
     public IEnumerable <int> LoadItemsLocatedAt (int locationID, Flags ignoreFlag)
     {
         IDbConnection connection = null;
+
         DbDataReader reader = Database.Select (
             ref connection,
             "SELECT itemID FROM invItems WHERE locationID = @locationID AND flag != @flag",
@@ -567,6 +582,7 @@ public class ItemDB : DatabaseAccessor
     public IEnumerable <int> LoadItemsLocatedAtByOwner (int locationID, int ownerID, Flags itemFlag)
     {
         IDbConnection connection = null;
+
         DbDataReader reader = Database.Select (
             ref connection,
             "SELECT itemID FROM invItems WHERE locationID = @locationID AND ownerID = @ownerID AND flag = @flag",
@@ -589,6 +605,7 @@ public class ItemDB : DatabaseAccessor
     public SolarSystem LoadSolarSystem (Item item)
     {
         IDbConnection connection = null;
+
         DbDataReader reader = Database.Select (
             ref connection,
             "SELECT regionID, constellationID, x, y, z, xMin, yMin, zMin, xMax, yMax, zMax, luminosity, border, fringe, corridor, hub, international, regional, constellation, security, factionID, radius, sunTypeID, securityClass FROM mapSolarSystems WHERE solarSystemID = @solarSystemID",
@@ -635,6 +652,7 @@ public class ItemDB : DatabaseAccessor
     public Constellation LoadConstellation (Item item)
     {
         IDbConnection connection = null;
+
         DbDataReader reader = Database.Select (
             ref connection,
             "SELECT regionID, x, y, z, xMin, yMin, zMin, xMax, yMax, zMax, factionID, radius FROM mapConstellations WHERE constellationID = @constellationID",
@@ -669,6 +687,7 @@ public class ItemDB : DatabaseAccessor
     public Region LoadRegion (Item item)
     {
         IDbConnection connection = null;
+
         DbDataReader reader = Database.Select (
             ref connection,
             "SELECT xMin, yMin, zMin, xMax, yMax, zMax, factionID, radius FROM mapRegions WHERE regionID = @regionID",
@@ -699,6 +718,7 @@ public class ItemDB : DatabaseAccessor
     private Dictionary <int, Attribute> LoadAttributesForItem (int itemID)
     {
         IDbConnection connection = null;
+
         DbDataReader reader = Database.Select (
             ref connection,
             "SELECT attributeID, valueInt, valueFloat FROM invItemsAttributes WHERE itemID = @itemID",
@@ -776,6 +796,7 @@ public class ItemDB : DatabaseAccessor
     public void PersistAttributeList (ItemEntity item, AttributeList list)
     {
         IDbConnection connection = null;
+
         MySqlCommand command = (MySqlCommand) Database.Prepare (
             ref connection,
             "REPLACE INTO invItemsAttributes(itemID, attributeID, valueInt, valueFloat) VALUE (@itemID, @attributeID, @valueInt, @valueFloat)"

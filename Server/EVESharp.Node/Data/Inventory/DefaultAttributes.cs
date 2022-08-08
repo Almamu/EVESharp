@@ -8,7 +8,5 @@ namespace EVESharp.Node.Data.Inventory;
 
 public class DefaultAttributes : Dictionary <int, Dictionary <int, Attribute>>, IDefaultAttributes
 {
-    public DefaultAttributes (IDatabaseConnection Database, IAttributes attributes) : base (Database.InvDgmLoadDefaultAttributes (attributes))
-    {
-    }
+    public DefaultAttributes (IDatabaseConnection Database, IAttributes attributes) : base (Database.InvDgmLoadDefaultAttributes (attributes)) { }
 }

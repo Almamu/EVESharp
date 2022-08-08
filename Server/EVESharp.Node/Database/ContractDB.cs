@@ -50,6 +50,7 @@ public class ContractDB : DatabaseAccessor
     public int GetOutstandingContractsCountForPlayer (int characterID)
     {
         IDbConnection connection = null;
+
         DbDataReader reader = Database.Select (
             ref connection,
             "SELECT COUNT(*) AS contractCount FROM conContracts WHERE issuerID = @characterID and forCorp = @forCorp AND status = @outstandingStatus AND dateExpired > @currentTime",
@@ -151,10 +152,11 @@ public class ContractDB : DatabaseAccessor
         );
     }
 
-    public ulong CreateContract (
-        IDbConnection  connection, int    characterID, int    corporationID, int?   allianceID,     ContractTypes type,         int    availability,
-        int             assigneeID, int    expireTime,  int    duration,      int    startStationID, int?          endStationID, double price,
-        double          reward,     double collateral,  string title,         string description,    int           issuerWalletID
+    public ulong CreateContract
+    (
+        IDbConnection connection, int    characterID, int    corporationID, int?   allianceID,     ContractTypes type,         int    availability,
+        int           assigneeID, int    expireTime,  int    duration,      int    startStationID, int?          endStationID, double price,
+        double        reward,     double collateral,  string title,         string description,    int           issuerWalletID
     )
     {
         return Database.PrepareLID (
@@ -233,6 +235,7 @@ public class ContractDB : DatabaseAccessor
     public ContractStatus GetContractStatus (int contractID, int characterID, int corporationID)
     {
         IDbConnection connection = null;
+
         DbDataReader reader = Database.Select (
             ref connection,
             "SELECT status FROM conContracts WHERE ((availability = 1 AND (issuerID = @characterID OR issuerCorpID = @corporationID OR assigneeID = @characterID OR assigneeID = @corporationID OR acceptorID = @characterID OR acceptorID = @corporationID)) OR availability = 0) AND contractID = @contractID",
@@ -254,7 +257,8 @@ public class ContractDB : DatabaseAccessor
         }
     }
 
-    public Dictionary <int, ItemQuantityEntry> PrepareItemsForContract (
+    public Dictionary <int, ItemQuantityEntry> PrepareItemsForContract
+    (
         IDbConnection connection, ulong contractID, PyList <PyList> itemList, Station station, int ownerID, int crateID, int shipID
     )
     {
@@ -295,6 +299,7 @@ public class ContractDB : DatabaseAccessor
 
                 if (damageValue == typeof (long) && reader.IsDBNull (2) == false && reader.GetInt64 (2) > 0)
                     throw new ConCannotTradeDamagedItem (this.Types [typeID]);
+
                 if (damageValue == typeof (double) && reader.IsDBNull (2) == false && reader.GetDouble (2) > 0)
                     throw new ConCannotTradeDamagedItem (this.Types [typeID]);
 
@@ -438,6 +443,7 @@ public class ContractDB : DatabaseAccessor
     public void PrepareRequestedItems (IDbConnection connection, ulong contractID, PyList <PyList> requestItemTypeList)
     {
         string query = "INSERT INTO conItems(contractID, itemTypeID, quantity, inCrate)VALUES";
+
         Dictionary <string, object> values = new Dictionary <string, object>
         {
             {"@contractID", contractID},
@@ -468,7 +474,8 @@ public class ContractDB : DatabaseAccessor
         Database.Query (ref connection, query, values);
     }
 
-    public List <int> GetContractList (
+    public List <int> GetContractList
+    (
         int? startContractID, int  limit, int? itemTypeID, PyList <PyInteger> notIssuedByIDs, PyList <PyInteger> issuedByIDs, int? assigneeID, int? locationID,
         int? itemGroupID,     int? itemCategoryID, int priceMax, int priceMin, int? type, string description, int callerID,
         int  callerCorpID,    int? ownerID = null, int? status = null, bool includeExpired = false, bool expiredOnly = false
@@ -476,6 +483,7 @@ public class ContractDB : DatabaseAccessor
     {
         string contractQuery =
             "SELECT contractID FROM conContracts LEFT JOIN conItems USING(contractID) LEFT JOIN invTypes ON conItems.itemTypeID = invTypes.typeID LEFT JOIN invGroups USING(groupID) LEFT JOIN staStations ON staStations.stationID = conContracts.startStationID WHERE (availability = 1 OR (availability = 0 AND issuerCorpID = @corporationID) OR assigneeID = @characterID)";
+
         Dictionary <string, object> values = new Dictionary <string, object> ();
 
         if (startContractID > 0)
@@ -586,8 +594,8 @@ public class ContractDB : DatabaseAccessor
         if (limit > 0)
             contractQuery += $" LIMIT {limit}";
 
-        IDbConnection   connection = null;
-        DbDataReader reader     = Database.Select (ref connection, contractQuery, values);
+        IDbConnection connection = null;
+        DbDataReader  reader     = Database.Select (ref connection, contractQuery, values);
 
         using (connection)
         using (reader)
@@ -608,6 +616,7 @@ public class ContractDB : DatabaseAccessor
     public List <int> GetContractListByOwnerBids (int ownerID)
     {
         IDbConnection connection = null;
+
         DbDataReader reader = Database.Select (
             ref connection,
             "SELECT contractID FROM conBids WHERE bidderID = @ownerID",
@@ -633,6 +642,7 @@ public class ContractDB : DatabaseAccessor
     public List <int> GetContractListByAcceptor (int acceptorID)
     {
         IDbConnection connection = null;
+
         DbDataReader reader = Database.Select (
             ref connection,
             "SELECT contractID FROM conContracts WHERE acceptorID = @acceptorID AND status = @status",
@@ -779,6 +789,7 @@ public class ContractDB : DatabaseAccessor
     public List <int> FetchLoginCharacterContractBids (int bidderID)
     {
         IDbConnection connection = null;
+
         DbDataReader reader = Database.Select (
             ref connection,
             "SELECT contractID, MAX(amount), (SELECT MAX(amount) FROM conBids b WHERE b.contractID = contractID) AS maximum FROM conBids LEFT JOIN conContracts USING(contractID) WHERE bidderID = @bidderID AND status = @outstandingStatus AND dateExpired < @currentTime GROUP BY contractID",
@@ -806,6 +817,7 @@ public class ContractDB : DatabaseAccessor
     public List <int> FetchLoginCharacterContractAssigned (int assigneeID)
     {
         IDbConnection connection = null;
+
         DbDataReader reader = Database.Select (
             ref connection,
             "SELECT contractID FROM conContracts WHERE assigneeID = @assigneeID AND status = @outstandingStatus AND dateExpired < @currentTime",
@@ -887,6 +899,7 @@ public class ContractDB : DatabaseAccessor
                 {"@crateID", crateID}
             }
         );
+
         // remove the crate
         Database.Query (
             ref connection,
@@ -895,7 +908,8 @@ public class ContractDB : DatabaseAccessor
         );
     }
 
-    public List <ItemQuantityEntry> CheckRequiredItemsAtStation (
+    public List <ItemQuantityEntry> CheckRequiredItemsAtStation
+    (
         IDbConnection connection, Station station, int ownerID, int newOwnerID, Flags flag, Dictionary <int, int> requiredItemTypes
     )
     {
@@ -923,10 +937,13 @@ public class ContractDB : DatabaseAccessor
 
                 if (damageValue == typeof (long) && reader.IsDBNull (4) == false && reader.GetInt64 (4) > 0)
                     throw new ConCannotTradeDamagedItem (this.Types [typeID]);
+
                 if (damageValue == typeof (double) && reader.IsDBNull (4) == false && reader.GetDouble (4) > 0)
                     throw new ConCannotTradeDamagedItem (this.Types [typeID]);
+
                 if (reader.GetBoolean (6) == false && reader.GetInt32 (6) == (int) CategoryID.Ship)
                     throw new ConCannotTradeNonSingletonShip (this.Types [typeID], station.ID);
+
                 if (reader.GetBoolean (7))
                     throw new ConCannotTradeContraband (this.Types [typeID]);
 

@@ -16,13 +16,13 @@ namespace EVESharp.Node.Database;
 
 public class CharacterDB : DatabaseAccessor
 {
-    private ItemDB       ItemDB      { get; }
-    private ITypes Types { get; }
+    private ItemDB ItemDB { get; }
+    private ITypes Types  { get; }
 
     public CharacterDB (IDatabaseConnection db, ItemDB itemDB, ITypes types) : base (db)
     {
         this.Types = types;
-        ItemDB      = itemDB;
+        ItemDB     = itemDB;
     }
 
     /// <summary>
@@ -33,6 +33,7 @@ public class CharacterDB : DatabaseAccessor
     public Rowset GetCharacterList (int accountID)
     {
         IDbConnection connection = null;
+
         DbDataReader reader = Database.Select (
             ref connection,
             "SELECT" +
@@ -66,6 +67,7 @@ public class CharacterDB : DatabaseAccessor
     public Rowset GetCharacterSelectionInfo (int characterID, int accountID)
     {
         IDbConnection connection = null;
+
         DbDataReader reader = Database.Select (
             ref connection,
             "SELECT " +
@@ -131,6 +133,7 @@ public class CharacterDB : DatabaseAccessor
     public bool IsCharacterNameTaken (string characterName)
     {
         IDbConnection connection = null;
+
         DbDataReader reader = Database.Select (
             ref connection,
             "SELECT COUNT(*) FROM eveNames WHERE groupID = 1 AND itemName LIKE @characterName",
@@ -209,7 +212,8 @@ public class CharacterDB : DatabaseAccessor
     /// <param name="constellationID">At what constellation the character is at right now</param>
     /// <param name="regionID">At what region the character is at right now</param>
     /// <returns></returns>
-    public int CreateCharacter (
+    public int CreateCharacter
+    (
         Type    from,                string  name,          ItemEntity owner,          int     accountID,     double  securityRating,
         int     corporationID,       int     corpRole,      int        rolesAtBase,    int     rolesAtHQ,     int     rolesAtOther,
         long    corporationDateTime, long    startDateTime, long       createDateTime, int     ancestryID,    int     careerID,  int  schoolID,
@@ -358,6 +362,7 @@ public class CharacterDB : DatabaseAccessor
     public bool GetRandomCareerForRace (int raceID, out int careerID, out int schoolID, out int careerSpecialityID, out int corporationID)
     {
         IDbConnection connection = null;
+
         DbDataReader reader = Database.Select (
             ref connection,
             "SELECT careerID, corporationID, schoolID FROM chrSchools WHERE raceID = @raceID ORDER BY RAND();",
@@ -396,12 +401,14 @@ public class CharacterDB : DatabaseAccessor
     /// <param name="constellationID">The constellation where the corporation is</param>
     /// <param name="regionID">The region where the corporation is</param>
     /// <returns>Whether the information was found or not</returns>
-    public bool GetLocationForCorporation (
+    public bool GetLocationForCorporation
+    (
         int     corporationID,   out int stationID, out int solarSystemID,
         out int constellationID, out int regionID
     )
     {
         IDbConnection connection = null;
+
         DbDataReader reader = Database.Select (
             ref connection,
             "SELECT staStations.stationID, solarSystemID, constellationID, regionID" +
@@ -442,6 +449,7 @@ public class CharacterDB : DatabaseAccessor
         Dictionary <int, int> skills = new Dictionary <int, int> ();
 
         IDbConnection connection = null;
+
         DbDataReader reader = Database.Select (
             ref connection,
             "SELECT skillTypeID, levels FROM chrRaceSkills WHERE raceID = @raceID",
@@ -465,6 +473,7 @@ public class CharacterDB : DatabaseAccessor
     public Rowset GetKeyMap ()
     {
         IDbConnection connection = null;
+
         DbDataReader reader = Database.Select (
             ref connection,
             "SELECT accountKey as keyID, accountType as keyType, accountName as keyName, description FROM market_keyMap"
@@ -486,6 +495,7 @@ public class CharacterDB : DatabaseAccessor
     public List <Character.SkillQueueEntry> LoadSkillQueue (Character character, Dictionary <int, Skill> skillsInTraining)
     {
         IDbConnection connection = null;
+
         DbDataReader reader = Database.Select (
             ref connection,
             "SELECT skillItemID, level FROM chrSkillQueue WHERE characterID = @characterID ORDER BY orderIndex",
@@ -531,6 +541,7 @@ public class CharacterDB : DatabaseAccessor
     public bool IsOnline (int characterID)
     {
         IDbConnection connection = null;
+
         DbDataReader reader = Database.Select (
             ref connection,
             "SELECT online FROM chrInformation WHERE characterID = @characterID",
@@ -555,6 +566,7 @@ public class CharacterDB : DatabaseAccessor
     public PyList <PyInteger> GetOnlineFriendList (Character character)
     {
         IDbConnection connection = null;
+
         DbDataReader reader = Database.Select (
             ref connection,
             "SELECT accessor AS characterID FROM lscChannelPermissions, chrInformation WHERE lscChannelPermissions.channelID = @characterID AND chrInformation.characterID = lscChannelPermissions.accessor and chrInformation.online = 1",
@@ -803,6 +815,7 @@ public class CharacterDB : DatabaseAccessor
     public string GetNote (int itemID, int ownerID)
     {
         IDbConnection connection = null;
+
         DbDataReader reader = Database.Select (
             ref connection,
             "SELECT note FROM chrNotes WHERE itemID = @itemID AND ownerID = @ownerID",
@@ -862,6 +875,7 @@ public class CharacterDB : DatabaseAccessor
     public string GetCharacterName (int characterID)
     {
         IDbConnection connection = null;
+
         DbDataReader reader = Database.Select (
             ref connection,
             "SELECT itemName FROM eveNames WHERE itemID = @characterID",
@@ -887,6 +901,7 @@ public class CharacterDB : DatabaseAccessor
     public int GetSkillLevelForCharacter (TypeID skill, int characterID)
     {
         IDbConnection connection = null;
+
         DbDataReader reader = Database.Select (
             ref connection,
             "SELECT valueInt FROM invItemsAttributes LEFT JOIN invItems USING(itemID) WHERE typeID = @skillTypeID AND ownerID = @characterID",
@@ -915,6 +930,7 @@ public class CharacterDB : DatabaseAccessor
     public List <int> FindCharacters (string namePart)
     {
         IDbConnection connection = null;
+
         DbDataReader reader = Database.Select (
             ref connection,
             "SELECT itemID FROM eveNames WHERE groupID = 1 AND itemName LIKE @name",
@@ -941,6 +957,7 @@ public class CharacterDB : DatabaseAccessor
     public long GetLastFactionJoinDate (int characterID)
     {
         IDbConnection connection = null;
+
         DbDataReader reader = Database.Select (
             ref connection,
             "SELECT startDate FROM chrEmployment WHERE corporationID IN (SELECT militiaCorporationID FROM chrFactions) AND characterID = @characterID",
@@ -965,6 +982,7 @@ public class CharacterDB : DatabaseAccessor
     public long? GetCharacterStasisTimer (int characterID)
     {
         IDbConnection connection = null;
+
         DbDataReader reader = Database.Select (
             ref connection,
             "SELECT corpStasisTime FROM chrInformation WHERE characterID = @characterID",
@@ -1013,13 +1031,15 @@ public class CharacterDB : DatabaseAccessor
     /// <param name="blockRoles">If the character has blocked role changing</param>
     /// <param name="baseID">The baseID for the character</param>
     /// <exception cref="System.Exception"></exception>
-    public void GetCharacterRoles (
+    public void GetCharacterRoles
+    (
         int      characterID,           out long roles,          out long rolesAtBase,          out long rolesAtHQ,
         out long rolesAtOther,          out long grantableRoles, out long grantableRolesAtBase, out long grantableRolesAtHQ,
         out long grantableRolesAtOther, out int? blockRoles,     out int? baseID,               out int  titleMask
     )
     {
         IDbConnection connection = null;
+
         DbDataReader reader = Database.Select (
             ref connection,
             "SELECT roles, rolesAtBase, rolesAtHQ, rolesAtOther, grantableRoles, grantableRolesAtBase, grantableRolesAtHQ, grantableRolesAtOther, blockRoles, baseID, titleMask FROM chrInformation WHERE characterID = @characterID",
@@ -1059,7 +1079,8 @@ public class CharacterDB : DatabaseAccessor
     /// <param name="grantableRolesAtHQ">The roles at HQ the character can grant</param>
     /// <param name="grantableRolesAtOther">The roles at other the character can grant</param>
     /// <param name="titleMask">The titles this character has</param>
-    public void UpdateCharacterRoles (
+    public void UpdateCharacterRoles
+    (
         int  characterID,    long roles,              long rolesAtHQ,            long rolesAtBase,           long rolesAtOther,
         long grantableRoles, long grantableRolesAtHQ, long grantableRolesAtBase, long grantableRolesAtOther, long titleMask
     )
@@ -1107,6 +1128,7 @@ public class CharacterDB : DatabaseAccessor
     public int GetCharacterCorporationID (int characterID)
     {
         IDbConnection connection = null;
+
         DbDataReader reader = Database.Select (
             ref connection,
             "SELECT corporationID FROM chrInformation WHERE characterID = @characterID",

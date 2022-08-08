@@ -34,15 +34,16 @@ public class LSC : Service
     private MessagesDB           MessagesDB           { get; }
     private ChatDB               DB                   { get; }
     private CharacterDB          CharacterDB          { get; }
-    private IItems          Items          { get; }
-    private INotificationSender   Notifications        { get; }
+    private IItems               Items                { get; }
+    private INotificationSender  Notifications        { get; }
     private MailManager          MailManager          { get; }
     private RemoteServiceManager RemoteServiceManager { get; }
     private PacketCallHelper     PacketCallHelper     { get; }
 
-    public LSC (
-        ChatDB             db,                 MessagesDB  messagesDB,  CharacterDB          characterDB,          IItems items, ILogger logger,
-        INotificationSender notificationSender, MailManager mailManager, RemoteServiceManager remoteServiceManager,  PacketCallHelper packetCallHelper
+    public LSC
+    (
+        ChatDB              db,                 MessagesDB  messagesDB,  CharacterDB          characterDB,          IItems           items, ILogger logger,
+        INotificationSender notificationSender, MailManager mailManager, RemoteServiceManager remoteServiceManager, PacketCallHelper packetCallHelper
     )
     {
         DB                   = db;
@@ -83,8 +84,10 @@ public class LSC : Service
                 channelID = integer;
                 // positive channel ids are entity ids, negatives are custom user channels
                 entityID = null;
+
                 if (channelID > ChatDB.MIN_CHANNEL_ENTITY_ID && channelID < ChatDB.MAX_CHANNEL_ENTITY_ID)
                     entityID = channelID;
+
                 // get the full channel identifier
                 channelType = ChatDB.CHANNEL_TYPE_NORMAL;
                 break;
@@ -93,8 +96,7 @@ public class LSC : Service
                 this.ParseTupleChannelIdentifier (tuple, out channelID, out channelType, out entityID);
                 break;
 
-            default:
-                throw new InvalidDataException ("LSC received a wrongly formatted channel identifier");
+            default: throw new InvalidDataException ("LSC received a wrongly formatted channel identifier");
         }
 
         // ensure the channelID is the correct one and not an entityID
@@ -141,7 +143,8 @@ public class LSC : Service
         return DB.GetChannelMembers (channelID, callerCharacterID);
     }
 
-    private PyTuple GetChannelInformation (
+    private PyTuple GetChannelInformation
+    (
         string channelType, int channelID, int? entityID, int callerCharacterID, PyDataType channelIDExtended, CallInformation call
     )
     {
@@ -186,6 +189,7 @@ public class LSC : Service
                     [5] = "reason"
                 }
             );
+
             chars = new Rowset (
                 new PyList <PyString> (6)
                 {
@@ -321,6 +325,7 @@ public class LSC : Service
         // ensure the player is allowed to chat in there
         if (channelType == ChatDB.CHANNEL_TYPE_NORMAL && DB.IsPlayerAllowedToChat (channelID, callerCharacterID) == false)
             throw new LSCCannotSendMessage ("Insufficient permissions");
+
         if (channelType != ChatDB.CHANNEL_TYPE_NORMAL && DB.IsPlayerAllowedToChatOnRelatedEntity ((int) entityID, callerCharacterID) == false)
             throw new LSCCannotSendMessage ("Insufficient permissions");
 
@@ -539,12 +544,12 @@ public class LSC : Service
             PacketCallHelper.SendException (
                 call.OriginalCall,
                 PyPacket.PacketType.CALL_REQ,
-                new UserError(
+                new UserError (
                     answer,
                     new PyDictionary
                     {
-                        ["channel"] = this.DB.GetChannelName(call.ChannelID),
-                        ["char"] = this.CharacterDB.GetCharacterName(call.ToCharacterID)
+                        ["channel"] = this.DB.GetChannelName (call.ChannelID),
+                        ["char"]    = this.CharacterDB.GetCharacterName (call.ToCharacterID)
                     }
                 )
             );
@@ -568,7 +573,7 @@ public class LSC : Service
                 new OnLSC (callInfo.Session, "JoinChannel", call.ChannelID, new PyTuple (0))
             );
             // TODO: CHECK IF WE HAVE TO NOTIFY THE NEW CHARACTER ABOUT ALL THE ONES THAT ARE IN THERE ALREADY SOMEWAY OR ANOTHER?
-            
+
             // TODO: FETCH THIS
             PyTuple args = new PyTuple (6)
             {

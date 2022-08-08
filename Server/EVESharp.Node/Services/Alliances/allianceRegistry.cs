@@ -35,11 +35,12 @@ public class allianceRegistry : MultiClientBoundService
     private INotificationSender Notifications  { get; }
     private IItems              Items          { get; }
     private Alliance            Alliance       { get; }
-    private ISessionManager      SessionManager { get; }
-    private IClusterManager      ClusterManager { get; }
+    private ISessionManager     SessionManager { get; }
+    private IClusterManager     ClusterManager { get; }
 
-    public allianceRegistry (
-        IDatabaseConnection databaseConnection, CorporationDB  corporationDB,  ChatDB chatDB, IItems items, INotificationSender notificationSender,
+    public allianceRegistry
+    (
+        IDatabaseConnection databaseConnection, CorporationDB   corporationDB,  ChatDB          chatDB, IItems items, INotificationSender notificationSender,
         BoundServiceManager manager,            ISessionManager sessionManager, IClusterManager clusterManager
     ) : base (manager)
     {
@@ -54,8 +55,9 @@ public class allianceRegistry : MultiClientBoundService
         ClusterManager.OnClusterTimer += PerformTimedEvents;
     }
 
-    private allianceRegistry (
-        Alliance alliance, IDatabaseConnection databaseConnection, CorporationDB corporationDB, IItems items, INotificationSender notificationSender,
+    private allianceRegistry
+    (
+        Alliance        alliance, IDatabaseConnection databaseConnection, CorporationDB corporationDB, IItems items, INotificationSender notificationSender,
         ISessionManager sessionManager, MultiClientBoundService parent
     ) : base (parent, alliance.ID)
     {
@@ -71,6 +73,7 @@ public class allianceRegistry : MultiClientBoundService
     {
         // TODO: THIS ONE MIGHT HAVE A BETTER PLACE SOMEWHERE, BUT FOR NOW IT'LL LIVE HERE
         IDbConnection connection = null;
+
         DbDataReader reader = Database.Select (
             ref connection,
             $"SELECT corporationID, allianceID, executorCorpID FROM crpApplications LEFT JOIN crpAlliances USING(allianceID) WHERE `state` = {(int) ApplicationStatus.Accepted} AND applicationUpdateTime < @limit",
@@ -125,7 +128,7 @@ public class allianceRegistry : MultiClientBoundService
         // finally remove all the applications
         Database.CrpAlliancesHousekeepApplications (minimumTime);
     }
-    
+
     protected override long MachoResolveObject (CallInformation call, ServiceBindParams parameters)
     {
         return Database.CluResolveAddress ("allianceRegistry", parameters.ObjectID);
@@ -138,8 +141,8 @@ public class allianceRegistry : MultiClientBoundService
 
     protected override MultiClientBoundService CreateBoundInstance (CallInformation call, ServiceBindParams bindParams)
     {
-         if (this.MachoResolveObject (call, bindParams) != BoundServiceManager.MachoNet.NodeID)
-             throw new CustomError ("Trying to bind an object that does not belong to us!");
+        if (this.MachoResolveObject (call, bindParams) != BoundServiceManager.MachoNet.NodeID)
+            throw new CustomError ("Trying to bind an object that does not belong to us!");
 
         Alliance alliance = this.Items.LoadItem <Alliance> (bindParams.ObjectID);
 
@@ -156,7 +159,7 @@ public class allianceRegistry : MultiClientBoundService
         return Database.CrpAlliancesGet (allianceID);
     }
 
-    [MustHaveCorporationRole(MLS.UI_CORP_UPDATE_ALLIANCE_NOT_DIRECTOR, CorporationRole.Director)]
+    [MustHaveCorporationRole (MLS.UI_CORP_UPDATE_ALLIANCE_NOT_DIRECTOR, CorporationRole.Director)]
     public PyDataType UpdateAlliance (CallInformation call, PyString description, PyString url)
     {
         if (Alliance.ExecutorCorpID != call.Session.CorporationID)
@@ -197,7 +200,7 @@ public class allianceRegistry : MultiClientBoundService
         return Database.CrpAlliancesGetMembersPrivate (this.ObjectID);
     }
 
-    [MustHaveCorporationRole(MLS.UI_CORP_SET_RELATIONSHIP_DIRECTOR_ONLY, CorporationRole.Director)]
+    [MustHaveCorporationRole (MLS.UI_CORP_SET_RELATIONSHIP_DIRECTOR_ONLY, CorporationRole.Director)]
     public PyDataType SetRelationship (CallInformation call, PyInteger relationship, PyInteger toID)
     {
         if (Alliance.ExecutorCorpID != call.Session.CorporationID)
@@ -215,7 +218,7 @@ public class allianceRegistry : MultiClientBoundService
         return null;
     }
 
-    [MustHaveCorporationRole(MLS.UI_CORP_DECLARE_EXEC_SUPPORT_DIRECTOR_ONLY, CorporationRole.Director)]
+    [MustHaveCorporationRole (MLS.UI_CORP_DECLARE_EXEC_SUPPORT_DIRECTOR_ONLY, CorporationRole.Director)]
     public PyDataType DeclareExecutorSupport (CallInformation call, PyInteger executorID)
     {
         // get corporation's join date
@@ -261,12 +264,12 @@ public class allianceRegistry : MultiClientBoundService
         return Database.MktBillsGetPayable (this.ObjectID);
     }
 
-    [MustHaveCorporationRole(MLS.UI_CORP_DELETE_RELATIONSHIP_DIRECTOR_ONLY, CorporationRole.Director)]
+    [MustHaveCorporationRole (MLS.UI_CORP_DELETE_RELATIONSHIP_DIRECTOR_ONLY, CorporationRole.Director)]
     public PyDataType DeleteRelationship (CallInformation call, PyInteger toID)
     {
         if (Alliance.ExecutorCorpID != call.Session.CorporationID)
             throw new CrpAccessDenied (MLS.UI_CORP_DELETE_RELATIONSHIP_EXECUTOR_ONLY);
-        
+
         Database.CrpAlliancesRemoveRelationship (this.ObjectID, toID);
 
         OnAllianceRelationshipChanged change =
@@ -281,7 +284,7 @@ public class allianceRegistry : MultiClientBoundService
         return Database.CrpAlliancesList ();
     }
 
-    [MustHaveCorporationRole(MLS.UI_CORP_DELETE_RELATIONSHIP_DIRECTOR_ONLY, CorporationRole.Director)]
+    [MustHaveCorporationRole (MLS.UI_CORP_DELETE_RELATIONSHIP_DIRECTOR_ONLY, CorporationRole.Director)]
     public PyDataType UpdateApplication (CallInformation call, PyInteger corporationID, PyString message, PyInteger newStatus)
     {
         if (Alliance.ExecutorCorpID != call.Session.CorporationID)
@@ -294,14 +297,13 @@ public class allianceRegistry : MultiClientBoundService
                 Database.CrpAlliancesUpdateApplication (corporationID, this.ObjectID, newStatus);
                 break;
 
-            default:
-                throw new CustomError ("Unknown status for alliance application");
+            default: throw new CustomError ("Unknown status for alliance application");
         }
 
         OnAllianceApplicationChanged change =
             new OnAllianceApplicationChanged (ObjectID, corporationID)
-                .AddChange ("allianceID",    ObjectID,                            ObjectID)
-                .AddChange ("corporationID", corporationID,                       corporationID)
+                .AddChange ("allianceID",    ObjectID,                    ObjectID)
+                .AddChange ("corporationID", corporationID,               corporationID)
                 .AddChange ("state",         (int) ApplicationStatus.New, newStatus);
 
         Notifications.NotifyAlliance (ObjectID, change);

@@ -23,17 +23,19 @@ namespace EVESharp.Node.Services.Inventory;
 public class insuranceSvc : ClientBoundService
 {
     private readonly int                 mStationID;
-    public override  AccessLevel         AccessLevel   => AccessLevel.None;
-    private          InsuranceDB         DB            { get; }
-    private          IItems               Items         { get; }
-    private          MarketDB            MarketDB      { get; }
-    private          ISolarSystems       SolarSystems  { get; }
-    private          IWallets      Wallets { get; }
-    private          MailManager         MailManager   { get; }
-    private          IDatabaseConnection Database      { get; }
+    public override  AccessLevel         AccessLevel  => AccessLevel.None;
+    private          InsuranceDB         DB           { get; }
+    private          IItems              Items        { get; }
+    private          MarketDB            MarketDB     { get; }
+    private          ISolarSystems       SolarSystems { get; }
+    private          IWallets            Wallets      { get; }
+    private          MailManager         MailManager  { get; }
+    private          IDatabaseConnection Database     { get; }
 
-    public insuranceSvc (
-        IClusterManager clusterManager, IItems items, InsuranceDB db, MarketDB marketDB, IWallets wallets, MailManager mailManager, BoundServiceManager manager, IDatabaseConnection database,
+    public insuranceSvc
+    (
+        IClusterManager clusterManager, IItems items, InsuranceDB db, MarketDB marketDB, IWallets wallets, MailManager mailManager, BoundServiceManager manager,
+        IDatabaseConnection database,
         ISolarSystems solarSystems
     ) : base (manager)
     {
@@ -44,13 +46,14 @@ public class insuranceSvc : ClientBoundService
         MailManager  = mailManager;
         Database     = database;
         SolarSystems = solarSystems;
-        
+
         clusterManager.OnClusterTimer += PerformTimedEvents;
     }
 
-    protected insuranceSvc (
-        IItems items, InsuranceDB db, MarketDB marketDB, IWallets wallets, MailManager mailManager, BoundServiceManager manager,
-        int         stationID,   Session     session, ISolarSystems solarSystems
+    protected insuranceSvc
+    (
+        IItems items,     InsuranceDB db,      MarketDB      marketDB, IWallets wallets, MailManager mailManager, BoundServiceManager manager,
+        int    stationID, Session     session, ISolarSystems solarSystems
     ) : base (manager, session, stationID)
     {
         this.mStationID = stationID;
@@ -116,6 +119,7 @@ public class insuranceSvc : ClientBoundService
         }
 
         using IWallet wallet = this.Wallets.AcquireWallet (character.ID, WalletKeys.MAIN);
+
         {
             wallet.EnsureEnoughBalance (insuranceCost);
             wallet.CreateJournalRecord (MarketReference.Insurance, this.Items.OwnerSCC.ID, -item.ID, -insuranceCost, $"Insurance fee for {item.Name}");
@@ -193,6 +197,9 @@ public class insuranceSvc : ClientBoundService
         if (this.MachoResolveObject (call, bindParams) != BoundServiceManager.MachoNet.NodeID)
             throw new CustomError ("Trying to bind an object that does not belong to us!");
 
-        return new insuranceSvc (this.Items, DB, MarketDB, this.Wallets, MailManager, BoundServiceManager, bindParams.ObjectID, call.Session, this.SolarSystems);
+        return new insuranceSvc (
+            this.Items, DB, MarketDB, this.Wallets, MailManager, BoundServiceManager, bindParams.ObjectID, call.Session,
+            this.SolarSystems
+        );
     }
 }

@@ -22,22 +22,23 @@ using Type = EVESharp.EVE.Data.Inventory.Type;
 namespace EVESharp.Node.Services.Network;
 
 [MustBeCharacter]
-[MustHaveRole(Roles.ROLE_ADMIN)]
+[MustHaveRole (Roles.ROLE_ADMIN)]
 public class slash : Service
 {
     private readonly Dictionary <string, Action <string [], CallInformation>> mCommands =
         new Dictionary <string, Action <string [], CallInformation>> ();
-    public override AccessLevel        AccessLevel        => AccessLevel.None;
-    private         ITypes       Types        => this.Items.Types;
+    public override AccessLevel         AccessLevel        => AccessLevel.None;
+    private         ITypes              Types              => this.Items.Types;
     private         IItems              Items              { get; }
-    private         ILogger            Log                { get; }
-    private         CharacterDB        CharacterDB        { get; }
+    private         ILogger             Log                { get; }
+    private         CharacterDB         CharacterDB        { get; }
     private         INotificationSender Notifications      { get; }
-    private         IWallets     Wallets      { get; }
+    private         IWallets            Wallets            { get; }
     private         IDogmaNotifications DogmaNotifications { get; }
 
-    public slash (
-        ILogger    logger, IItems items, CharacterDB characterDB, INotificationSender notificationSender, IWallets wallets,
+    public slash
+    (
+        ILogger             logger, IItems items, CharacterDB characterDB, INotificationSender notificationSender, IWallets wallets,
         IDogmaNotifications dogmaNotifications
     )
     {
@@ -124,6 +125,7 @@ public class slash : Service
         }
 
         using IWallet wallet = this.Wallets.AcquireWallet (targetCharacterID, WalletKeys.MAIN);
+
         {
             if (iskQuantity < 0)
             {

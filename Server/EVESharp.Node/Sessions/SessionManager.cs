@@ -9,7 +9,7 @@ namespace EVESharp.Node.Sessions;
 
 public class SessionManager : EVE.Sessions.SessionManager
 {
-    private IMachoNet        MachoNet         { get; }
+    private IMachoNet         MachoNet         { get; }
     private ITransportManager TransportManager { get; }
 
     public SessionManager (ITransportManager transportManager, IMachoNet machoNet)
@@ -36,6 +36,7 @@ public class SessionManager : EVE.Sessions.SessionManager
             Payload     = new SessionInitialStateNotification {Session = session},
             OutOfBounds = new PyDictionary {["channel"]                = "sessionchange"}
         };
+
         // send the packet to the player
         MachoNet.QueueOutputPacket (packet);
     }
@@ -58,7 +59,6 @@ public class SessionManager : EVE.Sessions.SessionManager
             case RunMode.Server:
                 this.PerformSessionUpdateForNode (idType, id, newValues);
                 break;
-
         }
     }
 

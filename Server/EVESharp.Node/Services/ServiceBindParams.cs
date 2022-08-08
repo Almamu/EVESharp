@@ -21,6 +21,7 @@ public class ServiceBindParams
 
         if (from is not PyTuple tuple)
             throw new Exception ("Unknown bind params for service");
+
         if (tuple.Count == 0 || tuple [0] is not PyInteger objectID2)
             throw new Exception ("First bind param must be an integer");
 

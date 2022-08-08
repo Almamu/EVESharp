@@ -32,8 +32,11 @@ public class dogmaIM : ClientBoundService
     private EffectsManager      EffectsManager    { get; }
     private IDatabaseConnection Database          { get; }
 
-    public dogmaIM (EffectsManager effectsManager, IItems items, INotificationSender notificationSender, BoundServiceManager manager, IDatabaseConnection database,
-                    ISolarSystems solarSystems) : base (manager)
+    public dogmaIM
+    (
+        EffectsManager effectsManager, IItems items, INotificationSender notificationSender, BoundServiceManager manager, IDatabaseConnection database,
+        ISolarSystems  solarSystems
+    ) : base (manager)
     {
         EffectsManager = effectsManager;
         Items          = items;
@@ -42,9 +45,10 @@ public class dogmaIM : ClientBoundService
         SolarSystems   = solarSystems;
     }
 
-    protected dogmaIM (
+    protected dogmaIM
+    (
         int     locationID, EffectsManager effectsManager, IItems items, INotificationSender notificationSender, BoundServiceManager manager,
-        Session session, ISolarSystems solarSystems
+        Session session,    ISolarSystems  solarSystems
     ) : base (manager, session, locationID)
     {
         EffectsManager = effectsManager;
@@ -129,7 +133,6 @@ public class dogmaIM : ClientBoundService
                         DateTime.UtcNow.ToFileTime ()
                     );
                     break;
-
             }
 
         return itemInfo;
@@ -245,7 +248,7 @@ public class dogmaIM : ClientBoundService
         {
             (int) GroupID.SolarSystem => Database.CluResolveAddress ("solarsystem", parameters.ObjectID),
             (int) GroupID.Station     => Database.CluResolveAddress ("station",     parameters.ObjectID),
-            _                        => throw new CustomError ("Unknown item's groupID")
+            _                         => throw new CustomError ("Unknown item's groupID")
         };
     }
 

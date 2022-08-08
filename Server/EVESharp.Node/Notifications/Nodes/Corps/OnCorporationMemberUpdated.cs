@@ -22,7 +22,8 @@ public class OnCorporationMemberUpdated : InterNodeNotification
     public int? BlockRoles            { get; init; }
     public long TitleMask             { get; init; }
 
-    public OnCorporationMemberUpdated (
+    public OnCorporationMemberUpdated
+    (
         int  characterID, long roles,                long grantableRoles, long rolesAtHQ,             long grantableRolesAtHQ,
         long rolesAtBase, long grantableRolesAtBase, long rolesAtOther,   long grantableRolesAtOther, int? baseID,
         int? blockRoles,  long titleMask
@@ -60,13 +61,15 @@ public class OnCorporationMemberUpdated : InterNodeNotification
             ["titleMask"]             = TitleMask
         };
     }
-    
+
     public static implicit operator OnCorporationMemberUpdated (PyTuple notification)
     {
         if (notification.Count != 2)
             throw new InvalidCastException ("Expected a tuple with two items");
+
         if (notification [0] is not PyString name || name != NOTIFICATION_NAME)
             throw new InvalidCastException ($"Expected a {NOTIFICATION_NAME}");
+
         if (notification [1] is not PyDictionary data)
             throw new InvalidCastException ("Expected a dictionary as the first element");
 

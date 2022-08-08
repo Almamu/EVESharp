@@ -9,7 +9,7 @@ namespace EVESharp.Node.Services.Stations;
 public class station : Service
 {
     public override AccessLevel AccessLevel => AccessLevel.None;
-    private         IItems Items { get; }
+    private         IItems      Items       { get; }
 
     public station (IItems items)
     {

@@ -302,6 +302,7 @@ public class ChatDB : DatabaseAccessor
                 " WHERE lscChannelPermissions.accessor = @characterID AND channelID = @channelID";
 
         IDbConnection connection = null;
+
         DbDataReader reader = Database.Select (
             ref connection, query,
             new Dictionary <string, object>
@@ -332,6 +333,7 @@ public class ChatDB : DatabaseAccessor
     public Row GetChannelInfoByRelatedEntity (int relatedEntityID, int characterID, bool maillist = false)
     {
         IDbConnection connection = null;
+
         DbDataReader reader = Database.Select (
             ref connection,
             "SELECT" +
@@ -417,6 +419,7 @@ public class ChatDB : DatabaseAccessor
     public Row GetExtraInfo (int characterID)
     {
         IDbConnection connection = null;
+
         DbDataReader reader = Database.Select (
             ref connection,
             "SELECT itemID AS ownerID, itemName AS ownerName, typeID FROM eveNames WHERE itemID = @characterID",
@@ -441,6 +444,7 @@ public class ChatDB : DatabaseAccessor
     public PyList <PyInteger> GetOnlineCharsOnChannel (int channelID)
     {
         IDbConnection connection = null;
+
         DbDataReader reader = Database.Select (
             ref connection,
             "SELECT accessor FROM lscChannelPermissions LEFT JOIN chrInformation ON accessor = characterID WHERE channelID = @channelID AND online = 1 AND `mode` > 0",
@@ -468,6 +472,7 @@ public class ChatDB : DatabaseAccessor
     public bool IsPlayerAllowedToChat (int channelID, int characterID)
     {
         IDbConnection connection = null;
+
         DbDataReader reader = Database.Select (
             ref connection,
             "SELECT `mode` FROM lscChannelPermissions WHERE channelID = @channelID AND accessor = @characterID",
@@ -497,6 +502,7 @@ public class ChatDB : DatabaseAccessor
     public bool IsPlayerAllowedToRead (int channelID, int characterID)
     {
         IDbConnection connection = null;
+
         DbDataReader reader = Database.Select (
             ref connection,
             "SELECT `mode` FROM lscChannelPermissions WHERE channelID = @channelID AND accessor = @characterID",
@@ -526,6 +532,7 @@ public class ChatDB : DatabaseAccessor
     public bool IsPlayerAllowedToChatOnRelatedEntity (int relatedEntityID, int characterID)
     {
         IDbConnection connection = null;
+
         DbDataReader reader = Database.Select (
             ref connection,
             "SELECT `mode` FROM lscChannelPermissions, lscGeneralChannels WHERE lscGeneralChannels.channelID = lscChannelPermissions.channelID AND lscGeneralChannels.relatedEntityID = @relatedEntityID AND accessor = @characterID",
@@ -555,6 +562,7 @@ public class ChatDB : DatabaseAccessor
     public int GetChannelIDFromRelatedEntity (int relatedEntityID, bool isMailingList = false)
     {
         IDbConnection connection = null;
+
         DbDataReader reader = Database.Select (
             ref connection,
             "SELECT channelID FROM lscGeneralChannels WHERE relatedEntityID = @itemID AND mailingList = @mailingList",
@@ -586,6 +594,7 @@ public class ChatDB : DatabaseAccessor
             return CHANNEL_TYPE_NORMAL;
 
         IDbConnection connection = null;
+
         DbDataReader reader = Database.Select (
             ref connection,
             "SELECT displayName FROM lscGeneralChannels WHERE channelID = @channelID",
@@ -617,6 +626,7 @@ public class ChatDB : DatabaseAccessor
             query = "SELECT displayName FROM lscGeneralChannels WHERE channelID = @channelID";
 
         IDbConnection connection = null;
+
         DbDataReader reader = Database.Select (
             ref connection, query,
             new Dictionary <string, object> {{"@channelID", channelID}}
@@ -641,22 +651,31 @@ public class ChatDB : DatabaseAccessor
     {
         if (channelName == "System Channels\\Corp")
             return CHANNEL_TYPE_CORPID;
+
         if (channelName == "System Channels\\Region")
             return CHANNEL_TYPE_REGIONID;
+
         if (channelName == "System Channels\\Constellation")
             return CHANNEL_TYPE_CONSTELLATIONID;
+
         if (channelName == "System Channels\\Local")
             return CHANNEL_TYPE_SOLARSYSTEMID2;
+
         if (channelName == "System Channels\\Alliance")
             return CHANNEL_TYPE_ALLIANCEID;
+
         if (channelName == "System Channels\\Gang")
             return "gangid";
+
         if (channelName == "System Channels\\Squad")
             return "squadid";
+
         if (channelName == "System Channels\\Wing")
             return "wingid";
+
         if (channelName == "System Channels\\War Faction")
             return CHANNEL_TYPE_WARFACTIONID;
+
         if (channelName == "System Channels\\Global")
             return CHANNEL_TYPE_GLOBAL;
 
@@ -672,6 +691,7 @@ public class ChatDB : DatabaseAccessor
     public bool IsCharacterMemberOfChannel (int channelID, int characterID)
     {
         IDbConnection connection = null;
+
         DbDataReader reader = Database.Select (
             ref connection,
             "SELECT 0 AS extra FROM lscChannelPermissions WHERE channelID = @channelID AND accessor = @characterID",
@@ -698,6 +718,7 @@ public class ChatDB : DatabaseAccessor
     public bool IsCharacterAdminOfChannel (int channelID, int characterID)
     {
         IDbConnection connection = null;
+
         DbDataReader reader = Database.Select (
             ref connection,
             "SELECT `mode` FROM lscChannelPermissions WHERE channelID = @channelID AND accessor = @characterID",
@@ -727,6 +748,7 @@ public class ChatDB : DatabaseAccessor
     public bool IsCharacterOperatorOrAdminOfChannel (int channelID, int characterID)
     {
         IDbConnection connection = null;
+
         DbDataReader reader = Database.Select (
             ref connection,
             "SELECT `mode` FROM lscChannelPermissions WHERE channelID = @channelID AND accessor = @characterID",

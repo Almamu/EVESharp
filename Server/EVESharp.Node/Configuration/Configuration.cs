@@ -28,12 +28,16 @@ public class General
 
         if (data.Sections.ContainsSection ("authentication"))
             config.Authentication.Load (data ["authentication"]);
+
         if (data.Sections.ContainsSection ("loglite"))
             config.LogLite.Load (data ["loglite"]);
+
         if (data.Sections.ContainsSection ("logfile"))
             config.FileLog.Load (data ["logfile"]);
+
         if (data.Sections.ContainsSection ("logging"))
             config.Logging.Load (data ["logging"]);
+
         if (data.Sections.ContainsSection ("character"))
             config.Character.Load (data ["character"]);
 

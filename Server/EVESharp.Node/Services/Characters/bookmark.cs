@@ -16,7 +16,7 @@ public class bookmark : Service
 {
     public override AccessLevel          AccessLevel          => AccessLevel.None;
     private         IDatabaseConnection  Database             { get; }
-    private         IItems          Items          { get; }
+    private         IItems               Items                { get; }
     private         RemoteServiceManager RemoteServiceManager { get; }
 
     public bookmark (IDatabaseConnection connection, IItems items, RemoteServiceManager remoteServiceManager)
@@ -63,10 +63,8 @@ public class bookmark : Service
         );
 
         // send a request to the client to update the bookmarks
-        RemoteServiceManager.SendServiceCall (
-            call.Session, "addressbook", "OnBookmarkAdd", new PyTuple (1) {[0] = bookmark}, new PyDictionary ()
-        );
-        
+        RemoteServiceManager.SendServiceCall (call.Session, "addressbook", "OnBookmarkAdd", new PyTuple (1) {[0] = bookmark}, new PyDictionary ());
+
         return new PyTuple (7)
         {
             [0] = bookmarkID, // bookmarkID
@@ -85,8 +83,8 @@ public class bookmark : Service
         if (bookmarkIDs.Count == 0)
             return null;
 
-        Database.ChrBookmarksDelete (call.Session.CharacterID, bookmarkIDs.GetEnumerable<PyInteger> ());
-        
+        Database.ChrBookmarksDelete (call.Session.CharacterID, bookmarkIDs.GetEnumerable <PyInteger> ());
+
         return null;
     }
 }

@@ -51,7 +51,7 @@ public class ClusterManager : IClusterManager
 
     private void StartClusterTimer ()
     {
-        this.ClusterTimer = this.Timers.EnqueueTimer<object?> (TimeSpan.FromMinutes (5), this.RunClusterTimerThread, null);
+        this.ClusterTimer = this.Timers.EnqueueTimer <object?> (TimeSpan.FromMinutes (5), this.RunClusterTimerThread, null);
     }
 
     /// <summary>
@@ -74,6 +74,7 @@ public class ClusterManager : IClusterManager
                 }
             }
         );
+
         HttpResponseMessage response = await HttpClient.PostAsync ($"{MachoNet.OrchestratorURL}/Nodes/register", content);
 
         // make sure we have a proper answer
@@ -85,11 +86,11 @@ public class ClusterManager : IClusterManager
 
         MachoNet.Address = result ["address"].ToString ();
         MachoNet.NodeID  = (long) result ["nodeId"];
-        IntervalStart    = DateTime.FromFileTimeUtc((long) result ["startupTime"]);
+        IntervalStart    = DateTime.FromFileTimeUtc ((long) result ["startupTime"]);
         IntervalDuration = (int) result ["timeInterval"];
 
         MachoNet.Log.Information ($"Orchestrator assigned node id {MachoNet.NodeID} with address {MachoNet.Address}");
-    
+
         // TODO: PROPERLY SELECT THIS AS THIS PREVENTS MULTIPLE PROXIES ACTUALLY WORKING AT ONCE
         if (MachoNet.Mode == RunMode.Proxy)
             // start the cluster timer thread
@@ -102,6 +103,7 @@ public class ClusterManager : IClusterManager
     public async void PerformHeartbeat ()
     {
         MachoNet.Log.Debug ("Sending heartbeat to orchestration agent");
+
         // register ourselves with the orchestrator and get our node id AND address
         HttpContent content = new FormUrlEncodedContent (
             new Dictionary <string, string>
@@ -110,6 +112,7 @@ public class ClusterManager : IClusterManager
                 {"load", "0.0"}
             }
         );
+
         await HttpClient.PostAsync ($"{MachoNet.OrchestratorURL}/Nodes/heartbeat", content);
     }
 
@@ -164,8 +167,10 @@ public class ClusterManager : IClusterManager
         // finally open a connection and register it in the transport list
         MachoUnauthenticatedTransport transport =
             new MachoUnauthenticatedTransport (MachoNet, HttpClient, Log.ForContext <MachoUnauthenticatedTransport> (result ["ip"].ToString ()));
+
         // open a connection
         transport.Connect (ip, port);
+
         // send an identification req to start the authentication flow
         transport.Socket.Send (
             new IdentificationReq
@@ -207,11 +212,11 @@ public class ClusterManager : IClusterManager
     /// Contacts the orchestrator and gets the node with less load
     /// </summary>
     /// <returns></returns>
-    public async Task<long> GetLessLoadedNode ()
+    public async Task <long> GetLessLoadedNode ()
     {
         // determine what node is going to load it and let it know
         HttpResponseMessage response = await HttpClient.GetAsync ($"{MachoNet.OrchestratorURL}/Nodes/next");
-        
+
         response.EnsureSuccessStatusCode ();
         // read the json and extract the required information
         Stream inputStream = await response.Content.ReadAsStreamAsync ();
@@ -222,7 +227,7 @@ public class ClusterManager : IClusterManager
     private void RunClusterTimerThread (object? state)
     {
         Log.Debug ("Running periodic cluster timed events");
-        
+
         this.OnClusterTimer?.Invoke (this, null);
     }
 

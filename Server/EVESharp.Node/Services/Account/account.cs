@@ -19,11 +19,11 @@ namespace EVESharp.Node.Services.Account;
 
 public class account : Service
 {
-    public override AccessLevel         AccessLevel   => AccessLevel.None;
-    private         CharacterDB         DB            { get; }
-    private         IWallets       Wallets { get; }
-    private         ICacheStorage        CacheStorage  { get; }
-    private         IDatabaseConnection Database      { get; }
+    public override AccessLevel         AccessLevel  => AccessLevel.None;
+    private         CharacterDB         DB           { get; }
+    private         IWallets            Wallets      { get; }
+    private         ICacheStorage       CacheStorage { get; }
+    private         IDatabaseConnection Database     { get; }
 
     public account (IDatabaseConnection databaseConnection, CharacterDB db, IWallets wallets, ICacheStorage cacheStorage)
     {
@@ -80,9 +80,10 @@ public class account : Service
     }
 
     [MustBeCharacter]
-    public PyDataType GetJournal (
-        CallInformation call, PyInteger accountKey,   PyInteger fromDate,      PyInteger entryTypeID,
-        PyBool    isCorpWallet, PyInteger transactionID, PyInteger rev
+    public PyDataType GetJournal
+    (
+        CallInformation call,         PyInteger accountKey,    PyInteger fromDate, PyInteger entryTypeID,
+        PyBool          isCorpWallet, PyInteger transactionID, PyInteger rev
     )
     {
         int? transactionIDint = null;
@@ -113,16 +114,22 @@ public class account : Service
 
         if (this.Wallets.IsAccessAllowed (call.Session, WalletKeys.MAIN, call.Session.CorporationID))
             walletKeys.Add (WalletKeys.MAIN);
+
         if (this.Wallets.IsAccessAllowed (call.Session, WalletKeys.SECOND, call.Session.CorporationID))
             walletKeys.Add (WalletKeys.SECOND);
+
         if (this.Wallets.IsAccessAllowed (call.Session, WalletKeys.THIRD, call.Session.CorporationID))
             walletKeys.Add (WalletKeys.THIRD);
+
         if (this.Wallets.IsAccessAllowed (call.Session, WalletKeys.FOURTH, call.Session.CorporationID))
             walletKeys.Add (WalletKeys.FOURTH);
+
         if (this.Wallets.IsAccessAllowed (call.Session, WalletKeys.FIFTH, call.Session.CorporationID))
             walletKeys.Add (WalletKeys.FIFTH);
+
         if (this.Wallets.IsAccessAllowed (call.Session, WalletKeys.SIXTH, call.Session.CorporationID))
             walletKeys.Add (WalletKeys.SIXTH);
+
         if (this.Wallets.IsAccessAllowed (call.Session, WalletKeys.SEVENTH, call.Session.CorporationID))
             walletKeys.Add (WalletKeys.SEVENTH);
 

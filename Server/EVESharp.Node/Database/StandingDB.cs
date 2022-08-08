@@ -35,7 +35,8 @@ public class StandingDB : DatabaseAccessor
         );
     }
 
-    public Rowset GetStandingTransactions (
+    public Rowset GetStandingTransactions
+    (
         int?  fromID, int? toID, int? direction, int? eventID, int? eventTypeID,
         long? eventDateTime
     )
@@ -45,6 +46,7 @@ public class StandingDB : DatabaseAccessor
 
         // use the old 1=1 trick to make it easier to append things
         Dictionary <string, object> parameters = new Dictionary <string, object> ();
+
         string query =
             "SELECT eventID, fromID, toID, direction, eventDateTime, eventTypeID, msg, modification, int_1, int_2, int_3 FROM chrStandingTransactions WHERE 1=1";
 
@@ -90,6 +92,7 @@ public class StandingDB : DatabaseAccessor
     public double? GetSecurityRating (int characterID)
     {
         IDbConnection connection = null;
+
         DbDataReader reader = Database.Select (
             ref connection,
             "SELECT securityRating FROM chrInformation WHERE characterID = @characterID",
@@ -106,7 +109,8 @@ public class StandingDB : DatabaseAccessor
         }
     }
 
-    public void CreateStandingTransaction (
+    public void CreateStandingTransaction
+    (
         int eventTypeID, int fromID, int toID, double value, string message, int int_1 = 0, int int_2 = 0,
         int int_3 = 0
     )
@@ -145,6 +149,7 @@ public class StandingDB : DatabaseAccessor
     public double GetStanding (int from, int to)
     {
         IDbConnection connection = null;
+
         DbDataReader reader = Database.Select (
             ref connection,
             "SELECT standing FROM chrStandings WHERE characterID = @fromID AND toID = @toID",

@@ -13,7 +13,7 @@ namespace EVESharp.Node.Services.Stations;
 public class ramProxy : Service
 {
     public override AccessLevel AccessLevel => AccessLevel.None;
-    private         IItems Items { get; }
+    private         IItems      Items       { get; }
     private         RAMDB       DB          { get; }
 
     public ramProxy (RAMDB ramDb, IItems items)
@@ -51,6 +51,7 @@ public class ramProxy : Service
     {
         if (typeFlag == "region")
             return DB.GetRegionDetails (call.Session.RegionID);
+
         if (typeFlag == "char")
             return DB.GetPersonalDetails (call.Session.CharacterID);
 

@@ -50,8 +50,9 @@ public class marketProxy : Service
     private IWallets            Wallets            { get; }
     private IDogmaNotifications DogmaNotifications { get; }
 
-    public marketProxy (
-        MarketDB  db,        CharacterDB        characterDB, ItemDB itemDB, IDatabaseConnection database, IItems items, ICacheStorage cacheStorage,
+    public marketProxy
+    (
+        MarketDB db, CharacterDB characterDB, ItemDB itemDB, IDatabaseConnection database, IItems items, ICacheStorage cacheStorage,
         IConstants constants, INotificationSender notificationSender, IWallets wallets, IDogmaNotifications dogmaNotifications, IClusterManager clusterManager,
         ISolarSystems solarSystems
     )
@@ -71,7 +72,8 @@ public class marketProxy : Service
         clusterManager.OnClusterTimer += this.PerformTimedEvents;
     }
 
-    private PyDataType GetNewTransactions (
+    private PyDataType GetNewTransactions
+    (
         int       entityID, PyInteger  sellBuy,  PyInteger  typeID,   PyDataType clientID,
         PyInteger quantity, PyDataType fromDate, PyDataType maxPrice, PyInteger  minPrice, PyInteger accountKey
     )
@@ -88,15 +90,15 @@ public class marketProxy : Service
                 case 1:
                     transactionType = TransactionType.Buy;
                     break;
-
             }
 
         return DB.GetNewTransactions (entityID, null, transactionType, typeID, quantity, minPrice, accountKey);
     }
 
-    public PyDataType CharGetNewTransactions (
-        CallInformation call, PyInteger sellBuy,  PyInteger  typeID,   PyDataType clientID,
-        PyInteger quantity, PyDataType fromDate, PyDataType maxPrice, PyInteger minPrice
+    public PyDataType CharGetNewTransactions
+    (
+        CallInformation call,     PyInteger  sellBuy,  PyInteger  typeID,   PyDataType clientID,
+        PyInteger       quantity, PyDataType fromDate, PyDataType maxPrice, PyInteger  minPrice
     )
     {
         int callerCharacterID = call.Session.CharacterID;
@@ -107,10 +109,11 @@ public class marketProxy : Service
         );
     }
 
-    [MustHaveCorporationRole(MLS.UI_SHARED_WALLETHINT8, CorporationRole.Accountant, CorporationRole.JuniorAccountant)]
-    public PyDataType CorpGetNewTransactions (
-        CallInformation call, PyInteger       sellBuy,  PyInteger  typeID,   PyDataType clientID,
-        PyInteger       quantity, PyDataType fromDate, PyDataType maxPrice, PyInteger minPrice, PyInteger accountKey, PyInteger who
+    [MustHaveCorporationRole (MLS.UI_SHARED_WALLETHINT8, CorporationRole.Accountant, CorporationRole.JuniorAccountant)]
+    public PyDataType CorpGetNewTransactions
+    (
+        CallInformation call,     PyInteger  sellBuy,  PyInteger  typeID,   PyDataType clientID,
+        PyInteger       quantity, PyDataType fromDate, PyDataType maxPrice, PyInteger  minPrice, PyInteger accountKey, PyInteger who
     )
     {
         // TODO: SUPPORT THE "who" PARAMETER
@@ -227,6 +230,7 @@ public class marketProxy : Service
 
         if (maximumDistance == -1 && character.StationID != stationID)
             throw new MktCantSellItemOutsideStation (jumps);
+
         if (character.SolarSystemID != station.SolarSystemID && maximumDistance < jumps)
             throw new MktCantSellItem2 (jumps, maximumDistance);
     }
@@ -248,6 +252,7 @@ public class marketProxy : Service
 
         if (maximumDistance == -1 && character.StationID != stationID)
             throw new MktCantSellItemOutsideStation (jumps);
+
         if (character.SolarSystemID != station.SolarSystemID && maximumDistance < jumps)
             throw new MktCantSellItem2 (jumps, maximumDistance);
     }
@@ -260,11 +265,13 @@ public class marketProxy : Service
             // ensure the order is in the range
             if (order.Range == -1 && order.LocationID != stationID)
                 continue;
+
             if (order.Range != -1 && order.Range < order.Jumps)
                 continue;
 
             if (order.UnitsLeft <= quantity)
                 quantity -= order.UnitsLeft;
+
             if ((order.UnitsLeft <= order.MinimumUnits && order.UnitsLeft <= quantity) || order.MinimumUnits <= quantity)
                 quantity -= Math.Min (order.UnitsLeft, quantity);
 
@@ -278,8 +285,9 @@ public class marketProxy : Service
             throw new MktOrderDidNotMatch ();
     }
 
-    private void PlaceImmediateSellOrderChar (
-        IDbConnection connection, IWallet  wallet, Character character, int itemID, int typeID, int stationID, int quantity,
+    private void PlaceImmediateSellOrderChar
+    (
+        IDbConnection connection, IWallet wallet, Character character, int itemID, int typeID, int stationID, int quantity,
         double        price,      Session session
     )
     {
@@ -299,6 +307,7 @@ public class marketProxy : Service
             // ensure the order is in the range
             if (order.Range == -1 && order.LocationID != stationID)
                 continue;
+
             if (order.Range != -1 && order.Range < order.Jumps)
                 continue;
 
@@ -314,6 +323,7 @@ public class marketProxy : Service
                     // give back the escrow for the character
                     // TODO: THERE IS A POTENTIAL DEADLOCK HERE IF WE BUY FROM OURSELVES
                     using IWallet escrowWallet = this.Wallets.AcquireWallet (orderOwnerID, order.AccountID, order.IsCorp);
+
                     {
                         escrowWallet.CreateJournalRecord (MarketReference.MarketEscrow, null, null, escrowLeft);
                     }
@@ -349,6 +359,7 @@ public class marketProxy : Service
                     wallet.CreateJournalRecord (MarketReference.TransactionTax, null, null, -tax);
 
                 wallet.CreateTransactionRecord (TransactionType.Sell, character.ID, orderOwnerID, typeID, quantityToSell, price, stationID);
+
                 this.Wallets.CreateTransactionRecord (
                     orderOwnerID, TransactionType.Buy, order.CharacterID, character.ID, typeID, quantityToSell, price, stationID,
                     order.AccountID
@@ -391,9 +402,7 @@ public class marketProxy : Service
                 connection, typeID, stationID, session.ShipID ?? -1, quantity, session.CharacterID, session.CorporationID, session.CorporationRole
             );
         else
-            items = DB.PrepareItemForOrder (
-                connection, typeID, stationID, -1, quantity, session.CharacterID, session.CorporationID, session.CorporationRole
-            );
+            items = DB.PrepareItemForOrder (connection, typeID, stationID, -1, quantity, session.CharacterID, session.CorporationID, session.CorporationRole);
 
         if (items is null)
             throw new NotEnoughQuantity (this.Types [typeID]);
@@ -438,9 +447,11 @@ public class marketProxy : Service
         }
     }
 
-    private void PlaceSellOrder (
-        CallInformation call, int itemID, Character character,  int stationID, int quantity,   int             typeID, int duration, double price,
-        int range,  double    brokerCost, int ownerID,   int accountKey
+    private void PlaceSellOrder
+    (
+        CallInformation call, int itemID, Character character, int stationID, int quantity, int typeID, int duration,
+        double          price,
+        int             range, double brokerCost, int ownerID, int accountKey
     )
     {
         int callerCharacterID = call.Session.CharacterID;
@@ -468,6 +479,7 @@ public class marketProxy : Service
             {
                 // move the items to update
                 this.PlaceSellOrderCharUpdateItems (connection, call.Session, stationID, typeID, quantity);
+
                 // finally create the records in the market database
                 this.PlaceImmediateSellOrderChar (
                     connection, wallet, character, itemID, typeID, stationID, quantity, price,
@@ -482,6 +494,7 @@ public class marketProxy : Service
                 wallet.CreateJournalRecord (MarketReference.Brokerfee, null, null, -brokerCost);
                 // move the items to update
                 this.PlaceSellOrderCharUpdateItems (connection, call.Session, stationID, typeID, quantity);
+
                 // finally place the order
                 DB.PlaceSellOrder (
                     connection, typeID, character.ID, call.Session.CorporationID, stationID, range, price, quantity,
@@ -504,6 +517,7 @@ public class marketProxy : Service
         {
             if (order.Range == -1 && order.LocationID != stationID)
                 continue;
+
             if (order.Range != -1 && order.Range < order.Jumps)
                 continue;
 
@@ -517,9 +531,11 @@ public class marketProxy : Service
             throw new MktOrderDidNotMatch ();
     }
 
-    private void PlaceImmediateBuyOrderChar (
-        CallInformation call, IDbConnection connection, IWallet          wallet, int typeID, Character character, int stationID, int quantity, double price,
-        int           range
+    private void PlaceImmediateBuyOrderChar
+    (
+        CallInformation call, IDbConnection connection, IWallet wallet, int typeID, Character character, int stationID, int quantity,
+        double          price,
+        int             range
     )
     {
         int solarSystemID = this.Items.GetStaticStation (stationID).SolarSystemID;
@@ -536,6 +552,7 @@ public class marketProxy : Service
 
             if (order.Range == -1 && order.LocationID != stationID)
                 continue;
+
             if (order.Range != -1 && order.Range < order.Jumps)
                 continue;
 
@@ -568,8 +585,10 @@ public class marketProxy : Service
 
                 // acquire wallet journal for seller so we can update their balance to add the funds that he got
                 using IWallet sellerWallet = this.Wallets.AcquireWallet (orderOwnerID, order.AccountID, order.IsCorp);
+
                 {
                     sellerWallet.CreateJournalRecord (MarketReference.MarketTransaction, orderOwnerID, null, price * quantityToBuy);
+
                     // calculate sales tax for the seller
                     if (tax > 0)
                         sellerWallet.CreateJournalRecord (MarketReference.TransactionTax, this.Items.OwnerSCC.ID, null, -tax);
@@ -586,6 +605,7 @@ public class marketProxy : Service
                 ItemEntity item = this.Items.CreateSimpleItem (
                     this.Types [typeID], wallet.OwnerID, stationID, wallet.OwnerID == character.CorporationID ? Flags.CorpMarket : Flags.Hangar, quantityToBuy
                 );
+
                 // immediately unload it, if it has to be loaded the OnItemUpdate notification will take care of that
                 this.Items.UnloadItem (item);
 
@@ -603,9 +623,11 @@ public class marketProxy : Service
         }
     }
 
-    private void PlaceBuyOrder (
-        CallInformation call, int typeID, Character character,  int stationID, int quantity,   double          price, int duration, int minVolume,
-        int range,  double    brokerCost, int ownerID,   int accountKey
+    private void PlaceBuyOrder
+    (
+        CallInformation call, int typeID, Character character, int stationID, int quantity, double price, int duration,
+        int             minVolume,
+        int             range, double brokerCost, int ownerID, int accountKey
     )
     {
         // ensure the character can place the order where he's trying to
@@ -624,13 +646,15 @@ public class marketProxy : Service
             if (duration == 0)
             {
                 this.PlaceImmediateBuyOrderChar (
-                    call, connection, wallet, typeID, character, stationID, quantity, price, range
+                    call, connection, wallet, typeID, character, stationID, quantity, price,
+                    range
                 );
             }
             else
             {
                 // do broker fee first
                 wallet.CreateJournalRecord (MarketReference.Brokerfee, null, null, -brokerCost);
+
                 // place the buy order
                 DB.PlaceBuyOrder (
                     connection, typeID, character.ID, call.Session.CorporationID, stationID, range, price, quantity,
@@ -647,22 +671,24 @@ public class marketProxy : Service
         }
     }
 
-
-    public PyDataType PlaceCharOrder (
-        CallInformation call, PyInteger  stationID, PyInteger       typeID, PyDecimal  price,  PyInteger quantity,
-        PyInteger  bid,       PyInteger       range,  PyDataType itemID, PyInteger minVolume, PyInteger duration, PyInteger useCorp,
-        PyDataType located
+    public PyDataType PlaceCharOrder
+    (
+        CallInformation call, PyInteger stationID, PyInteger  typeID, PyDecimal price,     PyInteger quantity,
+        PyInteger       bid,  PyInteger range,     PyDataType itemID, PyInteger minVolume, PyInteger duration, PyInteger useCorp,
+        PyDataType      located
     )
     {
         return this.PlaceCharOrder (
-            call, stationID, typeID, price, quantity, bid, range, itemID, minVolume, duration, useCorp == 1, located
+            call, stationID, typeID, price, quantity, bid, range, itemID,
+            minVolume, duration, useCorp == 1, located
         );
     }
 
-    public PyDataType PlaceCharOrder (
-        CallInformation call, PyInteger  stationID, PyInteger       typeID, PyDecimal  price,  PyInteger quantity,
-        PyInteger  bid,       PyInteger       range,  PyDataType itemID, PyInteger minVolume, PyInteger duration, PyBool useCorp,
-        PyDataType located
+    public PyDataType PlaceCharOrder
+    (
+        CallInformation call, PyInteger stationID, PyInteger  typeID, PyDecimal price,     PyInteger quantity,
+        PyInteger       bid,  PyInteger range,     PyDataType itemID, PyInteger minVolume, PyInteger duration, PyBool useCorp,
+        PyDataType      located
     )
     {
         // get solarSystem for the station
@@ -691,6 +717,7 @@ public class marketProxy : Service
         {
             if (this.Wallets.IsTakeAllowed (call.Session, call.Session.CorpAccountKey, call.Session.CorporationID) == false)
                 throw new CrpAccessDenied (MLS.UI_CORP_ACCESSTOWALLETDIVISIONDENIED);
+
             if (CorporationRole.Trader.Is (call.Session.CorporationRole) == false)
                 throw new CrpAccessDenied (MLS.UI_SHARED_WALLETHINT11);
 
@@ -705,14 +732,16 @@ public class marketProxy : Service
                 throw new CustomError ("Unexpected data!");
 
             this.PlaceSellOrder (
-                call, itemID as PyInteger, character, stationID, quantity, typeID, duration, price, range,
+                call, itemID as PyInteger, character, stationID, quantity, typeID, duration, price,
+                range,
                 brokerCost, ownerID, accountKey
             );
         }
         else if (bid == (int) TransactionType.Buy)
         {
             this.PlaceBuyOrder (
-                call, typeID, character, stationID, quantity, price, duration, minVolume, range,
+                call, typeID, character, stationID, quantity, price, duration, minVolume,
+                range,
                 brokerCost, ownerID, accountKey
             );
         }
@@ -747,6 +776,7 @@ public class marketProxy : Service
             if (order.Escrow > 0.0 && order.Bid == TransactionType.Buy)
             {
                 using IWallet wallet = this.Wallets.AcquireWallet (orderOwnerID, order.AccountID, order.IsCorp);
+
                 {
                     wallet.CreateJournalRecord (MarketReference.MarketEscrow, null, null, order.Escrow);
                 }
@@ -758,6 +788,7 @@ public class marketProxy : Service
                 ItemEntity item = this.Items.CreateSimpleItem (
                     this.Types [order.TypeID], orderOwnerID, order.LocationID, order.IsCorp ? Flags.CorpMarket : Flags.Hangar, order.UnitsLeft
                 );
+
                 // immediately unload it, if it has to be loaded the OnItemUpdate notification will take care of that
                 this.Items.UnloadItem (item);
 
@@ -793,9 +824,11 @@ public class marketProxy : Service
         return null;
     }
 
-    public PyDataType ModifyCharOrder (
-        CallInformation call, PyInteger orderID, PyDecimal       newPrice, PyInteger bid, PyInteger stationID, PyInteger solarSystemID, PyDecimal price, PyInteger volRemaining,
-        PyInteger issued
+    public PyDataType ModifyCharOrder
+    (
+        CallInformation call, PyInteger orderID, PyDecimal newPrice, PyInteger bid, PyInteger stationID, PyInteger solarSystemID, PyDecimal price,
+        PyInteger       volRemaining,
+        PyInteger       issued
     )
     {
         int callerCharacterID = call.Session.CharacterID;
@@ -831,6 +864,7 @@ public class marketProxy : Service
             int orderOwnerID = order.IsCorp ? order.CorporationID : order.CharacterID;
 
             using IWallet wallet = this.Wallets.AcquireWallet (orderOwnerID, order.AccountID, order.IsCorp);
+
             {
                 if (order.Bid == TransactionType.Buy)
                 {
@@ -881,10 +915,13 @@ public class marketProxy : Service
 
         if (injectedSkills.ContainsKey ((int) TypeID.Retail))
             retailLevel = (int) injectedSkills [(int) TypeID.Retail].Level;
+
         if (injectedSkills.ContainsKey ((int) TypeID.Trade))
             tradeLevel = (int) injectedSkills [(int) TypeID.Trade].Level;
+
         if (injectedSkills.ContainsKey ((int) TypeID.Wholesale))
             wholeSaleLevel = (int) injectedSkills [(int) TypeID.Wholesale].Level;
+
         if (injectedSkills.ContainsKey ((int) TypeID.Tycoon))
             tycoonLevel = (int) injectedSkills [(int) TypeID.Tycoon].Level;
 
@@ -903,6 +940,7 @@ public class marketProxy : Service
 
         // give back the escrow paid by the player
         using IWallet wallet = this.Wallets.AcquireWallet (order.IsCorp ? order.CorporationID : order.CharacterID, order.AccountID, order.IsCorp);
+
         {
             wallet.CreateJournalRecord (MarketReference.MarketEscrow, null, null, order.Escrow);
         }
@@ -926,6 +964,7 @@ public class marketProxy : Service
         ItemEntity item = this.Items.CreateSimpleItem (
             this.Types [order.TypeID], order.CharacterID, order.LocationID, order.IsCorp ? Flags.CorpMarket : Flags.Hangar, order.UnitsLeft
         );
+
         // immediately unload it, if it has to be loaded the OnItemUpdate notification will take care of that
         this.Items.UnloadItem (item);
 
@@ -966,7 +1005,6 @@ public class marketProxy : Service
                         // sell orders are a bit harder, the items have to go back to the player's hangar
                         this.SellOrderExpired (connection, order);
                         break;
-
                 }
         }
         finally
@@ -975,7 +1013,7 @@ public class marketProxy : Service
         }
     }
 
-    [MustHaveCorporationRole(MLS.UI_SHARED_WALLETHINT1, CorporationRole.Accountant)]
+    [MustHaveCorporationRole (MLS.UI_SHARED_WALLETHINT1, CorporationRole.Accountant)]
     public PyDataType GetCorporationOrders (CallInformation call)
     {
         return DB.GetOrdersForOwner (call.Session.CorporationID, true);

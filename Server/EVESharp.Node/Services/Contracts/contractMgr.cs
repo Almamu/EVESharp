@@ -36,12 +36,13 @@ public class contractMgr : Service
     private ITypes              Types              => this.Items.Types;
     private ISolarSystems       SolarSystems       { get; }
     private INotificationSender Notifications      { get; }
-    private IWallets      Wallets      { get; }
+    private IWallets            Wallets            { get; }
     private IDogmaNotifications DogmaNotifications { get; }
 
-    public contractMgr (
-        ContractDB    db,            ItemDB itemDB, MarketDB marketDB, CharacterDB characterDB, IItems items, INotificationSender notificationSender,
-        IWallets wallets, IDogmaNotifications dogmaNotifications, ISolarSystems solarSystems
+    public contractMgr
+    (
+        ContractDB db,      ItemDB              itemDB, MarketDB marketDB, CharacterDB characterDB, IItems items, INotificationSender notificationSender,
+        IWallets   wallets, IDogmaNotifications dogmaNotifications, ISolarSystems solarSystems
     )
     {
         DB                 = db;
@@ -66,6 +67,7 @@ public class contractMgr : Service
 
         foreach (int contractID in outbidContracts)
             this.DogmaNotifications.QueueMultiEvent (callerCharacterID, new OnContractOutbid (contractID));
+
         foreach (int contractID in assignedContracts)
             this.DogmaNotifications.QueueMultiEvent (callerCharacterID, new OnContractAssigned (contractID));
 
@@ -124,7 +126,8 @@ public class contractMgr : Service
         return DB.GetItemsInStationForPlayer (call.Session.CharacterID, stationID);
     }
 
-    private void PrepareItemsForCourierOrAuctionContract (
+    private void PrepareItemsForCourierOrAuctionContract
+    (
         IDbConnection   connection, ulong   contractID,
         PyList <PyList> itemList,   Station station, int ownerID, int shipID
     )
@@ -176,10 +179,11 @@ public class contractMgr : Service
         DB.UpdateContractCrateAndVolume (ref connection, contractID, container.ID, volume);
     }
 
-    public PyDataType CreateContract (
-        CallInformation call, PyInteger contractType, PyInteger availability,            PyInteger assigneeID,
-        PyInteger expireTime,   PyInteger courierContractDuration, PyInteger startStationID, PyInteger endStationID, PyInteger       priceOrStartingBid,
-        PyInteger reward,       PyInteger collateralOrBuyoutPrice, PyString  title,          PyString  description
+    public PyDataType CreateContract
+    (
+        CallInformation call,       PyInteger contractType,            PyInteger availability,   PyInteger assigneeID,
+        PyInteger       expireTime, PyInteger courierContractDuration, PyInteger startStationID, PyInteger endStationID, PyInteger priceOrStartingBid,
+        PyInteger       reward,     PyInteger collateralOrBuyoutPrice, PyString  title,          PyString  description
     )
     {
         if (assigneeID != null && (ItemRanges.IsNPC (assigneeID) || ItemRanges.IsNPCCorporationID (assigneeID)))
@@ -190,6 +194,7 @@ public class contractMgr : Service
 
         if (expireTime < 1440 || (courierContractDuration < 1 && contractType == (int) ContractTypes.Courier))
             throw new ConDurationZero ();
+
         if (startStationID == endStationID)
             throw new ConDestinationSame ();
 
@@ -221,6 +226,7 @@ public class contractMgr : Service
             if (reward > 0)
             {
                 using IWallet wallet = this.Wallets.AcquireWallet (callerCharacterID, WalletKeys.MAIN);
+
                 {
                     wallet.EnsureEnoughBalance (reward);
                     wallet.CreateJournalRecord (MarketReference.ContractRewardAdded, null, null, -reward);
@@ -252,10 +258,8 @@ public class contractMgr : Service
                     );
                     break;
 
-                case (int) ContractTypes.Loan:
-                    break;
-                default:
-                    throw new CustomError ("Unknown contract type");
+                case (int) ContractTypes.Loan: break;
+                default:                       throw new CustomError ("Unknown contract type");
             }
 
             if (contractType == (int) ContractTypes.ItemExchange)
@@ -295,6 +299,7 @@ public class contractMgr : Service
 
         if (filters.TryGetValue ("issuedByIDs", out PyList issuedIDs) && issuedIDs is not null)
             issuedByIDs = issuedIDs.GetEnumerable <PyInteger> ();
+
         if (filters.TryGetValue ("notIssuedByIDs", out PyList notIssuedIDs) && notIssuedIDs is not null)
             notIssuedByIDs = notIssuedIDs.GetEnumerable <PyInteger> ();
 
@@ -363,17 +368,19 @@ public class contractMgr : Service
         return null;
     }
 
-    public PyDataType SplitStack (
-        CallInformation call, PyInteger stationID, PyInteger       itemID, PyInteger newStack, PyInteger forCorp,
-        PyInteger flag
+    public PyDataType SplitStack
+    (
+        CallInformation call, PyInteger stationID, PyInteger itemID, PyInteger newStack, PyInteger forCorp,
+        PyInteger       flag
     )
     {
         return null;
     }
 
-    public PyDataType GetItemsInContainer (
-        CallInformation call, PyInteger locationID, PyInteger       containerID, PyInteger forCorp,
-        PyInteger flag
+    public PyDataType GetItemsInContainer
+    (
+        CallInformation call, PyInteger locationID, PyInteger containerID, PyInteger forCorp,
+        PyInteger       flag
     )
     {
         return DB.GetItemsInContainer (call.Session.CharacterID, containerID);
@@ -493,6 +500,7 @@ public class contractMgr : Service
 
             // take the bid's money off the wallet
             using IWallet bidderWallet = this.Wallets.AcquireWallet (bidderID, WalletKeys.MAIN);
+
             {
                 bidderWallet.EnsureEnoughBalance (quantity);
                 bidderWallet.CreateJournalRecord (MarketReference.ContractAuctionBid, null, null, -quantity);
@@ -516,6 +524,7 @@ public class contractMgr : Service
 
             // return the money for the player that was the highest bidder
             using IWallet maximumBidderWallet = this.Wallets.AcquireWallet (maximumBidderID, WalletKeys.MAIN);
+
             {
                 maximumBidderWallet.CreateJournalRecord (MarketReference.ContractAuctionBidRefund, null, null, maximumBid);
             }
@@ -528,7 +537,8 @@ public class contractMgr : Service
         }
     }
 
-    private void AcceptItemExchangeContract (
+    private void AcceptItemExchangeContract
+    (
         IDbConnection connection, Session session, ContractDB.Contract contract, Station station, int ownerID, Flags flag = Flags.Hangar
     )
     {
@@ -553,9 +563,11 @@ public class contractMgr : Service
                     this.Items.MetaInventories.OnItemDestroyed (item);
                     // temporarily move the item to the recycler, let the current owner know
                     item.LocationID = this.Items.LocationRecycler.ID;
+
                     this.DogmaNotifications.QueueMultiEvent (
                         session.CharacterID, EVE.Notifications.Inventory.OnItemChange.BuildLocationChange (item, station.ID)
                     );
+
                     // now set the item to the correct owner and place and notify it's new owner
                     // TODO: TAKE forCorp INTO ACCOUNT
                     item.LocationID = station.ID;
@@ -568,6 +580,7 @@ public class contractMgr : Service
                 {
                     int oldQuantity = item.Quantity;
                     item.Quantity = change.Quantity;
+
                     this.DogmaNotifications.QueueMultiEvent (
                         session.CharacterID, EVE.Notifications.Inventory.OnItemChange.BuildQuantityChange (item, oldQuantity)
                     );
@@ -612,11 +625,13 @@ public class contractMgr : Service
                 {
                     // change the item quantity
                     changes.AddChange (change.ItemID, "quantity", change.OldQuantity, change.Quantity);
+
                     // create a new item and notify the new node about it
                     // TODO: HANDLE BLUEPRINTS TOO! RIGHT NOW NO DATA IS COPIED FOR THEM
                     ItemEntity item = this.Items.CreateSimpleItem (
                         this.Types [change.TypeID], contract.IssuerID, station.ID, Flags.Hangar, change.OldQuantity - change.Quantity
                     );
+
                     // unload the created item
                     this.Items.UnloadItem (item);
                     changes.AddChange (item.ID, "location", 0, station.ID);
@@ -635,6 +650,7 @@ public class contractMgr : Service
         DB.UpdateAcceptorID (ref connection, contract.ID, ownerID);
         DB.UpdateAcceptedDate (ref connection, contract.ID);
         DB.UpdateCompletedDate (ref connection, contract.ID);
+
         // notify the contract as being accepted
         if (contract.ForCorp == false)
             Notifications.NotifyCharacter (contract.IssuerID, new OnContractAccepted (contract.ID));
@@ -658,6 +674,7 @@ public class contractMgr : Service
 
             if (contract.Status != ContractStatus.Outstanding)
                 throw new ConContractNotOutstanding ();
+
             if (contract.ExpireTime < DateTime.UtcNow.ToFileTimeUtc ())
                 throw new ConContractExpired ();
 
@@ -670,16 +687,11 @@ public class contractMgr : Service
                     this.AcceptItemExchangeContract (connection, call.Session, contract, station, callerCharacterID);
                     break;
 
-                case ContractTypes.Auction:
-                    throw new CustomError ("Auctions cannot be accepted!");
-                case ContractTypes.Courier:
-                    throw new CustomError ("Courier contracts not supported yet!");
-                case ContractTypes.Loan:
-                    throw new CustomError ("Loan contracts not supported yet!");
-                case ContractTypes.Freeform:
-                    throw new CustomError ("Freeform contracts not supported yet!");
-                default:
-                    throw new CustomError ("Unknown contract type to accept!");
+                case ContractTypes.Auction:  throw new CustomError ("Auctions cannot be accepted!");
+                case ContractTypes.Courier:  throw new CustomError ("Courier contracts not supported yet!");
+                case ContractTypes.Loan:     throw new CustomError ("Loan contracts not supported yet!");
+                case ContractTypes.Freeform: throw new CustomError ("Freeform contracts not supported yet!");
+                default:                     throw new CustomError ("Unknown contract type to accept!");
             }
         }
         finally

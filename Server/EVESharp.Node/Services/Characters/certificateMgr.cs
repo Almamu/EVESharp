@@ -22,7 +22,7 @@ public class certificateMgr : Service
 {
     public override AccessLevel                           AccessLevel              => AccessLevel.None;
     private         IItems                                Items                    { get; }
-    private         ICacheStorage                          CacheStorage             { get; }
+    private         ICacheStorage                         CacheStorage             { get; }
     private         Dictionary <int, List <Relationship>> CertificateRelationships { get; }
     private         IDogmaNotifications                   DogmaNotifications       { get; }
     private         IDatabaseConnection                   Database                 { get; }
@@ -96,6 +96,7 @@ public class certificateMgr : Service
                 if (relationship.ParentTypeID != 0 &&
                     (skills.TryGetValue (relationship.ParentTypeID, out Skill skill) == false || skill.Level < relationship.ParentLevel))
                     throw new CertificateSkillPrerequisitesNotMet ();
+
                 if (relationship.ParentID != 0 && grantedCertificates.Contains (relationship.ParentID) == false)
                     throw new CertificateCertPrerequisitesNotMet ();
             }
@@ -129,6 +130,7 @@ public class certificateMgr : Service
                     if (relationship.ParentTypeID != 0 &&
                         (skills.TryGetValue (relationship.ParentTypeID, out Skill skill) == false || skill.Level < relationship.ParentLevel))
                         requirementsMet = false;
+
                     if (relationship.ParentID != 0 && grantedCertificates.Contains (relationship.ParentID) == false)
                         requirementsMet = false;
                 }

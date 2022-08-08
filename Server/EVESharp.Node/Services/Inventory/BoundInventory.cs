@@ -33,9 +33,10 @@ public class BoundInventory : ClientBoundService
     private          IDogmaNotifications DogmaNotifications { get; }
     private          EffectsManager      EffectsManager     { get; }
 
-    public BoundInventory (
-        ItemDB             itemDB,             EffectsManager effectsManager, ItemInventory       item,    IItems items,
-        INotificationSender notificationSender, IDogmaNotifications     dogmaNotifications,     BoundServiceManager manager, Session     session
+    public BoundInventory
+    (
+        ItemDB              itemDB,             EffectsManager      effectsManager,     ItemInventory       item,    IItems  items,
+        INotificationSender notificationSender, IDogmaNotifications dogmaNotifications, BoundServiceManager manager, Session session
     ) : base (manager, session, item.ID)
     {
         EffectsManager     = effectsManager;
@@ -47,17 +48,18 @@ public class BoundInventory : ClientBoundService
         DogmaNotifications = dogmaNotifications;
     }
 
-    public BoundInventory (
-        ItemDB             itemDB,             EffectsManager effectsManager, ItemInventory       item,    Flags   flag, IItems items,
-        INotificationSender notificationSender, IDogmaNotifications     dogmaNotifications,     BoundServiceManager manager, Session session
+    public BoundInventory
+    (
+        ItemDB              itemDB,             EffectsManager      effectsManager,     ItemInventory       item,    Flags   flag, IItems items,
+        INotificationSender notificationSender, IDogmaNotifications dogmaNotifications, BoundServiceManager manager, Session session
     ) : base (manager, session, item.ID)
     {
-        EffectsManager          = effectsManager;
-        this.mInventory         = item;
-        this.mFlag              = flag;
-        ItemDB                  = itemDB;
+        EffectsManager     = effectsManager;
+        this.mInventory    = item;
+        this.mFlag         = flag;
+        ItemDB             = itemDB;
         Items              = items;
-        Notifications           = notificationSender;
+        Notifications      = notificationSender;
         DogmaNotifications = dogmaNotifications;
     }
 
@@ -134,18 +136,25 @@ public class BoundInventory : ClientBoundService
 
         if (modules.ContainsKey (Flags.HiSlot0) == false)
             return Flags.HiSlot0;
+
         if (modules.ContainsKey (Flags.HiSlot1) == false)
             return Flags.HiSlot1;
+
         if (modules.ContainsKey (Flags.HiSlot2) == false)
             return Flags.HiSlot2;
+
         if (modules.ContainsKey (Flags.HiSlot3) == false)
             return Flags.HiSlot3;
+
         if (modules.ContainsKey (Flags.HiSlot4) == false)
             return Flags.HiSlot4;
+
         if (modules.ContainsKey (Flags.HiSlot5) == false)
             return Flags.HiSlot5;
+
         if (modules.ContainsKey (Flags.HiSlot6) == false)
             return Flags.HiSlot6;
+
         if (modules.ContainsKey (Flags.HiSlot7) == false)
             return Flags.HiSlot7;
 
@@ -162,18 +171,25 @@ public class BoundInventory : ClientBoundService
 
         if (modules.ContainsKey (Flags.MedSlot0) == false)
             return Flags.MedSlot0;
+
         if (modules.ContainsKey (Flags.MedSlot1) == false)
             return Flags.MedSlot1;
+
         if (modules.ContainsKey (Flags.MedSlot2) == false)
             return Flags.MedSlot2;
+
         if (modules.ContainsKey (Flags.MedSlot3) == false)
             return Flags.MedSlot3;
+
         if (modules.ContainsKey (Flags.MedSlot4) == false)
             return Flags.MedSlot4;
+
         if (modules.ContainsKey (Flags.MedSlot5) == false)
             return Flags.MedSlot5;
+
         if (modules.ContainsKey (Flags.MedSlot6) == false)
             return Flags.MedSlot6;
+
         if (modules.ContainsKey (Flags.MedSlot7) == false)
             return Flags.MedSlot7;
 
@@ -190,18 +206,25 @@ public class BoundInventory : ClientBoundService
 
         if (modules.ContainsKey (Flags.LoSlot0) == false)
             return Flags.LoSlot0;
+
         if (modules.ContainsKey (Flags.LoSlot1) == false)
             return Flags.LoSlot1;
+
         if (modules.ContainsKey (Flags.LoSlot2) == false)
             return Flags.LoSlot2;
+
         if (modules.ContainsKey (Flags.LoSlot3) == false)
             return Flags.LoSlot3;
+
         if (modules.ContainsKey (Flags.LoSlot4) == false)
             return Flags.LoSlot4;
+
         if (modules.ContainsKey (Flags.LoSlot5) == false)
             return Flags.LoSlot5;
+
         if (modules.ContainsKey (Flags.LoSlot6) == false)
             return Flags.LoSlot6;
+
         if (modules.ContainsKey (Flags.LoSlot7) == false)
             return Flags.LoSlot7;
 
@@ -218,18 +241,25 @@ public class BoundInventory : ClientBoundService
 
         if (modules.ContainsKey (Flags.RigSlot0) == false)
             return Flags.RigSlot0;
+
         if (modules.ContainsKey (Flags.RigSlot1) == false)
             return Flags.RigSlot1;
+
         if (modules.ContainsKey (Flags.RigSlot2) == false)
             return Flags.RigSlot2;
+
         if (modules.ContainsKey (Flags.RigSlot3) == false)
             return Flags.RigSlot3;
+
         if (modules.ContainsKey (Flags.RigSlot4) == false)
             return Flags.RigSlot4;
+
         if (modules.ContainsKey (Flags.RigSlot5) == false)
             return Flags.RigSlot5;
+
         if (modules.ContainsKey (Flags.RigSlot6) == false)
             return Flags.RigSlot6;
+
         if (modules.ContainsKey (Flags.RigSlot7) == false)
             return Flags.RigSlot7;
 
@@ -301,16 +331,22 @@ public class BoundInventory : ClientBoundService
         {
             if (newFlag == Flags.Hangar && CorporationRole.HangarCanQuery1.Is (session.CorporationRole) == false)
                 throw new CrpAccessDenied ("You are not allowed to access that hangar");
+
             if (newFlag == Flags.CorpSAG2 && CorporationRole.HangarCanQuery2.Is (session.CorporationRole) == false)
                 throw new CrpAccessDenied ("You are not allowed to access that hangar");
+
             if (newFlag == Flags.CorpSAG3 && CorporationRole.HangarCanQuery3.Is (session.CorporationRole) == false)
                 throw new CrpAccessDenied ("You are not allowed to access that hangar");
+
             if (newFlag == Flags.CorpSAG4 && CorporationRole.HangarCanQuery4.Is (session.CorporationRole) == false)
                 throw new CrpAccessDenied ("You are not allowed to access that hangar");
+
             if (newFlag == Flags.CorpSAG5 && CorporationRole.HangarCanQuery5.Is (session.CorporationRole) == false)
                 throw new CrpAccessDenied ("You are not allowed to access that hangar");
+
             if (newFlag == Flags.CorpSAG6 && CorporationRole.HangarCanQuery6.Is (session.CorporationRole) == false)
                 throw new CrpAccessDenied ("You are not allowed to access that hangar");
+
             if (newFlag == Flags.CorpSAG7 && CorporationRole.HangarCanQuery7.Is (session.CorporationRole) == false)
                 throw new CrpAccessDenied ("You are not allowed to access that hangar");
         }
@@ -333,6 +369,7 @@ public class BoundInventory : ClientBoundService
 
                 if (item.Singleton == false)
                     changes.AddChange (ItemChange.Singleton, item.Singleton);
+
                 if (item.OwnerID != this.mInventory.OwnerID)
                     changes.AddChange (ItemChange.OwnerID, item.OwnerID);
 
@@ -348,9 +385,11 @@ public class BoundInventory : ClientBoundService
 
                 // notify the character about the change
                 Notifications.NotifyOwnerAtLocation (item.OwnerID, session.LocationID, changes);
+
                 // notify the old owner if it changed
                 if (item.OwnerID != oldOwnerID)
                     Notifications.NotifyOwnerAtLocation (oldOwnerID, session.LocationID, changes);
+
                 // update meta inventories too
                 this.Items.MetaInventories.OnItemMoved (item, oldLocation, this.mInventory.ID, oldFlag, newFlag);
 
@@ -370,6 +409,7 @@ public class BoundInventory : ClientBoundService
                 OnItemChange quantityChange = OnItemChange.BuildQuantityChange (item, item.Quantity + 1);
                 // notify the character about the change in quantity
                 Notifications.NotifyOwnerAtLocation (item.OwnerID, session.LocationID, quantityChange);
+
                 // notify the old owner if it changed
                 if (item.OwnerID != oldOwnerID)
                     Notifications.NotifyOwnerAtLocation (item.OwnerID, session.LocationID, quantityChange);
@@ -477,6 +517,7 @@ public class BoundInventory : ClientBoundService
                 OnItemChange quantityChange = OnItemChange.BuildQuantityChange (item, item.Quantity + quantity);
                 // notify the character about the change in quantity
                 Notifications.NotifyOwnerAtLocation (item.OwnerID, session.LocationID, quantityChange);
+
                 // notify the old owner if it changed
                 if (item.OwnerID != oldOwnerID)
                     Notifications.NotifyOwnerAtLocation (item.OwnerID, session.LocationID, quantityChange);
@@ -653,8 +694,12 @@ public class BoundInventory : ClientBoundService
                 // also create the notification for the user
                 this.DogmaNotifications.QueueMultiEvent (callerCharacterID, OnItemChange.BuildQuantityChange (secondItem, oldQuantity));
                 this.Items.DestroyItem (firstItem);
+
                 // notify the client about the item too
-                this.DogmaNotifications.QueueMultiEvent (callerCharacterID, OnItemChange.BuildLocationChange (firstItem, firstItem.Flag, secondItem.LocationID));
+                this.DogmaNotifications.QueueMultiEvent (
+                    callerCharacterID, OnItemChange.BuildLocationChange (firstItem, firstItem.Flag, secondItem.LocationID)
+                );
+
                 // ensure the second item is saved to database too
                 secondItem.Persist ();
 
@@ -684,15 +729,17 @@ public class BoundInventory : ClientBoundService
         return null;
     }
 
-    public static PySubStruct BindInventory (
-        ItemDB             itemDB,             EffectsManager effectsManager, ItemInventory       item,                Flags   flag, IItems items,
-        INotificationSender notificationSender, IDogmaNotifications     dogmaNotifications,     BoundServiceManager boundServiceManager, Session session
+    public static PySubStruct BindInventory
+    (
+        ItemDB              itemDB,             EffectsManager      effectsManager,     ItemInventory       item,                Flags   flag, IItems items,
+        INotificationSender notificationSender, IDogmaNotifications dogmaNotifications, BoundServiceManager boundServiceManager, Session session
     )
     {
         BoundService instance = new BoundInventory (
             itemDB, effectsManager, item, flag, items, notificationSender, dogmaNotifications,
             boundServiceManager, session
         );
+
         // bind the service
         int boundID = boundServiceManager.BindService (instance);
         // build the bound service string

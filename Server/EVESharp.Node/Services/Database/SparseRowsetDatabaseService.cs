@@ -10,16 +10,15 @@ public abstract class SparseRowsetDatabaseService : MultiClientBoundService
 {
     public SparseRowsetHeader RowsetHeader { get; init; }
 
-    protected SparseRowsetDatabaseService (SparseRowsetHeader rowsetHeader, BoundServiceManager manager, Session session, bool keepAlive = false) : base (
-        manager, 0, keepAlive
-    )
+    protected SparseRowsetDatabaseService
+        (SparseRowsetHeader rowsetHeader, BoundServiceManager manager, Session session, bool keepAlive = false) : base (manager, 0, keepAlive)
     {
         RowsetHeader = rowsetHeader;
     }
 
-    public abstract PyDataType Fetch (CallInformation call, PyInteger                     startPos,   PyInteger       fetchSize);
-    public abstract PyDataType FetchByKey (CallInformation call, PyList                   keyList);
-    public abstract PyDataType SelectByUniqueColumnValues (CallInformation call, PyString columnName, PyList          values);
+    public abstract PyDataType Fetch (CallInformation                      call, PyInteger startPos, PyInteger fetchSize);
+    public abstract PyDataType FetchByKey (CallInformation                 call, PyList    keyList);
+    public abstract PyDataType SelectByUniqueColumnValues (CallInformation call, PyString  columnName, PyList values);
 
     /// <summary>
     /// Notifies consumers of this SparseRowset that something in the list has changed

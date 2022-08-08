@@ -22,15 +22,16 @@ namespace EVESharp.Node.Services.Account;
 public class billMgr : Service
 {
     public override AccessLevel         AccessLevel   => AccessLevel.None;
-    private         ICacheStorage        CacheStorage  { get; }
+    private         ICacheStorage       CacheStorage  { get; }
     private         CorporationDB       CorporationDB { get; }
     private         IItems              Items         { get; }
     private         INotificationSender Notifications { get; }
     private         IDatabaseConnection Database      { get; }
 
-    public billMgr (
+    public billMgr
+    (
         ICacheStorage       cacheStorage,       IDatabaseConnection databaseConnection, CorporationDB corporationDb, IItems items,
-        INotificationSender notificationSender, IClusterManager      clusterManager
+        INotificationSender notificationSender, IClusterManager     clusterManager
     )
     {
         CacheStorage  = cacheStorage;
@@ -56,13 +57,13 @@ public class billMgr : Service
         return CachedMethodCallResult.FromCacheHint (cacheHint);
     }
 
-    [MustHaveCorporationRole(MLS.UI_CORP_ACCESSDENIED3, CorporationRole.Accountant, CorporationRole.JuniorAccountant)]
+    [MustHaveCorporationRole (MLS.UI_CORP_ACCESSDENIED3, CorporationRole.Accountant, CorporationRole.JuniorAccountant)]
     public PyDataType GetCorporationBillsReceivable (CallInformation call)
     {
         return Database.MktBillsGetReceivable (call.Session.CorporationID);
     }
 
-    [MustHaveCorporationRole(MLS.UI_CORP_ACCESSDENIED3, CorporationRole.Accountant, CorporationRole.JuniorAccountant)]
+    [MustHaveCorporationRole (MLS.UI_CORP_ACCESSDENIED3, CorporationRole.Accountant, CorporationRole.JuniorAccountant)]
     public PyDataType GetCorporationBills (CallInformation call)
     {
         return Database.MktBillsGetPayable (call.Session.CorporationID);
@@ -81,10 +82,12 @@ public class billMgr : Service
         {
             long dueDate = office.DueDate;
             int  ownerID = this.Items.Stations [office.StationID].OwnerID;
+
             int billID = (int) Database.MktBillsCreate (
                 BillTypes.RentalBill, office.CorporationID, ownerID,
                 office.PeriodCost, dueDate, 0, (int) TypeID.OfficeFolder, office.StationID
             );
+
             CorporationDB.SetNextBillID (office.CorporationID, office.OfficeID, billID);
 
             // notify characters about the new bill

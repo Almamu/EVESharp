@@ -19,9 +19,9 @@ public class Wallet : IWallet
     public  double              Balance         { get; set; }
     public  double              OriginalBalance { get; }
     public  IDatabaseConnection Database        { get; }
-    public  INotificationSender  Notifications   { get; }
+    public  INotificationSender Notifications   { get; }
     public  bool                ForCorporation  { get; }
-    public  IWallets      Wallets   { get; }
+    public  IWallets            Wallets         { get; }
 
     public Wallet (int ownerID, int walletKey, bool isCorporation, IDatabaseConnection database, INotificationSender notificationSender, IWallets wallets)
     {
@@ -31,8 +31,8 @@ public class Wallet : IWallet
         this.ForCorporation = isCorporation;
         this.Database       = database;
         this.Notifications  = notificationSender;
-        this.Wallets  = wallets;
-        
+        this.Wallets        = wallets;
+
         // obtain exclusive control over the wallet
         Database.GetLock (ref this.Connection, this.GenerateLockName ());
         // also fetch the balance
@@ -76,7 +76,7 @@ public class Wallet : IWallet
                     WalletKeys.FIFTH   => CorporationRole.AccountCanQuery5,
                     WalletKeys.SIXTH   => CorporationRole.AccountCanQuery6,
                     WalletKeys.SEVENTH => CorporationRole.AccountCanQuery7,
-                    _            => CorporationRole.JuniorAccountant
+                    _                  => CorporationRole.JuniorAccountant
                 });
 
                 Notifications.NotifyCorporationByRole (
@@ -155,6 +155,7 @@ public class Wallet : IWallet
     public void CreateTransactionRecord (TransactionType type, int characterID, int otherID, int typeID, int quantity, double amount, int stationID)
     {
         Balance += amount;
+
         // market transactions do not affect the wallet value because these are paid either when placing the sell/buy order
         // or when fullfiling it
         this.Wallets.CreateTransactionRecord (

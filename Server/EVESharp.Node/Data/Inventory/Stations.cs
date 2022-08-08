@@ -10,9 +10,9 @@ namespace EVESharp.Node.Data.Inventory;
 
 public class Stations : Dictionary <int, Station>, IStations
 {
-    public           Dictionary <int, Operation> Operations   { get; }
-    public           Dictionary <int, Type>      StationTypes { get; }
-    public           Dictionary <int, string>    Services     { get; }
+    public Dictionary <int, Operation> Operations   { get; }
+    public Dictionary <int, Type>      StationTypes { get; }
+    public Dictionary <int, string>    Services     { get; }
 
     public Stations (IDatabaseConnection Database)
     {

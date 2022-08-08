@@ -31,8 +31,8 @@ public class MetaInventories : Dictionary <int, Dictionary <int, Dictionary <Fla
             {
                 metaInventory = new ItemInventoryByOwnerID (ownerID, flag, inventory);
 
-                this [inventory.ID] [ownerID] [flag] = metaInventory;
-                this.MetaInventoriesByOwner [ownerID] [flag]         = metaInventory;
+                this [inventory.ID] [ownerID] [flag]         = metaInventory;
+                this.MetaInventoriesByOwner [ownerID] [flag] = metaInventory;
 
                 // fire the creation event
                 this.OnMetaInventoryCreated?.Invoke (metaInventory);

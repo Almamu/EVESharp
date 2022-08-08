@@ -36,21 +36,21 @@ using EVESharp.PythonTypes.Types.Network;
 
 namespace EVESharp.Node.Data.Inventory;
 
-public class SolarSystems : Dictionary<int, SolarSystem>, ISolarSystems
+public class SolarSystems : Dictionary <int, SolarSystem>, ISolarSystems
 {
     private readonly Dictionary <int, long> mSolarsystemToNodeID = new Dictionary <int, long> ();
     private          IDatabaseConnection    Database       { get; }
     private          IStations              Stations       { get; }
     private          IMachoNet              MachoNet       { get; }
     private          HttpClient             HttpClient     { get; }
-    private          IClusterManager         ClusterManager { get; }
+    private          IClusterManager        ClusterManager { get; }
 
     public SolarSystem this [TypeID id]
     {
         get => this [(int) id];
         set => this [(int) id] = value;
     }
-    
+
     public SolarSystems (HttpClient httpClient, IStations stations, IClusterManager clusterManager, IDatabaseConnection databaseConnection, IMachoNet machoNet)
     {
         this.HttpClient     = httpClient;
@@ -93,8 +93,8 @@ public class SolarSystems : Dictionary<int, SolarSystem>, ISolarSystems
             {
                 // TODO: CHECK FOR STATIC OR DYNAMIC SOLAR SYSTEMS!
                 // make sure it is marked as loaded locally
-                this.mSolarsystemToNodeID [solarSystemID]                   = nodeID;
-                this [solarSystemID].BelongsToUs                            = true;
+                this.mSolarsystemToNodeID [solarSystemID] = nodeID;
+                this [solarSystemID].BelongsToUs          = true;
             }
 
             return nodeID;
@@ -133,7 +133,7 @@ public class SolarSystems : Dictionary<int, SolarSystem>, ISolarSystems
     {
         // mark the item as loaded by that node
         this.Database.InvSetItemNode (solarSystemID, nodeID);
-        
+
         this.mSolarsystemToNodeID [solarSystemID] = nodeID;
     }
 

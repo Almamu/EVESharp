@@ -4,6 +4,4 @@ using EVESharp.EVE.Data.Inventory.Items.Types;
 
 namespace EVESharp.Node.Data.Inventory;
 
-public class Factions : Dictionary <int, Faction>, IFactions
-{
-}
+public class Factions : Dictionary <int, Faction>, IFactions { }

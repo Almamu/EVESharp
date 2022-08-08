@@ -26,8 +26,10 @@ public class LocalCallHandler
     public  ILogger              Log                  { get; }
     public  PacketCallHelper     PacketCallHelper     { get; }
 
-    public LocalCallHandler (
-        IMachoNet machoNet, ILogger logger, ServiceManager serviceManager, BoundServiceManager boundServiceManager, RemoteServiceManager remoteServiceManager, PacketCallHelper packetCallHelper
+    public LocalCallHandler
+    (
+        IMachoNet machoNet, ILogger logger, ServiceManager serviceManager, BoundServiceManager boundServiceManager, RemoteServiceManager remoteServiceManager,
+        PacketCallHelper packetCallHelper
     )
     {
         MachoNet             = machoNet;
@@ -146,7 +148,9 @@ public class LocalCallHandler
                     )
                 );
             else
-                PacketCallHelper.SendException (callInformation, packet.Type, new CustomError ($"An internal server error occurred. <b>Reference</b>: {errorID}"));
+                PacketCallHelper.SendException (
+                    callInformation, packet.Type, new CustomError ($"An internal server error occurred. <b>Reference</b>: {errorID}")
+                );
         }
     }
 
@@ -169,9 +173,10 @@ public class LocalCallHandler
 
         if (machoMessage.Transport is MachoClientTransport clientTransport)
             playerSession = clientTransport.Session;
+
         if (machoMessage.Packet.OutOfBounds?.TryGetValue ("Session", out PyDictionary session) == true)
             playerSession = Session.FromPyDictionary (session);
-        
+
         RemoteServiceManager.ReceivedRemoteCallAnswer (dest.CallID, subStream.Stream, playerSession);
     }
 }

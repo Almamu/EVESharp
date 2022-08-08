@@ -16,12 +16,13 @@ namespace EVESharp.Node.Server.Node;
 
 public class MachoNet : IMachoNet
 {
-    private General              Configuration { get; }
-    private IDatabaseConnection  Database      { get; }
+    private General             Configuration { get; }
+    private IDatabaseConnection Database      { get; }
 
-    public MachoNet (
+    public MachoNet
+    (
         IDatabaseConnection databaseConnection, ITransportManager transportManager, MessageProcessor <LoginQueueEntry> loginQueue,
-        General             configuration,      ILogger    logger
+        General             configuration,      ILogger           logger
     )
     {
         Database         = databaseConnection;

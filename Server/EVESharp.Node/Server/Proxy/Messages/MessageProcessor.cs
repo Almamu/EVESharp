@@ -18,13 +18,16 @@ namespace EVESharp.Node.Server.Proxy.Messages;
 
 public class MessageProcessor : Shared.Messages.MessageProcessor
 {
-
-    public MessageProcessor (
-        IMachoNet machoNet, ILogger logger, ServiceManager serviceManager, BoundServiceManager boundServiceManager, ISessionManager sessionManager, RemoteServiceManager remoteServiceManager, PacketCallHelper packetCallHelper, INotificationSender notificationSender, IItems items, ISolarSystems solarSystems
+    public MessageProcessor
+    (
+        IMachoNet            machoNet, ILogger logger, ServiceManager serviceManager, BoundServiceManager boundServiceManager, ISessionManager sessionManager,
+        RemoteServiceManager remoteServiceManager, PacketCallHelper packetCallHelper, INotificationSender notificationSender, IItems items,
+        ISolarSystems        solarSystems
     ) :
-        base (machoNet, logger, serviceManager, boundServiceManager, remoteServiceManager, packetCallHelper, items, solarSystems, notificationSender, sessionManager, 100)
-    {
-    }
+        base (
+            machoNet, logger, serviceManager, boundServiceManager, remoteServiceManager, packetCallHelper, items, solarSystems,
+            notificationSender, sessionManager, 100
+        ) { }
 
     protected override void HandleMessage (MachoMessage machoMessage)
     {
@@ -35,7 +38,7 @@ public class MessageProcessor : Shared.Messages.MessageProcessor
         }
         else if (machoMessage.Packet.Type == PyPacket.PacketType.PING_RSP && machoMessage.Transport is MachoNodeTransport)
         {
-            this.HandlePingRsp (machoMessage);            
+            this.HandlePingRsp (machoMessage);
         }
         else
         {
@@ -123,7 +126,6 @@ public class MessageProcessor : Shared.Messages.MessageProcessor
             case PyPacket.PacketType.NOTIFICATION:
                 LocalNotificationHandler.HandleNotification (machoMessage);
                 break;
-
         }
     }
 
@@ -139,8 +141,7 @@ public class MessageProcessor : Shared.Messages.MessageProcessor
         // TODO: CHECK THIS FOR PERFORMANCE?!
         List <MachoNodeTransport> nodeTransports = MachoNet.TransportManager.NodeTransports.Values.ToList ();
 
-        int index = Random.Shared.Next(0, nodeTransports.Count);
-        
+        int index = Random.Shared.Next (0, nodeTransports.Count);
 
         // this time should come from the stream packetizer or the socket itself
         // but there's no way we're adding time tracking for all the goddamned packets
@@ -158,10 +159,10 @@ public class MessageProcessor : Shared.Messages.MessageProcessor
             [1] = DateTime.UtcNow.ToFileTime (),
             [2] = "proxy::writing"
         };
-        
+
         (machoMessage.Packet.Payload [0] as PyList)?.Add (handleMessage);
         (machoMessage.Packet.Payload [0] as PyList)?.Add (writing);
-        
+
         // relay it to the node
         nodeTransports [index].Socket.Send (machoMessage.Packet);
     }
@@ -184,10 +185,10 @@ public class MessageProcessor : Shared.Messages.MessageProcessor
             [1] = DateTime.UtcNow.ToFileTime (),
             [2] = "proxy::writing"
         };
-        
+
         (machoMessage.Packet.Payload [0] as PyList)?.Add (handleMessage);
         (machoMessage.Packet.Payload [0] as PyList)?.Add (writing);
-        
+
         // queue it back so it now goes into the proper destination
         MachoNet.QueueOutputPacket (machoMessage.Packet);
     }

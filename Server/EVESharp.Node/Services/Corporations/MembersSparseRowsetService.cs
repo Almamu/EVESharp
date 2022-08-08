@@ -20,9 +20,10 @@ public class MembersSparseRowsetService : SparseRowsetDatabaseService
     public override AccessLevel                  AccessLevel   => AccessLevel.None;
     private         Corporation                  Corporation   { get; }
     private         CorporationDB                DB            { get; }
-    private         INotificationSender           Notifications { get; }
+    private         INotificationSender          Notifications { get; }
 
-    public MembersSparseRowsetService (
+    public MembersSparseRowsetService
+    (
         Corporation corporation, CorporationDB db, SparseRowsetHeader rowsetHeader, INotificationSender notificationSender, BoundServiceManager manager,
         Session     session
     ) : base (rowsetHeader, manager, session, true)

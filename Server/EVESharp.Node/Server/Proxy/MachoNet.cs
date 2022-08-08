@@ -23,8 +23,10 @@ public class MachoNet : IMachoNet
     private MachoServerTransport Transport     { get; set; }
     private IDatabaseConnection  Database      { get; }
 
-    public MachoNet (
-        ITransportManager transportManager, MessageProcessor <LoginQueueEntry> loginQueue, General configuration, ILogger logger, IDatabaseConnection databaseConnection
+    public MachoNet
+    (
+        ITransportManager   transportManager, MessageProcessor <LoginQueueEntry> loginQueue, General configuration, ILogger logger,
+        IDatabaseConnection databaseConnection
     )
     {
         LoginQueue       = loginQueue;
@@ -126,6 +128,7 @@ public class MachoNet : IMachoNet
             UserID      = transport.Session.UserID,
             OutOfBounds = new PyDictionary {["Session"] = transport.Session}
         };
+
         PyPacket localPacket = new PyPacket (PyPacket.PacketType.NOTIFICATION)
         {
             Source      = new PyAddressNode (NodeID),
@@ -138,6 +141,7 @@ public class MachoNet : IMachoNet
             UserID      = transport.Session.UserID,
             OutOfBounds = new PyDictionary {["Session"] = transport.Session}
         };
+
         // tell all the nodes that we're dead now
         // HACK: UGH THAT CASTING IS UGLY! HOPEFULLY THIS CHANGES ON NEWER C# VERSIONS
         ((IMachoNet) this).QueueOutputPacket (clusterPacket);
@@ -201,12 +205,14 @@ public class MachoNet : IMachoNet
                         // bitmask cannot be owner ids
                         if (transport.Session [dest.IDType] is not PyInteger val)
                             continue;
+
                         if ((val & id) != id)
                             continue;
                         break;
                     case ComparisonType.Equality:
                         if (!isOwnerID && transport.Session [dest.IDType] != id)
                             continue;
+
                         if (isOwnerID && transport.Session.AllianceID != id &&
                             transport.Session.CharacterID != id &&
                             transport.Session.CorporationID != id)
@@ -225,6 +231,7 @@ public class MachoNet : IMachoNet
 
         // extract the actual ids used to identify the destination
         string [] criteria = dest.IDType.Value.Split ('&');
+
         // detect how the comparisons have to be performed
         ComparisonType [] comparison = criteria.Select (
             x =>
@@ -235,6 +242,7 @@ public class MachoNet : IMachoNet
                 return result;
             }
         ).ToArray ();
+
         // determine if any of those IDs is an ownerID so we can take it into account
         bool [] isOwnerID = Array.ConvertAll (criteria, x => x == "ownerid");
 
@@ -251,25 +259,30 @@ public class MachoNet : IMachoNet
                 // validate all the values
                 for (int i = 0; i < criteria.Length; i++)
                 {
-                    switch (comparison[i])
+                    switch (comparison [i])
                     {
                         case ComparisonType.Bitmask:
                             // bitmask cannot be owner ids
                             if (transport.Session [criteria [i]] is not PyInteger val)
                                 break;
+
                             if (id [i] is not PyInteger val2)
                                 break;
+
                             if ((val & val2) != val2)
                                 break;
+
                             continue;
                         case ComparisonType.Equality:
-                            if (!isOwnerID[i] && transport.Session [criteria[i]] != id [i])
+                            if (!isOwnerID [i] && transport.Session [criteria [i]] != id [i])
                                 break;
-                            if (isOwnerID[i] && 
+
+                            if (isOwnerID [i] &&
                                 transport.Session.AllianceID != id [i] &&
                                 transport.Session.CharacterID != id [i] &&
                                 transport.Session.CorporationID != id [i])
                                 break;
+
                             continue;
                     }
 

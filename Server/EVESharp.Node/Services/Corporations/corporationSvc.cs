@@ -20,17 +20,18 @@ namespace EVESharp.Node.Services.Corporations;
 [MustBeCharacter]
 public class corporationSvc : Service
 {
-    public override AccessLevel        AccessLevel   => AccessLevel.None;
+    public override AccessLevel         AccessLevel   => AccessLevel.None;
     private         IDatabaseConnection Database      { get; }
-    private         CorporationDB      DB            { get; }
-    private         IWallets     Wallets { get; }
+    private         CorporationDB       DB            { get; }
+    private         IWallets            Wallets       { get; }
     private         IConstants          Constants     { get; }
-    private         IItems        Items   { get; }
+    private         IItems              Items         { get; }
     private         INotificationSender Notifications { get; }
 
-    public corporationSvc (
+    public corporationSvc
+    (
         IDatabaseConnection databaseConnection, CorporationDB db, IConstants constants, IWallets wallets, IItems items,
-        INotificationSender  notificationSender
+        INotificationSender notificationSender
     )
     {
         Database      = databaseConnection;
@@ -85,9 +86,10 @@ public class corporationSvc : Service
         return Database.CRowset (CorporationDB.GET_RECRUITMENT_AD_TYPES);
     }
 
-    public PyDataType GetRecruitmentAdsByCriteria (
-        CallInformation call, PyInteger regionID, PyInteger skillPoints,  PyInteger typeMask,
-        PyInteger raceMask, PyInteger isInAlliance, PyInteger minMembers, PyInteger maxMembers
+    public PyDataType GetRecruitmentAdsByCriteria
+    (
+        CallInformation call,     PyInteger regionID,     PyInteger skillPoints, PyInteger typeMask,
+        PyInteger       raceMask, PyInteger isInAlliance, PyInteger minMembers,  PyInteger maxMembers
     )
     {
         return this.GetRecruitmentAdsByCriteria (
@@ -96,9 +98,10 @@ public class corporationSvc : Service
         );
     }
 
-    public PyDataType GetRecruitmentAdsByCriteria (
-        CallInformation call, PyInteger regionID, PyDecimal skillPoints,  PyInteger typeMask,
-        PyInteger raceMask, PyInteger isInAlliance, PyInteger minMembers, PyInteger maxMembers
+    public PyDataType GetRecruitmentAdsByCriteria
+    (
+        CallInformation call,     PyInteger regionID,     PyDecimal skillPoints, PyInteger typeMask,
+        PyInteger       raceMask, PyInteger isInAlliance, PyInteger minMembers,  PyInteger maxMembers
     )
     {
         return DB.GetRecruitmentAds (regionID, skillPoints, typeMask, raceMask, isInAlliance, minMembers, maxMembers);
@@ -140,15 +143,22 @@ public class corporationSvc : Service
 
     private void ValidateMedal (PyString title, PyString description, PyList parts)
     {
-        if (title.Length < 3) throw new MedalNameInvalid ();
-        if (title.Length > 100) throw new MedalNameTooLong ();
-        if (description.Length > 1000) throw new MedalDescriptionTooLong ();
-        if (false) throw new MedalDescriptionInvalid (); // TODO: CHECK FOR BANNED WORDS!
+        if (title.Length < 3)
+            throw new MedalNameInvalid ();
+
+        if (title.Length > 100)
+            throw new MedalNameTooLong ();
+
+        if (description.Length > 1000)
+            throw new MedalDescriptionTooLong ();
+
+        if (false)
+            throw new MedalDescriptionInvalid (); // TODO: CHECK FOR BANNED WORDS!
 
         // TODO: VALIDATE PART NAMES TO ENSURE THEY'RE VALID
     }
 
-    [MustHaveCorporationRole(MLS.UI_CORP_NEED_ROLE_PERS_MAN_OR_DIRECT, CorporationRole.PersonnelManager, CorporationRole.Director)]
+    [MustHaveCorporationRole (MLS.UI_CORP_NEED_ROLE_PERS_MAN_OR_DIRECT, CorporationRole.PersonnelManager, CorporationRole.Director)]
     public PyDataType CreateMedal (CallInformation call, PyString title, PyString description, PyList parts, PyBool pay)
     {
         int characterID = call.Session.CharacterID;
@@ -169,7 +179,7 @@ public class corporationSvc : Service
         return null;
     }
 
-    [MustHaveCorporationRole(MLS.UI_CORP_NEED_ROLE_PERS_MAN_OR_DIRECT, CorporationRole.PersonnelManager, CorporationRole.Director)]
+    [MustHaveCorporationRole (MLS.UI_CORP_NEED_ROLE_PERS_MAN_OR_DIRECT, CorporationRole.PersonnelManager, CorporationRole.Director)]
     public PyDataType CreateMedal (CallInformation call, PyString title, PyString description, PyList parts)
     {
         this.ValidateMedal (title, description, parts);
@@ -213,13 +223,13 @@ public class corporationSvc : Service
         );
     }
 
-    [MustHaveCorporationRole(MLS.UI_CORP_NEED_ROLE_PERS_MAN_OR_DIRECT, CorporationRole.PersonnelManager, CorporationRole.Director)]
+    [MustHaveCorporationRole (MLS.UI_CORP_NEED_ROLE_PERS_MAN_OR_DIRECT, CorporationRole.PersonnelManager, CorporationRole.Director)]
     public PyDataType GiveMedalToCharacters (CallInformation call, PyInteger medalID, PyList characterIDs, PyString reason)
     {
         throw new ConfirmCreatingMedal (Constants.MedalCost);
     }
 
-    [MustHaveCorporationRole(MLS.UI_CORP_NEED_ROLE_PERS_MAN_OR_DIRECT, CorporationRole.PersonnelManager, CorporationRole.Director)]
+    [MustHaveCorporationRole (MLS.UI_CORP_NEED_ROLE_PERS_MAN_OR_DIRECT, CorporationRole.PersonnelManager, CorporationRole.Director)]
     public PyDataType GiveMedalToCharacters (CallInformation call, PyInteger medalID, PyList characterIDs, PyString reason, PyBool pay)
     {
         if (pay == false)

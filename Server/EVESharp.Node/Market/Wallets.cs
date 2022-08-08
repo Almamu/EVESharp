@@ -8,7 +8,7 @@ namespace EVESharp.Node.Market;
 
 public class Wallets : IWallets
 {
-    private INotificationSender  Notifications { get; }
+    private INotificationSender Notifications { get; }
     private IDatabaseConnection Database      { get; }
 
     public Wallets (IDatabaseConnection database, INotificationSender notificationSender)
@@ -20,9 +20,7 @@ public class Wallets : IWallets
     public IWallet AcquireWallet (int ownerID, int walletKey, bool isCorporation = false)
     {
         // TODO: CHECK PERMISSIONS
-        return new Wallet (
-            ownerID, walletKey, isCorporation, Database, Notifications, this
-        );
+        return new Wallet (ownerID, walletKey, isCorporation, Database, Notifications, this);
     }
 
     /// <summary>
@@ -37,15 +35,20 @@ public class Wallets : IWallets
     /// <param name="amount">The amount of ISK</param>
     /// <param name="stationID">The place where the transaction was recorded</param>
     /// <param name="walletKey">The account key where the transaction was recorded</param>
-    public void CreateTransactionRecord (
+    public void CreateTransactionRecord
+    (
         int ownerID,   TransactionType type, int characterID, int otherID, int typeID, int quantity, double amount,
         int stationID, int             walletKey
     )
     {
-        Database.MktRecordTransaction (ownerID, type, characterID, otherID, typeID, quantity, amount, stationID, walletKey);
+        Database.MktRecordTransaction (
+            ownerID, type, characterID, otherID, typeID, quantity, amount, stationID,
+            walletKey
+        );
     }
 
-    public void CreateJournalForOwner (
+    public void CreateJournalForOwner
+    (
         MarketReference reference, int  characterID, int    ownerID1,
         int?            ownerID2,  int? referenceID, double amount, double finalBalance, string reason, int walletKey
     )
@@ -66,7 +69,7 @@ public class Wallets : IWallets
     {
         Database.MktWalletCreate (startingBalance, ownerID, walletKey);
     }
-    
+
     /// <summary>
     /// Obtains the wallet balance for the given owner and wallet
     /// </summary>

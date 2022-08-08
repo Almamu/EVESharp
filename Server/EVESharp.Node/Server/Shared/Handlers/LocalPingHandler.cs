@@ -8,11 +8,11 @@ namespace EVESharp.Node.Server.Shared.Handlers;
 
 public class LocalPingHandler
 {
-    public IMachoNet        MachoNet         { get; }
+    public IMachoNet MachoNet { get; }
 
     public LocalPingHandler (IMachoNet machoNet)
     {
-        MachoNet         = machoNet;
+        MachoNet = machoNet;
     }
 
     public void HandlePingReq (MachoMessage machoMessage)

@@ -29,11 +29,9 @@ using EVESharp.PythonTypes.Types.Database;
 
 namespace EVESharp.Node.Data.Inventory;
 
-public class Attributes : ReadOnlyDictionary<int, AttributeType>, IAttributes
+public class Attributes : ReadOnlyDictionary <int, AttributeType>, IAttributes
 {
     public AttributeType this [AttributeTypes id] => this [(int) id];
 
-    public Attributes (IDatabaseConnection Database) : base(Database.InvDgmLoadAttributes ())
-    {
-    }
+    public Attributes (IDatabaseConnection Database) : base (Database.InvDgmLoadAttributes ()) { }
 }

@@ -31,13 +31,14 @@ public class invbroker : ClientBoundService
     private ItemDB              ItemDB             { get; }
     private ISolarSystems       SolarSystems       { get; }
     private INotificationSender Notifications      { get; }
-    private IDogmaNotifications  DogmaNotifications { get; }
+    private IDogmaNotifications DogmaNotifications { get; }
     private EffectsManager      EffectsManager     { get; }
     private IDatabaseConnection Database           { get; }
 
-    public invbroker (
-        ItemDB     itemDB,     EffectsManager      effectsManager, IItems         items, INotificationSender notificationSender,
-        IDogmaNotifications dogmaNotifications, BoundServiceManager manager,        IDatabaseConnection database, ISolarSystems solarSystems
+    public invbroker
+    (
+        ItemDB              itemDB,             EffectsManager      effectsManager, IItems              items,    INotificationSender notificationSender,
+        IDogmaNotifications dogmaNotifications, BoundServiceManager manager,        IDatabaseConnection database, ISolarSystems       solarSystems
     ) : base (manager)
     {
         EffectsManager     = effectsManager;
@@ -49,9 +50,10 @@ public class invbroker : ClientBoundService
         SolarSystems       = solarSystems;
     }
 
-    private invbroker (
-        ItemDB     itemDB,     EffectsManager      effectsManager, IItems items, INotificationSender notificationSender,
-        IDogmaNotifications dogmaNotifications, BoundServiceManager manager,        int         objectID,    Session            session, ISolarSystems solarSystems
+    private invbroker
+    (
+        ItemDB              itemDB,             EffectsManager      effectsManager, IItems items,    INotificationSender notificationSender,
+        IDogmaNotifications dogmaNotifications, BoundServiceManager manager,        int    objectID, Session             session, ISolarSystems solarSystems
     ) : base (manager, session, objectID)
     {
         EffectsManager     = effectsManager;
@@ -126,6 +128,7 @@ public class invbroker : ClientBoundService
 
                 if (ownerID != call.Session.CharacterID && ownerID != call.Session.CorporationID)
                     throw new CrpAccessDenied (MLS.UI_CORP_ACCESSDENIED13);
+
                 if (ownerID == call.Session.CorporationID && CorporationRole.SecurityOfficer.Is (call.Session.CorporationRole) == false)
                     throw new CrpAccessDenied (MLS.UI_CORP_ACCESSDENIED13);
                 break;
@@ -149,9 +152,7 @@ public class invbroker : ClientBoundService
                     throw new CrpAccessDenied (MLS.UI_CORP_ACCESSDENIED14);
                 break;
 
-
-            default:
-                throw new CustomError ($"Trying to open container ID ({containerID.Value}) is not supported");
+            default: throw new CustomError ($"Trying to open container ID ({containerID.Value}) is not supported");
         }
 
         // these inventories are usually meta
@@ -214,8 +215,9 @@ public class invbroker : ClientBoundService
         return null;
     }
 
-    public PyDataType AssembleCargoContainer (
-        CallInformation call, PyInteger       containerID, PyDataType ignored, PyDecimal ignored2
+    public PyDataType AssembleCargoContainer
+    (
+        CallInformation call, PyInteger containerID, PyDataType ignored, PyDecimal ignored2
     )
     {
         ItemEntity item = this.Items.GetItem (containerID);
@@ -233,8 +235,7 @@ public class invbroker : ClientBoundService
             case (int) GroupID.Tool:
             case (int) GroupID.MobileWarpDisruptor:
                 break;
-            default:
-                throw new ItemNotContainer (containerID);
+            default: throw new ItemNotContainer (containerID);
         }
 
         bool oldSingleton = item.Singleton;
@@ -249,7 +250,8 @@ public class invbroker : ClientBoundService
         return null;
     }
 
-    public PyDataType DeliverToCorpHangar (
+    public PyDataType DeliverToCorpHangar
+    (
         CallInformation call, PyInteger stationID, PyList itemIDs, PyDataType quantity, PyInteger ownerID, PyInteger deliverToFlag
     )
     {
@@ -258,7 +260,8 @@ public class invbroker : ClientBoundService
         return null;
     }
 
-    public PyDataType DeliverToCorpMember (
+    public PyDataType DeliverToCorpMember
+    (
         CallInformation call, PyInteger memberID, PyInteger stationID, PyList itemIDs, PyDataType quantity, PyInteger ownerID
     )
     {
@@ -271,7 +274,7 @@ public class invbroker : ClientBoundService
         {
             (int) GroupID.SolarSystem => Database.CluResolveAddress ("solarsystem", parameters.ObjectID),
             (int) GroupID.Station     => Database.CluResolveAddress ("station",     parameters.ObjectID),
-            _                        => throw new CustomError ("Unknown item's groupID")
+            _                         => throw new CustomError ("Unknown item's groupID")
         };
     }
 

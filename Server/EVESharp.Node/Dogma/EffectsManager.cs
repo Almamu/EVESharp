@@ -8,12 +8,12 @@ namespace EVESharp.Node.Dogma;
 
 public class EffectsManager
 {
-    private IDogmaNotifications  DogmaNotifications  { get; }
-    private IItems Items { get; }
+    private IDogmaNotifications DogmaNotifications { get; }
+    private IItems              Items              { get; }
 
     public EffectsManager (IItems items, IDogmaNotifications dogmaNotifications)
     {
-        this.Items             = items;
+        this.Items              = items;
         this.DogmaNotifications = dogmaNotifications;
     }
 

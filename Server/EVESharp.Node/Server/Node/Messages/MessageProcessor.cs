@@ -16,12 +16,15 @@ namespace EVESharp.Node.Server.Node.Messages;
 
 public class MessageProcessor : Shared.Messages.MessageProcessor
 {
-    public MessageProcessor (
-        IMachoNet      machoNet,       ILogger             logger, INotificationSender notificationSender, IItems items, ISolarSystems solarSystems,
-        ServiceManager serviceManager, BoundServiceManager boundServiceManager, RemoteServiceManager remoteServiceManager, PacketCallHelper packetCallHelper, ISessionManager sessionManager
-    ) : base (machoNet, logger, serviceManager, boundServiceManager, remoteServiceManager, packetCallHelper, items, solarSystems, notificationSender, sessionManager, 100)
-    {
-    }
+    public MessageProcessor
+    (
+        IMachoNet       machoNet,       ILogger             logger, INotificationSender notificationSender, IItems items, ISolarSystems solarSystems,
+        ServiceManager  serviceManager, BoundServiceManager boundServiceManager, RemoteServiceManager remoteServiceManager, PacketCallHelper packetCallHelper,
+        ISessionManager sessionManager
+    ) : base (
+        machoNet, logger, serviceManager, boundServiceManager, remoteServiceManager, packetCallHelper, items, solarSystems,
+        notificationSender, sessionManager, 100
+    ) { }
 
     protected override void HandleMessage (MachoMessage machoMessage)
     {
@@ -46,7 +49,6 @@ public class MessageProcessor : Shared.Messages.MessageProcessor
             case PyPacket.PacketType.NOTIFICATION:
                 LocalNotificationHandler.HandleNotification (machoMessage);
                 break;
-
         }
     }
 
@@ -69,7 +71,7 @@ public class MessageProcessor : Shared.Messages.MessageProcessor
     {
         // alter package to include the times the data
         PyAddressClient source = machoMessage.Packet.Source as PyAddressClient;
-        
+
         // this time should come from the stream packetizer or the socket itself
         // but there's no way we're adding time tracking for all the goddamned packets
         // so this should be sufficient
@@ -86,7 +88,7 @@ public class MessageProcessor : Shared.Messages.MessageProcessor
             [1] = DateTime.UtcNow.ToFileTime (),
             [2] = "server::turnaround"
         };
-        
+
         (machoMessage.Packet.Payload [0] as PyList)?.Add (serverHandleMessage);
         (machoMessage.Packet.Payload [0] as PyList)?.Add (serverTurnaround);
 
